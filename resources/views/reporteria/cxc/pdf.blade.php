@@ -186,8 +186,8 @@
                                                 if (isset($cotizacionesPorProveedor[$proveedor->id])) {
                                                     $cotizacionesProveedor = $cotizacionesPorProveedor[$proveedor->id];
                                                     foreach ($cotizacionesProveedor as $cotizacion) {
-                                                        $cuenta_1 = $base_factura + $iva - $retencion;
-                                                        $cuenta_2 = $total - $base_factura - $iva + $retencion;
+                                                        $cuenta_1 = $cotizacion->base_factura + $cotizacion->iva - $cotizacion->retencion;
+                                                        $cuenta_2 = $cotizacion->total - $cotizacion->base_factura - $cotizacion->iva + $cotizacion->retencion;
                                                         $totalCuenta1 += $cuenta_1;
                                                         $totalCuenta2 += $cuenta_2;
                                                     }

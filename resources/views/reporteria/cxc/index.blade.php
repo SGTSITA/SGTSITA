@@ -43,6 +43,15 @@
                                                     </select>
                                                 </div>
                                                 <div class="col-3">
+                                                    <label for="user_id">Buscar proveedor:</label>
+                                                    <select class="form-control proveedor" name="id_proveedor" id="id_proveedor">
+                                                        <option selected value="">seleccionar proveedor</option>
+                                                        @foreach($proveedores as $proveedor)
+                                                        <option value="{{ $proveedor->id }}">{{ $proveedor->nombre }}</option>
+                                                        @endforeach
+                                                    </select>
+                                                </div>
+                                                <div class="col-3">
                                                     <br>
                                                     <button class="btn btn-sm mb-0 mt-sm-0 mt-1" type="submit" style="background-color: #F82018; color: #ffffff;">Buscar</button>
                                                 </div>
@@ -124,6 +133,7 @@
 <script>
     $(document).ready(function() {
         $('.cliente').select2();
+        $('.proveedor').select2();
 
 
         const table = $('#datatable-search').DataTable({
