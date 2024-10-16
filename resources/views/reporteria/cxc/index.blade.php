@@ -108,6 +108,10 @@
                                     @endif
                                 </tbody>
                             </table>
+                            @if(isset($cotizaciones) && $cotizaciones != null)
+                            <button type="button" id="exportButtonExcel" class="btn btn-success">Exportar a Excel</button>
+                            <input type="hidden" id="txtDataCotizaciones" value="{{json_encode($cotizaciones)}}">
+                            @endif
                             <button type="button" id="exportButton" class="btn btn-primary">Exportar a PDF</button>
                         </form>
                     </div>
@@ -155,6 +159,32 @@
                 style: 'multi',
                 selector: 'td:first-child'
             }
+        });
+
+        $("#exportButtonExcel").on('click',()=>{
+            var dataExport = $("#txtDataCotizaciones").val();
+            $.ajax({
+                    url:"{{route('cotizaciones.export-excel')}}",
+                    type:'post',
+                    data:{ _token: '{{ csrf_token() }}',dataExport:dataExport},
+                    xhrFields: {
+                        responseType: 'blob' 
+                    },
+                    beforeSend:()=>{},
+                    success:(response)=>{
+                    var blob = new Blob([response], { type: 'application/xlsx' });
+                    var url = URL.createObjectURL(blob);
+                    var a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = url;
+                    a.download = 'Cuentas_por_coborar_{{  date('d-m-Y'); }}.xlsx';
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                    },
+                    error:()=>{}
+                });
         });
 
         $('#exportButton').on('click', function() {

@@ -128,6 +128,10 @@
                                             @endif
                                         </tbody>
                                     </table>
+                                    @if(isset($asignaciones) && $asignaciones != null)
+                                    <button type="button" id="exportButtonGenericExcel" data-report="1" class="btn btn-success">Exportar a Excel</button>
+                                    <input type="hidden" id="txtDataGenericExcel" value="{{json_encode($asignaciones)}}">
+                                    @endif
                                     <button type="submit" id="exportButton" class="btn btn-primary">Exportar a PDF</button>
                                 </form>
 
@@ -229,3 +233,7 @@
 
     </script>
 @endsection
+
+@push('custom-javascript')
+<script src="{{asset('js/reporteria/genericExcel.js')}}"></script>
+@endpush

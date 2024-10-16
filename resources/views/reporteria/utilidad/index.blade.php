@@ -55,8 +55,8 @@
                             <div class="table-responsive">
                                 <form id="exportForm" action="{{ route('export_utilidad.export') }}" method="POST">
                                     @csrf
-                                    <input type="date" id="fecha_de" name="fecha_de" value="{{$fechaDe}}">
-                                    <input type="date" id="fecha_hasta" name="fecha_hasta" value="{{$fechaHasta}}">
+                                    <input type="date" id="fecha_de" name="fecha_de" value="@if(isset($fechaDe)) $fechaDe @else date('d/m/Y') @endif">
+                                    <input type="date" id="fecha_hasta" name="fecha_hasta" value="@if(isset($fechaHasta)) $fechaHasta @else date('d/m/Y') @endif">
                                     <table class="table table-flush" id="datatable-search">
                                         <thead class="thead">
                                             <tr>
@@ -111,6 +111,10 @@
                                             @endif
                                         </tbody>
                                     </table>
+                                    @if(isset($asignaciones) && $asignaciones != null)
+                                    <button type="button" id="exportButtonGenericExcel" data-report="2" class="btn btn-success">Exportar a Excel</button>
+                                    <input type="hidden" id="txtDataGenericExcel" value="{{json_encode($asignaciones)}}">
+                                    @endif                                    
                                     <button type="submit" id="exportButton" class="btn btn-primary">Exportar a PDF</button>
                                 </form>
 
@@ -212,3 +216,6 @@
 
     </script>
 @endsection
+@push('custom-javascript')
+<script src="{{asset('js/reporteria/genericExcel.js')}}"></script>
+@endpush

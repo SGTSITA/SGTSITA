@@ -91,7 +91,10 @@
                                             @endif
                                         </tbody>
                                     </table>
-
+                                    @if(isset($cotizaciones) && $cotizaciones != null)
+                                        <button type="button" id="exportButtonGenericExcel" data-report="4" class="btn btn-success">Exportar a Excel</button>
+                                        <input type="hidden" id="txtDataGenericExcel" value="{{json_encode($cotizaciones)}}">
+                                    @endif 
                                     <button type="submit" id="exportButton" class="btn btn-primary">Exportar a PDF</button>
                                 </form>
                             </div>
@@ -191,3 +194,6 @@
 
     </script>
 @endsection
+@push('custom-javascript')
+<script src="{{asset('js/reporteria/genericExcel.js')}}"></script>
+@endpush

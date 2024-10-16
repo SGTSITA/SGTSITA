@@ -13,12 +13,17 @@ use App\Models\GastosGenerales;
 use App\Models\Proveedor;
 use App\Models\Subclientes;
 use App\Models\User;
+use App\Exports\CotizacionesCXC;
+use App\Exports\GenericExport;
 use Illuminate\Http\Request;
-use PDF;
-use Carbon\Carbon;
-use DB;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Storage;
+
+use Carbon\Carbon;
+use DB;
+use PDF;
+use Excel;
+
 
 class ReporteriaController extends Controller
 {
@@ -104,6 +109,102 @@ class ReporteriaController extends Controller
         // Devolver el archivo PDF como respuesta
         $filePath = storage_path('app/public/' . $fileName);
         return Response::download($filePath, $fileName)->deleteFileAfterSend(true);
+    }
+
+    public function exportExcel(request $r){
+        $collection = Collect(json_decode($r->dataExport));
+        $procesedData = $collection->map(function($c){
+            $fecha = optional($c->doc_cotizacion->asignaciones)->fehca_inicio_guard;
+            return ["id"=>$c->id,
+                    "fecha"=> ($fecha != null) ? Carbon::parse($fecha)->format('d/m/Y') : "Sin Fecha",
+                    "cliente"=>$c->cliente->nombre,
+                    "subcliente"=>$c->subcliente->nombre ?? "-",
+                    "origen"=>$c->origen,
+                    "dest"=>$c->destino,
+                    "contenedor"=>$c->doc_cotizacion->num_contenedor,
+                    "estatus"=>$c->estatus
+                ];
+        });
+
+        Excel::store(new CotizacionesCXC(json_decode($procesedData)), 'cotizaciones_cxc.xlsx','public');
+        return Response::download(storage_path('app/public/cotizaciones_cxc.xlsx'), "cxc.xlsx")->deleteFileAfterSend(true);
+    }
+
+    public function buildExcelData($excelData, $report = 0){
+        $collection = Collect(json_decode($excelData));
+        $procesedData = $collection->map(function($c) use ($report){
+            switch($report){
+                case 0:
+                    return [
+                        $c->id,
+                        $c->origen,
+                        $c->destino,
+                        $c->num_contenedor,
+                        $c->estatus
+                   ];
+                break;
+                case 1: 
+                   return [
+                           $c->contenedor->cotizacion->cliente->nombre,
+                           ($c->contenedor->cotizacion->id_subcliente != null) ? $c->contenedor->cotizacion->subcliente->nombre." / ".$c->contenedor->cotizacion->subcliente->telefono : '-',
+                           $c->contenedor->cotizacion->origen,
+                           $c->contenedor->cotizacion->destino,
+                           $c->contenedor->num_contenedor,
+                           Carbon::parse($c->fehca_inicio_guard)->format('d-m-Y') ,
+                           Carbon::parse($c->fehca_fin_guard)->format('d-m-Y') ,
+                           $c->contenedor->cotizacion->estatus
+                        ];
+                break;
+                case 2: 
+                    if($c->total_proveedor == NULL){
+                        $utilidad = $c->total - $c->pago_operador;
+                    }elseif($c->total_proveedor != NULL){
+                        $utilidad = $c->total - $c->total_proveedor;
+                    }else{
+                        $utilidad = 0;
+                    }
+                    return [
+                            $c->contenedor->cotizacion->cliente->nombre,
+                            ($c->contenedor->cotizacion->id_subcliente != null) ? $c->contenedor->cotizacion->subcliente->nombre." / ".$c->contenedor->cotizacion->subcliente->telefono : '-',
+                            $c->contenedor->cotizacion->origen,
+                            $c->contenedor->cotizacion->destino,
+                            $c->contenedor->num_contenedor,
+                            $utilidad
+                         ];
+                 break;
+                 case 3: // Liquidados cxc
+                
+                    return [
+                        $c->cliente->nombre,
+                        ($c->subcliente != null) ? $c->subcliente->nombre." / ".$c->subcliente->telefono : '-',
+                        $c->origen,
+                        $c->destino,
+                        $c->doc_cotizacion->num_contenedor,
+                        $c->estatus
+                     ];
+                    break;
+                    case 4: // Liquidados cxp
+                        return [
+                            $c->origen,
+                            $c->destino,
+                            $c->num_contenedor,
+                            $c->estatus
+                         ];
+                        break;
+                
+            }
+            
+        })->toArray();
+        return $procesedData;
+    }
+
+    public function exportGenericExcel(Request $r){
+        $fileName = "generic_excel_".uniqid().".xlsx";
+        $data = self::buildExcelData($r->dataExport, $r->reportNumber);
+        $headers = json_decode($r->reportHeaders);
+
+        Excel::store(new GenericExport($headers,$data), $fileName, 'public');
+        return Response::download(storage_path('app/public/'.$fileName), "excel_export.xlsx")->deleteFileAfterSend(true);
     }
 
     // ==================== C U E N T A S  P O R  P A G A R ====================
