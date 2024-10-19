@@ -109,10 +109,10 @@
                                 </tbody>
                             </table>
                             @if(isset($cotizaciones) && $cotizaciones != null)
-                            <button type="button" id="exportButtonExcel" class="btn btn-success">Exportar a Excel</button>
+                            <button type="button" id="exportButtonExcel1" data-filetype="xlsx" class="btn btn-success exportButton">Exportar a Excel</button>
                             <input type="hidden" id="txtDataCotizaciones" value="{{json_encode($cotizaciones)}}">
                             @endif
-                            <button type="button" id="exportButton" class="btn btn-primary">Exportar a PDF</button>
+                            <button type="button" id="exportButton" data-filetype="pdf" class="btn btn-primary exportButton">Exportar a PDF</button>
                         </form>
                     </div>
                 </div>
@@ -187,32 +187,34 @@
                 });
         });
 
-        $('#exportButton').on('click', function() {
+        $('.exportButton').on('click', function(event) {
             const selectedIds = table.rows('.selected').data().toArray().map(row => row[1]); // Obtener los IDs seleccionados
 
-            console.log(selectedIds); // Verificar en la consola del navegador
-
+            //console.log(selectedIds); // Verificar en la consola del navegador
+            var fileType = $("#"+event.target.id).data('filetype');
+            
             // Enviar los IDs seleccionados al controlador por Ajax
             $.ajax({
                 url: '{{ route('cotizaciones.export') }}',
                 method: 'POST',
                 data: {
                     _token: '{{ csrf_token() }}',
-                    selected_ids: selectedIds
+                    selected_ids: selectedIds,
+                    fileType: fileType
                 },
                 xhrFields: {
                         responseType: 'blob' // Indicar que esperamos una respuesta tipo blob (archivo)
                     },
                 success: function(response) {
                     // Crear un objeto URL del blob recibido
-                    var blob = new Blob([response], { type: 'application/pdf' });
+                    var blob = new Blob([response], { type: 'application/'+fileType });
                     var url = URL.createObjectURL(blob);
 
                     // Crear un elemento <a> para simular el clic de descarga
                     var a = document.createElement('a');
                     a.style.display = 'none';
                     a.href = url;
-                    a.download = 'Cuentas_por_coborar_{{  date('d-m-Y'); }}.pdf';
+                    a.download = 'Cuentas_por_coborar_{{  date('d-m-Y'); }}.'+fileType;
                     document.body.appendChild(a);
 
                     // Simular el clic en el enlace para iniciar la descarga

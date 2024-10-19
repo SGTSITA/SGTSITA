@@ -111,11 +111,24 @@
                                             @endif
                                         </tbody>
                                     </table>
+                            
+                                    <!--button type="button" id="exportButtonGenericExcel" data-report="2" class="btn btn-success">Exportar a Excel</button>
+                                    <input type="hidden" id="txtDataGenericExcel" value="{{json_encode($asignaciones)}}"-->
+                                                                  
                                     @if(isset($asignaciones) && $asignaciones != null)
-                                    <button type="button" id="exportButtonGenericExcel" data-report="2" class="btn btn-success">Exportar a Excel</button>
+                                    <div class="dropdown">
+                                        <button class="btn btn-success dropdown-toggle" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
+                                          Exportar
+                                        </button>
+                                        <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
+                                            <li><a class="dropdown-item" id="exportButtonGenericExcel" data-report="2"  href="javascript:$('#exportButtonGenericExcel').click();">Exportar Tablero</a></li>
+                                            <li><button type="submit" class="dropdown-item" data-filetype="pdf" id="exportButton" value="pdf" name="btnExport">PDF Cuentas por Pagar</button></li>
+                                            <li><button type="submit" class="dropdown-item exportButton" data-filetype="xlsx" id="exportButtonXlsx" value="xlsx" name="btnExport">Excel Cuentas por Pagar</button></li>
+                                        </ul>
+                                    </div>
                                     <input type="hidden" id="txtDataGenericExcel" value="{{json_encode($asignaciones)}}">
-                                    @endif                                    
-                                    <button type="submit" id="exportButton" class="btn btn-primary">Exportar a PDF</button>
+                                    @endif
+                                    <!--button type="submit" id="exportButton" class="btn btn-primary">Exportar a PDF</button-->
                                 </form>
 
                             </div>

@@ -15,6 +15,8 @@ use App\Models\Subclientes;
 use App\Models\User;
 use App\Exports\CotizacionesCXC;
 use App\Exports\GenericExport;
+use App\Exports\CxcExport;
+use App\Exports\CxpExport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Storage;
@@ -99,16 +101,21 @@ class ReporteriaController extends Controller
         $bancos_oficiales = Bancos::where('tipo', '=', 'Oficial')->get();
         $bancos_no_oficiales = Bancos::where('tipo', '=', 'No Oficial')->get();
 
-        $pdf = PDF::loadView('reporteria.cxc.pdf', compact('cotizaciones', 'fechaCarbon', 'bancos_oficiales', 'bancos_no_oficiales', 'cotizacion', 'user'))->setPaper([0, 0, 595, 1200], 'landscape');
+        if($request->fileType == "xlsx"){
+            Excel::store(new CxcExport($cotizaciones, $fechaCarbon, $bancos_oficiales, $bancos_no_oficiales, $cotizacion, $user), 'cotizaciones_cxc.xlsx','public');
+            return Response::download(storage_path('app/public/cotizaciones_cxc.xlsx'), "cxc.xlsx")->deleteFileAfterSend(true);
+        }else{
+            $pdf = PDF::loadView('reporteria.cxc.pdf', compact('cotizaciones', 'fechaCarbon', 'bancos_oficiales', 'bancos_no_oficiales', 'cotizacion', 'user'))->setPaper([0, 0, 595, 1200], 'landscape');
 
-        // Generar el nombre del archivo
-        $fileName = 'cxc_' . implode('_', $cotizacionIds) . '.pdf';
-        // Guardar el PDF en la carpeta storage
-        $pdf->save(storage_path('app/public/' . $fileName));
-
-        // Devolver el archivo PDF como respuesta
-        $filePath = storage_path('app/public/' . $fileName);
-        return Response::download($filePath, $fileName)->deleteFileAfterSend(true);
+            // Generar el nombre del archivo
+            $fileName = 'cxc_' . implode('_', $cotizacionIds) . '.pdf';
+            // Guardar el PDF en la carpeta storage
+            $pdf->save(storage_path('app/public/' . $fileName));
+    
+            // Devolver el archivo PDF como respuesta
+            $filePath = storage_path('app/public/' . $fileName);
+            return Response::download($filePath, $fileName)->deleteFileAfterSend(true);
+        }
     }
 
     public function exportExcel(request $r){
@@ -254,18 +261,22 @@ class ReporteriaController extends Controller
 
         $cotizacion = Asignaciones::where('id', $cotizacionIds)->first();
         $user = User::where('id', '=', auth()->user()->id)->first();
+        if($request->fileType == "xlsx"){
+            Excel::store(new CxpExport($cotizaciones, $fechaCarbon, $bancos_oficiales, $bancos_no_oficiales, $cotizacion, $user), 'cotizaciones_cxp.xlsx','public');
+            return Response::download(storage_path('app/public/cotizaciones_cxp.xlsx'), "cxp.xlsx")->deleteFileAfterSend(true);
+        }else{
+           $pdf = PDF::loadView('reporteria.cxp.pdf', compact('cotizaciones', 'fechaCarbon', 'bancos_oficiales', 'bancos_no_oficiales', 'cotizacion', 'user'))->setPaper('a4', 'landscape');
 
-        $pdf = PDF::loadView('reporteria.cxp.pdf', compact('cotizaciones', 'fechaCarbon', 'bancos_oficiales', 'bancos_no_oficiales', 'cotizacion', 'user'))->setPaper('a4', 'landscape');
+           $fileName = 'cxp_' . implode('_', $cotizacionIds) . '.pdf';
 
-        $fileName = 'cxp_' . implode('_', $cotizacionIds) . '.pdf';
+            // Guardar el PDF en la carpeta storage
+           $pdf->save(storage_path('app/public/' . $fileName));
 
-        // Guardar el PDF en la carpeta storage
-        $pdf->save(storage_path('app/public/' . $fileName));
-
-        // Devolver el archivo PDF como respuesta
-        $filePath = storage_path('app/public/' . $fileName);
-        //  return $pdf->stream();
-      return Response::download($filePath, $fileName)->deleteFileAfterSend(true);
+            // Devolver el archivo PDF como respuesta
+           $filePath = storage_path('app/public/' . $fileName);
+            //  return $pdf->stream();
+           return Response::download($filePath, $fileName)->deleteFileAfterSend(true);
+       }
     }
 
     // ==================== V I A J E S ====================
@@ -344,9 +355,15 @@ class ReporteriaController extends Controller
 
         $cotizacion = Asignaciones::where('id', $cotizacionIds)->first();
         $user = User::where('id', '=', auth()->user()->id)->first();
+        if($request->btnExport == "xlsx"){
+            Excel::store(new \App\Exports\AsignacionesExport($cotizaciones, $fechaCarbon, $bancos_oficiales, $bancos_no_oficiales, $cotizacion, $user), 'asignaciones.xlsx','public');
+            return Response::download(storage_path('app/public/asignaciones.xlsx'), "asignaciones.xlsx")->deleteFileAfterSend(true);
+        }else{
+            $pdf = PDF::loadView('reporteria.asignaciones.pdf', compact('cotizaciones', 'fechaCarbon', 'bancos_oficiales', 'bancos_no_oficiales', 'cotizacion', 'user'))->setPaper('a4', 'landscape');
+            return $pdf->stream();
+        }
 
-        $pdf = PDF::loadView('reporteria.asignaciones.pdf', compact('cotizaciones', 'fechaCarbon', 'bancos_oficiales', 'bancos_no_oficiales', 'cotizacion', 'user'))->setPaper('a4', 'landscape');
-        return $pdf->stream();
+        
         // return $pdf->download('cotizaciones_seleccionadas.pdf');
     }
 
@@ -430,9 +447,13 @@ class ReporteriaController extends Controller
 
         $gastos = $gastos->get();
 
+        if($request->btnExport == "xlsx"){
+            Excel::store(new \App\Exports\UtilidadExport($cotizaciones, $fechaCarbon, $cotizacion, $user, $gastos), 'utilidad.xlsx','public');
+            return Response::download(storage_path('app/public/utilidad.xlsx'), "utilidad.xlsx")->deleteFileAfterSend(true);
+        }else{
         $pdf = PDF::loadView('reporteria.utilidad.pdf', compact('cotizaciones', 'fechaCarbon', 'cotizacion', 'user', 'gastos'))->setPaper('a4', 'landscape');
-         // return $pdf->stream();
-       return $pdf->download('cotizaciones_seleccionadas.pdf');
+            return $pdf->download('utilidad_seleccionadas.pdf');
+        }
     }
 
     // ==================== D O C U M E N T O S ====================
@@ -577,6 +598,11 @@ class ReporteriaController extends Controller
         $bancos_no_oficiales = Bancos::where('tipo', '=', 'No Oficial')->get();
         $user = User::where('id', '=', auth()->user()->id)->first();
         $cotizacion_first = Cotizaciones::where('id', $cotizacionIds)->first();
+
+        if($request->fileType == "xlsx"){
+            Excel::store(new \App\Exports\LiquidadosCxcExport($cotizaciones, $fechaCarbon, $bancos_oficiales, $bancos_no_oficiales, $registrosBanco, $user,$cotizacion_first), 'liquidados_cxc.xlsx','public');
+            return Response::download(storage_path('app/public/liquidados_cxc.xlsx'), "liquidados_cxp.xlsx")->deleteFileAfterSend(true);
+        }else{
         // Generar el PDF con los datos necesarios
         $pdf = PDF::loadView('reporteria.liquidados.cxc.pdf', compact('cotizaciones', 'fechaCarbon', 'bancos_oficiales', 'bancos_no_oficiales', 'registrosBanco', 'user', 'cotizacion_first'))
             ->setPaper([0, 0, 595, 1200], 'landscape');
@@ -590,6 +616,7 @@ class ReporteriaController extends Controller
         // Devolver el archivo PDF como respuesta
         $filePath = storage_path('app/public/' . $fileName);
         return Response::download($filePath, $fileName)->deleteFileAfterSend(true);
+        }
     }
 
     // ==================== L I Q U I D A D O S CXP ====================

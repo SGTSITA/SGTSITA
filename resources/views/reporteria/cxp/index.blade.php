@@ -92,10 +92,20 @@
                                         </tbody>
                                     </table>
                                     @if(isset($cotizaciones) && $cotizaciones != null)
-                                    <button type="button" id="exportButtonGenericExcel" data-report="0" class="btn btn-success">Exportar a Excel</button>
+                                    <div class="dropdown">
+                                        <button class="btn btn-success dropdown-toggle" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
+                                          Exportar
+                                        </button>
+                                        <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
+                                            <li><a class="dropdown-item" id="exportButtonGenericExcel" data-report="0"  href="#">Exportar Tablero</a></li>
+                                            <li><a class="dropdown-item exportButton" data-filetype="pdf" id="exportButton" href="#">PDF Cuentas por Pagar</a></li>
+                                            <li><a class="dropdown-item exportButton" data-filetype="xlsx" id="exportButtonXlsx" href="#">Excel Cuentas por Pagar</a></li>
+                                        </ul>
+                                    </div>
+                                    <!--button type="button" id="exportButtonGenericExcel" data-report="0" class="btn btn-success">Exportar a Excel</button-->
                                     <input type="hidden" id="txtDataGenericExcel" value="{{json_encode($cotizaciones)}}">
                                     @endif
-                                    <button type="submit" id="exportButton" class="btn btn-primary">Exportar a PDF</button>
+                                    <!--button type="submit" id="exportButton" class="btn btn-primary">Exportar a PDF</button-->
                                 </form>
                             </div>
                         </div>
@@ -144,12 +154,13 @@
             }
         });
 
-        $('#exportButton').on('click', function(event) {
+        $('.exportButton').on('click', function(event) {
             event.preventDefault(); // Evita el comportamiento predeterminado del formulario
 
             const selectedIds = table.rows('.selected').data().toArray().map(row => row[1]); // Obtener los IDs seleccionados
 
             console.log(selectedIds); // Verificar en la consola del navegador
+            var fileType = $("#"+event.target.id).data('filetype');
 
             // Enviar los IDs seleccionados al controlador por Ajax
             $.ajax({
@@ -157,21 +168,22 @@
                 method: 'POST',
                 data: {
                     _token: '{{ csrf_token() }}',
-                    selected_ids: selectedIds
+                    selected_ids: selectedIds,
+                    fileType: fileType
                 },
                 xhrFields: {
                     responseType: 'blob' // Indicar que esperamos una respuesta tipo blob (archivo)
                 },
                 success: function(response) {
                     // Crear un objeto URL del blob recibido
-                    var blob = new Blob([response], { type: 'application/pdf' });
+                    var blob = new Blob([response], { type: 'application/' +fileType });
                     var url = URL.createObjectURL(blob);
 
                     // Crear un elemento <a> para simular el clic de descarga
                     var a = document.createElement('a');
                     a.style.display = 'none';
                     a.href = url;
-                    a.download = 'Cuentas_por_pagar_{{ date('d-m-Y') }}.pdf';
+                    a.download = 'Cuentas_por_pagar_{{ date('d-m-Y') }}.'+fileType;
                     document.body.appendChild(a);
 
                     // Simular el clic en el enlace para iniciar la descarga
