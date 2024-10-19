@@ -111,9 +111,6 @@
                                             @endif
                                         </tbody>
                                     </table>
-                            
-                                    <!--button type="button" id="exportButtonGenericExcel" data-report="2" class="btn btn-success">Exportar a Excel</button>
-                                    <input type="hidden" id="txtDataGenericExcel" value="{{json_encode($asignaciones)}}"-->
                                                                   
                                     @if(isset($asignaciones) && $asignaciones != null)
                                     <div class="dropdown">

@@ -8,7 +8,7 @@
         .registro-contenedor {
             border: 2px solid #000; /* Cambia el color y grosor del borde según tus necesidades */
             margin-bottom: 20px; /* Espacio entre cada registro */
-            padding: 15px; /* Espacio interno alrededor de las tablas */
+            padding: 15px; /* Espacio inter- alrededor de las tablas */
             border-radius: 5px; /* Bordes redondeados, opcional */
         }
 
@@ -63,54 +63,54 @@
                             <td>
                                 <div class="form-check">
                                     @if ($cotizacion->doc_ccp == NULL)
-                                        <input class="form-check-input" type="checkbox" disabled>
+                                        -
                                     @else
-                                        <input class="form-check-input" type="checkbox" checked disabled>
+                                        SI
                                     @endif
                                 </div>
                             </td>
                             <td>
                                 <div class="form-check">
                                     @if ($cotizacion->boleta_liberacion == NULL)
-                                        <input class="form-check-input" type="checkbox" disabled>
+                                        -
                                     @else
-                                        <input class="form-check-input" type="checkbox" checked disabled>
+                                        SI
                                     @endif
                                 </div>
                             </td>
                             <td>
                                 <div class="form-check">
                                     @if ($cotizacion->doda == NULL)
-                                        <input class="form-check-input" type="checkbox" disabled>
+                                        -
                                     @else
-                                        <input class="form-check-input" type="checkbox" checked disabled>
+                                        SI
                                     @endif
                                 </div>
                             </td>
                             <td>
                                 <div class="form-check">
                                     @if ($cotizacion->carta_porte == NULL)
-                                        <input class="form-check-input" type="checkbox" disabled>
+                                        -
                                     @else
-                                        <input class="form-check-input" type="checkbox" checked disabled>
+                                        SI
                                     @endif
                                 </div>
                             </td>
                             <td>
                                 <div class="form-check">
                                     @if ($cotizacion->boleta_vacio == NULL)
-                                        <input class="form-check-input" type="checkbox" disabled>
+                                        -
                                     @else
-                                        <input class="form-check-input" type="checkbox" checked disabled>
+                                        SI
                                     @endif
                                 </div>
                             </td>
                             <td>
                                 <div class="form-check">
                                     @if ($cotizacion->doc_eir == NULL)
-                                        <input class="form-check-input" type="checkbox" disabled>
+                                        -
                                     @else
-                                        <input class="form-check-input" type="checkbox" checked disabled>
+                                        SI
                                     @endif
                                 </div>
                             </td>

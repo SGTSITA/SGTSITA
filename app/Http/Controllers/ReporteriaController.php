@@ -511,9 +511,13 @@ class ReporteriaController extends Controller
 
         $cotizacion = Cotizaciones::where('id', $cotizacionIds)->first();
         $user = User::where('id', '=', auth()->user()->id)->first();
-
+        if($request->fileType == "xlsx"){
+            Excel::store(new \App\Exports\DocumentosExport($cotizaciones, $fechaCarbon,$cotizacion,$user), 'liquidados_cxc.xlsx','public');
+            return Response::download(storage_path('app/public/liquidados_cxc.xlsx'), "liquidados_cxp.xlsx")->deleteFileAfterSend(true);
+        }else{
         $pdf = PDF::loadView('reporteria.documentos.pdf', compact('cotizaciones', 'fechaCarbon', 'cotizacion', 'user'))->setPaper('a4', 'landscape');
         return $pdf->stream();
+        }
         // return $pdf->download('cotizaciones_seleccionadas.pdf');
     }
 
@@ -682,17 +686,22 @@ class ReporteriaController extends Controller
         $user = User::where('id', '=', auth()->user()->id)->first();
         $cotizacion = Asignaciones::where('id', $cotizacionIds)->first();
 
-        // Generar el PDF con los datos necesarios
-        $pdf = PDF::loadView('reporteria.liquidados.cxp.pdf', compact('cotizaciones', 'fechaCarbon', 'bancos_oficiales', 'bancos_no_oficiales', 'registrosBanco', 'user', 'cotizacion'))
-            ->setPaper('a4', 'landscape');
+        if($request->fileType == "xlsx"){
+            Excel::store(new \App\Exports\LiquidadosCxpExport($cotizaciones, $fechaCarbon, $bancos_oficiales, $bancos_no_oficiales, $registrosBanco, $user,$cotizacion), 'liquidados_cxp.xlsx','public');
+            return Response::download(storage_path('app/public/liquidados_cxp.xlsx'), "liquidados_cxp.xlsx")->deleteFileAfterSend(true);
+        }else{
+            // Generar el PDF con los datos necesarios
+            $pdf = PDF::loadView('reporteria.liquidados.cxp.pdf', compact('cotizaciones', 'fechaCarbon', 'bancos_oficiales', 'bancos_no_oficiales', 'registrosBanco', 'user', 'cotizacion'))
+                ->setPaper('a4', 'landscape');
 
-        $fileName = 'cxp_' . implode('_', $cotizacionIds) . '.pdf';
+            $fileName = 'cxp_' . implode('_', $cotizacionIds) . '.pdf';
 
-        // Guardar el PDF en la carpeta storage
-        $pdf->save(storage_path('app/public/' . $fileName));
+            // Guardar el PDF en la carpeta storage
+            $pdf->save(storage_path('app/public/' . $fileName));
 
-        // Devolver el archivo PDF como respuesta
-        $filePath = storage_path('app/public/' . $fileName);
-        return Response::download($filePath, $fileName)->deleteFileAfterSend(true);
+            // Devolver el archivo PDF como respuesta
+            $filePath = storage_path('app/public/' . $fileName);
+            return Response::download($filePath, $fileName)->deleteFileAfterSend(true);
+        }
     }
 }

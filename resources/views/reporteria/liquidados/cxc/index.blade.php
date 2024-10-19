@@ -96,8 +96,8 @@
                             </table>
                             @if(isset($cotizaciones) && $cotizaciones != null)
                             <!--button type="button" id="exportButtonGenericExcel" data-report="3" class="btn btn-success exportButton">Exportar a Excel</button-->
-                            <button type="button" id="exportButtonExcel" data-filetype="xlsx" class="btn btn-success exportButton">Exportar a Excel</button>
                             <input type="hidden" id="txtDataGenericExcel" value="{{json_encode($cotizaciones)}}">
+                            <button type="button" id="exportButtonExcel" data-filetype="xlsx" class="btn btn-success exportButton">Exportar a Excel</button>
                             <button type="button" id="exportButton" data-filetype="pdf" class="btn btn-primary exportButton">Exportar a PDF</button>
                             @endif  
                             

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+@if(!isset($isExcel))
     <style>
         .registro-contenedor {
             border: 2px solid #000; /* Cambia el color y grosor del borde según tus necesidades */
@@ -54,6 +55,7 @@
 
 
     </style>
+@endif
     <head>
         <title>Cuentas por pagar</title>
     </head>

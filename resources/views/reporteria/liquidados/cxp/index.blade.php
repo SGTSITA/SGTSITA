@@ -92,10 +92,12 @@
                                         </tbody>
                                     </table>
                                     @if(isset($cotizaciones) && $cotizaciones != null)
-                                        <button type="button" id="exportButtonGenericExcel" data-report="4" class="btn btn-success">Exportar a Excel</button>
+                                        <!--button type="button" id="exportButtonGenericExcel" data-report="4" class="btn btn-success exportButton">Exportar a Excel</button-->
                                         <input type="hidden" id="txtDataGenericExcel" value="{{json_encode($cotizaciones)}}">
-                                    @endif 
-                                    <button type="submit" id="exportButton" class="btn btn-primary">Exportar a PDF</button>
+                                        <button type="button" id="exportButtonExcel" data-filetype="xlsx" class="btn btn-success exportButton">Exportar a Excel</button>
+                                        <button type="button" id="exportButton" data-filetype="pdf" class="btn btn-primary exportButton">Exportar a PDF</button>
+                                    @endif  
+                                    <!--button type="submit" id="exportButton" class="btn btn-primary">Exportar a PDF</button-->
                                 </form>
                             </div>
                         </div>
@@ -144,34 +146,35 @@
             }
         });
 
-        $('#exportButton').on('click', function(event) {
+        $('.exportButton').on('click', function(event) {
             event.preventDefault(); // Evita el comportamiento predeterminado del formulario
 
             const selectedIds = table.rows('.selected').data().toArray().map(row => row[1]); // Obtener los IDs seleccionados
 
             console.log(selectedIds); // Verificar en la consola del navegador
-
+            var fileType = $("#"+event.target.id).data('filetype');
             // Enviar los IDs seleccionados al controlador por Ajax
             $.ajax({
                 url: '{{ route('liquidados_cxp.export') }}',
                 method: 'POST',
                 data: {
                     _token: '{{ csrf_token() }}',
-                    selected_ids: selectedIds
+                    selected_ids: selectedIds,
+                    fileType: fileType
                 },
                 xhrFields: {
                     responseType: 'blob' // Indicar que esperamos una respuesta tipo blob (archivo)
                 },
                 success: function(response) {
                     // Crear un objeto URL del blob recibido
-                    var blob = new Blob([response], { type: 'application/pdf' });
+                    var blob = new Blob([response], { type: 'application/'+fileType });
                     var url = URL.createObjectURL(blob);
 
                     // Crear un elemento <a> para simular el clic de descarga
                     var a = document.createElement('a');
                     a.style.display = 'none';
                     a.href = url;
-                    a.download = 'Cuentas_por_pagar_{{ date('d-m-Y') }}.pdf';
+                    a.download = 'Cuentas_por_pagar_{{ date('d-m-Y') }}.'+fileType;
                     document.body.appendChild(a);
 
                     // Simular el clic en el enlace para iniciar la descarga
