@@ -132,6 +132,7 @@
   {{-- <script async defer src="https://buttons.github.io/buttons.js"></script> --}}
 
   @yield('select2')
+  @stack('custom-javascript')
 
 </body>
 

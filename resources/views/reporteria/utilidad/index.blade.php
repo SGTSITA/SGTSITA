@@ -10,10 +10,15 @@
         <div class="row">
             <div class="col-sm-12">
                 <div class="card">
-                        <div class="card-body">
-                            <a href="{{ route('dashboard') }}" class="btn" style="background: {{$configuracion->color_boton_close}}; color: #ffff; margin-right: 3rem;">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                        
+                        <h5>Reporte de Utilidad</h5>
+                        <a href="{{ route('dashboard') }}" class="btn btn-sm" style="background: {{$configuracion->color_boton_close}}; color: #ffff; margin-right: 3rem;">
                                 Regresar
-                            </a>
+                        </a>
+                        </div>
+                        <div class="card-body">
+                           
                             <div class="container-fluid">
                                 <div class="row">
                                     <div class="col-sm-12">
@@ -55,8 +60,8 @@
                             <div class="table-responsive">
                                 <form id="exportForm" action="{{ route('export_utilidad.export') }}" method="POST">
                                     @csrf
-                                    <input type="date" id="fecha_de" name="fecha_de" value="{{$fechaDe}}">
-                                    <input type="date" id="fecha_hasta" name="fecha_hasta" value="{{$fechaHasta}}">
+                                    <input type="date" id="fecha_de" name="fecha_de" value="@if(isset($fechaDe)) $fechaDe @else date('d/m/Y') @endif">
+                                    <input type="date" id="fecha_hasta" name="fecha_hasta" value="@if(isset($fechaHasta)) $fechaHasta @else date('d/m/Y') @endif">
                                     <table class="table table-flush" id="datatable-search">
                                         <thead class="thead">
                                             <tr>
@@ -111,7 +116,21 @@
                                             @endif
                                         </tbody>
                                     </table>
-                                    <button type="submit" id="exportButton" class="btn btn-primary">Exportar a PDF</button>
+                                                                  
+                                    @if(isset($asignaciones) && $asignaciones != null)
+                                    <div class="dropdown">
+                                        <button class="btn btn-success dropdown-toggle" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
+                                          Exportar
+                                        </button>
+                                        <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
+                                            <li><a class="dropdown-item" id="exportButtonGenericExcel" data-report="2"  href="javascript:$('#exportButtonGenericExcel').click();">Exportar Tablero</a></li>
+                                            <li><button type="submit" class="dropdown-item" data-filetype="pdf" id="exportButton" value="pdf" name="btnExport">PDF Cuentas por Pagar</button></li>
+                                            <li><button type="submit" class="dropdown-item exportButton" data-filetype="xlsx" id="exportButtonXlsx" value="xlsx" name="btnExport">Excel Cuentas por Pagar</button></li>
+                                        </ul>
+                                    </div>
+                                    <input type="hidden" id="txtDataGenericExcel" value="{{json_encode($asignaciones)}}">
+                                    @endif
+                                    <!--button type="submit" id="exportButton" class="btn btn-primary">Exportar a PDF</button-->
                                 </form>
 
                             </div>
@@ -212,3 +231,6 @@
 
     </script>
 @endsection
+@push('custom-javascript')
+<script src="{{asset('js/reporteria/genericExcel.js')}}"></script>
+@endpush

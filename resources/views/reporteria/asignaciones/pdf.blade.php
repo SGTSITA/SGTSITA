@@ -3,6 +3,7 @@
     @php
         use Carbon\Carbon;
     @endphp
+    @if(!isset($isExcel))   
     <style>
         .registro-contenedor {
             border: 2px solid #000; /* Cambia el color y grosor del borde según tus necesidades */
@@ -28,6 +29,7 @@
             color: #000;
         }
     </style>
+    @endif
     <head>
         <title>Viajes</title>
     </head>

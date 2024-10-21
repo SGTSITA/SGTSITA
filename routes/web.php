@@ -136,6 +136,7 @@ Route::group(['middleware' => ['auth']], function() {
     Route::get('reporteria/cotizaciones/cxc', [App\Http\Controllers\ReporteriaController::class, 'index'])->name('index.reporteria');
     Route::get('reporteria/cotizaciones/cxc/buscador', [App\Http\Controllers\ReporteriaController::class, 'advance'])->name('advance_search.buscador');
     Route::post('reporteria/cotizaciones/cxc/export', [App\Http\Controllers\ReporteriaController::class, 'export'])->name('cotizaciones.export');
+    Route::post('reporteria/cotizaciones/cxc/export/excel', [App\Http\Controllers\ReporteriaController::class, 'exportExcel'])->name('cotizaciones.export-excel');
 
     Route::get('reporteria/cotizaciones/cxp', [App\Http\Controllers\ReporteriaController::class, 'index_cxp'])->name('index_cxp.reporteria');
     Route::get('reporteria/cotizaciones/cxp/buscador', [App\Http\Controllers\ReporteriaController::class, 'advance_cxp'])->name('advance_search_cxp.buscador');
@@ -161,6 +162,8 @@ Route::group(['middleware' => ['auth']], function() {
     Route::get('reporteria/liquidados/cxp', [App\Http\Controllers\ReporteriaController::class, 'index_liquidados_cxp'])->name('index_liquidados_cxp.reporteria');
     Route::get('reporteria/liquidados/cxp/buscador', [App\Http\Controllers\ReporteriaController::class, 'advance_liquidados_cxp'])->name('advance_liquidados_cxp.buscador');
     Route::post('reporteria/liquidados/cxp/export', [App\Http\Controllers\ReporteriaController::class, 'export_liquidados_cxp'])->name('liquidados_cxp.export');
+
+    Route::post('reporteria/excel/export',[App\Http\Controllers\ReporteriaController::class, 'exportGenericExcel'])->name('generic_excel');
     // ==================== L I Q U I D A C I O N E S ====================
     Route::get('liquidaciones', [App\Http\Controllers\LiquidacionesController::class, 'index'])->name('index.liquidacion');
     Route::get('liquidaciones/show/{id}', [App\Http\Controllers\LiquidacionesController::class, 'show'])->name('show.liquidacion');

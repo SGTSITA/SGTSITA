@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+    @if(!isset($isExcel))
     <style>
         .registro-contenedor {
             border: 2px solid #000; /* Cambia el color y grosor del borde según tus necesidades */
@@ -35,6 +36,7 @@
             margin: -40px;
         }
     </style>
+    @endif
     <head>
         <title>Liquidados CxC</title>
     </head>
