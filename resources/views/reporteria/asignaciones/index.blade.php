@@ -9,15 +9,21 @@
     <div class="container-fluid">
         <div class="row">
             <div class="col-sm-12">
+                
                 <div class="card">
+                    
                         <div class="card-body">
-                            <a href="{{ route('dashboard') }}" class="btn" style="background: {{$configuracion->color_boton_close}}; color: #ffff; margin-right: 3rem;">
-                                Regresar
-                            </a>
+                           
                             <div class="container-fluid">
                                 <div class="row">
                                     <div class="col-sm-12">
                                         <div class="card">
+                                        <div class="card-header d-flex justify-content-between align-items-center">
+                                            <h5>Reporte de Viajes</h5>
+                                            <a href="{{ route('dashboard') }}" class="btn btn-sm" style="background: {{$configuracion->color_boton_close}}; color: #ffff; margin-right: 3rem;">
+                                                    Regresar
+                                            </a>
+                                        </div>
                                             <form action="{{ route('advance_viajes.buscador') }}" method="GET" >
 
                                                 <div class="card-body" style="padding-left: 1.5rem; padding-top: 1rem;">
