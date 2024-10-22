@@ -136,10 +136,13 @@ class BancosController extends Controller
 
     public function edit($id){
         $banco = Bancos::where('id_empresa' ,'=',auth()->user()->id_empresa)->where('id', '=', $id)->first();
+        $saldoInicial = $banco->saldo_inicial;
         $startOfWeek = Carbon::now()->startOfWeek();
         $endOfWeek = Carbon::now()->endOfWeek();
         $fecha = date('Y-m-d');
+        $fechaBanco = date('2024-10-21');
 
+        //Movimientos
         $cotizaciones = Cotizaciones::where(function($query) use ($id) {
             $query->where('id_banco1', '=', $id)
                   ->orWhere('id_banco2', '=', $id);
@@ -196,6 +199,37 @@ class BancosController extends Controller
         ->whereBetween('fecha', [$startOfWeek, $endOfWeek])
         ->get();
 
+        // Calculo del saldo final
+        $totalSalidas = $banco_dinero_salida->where('fecha_pago', '>=', $fechaBanco)
+        ->map(function ($item) use ($id) {
+            return $item->id_banco1 == $id ? $item->monto1 : ($item->id_banco2 == $id ? $item->monto2 : 0);
+        })->sum()
+        + $proveedores->where('fecha_pago_proveedor', '>=', $fechaBanco)
+        ->map(function ($item) use ($id) {
+            return $item->id_prove_banco1 == $id ? $item->prove_monto1 : ($item->id_prove_banco2 == $id ? $item->prove_monto2 : 0);
+        })->sum()
+        + $banco_dinero_salida_ope->where('fecha_pago', '>=', $fechaBanco)
+        ->map(function ($item) use ($id) {
+            return $item->id_banco1 == $id ? $item->monto1 : ($item->id_banco2 == $id ? $item->monto2 : 0);
+        })->sum()
+        + $banco_dinero_salida_ope_varios->where('fecha_pago', '>=', $fechaBanco)
+        ->map(function ($item) use ($id) {
+            return $item->id_banco1 == $id ? $item->monto1 : ($item->id_banco2 == $id ? $item->monto2 : 0);
+        })->sum()
+        + $gastos_generales->where('fecha', '>=', $fechaBanco)
+        ->sum('monto1');
+
+        $totalEntradas = $cotizaciones->where('fecha_pago', '>=', $fechaBanco)
+        ->map(function ($item) use ($id) {
+            return $item->id_banco1 == $id ? $item->monto1 : ($item->id_banco2 == $id ? $item->monto2 : 0);
+        })->sum()
+        + $banco_dinero_entrada->where('fecha_pago', '>=', $fechaBanco)
+        ->map(function ($item) use ($id) {
+            return $item->id_banco1 == $id ? $item->monto1 : ($item->id_banco2 == $id ? $item->monto2 : 0);
+        })->sum();
+
+        $saldoFinal = $saldoInicial + $totalEntradas - $totalSalidas;
+
         $combined = collect()
         ->merge($cotizaciones)
         ->merge($banco_dinero_entrada)
@@ -215,14 +249,16 @@ class BancosController extends Controller
             return null;
         });
 
-        return view('bancos.show', compact('combined', 'startOfWeek', 'fecha', 'banco', 'cotizaciones', 'proveedores', 'banco_dinero_entrada', 'banco_dinero_salida', 'banco_dinero_salida_ope', 'banco_dinero_salida_ope_varios', 'gastos_generales'));
+        return view('bancos.show', compact('combined', 'startOfWeek', 'fecha', 'banco', 'cotizaciones', 'proveedores', 'banco_dinero_entrada', 'banco_dinero_salida', 'banco_dinero_salida_ope', 'banco_dinero_salida_ope_varios', 'gastos_generales', 'saldoFinal'));
     }
 
     public function advance_bancos(Request $request, $id){
         $banco = Bancos::where('id_empresa' ,'=',auth()->user()->id_empresa)->where('id', '=', $id)->first();
+        $saldoInicial = $banco->saldo_inicial;
         $startOfWeek = $request->get('fecha_de');
         $endOfWeek = $request->get('fecha_hasta');
         $fecha = date('Y-m-d');
+        $fechaBanco = date('2024-10-21');
 
         $cotizaciones = Cotizaciones::where(function($query) use ($id) {
             $query->where('id_banco1', '=', $id)
@@ -280,6 +316,37 @@ class BancosController extends Controller
         ->whereBetween('fecha', [$startOfWeek, $endOfWeek])
         ->get();
 
+        // Calculo del saldo final
+        $totalSalidas = $banco_dinero_salida->where('fecha_pago', '>=', $fechaBanco)
+        ->map(function ($item) use ($id) {
+            return $item->id_banco1 == $id ? $item->monto1 : ($item->id_banco2 == $id ? $item->monto2 : 0);
+        })->sum()
+        + $proveedores->where('fecha_pago_proveedor', '>=', $fechaBanco)
+        ->map(function ($item) use ($id) {
+            return $item->id_prove_banco1 == $id ? $item->prove_monto1 : ($item->id_prove_banco2 == $id ? $item->prove_monto2 : 0);
+        })->sum()
+        + $banco_dinero_salida_ope->where('fecha_pago', '>=', $fechaBanco)
+        ->map(function ($item) use ($id) {
+            return $item->id_banco1 == $id ? $item->monto1 : ($item->id_banco2 == $id ? $item->monto2 : 0);
+        })->sum()
+        + $banco_dinero_salida_ope_varios->where('fecha_pago', '>=', $fechaBanco)
+        ->map(function ($item) use ($id) {
+            return $item->id_banco1 == $id ? $item->monto1 : ($item->id_banco2 == $id ? $item->monto2 : 0);
+        })->sum()
+        + $gastos_generales->where('fecha', '>=', $fechaBanco)
+        ->sum('monto1');
+
+        $totalEntradas = $cotizaciones->where('fecha_pago', '>=', $fechaBanco)
+        ->map(function ($item) use ($id) {
+            return $item->id_banco1 == $id ? $item->monto1 : ($item->id_banco2 == $id ? $item->monto2 : 0);
+        })->sum()
+        + $banco_dinero_entrada->where('fecha_pago', '>=', $fechaBanco)
+        ->map(function ($item) use ($id) {
+            return $item->id_banco1 == $id ? $item->monto1 : ($item->id_banco2 == $id ? $item->monto2 : 0);
+        })->sum();
+
+        $saldoFinal = $saldoInicial + $totalEntradas - $totalSalidas;
+
         $combined = collect()
         ->merge($cotizaciones)
         ->merge($banco_dinero_entrada)
@@ -299,12 +366,11 @@ class BancosController extends Controller
             return null;
         });
 
-        return view('bancos.show', compact('combined', 'startOfWeek', 'endOfWeek', 'fecha', 'banco', 'cotizaciones', 'proveedores', 'banco_dinero_entrada', 'banco_dinero_salida', 'banco_dinero_salida_ope', 'banco_dinero_salida_ope_varios', 'gastos_generales'));
+        return view('bancos.show', compact('combined', 'startOfWeek', 'endOfWeek', 'fecha', 'banco', 'cotizaciones', 'proveedores', 'banco_dinero_entrada', 'banco_dinero_salida', 'banco_dinero_salida_ope', 'banco_dinero_salida_ope_varios', 'gastos_generales', 'saldoFinal'));
     }
 
     public function update(Request $request, Bancos $id)
     {
-
         $id->update($request->all());
 
         return redirect()->back()->with('success', 'Banco editado exitosamente');
@@ -402,7 +468,7 @@ class BancosController extends Controller
         $ultimaTotal = 0;
 
         foreach ($combined as $item) {
-       
+
             if (isset($item->fecha_pago)) {
                 $amount = isset($item->id_banco1) && $item->id_banco1 == $banco->id
                     ? $item->monto1
