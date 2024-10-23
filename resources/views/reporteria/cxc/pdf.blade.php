@@ -129,7 +129,7 @@
                                 <td>{{$cotizacion->tamano}}</td>
                                 <td>$ {{ number_format($cotizacion->burreo, 2, '.', ',')}}</td>
                                 <td>$ {{ number_format($cotizacion->maniobra, 2, '.', ',')}}</td>
-                                <td>$ {{ number_format($cotizacion->sobrepeso, 2, '.', ',')}}</td>
+                                <td>$ {{ number_format($cotizacion->precio_tonelada, 2, '.', ',')}}</td>
                                 <td>$ {{ number_format($cotizacion->otro, 2, '.', ',')}}</td>
                                 <td>$ {{ number_format($cotizacion->precio, 2, '.', ',')}}</td>
                                 <td>$ {{ number_format($cotizacion->precio_viaje, 2, '.', ',')}}</td>

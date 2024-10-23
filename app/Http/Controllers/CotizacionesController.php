@@ -57,6 +57,55 @@ class CotizacionesController extends Controller
         return view('cotizaciones.index', compact('empresas', 'proveedores','bancos','operadores','equipos_dolys','equipos_chasis','equipos_camiones','cotizaciones','cotizaciones_aprovadas','cotizaciones_canceladas', 'cotizaciones_planeadas','cotizaciones_finalizadas'));
     }
 
+    public function find(){
+        return view('cotizaciones.busqueda');
+    }
+
+    public function findExecute(Request $request){
+        $where = 'id_empresa = '.auth()->user()->id_empresa;
+        if($request->txtCliente != null){
+            $clientes = Client::where('nombre','like','%'.$request->txtCliente.'%')->get()->pluck('id')->toArray();
+            if($clientes != null ){
+                $where .= ' and id_cliente in('.implode(',',$clientes).')';
+            }else{
+               return redirect('/cotizaciones/busqueda')->with('message','Cliente no existe');
+            }
+        }
+
+        if($request->txtContenedor != null){
+            $documCotizacion = DocumCotizacion::where('num_contenedor','like','%'.$request->txtContenedor.'%')
+                                                ->get()
+                                                ->pluck('id_cotizacion')
+                                                ->toArray();
+                                                
+          //  $where .= ($documCotizacion != null ) ? ' and id in('.implode(',',$documCotizacion).')' : '';
+            if($documCotizacion != null ){
+                $where .= ' and id in('.implode(',',$documCotizacion).')';
+            }else{
+               return redirect('/cotizaciones/busqueda')->with('message','Núm. Contenedor no existe');
+            }
+        }
+
+        $where .= ($request->txtOrigen != null ) ? " and origen like '%".$request->txtOrigen."%'" : '';
+        $where .= ($request->txtDestino != null ) ? " and destino like '%".$request->txtDestino."%'" : '';
+        
+        $cotizaciones = Cotizaciones::whereRaw($where)
+                                    ->orderBy('created_at', 'desc')
+                                    ->select('id_cliente', 'origen', 'destino', 'id', 'estatus')
+                                    ->get();
+
+        $equipos_dolys = Equipo::where('id_empresa' ,'=',auth()->user()->id_empresa)->where('tipo','=','Dolys')->get();
+        $equipos_chasis = Equipo::where('id_empresa' ,'=',auth()->user()->id_empresa)->where('tipo','=','Chasis / Plataforma')->get();
+        $equipos_camiones = Equipo::where('id_empresa' ,'=',auth()->user()->id_empresa)->where('tipo','=','Tractos / Camiones')->get();
+        $operadores = Operador::get();
+        $bancos = Bancos::get();
+        $proveedores = Proveedor::get();
+        $empresas = Empresas::get();
+        return ($cotizaciones != null) ? view('cotizaciones.busqueda_results', compact('empresas', 'proveedores','bancos','operadores','equipos_dolys','equipos_chasis','equipos_camiones','cotizaciones')) : view('cotizaciones.busqueda')->with('find-message','No se encontraron resultados');
+
+
+    }
+
     public function create(){
         $clientes = Client::where('id_empresa' ,'=',auth()->user()->id_empresa)->get();
 
