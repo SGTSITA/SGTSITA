@@ -245,7 +245,7 @@
                                             <span class="input-group-text" id="basic-addon1">
                                                 <img src="{{ asset('img/icon/impuesto.png') }}" alt="" width="25px">
                                             </span>
-                                            <input name="iva" id="iva" type="number" class="form-control"onkeypress="return event.charCode >= 48 && event.charCode <= 57 || event.charCode === 46" oninput="calcularTotal()">
+                                            <input name="iva" id="iva" type="number" readonly class="form-control" onkeypress="return event.charCode >= 48 && event.charCode <= 57 || event.charCode === 46" oninput="calcularTotal()">
                                         </div>
                                     </div>
 
@@ -255,7 +255,7 @@
                                             <span class="input-group-text" id="basic-addon1">
                                                 <img src="{{ asset('img/icon/monedas.webp') }}" alt="" width="25px">
                                             </span>
-                                            <input name="retencion" id="retencion" type="float" class="form-control"onkeypress="return event.charCode >= 48 && event.charCode <= 57 || event.charCode === 46" oninput="calcularTotal()">
+                                            <input name="retencion" readonly id="retencion" type="float" class="form-control"onkeypress="return event.charCode >= 48 && event.charCode <= 57 || event.charCode === 46" oninput="calcularTotal()">
                                         </div>
                                     </div>
 
@@ -275,7 +275,7 @@
                                             <span class="input-group-text" id="basic-addon1">
                                                 <img src="{{ asset('img/icon/factura.png.webp') }}" alt="" width="25px">
                                             </span>
-                                            <input name="base_taref" id="base_taref" type="float" class="form-control">
+                                            <input name="base_taref" id="base_taref" type="float" readonly class="form-control">
                                         </div>
                                     </div>
                                     <div class="col-4"></div>
@@ -335,6 +335,19 @@
             $('.cliente').select2();
         });
 
+        const tasa_iva = 0.16;
+        const tasa_retencion = 0.04;
+
+        function moneyFormat(moneyValue){
+            const $formatMoneda = new Intl.NumberFormat('es-MX', {
+                style: 'currency',
+                currency: 'MXN',
+                minimumFractionDigits: 2
+            }).format(moneyValue);
+
+            return $formatMoneda;
+        }
+
         function calcularTotal() {
             const precio_viaje = parseFloat(document.getElementById('precio_viaje').value.replace(/,/g, '')) || 0;
             const burreo = parseFloat(document.getElementById('burreo').value.replace(/,/g, '')) || 0;
@@ -358,6 +371,25 @@
             const totalFormateado = totalFinal.toLocaleString('en-US');
 
             document.getElementById('total').value = totalFormateado;
+            calcularImpuestos();
+        }
+
+        function calcularImpuestos(){
+          //  const precio_viaje = parseFloat(document.getElementById('precio_viaje').value.replace(/,/g, '')) || 0;
+            const baseFactura = parseFloat(document.getElementById('base_factura').value.replace(/,/g, '')) || 0;
+            const total = parseFloat(document.getElementById('total').value.replace(/,/g, '')) || 0;
+
+
+            const iva = (baseFactura * tasa_iva);
+            const retencion = (baseFactura * tasa_retencion);
+
+            document.getElementById('iva').value = (iva.toFixed(2));
+            document.getElementById('retencion').value = (retencion.toFixed(2));
+            // Realizar el cálculo
+            const baseTaref = (total - baseFactura - iva) + retencion;
+
+            // Mostrar el resultado en el input de base_taref
+            document.getElementById('base_taref').value = baseTaref.toFixed(2);
         }
 
         document.addEventListener('DOMContentLoaded', function () {
@@ -409,10 +441,15 @@
             // Función para calcular base_taref
             function calcularBaseTaref() {
                 // Obtener los valores de los inputs
-                const total = parseFloat(document.getElementById('total').value) || 0;
+                const total = parseFloat(document.getElementById('total').value.replace(/,/g, '')) || 0;
+                const precio_viaje = parseFloat(document.getElementById('precio_viaje').value.replace(/,/g, '')) || 0;
                 const baseFactura = parseFloat(document.getElementById('base_factura').value) || 0;
-                const iva = parseFloat(document.getElementById('iva').value) || 0;
-                const retencion = parseFloat(document.getElementById('retencion').value) || 0;
+
+                //Calculamos IVA y retencion
+                const iva = (baseFactura * tasa_iva);
+                const retencion = (baseFactura * tasa_retencion);
+
+                calcularImpuestos();
 
                 // Realizar el cálculo
                 const baseTaref = (total - baseFactura - iva) + retencion;

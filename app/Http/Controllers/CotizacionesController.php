@@ -102,8 +102,6 @@ class CotizacionesController extends Controller
         $proveedores = Proveedor::get();
         $empresas = Empresas::get();
         return ($cotizaciones != null) ? view('cotizaciones.busqueda_results', compact('empresas', 'proveedores','bancos','operadores','equipos_dolys','equipos_chasis','equipos_camiones','cotizaciones')) : view('cotizaciones.busqueda')->with('find-message','No se encontraron resultados');
-
-
     }
 
     public function create(){
