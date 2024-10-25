@@ -45,11 +45,11 @@
 
                     <nav class="mx-auto">
                         <div class="nav nav-tabs custom-tabs" id="nav-tab" role="tablist">
-                        <a class="nav-link custom-tab active" id="nav-planeadas-tab" href="{{ route('index.cotizaciones') }}">
+                        <a class="nav-link custom-tab " id="nav-planeadas-tab" href="{{ route('index.cotizaciones') }}">
                             <img src="{{ asset('img/icon/resultado.webp') }}" alt="" width="40px">  Planeadas
                         </a>
 
-                        <a class="nav-link custom-tab " id="nav-finalizadas-tab" href="{{ route('index_finzaliadas.cotizaciones') }}">
+                        <a class="nav-link custom-tab active" id="nav-finalizadas-tab" href="{{ route('index_finzaliadas.cotizaciones') }}">
                             <img src="{{ asset('img/icon/pdf.webp') }}" alt="" width="40px">  Finalizadas
                         </a>
 
@@ -67,8 +67,10 @@
                         </div>
                     </nav>
 
+
+
                     <div class="table-responsive">
-                            <table class="table table-flush" id="datatable-planeadas">
+                        <table class="table table-flush" id="datatable-finalizadas">
                                         <thead class="thead">
                                             <tr>
                                                 <th>No</th>
@@ -82,7 +84,7 @@
                                             </tr>
                                         </thead>
                                             <tbody>
-                                                @foreach ($cotizaciones_planeadas as $cotizacion)
+                                                @foreach ($cotizaciones_finalizadas as $cotizacion)
                                                     <tr>
                                                         <td>{{$cotizacion->id}}</td>
                                                         <td>{{$cotizacion->Cliente->nombre}}</td>
@@ -92,9 +94,9 @@
 
                                                         <td>
                                                             @can('cotizaciones-estatus')
-                                                                <button type="button" class="btn btn-outline-success btn-xs" data-bs-toggle="modal" data-bs-target="#estatusModal{{$cotizacion->id}}">
-                                                                    {{$cotizacion->estatus}}
-                                                                </button>
+                                                            <button type="button" class="btn btn-outline-success btn-xs" data-bs-toggle="modal" data-bs-target="#estatusModal{{$cotizacion->id}}">
+                                                                {{$cotizacion->estatus}}
+                                                            </button>
                                                             @endcan
                                                         </td>
                                                         <td>
@@ -113,28 +115,28 @@
                                                             </a>
                                                             @endcan
 
+                                                            @can('cotizaciones-pdf')
+                                                            <a type="button" class="btn btn-xs" href="{{ route('pdf.cotizaciones', $cotizacion->id) }}">
+                                                                <img src="{{ asset('img/icon/pdf.webp') }}" alt="" width="25px">
+                                                            </a>
+                                                            @endcan
+
                                                             @if ($cotizacion->DocCotizacion->Asignaciones)
                                                                 @if ($cotizacion->DocCotizacion->Asignaciones->id_proveedor == NULL)
-                                                                    @can('cotizaciones-cambio-tipo')
-                                                                        <button type="button" class="btn btn-outline-success btn-xs" data-bs-toggle="modal" data-bs-target="#cambioModal{{ $cotizacion->DocCotizacion->Asignaciones->id }}">
-                                                                                Propio
-                                                                        </button>
-                                                                    @endcan
-                                                                @else
+                                                                @can('cotizaciones-cambio-tipo')
+                                                                <button type="button" class="btn btn-outline-success btn-xs" data-bs-toggle="modal" data-bs-target="#cambioModal{{ $cotizacion->DocCotizacion->Asignaciones->id }}">
+                                                                        Propio
+                                                                </button>
+                                                                @endcan
 
-                                                                    @can('cotizaciones-cambio-tipo')
-                                                                        <button type="button" class="btn btn-outline-dark btn-xs" data-bs-toggle="modal" data-bs-target="#cambioModal{{ $cotizacion->DocCotizacion->Asignaciones->id }}">
-                                                                            Sub.
-                                                                        </button>
-                                                                    @endcan
+                                                                @else
+                                                                @can('cotizaciones-cambio-tipo')
+                                                                <button type="button" class="btn btn-outline-dark btn-xs" data-bs-toggle="modal" data-bs-target="#cambioModal{{ $cotizacion->DocCotizacion->Asignaciones->id }}">
+                                                                    Subcontratado
+                                                                </button>
+                                                                @endcan
                                                                 @endif
                                                             @endif
-
-                                                            @can('cotizaciones-cambio-empresa')
-                                                                <button type="button" class="btn btn-outline-info btn-xs" data-bs-toggle="modal" data-bs-target="#cambioEmpresa{{ $cotizacion->id }}">
-                                                                    <img src="{{ asset('img/icon/documento.png') }}" alt="" width="25px">
-                                                                </button>
-                                                            @endcan
 
                                                             @if ($cotizacion->DocCotizacion)
                                                                 <button type="button" class="btn btn-outline-warning btn-xs" data-bs-toggle="modal" data-bs-target="#esatusDoc{{ $cotizacion->DocCotizacion->id }}">
@@ -145,15 +147,12 @@
                                                         </td>
                                                     </tr>
                                                     @include('cotizaciones.modal_estatus_doc')
-                                                    @include('cotizaciones.modal_cambio_empresa')
-
                                                     @include('cotizaciones.modal_estatus')
                                                     @include('cotizaciones.modal_cambio')
-
                                                 @endforeach
                                             </tbody>
 
-                            </table>
+                        </table>
                     </div>
 
                 </div>
@@ -164,78 +163,12 @@
 
 @section('datatable')
     <script type="text/javascript">
-        const dataTableSearch4 = new simpleDatatables.DataTable("#datatable-planeadas", {
-        searchable: true,
-        fixedHeight: false
-        });
 
         const dataTableSearch5 = new simpleDatatables.DataTable("#datatable-finalizadas", {
         searchable: true,
         fixedHeight: false
         });
 
-
-        const dataTableSearch = new simpleDatatables.DataTable("#datatable-search", {
-        searchable: true,
-        fixedHeight: false
-        });
-
-        const dataTableSearch2 = new simpleDatatables.DataTable("#datatable_aprovadas", {
-        searchable: true,
-        fixedHeight: false
-        });
-
-        const dataTableSearch3 = new simpleDatatables.DataTable("#datatable_canceladas", {
-        searchable: true,
-        fixedHeight: false
-        });
-
-        document.addEventListener("DOMContentLoaded", function() {
-            // Inicializar los formularios y eventos para cada cotización
-            @foreach($cotizaciones_planeadas as $cotizacion)
-                @if ($cotizacion->DocCotizacion->Asignaciones)
-                    (function() {
-                        var modalId = "{{ $cotizacion->DocCotizacion->Asignaciones->id }}";
-                        var formPropio = document.getElementById("formPropio" + modalId);
-                        var formSubcontratado = document.getElementById("formSubcontratado" + modalId);
-
-                        var radioPropio = document.getElementById("propio" + modalId);
-                        var radioSubcontratado = document.getElementById("subcontratado" + modalId);
-
-                        function inicializarFormulario() {
-                            var idProveedor = "{{ $cotizacion->DocCotizacion->Asignaciones->id_proveedor }}";
-
-                            if (idProveedor === "") {
-                                formPropio.style.display = "block";
-                                formSubcontratado.style.display = "none";
-                                radioPropio.checked = true;
-                            } else {
-                                formPropio.style.display = "none";
-                                formSubcontratado.style.display = "block";
-                                radioSubcontratado.checked = true;
-                            }
-                        }
-
-                        document.querySelectorAll('input[name="formType' + modalId + '"]').forEach(function(radio) {
-                            radio.addEventListener("change", function() {
-                                if (radioPropio.checked) {
-                                    formPropio.style.display = "block";
-                                    formSubcontratado.style.display = "none";
-                                } else {
-                                    formPropio.style.display = "none";
-                                    formSubcontratado.style.display = "block";
-                                }
-                            });
-                        });
-
-                        // Inicializar el formulario cuando se muestra el modal
-                        $('#cambioModal' + modalId).on('show.bs.modal', function () {
-                            inicializarFormulario();
-                        });
-                    })();
-                @endif
-            @endforeach
-        });
 
         $(document).ready(function() {
             $('[id^="btn_clientes_search"]').click(function() {
@@ -271,38 +204,5 @@
             }
         });
 
-
-        document.addEventListener("DOMContentLoaded", function() {
-            @foreach($cotizaciones_planeadas as $cotizacion)
-                @if ($cotizacion->DocCotizacion->Asignaciones)
-                    (function() {
-                        var asignacionId = "{{ $cotizacion->DocCotizacion->Asignaciones->id }}";
-
-                        function calcularTotal(asignacionId) {
-                            var precio = parseFloat($('#cot_precio_' + asignacionId).val()) || 0;
-                            var burreo = parseFloat($('#cot_burreo_' + asignacionId).val()) || 0;
-                            var maniobra = parseFloat($('#cot_maniobra_' + asignacionId).val()) || 0;
-                            var estadia = parseFloat($('#cot_estadia_' + asignacionId).val()) || 0;
-                            var otro = parseFloat($('#cot_otro_' + asignacionId).val()) || 0;
-                            var retencion = parseFloat($('#cot_retencion_' + asignacionId).val()) || 0;
-                            var iva = parseFloat($('#cot_iva_' + asignacionId).val()) || 0;
-
-                            var total = precio + burreo + maniobra + estadia + otro + iva - retencion;
-
-                            $('#total_proveedor_' + asignacionId).val(total.toFixed(2));
-                        }
-
-                        $('#cot_precio_' + asignacionId + ', #cot_burreo_' + asignacionId + ', #cot_maniobra_' + asignacionId + ', #cot_estadia_' + asignacionId + ', #cot_otro_' + asignacionId + ', #cot_retencion_' + asignacionId + ', #cot_iva_' + asignacionId).on('input', function() {
-                            calcularTotal(asignacionId);
-                        });
-
-                        // Inicializa el total cuando se muestra el modal
-                        $('#cambioModal' + asignacionId).on('show.bs.modal', function () {
-                            calcularTotal(asignacionId);
-                        });
-                    })();
-                @endif
-            @endforeach
-        });
     </script>
 @endsection

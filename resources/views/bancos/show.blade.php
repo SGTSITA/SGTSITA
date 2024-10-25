@@ -32,88 +32,6 @@
             </div>
         </div>
 
-        <div class="col-4 mt-md-0 mt-4">
-            <div class="card h-100">
-                <div class="card-header pb-0 p-3">
-                    <h6 class="mb-0">Datos Bancarios</h6>
-                </div>
-                <div class="card-body p-3">
-                    <form method="POST" action="{{ route('update.bancos',$banco->id) }}" id="" enctype="multipart/form-data" role="form">
-                        <input type="hidden" name="_method" value="PATCH">
-                        @csrf
-
-                        <div class="modal-body">
-                            <div class="row">
-
-                                <div class="col-12 form-group">
-                                    <label for="name">Nombre Beneficiario*</label>
-                                    <div class="input-group mb-3">
-                                        <span class="input-group-text" id="basic-addon1">
-                                            <img src="{{ asset('img/icon/user_predeterminado.webp') }}" alt="" width="25px">
-                                        </span>
-                                        <input name="nombre_beneficiario" id="nombre_beneficiario" type="text" class="form-control" value="{{$banco->nombre_beneficiario}}">
-                                    </div>
-                                </div>
-
-                                <div class="col-12 form-group">
-                                    <label for="name">Nombre Banco *</label>
-                                    <div class="input-group mb-3">
-                                        <span class="input-group-text" id="basic-addon1">
-                                            <img src="{{ asset('img/icon/sobre.png.webp') }}" alt="" width="25px">
-                                        </span>
-                                        <input name="nombre_banco" id="nombre_banco" type="text" class="form-control" value="{{$banco->nombre_banco}}">
-                                    </div>
-                                </div>
-
-                                <div class="col-12 form-group">
-                                    <label for="name">Cuenta Bancaria *</label>
-                                    <div class="input-group mb-3">
-                                        <span class="input-group-text" id="basic-addon1">
-                                            <img src="{{ asset('img/icon/business-card-design.webp') }}" alt="" width="25px">
-                                        </span>
-                                        <input name="cuenta_bancaria" id="cuenta_bancaria" type="text" class="form-control" value="{{$banco->cuenta_bancaria}}">
-                                    </div>
-                                </div>
-
-                                <div class="col-12 form-group">
-                                    <label for="name">Saldo inicial *</label>
-                                    <div class="input-group mb-3">
-                                        <span class="input-group-text" id="basic-addon1">
-                                            <img src="{{ asset('img/icon/bolsa-de-dinero.webp') }}" alt="" width="25px">
-                                        </span>
-                                        <input name="saldo_inicial" id="saldo_inicial" type="number" class="form-control" value="{{$banco->saldo_inicial}}">
-                                    </div>
-                                </div>
-
-                                {{-- <div class="col-12 form-group">
-                                    <label for="name">Saldo actual *</label>
-                                    <div class="input-group mb-3">
-                                        <span class="input-group-text" id="basic-addon1">
-                                            <img src="{{ asset('img/icon/bolsa-de-dinero.webp') }}" alt="" width="25px">
-                                        </span>
-                                        <input name="saldo" id="saldo" type="number" class="form-control" value="{{$banco->saldo}}">
-                                    </div>
-                                </div> --}}
-                                <div class="col-12 form-group">
-                                    <label for="name">Clabe *</label>
-                                    <div class="input-group mb-3">
-                                        <span class="input-group-text" id="basic-addon1">
-                                            <img src="{{ asset('img/icon/mapa-de-la-ciudad.webp') }}" alt="" width="25px">
-                                        </span>
-                                        <input name="clabe" id="clabe" type="text" class="form-control"  value="{{$banco->clabe}}">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="modal-footer">
-                            <button type="submit" class="btn btn-primary">Guardar</button>
-                          </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-
       <div class="col-md-8 col-sm-10 mx-auto mt-3">
           <div class="card my-sm-5 my-lg-0">
             <div class="card-header text-center">
@@ -124,7 +42,6 @@
                     @else
                         <img class="mb-2 w-25 p-2" src="{{asset('logo/'.$configuracion->logo) }}" alt="Logo">
                     @endif
-
                   <h6>
                     Reporte de Banco
                   </h6>
@@ -147,6 +64,18 @@
                   <p class="text-secondary">{{$banco->nombre_beneficiario}} <br> {{$banco->cuenta_bancaria}}</p>
                 </div>
               </div>
+                <br>
+                <div class="row justify-content-md-between">
+                    @can('bancos-configuracion')
+                        <div class="col-md-4 text-start">
+                            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal" style="background-color: #030303; color: #ffffff;">Configuracion</button>
+                        </div>
+                    @endcan
+                    <div class="col-lg-3 col-md-7 text-md-end text-start mt-5">
+                        <h6 class="d-block mt-2 mb-0">Total en Banco:</h6>
+                        <h6 class="text-secondary">${{ number_format($saldoFinal, 2, '.', ',') }} </h6>
+                    </div>
+                </div>
               <br>
               <div class="row justify-content-md-between">
                 <div class="col-md-4 mt-auto">
@@ -369,6 +298,7 @@
       </div>
     </div>
 </div>
+@include('bancos.modal')
 @endsection
 @section('datatable')
 
