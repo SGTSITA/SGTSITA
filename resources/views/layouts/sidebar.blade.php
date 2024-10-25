@@ -62,14 +62,29 @@
           </li>
           @endcan
         @can('cotizaciones-list')
-          <li class="nav-item">
-            <a class="nav-link {{ (Request::is('cotizaciones*') ? 'active' : '') }}" href="{{ route('index.cotizaciones') }}" target="">
-              <div class="icon icon-shape icon-sm text-center  me-2 d-flex align-items-center justify-content-center">
-                <img src="{{ asset('img/icon/factura.png.webp') }}" alt="" width="20px">
-              </div>
-              <span class="nav-link-text ms-1"><b>V</b> Cotizaciones</span>
+
+          <a data-bs-toggle="collapse" href="#pagesExamplesCotizaciones" class="nav-link {{ (Request::is('cotizaciones*') ? 'active' : '') }}" aria-controls="pagesExamplesCotizaciones" role="button" aria-expanded="false">
+                <div class="icon icon-shape icon-sm text-center  me-2 d-flex align-items-center justify-content-center">
+                    <img src="{{ asset('img/icon/factura.png.webp') }}" alt="" width="20px">
+                </div>
+                <span class="nav-link-text ms-1"><b>V</b> Cotizaciones</span>
             </a>
-          </li>
+
+            <div class="collapse " id="pagesExamplesCotizaciones">
+                <ul class="nav ms-4">
+                    <li class="nav-item ">
+                        <a class="nav-link {{ (Request::is('cotizaciones*') ? 'show' : '') }}" href="{{ route('index.cotizaciones') }}">
+                        <span class="sidenav-mini-icon"> P </span>
+                        <span class="sidenav-normal">Seguimiento</span>
+                        </a>
+
+                        <a class="nav-link {{ (Request::is('cotizaciones/busqueda') ? 'show' : '') }}" href="{{ route('busqueda.cotizaciones') }}">
+                        <span class="sidenav-mini-icon"> P </span>
+                        <span class="sidenav-normal">Busqueda</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
           @endcan
         @can('planeacion-list')
           <li class="nav-item">
