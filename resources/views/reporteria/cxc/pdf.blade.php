@@ -186,9 +186,11 @@
                                 Cuenta: <b>{{ $cuenta->cuenta_bancaria }}</b><br>
                                 Clave: <b>{{ $cuenta->cuenta_clabe }}</b><br>
                               </td>
+
                               @php
-                              $contador++;
+                                $contador++;
                               @endphp
+                              
                              @endforeach
                             @else
                             @foreach ($proveedoresConCuentas as $proveedor)
