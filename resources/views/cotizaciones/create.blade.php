@@ -351,12 +351,14 @@
         function calcularTotal() {
             const precio_viaje = parseFloat(document.getElementById('precio_viaje').value.replace(/,/g, '')) || 0;
             const burreo = parseFloat(document.getElementById('burreo').value.replace(/,/g, '')) || 0;
-            const retencion = parseFloat(document.getElementById('retencion').value.replace(/,/g, '')) || 0;
-            const iva = parseFloat(document.getElementById('iva').value.replace(/,/g, '')) || 0;
             const otro = parseFloat(document.getElementById('otro').value.replace(/,/g, '')) || 0;
             const estadia = parseFloat(document.getElementById('estadia').value.replace(/,/g, '')) || 0;
             const maniobra = parseFloat(document.getElementById('maniobra').value.replace(/,/g, '')) || 0;
 
+            const subTotal = precio_viaje + burreo + maniobra + estadia + otro;
+            calcularImpuestos(subTotal);
+            const retencion = parseFloat(document.getElementById('retencion').value.replace(/,/g, '')) || 0;
+            const iva = parseFloat(document.getElementById('iva').value.replace(/,/g, '')) || 0;
             // Restar el valor de Retención del total
             const totalSinRetencion = precio_viaje + burreo + iva + otro + estadia + maniobra;
             const totalConRetencion = totalSinRetencion - retencion;
@@ -371,13 +373,12 @@
             const totalFormateado = totalFinal.toLocaleString('en-US');
 
             document.getElementById('total').value = totalFormateado;
-            calcularImpuestos();
+            
         }
 
-        function calcularImpuestos(){
-          //  const precio_viaje = parseFloat(document.getElementById('precio_viaje').value.replace(/,/g, '')) || 0;
+        function calcularImpuestos(total){
             const baseFactura = parseFloat(document.getElementById('base_factura').value.replace(/,/g, '')) || 0;
-            const total = parseFloat(document.getElementById('total').value.replace(/,/g, '')) || 0;
+            //const total = parseFloat(document.getElementById('total').value.replace(/,/g, '')) || 0;
 
 
             const iva = (baseFactura * tasa_iva);
@@ -387,7 +388,6 @@
             document.getElementById('retencion').value = (retencion.toFixed(2));
             // Realizar el cálculo
             const baseTaref = (total - baseFactura - iva) + retencion;
-
             // Mostrar el resultado en el input de base_taref
             document.getElementById('base_taref').value = baseTaref.toFixed(2);
         }
@@ -449,7 +449,7 @@
                 const iva = (baseFactura * tasa_iva);
                 const retencion = (baseFactura * tasa_retencion);
 
-                calcularImpuestos();
+                //calcularImpuestos();
 
                 // Realizar el cálculo
                 const baseTaref = (total - baseFactura - iva) + retencion;
@@ -459,10 +459,10 @@
             }
 
             // Agregar eventos de cambio a los inputs para calcular automáticamente
-            document.getElementById('total').addEventListener('input', calcularBaseTaref);
-            document.getElementById('base_factura').addEventListener('input', calcularBaseTaref);
-            document.getElementById('iva').addEventListener('input', calcularBaseTaref);
-            document.getElementById('retencion').addEventListener('input', calcularBaseTaref);
+           // document.getElementById('total').addEventListener('input', calcularBaseTaref);
+            document.getElementById('base_factura').addEventListener('input', calcularTotal);
+           // document.getElementById('iva').addEventListener('input', calcularBaseTaref);
+          //  document.getElementById('retencion').addEventListener('input', calcularBaseTaref);
         });
 
         $(document).ready(function() {
