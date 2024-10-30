@@ -98,8 +98,14 @@ class ReporteriaController extends Controller
         $user = User::where('id', '=', auth()->user()->id)->first();
 
         $cotizaciones = Cotizaciones::whereIn('id', $cotizacionIds)->get();
-        $bancos_oficiales = Bancos::where('tipo', '=', 'Oficial')->get();
-        $bancos_no_oficiales = Bancos::where('tipo', '=', 'No Oficial')->get();
+        if(in_array($cotizacion->id_empresa,[2,6])){
+            $bancos_oficiales = Bancos::where('id_empresa', '=', $cotizacion->id_empresa)->get();
+            $bancos_no_oficiales = Bancos::where('id_empresa', '=', $cotizacion->id_empresa)->get();
+        }else{
+            $bancos_oficiales = Bancos::where('tipo', '=', 'Oficial')->get();
+            $bancos_no_oficiales = Bancos::where('tipo', '=', 'No Oficial')->get();
+        }
+        
 
         if($request->fileType == "xlsx"){
             Excel::store(new CxcExport($cotizaciones, $fechaCarbon, $bancos_oficiales, $bancos_no_oficiales, $cotizacion, $user), 'cotizaciones_cxc.xlsx','public');

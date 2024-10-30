@@ -86,10 +86,15 @@ Route::group(['middleware' => ['auth']], function() {
 
     // ==================== C O T I Z A C I O N E S ====================
     Route::get('/cotizaciones/index', [App\Http\Controllers\CotizacionesController::class, 'index'])->name('index.cotizaciones');
+
+    Route::get('/cotizaciones/busqueda', [App\Http\Controllers\CotizacionesController::class, 'find'])->name('busqueda.cotizaciones');
+    Route::post('/cotizaciones/busqueda', [App\Http\Controllers\CotizacionesController::class, 'findExecute'])->name('exec.busqueda.cotizaciones');
+
     Route::get('/cotizaciones/index_finzaliadas', [App\Http\Controllers\CotizacionesController::class, 'index_finzaliadas'])->name('index_finzaliadas.cotizaciones');
     Route::get('/cotizaciones/index_espera', [App\Http\Controllers\CotizacionesController::class, 'index_espera'])->name('index_espera.cotizaciones');
     Route::get('/cotizaciones/index_aprobadas', [App\Http\Controllers\CotizacionesController::class, 'index_aprobadas'])->name('index_aprobadas.cotizaciones');
     Route::get('/cotizaciones/index_canceladas', [App\Http\Controllers\CotizacionesController::class, 'index_canceladas'])->name('index_canceladas.cotizaciones');
+
 
 
     Route::get('cotizaciones/create', [App\Http\Controllers\CotizacionesController::class, 'create'])->name('create.cotizaciones');

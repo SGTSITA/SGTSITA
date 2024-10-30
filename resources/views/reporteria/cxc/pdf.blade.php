@@ -129,7 +129,7 @@
                                 <td>{{$cotizacion->tamano}}</td>
                                 <td>$ {{ number_format($cotizacion->burreo, 2, '.', ',')}}</td>
                                 <td>$ {{ number_format($cotizacion->maniobra, 2, '.', ',')}}</td>
-                                <td>$ {{ number_format($cotizacion->sobrepeso, 2, '.', ',')}}</td>
+                                <td>$ {{ number_format($cotizacion->precio_tonelada, 2, '.', ',')}}</td>
                                 <td>$ {{ number_format($cotizacion->otro, 2, '.', ',')}}</td>
                                 <td>$ {{ number_format($cotizacion->precio, 2, '.', ',')}}</td>
                                 <td>$ {{ number_format($cotizacion->precio_viaje, 2, '.', ',')}}</td>
@@ -174,6 +174,25 @@
                 <table class="table text-white tabla-completa sin_margem" style="color: #000;width: 100%;padding: 0px; font-size: 12px; border-collapse: collapse;">
                     <tbody style="text-align: left;font-size: 100%;">
                         <tr>
+                            @if(in_array($cotizacion->id_empresa,[2,6]))
+                            @php
+                              $contador = 1;
+                            @endphp
+                             @foreach($bancos_oficiales as $cuenta)
+                              <td>
+                                Cuenta #{{ $contador }}<br>
+                                Beneficiario: <br> <b>{{ $cuenta->nombre_beneficiario }}</b><br>
+                                Banco: <b>{{ $cuenta->nombre_banco }}</b><br>
+                                Cuenta: <b>{{ $cuenta->cuenta_bancaria }}</b><br>
+                                Clave: <b>{{ $cuenta->cuenta_clabe }}</b><br>
+                              </td>
+
+                              @php
+                                $contador++;
+                              @endphp
+                              
+                             @endforeach
+                            @else
                             @foreach ($proveedoresConCuentas as $proveedor)
                                 <td style="padding: 0; margin: 0; border: none;display:inline-block;">
                                     <h3 style="margin: 10px; padding: 10px;">Proveedor: {{ $proveedor->nombre }}</h3>
@@ -218,6 +237,7 @@
                                     @endif
                                 </td>
                             @endforeach
+                            @endif
                         </tr>
                     </tbody>
                 </table>
