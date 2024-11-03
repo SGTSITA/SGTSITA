@@ -83,7 +83,8 @@ class CuentasCobrarController extends Controller
                 $item->restante,
                 0,
                 0,
-                0
+                0,
+                $item->id
 
             ];
         });
@@ -92,7 +93,72 @@ class CuentasCobrarController extends Controller
     }
 
     public function aplicar_pagos(Request $request){
+        try{
+            //Primero validaremos que los pagos/abonos de cada contenedor no sea mayor al saldo pendiente
+            $cotizaciones = $request->datahotTable;
+            foreach($cotizaciones as $c){
+                if($c[8] > $c[4]) 
+                  return response()->json([
+                                            "success" => false, 
+                                            "Titulo" => "Error en el contenedor $c[0]",
+                                            "Mensaje" => "No se puede aplicar el pago para el contenedor porque existe un error monto del pago ó es mayor al Saldo Original",
+                                            "TMensaje" => "warning"
+                                        ]);
+            }
 
+            DB::beginTransaction();
+            $contenedoresAbonos = [];
+             foreach($cotizaciones as $c){
+                if($c[8] > 0){
+                    $id = $c[9];
+                    $cotizacion = Cotizaciones::where('id', '=', $c[9])->first();
+
+                    // Establecer el abono y calcular el restante
+                    $abono = $c[8];
+                    $nuevoRestante = $cotizacion->restante - $abono;
+
+                    if ($nuevoRestante < 0) {
+                        $nuevoRestante = 0;
+                    }
+
+                    $cotizacion->restante = $nuevoRestante;
+                    $cotizacion->estatus_pago = ($nuevoRestante == 0) ? 1 : 0;
+                    $cotizacion->fecha_pago = date('Y-m-d');
+                    $cotizacion->update();
+
+                    // Agregar contenedor y abono al array
+                    $contenedorAbono = [
+                        'num_contenedor' => $c[0],
+                        'abono' => $c[8]
+                    ];
+
+                    array_push($contenedoresAbonos, $contenedorAbono);
+                }
+                    
+             }
+
+            $banco = new BancoDinero;
+            $banco->contenedores = json_encode($contenedoresAbonos);
+            $banco->id_cliente = $request->theClient;
+            $banco->monto1 = $request->amountPayOne;
+            $banco->metodo_pago1 = "Transferencia"; //Metodo de pago por default, instrucciones JH
+            $banco->id_banco1 = $request->bankOne;
+
+            $banco->monto2 = $request->amountPayTwo;
+            $banco->metodo_pago2 = "Transferencia"; //Metodo de pago por default, instrucciones JH
+            $banco->id_banco2 = $request->bankTwo;
+
+            $banco->fecha_pago = date('Y-m-d');
+            $banco->tipo = 'Entrada';
+
+            $banco->save();
+
+            DB::commit();
+            return response()->json(["success" => true, "Titulo" => "Cobro exitoso", "Mensaje" => "Hemos aplicado el pago a los elementos indicados"]);
+        }catch(\Throwable $t){
+            DB::rollback();
+            return response()->json(["success" => false]);
+        }
     }
 
     public function show($id){

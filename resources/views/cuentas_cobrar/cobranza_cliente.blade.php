@@ -110,7 +110,7 @@
                     <div class="col-md-4">
                       <div class="form-group">
                         <label for="example-text-input" class="form-control-label">Banco 2</label>
-                        <select name="cmbBankTwo" id="cmbBankOne" class="form-control">
+                        <select name="cmbBankTwo" id="cmbBankTwo" class="form-control">
                           <option value="null">Seleccione banco</option>
                           @foreach ($bancos as $item)
                               <option value="{{$item->id}}">{{$item->nombre_banco}} - ${{$item->saldo}}</option>

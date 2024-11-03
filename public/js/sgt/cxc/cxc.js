@@ -5,6 +5,10 @@ var currentBalance = 0;
 var applyPayments = 0;
 var finalBalance = 0;
 var totalPayment = 0;
+var sumPayOne = 0;
+var sumPayTwo = 0;
+var cliente = -1;
+
  var data = [
 
 ];
@@ -20,8 +24,7 @@ var config = {
   rowHeaders: true,
   minSpareRows: 0,
   autoWrapRow: true,
-
-  colHeaders: ['# CONTENEDOR','SUBCLIENTE','TIPO VIAJE',  'ESTATUS', 'SALDO ORIGINAL','SALDO ACTUAL', 'PAGO 1','PAGO 2',"TOTAL PAGADO"],
+  colHeaders: ['# CONTENEDOR','SUBCLIENTE','TIPO VIAJE',  'ESTATUS', 'SALDO ORIGINAL','SALDO ACTUAL', 'PAGO 1','PAGO 2',"TOTAL PAGADO","ID"],
   fixedColumnsLeft: 1,
   columns:[{readOnly:true},{readOnly:true },{readOnly:true},{readOnly:true},
     {
@@ -62,8 +65,11 @@ var config = {
         pattern: '$ 0,0.00',
         culture: 'en-US'
       }
-    }],
-  //hiddenColumns: {columns: [7], indicators: true },
+    },
+  {
+    readOnly:true,
+  }],
+  hiddenColumns: {columns: [9], indicators: true },
   filters: true,
   dropdownMenu: ['filter_by_value','filter_action_bar'],
   licenseKey: 'non-commercial-and-evaluation',
@@ -161,7 +167,8 @@ function moneyFormat(moneyValue){
 
   function getViajesSinLiquidar(client){
     var _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-   // console.log(_token.getAttribute('content'));
+    cliente = client;
+
     $.ajax({
       url:'/cuentas/cobrar/por_liquidar',
       type:'post',
@@ -198,7 +205,7 @@ function getCurrentBalance(colBalance = 4){
   
  function sumPayment(colPayOne, colPayTwo) {
   var data = hotTable.getDataAtCol(colPayOne); // Obtiene los datos de la columna específica
-  var sumPayOne = data.reduce(function (accumulator, currentValue) {
+  sumPayOne = data.reduce(function (accumulator, currentValue) {
     // Verifica si el valor es un número válido antes de sumarlo
     if (typeof currentValue === 'number' && !isNaN(currentValue)) {
       return accumulator + currentValue;
@@ -207,7 +214,7 @@ function getCurrentBalance(colBalance = 4){
   }, 0); // Inicia la sumPayOne desde 0
 
   data = hotTable.getDataAtCol(colPayTwo);
-  var sumPayTwo = data.reduce(function (accumulator, currentValue) {
+  sumPayTwo = data.reduce(function (accumulator, currentValue) {
     // Verifica si el valor es un número válido antes de sumarlo
     if (typeof currentValue === 'number' && !isNaN(currentValue)) {
       return accumulator + currentValue;
@@ -217,6 +224,7 @@ function getCurrentBalance(colBalance = 4){
 
   var sumPay = sumPayOne + sumPayTwo;
   finalBalance = (currentBalance - sumPay);
+  applyPayments = sumPay;
   $("#finalBalance").text(moneyFormat(finalBalance));  
   $("#sumPago1").text(moneyFormat(sumPayOne));  
   $("#sumPago2").text(moneyFormat(sumPayTwo));  
@@ -241,8 +249,19 @@ function getCurrentBalance(colBalance = 4){
  
  function applyPayment(){
       var _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+      if(finalBalance < 0){
+        Swal.fire("No se puede aplicar el pago","Al menos uno de los pagos ingresados superan el monto de la deuda, por favor corrobore su información","warning"); 
+        return false;
+      }
+
+      if(applyPayments == 0){
+        Swal.fire("Debe ingresar pagos","Aún no ha ingresado pagos, por favor ingrese al menos uno e intentelo nuevamente","warning"); 
+        return false;
+      }
+
       var bankOne = $("#cmbBankOne").val();
-      var bankTwo = $("#cmbBankOne").val();
+      var bankTwo = $("#cmbBankTwo").val();
 
       if(bankOne == "null" || bankTwo == "null"){
         Swal.fire({
@@ -260,29 +279,26 @@ function getCurrentBalance(colBalance = 4){
         return false;
       }
 
-      if(finalBalance < 0){
-        Swal.fire("No se puede aplicar el pago","Al menos uno de los pagos ingresados superan el monto de la deuda, por favor corrobore su información","warning"); 
-        return false;
-      }
-
-      var button = document.querySelector("#kt_apply_payment_button");
       var datahotTable = hotTable.getData();
+      var amountPayOne = sumPayOne;
+      var amountPayTwo = sumPayTwo;
+      var theClient = cliente;
 
       $.ajax({
-        url:'/credits/manage/apply-payment',
+        url:'/cuentas/cobrar/confirmar_pagos',
         type:'post',
-        data:{_token, bankOne, bankTwo, datahotTable},
+        data:{_token, theClient, bankOne, bankTwo, amountPayOne, amountPayTwo, applyPayments,datahotTable},
         beforeSend:function(){
-          button.setAttribute("data-kt-indicator", "on");          
+            
         },
         success:function(response){
-          button.removeAttribute("data-kt-indicator");
+          
           Swal.fire(response.Titulo,response.Mensaje,response.TMensaje);
           if(response.TMensaje == "success") getActiveCredits(client) ;
         },
         error:function(){
           Swal.fire('Error 500','Error inesperado, por favor intentelo nuevamente','error');
-          button.removeAttribute("data-kt-indicator");
+          
         }
       })
     }
