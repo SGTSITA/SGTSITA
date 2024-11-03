@@ -132,20 +132,44 @@ hotTable.updateSettings({
     afterFilter:()=>{
       //getDataFiltered
       sumPayment(6,7);
+      const filteredData = hotTable.getData(); // Obtén los datos de la tabla después de filtrar
+      // Aquí puedes recorrer los datos filtrados y hacer cualquier actualización necesaria
+      filteredData.forEach((row, index) => {
+        // Ejemplo: actualizando una celda específica
+        hotTable.setDataAtRowProp(index, 8, 1);
+        totalPayment = hotTable.getDataAtCell(index,6) + hotTable.getDataAtCell(index,7);
+                var rowSaldoOriginal = hotTable.getDataAtCell(index,4);
+                var rowSaldoActual =  rowSaldoOriginal - totalPayment;
+                hotTable.setDataAtCell(index,5,rowSaldoActual);
+                hotTable.setDataAtCell(index,8,totalPayment);
+      });
+
     },
     afterChange: (changes) => {
         if (changes != null) {
             Fila = changes[0][0];
+   
             Columna = changes[0][1];
             ValAnterior = changes[0][2];
             ValNuevo = changes[0][3];
             if (Columna == 6 || Columna == 7) {
                 sumPayment(6,7);
-                totalPayment = hotTable.getDataAtCell(Fila,6) + hotTable.getDataAtCell(Fila,7);
+               /* totalPayment = hotTable.getDataAtCell(Fila,6) + hotTable.getDataAtCell(Fila,7);
                 var rowSaldoOriginal = hotTable.getDataAtCell(Fila,4);
                 var rowSaldoActual =  rowSaldoOriginal - totalPayment;
                 hotTable.setDataAtCell(Fila,5,rowSaldoActual);
-                hotTable.setDataAtCell(Fila,8,totalPayment);
+                hotTable.setDataAtCell(Fila,8,totalPayment);*/
+                const filteredData = hotTable.getData(); // Obtén los datos de la tabla después de filtrar
+                // Aquí puedes recorrer los datos filtrados y hacer cualquier actualización necesaria
+                filteredData.forEach((row, index) => {
+                  // Ejemplo: actualizando una celda específica
+                  hotTable.setDataAtRowProp(index, 8, 1);
+                  totalPayment = hotTable.getDataAtCell(index,6) + hotTable.getDataAtCell(index,7);
+                          var rowSaldoOriginal = hotTable.getDataAtCell(index,4);
+                          var rowSaldoActual =  rowSaldoOriginal - totalPayment;
+                          hotTable.setDataAtCell(index,5,rowSaldoActual);
+                          hotTable.setDataAtCell(index,8,totalPayment);
+                });
             } 
 
         }
@@ -294,7 +318,7 @@ function getCurrentBalance(colBalance = 4){
         success:function(response){
           
           Swal.fire(response.Titulo,response.Mensaje,response.TMensaje);
-          if(response.TMensaje == "success") getActiveCredits(client) ;
+          if(response.TMensaje == "success") btnAplicarPago.disabled = true;
         },
         error:function(){
           Swal.fire('Error 500','Error inesperado, por favor intentelo nuevamente','error');

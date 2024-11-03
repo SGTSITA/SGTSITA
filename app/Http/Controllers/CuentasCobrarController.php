@@ -153,11 +153,14 @@ class CuentasCobrarController extends Controller
 
             $banco->save();
 
+            Bancos::where('id' ,'=',$request->bankOne)->update(["saldo" => DB::raw("saldo + ". $request->amountPayOne)]);
+            Bancos::where('id' ,'=',$request->bankTwo)->update(["saldo" => DB::raw("saldo + ". $request->amountPayTwo)]);
+
             DB::commit();
-            return response()->json(["success" => true, "Titulo" => "Cobro exitoso", "Mensaje" => "Hemos aplicado el pago a los elementos indicados"]);
+            return response()->json(["success" => true, "Titulo" => "Cobro exitoso", "Mensaje" => "Hemos aplicado el pago a los elementos indicados", "TMensaje" => "success"]);
         }catch(\Throwable $t){
             DB::rollback();
-            return response()->json(["success" => false]);
+            return response()->json(["success" => false, "Titulo" => "Error", "Mensaje" => "No pudimos aplicar el pago, existe un error", "TMensaje" => "error"]);
         }
     }
 
