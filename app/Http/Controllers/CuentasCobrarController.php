@@ -32,6 +32,69 @@ class CuentasCobrarController extends Controller
         return view('cuentas_cobrar.index', compact('cotizacionesPorCliente'));
     }
 
+    public function cobranza_v2($id){
+        $cotizacion = Cotizaciones::join('docum_cotizacion', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
+        ->where('cotizaciones.id_empresa', '=', auth()->user()->id_empresa)
+        ->where('cotizaciones.estatus_pago', '=', '0')
+        ->where('cotizaciones.restante', '>', 0)
+        ->where(function($query) {
+            $query->where('cotizaciones.estatus', '=', 'Aprobada')
+                  ->orWhere('cotizaciones.estatus', '=', 'Finalizado');
+        })
+        ->where('cotizaciones.id_cliente', '=', $id)
+        ->select(
+            'cotizaciones.id_cliente',
+            DB::raw('COUNT(*) as total_cotizaciones'),
+            DB::raw('SUM(cotizaciones.restante) as total_restante') // Sumar la columna restante
+        )
+        ->groupBy('cotizaciones.id_cliente') // Agrupa por el ID de cotización
+        ->first();
+
+        $cliente = Client::where('id', '=', $id)->first();
+
+        $bancos = Bancos::where('id_empresa' ,'=',auth()->user()->id_empresa)->get();
+
+        return view('cuentas_cobrar.cobranza_cliente',compact('bancos','cliente', 'cotizacion'));
+    }
+
+    public function viajes_por_liquidar(Request $request){
+        $cotizacionesPorPagar = Cotizaciones::join('docum_cotizacion', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
+        ->where('cotizaciones.id_empresa', '=', auth()->user()->id_empresa)
+        ->where('cotizaciones.estatus_pago', '=', '0')
+        ->where('cotizaciones.restante', '>', 0)
+        ->where(function($query) {
+            $query->where('cotizaciones.estatus', '=', 'Aprobada')
+                  ->orWhere('cotizaciones.estatus', '=', 'Finalizado');
+        })
+        ->where('cotizaciones.id_cliente', '=', $request->client)
+        ->select('cotizaciones.*')
+        ->get();
+
+        $handsOnTableData = $cotizacionesPorPagar->map(function($item){
+            $subCliente = ($item->id_subcliente != NULL) ? $item->Subcliente->nombre." / ".$item->Subcliente->telefono : "";
+            $tipoViaje = ($item->tipo_viaje == NULL || $item->tipo_viaje == 'Seleccionar Opcion') ? "Subcontratado" : $item->tipo_viaje;
+
+            return [
+                $item->DocCotizacion->num_contenedor,
+                $subCliente,
+                $tipoViaje,
+                ($item->estatus == 'Aprobada') ? "En Curso" : $item->estatus,
+                $item->restante,
+                $item->restante,
+                0,
+                0,
+                0
+
+            ];
+        });
+
+        return response()->json(["success" => true,"handsOnTableData" => $handsOnTableData, "cotizacionesPorPagar" => $cotizacionesPorPagar]);
+    }
+
+    public function aplicar_pagos(Request $request){
+
+    }
+
     public function show($id){
         $cliente = Client::where('id', '=', $id)->first();
         $cotizacionesPorPagar = Cotizaciones::join('docum_cotizacion', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
@@ -64,7 +127,7 @@ class CuentasCobrarController extends Controller
         ->first();
 
         $bancos = Bancos::where('id_empresa' ,'=',auth()->user()->id_empresa)->get();
-
+        
         return view('cuentas_cobrar.show', compact('cotizacionesPorPagar', 'bancos', 'cliente', 'cotizacion'));
     }
 
