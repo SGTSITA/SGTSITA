@@ -20,13 +20,18 @@ Cuentas por pagar
       <div class="card-body p-3">
       <div class="row">
          <div class="col-md-6 mb-md-0 mb-4">
+            
          <ul class="list-group">
-                <li class="list-group-item border-0 d-flex p-4 mb-2 bg-gray-100 border-radius-lg">
+                <li class="list-group-item d-flex p-4 mb-2 bg-gray-100 border-dashed border-1 border-secondary border-radius-md">
+                  <div class="d-flex flex-column text-end me-4">
+                  <div class="icon icon-shape icon-lg bg-gradient-secondary text-center border-radius-lg">
+                        <i class="fas fa-solid fa-file-invoice-dollar opacity-10" aria-hidden="true"></i>
+                  </div>
+                  </div>
                   <div class="d-flex flex-column">
                     <h6 class="mb-3 text-sm">Información del Proveedor</h6>
                     <span class="mb-2 text-md">Nombre: <span class="text-dark font-weight-bold ms-sm-2">{{$cliente->nombre}}</span></span>
-                    <span class="mb-2 text-md">Viajes Totales: <span class="text-dark ms-sm-2 font-weight-bold" id="countViajes">0</span></span>
-                    
+                    <span class="mb-2 text-md">Viajes Totales: <span class="text-dark ms-sm-2 font-weight-bold" id="countViajes">0</span></span>                    
                   </div>
                   
                 </li>

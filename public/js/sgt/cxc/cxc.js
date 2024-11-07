@@ -24,7 +24,7 @@ var config = {
   rowHeaders: true,
   minSpareRows: 0,
   autoWrapRow: true,
-  colHeaders: ['# CONTENEDOR','SUBCLIENTE','TIPO VIAJE',  'ESTATUS', 'SALDO ORIGINAL','SALDO ACTUAL', 'PAGO 1','PAGO 2',"TOTAL PAGADO","ID"],
+  colHeaders: ['# CONTENEDOR','SUBCLIENTE','TIPO VIAJE',  'ESTATUS', 'SALDO ORIGINAL','SALDO ACTUAL', 'COBRO 1','COBRO 2',"TOTAL COBRADO","ID"],
   fixedColumnsLeft: 1,
   columns:[{readOnly:true},{readOnly:true },{readOnly:true},{readOnly:true},
     {

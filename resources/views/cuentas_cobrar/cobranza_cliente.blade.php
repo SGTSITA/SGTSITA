@@ -41,7 +41,7 @@
          </div>
          <div class="col-lg-4 col-6 text-center">
             <div class="border-dashed border-1 border-secondary border-radius-md py-3">
-               <h6 class="text-primary mb-0">Pagos</h6>
+               <h6 class="text-primary mb-0">Cobranza</h6>
                <h4 class="font-weight-bolder"><span class="small" id="payment">$ 0.00</span></h4>
             </div>
          </div>
@@ -77,13 +77,13 @@
          <ul class="nav nav-footer justify-content-center justify-content-lg-end">
          <li class="nav-item pe-1">
             <span class="border-dashed border-1 border-secondary border-radius-md py-3">
-                  <span class="text-sm opacity-8 ps-3">Pago 1</span>
+                  <span class="text-sm opacity-8 ps-3">Cobro 1</span>
                   <span class="text-lg  text-dark  font-weight-bolder ps-2 pe-3" id="sumPago1">$0.00</span>
             </span>
           </li>      
           <li class="nav-item">
             <span class="border-dashed border-1 border-secondary border-radius-md py-3">
-                  <span class="text-sm opacity-8 ps-3">Pago 2</span>
+                  <span class="text-sm opacity-8 ps-3">Cobro 2</span>
                   <span class="text-lg  text-dark  font-weight-bolder ps-2 pe-3" id="sumPago2">$0.00</span>
             </span>
           </li>     
