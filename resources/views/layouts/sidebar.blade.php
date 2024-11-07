@@ -61,6 +61,19 @@
             </a>
           </li>
           @endcan
+
+
+          @can('cotizaciones-externas')
+          <li class="nav-item">
+            <a class="nav-link {{ (Request::is('cotizaciones*') ? 'active' : '') }}" href="{{ route('index.cotizaciones_manual') }}" target="">
+              <div class="icon icon-shape icon-sm text-center  me-2 d-flex align-items-center justify-content-center">
+                <img src="{{ asset('img/icon/factura.png.webp') }}" alt="" width="20px">
+              </div>
+              <span class="nav-link-text ms-1"><b>V</b> Cotizaciones Manual</span>
+            </a>
+          </li>
+          @endcan
+
         @can('cotizaciones-list')
 
           <a data-bs-toggle="collapse" href="#pagesExamplesCotizaciones" class="nav-link {{ (Request::is('cotizaciones*') ? 'active' : '') }}" aria-controls="pagesExamplesCotizaciones" role="button" aria-expanded="false">

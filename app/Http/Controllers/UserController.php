@@ -11,6 +11,7 @@ use Hash;
 use Illuminate\Support\Arr;
 use Session;
 use App\Models\Empresas;
+use App\Models\Client;
 
 class UserController extends Controller
 {
@@ -41,9 +42,9 @@ class UserController extends Controller
         $empresas = Empresas::where('id','=',auth()->user()->Empresa->id)->orderBy('id','DESC')->get();
 
         $empresas_base = Empresas::orderBy('id','DESC')->get();
+        $clientes = Client::where('id_empresa' ,'=',auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
 
-
-        return view('users.create',compact('roles','empresas','empresas_base'));
+        return view('users.create',compact('roles','empresas','empresas_base','clientes'));
     }
 
     /**
@@ -102,8 +103,9 @@ class UserController extends Controller
 
         $empresas_base = Empresas::orderBy('id','DESC')->get();
 
+        $clientes = Client::where('id_empresa' ,'=',auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
 
-        return view('users.edit',compact('user','roles','userRole','empresas','empresas_base'));
+        return view('users.edit',compact('user','roles','userRole','empresas','empresas_base','clientes'));
     }
 
     /**

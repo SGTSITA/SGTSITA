@@ -81,7 +81,20 @@
                     @endif
 
 
-
+                    <div class="col-xs-12 col-sm-12 col-md-6">
+                        <div class="form-group">
+                            <label for="">Clientes</label>
+                            <select name="id_cliente" id="" class="form-select">
+                                <option value="">Seleciona Cliente</option>
+                                @foreach ($clientes as  $item)
+                                    @if($item->id == $user->id_empresa)
+                                        <option value="{{ $item->id }}" selected>{{ $item->nombre }}</option>
+                                    @endif
+                                    <option value="{{ $item->id }}">{{ $item->nombre }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
 
                     <div class="col-xs-12 col-sm-12 col-md-6">
                         <div class="form-group">

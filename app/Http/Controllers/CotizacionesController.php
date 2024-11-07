@@ -41,6 +41,14 @@ class CotizacionesController extends Controller
         return view('cotizaciones.index', compact('empresas', 'proveedores','bancos','operadores','equipos_dolys','equipos_chasis','equipos_camiones','cotizaciones_planeadas'));
     }
 
+    public function index_externo(){
+
+        $cotizaciones_emitidas = Cotizaciones::where('id_empresa' ,'=',auth()->user()->id_empresa)->orderBy('created_at', 'desc')
+        ->select('id_cliente', 'origen', 'destino', 'id', 'estatus')->get();
+
+        return view('cotizaciones.externos.index', compact('cotizaciones_emitidas'));
+    }
+
     public function index_finzaliadas(){
 
         $cotizaciones_finalizadas = Cotizaciones::where('id_empresa' ,'=',auth()->user()->id_empresa)->where('estatus','=','Finalizado')->orderBy('created_at', 'desc')
@@ -129,7 +137,7 @@ class CotizacionesController extends Controller
                                                 ->get()
                                                 ->pluck('id_cotizacion')
                                                 ->toArray();
-                                                
+
           //  $where .= ($documCotizacion != null ) ? ' and id in('.implode(',',$documCotizacion).')' : '';
             if($documCotizacion != null ){
                 $where .= ' and id in('.implode(',',$documCotizacion).')';
@@ -140,7 +148,7 @@ class CotizacionesController extends Controller
 
         $where .= ($request->txtOrigen != null ) ? " and origen like '%".$request->txtOrigen."%'" : '';
         $where .= ($request->txtDestino != null ) ? " and destino like '%".$request->txtDestino."%'" : '';
-        
+
         $cotizaciones = Cotizaciones::whereRaw($where)
                                     ->orderBy('created_at', 'desc')
                                     ->select('id_cliente', 'origen', 'destino', 'id', 'estatus')
@@ -160,6 +168,14 @@ class CotizacionesController extends Controller
         $clientes = Client::where('id_empresa' ,'=',auth()->user()->id_empresa)->get();
 
         return view('cotizaciones.create',compact('clientes'));
+    }
+
+    public function create_externo(){
+        $clientes = Client::where('id_empresa' ,'=',auth()->user()->id_empresa)->get();
+
+        $subclientes = Subclientes::where('id_empresa' ,'=',auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
+
+        return view('cotizaciones.externos.create',compact('clientes','subclientes'));
     }
 
     public function getSubclientes($clienteId)
@@ -298,6 +314,16 @@ class CotizacionesController extends Controller
         $gastos_ope = GastosOperadores::where('id_cotizacion', '=', $cotizacion->id)->get();
 
         return view('cotizaciones.edit', compact('cotizacion', 'documentacion', 'clientes','gastos_extras', 'gastos_ope'));
+    }
+
+    public function edit_externo($id){
+        $cotizacion = Cotizaciones::where('id', '=', $id)->first();
+        $documentacion = DocumCotizacion::where('id_cotizacion', '=', $cotizacion->id)->first();
+        $gastos_extras = GastosExtras::where('id_cotizacion', '=', $cotizacion->id)->get();
+        $clientes = Client::where('id_empresa' ,'=',auth()->user()->id_empresa)->get();
+        $gastos_ope = GastosOperadores::where('id_cotizacion', '=', $cotizacion->id)->get();
+
+        return view('cotizaciones.externos.edit', compact('cotizacion', 'documentacion', 'clientes','gastos_extras', 'gastos_ope'));
     }
 
     public function pdf($id){
