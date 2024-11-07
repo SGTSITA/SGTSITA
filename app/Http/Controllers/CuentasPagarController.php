@@ -45,9 +45,56 @@ class CuentasPagarController extends Controller
         return view('cuentas_pagar.index', compact('cotizacionesPorCliente'));
     }
 
-    public function show($id){
-
+    public function viajes_por_liquidar(Request $request){
         $cotizacionesPorPagar = Cotizaciones::join('docum_cotizacion', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
+        ->join('asignaciones', 'docum_cotizacion.id', '=', 'asignaciones.id_contenedor')
+        ->where('asignaciones.id_camion', '=', NULL)
+        ->where(function($query) {
+            $query->where('cotizaciones.estatus', '=', 'Aprobada')
+                  ->orWhere('cotizaciones.estatus', '=', 'Finalizado');
+        })
+        ->where('cotizaciones.id_empresa', '=', auth()->user()->id_empresa)
+        ->where('asignaciones.id_proveedor', '=', $request->proveedor)
+        ->where('cotizaciones.prove_restante', '>', 0)
+        ->select(
+            'asignaciones.*',
+            'docum_cotizacion.num_contenedor',
+            'docum_cotizacion.id_cotizacion',
+            'cotizaciones.estatus',
+            'cotizaciones.prove_restante',
+            'cotizaciones.id_cuenta_prov',
+            'cotizaciones.dinero_cuenta_prov',
+            'cotizaciones.id_cuenta_prov2',
+            'cotizaciones.dinero_cuenta_prov2'
+        )
+        ->get();
+
+        $handsOnTableData = $cotizacionesPorPagar->map(function($item){
+            return [
+                $item->num_contenedor,
+                ($item->estatus == 'Aprobada') ? "En Curso" : $item->estatus,
+                $item->prove_restante,
+                $item->prove_restante,
+                0,
+                0,
+                0,
+                $item->id
+
+            ];
+        });
+
+
+        
+        return response()->json(["success" => true,"handsOnTableData" => $handsOnTableData, "cotizacionesPorPagar" => $cotizacionesPorPagar]);
+        
+    }
+
+    public function show($id){
+        $bancos = Bancos::where('id_empresa', '=',auth()->user()->id_empresa)->get();
+        $cliente = Proveedor::where('id', '=', $id)->first();
+        $banco_proveedor = CuentasBancarias::where('id_proveedores', '=', $cliente->id)->get();
+
+        /*$cotizacionesPorPagar = Cotizaciones::join('docum_cotizacion', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
         ->join('asignaciones', 'docum_cotizacion.id', '=', 'asignaciones.id_contenedor')
         ->where('asignaciones.id_camion', '=', NULL)
         ->where(function($query) {
@@ -85,11 +132,10 @@ class CuentasPagarController extends Controller
             ];
         });
 
-        $bancos = Bancos::where('id_empresa', '=',auth()->user()->id_empresa)->get();
-        $cliente = Proveedor::where('id', '=', $id)->first();
-        $banco_proveedor = CuentasBancarias::where('id_proveedores', '=', $cliente->id)->get();
+        return view('cuentas_pagar.show', compact('cotizacionesPorPagar', 'bancos', 'cliente', 'banco_proveedor', 'cotizacionesAgrupadas'));*/
 
-        return view('cuentas_pagar.show', compact('cotizacionesPorPagar', 'bancos', 'cliente', 'banco_proveedor', 'cotizacionesAgrupadas'));
+        return view('cuentas_pagar.pagos_v2', compact('bancos', 'cliente', 'banco_proveedor'));
+       
     }
 
     public function update(Request $request, $id){

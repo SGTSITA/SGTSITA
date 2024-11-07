@@ -7,13 +7,13 @@ var finalBalance = 0;
 var totalPayment = 0;
 var sumPayOne = 0;
 var sumPayTwo = 0;
-var cliente = -1;
+var proveedor = -1;
 
  var data = [
 
 ];
 
-var containerPagos = document.getElementById('pendientes');
+var containerPagosPendientes = document.getElementById('pagosPendientes');
 var FileName = 'tableroPendientes';
 
 var config = {
@@ -24,9 +24,9 @@ var config = {
   rowHeaders: true,
   minSpareRows: 0,
   autoWrapRow: true,
-  colHeaders: ['# CONTENEDOR','SUBCLIENTE','TIPO VIAJE',  'ESTATUS', 'SALDO ORIGINAL','SALDO ACTUAL', 'PAGO 1','PAGO 2',"TOTAL PAGADO","ID"],
+  colHeaders: ['# CONTENEDOR', 'ESTATUS', 'SALDO ORIGINAL','SALDO ACTUAL', 'PAGO 1','PAGO 2',"TOTAL PAGADO","ID"],
   fixedColumnsLeft: 1,
-  columns:[{readOnly:true},{readOnly:true },{readOnly:true},{readOnly:true},
+  columns:[{readOnly:true},{readOnly:true},
     {
       readOnly:true,
       type: 'numeric',
@@ -66,10 +66,11 @@ var config = {
         culture: 'en-US'
       }
     },
-  {
-    readOnly:true,
-  }],
-  hiddenColumns: {columns: [9], indicators: true },
+    {
+        readOnly:true,
+    }
+],
+  hiddenColumns: {columns: [7], indicators: false },
   filters: true,
   dropdownMenu: ['filter_by_value','filter_action_bar'],
   licenseKey: 'non-commercial-and-evaluation',
@@ -110,16 +111,16 @@ Handsontable.renderers.registerRenderer('colorRenderer', colorRenderer);
 Handsontable.renderers.registerRenderer('errorRenderer', errorRenderer);
 
 
-var hotTable = new Handsontable(containerPagos, config);
+var hotTableCXP = new Handsontable(containerPagosPendientes, config);
 var TableroActivo = 0;
 var TMenu = 0;
 
-hotTable.updateSettings({
+hotTableCXP.updateSettings({
     cells: function(row, col) {
         var cellProperties = {};
        // var data = this.instance.getData();
-        var cellTotalPayment = hotTable.getDataAtCell(row,6) + hotTable.getDataAtCell(row,7);
-        if(col >= 1 && cellTotalPayment > hotTable.getDataAtCell(row,4) ){
+        var cellTotalPayment = hotTableCXP.getDataAtCell(row,4) + hotTableCXP.getDataAtCell(row,5);
+        if(col >= 1 && cellTotalPayment > hotTableCXP.getDataAtCell(row,2) ){
           this.renderer = errorRenderer;  
         }else{
           this.renderer = undefined;
@@ -131,17 +132,17 @@ hotTable.updateSettings({
     },
     afterFilter:()=>{
       //getDataFiltered
-      sumPayment(6,7);
-      const filteredData = hotTable.getData(); // Obtén los datos de la tabla después de filtrar
+      sumPayment(4,5);
+      const filteredData = hotTableCXP.getData(); // Obtén los datos de la tabla después de filtrar
       // Aquí puedes recorrer los datos filtrados y hacer cualquier actualización necesaria
       filteredData.forEach((row, index) => {
-        // Ejemplo: actualizando una celda específica
-        hotTable.setDataAtRowProp(index, 8, 1);
-        totalPayment = hotTable.getDataAtCell(index,6) + hotTable.getDataAtCell(index,7);
-                var rowSaldoOriginal = hotTable.getDataAtCell(index,4);
+        
+      //  hotTableCXP.setDataAtRowProp(index, 6, totalPayment);
+        totalPayment = hotTableCXP.getDataAtCell(index,4) + hotTableCXP.getDataAtCell(index,5);
+                var rowSaldoOriginal = hotTableCXP.getDataAtCell(index,2);
                 var rowSaldoActual =  rowSaldoOriginal - totalPayment;
-                hotTable.setDataAtCell(index,5,rowSaldoActual);
-                hotTable.setDataAtCell(index,8,totalPayment);
+                hotTableCXP.setDataAtCell(index,3,rowSaldoActual);
+                hotTableCXP.setDataAtCell(index,6,totalPayment);
       });
 
     },
@@ -152,23 +153,23 @@ hotTable.updateSettings({
             Columna = changes[0][1];
             ValAnterior = changes[0][2];
             ValNuevo = changes[0][3];
-            if (Columna == 6 || Columna == 7) {
-                sumPayment(6,7);
-               /* totalPayment = hotTable.getDataAtCell(Fila,6) + hotTable.getDataAtCell(Fila,7);
-                var rowSaldoOriginal = hotTable.getDataAtCell(Fila,4);
+            if (Columna == 4 || Columna == 5) {
+                sumPayment(4,5);
+               /* totalPayment = hotTableCXP.getDataAtCell(Fila,4) + hotTableCXP.getDataAtCell(Fila,5);
+                var rowSaldoOriginal = hotTableCXP.getDataAtCell(Fila,2);
                 var rowSaldoActual =  rowSaldoOriginal - totalPayment;
-                hotTable.setDataAtCell(Fila,5,rowSaldoActual);
-                hotTable.setDataAtCell(Fila,8,totalPayment);*/
-                const filteredData = hotTable.getData(); // Obtén los datos de la tabla después de filtrar
+                hotTableCXP.setDataAtCell(Fila,5,rowSaldoActual);
+                hotTableCXP.setDataAtCell(Fila,8,totalPayment);*/
+                const filteredData = hotTableCXP.getData(); // Obtén los datos de la tabla después de filtrar
                 // Aquí puedes recorrer los datos filtrados y hacer cualquier actualización necesaria
                 filteredData.forEach((row, index) => {
                   // Ejemplo: actualizando una celda específica
-                  hotTable.setDataAtRowProp(index, 8, 1);
-                  totalPayment = hotTable.getDataAtCell(index,6) + hotTable.getDataAtCell(index,7);
-                          var rowSaldoOriginal = hotTable.getDataAtCell(index,4);
+                 // hotTableCXP.setDataAtRowProp(index, 8, 1);
+                  totalPayment = hotTableCXP.getDataAtCell(index,4) + hotTableCXP.getDataAtCell(index,5);
+                          var rowSaldoOriginal = hotTableCXP.getDataAtCell(index,2);
                           var rowSaldoActual =  rowSaldoOriginal - totalPayment;
-                          hotTable.setDataAtCell(index,5,rowSaldoActual);
-                          hotTable.setDataAtCell(index,8,totalPayment);
+                          hotTableCXP.setDataAtCell(index,3,rowSaldoActual);
+                          hotTableCXP.setDataAtCell(index,6,totalPayment);
                 });
             } 
 
@@ -189,24 +190,25 @@ function moneyFormat(moneyValue){
 
   /*================================================================ */
 
-  function getViajesSinLiquidar(client){
+  function getViajesPorPagar(provee){
     var _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-    cliente = client;
+    proveedor = provee;
 
     $.ajax({
-      url:'/cuentas/cobrar/por_liquidar',
+      url:'/cuentas/pagar/por_liquidar',
       type:'post',
-      data: {_token, client},
+      data: {_token:_token, proveedor:provee},
       beforeSend:function(){
         
       },
       success:function(data){
-        hotTable.loadData(data.handsOnTableData);
-        getCurrentBalance(4);
+        hotTableCXP.loadData(data.handsOnTableData);
+        getCurrentBalance(2);
         var formatCurrentBalance = moneyFormat(currentBalance);
         $("#currentBalance").text(formatCurrentBalance);
         $("#finalBalance").text(formatCurrentBalance);
-        sumPayment(6,7);
+        $("#countViajes").text(data.handsOnTableData.length);
+        sumPayment(4,5);
       },
       error:function(data){
         swal('Error 500','Ha ocurrido un error y no se pudo procesar su solicitud, por favor intentelo nuevamente','error');
@@ -214,8 +216,8 @@ function moneyFormat(moneyValue){
     })
   }
 
-function getCurrentBalance(colBalance = 4){
-  var data = hotTable.getDataAtCol(colBalance); // Obtiene los datos de la columna específica
+function getCurrentBalance(colBalance = 2){
+  var data = hotTableCXP.getDataAtCol(colBalance); // Obtiene los datos de la columna específica
   currentBalance = data.reduce(function (accumulator, currentValue) {
     // Verifica si el valor es un número válido antes de sumarlo
     if (typeof currentValue === 'number' && !isNaN(currentValue)) {
@@ -228,7 +230,7 @@ function getCurrentBalance(colBalance = 4){
  }
   
  function sumPayment(colPayOne, colPayTwo) {
-  var data = hotTable.getDataAtCol(colPayOne); // Obtiene los datos de la columna específica
+  var data = hotTableCXP.getDataAtCol(colPayOne); // Obtiene los datos de la columna específica
   sumPayOne = data.reduce(function (accumulator, currentValue) {
     // Verifica si el valor es un número válido antes de sumarlo
     if (typeof currentValue === 'number' && !isNaN(currentValue)) {
@@ -237,7 +239,7 @@ function getCurrentBalance(colBalance = 4){
     return accumulator;
   }, 0); // Inicia la sumPayOne desde 0
 
-  data = hotTable.getDataAtCol(colPayTwo);
+  data = hotTableCXP.getDataAtCol(colPayTwo);
   sumPayTwo = data.reduce(function (accumulator, currentValue) {
     // Verifica si el valor es un número válido antes de sumarlo
     if (typeof currentValue === 'number' && !isNaN(currentValue)) {
@@ -303,15 +305,15 @@ function getCurrentBalance(colBalance = 4){
         return false;
       }
 
-      var datahotTable = hotTable.getData();
+      var datahotTableCXP = hotTableCXP.getData();
       var amountPayOne = sumPayOne;
       var amountPayTwo = sumPayTwo;
-      var theClient = cliente;
+      var theClient = proveedor;
 
       $.ajax({
-        url:'/cuentas/cobrar/confirmar_pagos',
+        url:'/cuentas/pagar/confirmar_pagos',
         type:'post',
-        data:{_token, theClient, bankOne, bankTwo, amountPayOne, amountPayTwo, applyPayments,datahotTable},
+        data:{_token, theClient, bankOne, bankTwo, amountPayOne, amountPayTwo, applyPayments,datahotTableCXP},
         beforeSend:function(){
             
         },

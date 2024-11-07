@@ -145,6 +145,7 @@ Route::group(['middleware' => ['auth']], function() {
     Route::get('cuentas/pagar/show/{id}', [App\Http\Controllers\CuentasPagarController::class, 'show'])->name('show.pagar');
     Route::patch('cuentas/pagar/update/{id}', [App\Http\Controllers\CuentasPagarController::class, 'update'])->name('update.pagar');
     Route::post('cuentas/pagar/update/varios', [App\Http\Controllers\CuentasPagarController::class, 'update_varios'])->name('update_varios.pagar');
+    Route::post('cuentas/pagar/por_liquidar', [App\Http\Controllers\CuentasPagarController::class, 'viajes_por_liquidar'])->name('por_liquidar.pagar');
 
     // ==================== R E P O R T E R I A ====================
     Route::get('reporteria/cotizaciones/cxc', [App\Http\Controllers\ReporteriaController::class, 'index'])->name('index.reporteria');

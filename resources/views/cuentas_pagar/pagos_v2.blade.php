@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('template_title')
- Cuentas por cobrar
+Cuentas por pagar
 @endsection
 
 @section('content')
@@ -10,10 +10,10 @@
       <div class="card-header pb-0 p-3">
        <div class="row">
          <div class="col-6 d-flex align-items-center">
-            <h6 class="mb-0">Cuentas por cobrar</h6>
+            <h6 class="mb-0">Cuentas por pagar</h6>
          </div>
          <div class="col-6 text-end">
-            <a class="btn btn-sm bg-gradient-warning mb-0" href="{{ route('index.cobrar') }}"><i class="fas fa-chevron-left" aria-hidden="true"></i>&nbsp;&nbsp;Regresar</a>
+            <a class="btn btn-sm bg-gradient-warning mb-0" href="{{ route('index.pagar') }}"><i class="fas fa-chevron-left" aria-hidden="true"></i>&nbsp;&nbsp;Regresar</a>
          </div>
        </div>
       </div>
@@ -23,10 +23,10 @@
          <ul class="list-group">
                 <li class="list-group-item border-0 d-flex p-4 mb-2 bg-gray-100 border-radius-lg">
                   <div class="d-flex flex-column">
-                    <h6 class="mb-3 text-sm">Información del cliente</h6>
+                    <h6 class="mb-3 text-sm">Información del Proveedor</h6>
                     <span class="mb-2 text-md">Nombre: <span class="text-dark font-weight-bold ms-sm-2">{{$cliente->nombre}}</span></span>
-                    <span class="mb-2 text-md">Viajes Totales: <span class="text-dark ms-sm-2 font-weight-bold">{{$cotizacion->total_cotizaciones}}</span></span>
-                    <!--span class="text-xs">Saldo actual: <span class="text-dark ms-sm-2 font-weight-bold">${{ number_format($cotizacion->total_restante, 0, '.', ',') }}</span></span-->
+                    <span class="mb-2 text-md">Viajes Totales: <span class="text-dark ms-sm-2 font-weight-bold" id="countViajes">0</span></span>
+                    
                   </div>
                   
                 </li>
@@ -92,7 +92,7 @@
        </div>
             </div>
             <div class="card-body pt-4 p-3">
-              <div id="pendientes"></div>
+              <div id="pagosPendientes"></div>
               <div class="row">
                 <div class="col-8 offset-4 text-end mt-3">
                     <div class="row">
@@ -120,7 +120,7 @@
                     </div>
                     <div class="col-4 d-flex flex-column">
                       <button class="btn btn-sm bg-gradient-success mt-auto" name="btnAplicarPago" id="btnAplicarPago" type="button">
-                        <i class="fas fa-check" aria-hidden="true"></i>&nbsp;&nbsp;Aplicar cobro
+                        <i class="fas fa-check" aria-hidden="true"></i>&nbsp;&nbsp;Aplicar pago
                       </button>
                     </div>
                   </div>
@@ -138,10 +138,10 @@
 <link href="/assets/handsontable/handsontable.full.min.css" rel="stylesheet" media="screen">
 <script src="/assets/handsontable/handsontable.full.min.js"></script>
 <script src="/assets/handsontable/all.js"></script>
-<script src="/js/sgt/cxc/cxc.js"></script>
+<script src="/js/sgt/cxp/cxp.js"></script>
 <script>
    $(document).ready(()=>{
-      getViajesSinLiquidar({{$cliente->id}});
+    getViajesPorPagar({{$cliente->id}});
    });
 </script>
 @endpush
