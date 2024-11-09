@@ -43,7 +43,7 @@ class CotizacionesController extends Controller
 
     public function index_externo(){
 
-        $cotizaciones_emitidas = Cotizaciones::where('id_empresa' ,'=',auth()->user()->id_empresa)->orderBy('created_at', 'desc')
+        $cotizaciones_emitidas = Cotizaciones::where('id_cliente' ,'=', auth()->user()->id_cliente)->orderBy('created_at', 'desc')
         ->select('id_cliente', 'origen', 'destino', 'id', 'estatus')->get();
 
         return view('cotizaciones.externos.index', compact('cotizaciones_emitidas'));
@@ -172,8 +172,7 @@ class CotizacionesController extends Controller
 
     public function create_externo(){
         $clientes = Client::where('id_empresa' ,'=',auth()->user()->id_empresa)->get();
-
-        $subclientes = Subclientes::where('id_empresa' ,'=',auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
+        $subclientes = Subclientes::where('id_cliente' ,'=',auth()->user()->id_cliente)->get();
 
         return view('cotizaciones.externos.create',compact('clientes','subclientes'));
     }
@@ -188,11 +187,9 @@ class CotizacionesController extends Controller
     }
 
     public function store(Request $request){
-
         $validator = Validator::make($request->all(), [
             'origen' => 'required',
             'destino' => 'required',
-            'tamano' => 'required',
         ]);
 
         if ($validator->fails()) {
@@ -214,7 +211,9 @@ class CotizacionesController extends Controller
             }
         }
 
-        if($request->get('nombre_cliente') == NULL){
+        if($request->get('id_cliente_clientes') !== NULL){
+            $cliente = $request->get('id_cliente_clientes');
+        }else if($request->get('nombre_cliente') == NULL){
             $cliente = $request->get('id_cliente');
         }else{
             $cliente = new Client;
@@ -250,14 +249,20 @@ class CotizacionesController extends Controller
         $cotizaciones->estadia = $request->get('estadia');
         $cotizaciones->base_factura = $request->get('base_factura');
         $cotizaciones->base_taref = $request->get('base_taref');
+        $cotizaciones->recinto_clientes = $request->get('recinto_clientes');
 
-        $precio_tonelada = str_replace(',', '', $request->get('precio_tonelada'));
-        $cotizaciones->precio_tonelada = $precio_tonelada;
+        if($request->get('id_cliente_clientes') == NULL){
+            $precio_tonelada = str_replace(',', '', $request->get('precio_tonelada'));
+            $cotizaciones->precio_tonelada = $precio_tonelada;
 
-        if($request->get('total') == NULL){
+            if($request->get('total') == NULL){
+                $total = 0;
+             }else{
+                $total = str_replace(',', '', $request->get('total'));
+            }
+        }else{
+            $cotizaciones->precio_tonelada = 0;
             $total = 0;
-         }else{
-            $total = str_replace(',', '', $request->get('total'));
         }
 
         $cotizaciones->total = $total;
@@ -265,15 +270,30 @@ class CotizacionesController extends Controller
         $cotizaciones->estatus_pago = '0';
         $cotizaciones->save();
 
+        $doc_cotizaciones = Cotizaciones::where('id', '=', $cotizaciones->id)->first();
+        if ($request->hasFile("excel_clientes")) {
+            $file = $request->file('excel_clientes');
+            $path = public_path() . '/cotizaciones/cotizacion'. $cotizaciones->id;
+            $fileName = uniqid() . $file->getClientOriginalName();
+            $file->move($path, $fileName);
+            $doc_cotizaciones->excel_clientes = $fileName;
+        }
+        $doc_cotizaciones->update();
+
         $docucotizaciones = new DocumCotizacion;
         $docucotizaciones->id_cotizacion = $cotizaciones->id;
         $docucotizaciones->num_contenedor = $request->get('num_contenedor');
         $docucotizaciones->save();
 
-        Session::flash('success', 'Se ha guardado sus datos con exito');
-        return redirect()->route('index.cotizaciones')
-            ->with('success', 'Cotizacion created successfully.');
-
+        if($request->get('id_cliente_clientes')){
+            Session::flash('success', 'Se ha guardado sus datos con exito');
+            return redirect()->route('index.cotizaciones')
+                ->with('success', 'Cotizacion created successfully.');
+        }else{
+            Session::flash('success', 'Se ha guardado sus datos con exito');
+            return redirect()->route('index.cotizaciones_manual')
+                ->with('success', 'Cotizacion created successfully.');
+        }
     }
 
     public function update_estatus(Request $request, $id){
@@ -322,8 +342,9 @@ class CotizacionesController extends Controller
         $gastos_extras = GastosExtras::where('id_cotizacion', '=', $cotizacion->id)->get();
         $clientes = Client::where('id_empresa' ,'=',auth()->user()->id_empresa)->get();
         $gastos_ope = GastosOperadores::where('id_cotizacion', '=', $cotizacion->id)->get();
+        $subclientes = Subclientes::where('id_cliente' ,'=',auth()->user()->id_cliente)->get();
 
-        return view('cotizaciones.externos.edit', compact('cotizacion', 'documentacion', 'clientes','gastos_extras', 'gastos_ope'));
+        return view('cotizaciones.externos.edit', compact('cotizacion', 'documentacion', 'clientes','gastos_extras', 'gastos_ope', 'subclientes'));
     }
 
     public function pdf($id){
@@ -433,17 +454,19 @@ class CotizacionesController extends Controller
             $cotizaciones->base_factura = $request->get('base_factura');
             $cotizaciones->base_taref = $request->get('base_taref');
 
-            if($request->get('cot_peso_contenedor') > $request->get('peso_reglamentario')){
-                $sobrepeso = $request->get('cot_peso_contenedor') - $request->get('peso_reglamentario');
-            }else{
-                $sobrepeso = 0;
+            if($request->get('id_cliente_clientes') == NULL){
+                if($request->get('cot_peso_contenedor') > $request->get('peso_reglamentario')){
+                    $sobrepeso = $request->get('cot_peso_contenedor') - $request->get('peso_reglamentario');
+                }else{
+                    $sobrepeso = 0;
+                }
+                $cotizaciones->sobrepeso = $sobrepeso;
+                $precio_tonelada = str_replace(',', '', $request->get('precio_sobre_peso'));
+                $cotizaciones->precio_sobre_peso = $precio_tonelada;
+                $cotizaciones->precio_tonelada = $precio_tonelada * $sobrepeso;
+                $total = ($cotizaciones->precio_tonelada + $request->get('cot_precio_viaje') + $request->get('cot_burreo') + $request->get('cot_maniobra') + $request->get('cot_estadia') + $request->get('cot_otro') + $request->get('cot_iva')) - $request->get('cot_retencion');
+                $cotizaciones->total = $total;
             }
-            $cotizaciones->sobrepeso = $sobrepeso;
-            $precio_tonelada = str_replace(',', '', $request->get('precio_sobre_peso'));
-            $cotizaciones->precio_sobre_peso = $precio_tonelada;
-            $cotizaciones->precio_tonelada = $precio_tonelada * $sobrepeso;
-            $total = ($cotizaciones->precio_tonelada + $request->get('cot_precio_viaje') + $request->get('cot_burreo') + $request->get('cot_maniobra') + $request->get('cot_estadia') + $request->get('cot_otro') + $request->get('cot_iva')) - $request->get('cot_retencion');
-            $cotizaciones->total = $total;
 
             if ($request->hasFile("carta_porte")) {
                 $file = $request->file('carta_porte');
@@ -463,26 +486,27 @@ class CotizacionesController extends Controller
 
             $cotizaciones->update();
 
-            $gasto_descripcion = $request->input('gasto_descripcion');
-            $gasto_monto = $request->input('gasto_monto');
-            $ticket_ids = $request->input('ticket_id');
+            if($request->get('id_cliente_clientes') == NULL){
+                $gasto_descripcion = $request->input('gasto_descripcion');
+                $gasto_monto = $request->input('gasto_monto');
+                $ticket_ids = $request->input('ticket_id');
 
-            for ($count = 0; $count < count($gasto_descripcion); $count++) {
-                $data = array(
-                    'id_cotizacion' => $cotizaciones->id,
-                    'descripcion' => $gasto_descripcion[$count],
-                    'monto' => $gasto_monto[$count],
-                );
+                for ($count = 0; $count < count($gasto_descripcion); $count++) {
+                    $data = array(
+                        'id_cotizacion' => $cotizaciones->id,
+                        'descripcion' => $gasto_descripcion[$count],
+                        'monto' => $gasto_monto[$count],
+                    );
 
-                if (isset($ticket_ids[$count])) {
-                    // Actualizar el ticket existente
-                    $ticket = GastosExtras::findOrFail($ticket_ids[$count]);
-                    $ticket->update($data);
-                } elseif($gasto_descripcion[$count] != NULL) {
-                    // Crear un nuevo ticket
-                    GastosExtras::create($data);
+                    if (isset($ticket_ids[$count])) {
+                        // Actualizar el ticket existente
+                        $ticket = GastosExtras::findOrFail($ticket_ids[$count]);
+                        $ticket->update($data);
+                    } elseif($gasto_descripcion[$count] != NULL) {
+                        // Crear un nuevo ticket
+                        GastosExtras::create($data);
+                    }
                 }
-            }
 
                 // Convertir los valores a números si son cadenas
                 // $maniobra = is_numeric($cotizaciones->maniobra) ? $cotizaciones->maniobra : 0;
@@ -581,7 +605,7 @@ class CotizacionesController extends Controller
                         $asignacion->update();
                     }
                 }
-
+            }
             Session::flash('edit', 'Se ha editado sus datos con exito');
             return redirect()->back()
                 ->with('success', 'Estatus updated successfully');

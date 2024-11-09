@@ -13,8 +13,9 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->unsignedBigInteger('id_cliente');
+        Schema::table('cotizaciones', function (Blueprint $table) {
+            $table->text('excel_clientes')->nullable();
+            $table->text('recinto_clientes')->nullable();
         });
     }
 
@@ -25,7 +26,7 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::table('users', function (Blueprint $table) {
+        Schema::table('cotizaciones', function (Blueprint $table) {
             //
         });
     }

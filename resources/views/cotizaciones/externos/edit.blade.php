@@ -38,6 +38,7 @@
                         <form method="POST" action="{{ route('update.cotizaciones', $cotizacion->id) }}" id="" enctype="multipart/form-data" role="form">
                             @csrf
                             <input type="hidden" name="_method" value="PATCH">
+                            <input name="id_cliente_clientes" id="id_cliente_clientes" type="hidden" class="form-control" value="{{auth()->user()->id_cliente}}">
 
                             <div class="tab-content" id="nav-tabContent">
                                 <div class="tab-pane fade show active" id="nav-cotizacion" role="tabpanel" aria-labelledby="nav-cotizacion-tab" tabindex="0">
@@ -55,9 +56,6 @@
                                                 <label for="name">Cliente *</label>
                                                 <select class="form-select cliente d-inline-block" data-toggle="select" id="id_cliente" name="id_cliente">
                                                     <option value="{{ $cotizacion->id_cliente }}">{{ $cotizacion->Cliente->nombre }} / {{ $cotizacion->Cliente->telefono }}</option>
-                                                    @foreach ($clientes as $item)
-                                                        <option value="{{ $item->id }}">{{ $item->nombre }} / {{ $item->telefono }}</option>
-                                                    @endforeach
                                                 </select>
                                             </div>
 
@@ -67,8 +65,11 @@
                                                     @if ($cotizacion->id_subcliente != NULL)
                                                         <option value="{{ $cotizacion->id_subcliente }}">{{ $cotizacion->Subcliente->nombre }} / {{ $cotizacion->Subcliente->telefono }}</option>
                                                     @else
-                                                        <option value="">Seleccionar subcliente</option>
+                                                        <option value="">Seleccionar Subcliente</option>
                                                     @endif
+                                                        @foreach ($subclientes as $item)
+                                                            <option value="{{ $item->id }}">{{ $item->nombre }} / {{ $item->telefono }}</option>
+                                                        @endforeach
                                                 </select>
                                             </div>
 
@@ -217,23 +218,12 @@
                                                 <span class="input-group-text" id="basic-addon1">
                                                     <img src="{{ asset('img/icon/9.webp') }}" alt="" width="25px">
                                                 </span>
-                                                <input name="num_carta_porte" id="num_carta_porte" type="text" class="form-control" value="{{$documentacion->num_carta_porte}}">
+                                                <input type="text" class="form-control" value="{{$documentacion->num_carta_porte}}" readonly>
                                             </div>
                                         </div>
-
-                                        <div class="col-6 form-group">
-                                            <label for="name">Carta Porte</label>
-                                            <div class="input-group mb-3">
-                                                <span class="input-group-text" id="basic-addon1">
-                                                    <img src="{{ asset('img/icon/boleto.png') }}" alt="" width="25px">
-                                                </span>
-                                                <input name="carta_porte" id="carta_porte" type="file" class="form-control">
-                                            </div>
-                                        </div>
-
-                                        <div class="col-6"></div>
 
                                         <div class="col-6">
+                                            <label for="name">Carta Porte</label>
                                             @if (pathinfo($cotizacion->carta_porte, PATHINFO_EXTENSION) == 'pdf')
                                             <p class="text-center ">
                                                 <iframe class="mt-2" src="{{asset('cotizaciones/cotizacion'. $cotizacion->id . '/' .$cotizacion->carta_porte)}}" style="width: 100%; height: 100px;"></iframe>
@@ -249,11 +239,11 @@
                                                 <img id="blah" src="{{asset('assets/icons/docx.png') }}" alt="Imagen" style="width: 150px; height: 150px;"/>
                                             </p>
                                                     <a class="btn btn-sm text-dark" href="{{asset('cotizaciones/cotizacion'. $cotizacion->id . '/' .$cotizacion->carta_porte) }}" target="_blank" style="background: #836262; color: #ffff!important">Descargar</a>
-                                            @else
+                                            {{-- @else
                                                 <p class="text-center mt-2">
                                                     <img id="blah" src="{{asset('cotizaciones/cotizacion'. $cotizacion->id . '/' .$cotizacion->carta_porte) }}" alt="Imagen" style="width: 150px;height: 150%;"/><br>
                                                 </p>
-                                                    <a class="text-center text-dark btn btn-sm" href="{{asset('cotizaciones/cotizacion'. $cotizacion->id . '/' .$cotizacion->carta_porte) }}" target="_blank" style="background: #836262; color: #ffff!important">Ver Imagen</a>
+                                                    <a class="text-center text-dark btn btn-sm" href="{{asset('cotizaciones/cotizacion'. $cotizacion->id . '/' .$cotizacion->carta_porte) }}" target="_blank" style="background: #836262; color: #ffff!important">Ver Imagen</a> --}}
                                             @endif
                                         </div>
 
@@ -328,52 +318,8 @@
 
                                         <div class="col-6"></div>
 
-                                        <div class="col-2">
-                                            <div class="form-group">
-                                                <label>Comprobante de vacio?</label><br>
-                                                @if ($documentacion->eir == 'si')
-                                                    <input class="form-check-input" type="radio" name="eir" value="si" id="eir_si" checked> Sí<br>
-                                                    <input class="form-check-input" type="radio" name="eir" value="no" id="eir_no"> No
-                                                @else
-                                                    <input class="form-check-input" type="radio" name="eir" value="si" id="eir_si"> Sí<br>
-                                                    <input class="form-check-input" type="radio" name="eir" value="no" id="eir_no" checked> No
-                                                @endif
-                                            </div>
-                                        </div>
-
-                                        <div class="col-4">
-                                            @if ($documentacion->eir == 'si')
-                                                <div class="form-group" id="inputEir">
-                                            @else
-                                                <div class="form-group" id="inputEir" style="display: none;">
-                                            @endif
-                                                <label for="input">Doc EIR:</label>
-                                                <div class="input-group mb-3">
-                                                    <span class="input-group-text" id="basic-addon1">
-                                                        <img src="{{ asset('img/icon/boleto.png') }}" alt="" width="25px">
-                                                    </span>
-                                                    <input name="doc_eir" id="doc_eir" type="file" class="form-control">
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div class="col-4">
-                                            @if ($documentacion->eir == 'si')
-                                                <div class="form-group" id="inputEirFecha">
-                                            @else
-                                                <div class="form-group" id="inputEirFecha" style="display: none;">
-                                            @endif
-                                                <label for="input">Fecha EIR:</label>
-                                                <div class="input-group mb-3">
-                                                    <span class="input-group-text" id="basic-addon1">
-                                                        <img src="{{ asset('img/icon/boleto.png') }}" alt="" width="25px">
-                                                    </span>
-                                                    <input name="fecha_eir" id="fecha_eir" type="date" class="form-control" value="{{$cotizacion->fecha_eir}}">
-                                                </div>
-                                            </div>
-                                        </div>
-
                                         <div class="col-6">
+                                            <label for="">Doc EIR</label>
                                             @if (pathinfo($documentacion->doc_eir, PATHINFO_EXTENSION) == 'pdf')
                                             <p class="text-center ">
                                                 <iframe class="mt-2" src="{{asset('cotizaciones/cotizacion'. $documentacion->id . '/' .$documentacion->doc_eir)}}" style="width: 100%; height: 50px;"></iframe>
@@ -389,11 +335,11 @@
                                                 <img id="blah" src="{{asset('assets/icons/docx.png') }}" alt="Imagen" style="width: 150px; height: 150px;"/>
                                             </p>
                                                     <a class="btn btn-sm text-dark" href="{{asset('cotizaciones/cotizacion'. $documentacion->id . '/' .$documentacion->doc_eir) }}" target="_blank" style="background: #836262; color: #ffff!important">Descargar</a>
-                                            @else
+                                            {{-- @else
                                                 <p class="text-center mt-2">
                                                     <img id="blah" src="{{asset('cotizaciones/cotizacion'. $documentacion->id . '/' .$documentacion->doc_eir) }}" alt="Imagen" style="width: 150px;height: 150%;"/><br>
                                                 </p>
-                                                    <a class="text-center text-dark btn btn-sm" href="{{asset('cotizaciones/cotizacion'. $documentacion->id . '/' .$documentacion->doc_eir) }}" target="_blank" style="background: #836262; color: #ffff!important">Ver Imagen</a>
+                                                    <a class="text-center text-dark btn btn-sm" href="{{asset('cotizaciones/cotizacion'. $documentacion->id . '/' .$documentacion->doc_eir) }}" target="_blank" style="background: #836262; color: #ffff!important">Ver Imagen</a> --}}
                                             @endif
                                         </div>
                                     </div>

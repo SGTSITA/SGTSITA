@@ -25,6 +25,7 @@
 
                             <div class="modal-body">
                                 <div class="row">
+                                    <input name="id_cliente_clientes" id="id_cliente_clientes" type="hidden" class="form-control" value="{{auth()->user()->id_cliente}}">
 
                                     <div class="col-12">
                                         <div class="form-group">
@@ -38,7 +39,17 @@
                                         </div>
                                     </div>
 
-                                    <div class="col-6 form-group">
+                                    <div class="col-4">
+                                        <div class="form-group">
+                                            <label for="name">¿Pasa por recinto?</label>
+                                            <select class="form-select d-inline-block"  data-toggle="select" id="recinto_clientes" name="recinto_clientes">
+                                                <option value="Si">Si</option>
+                                                <option value="No">No</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-4 form-group">
                                         <label for="name">Origen</label>
                                         <div class="input-group mb-3">
                                             <span class="input-group-text" id="basic-addon1">
@@ -48,7 +59,7 @@
                                         </div>
                                     </div>
 
-                                    <div class="col-6 form-group">
+                                    <div class="col-4 form-group">
                                         <label for="name">Destino</label>
                                         <div class="input-group mb-3">
                                             <span class="input-group-text" id="basic-addon1">
@@ -58,7 +69,7 @@
                                         </div>
                                     </div>
 
-                                    <div class="col-3 form-group">
+                                    <div class="col-4 form-group">
                                         <label for="name">Num. Contenedor</label>
                                         <div class="input-group mb-3">
                                             <span class="input-group-text" id="basic-addon1">
@@ -85,6 +96,16 @@
                                                 <img src="{{ asset('img/icon/calendar-dar.webp') }}" alt="" width="25px">
                                             </span>
                                             <input name="fecha_entrega" id="fecha_entrega" type="date" class="form-control">
+                                        </div>
+                                    </div>
+
+                                    <div class="col-4 form-group">
+                                        <label for="name">Excel</label>
+                                        <div class="input-group mb-3">
+                                            <span class="input-group-text" id="basic-addon1">
+                                                <img src="{{ asset('img/icon/gps.webp') }}" alt="" width="25px">
+                                            </span>
+                                            <input name="excel_clientes" id="excel_clientes" type="file" class="form-control">
                                         </div>
                                     </div>
 

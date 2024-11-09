@@ -94,13 +94,9 @@
                                                             @endif
                                                         </td>
                                                         <td>
-                                                            @if ($cotizacion->estatus == 'Aprobada')
-                                                                @can('cotizaciones-edit')
-                                                                <a type="button" class="btn btn-xs" href="{{ route('edit.cotizaciones_externo', $cotizacion->id) }}">
-                                                                    <img src="{{ asset('img/icon/quotes.webp') }}" alt="" width="25px">
-                                                                </a>
-                                                                @endcan
-                                                            @endif
+                                                            <a type="button" class="btn btn-xs" href="{{ route('edit.cotizaciones_externo', $cotizacion->id) }}">
+                                                                <img src="{{ asset('img/icon/quotes.webp') }}" alt="" width="25px">
+                                                            </a>
                                                             @if ($cotizacion->DocCotizacion)
                                                                 <button type="button" class="btn btn-outline-warning btn-xs" data-bs-toggle="modal" data-bs-target="#esatusDoc{{ $cotizacion->DocCotizacion->id }}">
                                                                     <img src="{{ asset('img/icon/catalogo.webp') }}" alt="" width="25px">
