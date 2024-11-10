@@ -109,9 +109,9 @@ class CuentasCobrarController extends Controller
             DB::beginTransaction();
             $contenedoresAbonos = [];
              foreach($cotizaciones as $c){
-                if($c[8] > 0){
-                    $id = $c[9];
-                    $cotizacion = Cotizaciones::where('id', '=', $c[9])->first();
+                if($c[8] > 0){ //Si total cobrado es mayor a cero
+                    $id = $c[9]; //Obtenemos el ID
+                    $cotizacion = Cotizaciones::where('id', '=', $id)->first();
 
                     // Establecer el abono y calcular el restante
                     $abono = $c[8];
@@ -157,10 +157,10 @@ class CuentasCobrarController extends Controller
             Bancos::where('id' ,'=',$request->bankTwo)->update(["saldo" => DB::raw("saldo + ". $request->amountPayTwo)]);
 
             DB::commit();
-            return response()->json(["success" => true, "Titulo" => "Cobro exitoso", "Mensaje" => "Hemos aplicado el pago a los elementos indicados", "TMensaje" => "success"]);
+            return response()->json(["success" => true, "Titulo" => "Cobro exitoso", "Mensaje" => "Hemos aplicado el cobro de los elementos indicados", "TMensaje" => "success"]);
         }catch(\Throwable $t){
             DB::rollback();
-            return response()->json(["success" => false, "Titulo" => "Error", "Mensaje" => "No pudimos aplicar el pago, existe un error", "TMensaje" => "error"]);
+            return response()->json(["success" => false, "Titulo" => "Error", "Mensaje" => "No pudimos aplicar el cobro, existe un error", "TMensaje" => "error"]);
         }
     }
 

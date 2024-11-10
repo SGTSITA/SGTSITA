@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('template_title')
- Cuentas por cobrar
+Cuentas por pagar
 @endsection
 
 @section('content')
@@ -10,23 +10,28 @@
       <div class="card-header pb-0 p-3">
        <div class="row">
          <div class="col-6 d-flex align-items-center">
-            <h6 class="mb-0">Cuentas por cobrar</h6>
+            <h6 class="mb-0">Cuentas por pagar</h6>
          </div>
          <div class="col-6 text-end">
-            <a class="btn btn-sm bg-gradient-warning mb-0" href="{{ route('index.cobrar') }}"><i class="fas fa-chevron-left" aria-hidden="true"></i>&nbsp;&nbsp;Regresar</a>
+            <a class="btn btn-sm bg-gradient-warning mb-0" href="{{ route('index.pagar') }}"><i class="fas fa-chevron-left" aria-hidden="true"></i>&nbsp;&nbsp;Regresar</a>
          </div>
        </div>
       </div>
       <div class="card-body p-3">
       <div class="row">
          <div class="col-md-6 mb-md-0 mb-4">
+            
          <ul class="list-group">
-                <li class="list-group-item border-0 d-flex p-4 mb-2 bg-gray-100 border-radius-lg">
+                <li class="list-group-item d-flex p-4 mb-2 bg-gray-100 border-dashed border-1 border-secondary border-radius-md">
+                  <div class="d-flex flex-column text-end me-4">
+                  <div class="icon icon-shape icon-lg bg-gradient-secondary text-center border-radius-lg">
+                        <i class="fas fa-solid fa-file-invoice-dollar opacity-10" aria-hidden="true"></i>
+                  </div>
+                  </div>
                   <div class="d-flex flex-column">
-                    <h6 class="mb-3 text-sm">Información del cliente</h6>
+                    <h6 class="mb-3 text-sm">Información del Proveedor</h6>
                     <span class="mb-2 text-md">Nombre: <span class="text-dark font-weight-bold ms-sm-2">{{$cliente->nombre}}</span></span>
-                    <span class="mb-2 text-md">Viajes Totales: <span class="text-dark ms-sm-2 font-weight-bold">{{$cotizacion->total_cotizaciones}}</span></span>
-                    <!--span class="text-xs">Saldo actual: <span class="text-dark ms-sm-2 font-weight-bold">${{ number_format($cotizacion->total_restante, 0, '.', ',') }}</span></span-->
+                    <span class="mb-2 text-md">Viajes Totales: <span class="text-dark ms-sm-2 font-weight-bold" id="countViajes">0</span></span>                    
                   </div>
                   
                 </li>
@@ -41,7 +46,7 @@
          </div>
          <div class="col-lg-4 col-6 text-center">
             <div class="border-dashed border-1 border-secondary border-radius-md py-3">
-               <h6 class="text-primary mb-0">Cobranza</h6>
+               <h6 class="text-primary mb-0">Pagos</h6>
                <h4 class="font-weight-bolder"><span class="small" id="payment">$ 0.00</span></h4>
             </div>
          </div>
@@ -77,13 +82,13 @@
          <ul class="nav nav-footer justify-content-center justify-content-lg-end">
          <li class="nav-item pe-1">
             <span class="border-dashed border-1 border-secondary border-radius-md py-3">
-                  <span class="text-sm opacity-8 ps-3">Cobro 1</span>
+                  <span class="text-sm opacity-8 ps-3">Pago 1</span>
                   <span class="text-lg  text-dark  font-weight-bolder ps-2 pe-3" id="sumPago1">$0.00</span>
             </span>
           </li>      
           <li class="nav-item">
             <span class="border-dashed border-1 border-secondary border-radius-md py-3">
-                  <span class="text-sm opacity-8 ps-3">Cobro 2</span>
+                  <span class="text-sm opacity-8 ps-3">Pago 2</span>
                   <span class="text-lg  text-dark  font-weight-bolder ps-2 pe-3" id="sumPago2">$0.00</span>
             </span>
           </li>     
@@ -92,13 +97,13 @@
        </div>
             </div>
             <div class="card-body pt-4 p-3">
-              <div id="pendientes"></div>
+              <div id="pagosPendientes"></div>
               <div class="row">
                 <div class="col-8 offset-4 text-end mt-3">
                     <div class="row">
                     <div class="col-md-4">
                       <div class="form-group">
-                        <label for="example-text-input" class="form-control-label">Banco 1</label>
+                        <label for="example-text-input" class="form-control-label">Banco de Retiro 1</label>
                         <select name="cmbBankOne" id="cmbBankOne" class="form-control">
                          <option value="null">Seleccione banco</option>
                           @foreach ($bancos as $item)
@@ -109,7 +114,7 @@
                     </div>
                     <div class="col-md-4">
                       <div class="form-group">
-                        <label for="example-text-input" class="form-control-label">Banco 2</label>
+                        <label for="example-text-input" class="form-control-label">Banco de Retiro 2</label>
                         <select name="cmbBankTwo" id="cmbBankTwo" class="form-control">
                           <option value="null">Seleccione banco</option>
                           @foreach ($bancos as $item)
@@ -119,8 +124,40 @@
                       </div>
                     </div>
                     <div class="col-4 d-flex flex-column">
+                      
+                    </div>
+                  </div>
+                 
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-8 offset-4 text-end mt-3">
+                    <div class="row">
+                    <div class="col-md-4">
+                      <div class="form-group">
+                        <label for="example-text-input" class="form-control-label">Banco Proveedor 1</label>
+                        <select name="cmbBankProvOne" id="cmbBankProvOne" class="form-control">
+                         <option value="null">Seleccione banco</option>
+                          @foreach ($banco_proveedor as $item)
+                              <option value="{{$item->id}}">{{$item->nombre_banco}}: ${{number_format($item->saldo1,2)}}</option>
+                          @endforeach
+                        </select>
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="form-group">
+                        <label for="example-text-input" class="form-control-label">Banco Proveedor 2</label>
+                        <select name="cmbBankProvTwo" id="cmbBankProvTwo" class="form-control">
+                          <option value="null">Seleccione banco</option>
+                          @foreach ($banco_proveedor as $item)
+                              <option value="{{$item->id}}">{{$item->nombre_banco}}: ${{number_format($item->saldo1,2)}}</option>
+                          @endforeach
+                        </select>
+                      </div>
+                    </div>
+                    <div class="col-4 d-flex flex-column">
                       <button class="btn btn-sm bg-gradient-success mt-auto" name="btnAplicarPago" id="btnAplicarPago" type="button">
-                        <i class="fas fa-check" aria-hidden="true"></i>&nbsp;&nbsp;Aplicar cobro
+                        <i class="fas fa-check" aria-hidden="true"></i>&nbsp;&nbsp;Aplicar pago
                       </button>
                     </div>
                   </div>
@@ -138,10 +175,10 @@
 <link href="/assets/handsontable/handsontable.full.min.css" rel="stylesheet" media="screen">
 <script src="/assets/handsontable/handsontable.full.min.js"></script>
 <script src="/assets/handsontable/all.js"></script>
-<script src="/js/sgt/cxc/cxc.js"></script>
+<script src="/js/sgt/cxp/cxp.js"></script>
 <script>
    $(document).ready(()=>{
-      getViajesSinLiquidar({{$cliente->id}});
+    getViajesPorPagar({{$cliente->id}});
    });
 </script>
 @endpush
