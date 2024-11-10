@@ -288,8 +288,10 @@ function getCurrentBalance(colBalance = 2){
 
       var bankOne = $("#cmbBankOne").val();
       var bankTwo = $("#cmbBankTwo").val();
+      var bankProvOne = $("#cmbBankProvOne").val();
+      var bankProvTwo = $("#cmbBankProvTwo").val();
 
-      if(bankOne == "null" || bankTwo == "null"){
+      if(bankOne == "null" || bankTwo == "null" || bankProvOne == "null" || bankProvTwo == "null"){
         Swal.fire({
           customClass: {
             confirmButton: "btn btn-success",
@@ -308,12 +310,12 @@ function getCurrentBalance(colBalance = 2){
       var datahotTableCXP = hotTableCXP.getData();
       var amountPayOne = sumPayOne;
       var amountPayTwo = sumPayTwo;
-      var theClient = proveedor;
+      var theProvider = proveedor;
 
       $.ajax({
         url:'/cuentas/pagar/confirmar_pagos',
         type:'post',
-        data:{_token, theClient, bankOne, bankTwo, amountPayOne, amountPayTwo, applyPayments,datahotTableCXP},
+        data:{_token, theProvider, bankOne, bankTwo,bankProvOne, bankProvTwo, amountPayOne, amountPayTwo, applyPayments,datahotTableCXP},
         beforeSend:function(){
             
         },

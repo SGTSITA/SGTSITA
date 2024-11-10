@@ -103,7 +103,7 @@ Cuentas por pagar
                     <div class="row">
                     <div class="col-md-4">
                       <div class="form-group">
-                        <label for="example-text-input" class="form-control-label">Banco 1</label>
+                        <label for="example-text-input" class="form-control-label">Banco de Retiro 1</label>
                         <select name="cmbBankOne" id="cmbBankOne" class="form-control">
                          <option value="null">Seleccione banco</option>
                           @foreach ($bancos as $item)
@@ -114,11 +114,43 @@ Cuentas por pagar
                     </div>
                     <div class="col-md-4">
                       <div class="form-group">
-                        <label for="example-text-input" class="form-control-label">Banco 2</label>
+                        <label for="example-text-input" class="form-control-label">Banco de Retiro 2</label>
                         <select name="cmbBankTwo" id="cmbBankTwo" class="form-control">
                           <option value="null">Seleccione banco</option>
                           @foreach ($bancos as $item)
                               <option value="{{$item->id}}">{{$item->nombre_banco}}: ${{number_format($item->saldo,2)}}</option>
+                          @endforeach
+                        </select>
+                      </div>
+                    </div>
+                    <div class="col-4 d-flex flex-column">
+                      
+                    </div>
+                  </div>
+                 
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-8 offset-4 text-end mt-3">
+                    <div class="row">
+                    <div class="col-md-4">
+                      <div class="form-group">
+                        <label for="example-text-input" class="form-control-label">Banco Proveedor 1</label>
+                        <select name="cmbBankProvOne" id="cmbBankProvOne" class="form-control">
+                         <option value="null">Seleccione banco</option>
+                          @foreach ($banco_proveedor as $item)
+                              <option value="{{$item->id}}">{{$item->nombre_banco}}: ${{number_format($item->saldo1,2)}}</option>
+                          @endforeach
+                        </select>
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="form-group">
+                        <label for="example-text-input" class="form-control-label">Banco Proveedor 2</label>
+                        <select name="cmbBankProvTwo" id="cmbBankProvTwo" class="form-control">
+                          <option value="null">Seleccione banco</option>
+                          @foreach ($banco_proveedor as $item)
+                              <option value="{{$item->id}}">{{$item->nombre_banco}}: ${{number_format($item->saldo1,2)}}</option>
                           @endforeach
                         </select>
                       </div>

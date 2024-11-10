@@ -78,7 +78,7 @@ class CuentasPagarController extends Controller
                 0,
                 0,
                 0,
-                $item->id
+                $item->id_cotizacion
 
             ];
         });
@@ -136,6 +136,111 @@ class CuentasPagarController extends Controller
 
         return view('cuentas_pagar.pagos_v2', compact('bancos', 'cliente', 'banco_proveedor'));
        
+    }
+
+    public function aplicar_pagos(Request $request){
+        try{
+        //Primero validaremos que los pagos/abonos de cada contenedor no sea mayor al saldo pendiente
+        $cotizaciones = $request->datahotTableCXP;
+        foreach($cotizaciones as $c){
+            if($c[6] > $c[2]) 
+              return response()->json([
+                                        "success" => false, 
+                                        "Titulo" => "Error en el contenedor $c[0]",
+                                        "Mensaje" => "No se puede aplicar el pago para el contenedor porque existe un error monto del pago ó es mayor al Saldo Original",
+                                        "TMensaje" => "warning"
+                                    ]);
+        }
+
+        $bankOne = Bancos::where('id' ,'=',$request->bankOne);
+        $bankTwo = Bancos::where('id' ,'=',$request->bankTwo);
+
+        $saldoCtaOne = $bankOne->first()->saldo;
+        $saldoCtaTwo = $bankTwo->first()->saldo;
+
+        if($saldoCtaOne < $request->amountPayOne){
+            return response()->json([
+                "success" => false, 
+                "Titulo" => "Saldo insuficiente",
+                "Mensaje" => "No se puede aplicar el pago porque el saldo en el Banco 1 es insuficiente",
+                "TMensaje" => "warning"
+            ]);
+        }
+
+        if($saldoCtaTwo < $request->amountPayTwo){
+            return response()->json([
+                "success" => false, 
+                "Titulo" => "Saldo insuficiente",
+                "Mensaje" => "No se puede aplicar el pago porque el saldo en el Banco 2 es insuficiente",
+                "TMensaje" => "warning"
+            ]);
+        }
+
+        DB::beginTransaction();
+        $contenedoresAbonos = [];
+
+        foreach($cotizaciones as $c){
+            if($c[6] > 0){//Si el pago es mayor a cero
+                $id = $c[7];
+                $cotizacion = Cotizaciones::where('id', '=', $id)->first();
+
+                // Establecer el abono y calcular el restante
+                $abono = $c[6];
+                $nuevoRestante = $cotizacion->prove_restante - $abono;
+                if ($nuevoRestante < 0) {
+                    $nuevoRestante = 0;
+                }
+
+                $cotizacion->prove_restante = $nuevoRestante;
+             //   $cotizacion->estatus_pago = ($nuevoRestante == 0) ? 1 : 0;
+                $cotizacion->fecha_pago_proveedor = date('Y-m-d');
+                $cotizacion->save();
+
+                // Agregar contenedor y abono al array
+                $contenedorAbono = [
+                    'num_contenedor' => $c[0],
+                    'abono' => $c[6]
+                ];
+
+                \Log::debug($contenedorAbono);
+
+                array_push($contenedoresAbonos, $contenedorAbono);
+            }
+        }
+
+        $banco = new BancoDinero();
+        $banco->contenedores = json_encode($contenedoresAbonos);;
+        $banco->id_proveedor = $request->theProvider;
+        $banco->monto1 = $request->amountPayOne;
+        $banco->metodo_pago1 = 'TRANSFERENCIA';
+        $banco->id_banco1 = $request->bankOne;
+
+        $banco->monto2 = $request->amountPayTwo;
+        $banco->metodo_pago2 = 'TRANSFERENCIA';
+        $banco->id_banco2 = $request->bankTwo;
+
+        $banco->fecha_pago = date('Y-m-d');
+        $banco->tipo = 'Salida';
+
+        $banco->save();
+
+        //Actualizamos cuentas bancarias de retiro
+        Bancos::where('id' ,'=',$request->bankOne)->update(["saldo" => DB::raw("saldo - ". $request->amountPayOne)]);
+        Bancos::where('id' ,'=',$request->bankTwo)->update(["saldo" => DB::raw("saldo - ". $request->amountPayTwo)]);
+
+        //Actualizamos cuentas bancarias de deposito
+       // CuentasBancarias::where('id' ,'=',$request->bankProvOne)->update(["saldo" => DB::raw("saldo + ". $request->amountPayOne)]);
+        //CuentasBancarias::where('id' ,'=',$request->bankProvTwo)->update(["saldo" => DB::raw("saldo + ". $request->amountPayTwo)]);
+
+        DB::commit();
+        return response()->json(["success" => true, "Titulo" => "Pago exitoso", "Mensaje" => "Hemos aplicado el pago a los elementos indicados", "TMensaje" => "success"]);
+
+     }catch(\Throwable $t){
+        DB::rollback();
+        \Log::debug($t->getMessage());
+        return response()->json(["success" => false, "Titulo" => "Error", "Mensaje" => "No pudimos aplicar el pago, existe un error", "TMensaje" => "error"]);
+
+     }
     }
 
     public function update(Request $request, $id){
