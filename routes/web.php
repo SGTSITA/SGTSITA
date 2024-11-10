@@ -84,6 +84,11 @@ Route::group(['middleware' => ['auth']], function() {
     Route::patch('operadores/pago/update/{id}', [App\Http\Controllers\OperadorController::class, 'update_pago'])->name('update_pago.operadores');
     Route::get('operadores/show/pagos/{id}', [App\Http\Controllers\OperadorController::class, 'show_pagos'])->name('show_pagos.operadores');
 
+    // ==================== C O T I Z A C I O N E S  E X T E R N A S====================
+    Route::get('/cotizaciones/index/externo', [App\Http\Controllers\CotizacionesController::class, 'index_externo'])->name('index.cotizaciones_manual');
+    Route::get('cotizaciones/externo/create', [App\Http\Controllers\CotizacionesController::class, 'create_externo'])->name('create.cotizaciones_externo');
+    Route::get('cotizaciones/externo/edit/{id}', [App\Http\Controllers\CotizacionesController::class, 'edit_externo'])->name('edit.cotizaciones_externo');
+
     // ==================== C O T I Z A C I O N E S ====================
     Route::get('/cotizaciones/index', [App\Http\Controllers\CotizacionesController::class, 'index'])->name('index.cotizaciones');
 

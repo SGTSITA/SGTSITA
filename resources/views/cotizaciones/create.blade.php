@@ -373,7 +373,7 @@
             const totalFormateado = totalFinal.toLocaleString('en-US');
 
             document.getElementById('total').value = totalFormateado;
-            
+
         }
 
         function calcularImpuestos(total){
