@@ -257,7 +257,7 @@
                                         <span class="input-group-text" id="basic-addon1">
                                             <img src="{{ asset('img/icon/pago-en-efectivo.png') }}" alt="" width="25px">
                                         </span>
-                                        <input name="sobrepeso_proveedor" id="sobrepeso_proveedor_{{$cotizacion->id}}" type="float" class="form-control">
+                                        <input name="sobrepeso_proveedor" id="sobrepeso_proveedor_{{$cotizacion->id}}" type="float" class="form-control fieldsCalculo">
                                     </div>
                                 </div>
 
