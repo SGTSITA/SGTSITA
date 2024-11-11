@@ -141,7 +141,7 @@ class CuentasPagarController extends Controller
     public function aplicar_pagos(Request $request){
         try{
         //Primero validaremos que los pagos/abonos de cada contenedor no sea mayor al saldo pendiente
-        $cotizaciones = $request->datahotTableCXP;
+        $cotizaciones = json_decode($request->datahotTableCXP);
         foreach($cotizaciones as $c){
             if($c[6] > $c[2]) 
               return response()->json([

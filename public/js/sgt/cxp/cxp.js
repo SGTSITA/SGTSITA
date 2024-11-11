@@ -307,7 +307,7 @@ function getCurrentBalance(colBalance = 2){
         return false;
       }
 
-      var datahotTableCXP = hotTableCXP.getData();
+      var datahotTableCXP = JSON.stringify(hotTableCXP.getData());
       var amountPayOne = sumPayOne;
       var amountPayTwo = sumPayTwo;
       var theProvider = proveedor;
