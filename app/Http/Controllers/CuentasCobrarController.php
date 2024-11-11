@@ -160,6 +160,7 @@ class CuentasCobrarController extends Controller
             return response()->json(["success" => true, "Titulo" => "Cobro exitoso", "Mensaje" => "Hemos aplicado el cobro de los elementos indicados", "TMensaje" => "success"]);
         }catch(\Throwable $t){
             DB::rollback();
+            \Log::info($t->getMessage());
             return response()->json(["success" => false, "Titulo" => "Error", "Mensaje" => "No pudimos aplicar el cobro, existe un error", "TMensaje" => "error"]);
         }
     }
