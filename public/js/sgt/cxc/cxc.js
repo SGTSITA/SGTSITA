@@ -303,7 +303,7 @@ function getCurrentBalance(colBalance = 4){
         return false;
       }
 
-      var datahotTable = hotTable.getData();
+      var datahotTable = JSON.stringify(hotTable.getData());
       var amountPayOne = sumPayOne;
       var amountPayTwo = sumPayTwo;
       var theClient = cliente;
