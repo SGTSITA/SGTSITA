@@ -138,7 +138,9 @@
 <link href="/assets/handsontable/handsontable.full.min.css" rel="stylesheet" media="screen">
 <script src="/assets/handsontable/handsontable.full.min.js"></script>
 <script src="/assets/handsontable/all.js"></script>
-<script src="/js/sgt/cxc/cxc.js"></script>
+<!--script src="/js/sgt/cxc/cxc.js"></script-->
+<script src="{{ asset('js/sgt/cxc/cxc.js') }}?v={{ filemtime(public_path('js/sgt/cxc/cxc.js')) }}"></script>
+
 <script>
    $(document).ready(()=>{
       getViajesSinLiquidar({{$cliente->id}});

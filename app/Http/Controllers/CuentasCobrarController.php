@@ -95,7 +95,7 @@ class CuentasCobrarController extends Controller
     public function aplicar_pagos(Request $request){
         try{
             //Primero validaremos que los pagos/abonos de cada contenedor no sea mayor al saldo pendiente
-            $cotizaciones = $request->datahotTable;
+            $cotizaciones = json_decode($request->datahotTable);
             foreach($cotizaciones as $c){
                 if($c[8] > $c[4]) 
                   return response()->json([
@@ -160,7 +160,8 @@ class CuentasCobrarController extends Controller
             return response()->json(["success" => true, "Titulo" => "Cobro exitoso", "Mensaje" => "Hemos aplicado el cobro de los elementos indicados", "TMensaje" => "success"]);
         }catch(\Throwable $t){
             DB::rollback();
-            return response()->json(["success" => false, "Titulo" => "Error", "Mensaje" => "No pudimos aplicar el cobro, existe un error", "TMensaje" => "error"]);
+            \Log::info($t->getMessage());
+            return response()->json(["success" => false,"dataRequest" => $request->all(), "Titulo" => "Error", "Mensaje" => "No pudimos aplicar el cobro, existe un error: ".$t->getMessage(), "TMensaje" => "error"]);
         }
     }
 
