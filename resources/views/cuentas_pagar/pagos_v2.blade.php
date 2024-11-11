@@ -175,7 +175,9 @@ Cuentas por pagar
 <link href="/assets/handsontable/handsontable.full.min.css" rel="stylesheet" media="screen">
 <script src="/assets/handsontable/handsontable.full.min.js"></script>
 <script src="/assets/handsontable/all.js"></script>
-<script src="/js/sgt/cxp/cxp.js"></script>
+<!--script src="/js/sgt/cxp/cxp.js"></script-->
+<script src="{{ asset('js/sgt/cxp/cxp.js') }}?v={{ filemtime(public_path('js/sgt/cxp/cxp.js')) }}"></script>
+
 <script>
    $(document).ready(()=>{
     getViajesPorPagar({{$cliente->id}});
