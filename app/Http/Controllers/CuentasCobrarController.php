@@ -95,7 +95,7 @@ class CuentasCobrarController extends Controller
     public function aplicar_pagos(Request $request){
         try{
             //Primero validaremos que los pagos/abonos de cada contenedor no sea mayor al saldo pendiente
-            $cotizaciones = $request->datahotTable;
+            $cotizaciones = json_decode($request->datahotTable);
             foreach($cotizaciones as $c){
                 if($c[8] > $c[4]) 
                   return response()->json([
