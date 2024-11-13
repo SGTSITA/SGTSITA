@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('template_title')
-    Bancos Edit
+    Movimientos Bancarios
 @endsection
 
 @section('content')
@@ -32,7 +32,7 @@
             </div>
         </div>
 
-      <div class="col-md-8 col-sm-10 mx-auto mt-3">
+      <div class="col-md-10 col-sm-10 mx-auto mt-3">
           <div class="card my-sm-5 my-lg-0">
             <div class="card-header text-center">
               <div class="row justify-content-between">
@@ -71,6 +71,10 @@
                             <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal" style="background-color: #030303; color: #ffffff;">Configuracion</button>
                         </div>
                     @endcan
+                    <div class="col-lg-3 col-md-7 text-md-end text-start mt-5">
+                        <h6 class="d-block mt-2 mb-0">Saldo inicial:</h6>
+                        <h6 class="text-secondary" id="saldo-inicial">${{ number_format($saldoInicial, 2, '.', ',') }} </h6>
+                    </div>
                     <div class="col-lg-3 col-md-7 text-md-end text-start mt-5">
                         <h6 class="d-block mt-2 mb-0">Total en Banco:</h6>
                         <h6 class="text-secondary">${{ number_format($saldoFinal, 2, '.', ',') }} </h6>
@@ -321,7 +325,9 @@
         document.getElementById('totalUltimaColumna').textContent = `$ ${totalUltima.toLocaleString('en-US')}`;
 
         // Calcular la diferencia y mostrarla
-        let diferencia = totalPenultima - totalUltima;
+        let saldoInicial = document.getElementById('saldo-inicial').textContent;
+        saldoInicial = saldoInicial.replace(/[\$,]/g, '');
+        let diferencia = parseFloat(saldoInicial) + totalPenultima - totalUltima ;
         document.getElementById('diferenciaColumna').textContent = `$ ${diferencia.toLocaleString('en-US')}`;
         document.getElementById('diferenciaColumna2').textContent = `$ ${diferencia.toLocaleString('en-US')}`;
     });
