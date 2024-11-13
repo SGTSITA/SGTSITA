@@ -8,6 +8,7 @@ use App\Models\BancoDineroOpe;
 use App\Models\Bancos;
 use App\Models\Cotizaciones;
 use App\Models\GastosGenerales;
+use App\Models\BancoSaldoDiario;
 use Session;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -495,5 +496,13 @@ class BancosController extends Controller
         $pdf = \PDF::loadView('bancos.pdf_banco', compact('combined', 'startOfWeek', 'fecha', 'banco', 'ultimaTotal', 'penultimaTotal', 'diferencia'));
         //   return $pdf->stream();
        return $pdf->download('Reporte Banco.pdf');
+    }
+
+    public static function saldos_diarios(){
+        $saldoDiarios = BancoSaldoDiario::where('fecha',Carbon::now()->format('Y-m-d'));
+        if(!$saldoDiarios->exists()){
+            $bancos = Bancos::selectRaw('id as id_banco,now() as fecha, saldo as saldo_inicial, saldo as saldo_final')->get()->toArray();     
+            BancoSaldoDiario::insert($bancos);
+        }
     }
 }
