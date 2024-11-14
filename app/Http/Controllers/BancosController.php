@@ -137,11 +137,14 @@ class BancosController extends Controller
 
     public function edit($id){
         $banco = Bancos::where('id_empresa' ,'=',auth()->user()->id_empresa)->where('id', '=', $id)->first();
-        $saldoInicial = $banco->saldo_inicial;
-        $startOfWeek = Carbon::now()->startOfWeek();
+       // $saldoInicial = $banco->saldo_inicial;
+        $startOfWeek = Carbon::now()->format('Y-m-d');
         $endOfWeek = Carbon::now()->endOfWeek();
         $fecha = date('Y-m-d');
         $fechaBanco = date('2024-10-21');
+
+        $saldoDiario = BancoSaldoDiario::where([["fecha","=",$startOfWeek],["id_banco",$banco->id]]);
+        $saldoInicial = ($saldoDiario->exists()) ? $saldoDiario->first()->saldo_inicial : 0;
 
         //Movimientos
         $cotizaciones = Cotizaciones::where(function($query) use ($id) {
@@ -250,7 +253,7 @@ class BancosController extends Controller
             return null;
         });
 
-        return view('bancos.show', compact('combined', 'startOfWeek', 'fecha', 'banco', 'cotizaciones', 'proveedores', 'banco_dinero_entrada', 'banco_dinero_salida', 'banco_dinero_salida_ope', 'banco_dinero_salida_ope_varios', 'gastos_generales', 'saldoFinal'));
+        return view('bancos.show', compact('combined', 'startOfWeek', 'fecha', 'banco', 'cotizaciones', 'proveedores', 'banco_dinero_entrada', 'banco_dinero_salida', 'banco_dinero_salida_ope', 'banco_dinero_salida_ope_varios', 'gastos_generales', 'saldoInicial','saldoFinal'));
     }
 
     public function advance_bancos(Request $request, $id){

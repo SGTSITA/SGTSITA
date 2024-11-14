@@ -5,12 +5,8 @@
 @endsection
 
 @section('content')
-
-<div class="container-fluid my-5 py-2">
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <form action="{{ route('advance_bancos.buscador', $banco->id) }}" method="GET">
+<div class="d-none">
+                <form action="{{ route('advance_bancos.buscador', $banco->id) }}" name="form-buscar" id="form-buscar" method="GET">
                     <div class="card-body" style="padding-left: 1.5rem; padding-top: 1rem;">
                         <h5>Buscador por fechas</h5>
                         <div class="row">
@@ -30,67 +26,149 @@
                     </div>
                 </form>
             </div>
-        </div>
-
-      <div class="col-md-10 col-sm-10 mx-auto mt-3">
-          <div class="card my-sm-5 my-lg-0">
-            <div class="card-header text-center">
-              <div class="row justify-content-between">
-                <div class="col-md-4 text-start">
-                    @if ($configuracion->logo == NULL)
-                        <img class="mb-2 w-25 p-2" src="{{asset('img/logo.jpg') }}" alt="Logo">
-                    @else
-                        <img class="mb-2 w-25 p-2" src="{{asset('logo/'.$configuracion->logo) }}" alt="Logo">
-                    @endif
-                  <h6>
-                    Reporte de Banco
-                  </h6>
-                  <p class="d-block text-secondary">{{$banco->nombre_banco}}</p>
-
-                    @if(Route::currentRouteName() == 'advance_bancos.buscador')
+<div class="container-fluid my-5 py-2">
+    
+    <!--div class="row">
+        <div class="col-12">
+            
+        </div-->
+        
+        <div class="col-12 card">
+        <div class=" card-header m-2 ">
+              <div class="row">
+                <div class="col-7">
+                  <h6 class="mb-0">Movimientos Bancarios</h6>
+                </div>
+                <div class="col-5 d-flex justify-content-end align-items-center">
+                @if(Route::currentRouteName() == 'advance_bancos.buscador')
                         <form action="{{ route('pdf.print_banco', $banco->id) }}" method="GET">
                             <input class="form-control" type="hidden" id="fecha_de" name="fecha_de" value="{{$startOfWeek}}">
                             <input class="form-control" type="hidden" id="fecha_hasta" name="fecha_hasta" value="{{$endOfWeek }}">
-                            <button class="btn btn-sm mb-0 mt-sm-0 mt-1" type="submit" style="background-color: #000000; color: #ffffff;">Reporte</button>
+                            <button class="btn btn-sm mb-0 d-none d-lg-block" type="submit" style="background-color: #F82018; color: #ffffff;">
+                                <i class="fas fa-file-pdf text-lg me-1" aria-hidden="true"></i>
+                                Reporte
+                            </button>
                         </form>
                         @else
                         <form action="{{ route('pdf.print_banco', $banco->id) }}" method="GET">
-                            <button class="btn btn-sm mb-0 mt-sm-0 mt-1" type="submit" style="background-color: #000000; color: #ffffff;">Reporte</button>
+                            <button class="btn btn-sm mb-0 d-none d-lg-block" type="submit" style="background-color: #F82018; color: #ffffff;">
+                                <i class="fas fa-file-pdf text-lg me-1" aria-hidden="true"></i>
+                                Reporte
+                            </button> 
                         </form>
                     @endif
-                </div>
-                <div class="col-lg-3 col-md-7 text-md-end text-start mt-5">
-                  <h6 class="d-block mt-2 mb-0">Nombre Beneficiario:</h6>
-                  <p class="text-secondary">{{$banco->nombre_beneficiario}} <br> {{$banco->cuenta_bancaria}}</p>
+                   
                 </div>
               </div>
-                <br>
+            </div>
+        <div class=" card-body" >
+            <div class="row m-1 justify-content-center align-items-center">
+              
+              <div class="col-sm-auto col-8 my-auto">
+                <div class="h-100">
+                  <h5 class="mb-1 font-weight-bolder">
+                  {{ucwords(mb_strtolower($banco->nombre_beneficiario, 'UTF-8'))}}
+                  </h5>
+                  <p class="mb-0 font-weight-bold text-sm">
+                  {{$banco->nombre_banco}}
+                  </p>
+                  <p class="mb-0 font-weight-bold text-sm">
+                  Núm Cuenta: {{$banco->cuenta_bancaria}}
+                  </p>
+                  <p class="mb-0 font-weight-bold text-sm">
+                  Clabe: {{$banco->clabe}}
+                  </p>
+                  <p class="mb-0 font-weight-bold text-sm">
+                  Saldo actual: <span class="font-weight-bolder @if ($banco->saldo < 0) text-danger @endif">${{number_format( $banco->saldo,2)}}</span>
+                  </p>
+                </div>
+              </div>
+              <div class="col-sm-auto ms-sm-auto mt-sm-0 mt-3 d-flex">
+              <div class="border-dashed border-1 border-secondary border-radius-md p-3 ">
+                    <div class="font-weight-bolder text-sm"><span class="small">Periodo</span></div>
+                    <input type="text" id="daterange" readonly 
+                    class="form-control bg-transparent form-control-sm min-w-100" 
+                    style="border: none; box-shadow: none;"
+                    value="{{ \Carbon\Carbon::parse($startOfWeek)->format('Y-m-d') }} AL {{ \Carbon\Carbon::parse($fecha)->format('Y-m-d') }}"
+                    />
+
+                </div>
+               
+              </div>
+            </div>
+          </div>
+        </div>
+
+      <div class="col-md-12 col-sm-12 mx-auto mt-3">
+          <div class="card my-sm-5 my-lg-0">
+            <div class="card-header text-center">
+            <div class="row">
+                <div class="col-lg-8 col-md-6 col-12">
+                  <div class="d-flex align-items-center">
+                
+                    <div class="px-3">
+                      <p class="text-body text-sm font-weight-bold mb-3">
+                      <span class="text-body text-xs opacity-8">
+                        Periodo del 
+                      </span>
+                      {{ \Carbon\Carbon::parse($startOfWeek)->translatedFormat('j \d\e F') }} al {{ \Carbon\Carbon::parse($fecha)->translatedFormat('j \d\e F') }}
+                      </p>
+                     
+                    </div>
+                  </div>
+                </div>
+          
+               
+                
+              </div>
+              
                 <div class="row justify-content-md-between">
                     @can('bancos-configuracion')
                         <div class="col-md-4 text-start">
                             <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal" style="background-color: #030303; color: #ffffff;">Configuracion</button>
                         </div>
                     @endcan
-                    <div class="col-lg-3 col-md-7 text-md-end text-start mt-5">
+                    <div class="col-md-12 row">
+         <div class="col-lg-3 col-6 text-center">
+            <div class="border-dashed border-1 border-secondary border-radius-md py-3">
+               <h6 class="text-primary mb-0">Saldo Inicial</h6>
+               <h4 class="font-weight-bolder"><span class="small" id="saldo-inicial">${{ number_format($saldoInicial, 2, '.', ',') }} </span></h4>
+            </div>
+         </div>
+         <div class="col-lg-3 col-6 text-center">
+            <div class="border-dashed border-1 border-secondary border-radius-md py-3">
+               <h6 class="text-primary mb-0">Cobros</h6>
+               <h4 class="font-weight-bolder"><span class="small" id="collections">$0.00</span></h4>
+            </div>
+         </div>
+         <div class="col-lg-3 col-6 text-center">
+            <div class="border-dashed border-1 border-secondary border-radius-md py-3">
+               <h6 class="text-primary mb-0">Pagos</h6>
+               <h4 class="font-weight-bolder"><span class="small" id="payment">$0.00</span></h4>
+            </div>
+         </div>
+         <div class="col-lg-3 col-6 text-center">
+            <div class="border-dashed border-1 border-secondary border-radius-md py-3 border-success" id="borderBalance">
+               <h6 class="text-primary mb-0">Saldo Final</h6>
+               <h4 class="font-weight-bolder"><span class="small" id="diferenciaColumna2">$0.00</span></h4>
+            </div>
+         </div>
+         </div>
+                    <!--div class="col-lg-3 col-md-7 text-md-end text-start mt-5">
                         <h6 class="d-block mt-2 mb-0">Saldo inicial:</h6>
                         <h6 class="text-secondary" id="saldo-inicial">${{ number_format($saldoInicial, 2, '.', ',') }} </h6>
                     </div>
                     <div class="col-lg-3 col-md-7 text-md-end text-start mt-5">
                         <h6 class="d-block mt-2 mb-0">Total en Banco:</h6>
                         <h6 class="text-secondary">${{ number_format($saldoFinal, 2, '.', ',') }} </h6>
-                    </div>
+                    </div-->
                 </div>
               <br>
               <div class="row justify-content-md-between">
                 <div class="col-md-4 mt-auto">
-                  <h6 class="mb-0 text-start text-secondary">
-                    Total
-                  </h6>
-                  <h5 class="text-start mb-0">
-                   <span id="diferenciaColumna"></span>
-                  </h5>
+                 
                 </div>
-                <div class="col-lg-5 col-md-7 mt-auto">
+                <!--iv class="col-lg-5 col-md-7 mt-auto">
                   <div class="row mt-md-5 mt-4 text-md-end text-start">
                     <div class="col-md-6">
                       <h6 class="text-secondary mb-0">Inicio de Semana:</h6>
@@ -104,10 +182,10 @@
                       <h6 class="text-secondary mb-0">Dia actual:</h6>
                     </div>
                     <div class="col-md-6">
-                      <h6 class="text-dark mb-0">{{ \Carbon\Carbon::parse($fecha)->translatedFormat('j \d\e F') }}</h6>
+                      <h6 class="text-dark mb-0">{{ \Carbon\Carbon::parse($startOfWeek)->format('Y-m-d') }} AL {{ \Carbon\Carbon::parse($fecha)->format('Y-m-d') }}</h6>
                     </div>
                   </div>
-                </div>
+                </div-->
               </div>
             </div>
             <div class="card-body">
@@ -290,7 +368,7 @@
                             <th></th>
                             <th></th>
                             <th class="h5 ps-4" colspan="2">Total</th>
-                            <td id="diferenciaColumna2" colspan="1" class="text-right h5 ps-4"></td>
+                            <td id="diferenciaColumna" colspan="1" class="text-right h5 ps-4"></td>
                           </tr>
                       </tfoot>
                     </table>
@@ -315,7 +393,9 @@
             totalPenultima += parseFloat(text) || 0;
         });
         document.getElementById('totalPenultimaColumna').textContent = `$ ${totalPenultima.toLocaleString('en-US')}`;
+        document.getElementById('collections').textContent = `$ ${totalPenultima.toLocaleString('en-US')}`;
 
+        
         // Calcular el total de la última columna
         let totalUltima = 0;
         document.querySelectorAll('.ultima-columna').forEach(function(cell) {
@@ -323,6 +403,8 @@
             totalUltima += parseFloat(text) || 0;
         });
         document.getElementById('totalUltimaColumna').textContent = `$ ${totalUltima.toLocaleString('en-US')}`;
+        document.getElementById('payment').textContent = `$ ${totalUltima.toLocaleString('en-US')}`;
+
 
         // Calcular la diferencia y mostrarla
         let saldoInicial = document.getElementById('saldo-inicial').textContent;
@@ -332,5 +414,42 @@
         document.getElementById('diferenciaColumna2').textContent = `$ ${diferencia.toLocaleString('en-US')}`;
     });
 </script>
+<!-- CSS de Date Range Picker -->
+<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
+
+<!-- Moment.js -->
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/moment@2.29.1/moment.min.js"></script>
+
+<!-- JS de Date Range Picker -->
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+
+<script>
+$(document).ready(function() {
+    $('#daterange').daterangepicker({
+        opens: 'left',
+        locale: {
+            format: 'YYYY-MM-DD', // Formato de fecha
+            separator: " AL ", // Separador entre la fecha inicial y final
+            applyLabel: "Aplicar",
+            cancelLabel: "Cancelar",
+            fromLabel: "Desde",
+            toLabel: "Hasta",
+            customRangeLabel: "Personalizado",
+            daysOfWeek: ["Do", "Lu", "Ma", "Mi", "Ju", "Vi", "Sa"],
+            monthNames: ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"],
+            firstDay: 1
+        },
+        maxDate: moment()
+    }, 
+        function(start, end, label) {
+        // Callback para el botón "Aplicar"
+        $("#fecha_de").val(start.format('YYYY-MM-DD'));
+        $("#fecha_hasta").val(end.format('YYYY-MM-DD'));
+        document.getElementById("form-buscar").submit();
+  
+    });
+});
+</script>
+
 
 @endsection
