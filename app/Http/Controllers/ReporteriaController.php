@@ -548,6 +548,7 @@ class ReporteriaController extends Controller
         $id_subcliente = $request->id_subcliente;
 
         $cotizaciones = [];
+        $registrosBanco = [];
 
         if ($id_client !== null) {
             $query = Cotizaciones::where('id_empresa', '=', auth()->user()->id_empresa)
