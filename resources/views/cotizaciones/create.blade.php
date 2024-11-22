@@ -12,10 +12,10 @@
                 <div class="card">
                     <div class="card-header">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <a class="btn"  href="{{ route('index.cotizaciones') }}" style="background: {{$configuracion->color_boton_close}}; color: #ffff;margin-right: 3rem;">
+                        <h3 class="mb-3">Crear Cotizacion</h3>
+                            <a class="btn btn-sm"  href="{{ route('index.cotizaciones') }}" style="background: {{$configuracion->color_boton_close}}; color: #ffff;margin-right: 3rem;">
                                 Regresar
                             </a>
-                            <h3 class="mb-3">Crear Cotizacion</h3>
                         </div>
                     </div>
 
@@ -25,16 +25,17 @@
 
                             <div class="modal-body">
                                 <div class="row">
+                                <hr class="horizontal dark mt-0 mb-4">
                                     <div class="col-12">
                                         <div class="row">
-                                            <div class="col-3">
+                                            <!--div class="col-3">
                                                 <label for="precio">Nuevo cliente</label><br>
                                                 <button class="btn btn-success btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#collapseExample" aria-expanded="false" aria-controls="collapseExample">
                                                     Agregar <img src="{{ asset('assets/icons/cliente.png') }}" alt="" width="25px">
                                                 </button>
-                                            </div>
-                                            <div class="col-4">
-                                                <div class="form-group">
+                                            </div-->
+                                            <div class="col-4 col-md-5">
+                                                <!--div class="form-group">
                                                     <label for="name">Cliente *</label>
                                                     <select class="form-select cliente d-inline-block"  data-toggle="select" id="id_cliente" name="id_cliente" value="{{ old('id_cliente') }}">
                                                         <option value="">Seleccionar cliente</option>
@@ -42,19 +43,62 @@
                                                             <option value="{{ $item->id }}">{{ $item->nombre }} / {{ $item->telefono }}</option>
                                                         @endforeach
                                                     </select>
-                                                </div>
+                                                </div-->
+                                                <ul class="list-group">
+                                                    <li class="list-group-item border-1 border-dashed d-flex p-4 mb-2 bg-gray-100 border-radius-lg">
+                                                    <div class="d-flex flex-column">
+                                                        <h6 class="mb-2 text-md">Cliente</h6>
+                                                        <span class="mb-2 text-sm">
+                                                            Nombre: <span class="text-dark font-weight-bold ms-2">
+                                                            <select class="form-select bg-transparent cliente d-inline-block"  data-toggle="select" id="id_cliente" name="id_cliente" value="{{ old('id_cliente') }}">
+                                                                <option value="">Seleccionar cliente</option>
+                                                                @foreach ($clientes as $item)
+                                                                    <option value="{{ $item->id }}">{{ucwords(strtolower( $item->nombre)) }} </option>
+                                                                @endforeach
+                                                            </select></span>
+                                                        </span>
+                                                        <span class="mb-2 text-sm">Teléfono: <span class="text-dark ms-2 font-weight-bold" id="telClient"></span></span>
+                                                        <span class="text-xs">Correo Electrónico: <span class="text-dark ms-2 font-weight-bold" id="mailClient"></span></span>
+                                                    </div>
+                                                    </li>
+                                                </ul>
                                             </div>
 
-                                            <div class="col-4">
-                                                <div class="form-group">
+                                            <div class="col-4 col-md-5">
+                                                <!--div class="form-group">
                                                     <label for="name">Subcliente *</label>
                                                     <select class="form-select subcliente d-inline-block" id="id_subcliente" name="id_subcliente">
                                                         <option value="">Seleccionar subcliente</option>
                                                     </select>
-                                                </div>
+                                                </div-->
+                                                <ul class="list-group">
+                                                    <li class="list-group-item border-1 border-dashed d-flex p-4 mb-2 bg-gray-100 border-radius-lg">
+                                                    <div class="d-flex flex-column">
+                                                        <h6 class="mb-2 text-md">SubCliente</h6>
+                                                        <span class="mb-2 text-sm">
+                                                            Nombre: <span class="text-dark font-weight-bold ms-2">
+                                                            <select class="form-select subcliente d-inline-block" id="id_subcliente" name="id_subcliente">
+                                                        <option value="">Seleccionar subcliente</option>
+                                                    </select></span>
+                                                        </span>
+                                                        <span class="mb-2 text-sm">Teléfono: <span class="text-dark ms-2 font-weight-bold" id="telClient"></span></span>
+                                                        <span class="text-xs">Correo Electrónico: <span class="text-dark ms-2 font-weight-bold" id="mailClient"></span></span>
+                                                    </div>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                            <div class="col-lg-2 col-md-2 col-2 my-auto text-end">
+                                            <a href="javascript:;" class="btn btn-sm bg-gradient-info mb-0"><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">Crear Cliente</font></font></a>
+                                                <p class="text-sm mt-2 mb-0">
+                                                    <font style="vertical-align: inherit;">
+                                                    <font style="vertical-align: inherit;">¿Cliente no registrado? Puede crearlo aquí </font>
+                                                    </font>
+                                                </p>
                                             </div>
                                         </div>
                                     </div>
+                                <hr class="horizontal dark mt-0 mb-4">
+
 
                                     <div class="form-group col-12">
                                         <div class="collapse" id="collapseExample">
@@ -133,7 +177,7 @@
                                             <span class="input-group-text" id="basic-addon1">
                                                 <img src="{{ asset('img/icon/escala.png') }}" alt="" width="25px">
                                             </span>
-                                            <input name="tamano" id="tamano" type="text" class="form-control"value="{{old('tamano')}}">@error('tamano') <span class="error text-danger">{{ $message }}</span> @enderror
+                                            <input name="tamano" id="tamano" type="text" oninput="allowOnlyDecimals(event)" class="form-control"value="{{old('tamano')}}">@error('tamano') <span class="error text-danger">{{ $message }}</span> @enderror
                                         </div>
                                     </div>
 
@@ -153,7 +197,7 @@
                                             <span class="input-group-text" id="basic-addon1">
                                                 <img src="{{ asset('img/icon/peso.png') }}" alt="" width="25px">
                                             </span>
-                                            <input name="peso_contenedor" id="peso_contenedor" type="text" class="form-control">
+                                            <input name="peso_contenedor" id="peso_contenedor" type="text" class="form-control" oninput="allowOnlyDecimals(event)">
                                         </div>
                                     </div>
 
@@ -173,7 +217,7 @@
                                             <span class="input-group-text" id="basic-addon1">
                                                 <img src="{{ asset('img/icon/tonelada.png') }}" alt="" width="25px">
                                             </span>
-                                            <input name="precio_sobre_peso" id="precio_sobre_peso" type="text" class="form-control">
+                                            <input name="precio_sobre_peso" id="precio_sobre_peso" type="text" class="form-control moneyformat" oninput="allowOnlyDecimals(event)">
                                         </div>
                                     </div>
 
@@ -183,7 +227,7 @@
                                             <span class="input-group-text" id="basic-addon1">
                                                 <img src="{{ asset('img/icon/tonelada.png') }}" alt="" width="25px">
                                             </span>
-                                            <input name="precio_tonelada" id="precio_tonelada" type="text" class="form-control" value="0" readonly>
+                                            <input name="precio_tonelada" id="precio_tonelada" type="text" class="form-control moneyformat" value="0" oninput="allowOnlyDecimals(event)" readonly>
                                         </div>
                                     </div>
 
@@ -195,7 +239,7 @@
                                             <span class="input-group-text" id="basic-addon1">
                                                 <img src="{{ asset('img/icon/bolsa-de-dinero.webp') }}" alt="" width="25px">
                                             </span>
-                                            <input name="precio_viaje" id="precio_viaje" type="text" class="form-control" onkeypress="return event.charCode >= 48 && event.charCode <= 57 || event.charCode === 46" oninput="calcularTotal()">
+                                            <input name="precio_viaje" id="precio_viaje" type="text" class="form-control moneyformat" oninput="allowOnlyDecimals(event)">
                                         </div>
                                     </div>
 
@@ -205,7 +249,7 @@
                                             <span class="input-group-text" id="basic-addon1">
                                                 <img src="{{ asset('img/icon/burro.png') }}" alt="" width="25px">
                                             </span>
-                                            <input name="burreo" id="burreo" type="float" class="form-control"onkeypress="return event.charCode >= 48 && event.charCode <= 57 || event.charCode === 46" oninput="calcularTotal()">
+                                            <input name="burreo" id="burreo" type="float" class="form-control moneyformat" oninput="allowOnlyDecimals(event)">
                                         </div>
                                     </div>
 
@@ -215,7 +259,7 @@
                                             <span class="input-group-text" id="basic-addon1">
                                                 <img src="{{ asset('img/icon/logistica.png') }}" alt="" width="25px">
                                             </span>
-                                            <input name="maniobra" id="maniobra" type="float" class="form-control"onkeypress="return event.charCode >= 48 && event.charCode <= 57 || event.charCode === 46" oninput="calcularTotal()">
+                                            <input name="maniobra" id="maniobra" type="float" class="form-control moneyformat" oninput="allowOnlyDecimals(event)">
                                         </div>
                                     </div>
 
@@ -225,7 +269,7 @@
                                             <span class="input-group-text" id="basic-addon1">
                                                 <img src="{{ asset('img/icon/servidor-en-la-nube.png') }}" alt="" width="25px">
                                             </span>
-                                            <input name="estadia" id="estadia" type="float" class="form-control"onkeypress="return event.charCode >= 48 && event.charCode <= 57 || event.charCode === 46" oninput="calcularTotal()">
+                                            <input name="estadia" id="estadia" type="float" class="form-control moneyformat" oninput="allowOnlyDecimals(event)">
                                         </div>
                                     </div>
 
@@ -235,7 +279,7 @@
                                             <span class="input-group-text" id="basic-addon1">
                                                 <img src="{{ asset('img/icon/inventario.png.webp') }}" alt="" width="25px">
                                             </span>
-                                            <input name="otro" id="otro" type="float" class="form-control"onkeypress="return event.charCode >= 48 && event.charCode <= 57 || event.charCode === 46" oninput="calcularTotal()">
+                                            <input name="otro" id="otro" type="float" class="form-control moneyformat" oninput="allowOnlyDecimals(event)">
                                         </div>
                                     </div>
 
@@ -245,7 +289,7 @@
                                             <span class="input-group-text" id="basic-addon1">
                                                 <img src="{{ asset('img/icon/impuesto.png') }}" alt="" width="25px">
                                             </span>
-                                            <input name="iva" id="iva" type="number" readonly class="form-control" onkeypress="return event.charCode >= 48 && event.charCode <= 57 || event.charCode === 46" oninput="calcularTotal()">
+                                            <input name="iva" id="iva" type="text" readonly class="form-control" oninput="allowOnlyDecimals(event)">
                                         </div>
                                     </div>
 
@@ -255,7 +299,7 @@
                                             <span class="input-group-text" id="basic-addon1">
                                                 <img src="{{ asset('img/icon/monedas.webp') }}" alt="" width="25px">
                                             </span>
-                                            <input name="retencion" readonly id="retencion" type="float" class="form-control"onkeypress="return event.charCode >= 48 && event.charCode <= 57 || event.charCode === 46" oninput="calcularTotal()">
+                                            <input name="retencion" readonly id="retencion" type="text" class="form-control" oninput="allowOnlyDecimals(event)">
                                         </div>
                                     </div>
 
@@ -265,7 +309,7 @@
                                             <span class="input-group-text" id="basic-addon1">
                                                 <img src="{{ asset('img/icon/factura.png') }}" alt="" width="25px">
                                             </span>
-                                            <input name="base_factura" id="base_factura" type="float" class="form-control">
+                                            <input name="base_factura" id="base_factura" type="float" class="form-control moneyformat" oninput="allowOnlyDecimals(event)">
                                         </div>
                                     </div>
 
@@ -275,7 +319,7 @@
                                             <span class="input-group-text" id="basic-addon1">
                                                 <img src="{{ asset('img/icon/factura.png.webp') }}" alt="" width="25px">
                                             </span>
-                                            <input name="base_taref" id="base_taref" type="float" readonly class="form-control">
+                                            <input name="base_taref" id="base_taref" type="float" readonly class="form-control moneyformat" oninput="allowOnlyDecimals(event)">
                                         </div>
                                     </div>
                                     <div class="col-4"></div>
@@ -286,7 +330,7 @@
                                             <span class="input-group-text" id="basic-addon1">
                                                 <img src="{{ asset('img/icon/monedas.webp') }}" alt="" width="25px">
                                             </span>
-                                            <input name="total" id="total" type="float" class="form-control">
+                                            <input name="total" id="total" readonly type="float" class="form-control moneyformat" oninput="allowOnlyDecimals(event)">
                                         </div>
                                     </div>
 
@@ -315,7 +359,7 @@
                             </div>
 
                             <div class="modal-footer">
-                                <button type="submit" class="btn btn-primary">Guardar</button>
+                                <button type="submit" class="btn bg-gradient-primary btn-sm mb-0">Guardar</button>
                             </div>
 
                         </form>
@@ -324,169 +368,41 @@
             </div>
         </div>
     </div>
+    <input type="hidden" id="txtClientes" value ="{{($clientes)}}">
 @endsection
 
 @section('select2')
-    <script src="{{ asset('assets/vendor/jquery/dist/jquery.min.js')}}"></script>
-    <script src="{{ asset('assets/vendor/select2/dist/js/select2.min.js')}}"></script>
-
-    <script type="text/javascript">
-        $(document).ready(function() {
-            $('.cliente').select2();
-        });
-
-        const tasa_iva = 0.16;
-        const tasa_retencion = 0.04;
-
-        function moneyFormat(moneyValue){
-            const $formatMoneda = new Intl.NumberFormat('es-MX', {
-                style: 'currency',
-                currency: 'MXN',
-                minimumFractionDigits: 2
-            }).format(moneyValue);
-
-            return $formatMoneda;
-        }
-
-        function calcularTotal() {
-            const precio_viaje = parseFloat(document.getElementById('precio_viaje').value.replace(/,/g, '')) || 0;
-            const burreo = parseFloat(document.getElementById('burreo').value.replace(/,/g, '')) || 0;
-            const otro = parseFloat(document.getElementById('otro').value.replace(/,/g, '')) || 0;
-            const estadia = parseFloat(document.getElementById('estadia').value.replace(/,/g, '')) || 0;
-            const maniobra = parseFloat(document.getElementById('maniobra').value.replace(/,/g, '')) || 0;
-
-            const subTotal = precio_viaje + burreo + maniobra + estadia + otro;
-            calcularImpuestos(subTotal);
-            const retencion = parseFloat(document.getElementById('retencion').value.replace(/,/g, '')) || 0;
-            const iva = parseFloat(document.getElementById('iva').value.replace(/,/g, '')) || 0;
-            // Restar el valor de Retención del total
-            const totalSinRetencion = precio_viaje + burreo + iva + otro + estadia + maniobra;
-            const totalConRetencion = totalSinRetencion - retencion;
-
-            // Obtener el valor de Precio Tonelada
-            const precioTonelada = parseFloat(document.getElementById('precio_tonelada').value.replace(/,/g, '')) || 0;
-
-            // Sumar el valor de Precio Tonelada al total
-            const totalFinal = totalConRetencion + precioTonelada;
-
-            // Formatear el total con comas
-            const totalFormateado = totalFinal.toLocaleString('en-US');
-
-            document.getElementById('total').value = totalFormateado;
-
-        }
-
-        function calcularImpuestos(total){
-            const baseFactura = parseFloat(document.getElementById('base_factura').value.replace(/,/g, '')) || 0;
-            //const total = parseFloat(document.getElementById('total').value.replace(/,/g, '')) || 0;
+<style>
+    /* Fondo transparente y sin bordes */
+.select2-container .select2-selection--single {
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important; /* Eliminar sombras */
+}
 
 
-            const iva = (baseFactura * tasa_iva);
-            const retencion = (baseFactura * tasa_retencion);
-
-            document.getElementById('iva').value = (iva.toFixed(2));
-            document.getElementById('retencion').value = (retencion.toFixed(2));
-            // Realizar el cálculo
-            const baseTaref = (total - baseFactura - iva) + retencion;
-            // Mostrar el resultado en el input de base_taref
-            document.getElementById('base_taref').value = baseTaref.toFixed(2);
-        }
-
-        document.addEventListener('DOMContentLoaded', function () {
-            // Obtener elementos del DOM
-            var pesoReglamentarioInput = document.getElementById('peso_reglamentario');
-            var pesoContenedorInput = document.getElementById('peso_contenedor');
-            var sobrepesoInput = document.getElementById('sobrepeso');
-
-            var precioSobrePesoInput = document.getElementById('precio_sobre_peso');
-            var precioToneladaInput = document.getElementById('precio_tonelada');
-
-            // Agregar evento de cambio a los inputs
-            pesoReglamentarioInput.addEventListener('input', calcularSobrepeso);
-            pesoContenedorInput.addEventListener('input', calcularSobrepeso);
-
-            // Función para calcular el sobrepeso
-            function calcularSobrepeso() {
-                var pesoReglamentario = parseFloat(pesoReglamentarioInput.value) || 0;
-                var pesoContenedor = parseFloat(pesoContenedorInput.value) || 0;
-
-                // Calcular sobrepeso
-                var sobrepeso = Math.max(pesoContenedor - pesoReglamentario, 0);
-
-                // Mostrar sobrepeso en el input correspondiente con dos decimales
-                sobrepesoInput.value = sobrepeso.toFixed(2);
-            }
-
-            // Agregar evento de entrada al campo "Precio Sobre Peso"
-            precioSobrePesoInput.addEventListener('input', function () {
-                // Obtener el valor de Sobrepeso
-                var sobrepeso = parseFloat(sobrepesoInput.value.replace(/,/g, '')) || 0;
-
-                // Obtener el valor de Precio Sobre Peso
-                var precioSobrePeso = parseFloat(precioSobrePesoInput.value.replace(/,/g, '')) || 0;
-
-                // Calcular el resultado de la multiplicación
-                var resultado = sobrepeso * precioSobrePeso;
-
-                // Mostrar el resultado en el campo "Precio Tonelada"
-                precioToneladaInput.value = resultado.toLocaleString('en-US');
-
-                // Calcular el total
-                calcularTotal();
-            });
-
-            // Calcular sobrepeso inicialmente al cargar la página
-            calcularSobrepeso();
-
-            // Función para calcular base_taref
-            function calcularBaseTaref() {
-                // Obtener los valores de los inputs
-                const total = parseFloat(document.getElementById('total').value.replace(/,/g, '')) || 0;
-                const precio_viaje = parseFloat(document.getElementById('precio_viaje').value.replace(/,/g, '')) || 0;
-                const baseFactura = parseFloat(document.getElementById('base_factura').value) || 0;
-
-                //Calculamos IVA y retencion
-                const iva = (baseFactura * tasa_iva);
-                const retencion = (baseFactura * tasa_retencion);
-
-                //calcularImpuestos();
-
-                // Realizar el cálculo
-                const baseTaref = (total - baseFactura - iva) + retencion;
-
-                // Mostrar el resultado en el input de base_taref
-                document.getElementById('base_taref').value = baseTaref.toFixed(2);
-            }
-
-            // Agregar eventos de cambio a los inputs para calcular automáticamente
-           // document.getElementById('total').addEventListener('input', calcularBaseTaref);
-            document.getElementById('base_factura').addEventListener('input', calcularTotal);
-           // document.getElementById('iva').addEventListener('input', calcularBaseTaref);
-          //  document.getElementById('retencion').addEventListener('input', calcularBaseTaref);
-        });
-
-        $(document).ready(function() {
-            $('#id_cliente').change(function() {
-                var clienteId = $(this).val();
-                if (clienteId) {
-                    $.ajax({
-                        type: 'GET',
-                        url: '/subclientes/' + clienteId,
-                        success: function(data) {
-                            $('#id_subcliente').empty();
-                            $('#id_subcliente').append('<option value="">Seleccionar subcliente</option>');
-                            $.each(data, function(key, subcliente) {
-                                $('#id_subcliente').append('<option value="' + subcliente.id + '">' + subcliente.nombre + '</option>');
-                            });
-                        }
-                    });
-                } else {
-                    $('#id_subcliente').empty();
-                    $('#id_subcliente').append('<option value="">Seleccionar subcliente</option>');
-                }
-            });
-        });
-    </script>
+.select2-container .select2-selection--single:focus {
+  outline: none !important;
+}
 
 
+.select2-container .select2-selection--single .select2-selection__rendered {
+  color: inherit; /* Heredar color del texto */
+  background-color: transparent !important;
+}
+</style>
 @endsection
+
+@push('custom-javascript')
+<script src="{{ asset('assets/vendor/jquery/dist/jquery.min.js')}}"></script>
+<script src="{{ asset('assets/vendor/select2/dist/js/select2.min.js')}}"></script>
+<script src="{{ asset('js/sgt/common.js') }}?v={{ filemtime(public_path('js/sgt/common.js')) }}"></script>
+<script src="{{ asset('js/sgt/cotizaciones/cotizaciones.js') }}?v={{ filemtime(public_path('js/sgt/cotizaciones/cotizaciones.js')) }}"></script>
+
+<script>
+   $(document).ready(()=>{
+        $('.cliente').select2();
+        $('#id_subcliente').select2();
+   });
+</script>
+@endpush
