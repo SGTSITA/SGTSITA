@@ -5,7 +5,6 @@
 @endsection
 
 @section('content')
-
     <div class="container-fluid">
         <div class="row">
             <div class="col-sm-12">
@@ -20,7 +19,7 @@
                     </div>
 
                     <div class="card-body">
-                        <form method="POST" action="{{ route('store.cotizaciones') }}" id="" enctype="multipart/form-data" role="form">
+                        <form method="POST" action="{{ route('store.cotizaciones') }}" id="cotizacionCreate" enctype="multipart/form-data" role="form">
                             @csrf
 
                             <div class="modal-body">
@@ -35,15 +34,6 @@
                                                 </button>
                                             </div-->
                                             <div class="col-4 col-md-5">
-                                                <!--div class="form-group">
-                                                    <label for="name">Cliente *</label>
-                                                    <select class="form-select cliente d-inline-block"  data-toggle="select" id="id_cliente" name="id_cliente" value="{{ old('id_cliente') }}">
-                                                        <option value="">Seleccionar cliente</option>
-                                                        @foreach ($clientes as $item)
-                                                            <option value="{{ $item->id }}">{{ $item->nombre }} / {{ $item->telefono }}</option>
-                                                        @endforeach
-                                                    </select>
-                                                </div-->
                                                 <ul class="list-group">
                                                     <li class="list-group-item border-1 border-dashed d-flex p-4 mb-2 bg-gray-100 border-radius-lg">
                                                     <div class="d-flex flex-column">
@@ -65,12 +55,6 @@
                                             </div>
 
                                             <div class="col-4 col-md-5">
-                                                <!--div class="form-group">
-                                                    <label for="name">Subcliente *</label>
-                                                    <select class="form-select subcliente d-inline-block" id="id_subcliente" name="id_subcliente">
-                                                        <option value="">Seleccionar subcliente</option>
-                                                    </select>
-                                                </div-->
                                                 <ul class="list-group">
                                                     <li class="list-group-item border-1 border-dashed d-flex p-4 mb-2 bg-gray-100 border-radius-lg">
                                                     <div class="d-flex flex-column">
@@ -90,9 +74,11 @@
                                             <div class="col-lg-2 col-md-2 col-2 my-auto text-end">
                                             <a href="javascript:;" class="btn btn-sm bg-gradient-info mb-0"><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">Crear Cliente</font></font></a>
                                                 <p class="text-sm mt-2 mb-0">
+                                                   
                                                     <font style="vertical-align: inherit;">
-                                                    <font style="vertical-align: inherit;">¿Cliente no registrado? Puede crearlo aquí </font>
+                                                    ¿Cliente no registrado? Puede crearlo aquí
                                                     </font>
+                                                   
                                                 </p>
                                             </div>
                                         </div>
@@ -147,7 +133,7 @@
                                             <span class="input-group-text" id="basic-addon1">
                                                 <img src="{{ asset('img/icon/gps.webp') }}" alt="" width="25px">
                                             </span>
-                                            <input name="origen" id="origen" type="text" class="form-control"value="{{old('origen')}}">@error('origen') <span class="error text-danger">{{ $message }}</span> @enderror
+                                            <input name="origen" id="origen" autocomplete="off" type="text" class="form-control" value="{{old('origen')}}">@error('origen') <span class="error text-danger">{{ $message }}</span> @enderror
                                         </div>
                                     </div>
 
@@ -157,7 +143,7 @@
                                             <span class="input-group-text" id="basic-addon1">
                                                 <img src="{{ asset('img/icon/origen.png') }}" alt="" width="25px">
                                             </span>
-                                            <input name="destino" id="destino" type="text" class="form-control" value="APARTADO">@error('destino') <span class="error text-danger">{{ $message }}</span> @enderror
+                                            <input name="destino" id="destino" autocomplete="off" type="text" class="form-control" value="APARTADO">@error('destino') <span class="error text-danger">{{ $message }}</span> @enderror
                                         </div>
                                     </div>
 
@@ -167,7 +153,7 @@
                                             <span class="input-group-text" id="basic-addon1">
                                                 <img src="{{ asset('img/icon/contenedor.png') }}" alt="" width="25px">
                                             </span>
-                                            <input name="num_contenedor" id="num_contenedor" type="text" class="form-control" value="{{old('num_contenedor')}}">@error('num_contenedor') <span class="error text-danger">{{ $message }}</span> @enderror
+                                            <input name="num_contenedor" id="num_contenedor" type="text" class="form-control" autocomplete="off">@error('num_contenedor') <span class="error text-danger">{{ $message }}</span> @enderror
                                         </div>
                                     </div>
 
@@ -177,7 +163,7 @@
                                             <span class="input-group-text" id="basic-addon1">
                                                 <img src="{{ asset('img/icon/escala.png') }}" alt="" width="25px">
                                             </span>
-                                            <input name="tamano" id="tamano" type="text" oninput="allowOnlyDecimals(event)" class="form-control"value="{{old('tamano')}}">@error('tamano') <span class="error text-danger">{{ $message }}</span> @enderror
+                                            <input name="tamano" id="tamano" autocomplete="off" type="text" oninput="allowOnlyDecimals(event)" class="form-control"value="{{old('tamano')}}">@error('tamano') <span class="error text-danger">{{ $message }}</span> @enderror
                                         </div>
                                     </div>
 
@@ -187,7 +173,7 @@
                                             <span class="input-group-text" id="basic-addon1">
                                                 <img src="{{ asset('img/icon/perdida-de-peso.png') }}" alt="" width="25px">
                                             </span>
-                                            <input name="peso_reglamentario" id="peso_reglamentario" type="number" class="form-control" value="22">
+                                            <input name="peso_reglamentario" autocomplete="off" id="peso_reglamentario" type="number" class="form-control" value="22">
                                         </div>
                                     </div>
 
@@ -197,7 +183,7 @@
                                             <span class="input-group-text" id="basic-addon1">
                                                 <img src="{{ asset('img/icon/peso.png') }}" alt="" width="25px">
                                             </span>
-                                            <input name="peso_contenedor" id="peso_contenedor" type="text" class="form-control" oninput="allowOnlyDecimals(event)">
+                                            <input name="peso_contenedor" id="peso_contenedor" autocomplete="off" type="text" class="form-control" oninput="allowOnlyDecimals(event)">
                                         </div>
                                     </div>
 
@@ -207,7 +193,7 @@
                                             <span class="input-group-text" id="basic-addon1">
                                                 <img src="{{ asset('img/icon/pesa-rusa.png') }}" alt="" width="25px">
                                             </span>
-                                            <input name="sobrepeso" id="sobrepeso" type="text" class="form-control" readonly>
+                                            <input name="sobrepeso" id="sobrepeso" type="text" autocomplete="off" class="form-control" readonly>
                                         </div>
                                     </div>
 
@@ -217,7 +203,7 @@
                                             <span class="input-group-text" id="basic-addon1">
                                                 <img src="{{ asset('img/icon/tonelada.png') }}" alt="" width="25px">
                                             </span>
-                                            <input name="precio_sobre_peso" id="precio_sobre_peso" type="text" class="form-control moneyformat" oninput="allowOnlyDecimals(event)">
+                                            <input name="precio_sobre_peso" id="precio_sobre_peso" type="text" autocomplete="off" class="form-control moneyformat" oninput="allowOnlyDecimals(event)">
                                         </div>
                                     </div>
 
@@ -227,7 +213,7 @@
                                             <span class="input-group-text" id="basic-addon1">
                                                 <img src="{{ asset('img/icon/tonelada.png') }}" alt="" width="25px">
                                             </span>
-                                            <input name="precio_tonelada" id="precio_tonelada" type="text" class="form-control moneyformat" value="0" oninput="allowOnlyDecimals(event)" readonly>
+                                            <input name="precio_tonelada" id="precio_tonelada" type="text" autocomplete="off" class="form-control moneyformat" value="0" oninput="allowOnlyDecimals(event)" readonly>
                                         </div>
                                     </div>
 
@@ -239,7 +225,7 @@
                                             <span class="input-group-text" id="basic-addon1">
                                                 <img src="{{ asset('img/icon/bolsa-de-dinero.webp') }}" alt="" width="25px">
                                             </span>
-                                            <input name="precio_viaje" id="precio_viaje" type="text" class="form-control moneyformat" oninput="allowOnlyDecimals(event)">
+                                            <input name="precio_viaje" id="precio_viaje" type="text" autocomplete="off" class="form-control moneyformat" oninput="allowOnlyDecimals(event)">
                                         </div>
                                     </div>
 
@@ -249,7 +235,7 @@
                                             <span class="input-group-text" id="basic-addon1">
                                                 <img src="{{ asset('img/icon/burro.png') }}" alt="" width="25px">
                                             </span>
-                                            <input name="burreo" id="burreo" type="float" class="form-control moneyformat" oninput="allowOnlyDecimals(event)">
+                                            <input name="burreo" id="burreo" type="float" autocomplete="off" class="form-control moneyformat" oninput="allowOnlyDecimals(event)">
                                         </div>
                                     </div>
 
@@ -259,7 +245,7 @@
                                             <span class="input-group-text" id="basic-addon1">
                                                 <img src="{{ asset('img/icon/logistica.png') }}" alt="" width="25px">
                                             </span>
-                                            <input name="maniobra" id="maniobra" type="float" class="form-control moneyformat" oninput="allowOnlyDecimals(event)">
+                                            <input name="maniobra" id="maniobra" type="float" autocomplete="off" class="form-control moneyformat" oninput="allowOnlyDecimals(event)">
                                         </div>
                                     </div>
 
@@ -269,7 +255,7 @@
                                             <span class="input-group-text" id="basic-addon1">
                                                 <img src="{{ asset('img/icon/servidor-en-la-nube.png') }}" alt="" width="25px">
                                             </span>
-                                            <input name="estadia" id="estadia" type="float" class="form-control moneyformat" oninput="allowOnlyDecimals(event)">
+                                            <input name="estadia" id="estadia" type="float" autocomplete="off" class="form-control moneyformat" oninput="allowOnlyDecimals(event)">
                                         </div>
                                     </div>
 
@@ -279,7 +265,7 @@
                                             <span class="input-group-text" id="basic-addon1">
                                                 <img src="{{ asset('img/icon/inventario.png.webp') }}" alt="" width="25px">
                                             </span>
-                                            <input name="otro" id="otro" type="float" class="form-control moneyformat" oninput="allowOnlyDecimals(event)">
+                                            <input name="otro" id="otro" type="float" autocomplete="off" class="form-control moneyformat" oninput="allowOnlyDecimals(event)">
                                         </div>
                                     </div>
 
@@ -289,7 +275,7 @@
                                             <span class="input-group-text" id="basic-addon1">
                                                 <img src="{{ asset('img/icon/impuesto.png') }}" alt="" width="25px">
                                             </span>
-                                            <input name="iva" id="iva" type="text" readonly class="form-control" oninput="allowOnlyDecimals(event)">
+                                            <input name="iva" id="iva" type="text" autocomplete="off" readonly class="form-control" oninput="allowOnlyDecimals(event)">
                                         </div>
                                     </div>
 
@@ -299,7 +285,7 @@
                                             <span class="input-group-text" id="basic-addon1">
                                                 <img src="{{ asset('img/icon/monedas.webp') }}" alt="" width="25px">
                                             </span>
-                                            <input name="retencion" readonly id="retencion" type="text" class="form-control" oninput="allowOnlyDecimals(event)">
+                                            <input name="retencion" readonly id="retencion" autocomplete="off" type="text" class="form-control" oninput="allowOnlyDecimals(event)">
                                         </div>
                                     </div>
 
@@ -309,7 +295,7 @@
                                             <span class="input-group-text" id="basic-addon1">
                                                 <img src="{{ asset('img/icon/factura.png') }}" alt="" width="25px">
                                             </span>
-                                            <input name="base_factura" id="base_factura" type="float" class="form-control moneyformat" oninput="allowOnlyDecimals(event)">
+                                            <input name="base_factura" id="base_factura" autocomplete="off" type="float" class="form-control moneyformat" oninput="allowOnlyDecimals(event)">
                                         </div>
                                     </div>
 
@@ -319,7 +305,7 @@
                                             <span class="input-group-text" id="basic-addon1">
                                                 <img src="{{ asset('img/icon/factura.png.webp') }}" alt="" width="25px">
                                             </span>
-                                            <input name="base_taref" id="base_taref" type="float" readonly class="form-control moneyformat" oninput="allowOnlyDecimals(event)">
+                                            <input name="base_taref" id="base_taref" autocomplete="off" type="float" readonly class="form-control moneyformat" oninput="allowOnlyDecimals(event)">
                                         </div>
                                     </div>
                                     <div class="col-4"></div>

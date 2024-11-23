@@ -187,17 +187,7 @@ class CotizacionesController extends Controller
     }
 
     public function store(Request $request){
-        $validator = Validator::make($request->all(), [
-            'origen' => 'required',
-            'destino' => 'required',
-        ]);
-
-        if ($validator->fails()) {
-            return back()
-            ->withErrors($validator)
-            ->withInput();
-        }
-
+        
         if($request->get('num_contenedor') != NULL){
             $numContenedor = $request->input('num_contenedor');
             $idEmpresa = auth()->user()->id_empresa;
@@ -207,7 +197,8 @@ class CotizacionesController extends Controller
                                                 ->first();
 
             if ($contenedorExistente) {
-                return redirect()->back()->with('error', 'El contenedor ya existe en la empresa.');
+                return response()->json(["Titulo" => "Contenedor creado previamente", "Mensaje" => "El contenedor ya existe en la empresa", "TMensaje" => "warning"]);
+               // return redirect()->back()->with('error', 'El contenedor ya existe en la empresa.');
             }
         }
 
@@ -284,6 +275,9 @@ class CotizacionesController extends Controller
         $docucotizaciones->id_cotizacion = $cotizaciones->id;
         $docucotizaciones->num_contenedor = $request->get('num_contenedor');
         $docucotizaciones->save();
+
+        return response()->json(["Titulo" => "Proceso satisfactorio", "Mensaje" => "Cotización creada con exito", "TMensaje" => "success"]);
+
 
         if($request->get('id_cliente_clientes')){
             Session::flash('success', 'Se ha guardado sus datos con exito');

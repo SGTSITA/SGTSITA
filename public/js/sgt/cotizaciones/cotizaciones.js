@@ -30,11 +30,10 @@ function calcularTotal() {
     document.getElementById('retencion').value = moneyFormat(retencion);
 
     const baseTaref = (subTotal - baseFactura - iva) + retencion;
+
     // Mostrar el resultado en el input de base_taref
     document.getElementById('base_taref').value = moneyFormat(baseTaref);
 
-   // const retencion = parseFloat(reverseMoneyFormat(document.getElementById('retencion').value)) || 0;
-    //const iva = parseFloat(reverseMoneyFormat(document.getElementById('iva').value)) || 0;
     // Restar el valor de Retención del total
     const totalSinRetencion = precio_viaje + burreo + iva + otro + estadia + maniobra;
     const totalConRetencion = totalSinRetencion - retencion;
@@ -79,7 +78,7 @@ document.addEventListener('DOMContentLoaded', function () {
         var resultado = sobrepeso * precioSobrePeso;
    
         // Mostrar el resultado en el campo "Precio Tonelada"
-        precioToneladaInput.value = moneyFormat(resultado); //resultado.toLocaleString('en-US');
+        precioToneladaInput.value = moneyFormat(resultado); 
    
         // Calcular el total
         calcularTotal();
@@ -94,6 +93,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Mostrar sobrepeso en el input correspondiente con dos decimales
         sobrepesoInput.value = sobrepeso.toFixed(2);
+        // Calcular el total
+        calcularTotal();
     }
 
     // Agregar evento de entrada al campo "Precio Sobre Peso"
@@ -104,63 +105,144 @@ document.addEventListener('DOMContentLoaded', function () {
     // Calcular sobrepeso inicialmente al cargar la página
     calcularSobrepeso();
 
-    // Función para calcular base_taref
-   /* function calcularBaseTaref() {
-        // Obtener los valores de los inputs
-        const total = parseFloat(document.getElementById('total').value.replace(/,/g, '')) || 0;
-        const precio_viaje = parseFloat(document.getElementById('precio_viaje').value.replace(/,/g, '')) || 0;
-        const baseFactura = parseFloat(document.getElementById('base_factura').value) || 0;
-
-        //Calculamos IVA y retencion
-        const iva = (baseFactura * tasa_iva);
-        const retencion = (baseFactura * tasa_retencion);
-
-        //calcularImpuestos();
-
-        // Realizar el cálculo
-        const baseTaref = (total - baseFactura - iva) + retencion;
-
-        // Mostrar el resultado en el input de base_taref
-        document.getElementById('base_taref').value = baseTaref.toFixed(2);
-    }*/
-
     // Agregar eventos de cambio a los inputs para calcular automáticamente
-   // document.getElementById('total').addEventListener('input', calcularBaseTaref);
     document.getElementById('base_factura').addEventListener('input', calcularTotal);
     var inputMoneyFormat = $('.moneyformat');
     inputMoneyFormat.on('input',calcularTotal)
-   // document.getElementById('iva').addEventListener('input', calcularBaseTaref);
-  //  document.getElementById('retencion').addEventListener('input', calcularBaseTaref);
+
 });
 
 
-    $('#id_cliente').change(function() {
-        var clienteId = $(this).val();
-        if (clienteId) {
-            var dataClientes = JSON.parse(catalogo_clientes.value);
-            dataClientes.forEach((i)=>{
-                if(i.id == clienteId){
-                    $("#telClient").text(i.telefono)
-                    $("#mailClient").text(i.correo.toLowerCase())
+$('#id_cliente').change(function() {
+    var clienteId = $(this).val();
+    if (clienteId) {
+        var dataClientes = JSON.parse(catalogo_clientes.value);
+        dataClientes.forEach((i)=>{
+            if(i.id == clienteId){
+                $("#telClient").text(i.telefono)
+                $("#mailClient").text(i.correo.toLowerCase())
 
-                }
-            })
-            $.ajax({
-                type: 'GET',
-                url: '/subclientes/' + clienteId,
-                success: function(data) {
-                    $('#id_subcliente').empty();
-                    $('#id_subcliente').append('<option value="">Seleccionar subcliente</option>');
-                    $.each(data, function(key, subcliente) {
-                        $('#id_subcliente').append('<option value="' + subcliente.id + '">' + subcliente.nombre + '</option>');
-                    });
-                    $('#id_subcliente').select2();
-                }
-            });
-        } else {
-            $('#id_subcliente').empty();
-            $('#id_subcliente').append('<option value="">Seleccionar subcliente</option>');
+            }
+        })
+        $.ajax({
+            type: 'GET',
+            url: '/subclientes/' + clienteId,
+            success: function(data) {
+                $('#id_subcliente').empty();
+                $('#id_subcliente').append('<option value="">Seleccionar subcliente</option>');
+                $.each(data, function(key, subcliente) {
+                    $('#id_subcliente').append('<option value="' + subcliente.id + '">' + subcliente.nombre + '</option>');
+                });
+                $('#id_subcliente').select2();
+            }
+        });
+    } else {
+        $('#id_subcliente').empty();
+        $('#id_subcliente').append('<option value="">Seleccionar subcliente</option>');
+    }
+});
+
+$("#cotizacionCreate").on("submit", function(e){
+    e.preventDefault();
+    var form = $(this);
+    var url = form.attr('action');
+
+    //Validaciones a campos obligatorios
+    if($("#id_cliente").val() == ""){
+        Swal.fire("Seleccione Cliente","Aún no ha seleccionado Cliente, este es un campo requerido","warning");
+        return false;
+    }
+
+    const selectSubClient = document.getElementById("id_subcliente");
+    const subClientQty = selectSubClient.options.length;
+
+    if(subClientQty > 1 && $("#id_subcliente").val() == ""){
+        Swal.fire("Seleccione SubCliente","Aún no ha seleccionado SubCliente, este es un campo requerido","warning");
+        return false;
+    }
+
+    const formFields = [
+        {'field':'origen','label':'Origen','required': true, "type":"text"},
+        {'field':'destino','label':'Destino','required': true, "type":"text"},
+        {'field':'num_contenedor','label':'Núm. Contenedor','required': true, "type":"text"},
+        {'field':'tamano','label':'Tamaño Contenedor','required': true, "type":"numeric"},
+        {'field':'peso_reglamentario','label':'Peso Reglamentario','required': true, "type":"numeric"},
+        {'field':'peso_contenedor','label':'Peso Contenedor','required': true, "type":"numeric"},
+        {'field':'precio_viaje','label':'Precio Viaje','required': true, "type":"money"},
+        {'field':'base_factura','label':'Base 1','required': true, "type":"money"},
+        {'field':'fecha_modulacion','label':'Fecha Modulación','required': true, "type":"text"},
+        {'field':'fecha_entrega','label':'Fecha Entrega','required': true, "type":"text"},
+        {'field':'sobrepeso','label':'Sobrepeso','required': false, "type":"numeric"},
+        {'field':'precio_sobre_peso','label':'Precio Sobre Peso','required': false, "type":"money"},
+        {'field':'precio_tonelada','label':'Precio Tonelada','required': false, "type":"money"},
+        {'field':'burreo','label':'Burreo','required': false, "type":"money"},
+        {'field':'maniobra','label':'Maniobra','required': false, "type":"money"},
+        {'field':'estadia','label':'Estadía','required': false, "type":"money"},
+        {'field':'otro','label':'Otros','required': false, "type":"money"},
+        {'field':'iva','label':'IVA','required': false, "type":"money"},
+        {'field':'retencion','label':'Retención','required': false, "type":"money"},
+        {'field':'base_taref','label':'Base 2','required': false, "type":"money"},
+        {'field':'total','label':'Total','required': false, "type":"money"},
+       
+    ];
+
+    var passValidation = formFields.every((item) => {
+        var field = document.getElementById(item.field);
+        
+        if(item.required === true && field.value.length == 0){
+            Swal.fire("El campo "+item.label+" es obligatorio","Parece que no ha proporcionado información en el campo "+item.label,"warning");
+            return false;
         }
-    });
+
+        return true;
+    })
+
+   if(!passValidation) return passValidation;
+
+   //Validaciones con condicionantes
+   let sobrePeso = document.getElementById('sobrepeso').value;
+   let precioSobrePeso = document.getElementById('precio_sobre_peso').value;
+   if(sobrePeso > 0 && precioSobrePeso.length <= 0){
+        Swal.fire("El campo Precio Sobre Peso es obligatorio","Parece que no ha proporcionado información en el campo Precio Sobre Peso","warning");
+        return false;
+   }
+
+   const formData = {};
+
+   formFields.forEach((item) =>{
+    var input = item.field;
+    var inputValue = document.getElementById(input);
+    if(item.type == "money"){
+        formData[input] = (inputValue.value.length > 0) ? parseFloat(reverseMoneyFormat(inputValue.value)) : 0;
+    }else{
+        formData[input] = inputValue.value;
+    }
+   });
+
+   formData["_token"] = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+   formData["id_cliente"] = $("#id_cliente").val();
+   formData["id_subcliente"] = selectSubClient.value;
+
+   $.ajax({
+        url: url,
+        type: "post",
+        data: formData,
+        beforeSend:function(){
+        
+        },
+        success:function(data){
+                Swal.fire(data.Titulo,data.Mensaje,data.TMensaje).then(function() {
+                    if(data.TMensaje == "success"){
+                    location.reload();
+                    }
+                });
+        },
+        error:function(){       
+        Swal.fire("Error","Ha ocurrido un error, intentelo nuevamente","error");
+        }
+    })
+
+  
+});
 
 
