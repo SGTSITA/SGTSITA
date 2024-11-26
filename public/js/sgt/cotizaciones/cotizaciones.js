@@ -2,6 +2,36 @@ const tasa_iva = 0.16;
 const tasa_retencion = 0.04;
 const catalogo_clientes = document.querySelector("#txtClientes");
 
+const formFields = [
+    {'field':'origen','label':'Origen','required': true, "type":"text"},
+    {'field':'destino','label':'Destino','required': true, "type":"text"},
+    {'field':'num_contenedor','label':'Núm. Contenedor','required': true, "type":"text"},
+    {'field':'tamano','label':'Tamaño Contenedor','required': true, "type":"numeric"},
+    {'field':'peso_reglamentario','label':'Peso Reglamentario','required': true, "type":"numeric"},
+    {'field':'peso_contenedor','label':'Peso Contenedor','required': true, "type":"numeric"},
+    {'field':'precio_viaje','label':'Precio Viaje','required': true, "type":"money"},
+    {'field':'base_factura','label':'Base 1','required': true, "type":"money"},
+    {'field':'fecha_modulacion','label':'Fecha Modulación','required': false, "type":"text"},
+    {'field':'fecha_entrega','label':'Fecha Entrega','required': false, "type":"text"},
+    {'field':'sobrepeso','label':'Sobrepeso','required': false, "type":"numeric"},
+    {'field':'precio_sobre_peso','label':'Precio Sobre Peso','required': false, "type":"money"},
+    {'field':'precio_tonelada','label':'Precio Tonelada','required': false, "type":"money"},
+    {'field':'burreo','label':'Burreo','required': false, "type":"money"},
+    {'field':'maniobra','label':'Maniobra','required': false, "type":"money"},
+    {'field':'estadia','label':'Estadía','required': false, "type":"money"},
+    {'field':'otro','label':'Otros','required': false, "type":"money"},
+    {'field':'iva','label':'IVA','required': false, "type":"money"},
+    {'field':'retencion','label':'Retención','required': false, "type":"money"},
+    {'field':'base_taref','label':'Base 2','required': false, "type":"money"},
+    {'field':'total','label':'Total','required': false, "type":"money"},   
+];
+
+const formFieldsBloque = [
+    {'field':'bloque','label':'Block','required': false, "type":"text"},
+    {'field':'bloque_hora_i','label':'Hora Inicio','required': false, "type":"text"},
+    {'field':'bloque_hora_f','label':'Hora Fin','required': false, "type":"text"},
+]
+
 $(".moneyformat").on("focus",(e)=>{
 var val = e.target.value;
 e.target.value = reverseMoneyFormat(val);
@@ -72,7 +102,7 @@ document.addEventListener('DOMContentLoaded', function () {
         var sobrepeso = parseFloat(sobrepesoInput.value.replace(/,/g, '')) || 0;
    
         // Obtener el valor de Precio Sobre Peso
-        var precioSobrePeso = parseFloat(precioSobrePesoInput.value.replace(/,/g, '')) || 0;
+        var precioSobrePeso = parseFloat(reverseMoneyFormat(precioSobrePesoInput.value)) || 0;
    
         // Calcular el resultado de la multiplicación
         var resultado = sobrepeso * precioSobrePeso;
@@ -161,31 +191,6 @@ $("#cotizacionCreate").on("submit", function(e){
         return false;
     }
 
-    const formFields = [
-        {'field':'origen','label':'Origen','required': true, "type":"text"},
-        {'field':'destino','label':'Destino','required': true, "type":"text"},
-        {'field':'num_contenedor','label':'Núm. Contenedor','required': true, "type":"text"},
-        {'field':'tamano','label':'Tamaño Contenedor','required': true, "type":"numeric"},
-        {'field':'peso_reglamentario','label':'Peso Reglamentario','required': true, "type":"numeric"},
-        {'field':'peso_contenedor','label':'Peso Contenedor','required': true, "type":"numeric"},
-        {'field':'precio_viaje','label':'Precio Viaje','required': true, "type":"money"},
-        {'field':'base_factura','label':'Base 1','required': true, "type":"money"},
-        {'field':'fecha_modulacion','label':'Fecha Modulación','required': true, "type":"text"},
-        {'field':'fecha_entrega','label':'Fecha Entrega','required': true, "type":"text"},
-        {'field':'sobrepeso','label':'Sobrepeso','required': false, "type":"numeric"},
-        {'field':'precio_sobre_peso','label':'Precio Sobre Peso','required': false, "type":"money"},
-        {'field':'precio_tonelada','label':'Precio Tonelada','required': false, "type":"money"},
-        {'field':'burreo','label':'Burreo','required': false, "type":"money"},
-        {'field':'maniobra','label':'Maniobra','required': false, "type":"money"},
-        {'field':'estadia','label':'Estadía','required': false, "type":"money"},
-        {'field':'otro','label':'Otros','required': false, "type":"money"},
-        {'field':'iva','label':'IVA','required': false, "type":"money"},
-        {'field':'retencion','label':'Retención','required': false, "type":"money"},
-        {'field':'base_taref','label':'Base 2','required': false, "type":"money"},
-        {'field':'total','label':'Total','required': false, "type":"money"},
-       
-    ];
-
     var passValidation = formFields.every((item) => {
         var field = document.getElementById(item.field);
         
@@ -246,3 +251,50 @@ $("#cotizacionCreate").on("submit", function(e){
 });
 
 
+$("#cotizacionesUpdate").on("submit",(e)=>{
+    e.preventDefault();
+    //Validaciones a campos obligatorios
+    if($("#id_cliente").val() == ""){
+        Swal.fire("Seleccione Cliente","Aún no ha seleccionado Cliente, este es un campo requerido","warning");
+        return false;
+    }
+
+    const selectSubClient = document.getElementById("id_subcliente");
+    const subClientQty = selectSubClient.options.length;
+
+    if(subClientQty > 1 && $("#id_subcliente").val() == ""){
+        Swal.fire("Seleccione SubCliente","Aún no ha seleccionado SubCliente, este es un campo requerido","warning");
+        return false;
+    }
+
+    var passValidation = formFields.every((item) => {
+        var field = document.getElementById(item.field);
+        
+        if(item.required === true && field.value.length == 0){
+            Swal.fire("El campo "+item.label+" es obligatorio","Parece que no ha proporcionado información en el campo "+item.label,"warning");
+            return false;
+        }
+
+        return true;
+    })
+
+   if(!passValidation) return passValidation;
+
+   //Validaciones con condicionantes
+   let sobrePeso = document.getElementById('sobrepeso').value;
+   let precioSobrePeso = document.getElementById('precio_sobre_peso').value;
+   if(sobrePeso > 0 && precioSobrePeso.length <= 0){
+        Swal.fire("El campo Precio Sobre Peso es obligatorio","Parece que no ha proporcionado información en el campo Precio Sobre Peso","warning");
+        return false;
+   }
+
+   //Eliminamos el formato moneda de todos los campos antes de enviar al backend
+   formFields.forEach((item) =>{
+    if(item.type == "money") {
+        var field = document.getElementById(item.field);
+        field.value = reverseMoneyFormat(field.value);
+    }
+   });
+
+   e.target.submit();
+})
