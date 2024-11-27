@@ -58,7 +58,7 @@
                         </nav>
 
 
-                        <form method="POST" action="{{ route('update.cotizaciones', $cotizacion->id) }}" id="" enctype="multipart/form-data" role="form">
+                        <form method="POST" action="{{ route('update.cotizaciones', $cotizacion->id) }}" id="cotizacionesUpdate" enctype="multipart/form-data" role="form">
                             @csrf
                             <input type="hidden" name="_method" value="PATCH">
 
@@ -75,24 +75,58 @@
                                             @endif
 
                                             <div class="col-6 form-group">
-                                                <label for="name">Cliente *</label>
+                                                <!--label for="name">Cliente *</label>
                                                 <select class="form-select cliente d-inline-block" data-toggle="select" id="id_cliente" name="id_cliente">
                                                     <option value="{{ $cotizacion->id_cliente }}">{{ $cotizacion->Cliente->nombre }} / {{ $cotizacion->Cliente->telefono }}</option>
                                                     @foreach ($clientes as $item)
                                                         <option value="{{ $item->id }}">{{ $item->nombre }} / {{ $item->telefono }}</option>
                                                     @endforeach
-                                                </select>
+                                                </select-->
+                                                <ul class="list-group">
+                                                    <li class="list-group-item border-1 border-dashed d-flex p-4 mb-2 bg-gray-100 border-radius-lg">
+                                                    <div class="d-flex flex-column">
+                                                        <h6 class="mb-2 text-md">Cliente</h6>
+                                                        <span class="mb-2 text-sm">
+                                                            Nombre: <span class="text-dark font-weight-bold ms-2">
+                                                            <select class="form-select bg-transparent cliente d-inline-block"  data-toggle="select" id="id_cliente" name="id_cliente" value="{{ old('id_cliente') }}">
+                                                                <option value="">Seleccionar cliente</option>
+                                                                @foreach ($clientes as $item)
+                                                                    <option value="{{ $item->id }}" @if($item->id == $cotizacion->id_cliente) selected @endif>{{ucwords(strtolower( $item->nombre)) }} </option>
+                                                                @endforeach
+                                                            </select></span>
+                                                        </span>
+                                                        <span class="mb-2 text-sm">Teléfono: <span class="text-dark ms-2 font-weight-bold" id="telClient"></span></span>
+                                                        <span class="text-xs">Correo Electrónico: <span class="text-dark ms-2 font-weight-bold" id="mailClient"></span></span>
+                                                    </div>
+                                                    </li>
+                                                </ul>
+                                                <input type="hidden" id="txtClientes" value ="{{($clientes)}}">
                                             </div>
 
                                             <div class="col-6 form-group">
-                                                <label for="name">Subcliente *</label>
+                                                <!--label for="name">Subcliente *</label>
                                                 <select class="form-select subcliente d-inline-block" id="id_subcliente" name="id_subcliente">
                                                     @if ($cotizacion->id_subcliente != NULL)
                                                         <option value="{{ $cotizacion->id_subcliente }}">{{ $cotizacion->Subcliente->nombre }} / {{ $cotizacion->Subcliente->telefono }}</option>
                                                     @else
                                                         <option value="">Seleccionar subcliente</option>
                                                     @endif
-                                                </select>
+                                                </select-->
+                                                <ul class="list-group">
+                                                    <li class="list-group-item border-1 border-dashed d-flex p-4 mb-2 bg-gray-100 border-radius-lg">
+                                                    <div class="d-flex flex-column">
+                                                        <h6 class="mb-2 text-md">SubCliente</h6>
+                                                        <span class="mb-2 text-sm">
+                                                            Nombre: <span class="text-dark font-weight-bold ms-2">
+                                                            <select class="form-select subcliente d-inline-block" id="id_subcliente" name="id_subcliente">
+                                                                <option value="">Seleccionar subcliente</option>
+                                                            </select></span>
+                                                        </span>
+                                                        <span class="mb-2 text-sm">Teléfono: <span class="text-dark ms-2 font-weight-bold" id="telClient"></span></span>
+                                                        <span class="text-xs">Correo Electrónico: <span class="text-dark ms-2 font-weight-bold" id="mailClient"></span></span>
+                                                    </div>
+                                                    </li>
+                                                </ul>
                                             </div>
 
                                             <div class="col-6 form-group">
@@ -101,7 +135,7 @@
                                                     <span class="input-group-text" id="basic-addon1">
                                                         <img src="{{ asset('img/icon/gps.webp') }}" alt="" width="25px">
                                                     </span>
-                                                    <input name="cot_origen" id="cot_origen" type="text" class="form-control" value="{{$cotizacion->origen}}">
+                                                    <input name="origen" id="origen" type="text" class="form-control" autocomplete="off" value="{{$cotizacion->origen}}">
                                                 </div>
                                             </div>
 
@@ -111,7 +145,7 @@
                                                     <span class="input-group-text" id="basic-addon1">
                                                         <img src="{{ asset('img/icon/origen.png') }}" alt="" width="25px">
                                                     </span>
-                                                    <input name="cot_destino" id="cot_destino" type="text" class="form-control" value="{{$cotizacion->destino}}">
+                                                    <input name="destino" id="destino" type="text" class="form-control" autocomplete="off" value="{{$cotizacion->destino}}">
                                                 </div>
                                             </div>
 
@@ -121,7 +155,7 @@
                                                     <span class="input-group-text" id="basic-addon1">
                                                         <img src="{{ asset('img/icon/calendar-dar.webp') }}" alt="" width="25px">
                                                     </span>
-                                                    <input name="cot_fecha_modulacion" id="cot_fecha_modulacion" type="date" class="form-control" value="{{$cotizacion->fecha_modulacion}}">
+                                                    <input name="fecha_modulacion" id="fecha_modulacion" type="date" class="form-control" value="{{$cotizacion->fecha_modulacion}}">
                                                 </div>
                                             </div>
 
@@ -131,7 +165,7 @@
                                                     <span class="input-group-text" id="basic-addon1">
                                                         <img src="{{ asset('img/icon/calendar-dar.webp') }}" alt="" width="25px">
                                                     </span>
-                                                    <input name="cot_fecha_entrega" id="cot_fecha_entrega" type="date" class="form-control" value="{{$cotizacion->fecha_entrega}}">
+                                                    <input name="fecha_entrega" id="fecha_entrega" type="date" class="form-control" value="{{$cotizacion->fecha_entrega}}">
                                                 </div>
                                             </div>
 
@@ -141,7 +175,7 @@
                                                     <span class="input-group-text" id="basic-addon1">
                                                         <img src="{{ asset('img/icon/escala.png') }}" alt="" width="25px">
                                                     </span>
-                                                    <input name="cot_tamano" id="cot_tamano" type="text" class="form-control"  value="{{$cotizacion->tamano}}">
+                                                    <input name="tamano" id="tamano" type="text" class="form-control" oninput="allowOnlyDecimals(event)" autocomplete="off" value="{{$cotizacion->tamano}}">
                                                 </div>
                                             </div>
 
@@ -151,7 +185,7 @@
                                                     <span class="input-group-text" id="basic-addon1">
                                                         <img src="{{ asset('img/icon/perdida-de-peso.png') }}" alt="" width="25px">
                                                     </span>
-                                                    <input name="peso_reglamentario" id="peso_reglamentario" type="number" class="form-control"  value="{{$cotizacion->peso_reglamentario}}">
+                                                    <input name="peso_reglamentario" id="peso_reglamentario" type="number" oninput="allowOnlyDecimals(event)" class="form-control calculo-cotizacion" autocomplete="off" value="{{$cotizacion->peso_reglamentario}}">
                                                 </div>
                                             </div>
 
@@ -161,7 +195,7 @@
                                                     <span class="input-group-text" id="basic-addon1">
                                                         <img src="{{ asset('img/icon/peso.png') }}" alt="" width="25px">
                                                     </span>
-                                                    <input name="cot_peso_contenedor" id="cot_peso_contenedor" type="text" class="form-control" value="{{$cotizacion->peso_contenedor}}">
+                                                    <input name="peso_contenedor" id="peso_contenedor" type="text" class="form-control calculo-cotizacion" oninput="allowOnlyDecimals(event)" autocomplete="off" value="{{$cotizacion->peso_contenedor}}">
                                                 </div>
                                             </div>
 
@@ -171,7 +205,7 @@
                                                     <span class="input-group-text" id="basic-addon1">
                                                         <img src="{{ asset('img/icon/pesa-rusa.png') }}" alt="" width="25px">
                                                     </span>
-                                                    <input name="sobrepeso" id="sobrepeso" type="text" class="form-control" readonly value="{{$cotizacion->sobrepeso}}">
+                                                    <input name="sobrepeso" id="sobrepeso" type="text" class="form-control calculo-cotizacion" autocomplete="off" readonly value="{{$cotizacion->sobrepeso}}">
                                                 </div>
                                             </div>
 
@@ -181,7 +215,7 @@
                                                     <span class="input-group-text" id="basic-addon1">
                                                         <img src="{{ asset('img/icon/tonelada.png') }}" alt="" width="25px">
                                                     </span>
-                                                    <input name="precio_sobre_peso" id="precio_sobre_peso" type="text" class="form-control" value="{{ number_format($cotizacion->precio_sobre_peso, 2, '.', ',') }}">
+                                                    <input name="precio_sobre_peso" id="precio_sobre_peso" type="text" autocomplete="off" oninput="allowOnlyDecimals(event)" class="form-control moneyformat calculo-cotizacion" value="{{ number_format($cotizacion->precio_sobre_peso, 2, '.', ',') }}">
                                                 </div>
                                             </div>
 
@@ -191,7 +225,7 @@
                                                     <span class="input-group-text" id="basic-addon1">
                                                         <img src="{{ asset('img/icon/tonelada.png') }}" alt="" width="25px">
                                                     </span>
-                                                    <input name="precio_tonelada" id="precio_tonelada" type="text" class="form-control" value="{{$cotizacion->precio_tonelada}}" readonly>
+                                                    <input name="precio_tonelada" id="precio_tonelada" type="text" class="form-control moneyformat calculo-cotizacion" oninput="allowOnlyDecimals(event)" autocomplete="off" value="{{$cotizacion->precio_tonelada}}" readonly>
                                                 </div>
                                             </div>
                                             <div class="col-6"></div>
@@ -202,7 +236,7 @@
                                                     <span class="input-group-text" id="basic-addon1">
                                                         <img src="{{ asset('img/icon/bolsa-de-dinero.webp') }}" alt="" width="25px">
                                                     </span>
-                                                    <input name="cot_precio_viaje" id="cot_precio_viaje" type="text" class="form-control" onkeypress="return event.charCode >= 48 && event.charCode <= 57 || event.charCode === 46" oninput="calcularTotal()" value="{{$cotizacion->precio_viaje}}">
+                                                    <input name="precio_viaje" id="precio_viaje" type="text" class="form-control moneyformat calculo-cotizacion" oninput="allowOnlyDecimals(event)" autocomplete="off" value="{{$cotizacion->precio_viaje}}">
                                                 </div>
                                             </div>
 
@@ -212,7 +246,7 @@
                                                     <span class="input-group-text" id="basic-addon1">
                                                         <img src="{{ asset('img/icon/burro.png') }}" alt="" width="25px">
                                                     </span>
-                                                    <input name="cot_burreo" id="cot_burreo" type="float" class="form-control"onkeypress="return event.charCode >= 48 && event.charCode <= 57 || event.charCode === 46" oninput="calcularTotal()" value="{{$cotizacion->burreo}}">
+                                                    <input name="burreo" id="burreo" type="float" class="form-control moneyformat calculo-cotizacion" autocomplete="off" oninput="allowOnlyDecimals(event)" value="{{$cotizacion->burreo}}">
                                                 </div>
                                             </div>
 
@@ -222,7 +256,7 @@
                                                     <span class="input-group-text" id="basic-addon1">
                                                         <img src="{{ asset('img/icon/logistica.png') }}" alt="" width="25px">
                                                     </span>
-                                                    <input name="cot_maniobra" id="cot_maniobra" type="float" class="form-control"onkeypress="return event.charCode >= 48 && event.charCode <= 57 || event.charCode === 46" oninput="calcularTotal()" value="{{$cotizacion->maniobra}}">
+                                                    <input name="maniobra" id="maniobra" type="float" class="form-control moneyformat calculo-cotizacion" autocomplete="off" oninput="allowOnlyDecimals(event)" value="{{$cotizacion->maniobra}}">
                                                 </div>
                                             </div>
 
@@ -232,7 +266,7 @@
                                                     <span class="input-group-text" id="basic-addon1">
                                                         <img src="{{ asset('img/icon/servidor-en-la-nube.png') }}" alt="" width="25px">
                                                     </span>
-                                                    <input name="cot_estadia" id="cot_estadia" type="float" class="form-control"onkeypress="return event.charCode >= 48 && event.charCode <= 57 || event.charCode === 46" oninput="calcularTotal()" value="{{$cotizacion->estadia}}">
+                                                    <input name="estadia" id="estadia" type="float" class="form-control moneyformat calculo-cotizacion" autocomplete="off" oninput="allowOnlyDecimals(event)" value="{{$cotizacion->estadia}}">
                                                 </div>
                                             </div>
 
@@ -242,7 +276,7 @@
                                                     <span class="input-group-text" id="basic-addon1">
                                                         <img src="{{ asset('img/icon/inventario.png.webp') }}" alt="" width="25px">
                                                     </span>
-                                                    <input name="cot_otro" id="cot_otro" type="float" class="form-control"onkeypress="return event.charCode >= 48 && event.charCode <= 57 || event.charCode === 46" oninput="calcularTotal()"  value="{{$cotizacion->otro}}">
+                                                    <input name="otro" id="otro" type="float" class="form-control moneyformat calculo-cotizacion" autocomplete="off" oninput="allowOnlyDecimals(event)" value="{{$cotizacion->otro}}">
                                                 </div>
                                             </div>
 
@@ -252,7 +286,7 @@
                                                     <span class="input-group-text" id="basic-addon1">
                                                         <img src="{{ asset('img/icon/impuesto.png') }}" alt="" width="25px">
                                                     </span>
-                                                    <input name="cot_iva" id="cot_iva" type="number" class="form-control"onkeypress="return event.charCode >= 48 && event.charCode <= 57 || event.charCode === 46" oninput="calcularTotal()" value="{{$cotizacion->iva}}">
+                                                    <input name="iva" id="iva" type="text" class="form-control moneyformat calculo-cotizacion" autocomplete="off" readonly value="{{$cotizacion->iva}}">
                                                 </div>
                                             </div>
 
@@ -262,7 +296,7 @@
                                                     <span class="input-group-text" id="basic-addon1">
                                                         <img src="{{ asset('img/icon/monedas.webp') }}" alt="" width="25px">
                                                     </span>
-                                                    <input name="cot_retencion" id="cot_retencion" type="float" class="form-control"onkeypress="return event.charCode >= 48 && event.charCode <= 57 || event.charCode === 46" oninput="calcularTotal()" value="{{$cotizacion->retencion}}">
+                                                    <input name="retencion" id="retencion" type="float" class="form-control moneyformat calculo-cotizacion" autocomplete="off" readonly value="{{$cotizacion->retencion}}">
                                                 </div>
                                             </div>
 
@@ -272,7 +306,7 @@
                                                     <span class="input-group-text" id="basic-addon1">
                                                         <img src="{{ asset('img/icon/factura.png') }}" alt="" width="25px">
                                                     </span>
-                                                    <input name="base_factura" id="base_factura" type="float" class="form-control" value="{{$cotizacion->base_factura}}">
+                                                    <input name="base_factura" id="base_factura" type="float" class="form-control moneyformat calculo-cotizacion" oninput="allowOnlyDecimals(event)" autocomplete="off" value="{{$cotizacion->base_factura}}">
                                                 </div>
                                             </div>
 
@@ -282,7 +316,7 @@
                                                     <span class="input-group-text" id="basic-addon1">
                                                         <img src="{{ asset('img/icon/factura.png.webp') }}" alt="" width="25px">
                                                     </span>
-                                                    <input name="base_taref" id="base_taref" type="float" class="form-control" value="{{$cotizacion->base_taref}}">
+                                                    <input name="base_taref" id="base_taref" type="float" class="form-control moneyformat calculo-cotizacion" readonly value="{{$cotizacion->base_taref}}">
                                                 </div>
                                             </div>
                                             <div class="col-4"></div>
@@ -293,7 +327,7 @@
                                                     <span class="input-group-text" id="basic-addon1">
                                                         <img src="{{ asset('img/icon/monedas.webp') }}" alt="" width="25px">
                                                     </span>
-                                                    <input name="total" id="total" type="float" class="form-control" readonly>
+                                                    <input name="total" id="total" type="float" class="form-control moneyformat calculo-cotizacion" readonly>
                                                 </div>
                                             </div>
 
@@ -797,7 +831,7 @@
                                                         <span class="input-group-text" id="basic-addon1">
                                                             <img src="{{ asset('img/icon/metodo-de-pago.webp') }}" alt="" width="25px">
                                                         </span>
-                                                        <input name="precio_proveedor" id="precio_proveedor" type="number" class="form-control" value="{{$documentacion->Asignaciones->precio}}">
+                                                        <input name="precio_proveedor" id="precio_proveedor" type="text" class="form-control moneyformat calculo-proveedor" value="{{$documentacion->Asignaciones->precio}}">
                                                     </div>
                                                 </div>
 
@@ -807,7 +841,7 @@
                                                         <span class="input-group-text" id="basic-addon1">
                                                             <img src="{{ asset('img/icon/burro.png') }}" alt="" width="25px">
                                                         </span>
-                                                        <input name="burreo_proveedor" id="burreo_proveedor" type="float" class="form-control" value="{{$documentacion->Asignaciones->burreo}}">
+                                                        <input name="burreo_proveedor" id="burreo_proveedor" type="float" class="form-control moneyformat calculo-proveedor" value="{{$documentacion->Asignaciones->burreo}}">
                                                     </div>
                                                 </div>
 
@@ -817,7 +851,7 @@
                                                         <span class="input-group-text" id="basic-addon1">
                                                             <img src="{{ asset('img/icon/logistica.png') }}" alt="" width="25px">
                                                         </span>
-                                                        <input name="maniobra_proveedor" id="maniobra_proveedor" type="float" class="form-control" value="{{$documentacion->Asignaciones->maniobra}}">
+                                                        <input name="maniobra_proveedor" id="maniobra_proveedor" type="float" class="form-control moneyformat calculo-proveedor" value="{{$documentacion->Asignaciones->maniobra}}">
                                                     </div>
                                                 </div>
 
@@ -827,7 +861,7 @@
                                                         <span class="input-group-text" id="basic-addon1">
                                                             <img src="{{ asset('img/icon/servidor-en-la-nube.png') }}" alt="" width="25px">
                                                         </span>
-                                                        <input name="estadia_proveedor" id="estadia_proveedor" type="float" class="form-control" value="{{$documentacion->Asignaciones->estadia}}">
+                                                        <input name="estadia_proveedor" id="estadia_proveedor" type="float" class="form-control moneyformat calculo-proveedor" value="{{$documentacion->Asignaciones->estadia}}">
                                                     </div>
                                                 </div>
 
@@ -837,7 +871,7 @@
                                                         <span class="input-group-text" id="basic-addon1">
                                                             <img src="{{ asset('img/icon/tonelada.png') }}" alt="" width="25px">
                                                         </span>
-                                                        <input id="cantidad_sobrepeso_proveedor" name="cantidad_sobrepeso_proveedor" type="float" class="form-control" value="{{$cotizacion->sobrepeso}}" disabled>
+                                                        <input id="cantidad_sobrepeso_proveedor" name="cantidad_sobrepeso_proveedor" type="float" class="form-control calculo-proveedor" value="{{$cotizacion->sobrepeso}}" disabled>
                                                     </div>
                                                 </div>
 
@@ -847,7 +881,7 @@
                                                         <span class="input-group-text" id="basic-addon1">
                                                             <img src="{{ asset('img/icon/pago-en-efectivo.png') }}" alt="" width="25px">
                                                         </span>
-                                                        <input id="sobrepeso_proveedor" name="sobrepeso_proveedor" value="{{$documentacion->Asignaciones->sobrepeso_proveedor}}" type="float" class="form-control">
+                                                        <input id="sobrepeso_proveedor" name="sobrepeso_proveedor" value="{{$documentacion->Asignaciones->sobrepeso_proveedor}}" type="float" class="form-control moneyformat calculo-proveedor">
                                                     </div>
                                                 </div>
 
@@ -857,7 +891,7 @@
                                                         <span class="input-group-text" id="basic-addon1">
                                                             <img src="{{ asset('img/icon/pago-en-efectivo.png') }}" alt="" width="25px">
                                                         </span>
-                                                        <input id="total_tonelada" name="total_tonelada" type="float" class="form-control" readonly>
+                                                        <input id="total_tonelada" name="total_tonelada" type="float" class="form-control moneyformat calculo-proveedor" readonly>
                                                     </div>
                                                 </div>
 
@@ -867,7 +901,7 @@
                                                         <span class="input-group-text" id="basic-addon1">
                                                             <img src="{{ asset('img/icon/factura.png') }}" alt="" width="25px">
                                                         </span>
-                                                        <input name="base1_proveedor" id="base1_proveedor" type="float" class="form-control" value="{{$documentacion->Asignaciones->base1_proveedor}}">
+                                                        <input name="base1_proveedor" id="base1_proveedor" type="float" class="form-control moneyformat calculo-proveedor" value="{{$documentacion->Asignaciones->base1_proveedor}}">
                                                     </div>
                                                 </div>
 
@@ -877,7 +911,7 @@
                                                         <span class="input-group-text" id="basic-addon1">
                                                             <img src="{{ asset('img/icon/factura.png.webp') }}" alt="" width="25px">
                                                         </span>
-                                                        <input name="base2_proveedor" id="base2_proveedor" type="float" class="form-control" value="{{$documentacion->Asignaciones->base2_proveedor}}">
+                                                        <input name="base2_proveedor" id="base2_proveedor" type="float" class="form-control moneyformat calculo-proveedor" readonly value="{{$documentacion->Asignaciones->base2_proveedor}}">
                                                     </div>
                                                 </div>
 
@@ -889,7 +923,7 @@
                                                         <span class="input-group-text" id="basic-addon1">
                                                             <img src="{{ asset('img/icon/inventario.png.webp') }}" alt="" width="25px">
                                                         </span>
-                                                        <input name="otro_proveedor" id="otro_proveedor" type="float" class="form-control" value="{{$documentacion->Asignaciones->otro}}">
+                                                        <input name="otro_proveedor" id="otro_proveedor" type="float" class="form-control moneyformat calculo-proveedor" value="{{$documentacion->Asignaciones->otro}}">
                                                     </div>
                                                 </div>
 
@@ -1083,7 +1117,7 @@
                                                         <span class="input-group-text" id="basic-addon1">
                                                             <img src="{{ asset('img/icon/impuesto.png') }}" alt="" width="25px">
                                                         </span>
-                                                        <input name="iva_proveedor" id="iva_proveedor" type="number" class="form-control" value="{{$documentacion->Asignaciones->iva}}">
+                                                        <input name="iva_proveedor" id="iva_proveedor" type="text" readonly class="form-control moneyformat calculo-proveedor" value="{{$documentacion->Asignaciones->iva}}">
                                                     </div>
                                                 </div>
 
@@ -1093,7 +1127,7 @@
                                                         <span class="input-group-text" id="basic-addon1">
                                                             <img src="{{ asset('img/icon/monedas.webp') }}" alt="" width="25px">
                                                         </span>
-                                                        <input name="retencion_proveedor" id="retencion_proveedor" type="float" class="form-control" value="{{$documentacion->Asignaciones->retencion}}">
+                                                        <input name="retencion_proveedor" id="retencion_proveedor" type="text" class="form-control moneyformat calculo-proveedor" readonly value="{{$documentacion->Asignaciones->retencion}}">
                                                     </div>
                                                 </div>
 
@@ -1103,7 +1137,7 @@
                                                         <span class="input-group-text" id="basic-addon1">
                                                             <img src="{{ asset('img/icon/monedas.webp') }}" alt="" width="25px">
                                                         </span>
-                                                        <input name="total_proveedor" id="total_proveedor" type="number" class="form-control" value="{{$documentacion->Asignaciones->total_proveedor}}" readonly>
+                                                        <input name="total_proveedor" id="total_proveedor" type="text" class="form-control moneyformat calculo-proveedor" value="{{$documentacion->Asignaciones->total_proveedor}}" readonly>
                                                     </div>
                                                 </div>
                                             </div>
@@ -1214,8 +1248,29 @@
 @endsection
 
 @section('select2')
+    <style>
+        /* Fondo transparente y sin bordes */
+    .select2-container .select2-selection--single {
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important; /* Eliminar sombras */
+    }
+
+
+    .select2-container .select2-selection--single:focus {
+    outline: none !important;
+    }
+
+
+    .select2-container .select2-selection--single .select2-selection__rendered {
+    color: inherit; /* Heredar color del texto */
+    background-color: transparent !important;
+    }
+    </style>
     <script src="{{ asset('assets/vendor/jquery/dist/jquery.min.js')}}"></script>
     <script src="{{ asset('assets/vendor/select2/dist/js/select2.min.js')}}"></script>
+    <script src="{{ asset('js/sgt/common.js') }}?v={{ filemtime(public_path('js/sgt/common.js')) }}"></script>
+    <script src="{{ asset('js/sgt/cotizaciones/cotizaciones.js') }}?v={{ filemtime(public_path('js/sgt/cotizaciones/cotizaciones.js')) }}"></script>
 
     <script type="text/javascript">
     $(document).ready(function() {
@@ -1242,106 +1297,6 @@
         $clone.appendTo('#formulario');
         });
 
-        function calcularTotal() {
-            const precio_viaje = parseFloat(document.getElementById('cot_precio_viaje').value.replace(/,/g, '')) || 0;
-            const burreo = parseFloat(document.getElementById('cot_burreo').value.replace(/,/g, '')) || 0;
-            const retencion = parseFloat(document.getElementById('cot_retencion').value.replace(/,/g, '')) || 0;
-            const iva = parseFloat(document.getElementById('cot_iva').value.replace(/,/g, '')) || 0;
-            const otro = parseFloat(document.getElementById('cot_otro').value.replace(/,/g, '')) || 0;
-            const estadia = parseFloat(document.getElementById('cot_estadia').value.replace(/,/g, '')) || 0;
-            const maniobra = parseFloat(document.getElementById('cot_maniobra').value.replace(/,/g, '')) || 0;
-
-            // Restar el valor de Retención del total
-            const totalSinRetencion = precio_viaje + burreo + iva + otro + estadia + maniobra;
-            const totalConRetencion = totalSinRetencion - retencion;
-
-            // Obtener el valor de Precio Tonelada
-            const precioTonelada = parseFloat(document.getElementById('precio_tonelada').value.replace(/,/g, '')) || 0;
-
-            // Sumar el valor de Precio Tonelada al total
-            const totalFinal = totalConRetencion + precioTonelada;
-
-            // Formatear el total con comas
-            const totalFormateado = totalFinal.toLocaleString('en-US');
-
-            document.getElementById('total').value = totalFormateado;
-        }
-
-        document.addEventListener('DOMContentLoaded', function () {
-            // Obtener elementos del DOM
-            var pesoReglamentarioInput = document.getElementById('peso_reglamentario');
-            var pesoContenedorInput = document.getElementById('cot_peso_contenedor');
-            var sobrepesoInput = document.getElementById('sobrepeso');
-            var precioSobrePesoInput = document.getElementById('precio_sobre_peso');
-            var precioToneladaInput = document.getElementById('precio_tonelada');
-
-            // Agregar evento de cambio a los inputs
-            pesoReglamentarioInput.addEventListener('input', calcularSobrepeso);
-            pesoContenedorInput.addEventListener('input', calcularSobrepeso);
-
-            // Función para calcular el sobrepeso
-            function calcularSobrepeso() {
-                var pesoReglamentario = parseFloat(pesoReglamentarioInput.value) || 0;
-                var pesoContenedor = parseFloat(pesoContenedorInput.value) || 0;
-
-                // Calcular sobrepeso
-                var sobrepeso = Math.max(pesoContenedor - pesoReglamentario, 0);
-
-                // Mostrar sobrepeso en el input correspondiente con dos decimales
-                sobrepesoInput.value = sobrepeso.toFixed(2);
-
-                // Obtener el valor de Precio Sobre Peso
-                var precioSobrePeso = parseFloat(precioSobrePesoInput.value.replace(/,/g, '')) || 0;
-
-                // Calcular el resultado de la multiplicación
-                var resultado = sobrepeso * precioSobrePeso;
-
-                // Mostrar el resultado en el campo "Precio Tonelada"
-                precioToneladaInput.value = resultado.toLocaleString('en-US');
-
-                // Calcular el total
-                calcularTotal();
-            }
-
-            // Agregar evento de entrada al campo "Precio Sobre Peso"
-            precioSobrePesoInput.addEventListener('input', function () {
-                // Obtener el valor de Precio Sobre Peso
-                var precioSobrePeso = parseFloat(precioSobrePesoInput.value.replace(/,/g, '')) || 0;
-
-                // Calcular el resultado de la multiplicación
-                var resultado = parseFloat(sobrepesoInput.value) * precioSobrePeso;
-
-                // Mostrar el resultado en el campo "Precio Tonelada"
-                precioToneladaInput.value = resultado.toLocaleString('en-US');
-
-                // Calcular el total
-                calcularTotal();
-            });
-
-            // Calcular sobrepeso inicialmente al cargar la página
-            calcularSobrepeso();
-
-            // Función para calcular base_taref
-            function calcularBaseTaref() {
-                // Obtener los valores de los inputs
-                const total = parseFloat(document.getElementById('total').value.replace(/,/g, '')) || 0;
-                const baseFactura = parseFloat(document.getElementById('base_factura').value.replace(/,/g, '')) || 0;
-                const iva = parseFloat(document.getElementById('cot_iva').value.replace(/,/g, '')) || 0;
-                const retencion = parseFloat(document.getElementById('cot_retencion').value.replace(/,/g, '')) || 0;
-
-                // Realizar el cálculo
-                const baseTaref = (total - baseFactura - iva) + retencion;
-
-                // Mostrar el resultado en el input de base_taref
-                document.getElementById('base_taref').value = baseTaref.toFixed(2);
-            }
-
-            // Agregar eventos de cambio a los inputs para calcular automáticamente
-            document.getElementById('total').addEventListener('input', calcularBaseTaref);
-            document.getElementById('base_factura').addEventListener('input', calcularBaseTaref);
-            document.getElementById('cot_iva').addEventListener('input', calcularBaseTaref);
-            document.getElementById('cot_retencion').addEventListener('input', calcularBaseTaref);
-        });
     </script>
 
     <script>
@@ -1459,6 +1414,7 @@
                                     $('#id_subcliente').append('<option value="' + subcliente.id + '">' + subcliente.nombre + '</option>');
                                 }
                             });
+                            $('#id_subcliente').select2()
                         }
                     });
                 } else {
@@ -1481,7 +1437,7 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            const cantidadSobrepesoInput = document.getElementById('cantidad_sobrepeso_proveedor');
+           /* const cantidadSobrepesoInput = document.getElementById('cantidad_sobrepeso_proveedor');
             const valorSobrepesoInput = document.getElementById('sobrepeso_proveedor');
             const sobrepesoProbInput = document.getElementById('total_tonelada');
 
@@ -1592,8 +1548,37 @@
             document.getElementById('base1_proveedor').addEventListener('input', calcularBase2Proveedor);
             document.getElementById('iva_proveedor').addEventListener('input', calcularBase2Proveedor);
             document.getElementById('retencion_proveedor').addEventListener('input', calcularBase2Proveedor);
+            */
         });
 
+    </script>
+
+    <script>
+        $(document).ready(()=>{
+           
+            calcularTotal()
+
+            formFields.forEach((item) =>{
+                if(item.type == "money") {
+                    var field = document.getElementById(item.field);
+                    field.value = reverseMoneyFormat(field.value || 0)
+                    field.value = moneyFormat(field.value || 0);
+                }
+            });
+
+            formFieldsProveedor.forEach((item) =>{
+                if(item.type == "money") {
+                    var field = document.getElementById(item.id);
+                    if(field != null){
+                      field.value = (field.value.length > 0) ? reverseMoneyFormat(field.value) : 0
+                      field.value = moneyFormat(field.value || 0);
+                    }
+                   
+                }
+            });
+
+           
+        })
     </script>
 
 @endsection

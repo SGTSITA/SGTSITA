@@ -187,17 +187,7 @@ class CotizacionesController extends Controller
     }
 
     public function store(Request $request){
-        $validator = Validator::make($request->all(), [
-            'origen' => 'required',
-            'destino' => 'required',
-        ]);
-
-        if ($validator->fails()) {
-            return back()
-            ->withErrors($validator)
-            ->withInput();
-        }
-
+        
         if($request->get('num_contenedor') != NULL){
             $numContenedor = $request->input('num_contenedor');
             $idEmpresa = auth()->user()->id_empresa;
@@ -207,7 +197,8 @@ class CotizacionesController extends Controller
                                                 ->first();
 
             if ($contenedorExistente) {
-                return redirect()->back()->with('error', 'El contenedor ya existe en la empresa.');
+                return response()->json(["Titulo" => "Contenedor creado previamente", "Mensaje" => "El contenedor ya existe en la empresa", "TMensaje" => "warning"]);
+               // return redirect()->back()->with('error', 'El contenedor ya existe en la empresa.');
             }
         }
 
@@ -284,6 +275,9 @@ class CotizacionesController extends Controller
         $docucotizaciones->id_cotizacion = $cotizaciones->id;
         $docucotizaciones->num_contenedor = $request->get('num_contenedor');
         $docucotizaciones->save();
+
+        return response()->json(["Titulo" => "Proceso satisfactorio", "Mensaje" => "Cotización creada con exito", "TMensaje" => "success"]);
+
 
         if($request->get('id_cliente_clientes')){
             Session::flash('success', 'Se ha guardado sus datos con exito');
@@ -433,19 +427,19 @@ class CotizacionesController extends Controller
             $cotizaciones = Cotizaciones::where('id', '=', $id)->first();
             $cotizaciones->id_cliente = $request->get('id_cliente');
             $cotizaciones->id_subcliente = $request->get('id_subcliente');
-            $cotizaciones->origen = $request->get('cot_origen');
-            $cotizaciones->destino = $request->get('cot_destino');
-            $cotizaciones->burreo = $request->get('cot_burreo');
-            $cotizaciones->estadia = $request->get('cot_estadia');
-            $cotizaciones->fecha_modulacion = $request->get('cot_fecha_modulacion');
-            $cotizaciones->fecha_entrega = $request->get('cot_fecha_entrega');
-            $cotizaciones->precio_viaje = $request->get('cot_precio_viaje');
-            $cotizaciones->tamano = $request->get('cot_tamano');
-            $cotizaciones->peso_contenedor = $request->get('cot_peso_contenedor');
-            $cotizaciones->maniobra = $request->get('cot_maniobra');
-            $cotizaciones->otro = $request->get('cot_otro');
-            $cotizaciones->iva = $request->get('cot_iva');
-            $cotizaciones->retencion = $request->get('cot_retencion');
+            $cotizaciones->origen = $request->get('origen');
+            $cotizaciones->destino = $request->get('destino');
+            $cotizaciones->burreo = $request->get('burreo');
+            $cotizaciones->estadia = $request->get('estadia');
+            $cotizaciones->fecha_modulacion = $request->get('fecha_modulacion');
+            $cotizaciones->fecha_entrega = $request->get('fecha_entrega');
+            $cotizaciones->precio_viaje = $request->get('precio_viaje');
+            $cotizaciones->tamano = $request->get('tamano');
+            $cotizaciones->peso_contenedor = $request->get('peso_contenedor');
+            $cotizaciones->maniobra = $request->get('maniobra');
+            $cotizaciones->otro = $request->get('otro');
+            $cotizaciones->iva = $request->get('iva');
+            $cotizaciones->retencion = $request->get('retencion');
             $cotizaciones->bloque = $request->get('bloque');
             $cotizaciones->bloque_hora_i = $request->get('bloque_hora_i');
             $cotizaciones->bloque_hora_f = $request->get('bloque_hora_f');
