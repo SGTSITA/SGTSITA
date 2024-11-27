@@ -86,14 +86,18 @@
             <div class="collapse " id="pagesExamplesCotizaciones">
                 <ul class="nav ms-4">
                     <li class="nav-item ">
+                        <a class="nav-link {{ (Request::is('cotizaciones*') ? 'show' : '') }}" href="{{ route('create.cotizaciones') }}">
+                          <span class="sidenav-mini-icon"> P </span>
+                          <span class="sidenav-normal">Crear Cotización</span>
+                        </a>
                         <a class="nav-link {{ (Request::is('cotizaciones*') ? 'show' : '') }}" href="{{ route('index.cotizaciones') }}">
-                        <span class="sidenav-mini-icon"> P </span>
-                        <span class="sidenav-normal">Seguimiento</span>
+                          <span class="sidenav-mini-icon"> P </span>
+                          <span class="sidenav-normal">Seguimiento</span>
                         </a>
 
                         <a class="nav-link {{ (Request::is('cotizaciones/busqueda') ? 'show' : '') }}" href="{{ route('busqueda.cotizaciones') }}">
-                        <span class="sidenav-mini-icon"> P </span>
-                        <span class="sidenav-normal">Busqueda</span>
+                          <span class="sidenav-mini-icon"> P </span>
+                          <span class="sidenav-normal">Busqueda</span>
                         </a>
                     </li>
                 </ul>

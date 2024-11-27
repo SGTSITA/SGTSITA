@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <!-- CSRF Token -->
     <meta name="csrf-token" content="{{ csrf_token() }}">
-
+    <link rel="stylesheet" href="{{ asset('assets/css/sweetalert2.css?v=2') }}">
   <link rel="apple-touch-icon" sizes="76x76" href="{{ asset('favicon/'. $configuracion->favicon) }}">
   <link rel="icon" type="image/png" href="{{ asset('favicon/'. $configuracion->favicon) }}">
   <title>
@@ -27,7 +27,7 @@
 
   <!-- CSS Files -->
   <link id="pagestyle" href="{{ asset('assets/css/argon-dashboard.css?v=2.0.4')}}" rel="stylesheet" />
-  <link rel="stylesheet" href="{{ asset('assets/css/sweetalert2.css') }}">
+
 
   <style>
         input:before {
