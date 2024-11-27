@@ -3,33 +3,49 @@ const tasa_retencion = 0.04;
 const catalogo_clientes = document.querySelector("#txtClientes");
 
 const formFields = [
-    {'field':'origen','label':'Origen','required': true, "type":"text"},
-    {'field':'destino','label':'Destino','required': true, "type":"text"},
-    {'field':'num_contenedor','label':'Núm. Contenedor','required': true, "type":"text"},
-    {'field':'tamano','label':'Tamaño Contenedor','required': true, "type":"numeric"},
-    {'field':'peso_reglamentario','label':'Peso Reglamentario','required': true, "type":"numeric"},
-    {'field':'peso_contenedor','label':'Peso Contenedor','required': true, "type":"numeric"},
-    {'field':'precio_viaje','label':'Precio Viaje','required': true, "type":"money"},
-    {'field':'base_factura','label':'Base 1','required': true, "type":"money"},
-    {'field':'fecha_modulacion','label':'Fecha Modulación','required': false, "type":"text"},
-    {'field':'fecha_entrega','label':'Fecha Entrega','required': false, "type":"text"},
-    {'field':'sobrepeso','label':'Sobrepeso','required': false, "type":"numeric"},
-    {'field':'precio_sobre_peso','label':'Precio Sobre Peso','required': false, "type":"money"},
-    {'field':'precio_tonelada','label':'Precio Tonelada','required': false, "type":"money"},
-    {'field':'burreo','label':'Burreo','required': false, "type":"money"},
-    {'field':'maniobra','label':'Maniobra','required': false, "type":"money"},
-    {'field':'estadia','label':'Estadía','required': false, "type":"money"},
-    {'field':'otro','label':'Otros','required': false, "type":"money"},
-    {'field':'iva','label':'IVA','required': false, "type":"money"},
-    {'field':'retencion','label':'Retención','required': false, "type":"money"},
-    {'field':'base_taref','label':'Base 2','required': false, "type":"money"},
-    {'field':'total','label':'Total','required': false, "type":"money"},   
+    {'field':'origen', 'id':'origen','label':'Origen','required': true, "type":"text"},
+    {'field':'destino', 'id':'destino','label':'Destino','required': true, "type":"text"},
+    {'field':'num_contenedor', 'id':'num_contenedor','label':'Núm. Contenedor','required': true, "type":"text"},
+    {'field':'tamano', 'id':'tamano','label':'Tamaño Contenedor','required': true, "type":"numeric"},
+    {'field':'peso_reglamentario', 'id':'peso_reglamentario','label':'Peso Reglamentario','required': true, "type":"numeric"},
+    {'field':'peso_contenedor', 'id':'peso_contenedor','label':'Peso Contenedor','required': true, "type":"numeric"},
+    {'field':'precio_viaje', 'id':'precio_viaje','label':'Precio Viaje','required': true, "type":"money"},
+    {'field':'base_factura', 'id':'base_factura','label':'Base 1','required': true, "type":"money"},
+    {'field':'fecha_modulacion', 'id':'fecha_modulacion','label':'Fecha Modulación','required': false, "type":"text"},
+    {'field':'fecha_entrega', 'id':'fecha_entrega','label':'Fecha Entrega','required': false, "type":"text"},
+    {'field':'sobrepeso', 'id':'sobrepeso','label':'Sobrepeso','required': false, "type":"numeric"},
+    {'field':'precio_sobre_peso', 'id':'precio_sobre_peso','label':'Precio Sobre Peso','required': false, "type":"money"},
+    {'field':'precio_tonelada', 'id':'precio_tonelada','label':'Precio Tonelada','required': false, "type":"money"},
+    {'field':'burreo', 'id':'burreo','label':'Burreo','required': false, "type":"money"},
+    {'field':'maniobra', 'id':'maniobra','label':'Maniobra','required': false, "type":"money"},
+    {'field':'estadia', 'id':'estadia','label':'Estadía','required': false, "type":"money"},
+    {'field':'otro', 'id':'otro','label':'Otros','required': false, "type":"money"},
+    {'field':'iva', 'id':'iva','label':'IVA','required': false, "type":"money"},
+    {'field':'retencion', 'id':'retencion','label':'Retención','required': false, "type":"money"},
+    {'field':'base_taref', 'id':'base_taref','label':'Base 2','required': false, "type":"money"},
+    {'field':'total', 'id':'total','label':'Total','required': false, "type":"money"},   
 ];
 
 const formFieldsBloque = [
     {'field':'bloque','label':'Block','required': false, "type":"text"},
     {'field':'bloque_hora_i','label':'Hora Inicio','required': false, "type":"text"},
     {'field':'bloque_hora_f','label':'Hora Fin','required': false, "type":"text"},
+]
+
+const formFieldsProveedor = [
+    {'field':'precio_viaje','id':'precio_proveedor','label':'Costo Viaje','required': false, "type":"money"},
+    {'field':'burreo','id':'burreo_proveedor','label':'Burreo Proveedor','required': false, "type":"money"},
+    {'field':'maniobra','id':'maniobra_proveedor','label':'Maniobra Proveedor','required': false, "type":"money"},
+    {'field':'estadia','id':'estadia_proveedor','label':'Estadía','required': false, "type":"money"},
+    {'field':'sobrepeso','id':'cantidad_sobrepeso_proveedor','label':'Sobre Peso','required': false, "type":"text"},
+    {'field':'precio_sobre_peso','id':'sobrepeso_proveedor','label':'Precio Sobre Peso','required': false, "type":"money"},
+    {'field':'precio_tonelada','id':'total_tonelada','label':'Total Tonelada','required': false, "type":"money"},
+    {'field':'base_factura','id':'base1_proveedor','label':'Base 1','required': false, "type":"money"},
+    {'field':'base_taref','id':'base2_proveedor','label':'Base 2','required': false, "type":"money"},
+    {'field':'otro','id':'otro_proveedor','label':'Otros','required': false, "type":"money"},
+    {'field':'iva','id':'iva_proveedor','label':'IVA','required': false, "type":"money"},
+    {'field':'retencion','id':'retencion_proveedor','label':'Retención','required': false, "type":"money"},
+    {'field':'total','id':'total_proveedor','label':'Total','required': false, "type":"money"},
 ]
 
 $(".moneyformat").on("focus",(e)=>{
@@ -42,42 +58,56 @@ var val = e.target.value;
 e.target.value =  moneyFormat(val);
 })
 
-function calcularTotal() {
-    const precio_viaje = parseFloat(reverseMoneyFormat(document.getElementById('precio_viaje').value)) || 0;
-    const burreo = parseFloat(reverseMoneyFormat(document.getElementById('burreo').value)) || 0;
-    const otro = parseFloat(reverseMoneyFormat(document.getElementById('otro').value)) || 0;
-    const estadia = parseFloat(reverseMoneyFormat(document.getElementById('estadia').value)) || 0;
-    const maniobra = parseFloat(reverseMoneyFormat(document.getElementById('maniobra').value)) || 0;
+function calcularTotal(modulo = 'crear') {
+    const fields = (modulo == 'crear') ? formFields : formFieldsProveedor;
+
+    const field_precio_viaje = fields.find( i => i.field == "precio_viaje");
+    const field_burreo = fields.find( i => i.field == "burreo");
+    const field_otro = fields.find( i => i.field == "otro");
+    const field_estadia = fields.find( i => i.field == "estadia");
+    const field_maniobra = fields.find( i => i.field == "maniobra");
+
+    const precio_viaje = parseFloat(reverseMoneyFormat(document.getElementById(field_precio_viaje.id).value)) || 0;
+    const burreo = parseFloat(reverseMoneyFormat(document.getElementById(field_burreo.id).value)) || 0;
+    const otro = parseFloat(reverseMoneyFormat(document.getElementById(field_otro.id).value)) || 0;
+    const estadia = parseFloat(reverseMoneyFormat(document.getElementById(field_estadia.id).value)) || 0;
+    const maniobra = parseFloat(reverseMoneyFormat(document.getElementById(field_maniobra.id).value)) || 0;
 
     const subTotal = precio_viaje + burreo + maniobra + estadia + otro;
-    
-    //calcularImpuestos(subTotal);
-    const baseFactura = parseFloat(reverseMoneyFormat(document.getElementById('base_factura').value)) || 0;
+
+    const field_base_factura = fields.find( i => i.field == "base_factura");
+
+    const baseFactura = parseFloat(reverseMoneyFormat(document.getElementById(field_base_factura.id).value)) || 0;
     const iva = (baseFactura * tasa_iva);
     const retencion = (baseFactura * tasa_retencion);
 
-    document.getElementById('iva').value = moneyFormat(iva);
-    document.getElementById('retencion').value = moneyFormat(retencion);
+    const field_iva = fields.find( i => i.field == "iva");
+    const field_retencion = fields.find( i => i.field == "retencion");
+
+    document.getElementById(field_iva.id).value = moneyFormat(iva);
+    document.getElementById(field_retencion.id).value = moneyFormat(retencion);
 
     const baseTaref = (subTotal - baseFactura - iva) + retencion;
 
     // Mostrar el resultado en el input de base_taref
-    document.getElementById('base_taref').value = moneyFormat(baseTaref);
+    const field_base_taref = fields.find( i => i.field == "base_taref");
+    document.getElementById(field_base_taref.id).value = moneyFormat(baseTaref);
 
     // Restar el valor de Retención del total
     const totalSinRetencion = precio_viaje + burreo + iva + otro + estadia + maniobra;
     const totalConRetencion = totalSinRetencion - retencion;
 
     // Obtener el valor de Precio Tonelada
-    const precioTonelada = parseFloat(reverseMoneyFormat(document.getElementById('precio_tonelada').value)) || 0;
+    const field_precio_tonelada = fields.find( i => i.field == "precio_tonelada");
+    const precioTonelada = parseFloat(reverseMoneyFormat(document.getElementById(field_precio_tonelada.id).value)) || 0;
 
     // Sumar el valor de Precio Tonelada al total
     const totalFinal = totalConRetencion + precioTonelada;
 
     // Formatear el total con comas
     const totalFormateado = moneyFormat(totalFinal);
-
-    document.getElementById('total').value = totalFormateado;
+    const field_total = fields.find( i => i.field == "total");
+    document.getElementById(field_total.id).value = totalFormateado;
 
 }
 
@@ -128,7 +158,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // Agregar evento de entrada al campo "Precio Sobre Peso"
-    precioSobrePesoInput.addEventListener('input', function () {
+    precioSobrePesoInput.addEventListener('input', ()=> {
         valorSobrePrecio();
     });
 
@@ -136,9 +166,12 @@ document.addEventListener('DOMContentLoaded', function () {
     calcularSobrepeso();
 
     // Agregar eventos de cambio a los inputs para calcular automáticamente
-    document.getElementById('base_factura').addEventListener('input', calcularTotal);
-    var inputMoneyFormat = $('.moneyformat');
-    inputMoneyFormat.on('input',calcularTotal)
+    document.getElementById('base_factura').addEventListener('input', ()=>{calcularTotal()});
+    var inputMoneyFormat = $('.calculo-cotizacion');
+    inputMoneyFormat.on('input',()=>{calcularTotal()})
+    var inputMoneyFormatProveedores = $('.calculo-proveedor');
+    inputMoneyFormatProveedores.on('input',()=>{calcularTotal('proveedores')})
+    
 
 });
 
@@ -293,6 +326,15 @@ $("#cotizacionesUpdate").on("submit",(e)=>{
     if(item.type == "money") {
         var field = document.getElementById(item.field);
         field.value = reverseMoneyFormat(field.value);
+    }
+   });
+
+   formFieldsProveedor.forEach((item) =>{
+    if(item.type == "money") {
+        var field = document.getElementById(item.id);
+        if(field){
+          field.value = reverseMoneyFormat(field.value);
+        }
     }
    });
 
