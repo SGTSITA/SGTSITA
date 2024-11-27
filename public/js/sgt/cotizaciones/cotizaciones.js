@@ -120,6 +120,10 @@ document.addEventListener('DOMContentLoaded', function () {
     var precioSobrePesoInput = document.getElementById('precio_sobre_peso');
     var precioToneladaInput = document.getElementById('precio_tonelada');
 
+    var precioSobrePesoProveedor = document.getElementById('sobrepeso_proveedor')
+    var sobrePesoProveedor = document.getElementById('cantidad_sobrepeso_proveedor');
+    var precioToneladaProveedor = document.getElementById('total_tonelada');
+
     // Agregar evento de cambio a los inputs
     pesoReglamentarioInput.addEventListener('input', calcularSobrepeso);
     pesoContenedorInput.addEventListener('input', calcularSobrepeso);
@@ -143,6 +147,23 @@ document.addEventListener('DOMContentLoaded', function () {
         // Calcular el total
         calcularTotal();
    }
+
+   function valorSobrePrecioProveedor(){
+    // Obtener el valor de Sobrepeso
+    var sobrepeso = parseFloat(sobrePesoProveedor.value.replace(/,/g, '')) || 0;
+
+    // Obtener el valor de Precio Sobre Peso
+    var precioSobrePeso = parseFloat(reverseMoneyFormat(precioSobrePesoProveedor.value)) || 0;
+
+    // Calcular el resultado de la multiplicación
+    var resultado = sobrepeso * precioSobrePeso;
+
+    // Mostrar el resultado en el campo "Precio Tonelada"
+    precioToneladaProveedor.value = moneyFormat(resultado); 
+
+    // Calcular el total
+    calcularTotal('proveedores');
+}
     // Función para calcular el sobrepeso
     function calcularSobrepeso() {
         var pesoReglamentario = parseFloat(pesoReglamentarioInput.value) || 0;
@@ -153,6 +174,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Mostrar sobrepeso en el input correspondiente con dos decimales
         sobrepesoInput.value = sobrepeso.toFixed(2);
+        var sobrePesoProveedor = document.getElementById('cantidad_sobrepeso_proveedor');
+        if(sobrePesoProveedor){
+            sobrePesoProveedor.value = sobrepeso.toFixed(2);
+            
+        }
         // Calcular el total
         calcularTotal();
     }
@@ -161,6 +187,13 @@ document.addEventListener('DOMContentLoaded', function () {
     precioSobrePesoInput.addEventListener('input', ()=> {
         valorSobrePrecio();
     });
+
+    if(precioSobrePesoProveedor){
+        precioSobrePesoProveedor.addEventListener('input', ()=> {
+            valorSobrePrecioProveedor();
+        });
+    }
+    
 
     // Calcular sobrepeso inicialmente al cargar la página
     calcularSobrepeso();

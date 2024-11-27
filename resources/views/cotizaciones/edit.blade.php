@@ -1569,7 +1569,7 @@
             formFieldsProveedor.forEach((item) =>{
                 if(item.type == "money") {
                     var field = document.getElementById(item.id);
-                    if(field != null){
+                    if(field){
                       field.value = (field.value.length > 0) ? reverseMoneyFormat(field.value) : 0
                       field.value = moneyFormat(field.value || 0);
                     }
