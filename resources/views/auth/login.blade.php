@@ -1,125 +1,93 @@
 <!DOCTYPE html>
-<html lang="en">
-
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <link rel="apple-touch-icon" sizes="76x76" href="{{ asset('assets/img/apple-icon.png')}}">
-  <link rel="icon" type="image/png" href="https://paradisus.mx/favicon/639893ee3d1ff63891f2fbd91b277248048_670190130923536_7018383830884135385_n__1_-removebg-preview.png">
-  <title>
-    SGT
-  </title>
-  <!--     Fonts and icons     -->
-  <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700" rel="stylesheet" />
-  <!-- Nucleo Icons -->
-  <link href="{{ asset('assets/css/nucleo-icons.css')}}" rel="stylesheet" />
-  <link href="{{ asset('assets/css/nucleo-svg.css')}}" rel="stylesheet" />
-  <!-- Font Awesome Icons -->
-  <script src="https://kit.fontawesome.com/42d5adcbca.js')}}" crossorigin="anonymous"></script>
-  <link href="{{ asset('assets/css/nucleo-svg.css')}}" rel="stylesheet" />
-  <!-- CSS Files -->
-  <link id="pagestyle" href="{{ asset('assets/css/argon-dashboard.css?v=2.0.4')}}" rel="stylesheet" />
-</head>
-
-<body class="">
-
-  <main class="main-content main-content-bg mt-0">
-    <div class="page-header min-vh-100" style="background-image: url('{{ asset('img/contenedores.jpg') }}');">
-      <span class="mask bg-gradient-dark opacity-6"></span>
-      <div class="container">
-        <div class="row justify-content-center">
-          <div class="col-lg-4 col-md-7">
-            <div class="card border-0 mb-0">
-              <div class="card-header bg-transparent">
-                <h5 class="text-dark text-center mt-2 mb-3">¡Bienvenido!</h5>
-
-                <h4 class="text-dark text-center mt-2 mb-3">
-                    Sistema de Gestion de Transporte
-                </h4>
-
-              </div>
-              <div class="card-body px-lg-5 pt-0">
-                <div class="text-center text-muted mb-4">
-                  <small></small>
+<html lang="es">
+  <head>
+    <title>SGT</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,400,500,600,700" />
+    <link href="/assets/metronic/plugins/global/plugins.bundle.css" rel="stylesheet" type="text/css" />
+    <link href="/assets/metronic/css/style.bundle.css" rel="stylesheet" type="text/css" />
+    <script>
+        if (window.top != window.self) {
+            window.top.location.replace(window.self.location.href);
+        }
+    </script>
+  </head>
+  <body id="kt_body" class="auth-bg">
+    <script>
+      var defaultThemeMode = "light";
+      var themeMode;
+      if (document.documentElement) {
+        if (document.documentElement.hasAttribute("data-bs-theme-mode")) {
+          themeMode = document.documentElement.getAttribute("data-bs-theme-mode");
+        } else {
+          if (localStorage.getItem("data-bs-theme") !== null) {
+            themeMode = localStorage.getItem("data-bs-theme");
+          } else {
+            themeMode = defaultThemeMode;
+          }
+        }
+        if (themeMode === "system") {
+          themeMode = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        }
+        document.documentElement.setAttribute("data-bs-theme", themeMode);
+      }
+    </script>
+    <div class="d-flex flex-column flex-root">
+      <div class="d-flex flex-column flex-lg-row flex-column-fluid">
+        <div class="d-flex flex-column flex-lg-row-fluid w-lg-50 p-10 order-2 order-lg-2">
+          <div class="d-flex flex-center flex-column flex-lg-row-fluid">
+            <div class="w-lg-500px p-10">
+              <form class="form w-100" novalidate="novalidate" id="kt_sign_in_form" data-kt-redirect-url="/dashboard" method="POST" action="{{ route('login.custom') }}"> @csrf <div class="text-center mb-11">
+                  <h1 class="text-gray-900 fw-bolder mb-3"> Hola, bienvenido </h1>
+                  <div class="text-gray-500 fw-semibold fs-6"> Introduzca sus credenciales para iniciar sesión </div>
                 </div>
-
-                {{-- <form method="POST" action="{{ route('login') }}"> --}}
-                <form method="POST" action="{{ route('login.custom') }}">
-                  @csrf
-
-                  <div class="mb-3">
-                    <input id="email" type="email" placeholder="Email" class="form-control @error('email') is-invalid @enderror" name="email" value="{{ old('email') }}" required autocomplete="email" autofocus>
-                    @error('email')
-                        <span class="invalid-feedback" role="alert">
-                            <strong>{{ $message }}</strong>
-                        </span>
-                    @enderror
-                  </div>
-
-                  <div class="mb-3">
-                    <input id="password" type="password" placeholder="*****" class="form-control @error('password') is-invalid @enderror" name="password" required autocomplete="current-password">
-                    @error('password')
-                        <span class="invalid-feedback" role="alert">
-                            <strong>{{ $message }}</strong>
-                        </span>
-                    @enderror
-                  </div>
-
-                  <div class="form-check form-switch">
-                    <input class="form-check-input" id=" customCheckLogin" type="checkbox" name="remember" id="remember"{{ old('remember') ? 'checked' : '' }}>
-                    <label class="form-check-label" for="rememberMe">{{ __('Remember Me') }}</label>
-                  </div>
-
-                  <div class="text-center">
-                    <button type="submit" class="btn btn-primary w-100 my-4 mb-2"> {{ __('Login') }}</button>
-                  </div>
-
-
-                </form>
-
-              </div>
+                <div class="separator separator-content my-14"></div>
+                <div class="fv-row mb-8">
+                  <input type="text" placeholder="Email" name="email" autocomplete="off" class="form-control bg-transparent" />
+                </div>
+                <div class="fv-row mb-3">
+                  <input type="password" placeholder="Password" name="password" autocomplete="off" class="form-control bg-transparent" />
+                </div>
+                <div class="d-flex flex-stack flex-wrap gap-3 fs-base fw-semibold mb-8">
+                  <div></div>
+                  <a href="/" class="link-primary"> ¿Olvidó su contraseña? </a>
+                </div>
+                <div class="d-grid mb-10">
+                  <button type="submit" id="kt_sign_in_submit" class="btn btn-primary">
+                    <span class="indicator-label"> Iniciar sesión</span>
+                    <span class="indicator-progress"> Espere un momento... <span class="spinner-border spinner-border-sm align-middle ms-2"></span>
+                    </span>
+                  </button>
+                </div>
+                <div class="text-gray-500 text-center fw-semibold fs-6"> ¿Aún no tiene cuenta? <a href="/accounts/register" class="link-primary"> Registrese </a>
+                </div>
+              </form>
+            </div>
+          </div>
+          <!--begin::Footer-->
+          <!--div class="text-center w-lg-500px d-flex flex-stack px-10 mx-auto "><div class="d-flex fw-semibold text-primary fs-base gap-5"><a href="/" target="_blank">Aviso de Privacidad</a><a href="/" target="_blank">Planes</a><a href="/" target="_blank">Contacto</a></div></div-->
+          <!--end::Footer-->
+        </div>
+        <div class="d-flex flex-lg-row-fluid w-lg-50 bgi-size-cover bgi-position-center order-1 order-lg-1" style="background-image: url(/assets/metronic/background-cfdi-stack.jpg)">
+          <div class="d-flex flex-column flex-center py-7 py-lg-15 px-5 px-md-15 w-100">
+            <a href="/" class="mb-0 mb-lg-8">
+              <img alt="Logo" src="/assets/metronic/logo-blanco-sgt.png" class="h-35px h-lg-40px" />
+            </a>
+            <img class="d-none d-lg-block mx-auto w-275px w-md-50 w-xl-500px mb-10 mb-lg-15" src="/assets/metronic/login-screen.png" alt="" />
+            <h1 class="d-none d-lg-block text-white fs-2qx fw-bolder text-center mb-8"> Sistema de Gestión de Transporte </h1>
+            <div class="d-none d-lg-block text-white fs-base text-center"> Planeación, coordinación y control del movimiento de mercancías de un lugar a otro. Esto incluye la planificación, implementación y control del transporte de productos y servicios. <a href="#" class="opacity-75-hover text-warning fw-bold me-1"></a>
             </div>
           </div>
         </div>
       </div>
     </div>
-  </main>
-  <!-- -------- START FOOTER 3 w/ COMPANY DESCRIPTION WITH LINKS & SOCIAL ICONS & COPYRIGHT ------- -->
-  <footer class="footer py-2">
-    <div class="container">
-      <div class="row">
-        <div class="col-8 mx-auto text-center mt-1">
-          <p class="mb-0 text-secondary">
-            Power By <script>
-              document.write(new Date().getFullYear())
-            </script> WebTech
-          </p>
-        </div>
-      </div>
-    </div>
-  </footer>
-  <!-- -------- END FOOTER 3 w/ COMPANY DESCRIPTION WITH LINKS & SOCIAL ICONS & COPYRIGHT ------- -->
-  <!--   Core JS Files   -->
-  <script src="{{ asset('assets/js/core/popper.min.js')}}"></script>
-  <script src="{{ asset('assets/js/core/bootstrap.min.js')}}"></script>
-  <script src="{{ asset('assets/js/plugins/perfect-scrollbar.min.js')}}"></script>
-  <script src="{{ asset('assets/js/plugins/smooth-scrollbar.min.js')}}"></script>
-  <!-- Kanban scripts -->
-  <script src="{{ asset('assets/js/plugins/dragula/dragula.min.js')}}"></script>
-  <script src="{{ asset('assets/js/plugins/jkanban/jkanban.js')}}"></script>
-  <script>
-    var win = navigator.platform.indexOf('Win') > -1;
-    if (win && document.querySelector('#sidenav-scrollbar')) {
-      var options = {
-        damping: '0.5'
-      }
-      Scrollbar.init(document.querySelector('#sidenav-scrollbar'), options);
-    }
-  </script>
-  <!-- Github buttons -->
-  <script async defer src="https://buttons.github.io/buttons.js"></script>
-  <!-- Control Center for Soft Dashboard: parallax effects, scripts for the example pages etc -->
-  <script src="{{ asset('assets/js/argon-dashboard.min.js?v=2.0.4')}}"></script>
-</body>
 
+    <script>
+      var hostUrl = "/assets/metronic/";
+    </script>
+    <script src="/assets/metronic/plugins/global/plugins.bundle.js"></script>
+    <script src="/assets/metronic/js/scripts.bundle.js"></script>
+    <script src="/assets/metronic/js/custom/authentication/sign-in/general.js"></script>
+    
+  </body>
 </html>

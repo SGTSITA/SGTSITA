@@ -27,7 +27,12 @@ class HomeController extends Controller
     public function index()
     {
 
-        return view('dashboard');
+        if(\Auth::user()->id_cliente != 0){
+            return view('dashboard_externo');
+        }else{
+            return view('dashboard');
+        }
+        
 
     }
 }
