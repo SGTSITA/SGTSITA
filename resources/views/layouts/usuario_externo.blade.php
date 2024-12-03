@@ -71,12 +71,13 @@
                     </div>
                   </div>
                 </div>
+      
                 <div data-kt-menu-trigger="click" class="menu-item menu-accordion">
                   <span class="menu-link">
                     <span class="menu-icon">
                       <i class="ki-duotone ki-black-right fs-2"></i>
                     </span>
-                    <span class="menu-title">Crédito & Cobranza</span>
+                    <span class="menu-title">Viajes</span>
                     <span class="menu-arrow"></span>
                   </span>
                   <div class="menu-sub menu-sub-accordion">
@@ -85,61 +86,7 @@
                         <span class="menu-bullet">
                           <span class="bullet bullet-dot"></span>
                         </span>
-                        <span class="menu-title">Estados de cuenta</span>
-                      </a>
-                    </div>
-                    <div class="menu-item">
-                      <a class="menu-link" href="#">
-                        <span class="menu-bullet">
-                          <span class="bullet bullet-dot"></span>
-                        </span>
-                        <span class="menu-title">Registrar Cobranza</span>
-                      </a>
-                    </div>
-                  </div>
-                </div>
-                <div data-kt-menu-trigger="click" class="menu-item menu-accordion">
-                  <span class="menu-link">
-                    <span class="menu-icon">
-                      <i class="ki-duotone ki-black-right fs-2"></i>
-                    </span>
-                    <span class="menu-title">Tickets Venta</span>
-                    <span class="menu-arrow"></span>
-                  </span>
-                  <div class="menu-sub menu-sub-accordion">
-                    <div class="menu-item">
-                      <a class="menu-link">
-                        <span class="menu-bullet">
-                          <span class="bullet bullet-dot"></span>
-                        </span>
-                        <span class="menu-title">Crear Ticket</span>
-                      </a>
-                    </div>
-                    <div class="menu-item">
-                      <a class="menu-link" href="/" title="Build your layout and export HTML for server side integration" data-bs-toggle="tooltip" data-bs-trigger="hover" data-bs-dismiss="click" data-bs-placement="right">
-                        <span class="menu-bullet">
-                          <span class="bullet bullet-dot"></span>
-                        </span>
-                        <span class="menu-title">Facturar Ticket</span>
-                      </a>
-                    </div>
-                  </div>
-                </div>
-                <div data-kt-menu-trigger="click" class="menu-item menu-accordion">
-                  <span class="menu-link">
-                    <span class="menu-icon">
-                      <i class="ki-duotone ki-black-right fs-2"></i>
-                    </span>
-                    <span class="menu-title">Facturación</span>
-                    <span class="menu-arrow"></span>
-                  </span>
-                  <div class="menu-sub menu-sub-accordion">
-                    <div class="menu-item">
-                      <a class="menu-link">
-                        <span class="menu-bullet">
-                          <span class="bullet bullet-dot"></span>
-                        </span>
-                        <span class="menu-title">Emitir Factura</span>
+                        <span class="menu-title">Solicitar Viaje</span>
                       </a>
                     </div>
                     <div class="menu-item">
@@ -147,7 +94,7 @@
                         <span class="menu-bullet">
                           <span class="bullet bullet-dot"></span>
                         </span>
-                        <span class="menu-title">Mis Facturas</span>
+                        <span class="menu-title">Mis Viajes</span>
                       </a>
                     </div>
                   </div>

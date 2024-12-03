@@ -66,7 +66,10 @@
               </a>
             </li>
           </ul>
-
+          <form method="POST" action="{{ route('store.cotizaciones') }}" id="cotizacionCreate" enctype="multipart/form-data" role="form">
+            @csrf
+            <input type="hidden" value="{{Auth::User()->id}}" name="id_cliente" id="id_cliente">
+            
           <div class="tab-content d-flex flex-column h-100" id="myTabContent">
             <div class="tab-pane fade show active h-100" id="kt_vtab_pane_1" role="tabpanel">
               @include('cotizaciones.externos.datos_generales')
@@ -74,26 +77,39 @@
             <div class="tab-pane fade h-100" id="kt_vtab_pane_2" role="tabpanel"> 
               @include('cotizaciones.externos.datos_bloque')
             </div>
+
             <div class="tab-pane fade d-flex flex-column h-100" id="kt_vtab_pane_3" role="tabpanel"> 
             @include('cotizaciones.externos.datos_documentos')
             </div>
+            <div class="card-footer border-0 text-end">
+            <div class="separator separator-dashed mb-8"></div>
+                <button type="submit" class="btn btn-primary">Solicitar servicio</button>
+            </form>
+            </div>
+
           </div>
 
         </div>
+
       </div>
-      <div class="card-footer text-end">
-      <div class="separator separator-dashed mb-8"></div>
-        <button class="btn btn-primary">Solicitar servicio</button>
-      </div>
+      
     </div>
   </div>
 </div>
+@include('cotizaciones.externos.modal_fileuploader')
 @endsection
 
-@push('')
+@push('javascript')
+<script src="{{ asset('js/sgt/common.js') }}?v={{ filemtime(public_path('js/sgt/common.js')) }}"></script>
+<script src="{{ asset('js/sgt/cotizaciones/cotizaciones-crud.js') }}?v={{ filemtime(public_path('js/sgt/cotizaciones/cotizaciones-crud.js')) }}"></script>
+<link href="{{asset('assets/metronic/fileuploader/font/font-fileuploader.css')}}" rel="stylesheet">
+<link href="{{asset('assets/metronic/fileuploader/jquery.fileuploader.min.css')}}" media="all" rel="stylesheet">
+<link href="{{asset('assets/metronic/fileuploader/jquery.fileuploader-theme-dragdrop.css')}}" media="all" rel="stylesheet">
+<script src="{{asset('assets/metronic/fileuploader/jquery.fileuploader.min.js')}}" type="text/javascript"></script>
+<script src="{{asset('assets/metronic/fileuploader/cotizacion-cliente-externo.js')}}" type="text/javascript"></script>
 <script>
-  $(document).ready(()=>{
-    
+  $(document).ready(() =>{
+    adjuntarDocumentos();
   })
 </script>
 @endpush
