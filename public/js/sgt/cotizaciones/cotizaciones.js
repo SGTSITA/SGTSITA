@@ -173,10 +173,10 @@ document.addEventListener('DOMContentLoaded', function () {
         var sobrepeso = Math.max(pesoContenedor - pesoReglamentario, 0);
 
         // Mostrar sobrepeso en el input correspondiente con dos decimales
-        sobrepesoInput.value = sobrepeso.toFixed(2);
+        sobrepesoInput.value = sobrepeso.toFixed(4);
         var sobrePesoProveedor = document.getElementById('cantidad_sobrepeso_proveedor');
         if(sobrePesoProveedor){
-            sobrePesoProveedor.value = sobrepeso.toFixed(2);
+            sobrePesoProveedor.value = sobrepeso.toFixed(4);
             
         }
         // Calcular el total
