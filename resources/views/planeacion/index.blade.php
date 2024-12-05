@@ -551,29 +551,23 @@ use Carbon\Carbon;
                 var sobre = cantidadsob * sobrepeso;
                 var subTotal = (precio + burreo + maniobra + estadia + otro );
 
-                calcularBaseTaref(cotizacionId,subTotal);
-
-                var iva = parseFloat($('#iva_proveedor_' + cotizacionId).val()) || 0;
-                var retencion = parseFloat($('#retencion_proveedor_' + cotizacionId).val()) || 0;
-                var total = (precio + burreo + maniobra + estadia + otro + iva + sobre) - retencion;
-                
-                console.log('total', total);
-                $('#total_proveedor_' + cotizacionId).val(total.toFixed(2));
-                
-            }
-
-            function calcularBaseTaref(cotizacionId,total) {
-                //const total = parseFloat(document.getElementById('total_proveedor_' + cotizacionId).value) || 0;
                 const baseFactura = parseFloat(document.getElementById('base_factura_' + cotizacionId).value) || 0;
-                const iva = (baseFactura * tasa_iva);
-                const retencion = (baseFactura * tasa_retencion);
+                var iva = (baseFactura * tasa_iva);
+                var retencion = (baseFactura * tasa_retencion);
 
                 document.getElementById('iva_proveedor_' + cotizacionId).value = (iva.toFixed(2));
                 document.getElementById('retencion_proveedor_' + cotizacionId).value = (retencion.toFixed(2));
+                var total = (precio + burreo + maniobra + estadia + otro + iva + sobre) - retencion;
 
                 const baseTaref = (total - baseFactura - iva) + retencion;
-                console.log('baseTaref', baseTaref);
+               
                 document.getElementById('base_taref_' + cotizacionId).value = baseTaref.toFixed(2);
+                
+               
+                $('#total_proveedor_' + cotizacionId).val(total.toFixed(2));
+
+                
+                
             }
 
             @foreach($cotizaciones as $cotizacion)
@@ -581,17 +575,12 @@ use Carbon\Carbon;
                     // Eventos para calcular el total
                     $('.fieldsCalculo').on('input', function() {
                         calculateTotal(cotizacionId);
-                        
+                       
                     });
-
-                    // Eventos para calcular base_taref
-                   /* $('#total_proveedor_' + cotizacionId + ', #base_factura_' + cotizacionId + ', #iva_proveedor_' + cotizacionId + ', #retencion_proveedor_' + cotizacionId).on('input', function() {
-                        calcularBaseTaref(cotizacionId);
-                    });*/
 
                     // Llamar a las funciones al cargar la página
                     calculateTotal(cotizacionId);
-                    calcularBaseTaref(cotizacionId);
+                   
                 })('{{$cotizacion->id}}');
             @endforeach
         });

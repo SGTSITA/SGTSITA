@@ -87,12 +87,6 @@ function calcularTotal(modulo = 'crear') {
     document.getElementById(field_iva.id).value = moneyFormat(iva);
     document.getElementById(field_retencion.id).value = moneyFormat(retencion);
 
-    const baseTaref = (subTotal - baseFactura - iva) + retencion;
-
-    // Mostrar el resultado en el input de base_taref
-    const field_base_taref = fields.find( i => i.field == "base_taref");
-    document.getElementById(field_base_taref.id).value = moneyFormat(baseTaref);
-
     // Restar el valor de Retención del total
     const totalSinRetencion = precio_viaje + burreo + iva + otro + estadia + maniobra;
     const totalConRetencion = totalSinRetencion - retencion;
@@ -103,7 +97,15 @@ function calcularTotal(modulo = 'crear') {
 
     // Sumar el valor de Precio Tonelada al total
     const totalFinal = totalConRetencion + precioTonelada;
+    
+    //baseTaref Corresponde a Base 2
+    const baseTaref = (totalFinal - baseFactura - iva) + retencion;
 
+    // Mostrar el resultado en el input de base_taref
+    const field_base_taref = fields.find( i => i.field == "base_taref");
+    document.getElementById(field_base_taref.id).value = moneyFormat(baseTaref);
+
+    
     // Formatear el total con comas
     const totalFormateado = moneyFormat(totalFinal);
     const field_total = fields.find( i => i.field == "total");
