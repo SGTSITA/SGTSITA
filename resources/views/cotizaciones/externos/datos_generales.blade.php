@@ -66,7 +66,7 @@
             </i>
             </span>
             <div class="form-floating">
-            <input type="text" class="form-control"autocomplete="off" id="num_contenedor" placeholder=""/>
+            <input type="text" class="form-control" autocomplete="off" id="num_contenedor" placeholder="" oninput="changeTag('tagContenedor',this.value)"/>
             <label for="num_contenedor" class="text-gray-700">Número de Contenedor</label>
             </div>
         </div>

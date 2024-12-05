@@ -233,7 +233,7 @@ class CotizacionesController extends Controller
         $cotizaciones->peso_reglamentario = $request->get('peso_reglamentario');
         $cotizaciones->precio_sobre_peso = $request->get('precio_sobre_peso');
         $cotizaciones->sobrepeso = $request->get('sobrepeso');
-        $cotizaciones->estatus = 'Pendiente';
+        $cotizaciones->estatus = ($request->has('uuid')) ? 'En espera' : 'Pendiente';
         $cotizaciones->precio_viaje = $request->get('precio_viaje');
         $cotizaciones->burreo = $request->get('burreo');
         $cotizaciones->maniobra = $request->get('maniobra');

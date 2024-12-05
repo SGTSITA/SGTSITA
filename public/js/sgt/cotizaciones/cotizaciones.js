@@ -27,9 +27,9 @@ const formFields = [
 ];
 
 const formFieldsBloque = [
-    {'field':'bloque','label':'Block','required': false, "type":"text"},
-    {'field':'bloque_hora_i','label':'Hora Inicio','required': false, "type":"text"},
-    {'field':'bloque_hora_f','label':'Hora Fin','required': false, "type":"text"},
+    {'field':'bloque','id':'bloque','label':'Block','required': false, "type":"text", "trigger":"none"},
+    {'field':'bloque_hora_i','id':'bloque_hora_i','label':'Hora Inicio','required': false, "type":"text", "trigger":"bloque"},
+    {'field':'bloque_hora_f','id':'bloque_hora_f','label':'Hora Fin','required': false, "type":"text", "trigger":"bloque"},
 ]
 
 const formFieldsProveedor = [
@@ -333,6 +333,36 @@ $("#cotizacionCreate").on("submit", function(e){
    formData["_token"] = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
    formData["id_cliente"] = $("#id_cliente").val();
    formData["id_subcliente"] = selectSubClient.value;
+
+   var uuid = localStorage.getItem('uuid');
+   if(uuid != null){
+    formData["uuid"] = uuid;
+
+    passValidation = formFieldsBloque.every((item) => {
+        let trigger = item.trigger;
+        let field = document.getElementById(item.field);
+
+        if(trigger != "none"){
+            let primaryField = document.getElementById(trigger);
+            if(primaryField.value.length > 0 && field.value.length == 0){
+                Swal.fire("El campo "+item.label+" es obligatorio","Parece que no ha proporcionado información en el campo "+item.label,"warning");
+                return false;
+            }
+        }
+        
+        if(field){
+            if(item.required === true && field.value.length == 0){
+                Swal.fire("El campo "+item.label+" es obligatorio","Parece que no ha proporcionado información en el campo "+item.label,"warning");
+                return false;
+            }
+        }
+        return true;
+
+    });
+
+    if(!passValidation) return passValidation;
+    
+   }
 
    $.ajax({
         url: url,
