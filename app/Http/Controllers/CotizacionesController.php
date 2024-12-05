@@ -241,6 +241,7 @@ class CotizacionesController extends Controller
         $cotizaciones->base_factura = $request->get('base_factura');
         $cotizaciones->base_taref = $request->get('base_taref');
         $cotizaciones->recinto_clientes = $request->get('recinto_clientes');
+        $cotizaciones->precio_tonelada = $request->get('precio_tonelada');
 
         if($request->get('id_cliente_clientes') == NULL){
             $precio_tonelada = str_replace(',', '', $request->get('precio_tonelada'));
@@ -252,7 +253,7 @@ class CotizacionesController extends Controller
                 $total = str_replace(',', '', $request->get('total'));
             }
         }else{
-            $cotizaciones->precio_tonelada = 0;
+            $cotizaciones->precio_tonelada = $request->get('precio_tonelada');
             $total = 0;
         }
 
@@ -457,7 +458,7 @@ class CotizacionesController extends Controller
                 $cotizaciones->sobrepeso = $sobrepeso;
                 $precio_tonelada = str_replace(',', '', $request->get('precio_sobre_peso'));
                 $cotizaciones->precio_sobre_peso = $precio_tonelada;
-                $cotizaciones->precio_tonelada = $precio_tonelada * $sobrepeso;
+                $cotizaciones->precio_tonelada = $request->get('precio_tonelada');
                 $total = ($cotizaciones->precio_tonelada + $request->get('cot_precio_viaje') + $request->get('cot_burreo') + $request->get('cot_maniobra') + $request->get('cot_estadia') + $request->get('cot_otro') + $request->get('cot_iva')) - $request->get('cot_retencion');
                 $cotizaciones->total = $total;
             }
@@ -696,6 +697,43 @@ class CotizacionesController extends Controller
 
         return redirect()->back()->with('success', 'Ha sido cambiado exitosamente.');
     }
+
+    public function adjuntarDocumentos(Request $r){
+		include('Fileuploader/class.fileuploader.php');
+		$FileUploader = new FileUploader('files', array(
+        'uploadDir' => public_path().'/attachments/',
+        ));
+
+	// call to upload the files
+		$upload = $FileUploader->upload();
+		if ($upload['isSuccess']) {
+			foreach($upload['files'] as $key=>$item) {
+				$upload['files'][$key] = array(
+					'extension' => $item['extension'],
+					'format' => $item['format'],
+					'file' => public_path().'/attachments/' . $item['name'],
+					'name' => $item['name'],
+					'old_name' => $item['old_name'],
+					'size' => $item['size'],
+					'size2' => $item['size2'],
+					'title' => $item['title'],
+					'type' => $item['type'],
+					'url' => asset(public_path().'/attachments/'. $item['name'])
+				);
+			}
+
+			$json = $upload['files'];
+
+			//$SP = "EXEC P_AGREGAR_ARCH_ADJUNTO ".$r->input('_Folio').",'/attachments/".$json[0]['name']."','".$json[0]['old_name']."','".$json[0]['extension']."'";
+			$SP = "INSERT INTO TMPADJUNTOS SELECT '".$json[0]['old_name']."','".request()->cookie('Trab_ID')."','',0,'/attachments/".$json[0]['name']."','.".$json[0]['extension']."',2.2;";
+			DB::statement($SP);
+		}
+
+
+
+		return response()->json($upload);
+		exit;
+	}
 
     public function cambiar_empresa(Request $request, $id){
 

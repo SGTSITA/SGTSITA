@@ -891,7 +891,7 @@
                                                         <span class="input-group-text" id="basic-addon1">
                                                             <img src="{{ asset('img/icon/pago-en-efectivo.png') }}" alt="" width="25px">
                                                         </span>
-                                                        <input id="total_tonelada" name="total_tonelada" type="float" class="form-control moneyformat calculo-proveedor" readonly>
+                                                        <input id="total_tonelada" name="total_tonelada" type="text" value="{{$documentacion->Asignaciones->total_tonelada}}" class="form-control moneyformat calculo-proveedor" readonly>
                                                     </div>
                                                 </div>
 
@@ -1561,7 +1561,7 @@
             formFields.forEach((item) =>{
                 if(item.type == "money") {
                     var field = document.getElementById(item.field);
-                    field.value = reverseMoneyFormat(field.value || 0)
+                    field.value =  (field.value.length > 0) ? reverseMoneyFormat(field.value) : 0
                     field.value = moneyFormat(field.value || 0);
                 }
             });
