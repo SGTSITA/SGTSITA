@@ -227,7 +227,7 @@
                                         <span class="input-group-text" id="basic-addon1">
                                             <img src="{{ asset('img/icon/factura.png') }}" alt="" width="25px">
                                         </span>
-                                        <input name="base_factura" id="base_factura_{{$cotizacion->id}}" type="float" class="form-control fieldsCalculo">
+                                        <input name="base_factura" id="base_factura_{{$cotizacion->id}}" type="float" class="form-control fieldsCalculo" >
                                     </div>
                                 </div>
 
