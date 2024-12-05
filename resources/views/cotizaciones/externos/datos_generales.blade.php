@@ -104,6 +104,11 @@
             <div class="form-floating">
               <input type="text" class="form-control" autocomplete="off" value="22" id="peso_reglamentario" placeholder="" oninput="allowOnlyDecimals(event)"/>
               <label for="peso_reglamentario" class="text-gray-700">Peso de Reglamentario</label>
+              <input type="text" class="form-control" autocomplete="off" id="sobrepeso" placeholder="" value ="0" oninput="allowOnlyDecimals(event)"/>
+              <input type="text" class="form-control" autocomplete="off" id="precio_sobre_peso" placeholder="" value ="0" oninput="allowOnlyDecimals(event)"/>
+              <input type="text" class="form-control" autocomplete="off" id="precio_tonelada" placeholder="" value ="0" oninput="allowOnlyDecimals(event)"/>
+
+              
             </div>
         </div>
       </div>
@@ -125,12 +130,9 @@
             <div class="form-floating">
               <input type="text" class="form-control" autocomplete="off" id="peso_contenedor" placeholder="" oninput="allowOnlyDecimals(event)"/>
               <label for="peso_contenedor" class="text-gray-700">Peso de Contenedor</label>
+             
             </div>
         </div>
       </div>
    </div>
-
-   
-
- 
  </div>

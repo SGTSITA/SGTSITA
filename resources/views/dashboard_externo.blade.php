@@ -68,7 +68,7 @@
           </ul>
           <form method="POST" action="{{ route('store.cotizaciones') }}" id="cotizacionCreate" enctype="multipart/form-data" role="form">
             @csrf
-            <input type="hidden" value="{{Auth::User()->id}}" name="id_cliente" id="id_cliente">
+            <input type="hidden" value="{{Auth::User()->id_cliente}}" name="id_cliente" id="id_cliente">
             
           <div class="tab-content d-flex flex-column h-100" id="myTabContent">
             <div class="tab-pane fade show active h-100" id="kt_vtab_pane_1" role="tabpanel">
@@ -101,7 +101,7 @@
 
 @push('javascript')
 <script src="{{ asset('js/sgt/common.js') }}?v={{ filemtime(public_path('js/sgt/common.js')) }}"></script>
-<script src="{{ asset('js/sgt/cotizaciones/cotizaciones-crud.js') }}?v={{ filemtime(public_path('js/sgt/cotizaciones/cotizaciones-crud.js')) }}"></script>
+<script src="{{ asset('js/sgt/cotizaciones/cotizaciones.js') }}?v={{ filemtime(public_path('js/sgt/cotizaciones/cotizaciones-crud.js')) }}"></script>
 <link href="{{asset('assets/metronic/fileuploader/font/font-fileuploader.css')}}" rel="stylesheet">
 <link href="{{asset('assets/metronic/fileuploader/jquery.fileuploader.min.css')}}" media="all" rel="stylesheet">
 <link href="{{asset('assets/metronic/fileuploader/jquery.fileuploader-theme-dragdrop.css')}}" media="all" rel="stylesheet">
@@ -110,6 +110,9 @@
 <script>
   $(document).ready(() =>{
     adjuntarDocumentos();
+     getClientes({{Auth::User()->id_cliente}})
   })
+
+
 </script>
 @endpush
