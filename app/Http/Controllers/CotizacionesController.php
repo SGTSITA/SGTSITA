@@ -241,6 +241,7 @@ class CotizacionesController extends Controller
         $cotizaciones->base_factura = $request->get('base_factura');
         $cotizaciones->base_taref = $request->get('base_taref');
         $cotizaciones->recinto_clientes = $request->get('recinto_clientes');
+        $cotizaciones->precio_tonelada = $request->get('precio_tonelada');
 
         if($request->get('id_cliente_clientes') == NULL){
             $precio_tonelada = str_replace(',', '', $request->get('precio_tonelada'));
@@ -252,7 +253,7 @@ class CotizacionesController extends Controller
                 $total = str_replace(',', '', $request->get('total'));
             }
         }else{
-            $cotizaciones->precio_tonelada = 0;
+            $cotizaciones->precio_tonelada = $request->get('precio_tonelada');
             $total = 0;
         }
 
@@ -457,7 +458,7 @@ class CotizacionesController extends Controller
                 $cotizaciones->sobrepeso = $sobrepeso;
                 $precio_tonelada = str_replace(',', '', $request->get('precio_sobre_peso'));
                 $cotizaciones->precio_sobre_peso = $precio_tonelada;
-                $cotizaciones->precio_tonelada = $precio_tonelada * $sobrepeso;
+                $cotizaciones->precio_tonelada = $request->get('precio_tonelada');
                 $total = ($cotizaciones->precio_tonelada + $request->get('cot_precio_viaje') + $request->get('cot_burreo') + $request->get('cot_maniobra') + $request->get('cot_estadia') + $request->get('cot_otro') + $request->get('cot_iva')) - $request->get('cot_retencion');
                 $cotizaciones->total = $total;
             }
