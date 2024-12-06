@@ -460,7 +460,7 @@ class CotizacionesController extends Controller
                 $cotizaciones->precio_sobre_peso = $precio_tonelada;
                 $cotizaciones->precio_tonelada = $request->get('precio_tonelada');
                 $total = ($cotizaciones->precio_tonelada + $request->get('cot_precio_viaje') + $request->get('cot_burreo') + $request->get('cot_maniobra') + $request->get('cot_estadia') + $request->get('cot_otro') + $request->get('cot_iva')) - $request->get('cot_retencion');
-                $cotizaciones->total = $total;
+                $cotizaciones->total = $request->get('total');
             }
 
             if ($request->hasFile("carta_porte")) {
