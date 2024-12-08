@@ -703,7 +703,7 @@ class CotizacionesController extends Controller
 		$FileUploader = new FileUploader('files', array(
         'uploadDir' => public_path().'/attachments/',
         ));
-
+\Log::debug($r->all());
 	// call to upload the files
 		$upload = $FileUploader->upload();
 		if ($upload['isSuccess']) {
@@ -723,10 +723,9 @@ class CotizacionesController extends Controller
 			}
 
 			$json = $upload['files'];
+         //   $upload['typeOfDocument'] = $r->urlRepo;
 
-			//$SP = "EXEC P_AGREGAR_ARCH_ADJUNTO ".$r->input('_Folio').",'/attachments/".$json[0]['name']."','".$json[0]['old_name']."','".$json[0]['extension']."'";
-			$SP = "INSERT INTO TMPADJUNTOS SELECT '".$json[0]['old_name']."','".request()->cookie('Trab_ID')."','',0,'/attachments/".$json[0]['name']."','.".$json[0]['extension']."',2.2;";
-			DB::statement($SP);
+	
 		}
 
 

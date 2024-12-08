@@ -28,7 +28,7 @@ class HomeController extends Controller
     {
 
         if(\Auth::user()->id_cliente != 0){
-            return view('dashboard_externo');
+            return view('cotizaciones.externos.step_one');
         }else{
             return view('dashboard');
         }
