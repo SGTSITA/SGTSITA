@@ -150,9 +150,10 @@ class MissionResultRenderer {
     });
    }
 
-   function goToUploadDocuments(NumContenedor){
+   function goToUploadDocuments(numContenedor){
         let titleFileUploader = document.querySelector("#titleFileUploader");
-        titleFileUploader.textContent = NumContenedor.toUpperCase();
+        titleFileUploader.textContent = numContenedor.toUpperCase();
+        localStorage.setItem('numContenedor',numContenedor);
         const modalElement = document.getElementById('kt_modal_fileuploader');
         const bootstrapModal = new bootstrap.Modal(modalElement);
         bootstrapModal.show();

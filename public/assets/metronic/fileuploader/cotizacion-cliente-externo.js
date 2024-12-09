@@ -3,12 +3,12 @@ let urlRepo = '';
 var _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
 var [BoletaLib, Doda,CartaPorte] = [
-    {"opcion":"BoletaLib","titulo":"Boleta de Liberación"},
-    {"opcion":"Doda","titulo":"DODA"},
-    {"opcion":"CartaPorte","titulo":"Carta Porte"}
+    {"opcion":"BoletaLib","titulo":"Boleta de Liberación","agGrid": "BoletaLiberacion"},
+    {"opcion":"Doda","titulo":"DODA","agGrid": "DODA"},
+    {"opcion":"CartaPorte","titulo":"Carta Porte","agGrid": "CartaPorte"}
 ];
 
-let fileSettings = Doda;
+let fileSettings = BoletaLib;
 
 let fileCartaPorte = document.querySelector('#fileCartaPorte');
 let btnFileCartaPorte = document.querySelector('#btnFileCartaPorte');
@@ -17,23 +17,15 @@ let btnFileBoletaLiberacion = document.querySelector('#btnFileBoletaLiberacion')
 
 btnFileCartaPorte.addEventListener('click',()=>{
     fileSettings = CartaPorte;
-    setFileUploaderSettings('/dashboard','Carta Porte');
 })
 
 btnFileDODA.addEventListener('click',()=>{
     fileSettings = Doda;
-    setFileUploaderSettings('/dashboard','DODA');
 })
 
 btnFileBoletaLiberacion.addEventListener('click',()=>{
     fileSettings = BoletaLib;
-    setFileUploaderSettings('/dashboard','Boleta de Liberación');
 })
-
-function setFileUploaderSettings(url,title){
-    urlRepo = url;
-
-}
 
 function getSubClientes() {
     var clienteId = $(this).val();
@@ -60,12 +52,14 @@ function resetUploadConfig(){
     // Obtener la instancia de Fileuploader asociada a este campo de carga
     var api = $.fileuploader.getInstance(fileInputElement);
 
-   urlRepo = fileSettings.opcion;    
+   urlRepo = fileSettings.opcion;   
+   numContenedor = localStorage.getItem('numContenedor'); 
    
     api.setOption('upload', {
         url: '/contenedores/files/upload',
         data: {
             urlRepo:urlRepo,
+            numContenedor: numContenedor,
             _token: _token
         },
         type: 'POST',
@@ -76,6 +70,7 @@ function resetUploadConfig(){
 
         },
         onSuccess: function(result, item) {
+
             var data = {};
 
             // get data
@@ -107,6 +102,41 @@ function resetUploadConfig(){
             setTimeout(function() {
                 item.html.find('.progress-bar2').fadeOut(400);
             }, 400);
+
+            const gridApi = gridOptions.api;
+            let dataGrid = gridApi.getGridOption('rowData');
+            var rowIndex = dataGrid.findIndex(d => d.NumContenedor == numContenedor)
+            
+            const colId = fileSettings.agGrid;
+
+            // Obtener el nodo de la fila
+            const rowNode = gridApi.getDisplayedRowAtIndex(rowIndex);
+
+            // Establecer un nuevo valor en la celda
+            if (rowNode) {
+                rowNode.setDataValue(colId, true);
+            }
+
+            toastr.options = {
+                "closeButton": true,
+                "debug": false,
+                "newestOnTop": false,
+                "progressBar": true,
+                "positionClass": "toastr-bottom-center",
+                "preventDuplicates": false,
+                "onclick": null,
+                "showDuration": "1500",
+                "hideDuration": "1000",
+                "timeOut": "5000",
+                "extendedTimeOut": "1000",
+                "showEasing": "swing",
+                "hideEasing": "linear",
+                "showMethod": "fadeIn",
+                "hideMethod": "fadeOut"
+              };
+              
+              toastr.success( `Se cargó el archivo correctamente en el contenedor ${fileSettings.titulo}`,`${fileSettings.titulo}: Carga Exitosa`);
+
         },
         onError: function(item) {
             var progressBar = item.html.find('.progress-bar2');
@@ -132,26 +162,7 @@ function resetUploadConfig(){
         },
         onComplete: ()=>{
 
-            toastr.options = {
-                "closeButton": true,
-                "debug": false,
-                "newestOnTop": false,
-                "progressBar": true,
-                "positionClass": "toastr-bottom-center",
-                "preventDuplicates": false,
-                "onclick": null,
-                "showDuration": "1500",
-                "hideDuration": "1000",
-                "timeOut": "5000",
-                "extendedTimeOut": "1000",
-                "showEasing": "swing",
-                "hideEasing": "linear",
-                "showMethod": "fadeIn",
-                "hideMethod": "fadeOut"
-              };
-              
-              toastr.success( `Se cargó el archivo correctamente en el contenedor ${fileSettings.titulo}`,`${fileSettings.titulo}: Carga Exitosa`);
-
+           
             setTimeout(()=> {
        
                adjuntarDocumentos()

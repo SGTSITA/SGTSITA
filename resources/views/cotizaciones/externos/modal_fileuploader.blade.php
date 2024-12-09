@@ -25,14 +25,14 @@
                 </label>
                 <div class="row mb-2" data-kt-buttons="true">
                   <div class="col">
-                    <label class="btn btn-outline btn-outline-dashed btn-active-light-primary w-100 p-4">
-                      <input type="radio" class="btn-check CheckTypeFile" name="CheckTypeFile" value="BoletaLiberacion" id="btnFileBoletaLiberacion" />
+                    <label class="btn btn-outline btn-outline-dashed btn-active-light-primary w-100 p-4 active">
+                      <input type="radio" class="btn-check CheckTypeFile" name="CheckTypeFile" checked value="BoletaLiberacion" id="btnFileBoletaLiberacion" />
                       <span class="fw-bold fs-3">Boleta Liberación</span>
                     </label>
                   </div>
                   <div class="col">
-                    <label class="btn btn-outline btn-outline-dashed btn-active-light-primary w-100 p-4 active">
-                      <input type="radio" class="btn-check CheckTypeFile" name="CheckTypeFile" checked value="DODA" id="btnFileDODA" />
+                    <label class="btn btn-outline btn-outline-dashed btn-active-light-primary w-100 p-4">
+                      <input type="radio" class="btn-check CheckTypeFile" name="CheckTypeFile" value="DODA" id="btnFileDODA" />
                       <span class="fw-bold fs-3">DODA</span>
                     </label>
                   </div>

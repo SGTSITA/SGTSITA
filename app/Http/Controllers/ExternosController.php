@@ -36,14 +36,34 @@ class ExternosController extends Controller
                 "Peso" => $c->peso_contenedor,
                 "BoletaLiberacion" => ($c->boleta_liberacion == null) ? false : true,
                 "DODA" => ($c->doda == null) ? false : true,
-                "CartaPorte" => ($c->doc_ccp == null) ? false : true
+                "CartaPorte" => ($c->carta_porte == null) ? false : true
             ];
         });
 
         return $resultContenedores;
     }
 
+    public static function confirmarDocumentos($cotizacion){
+        try{
+            $contenedor = Cotizaciones::join('docum_cotizacion as d', 'cotizaciones.id', '=', 'd.id_cotizacion')
+            ->where('cotizaciones.id' ,'=',$cotizacion)
+            ->where('estatus','=','En espera')
+            ->orderBy('created_at', 'desc')
+            ->selectRaw('cotizaciones.*, d.num_contenedor,d.doc_eir,doc_ccp ,d.boleta_liberacion,d.doda')
+            ->first();
+
+            if($contenedor->carta_porte != null && $contenedor->doda != null && $contenedor->boleta_liberacion != null){
+                $contenedor->estatus = 'NO ASIGNADA';
+                $contenedor->save();
+            }
+        }catch(\Throwable $t){
+          \Log::chanel('daily')->info('Maniobra no se pudo enviar al admin. id: '.$cotizacion);
+        }
+        
+    }
+
     public function selector(Request $request){
+       // return $request->transac;
         switch($request->transac){
             case "simple":
                 $path = 'viajes.simple';

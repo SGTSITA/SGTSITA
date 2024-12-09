@@ -699,11 +699,21 @@ class CotizacionesController extends Controller
     }
 
     public function adjuntarDocumentos(Request $r){
-		include('Fileuploader/class.fileuploader.php');
+		
+        include('Fileuploader/class.fileuploader.php');
+        $cotizacionQuery = Cotizaciones::join('docum_cotizacion as d', 'cotizaciones.id', '=', 'd.id_cotizacion')
+        ->where('d.num_contenedor',$r->numContenedor);
+
+        $cotizacion = $cotizacionQuery->first();
+
+        $directorio =  public_path().'/cotizaciones/cotizacion'.$cotizacion->id_cotizacion;
+        if (!is_dir($directorio)) {
+            mkdir($directorio);
+        }
 		$FileUploader = new FileUploader('files', array(
-        'uploadDir' => public_path().'/attachments/',
+        'uploadDir' => public_path()."/cotizaciones/cotizacion$cotizacion->id_cotizacion/",
         ));
-\Log::debug($r->all());
+
 	// call to upload the files
 		$upload = $FileUploader->upload();
 		if ($upload['isSuccess']) {
@@ -711,25 +721,34 @@ class CotizacionesController extends Controller
 				$upload['files'][$key] = array(
 					'extension' => $item['extension'],
 					'format' => $item['format'],
-					'file' => public_path().'/attachments/' . $item['name'],
+					'file' =>   public_path()."/cotizaciones/cotizacion$cotizacion->id_cotizacion/".$item['name'],
 					'name' => $item['name'],
 					'old_name' => $item['old_name'],
 					'size' => $item['size'],
 					'size2' => $item['size2'],
 					'title' => $item['title'],
 					'type' => $item['type'],
-					'url' => asset(public_path().'/attachments/'. $item['name'])
+					'url' => asset( $directorio.'/'.$item['name'])
 				);
+
+                //$fileName = uniqid() . $item['name'];
 			}
 
 			$json = $upload['files'];
          //   $upload['typeOfDocument'] = $r->urlRepo;
+         switch($r->urlRepo){
+            case 'BoletaLib': $update = ["boleta_liberacion" => $item['name']]; break;
+            case 'Doda': $update = ["doda" => $item['name']]; break;
+            case 'CartaPorte': $update = ["carta_porte" => $item['name']]; break;
+         }
+         
+         ($r->urlRepo != 'CartaPorte') 
+         ? DocumCotizacion::where('id',$cotizacion->id_cotizacion)->update($update)
+         : Cotizaciones::where('id',$cotizacion->id_cotizacion)->update($update);
 
-	
+         event(new \App\Events\ConfirmarDocumentosEvent($cotizacion->id_cotizacion));
+
 		}
-
-
-
 		return response()->json($upload);
 		exit;
 	}

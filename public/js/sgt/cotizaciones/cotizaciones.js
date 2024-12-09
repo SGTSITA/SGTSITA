@@ -374,7 +374,13 @@ $("#cotizacionCreate").on("submit", function(e){
         success:function(data){
                 Swal.fire(data.Titulo,data.Mensaje,data.TMensaje).then(function() {
                     if(data.TMensaje == "success"){
-                    location.reload();
+                        var uuid = localStorage.getItem('uuid');
+                        if(uuid){
+                            window.location.replace("/viajes/documents");
+                        }else{
+                            location.reload();
+                        }
+                    
                     }
                 });
         },
