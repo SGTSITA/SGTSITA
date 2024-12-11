@@ -18,7 +18,7 @@
       </div>
       <div class="card-footer border-0 text-end">
       <div class="separator separator-dashed mb-8"></div>
-      <button type="submit" class="btn btn-lg btn-primary" data-kt-stepper-action="next"> Solicitar viajes
+      <button type="button" id="btnSolicitar" class="btn btn-lg btn-primary" data-kt-stepper-action="next"> Solicitar viajes
       <!--begin::Svg Icon | path: icons/duotune/arrows/arr064.svg-->
       <span class="svg-icon svg-icon-4 ms-1">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -37,7 +37,14 @@
 <link href="{{asset('assets/handsontable/handsontable.full.min.css')}}" rel="stylesheet" media="screen">
 <script src="{{asset('assets/handsontable/handsontable.full.min.js')}}"></script>
 <script src="{{asset('assets/handsontable/all.js')}}"></script>
-<!--script src="/js/sgt/cxc/cxc.js"></script-->
+<script src="{{ asset('js/sgt/common.js') }}?v={{ filemtime(public_path('js/sgt/common.js')) }}"></script>
 <script src="{{ asset('js/sgt/cotizaciones/cotizacion-multiple.js') }}?v={{ filemtime(public_path('js/sgt/cotizaciones/cotizacion-multiple.js')) }}"></script>
-
+<script>
+  $(document).ready(async () =>{
+    let clientes = await getClientes();
+    const handsontable = buildHandsOntable();
+    var btn = document.querySelector('#btnSolicitar');
+    btn.addEventListener('click',i=> handsontable.validarSolicitud())
+  })
+</script>
 @endpush
