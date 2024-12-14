@@ -247,7 +247,7 @@
                                         <span class="input-group-text" id="basic-addon1">
                                             <img src="{{ asset('img/icon/tonelada.png') }}" alt="" width="25px">
                                         </span>
-                                        <input id="cantidad_sobrepeso_proveedor_{{$cotizacion->id}}" type="float" class="form-control" value="{{$cotizacion->sobrepeso}}" disabled>
+                                        <input name="cantidad_sobrepeso_proveedor" id="cantidad_sobrepeso_proveedor_{{$cotizacion->id}}" type="float" class="form-control" @if($cotizacion->peso_contenedor > $cotizacion->peso_reglamentario) value="{{$cotizacion->peso_contenedor - $cotizacion->peso_reglamentario}} @else value="0" @endif" disabled>
                                     </div>
                                 </div>
 

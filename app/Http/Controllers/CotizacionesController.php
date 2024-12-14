@@ -327,8 +327,9 @@ class CotizacionesController extends Controller
         $gastos_extras = GastosExtras::where('id_cotizacion', '=', $cotizacion->id)->get();
         $clientes = Client::where('id_empresa' ,'=',auth()->user()->id_empresa)->get();
         $gastos_ope = GastosOperadores::where('id_cotizacion', '=', $cotizacion->id)->get();
+        $proveedores = Proveedor::where('id_empresa', '=', auth()->user()->id_empresa)->get();
 
-        return view('cotizaciones.edit', compact('cotizacion', 'documentacion', 'clientes','gastos_extras', 'gastos_ope'));
+        return view('cotizaciones.edit', compact('cotizacion', 'documentacion', 'clientes','gastos_extras', 'gastos_ope','proveedores'));
     }
 
     public function edit_externo($id){
@@ -524,6 +525,7 @@ class CotizacionesController extends Controller
                 $cotizaciones->update();
 
                 $asignacion = Asignaciones::where('id_contenedor', '=', $doc_cotizaciones->id)->first();
+               
 
                 if ($asignacion) {
                     if($asignacion->id_proveedor != NULL){
@@ -597,6 +599,7 @@ class CotizacionesController extends Controller
                         $asignacion->iva = $request->get('iva_proveedor');
                         $asignacion->retencion = $request->get('retencion_proveedor');
                         $asignacion->total_proveedor = $request->get('total_proveedor');
+                        $asignacion->id_proveedor = $request->id_proveedor;
                         $asignacion->update();
                     }
                 }
