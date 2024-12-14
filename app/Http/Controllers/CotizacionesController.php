@@ -117,6 +117,11 @@ class CotizacionesController extends Controller
         return view('cotizaciones.index_cancelada', compact('empresas', 'proveedores','bancos','operadores','equipos_dolys','equipos_chasis','equipos_camiones','cotizaciones_canceladas'));
     }
 
+    public function solicitudesEntrantes(){
+        $empresas = Empresas::get();
+        return view('cotizaciones.solicitudes_clientes',compact('empresas'));
+    }
+
     public function find(){
         return view('cotizaciones.busqueda');
     }
@@ -322,9 +327,9 @@ class CotizacionesController extends Controller
             //una vez superada todas las validaciones procedemos a guardar los datos
             foreach($contenedores as $contenedor){
 
-                $numSubCliente = substr($cont[0],0,5);
+                $numSubCliente = substr($contenedor[0],0,5);
                 $pesoReglamentario = 22;
-                $numContenedor = $cont[1];
+                $numContenedor = $contenedor[1];
 
                 $cotizaciones = new Cotizaciones;
                 $cotizaciones->id_cliente = 11;

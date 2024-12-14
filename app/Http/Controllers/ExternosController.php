@@ -43,6 +43,29 @@ class ExternosController extends Controller
         return $resultContenedores;
     }
 
+    public function getContenedoresAsignables(Request $request){
+        $contenedoresPendientes = Cotizaciones::join('docum_cotizacion as d', 'cotizaciones.id', '=', 'd.id_cotizacion')
+                                                ->where('estatus','=','NO ASIGNADA')
+                                                ->orderBy('created_at', 'desc')
+                                                ->selectRaw('cotizaciones.*, d.num_contenedor,d.doc_eir,doc_ccp ,d.boleta_liberacion,d.doda')
+                                                ->get();
+
+        $resultContenedores = 
+        $contenedoresPendientes->map(function($c){
+            return [
+                "NumContenedor" => $c->num_contenedor,
+                "Origen" => $c->origen, 
+                "Destino" => $c->destino, 
+                "Peso" => $c->peso_contenedor,
+                "BoletaLiberacion" => ($c->boleta_liberacion == null) ? false : true,
+                "DODA" => ($c->doda == null) ? false : true,
+                "CartaPorte" => ($c->carta_porte == null) ? false : true
+            ];
+        });
+
+        return $resultContenedores;
+    }
+
     public static function confirmarDocumentos($cotizacion){
         try{
             $contenedor = Cotizaciones::join('docum_cotizacion as d', 'cotizaciones.id', '=', 'd.id_cotizacion')

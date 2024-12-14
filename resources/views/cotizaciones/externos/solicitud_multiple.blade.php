@@ -45,6 +45,13 @@
     const handsontable = buildHandsOntable();
     var btn = document.querySelector('#btnSolicitar');
     btn.addEventListener('click',i=> handsontable.validarSolicitud())
+
+    var genericUUID = localStorage.getItem('uuid');
+     if(genericUUID == null){
+      genericUUID = generateUUID();
+      localStorage.setItem('uuid',genericUUID);
+     }
+     
   })
 </script>
 @endpush

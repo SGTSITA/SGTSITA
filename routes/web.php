@@ -77,6 +77,7 @@ Route::group(['middleware' => ['auth']], function() {
 
     // ==================== C O T I Z A C I O N E S  E X T E R N A S====================
     Route::get('/cotizaciones/index/externo', [App\Http\Controllers\CotizacionesController::class, 'index_externo'])->name('index.cotizaciones_manual');
+    Route::get('/cotizaciones/solicitudes', [App\Http\Controllers\CotizacionesController::class, 'solicitudesEntrantes'])->name('cotizaciones.entrantes');
     Route::get('cotizaciones/externo/create', [App\Http\Controllers\CotizacionesController::class, 'create_externo'])->name('create.cotizaciones_externo');
     Route::get('cotizaciones/externo/edit/{id}', [App\Http\Controllers\CotizacionesController::class, 'edit_externo'])->name('edit.cotizaciones_externo');
 
