@@ -27,7 +27,12 @@ class HomeController extends Controller
     public function index()
     {
 
-        return view('dashboard');
+        if(\Auth::user()->id_cliente != 0){
+            return view('cotizaciones.externos.step_one');
+        }else{
+            return view('dashboard');
+        }
+        
 
     }
 }

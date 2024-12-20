@@ -5,7 +5,7 @@
           <div class="copyright text-center text-sm text-muted text-lg-start">
              {{-- <p class="text-dark p-3" >
                  <br> Power <i class="fa fa-heart" style="color:red;"></i> by
-                <a  href="https://www.wtech.com.mx/landing-page/" class="font-weight-bold text-dark ml-1" target="_blank"> WebTech</a>
+                <a  href="#" class="font-weight-bold text-dark ml-1" target="_blank"> WebTech</a>
              </p> --}}
           </div>
         </div>

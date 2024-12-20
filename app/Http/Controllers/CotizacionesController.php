@@ -117,6 +117,11 @@ class CotizacionesController extends Controller
         return view('cotizaciones.index_cancelada', compact('empresas', 'proveedores','bancos','operadores','equipos_dolys','equipos_chasis','equipos_camiones','cotizaciones_canceladas'));
     }
 
+    public function solicitudesEntrantes(){
+        $empresas = Empresas::get();
+        return view('cotizaciones.solicitudes_clientes',compact('empresas'));
+    }
+
     public function find(){
         return view('cotizaciones.busqueda');
     }
@@ -233,7 +238,7 @@ class CotizacionesController extends Controller
         $cotizaciones->peso_reglamentario = $request->get('peso_reglamentario');
         $cotizaciones->precio_sobre_peso = $request->get('precio_sobre_peso');
         $cotizaciones->sobrepeso = $request->get('sobrepeso');
-        $cotizaciones->estatus = 'Pendiente';
+        $cotizaciones->estatus = ($request->has('uuid')) ? 'En espera' : 'Pendiente';
         $cotizaciones->precio_viaje = $request->get('precio_viaje');
         $cotizaciones->burreo = $request->get('burreo');
         $cotizaciones->maniobra = $request->get('maniobra');
@@ -288,6 +293,94 @@ class CotizacionesController extends Controller
             Session::flash('success', 'Se ha guardado sus datos con exito');
             return redirect()->route('index.cotizaciones_manual')
                 ->with('success', 'Cotizacion created successfully.');
+        }
+    }
+
+    public function storeMultiple(Request $request){
+        try{
+            DB::beginTransaction();
+            $contenedores = $request->contenedores;
+            $row = 1;
+
+            foreach($contenedores as $cont){
+                //validaremos que los contenedores no existan
+                $numContenedor = $cont[1];
+                $idEmpresa = auth()->user()->id_empresa;
+    
+                $contenedorExistente = DocumCotizacion::where('num_contenedor', $numContenedor)
+                                                    ->where('id_empresa', $idEmpresa)
+                                                    ->first();
+    
+                if ($contenedorExistente) {
+                    return response()->json(["Titulo" => "Contenedor creado previamente", "Mensaje" => "El contenedor ya existe en la empresa", "TMensaje" => "warning"]);
+                }
+
+                //Validaremos que el num de sub-cliente sea valido
+                $numSubCliente = substr($cont[0],0,5);
+                $subCliente = Subclientes::where('id',$numSubCliente);
+                if(!$subCliente->exists()){
+                    return response()->json(["Titulo" => "SubCliente NO Valido", "Mensaje" => "El subcliente de la fila $row no es un cliente registrado", "TMensaje" => "warning"]);
+                }
+
+            }
+
+            //una vez superada todas las validaciones procedemos a guardar los datos
+            foreach($contenedores as $contenedor){
+
+                $numSubCliente = substr($contenedor[0],0,5);
+                $pesoReglamentario = 22;
+                $numContenedor = $contenedor[1];
+
+                $cotizaciones = new Cotizaciones;
+                $cotizaciones->id_cliente = 11;
+                $cotizaciones->id_subcliente = $numSubCliente;
+                $cotizaciones->origen = $contenedor[2];
+                $cotizaciones->destino = $contenedor[3];
+                $cotizaciones->tamano = $contenedor[4];
+                $cotizaciones->peso_contenedor = $contenedor[5];
+                $cotizaciones->bloque = $contenedor[6];
+                $cotizaciones->bloque_hora_i = $contenedor[7];
+                $cotizaciones->bloque_hora_f = $contenedor[8];
+        
+                $cotizaciones->otro = 0;
+               // $cotizaciones->fecha_modulacion = $request->get('fecha_modulacion');
+                //$cotizaciones->fecha_entrega = $request->get('fecha_entrega');
+                $cotizaciones->iva = 0;
+                $cotizaciones->retencion = 0;
+                $cotizaciones->peso_reglamentario = $pesoReglamentario;
+                $cotizaciones->precio_sobre_peso = 0;
+                $cotizaciones->sobrepeso = ($contenedor[5] > $pesoReglamentario) ? $contenedor[5] - $pesoReglamentario : 0;
+                $cotizaciones->estatus = ($request->has('uuid')) ? 'En espera' : 'Pendiente';
+                $cotizaciones->precio_viaje = 0;
+                $cotizaciones->burreo = 0;
+                $cotizaciones->maniobra = 0;
+                $cotizaciones->estadia = 0;
+                $cotizaciones->base_factura = 0;
+                $cotizaciones->base_taref = 0;
+              //  $cotizaciones->recinto_clientes = $request->get('recinto_clientes');
+                $cotizaciones->precio_tonelada = 0;
+        
+                $cotizaciones->total = 0;
+                $cotizaciones->restante = 0;
+                $cotizaciones->estatus_pago = '0';
+                $cotizaciones->save();
+        
+
+                $docucotizaciones = new DocumCotizacion;
+                $docucotizaciones->id_cotizacion = $cotizaciones->id;
+                $docucotizaciones->num_contenedor = $numContenedor;
+                $docucotizaciones->save();
+        
+                
+            }
+
+            DB::commit();
+            return response()->json(["Titulo" => "Proceso satisfactorio", "Mensaje" => "Cotización creada con exito", "TMensaje" => "success"]);
+        
+        }catch(\Trhowable $t){
+             DB::rollback();
+            \Log::channel('daily')->info($t->getMessage());
+            return response()->json(["Titulo" => "Ocurrion un error", "Mensaje" => "Ocurrio un error mientras procesabamos su solicitud. ".$t->getMessage(), "TMensaje" => "error"]);
         }
     }
 
@@ -700,6 +793,65 @@ class CotizacionesController extends Controller
 
         return redirect()->back()->with('success', 'Ha sido cambiado exitosamente.');
     }
+
+    public function adjuntarDocumentos(Request $r){
+		
+        include('Fileuploader/class.fileuploader.php');
+        $cotizacionQuery = Cotizaciones::join('docum_cotizacion as d', 'cotizaciones.id', '=', 'd.id_cotizacion')
+        ->where('d.num_contenedor',$r->numContenedor);
+
+        $cotizacion = $cotizacionQuery->first();
+
+        $directorio =  public_path().'/cotizaciones/cotizacion'.$cotizacion->id_cotizacion;
+        if (!is_dir($directorio)) {
+            mkdir($directorio);
+        }
+		$FileUploader = new FileUploader('files', array(
+        'uploadDir' => public_path()."/cotizaciones/cotizacion$cotizacion->id_cotizacion/",
+        ));
+
+	// call to upload the files
+		$upload = $FileUploader->upload();
+		if ($upload['isSuccess']) {
+			foreach($upload['files'] as $key=>$item) {
+				$upload['files'][$key] = array(
+					'extension' => $item['extension'],
+					'format' => $item['format'],
+					'file' =>   public_path()."/cotizaciones/cotizacion$cotizacion->id_cotizacion/".$item['name'],
+					'name' => $item['name'],
+					'old_name' => $item['old_name'],
+					'size' => $item['size'],
+					'size2' => $item['size2'],
+					'title' => $item['title'],
+					'type' => $item['type'],
+					'url' => asset( $directorio.'/'.$item['name'])
+				);
+
+                //$fileName = uniqid() . $item['name'];
+			}
+
+			$json = $upload['files'];
+         //   $upload['typeOfDocument'] = $r->urlRepo;
+         switch($r->urlRepo){
+            case 'BoletaLib': $update = ["boleta_liberacion" => $item['name']]; break;
+            case 'Doda': $update = ["doda" => $item['name']]; break;
+            case 'CartaPorte': $update = ["carta_porte" => $item['name']]; break;
+            case 'PreAlta': $update = ["img_boleta" => $item['name']]; break;
+
+         }
+         
+         ($r->urlRepo != 'CartaPorte' && $r->urlRepo != 'PreAlta' ) 
+         ? DocumCotizacion::where('id',$cotizacion->id_cotizacion)->update($update)
+         : Cotizaciones::where('id',$cotizacion->id_cotizacion)->update($update);
+
+         if ($r->urlRepo == 'PreAlta')  DocumCotizacion::where('id',$cotizacion->id_cotizacion)->update(['boleta_vacio'=>'si']);
+
+         event(new \App\Events\ConfirmarDocumentosEvent($cotizacion->id_cotizacion));
+
+		}
+		return response()->json($upload);
+		exit;
+	}
 
     public function cambiar_empresa(Request $request, $id){
 
