@@ -329,7 +329,7 @@ use Carbon\Carbon;
 
                         $.ajax({
                             url: '{{ route('asignacion.edit_fecha') }}',
-                            type: 'get',
+                            type: 'post',
                             data: {
                                 'finzalizar_vieje': finzalizar_vieje,
                                 'nuevaFechaInicio': nuevaFechaInicio,
@@ -343,14 +343,21 @@ use Carbon\Carbon;
                             },
                             success: function(data) {
                                 // Realizar alguna acción si la solicitud es exitosa
+                                Swal.fire('',data.message,data.TMensaje).then((click)=>{
+                                     location.reaload();
+                                    if(!click.isConfirmed){
+                                       
+                                    }
+                                })
+                                
                             },
                             error: function(error) {
                                 console.log(error);
                             },
                             complete: function() {
                                 // Ocultar el spinner cuando la búsqueda esté completa
-                                alert('Cambio realizado');
-                                location.reload();
+                               
+                               
                             }
                         });
 

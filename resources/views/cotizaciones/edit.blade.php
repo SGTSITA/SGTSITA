@@ -820,10 +820,34 @@
                                 @if ($cotizacion->estatus_planeacion == 1)
                                     @if ($documentacion->Asignaciones->id_operador == NULL)
                                         <div class="tab-pane fade" id="nav-Proveedor" role="tabpanel" aria-labelledby="nav-Proveedor-tab" tabindex="0">
-                                            <h3 class="mt-3 mb-5">Proveedor - {{$documentacion->Asignaciones->Proveedor->nombre}} </h3>
-                                            @if ($documentacion->num_contenedor != NULL)
+                                             
+                                       <div class="row">
+                                       @if ($documentacion->num_contenedor != NULL)
                                                 <label style="font-size: 20px;">Num contenedor:  {{$documentacion->num_contenedor}} </label>
                                             @endif
+                                       </div>
+                                            <div class="row">
+                                                <ul class="list-group">
+                                                    <li class="list-group-item border-1 border-dashed d-flex p-4 mb-2 bg-gray-100 border-radius-lg">
+                                                    <div class="d-flex flex-column">
+                                                        <h5 class="mb-2 text-md">Proveedor</h5>
+                                                        <span class="mb-2 text-md">
+                                                            Nombre: <span class="text-dark font-weight-bold ms-2">
+                                                            <select class="form-select bg-transparent cliente d-inline-block"  data-toggle="select" id="id_proveedor" name="id_proveedor">
+                                                                <option value="">Seleccionar Proveedor</option>
+                                                                @foreach($proveedores as $p)
+                                                                  <option value="{{$p->id}}" @if($p->id == $documentacion->Asignaciones->Proveedor->id) selected @endif>{{$p->nombre}}</option>
+                                                                @endforeach
+                                                            </select></span>
+                                                        </span>
+
+                                                    </div>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                            
+                                           
+                                            
                                             <div class="row">
                                                 <div class="col-3 form-group">
                                                     <label for="name">Costo viaje</label>
@@ -886,7 +910,7 @@
                                                 </div>
 
                                                 <div class="col-4 form-group">
-                                                    <label for="name">Total tonelada</label>
+                                                    <label for="name">Total tonelada {{ ($cotizacion->sobrepeso)}}</label>
                                                     <div class="input-group mb-3">
                                                         <span class="input-group-text" id="basic-addon1">
                                                             <img src="{{ asset('img/icon/pago-en-efectivo.png') }}" alt="" width="25px">
@@ -1555,7 +1579,7 @@
 
     <script>
         $(document).ready(()=>{
-           
+            
             calcularTotal()
 
             formFields.forEach((item) =>{

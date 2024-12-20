@@ -97,14 +97,14 @@ function calcularTotal(modulo = 'crear') {
 
     // Sumar el valor de Precio Tonelada al total
     const totalFinal = totalConRetencion + precioTonelada;
-
+    
     //baseTaref Corresponde a Base 2
     const baseTaref = (totalFinal - baseFactura - iva) + retencion;
+
 
     // Mostrar el resultado en el input de base_taref
     const field_base_taref = fields.find( i => i.field == "base_taref");
     document.getElementById(field_base_taref.id).value = moneyFormat(baseTaref);
-    
 
     // Formatear el total con comas
     const totalFormateado = moneyFormat(totalFinal);
@@ -175,10 +175,12 @@ document.addEventListener('DOMContentLoaded', function () {
         var sobrepeso = Math.max(pesoContenedor - pesoReglamentario, 0);
 
         // Mostrar sobrepeso en el input correspondiente con dos decimales
+
         if(sobrepesoInput){
             sobrepesoInput.value = sobrepeso.toFixed(4);
         }
        
+
         var sobrePesoProveedor = document.getElementById('cantidad_sobrepeso_proveedor');
         if(sobrePesoProveedor){
             sobrePesoProveedor.value = sobrepeso.toFixed(4);

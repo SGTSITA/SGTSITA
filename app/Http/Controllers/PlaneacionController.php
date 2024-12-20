@@ -234,6 +234,7 @@ class PlaneacionController extends Controller
             $asignaciones->retencion = $request->get('retencion_proveedor');
             $asignaciones->total_proveedor = $request->get('total_proveedor');
             $asignaciones->sobrepeso_proveedor = $request->get('sobrepeso_proveedor');
+            $asignaciones->total_tonelada = round(floatVal($request->get('sobrepeso_proveedor')) * floatVal($request->get('cantidad_sobrepeso_proveedor')),4);
 
             $asignaciones->id_banco1_dinero_viaje = $request->get('id_banco1_dinero_viaje');
             $asignaciones->cantidad_banco1_dinero_viaje = $request->get('cantidad_banco1_dinero_viaje');
@@ -297,6 +298,7 @@ class PlaneacionController extends Controller
             $asignaciones->cantidad_banco2_dinero_viaje = $request->get('cantidad_banco2_dinero_viaje');
             $asignaciones->base1_proveedor = $request->get('base_factura');
             $asignaciones->base2_proveedor = $request->get('base_taref');
+            $asignaciones->total_tonelada = round(floatVal($request->get('sobrepeso_proveedor')) * floatVal($request->get('cantidad_sobrepeso_proveedor')),4);
             if($request->get('sueldo_viaje') > $request->get('dinero_viaje')){
             $resta = $request->get('sueldo_viaje') - $request->get('dinero_viaje');
             $asignaciones->pago_operador = $resta;
@@ -310,6 +312,7 @@ class PlaneacionController extends Controller
             }
             $cotizacion->estatus_planeacion = 1;
             $cotizacion->tipo_viaje = $request->get('tipo');
+        //    $cotizacion->precio_tonelada = 
             $cotizacion->update();
 
             $coordenada = new Coordenadas;
@@ -330,12 +333,14 @@ class PlaneacionController extends Controller
         $id = $request->get('urlId');
         $urlId = $request->get('urlId');
 
-
+        $cotizaciones = Cotizaciones::find($urlId);
+        
         if($request->get('finzalizar_vieje') != NULL){
-            $cotizaciones = Cotizaciones::find($urlId);
+            
             $cotizaciones->estatus = $request->get('finzalizar_vieje');
-            $cotizaciones->update();
+            
         }
+        $cotizaciones->update();
 
         $asignaciones = Asignaciones::where('id_contenedor','=',$cotizaciones->id)->first();
 
@@ -354,7 +359,7 @@ class PlaneacionController extends Controller
         $asignaciones->update();
 
         // Devuelve una respuesta, por ejemplo:
-        return response()->json(['message' => 'Fechas actualizadas correctamente']);
+        return response()->json(['message' => 'Cambios aplicados correctamente','TMensaje' => 'success']);
     }
 
     public function advance_planeaciones(Request $request) {

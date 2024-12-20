@@ -420,8 +420,9 @@ class CotizacionesController extends Controller
         $gastos_extras = GastosExtras::where('id_cotizacion', '=', $cotizacion->id)->get();
         $clientes = Client::where('id_empresa' ,'=',auth()->user()->id_empresa)->get();
         $gastos_ope = GastosOperadores::where('id_cotizacion', '=', $cotizacion->id)->get();
+        $proveedores = Proveedor::where('id_empresa', '=', auth()->user()->id_empresa)->get();
 
-        return view('cotizaciones.edit', compact('cotizacion', 'documentacion', 'clientes','gastos_extras', 'gastos_ope'));
+        return view('cotizaciones.edit', compact('cotizacion', 'documentacion', 'clientes','gastos_extras', 'gastos_ope','proveedores'));
     }
 
     public function edit_externo($id){
@@ -553,7 +554,7 @@ class CotizacionesController extends Controller
                 $cotizaciones->precio_sobre_peso = $precio_tonelada;
                 $cotizaciones->precio_tonelada = $request->get('precio_tonelada');
                 $total = ($cotizaciones->precio_tonelada + $request->get('cot_precio_viaje') + $request->get('cot_burreo') + $request->get('cot_maniobra') + $request->get('cot_estadia') + $request->get('cot_otro') + $request->get('cot_iva')) - $request->get('cot_retencion');
-                $cotizaciones->total = $total;
+                $cotizaciones->total = $request->get('total');
             }
 
             if ($request->hasFile("carta_porte")) {
@@ -617,6 +618,7 @@ class CotizacionesController extends Controller
                 $cotizaciones->update();
 
                 $asignacion = Asignaciones::where('id_contenedor', '=', $doc_cotizaciones->id)->first();
+               
 
                 if ($asignacion) {
                     if($asignacion->id_proveedor != NULL){
@@ -690,6 +692,7 @@ class CotizacionesController extends Controller
                         $asignacion->iva = $request->get('iva_proveedor');
                         $asignacion->retencion = $request->get('retencion_proveedor');
                         $asignacion->total_proveedor = $request->get('total_proveedor');
+                        $asignacion->id_proveedor = $request->id_proveedor;
                         $asignacion->update();
                     }
                 }
