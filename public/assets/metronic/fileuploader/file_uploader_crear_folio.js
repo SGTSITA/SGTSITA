@@ -15,7 +15,7 @@ function SubirDocs(_Folio_) {
 					  '</div>',
         theme: 'dragdrop',
 		upload: {
-            url: '/SIFOL/Folios/v2/adjuntarDocumentos',
+            url: '',
             data: {_token:_token,_Folio:_Folio},
             type: 'POST',
             enctype: 'multipart/form-data',
@@ -80,7 +80,7 @@ function SubirDocs(_Folio_) {
             onComplete: null,
         },
 		onRemove: function(item) {
-			$.post('/SIFOL/Folios/v2/EliminarDocumento', {
+			$.post('', {
 				_token:_token,
 				_Folio:_Folio,
 				file: item.name

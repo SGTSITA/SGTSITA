@@ -27,9 +27,9 @@ const formFields = [
 ];
 
 const formFieldsBloque = [
-    {'field':'bloque','label':'Block','required': false, "type":"text"},
-    {'field':'bloque_hora_i','label':'Hora Inicio','required': false, "type":"text"},
-    {'field':'bloque_hora_f','label':'Hora Fin','required': false, "type":"text"},
+    {'field':'bloque','id':'bloque','label':'Block','required': false, "type":"text", "trigger":"none"},
+    {'field':'bloque_hora_i','id':'bloque_hora_i','label':'Hora Inicio','required': false, "type":"text", "trigger":"bloque"},
+    {'field':'bloque_hora_f','id':'bloque_hora_f','label':'Hora Fin','required': false, "type":"text", "trigger":"bloque"},
 ]
 
 const formFieldsProveedor = [
@@ -87,12 +87,6 @@ function calcularTotal(modulo = 'crear') {
     document.getElementById(field_iva.id).value = moneyFormat(iva);
     document.getElementById(field_retencion.id).value = moneyFormat(retencion);
 
-    const baseTaref = (subTotal - baseFactura - iva) + retencion;
-
-    // Mostrar el resultado en el input de base_taref
-    const field_base_taref = fields.find( i => i.field == "base_taref");
-    document.getElementById(field_base_taref.id).value = moneyFormat(baseTaref);
-
     // Restar el valor de Retención del total
     const totalSinRetencion = precio_viaje + burreo + iva + otro + estadia + maniobra;
     const totalConRetencion = totalSinRetencion - retencion;
@@ -103,6 +97,14 @@ function calcularTotal(modulo = 'crear') {
 
     // Sumar el valor de Precio Tonelada al total
     const totalFinal = totalConRetencion + precioTonelada;
+
+    //baseTaref Corresponde a Base 2
+    const baseTaref = (totalFinal - baseFactura - iva) + retencion;
+
+    // Mostrar el resultado en el input de base_taref
+    const field_base_taref = fields.find( i => i.field == "base_taref");
+    document.getElementById(field_base_taref.id).value = moneyFormat(baseTaref);
+    
 
     // Formatear el total con comas
     const totalFormateado = moneyFormat(totalFinal);
@@ -332,6 +334,36 @@ $("#cotizacionCreate").on("submit", function(e){
    formData["id_cliente"] = $("#id_cliente").val();
    formData["id_subcliente"] = selectSubClient.value;
 
+   var uuid = localStorage.getItem('uuid');
+   if(uuid != null){
+    formData["uuid"] = uuid;
+
+    passValidation = formFieldsBloque.every((item) => {
+        let trigger = item.trigger;
+        let field = document.getElementById(item.field);
+
+        if(trigger != "none"){
+            let primaryField = document.getElementById(trigger);
+            if(primaryField.value.length > 0 && field.value.length == 0){
+                Swal.fire("El campo "+item.label+" es obligatorio","Parece que no ha proporcionado información en el campo "+item.label,"warning");
+                return false;
+            }
+        }
+        
+        if(field){
+            if(item.required === true && field.value.length == 0){
+                Swal.fire("El campo "+item.label+" es obligatorio","Parece que no ha proporcionado información en el campo "+item.label,"warning");
+                return false;
+            }
+        }
+        return true;
+
+    });
+
+    if(!passValidation) return passValidation;
+    
+   }
+
    $.ajax({
         url: url,
         type: "post",
@@ -342,7 +374,13 @@ $("#cotizacionCreate").on("submit", function(e){
         success:function(data){
                 Swal.fire(data.Titulo,data.Mensaje,data.TMensaje).then(function() {
                     if(data.TMensaje == "success"){
-                    location.reload();
+                        var uuid = localStorage.getItem('uuid');
+                        if(uuid){
+                            window.location.replace("/viajes/documents");
+                        }else{
+                            location.reload();
+                        }
+                    
                     }
                 });
         },

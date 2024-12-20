@@ -1,3 +1,39 @@
+<div class="timeline-item">
+      <!--begin::Timeline line-->
+      <div class="timeline-line"></div>
+      <!--end::Timeline line-->
+
+      <!--begin::Timeline icon-->
+      <div class="timeline-icon">
+          <i class="ki-duotone ki-message-text-2 fs-2 text-gray-500"><span class="path1"></span><span class="path2"></span><span class="path3"></span></i>    </div>
+      <!--end::Timeline icon-->
+
+      <!--begin::Timeline content-->
+      <div class="timeline-content mb-10 mt-n1">
+          <!--begin::Timeline heading-->
+          <div class="pe-3 mb-5">
+              <!--begin::Title-->
+              <div class="fs-5 fw-semibold mb-2">Datos Generales:</div>
+              <!--end::Title-->
+
+              <!--begin::Description-->
+              <div class="d-flex align-items-center mt-1 fs-6">
+                  <!--begin::Info-->
+                  <div class="text-muted me-2 fs-7">Información del contenedor</div>
+                  <!--end::Info-->
+
+              </div>
+              <!--end::Description-->
+          </div>
+          <!--end::Timeline heading-->
+
+          <!--begin::Timeline details-->
+          <div class="overflow-auto pb-5">
+              <!--begin::Record-->
+              <div class="d-flex align-items-center border border-dashed border-gray-300 rounded min-w-750px px-7 py-3 mb-5">  
+      
+        
+                  
 <div class="flex-grow-1">
    <div class="fv-row row mb-3">
      <div class="col-12 min-w-450px">
@@ -66,7 +102,7 @@
             </i>
             </span>
             <div class="form-floating">
-            <input type="text" class="form-control"autocomplete="off" id="num_contenedor" placeholder=""/>
+            <input type="text" class="form-control" autocomplete="off" id="num_contenedor" placeholder="" oninput="changeTag('tagContenedor',this.value)"/>
             <label for="num_contenedor" class="text-gray-700">Número de Contenedor</label>
             </div>
         </div>
@@ -136,3 +172,12 @@
       </div>
    </div>
  </div>
+
+ </div>
+              <!--end::Record-->
+
+          </div>
+          <!--end::Timeline details-->
+      </div>
+      <!--end::Timeline content-->    
+      </div>

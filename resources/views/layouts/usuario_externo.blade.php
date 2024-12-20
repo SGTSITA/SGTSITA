@@ -54,7 +54,7 @@
                   </span>
                   <div class="menu-sub menu-sub-accordion">
                     <div class="menu-item">
-                      <a class="menu-link">
+                      <a class="menu-link" href="{{ route('subcliente.index') }}">
                         <span class="menu-bullet">
                           <span class="bullet bullet-dot"></span>
                         </span>
@@ -82,7 +82,7 @@
                   </span>
                   <div class="menu-sub menu-sub-accordion">
                     <div class="menu-item">
-                      <a class="menu-link">
+                      <a href="{{route('dashboard')}}" class="menu-link">
                         <span class="menu-bullet">
                           <span class="bullet bullet-dot"></span>
                         </span>
@@ -125,16 +125,16 @@
                     <div class="menu-content d-flex align-items-center px-3">
                       <div class="d-flex flex-column">
                         <div class="fw-bold d-flex align-items-center fs-5">{{Auth::User()->name}}
-                          <span class="badge badge-light-success fw-bold fs-8 px-2 py-1 ms-2">Pro</span>
+                          <span class="badge badge-light-success fw-bold fs-8 px-2 py-1 ms-2">Perfil Cliente</span>
                         </div>
                         <a href="#" class="fw-semibold text-muted text-hover-primary fs-7">{{Auth::User()->email}}</a>
                       </div>
                     </div>
                   </div>
                   <div class="separator my-2"></div>
-                  <div class="menu-item px-5">
+                  <!--div class="menu-item px-5">
                     <a href="account/overview.html" class="menu-link px-5">My Profile</a>
-                  </div>
+                  </div-->
                   <!--div class="separator my-2"></div-->
                   <!--div class="menu-item px-5 my-1">
                     <a href="account/settings.html" class="menu-link px-5">Account Settings</a>

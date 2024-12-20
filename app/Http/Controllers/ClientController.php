@@ -78,6 +78,13 @@ class ClientController extends Controller
 
     }
 
+    /**
+     * Vista disponible unicamente en Modulo Externo de Clientes
+     */
+    public function index_subcliente(){
+        return view('client.cliente_externo');
+    }
+
     public function store_subclientes(Request $request){
         $this->validate($request, [
             'nombre' => 'required',
@@ -88,7 +95,7 @@ class ClientController extends Controller
         $fechaActual = date('Y-m-d');
 
         $client = new Subclientes;
-        $client->id_cliente = $request->get('id_client');
+        $client->id_cliente = $request->has('id_client') ? $request->id_client : $request->id_cliente;
         $client->nombre = $request->get('nombre');
         $client->correo = $request->get('correo');
         $client->telefono = $request->get('telefono');
@@ -98,6 +105,10 @@ class ClientController extends Controller
         $client->nombre_empresa = $request->get('nombre_empresa');
         $client->fecha = $fechaActual;
         $client->save();
+
+        if($request->has('uuid')){
+            return response()->json(["TMensaje" => "success", "Mensaje" => "Se ha creado el cliente correctamente","Titulo" => "Proceso satisfactorio"]);
+        }
 
         Session::flash('success', 'Se ha guardado sus datos con exito');
         return redirect()->back()

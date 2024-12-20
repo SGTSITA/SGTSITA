@@ -88,6 +88,10 @@
     <script src="/assets/metronic/plugins/global/plugins.bundle.js"></script>
     <script src="/assets/metronic/js/scripts.bundle.js"></script>
     <script src="/assets/metronic/js/custom/authentication/sign-in/general.js"></script>
-    
+    <script>
+      $(document).ready(() => {
+        localStorage.removeItem('uuid')
+      })
+    </script>
   </body>
 </html>
