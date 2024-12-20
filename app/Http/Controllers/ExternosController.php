@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Cotizaciones;
+use App\Models\Client;
+use Illuminate\Support\Facades\Mail;
 
 class ExternosController extends Controller
 {
@@ -36,7 +38,8 @@ class ExternosController extends Controller
                 "Peso" => $c->peso_contenedor,
                 "BoletaLiberacion" => ($c->boleta_liberacion == null) ? false : true,
                 "DODA" => ($c->doda == null) ? false : true,
-                "CartaPorte" => ($c->carta_porte == null) ? false : true
+                "CartaPorte" => ($c->carta_porte == null) ? false : true,
+                "PreAlta" => ($c->img_boleta == null) ? false : true
             ];
         });
 
@@ -75,12 +78,19 @@ class ExternosController extends Controller
             ->selectRaw('cotizaciones.*, d.num_contenedor,d.doc_eir,doc_ccp ,d.boleta_liberacion,d.doda')
             ->first();
 
-            if($contenedor->carta_porte != null && $contenedor->doda != null && $contenedor->boleta_liberacion != null){
+            if($contenedor->doda != null && $contenedor->boleta_liberacion != null && $contenedor->img_boleta != null){
+
                 $contenedor->estatus = 'NO ASIGNADA';
+                
+
+                $cliente = Client::where('id',$contenedor->id_cliente)->first();
                 $contenedor->save();
+
+                Mail::to('alejandroc.carlos@gmail.com')->send(new \App\Mail\NotificaCotizacionMail($contenedor,$cliente));
+
             }
         }catch(\Throwable $t){
-          \Log::chanel('daily')->info('Maniobra no se pudo enviar al admin. id: '.$cotizacion);
+          \Log::channel('daily')->info('Maniobra no se pudo enviar al admin. id: '.$cotizacion.'. '.$t->getMessage());
         }
         
     }

@@ -23,7 +23,9 @@
                     </i>
                   </span>
                 </label>
-                <div class="row mb-2" data-kt-buttons="true">
+              
+                <div  data-kt-buttons="true">
+                  <div class="row mb-2">
                   <div class="col">
                     <label class="btn btn-outline btn-outline-dashed btn-active-light-primary w-100 p-4 active">
                       <input type="radio" class="btn-check CheckTypeFile" name="CheckTypeFile" checked value="BoletaLiberacion" id="btnFileBoletaLiberacion" />
@@ -39,10 +41,20 @@
                   <div class="col">
                     <label class="btn btn-outline btn-outline-dashed btn-active-light-primary w-100 p-4">
                       <input type="radio" class="btn-check CheckTypeFile" name="CheckTypeFile" value="CartaPorte" id="btnFileCartaPorte" />
-                      <span class="fw-bold fs-3">Carta Porte</span>
+                      <span class="fw-bold fs-4">Formato para Carta Porte</span>
                     </label>
                   </div>
+                  </div>
+                  <div class="row mb-2" >
+                  <div class="col-4">
+                      <label class="btn btn-outline btn-outline-dashed btn-active-light-primary w-100 p-4">
+                        <input type="radio" class="btn-check CheckTypeFile" name="CheckTypeFile" value="Prealta" id="btnFilePrealta" />
+                        <span class="fw-bold fs-4">Pre Alta</span>
+                      </label>
+                  </div>
                 </div>
+                </div>
+                
                 <div class="form-text"> La solicitud del viaje se enviará al subir todos los documentos </div>
               </div>
             </div>

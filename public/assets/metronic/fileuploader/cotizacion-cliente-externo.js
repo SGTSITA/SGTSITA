@@ -2,10 +2,11 @@ let urlRepo = '';
 
 var _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
-var [BoletaLib, Doda,CartaPorte] = [
+var [BoletaLib, Doda,CartaPorte, PreAlta] = [
     {"opcion":"BoletaLib","titulo":"Boleta de Liberación","agGrid": "BoletaLiberacion"},
     {"opcion":"Doda","titulo":"DODA","agGrid": "DODA"},
-    {"opcion":"CartaPorte","titulo":"Carta Porte","agGrid": "CartaPorte"}
+    {"opcion":"CartaPorte","titulo":"Carta Porte","agGrid": "CartaPorte"},
+    {"opcion":"PreAlta","titulo":"Pre Alta","agGrid": "PreAlta"}
 ];
 
 let fileSettings = BoletaLib;
@@ -14,6 +15,7 @@ let fileCartaPorte = document.querySelector('#fileCartaPorte');
 let btnFileCartaPorte = document.querySelector('#btnFileCartaPorte');
 let btnFileDODA = document.querySelector('#btnFileDODA');
 let btnFileBoletaLiberacion = document.querySelector('#btnFileBoletaLiberacion');
+let btnPreAlta = document.querySelector("#btnFilePrealta");
 
 btnFileCartaPorte.addEventListener('click',()=>{
     fileSettings = CartaPorte;
@@ -25,6 +27,10 @@ btnFileDODA.addEventListener('click',()=>{
 
 btnFileBoletaLiberacion.addEventListener('click',()=>{
     fileSettings = BoletaLib;
+})
+
+btnPreAlta.addEventListener('click',()=>{
+    fileSettings = PreAlta
 })
 
 function getSubClientes() {
@@ -103,14 +109,14 @@ function resetUploadConfig(){
                 item.html.find('.progress-bar2').fadeOut(400);
             }, 400);
 
-            const gridApi = gridOptions.api;
-            let dataGrid = gridApi.getGridOption('rowData');
+          //  const gridApi = gridOptions.api;
+            let dataGrid = apiGrid.getGridOption('rowData');
             var rowIndex = dataGrid.findIndex(d => d.NumContenedor == numContenedor)
             
             const colId = fileSettings.agGrid;
 
             // Obtener el nodo de la fila
-            const rowNode = gridApi.getDisplayedRowAtIndex(rowIndex);
+            const rowNode = apiGrid.getDisplayedRowAtIndex(rowIndex);
 
             // Establecer un nuevo valor en la celda
             if (rowNode) {

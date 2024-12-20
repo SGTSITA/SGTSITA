@@ -112,7 +112,7 @@ class MissionResultRenderer {
    ],
 
    columnDefs: [
-     {field: "",width: 60, cellRenderer: CustomButtonComponent},
+     { field: "",width: 60, cellRenderer: CustomButtonComponent},
      { field: "NumContenedor",filter: true, floatingFilter: true},
      { field: "Origen",filter: true, floatingFilter: true},
      { field: "Destino" },
@@ -120,13 +120,15 @@ class MissionResultRenderer {
      { field: "BoletaLiberacion",width: 110,cellRenderer: MissionResultRenderer },
      { field: "DODA",width: 110,cellRenderer: MissionResultRenderer },
      { field: "CartaPorte",width: 110,cellRenderer: MissionResultRenderer },
+     { field: "PreAlta",width: 110,cellRenderer: MissionResultRenderer },
    ],
   
    localeText: localeText
   };
   
   const myGridElement = document.querySelector('#myGrid');
-  const gridInstance = createGrid(myGridElement, gridOptions)//new agGrid.Grid(myGridElement, gridOptions);
+  let apiGrid = agGrid.createGrid(myGridElement, gridOptions);
+ // const gridInstance = createGrid(myGridElement, gridOptions)//new agGrid.Grid(myGridElement, gridOptions);
   
   var paginationTitle = document.querySelector("#ag-32-label");
   paginationTitle.textContent = 'Registros por página';
@@ -143,7 +145,7 @@ class MissionResultRenderer {
         beforeSend:()=>{},
         success:(response)=>{
             
-          gridInstance.setGridOption("rowData", response)
+          apiGrid.setGridOption("rowData", response)
         },
         error:()=>{
 

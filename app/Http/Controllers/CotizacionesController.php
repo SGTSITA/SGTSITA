@@ -833,11 +833,15 @@ class CotizacionesController extends Controller
             case 'BoletaLib': $update = ["boleta_liberacion" => $item['name']]; break;
             case 'Doda': $update = ["doda" => $item['name']]; break;
             case 'CartaPorte': $update = ["carta_porte" => $item['name']]; break;
+            case 'PreAlta': $update = ["img_boleta" => $item['name']]; break;
+
          }
          
-         ($r->urlRepo != 'CartaPorte') 
+         ($r->urlRepo != 'CartaPorte' && $r->urlRepo != 'PreAlta' ) 
          ? DocumCotizacion::where('id',$cotizacion->id_cotizacion)->update($update)
          : Cotizaciones::where('id',$cotizacion->id_cotizacion)->update($update);
+
+         if ($r->urlRepo == 'PreAlta')  DocumCotizacion::where('id',$cotizacion->id_cotizacion)->update(['boleta_vacio'=>'si']);
 
          event(new \App\Events\ConfirmarDocumentosEvent($cotizacion->id_cotizacion));
 
