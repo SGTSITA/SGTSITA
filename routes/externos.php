@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ExternosController;
 use App\Http\Controllers\CotizacionesController;
 use App\Http\Controllers\ClientController;
+use App\Http\Controllers\UserController;
 
 Route::group(["prefix" => "viajes"], function(){
     Route::post('selector', [ExternosController::class,'selector'])->name('viajes.selector');
@@ -24,4 +25,14 @@ Route::group(["prefix" => "contenedores"], function(){
 
 Route::group(["prefix" => "clientes"], function(){
     Route::get('/crear-nuevo',[ClientController::class,'index_subcliente'])->name('subcliente.index');
+    Route::get('/list',[ClientController::class,'subcliente_list'])->name('subcliente.list');
+    Route::post('/list',[ClientController::class,'subcliente_get_list'])->name('subcliente.getlist');
+    Route::post('/edit',[ClientController::class,'show_edit'])->name('subcliente.getlist');
+    Route::post('/update',[ClientController::class,'update_subclientes'])->name('upadate.subcliente');
+});
+
+Route::group(['prefix' => 'manager'], function(){
+    Route::get('/usuarios/crear',[UserController::class,'index_externos'])->name('usuario.create');
+    Route::post('/usuarios/store',[UserController::class,'store'])->name('usuario.store');
+
 });

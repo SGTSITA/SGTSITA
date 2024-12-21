@@ -5,6 +5,7 @@
     <title>Sistema de Gestión de Transporte</title>
     <meta charset="utf-8" />
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="id-cliente" content="{{ Auth::User()->id_cliente }}">
     <link rel="shortcut icon" href="/assets/metronic/media/logos/favicon.ico" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,400,500,600,700" />
     <link href="/assets/metronic/plugins/custom/datatables/datatables.bundle.css" rel="stylesheet" type="text/css" />
@@ -49,7 +50,7 @@
                     <span class="menu-icon">
                       <i class="ki-duotone ki-black-right fs-2"></i>
                     </span>
-                    <span class="menu-title">Clientes</span>
+                    <span class="menu-title">Sub Clientes</span>
                     <span class="menu-arrow"></span>
                   </span>
                   <div class="menu-sub menu-sub-accordion">
@@ -58,15 +59,15 @@
                         <span class="menu-bullet">
                           <span class="bullet bullet-dot"></span>
                         </span>
-                        <span class="menu-title">Crear Cliente</span>
+                        <span class="menu-title">Crear Sub Cliente</span>
                       </a>
                     </div>
                     <div class="menu-item">
-                      <a class="menu-link">
+                      <a href="{{route('subcliente.list')}}" class="menu-link">
                         <span class="menu-bullet">
                           <span class="bullet bullet-dot"></span>
                         </span>
-                        <span class="menu-title">Editar Cliente</span>
+                        <span class="menu-title">Editar Sub Cliente</span>
                       </a>
                     </div>
                   </div>

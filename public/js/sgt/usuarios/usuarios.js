@@ -1,17 +1,15 @@
-const formFieldsClientes = [
-    {'field':'nombre', 'id':'nombre','label':'Nombre ó Razón Social','required': true, "type":"text"},
-    {'field':'rfc', 'id':'rfc','label':'RFC','required': false, "type":"text"},
-    {'field':'regimen_fiscal', 'id':'regimen_fiscal','label':'Régimen Fiscal','required': false, "type":"text"},
-    {'field':'nombre_empresa', 'id':'nombre_empresa','label':'Nombre Comercial','required': true, "type":"text"},
-    {'field':'correo', 'id':'correo','label':'Correo Electrónico','required': true, "type":"email"},
-    {'field':'telefono', 'id':'telefono','label':'Teléfono','required': true, "type":"text"},
-    {'field':'direccion', 'id':'direccion','label':'Dirección','required': false, "type":"text"},
+const formFieldsUsuario = [
+    {'field':'name', 'id':'name','label':'Nombre','required': true, "type":"text"},
+    {'field':'email', 'id':'email','label':'Correo Electrónico','required': true, "type":"email"},
+    {'field':'password', 'id':'password','label':'Contraseña','required': true, "type":"text"},
+    {'field':'confirm-password', 'id':'confirm-password','label':'Confirmar Contraseña','required': true, "type":"text"},
 ];
 
-$("#sublienteCreate").on("submit", function(e){
+
+$("#usuarioCreate").on("submit", function(e){
     e.preventDefault();
 
-    var passValidation = formFieldsClientes.every((item) => {
+    var passValidation = formFieldsUsuario.every((item) => {
         var field = document.getElementById(item.field);
         if(field){
             if(item.required === true && field.value.length == 0){
@@ -34,7 +32,7 @@ $("#sublienteCreate").on("submit", function(e){
 
     const formData = {};
 
-    formFieldsClientes.forEach((item) =>{
+    formFieldsUsuario.forEach((item) =>{
     var input = item.field;
     var inputValue = document.getElementById(input);
     if(inputValue){
@@ -59,6 +57,8 @@ $("#sublienteCreate").on("submit", function(e){
    if(uuid != null){
     formData["uuid"] = uuid
     }
+    formData["roles"] = [1]
+    formData["id_empresa"] = 1
 
     var form = $(this);
     var url = form.attr('action');
