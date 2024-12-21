@@ -85,6 +85,26 @@ class ClientController extends Controller
         return view('client.cliente_externo');
     }
 
+    public function subcliente_list(){
+        return view('client.subcliente_list');
+    }
+
+    public function subcliente_get_list(Request $request){
+        $subClientes = Subclientes::where('id_cliente',$request->_cliente)->get();
+        $list = $subClientes->map(function ($s){
+            return [
+                "IdSubCliente" => $s->id,
+                "SubCliente" => $s->nombre,
+                "RFC" => $s->rfc,
+                "NombreComercial" => $s->nombre_empresa,
+                "CorreoElectronico" => $s->correo,
+                "Telefono" => $s->telefono
+            ];
+        });
+
+        return response()->json(["TMensaje" => "success", "data" => $list]);
+    }
+
     public function store_subclientes(Request $request){
         $this->validate($request, [
             'nombre' => 'required',
@@ -135,6 +155,12 @@ class ClientController extends Controller
      * @param  int $id
      * @return \Illuminate\Http\Response
      */
+    public function show_edit(Request $request)
+    {
+        $subCliente = Subclientes::find($request->id_subcliente);
+        return view('client.cliente_externo', ["subCliente" =>$subCliente]);
+    }
+
     public function edit($id)
     {
         $client = Client::find($id);
@@ -150,10 +176,16 @@ class ClientController extends Controller
     }
 
 
-    public function update_subclientes(Request $request, Subclientes $id)
+    public function update_subclientes(Request $request, Subclientes $id = null)
     {
+        
+        if($request->has('id_subcliente')){
+            $id = Subclientes::find($request->id_subcliente);
+        }
 
         $id->update($request->all());
+
+        return response()->json(["TMensaje" => "success","Mensaje" => "SubCliente modificado con exito","Titulo" => "Proceso exitoso!"]);
 
         Session::flash('edit', 'Se ha editado sus datos con exito');
         return redirect()->route('clients.index')
