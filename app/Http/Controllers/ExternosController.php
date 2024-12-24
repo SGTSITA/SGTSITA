@@ -21,10 +21,15 @@ class ExternosController extends Controller
         return view('cotizaciones.externos.viajes_documentacion');
     }
 
+    public function misViajes(){
+        return view('cotizaciones.externos.viajes_solicitados');
+    }
+
     public function getContenedoresPendientes(Request $request){
+        $condicion = ($request->estatus == 'En espera') ? '=' : '!=';
         $contenedoresPendientes = Cotizaciones::join('docum_cotizacion as d', 'cotizaciones.id', '=', 'd.id_cotizacion')
-                                                ->where('cotizaciones.id_empresa' ,'=',auth()->user()->id_empresa)
-                                                ->where('estatus','=','En espera')
+                                                ->where('cotizaciones.id_cliente' ,'=',auth()->user()->id_cliente)
+                                                ->where('estatus',$condicion,'En espera')
                                                 ->orderBy('created_at', 'desc')
                                                 ->selectRaw('cotizaciones.*, d.num_contenedor,d.doc_eir,doc_ccp ,d.boleta_liberacion,d.doda')
                                                 ->get();
@@ -56,6 +61,7 @@ class ExternosController extends Controller
         $resultContenedores = 
         $contenedoresPendientes->map(function($c){
             return [
+                "IdContenedor" => $c->id,
                 "NumContenedor" => $c->num_contenedor,
                 "Origen" => $c->origen, 
                 "Destino" => $c->destino, 

@@ -91,7 +91,7 @@
                       </a>
                     </div>
                     <div class="menu-item">
-                      <a class="menu-link">
+                      <a href="{{ route('mis.viajes') }}" class="menu-link">
                         <span class="menu-bullet">
                           <span class="bullet bullet-dot"></span>
                         </span>
