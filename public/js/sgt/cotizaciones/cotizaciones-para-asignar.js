@@ -105,14 +105,18 @@ class MissionResultRenderer {
    
   const gridOptions = {
    pagination: true,
-      paginationPageSize: 500,
-      paginationPageSizeSelector: [200, 500, 1000],
+      paginationPageSize: 100,
+      paginationPageSizeSelector: [100, 200, 500],
+      rowSelection: {
+        mode: "multiRow",
+        headerCheckbox: true,
+      },
    rowData: [
   
    ],
 
    columnDefs: [
-     {field: "",width: 60, cellRenderer: CustomButtonComponent},
+     { field: "IdContenedor", hide: true},
      { field: "NumContenedor",filter: true, floatingFilter: true},
      { field: "Origen",filter: true, floatingFilter: true},
      { field: "Destino" },
@@ -126,12 +130,13 @@ class MissionResultRenderer {
   };
   
   const myGridElement = document.querySelector('#myGrid');
-  const gridInstance = new agGrid.Grid(myGridElement, gridOptions);
+  let apiGrid = agGrid.createGrid(myGridElement, gridOptions);
+ // const gridInstance = new agGrid.Grid(myGridElement, gridOptions);
   
   var paginationTitle = document.querySelector("#ag-32-label");
   paginationTitle.textContent = 'Registros por página';
   
-  const gridApi = gridInstance.gridOptions.api;
+  let IdContenedor = null;
    
    function getContenedoresPorAsignar(){
     var _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
@@ -141,8 +146,8 @@ class MissionResultRenderer {
         data: {_token},
         beforeSend:()=>{},
         success:(response)=>{
-            
-            gridApi.setGridOption("rowData", response)
+            console.log(response)
+          apiGrid.setGridOption("rowData", response)
         },
         error:()=>{
 
@@ -150,10 +155,57 @@ class MissionResultRenderer {
     });
    }
 
-   function assignEmpresa(){
-
-
-    const modalElement = document.getElementById('cambioEmpresa');
+   function assignEmpresa(_IdContenedor){
+        const modalElement = document.getElementById('cambioEmpresa');
         const bootstrapModal = new bootstrap.Modal(modalElement);
         bootstrapModal.show();
+        IdContenedor = _IdContenedor
+   }
+
+   function asignarContenedores(){
+    let contenedores = apiGrid.getSelectedRows();
+
+    if($("#cmbEmpresa").val() == ""){
+      Swal.fire("Seleccione Empresa","Aún no ha seleccionado Empresa, este es un campo requerido","warning");
+      return false;
+    }
+    
+    if(contenedores.length == 0){
+      Swal.fire('Seleccione contenedores','Para realizar la asignación debe seleccionar al menos un contenedor','warning');
+      return false;
+    }
+
+    Swal.fire({
+      title: '¿Asignar seleccionados?',
+      icon: 'question',
+      confirmButtonText: 'Si, asignar',
+      cancelButtonText: 'Cancelar',
+      showCancelButton: true
+    }).then((respuesta) =>{
+      if(respuesta.isConfirmed){
+        confirmarAsignarContenedores(contenedores);
+      }
+    })
+   }
+
+   function confirmarAsignarContenedores(contenedores){
+    let _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    let empresa = $("#cmbEmpresa").val();
+    let seleccionContenedores = JSON.stringify(contenedores)
+    $.ajax({
+      url: '/cotizaciones/asignar/empresa',
+      type: 'post',
+      data: {_token, seleccionContenedores,empresa},
+      beforeSend:()=>{
+
+      },
+      success:(response)=>{
+        if(response.TMensaje == "success") getContenedoresPorAsignar();
+        Swal.fire(response.Titulo,response.Mensaje,response.TMensaje);
+      },
+      error:(x, error)=>{
+        Swal.fire('Ocurrio un error',x.getMessage(),'error');
+      }
+    });
+    
    }

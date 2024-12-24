@@ -3,12 +3,12 @@
       <div class="modal-content">
 
         <div class="modal-header">
-          <h5 class="modal-title">Cambio de Empresa</h5>
+          <h5 class="modal-title">Asignar de Empresa</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
-        <form method="POST" action="" enctype="multipart/form-data" role="form">
+        <form action="/cotizaciones/cambiar/empresa/" enctype="multipart/form-data" name="frmAsignarEmpresa" id="frmAsignarEmpresa" role="form">
             @csrf
-            <input type="hidden" name="_method" value="PATCH">
+           
             <div class="modal-body">
                 <div class="row">
 
@@ -30,8 +30,8 @@
             </div>
 
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="submit" class="btn btn-primary">Guardar</button>
+                <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-sm bg-gradient-success">Asignar</button>
             </div>
         </form>
       </div>
