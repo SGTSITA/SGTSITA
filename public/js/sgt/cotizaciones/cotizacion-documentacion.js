@@ -136,12 +136,12 @@ class MissionResultRenderer {
   //const gridApi = gridInstance.gridOptions.api;
   //const api = createGrid(gridDiv, gridOptions)
    
-   function getContenedoresPendientes(){
+   function getContenedoresPendientes(estatus = 'En espera'){
     var _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     $.ajax({
         url: '/viajes/documents/pending',
         type: 'post',
-        data: {_token},
+        data: {_token,estatus},
         beforeSend:()=>{},
         success:(response)=>{
             

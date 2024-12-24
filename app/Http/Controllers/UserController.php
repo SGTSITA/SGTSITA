@@ -74,8 +74,9 @@ class UserController extends Controller
         $user = User::create($input);
         $user->assignRole($request->input('roles'));
 
-       
-        return response()->json(["TMensaje" => "success", "Mensaje" => "Usuario creado correctamente"]);
+        if($request->has('uuid')){
+            return response()->json(["TMensaje" => "success", "Mensaje" => "Usuario creado correctamente"]);
+        }
 
         Session::flash('success', 'Se ha guardado sus datos con exito');
         return redirect()->route('users.index')

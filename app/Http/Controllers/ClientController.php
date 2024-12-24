@@ -4,12 +4,16 @@ namespace App\Http\Controllers;
 
 use App\Models\Client;
 use App\Models\Subclientes;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Mediconesystems\LivewireDatatables\Column;
 use Mediconesystems\LivewireDatatables\NumberColumn;
 use Mediconesystems\LivewireDatatables\DateColumn;
 use Mediconesystems\LivewireDatatables\Http\Livewire\LivewireDatatable;
 use Session;
+use DB;
+use Log;
+use Hash;
 
 /**
  * Class ClientController
@@ -51,30 +55,50 @@ class ClientController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function store(Request $request){
-        $this->validate($request, [
-            'nombre' => 'required',
-            'correo' => 'required',
-            'telefono' => 'required'
-        ]);
+        try{
+            DB::beginTransaction();
+            $this->validate($request, [
+                'nombre' => 'required',
+                'correo' => 'required',
+                'telefono' => 'required'
+            ]);
 
-        $fechaActual = date('Y-m-d');
+            $fechaActual = date('Y-m-d');
 
-        $client = new Client;
-        $client->id_empresa =auth()->user()->id_empresa;
+            $client = new Client;
+            $client->id_empresa = auth()->user()->id_empresa;
 
-        $client->nombre = $request->get('nombre');
-        $client->correo = $request->get('correo');
-        $client->telefono = $request->get('telefono');
-        $client->direccion = $request->get('direccion');
-        $client->regimen_fiscal = $request->get('regimen_fiscal');
-        $client->rfc = $request->get('rfc');
-        $client->nombre_empresa = $request->get('nombre_empresa');
-        $client->fecha = $fechaActual;
-        $client->save();
+            $client->nombre = $request->get('nombre');
+            $client->correo = $request->get('correo');
+            $client->telefono = $request->get('telefono');
+            $client->direccion = $request->get('direccion');
+            $client->regimen_fiscal = $request->get('regimen_fiscal');
+            $client->rfc = $request->get('rfc');
+            $client->nombre_empresa = $request->get('nombre_empresa');
+            $client->fecha = $fechaActual;
+            $client->save();
 
-        Session::flash('success', 'Se ha guardado sus datos con exito');
-        return redirect()->back()
-            ->with('success', 'Cliente created successfully.');
+            //Crear usuario para el cliente
+            $welcomePassword = strtoupper(uniqid());
+            $clientUser['name'] = $request->get('nombre');
+            $clientUser['email'] = $request->get('correo');
+            $clientUser['password'] = Hash::make($welcomePassword);
+            $clientUser['id_empresa'] = auth()->user()->id_empresa;
+            $clientUser['id_cliente'] = $client->id;
+
+            $user = User::create($clientUser);
+            $user->assignRole([3]); // Se asgna ROL de cliente
+            DB::commit();
+            Session::flash('success', 'Se ha guardado sus datos con exito, Usuario de acceso generado automaticamente con contraseña: '.$welcomePassword);
+            return redirect()->back()->with('success', 'Cliente creado correctamente. Proporcione contraseña: '.$welcomePassword);
+        }catch(\Throwable $t){
+            DB::rollback();
+            Log::channel('daily')->info('Error al crear cliente: '.$t->getMessage());
+            Session::flash('warning', 'Error:'.$t->getMessage());
+
+            return redirect()->back()->with('error', 'No se pudo crear el cliente. '.$t->getMessage());
+        }
+        
 
     }
 

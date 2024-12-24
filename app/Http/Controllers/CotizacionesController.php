@@ -853,8 +853,39 @@ class CotizacionesController extends Controller
 		exit;
 	}
 
-    public function cambiar_empresa(Request $request, $id){
+    /**
+     * Esta metodo se utiliza para asignar los contenedores solicitados desde el modulo de clientes externos
+     */
+    public function asignar_empresa(Request $request){
+        try{
+            DB::beginTransaction();
+            $contenedores = json_decode($request->seleccionContenedores);
 
+            foreach($contenedores as $c){
+                $cotizaciones = DB::table('cotizaciones')
+                ->where('id', $c->IdContenedor)
+                ->update([
+                    'id_empresa' => $request->empresa,
+                    'estatus' => 'Aprobada'
+                ]);
+        
+                $contenedores = DB::table('docum_cotizacion')
+                ->where('id_cotizacion',  '=', $c->IdContenedor)
+                ->update(['id_empresa' => $request->empresa]);
+            }
+
+            DB::commit();
+            return response()->json(["TMensaje" => "success", "Mensaje" => "Contenedores asignados correctamente","Titulo" => "Proceso satisfactorio"]);
+        }catch(\Trhowable $t){
+            DB::rollback();
+            return response()->json(["TMensaje" => "error", "Mensaje" => "No fue posible asignar los contenedores. $t->getMessage()","Titulo" => "No asignado"]);
+
+        }
+        
+        
+    }
+
+    public function cambiar_empresa(Request $request){
         // Obtener la cotización actual
         $cotizacion = DB::table('cotizaciones')->where('id', $id)->first();
         $doc = DocumCotizacion::where('id_cotizacion', $id)->first();
