@@ -14,6 +14,7 @@ use Session;
 use DB;
 use Log;
 use Hash;
+use Mail;
 
 /**
  * Class ClientController
@@ -89,17 +90,46 @@ class ClientController extends Controller
             $user = User::create($clientUser);
             $user->assignRole([3]); // Se asgna ROL de cliente
             DB::commit();
-            Session::flash('success', 'Se ha guardado sus datos con exito, Usuario de acceso generado automaticamente con contraseña: '.$welcomePassword);
-            return redirect()->back()->with('success', 'Cliente creado correctamente. Proporcione contraseña: '.$welcomePassword);
+
+            Mail::to($request->get('correo'))->send(new \App\Mail\WelcomeMail($client, $welcomePassword));
+            
+
+
+            return response()->json(["TMensaje" =>"success", "Titulo" => "Cliente creado correctamente", "Mensaje" => "El cliente se ha creado con exito. Contraseña de acceso generada y enviada correctamente: $welcomePassword"]);
+          //  Session::flash('success', 'Se ha guardado sus datos con exito, Usuario de acceso generado automaticamente con contraseña: '.$welcomePassword);
+            //return redirect()->back()->with('success', 'Cliente creado correctamente. Proporcione contraseña: '.$welcomePassword);
         }catch(\Throwable $t){
             DB::rollback();
             Log::channel('daily')->info('Error al crear cliente: '.$t->getMessage());
-            Session::flash('warning', 'Error:'.$t->getMessage());
+            return response()->json(["TMensaje" =>"error", "Titulo" => "Ocurrio un error", "Mensaje" => $t->getMessage()]);
 
-            return redirect()->back()->with('error', 'No se pudo crear el cliente. '.$t->getMessage());
+            //Session::flash('warning', 'Error:'.$t->getMessage());
+
+            //return redirect()->back()->with('error', 'No se pudo crear el cliente. '.$t->getMessage());
         }
         
 
+    }
+
+    /**
+     * Obtiene la lista de clientes del usuario logueado (según la empresa a la que corresponde)
+     */
+    public function get_list(){
+        $clientes = Client::where('id_empresa',auth()->user()->id_empresa)->orderBy('nombre')->get();
+        $list = $clientes->map(function($c){
+            return [
+                "IdCliente" => $c->id,
+                "Nombre" => $c->nombre,
+                "Correo" => $c->correo,
+                "Telefono" => $c->telefono,
+                "RFC" => $c->rfc,
+                "RegimenFiscal" => $c->regimen_fiscal,
+                "Empresa" => $c->empresa,
+                "Direccion" => $c->direccion,
+            ];
+        });
+
+        return response()->json(["list" => $list, "TMensaje" => "success"]);
     }
 
     /**
