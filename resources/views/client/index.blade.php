@@ -23,10 +23,10 @@ Clientes
                                 </button-->
                                 <div class="ms-auto my-auto">
                                 <a href="{{route('create.clients')}}" class="btn bg-gradient-info btn-xs mb-2">+&nbsp;  Nuevo cliente</a>
-                                <button type="button" class="btn btn-outline-info btn-xs mb-2" >
+                                <button type="button" class="btn btn-outline-info btn-xs mb-2" onclick="goToClientEdit()">
                                 Editar Cliente
                                 </button>                        
-                                    <button class="btn btn-outline-info btn-xs mb-2 mt-sm-0 mt-1" data-type="csv" type="button" name="button">Sub Clientes</button>
+                                    <button class="btn btn-outline-info btn-xs mb-2 mt-sm-0 mt-1" type="button" name="button" onclick ="goToSubClients()">Sub Clientes</button>
                                 </div>
                             </div>
                             @endcan

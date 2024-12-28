@@ -154,3 +154,63 @@ class MissionResultRenderer {
         }
     });
    }
+
+   function goToClientEdit(){
+    var _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    let client = apiGrid.getSelectedRows();
+    
+    if(client.length == 0){
+      Swal.fire('Seleccione cliente','Debe seleccionar un cliente','warning');
+      return false;
+    }
+    let IdCliente = null;
+    
+    client.forEach(c => IdCliente = c.IdCliente)
+    
+
+    var url = '/clients/edit';
+
+    var form =
+    $('<form action="' + url + '" method="post">' +
+        '<input type="hidden" name="id_client" value="'+IdCliente+'" />' +
+        '<input type="hidden" name="_token" value="' + _token + '" />' +
+    '</form>');
+
+    $('body').append(form);
+    form.submit();
+    setTimeout(()=>{
+        if (form) {
+            form.remove();
+        }
+    },1000)
+    
+   }
+
+   function goToSubClients(){
+    var _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    let client = apiGrid.getSelectedRows();
+    
+    if(client.length == 0){
+      Swal.fire('Seleccione cliente','Debe seleccionar un cliente','warning');
+      return false;
+    }
+    let IdCliente = null;
+    
+    client.forEach(c => IdCliente = c.IdCliente)
+    
+    var url = '/subclientes/list';
+
+    var form =
+    $('<form action="' + url + '" method="post">' +
+        '<input type="hidden" name="id_client" value="'+IdCliente+'" />' +
+        '<input type="hidden" name="_token" value="' + _token + '" />' +
+    '</form>');
+
+    $('body').append(form);
+    form.submit();
+    setTimeout(()=>{
+        if (form) {
+            form.remove();
+        }
+    },1000)
+   }

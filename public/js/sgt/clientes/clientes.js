@@ -48,9 +48,9 @@ $("#clienteCreate").on("submit", function(e){
 
     formData["_token"] = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
-    var subCliente = document.querySelector("#id_subcliente")
-    if(subCliente){
-        formData["id_subcliente"] = subCliente.value;
+    var idClient = document.querySelector("#idClient")
+    if(idClient){
+        formData["idClient"] = idClient.value;
     }
     
 

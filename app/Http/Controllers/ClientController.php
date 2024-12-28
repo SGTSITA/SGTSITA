@@ -15,6 +15,7 @@ use DB;
 use Log;
 use Hash;
 use Mail;
+use Auth;
 
 /**
  * Class ClientController
@@ -48,6 +49,8 @@ class ClientController extends Controller
         $client = new Client();
         return view('client.create', compact('client'));
     }
+
+
 
     /**
      * Store a newly created resource in storage.
@@ -124,7 +127,7 @@ class ClientController extends Controller
                 "Telefono" => $c->telefono,
                 "RFC" => $c->rfc,
                 "RegimenFiscal" => $c->regimen_fiscal,
-                "Empresa" => $c->empresa,
+                "Empresa" => $c->nombre_empresa,
                 "Direccion" => $c->direccion,
             ];
         });
@@ -139,8 +142,17 @@ class ClientController extends Controller
         return view('client.cliente_externo');
     }
 
+    public function new_subcliente(Request $request){
+        return view('client.new_subclient',["idClient" => $request->idClient]);
+    }
+
     public function subcliente_list(){
         return view('client.subcliente_list');
+    }
+
+    public function subcliente_list_internal(Request $request){
+        $client = Client::where('id',$request->id_client)->first();
+        return view('client.subcliente_list_internal',["id_client" => $request->id_client, "client" => $client]);
     }
 
     public function subcliente_get_list(Request $request){
@@ -184,9 +196,9 @@ class ClientController extends Controller
             return response()->json(["TMensaje" => "success", "Mensaje" => "Se ha creado el cliente correctamente","Titulo" => "Proceso satisfactorio"]);
         }
 
-        Session::flash('success', 'Se ha guardado sus datos con exito');
-        return redirect()->back()
-            ->with('success', 'Cliente created successfully.');
+        return response()->json(["TMensaje" => "success", "Mensaje" => "Se ha creado el cliente correctamente","Titulo" => "Proceso satisfactorio"]);
+
+
 
     }
 
@@ -212,21 +224,28 @@ class ClientController extends Controller
     public function show_edit(Request $request)
     {
         $subCliente = Subclientes::find($request->id_subcliente);
-        return view('client.cliente_externo', ["subCliente" =>$subCliente]);
+
+        return (Auth::User()->id_cliente != 0) 
+         ? view('client.cliente_externo', ["subCliente" =>$subCliente])
+         : view('client.new_subclient', ["subCliente" =>$subCliente, "idClient" => $request->idClient]);
+
+      //  return view('client.cliente_externo', ["subCliente" =>$subCliente]);
     }
 
-    public function edit($id)
+    public function edit(Request $request)
     {
-        $client = Client::find($id);
+        $cliente = Client::find($request->id_client);
 
-        return view('client.edit', compact('client'));
+        return view('client.create', compact('cliente'));
     }
 
     public function edit_subclientes($id)
     {
         $subcliente = Subclientes::find($id);
 
-        return view('client.subclientes', compact('subcliente'));
+        return (Auth::User()->id_cliente != 0) 
+         ? view('client.subclientes', compact('subcliente'))
+         : view('client.new_subclient', compact('subcliente'));
     }
 
 
@@ -254,14 +273,12 @@ class ClientController extends Controller
      * @param  Client $client
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, Client $id)
+    public function update(Request $request)
     {
+        $client = Client::where('id',$request->idClient);
+        $client->update($request->only('nombre','rfc','regimen_fiscal','nombre_empresa','correo','telefono','direccion'));
 
-        $id->update($request->all());
-
-        Session::flash('edit', 'Se ha editado sus datos con exito');
-        return redirect()->route('clients.index')
-            ->with('success', 'Client updated successfully');
+        return response()->json(["Titulo" => "Datos actualizados", "Mensaje" => "Los datos del cliente han sido actualizados correctamente","TMensaje" => "success"]);
     }
 
     /**

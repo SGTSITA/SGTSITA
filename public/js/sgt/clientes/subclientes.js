@@ -77,7 +77,7 @@ $("#sublienteCreate").on("submit", function(e){
                         if(uuid){
                             window.location.replace("/clientes/list");
                         }else{
-                            location.reload();
+                            window.location.replace("/clients");
                         }
                     
                     }
