@@ -19,9 +19,7 @@
                         <div class="card-header  d-flex justify-content-between align-items-center">
                         
                         <h5>Reporte Liquidados CXP</h5>
-                        <a href="{{ route('dashboard') }}" class="btn btn-sm" style="background: {{$configuracion->color_boton_close}}; color: #ffff; margin-right: 3rem;">
-                                Regresar
-                        </a>
+                        
                         </div>
                         <div class="card-body">
                         
@@ -54,6 +52,11 @@
                             </div>
 
                             <div class="table-responsive">
+                            <div class="mb-3">
+                            </div>
+                            <div class="mb-3">
+                            <button type="button" id="selectAllButton" class="btn btn-primary">Seleccionar todo</button>
+                            </div>
                                 <form id="exportForm" action="{{ route('liquidados_cxp.export') }}" method="POST">
                                     @csrf
                                     @if(Route::currentRouteName() != 'index_liquidados_cxp.reporteria')
@@ -125,10 +128,9 @@
 <script src="https://cdn.datatables.net/select/2.0.3/js/dataTables.select.min.js"></script>
 <script src="https://cdn.datatables.net/select/2.0.3/js/select.bootstrap5.min.js"></script>
 
-    <script>
+<script>
     $(document).ready(function() {
         $('.cliente').select2();
-
 
         const table = $('#datatable-search').DataTable({
             columnDefs: [{
@@ -151,16 +153,45 @@
             }
         });
 
+        // Función para manejar el botón "Seleccionar todo"
+        $('#selectAllButton').on('click', function() {
+            // Verificar si todas las filas están seleccionadas (no solo las visibles)
+            if (table.rows({ selected: true }).count() === table.rows().count()) {
+                // Si todas están seleccionadas, deseleccionarlas
+                table.rows().deselect();
+                $(this).text('Seleccionar todo');
+            } else {
+                // Si no todas están seleccionadas, seleccionarlas todas
+                table.rows().select();
+                $(this).text('Deseleccionar todo');
+            }
+        });
+
+        // Detectar cuando las filas cambian de estado (seleccionadas o desmarcadas)
+        table.on('select deselect', function() {
+            // Si todas las filas están seleccionadas, cambiar el texto a "Deseleccionar todo"
+            if (table.rows({ selected: true }).count() === table.rows().count()) {
+                $('#selectAllButton').text('Deseleccionar todo');
+            } else {
+                // Si no todas las filas están seleccionadas, cambiar el texto a "Seleccionar todo"
+                $('#selectAllButton').text('Seleccionar todo');
+            }
+        });
+
+        // Función para la exportación de datos seleccionados
         $('.exportButton').on('click', function(event) {
             event.preventDefault(); // Evita el comportamiento predeterminado del formulario
 
-            const selectedIds = table.rows('.selected').data().toArray().map(row => row[1]); // Obtener los IDs seleccionados
+            // Obtener los IDs de las filas seleccionadas
+            const selectedIds = table.rows('.selected').data().toArray().map(row => row[1]); // Asumiendo que el ID está en la segunda columna
 
             console.log(selectedIds); // Verificar en la consola del navegador
-            var fileType = $("#"+event.target.id).data('filetype');
+
+            var fileType = $("#"+event.target.id).data('filetype'); // Obtener el tipo de archivo (PDF, Excel, etc.)
+
             // Enviar los IDs seleccionados al controlador por Ajax
             $.ajax({
-                url: '{{ route('liquidados_cxp.export') }}',
+                url: '{{ route('liquidados_cxp.export') }}', // Ruta para la exportación
                 method: 'POST',
                 data: {
                     _token: '{{ csrf_token() }}',
@@ -172,14 +203,14 @@
                 },
                 success: function(response) {
                     // Crear un objeto URL del blob recibido
-                    var blob = new Blob([response], { type: 'application/'+fileType });
+                    var blob = new Blob([response], { type: 'application/' + fileType });
                     var url = URL.createObjectURL(blob);
 
                     // Crear un elemento <a> para simular el clic de descarga
                     var a = document.createElement('a');
                     a.style.display = 'none';
                     a.href = url;
-                    a.download = 'Cuentas_por_pagar_{{ date('d-m-Y') }}.'+fileType;
+                    a.download = 'Cuentas_por_pagar_{{ date('d-m-Y') }}.' + fileType;
                     document.body.appendChild(a);
 
                     // Simular el clic en el enlace para iniciar la descarga
@@ -197,10 +228,9 @@
                 }
             });
         });
-
     });
+</script>
 
-    </script>
 @endsection
 @push('custom-javascript')
 <script src="{{asset('js/reporteria/genericExcel.js')}}"></script>

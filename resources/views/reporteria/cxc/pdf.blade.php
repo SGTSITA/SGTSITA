@@ -1,16 +1,28 @@
 <!DOCTYPE html>
 <html>
-    @if(!isset($isExcel))
+@if(!isset($isExcel))
     <style>
+        body {
+            font-family: Arial, sans-serif; /* Fuente Arial para todo */
+            font-size: 12px; /* Tamaño de fuente 12 */
+            margin-top: 50px; 
+            margin-left: 40px;
+        }
+
+        /* Eliminar el bold en todos los elementos */
+        h3, p, th, td {
+            font-weight: normal; /* Quitar negrita */
+        }
+
         .registro-contenedor {
-            border: 2px solid #000; /* Cambia el color y grosor del borde según tus necesidades */
-            margin-bottom: 20px; /* Espacio entre cada registro */
-            padding: 15px; /* Espacio interno alrededor de las tablas */
-            border-radius: 5px; /* Bordes redondeados, opcional */
+            border: 2px solid #000;
+            margin-bottom: 20px;
+            padding: 15px;
+            border-radius: 5px;
         }
 
         .registro-contenedor table {
-            margin-bottom: 10px; /* Espacio entre tablas dentro del mismo contenedor */
+            margin-bottom: 10px;
         }
 
         .totales {
@@ -18,7 +30,7 @@
         }
 
         .totales h3 {
-            font-weight: bold;
+            font-weight: normal; /* Quitar negrita */
         }
 
         .totales p {
@@ -26,41 +38,63 @@
             color: #000;
         }
 
-        .margin_cero{
+        .margin_cero {
             padding: 0;
             margin: 0;
             font-size: 15px;
         }
-        .contianer{
+
+        .contianer {
             padding: 0;
             margin: -40px;
         }
 
+        table {
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            border: 1px solid #000;
+            padding: 8px;
+           
+        }
     </style>
-    @endif
-    <head>
-        <title>Cuentas por coborar</title>
-    </head>
+@endif
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>Cuentas por cobrar</title>
+</head>
+
 
     <body>
+        
         @php
             $totalOficialSum = 0;
             $totalnoofi = 0;
             $importeVtaSum = 0;
             $total_no_ofi = 0;
         @endphp
-
+        
+                
                 <div class="contianer" style="position: relative">
                     <h4 class="margin_cero">Empresa: {{ $user->Empresa->nombre }}</h4>
                     <h4 class="margin_cero">Estado de cuenta</h4>
-                    <h4 class="margin_cero">Cliente: {{ $cotizacion->Cliente->nombre }}</h4>
+                    <h4 class="margin_cero">Cliente: {{ $cotizacion->Cliente->nombre }}</h4><br>
                 </div>
+                
 
                 <div class="contianer" style="position: relative">
                     <h5 style="position: absolute;left:80%;top:-5%;">Cuentas por Cobrar : {{ date("d-m-Y") }}</h5><br>
+                    
                 </div>
 
-                <table class="table text-white tabla-completa"  style="color: #000;width: 100%;padding: 10px; margin: 0px; font-size: 12px">
+                
+                <table class="table text-white tabla-completa"  style="color: #000;width: 100%;padding: 10px; margin: 10px;margin-top: 50px; font-size: 12px">
+                    
                     <thead>
                         <tr>
                             <th>Fecha inicio</th>
@@ -159,6 +193,7 @@
                         @endforeach
                     </tbody>
                 </table>
+   
 
                 @php
                     // Recopila los IDs de los proveedores únicos de las cotizaciones, excluyendo NULL
@@ -181,10 +216,10 @@
                              @foreach($bancos_oficiales as $cuenta)
                               <td>
                                 Cuenta #{{ $contador }}<br>
-                                Beneficiario: <br> <b>{{ $cuenta->nombre_beneficiario }}</b><br>
-                                Banco: <b>{{ $cuenta->nombre_banco }}</b><br>
-                                Cuenta: <b>{{ $cuenta->cuenta_bancaria }}</b><br>
-                                Clave: <b>{{ $cuenta->cuenta_clabe }}</b><br>
+                                Beneficiario: <br> {{ $cuenta->nombre_beneficiario }}<br>
+                                Banco: {{ $cuenta->nombre_banco }}<br>
+                                Cuenta: {{ $cuenta->cuenta_bancaria }}<br>
+                                Clave: {{ $cuenta->cuenta_clabe }}<br>
                               </td>
 
                               @php
@@ -195,11 +230,13 @@
                             @else
                             @foreach ($proveedoresConCuentas as $proveedor)
                                 <td style="padding: 0; margin: 0; border: none;display:inline-block;">
+                                    <p></p>
                                     <h3 style="margin: 10px; padding: 10px;">Proveedor: {{ $proveedor->nombre }}</h3>
+                                    <p></p>
                                     @if ($proveedor->CuentasBancarias->isEmpty())
                                     <p style="margin: 0; padding: 0;">No hay cuentas bancarias registradas para este proveedor.</p>
                                     @else
-                                        <table style="width: 100%; font-size: 12px; margin-bottom: 0; border-collapse: collapse;">
+                                        
                                             @php
                                                 $contador = 1;
                                                 $totalCuenta1 = 0;
@@ -214,26 +251,30 @@
                                                     }
                                                 }
                                             @endphp
-                                            <tr>
+                                            
                                                 @foreach ($proveedor->CuentasBancarias as $cuenta)
-                                                    <td style="padding: 0 5px; margin: 0; border: none;display:inline-block;">
+                                                    <p style="padding: 0 5px; margin: 0; border: none;display:inline-block;">
+                                                        
                                                         Cuenta #{{ $contador }}<br>
-                                                        Beneficiario: <br> <b>{{ $cuenta->nombre_beneficiario }}</b><br>
-                                                        Banco: <b>{{ $cuenta->nombre_banco }}</b><br>
-                                                        Cuenta: <b>{{ $cuenta->cuenta_bancaria }}</b><br>
-                                                        Clave: <b>{{ $cuenta->cuenta_clabe }}</b><br>
+                                                        Beneficiario: <br> {{ $cuenta->nombre_beneficiario }}<br>
+                                                        Banco: {{ $cuenta->nombre_banco }}<br>
+                                                        Cuenta: {{ $cuenta->cuenta_bancaria }}<br>
+                                                        Clave: {{ $cuenta->cuenta_clabe }}<br>
                                                         @if ($contador == 1)
                                                             A pagar: <b>${{ number_format($totalCuenta1, 2, '.', ',') }}</b>
+                                                            <br>
                                                         @elseif ($contador == 2)
                                                             A pagar: <b>${{ number_format($totalCuenta2, 2, '.', ',') }}</b>
-                                                        @endif
-                                                    </td>
+                                                            <br>
+                                                            @else
+            A pagar: <b>$00.00</b><br>
+        @endif
+                                            </p>
                                                     @php
                                                         $contador++;
                                                     @endphp
                                                 @endforeach
-                                            </tr>
-                                        </table>
+                                            
                                     @endif
                                 </td>
                             @endforeach

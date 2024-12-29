@@ -10,6 +10,36 @@ use App\Http\Controllers\PermisosController;
 use App\Http\Controllers\EmpresasController;
 
 
+
+Route::post('/exportar-cxc', [ReporteriaController::class, 'export'])->name('exportar.cxc');
+
+
+use App\Http\Controllers\ReporteriaController;
+
+// Ruta para mostrar el formulario de búsqueda
+Route::get('/reporteria', [ReporteriaController::class, 'index'])->name('reporteria.index');
+
+// Ruta para manejar la búsqueda de cotizaciones
+Route::get('/reporteria/advance', [ReporteriaController::class, 'advance'])->name('reporteria.advance');
+
+Route::get('/reporteria/cxp/advance', [ReporteriaController::class, 'advance_cxp'])->name('ruta_advance_cxp');
+
+Route::get('exportar-cxc', [ReporteriaController::class, 'exportarCxc']);
+
+Route::post('/exportar-cxc', [ReporteriaController::class, 'export'])->name('exportar.cxc');
+
+
+Route::get('/previsualizacion-cxc', function () {
+    return view('reporteria.cxc.previsualizacion');
+})->name('ruta.previsualizacion');
+
+
+//////////////
+/*Route::get('/index-cxc', function () {
+    return view('reporteria.cxc.index');
+})->name('ruta.index');*/
+///////////////
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
