@@ -199,7 +199,7 @@
                                     @if ($proveedor->CuentasBancarias->isEmpty())
                                     <p style="margin: 0; padding: 0;">No hay cuentas bancarias registradas para este proveedor.</p>
                                     @else
-                                        <table style="width: 100%; font-size: 12px; margin-bottom: 0; border-collapse: collapse;">
+                                        
                                             @php
                                                 $contador = 1;
                                                 $totalCuenta1 = 0;
@@ -214,7 +214,7 @@
                                                     }
                                                 }
                                             @endphp
-                                            <tr>
+                                            
                                                 @foreach ($proveedor->CuentasBancarias as $cuenta)
                                                     <td style="padding: 0 5px; margin: 0; border: none;display:inline-block;">
                                                         Cuenta #{{ $contador }}<br>
@@ -232,8 +232,7 @@
                                                         $contador++;
                                                     @endphp
                                                 @endforeach
-                                            </tr>
-                                        </table>
+                                        
                                     @endif
                                 </td>
                             @endforeach

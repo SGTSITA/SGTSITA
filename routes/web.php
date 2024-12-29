@@ -48,8 +48,14 @@ Route::group(['middleware' => ['auth']], function() {
 
     // ==================== C L I E N T E S ====================
     Route::resource('clients', ClientController::class);
-    Route::post('clients/create', [App\Http\Controllers\ClientController::class, 'store'])->name('store.clients');
-    Route::patch('clients/update/{id}', [App\Http\Controllers\ClientController::class, 'update'])->name('update.clients');
+    Route::post('clients/get-list',[App\Http\Controllers\ClientController::class,'get_list'])->name('clients.get');
+    Route::post('clients/create', [App\Http\Controllers\ClientController::class, 'create'])->name('create.clients');
+    Route::post('clients/store', [App\Http\Controllers\ClientController::class, 'store'])->name('store.clients');
+    Route::post('clients/edit', [App\Http\Controllers\ClientController::class, 'edit'])->name('edit.clients');
+    Route::post('clients/confirm-update', [App\Http\Controllers\ClientController::class, 'update'])->name('update.client');
+   // Route::patch('clients/update/{id}', [App\Http\Controllers\ClientController::class, 'update'])->name('update.clients');
+    Route::post('subclientes/crear-nuevo',[ClientController::class,'new_subcliente'])->name('new.subcliente');
+    Route::post('subclientes/list',[ClientController::class,'subcliente_list_internal'])->name('subcliente.list');
     Route::get('subclientes/edit/{id}', [App\Http\Controllers\ClientController::class, 'edit_subclientes'])->name('edit_subclientes.clients');
     Route::patch('subclientes/update/{id}', [App\Http\Controllers\ClientController::class, 'update_subclientes'])->name('update_subclientes.clients');
     Route::post('clients/subclientes/create', [App\Http\Controllers\ClientController::class, 'store_subclientes'])->name('store_subclientes.clients');

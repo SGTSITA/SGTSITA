@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Cotizaciones;
 use App\Models\Client;
 use Illuminate\Support\Facades\Mail;
+use Carbon\Carbon;
 
 class ExternosController extends Controller
 {
@@ -44,7 +45,8 @@ class ExternosController extends Controller
                 "BoletaLiberacion" => ($c->boleta_liberacion == null) ? false : true,
                 "DODA" => ($c->doda == null) ? false : true,
                 "CartaPorte" => ($c->carta_porte == null) ? false : true,
-                "PreAlta" => ($c->img_boleta == null) ? false : true
+                "PreAlta" => ($c->img_boleta == null) ? false : true,
+                "FechaSolicitud" => Carbon::parse($c->created_at)->format('Y-m-d')
             ];
         });
 

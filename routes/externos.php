@@ -27,7 +27,7 @@ Route::group(["prefix" => "contenedores"], function(){
 
 Route::group(["prefix" => "clientes"], function(){
     Route::get('/crear-nuevo',[ClientController::class,'index_subcliente'])->name('subcliente.index');
-    Route::get('/list',[ClientController::class,'subcliente_list'])->name('subcliente.list');
+    Route::get('/list',[ClientController::class,'subcliente_list'])->name('client.subcliente.list');
     Route::post('/list',[ClientController::class,'subcliente_get_list'])->name('subcliente.getlist');
     Route::post('/edit',[ClientController::class,'show_edit'])->name('subcliente.getlist');
     Route::post('/update',[ClientController::class,'update_subclientes'])->name('upadate.subcliente');

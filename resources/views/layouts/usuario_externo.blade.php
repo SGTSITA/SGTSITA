@@ -63,7 +63,7 @@
                       </a>
                     </div>
                     <div class="menu-item">
-                      <a href="{{route('subcliente.list')}}" class="menu-link">
+                      <a href="{{route('client.subcliente.list')}}" class="menu-link">
                         <span class="menu-bullet">
                           <span class="bullet bullet-dot"></span>
                         </span>
@@ -305,6 +305,18 @@
     <script src="/assets/metronic/plugins/custom/datatables/datatables.bundle.js"></script>
     <script src="/assets/metronic/js/widgets.bundle.js"></script>
     <script src="/assets/metronic/js/custom/widgets.js"></script> 
+    <script>
+  $(document).ready(() =>{
+     var genericUUID = localStorage.getItem('uuid');
+     if(genericUUID == null){
+      genericUUID = generateUUID();
+      localStorage.setItem('uuid',genericUUID);
+     }
+  })
+
+
+</script>
+
     @stack('javascript')
 
   </body>

@@ -8,7 +8,7 @@ const formFieldsClientes = [
     {'field':'direccion', 'id':'direccion','label':'Dirección','required': false, "type":"text"},
 ];
 
-$("#sublienteCreate").on("submit", function(e){
+$("#clienteCreate").on("submit", function(e){
     e.preventDefault();
 
     var passValidation = formFieldsClientes.every((item) => {
@@ -47,11 +47,10 @@ $("#sublienteCreate").on("submit", function(e){
     });
 
     formData["_token"] = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-    formData["id_cliente"] = $("#id_cliente").val();
 
-    var subCliente = document.querySelector("#id_subcliente")
-    if(subCliente){
-        formData["id_subcliente"] = subCliente.value;
+    var idClient = document.querySelector("#idClient")
+    if(idClient){
+        formData["idClient"] = idClient.value;
     }
     
 
@@ -73,12 +72,7 @@ $("#sublienteCreate").on("submit", function(e){
         success:function(data){
                 Swal.fire(data.Titulo,data.Mensaje,data.TMensaje).then(function() {
                     if(data.TMensaje == "success"){
-                        var uuid = localStorage.getItem('uuid');
-                        if(uuid){
-                            window.location.replace("/clientes/list");
-                        }else{
-                            window.location.replace("/clients");
-                        }
+                        window.location.replace("/clients/");
                     
                     }
                 });

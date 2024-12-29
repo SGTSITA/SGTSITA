@@ -14,8 +14,8 @@
         
         
                     <!--begin::Global Stylesheets Bundle(mandatory for all pages)-->
-                            <link href="/metronic8/demo62/assets/plugins/global/plugins.bundle.css" rel="stylesheet" type="text/css"/>
-                            <link href="/metronic8/demo62/assets/css/style.bundle.css" rel="stylesheet" type="text/css"/>
+                            <link href="/assets/plugins/global/plugins.bundle.css" rel="stylesheet" type="text/css"/>
+                            <link href="/assets/css/style.bundle.css" rel="stylesheet" type="text/css"/>
                         <!--end::Global Stylesheets Bundle-->
     </head>
     <!--end::Head-->
@@ -76,16 +76,12 @@
     <div style="text-align:center; margin:0 15px 34px 15px">
         <!--begin:Logo-->
         <div style="margin-bottom: 10px">
-            <a href="http://sgt.gologipro.com" rel="noopener" target="_blank">
-                <img alt="Logo" src="/demo62/assets/media/email/logo-1.svg" style="height: 35px"/>                
-            </a>
+          
         </div>
         <!--end:Logo-->
 
         <!--begin:Media-->
-        <div style="margin-bottom: 15px">
-            <img alt="Logo" src="/assets/metronic/media/email/icon-positive-vote-1.svg"/>              
-        </div> 
+ 
         <!--end:Media-->                            
 
         <!--begin:Text-->
@@ -221,11 +217,11 @@
         
         <!--begin::Javascript-->
         <script>
-            var hostUrl = "/metronic8/demo62/assets/";        </script>
+            var hostUrl = "/assets/";        </script>
 
                     <!--begin::Global Javascript Bundle(mandatory for all pages)-->
-                            <script src="/metronic8/demo62/assets/plugins/global/plugins.bundle.js"></script>
-                            <script src="/metronic8/demo62/assets/js/scripts.bundle.js"></script>
+                            <script src="/assets/plugins/global/plugins.bundle.js"></script>
+                            <script src="/assets/js/scripts.bundle.js"></script>
                         <!--end::Global Javascript Bundle-->
         
         

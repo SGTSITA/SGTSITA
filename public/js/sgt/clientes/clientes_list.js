@@ -108,22 +108,22 @@ class MissionResultRenderer {
       paginationPageSize: 100,
       paginationPageSizeSelector: [100, 200, 500],
       rowSelection: {
-        mode: "multiRow",
-        headerCheckbox: true,
+        mode: "singleRow",
+        headerCheckbox: false,
       },
    rowData: [
   
    ],
 
    columnDefs: [
-     { field: "IdContenedor", hide: true},
-     { field: "NumContenedor",filter: true, floatingFilter: true},
-     { field: "Origen",filter: true, floatingFilter: true},
-     { field: "Destino" },
-     { field: "Peso",width: 100 },
-     { field: "BoletaLiberacion",width: 110,cellRenderer: MissionResultRenderer },
-     { field: "DODA",width: 110,cellRenderer: MissionResultRenderer },
-     { field: "CartaPorte",width: 110,cellRenderer: MissionResultRenderer },
+     { field: "IdCliente", hide: true},
+     { field: "Nombre",filter: true, floatingFilter: true},
+     { field: "Correo",filter: true, floatingFilter: true},
+     { field: "Telefono",filter: true, floatingFilter: true },
+     { field: "RFC",width: 100 },
+     { field: "RegimenFiscal",width: 200 },
+     { field: "Empresa",width: 110 },
+     { field: "Direccion",width: 110 },
    ],
   
    localeText: localeText
@@ -138,15 +138,16 @@ class MissionResultRenderer {
   
   let IdContenedor = null;
    
-   function getContenedoresPorAsignar(){
+   function getClientesList(){
     var _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     $.ajax({
-        url: '/viajes/get-asignables',
+        url: '/clients/get-list',
         type: 'post',
         data: {_token},
         beforeSend:()=>{},
         success:(response)=>{
-            apiGrid.setGridOption("rowData", response)
+  
+          apiGrid.setGridOption("rowData", response.list)
         },
         error:()=>{
 
@@ -154,57 +155,62 @@ class MissionResultRenderer {
     });
    }
 
-   function assignEmpresa(_IdContenedor){
-        const modalElement = document.getElementById('cambioEmpresa');
-        const bootstrapModal = new bootstrap.Modal(modalElement);
-        bootstrapModal.show();
-        IdContenedor = _IdContenedor
-   }
-
-   function asignarContenedores(){
-    let contenedores = apiGrid.getSelectedRows();
-
-    if($("#cmbEmpresa").val() == ""){
-      Swal.fire("Seleccione Empresa","Aún no ha seleccionado Empresa, este es un campo requerido","warning");
+   function goToClientEdit(){
+    var _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    let client = apiGrid.getSelectedRows();
+    
+    if(client.length == 0){
+      Swal.fire('Seleccione cliente','Debe seleccionar un cliente','warning');
       return false;
     }
+    let IdCliente = null;
     
-    if(contenedores.length == 0){
-      Swal.fire('Seleccione contenedores','Para realizar la asignación debe seleccionar al menos un contenedor','warning');
-      return false;
-    }
+    client.forEach(c => IdCliente = c.IdCliente)
+    
 
-    Swal.fire({
-      title: '¿Asignar seleccionados?',
-      icon: 'question',
-      confirmButtonText: 'Si, asignar',
-      cancelButtonText: 'Cancelar',
-      showCancelButton: true
-    }).then((respuesta) =>{
-      if(respuesta.isConfirmed){
-        confirmarAsignarContenedores(contenedores);
-      }
-    })
+    var url = '/clients/edit';
+
+    var form =
+    $('<form action="' + url + '" method="post">' +
+        '<input type="hidden" name="id_client" value="'+IdCliente+'" />' +
+        '<input type="hidden" name="_token" value="' + _token + '" />' +
+    '</form>');
+
+    $('body').append(form);
+    form.submit();
+    setTimeout(()=>{
+        if (form) {
+            form.remove();
+        }
+    },1000)
+    
    }
 
-   function confirmarAsignarContenedores(contenedores){
-    let _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-    let empresa = $("#cmbEmpresa").val();
-    let seleccionContenedores = JSON.stringify(contenedores)
-    $.ajax({
-      url: '/cotizaciones/asignar/empresa',
-      type: 'post',
-      data: {_token, seleccionContenedores,empresa},
-      beforeSend:()=>{
-
-      },
-      success:(response)=>{
-        if(response.TMensaje == "success") getContenedoresPorAsignar();
-        Swal.fire(response.Titulo,response.Mensaje,response.TMensaje);
-      },
-      error:(x, error)=>{
-        Swal.fire('Ocurrio un error',x.getMessage(),'error');
-      }
-    });
+   function goToSubClients(){
+    var _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    let client = apiGrid.getSelectedRows();
     
+    if(client.length == 0){
+      Swal.fire('Seleccione cliente','Debe seleccionar un cliente','warning');
+      return false;
+    }
+    let IdCliente = null;
+    
+    client.forEach(c => IdCliente = c.IdCliente)
+    
+    var url = '/subclientes/list';
+
+    var form =
+    $('<form action="' + url + '" method="post">' +
+        '<input type="hidden" name="id_client" value="'+IdCliente+'" />' +
+        '<input type="hidden" name="_token" value="' + _token + '" />' +
+    '</form>');
+
+    $('body').append(form);
+    form.submit();
+    setTimeout(()=>{
+        if (form) {
+            form.remove();
+        }
+    },1000)
    }

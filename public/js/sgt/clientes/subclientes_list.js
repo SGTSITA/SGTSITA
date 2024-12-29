@@ -138,8 +138,11 @@ class MissionResultRenderer {
         data: {_token, _cliente},
         beforeSend:()=>{},
         success:(response)=>{
-            
           apiGrid.setGridOption("rowData", response.data)
+          let counter = document.querySelector("#countSubclientes");
+          if(counter){
+            counter.textContent = response.data.length
+          }
         },
         error:()=>{
 
@@ -149,12 +152,14 @@ class MissionResultRenderer {
 
    function goToEdit(IdSubCliente){
     var _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    var _cliente = document.querySelector('meta[name="id-cliente"]').getAttribute('content');
 
     var url = '/clientes/edit';
 
     var form =
     $('<form action="' + url + '" method="post">' +
         '<input type="hidden" name="id_subcliente" value="'+IdSubCliente+'" />' +
+        '<input type="hidden" name="idClient" value="'+_cliente+'" />' +
         '<input type="hidden" name="_token" value="' + _token + '" />' +
     '</form>');
 
