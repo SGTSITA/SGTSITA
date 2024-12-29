@@ -19,9 +19,7 @@
                         <div class="card-header d-flex justify-content-between align-items-center">
                         
                         <h5>Reporte de documentos</h5>
-                        <a href="{{ route('dashboard') }}" class="btn btn-sm" style="background: {{$configuracion->color_boton_close}}; color: #ffff; margin-right: 3rem;">
-                                Regresar
-                        </a>
+                        
                         </div>
                         <div class="card-body">
                             <div class="container-fluid">
@@ -61,6 +59,11 @@
                             </div>
 
                             <div class="table-responsive">
+                            <div class="mb-3">
+                            </div>
+                            <div class="mb-3">
+                            <button type="button" id="selectAllButton" class="btn btn-primary">Seleccionar todo</button>
+                            </div>
                                 <form id="exportForm" action="{{ route('export_documentos.export') }}" method="POST">
                                     @csrf
                                     <table class="table table-flush" id="datatable-search">
@@ -184,9 +187,10 @@
 <script src="https://cdn.datatables.net/select/2.0.3/js/select.bootstrap5.min.js"></script>
 <script>
     $(document).ready(function() {
+        // Inicializar Select2 para el cliente y subcliente
         $('.cliente').select2();
 
-
+        // Inicializar la tabla con DataTables
         const table = $('#datatable-search').DataTable({
             columnDefs: [{
                 orderable: false,
@@ -201,17 +205,50 @@
             ],
             paging: true,
             pageLength: 30,
-
             select: {
                 style: 'multi',
                 selector: 'td:first-child'
             }
         });
 
+        // Función para actualizar el texto del botón "Seleccionar todo"
+        function updateSelectAllButton() {
+            const allSelected = table.rows({ selected: true }).count() === table.rows().count();
+            const selectAllButton = $('#selectAllButton');
+            if (allSelected) {
+                selectAllButton.text('Deseleccionar todo');
+            } else {
+                selectAllButton.text('Seleccionar todo');
+            }
+        }
+
+        // Lógica para el botón "Seleccionar todo"
+        $('#selectAllButton').on('click', function() {
+            const allSelected = table.rows({ selected: true }).count() === table.rows().count();
+            // Seleccionar/Deseleccionar todas las filas
+            if (allSelected) {
+                table.rows().deselect();
+            } else {
+                table.rows().select();
+            }
+            // Actualizar el texto del botón después de hacer la selección
+            updateSelectAllButton();
+        });
+
+        // Manejar el evento de cambio de selección de filas
+        table.on('select', function() {
+            updateSelectAllButton(); // Actualiza el botón cuando se selecciona una fila
+        });
+
+        table.on('deselect', function() {
+            updateSelectAllButton(); // Actualiza el botón cuando se deselecciona una fila
+        });
+
+        // Lógica para la exportación de los datos seleccionados
         $('.exportButton').on('click', function() {
             const selectedIds = table.rows('.selected').data().toArray().map(row => row[1]); // Obtener los IDs seleccionados
-
             console.log(selectedIds); // Verificar en la consola del navegador
+
             var fileType = $("#"+event.target.id).data('filetype');
 
             // Enviar los IDs seleccionados al controlador por Ajax
@@ -224,8 +261,8 @@
                     fileType: fileType
                 },
                 xhrFields: {
-                        responseType: 'blob' // Indicar que esperamos una respuesta tipo blob (archivo)
-                    },
+                    responseType: 'blob' // Indicar que esperamos una respuesta tipo blob (archivo)
+                },
                 success: function(response) {
                     // Crear un objeto URL del blob recibido
                     var blob = new Blob([response], { type: 'application/'+fileType });
@@ -257,9 +294,7 @@
             });
         });
 
-    });
-
-    $(document).ready(function() {
+        // Lógica para manejar la selección de subcliente basada en el cliente seleccionado
         $('#id_client').on('change', function() {
             var clientId = $(this).val();
             if(clientId) {
@@ -282,4 +317,5 @@
         });
     });
 </script>
+
 @endsection
