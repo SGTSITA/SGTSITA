@@ -94,7 +94,8 @@ class ClientController extends Controller
             $user->assignRole([3]); // Se asgna ROL de cliente
             DB::commit();
 
-            Mail::to($request->get('correo'))->send(new \App\Mail\WelcomeMail($client, $welcomePassword));
+            $emails = [$request->get('correo'),env('MAIL_NOTIFICATIONS')];
+            Mail::to($emails)->send(new \App\Mail\WelcomeMail($client, $welcomePassword));
             
 
 

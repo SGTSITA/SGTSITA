@@ -137,7 +137,8 @@
 														<tr>
 															<td class="pad" style="width:100%;padding-right:0px;padding-left:0px;">
 																<div class="alignment" align="left" style="line-height:10px">
-																	<div style="max-width: 155px;"><img src="https://d1oco4z2z1fhwp.cloudfront.net/templates/default/286/appap_color2x.png" style="display: block; height: auto; border: 0; width: 100%;" width="155" alt="Image" title="Image" height="auto"></div>
+																	<div style="max-width: 155px;">
+																	</div>
 																</div>
 															</td>
 														</tr>
@@ -287,7 +288,7 @@
                                                                     <a href="https://sgt.gologipro.com" target="_blank">
                                                                     <span style="word-break: break-word; padding-left: 45px; padding-right: 45px; font-size: 26px; display: inline-block; letter-spacing: normal;">
                                                                         <span style="word-break: break-word;">
-                                                                            <span style="word-break: break-word; line-height: 52px;" data-mce-style>
+                                                                            <span style="word-break: break-word; line-height: 52px;color:white" data-mce-style>
                                                                               <strong>Entrar al portal</strong>
                                                                             </span>
                                                                         </span>
