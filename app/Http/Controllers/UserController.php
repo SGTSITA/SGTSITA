@@ -29,6 +29,12 @@ class UserController extends Controller
             ->with('i', ($request->input('page', 1) - 1) * 10);
     }
 
+    public function index_externos(){
+        $clientes = Client::where('id_empresa' ,'=',auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
+
+        return view('manager.usuarios.crear-usuario-externo',["clientes" => $clientes]);
+    }
+
     /**
      * Show the form for creating a new resource.
      *
@@ -67,6 +73,10 @@ class UserController extends Controller
 
         $user = User::create($input);
         $user->assignRole($request->input('roles'));
+
+        if($request->has('uuid')){
+            return response()->json(["TMensaje" => "success", "Mensaje" => "Usuario creado correctamente"]);
+        }
 
         Session::flash('success', 'Se ha guardado sus datos con exito');
         return redirect()->route('users.index')

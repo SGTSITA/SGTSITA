@@ -274,7 +274,6 @@
                                                         $contador++;
                                                     @endphp
                                                 @endforeach
-                                            
                                     @endif
                                 </td>
                             @endforeach
