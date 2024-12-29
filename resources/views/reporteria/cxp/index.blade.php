@@ -27,38 +27,59 @@
                             <strong>Advertencia!</strong> No se ha seleccionado un proveedor. Por favor, elija un proveedor para realizar la búsqueda.
                         </div>
                     @endif
+                    <form action="{{ route('ruta_advance_cxp') }}" method="GET">
+    <div class="card-body" style="padding-left: 1.5rem; padding-top: 1rem;">
+        <div class="row">
+            <!-- Campo para proveedor -->
+            <div class="col-3">
+                <label for="id_proveedor">Buscar proveedor:</label>
+                <select class="form-control cliente" name="id_proveedor" id="id_proveedor">
+                    <option selected value="">Seleccionar proveedor</option>
+                    @foreach($proveedores as $proveedor)
+                        <option value="{{ $proveedor->id }}" 
+                            {{ request('id_proveedor') == $proveedor->id ? 'selected' : '' }}>
+                            {{ $proveedor->nombre }} {{ $proveedor->telefono }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
 
-                    <!-- Formulario de búsqueda -->
-                    <div class="container-fluid">
-                        <div class="row">
-                            <div class="col-sm-12">
-                                <div class="card">
-                                    <form action="{{ route('ruta_advance_cxp') }}" method="GET">
-                                        <div class="card-body" style="padding-left: 1.5rem; padding-top: 1rem;">
-                                            <div class="row">
-                                                <div class="col-3">
-                                                    <label for="id_proveedor">Buscar proveedor:</label>
-                                                    <select class="form-control cliente" name="id_proveedor" id="id_proveedor">
-                                                        <option selected value="">Seleccionar proveedor</option>
-                                                        @foreach($proveedores as $proveedor)
-                                                            <option value="{{ $proveedor->id }}" 
-                                                                {{ request('id_proveedor') == $proveedor->id ? 'selected' : '' }}>
-                                                                {{ $proveedor->nombre }} {{ $proveedor->telefono }}
-                                                            </option>
-                                                        @endforeach
-                                                    </select>
-                                                </div>
-                                                <div class="col-3">
-                                                    <br>
-                                                    <button class="btn btn-sm mb-0 mt-sm-0 mt-1" type="submit" style="background-color: #F82018; color: #ffffff;">Buscar</button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+            <!-- Campo para cliente -->
+            <div class="col-3">
+                <label for="id_cliente">Buscar cliente:</label>
+                <select class="form-control cliente" name="id_cliente" id="id_cliente">
+                    <option selected value="">Seleccionar cliente</option>
+                    @foreach($clientes as $cliente)
+                        <option value="{{ $cliente->id }}" 
+                            {{ request('id_cliente') == $cliente->id ? 'selected' : '' }}>
+                            {{ $cliente->nombre }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            <!-- Campo para subcliente -->
+            <div class="col-3">
+                <label for="id_subcliente">Buscar subcliente:</label>
+                <select class="form-control cliente" name="id_subcliente" id="id_subcliente">
+                    <option selected value="">Seleccionar subcliente</option>
+                    @foreach($subclientes as $subcliente)
+                        <option value="{{ $subcliente->id }}" 
+                            {{ request('id_subcliente') == $subcliente->id ? 'selected' : '' }}>
+                            {{ $subcliente->nombre }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div class="col-3">
+                <br>
+                <button class="btn btn-sm mb-0 mt-sm-0 mt-1" type="submit" 
+                    style="background-color: #F82018; color: #ffffff;">Buscar</button>
+            </div>
+        </div>
+    </div>
+</form>
                        
 
                             <div class="table-responsive">

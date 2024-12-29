@@ -14,7 +14,7 @@
         .container-box {
             margin: 30px auto;
             padding: 20px;
-            max-width: 1200px; /* Ajuste de tamaño del cuadro */
+            max-width: 1600px; /* Ajuste de tamaño del cuadro */
             background-color: #fff;
             border-radius: 10px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
@@ -125,6 +125,7 @@
                 <p>Total no oficial: <b>$500.00</b></p>
                 <p>Importe VTA: <b>$3350.00</b></p>
             </div>
+            
         </div>
     </div>
 @endsection

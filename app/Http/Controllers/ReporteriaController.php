@@ -226,21 +226,32 @@ class ReporteriaController extends Controller
     }
 
     // ==================== C U E N T A S  P O R  P A G A R ====================
-    public function index_cxp(){
-
-        $proveedores = Proveedor::where('id_empresa' ,'=',auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
-
-        return view('reporteria.cxp.index', compact('proveedores'));
-    }
-
-    public function advance_cxp(Request $request)
+    public function index_cxp()
 {
-    // Obtener proveedores de la empresa actual
     $proveedores = Proveedor::where('id_empresa', '=', auth()->user()->id_empresa)
                              ->orderBy('created_at', 'desc')
                              ->get();
 
-    // Obtener el ID del proveedor seleccionado desde la solicitud
+    $clientes = Client::where('id_empresa', '=', auth()->user()->id_empresa)
+                        ->orderBy('nombre', 'asc')
+                        ->get();
+    $subclientes = Subclientes::where('id_empresa' ,'=',auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
+
+    return view('reporteria.cxp.index', compact('proveedores', 'clientes','subclientes'));
+}
+public function advance_cxp(Request $request)
+{
+    // Obtener proveedores y clientes de la empresa actual
+    $proveedores = Proveedor::where('id_empresa', '=', auth()->user()->id_empresa)
+                             ->orderBy('created_at', 'desc')
+                             ->get();
+
+    $clientes = Client::where('id_empresa', '=', auth()->user()->id_empresa)
+                        ->orderBy('nombre', 'asc')
+                        ->get();
+     $subclientes = Subclientes::where('id_empresa' ,'=',auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
+
+    // Obtener el ID del proveedor y del cliente desde la solicitud
     $id_proveedor = $request->input('id_proveedor');
 
     // Mostrar advertencia si no se seleccionó proveedor
@@ -277,8 +288,8 @@ class ReporteriaController extends Controller
         $proveedor_cxp = Proveedor::find($id_proveedor);
     }
 
-    // Retornar la vista con los datos necesarios, incluyendo el ID del proveedor seleccionado
-    return view('reporteria.cxp.index', compact('proveedores', 'cotizaciones', 'proveedor_cxp', 'showWarning', 'id_proveedor'));
+    // Retornar la vista con los datos necesarios
+    return view('reporteria.cxp.index', compact('proveedores', 'clientes', 'cotizaciones', 'proveedor_cxp', 'showWarning', 'id_proveedor','subclientes'));
 }
 
     
