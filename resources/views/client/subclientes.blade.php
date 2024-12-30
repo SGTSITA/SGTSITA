@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('template_title')
-Subcliuente
+Subcliente
 @endsection
 
 @section('content')

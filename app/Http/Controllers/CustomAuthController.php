@@ -32,7 +32,10 @@ class CustomAuthController extends Controller
                         ->withSuccess('Signed in');
         }
 
-        return redirect("login")->withSuccess('Login details are not valid');
+      //  return redirect("login")->withSuccess('Login details are not valid');
+      return response([
+                            "mensaje"=>"Las credenciales de acceso son incorrectas. Verifique su información"
+                        ],401);
 
     }else{
 
