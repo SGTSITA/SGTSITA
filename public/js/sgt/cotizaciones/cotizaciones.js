@@ -27,9 +27,9 @@ const formFields = [
 ];
 
 const formFieldsBloque = [
-    {'field':'bloque','label':'Block','required': false, "type":"text"},
-    {'field':'bloque_hora_i','label':'Hora Inicio','required': false, "type":"text"},
-    {'field':'bloque_hora_f','label':'Hora Fin','required': false, "type":"text"},
+    {'field':'bloque','id':'bloque','label':'Block','required': false, "type":"text", "trigger":"none"},
+    {'field':'bloque_hora_i','id':'bloque_hora_i','label':'Hora Inicio','required': false, "type":"text", "trigger":"bloque"},
+    {'field':'bloque_hora_f','id':'bloque_hora_f','label':'Hora Fin','required': false, "type":"text", "trigger":"bloque"},
 ]
 
 const formFieldsProveedor = [
@@ -101,11 +101,11 @@ function calcularTotal(modulo = 'crear') {
     //baseTaref Corresponde a Base 2
     const baseTaref = (totalFinal - baseFactura - iva) + retencion;
 
+
     // Mostrar el resultado en el input de base_taref
     const field_base_taref = fields.find( i => i.field == "base_taref");
     document.getElementById(field_base_taref.id).value = moneyFormat(baseTaref);
 
-    
     // Formatear el total con comas
     const totalFormateado = moneyFormat(totalFinal);
     const field_total = fields.find( i => i.field == "total");
@@ -175,7 +175,12 @@ document.addEventListener('DOMContentLoaded', function () {
         var sobrepeso = Math.max(pesoContenedor - pesoReglamentario, 0);
 
         // Mostrar sobrepeso en el input correspondiente con dos decimales
-        sobrepesoInput.value = sobrepeso.toFixed(4);
+
+        if(sobrepesoInput){
+            sobrepesoInput.value = sobrepeso.toFixed(4);
+        }
+       
+
         var sobrePesoProveedor = document.getElementById('cantidad_sobrepeso_proveedor');
         if(sobrePesoProveedor){
             sobrePesoProveedor.value = sobrepeso.toFixed(4);
@@ -186,9 +191,12 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // Agregar evento de entrada al campo "Precio Sobre Peso"
-    precioSobrePesoInput.addEventListener('input', ()=> {
-        valorSobrePrecio();
-    });
+    if(precioSobrePesoInput){
+        precioSobrePesoInput.addEventListener('input', ()=> {
+            valorSobrePrecio();
+        });
+    }
+
 
     if(precioSobrePesoProveedor){
         precioSobrePesoProveedor.addEventListener('input', ()=> {
@@ -210,6 +218,31 @@ document.addEventListener('DOMContentLoaded', function () {
 
 });
 
+var pesoReglamentarioInput = document.getElementById('peso_reglamentario');
+var sobrepesoInput = document.getElementById('sobrepeso');
+var pesoContenedorInput = document.getElementById('peso_contenedor');
+pesoContenedorInput.addEventListener('input', calcularSobrepeso);
+
+function calcularSobrepeso() {
+    var pesoReglamentario = parseFloat(pesoReglamentarioInput.value) || 0;
+    var pesoContenedor = parseFloat(pesoContenedorInput.value) || 0;
+
+    // Calcular sobrepeso
+    var sobrepeso = Math.max(pesoContenedor - pesoReglamentario, 0);
+
+    // Mostrar sobrepeso en el input correspondiente con dos decimales
+    if(sobrepesoInput){
+        sobrepesoInput.value = sobrepeso.toFixed(4);
+    }
+   
+    var sobrePesoProveedor = document.getElementById('cantidad_sobrepeso_proveedor');
+    if(sobrePesoProveedor){
+        sobrePesoProveedor.value = sobrepeso.toFixed(4);
+        
+    }
+    // Calcular el total
+    calcularTotal();
+}
 
 $('#id_cliente').change(function() {
     var clienteId = $(this).val();
@@ -222,23 +255,28 @@ $('#id_cliente').change(function() {
 
             }
         })
-        $.ajax({
-            type: 'GET',
-            url: '/subclientes/' + clienteId,
-            success: function(data) {
-                $('#id_subcliente').empty();
-                $('#id_subcliente').append('<option value="">Seleccionar subcliente</option>');
-                $.each(data, function(key, subcliente) {
-                    $('#id_subcliente').append('<option value="' + subcliente.id + '">' + subcliente.nombre + '</option>');
-                });
-                $('#id_subcliente').select2();
-            }
-        });
+        getClientes(clienteId);
     } else {
         $('#id_subcliente').empty();
         $('#id_subcliente').append('<option value="">Seleccionar subcliente</option>');
     }
+   
 });
+
+function getClientes(clienteId){
+    $.ajax({
+        type: 'GET',
+        url: '/subclientes/' + clienteId,
+        success: function(data) {
+            $('#id_subcliente').empty();
+            $('#id_subcliente').append('<option value="">Seleccionar subcliente</option>');
+            $.each(data, function(key, subcliente) {
+                $('#id_subcliente').append('<option value="' + subcliente.id + '">' + subcliente.nombre + '</option>');
+            });
+            $('#id_subcliente').select2();
+        }
+    });
+}
 
 $("#cotizacionCreate").on("submit", function(e){
     e.preventDefault();
@@ -261,12 +299,12 @@ $("#cotizacionCreate").on("submit", function(e){
 
     var passValidation = formFields.every((item) => {
         var field = document.getElementById(item.field);
-        
-        if(item.required === true && field.value.length == 0){
-            Swal.fire("El campo "+item.label+" es obligatorio","Parece que no ha proporcionado información en el campo "+item.label,"warning");
-            return false;
+        if(field){
+            if(item.required === true && field.value.length == 0){
+                Swal.fire("El campo "+item.label+" es obligatorio","Parece que no ha proporcionado información en el campo "+item.label,"warning");
+                return false;
+            }
         }
-
         return true;
     })
 
@@ -285,16 +323,48 @@ $("#cotizacionCreate").on("submit", function(e){
    formFields.forEach((item) =>{
     var input = item.field;
     var inputValue = document.getElementById(input);
-    if(item.type == "money"){
-        formData[input] = (inputValue.value.length > 0) ? parseFloat(reverseMoneyFormat(inputValue.value)) : 0;
-    }else{
-        formData[input] = inputValue.value;
+    if(inputValue){
+        if(item.type == "money"){
+            formData[input] = (inputValue.value.length > 0) ? parseFloat(reverseMoneyFormat(inputValue.value)) : 0;
+        }else{
+            formData[input] = inputValue.value;
+        }
     }
    });
 
    formData["_token"] = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
    formData["id_cliente"] = $("#id_cliente").val();
    formData["id_subcliente"] = selectSubClient.value;
+
+   var uuid = localStorage.getItem('uuid');
+   if(uuid != null){
+    formData["uuid"] = uuid;
+
+    passValidation = formFieldsBloque.every((item) => {
+        let trigger = item.trigger;
+        let field = document.getElementById(item.field);
+
+        if(trigger != "none"){
+            let primaryField = document.getElementById(trigger);
+            if(primaryField.value.length > 0 && field.value.length == 0){
+                Swal.fire("El campo "+item.label+" es obligatorio","Parece que no ha proporcionado información en el campo "+item.label,"warning");
+                return false;
+            }
+        }
+        
+        if(field){
+            if(item.required === true && field.value.length == 0){
+                Swal.fire("El campo "+item.label+" es obligatorio","Parece que no ha proporcionado información en el campo "+item.label,"warning");
+                return false;
+            }
+        }
+        return true;
+
+    });
+
+    if(!passValidation) return passValidation;
+    
+   }
 
    $.ajax({
         url: url,
@@ -306,7 +376,13 @@ $("#cotizacionCreate").on("submit", function(e){
         success:function(data){
                 Swal.fire(data.Titulo,data.Mensaje,data.TMensaje).then(function() {
                     if(data.TMensaje == "success"){
-                    location.reload();
+                        var uuid = localStorage.getItem('uuid');
+                        if(uuid){
+                            window.location.replace("/viajes/documents");
+                        }else{
+                            location.reload();
+                        }
+                    
                     }
                 });
         },

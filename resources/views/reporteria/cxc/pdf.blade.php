@@ -216,6 +216,7 @@
                 $totalCuenta2 = 0;
                 $totalCuenta3 = 0;
 
+<<
                 // Cálculo de montos a pagar por cuenta
                 if (isset($cotizacionesPorProveedor[$proveedor->id])) {
                     $cotizacionesProveedor = $cotizacionesPorProveedor[$proveedor->id];
@@ -259,6 +260,79 @@
                                 A pagar: <b>${{ number_format($totalCuenta2, 2, '.', ',') }}</b>
                             @elseif ($contador == 3)
                                 A pagar: <b>${{ number_format($totalCuenta3, 2, '.', ',') }}</b>
+
+                <table class="table text-white tabla-completa sin_margem" style="color: #000;width: 100%;padding: 0px; font-size: 12px; border-collapse: collapse;">
+                    <tbody style="text-align: left;font-size: 100%;">
+                        <tr>
+                            @if(in_array($cotizacion->id_empresa,[2,6]))
+                            @php
+                              $contador = 1;
+                            @endphp
+                             @foreach($bancos_oficiales as $cuenta)
+                              <td>
+                                Cuenta #{{ $contador }}<br>
+                                Beneficiario: <br> {{ $cuenta->nombre_beneficiario }}<br>
+                                Banco: {{ $cuenta->nombre_banco }}<br>
+                                Cuenta: {{ $cuenta->cuenta_bancaria }}<br>
+                                Clave: {{ $cuenta->cuenta_clabe }}<br>
+                              </td>
+
+                              @php
+                                $contador++;
+                              @endphp
+                              
+                             @endforeach
+                            @else
+                            @foreach ($proveedoresConCuentas as $proveedor)
+                                <td style="padding: 0; margin: 0; border: none;display:inline-block;">
+                                    <p></p>
+                                    <h3 style="margin: 10px; padding: 10px;">Proveedor: {{ $proveedor->nombre }}</h3>
+                                    <p></p>
+                                    @if ($proveedor->CuentasBancarias->isEmpty())
+                                    <p style="margin: 0; padding: 0;">No hay cuentas bancarias registradas para este proveedor.</p>
+                                    @else
+                                        
+                                            @php
+                                                $contador = 1;
+                                                $totalCuenta1 = 0;
+                                                $totalCuenta2 = 0;
+                                                if (isset($cotizacionesPorProveedor[$proveedor->id])) {
+                                                    $cotizacionesProveedor = $cotizacionesPorProveedor[$proveedor->id];
+                                                    foreach ($cotizacionesProveedor as $cotizacion) {
+                                                        $cuenta_1 = $cotizacion->base_factura + $cotizacion->iva - $cotizacion->retencion;
+                                                        $cuenta_2 = $cotizacion->total - $cotizacion->base_factura - $cotizacion->iva + $cotizacion->retencion;
+                                                        $totalCuenta1 += $cuenta_1;
+                                                        $totalCuenta2 += $cuenta_2;
+                                                    }
+                                                }
+                                            @endphp
+                                            
+                                                @foreach ($proveedor->CuentasBancarias as $cuenta)
+                                                    <p style="padding: 0 5px; margin: 0; border: none;display:inline-block;">
+                                                        
+                                                        Cuenta #{{ $contador }}<br>
+                                                        Beneficiario: <br> {{ $cuenta->nombre_beneficiario }}<br>
+                                                        Banco: {{ $cuenta->nombre_banco }}<br>
+                                                        Cuenta: {{ $cuenta->cuenta_bancaria }}<br>
+                                                        Clave: {{ $cuenta->cuenta_clabe }}<br>
+                                                        @if ($contador == 1)
+                                                            A pagar: <b>${{ number_format($totalCuenta1, 2, '.', ',') }}</b>
+                                                            <br>
+                                                        @elseif ($contador == 2)
+                                                            A pagar: <b>${{ number_format($totalCuenta2, 2, '.', ',') }}</b>
+                                                            <br>
+                                                            @else
+            A pagar: <b>$00.00</b><br>
+        @endif
+                                            </p>
+                                                    @php
+                                                        $contador++;
+                                                    @endphp
+                                                @endforeach
+                                    @endif
+                                </td>
+                            @endforeach
+
                             @endif
                         </td>
                         @php

@@ -8,8 +8,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\PermisosController;
 use App\Http\Controllers\EmpresasController;
-
-
+use App\Http\Controllers\ExternosController;
 
 Route::post('/exportar-cxc', [ReporteriaController::class, 'export'])->name('exportar.cxc');
 
@@ -50,6 +49,7 @@ Route::get('/previsualizacion-cxc', function () {
 | contains the "web" middleware group. Now create something great!
 |
 */
+include('externos.php');
 
 Route::get('/', function () {
     return view('auth.login');
@@ -87,8 +87,14 @@ Route::group(['middleware' => ['auth']], function() {
 
     // ==================== C L I E N T E S ====================
     Route::resource('clients', ClientController::class);
-    Route::post('clients/create', [App\Http\Controllers\ClientController::class, 'store'])->name('store.clients');
-    Route::patch('clients/update/{id}', [App\Http\Controllers\ClientController::class, 'update'])->name('update.clients');
+    Route::post('clients/get-list',[App\Http\Controllers\ClientController::class,'get_list'])->name('clients.get');
+    Route::post('clients/create', [App\Http\Controllers\ClientController::class, 'create'])->name('create.clients');
+    Route::post('clients/store', [App\Http\Controllers\ClientController::class, 'store'])->name('store.clients');
+    Route::post('clients/edit', [App\Http\Controllers\ClientController::class, 'edit'])->name('edit.clients');
+    Route::post('clients/confirm-update', [App\Http\Controllers\ClientController::class, 'update'])->name('update.client');
+   // Route::patch('clients/update/{id}', [App\Http\Controllers\ClientController::class, 'update'])->name('update.clients');
+    Route::post('subclientes/crear-nuevo',[ClientController::class,'new_subcliente'])->name('new.subcliente');
+    Route::post('subclientes/list',[ClientController::class,'subcliente_list_internal'])->name('subcliente.list');
     Route::get('subclientes/edit/{id}', [App\Http\Controllers\ClientController::class, 'edit_subclientes'])->name('edit_subclientes.clients');
     Route::patch('subclientes/update/{id}', [App\Http\Controllers\ClientController::class, 'update_subclientes'])->name('update_subclientes.clients');
     Route::post('clients/subclientes/create', [App\Http\Controllers\ClientController::class, 'store_subclientes'])->name('store_subclientes.clients');
@@ -116,6 +122,7 @@ Route::group(['middleware' => ['auth']], function() {
 
     // ==================== C O T I Z A C I O N E S  E X T E R N A S====================
     Route::get('/cotizaciones/index/externo', [App\Http\Controllers\CotizacionesController::class, 'index_externo'])->name('index.cotizaciones_manual');
+    Route::get('/cotizaciones/solicitudes', [App\Http\Controllers\CotizacionesController::class, 'solicitudesEntrantes'])->name('cotizaciones.entrantes');
     Route::get('cotizaciones/externo/create', [App\Http\Controllers\CotizacionesController::class, 'create_externo'])->name('create.cotizaciones_externo');
     Route::get('cotizaciones/externo/edit/{id}', [App\Http\Controllers\CotizacionesController::class, 'edit_externo'])->name('edit.cotizaciones_externo');
 
@@ -145,6 +152,7 @@ Route::group(['middleware' => ['auth']], function() {
     Route::get('subclientes/{clienteId}', [App\Http\Controllers\CotizacionesController::class, 'getSubclientes']);
 
     Route::patch('cotizaciones/cambiar/empresa/{id}', [App\Http\Controllers\CotizacionesController::class, 'cambiar_empresa'])->name('cambiar_empresa.cotizaciones');
+    Route::post('cotizaciones/asignar/empresa', [App\Http\Controllers\CotizacionesController::class, 'asignar_empresa'])->name('asignar_empresa.cotizaciones');
 
     // ==================== P L A N E A C I O N ====================
     Route::get('planeaciones', [App\Http\Controllers\PlaneacionController::class, 'index'])->name('index.planeaciones');
