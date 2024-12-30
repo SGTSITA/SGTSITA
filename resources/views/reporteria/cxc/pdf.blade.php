@@ -93,121 +93,76 @@
                     <h5 style="position: absolute;left:80%;top:-5%;">Cuentas por Cobrar : {{ date("d-m-Y") }}</h5><br>
                     
                 </div>
+                
 
                 
-                <table class="table text-white tabla-completa"  style="color: #000;width: 100%;padding: 10px; margin: 10px;margin-top: 50px; font-size: 12px">
-                    
-                    <thead>
-                        <tr>
-                            <th>Fecha inicio</th>
-                            <th>Contratista</th>
-                            <th>Contenedor</th>
-                            <th>Facturado a</th>
-                            <th>Destino</th>
-                            <th>Peso</th>
-                            <th>Tamaño contenedor</th>
-                            <th>Burreo</th>
-                            <th>Estadia</th>
-                            <th>Sobre peso</th>
-                            <th>Otro</th>
-                            <th>Precio venta</th>
-                            <th>Precio viaje</th>
+                <table class="table text-white tabla-completa" style="color: #000; width: 100%; padding: 5px; margin: 5px; margin-top: 50px; font-size: 10px; border-collapse: collapse; border: 1px solid #000;">
+    <thead>
+        <tr style="font-size: 10px; border: 1px solid #000;">
+            <th style="padding: 3px; border: 1px solid #000;">Fecha inicio</th>
+            <th style="padding: 3px; border: 1px solid #000;">Contratista</th>
+            <th style="padding: 3px; border: 1px solid #000;">Contenedor</th>
+            <th style="padding: 3px; border: 1px solid #000;">Facturado a</th>
+            <th style="padding: 3px; border: 1px solid #000;">Destino</th>
+            <th style="padding: 3px; border: 1px solid #000;">Peso</th>
+            <th style="padding: 3px; border: 1px solid #000;">Tam. Cont.</th>
+            <th style="padding: 3px; border: 1px solid #000;">Burreo</th>
+            <th style="padding: 3px; border: 1px solid #000;">Estadia</th>
+            <th style="padding: 3px; border: 1px solid #000;">Sobre peso</th>
+            <th style="padding: 3px; border: 1px solid #000;">Otro</th>
+            <th style="padding: 3px; border: 1px solid #000;">Precio venta</th>
+            <th style="padding: 3px; border: 1px solid #000;">Precio viaje</th>
+            <th style="padding: 3px; border: 1px solid #000; color: #000000; background: #56d1f7;">Base factura</th>
+            <th style="padding: 3px; border: 1px solid #000; color: #000000; background: #56d1f7;">IVA</th>
+            <th style="padding: 3px; border: 1px solid #000; color: #000000; background: #56d1f7;">Retención</th>
+            <th style="padding: 3px; border: 1px solid #000; color: #000000; background: #2dce89;">Base 2</th>
+            <th style="padding: 3px; border: 1px solid #000; color: #000000; background: yellow;">Total oficial</th>
+            <th style="padding: 3px; border: 1px solid #000; color: #000000; background: #fb6340;">Total no oficial</th>
+            <th style="padding: 3px; border: 1px solid #000;">Importe VTA</th>
+        </tr>
+    </thead>
+    <tbody style="text-align: center; font-size: 9px;">
+        @foreach ($cotizaciones as $cotizacion)
+            @php
+                $base_factura = floatval($cotizacion->base_factura ?? 0);
+                $iva = floatval($cotizacion->iva ?? 0);
+                $retencion = floatval($cotizacion->retencion ?? 0);
+                $total = floatval($cotizacion->total ?? 0);
+                $total_oficial = ($base_factura + $iva) - $retencion;
+                $base_taref = $total - $base_factura - $iva + $retencion;
+                $importe_vta = $base_taref + $total_oficial;
+                $totalOficialSum += $total_oficial;
+                $totalnoofi += $base_taref;
+                $importeVtaSum += $importe_vta;
+            @endphp
+            <tr style="font-size: 9px; border: 1px solid #000;">
+                <td style="padding: 3px; border: 1px solid #000;">{{ Carbon\Carbon::parse($cotizacion->DocCotizacion->Asignaciones->fehca_inicio_guard)->format('d-m-Y') }}</td>
+                <td style="padding: 3px; border: 1px solid #000;">{{ optional($cotizacion->DocCotizacion->Asignaciones->Proveedor)->nombre ?? '-' }}</td>
+                <td style="padding: 3px; border: 1px solid #000;">{{ $cotizacion->DocCotizacion->num_contenedor }}</td>
+                <td style="padding: 3px; border: 1px solid #000; color: #020202; background: yellow;">{{ $cotizacion->id_subcliente ? $cotizacion->Subcliente->nombre : '' }}</td>
+                <td style="padding: 3px; border: 1px solid #000; color: #ffffff; background: #2778c4;">{{ $cotizacion->destino }}</td>
+                <td style="padding: 3px; border: 1px solid #000;">{{ $cotizacion->peso_contenedor }}</td>
+                <td style="padding: 3px; border: 1px solid #000;">{{ $cotizacion->tamano }}</td>
+                <td style="padding: 3px; border: 1px solid #000;">$ {{ number_format($cotizacion->burreo, 2, '.', ',') }}</td>
+                <td style="padding: 3px; border: 1px solid #000;">$ {{ number_format($cotizacion->maniobra, 2, '.', ',') }}</td>
+                <td style="padding: 3px; border: 1px solid #000;">$ {{ number_format($cotizacion->precio_tonelada, 2, '.', ',') }}</td>
+                <td style="padding: 3px; border: 1px solid #000;">$ {{ number_format($cotizacion->otro, 2, '.', ',') }}</td>
+                <td style="padding: 3px; border: 1px solid #000;">$ {{ number_format($cotizacion->precio, 2, '.', ',') }}</td>
+                <td style="padding: 3px; border: 1px solid #000;">$ {{ number_format($cotizacion->precio_viaje, 2, '.', ',') }}</td>
+                <td style="padding: 3px; border: 1px solid #000;">$ {{ number_format($base_factura, 2, '.', ',') }}</td>
+                <td style="padding: 3px; border: 1px solid #000;">$ {{ number_format($iva, 2, '.', ',') }}</td>
+                <td style="padding: 3px; border: 1px solid #000;">$ {{ number_format($retencion, 2, '.', ',') }}</td>
+                <td style="padding: 3px; border: 1px solid #000;">$ {{ number_format($base_taref, 2, '.', ',') }}</td>
+                <td style="padding: 3px; border: 1px solid #000;">$ {{ number_format($total_oficial, 2, '.', ',') }}</td>
+                <td style="padding: 3px; border: 1px solid #000;">$ {{ number_format($base_taref, 2, '.', ',') }}</td>
+                <td style="padding: 3px; border: 1px solid #000;">$ {{ number_format($importe_vta, 2, '.', ',') }}</td>
+            </tr>
+        @endforeach
+    </tbody>
+</table>
 
-                            <th style="color: #000000; border-radius:3px; background: #56d1f7;">Base factura</th>
-                            <th style="color: #000000; border-radius:3px; background: #56d1f7;">IVA</th>
-                            <th style="color: #000000; border-radius:3px; background: #56d1f7;">Retención</th>
-                            <th style="color: #000000; border-radius:3px; background: #2dce89;">Base taref</th>
-                            <th style="color: #000000; border-radius:3px; background: yellow;">Total oficial</th>
-                            <th style="color: #000000; border-radius:3px; background: #fb6340;">Total no oficial</th>
-                            <th>Importe VTA</th>
-                        </tr>
-                    </thead>
-                    <tbody style="text-align: center;font-size: 100%;">
-                        @foreach ($cotizaciones as $cotizacion)
-                            @php
-                                // Convertir valores a numéricos para evitar el error
-                                $base_factura = floatval($cotizacion->base_factura ?? 0);
-                                $iva = floatval($cotizacion->iva ?? 0);
-                                $retencion = floatval($cotizacion->retencion ?? 0);
-                                $total = floatval($cotizacion->total ?? 0);
 
-                                // Calcular total oficial y base taref
-                                $total_oficial = ($base_factura + $iva) - $retencion;
-                                $base_taref = $total - $base_factura - $iva + $retencion;
-
-                                // Calcular importe de venta
-                                $importe_vta = $base_taref + $total_oficial;
-
-                                // Sumar los valores a las variables acumulativas
-                                $totalOficialSum += $total_oficial;
-                                $totalnoofi += $base_taref;
-                                $importeVtaSum += $importe_vta;
-                            @endphp
-                            <tr>
-                                <td>
-                                    {{ Carbon\Carbon::parse($cotizacion->DocCotizacion->Asignaciones->fehca_inicio_guard)->format('d-m-Y') }}
-                                </td>
-                                @if (optional($cotizacion->DocCotizacion->Asignaciones)->id_proveedor == NULL)
-                                    <td>-</td>
-                                @else
-                                    <td>{{ optional($cotizacion->DocCotizacion->Asignaciones->Proveedor)->nombre }}</td>
-                                @endif
-                                <td>{{ $cotizacion->DocCotizacion->num_contenedor }}</td>
-                                <td style="color: #020202; background: yellow;">
-                                    @if ($cotizacion->id_subcliente != NULL)
-                                    {{ $cotizacion->Subcliente->nombre }}
-                                    @else
-
-                                    @endif
-                                </td>
-                                <td style="color: #ffffff; background: #2778c4;">{{$cotizacion->destino}}</td>
-                                <td>{{$cotizacion->peso_contenedor}}</td>
-                                <td>{{$cotizacion->tamano}}</td>
-                                <td>$ {{ number_format($cotizacion->burreo, 2, '.', ',')}}</td>
-                                <td>$ {{ number_format($cotizacion->maniobra, 2, '.', ',')}}</td>
-                                <td>$ {{ number_format($cotizacion->precio_tonelada, 2, '.', ',')}}</td>
-                                <td>$ {{ number_format($cotizacion->otro, 2, '.', ',')}}</td>
-                                <td>$ {{ number_format($cotizacion->precio, 2, '.', ',')}}</td>
-                                <td>$ {{ number_format($cotizacion->precio_viaje, 2, '.', ',')}}</td>
-
-                                <td>$ {{ number_format(floatval($cotizacion->base_factura ?? 0), 2, '.', ',') }}</td>
-                                <td>$ {{ number_format($cotizacion->iva, 2, '.', ',')}}</td>
-                                <td>$ {{ number_format($cotizacion->retencion, 2, '.', ',')}}</td>
-                                <td>$ {{ number_format($cotizacion->base_taref, 2, '.', ',')}}</td>
-                                <td>
-                                    @php
-                                        $total_oficial = ($base_factura + $iva) - $retencion;
-                                    @endphp
-                                    $ {{ number_format($total_oficial, 2, '.', ',')}}
-                                </td>
-                                <td>
-                                    @php
-                                        $total_no_ofi = $cotizacion->total - $base_factura - $iva + $retencion;
-                                    @endphp
-                                    $ {{ number_format($total_no_ofi, 2, '.', ',')}}</td>
-                                <td>
-                                    @php
-                                        $importe_vta2 = $total_oficial + $total_no_ofi;
-                                    @endphp
-                                    $ {{ number_format($importe_vta2, 2, '.', ',')}}
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-   
-
-                @php
-                    // Recopila los IDs de los proveedores únicos de las cotizaciones, excluyendo NULL
-                    $proveedoresIds = $cotizaciones->pluck('DocCotizacion.Asignaciones.id_proveedor')->filter()->unique();
-                    // Carga los proveedores con sus cuentas bancarias usando los IDs recopilados
-                    $proveedoresConCuentas = App\Models\Proveedor::whereIn('id', $proveedoresIds)
-                                            ->with('CuentasBancarias')
-                                            ->get();
-
-                    $cotizacionesPorProveedor = $cotizaciones->groupBy('DocCotizacion.Asignaciones.id_proveedor');
-                @endphp
-                
+          
    
 
                 @php
@@ -242,30 +197,33 @@
                 }
             @endphp
 
-            <!-- Fila con el nombre del proveedor y las cuentas en celdas horizontales -->
+            <!-- Fila para el nombre del proveedor -->
             <tr>
-                <!-- Celda del nombre del proveedor -->
-                <td style="padding: 8px; text-align: center; vertical-align: top; width: 120px;">
-                    <b>Proveedor:</b><br> {{ $proveedor->nombre }}
+                <td colspan="3" style="padding: 4px; text-align: left; background-color: #f5f5f5; font-weight: bold;font-size: 8px;">
+                    Proveedor: {{ $proveedor->nombre }}
                 </td>
+            </tr>
 
-                @if ($proveedor->CuentasBancarias->isEmpty())
-                    <!-- Si no hay cuentas, se coloca un mensaje en una celda horizontal -->
-                    <td colspan="3" style="padding: 8px; text-align: left;">
+            <!-- Fila con las cuentas bancarias -->
+            @if ($proveedor->CuentasBancarias->isEmpty())
+                <!-- Si no hay cuentas -->
+                <tr>
+                    <td colspan="3" style="padding: 8px; text-align: left;font-size: 10px; border-bottom: 1px solid #ccc;">
                         No hay cuentas bancarias registradas.
                     </td>
-                @else
-                    @php
-                        $contador = 1;
-                    @endphp
-                    <!-- Recorrer las cuentas del proveedor y colocarlas en celdas horizontales -->
+                </tr>
+            @else
+                @php
+                    $contador = 1;
+                @endphp
+                <tr>
                     @foreach ($proveedor->CuentasBancarias as $cuenta)
-                        <td style="padding: 8px; text-align: left; width: 200px;">
+                        <td style="padding: 8px; text-align: left; border: 1px solid #ccc; font-size: 8px;" width="25">
                             <b>Cuenta #{{ $contador }}</b><br>
                             Beneficiario: {{ $cuenta->nombre_beneficiario }}<br>
                             Banco: {{ $cuenta->nombre_banco }}<br>
                             Cuenta: {{ $cuenta->cuenta_bancaria }}<br>
-                            Clave: {{ $cuenta->cuenta_clabe }}<br>
+                            Clabe: <b>{{ $cuenta->cuenta_clabe }}</b><br>
                             @if ($contador == 1)
                                 A pagar: <b>${{ number_format($totalCuenta1, 2, '.', ',') }}</b>
                             @elseif ($contador == 2)
@@ -278,12 +236,11 @@
                             $contador++;
                         @endphp
                     @endforeach
-                @endif
-            </tr>
+                </tr>
+            @endif
         @endforeach
     </tbody>
 </table>
-
 
 
 
