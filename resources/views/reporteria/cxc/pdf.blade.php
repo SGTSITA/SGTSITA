@@ -266,6 +266,7 @@
                         @endphp
                     @endforeach
                 @endif
+                <!-- Prueba -->
             </tr>
         @endforeach
     </tbody>
