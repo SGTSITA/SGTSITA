@@ -70,7 +70,7 @@ table th, table td {
     margin: 2px; /* Márgenes pequeños */
     padding: 0; /* Sin relleno */
     font-size: 10px; /* Fuente más pequeña */
-    font-size: 16px;
+    font-size: 12px;
 }
 
 .contianer {
@@ -171,25 +171,42 @@ table th, table td {
                         $contador = 1;
                     @endphp
                     <tr>
-                        @foreach ($cotizacion->Proveedor->CuentasBancarias as $cuentas)
-                            <td style="padding: 0; margin: 0; border: none;display:inline-block;">
-                                Cuenta #{{ $contador }}
-                                Beneficiario: <br> <b> {{ $cuentas->nombre_beneficiario }} </b><br>
-                                Banco: <b> {{ $cuentas->nombre_banco }} </b><br>
-                                Cuenta: <b> {{ $cuentas->cuenta_bancaria }}</b><br>
-                                <p>Clave: <b> {{ $cuentas->cuenta_clabe }}</b></p>
-                                @if ($contador == 1)
-                                    <h4 class="sin_espacios2">A pagar: ${{ number_format($pagar1, 2, '.', ',') }}<b></b></h4>
-                                @endif
-                                @if ($contador == 2)
-                                    <h4 class="sin_espacios2">A pagar: ${{ number_format($pagar2, 2, '.', ',') }}<b></b></h4>
-                                @endif
-                                @php
-                                    $contador++;
-                                @endphp
-                            </td>
-                        @endforeach
-                    </tr>
+    @if ($cotizacion->Proveedor)
+        @if ($cotizacion->Proveedor->CuentasBancarias->isNotEmpty())
+            @php
+                $contador = 1;
+            @endphp
+            @foreach ($cotizacion->Proveedor->CuentasBancarias as $cuentas)
+                <td style="padding: 15px; margin: 0; border: 1px solid #ccc; text-align: left; vertical-align: top; width: 200px; min-width: 200px;">
+                    <h4 style="margin-bottom: 10px; font-size: 16px;">Cuenta #{{ $contador }}</h4>
+                    <p style="margin: 5px 0; font-size: 14px;">Beneficiario: <b>{{ $cuentas->nombre_beneficiario }}</b></p>
+                    <p style="margin: 5px 0; font-size: 14px;">Banco: <b>{{ $cuentas->nombre_banco }}</b></p>
+                    <p style="margin: 5px 0; font-size: 14px;">Cuenta: <b>{{ $cuentas->cuenta_bancaria }}</b></p>
+                    <p style="margin: 5px 0; font-size: 14px;">Clave: <b>{{ $cuentas->cuenta_clabe }}</b></p>
+                    @if ($contador == 1)
+                        <p style="margin: 5px 0; font-size: 14px;"><b>A pagar:</b> ${{ number_format($pagar1, 2, '.', ',') }}</p>
+                    @elseif ($contador == 2)
+                        <p style="margin: 5px 0; font-size: 14px;"><b>A pagar:</b> ${{ number_format($pagar2, 2, '.', ',') }}</p>
+                    @else
+                        <p style="margin: 5px 0; font-size: 14px;"><b>A pagar:</b> $00.00</p>
+                    @endif
+                    @php
+                        $contador++;
+                    @endphp
+                </td>
+            @endforeach
+        @else
+            <td colspan="3" style="padding: 20px; border: 1px solid #ccc; text-align: center; font-size: 16px; width: 100%;">
+                No se encontraron cuentas bancarias para el proveedor: <b>{{ $cotizacion->Proveedor->nombre }}</b>.
+            </td>
+        @endif
+    @else
+        <td colspan="3" style="padding: 20px; border: 1px solid #ccc; text-align: center; font-size: 16px; width: 100%;">
+            No se encontró un proveedor asociado a esta cotización.
+        </td>
+    @endif
+</tr>
+
                 </tbody>
             </table>
 

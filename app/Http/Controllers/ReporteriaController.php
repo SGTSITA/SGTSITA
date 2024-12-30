@@ -293,38 +293,52 @@ public function advance_cxp(Request $request)
 }
 
     
-    public function export_cxp(Request $request){
-        $fecha = date('Y-m-d');
-        $fechaCarbon = Carbon::parse($fecha);
+public function export_cxp(Request $request)
+{
+    // Obtener la fecha actual
+    $fecha = date('Y-m-d');
+    $fechaCarbon = Carbon::parse($fecha);
 
-        $cotizacionIds = $request->input('selected_ids', []);
-        if (empty($cotizacionIds)) {
-            return redirect()->back()->with('error', 'No se seleccionaron cotizaciones.');
-        }
-
-        $cotizaciones = Asignaciones::whereIn('id', $cotizacionIds)->get();
-        $bancos_oficiales = Bancos::where('tipo', '=', 'Oficial')->get();
-        $bancos_no_oficiales = Bancos::where('tipo', '=', 'No Oficial')->get();
-
-        $cotizacion = Asignaciones::where('id', $cotizacionIds)->first();
-        $user = User::where('id', '=', auth()->user()->id)->first();
-        if($request->fileType == "xlsx"){
-            Excel::store(new CxpExport($cotizaciones, $fechaCarbon, $bancos_oficiales, $bancos_no_oficiales, $cotizacion, $user), 'cotizaciones_cxp.xlsx','public');
-            return Response::download(storage_path('app/public/cotizaciones_cxp.xlsx'), "cxp.xlsx")->deleteFileAfterSend(true);
-        }else{
-           $pdf = PDF::loadView('reporteria.cxp.pdf', compact('cotizaciones', 'fechaCarbon', 'bancos_oficiales', 'bancos_no_oficiales', 'cotizacion', 'user'))->setPaper('a4', 'landscape');
-
-           $fileName = 'cxp_' . implode('_', $cotizacionIds) . '.pdf';
-
-            // Guardar el PDF en la carpeta storage
-           $pdf->save(storage_path('app/public/' . $fileName));
-
-            // Devolver el archivo PDF como respuesta
-           $filePath = storage_path('app/public/' . $fileName);
-            //  return $pdf->stream();
-           return Response::download($filePath, $fileName)->deleteFileAfterSend(true);
-       }
+    // Obtener los IDs de las cotizaciones seleccionadas
+    $cotizacionIds = $request->input('selected_ids', []);
+    if (empty($cotizacionIds)) {
+        return redirect()->back()->with('error', 'No se seleccionaron cotizaciones.');
     }
+
+    // Cargar las cotizaciones con sus proveedores y cuentas bancarias
+    $cotizaciones = Asignaciones::with('Proveedor.CuentasBancarias')->whereIn('id', $cotizacionIds)->get();
+    $bancos_oficiales = Bancos::where('tipo', '=', 'Oficial')->get();
+    $bancos_no_oficiales = Bancos::where('tipo', '=', 'No Oficial')->get();
+
+    // Obtener la primera cotización (si es necesario)
+    $cotizacion = Asignaciones::where('id', $cotizacionIds)->first();
+
+    // Obtener los datos del usuario autenticado
+    $user = User::where('id', '=', auth()->user()->id)->first();
+
+    // Generar el archivo Excel o PDF según el tipo de archivo solicitado
+    if ($request->fileType == "xlsx") {
+        // Generar el archivo Excel y almacenarlo
+        Excel::store(new CxpExport($cotizaciones, $fechaCarbon, $bancos_oficiales, $bancos_no_oficiales, $cotizacion, $user), 'cotizaciones_cxp.xlsx', 'public');
+        
+        // Devolver el archivo Excel como descarga
+        return Response::download(storage_path('app/public/cotizaciones_cxp.xlsx'), "cxp.xlsx")->deleteFileAfterSend(true);
+    } else {
+        // Generar el archivo PDF
+        $pdf = PDF::loadView('reporteria.cxp.pdf', compact('cotizaciones', 'fechaCarbon', 'bancos_oficiales', 'bancos_no_oficiales', 'cotizacion', 'user'))->setPaper('a4', 'landscape');
+
+        // Crear un nombre para el archivo PDF
+        $fileName = 'cxp_' . implode('_', $cotizacionIds) . '.pdf';
+
+        // Guardar el archivo PDF en la carpeta de almacenamiento
+        $pdf->save(storage_path('app/public/' . $fileName));
+
+        // Devolver el archivo PDF como descarga
+        $filePath = storage_path('app/public/' . $fileName);
+        return Response::download($filePath, $fileName)->deleteFileAfterSend(true);
+    }
+}
+
 
     // ==================== V I A J E S ====================
     public function index_viajes(){
