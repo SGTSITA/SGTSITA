@@ -1,16 +1,28 @@
 <!DOCTYPE html>
 <html>
-    @if(!isset($isExcel))
+@if(!isset($isExcel))
     <style>
+        body {
+            font-family: Arial, sans-serif; /* Fuente Arial para todo */
+            font-size: 12px; /* Tamaño de fuente 12 */
+            margin-top: 50px; 
+            margin-left: 40px;
+        }
+
+        /* Eliminar el bold en todos los elementos */
+        h3, p, th, td {
+            font-weight: normal; /* Quitar negrita */
+        }
+
         .registro-contenedor {
-            border: 2px solid #000; /* Cambia el color y grosor del borde según tus necesidades */
-            margin-bottom: 20px; /* Espacio entre cada registro */
-            padding: 15px; /* Espacio interno alrededor de las tablas */
-            border-radius: 5px; /* Bordes redondeados, opcional */
+            border: 2px solid #000;
+            margin-bottom: 20px;
+            padding: 15px;
+            border-radius: 5px;
         }
 
         .registro-contenedor table {
-            margin-bottom: 10px; /* Espacio entre tablas dentro del mismo contenedor */
+            margin-bottom: 10px;
         }
 
         .totales {
@@ -18,7 +30,7 @@
         }
 
         .totales h3 {
-            font-weight: bold;
+            font-weight: normal; /* Quitar negrita */
         }
 
         .totales p {
@@ -26,41 +38,65 @@
             color: #000;
         }
 
-        .margin_cero{
+        .margin_cero {
             padding: 0;
             margin: 0;
             font-size: 15px;
         }
-        .contianer{
+
+        .contianer {
             padding: 0;
             margin: -40px;
         }
 
+        table {
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            border: 1px solid #000;
+            padding: 8px;
+           
+        }
     </style>
-    @endif
-    <head>
-        <title>Cuentas por coborar</title>
-    </head>
+@endif
+
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>Cuentas por cobrar</title>
+</head>
+
 
     <body>
+        
         @php
             $totalOficialSum = 0;
             $totalnoofi = 0;
             $importeVtaSum = 0;
             $total_no_ofi = 0;
         @endphp
-
+        
+                
                 <div class="contianer" style="position: relative">
                     <h4 class="margin_cero">Empresa: {{ $user->Empresa->nombre }}</h4>
                     <h4 class="margin_cero">Estado de cuenta</h4>
-                    <h4 class="margin_cero">Cliente: {{ $cotizacion->Cliente->nombre }}</h4>
+                    <h4 class="margin_cero">Cliente: {{ $cotizacion->Cliente->nombre }}</h4><br>
                 </div>
+                
 
                 <div class="contianer" style="position: relative">
                     <h5 style="position: absolute;left:80%;top:-5%;">Cuentas por Cobrar : {{ date("d-m-Y") }}</h5><br>
+                    
                 </div>
 
-                <table class="table text-white tabla-completa"  style="color: #000;width: 100%;padding: 10px; margin: 0px; font-size: 12px">
+                
+                <table class="table text-white tabla-completa"  style="color: #000;width: 100%;padding: 10px; margin: 10px;margin-top: 50px; font-size: 12px">
+                    
                     <thead>
                         <tr>
                             <th>Fecha inicio</th>
@@ -159,6 +195,7 @@
                         @endforeach
                     </tbody>
                 </table>
+   
 
                 @php
                     // Recopila los IDs de los proveedores únicos de las cotizaciones, excluyendo NULL
@@ -170,76 +207,71 @@
 
                     $cotizacionesPorProveedor = $cotizaciones->groupBy('DocCotizacion.Asignaciones.id_proveedor');
                 @endphp
+                <h3 class="sin_margem" style="color: #fff; background: rgb(24, 192, 141);">Cuentas Bancarias Proveedores</h3>
+                <table class="table text-white tabla-completa sin_margem" style="color: #000; width: 100%; padding: 0px; font-size: 12px; border-collapse: collapse;">
+    <tbody style="text-align: left; font-size: 100%;">
+        @foreach ($proveedoresConCuentas as $proveedor)
+            @php
+                $totalCuenta1 = 0;
+                $totalCuenta2 = 0;
+                $totalCuenta3 = 0;
 
-                <table class="table text-white tabla-completa sin_margem" style="color: #000;width: 100%;padding: 0px; font-size: 12px; border-collapse: collapse;">
-                    <tbody style="text-align: left;font-size: 100%;">
-                        <tr>
-                            @if(in_array($cotizacion->id_empresa,[2,6]))
-                            @php
-                              $contador = 1;
-                            @endphp
-                             @foreach($bancos_oficiales as $cuenta)
-                              <td>
-                                Cuenta #{{ $contador }}<br>
-                                Beneficiario: <br> <b>{{ $cuenta->nombre_beneficiario }}</b><br>
-                                Banco: <b>{{ $cuenta->nombre_banco }}</b><br>
-                                Cuenta: <b>{{ $cuenta->cuenta_bancaria }}</b><br>
-                                Clave: <b>{{ $cuenta->cuenta_clabe }}</b><br>
-                              </td>
+                // Cálculo de montos a pagar por cuenta
+                if (isset($cotizacionesPorProveedor[$proveedor->id])) {
+                    $cotizacionesProveedor = $cotizacionesPorProveedor[$proveedor->id];
+                    foreach ($cotizacionesProveedor as $cotizacion) {
+                        $cuenta1 = $cotizacion->base_factura + $cotizacion->iva - $cotizacion->retencion;
+                        $cuenta2 = $cotizacion->total - $cotizacion->base_factura - $cotizacion->iva + $cotizacion->retencion;
+                        $totalCuenta1 += $cuenta1;
+                        $totalCuenta2 += $cuenta2;
+                        $totalCuenta3 += 0; // Si aplica
+                    }
+                }
+            @endphp
 
-                              @php
-                                $contador++;
-                              @endphp
-                              
-                             @endforeach
-                            @else
-                            @foreach ($proveedoresConCuentas as $proveedor)
-                                <td style="padding: 0; margin: 0; border: none;display:inline-block;">
-                                    <h3 style="margin: 10px; padding: 10px;">Proveedor: {{ $proveedor->nombre }}</h3>
-                                    @if ($proveedor->CuentasBancarias->isEmpty())
-                                    <p style="margin: 0; padding: 0;">No hay cuentas bancarias registradas para este proveedor.</p>
-                                    @else
-                                        
-                                            @php
-                                                $contador = 1;
-                                                $totalCuenta1 = 0;
-                                                $totalCuenta2 = 0;
-                                                if (isset($cotizacionesPorProveedor[$proveedor->id])) {
-                                                    $cotizacionesProveedor = $cotizacionesPorProveedor[$proveedor->id];
-                                                    foreach ($cotizacionesProveedor as $cotizacion) {
-                                                        $cuenta_1 = $cotizacion->base_factura + $cotizacion->iva - $cotizacion->retencion;
-                                                        $cuenta_2 = $cotizacion->total - $cotizacion->base_factura - $cotizacion->iva + $cotizacion->retencion;
-                                                        $totalCuenta1 += $cuenta_1;
-                                                        $totalCuenta2 += $cuenta_2;
-                                                    }
-                                                }
-                                            @endphp
-                                            
-                                                @foreach ($proveedor->CuentasBancarias as $cuenta)
-                                                    <td style="padding: 0 5px; margin: 0; border: none;display:inline-block;">
-                                                        Cuenta #{{ $contador }}<br>
-                                                        Beneficiario: <br> <b>{{ $cuenta->nombre_beneficiario }}</b><br>
-                                                        Banco: <b>{{ $cuenta->nombre_banco }}</b><br>
-                                                        Cuenta: <b>{{ $cuenta->cuenta_bancaria }}</b><br>
-                                                        Clave: <b>{{ $cuenta->cuenta_clabe }}</b><br>
-                                                        @if ($contador == 1)
-                                                            A pagar: <b>${{ number_format($totalCuenta1, 2, '.', ',') }}</b>
-                                                        @elseif ($contador == 2)
-                                                            A pagar: <b>${{ number_format($totalCuenta2, 2, '.', ',') }}</b>
-                                                        @endif
-                                                    </td>
-                                                    @php
-                                                        $contador++;
-                                                    @endphp
-                                                @endforeach
-                                        
-                                    @endif
-                                </td>
-                            @endforeach
+            <!-- Fila con el nombre del proveedor y las cuentas en celdas horizontales -->
+            <tr>
+                <!-- Celda del nombre del proveedor -->
+                <td style="padding: 8px; text-align: center; vertical-align: top; width: 120px;">
+                    <b>Proveedor:</b><br> {{ $proveedor->nombre }}
+                </td>
+
+                @if ($proveedor->CuentasBancarias->isEmpty())
+                    <!-- Si no hay cuentas, se coloca un mensaje en una celda horizontal -->
+                    <td colspan="3" style="padding: 8px; text-align: left;">
+                        No hay cuentas bancarias registradas.
+                    </td>
+                @else
+                    @php
+                        $contador = 1;
+                    @endphp
+                    <!-- Recorrer las cuentas del proveedor y colocarlas en celdas horizontales -->
+                    @foreach ($proveedor->CuentasBancarias as $cuenta)
+                        <td style="padding: 8px; text-align: left; width: 200px;">
+                            <b>Cuenta #{{ $contador }}</b><br>
+                            Beneficiario: {{ $cuenta->nombre_beneficiario }}<br>
+                            Banco: {{ $cuenta->nombre_banco }}<br>
+                            Cuenta: {{ $cuenta->cuenta_bancaria }}<br>
+                            Clave: {{ $cuenta->cuenta_clabe }}<br>
+                            @if ($contador == 1)
+                                A pagar: <b>${{ number_format($totalCuenta1, 2, '.', ',') }}</b>
+                            @elseif ($contador == 2)
+                                A pagar: <b>${{ number_format($totalCuenta2, 2, '.', ',') }}</b>
+                            @elseif ($contador == 3)
+                                A pagar: <b>${{ number_format($totalCuenta3, 2, '.', ',') }}</b>
                             @endif
-                        </tr>
-                    </tbody>
-                </table>
+                        </td>
+                        @php
+                            $contador++;
+                        @endphp
+                    @endforeach
+                @endif
+            </tr>
+        @endforeach
+    </tbody>
+</table>
+
+
 
 
 

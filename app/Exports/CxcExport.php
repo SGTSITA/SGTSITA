@@ -30,14 +30,14 @@ class CxcExport implements FromView,ShouldAutoSize
 
     public function view() : View
     {
-        $cotizaciones = $this->vCotizaciones;
-        $fechaCarbon = $this->vFechaCarbon;
-        $bancos_oficiales = $this->vBancosOficiales;
-        $bancos_no_oficiales = $this->vBancosNoOficiales;
-        $cotizacion = $this->vCotizacion;
-        $user = $this->vUser;
-        $isExcel = true;
-       
-        return view('reporteria.cxc.pdf',compact('cotizaciones', 'fechaCarbon', 'bancos_oficiales', 'bancos_no_oficiales', 'cotizacion', 'user','isExcel'));
+    $cotizaciones = $this->vCotizaciones;
+    $fechaCarbon = $this->vFechaCarbon;
+    $bancos_oficiales = $this->vBancosOficiales;
+    $bancos_no_oficiales = $this->vBancosNoOficiales;
+    $cotizacion = $this->vCotizacion;
+    $user = $this->vUser;
+    $isExcel = true;
+   
+    return view('reporteria.cxc.pdf',compact('cotizaciones', 'fechaCarbon', 'bancos_oficiales', 'bancos_no_oficiales', 'cotizacion', 'user','isExcel'));
     }
 }

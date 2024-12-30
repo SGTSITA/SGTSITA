@@ -18,9 +18,7 @@
             <div class="card-header d-flex justify-content-between align-items-center">
                 
                 <h5>Reporte liquidados CXC</h5>
-                <a href="{{ route('dashboard') }}" class="btn btn-sm" style="background: {{$configuracion->color_boton_close}}; color: #ffff; margin-right: 3rem;">
-                        Regresar
-                </a>
+                
                 </div>
                 <div class="card-body">
                     <div class="container-fluid">
@@ -59,6 +57,11 @@
                     </div>
 
                     <div class="table-responsive">
+                    <div class="mb-3">
+                                </div>
+                                <div class="mb-3">
+                                    <button type="button" id="selectAllButton" class="btn btn-primary">Seleccionar todo</button>
+                                </div>
                         <form id="exportForm" action="{{ route('liquidados_cxc.export') }}" method="POST">
                             @csrf
                             <table class="table table-flush" id="datatable-search">
@@ -132,7 +135,6 @@
     $(document).ready(function() {
         $('.cliente').select2();
 
-
         const table = $('#datatable-search').DataTable({
             columnDefs: [{
                 orderable: false,
@@ -154,11 +156,38 @@
             }
         });
 
+        // Función para manejar el botón "Seleccionar todo"
+        $('#selectAllButton').on('click', function() {
+            // Verificar si todas las filas están seleccionadas (no solo las visibles)
+            if (table.rows({ selected: true }).count() === table.rows().count()) {
+                // Si todas están seleccionadas, deseleccionarlas
+                table.rows().deselect();
+                $(this).text('Seleccionar todo');
+            } else {
+                // Si no todas están seleccionadas, seleccionarlas todas
+                table.rows().select();
+                $(this).text('Deseleccionar todo');
+            }
+        });
+
+        // Detectar cuando las filas cambian de estado (seleccionadas o desmarcadas)
+        table.on('select deselect', function() {
+            // Si todas las filas están seleccionadas, cambiar el texto a "Deseleccionar todo"
+            if (table.rows({ selected: true }).count() === table.rows().count()) {
+                $('#selectAllButton').text('Deseleccionar todo');
+            } else {
+                // Si no todas las filas están seleccionadas, cambiar el texto a "Seleccionar todo"
+                $('#selectAllButton').text('Seleccionar todo');
+            }
+        });
+
+        // Función para la exportación de datos seleccionados
         $('.exportButton').on('click', function() {
             const selectedIds = table.rows('.selected').data().toArray().map(row => row[1]); // Obtener los IDs seleccionados
 
             console.log(selectedIds); // Verificar en la consola del navegador
             var fileType = $("#"+event.target.id).data('filetype');
+            
             // Enviar los IDs seleccionados al controlador por Ajax
             $.ajax({
                 url: '{{ route('liquidados_cxc.export') }}',
@@ -169,18 +198,18 @@
                     fileType: fileType
                 },
                 xhrFields: {
-                        responseType: 'blob' // Indicar que esperamos una respuesta tipo blob (archivo)
-                    },
+                    responseType: 'blob' // Indicar que esperamos una respuesta tipo blob (archivo)
+                },
                 success: function(response) {
                     // Crear un objeto URL del blob recibido
-                    var blob = new Blob([response], { type: 'application/'+fileType });
+                    var blob = new Blob([response], { type: 'application/' + fileType });
                     var url = URL.createObjectURL(blob);
 
                     // Crear un elemento <a> para simular el clic de descarga
                     var a = document.createElement('a');
                     a.style.display = 'none';
                     a.href = url;
-                    a.download = 'Liquidados_cxc_{{  date('d-m-Y'); }}.'+fileType;
+                    a.download = 'Liquidados_cxc_{{ date('d-m-Y') }}.' + fileType;
                     document.body.appendChild(a);
 
                     // Simular el clic en el enlace para iniciar la descarga
@@ -204,6 +233,7 @@
 
     });
 
+    // Función para actualizar los subclientes en función del cliente seleccionado
     $(document).ready(function() {
         $('#id_client').on('change', function() {
             var clientId = $(this).val();
@@ -227,6 +257,7 @@
         });
     });
 </script>
+
 @endsection
 
 @push('custom-javascript')
