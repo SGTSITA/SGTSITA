@@ -105,110 +105,111 @@ table th, table td {
                 <h5 style="position: absolute;left:70%;top:-5%;">Estado de cuenta por pagar : {{ date("d-m-Y") }}</h5><br>
             </div>
 
-            <table class="table text-white tabla-completa" style="color: #000;width: 100%;padding: 5px;margin-top: 50px; font-size: 12px">
-                <thead>
-                    <tr>
-                        <th>Contratista</th>
-                        <th>Contenedor</th>
-                        <th>Importe CT</th>
-                        <th>A pagar 1</th>
-                        <th>A pagar 2</th>
-                        <th>Retención</th>
-                        <th>IVA</th>
-                        <th>Base factura</th>
-                        <th>Precio viaje</th>
-                        <th>Otro</th>
-                        {{-- <th>Sobre peso</th> --}}
-                        <th>Estadia</th>
-                        <th>Burreo</th>
-                    </tr>
-                </thead>
-                <tbody style="text-align: center;font-size: 100%;">
-                        @php
-                            $totalBaseFactura = 0;
-                            $totalImporteVTA = 0;
-                            $base_factura = 0;
-                        @endphp
+            <table class="table text-white tabla-completa" style="color: #000; width: 100%; padding: 2px; margin-top: 40px; font-size: 10px; border-collapse: collapse;">
+    <thead>
+        <tr>
+            <th style="padding: 5px; border: 1px solid #ccc;">Contratista</th>
+            <th style="padding: 5px; border: 1px solid #ccc;">Contenedor</th>
+            <th style="padding: 5px; border: 1px solid #ccc;">Importe CT</th>
+            <th style="padding: 5px; border: 1px solid #ccc;">A pagar 1</th>
+            <th style="padding: 5px; border: 1px solid #ccc;">A pagar 2</th>
+            <th style="padding: 5px; border: 1px solid #ccc;">Retención</th>
+            <th style="padding: 5px; border: 1px solid #ccc;">IVA</th>
+            <th style="padding: 5px; border: 1px solid #ccc;">Base factura</th>
+            <th style="padding: 5px; border: 1px solid #ccc;">Precio viaje</th>
+            <th style="padding: 5px; border: 1px solid #ccc;">Otro</th>
+            <th style="padding: 5px; border: 1px solid #ccc;">Estadia</th>
+            <th style="padding: 5px; border: 1px solid #ccc;">Burreo</th>
+        </tr>
+    </thead>
+    <tbody style="text-align: center; font-size: 10px; line-height: 1;">
+        <!-- Empezamos con PHP para insertar los datos dinámicos -->
+        @php
+            $totalBaseFactura = 0;
+            $totalImporteVTA = 0;
+            $base_factura = 0;
+        @endphp
 
-                    @foreach ($cotizaciones as $item)
-                        @php
-                            $total_oficial = ($item->base1_proveedor + $item->iva) - $item->retencion;
-                            $base_factura = $item->total_proveedor - $item->base1_proveedor - $item->iva + $item->retencion;
+        @foreach ($cotizaciones as $item)
+            @php
+                $total_oficial = ($item->base1_proveedor + $item->iva) - $item->retencion;
+                $base_factura = $item->total_proveedor - $item->base1_proveedor - $item->iva + $item->retencion;
 
-                            $importe_vta = $base_factura - $total_oficial;
-                            $suma_importeCT = $base_factura + $total_oficial;
+                $importe_vta = $base_factura - $total_oficial;
+                $suma_importeCT = $base_factura + $total_oficial;
 
-                            $importeCT += $suma_importeCT;
-                            $pagar1 += $total_oficial;
-                            $pagar2 += $base_factura;
+                $importeCT += $suma_importeCT;
+                $pagar1 += $total_oficial;
+                $pagar2 += $base_factura;
 
-                            $totalBaseFactura += $base_factura;
-                            $totalImporteVTA += $importe_vta;
-                        @endphp
-                        <tr>
-                            <td>{{ $cotizacion->Proveedor->nombre }}</td>
-                            <td>{{ $item->Contenedor->num_contenedor }}</td>
-                            <td>${{ number_format($suma_importeCT, 2, '.', ',') }}</td>
-                            <td>${{ number_format($total_oficial, 2, '.', ',') }}</td>
-                            <td>${{ number_format($base_factura, 2, '.', ',') }}</td>
-                            <td>${{ number_format($item->retencion, 2, '.', ',') }}</td>
-                            <td>${{ number_format($item->iva, 2, '.', ',') }}</td>
-                            <td>${{ number_format($item->base1_proveedor, 2, '.', ',') }}</td>
-                            <td>${{ number_format($item->precio, 2, '.', ',') }}</td>
-                            <td>${{ number_format($item->otro, 2, '.', ',') }}</td>
-                            {{-- <td>${{ number_format($item->Contenedor->item->precio_tonelada, 2, '.', ',') }}</td> --}}
-                            <td>${{ number_format($item->estadia, 2, '.', ',') }}</td>
-                            <td>${{ number_format($item->burreo, 2, '.', ',') }}</td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
+                $totalBaseFactura += $base_factura;
+                $totalImporteVTA += $importe_vta;
+            @endphp
+            <tr>
+                <td style="padding: 3px; border: 1px solid #ccc;">{{ $cotizacion->Proveedor->nombre }}</td>
+                <td style="padding: 3px; border: 1px solid #ccc;">{{ $item->Contenedor->num_contenedor }}</td>
+                <td style="padding: 3px; border: 1px solid #ccc;">${{ number_format($suma_importeCT, 2, '.', ',') }}</td>
+                <td style="padding: 3px; border: 1px solid #ccc;">${{ number_format($total_oficial, 2, '.', ',') }}</td>
+                <td style="padding: 3px; border: 1px solid #ccc;">${{ number_format($base_factura, 2, '.', ',') }}</td>
+                <td style="padding: 3px; border: 1px solid #ccc;">${{ number_format($item->retencion, 2, '.', ',') }}</td>
+                <td style="padding: 3px; border: 1px solid #ccc;">${{ number_format($item->iva, 2, '.', ',') }}</td>
+                <td style="padding: 3px; border: 1px solid #ccc;">${{ number_format($item->base1_proveedor, 2, '.', ',') }}</td>
+                <td style="padding: 3px; border: 1px solid #ccc;">${{ number_format($item->precio, 2, '.', ',') }}</td>
+                <td style="padding: 3px; border: 1px solid #ccc;">${{ number_format($item->otro, 2, '.', ',') }}</td>
+                <td style="padding: 3px; border: 1px solid #ccc;">${{ number_format($item->estadia, 2, '.', ',') }}</td>
+                <td style="padding: 3px; border: 1px solid #ccc;">${{ number_format($item->burreo, 2, '.', ',') }}</td>
+            </tr>
+        @endforeach
+    </tbody>
+</table>
 
-            <h3 class="sin_margem" style="color: #fff; background: rgb(24, 192, 141);">Contratista</h3>
-            <table class="table text-white tabla-completa sin_margem" style="color: #000;width: 100%;padding: 5px; font-size: 12px;margin-top:5px">
-                <tbody style="text-align: left;font-size: 100%;">
+
+            <h3 class="sin_margem" style="color: #fff;margin-top: 5px; background: rgb(24, 192, 141);">Contratista</h3>
+            <table class="table text-white tabla-completa sin_margem" style="color: #000; width: 100%; padding: 0; font-size: 10px; margin-top: 5px; border-collapse: collapse;">
+    <tbody style="text-align: left; font-size: 10px; line-height: 1;">
+        @php
+            $contador = 1;
+        @endphp
+        <tr>
+            @if ($cotizacion->Proveedor)
+                @if ($cotizacion->Proveedor->CuentasBancarias->isNotEmpty())
                     @php
                         $contador = 1;
                     @endphp
-                    <tr>
-    @if ($cotizacion->Proveedor)
-        @if ($cotizacion->Proveedor->CuentasBancarias->isNotEmpty())
-            @php
-                $contador = 1;
-            @endphp
-            @foreach ($cotizacion->Proveedor->CuentasBancarias as $cuentas)
-                <td style="padding: 15px; margin: 0; border: 1px solid #ccc; text-align: left; vertical-align: top; width: 200px; min-width: 200px;">
-                    <h4 style="margin-bottom: 10px; font-size: 16px;">Cuenta #{{ $contador }}</h4>
-                    <p style="margin: 5px 0; font-size: 14px;">Beneficiario: <b>{{ $cuentas->nombre_beneficiario }}</b></p>
-                    <p style="margin: 5px 0; font-size: 14px;">Banco: <b>{{ $cuentas->nombre_banco }}</b></p>
-                    <p style="margin: 5px 0; font-size: 14px;">Cuenta: <b>{{ $cuentas->cuenta_bancaria }}</b></p>
-                    <p style="margin: 5px 0; font-size: 14px;">Clave: <b>{{ $cuentas->cuenta_clabe }}</b></p>
-                    @if ($contador == 1)
-                        <p style="margin: 5px 0; font-size: 14px;"><b>A pagar:</b> ${{ number_format($pagar1, 2, '.', ',') }}</p>
-                    @elseif ($contador == 2)
-                        <p style="margin: 5px 0; font-size: 14px;"><b>A pagar:</b> ${{ number_format($pagar2, 2, '.', ',') }}</p>
-                    @else
-                        <p style="margin: 5px 0; font-size: 14px;"><b>A pagar:</b> $00.00</p>
-                    @endif
-                    @php
-                        $contador++;
-                    @endphp
+                    @foreach ($cotizacion->Proveedor->CuentasBancarias as $cuentas)
+                        <td style="padding: 5px; margin: 0; border: 1px solid #ccc; text-align: left; vertical-align: top; width: 150px; min-width: 150px;">
+                            <h4 style="margin: 0; font-size: 10px; line-height: 1;">Cuenta #{{ $contador }}</h4>
+                            <p style="margin: 0; font-size: 10px; line-height: 1;">Beneficiario: {{ $cuentas->nombre_beneficiario }}</p>
+                            <p style="margin: 0; font-size: 10px; line-height: 1;">Banco: {{ $cuentas->nombre_banco }}</p>
+                            <p style="margin: 0; font-size: 10px; line-height: 1;">Cuenta: {{ $cuentas->cuenta_bancaria }}</p>
+                            <p style="margin: 0; font-size: 10px; line-height: 1;">Clabe: <b>{{ $cuentas->cuenta_clabe }}</b></p>
+                            @if ($contador == 1)
+                                <p style="margin: 0; font-size: 10px; line-height: 1;">A pagar: <b>${{ number_format($pagar1, 2, '.', ',') }}</b></p>
+                            @elseif ($contador == 2)
+                                <p style="margin: 0; font-size: 10px; line-height: 1;">A pagar: <b>${{ number_format($pagar2, 2, '.', ',') }}</b></p>
+                            @else
+                                <p style="margin: 0; font-size: 10px; line-height: 1;">A pagar: <b>$00.00</b></p>
+                            @endif
+                            @php
+                                $contador++;
+                            @endphp
+                        </td>
+                    @endforeach
+                @else
+                    <td colspan="3" style="padding: 5px; border: 1px solid #ccc; text-align: center; font-size: 10px; line-height: 1; width: 100%;">
+                        No se encontraron cuentas bancarias para el proveedor: <b>{{ $cotizacion->Proveedor->nombre }}</b>.
+                    </td>
+                @endif
+            @else
+                <td colspan="3" style="padding: 5px; border: 1px solid #ccc; text-align: center; font-size: 10px; line-height: 1; width: 100%;">
+                    No se encontró un proveedor asociado a esta cotización.
                 </td>
-            @endforeach
-        @else
-            <td colspan="3" style="padding: 20px; border: 1px solid #ccc; text-align: center; font-size: 16px; width: 100%;">
-                No se encontraron cuentas bancarias para el proveedor: <b>{{ $cotizacion->Proveedor->nombre }}</b>.
-            </td>
-        @endif
-    @else
-        <td colspan="3" style="padding: 20px; border: 1px solid #ccc; text-align: center; font-size: 16px; width: 100%;">
-            No se encontró un proveedor asociado a esta cotización.
-        </td>
-    @endif
-</tr>
+            @endif
+        </tr>
+    </tbody>
+</table>
 
-                </tbody>
-            </table>
+
 
         <div class="totales">
             <h3 class="sin_margem" style="color: #000000; background: rgb(0, 174, 255);">Totales</h3>
