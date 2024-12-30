@@ -885,7 +885,7 @@ class CotizacionesController extends Controller
         
     }
 
-    public function cambiar_empresa(Request $request){
+    public function cambiar_empresa(Request $request,$id){
         // Obtener la cotización actual
         $cotizacion = DB::table('cotizaciones')->where('id', $id)->first();
         $doc = DocumCotizacion::where('id_cotizacion', $id)->first();

@@ -207,19 +207,6 @@
 
                     $cotizacionesPorProveedor = $cotizaciones->groupBy('DocCotizacion.Asignaciones.id_proveedor');
                 @endphp
-                
-   
-
-                @php
-                    // Recopila los IDs de los proveedores únicos de las cotizaciones, excluyendo NULL
-                    $proveedoresIds = $cotizaciones->pluck('DocCotizacion.Asignaciones.id_proveedor')->filter()->unique();
-                    // Carga los proveedores con sus cuentas bancarias usando los IDs recopilados
-                    $proveedoresConCuentas = App\Models\Proveedor::whereIn('id', $proveedoresIds)
-                                            ->with('CuentasBancarias')
-                                            ->get();
-
-                    $cotizacionesPorProveedor = $cotizaciones->groupBy('DocCotizacion.Asignaciones.id_proveedor');
-                @endphp
                 <h3 class="sin_margem" style="color: #fff; background: rgb(24, 192, 141);">Cuentas Bancarias Proveedores</h3>
                 <table class="table text-white tabla-completa sin_margem" style="color: #000; width: 100%; padding: 0px; font-size: 12px; border-collapse: collapse;">
     <tbody style="text-align: left; font-size: 100%;">
