@@ -162,7 +162,7 @@
             </li>
           @endcan
 
-          @can('cuentas-pagar')
+          @can('reportes')
             <a data-bs-toggle="collapse" href="#pagesExamplesReporteria" class="nav-link {{ (Request::is('reporteria/cotizaciones*') ? 'active' : '') }}" aria-controls="pagesExamplesReporteria" role="button" aria-expanded="false">
                 <div class="icon icon-shape icon-sm text-center  me-2 d-flex align-items-center justify-content-center">
                     <img src="{{ asset('img/icon/pdf.webp') }}" alt="" width="20px">
@@ -182,11 +182,13 @@
                         <span class="sidenav-mini-icon"> P </span>
                         <span class="sidenav-normal">Cuentas por pagar</span>
                         </a>
-
+                        
+                        @can('reportes-viajes')
                         <a class="nav-link {{ (Request::is('reporteria/viajes*') ? 'show' : '') }}" href="{{ route('index_viajes.reporteria') }}">
                         <span class="sidenav-mini-icon"> P </span>
                         <span class="sidenav-normal">Viajes</span>
                         </a>
+                        @endcan
 
                         <a class="nav-link {{ (Request::is('reporteria/utilidad*') ? 'show' : '') }}" href="{{ route('index_utilidad.reporteria') }}">
                             <span class="sidenav-mini-icon"> P </span>
