@@ -12,48 +12,82 @@
 @endsection
 
 @section('content')
-    <div class="container-fluid">
-        <div class="row">
-            <div class="col-sm-12">
-                <div class="card">
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-sm-12">
+            <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                
-                <h5>Reporte de Cuentas por Pagar</h5>
-                <a href="{{ route('dashboard') }}" class="btn btn-sm" style="background: {{$configuracion->color_boton_close}}; color: #ffff; margin-right: 3rem;">
-                        Regresar
-                </a>
+                    <h5>Reporte de Cuentas por Pagar</h5>
+                   
                 </div>
-                        <div class="card-body">
-                          
-                            <div class="container-fluid">
-                                <div class="row">
-                                    <div class="col-sm-12">
-                                        <div class="card">
-                                            <form action="{{ route('advance_search_cxp.buscador') }}" method="GET" >
-                                                <div class="card-body" style="padding-left: 1.5rem; padding-top: 1rem;">
-                                                    <div class="row">
-                                                        <div class="col-3">
-                                                            <label for="user_id">Buscar proveedor:</label>
-                                                            <select class="form-control cliente" name="id_proveedor" id="id_proveedor">
-                                                                <option selected value="">seleccionar proveedor</option>
-                                                                @foreach($proveedores as $proveedor)
-                                                                    <option value="{{ $proveedor->id }}">{{ $proveedor->nombre }} {{ $proveedor->telefono }}</option>
-                                                                @endforeach
-                                                            </select>
-                                                        </div>
-                                                        <div class="col-3">
-                                                            <br>
-                                                            <button class="btn btn-sm mb-0 mt-sm-0 mt-1" type="submit" style="background-color: #F82018; color: #ffffff;">Buscar</button>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                <div class="card-body">
+                    <!-- Mostrar advertencia si no se ha seleccionado proveedor -->
+                    @if(isset($showWarning) && $showWarning)
+                        <div class="alert alert-warning">
+                            <strong>Advertencia!</strong> No se ha seleccionado un proveedor. Por favor, elija un proveedor para realizar la búsqueda.
+                        </div>
+                    @endif
+                    <form action="{{ route('ruta_advance_cxp') }}" method="GET">
+    <div class="card-body" style="padding-left: 1.5rem; padding-top: 1rem;">
+        <div class="row">
+            <!-- Campo para proveedor -->
+            <div class="col-3">
+                <label for="id_proveedor">Buscar proveedor:</label>
+                <select class="form-control cliente" name="id_proveedor" id="id_proveedor">
+                    <option selected value="">Seleccionar proveedor</option>
+                    @foreach($proveedores as $proveedor)
+                        <option value="{{ $proveedor->id }}" 
+                            {{ request('id_proveedor') == $proveedor->id ? 'selected' : '' }}>
+                            {{ $proveedor->nombre }} {{ $proveedor->telefono }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            <!-- Campo para cliente -->
+            <div class="col-3">
+                <label for="id_cliente">Buscar cliente:</label>
+                <select class="form-control cliente" name="id_cliente" id="id_cliente">
+                    <option selected value="">Seleccionar cliente</option>
+                    @foreach($clientes as $cliente)
+                        <option value="{{ $cliente->id }}" 
+                            {{ request('id_cliente') == $cliente->id ? 'selected' : '' }}>
+                            {{ $cliente->nombre }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            <!-- Campo para subcliente -->
+            <div class="col-3">
+                <label for="id_subcliente">Buscar subcliente:</label>
+                <select class="form-control cliente" name="id_subcliente" id="id_subcliente">
+                    <option selected value="">Seleccionar subcliente</option>
+                    @foreach($subclientes as $subcliente)
+                        <option value="{{ $subcliente->id }}" 
+                            {{ request('id_subcliente') == $subcliente->id ? 'selected' : '' }}>
+                            {{ $subcliente->nombre }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div class="col-3">
+                <br>
+                <button class="btn btn-sm mb-0 mt-sm-0 mt-1" type="submit" 
+                    style="background-color: #F82018; color: #ffffff;">Buscar</button>
+            </div>
+        </div>
+    </div>
+</form>
+                       
 
                             <div class="table-responsive">
+                                <div class="mb-3">
+                                </div>
+                                <div class="mb-3">
+                                    <button type="button" id="selectAllButton" class="btn btn-primary">Seleccionar todo</button>
+                                </div>
                                 <form id="exportForm" action="{{ route('cotizaciones_cxp.export') }}" method="POST">
                                     @csrf
                                     @if(Route::currentRouteName() != 'index_cxp.reporteria')
@@ -96,6 +130,7 @@
                                             @endif
                                         </tbody>
                                     </table>
+                                    
                                     @if(isset($cotizaciones) && $cotizaciones != null)
                                     <div class="dropdown">
                                         <button class="btn btn-success dropdown-toggle" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
@@ -112,6 +147,10 @@
                                     @endif
                                     <!--button type="submit" id="exportButton" class="btn btn-primary">Exportar a PDF</button-->
                                 </form>
+                                <!-- Advertencia oculta inicialmente -->
+<div id="warningMessage" class="alert alert-warning d-none" role="alert">
+    <strong>Advertencia!</strong> Debes seleccionar al menos una casilla para visualizar el reporte.
+</div>
                             </div>
                         </div>
                     </div>
@@ -133,11 +172,12 @@
 <script src="https://cdn.datatables.net/select/2.0.3/js/dataTables.select.min.js"></script>
 <script src="https://cdn.datatables.net/select/2.0.3/js/select.bootstrap5.min.js"></script>
 
-    <script>
+<script>
     $(document).ready(function() {
+        // Inicializar select2 para el campo de proveedor
         $('.cliente').select2();
 
-
+        // Inicializar la tabla con DataTable
         const table = $('#datatable-search').DataTable({
             columnDefs: [{
                 orderable: false,
@@ -152,22 +192,56 @@
             ],
             paging: true,
             pageLength: 30,
-
             select: {
                 style: 'multi',
                 selector: 'td:first-child'
             }
         });
 
+        // Función para manejar el botón "Seleccionar todo"
+        $('#selectAllButton').on('click', function() {
+            // Verificar si todas las filas están seleccionadas
+            if (table.rows({ selected: true }).count() === table.rows().count()) {
+                // Si todas están seleccionadas, deseleccionarlas
+                table.rows().deselect();
+                $(this).text('Seleccionar todo');
+            } else {
+                // Si no todas están seleccionadas, seleccionarlas todas
+                table.rows().select();
+                $(this).text('Deseleccionar todo');
+            }
+        });
+
+        // Detectar cuando las filas cambian de estado (seleccionadas o desmarcadas)
+        table.on('select deselect', function() {
+            // Si todas las filas están seleccionadas, cambiar el texto a "Deseleccionar todo"
+            if (table.rows({ selected: true }).count() === table.rows().count()) {
+                $('#selectAllButton').text('Deseleccionar todo');
+            } else {
+                // Si no todas están seleccionadas, cambiar el texto a "Seleccionar todo"
+                $('#selectAllButton').text('Seleccionar todo');
+            }
+        });
+
+        // Función para la exportación de datos seleccionados
         $('.exportButton').on('click', function(event) {
-            event.preventDefault(); // Evita el comportamiento predeterminado del formulario
+            event.preventDefault(); // Evitar comportamiento predeterminado del formulario
 
             const selectedIds = table.rows('.selected').data().toArray().map(row => row[1]); // Obtener los IDs seleccionados
 
-            console.log(selectedIds); // Verificar en la consola del navegador
-            var fileType = $("#"+event.target.id).data('filetype');
+            // Verificar si no se seleccionó ninguna fila
+            if (selectedIds.length === 0) {
+                // Mostrar el mensaje de advertencia si no se seleccionó ninguna fila
+                $('#warningMessage').removeClass('d-none');
+                return; // Detener la ejecución del código
+            }
 
-            // Enviar los IDs seleccionados al controlador por Ajax
+            // Si se seleccionó al menos una fila, ocultar el mensaje de advertencia
+            $('#warningMessage').addClass('d-none');
+
+            var fileType = $(this).data('filetype'); // Obtener el tipo de archivo (PDF o Excel)
+
+            // Enviar los IDs seleccionados al controlador por AJAX
             $.ajax({
                 url: '{{ route('cotizaciones_cxp.export') }}',
                 method: 'POST',
@@ -177,21 +251,19 @@
                     fileType: fileType
                 },
                 xhrFields: {
-                    responseType: 'blob' // Indicar que esperamos una respuesta tipo blob (archivo)
+                    responseType: 'blob' // Esperamos una respuesta tipo blob (archivo)
                 },
                 success: function(response) {
-                    // Crear un objeto URL del blob recibido
-                    var blob = new Blob([response], { type: 'application/' +fileType });
+                    var blob = new Blob([response], { type: 'application/' + fileType });
                     var url = URL.createObjectURL(blob);
 
-                    // Crear un elemento <a> para simular el clic de descarga
                     var a = document.createElement('a');
                     a.style.display = 'none';
                     a.href = url;
-                    a.download = 'Cuentas_por_pagar_{{ date('d-m-Y') }}.'+fileType;
+                    a.download = 'Cuentas_por_pagar_{{ date('d-m-Y') }}.' + fileType;
                     document.body.appendChild(a);
 
-                    // Simular el clic en el enlace para iniciar la descarga
+                    // Inicia la descarga
                     a.click();
 
                     // Limpiar después de la descarga
@@ -206,10 +278,9 @@
                 }
             });
         });
-
     });
+</script>
 
-    </script>
 @endsection
 
 @push('custom-javascript')

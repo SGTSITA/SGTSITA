@@ -13,9 +13,8 @@
                         <div class="card-header d-flex justify-content-between align-items-center">
                         
                         <h5>Reporte de Utilidad</h5>
-                        <a href="{{ route('dashboard') }}" class="btn btn-sm" style="background: {{$configuracion->color_boton_close}}; color: #ffff; margin-right: 3rem;">
-                                Regresar
-                        </a>
+                        
+                       
                         </div>
                         <div class="card-body">
                            
@@ -23,45 +22,57 @@
                                 <div class="row">
                                     <div class="col-sm-12">
                                         <div class="card">
-                                            <form action="{{ route('advance_utilidad.buscador') }}" method="GET" >
-
-                                                <div class="card-body" style="padding-left: 1.5rem; padding-top: 1rem;">
-                                                    <h5>Filtro</h5>
-                                                        <div class="row">
-                                                            <div class="col-4 mb-3">
-                                                                <label for="user_id">Rango de fecha DE:</label>
-                                                                <input class="form-control" type="date" id="fecha_de" name="fecha_de">
-                                                            </div>
-                                                            <div class="col-4 mb-3">
-                                                                <label for="user_id">Rango de fecha Hasta:</label>
-                                                                <input class="form-control" type="date" id="fecha_hasta" name="fecha_hasta">
-                                                            </div>
-                                                            {{-- <div class="col-4 mb-3">
-                                                                <label for="user_id">Contenedor:</label>
-                                                                <select class="form-control contenedor" name="contenedor" id="contenedor">
-                                                                    <option value="">seleccionar contenedor</option>
-                                                                    @foreach ($contenedores as $contenedor)
-                                                                        <option value="{{ $contenedor->num_contenedor }}">{{ $contenedor->num_contenedor }}</option>
-                                                                    @endforeach
-                                                                </select>
-                                                            </div> --}}
-                                                            <div class="col-3 mb-5">
-                                                                <br>
-                                                                <button class="btn btn-sm mb-0 mt-sm-0 mt-1" type="submit" style="background-color: #F82018; color: #ffffff;">Buscar</button>
-                                                            </div>
-                                                        </div>
-                                                </div>
-                                            </form>
+                                        <form action="{{ route('advance_utilidad.buscador') }}" method="GET">
+    <div class="card-body" style="padding-left: 1.5rem; padding-top: 1rem;">
+        <h5>Filtro</h5>
+        <div class="row">
+            <div class="col-4 mb-3">
+                <label for="fecha_de">Rango de fecha DE:</label>
+                <input 
+                    class="form-control" 
+                    type="date" 
+                    id="fecha_de" 
+                    name="fecha_de" 
+                    value="{{ request('fecha_de') }}"
+                >
+            </div>
+            <div class="col-4 mb-3">
+                <label for="fecha_hasta">Rango de fecha Hasta:</label>
+                <input 
+                    class="form-control" 
+                    type="date" 
+                    id="fecha_hasta" 
+                    name="fecha_hasta" 
+                    value="{{ request('fecha_hasta') }}"
+                >
+            </div>
+            <div class="col-3 mb-5">
+                <br>
+                <button 
+                    class="btn btn-sm mb-0 mt-sm-0 mt-1" 
+                    type="submit" 
+                    style="background-color: #F82018; color: #ffffff;"
+                >
+                    Buscar
+                </button>
+            </div>
+        </div>
+    </div>
+</form>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
                             <div class="table-responsive">
+                            <div class="mb-3">
+                            </div>
+                            <div class="mb-3">
+                            <button type="button" id="selectAllButton" class="btn btn-primary">Seleccionar todo</button>
+                            </div>
                                 <form id="exportForm" action="{{ route('export_utilidad.export') }}" method="POST">
                                     @csrf
-                                    <input type="date" id="fecha_de" name="fecha_de" value="@if(isset($fechaDe)) $fechaDe @else date('d/m/Y') @endif">
-                                    <input type="date" id="fecha_hasta" name="fecha_hasta" value="@if(isset($fechaHasta)) $fechaHasta @else date('d/m/Y') @endif">
+                                    
                                     <table class="table table-flush" id="datatable-search">
                                         <thead class="thead">
                                             <tr>
@@ -147,90 +158,62 @@
 
     <script>
         $(document).ready(function() {
+            // Inicializa Select2 para los selects
             $('.cliente').select2();
             $('.contenedor').select2();
-        });
 
-        const dataTableSearch = new simpleDatatables.DataTable("#datatable-search", {
-        searchable: true,
-        fixedHeight: false
-        });
-
-        $(document).ready(function() {
-            $('#id_client').on('change', function() {
-                var clientId = $(this).val();
-                if(clientId) {
-                    $.ajax({
-                        url: '/subclientes/' + clientId,
-                        type: 'GET',
-                        dataType: 'json',
-                        success: function(data) {
-                            $('#id_subcliente').empty();
-                            $('#id_subcliente').append('<option selected value="">Seleccionar subcliente</option>');
-                            $.each(data, function(key, subcliente) {
-                                $('#id_subcliente').append('<option value="'+ subcliente.id +'">'+ subcliente.nombre +'</option>');
-                            });
-                        }
-                    });
-                } else {
-                    $('#id_subcliente').empty();
-                    $('#id_subcliente').append('<option selected value="">Seleccionar subcliente</option>');
-                }
-            });
-        });
-
-        document.addEventListener('DOMContentLoaded', function() {
-            const selectAllCheckbox = document.getElementById('select-all');
-            const exportButton = document.getElementById('exportButton');
-            const selectedRows = new Set();
-
-            const table = $('#datatable-search').DataTable();
-
-            // Manejar el evento de cambio en el checkbox "select all"
-            selectAllCheckbox.addEventListener('change', function() {
-                const checkboxes = document.querySelectorAll('.select-box');
-                const allChecked = selectAllCheckbox.checked;
-
-                checkboxes.forEach(checkbox => {
-                    checkbox.checked = allChecked;
-                    const rowId = checkbox.value;
-                    if (allChecked) {
-                        selectedRows.add(rowId);
-                    } else {
-                        selectedRows.delete(rowId);
-                    }
-                });
-                toggleExportButton();
+            // Inicializa DataTable
+            const table = new simpleDatatables.DataTable("#datatable-search", {
+                searchable: true,
+                fixedHeight: false
             });
 
-            // Manejar el evento de cambio en cada checkbox individual
+            // Funcionalidad de "Seleccionar todo"
+            $('#selectAllButton').on('click', function() {
+                const checkboxes = $('.select-box');
+                const allChecked = checkboxes.filter(':checked').length === checkboxes.length;
+
+                // Marcar o desmarcar todos los checkboxes
+                checkboxes.prop('checked', !allChecked);
+
+                // Cambiar el texto del botón
+                $(this).text(allChecked ? 'Seleccionar todo' : 'Deseleccionar todo');
+                updateSelectedRows();
+            });
+
+            // Manejo de la selección/deselección individual
             $('#datatable-search tbody').on('change', '.select-box', function() {
-                const rowId = this.value;
-                if (this.checked) {
-                    selectedRows.add(rowId);
-                } else {
-                    selectedRows.delete(rowId);
-                }
-                toggleExportButton();
+                updateSelectedRows();
+                const allChecked = $('.select-box:checked').length === $('.select-box').length;
+                $('#selectAllButton').text(allChecked ? 'Deseleccionar todo' : 'Seleccionar todo');
             });
 
-            function toggleExportButton() {
-                exportButton.disabled = selectedRows.size === 0;
+            // Función para actualizar las filas seleccionadas
+            function updateSelectedRows() {
+                const selectedRows = $('.select-box:checked').map(function() {
+                    return this.value;
+                }).get();
+
+                // Habilitar el botón de exportación si hay filas seleccionadas
+                $('#exportButton').prop('disabled', selectedRows.length === 0);
             }
 
-            // Exportar los datos seleccionados a PDF
-            exportButton.addEventListener('click', function(event) {
-                const selectedData = Array.from(selectedRows);
+            // Exportación de los datos seleccionados
+            $('#exportButton').on('click', function() {
+                const selectedRows = $('.select-box:checked').map(function() {
+                    return this.value;
+                }).get();
+
                 const input = document.createElement('input');
                 input.type = 'hidden';
                 input.name = 'selected_ids';
-                input.value = JSON.stringify(selectedData);
+                input.value = JSON.stringify(selectedRows);
                 document.getElementById('exportForm').appendChild(input);
             });
         });
-
     </script>
 @endsection
+
 @push('custom-javascript')
 <script src="{{asset('js/reporteria/genericExcel.js')}}"></script>
 @endpush

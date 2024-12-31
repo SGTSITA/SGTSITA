@@ -40,44 +40,49 @@ class ReporteriaController extends Controller
     }
 
     public function advance(Request $request) {
-
-        $clientes = Client::where('id_empresa' ,'=',auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
-
-        $proveedores = Proveedor::where('id_empresa' ,'=',auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
-
-
-        $id_client = $request->id_client;
-        $id_subcliente = $request->id_subcliente;
-        $id_proveedor = $request->id_proveedor;
-
-        $cotizaciones = [];
-
-        if ($id_client !== null) {
-            $query = Cotizaciones::where('id_empresa', '=', auth()->user()->id_empresa)
-                ->where('id_cliente', $id_client)
-                ->where(function ($query) {
-                    $query->where('estatus', '=', 'Aprobada')
-                          ->orWhere('estatus', '=', 'Finalizado');
-                })
-                ->where('estatus_pago', '=', '0')
-                ->where('restante', '>', 0);
-
-            // Agrega la condición de proveedor solo si se selecciona uno
-            if ($id_proveedor !== null && $id_proveedor !== '') {
-                $query->whereHas('DocCotizacion.Asignaciones', function ($query) use ($id_proveedor) {
-                    $query->where('id_proveedor', $id_proveedor);
-                });
-            }
-
-            if ($id_subcliente !== null && $id_subcliente !== '') {
-                $query->where('id_subcliente', $id_subcliente);
-            }
-
-            $cotizaciones = $query->get();
+        // Obtener los datos de los filtros
+        $id_client = $request->input('id_client');
+        $id_subcliente = $request->input('id_subcliente');
+        $id_proveedor = $request->input('id_proveedor');
+    
+        // Obtener los clientes, subclientes y proveedores para mostrarlos en el formulario
+        $clientes = Client::where('id_empresa', auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
+        $subclientes = Subclientes::where('id_empresa', auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
+        $proveedores = Proveedor::where('id_empresa', auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
+    
+        // Inicializar la consulta de cotizaciones
+        $cotizaciones = Cotizaciones::where('id_empresa', auth()->user()->id_empresa)
+            ->where(function ($query) {
+                $query->where('estatus', '=', 'Aprobada')
+                    ->orWhere('estatus', '=', 'Finalizado');
+            })
+            ->where('estatus_pago', '=', '0')
+            ->where('restante', '>', 0);  // Solo cotizaciones con saldo restante
+    
+        // Filtrar por cliente si se selecciona uno
+        if ($id_client) {
+            $cotizaciones->where('id_cliente', $id_client);
         }
-
-        return view('reporteria.cxc.index', compact('clientes', 'cotizaciones', 'proveedores'));
+    
+        // Filtrar por subcliente si se selecciona uno
+        if ($id_subcliente) {
+            $cotizaciones->where('id_subcliente', $id_subcliente);
+        }
+    
+        // Filtrar por proveedor si se selecciona uno
+        if ($id_proveedor) {
+            $cotizaciones->whereHas('DocCotizacion.Asignaciones', function ($query) use ($id_proveedor) {
+                $query->where('id_proveedor', $id_proveedor);
+            });
+        }
+    
+        // Ejecutar la consulta
+        $cotizaciones = $cotizaciones->get();
+    
+        // Devolver la vista con los filtros y las cotizaciones
+        return view('reporteria.cxc.index', compact('clientes', 'subclientes', 'proveedores', 'cotizaciones'));
     }
+    
 
     public function getSubclientes($clienteId){
         $subclientes = Subclientes::where('id_cliente', $clienteId)->get();
@@ -221,69 +226,119 @@ class ReporteriaController extends Controller
     }
 
     // ==================== C U E N T A S  P O R  P A G A R ====================
-    public function index_cxp(){
+    public function index_cxp()
+{
+    $proveedores = Proveedor::where('id_empresa', '=', auth()->user()->id_empresa)
+                             ->orderBy('created_at', 'desc')
+                             ->get();
 
-        $proveedores = Proveedor::where('id_empresa' ,'=',auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
+    $clientes = Client::where('id_empresa', '=', auth()->user()->id_empresa)
+                        ->orderBy('nombre', 'asc')
+                        ->get();
+    $subclientes = Subclientes::where('id_empresa' ,'=',auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
 
-        return view('reporteria.cxp.index', compact('proveedores'));
-    }
+    return view('reporteria.cxp.index', compact('proveedores', 'clientes','subclientes'));
+}
+public function advance_cxp(Request $request)
+{
+    // Obtener proveedores y clientes de la empresa actual
+    $proveedores = Proveedor::where('id_empresa', '=', auth()->user()->id_empresa)
+                             ->orderBy('created_at', 'desc')
+                             ->get();
 
-    public function advance_cxp(Request $request) {
-        $proveedores = Proveedor::where('id_empresa' ,'=',auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
-        $id_proveedor = $request->id_proveedor;
+    $clientes = Client::where('id_empresa', '=', auth()->user()->id_empresa)
+                        ->orderBy('nombre', 'asc')
+                        ->get();
+     $subclientes = Subclientes::where('id_empresa' ,'=',auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
 
-        if ($id_proveedor !== null) {
-            $cotizaciones = Cotizaciones::join('docum_cotizacion', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
+    // Obtener el ID del proveedor y del cliente desde la solicitud
+    $id_proveedor = $request->input('id_proveedor');
+
+    // Mostrar advertencia si no se seleccionó proveedor
+    $showWarning = empty($id_proveedor);
+
+    // Inicializar variables
+    $cotizaciones = [];
+    $proveedor_cxp = null;
+
+    // Si se seleccionó un proveedor, filtrar las cotizaciones correspondientes
+    if ($id_proveedor) {
+        $cotizaciones = Cotizaciones::join('docum_cotizacion', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
             ->join('asignaciones', 'docum_cotizacion.id', '=', 'asignaciones.id_contenedor')
-            ->where('cotizaciones.id_empresa' ,'=',auth()->user()->id_empresa)
-            ->where('asignaciones.id_camion', '=', NULL)
+            ->where('cotizaciones.id_empresa', '=', auth()->user()->id_empresa)
+            ->whereNull('asignaciones.id_camion') // Verificar que el camión sea NULL
             ->where(function($query) {
                 $query->where('cotizaciones.estatus', '=', 'Aprobada')
-                    ->orWhere('cotizaciones.estatus', '=', 'Finalizado');
+                      ->orWhere('cotizaciones.estatus', '=', 'Finalizado');
             })
             ->where('asignaciones.id_proveedor', '=', $id_proveedor)
             ->where('cotizaciones.prove_restante', '>', 0)
-            ->select('asignaciones.*', 'docum_cotizacion.num_contenedor', 'docum_cotizacion.id_cotizacion', 'cotizaciones.origen', 'cotizaciones.destino', 'cotizaciones.estatus', 'cotizaciones.prove_restante')
+            ->select(
+                'asignaciones.*',
+                'docum_cotizacion.num_contenedor',
+                'docum_cotizacion.id_cotizacion',
+                'cotizaciones.origen',
+                'cotizaciones.destino',
+                'cotizaciones.estatus',
+                'cotizaciones.prove_restante'
+            )
             ->get();
 
-            $proveedor_cxp = Proveedor::where('id', '=', $request->id_proveedor)->first();
-        }
-
-        return view('reporteria.cxp.index', compact('proveedores', 'cotizaciones', 'proveedor_cxp'));
+        // Obtener datos del proveedor seleccionado
+        $proveedor_cxp = Proveedor::find($id_proveedor);
     }
 
-    public function export_cxp(Request $request){
-        $fecha = date('Y-m-d');
-        $fechaCarbon = Carbon::parse($fecha);
+    // Retornar la vista con los datos necesarios
+    return view('reporteria.cxp.index', compact('proveedores', 'clientes', 'cotizaciones', 'proveedor_cxp', 'showWarning', 'id_proveedor','subclientes'));
+}
 
-        $cotizacionIds = $request->input('selected_ids', []);
-        if (empty($cotizacionIds)) {
-            return redirect()->back()->with('error', 'No se seleccionaron cotizaciones.');
-        }
+    
+public function export_cxp(Request $request)
+{
+    // Obtener la fecha actual
+    $fecha = date('Y-m-d');
+    $fechaCarbon = Carbon::parse($fecha);
 
-        $cotizaciones = Asignaciones::whereIn('id', $cotizacionIds)->get();
-        $bancos_oficiales = Bancos::where('tipo', '=', 'Oficial')->get();
-        $bancos_no_oficiales = Bancos::where('tipo', '=', 'No Oficial')->get();
-
-        $cotizacion = Asignaciones::where('id', $cotizacionIds)->first();
-        $user = User::where('id', '=', auth()->user()->id)->first();
-        if($request->fileType == "xlsx"){
-            Excel::store(new CxpExport($cotizaciones, $fechaCarbon, $bancos_oficiales, $bancos_no_oficiales, $cotizacion, $user), 'cotizaciones_cxp.xlsx','public');
-            return Response::download(storage_path('app/public/cotizaciones_cxp.xlsx'), "cxp.xlsx")->deleteFileAfterSend(true);
-        }else{
-           $pdf = PDF::loadView('reporteria.cxp.pdf', compact('cotizaciones', 'fechaCarbon', 'bancos_oficiales', 'bancos_no_oficiales', 'cotizacion', 'user'))->setPaper('a4', 'landscape');
-
-           $fileName = 'cxp_' . implode('_', $cotizacionIds) . '.pdf';
-
-            // Guardar el PDF en la carpeta storage
-           $pdf->save(storage_path('app/public/' . $fileName));
-
-            // Devolver el archivo PDF como respuesta
-           $filePath = storage_path('app/public/' . $fileName);
-            //  return $pdf->stream();
-           return Response::download($filePath, $fileName)->deleteFileAfterSend(true);
-       }
+    // Obtener los IDs de las cotizaciones seleccionadas
+    $cotizacionIds = $request->input('selected_ids', []);
+    if (empty($cotizacionIds)) {
+        return redirect()->back()->with('error', 'No se seleccionaron cotizaciones.');
     }
+
+    // Cargar las cotizaciones con sus proveedores y cuentas bancarias
+    $cotizaciones = Asignaciones::with('Proveedor.CuentasBancarias')->whereIn('id', $cotizacionIds)->get();
+    $bancos_oficiales = Bancos::where('tipo', '=', 'Oficial')->get();
+    $bancos_no_oficiales = Bancos::where('tipo', '=', 'No Oficial')->get();
+
+    // Obtener la primera cotización (si es necesario)
+    $cotizacion = Asignaciones::where('id', $cotizacionIds)->first();
+
+    // Obtener los datos del usuario autenticado
+    $user = User::where('id', '=', auth()->user()->id)->first();
+
+    // Generar el archivo Excel o PDF según el tipo de archivo solicitado
+    if ($request->fileType == "xlsx") {
+        // Generar el archivo Excel y almacenarlo
+        Excel::store(new CxpExport($cotizaciones, $fechaCarbon, $bancos_oficiales, $bancos_no_oficiales, $cotizacion, $user), 'cotizaciones_cxp.xlsx', 'public');
+        
+        // Devolver el archivo Excel como descarga
+        return Response::download(storage_path('app/public/cotizaciones_cxp.xlsx'), "cxp.xlsx")->deleteFileAfterSend(true);
+    } else {
+        // Generar el archivo PDF
+        $pdf = PDF::loadView('reporteria.cxp.pdf', compact('cotizaciones', 'fechaCarbon', 'bancos_oficiales', 'bancos_no_oficiales', 'cotizacion', 'user'))->setPaper('a4', 'landscape');
+
+        // Crear un nombre para el archivo PDF
+        $fileName = 'cxp_' . implode('_', $cotizacionIds) . '.pdf';
+
+        // Guardar el archivo PDF en la carpeta de almacenamiento
+        $pdf->save(storage_path('app/public/' . $fileName));
+
+        // Devolver el archivo PDF como descarga
+        $filePath = storage_path('app/public/' . $fileName);
+        return Response::download($filePath, $fileName)->deleteFileAfterSend(true);
+    }
+}
+
 
     // ==================== V I A J E S ====================
     public function index_viajes(){

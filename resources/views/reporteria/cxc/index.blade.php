@@ -18,57 +18,61 @@
                 <div class="card-header d-flex justify-content-between align-items-center">
                 
                 <h5>Reporte de Cuentas por Cobrar</h5>
-                <a href="{{ route('dashboard') }}" class="btn btn-sm" style="background: {{$configuracion->color_boton_close}}; color: #ffff; margin-right: 3rem;">
-                        Regresar
-                </a>
                 </div>
                 <div class="card-body">
                     
-                    <div class="container-fluid">
-                        <div class="row">
-                            <div class="col-sm-12">
-                                <div class="card">
-                                    <form action="{{ route('advance_search.buscador') }}" method="GET">
-                                        <div class="card-body" style="padding-left: 1.5rem; padding-top: 1rem;">
-                                            <h5>Filtro</h5>
-                                            <div class="row">
-                                                <div class="col-3">
-                                                    <label for="user_id">Buscar cliente:</label>
-                                                    <select class="form-control cliente" name="id_client" id="id_client">
-                                                        <option selected value="">seleccionar cliente</option>
-                                                        @foreach($clientes as $client)
-                                                        <option value="{{ $client->id }}">{{ $client->nombre }}</option>
-                                                        @endforeach
-                                                    </select>
-                                                </div>
-                                                <div class="col-3">
-                                                    <label for="user_id">Buscar subcliente:</label>
-                                                    <select class="form-control subcliente" name="id_subcliente" id="id_subcliente">
-                                                        <option selected value="">seleccionar cliente</option>
-                                                    </select>
-                                                </div>
-                                                <div class="col-3">
-                                                    <label for="user_id">Buscar proveedor:</label>
-                                                    <select class="form-control proveedor" name="id_proveedor" id="id_proveedor">
-                                                        <option selected value="">seleccionar proveedor</option>
-                                                        @foreach($proveedores as $proveedor)
-                                                        <option value="{{ $proveedor->id }}">{{ $proveedor->nombre }}</option>
-                                                        @endforeach
-                                                    </select>
-                                                </div>
-                                                <div class="col-3">
-                                                    <br>
-                                                    <button class="btn btn-sm mb-0 mt-sm-0 mt-1" type="submit" style="background-color: #F82018; color: #ffffff;">Buscar</button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                <form method="GET" action="{{ route('reporteria.advance') }}">
+    <div class="row">
+        <div class="col-md-3">
+            <label for="id_client">Cliente</label>
+            <select name="id_client" id="id_client" class="form-control">
+                <option value="">Seleccionar Cliente</option>
+                @foreach($clientes as $cliente)
+                    <option value="{{ $cliente->id }}" {{ request('id_client') == $cliente->id ? 'selected' : '' }}>
+                        {{ $cliente->nombre }}
+                    </option>
+                @endforeach
+            </select>
+        </div>
+
+        <div class="col-md-3">
+            <label for="id_subcliente">Subcliente</label>
+            <select name="id_subcliente" id="id_subcliente" class="form-control">
+                <option value="">Seleccionar Subcliente</option>
+                @foreach($subclientes as $subcliente)
+                    <option value="{{ $subcliente->id }}" {{ request('id_subcliente') == $subcliente->id ? 'selected' : '' }}>
+                        {{ $subcliente->nombre }}
+                    </option>
+                @endforeach
+            </select>
+        </div>
+
+        <div class="col-md-3">
+            <label for="id_proveedor">Proveedor</label>
+            <select name="id_proveedor" id="id_proveedor" class="form-control">
+                <option value="">Seleccionar Proveedor</option>
+                @foreach($proveedores as $proveedor)
+                    <option value="{{ $proveedor->id }}" {{ request('id_proveedor') == $proveedor->id ? 'selected' : '' }}>
+                        {{ $proveedor->nombre }}
+                    </option>
+                @endforeach
+            </select>
+        </div>
+        <div class="col-md-3">
+        <button type="submit" class="btn btn-primary mt-3">Buscar</button>  
+        </div>
+    </div>
+
+    
+</form>
+
 
                     <div class="table-responsive">
+                    <div class="mb-3">
+                    </div>
+                    <div class="mb-3">
+                        <button type="button" id="selectAllButton" class="btn btn-primary">Seleccionar todo</button>
+                    </div>
                         <form id="exportForm" action="{{ route('cotizaciones.export') }}" method="POST">
                             @csrf
                             <table class="table table-flush" id="datatable-search">
@@ -118,6 +122,12 @@
                             <input type="hidden" id="txtDataCotizaciones" value="{{json_encode($cotizaciones)}}">
                             @endif
                             <button type="button" id="exportButton" data-filetype="pdf" class="btn btn-primary exportButton">Exportar a PDF</button>
+                            <div id="warningMessage" class="alert alert-warning d-none" role="alert">
+                            <strong>Advertencia!</strong> Debes seleccionar al menos una casilla para visualizar el reporte.
+                            </div>
+                            <a href="{{ route('ruta.previsualizacion') }}" class="btn btn-primary">
+                            Vista Previa
+                            </a>    
                         </form>
                     </div>
                 </div>
@@ -144,7 +154,6 @@
         $('.cliente').select2();
         $('.proveedor').select2();
 
-
         const table = $('#datatable-search').DataTable({
             columnDefs: [{
                 orderable: false,
@@ -159,45 +168,74 @@
             ],
             paging: true,
             pageLength: 30,
-
             select: {
                 style: 'multi',
                 selector: 'td:first-child'
             }
         });
 
-        $("#exportButtonExcel").on('click',()=>{
+        // Actualización del botón "Seleccionar todo" al cambiar la selección de filas
+        table.on('select deselect', function() {
+            // Si todas las filas están seleccionadas, cambia el texto del botón
+            if (table.rows({ selected: true }).count() === table.rows().count()) {
+                $('#selectAllButton').text('Deseleccionar todo');
+            } else {
+                $('#selectAllButton').text('Seleccionar todo');
+            }
+        });
+
+        // Botón "Seleccionar todo" para seleccionar/desmarcar todas las filas
+        $('#selectAllButton').on('click', function() {
+            if (table.rows({ selected: true }).count() === table.rows().count()) {
+                // Si todas las filas están seleccionadas, deseleccionarlas
+                table.rows().deselect(); 
+                $(this).text('Seleccionar todo'); // Cambiar el texto del botón
+            } else {
+                // Si no todas las filas están seleccionadas, seleccionarlas
+                table.rows().select(); 
+                $(this).text('Deseleccionar todo'); // Cambiar el texto del botón
+            }
+        });
+
+        $("#exportButtonExcel").on('click', () => {
             var dataExport = $("#txtDataCotizaciones").val();
             $.ajax({
-                    url:"{{route('cotizaciones.export-excel')}}",
-                    type:'post',
-                    data:{ _token: '{{ csrf_token() }}',dataExport:dataExport},
-                    xhrFields: {
-                        responseType: 'blob' 
-                    },
-                    beforeSend:()=>{},
-                    success:(response)=>{
+                url: "{{route('cotizaciones.export-excel')}}",
+                type: 'post',
+                data: { _token: '{{ csrf_token() }}', dataExport: dataExport },
+                xhrFields: {
+                    responseType: 'blob'
+                },
+                beforeSend: () => { },
+                success: (response) => {
                     var blob = new Blob([response], { type: 'application/xlsx' });
                     var url = URL.createObjectURL(blob);
                     var a = document.createElement('a');
                     a.style.display = 'none';
                     a.href = url;
-                    a.download = 'Cuentas_por_coborar_{{  date('d-m-Y'); }}.xlsx';
+                    a.download = 'Cuentas_por_coborar_{{  date('d-m-Y') }}.xlsx';
                     document.body.appendChild(a);
                     a.click();
                     window.URL.revokeObjectURL(url);
                     document.body.removeChild(a);
-                    },
-                    error:()=>{}
-                });
+                },
+                error: () => { }
+            });
         });
 
         $('.exportButton').on('click', function(event) {
             const selectedIds = table.rows('.selected').data().toArray().map(row => row[1]); // Obtener los IDs seleccionados
 
-            //console.log(selectedIds); // Verificar en la consola del navegador
+            if (selectedIds.length === 0) {
+                // Mostrar el mensaje de advertencia si no hay selecciones
+                $('#warningMessage').removeClass('d-none');
+                return;
+            }
+
+            $('#warningMessage').addClass('d-none');  // Ocultar advertencia
+
             var fileType = $("#"+event.target.id).data('filetype');
-            
+
             // Enviar los IDs seleccionados al controlador por Ajax
             $.ajax({
                 url: '{{ route('cotizaciones.export') }}',
@@ -208,8 +246,8 @@
                     fileType: fileType
                 },
                 xhrFields: {
-                        responseType: 'blob' // Indicar que esperamos una respuesta tipo blob (archivo)
-                    },
+                    responseType: 'blob' // Indicar que esperamos una respuesta tipo blob (archivo)
+                },
                 success: function(response) {
                     // Crear un objeto URL del blob recibido
                     var blob = new Blob([response], { type: 'application/'+fileType });
@@ -219,7 +257,7 @@
                     var a = document.createElement('a');
                     a.style.display = 'none';
                     a.href = url;
-                    a.download = 'Cuentas_por_coborar_{{  date('d-m-Y'); }}.'+fileType;
+                    a.download = 'Cuentas_por_coborar_{{  date('d-m-Y') }}.'+fileType;
                     document.body.appendChild(a);
 
                     // Simular el clic en el enlace para iniciar la descarga
@@ -241,12 +279,9 @@
             });
         });
 
-    });
-
-    $(document).ready(function() {
         $('#id_client').on('change', function() {
             var clientId = $(this).val();
-            if(clientId) {
+            if (clientId) {
                 $.ajax({
                     url: '/subclientes/' + clientId,
                     type: 'GET',
@@ -266,4 +301,5 @@
         });
     });
 </script>
+
 @endsection

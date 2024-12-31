@@ -22,5 +22,11 @@
         "sass": "^1.29.0",
         "sass-loader": "^8.0.2",
         "vue-template-compiler": "^2.6.12"
+    },
+    "dependencies": {
+        "ag-grid-community": "^33.0.3",
+        "ag-grid-react": "^33.0.3",
+        "react": "^19.0.0",
+        "react-dom": "^19.0.0"
     }
 }

@@ -73,7 +73,7 @@ class Asignaciones extends Model
     {
         return $this->belongsTo(Bancos::class, 'id_banco2_dinero_viaje');
     }
-
+    
     protected static function boot()
     {
         parent::boot();
