@@ -44,7 +44,7 @@ class ExternosController extends Controller
                 "Peso" => $c->peso_contenedor,
                 "BoletaLiberacion" => ($c->boleta_liberacion == null) ? false : true,
                 "DODA" => ($c->doda == null) ? false : true,
-                "CartaPorte" => ($c->carta_porte == null) ? false : true,
+                "FormatoCartaPorte" => ($c->carta_porte == null) ? false : true,
                 "PreAlta" => ($c->img_boleta == null) ? false : true,
                 "FechaSolicitud" => Carbon::parse($c->created_at)->format('Y-m-d')
             ];
@@ -70,7 +70,7 @@ class ExternosController extends Controller
                 "Peso" => $c->peso_contenedor,
                 "BoletaLiberacion" => ($c->boleta_liberacion == null) ? false : true,
                 "DODA" => ($c->doda == null) ? false : true,
-                "CartaPorte" => ($c->carta_porte == null) ? false : true
+                "FormatoCartaPorte" => ($c->carta_porte == null) ? false : true
             ];
         });
 
@@ -86,7 +86,7 @@ class ExternosController extends Controller
             ->selectRaw('cotizaciones.*, d.num_contenedor,d.doc_eir,doc_ccp ,d.boleta_liberacion,d.doda')
             ->first();
 
-            if($contenedor->doda != null && $contenedor->boleta_liberacion != null && $contenedor->img_boleta != null){
+            if($contenedor->doda != null && $contenedor->boleta_liberacion != null){
 
                 $contenedor->estatus = 'NO ASIGNADA';
                 
@@ -94,7 +94,7 @@ class ExternosController extends Controller
                 $cliente = Client::where('id',$contenedor->id_cliente)->first();
                 $contenedor->save();
 
-                Mail::to('alejandroc.carlos@gmail.com')->send(new \App\Mail\NotificaCotizacionMail($contenedor,$cliente));
+                Mail::to(env('MAIL_NOTIFICATIONS'))->send(new \App\Mail\NotificaCotizacionMail($contenedor,$cliente));
 
             }
         }catch(\Throwable $t){

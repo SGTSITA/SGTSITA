@@ -119,7 +119,7 @@ class MissionResultRenderer {
      { field: "Peso",width: 100 },
      { field: "BoletaLiberacion",width: 110,cellRenderer: MissionResultRenderer },
      { field: "DODA",width: 110,cellRenderer: MissionResultRenderer },
-     { field: "CartaPorte",width: 110,cellRenderer: MissionResultRenderer },
+     { field: "FormatoCartaPorte",width: 150,cellRenderer: MissionResultRenderer },
      { field: "PreAlta",width: 110,cellRenderer: MissionResultRenderer },
    ],
   
