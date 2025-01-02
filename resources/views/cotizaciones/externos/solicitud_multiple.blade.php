@@ -41,7 +41,7 @@
 <script src="{{ asset('js/sgt/cotizaciones/cotizacion-multiple.js') }}?v={{ filemtime(public_path('js/sgt/cotizaciones/cotizacion-multiple.js')) }}"></script>
 <script>
   $(document).ready(async () =>{
-    let clientes = await getClientes();
+    let clientes = await getClientes({{Auth::User()->id_cliente}});
     const handsontable = buildHandsOntable();
     var btn = document.querySelector('#btnSolicitar');
     btn.addEventListener('click',i=> handsontable.validarSolicitud())

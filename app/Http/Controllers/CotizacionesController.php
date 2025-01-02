@@ -332,7 +332,7 @@ class CotizacionesController extends Controller
                 $numContenedor = $contenedor[1];
 
                 $cotizaciones = new Cotizaciones;
-                $cotizaciones->id_cliente = 11;
+                $cotizaciones->id_cliente = \Auth::User()->id_cliente;
                 $cotizaciones->id_subcliente = $numSubCliente;
                 $cotizaciones->origen = $contenedor[2];
                 $cotizaciones->destino = $contenedor[3];
