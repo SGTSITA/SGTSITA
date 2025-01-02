@@ -173,12 +173,14 @@
             <div class="collapse " id="pagesExamplesReporteria">
                 <ul class="nav ms-4">
                     <li class="nav-item ">
+
                         @can('reportes-cxc')
                         <a class="nav-link {{ (Request::is('reporteria/cotizaciones/cxc*') ? 'show' : '') }}" href="{{ route('index.reporteria') }}">
                         <span class="sidenav-mini-icon"> P </span>
                         <span class="sidenav-normal">Cuentas por cobrar</span>
                         </a>
                         @endcan
+
                         @can('reportes-cxp')
                         <a class="nav-link {{ (Request::is('reporteria/cotizaciones/cxp*') ? 'show' : '') }}" href="{{ route('index_cxp.reporteria') }}">
                         <span class="sidenav-mini-icon"> P </span>
@@ -206,7 +208,8 @@
                             <span class="sidenav-normal">Reporte de documentos</span>
                         </a>
                         @endcan
-                        @can('reportes-luquidados-cxc')
+
+                        @can('reportes-liquidados-cxc')
 
                         <a class="nav-link {{ (Request::is('reporteria/liquidados/cxc*') ? 'show' : '') }}" href="{{ route('index_liquidados_cxc.reporteria') }}">
                             <span class="sidenav-mini-icon"> P </span>
