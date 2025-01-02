@@ -107,12 +107,16 @@ class MissionResultRenderer {
    pagination: true,
       paginationPageSize: 500,
       paginationPageSizeSelector: [200, 500, 1000],
+      rowSelection: {
+        mode: "singleRow",
+        headerCheckbox: false,
+      },
    rowData: [
   
    ],
 
    columnDefs: [
-     { field: "",width: 60, cellRenderer: CustomButtonComponent},
+
      { field: "NumContenedor",filter: true, floatingFilter: true},
      { field: "Origen",filter: true, floatingFilter: true},
      { field: "Destino" },
@@ -133,7 +137,7 @@ class MissionResultRenderer {
   var paginationTitle = document.querySelector("#ag-32-label");
   paginationTitle.textContent = 'Registros por página';
   
-  //const gridApi = gridInstance.gridOptions.api;
+  const btnDocumets = document.querySelector('#btnDocs');
   //const api = createGrid(gridDiv, gridOptions)
    
    function getContenedoresPendientes(estatus = 'En espera'){
@@ -145,6 +149,9 @@ class MissionResultRenderer {
         beforeSend:()=>{},
         success:(response)=>{
             
+          if(response.length > 0){
+            btnDocumets.disabled = false;
+          }
           apiGrid.setGridOption("rowData", response)
         },
         error:()=>{
@@ -153,7 +160,13 @@ class MissionResultRenderer {
     });
    }
 
-   function goToUploadDocuments(numContenedor){
+   function goToUploadDocuments(){
+        let contenedor = apiGrid.getSelectedRows();
+
+        let numContenedor = null;
+        contenedor.forEach(c => numContenedor = c.NumContenedor)
+
+        console.log(numContenedor)
         let titleFileUploader = document.querySelector("#titleFileUploader");
         titleFileUploader.textContent = numContenedor.toUpperCase();
         localStorage.setItem('numContenedor',numContenedor);
@@ -162,18 +175,4 @@ class MissionResultRenderer {
         bootstrapModal.show();
    }
 
- /* document.querySelector('#addRow').addEventListener('click', function () {
-    const nuevaFila = { SKU: '0000001', Producto: 'Queso Argentina', price: 250, electric: true };
-    
-    // Usa applyTransaction para agregar la fila
-    gridApi.applyTransaction({
-      add: [nuevaFila],
-    });
-  });
-  
-  $data = [
-    { NumContenedor: "Tesla", Origen: "Model Y", Destino: 64950, Peso: true,BoletaLiberacion:false ,DODA:true,CartaPorte:false },
-    { NumContenedor: "Ford", Origen: "F-Series", Destino: 33850, Peso: false,BoletaLiberacion:false ,DODA:true,CartaPorte:false },
-    { NumContenedor: "Toyota", Origen: "Corolla", Destino: 29600, Peso: false,BoletaLiberacion:false ,DODA:true,CartaPorte:false },
-   ]
-  */
+   btnDocumets.addEventListener('click',goToUploadDocuments)

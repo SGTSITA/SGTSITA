@@ -16,11 +16,11 @@ const formFieldsContenedores = [
   {'field':'horaFinal', 'index':8,'label':'Hora Final','required': false, "trigger":"none","type":"text"},
 ];
 
-async function getClientes(){
+async function getClientes(clienteId){
   let dataGetClientes =
   $.ajax({
     type: 'GET',
-    url: '/subclientes/11' ,
+    url: '/subclientes/'+clienteId ,
     success: function(data) {
         let dataClientes = [];
         $.each(data, function(key, subcliente) {
