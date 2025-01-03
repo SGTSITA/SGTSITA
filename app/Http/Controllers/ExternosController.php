@@ -94,7 +94,9 @@ class ExternosController extends Controller
                 $cliente = Client::where('id',$contenedor->id_cliente)->first();
                 $contenedor->save();
 
-                Mail::to(env('MAIL_NOTIFICATIONS'))->send(new \App\Mail\NotificaCotizacionMail($contenedor,$cliente));
+                $emailList = [env('MAIL_NOTIFICATIONS'),Auth::User()->email];
+
+                Mail::to($emailList)->send(new \App\Mail\NotificaCotizacionMail($contenedor,$cliente));
 
             }
         }catch(\Throwable $t){
