@@ -11,9 +11,7 @@ Empresas
                 <div class="card">
                     <div class="card-header">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <a href="{{ route('dashboard') }}" class="btn" style="background: {{$configuracion->color_boton_close}}; color: #ffff; margin-right: 3rem;">
-                                Regresar
-                            </a>
+                           
 
                             <h2 id="card_title">
                                Empresas

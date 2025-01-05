@@ -12,9 +12,7 @@
                     <div class="card-body">
                         <h5 class="card-title">Buscador de cotizaciones</h5>
                         <p class="card-text">Seleccione los críterios de busqueda deseados y haga click en Buscar</p>
-                        <a id="backButton" class="btn" style="background: {{$configuracion->color_boton_close}}; color: #ffff; margin-right: 3rem;">
-                            Regresar
-                        </a>
+                       
                         @if(Session::has('message'))
                             <div id ="label-message" class="alert alert-warning">
                                 <strong>{{ Session::get('message') }}</strong>
