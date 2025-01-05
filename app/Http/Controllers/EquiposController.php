@@ -116,7 +116,7 @@ class EquiposController extends Controller
 
         Session::flash('success', 'Se ha guardado sus datos con exito');
         return redirect()->back()
-            ->with('success', 'Proveedor created successfully.');
+            ->with('success', 'Equipo creado con exito.');
 
     }
 
