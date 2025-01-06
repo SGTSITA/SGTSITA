@@ -7,6 +7,7 @@ use App\Models\Cotizaciones;
 use App\Models\Client;
 use Illuminate\Support\Facades\Mail;
 use Carbon\Carbon;
+use Auth;
 
 class ExternosController extends Controller
 {
