@@ -866,7 +866,7 @@ class CotizacionesController extends Controller
                 ->where('id', $c->IdContenedor)
                 ->update([
                     'id_empresa' => $request->empresa,
-                    'estatus' => 'En Espera'
+                    'estatus' => 'PENDIENTE'
                 ]);
         
                 $contenedores = DB::table('docum_cotizacion')
