@@ -30,12 +30,12 @@ class ExternosController extends Controller
     public function getContenedoresPendientes(Request $request){
         $condicion = ($request->estatus == 'En espera') ? '=' : '!=';
         $contenedoresPendientes = Cotizaciones::join('docum_cotizacion as d', 'cotizaciones.id', '=', 'd.id_cotizacion')
-                                                ->where('cotizaciones.id_cliente' ,'=',auth()->user()->id_cliente)
+                                                ->where('cotizaciones.id_cliente' ,'=',Auth::User()->id_cliente)
                                                 ->where('estatus',$condicion,'En espera')
                                                 ->orderBy('created_at', 'desc')
                                                 ->selectRaw('cotizaciones.*, d.num_contenedor,d.doc_eir,doc_ccp ,d.boleta_liberacion,d.doda')
                                                 ->get();
-                                                \Log::channel('daily')->info('getContenedoresPendientes usuario '.auth()->user()->id_cliente.', estatus solicitado '.$request->estatus);
+                                                
 
         $resultContenedores = 
         $contenedoresPendientes->map(function($c){
