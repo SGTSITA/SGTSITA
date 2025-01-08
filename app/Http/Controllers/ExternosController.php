@@ -35,6 +35,7 @@ class ExternosController extends Controller
                                                 ->orderBy('created_at', 'desc')
                                                 ->selectRaw('cotizaciones.*, d.num_contenedor,d.doc_eir,doc_ccp ,d.boleta_liberacion,d.doda')
                                                 ->get();
+                                                \Log::channel('daily')->info('getContenedoresPendientes usuario '.auth()->user()->id_cliente.', estatus solicitado '.$request->estatus);
 
         $resultContenedores = 
         $contenedoresPendientes->map(function($c){
