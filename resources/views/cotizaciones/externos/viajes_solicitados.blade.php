@@ -36,7 +36,7 @@
               <!--begin::Menu item-->
               <div class="menu-item px-3" data-kt-menu-trigger="hover" data-kt-menu-placement="right-start">
                 <!--begin::Menu item-->
-                <a href="#" class="menu-link px-3">
+                <a href="#" class="menu-link px-3" data-bs-toggle="modal" data-bs-target="#kt_modal_top_up_wallet">
                   <span class="menu-title">Ver documentos</span>
                   <span class="menu-arrow"></span>
                 </a>
@@ -88,9 +88,45 @@
       <div class="card-body">
          
             <div class="row">
-                <div id="myGrid" class="col-12 ag-theme-quartz" style="height: 500px">
+                <div id="myGrid" class="col-12 ag-theme-quartz mb-6" style="height: 500px">
                    
                 </div>
+
+                <div class="modal fade" id="kt_modal_top_up_wallet" tabindex="-1" aria-hidden="true">
+                  <!--begin::Modal dialog-->
+                  <div class="modal-dialog modal-fullscreen p-9">
+                      <!--begin::Modal content-->
+                      <div class="modal-content modal-rounded">
+                          <!--begin::Modal header-->
+                          <div class="modal-header py-7 d-flex justify-content-between">
+                              <!--begin::Modal title-->
+                              <div class="mb-3">
+                        <!--begin::Title-->
+                        <h3 class="mb-3">Boleta de liberación</h3>
+                        <!--end::Title-->
+
+                        <!--begin::Description-->
+                        <div class="text-muted fw-semibold fs-5">
+                            Contenedor <span class="fw-bold link-primary">PPPP0009991</span>.
+                        </div>
+                        <!--end::Description-->
+                    </div>
+                           
+                              <div class="btn btn-sm btn-icon btn-active-color-primary" data-bs-dismiss="modal">
+                                <i class="ki-duotone ki-cross fs-1"><span class="path1"></span><span class="path2"></span></i>                
+                              </div>
+                          </div>
+                          <div class="modal-body scroll-y m-5">
+                       
+                          </div>
+                      </div>
+                  </div>
+                </div>
+
+               
+
+              
+             
             </div>
       </div>
     </div>
