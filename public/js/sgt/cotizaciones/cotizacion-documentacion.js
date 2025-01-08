@@ -166,13 +166,51 @@ class MissionResultRenderer {
         let numContenedor = null;
         contenedor.forEach(c => numContenedor = c.NumContenedor)
 
-        console.log(numContenedor)
         let titleFileUploader = document.querySelector("#titleFileUploader");
         titleFileUploader.textContent = numContenedor.toUpperCase();
         localStorage.setItem('numContenedor',numContenedor);
         const modalElement = document.getElementById('kt_modal_fileuploader');
         const bootstrapModal = new bootstrap.Modal(modalElement);
         bootstrapModal.show();
+   }
+
+   function cancelarViajeQuestion(){
+    Swal.fire({
+      title: '¿Desea cancelar el viaje seleccionado?',
+      text:'Está a punto de cancelar el viaje, si está seguro haga click en "Si, Cancelar"',
+      icon: 'question',
+      confirmButtonText: 'Si, Cancelar',
+      cancelButtonText: 'No quiero cancelarlo',
+      showCancelButton: true
+    }).then((respuesta) =>{
+      if(respuesta.isConfirmed){
+        cancelarViajeConfirm();
+      }
+    })
+   }
+
+   function cancelarViajeConfirm(){
+    let contenedor = apiGrid.getSelectedRows();
+
+    let numContenedor = null;
+    contenedor.forEach(c => numContenedor = c.NumContenedor)
+
+    let _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+    $.ajax({
+      url:'/viajes/cancelar',
+      type:'post',
+      data:{_token, numContenedor},
+      beforeSend:()=>{
+
+      },
+      success:(response)=>{
+        Swal.fire(response.Titulo,response.Mensaje, response.TMensaje);
+      },
+      error:(err)=>{
+        Swal.fire("Ocurrio un error","No se pudo procesar la solicitud", "error");
+      }
+    });
    }
 
    btnDocumets.addEventListener('click',goToUploadDocuments)

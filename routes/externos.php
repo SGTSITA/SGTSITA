@@ -16,6 +16,8 @@ Route::group(["prefix" => "viajes"], function(){
     Route::get('documents',[ExternosController::class,'viajesDocuments'])->name('viajes.documents');
     Route::post('documents/pending',[ExternosController::class,'getContenedoresPendientes'])->name('documents.pending');
 
+    Route::post('cancelar',[ExternosController::class,'cancelarViaje'])->name('viajes.cancelar');
+
     Route::get('mis-viajes',[ExternosController::class,'misViajes'])->name('mis.viajes');
 
     Route::post('/get-asignables',[ExternosController::class,'getContenedoresAsignables'])->name('viajes.asignables');

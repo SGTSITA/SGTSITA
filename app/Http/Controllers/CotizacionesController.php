@@ -801,6 +801,7 @@ class CotizacionesController extends Controller
         ->where('d.num_contenedor',$r->numContenedor);
 
         $cotizacion = $cotizacionQuery->first();
+        $estatus = $cotizacion->estatus;
 
         $directorio =  public_path().'/cotizaciones/cotizacion'.$cotizacion->id_cotizacion;
         if (!is_dir($directorio)) {
@@ -847,6 +848,10 @@ class CotizacionesController extends Controller
          if ($r->urlRepo == 'PreAlta')  DocumCotizacion::where('id',$cotizacion->id_cotizacion)->update(['boleta_vacio'=>'si']);
 
          event(new \App\Events\ConfirmarDocumentosEvent($cotizacion->id_cotizacion));
+
+         if($estatus != 'En espera'){
+            event(new \App\Events\NotificaNuevoDocumentoEvent($cotizacion,$r->urlRepo));
+         }
 
 		}
 		return response()->json($upload);
