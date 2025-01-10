@@ -367,7 +367,7 @@
             <th style="padding: 1px; border: 1px solid #000;">Total</th>
             <!-- Columnas dinámicas para los "Facturados A" -->
             @foreach($facturadosPorProveedor as $facturadoA => $total)
-                <th style="padding: 1px; border: 1px solid #000;">{{ $facturadoA }}</th>
+                <th style="padding: 1px; border: 1px solid #000;">{{ $facturadoA }}</th>     
             @endforeach
         </tr>
     </thead>
