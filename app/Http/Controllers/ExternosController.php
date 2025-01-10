@@ -115,10 +115,10 @@ class ExternosController extends Controller
 
         if($cotizacion->estatus == 'Cancelada') return response()->json(["Titulo" => "Previamente Cancelado","Mensaje" => "El contenedor $request->numContenedor fue cancelado previamente","TMensaje" => "info"]);
 
-        $cotizacion->update(['estatus'=>'Cancelada']);
+        Cotizaciones::where('id',$cotizacion->id)->update(['estatus'=>'Cancelada']);
 
         $emailList = [env('MAIL_NOTIFICATIONS'),Auth::User()->email];
-        $cotizacionCancelar = Cotizaciones::find($cotizacion->id)->first();
+        $cotizacionCancelar = Cotizaciones::where('id',$cotizacion->id)->first();
         Mail::to($emailList)->send(new \App\Mail\NotificaCancelarViajeMail($cotizacionCancelar,$request->numContenedor));
 
         return response()->json(["Titulo" => "Cancelado correctamente","Mensaje" => "Se canceló el viaje con el Núm. Contenedor $request->numContenedor","TMensaje" => "success"]);
