@@ -105,7 +105,7 @@ a[x-apple-data-detectors],
                       <td align="center" style="padding:0;Margin:0;padding-top:10px">
                       <p style="Margin:0;mso-line-height-rule:exactly;font-family:'Open Sans', sans-serif;line-height:21px;letter-spacing:0;color:#3C4858;font-size:16px">
                        Hola, el cliente <strong>{{ucfirst(strtolower($cotizacion->cliente->nombre))}} 
-                       </strong>ha cargado cancelado el viaje con número de contenedor {{strtoupper($contenedor)}}
+                       </strong>ha cancelado el viaje con número de contenedor {{strtoupper($contenedor)}}
                       </p>
                       <p style="Margin:0;mso-line-height-rule:exactly;font-family:'Open Sans', sans-serif;line-height:21px;letter-spacing:0;color:#8492A6;font-size:14px">
 
