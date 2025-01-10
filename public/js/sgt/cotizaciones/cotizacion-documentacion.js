@@ -213,4 +213,29 @@ class MissionResultRenderer {
     });
    }
 
+   function fileManager(){
+      var _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+      var url = '/viajes/file-manager';
+
+      let contenedor = apiGrid.getSelectedRows();
+
+      let numContenedor = null;
+      contenedor.forEach(c => numContenedor = c.NumContenedor)
+
+      var form =
+      $('<form action="' + url + '" method="post" target="_blank">' +
+          '<input type="hidden" name="numContenedor" value="'+numContenedor+'" />' +
+          '<input type="hidden" name="_token" value="' + _token + '" />' +
+      '</form>');
+
+      $('body').append(form);
+      form.submit();
+
+      setTimeout(()=>{
+        if (form) {
+            form.remove();
+        }
+    },1000)
+   }
+
    btnDocumets.addEventListener('click',goToUploadDocuments)

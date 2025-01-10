@@ -141,4 +141,14 @@ class ExternosController extends Controller
 
         return redirect()->route($path);
     }
+
+    public function fileManager(Request $r){
+        return view('cotizaciones.externos.file-manager');
+    }
+
+    public function getFilesProperties(Request $r){
+        $documentos = DocumCotizacion::where('id',754)->first();
+        $documentList = ["file" => $documentos->boleta_liberacion,'name'=> "Boleta de liberacion"];
+        return json_enconde($documentList);
+    }
 }

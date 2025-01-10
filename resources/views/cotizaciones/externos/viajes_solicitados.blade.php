@@ -26,45 +26,47 @@
               <!--end::Menu separator-->
               <!--begin::Menu item-->
               <div class="menu-item px-3">
-                <a href="#" class="menu-link px-3"> Editar Viaje </a>
+                <a href="#" class="menu-link px-3 text-muted disabled-link"> Editar Viaje </a>
               </div>
               <div class="menu-item px-3">
                 <a class="menu-link px-3" onclick="cancelarViajeQuestion()"> Cancelar Viaje </a>
               </div>
+
+              <div class="menu-item px-3">
+                <a class="menu-link px-3 text-muted disabled-link" onclick="fileManager()"> Ver Documentos </a>
+              </div>
               <!--end::Menu item-->
      
-              <!--begin::Menu item-->
-              <div class="menu-item px-3" data-kt-menu-trigger="hover" data-kt-menu-placement="right-start">
-                <!--begin::Menu item-->
+              
+              <!--div class="menu-item px-3" data-kt-menu-trigger="hover" data-kt-menu-placement="right-start">
+                
                 <a href="#" class="menu-link px-3" data-bs-toggle="modal" data-bs-target="#kt_modal_top_up_wallet">
                   <span class="menu-title">Ver documentos</span>
                   <span class="menu-arrow"></span>
                 </a>
-                <!--end::Menu item-->
-                <!--begin::Menu sub-->
+              
+               
                 <div class="menu-sub menu-sub-dropdown w-175px py-4">
-                  <!--begin::Menu item-->
+                
                   <div class="menu-item px-3">
                     <a href="#" class="menu-link px-3"> DODA </a>
                   </div>
-                  <!--end::Menu item-->
-                  <!--begin::Menu item-->
+               
                   <div class="menu-item px-3">
                     <a href="#" class="menu-link px-3"> Pre Alta </a>
                   </div>
-                  <!--end::Menu item-->
-                  <!--begin::Menu item-->
+                 
                   <div class="menu-item px-3">
                     <a href="#" class="menu-link px-3"> Boleta de liberación </a>
                   </div>
                   <div class="menu-item px-3">
                     <a href="#" class="menu-link px-3"> Formato Carta Porte </a>
                   </div>
-                  <!--end::Menu item-->
+                 
                 </div>
-                <!--end::Menu sub-->
-              </div>
-              <!--end::Menu item-->
+               
+              </div-->
+              
               
               <!--begin::Menu separator-->
               <div class="separator mt-3 opacity-75"></div>
@@ -137,6 +139,13 @@
 @endsection
 
 @push('javascript')
+<style>
+  .disabled-link {
+  pointer-events: none; /* Desactiva los clics */
+  color: gray; /* Cambia el estilo visual */
+  cursor: default;
+}
+</style>
 <link href="{{asset('assets/metronic/fileuploader/font/font-fileuploader.css')}}" rel="stylesheet">
 <link href="{{asset('assets/metronic/fileuploader/jquery.fileuploader.min.css')}}" media="all" rel="stylesheet">
 <link href="{{asset('assets/metronic/fileuploader/jquery.fileuploader-theme-dragdrop.css')}}" media="all" rel="stylesheet">
