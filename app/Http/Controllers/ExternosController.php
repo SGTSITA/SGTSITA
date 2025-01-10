@@ -89,12 +89,10 @@ class ExternosController extends Controller
             ->first();
 
             if($contenedor->doda != null && $contenedor->boleta_liberacion != null){
-
-                $contenedor->estatus = 'NO ASIGNADA';
-                
-
-                $cliente = Client::where('id',$contenedor->id_cliente)->first();
-                $contenedor->save();
+                $cotizacion = Cotizaciones::where('id',$cotizacion)->first();
+                $cotizacion->estatus = 'NO ASIGNADA';
+                $cliente = Client::where('id',$cotizacion->id_cliente)->first();
+                $cotizacion->save();
 
                 $emailList = [env('MAIL_NOTIFICATIONS'),Auth::User()->email];
 
