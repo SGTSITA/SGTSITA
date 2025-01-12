@@ -17,11 +17,13 @@ use App\Models\GastosOperadores;
 use App\Models\Operador;
 use App\Models\Proveedor;
 use App\Models\Subclientes;
+use App\Models\ClientEmpresa;
 use Illuminate\Http\Request;
-use Session;
-use Carbon\Carbon;
-use DB;
 use Illuminate\Support\Facades\Validator;
+use Carbon\Carbon;
+use Session;
+use DB;
+use Auth;
 
 class CotizacionesController extends Controller
 {
@@ -418,7 +420,12 @@ class CotizacionesController extends Controller
         $cotizacion = Cotizaciones::where('id', '=', $id)->first();
         $documentacion = DocumCotizacion::where('id_cotizacion', '=', $cotizacion->id)->first();
         $gastos_extras = GastosExtras::where('id_cotizacion', '=', $cotizacion->id)->get();
-        $clientes = Client::where('id_empresa' ,'=',auth()->user()->id_empresa)->get();
+        //$clientes = Client::where('id_empresa' ,'=',auth()->user()->id_empresa)->get();
+        $clientes = Client::join('client_empresa as ce','clients.id','=','ce.id_client')
+                            ->where('ce.id_empresa',Auth::User()->id_empresa)
+                            ->where('is_active',1)
+                            ->orderBy('nombre')->get();
+
         $gastos_ope = GastosOperadores::where('id_cotizacion', '=', $cotizacion->id)->get();
         $proveedores = Proveedor::where('id_empresa', '=', auth()->user()->id_empresa)->get();
 
@@ -877,6 +884,18 @@ class CotizacionesController extends Controller
                 $contenedores = DB::table('docum_cotizacion')
                 ->where('id_cotizacion',  '=', $c->IdContenedor)
                 ->update(['id_empresa' => $request->empresa]);
+
+                //Verificar que el cliente este visible en la empresa a la que se asigna
+
+                $cotizacion = Cotizaciones::where('id',$c->IdContenedor)->first();
+              
+                $clientEmpresa = ClientEmpresa::where('id_client',$cotizacion->id_cliente)->where('id_empresa',$request->empresa);
+                if(!$clientEmpresa->exists()){
+                    ClientEmpresa::create([
+                        'id_client' => $cotizacion->id_cliente,
+                        'id_empresa' => $request->empresa
+                    ]);
+                }
             }
 
             DB::commit();
