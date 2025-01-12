@@ -80,6 +80,7 @@ class ClientController extends Controller
             $client->rfc = $request->get('rfc');
             $client->nombre_empresa = $request->get('nombre_empresa');
             $client->fecha = $fechaActual;
+            $client->is_active = 1;
             $client->save();
 
             //Crear usuario para el cliente
