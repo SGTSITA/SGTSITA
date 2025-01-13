@@ -172,7 +172,11 @@ class CotizacionesController extends Controller
     }
 
     public function create(){
-        $clientes = Client::where('id_empresa' ,'=',auth()->user()->id_empresa)->get();
+        //$clientes = Client::where('id_empresa' ,'=',auth()->user()->id_empresa)->get();
+        $clientes = Client::join('client_empresa as ce','clients.id','=','ce.id_client')
+                            ->where('ce.id_empresa',Auth::User()->id_empresa)
+                            ->where('is_active',1)
+                            ->orderBy('nombre')->get();
 
         return view('cotizaciones.create',compact('clientes'));
     }
