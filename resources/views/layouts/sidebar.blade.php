@@ -162,7 +162,7 @@
             </li>
           @endcan
 
-          @can('cuentas-pagar')
+          @can('reportes')
             <a data-bs-toggle="collapse" href="#pagesExamplesReporteria" class="nav-link {{ (Request::is('reporteria/cotizaciones*') ? 'active' : '') }}" aria-controls="pagesExamplesReporteria" role="button" aria-expanded="false">
                 <div class="icon icon-shape icon-sm text-center  me-2 d-flex align-items-center justify-content-center">
                     <img src="{{ asset('img/icon/pdf.webp') }}" alt="" width="20px">
@@ -173,40 +173,55 @@
             <div class="collapse " id="pagesExamplesReporteria">
                 <ul class="nav ms-4">
                     <li class="nav-item ">
+
+                        @can('reportes-cxc')
                         <a class="nav-link {{ (Request::is('reporteria/cotizaciones/cxc*') ? 'show' : '') }}" href="{{ route('index.reporteria') }}">
                         <span class="sidenav-mini-icon"> P </span>
                         <span class="sidenav-normal">Cuentas por cobrar</span>
                         </a>
+                        @endcan
 
+                        @can('reportes-cxp')
                         <a class="nav-link {{ (Request::is('reporteria/cotizaciones/cxp*') ? 'show' : '') }}" href="{{ route('index_cxp.reporteria') }}">
                         <span class="sidenav-mini-icon"> P </span>
                         <span class="sidenav-normal">Cuentas por pagar</span>
                         </a>
-
+                        @endcan
+                        
+                        @can('reportes-viajes')
                         <a class="nav-link {{ (Request::is('reporteria/viajes*') ? 'show' : '') }}" href="{{ route('index_viajes.reporteria') }}">
                         <span class="sidenav-mini-icon"> P </span>
                         <span class="sidenav-normal">Viajes</span>
                         </a>
+                        @endcan
 
+                        @can('reportes-utilidad')
                         <a class="nav-link {{ (Request::is('reporteria/utilidad*') ? 'show' : '') }}" href="{{ route('index_utilidad.reporteria') }}">
                             <span class="sidenav-mini-icon"> P </span>
                             <span class="sidenav-normal">Reporte de utilidad</span>
                         </a>
+                        @endcan
 
+                        @can('reportes-documentos')
                         <a class="nav-link {{ (Request::is('reporteria/documentos*') ? 'show' : '') }}" href="{{ route('index_documentos.reporteria') }}">
                             <span class="sidenav-mini-icon"> P </span>
                             <span class="sidenav-normal">Reporte de documentos</span>
                         </a>
+                        @endcan
+
+                        @can('reportes-liquidados-cxc')
 
                         <a class="nav-link {{ (Request::is('reporteria/liquidados/cxc*') ? 'show' : '') }}" href="{{ route('index_liquidados_cxc.reporteria') }}">
                             <span class="sidenav-mini-icon"> P </span>
                             <span class="sidenav-normal">Liquidados cxc</span>
                         </a>
-
+                        @endcan
+                        @can('reportes-liquidados-cxp')
                         <a class="nav-link {{ (Request::is('reporteria/liquidados/cxp*') ? 'show' : '') }}" href="{{ route('index_liquidados_cxp.reporteria') }}">
                             <span class="sidenav-mini-icon"> P </span>
                             <span class="sidenav-normal">Liquidados cxp</span>
                         </a>
+                        @endcan
                     </li>
                 </ul>
             </div>

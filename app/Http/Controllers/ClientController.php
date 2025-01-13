@@ -80,7 +80,13 @@ class ClientController extends Controller
             $client->rfc = $request->get('rfc');
             $client->nombre_empresa = $request->get('nombre_empresa');
             $client->fecha = $fechaActual;
+            $client->is_active = 1;
             $client->save();
+
+            ClientEmpresa::create([
+                'id_client' => $client->id,
+                'id_empresa' => auth()->user()->id_empresa
+            ]);
 
             //Crear usuario para el cliente
             $welcomePassword = strtoupper(uniqid());
@@ -119,7 +125,11 @@ class ClientController extends Controller
      * Obtiene la lista de clientes del usuario logueado (según la empresa a la que corresponde)
      */
     public function get_list(){
-        $clientes = Client::where('id_empresa',auth()->user()->id_empresa)->orderBy('nombre')->get();
+        $clientes = Client::join('client_empresa as ce','clients.id','=','ce.id_client')
+                            ->where('ce.id_empresa',Auth::User()->id_empresa)
+                            ->where('is_active',1)
+                            ->orderBy('nombre')->get();
+
         $list = $clientes->map(function($c){
             return [
                 "IdCliente" => $c->id,

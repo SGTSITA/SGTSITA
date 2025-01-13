@@ -107,19 +107,23 @@ class MissionResultRenderer {
    pagination: true,
       paginationPageSize: 500,
       paginationPageSizeSelector: [200, 500, 1000],
+      rowSelection: {
+        mode: "singleRow",
+        headerCheckbox: false,
+      },
    rowData: [
   
    ],
 
    columnDefs: [
-     { field: "",width: 60, cellRenderer: CustomButtonComponent},
+
      { field: "NumContenedor",filter: true, floatingFilter: true},
      { field: "Origen",filter: true, floatingFilter: true},
      { field: "Destino" },
      { field: "Peso",width: 100 },
      { field: "BoletaLiberacion",width: 110,cellRenderer: MissionResultRenderer },
      { field: "DODA",width: 110,cellRenderer: MissionResultRenderer },
-     { field: "CartaPorte",width: 110,cellRenderer: MissionResultRenderer },
+     { field: "FormatoCartaPorte",width: 150,cellRenderer: MissionResultRenderer },
      { field: "PreAlta",width: 110,cellRenderer: MissionResultRenderer },
    ],
   
@@ -133,7 +137,7 @@ class MissionResultRenderer {
   var paginationTitle = document.querySelector("#ag-32-label");
   paginationTitle.textContent = 'Registros por página';
   
-  //const gridApi = gridInstance.gridOptions.api;
+  const btnDocumets = document.querySelector('#btnDocs');
   //const api = createGrid(gridDiv, gridOptions)
    
    function getContenedoresPendientes(estatus = 'En espera'){
@@ -145,6 +149,9 @@ class MissionResultRenderer {
         beforeSend:()=>{},
         success:(response)=>{
             
+          if(response.length > 0){
+            btnDocumets.disabled = false;
+          }
           apiGrid.setGridOption("rowData", response)
         },
         error:()=>{
@@ -153,7 +160,12 @@ class MissionResultRenderer {
     });
    }
 
-   function goToUploadDocuments(numContenedor){
+   function goToUploadDocuments(){
+        let contenedor = apiGrid.getSelectedRows();
+
+        let numContenedor = null;
+        contenedor.forEach(c => numContenedor = c.NumContenedor)
+
         let titleFileUploader = document.querySelector("#titleFileUploader");
         titleFileUploader.textContent = numContenedor.toUpperCase();
         localStorage.setItem('numContenedor',numContenedor);
@@ -162,18 +174,68 @@ class MissionResultRenderer {
         bootstrapModal.show();
    }
 
- /* document.querySelector('#addRow').addEventListener('click', function () {
-    const nuevaFila = { SKU: '0000001', Producto: 'Queso Argentina', price: 250, electric: true };
-    
-    // Usa applyTransaction para agregar la fila
-    gridApi.applyTransaction({
-      add: [nuevaFila],
+   function cancelarViajeQuestion(){
+    Swal.fire({
+      title: '¿Desea cancelar el viaje seleccionado?',
+      text:'Está a punto de cancelar el viaje, si está seguro haga click en "Si, Cancelar"',
+      icon: 'question',
+      confirmButtonText: 'Si, Cancelar',
+      cancelButtonText: 'No quiero cancelarlo',
+      showCancelButton: true
+    }).then((respuesta) =>{
+      if(respuesta.isConfirmed){
+        cancelarViajeConfirm();
+      }
+    })
+   }
+
+   function cancelarViajeConfirm(){
+    let contenedor = apiGrid.getSelectedRows();
+
+    let numContenedor = null;
+    contenedor.forEach(c => numContenedor = c.NumContenedor)
+
+    let _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+    $.ajax({
+      url:'/viajes/cancelar',
+      type:'post',
+      data:{_token, numContenedor},
+      beforeSend:()=>{
+
+      },
+      success:(response)=>{
+        Swal.fire(response.Titulo,response.Mensaje, response.TMensaje);
+      },
+      error:(err)=>{
+        Swal.fire("Ocurrio un error","No se pudo procesar la solicitud", "error");
+      }
     });
-  });
-  
-  $data = [
-    { NumContenedor: "Tesla", Origen: "Model Y", Destino: 64950, Peso: true,BoletaLiberacion:false ,DODA:true,CartaPorte:false },
-    { NumContenedor: "Ford", Origen: "F-Series", Destino: 33850, Peso: false,BoletaLiberacion:false ,DODA:true,CartaPorte:false },
-    { NumContenedor: "Toyota", Origen: "Corolla", Destino: 29600, Peso: false,BoletaLiberacion:false ,DODA:true,CartaPorte:false },
-   ]
-  */
+   }
+
+   function fileManager(){
+      var _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+      var url = '/viajes/file-manager';
+
+      let contenedor = apiGrid.getSelectedRows();
+
+      let numContenedor = null;
+      contenedor.forEach(c => numContenedor = c.NumContenedor)
+
+      var form =
+      $('<form action="' + url + '" method="post" target="_blank">' +
+          '<input type="hidden" name="numContenedor" value="'+numContenedor+'" />' +
+          '<input type="hidden" name="_token" value="' + _token + '" />' +
+      '</form>');
+
+      $('body').append(form);
+      form.submit();
+
+      setTimeout(()=>{
+        if (form) {
+            form.remove();
+        }
+    },1000)
+   }
+
+   btnDocumets.addEventListener('click',goToUploadDocuments)
