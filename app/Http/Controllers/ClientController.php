@@ -83,6 +83,11 @@ class ClientController extends Controller
             $client->is_active = 1;
             $client->save();
 
+            ClientEmpresa::create([
+                'id_client' => $client->id,
+                'id_empresa' => auth()->user()->id_empresa
+            ]);
+
             //Crear usuario para el cliente
             $welcomePassword = strtoupper(uniqid());
             $clientUser['name'] = $request->get('nombre');
