@@ -27,12 +27,6 @@ Route::get('exportar-cxc', [ReporteriaController::class, 'exportarCxc']);
 
 Route::post('/exportar-cxc', [ReporteriaController::class, 'export'])->name('exportar.cxc');
 
-
-Route::get('/previsualizacion-cxc', function () {
-    return view('reporteria.cxc.previsualizacion');
-})->name('ruta.previsualizacion');
-
-
 //////////////
 /*Route::get('/index-cxc', function () {
     return view('reporteria.cxc.index');
