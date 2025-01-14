@@ -9,6 +9,19 @@
 <link rel="stylesheet" href="https://cdn.datatables.net/fixedcolumns/5.0.1/css/fixedColumns.bootstrap5.min.css">
 <link rel="stylesheet" href="https://cdn.datatables.net/select/2.0.3/css/select.bootstrap5.min.css">
 @endsection
+<style>
+    /* Centrado de la vista previa del PDF */
+    #pdf-preview-container {
+        text-align: center;
+        margin-top: 20px;
+        margin-bottom: 20px;
+    }
+    #pdf-canvas {
+        border: 1px solid #ddd;
+        margin: 0 auto;
+    }
+
+</style>
 
 @section('content')
 <div class="container-fluid">
@@ -59,7 +72,7 @@
             </select>
         </div>
         <div class="col-md-3">
-        <button type="submit" class="btn btn-primary mt-3">Buscar</button>  
+        <button type="submit" class="btn btn-outline-secondary btn-sm mt-3">Buscar</button>  
         </div>
     </div>
 
@@ -71,7 +84,7 @@
                     <div class="mb-3">
                     </div>
                     <div class="mb-3">
-                        <button type="button" id="selectAllButton" class="btn btn-primary">Seleccionar todo</button>
+                        <button type="button" id="selectAllButton" class="btn btn-outline-secondary btn-sm">Seleccionar todo</button>
                     </div>
                         <form id="exportForm" action="{{ route('cotizaciones.export') }}" method="POST">
                             @csrf
@@ -117,19 +130,21 @@
                                     @endif
                                 </tbody>
                             </table>
-                            @if(isset($cotizaciones) && $cotizaciones != null)
-                            <button type="button" id="exportButtonExcel1" data-filetype="xlsx" class="btn btn-success exportButton">Exportar a Excel</button>
-                            <input type="hidden" id="txtDataCotizaciones" value="{{json_encode($cotizaciones)}}">
-                            @endif
-                            <button type="button" id="exportButton" data-filetype="pdf" class="btn btn-primary exportButton">Vista previa</button>
+                            < <button type="button" id="exportButton" data-filetype="pdf" class="btn btn-outline-secondary btn-sm exportButton">Vista previa</button>
                             <div id="warningMessage" class="alert alert-warning d-none" role="alert">
                             <strong>Advertencia!</strong> Debes seleccionar al menos una casilla para visualizar el reporte.
                             </div>
                             <div id="pdf-preview-container" class="d-none">
-                            <canvas id="pdf-canvas"></canvas>
-                            </div>
-                            <button type="button" id="downloadPdfButton" class="btn btn-success d-none">Exportar a PDF</button>
-                            
+                                <canvas id="pdf-canvas"></canvas>
+                                <div class="button-container">
+                                    @if(isset($cotizaciones) && $cotizaciones != null)
+                                        <button type="button" id="exportButtonExcel1" data-filetype="xlsx" class="btn btn-outline-secondary btn-sm exportButton">Exportar a Excel</button>
+                                        <input type="hidden" id="txtDataCotizaciones" value="{{json_encode($cotizaciones)}}">
+                                    @endif
+                                    <button type="button" id="downloadPdfButton" class="btn btn-outline-secondary btn-sm d-none">Exportar a PDF</button>
+                                
+    </div>
+</div>
                         </form>
                     </div>
                 </div>
@@ -201,89 +216,88 @@
         });
 
        $('.exportButton').on('click', function(event) {
-    const selectedIds = table.rows('.selected').data().toArray().map(row => row[1]); // Obtener los IDs seleccionados
+            const selectedIds = table.rows('.selected').data().toArray().map(row => row[1]); // Obtener los IDs seleccionados
 
-    if (selectedIds.length === 0) {
-        $('#warningMessage').removeClass('d-none');
-        return;
-    }
-
-    $('#warningMessage').addClass('d-none');  // Ocultar advertencia
-
-    var fileType = $("#"+event.target.id).data('filetype');
-
-    // Enviar los IDs seleccionados al controlador por Ajax
-    $.ajax({
-        url: '{{ route('cotizaciones.export') }}',
-        method: 'POST',
-        data: {
-            _token: '{{ csrf_token() }}',
-            selected_ids: selectedIds,
-            fileType: fileType
-        },
-        xhrFields: {
-            responseType: 'blob' // Indicar que esperamos una respuesta tipo blob (archivo)
-        },
-        success: function(response) {
-            var blob = new Blob([response], { type: 'application/' + fileType });
-            var url = URL.createObjectURL(blob);
-
-            if (fileType === 'pdf') {
-                // Mostrar el contenedor del PDF para vista previa
-                $('#pdf-preview-container').removeClass('d-none');
-
-                // Cargar el PDF en el canvas
-                var canvas = document.getElementById('pdf-canvas');
-                var context = canvas.getContext('2d');
-                var pdfUrl = url;
-
-                // Usar PDF.js para renderizar el PDF
-                pdfjsLib.getDocument(pdfUrl).promise.then(function(pdf) {
-                    pdf.getPage(1).then(function(page) {
-                        var scale = 1.5;
-                        var viewport = page.getViewport({ scale: scale });
-
-                        canvas.height = viewport.height;
-                        canvas.width = viewport.width;
-
-                        page.render({
-                            canvasContext: context,
-                            viewport: viewport
-                        });
-                    });
-                });
-
-                // Mostrar el botón de descarga del PDF
-                $('#downloadPdfButton').removeClass('d-none');
-
-                // Agregar un evento para descargar el PDF
-                $('#downloadPdfButton').on('click', function() {
-                    var a = document.createElement('a');
-                    a.href = url;
-                    a.download = 'Cuentas_por_coborar_{{ date('d-m-Y') }}.pdf';
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    // Ocultar la vista previa después de la descarga
-                    $('#pdf-preview-container').addClass('d-none');
-                    window.URL.revokeObjectURL(url);
-                });
-            } else if (fileType === 'xlsx') {
-                // Lógica para descargar el archivo Excel (si es necesario)
-                var a = document.createElement('a');
-                a.href = url;
-                a.download = 'Cuentas_por_coborar_{{ date('d-m-Y') }}.xlsx';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
+            if (selectedIds.length === 0) {
+                $('#warningMessage').removeClass('d-none');
+                return;
             }
-        },
-        error: function(xhr, status, error) {
-            console.error(error);
-            alert('Ocurrió un error al exportar los datos.');
-        }
-    });
-});
+
+            $('#warningMessage').addClass('d-none');  // Ocultar advertencia
+
+            var fileType = $("#"+event.target.id).data('filetype');
+
+            // Enviar los IDs seleccionados al controlador por Ajax
+            $.ajax({
+                url: '{{ route('cotizaciones.export') }}',
+                method: 'POST',
+                data: {
+                    _token: '{{ csrf_token() }}',
+                    selected_ids: selectedIds,
+                    fileType: fileType
+                },
+                xhrFields: {
+                    responseType: 'blob' // Indicar que esperamos una respuesta tipo blob (archivo)
+                },
+                success: function(response) {
+                    var blob = new Blob([response], { type: 'application/' + fileType });
+                    var url = URL.createObjectURL(blob);
+
+                    if (fileType === 'pdf') {
+                        // Mostrar el contenedor del PDF para vista previa
+                        $('#pdf-preview-container').removeClass('d-none');
+
+                        // Cargar el PDF en el canvas
+                        var canvas = document.getElementById('pdf-canvas');
+                        var context = canvas.getContext('2d');
+                        var pdfUrl = url;
+
+                        // Usar PDF.js para renderizar el PDF
+                        pdfjsLib.getDocument(pdfUrl).promise.then(function(pdf) {
+                            pdf.getPage(1).then(function(page) {
+                                var scale = 1.5;
+                                var viewport = page.getViewport({ scale: scale });
+
+                                canvas.height = viewport.height;
+                                canvas.width = viewport.width;
+
+                                page.render({
+                                    canvasContext: context,
+                                    viewport: viewport
+                                });
+                            });
+                        });
+
+                        // Mostrar el botón de descarga del PDF
+                        $('#downloadPdfButton').removeClass('d-none');
+
+                        // Agregar un evento para descargar el PDF
+                        $('#downloadPdfButton').on('click', function() {
+                            var a = document.createElement('a');
+                            a.href = url;
+                            a.download = 'Cuentas_por_coborar_{{ date('d-m-Y') }}.pdf';
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                            // No ocultar la vista previa después de la descarga
+                            window.URL.revokeObjectURL(url);
+                        });
+                    } else if (fileType === 'xlsx') {
+                        // Lógica para descargar el archivo Excel (si es necesario)
+                        var a = document.createElement('a');
+                        a.href = url;
+                        a.download = 'Cuentas_por_coborar_{{ date('d-m-Y') }}.xlsx';
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error(error);
+                    alert('Ocurrió un error al exportar los datos.');
+                }
+            });
+        });
 
         $('#id_client').on('change', function() {
             var clientId = $(this).val();
@@ -306,7 +320,7 @@
             }
         });
     });
-    
 </script>
+
 
 @endsection
