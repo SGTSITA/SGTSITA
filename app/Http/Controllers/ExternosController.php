@@ -5,6 +5,9 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Cotizaciones;
 use App\Models\Client;
+use App\Models\SatFormaPago;
+use App\Models\SatMetodoPago;
+use App\Models\SatUsoCfdi;
 use Illuminate\Support\Facades\Mail;
 use Carbon\Carbon;
 use Auth;
@@ -12,7 +15,10 @@ use Auth;
 class ExternosController extends Controller
 {
     public function solicitudSimple(){
-        return view('cotizaciones.externos.solicitud_simple');
+        $formasPago = SatFormaPago::get();
+        $metodosPago = SatMetodoPago::get();
+        $usoCfdi = SatUsoCfdi::get();
+        return view('cotizaciones.externos.solicitud_simple',["formasPago" => $formasPago, "metodosPago" => $metodosPago, "usoCfdi" => $usoCfdi]);
     }
 
     public function solicitudMultiple(){
