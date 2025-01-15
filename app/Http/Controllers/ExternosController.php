@@ -57,22 +57,27 @@ class ExternosController extends Controller
 
     public function getContenedoresAsignables(Request $request){
         $contenedoresPendientes = Cotizaciones::join('docum_cotizacion as d', 'cotizaciones.id', '=', 'd.id_cotizacion')
+                                                ->join('clients as cl','cotizaciones.id_cliente','=','cl.id')
+                                                ->join('subclientes as sc','cotizaciones.id_subcliente','=','sc.id')
                                                 ->where('estatus','=','NO ASIGNADA')
                                                 ->orderBy('created_at', 'desc')
-                                                ->selectRaw('cotizaciones.*, d.num_contenedor,d.doc_eir,doc_ccp ,d.boleta_liberacion,d.doda')
+                                                ->selectRaw('cotizaciones.*, d.num_contenedor,d.doc_eir,doc_ccp ,d.boleta_liberacion,d.doda,cl.nombre as cliente,sc.nombre as subcliente')
                                                 ->get();
 
         $resultContenedores = 
         $contenedoresPendientes->map(function($c){
             return [
                 "IdContenedor" => $c->id,
+                "Cliente" => $c->cliente,
+                "SubCliente" => $c->subcliente,
                 "NumContenedor" => $c->num_contenedor,
                 "Origen" => $c->origen, 
                 "Destino" => $c->destino, 
                 "Peso" => $c->peso_contenedor,
                 "BoletaLiberacion" => ($c->boleta_liberacion == null) ? false : true,
                 "DODA" => ($c->doda == null) ? false : true,
-                "FormatoCartaPorte" => ($c->carta_porte == null) ? false : true
+                "FormatoCartaPorte" => ($c->carta_porte == null) ? false : true,
+                "IdCliente" => $c->id_cliente,
             ];
         });
 

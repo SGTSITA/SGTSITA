@@ -891,12 +891,12 @@ class CotizacionesController extends Controller
 
                 //Verificar que el cliente este visible en la empresa a la que se asigna
 
-                $cotizacion = Cotizaciones::where('id',$c->IdContenedor)->first();
+               // $cotizacion = Cotizaciones::where('id',$c->IdContenedor)->first();
               
-                $clientEmpresa = ClientEmpresa::where('id_client',$cotizacion->id_cliente)->where('id_empresa',$request->empresa);
+                $clientEmpresa = ClientEmpresa::where('id_client',$c->IdCliente)->where('id_empresa',$request->empresa);
                 if(!$clientEmpresa->exists()){
                     ClientEmpresa::create([
-                        'id_client' => $cotizacion->id_cliente,
+                        'id_client' => $c->IdCliente,
                         'id_empresa' => $request->empresa
                     ]);
                 }
