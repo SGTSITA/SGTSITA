@@ -32,6 +32,18 @@ const formFieldsBloque = [
     {'field':'bloque_hora_f','id':'bloque_hora_f','label':'Hora Fin','required': false, "type":"text", "trigger":"bloque"},
 ]
 
+const formFieldsMec = [
+    {'field':'direccion_entrega','id':'direccion_entrega','label':'Dirección Entrega','required': true, "type":"text", "trigger":"none"},
+    {'field':'direccion_recinto','id':'direccion_recinto','label':'Dirección recinto','required': false, "type":"text", "trigger":"text-recinto"}
+]
+
+const formFieldsFacturacion = [
+    {'field':'id_uso_cfdi','id':'id_uso_cfdi','label':'Seleccione Uso del CFDI','required': true, "type":"text", "trigger":"none"},
+    {'field':'id_forma_pago','id':'id_forma_pago','label':'Selecciones Forma de Pago','required': true, "type":"text", "trigger":"none"},
+    {'field':'id_metodo_pago','id':'id_metodo_pago','label':'Seleccione Método de Pago','required': true, "type":"text", "trigger":"none"}
+
+]
+
 const formFieldsProveedor = [
     {'field':'precio_viaje','id':'precio_proveedor','label':'Costo Viaje','required': false, "type":"money"},
     {'field':'burreo','id':'burreo_proveedor','label':'Burreo Proveedor','required': false, "type":"money"},
@@ -337,10 +349,61 @@ $("#cotizacionCreate").on("submit", function(e){
    formData["id_subcliente"] = selectSubClient.value;
 
    var uuid = localStorage.getItem('uuid');
+   //Validaciones MEC
    if(uuid != null){
     formData["uuid"] = uuid;
 
     passValidation = formFieldsBloque.every((item) => {
+        let trigger = item.trigger;
+        let field = document.getElementById(item.field);
+
+        if(trigger != "none"){
+            let primaryField = document.getElementById(trigger);
+            if(primaryField.value.length > 0 && field.value.length == 0){
+                Swal.fire("El campo "+item.label+" es obligatorio","Parece que no ha proporcionado información en el campo "+item.label,"warning");
+                return false;
+            }
+        }
+        
+        if(field){
+            if(item.required === true && field.value.length == 0){
+                Swal.fire("El campo "+item.label+" es obligatorio","Parece que no ha proporcionado información en el campo "+item.label,"warning");
+                return false;
+            }
+        }
+        return true;
+
+    });
+
+    if(!passValidation) return passValidation;
+
+    //formFieldsMec
+    passValidation = formFieldsMec.every((item) => {
+        let trigger = item.trigger;
+        let field = document.getElementById(item.field);
+
+        if(trigger != "none"){
+            let primaryField = document.getElementById(trigger);
+            if(primaryField.value.length > 0 && field.value.length == 0){
+                Swal.fire("El campo "+item.label+" es obligatorio","Parece que no ha proporcionado información en el campo "+item.label,"warning");
+                return false;
+            }
+        }
+        
+        if(field){
+            if(item.required === true && field.value.length == 0){
+                Swal.fire("El campo "+item.label+" es obligatorio","Parece que no ha proporcionado información en el campo "+item.label,"warning");
+                return false;
+            }
+        }
+        return true;
+
+    });
+
+    if(!passValidation) return passValidation;
+
+    //Validaciones Facturacion 
+    passValidation = formFieldsFacturacion.every((item) => {
         let trigger = item.trigger;
         let field = document.getElementById(item.field);
 

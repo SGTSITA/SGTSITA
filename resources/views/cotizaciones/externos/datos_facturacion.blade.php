@@ -43,7 +43,7 @@
    <div class="fv-row row mb-3">
       <div class="col-6">
       <div class="d-flex align-items-center">
-           <div class="fs-4 fw-bold" id="id_uso_cfdi">Uso CFDI:</div>
+           <div class="fs-4 fw-bold" id="id_uso_cfdi_label">Uso CFDI:</div>
          </div>
         <select class="form-select id_uso_cfdi d-inline-block" id="id_uso_cfdi" name="id_uso_cfdi">
             <option value="">Seleccionar Uso del CFDI</option>

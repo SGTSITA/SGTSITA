@@ -49,10 +49,12 @@
 
      let condicionRecinto = document.querySelectorAll('.recinto');
      let inputRecinto = document.querySelector('#input-recinto');
+     let textRecinto = document.querySelector('#text-recinto');
 
      condicionRecinto.forEach(function(elemento) {
       elemento.addEventListener('click', function() {
         inputRecinto.classList.toggle('d-none',elemento.attributes['data-kt-plan'].value != 'recinto-si') 
+        textRecinto.value = (elemento.attributes['data-kt-plan'].value != 'recinto-si') ? '' : 'recinto-si';
       });
     });
   })
