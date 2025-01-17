@@ -271,6 +271,16 @@ class CotizacionesController extends Controller
         $cotizaciones->total = $total;
         $cotizaciones->restante = $cotizaciones->total;
         $cotizaciones->estatus_pago = '0';
+
+        if($request->has('uuid')){
+            $cotizaciones->sat_uso_cfdi_id = $request->id_uso_cfdi;
+            $cotizaciones->sat_forma_pago_id = $request->id_forma_pago;
+            $cotizaciones->sat_metodo_pago_id = $request->id_metodo_pago;
+            $cotizaciones->direccion_entrega = $request->direccion_entrega;
+            $cotizaciones->direccion_recinto = $request->direccion_recinto;
+            $cotizaciones->uso_recinto = ($request->text_recinto == 'recinto-si') ? 1 : 0;
+        }
+
         $cotizaciones->save();
 
         $doc_cotizaciones = Cotizaciones::where('id', '=', $cotizaciones->id)->first();

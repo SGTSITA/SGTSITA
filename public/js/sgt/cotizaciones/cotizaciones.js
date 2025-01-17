@@ -33,8 +33,9 @@ const formFieldsBloque = [
 ]
 
 const formFieldsMec = [
+    {'field':'text_recinto','id':'text_recinto','label':'recinto','required': false, "type":"text", "trigger":"none"},
     {'field':'direccion_entrega','id':'direccion_entrega','label':'Dirección Entrega','required': true, "type":"text", "trigger":"none"},
-    {'field':'direccion_recinto','id':'direccion_recinto','label':'Dirección recinto','required': false, "type":"text", "trigger":"text-recinto"}
+    {'field':'direccion_recinto','id':'direccion_recinto','label':'Dirección recinto','required': false, "type":"text", "trigger":"text_recinto"}
 ]
 
 const formFieldsFacturacion = [
@@ -371,6 +372,8 @@ $("#cotizacionCreate").on("submit", function(e){
                 return false;
             }
         }
+        
+        formData[item.field] = field.value;
         return true;
 
     });
@@ -396,6 +399,8 @@ $("#cotizacionCreate").on("submit", function(e){
                 return false;
             }
         }
+
+        formData[item.field] = field.value;
         return true;
 
     });
@@ -421,6 +426,8 @@ $("#cotizacionCreate").on("submit", function(e){
                 return false;
             }
         }
+
+        formData[item.field] = field.value;
         return true;
 
     });

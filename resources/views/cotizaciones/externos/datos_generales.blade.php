@@ -194,7 +194,7 @@
             <!--end::Nav link-->
         </div> 
 
-        <input type="text" name="text-recinto" id="text-recinto" class="d-none">
+        <input type="text" name="text_recinto" id="text_recinto" class="d-none">
 
         <div class="input-group d-none" id="input-recinto">
             <span class="input-group-text">Dirección recinto</span>

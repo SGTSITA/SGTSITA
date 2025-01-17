@@ -49,7 +49,7 @@
 
      let condicionRecinto = document.querySelectorAll('.recinto');
      let inputRecinto = document.querySelector('#input-recinto');
-     let textRecinto = document.querySelector('#text-recinto');
+     let textRecinto = document.querySelector('#text_recinto');
 
      condicionRecinto.forEach(function(elemento) {
       elemento.addEventListener('click', function() {
