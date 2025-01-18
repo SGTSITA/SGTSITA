@@ -857,12 +857,13 @@ class CotizacionesController extends Controller
          switch($r->urlRepo){
             case 'BoletaLib': $update = ["boleta_liberacion" => $item['name']]; break;
             case 'Doda': $update = ["doda" => $item['name']]; break;
-            case 'CartaPorte': $update = ["carta_porte" => $item['name']]; break;
+            case 'CartaPorte': $update = ["doc_ccp" => $item['name'],"ccp" => "si"]; break;
             case 'PreAlta': $update = ["img_boleta" => $item['name']]; break;
 
          }
-         
-         ($r->urlRepo != 'CartaPorte' && $r->urlRepo != 'PreAlta' ) 
+
+        
+        ($r->urlRepo != 'PreAlta' ) 
          ? DocumCotizacion::where('id',$cotizacion->id_cotizacion)->update($update)
          : Cotizaciones::where('id',$cotizacion->id_cotizacion)->update($update);
 
