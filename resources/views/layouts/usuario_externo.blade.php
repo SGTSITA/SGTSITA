@@ -107,7 +107,7 @@
             <div class="d-flex flex-stack">
               <div class="d-flex align-items-center">
                 <div class="symbol symbol-circle symbol-40px">
-                  <img src="/assets/metronic/media/avatars/300-1.jpg" alt="photo" />
+                  <img src="/img/icon-user.jpg" alt="photo" />
                 </div>
                 <div class="ms-2">
                   <a href="#" class="text-gray-800 text-hover-primary fs-6 fw-bold lh-1">{{Auth::User()->name}}</a>

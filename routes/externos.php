@@ -20,7 +20,7 @@ Route::group(["prefix" => "viajes"], function(){
 
     Route::get('mis-viajes',[ExternosController::class,'misViajes'])->name('mis.viajes');
     Route::post('file-manager',[ExternosController::class,'fileManager'])->name('mis.file-manager');
-    Route::get('file-manager/get-file-list',[ExternosController::class,'fileManager'])->name('viajes.files');
+    Route::get('file-manager/get-file-list/{numContenedor}',[ExternosController::class,'getFilesProperties'])->name('viajes.files');
 
     Route::post('/get-asignables',[ExternosController::class,'getContenedoresAsignables'])->name('viajes.asignables');
 });

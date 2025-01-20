@@ -110,18 +110,21 @@ function resetUploadConfig(){
             }, 400);
 
           //  const gridApi = gridOptions.api;
-            let dataGrid = apiGrid.getGridOption('rowData');
-            var rowIndex = dataGrid.findIndex(d => d.NumContenedor == numContenedor)
-            
-            const colId = fileSettings.agGrid;
+            if(apiGrid){
+                let dataGrid = apiGrid.getGridOption('rowData');
+                var rowIndex = dataGrid.findIndex(d => d.NumContenedor == numContenedor)
+                
+                const colId = fileSettings.agGrid;
 
-            // Obtener el nodo de la fila
-            const rowNode = apiGrid.getDisplayedRowAtIndex(rowIndex);
+                // Obtener el nodo de la fila
+                const rowNode = apiGrid.getDisplayedRowAtIndex(rowIndex);
 
-            // Establecer un nuevo valor en la celda
-            if (rowNode) {
-                rowNode.setDataValue(colId, true);
+                // Establecer un nuevo valor en la celda
+                if (rowNode) {
+                    rowNode.setDataValue(colId, true);
+                }
             }
+            
 
             toastr.options = {
                 "closeButton": true,

@@ -33,7 +33,7 @@
               </div>
 
               <div class="menu-item px-3">
-                <a class="menu-link px-3 text-muted disabled-link" onclick="fileManager()"> Ver Documentos </a>
+                <a class="menu-link px-3 " onclick="fileManager()"> Ver Documentos </a>
               </div>
               <!--end::Menu item-->
      
@@ -161,4 +161,12 @@
         adjuntarDocumentos();
     });
 </script>
+<style>
+  .rag-red {
+    background-color: #cc222244;
+  }
+  .rag-green {
+      background-color: #198754;
+  }
+</style>
 @endpush

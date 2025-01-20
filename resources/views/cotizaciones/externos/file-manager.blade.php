@@ -3,6 +3,9 @@
 @section('WorkSpace')
 
 <div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Núm Contenedor:  <span id="numContenedor" style="text-transform: uppercase">{{$numContenedor}}</span></h3>
+    </div>
     <div class="card-body">
 
 <!--begin::Wrapper-->
@@ -16,15 +19,9 @@
 
     <!--begin::Toolbar-->
     <div class="d-flex justify-content-end" data-kt-docs-table-toolbar="base">
-        <!--begin::Filter-->
-        <button type="button" class="btn btn-sm btn-light-primary me-3" data-bs-toggle="tooltip" title="Coming Soon">
-            <i class="ki-duotone ki-filter fs-2"><span class="path1"></span><span class="path2"></span></i>
-            Filter
-        </button>
-        <!--end::Filter-->
-
+      
         <!--begin::Add customer-->
-        <button type="button" class="btn btn-sm btn-primary" >
+        <button type="button" class="btn btn-sm btn-primary" name="btnDocs" id="btnDocs">
         <i class="ki-duotone ki-folder-up fs-2"><span class="path1"></span><span class="path2"></span></i>
             Agregar documento
         </button>
@@ -35,7 +32,7 @@
     <!--begin::Group actions-->
     <div class="d-flex justify-content-end align-items-center d-none" data-kt-docs-table-toolbar="selected">
         <div class="fw-bold me-5">
-            <span class="me-2" data-kt-docs-table-select="selected_count"></span> Selected
+            Archivos seleccionados: <span class="me-2" data-kt-docs-table-select="selected_count"></span> 
         </div>
 
         <button type="button" class="btn btn-sm btn-danger" data-kt-docs-table-select="delete_selected">
@@ -59,20 +56,31 @@
         <th>Tipo</th>
         <th>Tamaño</th>
         <th>Fecha documento</th>
-        <th>Created Date</th>
-        <th class="text-end min-w-100px">Actions</th>
+        <th class="text-end min-w-100px"></th>
     </tr>
     </thead>
     <tbody class="text-gray-600 fw-semibold">
+    
+    
     </tbody>
 </table>
 <!--end::Datatable-->
     </div>
 </div>
-
+@include('cotizaciones.externos.modal_fileuploader')
 @endsection
 
 @push('javascript')
+<script src="{{ asset('js/sgt/common.js') }}?v={{ filemtime(public_path('js/sgt/common.js')) }}"></script>
+<link href="{{asset('assets/metronic/fileuploader/font/font-fileuploader.css')}}" rel="stylesheet">
+<link href="{{asset('assets/metronic/fileuploader/jquery.fileuploader.min.css')}}" media="all" rel="stylesheet">
+<link href="{{asset('assets/metronic/fileuploader/jquery.fileuploader-theme-dragdrop.css')}}" media="all" rel="stylesheet">
+<script src="{{asset('assets/metronic/fileuploader/jquery.fileuploader.min.js')}}" type="text/javascript"></script>
+<script src="{{asset('assets/metronic/fileuploader/cotizacion-cliente-externo.js')}}" type="text/javascript"></script>
 <script src="{{ asset('js/sgt/cotizaciones/file-manager.js') }}?v={{ filemtime(public_path('js/sgt/cotizaciones/file-manager.js')) }}"></script>
-
+<script>
+    $(document).ready(()=>{
+        adjuntarDocumentos();
+    })
+</script>
 @endpush
