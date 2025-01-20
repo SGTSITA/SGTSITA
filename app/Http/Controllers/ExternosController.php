@@ -54,7 +54,7 @@ class ExternosController extends Controller
                 "Peso" => $c->peso_contenedor,
                 "BoletaLiberacion" => ($c->boleta_liberacion == null) ? false : true,
                 "DODA" => ($c->doda == null) ? false : true,
-                "FormatoCartaPorte" => ($c->carta_porte == null) ? false : true,
+                "FormatoCartaPorte" => ($c->doc_ccp == null) ? false : true,
                 "PreAlta" => ($c->img_boleta == null) ? false : true,
                 "FechaSolicitud" => Carbon::parse($c->created_at)->format('Y-m-d')
             ];
@@ -81,7 +81,7 @@ class ExternosController extends Controller
                 "Peso" => $c->peso_contenedor,
                 "BoletaLiberacion" => ($c->boleta_liberacion == null) ? false : true,
                 "DODA" => ($c->doda == null) ? false : true,
-                "FormatoCartaPorte" => ($c->carta_porte == null) ? false : true
+                "FormatoCartaPorte" => ($c->doc_ccp == null) ? false : true
             ];
         });
 
@@ -162,7 +162,8 @@ class ExternosController extends Controller
                 'fileName'=> $title,
                 "fileDate" => CommonTrait::obtenerFechaEnLetra(date("Y-m-d", filemtime($path))),
                 "fileSize" => CommonTrait::calculateFileSize(filesize($path)),
-                "fileType" => pathinfo($path, PATHINFO_EXTENSION)
+                "fileType" => pathinfo($path, PATHINFO_EXTENSION),
+                "identifier" => $id
                 ];
         }else{
             return [];

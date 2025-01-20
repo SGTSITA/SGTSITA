@@ -185,6 +185,8 @@ class MissionResultRenderer {
    }
 
    function cancelarViajeQuestion(){
+    let contenedor = apiGrid.getSelectedRows();
+    if(contenedor.length <= 0) return
     Swal.fire({
       title: '¿Desea cancelar el viaje seleccionado?',
       text:'Está a punto de cancelar el viaje, si está seguro haga click en "Si, Cancelar"',
@@ -201,6 +203,7 @@ class MissionResultRenderer {
 
    function cancelarViajeConfirm(){
     let contenedor = apiGrid.getSelectedRows();
+    if(contenedor.length <= 0) return
 
     let numContenedor = null;
     contenedor.forEach(c => numContenedor = c.NumContenedor)
@@ -229,11 +232,13 @@ class MissionResultRenderer {
 
       let contenedor = apiGrid.getSelectedRows();
 
+      if(contenedor.length <= 0) return
+
       let numContenedor = null;
       contenedor.forEach(c => numContenedor = c.NumContenedor)
 
       var form =
-      $('<form action="' + url + '" method="post" target="_blank">' +
+      $('<form action="' + url + '" method="post" >' +
           '<input type="hidden" name="numContenedor" value="'+numContenedor+'" />' +
           '<input type="hidden" name="_token" value="' + _token + '" />' +
       '</form>');

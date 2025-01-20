@@ -43,14 +43,15 @@ let dt = $("#kt_datatable_example_1").DataTable({
         { data: 'fileType' },
         { data: 'fileSize' },
         { data: 'fileDate' },
-        { data: 'filePath' },
-    
+        { data: null },
+      
     ],
     columnDefs: [
         {
             targets: 0,
             orderable: false,
             render: function (data) {
+                
                 return `
                     <div class="form-check form-check-sm form-check-custom form-check-solid">
                         <input class="form-check-input" type="checkbox" value="${data}" />
@@ -58,16 +59,16 @@ let dt = $("#kt_datatable_example_1").DataTable({
             }
         },
         {
-                targets: -1,
-                data: null,
+                targets: 5,
+                
                 orderable: false,
               
                 render: function (data, type, row) {
+                    console.log(data)
                     return `
-                        <a href="#" target="_blank" class="btn btn-active-primary btn-sm">
+                        <a href="/cotizaciones/cotizacion${data.identifier}/${data.filePath}" target="_blank" class="btn btn-active-primary btn-sm">
                             Ver Archivo
-                        </a>
-                        
+                        </a>    
                     `;
                 },
             },
@@ -81,7 +82,7 @@ filterSearch.addEventListener('keyup', function (e) {
 });
 
 dt.on('draw', function () {
-        initToggleToolbar();
+      //  initToggleToolbar();
         toggleToolbars();
      //   handleDeleteRows();
         KTMenu.createInstances();
@@ -111,13 +112,13 @@ dt.on('draw', function () {
         deleteSelected.addEventListener('click', function () {
             // SweetAlert2 pop up --- official docs reference: https://sweetalert2.github.io/
             Swal.fire({
-                text: "Are you sure you want to delete selected customers?",
-                icon: "warning",
+                text: "¿Esta seguro que quiere eliminar los archivos seleccionados?",
+                icon: "question",
                 showCancelButton: true,
                 buttonsStyling: false,
                 showLoaderOnConfirm: true,
-                confirmButtonText: "Yes, delete!",
-                cancelButtonText: "No, cancel",
+                confirmButtonText: "Si, Eliminar!",
+                cancelButtonText: "No",
                 customClass: {
                     confirmButton: "btn fw-bold btn-danger",
                     cancelButton: "btn fw-bold btn-active-light-primary"
@@ -150,15 +151,7 @@ dt.on('draw', function () {
                         headerCheckbox.checked = false;
                     });
                 } else if (result.dismiss === 'cancel') {
-                    Swal.fire({
-                        text: "Selected customers was not deleted.",
-                        icon: "error",
-                        buttonsStyling: false,
-                        confirmButtonText: "Ok, got it!",
-                        customClass: {
-                            confirmButton: "btn fw-bold btn-primary",
-                        }
-                    });
+                  
                 }
             });
         });}

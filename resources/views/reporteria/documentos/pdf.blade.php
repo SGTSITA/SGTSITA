@@ -5,6 +5,13 @@
     @endphp
     @if(!isset($isExcel))
     <style>
+         body {
+            font-family: Arial, sans-serif;
+            font-size: 8px; /* Tamaño de fuente reducido */
+            margin: 0; 
+            padding: 0;
+        }
+        
         .registro-contenedor {
             border: 2px solid #000; /* Cambia el color y grosor del borde según tus necesidades */
             margin-bottom: 20px; /* Espacio entre cada registro */
