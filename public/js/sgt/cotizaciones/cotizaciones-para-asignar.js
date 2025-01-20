@@ -117,13 +117,17 @@ class MissionResultRenderer {
 
    columnDefs: [
      { field: "IdContenedor", hide: true},
-     { field: "NumContenedor",filter: true, floatingFilter: true},
-     { field: "Origen",filter: true, floatingFilter: true},
-     { field: "Destino" },
-     { field: "Peso",width: 100 },
+     { field: "IdCliente", hide: true},
      { field: "BoletaLiberacion",width: 110,cellRenderer: MissionResultRenderer },
      { field: "DODA",width: 110,cellRenderer: MissionResultRenderer },
      { field: "FormatoCartaPorte",width: 110,cellRenderer: MissionResultRenderer },
+     { field: "NumContenedor",filter: true, floatingFilter: true},
+     { field: "Cliente",filter: true, floatingFilter: true},
+     { field: "SubCliente",filter: true, floatingFilter: true},    
+     { field: "Origen",filter: true, floatingFilter: true},
+     { field: "Destino" },
+     { field: "Peso",width: 100 },
+     
    ],
   
    localeText: localeText

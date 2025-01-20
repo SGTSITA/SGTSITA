@@ -97,8 +97,8 @@
 @endif
 
 
-
 <head>
+    
     <meta charset="UTF-8">
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <title>Cuentas por cobrar</title>
@@ -191,30 +191,31 @@
 
 
     @php
-                    // Recopila los IDs de los proveedores únicos de las cotizaciones, excluyendo NULL
-                    $proveedoresIds = $cotizaciones->pluck('DocCotizacion.Asignaciones.id_proveedor')->filter()->unique();
-                    // Carga los proveedores con sus cuentas bancarias usando los IDs recopilados
-                    $proveedoresConCuentas = App\Models\Proveedor::whereIn('id', $proveedoresIds)
-                                            ->with('CuentasBancarias')
-                                            ->get();
+    // Recopila los IDs de los proveedores únicos de las cotizaciones, excluyendo NULL
+    $proveedoresIds = $cotizaciones->pluck('DocCotizacion.Asignaciones.id_proveedor')->filter()->unique();
+    // Carga los proveedores con sus cuentas bancarias usando los IDs recopilados
+    $proveedoresConCuentas = App\Models\Proveedor::whereIn('id', $proveedoresIds)
+                                        ->with('CuentasBancarias')
+                                        ->get();
 
-                    $cotizacionesPorProveedor = $cotizaciones->groupBy('DocCotizacion.Asignaciones.id_proveedor');
-                @endphp
+    $cotizacionesPorProveedor = $cotizaciones->groupBy('DocCotizacion.Asignaciones.id_proveedor');
+@endphp
 
-<h3 class="sin_margem" style="color: #fff; background: rgb(24, 192, 141);margin-top: 0px;padding: 0px;">Cuentas Bancarias Proveedores</h3>
-<table class="table text-white tabla-completa sin_margem" style="color: #000; width: 100%; padding: 0px; font-size: 8px; border-collapse: collapse;">
-    <thead style="background-color: #f5f5f5; font-weight: bold;">
+<h3 class="sin_margem" style="color: #fff; background: rgb(24, 192, 141); margin-top: 0px; padding: 0px; font-size: 10px;">Cuentas Bancarias Proveedores</h3>
+
+<!-- Tabla para Cuenta 1 -->
+<table class="table text-white tabla-completa sin_margem" style="color: #000; max-width: 90%; margin: 0 auto; font-size: 6px; border-collapse: collapse;">
+    <thead style="background-color: #f5f5f5; font-weight: bold; font-size: 6px;">
         <tr>
-            <th style="padding: 1px; border: 1px solid #ccc;">Cuenta 1</th>
-            <th style="padding: 1px; border: 1px solid #ccc;">Beneficiario</th>
-            <th style="padding: 1px; border: 1px solid #ccc;">Banco</th>
-            <th style="padding: 1px; border: 1px solid #ccc;">Cuenta</th>
-            <th style="padding: 1px; border: 1px solid #ccc;">Clabe</th>
-            <th style="padding: 1px; border: 1px solid #ccc;">Monto a Pagar</th>
+            <th style="padding: 0px 4px; border: 1px solid #ccc; width: 10%;">Cuenta 1</th>
+            <th style="padding: 0px 4px; border: 1px solid #ccc; width: 15%;">Beneficiario</th>
+            <th style="padding: 0px 4px; border: 1px solid #ccc; width: 15%;">Banco</th>
+            <th style="padding: 0px 4px; border: 1px solid #ccc; width: 15%;">Cuenta</th>
+            <th style="padding: 0px 4px; border: 1px solid #ccc; width: 15%;">Clabe</th>
+            <th style="padding: 0px 4px; border: 1px solid #ccc; width: 10%;">Monto a Pagar</th>
         </tr>
     </thead>
     <tbody>
-        <!-- Tabla para las Cuentas 1 -->
         @foreach ($proveedoresConCuentas as $proveedor)
             @php
                 $totalCuenta1 = 0;
@@ -229,12 +230,12 @@
 
             @if (!$proveedor->CuentasBancarias->isEmpty() && isset($proveedor->CuentasBancarias[0]))
                 <tr>
-                    <td style="padding: 1px; border: 1px solid #ccc;">{{ $proveedor->nombre }}</td>
-                    <td style="padding: 1px; border: 1px solid #ccc;">{{ $proveedor->CuentasBancarias[0]->nombre_beneficiario }}</td>
-                    <td style="padding: 1px; border: 1px solid #ccc;">{{ $proveedor->CuentasBancarias[0]->nombre_banco }}</td>
-                    <td style="padding: 1px; border: 1px solid #ccc;">No.{{ $proveedor->CuentasBancarias[0]->cuenta_bancaria }}</td>
-                    <td style="padding: 1px; border: 1px solid #ccc;">No.{{ $proveedor->CuentasBancarias[0]->cuenta_clabe }}</td>
-                    <td style="padding: 1px; border: 1px solid #ccc;">${{ number_format($totalCuenta1, 2, '.', ',') }}</td>
+                    <td style="padding: 1px 4px; border: 1px solid #ccc; font-size: 6px;">{{ $proveedor->nombre }}</td>
+                    <td style="padding: 1px 4px; border: 1px solid #ccc; font-size: 6px;">{{ $proveedor->CuentasBancarias[0]->nombre_beneficiario }}</td>
+                    <td style="padding: 1px 4px; border: 1px solid #ccc; font-size: 6px;">{{ $proveedor->CuentasBancarias[0]->nombre_banco }}</td>
+                    <td style="padding: 1px 4px; border: 1px solid #ccc; font-size: 6px;">No.{{ $proveedor->CuentasBancarias[0]->cuenta_bancaria }}</td>
+                    <td style="padding: 1px 4px; border: 1px solid #ccc; font-size: 6px;">No.{{ $proveedor->CuentasBancarias[0]->cuenta_clabe }}</td>
+                    <td style="padding: 1px 4px; border: 1px solid #ccc; font-size: 6px;">${{ number_format($totalCuenta1, 2, '.', ',') }}</td>
                 </tr>
             @endif
         @endforeach
@@ -243,19 +244,19 @@
 
 <br>
 
-<table class="table text-white tabla-completa sin_margem" style="color: #000; width: 100%; padding: 0px; font-size: 8px; border-collapse: collapse;">
-    <thead style="background-color: #f5f5f5; font-weight: bold;">
+<!-- Tabla para Cuenta 2 -->
+<table class="table text-white tabla-completa sin_margem" style="color: #000; max-width: 90%; margin: 0 auto; font-size: 6px; border-collapse: collapse;">
+    <thead style="background-color: #f5f5f5; font-weight: bold; font-size: 6px;">
         <tr>
-            <th style="padding: 1px; border: 1px solid #ccc;">Cuenta 2</th>
-            <th style="padding: 1px; border: 1px solid #ccc;">Beneficiario</th>
-            <th style="padding: 1px; border: 1px solid #ccc;">Banco</th>
-            <th style="padding: 1px; border: 1px solid #ccc;">Cuenta</th>
-            <th style="padding: 1px; border: 1px solid #ccc;">Clabe</th>
-            <th style="padding: 1px; border: 1px solid #ccc;">Monto a Pagar</th>
+            <th style="padding: 0px 4px; border: 1px solid #ccc; width: 10%;">Cuenta 2</th>
+            <th style="padding: 0px 4px; border: 1px solid #ccc; width: 15%;">Beneficiario</th>
+            <th style="padding: 0px 4px; border: 1px solid #ccc; width: 15%;">Banco</th>
+            <th style="padding: 0px 4px; border: 1px solid #ccc; width: 15%;">Cuenta</th>
+            <th style="padding: 0px 4px; border: 1px solid #ccc; width: 15%;">Clabe</th>
+            <th style="padding: 0px 4px; border: 1px solid #ccc; width: 10%;">Monto a Pagar</th>
         </tr>
     </thead>
     <tbody>
-        <!-- Tabla para las Cuentas 2 -->
         @foreach ($proveedoresConCuentas as $proveedor)
             @php
                 $totalCuenta2 = 0;
@@ -270,12 +271,12 @@
 
             @if (isset($proveedor->CuentasBancarias[1]))
                 <tr>
-                    <td style="padding: 1px; border: 1px solid #ccc;">{{ $proveedor->nombre }}</td>
-                    <td style="padding: 1px; border: 1px solid #ccc;">{{ $proveedor->CuentasBancarias[1]->nombre_beneficiario }}</td>
-                    <td style="padding: 1px; border: 1px solid #ccc;">{{ $proveedor->CuentasBancarias[1]->nombre_banco }}</td>
-                    <td style="padding: 1px; border: 1px solid #ccc;">No.{{ $proveedor->CuentasBancarias[1]->cuenta_bancaria }}</td>
-                    <td style="padding: 1px; border: 1px solid #ccc;">No.{{ $proveedor->CuentasBancarias[1]->cuenta_clabe }}</td>
-                    <td style="padding: 1px; border: 1px solid #ccc;">${{ number_format($totalCuenta2, 2, '.', ',') }}</td>
+                    <td style="padding: 1px 4px; border: 1px solid #ccc; font-size: 6px;">{{ $proveedor->nombre }}</td>
+                    <td style="padding: 1px 4px; border: 1px solid #ccc; font-size: 6px;">{{ $proveedor->CuentasBancarias[1]->nombre_beneficiario }}</td>
+                    <td style="padding: 1px 4px; border: 1px solid #ccc; font-size: 6px;">{{ $proveedor->CuentasBancarias[1]->nombre_banco }}</td>
+                    <td style="padding: 1px 4px; border: 1px solid #ccc; font-size: 6px;">No.{{ $proveedor->CuentasBancarias[1]->cuenta_bancaria }}</td>
+                    <td style="padding: 1px 4px; border: 1px solid #ccc; font-size: 6px;">No.{{ $proveedor->CuentasBancarias[1]->cuenta_clabe }}</td>
+                    <td style="padding: 1px 4px; border: 1px solid #ccc; font-size: 6px;">${{ number_format($totalCuenta2, 2, '.', ',') }}</td>
                 </tr>
             @endif
         @endforeach
@@ -284,19 +285,19 @@
 
 <br>
 
-<table class="table text-white tabla-completa sin_margem" style="color: #000; width: 100%; padding: 0px; font-size: 8px; border-collapse: collapse;">
-    <thead style="background-color: #f5f5f5; font-weight: bold;">
+<!-- Tabla para Cuenta 3 -->
+<table class="table text-white tabla-completa sin_margem" style="color: #000; max-width: 90%; margin: 0 auto; font-size: 6px; border-collapse: collapse;">
+    <thead style="background-color: #f5f5f5; font-weight: bold; font-size: 6px;">
         <tr>
-            <th style="padding: 1px; border: 1px solid #ccc;">Cuenta 3</th>
-            <th style="padding: 1px; border: 1px solid #ccc;">Beneficiario</th>
-            <th style="padding: 1px; border: 1px solid #ccc;">Banco</th>
-            <th style="padding: 1px; border: 1px solid #ccc;">Cuenta</th>
-            <th style="padding: 1px; border: 1px solid #ccc;">Clabe</th>
-            <th style="padding: 1px; border: 1px solid #ccc;">Monto a Pagar</th>
+            <th style="padding: 0px 4px; border: 1px solid #ccc; width: 10%;">Cuenta 3</th>
+            <th style="padding: 0px 4px; border: 1px solid #ccc; width: 15%;">Beneficiario</th>
+            <th style="padding: 0px 4px; border: 1px solid #ccc; width: 15%;">Banco</th>
+            <th style="padding: 0px 4px; border: 1px solid #ccc; width: 15%;">Cuenta</th>
+            <th style="padding: 0px 4px; border: 1px solid #ccc; width: 15%;">Clabe</th>
+            <th style="padding: 0px 4px; border: 1px solid #ccc; width: 10%;">Monto a Pagar</th>
         </tr>
     </thead>
     <tbody>
-        <!-- Tabla para las Cuentas 3 -->
         @foreach ($proveedoresConCuentas as $proveedor)
             @php
                 $totalCuenta3 = 0;
@@ -310,91 +311,159 @@
 
             @if (isset($proveedor->CuentasBancarias[2]))
                 <tr>
-                    <td style="padding: 1px; border: 1px solid #ccc;">{{ $proveedor->nombre }}</td>
-                    <td style="padding: 1px; border: 1px solid #ccc;">{{ $proveedor->CuentasBancarias[2]->nombre_beneficiario }}</td>
-                    <td style="padding: 1px; border: 1px solid #ccc;">{{ $proveedor->CuentasBancarias[2]->nombre_banco }}</td>
-                    <td style="padding: 1px; border: 1px solid #ccc;">No.{{ $proveedor->CuentasBancarias[2]->cuenta_bancaria }}</td>
-                    <td style="padding: 1px; border: 1px solid #ccc;">No.{{ $proveedor->CuentasBancarias[2]->cuenta_clabe }}</td>
-                    <td style="padding: 1px; border: 1px solid #ccc;">${{ number_format($totalCuenta3, 2, '.', ',') }}</td>
+                    <td style="padding: 1px 4px; border: 1px solid #ccc; font-size: 6px;">{{ $proveedor->nombre }}</td>
+                    <td style="padding: 1px 4px; border: 1px solid #ccc; font-size: 6px;">{{ $proveedor->CuentasBancarias[2]->nombre_beneficiario }}</td>
+                    <td style="padding: 1px 4px; border: 1px solid #ccc; font-size: 6px;">{{ $proveedor->CuentasBancarias[2]->nombre_banco }}</td>
+                    <td style="padding: 1px 4px; border: 1px solid #ccc; font-size: 6px;">No.{{ $proveedor->CuentasBancarias[2]->cuenta_bancaria }}</td>
+                    <td style="padding: 1px 4px; border: 1px solid #ccc; font-size: 6px;">No.{{ $proveedor->CuentasBancarias[2]->cuenta_clabe }}</td>
+                    <td style="padding: 1px 4px; border: 1px solid #ccc; font-size: 6px;">${{ number_format($totalCuenta3, 2, '.', ',') }}</td>
                 </tr>
             @endif
         @endforeach
     </tbody>
 </table>
 
-<table class="table text-white" style="color: #000; width: 50%; padding: 5px; font-size: 8px; border-collapse: collapse">
-@php
-    // Recopilamos los proveedores y sus datos
-    $proveedoresIds = $cotizaciones->pluck('DocCotizacion.Asignaciones.id_proveedor')->filter()->unique();
-    $proveedoresConCuentas = App\Models\Proveedor::whereIn('id', $proveedoresIds)
-                                            ->with('CuentasBancarias')
-                                            ->get();
 
-    $cotizacionesPorProveedor = $cotizaciones->groupBy('DocCotizacion.Asignaciones.id_proveedor');
-@endphp
+<div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%;">
 
-@foreach ($proveedoresConCuentas as $index => $proveedor)
-    @php
-        $totalFacturaProveedor = 0;
-        $facturadosPorProveedor = [];
-        $beneficiarioCuenta1 = ''; // Variable para el beneficiario de la cuenta CLABE 1
+    <!-- Contenedor de la Tabla de Totales Oficiales -->
+    <div style="width: 48%; padding: 0; box-sizing: border-box;">
+        <table class="table text-white" style="color: #000; width: 100%; padding: 2px; font-size: 6px; border-collapse: collapse;">
+            @php
+                // Recopilamos los proveedores y sus datos
+                $proveedoresIds = $cotizaciones->pluck('DocCotizacion.Asignaciones.id_proveedor')->filter()->unique();
+                $proveedoresConCuentas = App\Models\Proveedor::whereIn('id', $proveedoresIds)
+                                                        ->with('CuentasBancarias')
+                                                        ->get();
 
-        if (isset($cotizacionesPorProveedor[$proveedor->id])) {
-            $cotizacionesProveedor = $cotizacionesPorProveedor[$proveedor->id];
-            foreach ($cotizacionesProveedor as $cotizacion) {
-                $cuenta1 = $cotizacion->base_factura + $cotizacion->iva - $cotizacion->retencion;
-                $totalFacturaProveedor += $cuenta1;
+                $cotizacionesPorProveedor = $cotizaciones->groupBy('DocCotizacion.Asignaciones.id_proveedor');
+            @endphp
 
-                // Agrupamos los "facturados a" por proveedor
-                $facturadoA = $cotizacion->Subcliente->nombre ?? 'Sin facturado';
-                if (!isset($facturadosPorProveedor[$facturadoA])) {
-                    $facturadosPorProveedor[$facturadoA] = 0;
-                }
-                $facturadosPorProveedor[$facturadoA] += $cuenta1;
-            }
-        }
+            @foreach ($proveedoresConCuentas as $index => $proveedor)
+                @php
+                    $totalFacturaProveedor = 0;
+                    $facturadosPorProveedor = [];
+                    $beneficiarioCuenta1 = '';
 
-        // Obtenemos el beneficiario de la primera cuenta CLABE (si existe)
-        if (!$proveedor->CuentasBancarias->isEmpty()) {
-            $cuentaCLABE = $proveedor->CuentasBancarias->first(); // Asumimos que la cuenta 1 es la primera
-            $beneficiarioCuenta1 = $cuentaCLABE->nombre_beneficiario ?? 'No disponible';
-        }
-    @endphp
+                    if (isset($cotizacionesPorProveedor[$proveedor->id])) {
+                        $cotizacionesProveedor = $cotizacionesPorProveedor[$proveedor->id];
+                        foreach ($cotizacionesProveedor as $cotizacion) {
+                            $cuenta1 = $cotizacion->base_factura + $cotizacion->iva - $cotizacion->retencion;
+                            $totalFacturaProveedor += $cuenta1;
 
-    <thead>
-        <tr style="font-size: 7px; border: 1px solid #000; background-color: #2c3e50; color: white;">
-            <th style="padding: 1px; border: 1px solid #000;">Proveedor-{{ $proveedor->nombre }}</th>
-            <th style="padding: 1px; border: 1px solid #000;">Total</th>
-            <!-- Columnas dinámicas para los "Facturados A" -->
-            @foreach($facturadosPorProveedor as $facturadoA => $total)
-                <th style="padding: 1px; border: 1px solid #000;">{{ $facturadoA }}</th>
+                            $facturadoA = $cotizacion->Subcliente->nombre ?? 'Sin facturado';
+                            if (!isset($facturadosPorProveedor[$facturadoA])) {
+                                $facturadosPorProveedor[$facturadoA] = 0;
+                            }
+                            $facturadosPorProveedor[$facturadoA] += $cuenta1;
+                        }
+                    }
+
+                    if (!$proveedor->CuentasBancarias->isEmpty()) {
+                        $cuentaCLABE = $proveedor->CuentasBancarias->first();
+                        $beneficiarioCuenta1 = $cuentaCLABE->nombre_beneficiario ?? 'No disponible';
+                    }
+                @endphp
+
+                <thead>
+                    <tr style="font-size: 7px; border: 1px solid #000; background-color: #2c3e50; color: white;">
+                        <th style="padding: 2px; border: 1px solid #000;">Proveedor - {{ $proveedor->nombre }}</th>
+                        <th style="padding: 2px; border: 1px solid #000;">Total</th>
+                        @foreach($facturadosPorProveedor as $facturadoA => $total)
+                            <th style="padding: 2px; border: 1px solid #000;">{{ $facturadoA }}</th>     
+                        @endforeach
+                    </tr>
+                </thead>
+                <tbody style="text-align: center; font-size: 6px;">
+                    <tr style="background-color: {{ $index % 2 == 0 ? '#f1f1f1' : '#e0e0e0' }};">
+                        <td style="padding: 2px; border: 1px solid #ccc;">
+                            {{ $beneficiarioCuenta1 }}<br>
+                            {{ $proveedor->CuentasBancarias[0]->nombre_banco }}<br>
+                            No. {{ $cuentaCLABE->cuenta_clabe }}<br>
+                        </td>
+                        <td style="padding: 2px; border: 1px solid #ccc;">
+                            ${{ number_format($totalFacturaProveedor, 2, '.', ',') }}
+                        </td>
+                        @foreach($facturadosPorProveedor as $facturadoA => $total)
+                            <td style="padding: 2px; border: 1px solid #ccc;">
+                                ${{ number_format($total, 2, '.', ',') }}
+                            </td>
+                        @endforeach
+                    </tr>
+                </tbody>
             @endforeach
-        </tr>
-    </thead>
-    <tbody style="text-align: center; font-size: 8px;">
-        @if (!$proveedor->CuentasBancarias->isEmpty())
-            <tr style="background-color: {{ $index % 2 == 0 ? '#f1f1f1' : '#e0e0e0' }};">
-                <td style="padding: 1px; border: 1px solid #ccc;">
-                    <!-- Proveedor, Beneficiario, Banco, CLABE -->
-                   
-                    {{ $beneficiarioCuenta1 }}<br>
-                    {{ $proveedor->CuentasBancarias[0]->nombre_banco }}<br>
-                    No.{{ $cuentaCLABE->cuenta_clabe }}<br>
-                </td>
-                <td style="padding: 1px; border: 1px solid #ccc;">
-                    ${{ number_format($totalFacturaProveedor, 2, '.', ',') }}<br>
-                </td>
-                <!-- Facturado A -->
-                @foreach($facturadosPorProveedor as $facturadoA => $total)
-                    <td style="padding: 1px; border: 1px solid #ccc;">
-                        ${{ number_format($total, 2, '.', ',') }}<br>
+        </table>
+    </div>
+
+    <!-- Contenedor de la Tabla de Totales No Oficiales -->
+<div style="width: 48%; padding: 0; box-sizing: border-box;">
+    <h3 style="text-align: center; font-size: 8px; color: white; background-color: #2c3e50; margin: 2px 0; padding: 2px;">No Oficial</h3>
+    <table class="table text-white" style="color: #000; width: 100%; padding: 0; font-size: 7px; border-collapse: collapse; table-layout: fixed;">
+        @php
+            $cuentaGlobal = [
+                'beneficiario' => 'Nombre Global Beneficiario',
+                'banco' => 'Banco Global',
+                'clabe' => '000000000000000000'
+            ];
+        @endphp
+
+        <tbody style="text-align: center; font-size: 7px;">
+            @foreach ($proveedoresConCuentas as $index => $proveedor)
+                @php
+                    $totalNoOficialProveedor = 0;
+                    $facturadosPorProveedor = [];
+
+                    if (isset($cotizacionesPorProveedor[$proveedor->id])) {
+                        $cotizacionesProveedor = $cotizacionesPorProveedor[$proveedor->id];
+                        foreach ($cotizacionesProveedor as $cotizacion) {
+                            $baseTaref = floatval($cotizacion->total ?? 0) - floatval($cotizacion->base_factura ?? 0) - floatval($cotizacion->iva ?? 0) + floatval($cotizacion->retencion ?? 0);
+                            $totalNoOficialProveedor += $baseTaref;
+
+                            $facturadoA = $cotizacion->Subcliente->nombre ?? 'Sin facturado';
+                            if (!isset($facturadosPorProveedor[$facturadoA])) {
+                                $facturadosPorProveedor[$facturadoA] = 0;
+                            }
+                            $facturadosPorProveedor[$facturadoA] += $baseTaref;
+                        }
+                    }
+                @endphp
+
+                <tr style="background-color: {{ $index % 2 == 0 ? '#f1f1f1' : '#e0e0e0' }}; height: 18px;">
+                    <!-- Columna de Cuenta Global (Solo una vez) -->
+                    @if ($index == 0)
+                        <td rowspan="{{ count($proveedoresConCuentas) }}" style="padding: 3px; border: 1px solid #ccc; text-align: center; vertical-align: middle; height: 18px;">
+                            {{ $cuentaGlobal['beneficiario'] }}<br>
+                            {{ $cuentaGlobal['banco'] }}<br>
+                            No. {{ $cuentaGlobal['clabe'] }}
+                        </td>
+                    @endif
+
+                    <!-- Columna Proveedor - Total No Oficial -->
+                    <td style="padding: 3px; border: 1px solid #ccc; text-align: left; height: 18px;">
+                        {{ $proveedor->nombre }} - ${{ number_format($totalNoOficialProveedor, 2, '.', ',') }}
                     </td>
-                @endforeach
-            </tr>
-        @endif
-    </tbody>
-@endforeach
-</table>
+
+                    <!-- Columna Facturado A con Subtabla -->
+                    <td colspan="2" style="padding: 3px; border: 1px solid #ccc; vertical-align: top; height: 18px;">
+                         @foreach($facturadosPorProveedor as $facturadoA => $total)
+                        <p style="margin: 0; padding: 0; font-size: 7px;">
+                         {{ $facturadoA }} - ${{ number_format($total, 2, '.', ',') }}
+                        </p>
+                        @endforeach
+                    </td>
+                </tr>
+            @endforeach
+        </tbody>
+    </table>
+</div>
+
+
+
+</div>
+
+
+
+
 
     <div class="totales">
         <h3 class="margin_cero" style="color: #000000; background: rgb(0, 174, 255);margin-top: 5px;">Totales</h3>
