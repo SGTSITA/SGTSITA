@@ -545,6 +545,9 @@ class CotizacionesController extends Controller
             $cotizaciones->id_subcliente = $request->get('id_subcliente');
             $cotizaciones->origen = $request->get('origen');
             $cotizaciones->destino = $request->get('destino');
+            $cotizaciones->direccion_entrega = $request->get('direccion_entrega');
+            $cotizaciones->uso_recinto = ($request->text_recinto == 'recinto-si') ? 1 : 0;
+            $cotizaciones->direccion_recinto = $request->direccion_recinto ;
             $cotizaciones->burreo = $request->get('burreo');
             $cotizaciones->estadia = $request->get('estadia');
             $cotizaciones->fecha_modulacion = $request->get('fecha_modulacion');
