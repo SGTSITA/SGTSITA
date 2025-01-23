@@ -905,12 +905,12 @@ class CotizacionesController extends Controller
 
                 //Verificar que el cliente este visible en la empresa a la que se asigna
 
-                $cotizacion = Cotizaciones::where('id',$c->IdContenedor)->first();
+               // $cotizacion = Cotizaciones::where('id',$c->IdContenedor)->first();
               
-                $clientEmpresa = ClientEmpresa::where('id_client',$cotizacion->id_cliente)->where('id_empresa',$request->empresa);
+                $clientEmpresa = ClientEmpresa::where('id_client',$c->IdCliente)->where('id_empresa',$request->empresa);
                 if(!$clientEmpresa->exists()){
                     ClientEmpresa::create([
-                        'id_client' => $cotizacion->id_cliente,
+                        'id_client' => $c->IdCliente,
                         'id_empresa' => $request->empresa
                     ]);
                 }
@@ -932,9 +932,19 @@ class CotizacionesController extends Controller
         $cotizacion = DB::table('cotizaciones')->where('id', $id)->first();
         $doc = DocumCotizacion::where('id_cotizacion', $id)->first();
 
+        $idEmpresa = $request->get('id_empresa');
+        
+        $clientEmpresa = ClientEmpresa::where('id_client',$cotizacion->id_cliente)->where('id_empresa',$idEmpresa);
+        if(!$clientEmpresa->exists()){
+            ClientEmpresa::create([
+                'id_client' => $cotizacion->id_cliente,
+                'id_empresa' => $idEmpresa
+            ]);
+        }
+
         if($doc->num_contenedor != NULL){
             $numContenedor = $doc->num_contenedor;
-            $idEmpresa = $request->get('id_empresa');
+            
 
             $contenedorExistente = DocumCotizacion::where('num_contenedor', $numContenedor)
                                                 ->where('id_empresa', $idEmpresa)
@@ -946,7 +956,7 @@ class CotizacionesController extends Controller
         }
 
         // Obtener el id_cliente actual de la empresa anterior
-        $idClienteAnterior = DB::table('clients')
+      /*  $idClienteAnterior = DB::table('clients')
             ->where('id', $cotizacion->id_cliente)
             ->value('id');
 
@@ -987,11 +997,10 @@ class CotizacionesController extends Controller
             }
         }else{
             $nuevoIdSubCliente = NULL;
-        }
+        }*/
 
-        if ($nuevoIdCliente) {
             $contenedor = DocumCotizacion::where('id_cotizacion',  '=', $cotizacion->id)->first();
-
+            $nuevoIdEmpresa = $request->get('id_empresa');
             if ($contenedor) {
                 $asignacionExiste = Asignaciones::where('id_contenedor', '=', $contenedor->id)->exists();
 
@@ -1000,7 +1009,7 @@ class CotizacionesController extends Controller
                     $asignacion = Asignaciones::where('id_contenedor', '=', $contenedor->id)->first();
 
                     // Obtener los datos necesarios del request
-                    $nuevoIdEmpresa = $request->get('id_empresa');
+                    
 
                     // Verificar si id_operador es null y actualizar id_proveedor
                     if (is_null($asignacion->id_operador)) {
@@ -1098,9 +1107,7 @@ class CotizacionesController extends Controller
             $cotizaciones = DB::table('cotizaciones')
             ->where('id', $id)
             ->update([
-                'id_empresa' => $nuevoIdEmpresa,
-                'id_subcliente' => $nuevoIdSubCliente,
-                'id_cliente' => $nuevoIdCliente
+                'id_empresa' => $nuevoIdEmpresa
             ]);
 
             $contenedores = DB::table('docum_cotizacion')
@@ -1109,10 +1116,7 @@ class CotizacionesController extends Controller
 
             return redirect()->route('index.cotizaciones')
                 ->with('success', 'Se ha editado sus datos con exito');
-        } else {
-            return redirect()->route('index.cotizaciones')
-                ->with('error', 'No tiene cliente con el mismo correo a la empresa que quiere cambiar');
-        }
+       
 
 
     }
