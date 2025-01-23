@@ -117,11 +117,15 @@
     </script>
 
 <script>
-    document.getElementById('backButton').addEventListener('click', function(event) {
+  let backButton =  document.getElementById('backButton');
+  if(backButton){
+    backButton.addEventListener('click', function(event) {
         event.preventDefault(); // Evitar el comportamiento predeterminado del enlace
         history.back(); // Volver a la página anterior
 
     });
+  }
+    
 </script>
 
   @yield('datatable')

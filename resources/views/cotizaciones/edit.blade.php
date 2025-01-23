@@ -146,10 +146,52 @@
                                                     <input name="destino" id="destino" type="text" class="form-control" autocomplete="off" value="{{$cotizacion->destino}}">
                                                 </div>
                                             </div>
+                                            
+                                            <div class="border-dashed border-1 border-secondary border-radius-md p-3">
 
-                                            <div class="col-6 form-group">
+                                            
+                                            <div class="col-lg-4 col-md-6 col-7  text-start">
+                                                <h5 class="fw-bold mb-2">¿El contenedor va a recinto?</h5>
+                                                <div class="nav-wrapper  mt-2 mb-3 position-relative ">
+                                                    <ul class="nav nav-pills bg-light rounded-pill nav-fill flex-row p-1" id="tabs-pricing" role="tablist">
+                                                    <li class="nav-item">
+                                                        <a class="recinto nav-link mb-0 rounded-pill active" id="tabs-iconpricing-tab-1" data-bs-toggle="tab" href="#monthly" role="tab" 
+                                                        aria-controls="monthly" aria-selected="true" @if($cotizacion->uso_recinto == 0) data-kt-plan="recinto-no" @else data-kt-plan="recinto-si" @endif>
+                                                        @if($cotizacion->uso_recinto == 0) No @else Si, va a recinto @endif
+                                                        </a>
+                                                    </li>
+                                                    <li class="nav-item">
+                                                        <a class="recinto nav-link mb-0 rounded-pill " id="tabs-iconpricing-tab-2" data-bs-toggle="tab" href="#annual" role="tab" 
+                                                        aria-controls="annual" aria-selected="false" @if($cotizacion->uso_recinto != 0) data-kt-plan="recinto-no" @else data-kt-plan="recinto-si" @endif>
+                                                        @if($cotizacion->uso_recinto != 0) No @else Si, va a recinto @endif
+                                                        </a>
+                                                    </li>
+                                                    </ul>
+                                                </div>
+                                                
+                                            </div>
+
+                                            <div class="col-12">
+                                                <input type="text" name="text_recinto" id="text_recinto" class="d-none" @if($cotizacion->uso_recinto == 1) value="recinto-si" @endif>
+
+                                                <div class="input-group @if($cotizacion->uso_recinto == 0) d-none @endif" id="input-recinto">
+                                                    <span class="input-group-text">Dirección recinto</span>
+                                                    <textarea class="form-control" name="direccion_recinto" id="direccion_recinto" aria-label="Dirección recinto">{{$cotizacion->direccion_recinto}}</textarea>
+                                                </div>
+                                            </div>
+
+                                            <div class="col-12">
+                                                <h5 class="fw-bold mb-2  mt-3">Dirección entrega</h5>
+                                                <div class="input-group" >
+                                                    <span class="input-group-text">Dirección Entrega</span>
+                                                    <textarea class="form-control" name="direccion_entrega" id="direccion_entrega" aria-label="Dirección Entrega">{{$cotizacion->direccion_entrega}}</textarea>
+                                                </div>
+                                            </div>
+                                            </div>
+
+                                            <div class="col-6 mt-2 form-group">
                                                 <label for="name">Fecha modulación</label>
-                                                <div class="input-group mb-3">
+                                                <div class="input-group  b-3">
                                                     <span class="input-group-text" id="basic-addon1">
                                                         <img src="{{ asset('img/icon/calendar-dar.webp') }}" alt="" width="25px">
                                                     </span>
@@ -157,7 +199,7 @@
                                                 </div>
                                             </div>
 
-                                            <div class="col-6 form-group">
+                                            <div class="col-6 mt-2 form-group">
                                                 <label for="name">Fecha entrega</label>
                                                 <div class="input-group mb-3">
                                                     <span class="input-group-text" id="basic-addon1">
@@ -1472,123 +1514,7 @@
         });
     </script>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-           /* const cantidadSobrepesoInput = document.getElementById('cantidad_sobrepeso_proveedor');
-            const valorSobrepesoInput = document.getElementById('sobrepeso_proveedor');
-            const sobrepesoProbInput = document.getElementById('total_tonelada');
-
-            const precioInput = document.getElementById('precio_proveedor');
-            const burreoInput = document.getElementById('burreo_proveedor');
-            const maniobraInput = document.getElementById('maniobra_proveedor');
-            const estadiaInput = document.getElementById('estadia_proveedor');
-            const otroInput = document.getElementById('otro_proveedor');
-            const otro2Input = document.getElementById('otro2');
-            const otro3Input = document.getElementById('otro3');
-            const otro4Input = document.getElementById('otro4');
-            const otro5Input = document.getElementById('otro5');
-            const otro6Input = document.getElementById('otro6');
-            const otro7Input = document.getElementById('otro7');
-            const otro8Input = document.getElementById('otro8');
-            const otro9Input = document.getElementById('otro9');
-            const ivaInput = document.getElementById('iva_proveedor');
-            const retencionInput = document.getElementById('retencion_proveedor');
-            const totalInput = document.getElementById('total_proveedor');
-
-            // Función para actualizar el total
-            function updateTotal() {
-                let precio = parseFloat(precioInput.value) || 0;
-                let burreo = parseFloat(burreoInput.value) || 0;
-                let maniobra = parseFloat(maniobraInput.value) || 0;
-                let estadia = parseFloat(estadiaInput.value) || 0;
-                let sobrepesoProb = parseFloat(sobrepesoProbInput.value) || 0;
-                let otro = parseFloat(otroInput.value) || 0;
-                let otro2 = parseFloat(otro2Input.value) || 0;
-                let otro3 = parseFloat(otro3Input.value) || 0;
-                let otro4 = parseFloat(otro4Input.value) || 0;
-                let otro5 = parseFloat(otro5Input.value) || 0;
-                let otro6 = parseFloat(otro6Input.value) || 0;
-                let otro7 = parseFloat(otro7Input.value) || 0;
-                let otro8 = parseFloat(otro8Input.value) || 0;
-                let otro9 = parseFloat(otro9Input.value) || 0;
-                let iva = parseFloat(ivaInput.value) || 0;
-                let retencion = parseFloat(retencionInput.value) || 0;
-
-                // Sumar todos menos retencion
-                let subtotal = precio + burreo + maniobra + estadia + otro +
-                            otro2 + otro3 + otro4 + otro5 + otro6 +
-                            otro7 + otro8 + otro9 + iva + sobrepesoProb;
-
-                console.log(`Subtotal: ${subtotal}`);
-                // Restar retencion
-                let total = subtotal - retencion;
-                console.log(`Total: ${total}`);
-
-                // Actualizar el input de total
-                totalInput.value = total.toFixed(2);
-            }
-
-            // Función para actualizar el resultado y el total
-            function updateResultado() {
-                const cantidadSobrepeso = parseFloat(cantidadSobrepesoInput.value) || 0;
-                const valorSobrepeso = parseFloat(valorSobrepesoInput.value) || 0;
-
-                console.log(`Cantidad sobrepeso: ${cantidadSobrepeso}, Valor sobrepeso: ${valorSobrepeso}`);
-
-                // Multiplicar los valores
-                const resultado = cantidadSobrepeso * valorSobrepeso;
-
-                console.log(`Resultado sobrepeso: ${resultado}`);
-
-                // Colocar el resultado en el input correspondiente
-                sobrepesoProbInput.value = resultado.toFixed(2); // Redondear a dos decimales
-
-                // Actualizar el total
-                updateTotal();
-            }
-
-            // Asignar evento de input a todos los inputs relevantes
-            const allInputs = [
-                precioInput, burreoInput, maniobraInput, estadiaInput, otroInput,
-                otro2Input, otro3Input, otro4Input, otro5Input, otro6Input,
-                otro7Input, otro8Input, otro9Input, ivaInput, retencionInput,
-                valorSobrepesoInput, cantidadSobrepesoInput
-            ];
-
-            allInputs.forEach(input => {
-                input.addEventListener('input', () => {
-                    updateResultado();
-                    updateTotal();
-                });
-            });
-
-            // Calcular el resultado y el total iniciales
-            updateResultado();
-
-                // Función para calcular base2_proveedor
-            function calcularBase2Proveedor() {
-                // Obtener los valores de los inputs
-                const totalProveedor = parseFloat(document.getElementById('total_proveedor').value) || 0;
-                const base1Proveedor = parseFloat(document.getElementById('base1_proveedor').value) || 0;
-                const ivaProveedor = parseFloat(document.getElementById('iva_proveedor').value) || 0;
-                const retencionProveedor = parseFloat(document.getElementById('retencion_proveedor').value) || 0;
-
-                // Realizar el cálculo
-                const base2Proveedor = (totalProveedor - base1Proveedor - ivaProveedor) + retencionProveedor;
-
-                // Mostrar el resultado en el input de base2_proveedor
-                document.getElementById('base2_proveedor').value = base2Proveedor.toFixed(2);
-            }
-
-            // Agregar eventos de cambio a los inputs para calcular automáticamente
-            document.getElementById('total_proveedor').addEventListener('input', calcularBase2Proveedor);
-            document.getElementById('base1_proveedor').addEventListener('input', calcularBase2Proveedor);
-            document.getElementById('iva_proveedor').addEventListener('input', calcularBase2Proveedor);
-            document.getElementById('retencion_proveedor').addEventListener('input', calcularBase2Proveedor);
-            */
-        });
-
-    </script>
+    
 
     <script>
         $(document).ready(()=>{
@@ -1616,6 +1542,29 @@
 
            
         })
+    </script>
+
+<script>
+        document.addEventListener('DOMContentLoaded', function () {
+            let condicionRecinto = document.querySelectorAll('.recinto');
+            let inputRecinto = document.querySelector('#input-recinto');
+            let textRecinto = document.querySelector('#text_recinto');
+
+            condicionRecinto.forEach(function(elemento) {
+              //  elemento.classList.remove('active')
+                elemento.addEventListener('click', function() {
+                    inputRecinto.classList.toggle('d-none',elemento.attributes['data-kt-plan'].value != 'recinto-si') 
+                    textRecinto.value = (elemento.attributes['data-kt-plan'].value != 'recinto-si') ? '' : 'recinto-si';
+                });
+                
+          
+              
+               //elemento.classList.toggle('active',elemento.attributes['data-kt-plan'].value == 'recinto-si' && '{{$cotizacion->uso_recinto}}' == 1) 
+
+
+            });
+        });
+
     </script>
 
 @endsection
