@@ -41,8 +41,11 @@
 <!-- Font Awesome para los íconos de los botones -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 
+<!-- SweetAlert2 CSS y JS -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', function () {
     const container = document.getElementById('correosTable');
 
     // Datos iniciales (pueden ser vacíos o cargados desde el servidor)
@@ -59,7 +62,7 @@
 
     let nextId = initialData.length > 0 ? Math.max(...initialData.map(row => row[0])) + 1 : 1;
 
-    // Inicializar Handsontable
+    // Inicializar Handsontable con checkboxes centrados
     const hot = new Handsontable(container, {
         data: initialData,
         rowHeaders: true,
@@ -78,10 +81,10 @@
             { data: 1, type: 'text' },                   // Correo
             { data: 2, type: 'dropdown', source: ['Personal', 'Trabajo', 'Otro'] }, // Tipo de Correo
             { data: 3, type: 'text' },                   // Referencia
-            { data: 4, type: 'checkbox',className: 'htCenter' },               // Notificación Nueva
-            { data: 5, type: 'checkbox',className: 'htCenter' },               // Cancelación de Viaje
-            { data: 6, type: 'checkbox',className: 'htCenter' },               // Nuevo Documento Cargado
-            { data: 7, type: 'checkbox',className: 'htCenter' }                // Viaje Modificado
+            { data: 4, type: 'checkbox', className: 'htCenter' }, // Notificación Nueva
+            { data: 5, type: 'checkbox', className: 'htCenter' }, // Cancelación de Viaje
+            { data: 6, type: 'checkbox', className: 'htCenter' }, // Nuevo Documento Cargado
+            { data: 7, type: 'checkbox', className: 'htCenter' }  // Viaje Modificado
         ],
         licenseKey: 'non-commercial-and-evaluation',
         width: '100%',
@@ -105,30 +108,51 @@
         hot.setDataAtRowProp(hot.countRows() - 1, undefined, newRow); // Asigna valores a la nueva fila
     });
 
-    // Botón para guardar cambios
+    // Botón para guardar cambios con confirmación SweetAlert
     document.getElementById('saveChangesButton').addEventListener('click', function () {
-        const updatedData = hot.getData(); // Obtiene todos los datos de la tabla
+        Swal.fire({
+            title: "¿Estás seguro?",
+            text: "Se guardarán los cambios en la base de datos.",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonText: "Sí, guardar",
+            cancelButtonText: "Cancelar"
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const updatedData = hot.getData();
 
-        fetch('/correo', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': '{{ csrf_token() }}'
-            },
-            body: JSON.stringify(updatedData)
-        })
-        .then(response => response.json())
-        .then(result => {
-            alert(result.message); // Muestra un mensaje de éxito
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Error al guardar los cambios.');
+                fetch('/correo', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify(updatedData)
+                })
+                .then(response => response.json())
+                .then(result => {
+                    Swal.fire({
+                        title: "Guardado",
+                        text: result.message,
+                        icon: "success",
+                        confirmButtonText: "OK"
+                    });
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    Swal.fire({
+                        title: "Error",
+                        text: "No se pudieron guardar los cambios.",
+                        icon: "error",
+                        confirmButtonText: "Cerrar"
+                    });
+                });
+            }
         });
     });
 });
-
 </script>
+
 
 
 @endsection
