@@ -149,25 +149,56 @@
         </div>
       </div>
       <div class="col-6">
-      <div class="input-group mb-5">
-            <span class="input-group-text" id="basic-addon1">
-            <i class="ki-duotone ki-delivery-2 fs-2">
-                <span class="path1"></span>
-                <span class="path2"></span>
-                <span class="path3"></span>
-                <span class="path4"></span>
-                <span class="path5"></span>
-                <span class="path6"></span>
-                <span class="path7"></span>
-                <span class="path8"></span>
-                <span class="path9"></span>
-            </i>
-            </span>
-            <div class="form-floating">
-              <input type="text" class="form-control" autocomplete="off" id="peso_contenedor" placeholder="" oninput="allowOnlyDecimals(event)"/>
-              <label for="peso_contenedor" class="text-gray-700">Peso de Contenedor</label>
-             
+        <div class="input-group mb-5">
+              <span class="input-group-text" id="basic-addon1">
+              <i class="ki-duotone ki-delivery-2 fs-2">
+                  <span class="path1"></span>
+                  <span class="path2"></span>
+                  <span class="path3"></span>
+                  <span class="path4"></span>
+                  <span class="path5"></span>
+                  <span class="path6"></span>
+                  <span class="path7"></span>
+                  <span class="path8"></span>
+                  <span class="path9"></span>
+              </i>
+              </span>
+              <div class="form-floating">
+                <input type="text" class="form-control" autocomplete="off" id="peso_contenedor" placeholder="" oninput="allowOnlyDecimals(event)"/>
+                <label for="peso_contenedor" class="text-gray-700">Peso de Contenedor</label>
+              </div>
+        </div>
+      </div>
+      <div class="col-12">
+      <h4 class="fw-bold mb-4">Dirección entrega</h4>
+        <div class="input-group" >
+            <span class="input-group-text">Dirección Entrega</span>
+            <textarea class="form-control" name="direccion_entrega" id="direccion_entrega" aria-label="Dirección Entrega"></textarea>
+        </div>
+      </div>
+      <div class="col-12">
+      <br>
+      <h4 class="fw-bold mb-4">¿Su contenedor va a recinto?</h4>
+        <!--begin::Nav group-->                            
+        <div class="nav bg-light rounded-pill px-3 py-2 ms-9 mb-5 w-225px" data-kt-buttons="true">
+            <!--begin::Nav link-->
+            <div class="recinto nav-link active btn btn-active btn-active-primary fw-bold btn-color-gray-600 active py-3 px-5 m-1 rounded-pill" data-kt-plan="recinto-no">
+                No
             </div>
+            <!--end::Nav link-->
+
+            <!--begin::Nav link-->
+            <div class="recinto nav-link  btn btn-active btn-active-primary fw-bold btn-color-gray-600 py-3 px-5 m-1 rounded-pill" data-kt-plan="recinto-si">
+                Si va a recinto
+            </div>
+            <!--end::Nav link-->
+        </div> 
+
+        <input type="text" name="text_recinto" id="text_recinto" class="d-none">
+
+        <div class="input-group d-none" id="input-recinto">
+            <span class="input-group-text">Dirección recinto</span>
+            <textarea class="form-control" name="direccion_recinto" id="direccion_recinto" aria-label="Dirección recinto"></textarea>
         </div>
       </div>
    </div>

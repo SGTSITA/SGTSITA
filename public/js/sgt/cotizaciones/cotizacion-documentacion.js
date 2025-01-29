@@ -103,6 +103,15 @@ class MissionResultRenderer {
     paginationPageSize: 'Registros por página'
   };
    
+  const ragCellClassRules = {
+
+    "badge badge-light-info fs-base": (params) => params.value === "Viaje solicitado",
+    "badge badge-light-warning fs-base": (params) => params.value === "En espera",
+    "badge badge-light-success fs-base": (params) => params.value === "Aprobada",
+    "badge badge-light-danger fs-base": (params) => params.value === "Cancelada",
+    
+  };
+
   const gridOptions = {
    pagination: true,
       paginationPageSize: 500,
@@ -116,15 +125,16 @@ class MissionResultRenderer {
    ],
 
    columnDefs: [
-
-     { field: "NumContenedor",filter: true, floatingFilter: true},
-     { field: "Origen",filter: true, floatingFilter: true},
-     { field: "Destino" },
-     { field: "Peso",width: 100 },
      { field: "BoletaLiberacion",width: 110,cellRenderer: MissionResultRenderer },
      { field: "DODA",width: 110,cellRenderer: MissionResultRenderer },
      { field: "FormatoCartaPorte",width: 150,cellRenderer: MissionResultRenderer },
      { field: "PreAlta",width: 110,cellRenderer: MissionResultRenderer },
+     { field: "NumContenedor",filter: true, floatingFilter: true},
+     { field: "Estatus",filter: true, floatingFilter: true, cellClassRules: ragCellClassRules},
+     { field: "Origen",filter: true, floatingFilter: true},
+     { field: "Destino" },
+     { field: "Peso",width: 100 },
+     
    ],
   
    localeText: localeText
@@ -175,6 +185,8 @@ class MissionResultRenderer {
    }
 
    function cancelarViajeQuestion(){
+    let contenedor = apiGrid.getSelectedRows();
+    if(contenedor.length <= 0) return
     Swal.fire({
       title: '¿Desea cancelar el viaje seleccionado?',
       text:'Está a punto de cancelar el viaje, si está seguro haga click en "Si, Cancelar"',
@@ -191,6 +203,7 @@ class MissionResultRenderer {
 
    function cancelarViajeConfirm(){
     let contenedor = apiGrid.getSelectedRows();
+    if(contenedor.length <= 0) return
 
     let numContenedor = null;
     contenedor.forEach(c => numContenedor = c.NumContenedor)
@@ -219,11 +232,13 @@ class MissionResultRenderer {
 
       let contenedor = apiGrid.getSelectedRows();
 
+      if(contenedor.length <= 0) return
+
       let numContenedor = null;
       contenedor.forEach(c => numContenedor = c.NumContenedor)
 
       var form =
-      $('<form action="' + url + '" method="post" target="_blank">' +
+      $('<form action="' + url + '" method="post" >' +
           '<input type="hidden" name="numContenedor" value="'+numContenedor+'" />' +
           '<input type="hidden" name="_token" value="' + _token + '" />' +
       '</form>');

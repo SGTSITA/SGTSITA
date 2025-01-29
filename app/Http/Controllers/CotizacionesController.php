@@ -271,6 +271,16 @@ class CotizacionesController extends Controller
         $cotizaciones->total = $total;
         $cotizaciones->restante = $cotizaciones->total;
         $cotizaciones->estatus_pago = '0';
+
+        if($request->has('uuid')){
+            $cotizaciones->sat_uso_cfdi_id = $request->id_uso_cfdi;
+            $cotizaciones->sat_forma_pago_id = $request->id_forma_pago;
+            $cotizaciones->sat_metodo_pago_id = $request->id_metodo_pago;
+            $cotizaciones->direccion_entrega = $request->direccion_entrega;
+            $cotizaciones->direccion_recinto = $request->direccion_recinto;
+            $cotizaciones->uso_recinto = ($request->text_recinto == 'recinto-si') ? 1 : 0;
+        }
+
         $cotizaciones->save();
 
         $doc_cotizaciones = Cotizaciones::where('id', '=', $cotizaciones->id)->first();
@@ -535,6 +545,9 @@ class CotizacionesController extends Controller
             $cotizaciones->id_subcliente = $request->get('id_subcliente');
             $cotizaciones->origen = $request->get('origen');
             $cotizaciones->destino = $request->get('destino');
+            $cotizaciones->direccion_entrega = $request->get('direccion_entrega');
+            $cotizaciones->uso_recinto = ($request->text_recinto == 'recinto-si') ? 1 : 0;
+            $cotizaciones->direccion_recinto = $request->direccion_recinto ;
             $cotizaciones->burreo = $request->get('burreo');
             $cotizaciones->estadia = $request->get('estadia');
             $cotizaciones->fecha_modulacion = $request->get('fecha_modulacion');
@@ -847,12 +860,13 @@ class CotizacionesController extends Controller
          switch($r->urlRepo){
             case 'BoletaLib': $update = ["boleta_liberacion" => $item['name']]; break;
             case 'Doda': $update = ["doda" => $item['name']]; break;
-            case 'CartaPorte': $update = ["carta_porte" => $item['name']]; break;
+            case 'CartaPorte': $update = ["doc_ccp" => $item['name'],"ccp" => "si"]; break;
             case 'PreAlta': $update = ["img_boleta" => $item['name']]; break;
 
          }
-         
-         ($r->urlRepo != 'CartaPorte' && $r->urlRepo != 'PreAlta' ) 
+
+        
+        ($r->urlRepo != 'PreAlta' ) 
          ? DocumCotizacion::where('id',$cotizacion->id_cotizacion)->update($update)
          : Cotizaciones::where('id',$cotizacion->id_cotizacion)->update($update);
 

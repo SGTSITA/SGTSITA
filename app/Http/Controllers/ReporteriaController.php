@@ -25,15 +25,22 @@ use Carbon\Carbon;
 use DB;
 use PDF;
 use Excel;
+use Auth;
 
 
 class ReporteriaController extends Controller
 {
     public function index(){
 
-        $clientes = Client::where('id_empresa' ,'=',auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
+        //$clientes = Client::where('id_empresa' ,'=',auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
+        $clientes = Client::join('client_empresa as ce','clients.id','=','ce.id_client')
+                            ->where('ce.id_empresa',Auth::User()->id_empresa)
+                            ->where('is_active',1)
+                            ->orderBy('nombre')->get();
 
-        $subclientes = Subclientes::where('id_empresa' ,'=',auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
+        $clientesIds = $clientes->pluck('id');
+
+        $subclientes = Subclientes::whereIn('id_cliente' ,$clientesIds)->orderBy('created_at', 'desc')->get();
         $proveedores = Proveedor::where('id_empresa' ,'=',auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
 
         return view('reporteria.cxc.index', compact('clientes', 'subclientes', 'proveedores'));
@@ -46,8 +53,15 @@ class ReporteriaController extends Controller
         $id_proveedor = $request->input('id_proveedor');
     
         // Obtener los clientes, subclientes y proveedores para mostrarlos en el formulario
-        $clientes = Client::where('id_empresa', auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
-        $subclientes = Subclientes::where('id_empresa', auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
+        //$clientes = Client::where('id_empresa', auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
+        $clientes = Client::join('client_empresa as ce','clients.id','=','ce.id_client')
+                            ->where('ce.id_empresa',Auth::User()->id_empresa)
+                            ->where('is_active',1)
+                            ->orderBy('nombre')->get();
+
+        $clientesIds = $clientes->pluck('id');
+
+        $subclientes = Subclientes::whereIn('id_cliente', $clientesIds)->orderBy('created_at', 'desc')->get();
         $proveedores = Proveedor::where('id_empresa', auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
     
         // Inicializar la consulta de cotizaciones
@@ -232,10 +246,17 @@ class ReporteriaController extends Controller
                              ->orderBy('created_at', 'desc')
                              ->get();
 
-    $clientes = Client::where('id_empresa', '=', auth()->user()->id_empresa)
+    /*$clientes = Client::where('id_empresa', '=', auth()->user()->id_empresa)
                         ->orderBy('nombre', 'asc')
-                        ->get();
-    $subclientes = Subclientes::where('id_empresa' ,'=',auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
+                        ->get();*/
+    $clientes = Client::join('client_empresa as ce','clients.id','=','ce.id_client')
+                            ->where('ce.id_empresa',Auth::User()->id_empresa)
+                            ->where('is_active',1)
+                            ->orderBy('nombre')->get();
+
+    $clientesIds = $clientes->pluck('id');
+
+    $subclientes = Subclientes::whereIn('id_cliente' ,$clientesIds)->orderBy('created_at', 'desc')->get();
 
     return view('reporteria.cxp.index', compact('proveedores', 'clientes','subclientes'));
 }
@@ -246,10 +267,14 @@ public function advance_cxp(Request $request)
                              ->orderBy('created_at', 'desc')
                              ->get();
 
-    $clientes = Client::where('id_empresa', '=', auth()->user()->id_empresa)
-                        ->orderBy('nombre', 'asc')
-                        ->get();
-     $subclientes = Subclientes::where('id_empresa' ,'=',auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
+    $clientes = Client::join('client_empresa as ce','clients.id','=','ce.id_client')
+                        ->where('ce.id_empresa',Auth::User()->id_empresa)
+                        ->where('is_active',1)
+                        ->orderBy('nombre')->get();
+
+    $clientesIds = $clientes->pluck('id');                        
+
+    $subclientes = Subclientes::whereIn('id_cliente' ,$clientesIds)->orderBy('created_at', 'desc')->get();
 
     // Obtener el ID del proveedor y del cliente desde la solicitud
     $id_proveedor = $request->input('id_proveedor');
