@@ -247,3 +247,11 @@ Route::patch('/configuracion/update/{id}', [App\Http\Controllers\ConfiguracionCo
 
 // En routes/web.php
 Route::get('/descargar-db', [App\Http\Controllers\DatabaseController::class, 'descargarBaseDeDatos'])->name('descargar.db');
+
+use App\Http\Controllers\CorreoController;
+
+// Ruta para la vista principal de correos
+Route::get('/correo', [App\Http\Controllers\CorreoController::class, 'index'])->name('correo.index');
+
+Route::post('/correo', [App\Http\Controllers\CorreoController::class, 'update'])->name('correo.update');
+

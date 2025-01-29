@@ -259,30 +259,42 @@
 
           <div class="collapse " id="pagesExamples">
             <ul class="nav ms-4">
-               @can('roles-permisos-users')
+                @can('roles-permisos-users')
                 <li class="nav-item ">
                     <a class="nav-link {{ (Request::is('users*') ? 'show' : '') }}" href="{{ route('users.index') }}">
-                    <span class="sidenav-mini-icon"> P </span>
-                    <span class="sidenav-normal">Usuarios</span>
-                    </a>
-                    @endcan
-
-                    @can('roles-permisos-users')
-                    <a class="nav-link {{ (Request::is('roles*') ? 'show' : '') }}" href="{{ route('roles.index') }}">
-                    <span class="sidenav-mini-icon"> P </span>
-                    <span class="sidenav-normal">Roles</span>
-                    </a>
-                    @endcan
-
-                    @can('empresas-list')
-                    <a class="nav-link {{ (Request::is('empresas*') ? 'show' : '') }}" href="{{ route('empresas.index') }}">
                         <span class="sidenav-mini-icon"> P </span>
-                        <span class="sidenav-normal">Empresas</span>
+                        <span class="sidenav-normal"> Usuarios </span>
                     </a>
                 </li>
-               @endcan
+                @endcan
+        
+                @can('roles-permisos-users')
+                <li class="nav-item ">
+                    <a class="nav-link {{ (Request::is('roles*') ? 'show' : '') }}" href="{{ route('roles.index') }}">
+                        <span class="sidenav-mini-icon"> P </span>
+                        <span class="sidenav-normal"> Roles </span>
+                    </a>
+                </li>
+                @endcan
+        
+                @can('empresas-list')
+                <li class="nav-item ">
+                    <a class="nav-link {{ (Request::is('empresas*') ? 'show' : '') }}" href="{{ route('empresas.index') }}">
+                        <span class="sidenav-mini-icon"> P </span>
+                        <span class="sidenav-normal"> Empresas </span>
+                    </a>
+                </li>
+                @endcan
+        
+                <!-- Nueva opción de Correo -->
+                <li class="nav-item ">
+                    <a class="nav-link {{ (Request::is('correo*') ? 'show' : '') }}" href="{{ route('correo.index') }}">
+                        <span class="sidenav-mini-icon"> C </span>
+                        <span class="sidenav-normal"> Correo </span>
+                    </a>
+                </li>
             </ul>
-          </div>
+        </div>
         </li>
 
         @can('configuracion-list')
