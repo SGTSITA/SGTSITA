@@ -27,6 +27,7 @@ Route::get('exportar-cxc', [ReporteriaController::class, 'exportarCxc']);
 
 Route::post('/exportar-cxc', [ReporteriaController::class, 'export'])->name('exportar.cxc');
 
+
 //////////////
 /*Route::get('/index-cxc', function () {
     return view('reporteria.cxc.index');
@@ -83,6 +84,7 @@ Route::group(['middleware' => ['auth']], function() {
     Route::resource('clients', ClientController::class);
     Route::post('clients/get-list',[App\Http\Controllers\ClientController::class,'get_list'])->name('clients.get');
     Route::post('clients/create', [App\Http\Controllers\ClientController::class, 'create'])->name('create.clients');
+    //
     Route::post('clients/store', [App\Http\Controllers\ClientController::class, 'store'])->name('store.clients');
     Route::post('clients/edit', [App\Http\Controllers\ClientController::class, 'edit'])->name('edit.clients');
     Route::post('clients/confirm-update', [App\Http\Controllers\ClientController::class, 'update'])->name('update.client');
@@ -245,3 +247,11 @@ Route::patch('/configuracion/update/{id}', [App\Http\Controllers\ConfiguracionCo
 
 // En routes/web.php
 Route::get('/descargar-db', [App\Http\Controllers\DatabaseController::class, 'descargarBaseDeDatos'])->name('descargar.db');
+
+use App\Http\Controllers\CorreoController;
+
+// Ruta para la vista principal de correos
+Route::get('/correo', [App\Http\Controllers\CorreoController::class, 'index'])->name('correo.index');
+
+Route::post('/correo', [App\Http\Controllers\CorreoController::class, 'update'])->name('correo.update');
+

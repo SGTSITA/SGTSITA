@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Client;
 use App\Models\Subclientes;
 use App\Models\User;
+use App\Models\Empresas;
+use App\Models\ClientEmpresa;
 use Illuminate\Http\Request;
 use Mediconesystems\LivewireDatatables\Column;
 use Mediconesystems\LivewireDatatables\NumberColumn;
@@ -45,14 +47,17 @@ class ClientController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function create()
-    {
-        $client = new Client();
-        return view('client.create', compact('client'));
-    }
+{
+    $client = new Client();
+    // Obtener todas las empresas 
+    $empresas = Empresas::All();
 
+    return view('client.create', compact('client','empresas'));
+    
+}
+///////////
 
-
-    /**
+ /**
      * Store a newly created resource in storage.
      *
      * @param  \Illuminate\Http\Request $request
@@ -244,12 +249,45 @@ class ClientController extends Controller
     }
 
     public function edit(Request $request)
-    {
-        $cliente = Client::find($request->id_client);
+{
+    $cliente = Client::find($request->id_client);
 
-        return view('client.create', compact('cliente'));
+    if ($request->has('toggle_empresa')) {
+        // Gestionar el cambio de estado del switch
+        $idEmpresa = $request->toggle_empresa; // ID de la empresa
+        $checked = $request->checked; // Estado del switch
+
+        if ($checked) {
+            // Crear la relación si está activada
+            DB::table('client_empresa')->updateOrInsert([
+                'id_client' => $cliente->id,
+                'id_empresa' => $idEmpresa,
+            ], [
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        } else {
+            // Eliminar la relación si está desactivada
+            DB::table('client_empresa')
+                ->where('id_client', $cliente->id)
+                ->where('id_empresa', $idEmpresa)
+                ->delete();
+        }
+
+        return response()->json(['success' => true]);
     }
 
+    // Obtener todas las empresas
+    $empresas = Empresas::all();
+
+    // Identificar las empresas vinculadas al cliente
+    $vinculadas = DB::table('client_empresa')
+        ->where('id_client', $cliente->id)
+        ->pluck('id_empresa')
+        ->toArray();
+
+    return view('client.create', compact('cliente', 'empresas', 'vinculadas'));
+}
     public function edit_subclientes($id)
     {
         $subcliente = Subclientes::find($id);
@@ -305,4 +343,5 @@ class ClientController extends Controller
         return redirect()->route('clients.index')
             ->with('success', 'Client deleted successfully');
     }
+    
 }
