@@ -13,7 +13,7 @@ class Correo extends Model
         'correo',
         'tipo_correo',
         'referencia',
-        'notificacion_nueva',
+        'cotizacion_nueva',
         'cancelacion_viaje',
         'nuevo_documento',
         'viaje_modificado',

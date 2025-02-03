@@ -13,6 +13,7 @@
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h3 class="mb-0">Correos</h3>
                     <div>
+                        <input type="text" id="searchCliente" class="form-control form-control-sm" placeholder="Buscar por cliente..." style="width: 250px; display: inline-block; margin-right: 10px;">
                         <button id="addRowButton" class="btn btn-outline-secondary btn-sm rounded-3 px-4 py-2">
                             <i class="fas fa-plus"></i> Agregar Fila
                         </button>
@@ -48,30 +49,34 @@
 document.addEventListener('DOMContentLoaded', function () {
     const container = document.getElementById('correosTable');
 
-    // Datos iniciales (pueden ser vacíos o cargados desde el servidor)
-    const initialData = @json($correos).map(correo => [
+    // Datos iniciales con la columna "Cliente"
+    let originalData = @json($correos).map(correo => [
         correo.id || null,                 // ID
         correo.correo || '',               // Correo
-        correo.tipo_correo || 'Personal',  // Tipo de Correo
-        correo.referencia || '',           // Referencia
-        !!correo.notificacion_nueva,       // Notificación Nueva (checkbox)
+        correo.tipo_correo || '',          // Tipo de Correo
+        correo.referencia || '',           // Referencia (Oculta)
+        correo.cliente || '',              // Cliente (Solo lectura)
+        !!correo.cotizacion_nueva,         // Cotización Nueva (checkbox)
         !!correo.cancelacion_viaje,        // Cancelación de Viaje (checkbox)
         !!correo.nuevo_documento,          // Nuevo Documento Cargado (checkbox)
         !!correo.viaje_modificado          // Viaje Modificado (checkbox)
     ]);
 
-    let nextId = initialData.length > 0 ? Math.max(...initialData.map(row => row[0])) + 1 : 1;
+    let displayedData = [...originalData]; // Para mostrar datos filtrados
 
-    // Inicializar Handsontable con checkboxes centrados
+    let nextId = originalData.length > 0 ? Math.max(...originalData.map(row => row[0])) + 1 : 1;
+
+    // Inicializar Handsontable con checkboxes y columna Cliente
     const hot = new Handsontable(container, {
-        data: initialData,
+        data: displayedData,
         rowHeaders: true,
         colHeaders: [
             'ID',
             'Correo',
             'Tipo de Correo',
             'Referencia',
-            'Notificación Nueva',
+            'Cliente',
+            'Cotización Nueva',
             'Cancelación de Viaje',
             'Nuevo Documento Cargado',
             'Viaje Modificado'
@@ -79,17 +84,29 @@ document.addEventListener('DOMContentLoaded', function () {
         columns: [
             { data: 0, type: 'numeric', readOnly: true }, // ID (solo lectura)
             { data: 1, type: 'text' },                   // Correo
-            { data: 2, type: 'dropdown', source: ['Personal', 'Trabajo', 'Otro'] }, // Tipo de Correo
-            { data: 3, type: 'text' },                   // Referencia
-            { data: 4, type: 'checkbox', className: 'htCenter' }, // Notificación Nueva
-            { data: 5, type: 'checkbox', className: 'htCenter' }, // Cancelación de Viaje
-            { data: 6, type: 'checkbox', className: 'htCenter' }, // Nuevo Documento Cargado
-            { data: 7, type: 'checkbox', className: 'htCenter' }  // Viaje Modificado
+            { data: 2, type: 'dropdown', source: ['SGT', 'MEC'] }, // Tipo de Correo
+            { data: 3, type: 'text', readOnly: true },   // Referencia (Oculta)
+            { data: 4, type: 'text', readOnly: true },   // Cliente (Solo lectura)
+            { data: 5, type: 'checkbox', className: 'htCenter' }, // Cotización Nueva
+            { data: 6, type: 'checkbox', className: 'htCenter' }, // Cancelación de Viaje
+            { data: 7, type: 'checkbox', className: 'htCenter' }, // Nuevo Documento Cargado
+            { data: 8, type: 'checkbox', className: 'htCenter' }  // Viaje Modificado
         ],
+        hiddenColumns: {
+            columns: [0, 3], // Oculta la columna Referencia e ID
+            indicators: false
+        },
         licenseKey: 'non-commercial-and-evaluation',
         width: '100%',
         height: 'auto',
         stretchH: 'all',
+    });
+
+    // Filtro de búsqueda por Cliente
+    document.getElementById('searchCliente').addEventListener('input', function () {
+        const searchText = this.value.toLowerCase();
+        displayedData = originalData.filter(row => row[4].toLowerCase().includes(searchText));
+        hot.loadData(displayedData);
     });
 
     // Botón para agregar fila
@@ -97,18 +114,19 @@ document.addEventListener('DOMContentLoaded', function () {
         const newRow = [
             nextId++, // ID automático
             '',       // Correo
-            'Personal', // Tipo de Correo por defecto
-            '',       // Referencia
-            false,    // Notificación Nueva (checkbox por defecto)
-            false,    // Cancelación de Viaje (checkbox por defecto)
-            false,    // Nuevo Documento Cargado (checkbox por defecto)
-            false     // Viaje Modificado (checkbox por defecto)
+            'SGT',    // Tipo de Correo por defecto
+            '',       // Referencia (Oculta)
+            '',       // Cliente (Solo lectura)
+            false,    // Cotización Nueva
+            false,    // Cancelación de Viaje
+            false,    // Nuevo Documento Cargado
+            false     // Viaje Modificado
         ];
-        hot.alter('insert_row', hot.countRows()); // Inserta una nueva fila
-        hot.setDataAtRowProp(hot.countRows() - 1, undefined, newRow); // Asigna valores a la nueva fila
+        hot.alter('insert_row', hot.countRows());
+        hot.setDataAtRowProp(hot.countRows() - 1, undefined, newRow);
     });
 
-    // Botón para guardar cambios con confirmación SweetAlert
+    // Botón para guardar cambios con SweetAlert
     document.getElementById('saveChangesButton').addEventListener('click', function () {
         Swal.fire({
             title: "¿Estás seguro?",
