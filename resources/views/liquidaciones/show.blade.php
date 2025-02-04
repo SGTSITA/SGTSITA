@@ -8,6 +8,32 @@
 
     <div class="contaboleta_liberacionr-fluid">
         <div class="row">
+        <div class="col-lg-4 col-sm-8">
+          <div class="nav-wrapper position-relative end-0">
+            <ul class="nav nav-pills nav-fill p-1" role="tablist">
+              <li class="nav-item" role="presentation">
+                <a class="nav-link mb-0 px-0 py-1 active  active " data-bs-toggle="tab" href="../../examples/pages/account/settings.html" role="tab" aria-selected="true">
+                  Messages
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link mb-0 px-0 py-1 " data-bs-toggle="tab" href="../../examples/pages/account/billing.html" role="tab" aria-selected="false">
+                  Social
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link mb-0 px-0 py-1 " data-bs-toggle="tab" href="../../examples/pages/account/invoice.html" role="tab" aria-selected="false">
+                  Notifications
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link mb-0 px-0 py-1 " data-bs-toggle="tab" href="../../examples/pages/account/security.html" role="tab" aria-selected="false">
+                  Backup
+                </a>
+              </li>
+            <div class="moving-tab position-absolute nav-link" style="padding: 0px; transition: 0.5s; transform: translate3d(0px, 0px, 0px); width: 98px;"><a class="nav-link mb-0 px-0 py-1 active  active " data-bs-toggle="tab" href="../../examples/pages/account/settings.html" role="tab" aria-selected="true">-</a></div></ul>
+          </div>
+        </div>
             <div class="col-sm-12">
                 <div class="card">
                     <div class="card-header">

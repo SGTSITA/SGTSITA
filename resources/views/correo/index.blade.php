@@ -79,7 +79,7 @@ document.addEventListener('DOMContentLoaded', function () {
         columns: [
             { data: 0, type: 'numeric', readOnly: true }, // ID (solo lectura)
             { data: 1, type: 'text' },                   // Correo
-            { data: 2, type: 'dropdown', source: ['Personal', 'Trabajo', 'Otro'] }, // Tipo de Correo
+            { data: 2, type: 'dropdown', source: ['SGT', 'MEC'] }, // Tipo de Correo
             { data: 3, type: 'text' },                   // Referencia
             { data: 4, type: 'checkbox', className: 'htCenter' }, // Notificación Nueva
             { data: 5, type: 'checkbox', className: 'htCenter' }, // Cancelación de Viaje

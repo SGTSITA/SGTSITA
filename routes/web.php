@@ -226,7 +226,8 @@ Route::group(['middleware' => ['auth']], function() {
     Route::post('liquidaciones/update/varios', [App\Http\Controllers\LiquidacionesController::class, 'update_varios'])->name('update_varios.liquidacion');
 
     // ==================== G A S T O S  G E N E R A L E S ====================
-    Route::get('gastos/generales', [App\Http\Controllers\GastosGeneralesController::class, 'index'])->name('index.gastos_generales');
+    Route::get('gastos/generales',[App\Http\Controllers\GastosGeneralesController::class, 'index'])->name('index.gastos_generales');
+    Route::post('gastos/generales/get',[App\Http\Controllers\GastosGeneralesController::class, 'getGastos'])->name('get.gastos_generales');
     Route::post('gastos/generales/create', [App\Http\Controllers\GastosGeneralesController::class, 'store'])->name('store.gastos_generales');
 
     // ==================== C A T A L O G O ====================

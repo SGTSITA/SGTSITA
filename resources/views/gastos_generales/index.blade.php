@@ -11,14 +11,18 @@ Gastos Generales
                 <div class="card">
                     <div class="card-header">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <h2 id="card_title">
+                            <h5 id="card_title">
                                 Gastos Generales
-                            </h2>
+                                <p class="text-sm mb-0">
+                                    <i class="fa fa-calendar text-success"></i>
+                                    <span class="font-weight-bold">Periodo:</span> del {{$initDay}} al {{$now}}
+                                </p>
+                            </h5>
 
                               @can('gastos-create')
                              <div class="float-right">
-                                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal" style="background: {{$configuracion->color_boton_add}}; color: #ffff">
-                                    <i class="fa fa-fw fa-plus"></i>  Crear
+                                <button type="button" class="btn btn-sm bg-gradient-info" data-bs-toggle="modal" data-bs-target="#exampleModal">
+                                    <i class="fa fa-fw fa-plus"></i>  Agregar Gasto
                                 </button>
                               </div>
                               @endcan
@@ -27,34 +31,8 @@ Gastos Generales
                     </div>
 
                     <div class="card-body"style=" padding: 0rem 1.5rem 1.5rem 1.5rem;">
-                        <div class="table-responsive">
-                            <table class="table table-striped table-hover table_id" id="datatable-search">
-                                <thead class="thead">
-                                    <tr>
-                                        <th>No</th>
-										<th>Motivo</th>
-										<th>Monto</th>
-										<th>Metodo</th>
-                                        <th>Banco</th>
-                                        <th>Fecha</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach ($gastos as $gasto)
-                                        <tr>
-                                            <td>{{ $gasto->id }}</td>
-
-											<td>{{ $gasto->motivo }}</td>
-											<td>
-                                               <b> ${{ number_format($gasto->monto1, 2, '.', ',') }} </b>
-                                            </td>
-											<td>{{ $gasto->metodo_pago1 }}</td>
-                                            <td>{{ $gasto->Banco1->nombre_banco }}</td>
-                                            <td>{{ $gasto->fecha }}</td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
+                        <div class="row">
+                         <div id="myGrid" class="col-12 ag-theme-quartz" style="height: 500px"></div>
                         </div>
                     </div>
                 </div>
@@ -64,14 +42,24 @@ Gastos Generales
 @include('gastos_generales.create')
 @endsection
 
-@section('datatable')
+@push('custom-javascript')
+<script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.js"></script>
+<script src="{{ asset('js/sgt/common.js') }}?v={{ filemtime(public_path('js/sgt/common.js')) }}"></script>
+<script src="{{ asset('js/sgt/gastos/gastos.js') }}?v={{ filemtime(public_path('js/sgt/gastos/gastos.js')) }}"></script>
 
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
 <script>
-    const dataTableSearch = new simpleDatatables.DataTable("#datatable-search", {
-      searchable: true,
-      fixedHeight: false
+    $(document).ready(()=>{
+        getGastos('{{$initDay}}','{{$now}}');
+
+        flatpickr(".fechas", {
+        locale: "es",
+        dateFormat: "Y-m-d", // Formato de la fecha (Año-Mes-Día)
+        allowInput: false     // Permite escribir manualmente la fecha
     });
-
+        
+    });
 </script>
-
-@endsection
+@endpush

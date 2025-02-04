@@ -271,7 +271,7 @@
                                         @else
                                             @if(isset($item->contenedores))
                                                 <a data-bs-toggle="collapse" href="#pagesOperadores{{ $item->id }}" aria-controls="pagesOperadores" role="button" aria-expanded="false">
-                                                    Liquidación Varios <br> <b style="color: #226dc2">{{ $item->Operador->nombre }}</b>
+                                                    {{$item->descripcion_gasto}}<br> <b style="color: #226dc2">{{ $item->Operador->nombre }}</b>
                                                 </a>
                                                 <div class="collapse " id="pagesOperadores{{ $item->id }}">
                                                     Contenedores y Abonos

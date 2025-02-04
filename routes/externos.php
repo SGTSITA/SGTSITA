@@ -5,7 +5,9 @@ use App\Http\Controllers\ExternosController;
 use App\Http\Controllers\CotizacionesController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\UserController;
-
+Route::get('gps',function(){
+ return view('gps.magnitracking');
+});
 Route::group(["prefix" => "viajes"], function(){
     Route::post('selector', [ExternosController::class,'selector'])->name('viajes.selector');
     Route::get('solicitud/simple',[ExternosController::class,'solicitudSimple'])->name('viajes.simple');

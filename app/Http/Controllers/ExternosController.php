@@ -9,6 +9,7 @@ use App\Models\SatFormaPago;
 use App\Models\SatMetodoPago;
 use App\Models\SatUsoCfdi;
 use App\Models\DocumCotizacion;
+use App\Models\Correo;
 use Illuminate\Support\Facades\Mail;
 use App\Traits\CommonTrait;
 use Carbon\Carbon;
@@ -110,9 +111,10 @@ class ExternosController extends Controller
                 $cliente = Client::where('id',$cotizacion->id_cliente)->first();
                 $cotizacion->save();
 
-                $emailList = [env('MAIL_NOTIFICATIONS'),Auth::User()->email];
-
-                Mail::to($emailList)->send(new \App\Mail\NotificaCotizacionMail($contenedor,$cliente));
+                $cuentasCorreo = [env('MAIL_NOTIFICATIONS'),Auth::User()->email];
+                $cuentasCorreo2 = Correo::where('cotizacion_nueva',1)->get()->pluck('correo')->toArray();
+                \Log::debug($cuentasCorreo);
+                Mail::to($cuentasCorreo)->send(new \App\Mail\NotificaCotizacionMail($contenedor,$cliente));
 
             }
         }catch(\Throwable $t){
