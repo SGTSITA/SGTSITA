@@ -12,60 +12,41 @@ Liquidaciones
                 <div class="card">
                     <div class="card-header">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <h2 id="card_title">
+                        <h5 id="card_title">
                                 Liquidaciones
-                            </h2>
+                                <p class="text-sm mb-0">
+                                    <i class="fa fa-calendar text-success"></i>
+                                    <span class="font-weight-bold">Periodo:</span> 
+                                </p>
+                            </h5>
 
-                             <div class="float-right">
-
+                            <div class="float-right">
+                                <button type="button" class="btn btn-sm bg-gradient-info" id="openPay">
+                                    <i class="fa fa-fw fa-money-bill"></i>  Pagar viajes
+                                </button>
                               </div>
                         </div>
                     </div>
 
                     <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-striped table-hover table_id text-center" id="datatable-search">
-                                <thead class="thead">
-                                    <tr>
-										<th><img src="{{ asset('img/icon/user_predeterminado.webp') }}" alt="" width="25px"> Nombre</th>
-										<th><img src="{{ asset('img/icon/phone.webp') }}" alt="" width="25px"> Telefono</th>
-										<th><img src="{{ asset('img/icon/origen.png') }}" alt="" width="25px"> Viajes realizados</th>
-                                        <th><img src="{{ asset('img/icon/bolsa-de-dinero.webp') }}" alt="" width="25px"> Total a pagar</th>
-                                        <th><img src="{{ asset('img/icon/edit.png') }}" alt="" width="25px"> Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach ($asignacion_operador as $item)
-                                        <tr>
-											<td>{{ $item->Operador->nombre }}</td>
-											<td>{{ $item->Operador->telefono }}</td>
-											<td>{{ $item->total_cotizaciones  }}</td>
-                                            <td>$ {{ number_format($item->total_pago, 2, '.', ',') }}</td>
-                                            <td>
-                                                <a class="btn btn-xs btn-success" href="{{ route('show.liquidacion', $item->id_operador) }}">
-                                                    <i class="fa fa-fw fa-edit"></i> Ver
-                                                </a>
-                                            </td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
+                    <div id="myGrid" class="col-12 ag-theme-quartz" style="height: 500px"></div>
+                      
                     </div>
                 </div>
             </div>
         </div>
     </div>
-@include('client.modal_create')
+
 @endsection
 
-@section('datatable')
+@push('custom-javascript')
+<script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.js"></script>
+<script src="{{ asset('js/sgt/common.js') }}?v={{ filemtime(public_path('js/sgt/common.js')) }}"></script>
+<script src="{{ asset('js/sgt/liquidaciones/liquidaciones.js') }}?v={{ filemtime(public_path('js/sgt/liquidaciones/liquidaciones.js')) }}"></script>
 
 <script>
-    const dataTableSearch = new simpleDatatables.DataTable("#datatable-search", {
-      searchable: true,
-      fixedHeight: false
+    $(document).ready(()=>{
+        getViajesOperadores();
     });
 </script>
-
-@endsection
+@endpush

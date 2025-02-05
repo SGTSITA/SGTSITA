@@ -251,6 +251,7 @@ class PlaneacionController extends Controller
             if($request->get('sueldo_viaje') > $request->get('dinero_viaje')){
                 $resta = $request->get('sueldo_viaje') - $request->get('dinero_viaje');
                 $asignaciones->pago_operador = $resta;
+                $asignaciones->restante_pago_operador = $resta;                
             }
 
             $asignaciones->update();
@@ -269,7 +270,8 @@ class PlaneacionController extends Controller
             $cotizacion->update();
         } else {
             try{
-                DB::beginTransaction();
+
+            DB::beginTransaction();
             $asignaciones = new Asignaciones;
             $asignaciones->id_chasis = $request->get('chasis');
             $asignaciones->id_chasis2 = $request->get('chasisAdicional1');
@@ -319,6 +321,7 @@ class PlaneacionController extends Controller
             if($request->get('sueldo_viaje') > $request->get('dinero_viaje')){
             $resta = $request->get('sueldo_viaje') - $request->get('dinero_viaje');
             $asignaciones->pago_operador = $resta;
+            $asignaciones->restante_pago_operador = $resta;
             }
             $asignaciones->save();
 

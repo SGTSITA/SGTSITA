@@ -55,10 +55,10 @@ Gastos Generales
         getGastos('{{$initDay}}','{{$now}}');
 
         flatpickr(".fechas", {
-        locale: "es",
-        dateFormat: "Y-m-d", // Formato de la fecha (Año-Mes-Día)
-        allowInput: false     // Permite escribir manualmente la fecha
-    });
+            locale: "es",
+            dateFormat: "Y-m-d", // Formato de la fecha (Año-Mes-Día)
+            allowInput: false     // Permite escribir manualmente la fecha
+        });
         
     });
 </script>
