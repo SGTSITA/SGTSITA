@@ -20,11 +20,17 @@ class GastosGenerales extends Model
         'id_banco1',
         'id_banco2',
         'id_empresa',
+        'id_categoria'
     ];
 
     public function Banco1()
     {
         return $this->belongsTo(Bancos::class, 'id_banco1');
+    }
+
+    public function Categoria()
+    {
+        return $this->belongsTo(CategoriasGastos::class, 'id_categoria');
     }
 
 }

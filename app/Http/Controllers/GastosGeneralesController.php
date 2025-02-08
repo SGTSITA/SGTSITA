@@ -32,7 +32,7 @@ class GastosGeneralesController extends Controller
             return [
                      "Descripcion" => $g->motivo,
                      "Monto" => $g->monto1,
-                     "Categoria" => 'Ninguno',
+                     "Categoria" => $g->categoria->categoria,
                      "CuentaOrigen" => $g->banco1->nombre_banco,
                      "FechaGasto" => $g->fecha,
                      "FechaContabilizado" => $g->fecha,

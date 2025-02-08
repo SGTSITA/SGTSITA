@@ -151,12 +151,62 @@ class MissionResultRenderer {
   
   const myGridElement = document.querySelector('#myGrid');
   let apiGrid = agGrid.createGrid(myGridElement, gridOptions);
- // const gridInstance = new agGrid.Grid(myGridElement, gridOptions);
+  let btnDiferir = document.querySelector('#btnDiferir');
+  let labelMontoGasto = document.querySelector('#labelMontoGasto')
+  let labelGastoDiario = document.querySelector('#labelGastoDiario')
+  let labelDiasPeriodo = document.querySelector('#labelDiasPeriodo')
+  let labelDescripcionGasto = document.querySelector("#labelDescripcionGasto")
+
   
   var paginationTitle = document.querySelector("#ag-32-label");
   paginationTitle.textContent = 'Registros por página';
   
+  document.querySelectorAll(".fechasDiferir").forEach(elemento => {
+    elemento.addEventListener("focus", () => calcDays());
+    elemento.addEventListener("blur", () => calcDays());
+    elemento.addEventListener("change", () => calcDays());
+});
+
   let IdContenedor = null;
+
+  function diferenciaEnDias(fecha1, fecha2) {
+    fecha1ToTime = new Date(fecha1)
+    fecha2Totme = new Date(fecha2)
+    const unDia = 1000 * 60 * 60 * 24; // Milisegundos en un día
+    const diferenciaMs = Math.abs(fecha2Totme.getTime() - fecha1ToTime.getTime());
+    return Math.floor(diferenciaMs / unDia);
+ }
+
+  function calcDays(){
+    let fechaI = document.getElementById('txtDiferirFechaInicia');
+    let fechaF = document.getElementById('txtDiferirFechaTermina');
+
+    if(fechaI.value.length > 0 && fechaF.value.length > 0){
+     let diasContados = diferenciaEnDias(fechaI.value, fechaF.value)
+     labelDiasPeriodo.textContent = diasContados
+
+     let amount = reverseMoneyFormat(labelMontoGasto.textContent)
+     let dailyAmount = parseFloat(amount) / diasContados
+     labelGastoDiario.textContent = moneyFormat(dailyAmount)
+    }
+  }
+
+  btnDiferir.addEventListener('click',()=>{
+    let gasto = apiGrid.getSelectedRows();
+
+    if(gasto.length <= 0 || gasto.length > 1){
+      Swal.fire('Seleccionar UN Gasto','Debe seleccionar el gasto que desea diferir','warning');
+      return;
+    } 
+
+    labelMontoGasto.textContent = moneyFormat(gasto[0].Monto)
+    labelDescripcionGasto.textContent = gasto[0].Descripcion
+    calcDays()
+    const modalElement = document.getElementById('modalDiferir');
+    const bootstrapModal = new bootstrap.Modal(modalElement);
+    bootstrapModal.show();
+
+  })
    
    function getGastos(from,to){
     var _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
@@ -178,7 +228,6 @@ class MissionResultRenderer {
     e.preventDefault();
     var form = $(this);
    
-
     var passValidation = gastosFormFields.every((item) => {
         var field = document.getElementById(item.field);
         if(field){

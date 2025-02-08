@@ -21,6 +21,9 @@ Gastos Generales
 
                               @can('gastos-create')
                              <div class="float-right">
+                                <button type="button" class="btn btn-sm bg-gradient-warning" id="btnDiferir">
+                                    <i class="fa fa-fw fa-coins"></i>  Diferir
+                                </button>
                                 <button type="button" class="btn btn-sm bg-gradient-info" data-bs-toggle="modal" data-bs-target="#exampleModal">
                                     <i class="fa fa-fw fa-plus"></i>  Agregar Gasto
                                 </button>
@@ -40,13 +43,13 @@ Gastos Generales
         </div>
     </div>
 @include('gastos_generales.create')
+@include('gastos_generales.modal-diferir')
 @endsection
 
 @push('custom-javascript')
 <script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.js"></script>
 <script src="{{ asset('js/sgt/common.js') }}?v={{ filemtime(public_path('js/sgt/common.js')) }}"></script>
 <script src="{{ asset('js/sgt/gastos/gastos.js') }}?v={{ filemtime(public_path('js/sgt/gastos/gastos.js')) }}"></script>
-
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>

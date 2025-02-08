@@ -15,8 +15,8 @@ Liquidaciones
                         <h5 id="card_title">
                                 Liquidaciones
                                 <p class="text-sm mb-0">
-                                    <i class="fa fa-calendar text-success"></i>
-                                    <span class="font-weight-bold">Periodo:</span> 
+                                   
+                                    <span class="font-weight-bold">Pagos pendientes a operadores</span> 
                                 </p>
                             </h5>
 
