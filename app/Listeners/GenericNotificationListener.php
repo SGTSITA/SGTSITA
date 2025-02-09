@@ -25,6 +25,7 @@ class GenericNotificationListener
      */
     public function handle(GenericNotificationEvent $event)
     {
+        //Envio de email
         Mail::to($event->emailAccounts)
         ->send(new \App\Mail\GenericNotificationMail($event->emailSubject,$event->emailMessage));
     }
