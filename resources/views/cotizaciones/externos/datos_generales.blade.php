@@ -143,8 +143,6 @@
               <input type="text" class="form-control" autocomplete="off" id="sobrepeso" placeholder="" value ="0" oninput="allowOnlyDecimals(event)"/>
               <input type="text" class="form-control" autocomplete="off" id="precio_sobre_peso" placeholder="" value ="0" oninput="allowOnlyDecimals(event)"/>
               <input type="text" class="form-control" autocomplete="off" id="precio_tonelada" placeholder="" value ="0" oninput="allowOnlyDecimals(event)"/>
-
-              
             </div>
         </div>
       </div>
@@ -166,6 +164,43 @@
               <div class="form-floating">
                 <input type="text" class="form-control" autocomplete="off" id="peso_contenedor" placeholder="" oninput="allowOnlyDecimals(event)"/>
                 <label for="peso_contenedor" class="text-gray-700">Peso de Contenedor</label>
+              </div>
+        </div>
+      </div>
+      <div class="col-6"></div>
+      <div class="col-6">
+        <div class="input-group mb-5">
+              <span class="input-group-text" id="basic-addon1">
+              <i class="ki-duotone ki-calendar-8 fs-1">
+                <span class="path1"></span>
+                <span class="path2"></span>
+                <span class="path3"></span>
+                <span class="path4"></span>
+                <span class="path5"></span>
+                <span class="path6"></span>
+              </i>
+              </span>
+              <div class="form-floating">
+                <input type="text" class="form-control fechas" autocomplete="off" id="fecha_modulacion" name="fecha_modulacion" placeholder="" oninput="allowOnlyDecimals(event)"/>
+                <label for="fecha_modulacion" class="text-gray-700">Fecha Modulación</label>
+              </div>
+        </div>
+      </div>
+      <div class="col-6">
+        <div class="input-group mb-5">
+              <span class="input-group-text" id="basic-addon1">
+              <i class="ki-duotone ki-calendar-8 fs-1">
+                <span class="path1"></span>
+                <span class="path2"></span>
+                <span class="path3"></span>
+                <span class="path4"></span>
+                <span class="path5"></span>
+                <span class="path6"></span>
+              </i>
+              </span>
+              <div class="form-floating">
+                <input type="text" class="form-control fechas" autocomplete="off" id="fecha_entrega" name="fecha_entrega" placeholder="" oninput="allowOnlyDecimals(event)"/>
+                <label for="fecha_entrega" class="text-gray-700">Fecha Entrega</label>
               </div>
         </div>
       </div>
@@ -207,7 +242,7 @@
  </div>
               <!--end::Record-->
 
-          </div>
+</div>
           <!--end::Timeline details-->
       </div>
       <!--end::Timeline content-->    
