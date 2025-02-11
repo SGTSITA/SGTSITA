@@ -123,27 +123,31 @@ class MissionResultRenderer {
   };
 
   const gridOptions = {
-   pagination: true,
-      paginationPageSize: 10,
-      paginationPageSizeSelector: [10, 20, 50,100],
-      rowSelection: {
-        mode: "multiRow",
-        headerCheckbox: true,
-      },
+    pagination: true,
+    paginationPageSize: 10,
+    paginationPageSizeSelector: [10, 20, 50,100],
+    rowSelection: {
+      mode: "multiRow",
+      headerCheckbox: true,
+    },
+    rowClassRules: {
+      // apply green to electric cars
+      'rag-green': params => params.data.Diferido === "Diferido",
+  },
    rowData: [
   
    ],
 
    columnDefs: [
-     { field: "IdContenedor", hide: true},
-     { field: "IdCliente", hide: true},
+     { field: "IdGasto", hide: true},
      { field: "Descripcion" },
      { field: "Monto",width: 150, valueFormatter: params => currencyFormatter(params.value), cellStyle: { textAlign: "right" }},
      { field: "Categoria",width: 150 },
      { field: "CuentaOrigen",filter: true, floatingFilter: true},
      { field: "FechaGasto",filter: true, floatingFilter: true,valueFormatter: params => formatFecha(params.value)},
      { field: "FechaContabilizado",filter: true, floatingFilter: true,valueFormatter: params => formatFecha(params.value)},    
-     { field: "Estatus",cellRenderer: MissionResultRenderer}
+     { field: "Estatus",cellRenderer: MissionResultRenderer},
+     { field: "Diferido"}
    ],
   
    localeText: localeText
@@ -156,18 +160,19 @@ class MissionResultRenderer {
   let labelGastoDiario = document.querySelector('#labelGastoDiario')
   let labelDiasPeriodo = document.querySelector('#labelDiasPeriodo')
   let labelDescripcionGasto = document.querySelector("#labelDescripcionGasto")
+  let btnConfirmacion = document.querySelector('#btnConfirmacion')
 
   
   var paginationTitle = document.querySelector("#ag-32-label");
   paginationTitle.textContent = 'Registros por página';
   
   document.querySelectorAll(".fechasDiferir").forEach(elemento => {
-    elemento.addEventListener("focus", () => calcDays());
-    elemento.addEventListener("blur", () => calcDays());
-    elemento.addEventListener("change", () => calcDays());
+  elemento.addEventListener("focus", () => calcDays());
+  elemento.addEventListener("blur", () => calcDays());
+  elemento.addEventListener("change", () => calcDays());
 });
 
-  let IdContenedor = null;
+  let IdGasto = null;
 
   function diferenciaEnDias(fecha1, fecha2) {
     fecha1ToTime = new Date(fecha1)
@@ -199,8 +204,14 @@ class MissionResultRenderer {
       return;
     } 
 
+    if(gasto[0].Diferido == "Diferido"){
+      Swal.fire('Previamente diferido','Este gasto ya fue diferido previtamente','warning');
+      return;
+    }
+
     labelMontoGasto.textContent = moneyFormat(gasto[0].Monto)
     labelDescripcionGasto.textContent = gasto[0].Descripcion
+    IdGasto = gasto[0].IdGasto
     calcDays()
     const modalElement = document.getElementById('modalDiferir');
     const bootstrapModal = new bootstrap.Modal(modalElement);
@@ -266,7 +277,7 @@ class MissionResultRenderer {
         success:function(data){
                 Swal.fire(data.Titulo,data.Mensaje,data.TMensaje).then(function() {
                     if(data.TMensaje == "success"){
-                       
+                      $('#exampleModal').modal('hide')
                     
                     }
                 });
@@ -275,7 +286,44 @@ class MissionResultRenderer {
         Swal.fire("Error","Ha ocurrido un error, intentelo nuevamente","error");
         }
     })
-  }) 
+  })
+
+  function diferirGasto(){
+    let fechaDesde = document.getElementById('txtDiferirFechaInicia')
+    let fechaHasta = document.getElementById('txtDiferirFechaTermina')
+
+    let gastoDiario = labelGastoDiario.textContent
+    let diasContados = labelDiasPeriodo.textContent
+    let _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+    if(fechaDesde.value.length == 0 || fechaHasta.value.length == 0){
+      Swal.fire('Definir periodo','Por favor seleccione la fecha inicial y final del periodo','warning');
+      return false;
+    }
+
+    let _IdGasto = IdGasto
+
+    $.ajax({
+      url: '/gastos/diferir',
+      type:'post',
+      data:{_token,_IdGasto,gastoDiario,diasContados,fechaDesde: fechaDesde.value, fechaHasta: fechaHasta.value},
+      beforeSend:()=>{},
+      success:(response)=>{
+        if(response.TMensaje == 'success'){
+    
+          $('#modalDiferir').modal('hide')
+        }
+        Swal.fire(response.Titulo,response.Mensaje,response.TMensaje)
+      },
+      error:()=>{
+        Swal.fire('Error','Ocurrió un error','error')
+      }
+    });
+  }
+
+  btnConfirmacion.addEventListener('click',()=>{
+    diferirGasto()
+  })
 
    $(".moneyformat").on("focus",(e)=>{
     var val = e.target.value;

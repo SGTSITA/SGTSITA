@@ -30,13 +30,15 @@ class GastosGeneralesController extends Controller
 
         $gastosInformacion = $gastos->map(function($g){
             return [
+                     "IdGasto" => $g->id,
                      "Descripcion" => $g->motivo,
                      "Monto" => $g->monto1,
                      "Categoria" => $g->categoria->categoria,
                      "CuentaOrigen" => $g->banco1->nombre_banco,
                      "FechaGasto" => $g->fecha,
                      "FechaContabilizado" => $g->fecha,
-                     "Estatus" => true
+                     "Estatus" => true,
+                     "Diferido" => ($g->diferir_gasto == 1) ? 'Diferido' : ''
                    ];
         });
         return $gastosInformacion;
@@ -85,5 +87,16 @@ class GastosGeneralesController extends Controller
 
         }
 
+    }
+
+    public function diferir(Request $r){
+        GastosGenerales::where('id',$r->_IdGasto)->update([
+            "diferir_gasto" => 1,
+            "diferir_contador_periodos" => $r->diasContados,
+            "fecha_diferido_inicial" => $r->fechaDesde,
+            "fecha_diferido_final" => $r->fechaHasta
+        ]);
+
+        return response()->json(["Titulo" => "Exito!", "Mensaje" => "Se ha diferido el gasto exitosamente", "TMensaje" => "success"]);
     }
 }

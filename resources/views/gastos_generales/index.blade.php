@@ -47,6 +47,15 @@ Gastos Generales
 @endsection
 
 @push('custom-javascript')
+<style>
+    .rag-red {
+    background-color: #cc222244;
+}
+
+.rag-green {
+    background-color: #33cc3344;
+}
+</style>
 <script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.js"></script>
 <script src="{{ asset('js/sgt/common.js') }}?v={{ filemtime(public_path('js/sgt/common.js')) }}"></script>
 <script src="{{ asset('js/sgt/gastos/gastos.js') }}?v={{ filemtime(public_path('js/sgt/gastos/gastos.js')) }}"></script>
