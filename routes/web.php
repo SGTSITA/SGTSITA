@@ -206,6 +206,7 @@ Route::group(['middleware' => ['auth']], function() {
     Route::post('reporteria/viajes/export', [App\Http\Controllers\ReporteriaController::class, 'export_viajes'])->name('export_viajes.viajes');
 
     Route::get('reporteria/utilidad', [App\Http\Controllers\ReporteriaController::class, 'index_utilidad'])->name('index_utilidad.reporteria')->middleware('finanzas:3');
+    Route::post('reporteria/utilidad/ver-utilidad' ,[App\Http\Controllers\ReporteriaController::class, 'getContenedorUtilidad']);
     Route::get('reporteria/utilidad/buscador', [App\Http\Controllers\ReporteriaController::class, 'advance_utilidad'])->name('advance_utilidad.buscador')->middleware('finanzas:3');
     Route::post('reporteria/utilidad/export', [App\Http\Controllers\ReporteriaController::class, 'export_utilidad'])->name('export_utilidad.export')->middleware('finanzas:3');
 

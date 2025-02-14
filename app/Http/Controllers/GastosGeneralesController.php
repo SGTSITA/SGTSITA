@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Bancos;
 use App\Models\GastosGenerales;
 use App\Models\CategoriasGastos;
+use App\Models\GastosDiferidosDetalle;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use DB;
@@ -90,13 +91,47 @@ class GastosGeneralesController extends Controller
     }
 
     public function diferir(Request $r){
-        GastosGenerales::where('id',$r->_IdGasto)->update([
+        try{
+            DB::beginTransaction();
+            DB::commit();
+            $gastosGenerales = GastosGenerales::where('id',$r->_IdGasto);
+
+        $montoGasto = $gastosGenerales->first()->monto1;
+        $montoDiario = $montoGasto / $r->diasContados;
+
+        $gastosGenerales->update([
             "diferir_gasto" => 1,
             "diferir_contador_periodos" => $r->diasContados,
             "fecha_diferido_inicial" => $r->fechaDesde,
             "fecha_diferido_final" => $r->fechaHasta
         ]);
 
-        return response()->json(["Titulo" => "Exito!", "Mensaje" => "Se ha diferido el gasto exitosamente", "TMensaje" => "success"]);
+        $fechaDesde = Carbon::parse($r->fechaDesde);
+        $fechaHasta = Carbon::parse($r->fechaHasta);
+
+        $Daily = [];
+        while($fechaDesde < $fechaHasta){
+            $newDate = $fechaDesde->addDay();
+            $fechaDesde = $newDate;
+            $date = ["id_gasto" => $r->_IdGasto,"fecha_gasto" => $newDate->format('Y-m-d'),"gasto_dia" => $montoDiario];
+            $Daily[] = $date;
+        }
+
+        GastosDiferidosDetalle::insert($Daily);
+
+        return response()->json([
+                                "Titulo" => "Exito!", 
+                                "Mensaje" => "Se ha diferido el gasto exitosamente", 
+                                "TMensaje" => "success",
+                                "Fechas" => $Daily
+                           ]);
+        }catch(\Throwable $t){
+
+            DB::rollback();
+            \Log::channel('daily')->info("Error: GastosGeneralesController->diferir->".$t->getMessage());
+            return response()->json(["Titulo" => "Gasto no aplicado","Mensaje" => "Ha ocurrido un error, no se puede aplicar el gasto", "TMensaje" => "error"]);
+
+        }
+        
     }
 }

@@ -17,6 +17,7 @@ use App\Exports\CotizacionesCXC;
 use App\Exports\GenericExport;
 use App\Exports\CxcExport;
 use App\Exports\CxpExport;
+use App\Models\GastosDiferidosDetalle;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Storage;
@@ -456,7 +457,7 @@ public function export_cxp(Request $request)
     // ==================== U T I L I D A D E S ====================
     public function index_utilidad(){
 
-        $clientes = Client::where('id_empresa' ,'=',auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
+       /* $clientes = Client::where('id_empresa' ,'=',auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
 
         $subclientes = Subclientes::where('id_empresa' ,'=',auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
 
@@ -465,9 +466,24 @@ public function export_cxp(Request $request)
         ->where('docum_cotizacion.num_contenedor' ,'!=', NULL)
         ->where('docum_cotizacion.id_empresa' ,'=',auth()->user()->id_empresa)
         ->where('cotizaciones.estatus' ,'=', 'Aprobada')
-        ->orderBy('docum_cotizacion.created_at', 'desc')->get();
+        ->orderBy('docum_cotizacion.created_at', 'desc')->get();*/
+        
+    
 
-        return view('reporteria.utilidad.index', compact('clientes', 'subclientes', 'contenedores'));
+        /*
+        $fechaDesde = Carbon::parse($r->fechaDesde);
+        $fechaHasta = Carbon::parse($r->fechaHasta);
+
+        $Daily = [];
+        while($fechaDesde < $fechaHasta){
+            $newDate = $fechaDesde->addDay();
+            $fechaDesde = $newDate;
+            $date = ["id_gasto" => $r->_IdGasto,"fecha_gasto" => $newDate->format('Y-m-d'),"gasto_dia" => $montoDiario];
+            $Daily[] = $date;
+        }
+         */
+
+        return view('reporteria.utilidad.index');
     }
 
     public function advance_utilidad(Request $request) {
@@ -506,6 +522,45 @@ public function export_cxp(Request $request)
         $fechaHasta = $request->query('fecha_hasta');
 
         return view('reporteria.utilidad.index', compact('asignaciones', 'clientes', 'subclientes', 'contenedores', 'fechaDe', 'fechaHasta'));
+    }
+
+    public function getContenedorUtilidad(Request $r){
+        $datos = DB::select('select dc.num_contenedor,cl.nombre as cliente, op.nombre Operador, a.sueldo_viaje,dinero_viaje, pr.nombre as Proveedor,total_proveedor,
+        c.total, c.estatus,estatus_pago,c.fecha_pago,a.fecha_inicio,a.fecha_fin,DATEDIFF(a.fecha_fin,a.fecha_inicio) as tiempo_viaje
+        from cotizaciones c
+        left join clients cl on c.id_cliente = cl.id
+        left join docum_cotizacion dc on c.id = dc.id_cotizacion
+        left join asignaciones a on dc.id = a.id_contenedor
+        left join operadores op on a.id_operador = op.id
+        left join proveedores pr on a.id_proveedor = pr.id');
+
+        $Info = [];
+        foreach($datos as $d){
+            $diferido = 
+            GastosDiferidosDetalle::join('gastos_generales as g','gastos_diferidos_detalle.id_gasto','=','g.id')->whereBetween('fecha_gasto',[$d->fecha_inicio,$d->fecha_fin])
+            ->get();
+            $pagoOperacion = (is_null($d->Proveedor)) ? $d->sueldo_viaje : $d->total_proveedor;
+            $gastosDiferidos = $diferido->sum('gasto_dia');
+            $Columns = [
+                        "numContenedor" => $d->num_contenedor,
+                        "cliente" => $d->cliente,
+                        "precioViaje" => $d->total,
+                        "transportadoPor" => (is_null($d->Proveedor)) ? 'Operador' : 'Proveedor',
+                        "operadorOrProveedor" => (is_null($d->Proveedor)) ? $d->Operador : $d->Proveedor,
+                        "pagoOperacion" => $pagoOperacion,
+                        "viajeInicia"=> $d->fecha_inicio,
+                        "viajeTermina"=> $d->fecha_fin, 
+                        "estatusViaje" => $d->estatus,     
+                        "estatusPago" => ($d->estatus_pago == 1) ? 'Pagado' : 'Por Cobrar',
+                        "gastosDiferidos" =>  $gastosDiferidos,
+                        "detalleGastos" => $diferido,
+                        "utilidad" => $d->total  - $pagoOperacion - $gastosDiferidos                        
+                        ];
+            $Info[] = $Columns;
+        }
+
+        return $Info;
+
     }
 
     public function export_utilidad(Request $request){
