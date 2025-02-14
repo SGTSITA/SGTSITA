@@ -727,7 +727,7 @@ class CotizacionesController extends Controller
             }
             Session::flash('edit', 'Se ha editado sus datos con exito');
             return redirect()->back()
-                ->with('success', 'Estatus updated successfully');
+                ->with('success');
     }
 
     public function update_cambio(Request $request, $id){
