@@ -111,7 +111,7 @@ class LiquidacionesController extends Controller
                 $banco->id_operador = $asignacion->id_operador;
                 
                 $banco->monto1 = $c['MontoPago'];
-                $banco->metodo_pago1 = 'Tranferencia';
+                $banco->metodo_pago1 = 'Transferencia';
                 $banco->descripcion_gasto = 'Sueldos y salarios';
                 $banco->id_banco1 = $request->bancoId;
 

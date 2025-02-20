@@ -149,6 +149,13 @@ Route::group(['middleware' => ['auth']], function() {
 
     Route::patch('cotizaciones/cambiar/empresa/{id}', [App\Http\Controllers\CotizacionesController::class, 'cambiar_empresa'])->name('cambiar_empresa.cotizaciones');
     Route::post('cotizaciones/asignar/empresa', [App\Http\Controllers\CotizacionesController::class, 'asignar_empresa'])->name('asignar_empresa.cotizaciones');
+    Route::post('cotizaciones/gastos/registrar',[App\Http\Controllers\CotizacionesController::class, 'agregar_gasto_cotizacion'])->name('gastos.cotizaciones');
+    Route::post('cotizaciones/gastos/get',[App\Http\Controllers\CotizacionesController::class, 'get_gastos'])->name('gastos.cotizaciones');
+    Route::post('cotizaciones/gastos/eliminar',[App\Http\Controllers\CotizacionesController::class, 'eliminar_gasto_cotizacion'])->name('gastos.eliminar');
+
+    Route::post('cotizaciones/gastos-operador/registrar',[App\Http\Controllers\CotizacionesController::class, 'agregar_gasto_operador'])->name('gastos.cotizaciones');
+    Route::post('cotizaciones/gastos-operador/get',[App\Http\Controllers\CotizacionesController::class, 'get_gastos_operador'])->name('gastos.cotizaciones');
+
 
     // ==================== P L A N E A C I O N ====================
     Route::get('planeaciones', [App\Http\Controllers\PlaneacionController::class, 'index'])->name('index.planeaciones');

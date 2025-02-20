@@ -123,6 +123,9 @@ class MissionResultRenderer {
     mode: "singleRow",
     headerCheckbox: false,
    },
+   rowClassRules: {
+    'bg-gradient-danger': params => params.data.utilidad < 0,
+   },
    rowData: [
   
    ],
@@ -133,6 +136,8 @@ class MissionResultRenderer {
      { field: "cliente" },
      { field: "precioViaje",width: 150, valueFormatter: params => currencyFormatter(params.value), cellStyle: { textAlign: "right" }},
      { field: "pagoOperacion",width: 150, valueFormatter: params => currencyFormatter(params.value), cellStyle: { textAlign: "right" } },
+     { field: "gastosExtra", valueFormatter: params => currencyFormatter(params.value), cellStyle: { textAlign: "right" }},
+     { field: "gastosOperador", valueFormatter: params => currencyFormatter(params.value), cellStyle: { textAlign: "right" }},
      { field: "gastosDiferidos", valueFormatter: params => currencyFormatter(params.value), cellStyle: { textAlign: "right" }},
      { field: "utilidad", valueFormatter: params => currencyFormatter(params.value), cellStyle: { textAlign: "right" } },
      { field: "transportadoPor",width: 150},

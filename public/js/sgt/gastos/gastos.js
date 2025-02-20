@@ -131,7 +131,6 @@ class MissionResultRenderer {
       headerCheckbox: true,
     },
     rowClassRules: {
-      // apply green to electric cars
       'rag-green': params => params.data.Diferido === "Diferido",
   },
    rowData: [

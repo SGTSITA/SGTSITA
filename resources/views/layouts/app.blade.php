@@ -18,6 +18,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
   <!-- Nucleo Icons -->
+  <link href="{{ asset('assets/css/icons.css')}}" rel="stylesheet" />
+  <!--link href="{{ asset('assets/css/styles.css')}}" rel="stylesheet" /-->
   <link href="{{ asset('assets/css/nucleo-icons.css')}}" rel="stylesheet" />
   <link href="{{ asset('assets/css/nucleo-svg.css')}}" rel="stylesheet" />
   <!-- Font Awesome Icons -->
@@ -84,11 +86,6 @@
         @include('proveedores.modal_create')
         @include('equipos.modal_create')
         @include('bancos.modal_create')
-
-
-       <!-- Modal lateral Congif -->
-        @include('layouts.footer')
-      <!-- End Modal lateral Congif -->
 
     </div>
   </main>

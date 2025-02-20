@@ -9,6 +9,7 @@ use App\Models\Client;
 use App\Models\Cotizaciones;
 use App\Models\DocumCotizacion;
 use App\Models\GastosExtras;
+use App\Models\GastosOperadores;
 use App\Models\GastosGenerales;
 use App\Models\Proveedor;
 use App\Models\Subclientes;
@@ -525,7 +526,7 @@ public function export_cxp(Request $request)
     }
 
     public function getContenedorUtilidad(Request $r){
-        $datos = DB::select('select dc.num_contenedor,cl.nombre as cliente, op.nombre Operador, a.sueldo_viaje,dinero_viaje, pr.nombre as Proveedor,total_proveedor,
+        $datos = DB::select('select c.id as id_cotizacion,dc.num_contenedor,cl.nombre as cliente, op.nombre Operador, a.sueldo_viaje,dinero_viaje, pr.nombre as Proveedor,total_proveedor,
         c.total, c.estatus,estatus_pago,c.fecha_pago,a.fecha_inicio,a.fecha_fin,DATEDIFF(a.fecha_fin,a.fecha_inicio) as tiempo_viaje
         from cotizaciones c
         left join clients cl on c.id_cliente = cl.id
@@ -539,22 +540,28 @@ public function export_cxp(Request $request)
             $diferido = 
             GastosDiferidosDetalle::join('gastos_generales as g','gastos_diferidos_detalle.id_gasto','=','g.id')->whereBetween('fecha_gasto',[$d->fecha_inicio,$d->fecha_fin])
             ->get();
+
+            $gastosExtra = GastosExtras::where('id_cotizacion',$d->id_cotizacion)->sum('monto');
+            $gastosOperador = GastosOperadores::where('id_cotizacion',$d->id_cotizacion)->sum('cantidad');
+
             $pagoOperacion = (is_null($d->Proveedor)) ? $d->sueldo_viaje : $d->total_proveedor;
             $gastosDiferidos = $diferido->sum('gasto_dia');
             $Columns = [
                         "numContenedor" => $d->num_contenedor,
                         "cliente" => $d->cliente,
-                        "precioViaje" => $d->total,
+                        "precioViaje" => $d->total + $gastosExtra,
                         "transportadoPor" => (is_null($d->Proveedor)) ? 'Operador' : 'Proveedor',
                         "operadorOrProveedor" => (is_null($d->Proveedor)) ? $d->Operador : $d->Proveedor,
                         "pagoOperacion" => $pagoOperacion,
+                        "gastosExtra" => $gastosExtra,
+                        "gastosOperador" => $gastosOperador,
                         "viajeInicia"=> $d->fecha_inicio,
                         "viajeTermina"=> $d->fecha_fin, 
                         "estatusViaje" => $d->estatus,     
                         "estatusPago" => ($d->estatus_pago == 1) ? 'Pagado' : 'Por Cobrar',
                         "gastosDiferidos" =>  $gastosDiferidos,
                         "detalleGastos" => $diferido,
-                        "utilidad" => $d->total  - $pagoOperacion - $gastosDiferidos                        
+                        "utilidad" => $d->total  - $pagoOperacion - $gastosDiferidos - $gastosExtra - $gastosOperador               
                         ];
             $Info[] = $Columns;
         }
