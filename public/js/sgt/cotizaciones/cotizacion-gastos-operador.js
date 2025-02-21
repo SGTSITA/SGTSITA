@@ -9,6 +9,9 @@ const gridOptionsOperador = {
       rowClassRules: {
         'bg-gradient-warning': params => params.data.Estatus === "Pago Pendiente",
       },
+      onRowSelected:(event)=>{
+        btnPaymentStatus()
+      },
       rowData: [
         
       ],
@@ -95,9 +98,13 @@ const gridOptionsOperador = {
         beforeSend:()=>{},
         success:(response)=>{
             Swal.fire(response.Titulo,response.Mensaje,response.TMensaje)
-            $('#modal-form').modal('hide')
-            textDescripcion.value = '';
-            textMonto.value = '';
+            
+            if(response.TMensaje == "success"){
+              getGastosOperador();
+              $('#modal-gastos-operador').modal('hide')
+              textDescripcion.value = '';
+              textMonto.value = '';
+            }
         },
         error:(err)=>{
             Swal.fire('Ocurrio un error','Error','error')
@@ -105,6 +112,79 @@ const gridOptionsOperador = {
     })
    }
 
+  let btnPayment = document.querySelector('#btnPayment')
+  btnPayment.addEventListener('click',()=>{
+     paymentGastosOperador()
+   })
+
+  function btnPaymentStatus(){
+    let seleccion = apiGridGastosOperador.getSelectedRows();
+    btnPayment.disabled = (seleccion.length == 0) ? true : false;
+  }
+
+   function paymentGastosOperador(){
+    let seleccionPago = apiGridGastosOperador.getSelectedRows();
+    let totalPago = 0
+
+    let validarGastos = seleccionPago.every((gasto)=>{
+      if (gasto.Estatus != 'Pago Pendiente') return false;
+      totalPago += parseFloat(gasto.Monto)
+      return true;
+    })
+
+    if(!validarGastos) {
+      Swal.fire('No es posible pagar','Solo se admiten Gastos con estatus "Pago Pendiente"','warning')
+      return false;
+    }
+    
+    let totalPagoGastosOperador = document.querySelector('#totalPagoGastosOperador')
+
+    totalPagoGastosOperador.textContent = moneyFormat(totalPago)
+
+    const modalElement = document.getElementById('modal-pagar-gastos-operador');
+    const bootstrapModal = new bootstrap.Modal(modalElement);
+    bootstrapModal.show();
+
+    
+   }
+
+   function applyPaymentGastosOperador(){
+    
+    let totalPagoGastosOperador = document.querySelector('#totalPagoGastosOperador')
+
+    let totalPago = reverseMoneyFormat(totalPagoGastosOperador.textContent)
+
+    let bancosPagoGastos = document.querySelector('#bancosPagoGastos')
+    let bank = bancosPagoGastos.value;
+
+    let spanContenedor = document.querySelector("#spanContenedor");
+    let numContenedor = spanContenedor.textContent;
+
+    let gastosPagar = apiGridGastosOperador.getSelectedRows();
+    let _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+
+    $.ajax({
+      url:'/cotizaciones/gastos-operador/pagar',
+      type:'post',
+      data:{totalPago, numContenedor, bank, gastosPagar,_token},
+      beforeSend:()=>{
+
+      },
+      success:(response)=>{
+        Swal.fire(response.Titulo,response.Mensaje,response.TMensaje)
+            
+        if(response.TMensaje == "success"){
+          getGastosOperador();
+          $('#modal-pagar-gastos-operador').modal('hide')
+        }
+      },
+      error:()=>{
+        Swal.fire("Error inesperado","Ocurrio un error mientras procesamos su solicitud","error")
+
+      }
+    })
+   }
 
 
    

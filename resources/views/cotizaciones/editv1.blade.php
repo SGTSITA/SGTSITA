@@ -1236,10 +1236,14 @@
                                                                 </p>
                                                                 </div>
                                                             </div>
-                                                            <div class="col-3 text-center">
-                                                               <button type="button" data-bs-toggle="modal" data-bs-target="#modal-gastos-operador" class="btn btn-sm bg-gradient-success" id="btnNuevoGasto">
+                                                            <div class="col-4 text-center">
+                                                               <button type="button" class="btn btn-sm bg-gradient-warning" id="btnPayment">
+                                                                    <i class="fa fa-fw fa-coins"></i>
+                                                                    Pagar Pendientes
+                                                                </button>
+                                                                <button type="button" data-bs-toggle="modal" data-bs-target="#modal-gastos-operador" class="btn btn-sm bg-gradient-success" id="btnNuevoGasto">
                                                                 Registrar Gasto
-                                                            </button>
+                                                                </button>
                                                             </div>
                                                     </div>
                                                 </div>
@@ -1251,16 +1255,15 @@
                                             </div>
                                             <div class="row">
                                             <div class="card card-body" id="profile">
-                                                    <div class="row justify-content-between align-items-center">
-                                                            <div class="col-sm-auto col-8 my-auto">
-                                                               
-                                                            </div>
-                                                            <div class="col-3 text-center">
-                                                                <div class="border-dashed border-1 border-secondary border-radius-md py-3">
+                                                <div class="row justify-content-between align-items-center">
+                                                        <div class="col-sm-auto col-8 my-auto">
+                                                        </div>
+                                                        <div class="col-3 text-center">
+                                                            <div class="border-dashed border-1 border-secondary border-radius-md py-3">
                                                                 <h6 class="text-primary mb-0">Total Gastos</h6>
                                                                 <h4 class="font-weight-bolder"><span class="small" id="totalGastosOperador">$ 0.00</span></h4>
-                                                                </div>
                                                             </div>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -1281,6 +1284,7 @@
     </div>
 @include('cotizaciones.modal_agregar_gasto')
 @include('cotizaciones.modal_agregar_gasto_operador')
+@include('cotizaciones.modal_pagar_gastos_operador')
 @endsection
 
 @section('select2')
@@ -1317,6 +1321,7 @@
     $('.cliente').select2();
     getGastosContenedor();
     getGastosOperador();
+    btnPaymentStatus();
     });
     </script>
 

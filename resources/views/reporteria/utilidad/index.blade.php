@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('template_title')
-Liquidaciones
+Reporte de Utilidades
 @endsection
 
 @section('content')
