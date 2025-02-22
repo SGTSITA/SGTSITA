@@ -590,6 +590,10 @@ class CotizacionesController extends Controller
                 $fileName = uniqid() . $file->getClientOriginalName();
                 $file->move($path, $fileName);
                 $cotizaciones->carta_porte = $fileName;
+
+                //Notificamos al cliente que se ha adjuntado el PDF de Carta Porte
+                
+                event(new \App\Events\GenericNotificationEvent([$cotizaciones->cliente->correo],'Se cargó Carta Porte: '.$doc_cotizaciones->num_contenedor,'Hola, tu transportista cargó el documento "Carta Porte" del contenedor '.$doc_cotizaciones->num_contenedor));
             }
 
             if ($request->hasFile("img_boleta")) {
@@ -663,6 +667,7 @@ class CotizacionesController extends Controller
                 }
             }
             Session::flash('edit', 'Se ha editado sus datos con exito');
+
             return redirect()->back();
     }
 
@@ -928,6 +933,7 @@ class CotizacionesController extends Controller
 
         }
         
+
     }
 
     public function update_cambio(Request $request, $id){

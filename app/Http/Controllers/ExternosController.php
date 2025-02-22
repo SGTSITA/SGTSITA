@@ -207,6 +207,11 @@ class ExternosController extends Controller
             $preAlta = self::fileProperties($folderId,$cotizacion->img_boleta,'Pre-Alta');
             if(sizeof($preAlta) > 0) array_push($documentList,$preAlta);
         }
+
+        if(!is_null($cotizacion->carta_porte)){
+            $preAlta = self::fileProperties($folderId,$cotizacion->carta_porte,'Carta Porte');
+            if(sizeof($preAlta) > 0) array_push($documentList,$preAlta);
+        }
         
 
         return ["data"=>$documentList,"numContenedor" => $numContenedor,"documentos" =>$documentos];
