@@ -140,6 +140,39 @@
                 </li>
             @endcan
 
+
+          @can('gastos-generales')
+            <!--li class="nav-item">
+                <a class="nav-link {{ (Request::is('gastos/generales*') ? 'active' : '') }}" href="{{ route('index.gastos_generales') }}" target="">
+                <div class="icon icon-shape icon-sm text-center  me-2 d-flex align-items-center justify-content-center">
+                    <img src="{{ asset('img/icon/billetera.png') }}" alt="" width="20px">
+                </div>
+                <span class="nav-link-text ms-1"><b>X</b> Gastos Generales</span>
+                </a>
+            </li-->
+            <a data-bs-toggle="collapse" href="#pagesGastos" class="nav-link {{ (Request::is('gastos/generales*') ? 'active' : '') }}" target="">
+                <div class="icon icon-shape icon-sm text-center  me-2 d-flex align-items-center justify-content-center">
+                    <img src="{{ asset('img/icon/billetera.png') }}" alt="" width="20px">
+                </div>
+                <span class="nav-link-text ms-1"><b>X</b> Gastos</span>
+            </a>
+
+            <div class="collapse " id="pagesGastos">
+                <ul class="nav ms-4">
+                    <li class="nav-item ">
+                        <a class="nav-link {{ (Request::is('gastos/generales') ? 'show' : '') }}" href="{{ route('index.gastos_generales') }}" >
+                          <span class="sidenav-mini-icon"> P </span>
+                          <span class="sidenav-normal">Gastos Generales</span>
+                        </a>
+                        <a class="nav-link {{ (Request::is('cotizaciones*') ? 'show' : '') }}" href="{{ route('index.gastos_operativos') }}">
+                          <span class="sidenav-mini-icon"> P </span>
+                          <span class="sidenav-normal">Gastos Operativos</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+          @endcan
+
             @can('bancos-list')
                 <li class="nav-item">
                     <a class="nav-link {{ Request::is('bancos*') ? 'active' : '' }}"
@@ -152,6 +185,7 @@
                     </a>
                 </li>
             @endcan
+
 
             @can('cuentas-cobrar')
                 <li class="nav-item">

@@ -14,8 +14,12 @@
     @yield('template_title') - {{$configuracion->nombre_sistema}}
   </title>
 
-  <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700" rel="stylesheet" />
+  
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
   <!-- Nucleo Icons -->
+  <link href="{{ asset('assets/css/icons.css')}}" rel="stylesheet" />
+  <!--link href="{{ asset('assets/css/styles.css')}}" rel="stylesheet" /-->
   <link href="{{ asset('assets/css/nucleo-icons.css')}}" rel="stylesheet" />
   <link href="{{ asset('assets/css/nucleo-svg.css')}}" rel="stylesheet" />
   <!-- Font Awesome Icons -->
@@ -49,6 +53,10 @@
         .card .card-header {
             padding: 1.5rem 1.5rem 0 1.5rem;
         }
+
+        body {
+    font-family: 'Inter', sans-serif;
+}
     </style>
 
 </head>
@@ -78,11 +86,6 @@
         @include('proveedores.modal_create')
         @include('equipos.modal_create')
         @include('bancos.modal_create')
-
-
-       <!-- Modal lateral Congif -->
-        @include('layouts.footer')
-      <!-- End Modal lateral Congif -->
 
     </div>
   </main>
@@ -116,25 +119,14 @@
         var token = $('meta[name="csrf-token"]').attr('content');
     </script>
 
-<script>
-  let backButton =  document.getElementById('backButton');
-  if(backButton){
-    backButton.addEventListener('click', function(event) {
-        event.preventDefault(); // Evitar el comportamiento predeterminado del enlace
-        history.back(); // Volver a la página anterior
 
-    });
-  }
-    
-</script>
 
   @yield('datatable')
 
   @yield('fullcalendar')
   @yield('alerta')
 
-  <!-- Github buttons -->
-  {{-- <script async defer src="https://buttons.github.io/buttons.js"></script> --}}
+
 
   @yield('select2')
   @stack('custom-javascript')

@@ -115,7 +115,7 @@ class BancosController extends Controller
 
             // Actualizar el saldo del banco actual en la base de datos
             $banco->saldo = $saldo;
-            $banco->save();
+           // $banco->save();
         }
         return view('bancos.index', compact('bancos'));
     }
