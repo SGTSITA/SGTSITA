@@ -887,10 +887,10 @@ class CotizacionesController extends Controller
     
             GastosExtras::create($data);
 
-            $gastosContenedor = GastosExtras::where('id_cotizacion',$contenedor->id_cotizacion)->get();
-            $totalGastos = $gastosContenedor->sum('monto');
+           // $gastosContenedor = GastosExtras::where('id_cotizacion',$contenedor->id_cotizacion)->get();
+           // $totalGastos = $gastosContenedor->sum('monto');
 
-            Cotizaciones::where('id',$contenedor->id_cotizacion)->update(["restante" => DB::raw('restante + '.$totalGastos)]);
+            Cotizaciones::where('id',$contenedor->id_cotizacion)->update(["restante" => DB::raw('restante + '.$r->montoGasto)]);
             DB::commit();
             return response()->json(["TMensaje" => "success", "Mensaje" => "Agregado correctamente", "Titulo" => "Gasto agregado"]);
         }catch(\Trhowable $t){
