@@ -97,10 +97,18 @@ Route::group(['middleware' => ['auth']], function() {
 
     // ==================== P R O V E E D O R E S ====================
     Route::get('proveedores', [App\Http\Controllers\ProveedorController::class, 'index'])->name('index.proveedores');
+    Route::get('proveedores/list', [App\Http\Controllers\ProveedorController::class, 'getProveedoresList'])->name('list.proveedores');
     Route::post('proveedores/create', [App\Http\Controllers\ProveedorController::class, 'store'])->name('store.proveedores');
     Route::post('proveedores/create/cuenta', [App\Http\Controllers\ProveedorController::class, 'cuenta'])->name('cuenta.proveedores');
     Route::patch('proveedores/update/{id}', [App\Http\Controllers\ProveedorController::class, 'update'])->name('update.proveedores');
     Route::delete('proveedores/cuentas/{id}', [App\Http\Controllers\ProveedorController::class, 'destroy'])->name('cuentas.borrar');
+    Route::get('proveedores/{id}/edit', [App\Http\Controllers\ProveedorController::class, 'edit'])->name('edit.proveedores');
+    Route::get('proveedores/{id}/cuentas', [App\Http\Controllers\ProveedorController::class, 'getCuentasBancarias'])->name('cuentas.proveedores');
+    Route::patch('cuentas-bancarias/{id}/restore', [App\Http\Controllers\ProveedorController::class, 'restore'])->name('cuentas.restore');
+    Route::patch('cuentas-bancarias/{id}/estado', [App\Http\Controllers\ProveedorController::class, 'cambiarEstadoCuenta'])->name('cambiar.estado.cuentas');
+    Route::get('proveedores/validar-rfc', [App\Http\Controllers\ProveedorController::class, 'validarRFC'])->name('validar.rfc');
+    Route::get('cuentas-bancarias/validar-clabe', [App\Http\Controllers\ProveedorController::class, 'validarCLABE'])->name('validar.clabe');
+
     // ==================== E Q U I P O S ====================
     Route::get('equipos/index', [App\Http\Controllers\EquiposController::class, 'index'])->name('index.equipos');
     Route::post('equipos/create', [App\Http\Controllers\EquiposController::class, 'store'])->name('store.equipos');

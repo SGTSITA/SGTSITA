@@ -1,122 +1,125 @@
 <!DOCTYPE html>
 <html>
-    @php
-        use Carbon\Carbon;
-    @endphp
-    @if(!isset($isExcel))
+@php
+    use Carbon\Carbon;
+@endphp
+@if (!isset($isExcel))
     <style>
-        .registro-contenedor {
-            border: 2px solid #000; /* Cambia el color y grosor del borde según tus necesidades */
-            margin-bottom: 20px; /* Espacio entre cada registro */
-            padding: 15px; /* Espacio inter- alrededor de las tablas */
-            border-radius: 5px; /* Bordes redondeados, opcional */
+        body {
+            font-family: Arial, sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji';
+            font-size: 10px;
+            margin: 0;
+            padding: 0px;
         }
 
-        .registro-contenedor table {
-            margin-bottom: 10px; /* Espacio entre tablas dentro del mismo contenedor */
+        h4,
+        h5 {
+            color: #333;
         }
 
-        .totales {
-            margin-top: 20px;
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 5px;
+            font-size: 10px;
+            border: 2px solid #000;
         }
 
-        .totales h3 {
+        th,
+        td {
+            border: 1px solid #000;
+            padding: 5px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #007bff;
+            color: white;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        .status-check {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin: auto;
+            font-size: 14px;
             font-weight: bold;
+            color: white;
         }
 
-        .totales p {
-            font-size: 1.2em;
-            color: #000;
+        .checked {
+            background-color: green;
+        }
+
+        .unchecked {
+            background-color: red;
         }
     </style>
-    @endif
-    <head>
-        <title>Estatus Documentos</title>
-    </head>
+@endif
 
-    <body>
+<head>
+    <title>Estatus Documentos</title>
+</head>
 
-            <div class="contianer" style="position: relative">
-                <h4>Empresa: {{ $user->Empresa->nombre }}</h4>
-                <h4>Estatus Documentos</h4>
-            </div>
-            <div class="contianer" style="position: relative">
-                <h5 style="position: absolute;left:75%;">Documentos: {{ date("d-m-Y") }}</h5><br>
-            </div>
+<body>
+    <h4>Empresa: {{ $user->Empresa->nombre }}</h4>
+    <h4>Estatus Documentos</h4>
+    <h5 style="text-align: right;">Fecha: {{ date('d-m-Y') }}</h5>
 
-            <table class="table text-white tabla-completa" style="color: #000;width: 100%;padding: 30px; font-size: 12px">
-                <thead>
-                    <tr>
-                        <th># Contenedor</th>
-                        <th>CCP</th>
-                        <th>Boleta liberacion</th>
-                        <th>Doda</th>
-                        <th>Carta porte</th>
-                        <th>Boleta vacio</th>
-                        <th>EIR</th>
-                    </tr>
-                </thead>
-                <tbody style="text-align: center;font-size: 100%;">
-                    @foreach ($cotizaciones as $cotizacion)
-                        <tr>
-                            <td>{{$cotizacion->num_contenedor}}</td>
-                            <td>
-                                <div class="form-check">
-                                    @if ($cotizacion->doc_ccp == NULL)
-                                        -
-                                    @else
-                                        SI
-                                    @endif
-                                </div>
-                            </td>
-                            <td>
-                                <div class="form-check">
-                                    @if ($cotizacion->boleta_liberacion == NULL)
-                                        -
-                                    @else
-                                        SI
-                                    @endif
-                                </div>
-                            </td>
-                            <td>
-                                <div class="form-check">
-                                    @if ($cotizacion->doda == NULL)
-                                        -
-                                    @else
-                                        SI
-                                    @endif
-                                </div>
-                            </td>
-                            <td>
-                                <div class="form-check">
-                                    @if ($cotizacion->carta_porte == NULL)
-                                        -
-                                    @else
-                                        SI
-                                    @endif
-                                </div>
-                            </td>
-                            <td>
-                                <div class="form-check">
-                                    @if ($cotizacion->boleta_vacio == NULL)
-                                        -
-                                    @else
-                                        SI
-                                    @endif
-                                </div>
-                            </td>
-                            <td>
-                                <div class="form-check">
-                                    @if ($cotizacion->doc_eir == NULL)
-                                        -
-                                    @else
-                                        SI
-                                    @endif
-                                </div>
-                            </td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-    </body>
+    <table>
+        <thead>
+            <tr>
+                <th># Contenedor</th>
+                <th>Formato CCP</th>
+                <th>Boleta Liberación</th>
+                <th>Doda</th>
+                <th>Carta Porte</th>
+                <th>Boleta Vacío</th>
+                <th>EIR</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach ($cotizaciones as $cotizacion)
+                <tr>
+                    <td>{{ $cotizacion->num_contenedor }}</td>
+                    @if (!isset($isExcel))
+                        <td><span
+                                class="status-check {{ $cotizacion->doc_ccp ? 'checked' : 'unchecked' }}">{{ $cotizacion->doc_ccp ? '✔' : '✖' }}</span>
+                        </td>
+                        <td><span
+                                class="status-check {{ $cotizacion->boleta_liberacion ? 'checked' : 'unchecked' }}">{{ $cotizacion->boleta_liberacion ? '✔' : '✖' }}</span>
+                        </td>
+                        <td><span
+                                class="status-check {{ $cotizacion->doda ? 'checked' : 'unchecked' }}">{{ $cotizacion->doda ? '✔' : '✖' }}</span>
+                        </td>
+                        <td><span
+                                class="status-check {{ $cotizacion->carta_porte ? 'checked' : 'unchecked' }}">{{ $cotizacion->carta_porte ? '✔' : '✖' }}</span>
+                        </td>
+                        <td><span
+                                class="status-check {{ $cotizacion->boleta_vacio ? 'checked' : 'unchecked' }}">{{ $cotizacion->boleta_vacio ? '✔' : '✖' }}</span>
+                        </td>
+                        <td><span
+                                class="status-check {{ $cotizacion->doc_eir ? 'checked' : 'unchecked' }}">{{ $cotizacion->doc_eir ? '✔' : '✖' }}</span>
+                        </td>
+                    @else
+                        <td>{{ $cotizacion->doc_ccp ? '✔' : '✖' }}</td>
+                        <td>{{ $cotizacion->boleta_liberacion ? '✔' : '✖' }}</td>
+                        <td>{{ $cotizacion->doda ? '✔' : '✖' }}</td>
+                        <td>{{ $cotizacion->carta_porte ? '✔' : '✖' }}</td>
+                        <td>{{ $cotizacion->boleta_vacio ? '✔' : '✖' }}</td>
+                        <td>{{ $cotizacion->doc_eir ? '✔' : '✖' }}</td>
+                    @endif
+                </tr>
+            @endforeach
+        </tbody>
+    </table>
+</body>
+
 </html>
