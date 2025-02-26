@@ -140,6 +140,7 @@ class MissionResultRenderer {
      { field: "Contenedor" },
      { field: "SueldoViaje",width: 150, valueFormatter: params => currencyFormatter(params.value), cellStyle: { textAlign: "right" }},
      { field: "DineroViaje",width: 150, valueFormatter: params => currencyFormatter(params.value), cellStyle: { textAlign: "right" }},
+     { field: "GastosJustificados",width: 150, valueFormatter: params => currencyFormatter(params.value), cellStyle: { textAlign: "right" }},
      { field: "MontoPago",width: 150, valueFormatter: params => currencyFormatter(params.value), cellStyle: { textAlign: "right" }},
      { field: "FechaInicia",width: 150 },
      { field: "FechaTermina",width: 150 },
@@ -162,9 +163,11 @@ class MissionResultRenderer {
   let btnSummaryPayment = document.querySelector('#btnSummaryPayment')
   let sumaSalario = document.querySelector('#sumaSalario')
   let sumaDineroViaje = document.querySelector('#sumaDineroViaje')
+  let sumaJustificados = document.querySelector('#sumaJustificados')
   let sumaPago = document.querySelector('#sumaPago')
   let contadorContenedores = document.querySelector("#contadorContenedores")
   let btnConfirmaPago = document.querySelector("#btnConfirmaPago")
+  let btnJustificar = document.querySelector("#btnJustificar")
   let totalMontoPago = 0;
    
    function mostrarViajesOperador(operador){
@@ -196,19 +199,23 @@ class MissionResultRenderer {
 
     let suma = 0;
     let sumSalario = 0;
+    let sumJustificado = 0;
     let sumDineroViaje = 0;
 
     pagoContenedores.forEach((c)=>{
        suma = suma + parseFloat(c.MontoPago);
        sumSalario = sumSalario + parseFloat(c.SueldoViaje);
        sumDineroViaje = sumDineroViaje + parseFloat(c.DineroViaje);
+       sumJustificado = sumJustificado + parseFloat(c.GastosJustificados);
+
     });
 
     totalMontoPago = suma;
 
     sumaPago.textContent = moneyFormat(suma)
     sumaSalario.textContent = moneyFormat(sumSalario)
-    sumaDineroViaje.textContent = moneyFormat(sumDineroViaje)
+    sumaDineroViaje.textContent = `- ${moneyFormat(sumDineroViaje)}`
+    sumaJustificados.textContent = `+ ${moneyFormat(sumJustificado)}`
     contadorContenedores.textContent = `${pagoContenedores.length} de ${dNumViajes.textContent}`
 
     const modalElement = document.getElementById('exampleModal');
@@ -227,10 +234,10 @@ class MissionResultRenderer {
     let pagoContenedores = apiGrid.getSelectedRows();
     let bancoId = banco.value;
     var _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-console.log(pagoContenedores)
+
 
     $.ajax({
-        url:'/liquidaciones/viajes/aplicar-pago ',
+        url:'/liquidaciones/viajes/aplicar-pago',
         type:'post',
         data:{_token,pagoContenedores,bancoId,totalMontoPago},
         beforeSend:()=>{
@@ -238,6 +245,9 @@ console.log(pagoContenedores)
         },
         success:(response)=>{
             Swal.fire(response.Titulo, response.Mensaje, response.TMensaje);
+            if(response.TMensaje == "success"){
+              location.reload()
+            }
         },
         error:()=>{
             Swal.fire("Error", "Ha ocurrido un error", "danger");
@@ -254,7 +264,82 @@ console.log(pagoContenedores)
     aplicarPago()
    });
 
- 
+   btnJustificar.addEventListener('click',()=>{
+    openModalJustificar()
+   });
+
+  function openModalJustificar(){
+    let justificaContenedores = apiGrid.getSelectedRows();
+      if(justificaContenedores.length != 1){
+          Swal.fire('Seleccione un contenedor','Debe seleccionar solo un contenedor de la lista','warning');
+          return false;
+      } 
+
+    const modalElement = document.getElementById('modal-justificar');
+      const bootstrapModal = new bootstrap.Modal(modalElement);
+      bootstrapModal.show();
+  }
+
+  function justificarGasto(){
+
+    let monto = document.getElementById("txtMonto").value
+    if(monto.length == 0){
+      Swal.fire('Ingrese Monto','Por favor introduzca el monto del gasto que está justificando','warning')
+      return false
+    }
+
+    let txtDescripcion = document.getElementById('txtDescripcion').value;
+
+    if(txtDescripcion.length == 0){
+      Swal.fire('Ingrese descripción','Por favor introduzca la descripción del gasto que está justificando','warning')
+      return false
+    }
+
+    let justificaContenedores = apiGrid.getSelectedRows();
+    let DineroViaje = 0;
+    let GastosJustificados = 0;
+    let numContenedor;
+    justificaContenedores.forEach((cn)=>{
+      DineroViaje = cn.DineroViaje
+      GastosJustificados = cn.GastosJustificados || 0
+      numContenedor = cn.Contenedor
+    })
+
+    let sinJustificar = DineroViaje - GastosJustificados;
+    let montoJustificacion = reverseMoneyFormat( document.getElementById("txtMonto").value);
+    
+    if(montoJustificacion > 0 && montoJustificacion > sinJustificar){
+      Swal.fire("Monto a justificar incorrecto",`El monto a justificar debe ser mayor a cero y no debe superar el monto pendiente de Dinero de Viaje. Monto pendiente por justificar ${moneyFormat(sinJustificar)}`,"warning");
+      return false;
+    }
+
+    let _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+    if(txtDescripcion.length == 0){
+      Swal.fire('Ingrese descripcion','Por favor introduzca la descripción del gasto que está justificando','warning')
+      return false
+    }
+
+    $.ajax({
+      url:'/liquidaciones/viajes/gastos/justificar',
+      type:'post',
+      data:{_token, montoJustificacion,numContenedor, txtDescripcion},
+      beforeSend:()=>{
+
+      },
+      success:(response)=>{
+        Swal.fire(response.Titulo,response.Mensaje,response.TMensaje)
+        $('#exampleModal').modal('hide')
+        if(response.TMensaje == "success"){
+          setTimeout(()=>{location.reload()},350)
+          
+        }
+      },
+      error:(error)=>{
+        Swal.fire('Error','Ocurre un problema','error')
+      }
+    })
+  }
 
    $(".moneyformat").on("focus",(e)=>{
     var val = e.target.value;

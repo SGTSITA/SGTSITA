@@ -47,7 +47,7 @@
                                     </button>
                                 @elseif ($documentacion->Asignaciones->id_proveedor == NULL)
                                     <button class="nav-link custom-tab" id="nav-GastosOpe-tab" data-bs-toggle="tab" data-bs-target="#nav-GastosOpe" type="button" role="tab" aria-controls="nav-GastosOpe" aria-selected="false">
-                                        <img src="{{ asset('img/icon/efectivo.webp') }}" alt="" width="40px"> Gastos Operador
+                                        <img src="{{ asset('img/icon/efectivo.webp') }}" alt="" width="40px"> Gastos Viaje
                                     </button>
                                 @endif
                               @endif
@@ -1232,7 +1232,7 @@
                                                                 {{$documentacion->Asignaciones->Operador->nombre}}
                                                                 </h5>
                                                                 <p class="mb-0 font-weight-bold text-sm">
-                                                                    Gastos Operador
+                                                                    Gastos Viaje
                                                                 </p>
                                                                 </div>
                                                             </div>

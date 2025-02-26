@@ -8,6 +8,7 @@ use App\Models\Bancos;
 use App\Models\DocumCotizacion;
 use App\Models\GastosOperadores;
 use App\Models\Operador;
+use App\Models\ViaticosOperador;
 use Illuminate\Http\Request;
 use DB;
 use Log;
@@ -62,12 +63,14 @@ class LiquidacionesController extends Controller
         ->get();
 
         $contenedores = $asignacion_operador->map(function($c){
+            //ViaticosOperador::where()
             return [
                 "IdAsignacion" => $c->id,
                 "IdOperador" => $c->id_operador,
                 "Contenedor" => $c->contenedor->num_contenedor,
                 "SueldoViaje" => $c->sueldo_viaje,
                 "DineroViaje" => $c->dinero_viaje,
+                "GastosJustificados" => (!is_null($c->justificacion)) ? $c->justificacion->sum('monto') : 0,
                 "MontoPago" => $c->restante_pago_operador,
                 "FechaInicia" => $c->fecha_inicio,
                 "FechaTermina" => $c->fecha_fin
@@ -80,7 +83,33 @@ class LiquidacionesController extends Controller
         $bancos = Bancos::where('id_empresa' ,'=',auth()->user()->id_empresa)->get();
         $gastos_ope = GastosOperadores::where('id_operador', '=', $r->operador)->get();
 
-        return response()->json(["viajes" => $contenedores, "totalPago" => $totalPago, "numViajes" => $numeroViajes]);
+        return response()->json(["viajes" => $contenedores, "totalPago" => $totalPago, "numViajes" => $numeroViajes, "data" => $asignacion_operador]);
+    }
+
+    public function justificarGastos(Request $r){
+        try{
+            DB::beginTransaction();
+            $documCotizacion = DocumCotizacion::where('num_contenedor',$r->numContenedor)->first();
+            ViaticosOperador::insert([
+                                        "id_cotizacion" => $documCotizacion->id_cotizacion,
+                                        "descripcion_gasto" => $r->txtDescripcion,
+                                        "monto" => $r->montoJustificacion
+                                    ]);
+
+            $asignacion = Asignaciones::where('id_contenedor',$documCotizacion->id)->update([
+                "restante_pago_operador" => DB::raw('restante_pago_operador + '.$r->montoJustificacion)
+            ]);
+
+            DB::commit();
+
+            return response()->json(["Titulo" => "Correcto", "Mensaje" => "Datos guardados con exito", "TMensaje" => "success"]);
+        }catch(\Throwable $t){
+            DB::rollback();
+            $uniqid = uniqid();
+            Log::channel('daily')->info("Codigo: $uniqid, Error: LiquidacionesController/justificarGastos ".$t->getMessage());
+            return response()->json(["Titulo" =>"Ha ocurrido un problema", "Mensaje" => "Codigo error: $uniqid. Mensaje: ".$t->getMessage(), "TMensaje" => "error"]);
+
+        }
     }
 
     public function aplicarPago(Request $request){

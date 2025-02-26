@@ -132,18 +132,18 @@ class MissionResultRenderer {
 
    columnDefs: [
    
-     { field: "numContenedor"},
-     { field: "cliente" },
+     { field: "numContenedor",filter: true, floatingFilter: true},
+     { field: "cliente",filter: true, floatingFilter: true },
      { field: "precioViaje",width: 150, valueFormatter: params => currencyFormatter(params.value), cellStyle: { textAlign: "right" }},
      { field: "pagoOperacion",width: 150, valueFormatter: params => currencyFormatter(params.value), cellStyle: { textAlign: "right" } },
      { field: "gastosExtra", valueFormatter: params => currencyFormatter(params.value), cellStyle: { textAlign: "right" }},
      { field: "gastosOperador", valueFormatter: params => currencyFormatter(params.value), cellStyle: { textAlign: "right" }},
      { field: "gastosDiferidos", valueFormatter: params => currencyFormatter(params.value), cellStyle: { textAlign: "right" }},
      { field: "utilidad", valueFormatter: params => currencyFormatter(params.value), cellStyle: { textAlign: "right" } },
-     { field: "transportadoPor",width: 150},
-     { field: "operadorOrProveedor"},
-     { field: "estatusViaje"},
-     { field: "estatusPago"},
+     { field: "transportadoPor",width: 150,filter: true, floatingFilter: true},
+     { field: "operadorOrProveedor",filter: true, floatingFilter: true},
+     { field: "estatusViaje",filter: true, floatingFilter: true},
+     { field: "estatusPago",filter: true, floatingFilter: true},
      { field: "detalleGastos", hide:true},
    ],
   
@@ -194,12 +194,12 @@ class MissionResultRenderer {
 
       let liTemplate = `<li class="list-group-item border-0 d-flex justify-content-between ps-0 mb-2 border-radius-lg">
       <div class="d-flex flex-column">
-        <h6 class="mb-1 text-dark font-weight-bold text-sm" style="color:#333335 !important">${item.motivo}</h6>
+        <h6 class="mb-1 text-dark font-weight-bold text-sm" style="color:#333335 !important">${item.motivo_gasto}</h6>
         <span class="text-xs">${obtenerFechaEnLetra(item.fecha_gasto)}</span>
-        <span class="badge bg-purple-transparent">Diferido</span>
+        <span class="badge bg-purple-transparent">${item.tipo_gasto}</span>
       </div>
       <div class="d-flex fw-semibold align-items-right" style="color:#333335; font-size:16px;">
-       ${moneyFormat(item.gasto_dia)}
+       ${moneyFormat(item.monto_gasto)}
       </div>
     </li>`
 
@@ -211,7 +211,6 @@ class MissionResultRenderer {
    }
 
    btnVerDetalle.addEventListener('click',()=> {
-    console.log('click')
     verDetalleGastos()
    });
 
