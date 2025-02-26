@@ -24,8 +24,8 @@
         "vue-template-compiler": "^2.6.12"
     },
     "dependencies": {
-        "ag-grid-community": "^33.0.3",
-        "ag-grid-react": "^33.0.3",
+        "ag-grid-community": "^33.1.0",
+        "ag-grid-react": "^33.1.0",
         "react": "^19.0.0",
         "react-dom": "^19.0.0"
     }

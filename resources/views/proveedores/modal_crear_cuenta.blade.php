@@ -1,65 +1,49 @@
-<div class="modal fade" id="editarModal{{$proveedor->id}}" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+<!-- 🔹 MODAL PARA AGREGAR CUENTA BANCARIA -->
+<div class="modal fade" id="modalCrearCuenta" tabindex="-1" aria-labelledby="modalCrearCuentaLabel" aria-hidden="true">
     <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Agregar Cuenta Bancaria</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <form method="POST" action="{{ route('cuenta.proveedores') }}" id="" enctype="multipart/form-data" role="form">
-            @csrf
-
-            <div class="modal-body">
-                <div class="row">
-                    <input name="id_proveedores" id="id_proveedores" value="{{$proveedor->id}}" style="display: none" class="form-control">
-
-                    <div class="col-12 form-group">
-                        <label for="name">Nombre Beneficiario*</label>
-                        <div class="input-group mb-3">
-                            <span class="input-group-text" id="basic-addon1">
-                                <img src="{{ asset('img/icon/user_predeterminado.webp') }}" alt="" width="25px">
-                            </span>
-                            <input name="nombre_beneficiario" id="nombre_beneficiario" type="text" class="form-control">
-                        </div>
-                    </div>
-
-                    <div class="col-12 form-group">
-                        <label for="name">Nombre Banco*</label>
-                        <div class="input-group mb-3">
-                            <span class="input-group-text" id="basic-addon1">
-                                <img src="{{ asset('img/icon/metodo-de-pago.webp') }}" alt="" width="25px">
-                            </span>
-                            <input name="nombre_banco" id="nombre_banco" type="text" class="form-control">
-                        </div>
-                    </div>
-
-                    <div class="col-12 form-group">
-                        <label for="name">Cuenta Bancaria *</label>
-                        <div class="input-group mb-3">
-                            <span class="input-group-text" id="basic-addon1">
-                                <img src="{{ asset('img/icon/t debito.webp') }}" alt="" width="25px">
-                            </span>
-                            <input name="cuenta_bancaria" id="cuenta_bancaria" type="number" class="form-control">
-                        </div>
-                    </div>
-
-                    <div class="col-12 form-group">
-                        <label for="name">Clabe *</label>
-                        <div class="input-group mb-3">
-                            <span class="input-group-text" id="basic-addon1">
-                                <img src="{{ asset('img/icon/t credito.png.webp') }}" alt="" width="25px">
-                            </span>
-                            <input name="cuenta_clabe" id="cuenta_clabe" type="number" class="form-control">
-                        </div>
-                    </div>
-
-                </div>
+        <div class="modal-content shadow-lg">
+            <div class="modal-header text-white">
+                <h5 class="modal-title" id="modalCrearCuentaLabel">Agregar Cuenta Bancaria</h5>
+                <button type="button" class="btn-close text-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
 
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="submit" class="btn btn-primary">Guardar</button>
-              </div>
-        </form>
-      </div>
+            <form id="formAgregarCuenta" method="POST">
+                @csrf
+
+                <div class="modal-body">
+                    <!-- 🔹 Mostrar Nombre del Proveedor -->
+                    <h6>Proveedor: <span id="nombreProveedorCuenta" class="text-info fw-bold"></span></h6>
+
+                    <input type="hidden" id="idProveedorCuenta" name="id_proveedores">
+
+                    <div class="mb-3">
+                        <label for="nombre_banco" class="form-label">Banco *</label>
+                        <input type="text" class="form-control" id="nombre_banco" name="nombre_banco" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="nombre_beneficiario" class="form-label">Nombre del Beneficiario *</label>
+                        <input type="text" class="form-control" id="nombre_beneficiario" name="nombre_beneficiario"
+                            required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="cuenta_bancaria" class="form-label">Número de Cuenta *</label>
+                        <input type="text" class="form-control" id="cuenta_bancaria" name="cuenta_bancaria" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="cuenta_clabe" class="form-label">Cuenta CLABE *</label>
+                        <input type="text" class="form-control" id="cuenta_clabe" name="cuenta_clabe" required>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-danger btn-xs"
+                        data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-outline-info btn-xs">Guardar</button>
+                </div>
+            </form>
+        </div>
     </div>
-  </div>
+</div>
