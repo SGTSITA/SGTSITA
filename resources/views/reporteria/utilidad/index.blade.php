@@ -57,7 +57,7 @@ Reporte de Utilidades
 
                             <div class="float-right">
                             <button class="btn btn-sm btn-outline" id="btnVerDetalle">Ver Gastos</button>
-                                <button type="button" class="btn btn-sm bg-gradient-danger" id="btnVerDetalle1">
+                                <button type="button" class="btn btn-sm bg-gradient-danger" id="btnVerDetalle1" onclick="exportUtilidades()">
                                     <i class="fa fa-fw fa-money-bill"></i>  Exportar Reporte
                                 </button>
                               </div>

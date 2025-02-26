@@ -137,7 +137,7 @@ class MissionResultRenderer {
      { field: "precioViaje",width: 150, valueFormatter: params => currencyFormatter(params.value), cellStyle: { textAlign: "right" }},
      { field: "pagoOperacion",width: 150, valueFormatter: params => currencyFormatter(params.value), cellStyle: { textAlign: "right" } },
      { field: "gastosExtra", valueFormatter: params => currencyFormatter(params.value), cellStyle: { textAlign: "right" }},
-     { field: "gastosOperador", valueFormatter: params => currencyFormatter(params.value), cellStyle: { textAlign: "right" }},
+     { field: "gastosViaje", valueFormatter: params => currencyFormatter(params.value), cellStyle: { textAlign: "right" }},
      { field: "gastosDiferidos", valueFormatter: params => currencyFormatter(params.value), cellStyle: { textAlign: "right" }},
      { field: "utilidad", valueFormatter: params => currencyFormatter(params.value), cellStyle: { textAlign: "right" } },
      { field: "transportadoPor",width: 150,filter: true, floatingFilter: true},
@@ -159,6 +159,56 @@ class MissionResultRenderer {
   
   let IdContenedor = null;
   let btnVerDetalle = document.querySelector('#btnVerDetalle')
+
+  function exportUtilidades(){
+    //apiGrid.exportDataAsCsv();
+    //return false;
+    var _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    const rowData = [];
+    apiGrid.forEachNode((node) => rowData.push(node.data));
+   
+    $.ajax({
+      url: '/reporteria/utilidad/export',
+      method: 'POST',
+      data: {
+          _token: _token,
+          rowData: rowData,
+          fileType: 'pdf'
+      },
+      xhrFields: {
+        responseType: "blob" // Asegura que el tipo de respuesta sea un Blob
+      },
+      success: function(response) {
+        console.log(response)
+        if (response instanceof Blob) {
+          var blob = new Blob([response], { type: 'application/pdf'  });
+          var url = URL.createObjectURL(blob);
+
+          var a = document.createElement('a');
+          a.style.display = 'none';
+          a.href = url;
+          a.target = "_blank"
+         // a.download = 'Cuentas_por_pagar_{{ date('d-m-Y') }}.' + fileType;
+          document.body.appendChild(a);
+
+          // Inicia la descarga
+          a.click();
+
+          // Limpiar después de la descarga
+          window.URL.revokeObjectURL(url);
+          document.body.removeChild(a);
+        }else {
+          console.error("La respuesta no es un Blob válido:", response);
+      }
+
+         // alert('El archivo se ha descargado correctamente.');
+      },
+      error: function(xhr, status, error) {
+          console.error(error);
+          alert('Ocurrió un error al exportar los datos.');
+      }
+  });
+  }
    
    function getUtilidadesViajes(){
     var _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');

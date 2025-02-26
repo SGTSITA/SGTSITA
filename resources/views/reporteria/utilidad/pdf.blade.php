@@ -3,145 +3,181 @@
     @php
         use Carbon\Carbon;
     @endphp
-    @if(!isset($isExcel)) 
+    @if(!isset($isExcel))
     <style>
+        /* Configuración de la página para tamaño carta en horizontal con márgenes generales */
+        @page {
+            size: letter landscape; /* Tamaño carta en orientación horizontal */
+            margin: 10mm; /* Márgenes generales alrededor de la página */
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 12px; /* Tamaño de fuente reducido */
+            margin: 0; 
+            padding: 0;
+        }
+
+        /* Eliminar el bold en todos los elementos */
+        h3, p, th, td {
+            font-weight: normal; /* Quitar negrita */
+        }
+
         .registro-contenedor {
-            border: 2px solid #000; /* Cambia el color y grosor del borde según tus necesidades */
-            margin-bottom: 20px; /* Espacio entre cada registro */
-            padding: 15px; /* Espacio interno alrededor de las tablas */
-            border-radius: 5px; /* Bordes redondeados, opcional */
+            border: 2px solid #000;
+            margin-bottom: 0px;
+            padding: 15px;
+            border-radius: 5px;
         }
 
         .registro-contenedor table {
-            margin-bottom: 10px; /* Espacio entre tablas dentro del mismo contenedor */
+            margin-bottom: 0px;
         }
 
         .totales {
-            margin-top: 20px;
+            margin-top: 0px;
         }
 
         .totales h3 {
-            font-weight: bold;
+            font-weight: normal; /* Quitar negrita */
         }
 
         .totales p {
             font-size: 1.2em;
             color: #000;
         }
+
+        .margin_cero {
+            padding: 0;
+            margin: 0;
+            font-size: 12px;
+        }
+
+        .container1 {
+            display: flex;
+            justify-content: space-between; /* Distribuye los elementos entre los extremos */
+            align-items: center; /* Centra los elementos verticalmente */
+            height: 100%;
+            padding: 0 10px; /* Agrega algo de espacio a los lados */
+        }
+
+        .left-element, .right-element {
+            padding: 10px;
+            background-color: lightgray;
+            border-radius: 5px;
+        }
+
+        table {
+            font-family: Arial, sans-serif;
+            font-size: 9px; /* Tamaño de fuente reducido */
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 0px;
+        }
+
+        th, td {
+            border: 1px solid #000;
+            padding: 4px; /* Reducir el espacio de las celdas */
+             /* Centrar el texto */
+        }
+
+        
+        .bg-primary {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        .bg-success {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .bg-warning {
+            background-color: #ffc107;
+            color: black;
+        }
+
+        .bg-danger {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .tabla-completa {
+            margin-top: 0px;
+        }
+        .my-table {
+            border: none !important; /* Quita el borde de la tabla */
+            border-collapse: collapse !important; /* Elimina los bordes entre celdas */
+            font-size: 14px !important;
+            text-align: left; 
+            background-color: lightgray;
+            border-radius: 10px;
+        }
+
+        .my-table td {
+            border: none !important; /* Quita el borde de las celdas */
+        }
     </style>
-    @endif
+@endif
     <head>
         <title>Utilidades</title>
     </head>
 
     <body>
 
-            <div class="contianer" style="position: relative">
-                <h4>Empresa: {{ $user->Empresa->nombre }}</h4>
-                <h4>Utilidades</h4>
-            </div>
-            <div class="contianer" style="position: relative">
-                <h5 style="position: absolute;left:75%;">Utilidades: {{ date("d-m-Y") }}</h5><br>
-            </div>
+        
 
-            <table class="table text-white tabla-completa" style="color: #000;width: 100%;padding: 30px; font-size: 12px">
+            <table class="my-table">
+                <tr>
+                    <td align="left">
+                    <div class="left-element">
+                        <h4>Empresa: {{ $user->Empresa->nombre }}</h4>
+                        <h4>Reporte de Utilidades</h4>
+                        <h5 >Utilidades: {{ date("d-m-Y") }}</h5>
+                    </div>
+                    </td>
+                    <td align="right">
+                    <div class="right-element">
+                      <h3 style="font-weight:bold !important" >Utilidad: ${{ number_format($utilidad,2) }}</h3>
+                    </div>
+                    </td>
+                </tr>
+            </table>
+           
+
+            <table class="table text-white tabla-completa" style="color: #000; width: 100%; padding: 5px; margin: 0px; border-collapse: collapse; border: 1px solid #000;">
                 <thead>
                     <tr>
-                        <th>Contenedor</th>
+                        <th>Núm Contenedor</th>
                         <th>Cliente</th>
-                        <th>Subcliente</th>
-                        <th>Origen</th>
-                        <th>Destino</th>
+                        <th>Precio Viaje</th>
+                        <th>Pago Operación</th>
+                        <th>Gastos Extra</th>
+                        <th>Gastos Viaje</th>
+                        <th>Gastos Diferidos</th>
                         <th>Utilidad</th>
+                        <th>Transportado Por</th>
                     </tr>
                 </thead>
                 <tbody style="text-align: center;font-size: 100%;">
                     @foreach ($cotizaciones as $cotizacion)
                         <tr>
-                            <td>{{$cotizacion->Contenedor->num_contenedor}}</td>
-                            <td>{{$cotizacion->Contenedor->Cotizacion->Cliente->nombre}}</td>
-                            <td>
-                                @if ($cotizacion->Contenedor->Cotizacion->id_subcliente != NULL)
-                                    {{$cotizacion->Contenedor->Cotizacion->Subcliente->nombre}} / {{$cotizacion->Contenedor->Cotizacion->Subcliente->telefono}}
-                                @else
-                                    -
-                                @endif
-                            </td>
-                            <td>{{$cotizacion->Contenedor->Cotizacion->origen}}</td>
-                            <td>{{$cotizacion->Contenedor->Cotizacion->destino}}</td>
-                            <td>{{$cotizacion->Contenedor->Cotizacion->estatus}}</td>
-                            <td>
-                                @php
-                                    if($cotizacion->total_proveedor == NULL){
-                                        $utilidad = $cotizacion->Contenedor->Cotizacion->total - $cotizacion->pago_operador;
-                                    }elseif($cotizacion->total_proveedor != NULL){
-                                        $utilidad = $cotizacion->Contenedor->Cotizacion->total - $cotizacion->total_proveedor;
-                                    }else{
-                                        $utilidad = 0;
-                                    }
-                                @endphp
-                            <b> ${{ number_format($utilidad, 2, '.', ',') }}</b>
-                            </td>
+                            <td>{{$cotizacion['numContenedor']}}</td>
+                            <td>{{$cotizacion['cliente']}}</td>
+                            <td>$ {{number_format($cotizacion['precioViaje'],2)}}</td>
+                            <td>$ {{number_format($cotizacion['pagoOperacion'],2)}}</td>
+                            <td>$ {{number_format($cotizacion['gastosExtra'],2)}}</td>
+                            <td>$ {{number_format($cotizacion['gastosViaje'],2)}}</td>
+                            <td>$ {{number_format($cotizacion['gastosDiferidos'],2)}}</td>
+                            <td @if($cotizacion['utilidad']<0) class="bg-warning" @endif>$ {{number_format($cotizacion['utilidad'],2)}}</td>
+                            <td>{{$cotizacion['transportadoPor']}}</td>
+                            
                         </tr>
                     @endforeach
                 </tbody>
             </table>
 
-            <h4>Gatos generales</h4>
-            <table class="table text-white tabla-completa" style="color: #000;width: 35%;padding: 30px; font-size: 12px">
-                <thead>
-                    <tr>
-                        <th>Motivo</th>
-                        <th>Monto</th>
-                    </tr>
-                </thead>
-                <tbody style="text-align: center;font-size: 100%;">
-                    @foreach ($gastos as $gasto)
-                        <tr>
-                            <td>{{$gasto->motivo}}</td>
-                            <td><b> ${{ number_format($gasto->monto1, 2, '.', ',') }} </b></td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-
-            <table class="table text-white tabla-completa" style="color: #000;width: 35%;padding: 30px; font-size: 12px">
-                <thead>
-                    <tr>
-                        <th>Total <br> Utilidades</th>
-                        <th>Total <br> Gastos<</th>
-                        <th>Total</th>
-                    </tr>
-                </thead>
-                <tbody style="text-align: center;font-size: 100%;">
-                    @php
-                        $utilidades = 0;
-                        foreach ($cotizaciones as $cotizacion) {
-                            if($cotizacion->total_proveedor == NULL){
-                                $utilidad = $cotizacion->Contenedor->Cotizacion->total - $cotizacion->pago_operador;
-                            }elseif($cotizacion->total_proveedor != NULL){
-                                $utilidad = $cotizacion->Contenedor->Cotizacion->total - $cotizacion->total_proveedor;
-                            }else{
-                                $utilidad = 0;
-                            }
-
-                            $utilidades += $utilidad;
-                        }
-
-                        $suma_gastos = 0;
-                        foreach ($gastos as $gasto) {
-                            $suma_gastos += $gasto->monto1;
-                        }
-
-                        $resta = 0;
-                        $resta = $utilidades - $suma_gastos;
-                    @endphp
-                        <tr>
-                            <td>${{ number_format($utilidades, 2, '.', ',') }}</td>
-                            <td>${{ number_format($suma_gastos, 2, '.', ',') }}</td>
-                            <td>${{ number_format($resta, 2, '.', ',') }}</td>
-                        </tr>
-                </tbody>
-            </table>
+          
+            
     </body>
 </html>

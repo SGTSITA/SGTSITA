@@ -580,7 +580,7 @@ public function export_cxp(Request $request)
                         "operadorOrProveedor" => (is_null($d->Proveedor)) ? $d->Operador : $d->Proveedor,
                         "pagoOperacion" => $pagoOperacion,
                         "gastosExtra" => $gastosExtra->sum('monto'),
-                        "gastosOperador" => $gastosOperador->sum('cantidad'),
+                        "gastosViaje" => $gastosOperador->sum('cantidad'),
                         "viajeInicia"=> $d->fecha_inicio,
                         "viajeTermina"=> $d->fecha_fin, 
                         "estatusViaje" => $d->estatus,     
@@ -602,31 +602,22 @@ public function export_cxp(Request $request)
 
         $fecha = date('Y-m-d');
         $fechaCarbon = Carbon::parse($fecha);
-
-        $cotizacionIds = $request->input('cotizacion_ids', []);
-        if (empty($cotizacionIds)) {
-            return redirect()->back()->with('error', 'No se seleccionaron cotizaciones.');
-        }
-
-        $cotizaciones = Asignaciones::whereIn('id', $cotizacionIds)->get();
-
-        $cotizacion = Asignaciones::where('id', $cotizacionIds)->first();
+        $cotizaciones = Collect($request->rowData);//Asignaciones::whereIn('id', $cotizacionIds)->get();
+        $cotizacion = [];//Asignaciones::where('id', $cotizacionIds)->first();
         $user = User::where('id', '=', auth()->user()->id)->first();
 
         $gastos = GastosGenerales::where('id_empresa', auth()->user()->id_empresa);
-        if ($fechaDe && $fechaHasta) {
-            $gastos = $gastos->where('fecha', '>=', $fechaDe)
-                             ->where('fecha', '<=', $fechaHasta);
-        }
+        $gastos = [];
 
-        $gastos = $gastos->get();
+        $utilidad = $cotizaciones->sum('utilidad');
+  
 
-        if($request->btnExport == "xlsx"){
+        if($request->fileType == "xlsx"){
             Excel::store(new \App\Exports\UtilidadExport($cotizaciones, $fechaCarbon, $cotizacion, $user, $gastos), 'utilidad.xlsx','public');
             return Response::download(storage_path('app/public/utilidad.xlsx'), "utilidad.xlsx")->deleteFileAfterSend(true);
         }else{
-        $pdf = PDF::loadView('reporteria.utilidad.pdf', compact('cotizaciones', 'fechaCarbon', 'cotizacion', 'user', 'gastos'))->setPaper('a4', 'landscape');
-            return $pdf->download('utilidad_seleccionadas.pdf');
+        $pdf = PDF::loadView('reporteria.utilidad.pdf', compact('cotizaciones','utilidad', 'fechaCarbon', 'cotizacion', 'user', 'gastos'))->setPaper('a4', 'landscape');
+            return $pdf->stream('utilidades_rpt.pdf');
         }
     }
 
