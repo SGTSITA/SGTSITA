@@ -276,3 +276,6 @@ Route::get('/correo', [App\Http\Controllers\CorreoController::class, 'index'])->
 
 Route::post('/correo', [App\Http\Controllers\CorreoController::class, 'update'])->name('correo.update');
 
+Route::get('/configmec', [App\Http\Controllers\ConfigMecController::class, 'index'])->name('configmec');
+Route::post('/configmec', [App\Http\Controllers\ConfigMecController::class, 'update'])->name('configmec.update');
+

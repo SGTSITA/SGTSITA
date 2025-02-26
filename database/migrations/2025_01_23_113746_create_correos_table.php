@@ -16,7 +16,7 @@ class CreateCorreosTable extends Migration
         Schema::create('correos', function (Blueprint $table) {
             $table->id(); // ID único y autoincremental
             $table->string('correo'); // Dirección de correo
-            $table->enum('tipo_correo', ['Personal', 'Trabajo', 'Otro']); // Tipo de correo
+            $table->enum('tipo_correo', ['SGT', 'MEC', 'Otro']); // Tipo de correo
             $table->string('referencia')->nullable(); // Referencia
             $table->boolean('notificacion_nueva')->default(false); // Notificación nueva
             $table->boolean('cancelacion_viaje')->default(false); // Cancelación de viaje
