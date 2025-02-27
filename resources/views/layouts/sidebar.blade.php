@@ -302,16 +302,43 @@
             @endcan
 
             @can('liquidaciones')
-                <li class="nav-item">
+            <a data-bs-toggle="collapse" href="#pagesLiquidaciones"
+                    class="nav-link {{ Request::is('reporteria/cotizaciones*') ? 'active' : '' }}"
+                    aria-controls="pagesLiquidaciones" role="button" aria-expanded="false">
+                    <div
+                        class="icon icon-shape icon-sm text-center  me-2 d-flex align-items-center justify-content-center">
+                        <img src="{{ asset('img/icon/pago-en-efectivo.png') }}" alt="" width="20px">
+                    </div>
+                    <span class="nav-link-text ms-1"><b>XII</b> Liquidaciones</span>
+                </a>
+
+                <div class="collapse " id="pagesLiquidaciones">
+                    <ul class="nav ms-4">
+                        <li class="nav-item ">
+
+                                <a class="nav-link {{ Request::is('reporteria/cotizaciones/cxc*') ? 'show' : '' }}"
+                                    href="{{ route('index.liquidacion') }}">
+                                    <span class="sidenav-mini-icon"> P </span>
+                                    <span class="sidenav-normal">Liquidar Operadores</span>
+                                </a>
+                                <a class="nav-link {{ Request::is('reporteria/cotizaciones/cxp*') ? 'show' : '' }}"
+                                    href="{{ route('historial.liquidacion') }}">
+                                    <span class="sidenav-mini-icon"> P </span>
+                                    <span class="sidenav-normal">Historial Liquidaciones</span>
+                                </a>
+                        </li>
+                    </ul>
+                </div>
+                <!--li class="nav-item">
                     <a class="nav-link {{ Request::is('liquidaciones*') ? 'active' : '' }}"
                         href="{{ route('index.liquidacion') }}" target="">
                         <div
                             class="icon icon-shape icon-sm text-center  me-2 d-flex align-items-center justify-content-center">
                             <img src="{{ asset('img/icon/pago-en-efectivo.png') }}" alt="" width="20px">
                         </div>
-                        <span class="nav-link-text ms-1"><b>XII</b> Liquidaciones</span>
+                       
                     </a>
-                </li>
+                </li-->
             @endcan
 
             @can('catalogo')

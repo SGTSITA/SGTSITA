@@ -137,6 +137,7 @@ class MissionResultRenderer {
    columnDefs: [
      { field: "IdAsignacion", hide: true},
      { field: "IdOperador", hide: true},
+     { field: "IdContenedor", hide: true},
      { field: "Contenedor" },
      { field: "SueldoViaje",width: 150, valueFormatter: params => currencyFormatter(params.value), cellStyle: { textAlign: "right" }},
      { field: "DineroViaje",width: 150, valueFormatter: params => currencyFormatter(params.value), cellStyle: { textAlign: "right" }},
@@ -158,6 +159,7 @@ class MissionResultRenderer {
   paginationTitle.textContent = 'Registros por página';
   
   let IdContenedor = null;
+  let IdOperador = document.querySelector('#IdOperador');
   let dTotalPago = document.querySelector('#totalPago')
   let dNumViajes = document.querySelector('#numViajes')
   let btnSummaryPayment = document.querySelector('#btnSummaryPayment')
@@ -234,12 +236,12 @@ class MissionResultRenderer {
     let pagoContenedores = apiGrid.getSelectedRows();
     let bancoId = banco.value;
     var _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-
+    let _IdOperador = IdOperador.value;
 
     $.ajax({
         url:'/liquidaciones/viajes/aplicar-pago',
         type:'post',
-        data:{_token,pagoContenedores,bancoId,totalMontoPago},
+        data:{_token,_IdOperador,pagoContenedores,bancoId,totalMontoPago},
         beforeSend:()=>{
 
         },

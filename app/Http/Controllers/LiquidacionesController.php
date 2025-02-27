@@ -8,10 +8,16 @@ use App\Models\Bancos;
 use App\Models\DocumCotizacion;
 use App\Models\GastosOperadores;
 use App\Models\Operador;
+use App\Models\Liquidaciones;
+use App\Models\LiquidacionContenedor;
 use App\Models\ViaticosOperador;
 use Illuminate\Http\Request;
+use Carbon\Carbon;
 use DB;
 use Log;
+use Auth;
+use PDF;
+
 
 class LiquidacionesController extends Controller
 {
@@ -67,6 +73,7 @@ class LiquidacionesController extends Controller
             return [
                 "IdAsignacion" => $c->id,
                 "IdOperador" => $c->id_operador,
+                "IdContenedor" => $c->id_contenedor,
                 "Contenedor" => $c->contenedor->num_contenedor,
                 "SueldoViaje" => $c->sueldo_viaje,
                 "DineroViaje" => $c->dinero_viaje,
@@ -122,8 +129,32 @@ class LiquidacionesController extends Controller
             }
 
             $contenedores = collect($request->pagoContenedores);
-        
-          //  return $contenedores->sum('MontoPago');
+
+            
+
+            $liquidacion = new Liquidaciones;
+            $liquidacion->id_operador = $request->_IdOperador;
+            $liquidacion->id_banco = $request->bancoId;
+            $liquidacion->fecha = Carbon::now()->format('Y-m-d');
+            $liquidacion->viajes_realizados = $contenedores->count();
+            $liquidacion->sueldo_operador = $contenedores->sum('SueldoViaje');
+            $liquidacion->dinero_viaje = $contenedores->sum('DineroViaje');
+            $liquidacion->dinero_justificado = $contenedores->sum('GastosJustificados');
+            $liquidacion->total_pago = $contenedores->sum('MontoPago');
+            $liquidacion->save();
+
+            $contenedores->map(function($contenedor) use ($liquidacion){
+                $cont = [
+                        'id_liquidacion' => $liquidacion->id,
+                        'id_contenedor' => $contenedor['IdContenedor'] ,
+                        'sueldo_operador' => $contenedor['SueldoViaje'] ,
+                        'dinero_viaje' => $contenedor['DineroViaje'] ,
+                        'dinero_justificado' => $contenedor['GastosJustificados'] ,
+                        'total_pagado' => $contenedor['MontoPago'] ,
+                        ];
+                LiquidacionContenedor::insert($cont);
+            });
+
             foreach($contenedores as $c){
                 $asignacion = Asignaciones::where('id', '=', $c['IdAsignacion'])->first();
                 $saldoContenedor = $asignacion->restante_pago_operador;
@@ -169,81 +200,46 @@ class LiquidacionesController extends Controller
         }
     }
 
-    public function update_varios(Request $request)
-    {
-        $cotizacionesData = $request->get('id_cotizacion');
-        $abonos = $request->get('abono');
-        $remainingTotal = $request->get('remaining_total');
+    public function comprobantePago(Request $r){
+        $liquidacion = Liquidaciones::where('id',$r->IdOperacion)->first();
+        $user = Auth::User();
 
-        // Array para almacenar contenedor y abono
-        $contenedoresAbonos = [];
+        $idViajes = $liquidacion->viajes->pluck('id_contenedor');
+        $viaticos = ViaticosOperador::whereIn('id_cotizacion',$idViajes)->get();
 
-        foreach ($cotizacionesData as $id) {
-            $cotizacion = Asignaciones::where('id', '=', $id)->first();
-
-            // Establecer el abono y calcular el restante
-            $abono = isset($abonos[$id]) ? floatval($abonos[$id]) : 0;
-            $nuevoRestante = $cotizacion->restante_pago_operador - $abono;
-
-            if ($nuevoRestante < 0) {
-                $nuevoRestante = 0;
-            }
-
-            $cotizacion->restante_pago_operador = $nuevoRestante;
-            if($nuevoRestante == 0){
-                $cotizacion->estatus_pagado = 'Pagado';
-            }
-            $cotizacion->update();
-
-            // Agregar contenedor y abono al array
-            $contenedoresAbonos[] = [
-                'num_contenedor' => $cotizacion->Contenedor->num_contenedor,
-                'abono' => $abono
-            ];
-        }
-
-        // Convertir el array de contenedores y abonos a JSON
-        $contenedoresAbonosJson = json_encode($contenedoresAbonos);
-
-        $banco = new BancoDineroOpe;
-        if($request->get('monto1_varios') != NULL){
-            $banco = new BancoDineroOpe;
-            $banco->contenedores = $contenedoresAbonosJson;
-            $banco->id_operador = $request->get('id_cliente');
-            $banco->monto1 = $request->get('monto1_varios');
-            $banco->metodo_pago1 = $request->get('metodo_pago1_varios');
-            $banco->id_banco1 = $request->get('id_banco1_varios');
-            if ($request->hasFile("comprobante1_varios")) {
-                $file = $request->file('comprobante1_varios');
-                $path = public_path() . '/pagos';
-                $fileName = uniqid() . $file->getClientOriginalName();
-                $file->move($path, $fileName);
-                $banco->comprobante_pago1 = $fileName;
-            }
-            $banco->tipo = 'Salida';
-            $banco->fecha_pago = date('Y-m-d');
-            $banco->save();
-        }
-
-        if($request->get('monto2_varios') != NULL){
-            $banco = new BancoDineroOpe;
-            $banco->contenedores = $contenedoresAbonosJson;
-            $banco->monto2 = $request->get('monto2_varios');
-            $banco->metodo_pago2 = $request->get('metodo_pago2_varios');
-            $banco->id_banco2 = $request->get('id_banco2_varios');
-            if ($request->hasFile("comprobante2_varios")) {
-                $file = $request->file('comprobante2_varios');
-                $path = public_path() . '/pagos';
-                $fileName = uniqid() . $file->getClientOriginalName();
-                $file->move($path, $fileName);
-                $banco->comprobante_pago2 = $fileName;
-            }
-           $banco->tipo = 'Salida';
-           $banco->fecha_pago = date('Y-m-d');
-        }
-
-        $banco->save();
-
-        return redirect()->back()->with('success', 'Liquedaciones exitosas');
+        $pdf = PDF::loadView('liquidaciones.pdf', compact('liquidacion','user','viaticos'));
+        return $pdf->stream('utilidades_rpt.pdf');
     }
+
+   public function historialPagos(){
+    
+    return view('liquidaciones.historial');
+   }
+
+   public function historialPagosData(Request $r){
+    $idOperadores = Operador::where('id_empresa',Auth::User()->id_empresa)->get()->pluck('id');
+    $fechaI = Carbon::now()->format('Y-m-d');
+    $fechaF = Carbon::now()->format('Y-m-d');
+
+    $historial = Liquidaciones::whereIn('id_operador',$idOperadores)->get();
+
+    $mapHistory = $historial->map(function($h){
+        return
+        [
+            "IdPago" => $h->id,
+            "IdOperador" => $h->id_operador,
+            "IdBanco" => $h->id_banco,
+            "Operador" => $h->operadores->nombre ,
+            "Fecha" => $h->fecha,
+            "ViajesRealizados" => $h->viajes_realizados,
+            "SueldoOperador" => $h->sueldo_operador,
+            "DineroViaje" => $h->dinero_viaje,
+            "DineroJustificado" => $h->dinero_justificado,
+            "TotalPagado" => $h->total_pagado
+        ];
+    });
+
+    return response()->json(["TMensaje" => "success", "data" => $mapHistory]);
+
+   }
 }
