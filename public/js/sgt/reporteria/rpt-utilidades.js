@@ -120,8 +120,8 @@ class MissionResultRenderer {
    paginationPageSize: 10,
    paginationPageSizeSelector: [10, 20, 50,100],
    rowSelection: {
-    mode: "singleRow",
-    headerCheckbox: false,
+    mode: "multiRow",
+    headerCheckbox: true,
    },
    rowClassRules: {
     'bg-gradient-danger': params => params.data.utilidad < 0,
@@ -161,12 +161,10 @@ class MissionResultRenderer {
   let btnVerDetalle = document.querySelector('#btnVerDetalle')
 
   function exportUtilidades(){
-    //apiGrid.exportDataAsCsv();
-    //return false;
+
     var _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-    const rowData = [];
-    apiGrid.forEachNode((node) => rowData.push(node.data));
-   
+    const rowData = apiGrid.getSelectedRows();
+
     $.ajax({
       url: '/reporteria/utilidad/export',
       method: 'POST',
@@ -210,12 +208,12 @@ class MissionResultRenderer {
   });
   }
    
-   function getUtilidadesViajes(){
+   function getUtilidadesViajes(startDate, endDate){
     var _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     $.ajax({
         url: '/reporteria/utilidad/ver-utilidad',
         type: 'post',
-        data: {_token},
+        data: {_token,startDate, endDate},
         beforeSend:()=>{},
         success:(response)=>{
             apiGrid.setGridOption("rowData", response)

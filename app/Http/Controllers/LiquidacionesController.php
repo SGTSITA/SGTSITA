@@ -218,10 +218,10 @@ class LiquidacionesController extends Controller
 
    public function historialPagosData(Request $r){
     $idOperadores = Operador::where('id_empresa',Auth::User()->id_empresa)->get()->pluck('id');
-    $fechaI = Carbon::now()->format('Y-m-d');
-    $fechaF = Carbon::now()->format('Y-m-d');
+    $fechaI = $r->startDate;
+    $fechaF = $r->endDate;
 
-    $historial = Liquidaciones::whereIn('id_operador',$idOperadores)->get();
+    $historial = Liquidaciones::whereIn('id_operador',$idOperadores)->whereBetween('fecha',[$fechaI, $fechaF])->get();
 
     $mapHistory = $historial->map(function($h){
         return

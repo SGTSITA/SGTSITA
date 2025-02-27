@@ -147,13 +147,13 @@ class MissionResultRenderer {
   var paginationTitle = document.querySelector("#ag-32-label");
   paginationTitle.textContent = 'Registros por página';
   
-  function getHistorial(){
+  function getHistorial(startDate, endDate){
     let _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
     $.ajax({
         url:'/liquidaciones/historial/data',
         type: 'post',
-        data:{_token},
+        data:{_token,startDate,endDate},
         beforeSend:()=>{},
         success:(response)=>{
             apiGrid.setGridOption("rowData", response.data)
@@ -179,6 +179,7 @@ class MissionResultRenderer {
           _token: _token,
           IdOperacion: IdOperacion,
           fileType: 'pdf'
+          
       },
       xhrFields: {
         responseType: "blob" // Asegura que el tipo de respuesta sea un Blob

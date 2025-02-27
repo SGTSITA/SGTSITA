@@ -526,6 +526,8 @@ public function export_cxp(Request $request)
     }
 
     public function getContenedorUtilidad(Request $r){
+        $fechaI = $r->startDate.' 00:00:00';
+        $fechaF = $r->endDate.' 00:00:00';
         $datos = DB::select('select c.id as id_cotizacion,dc.num_contenedor,cl.nombre as cliente, op.nombre Operador, a.sueldo_viaje,dinero_viaje, pr.nombre as Proveedor,total_proveedor,
         c.total, c.estatus,estatus_pago,c.fecha_pago,a.fecha_inicio,a.fecha_fin,DATEDIFF(a.fecha_fin,a.fecha_inicio) as tiempo_viaje
         from cotizaciones c
@@ -533,7 +535,8 @@ public function export_cxp(Request $request)
         left join docum_cotizacion dc on c.id = dc.id_cotizacion
         left join asignaciones a on dc.id = a.id_contenedor
         left join operadores op on a.id_operador = op.id
-        left join proveedores pr on a.id_proveedor = pr.id');
+        left join proveedores pr on a.id_proveedor = pr.id
+        where a.fecha_inicio between '."'".$fechaI."'".' and '."'".$fechaF."'");
 
         $Info = [];
         foreach($datos as $d){
