@@ -101,35 +101,44 @@ class GastosGeneralesController extends Controller
             DB::commit();
             $gastosGenerales = GastosGenerales::where('id',$r->_IdGasto);
 
-        $montoGasto = $gastosGenerales->first()->monto1;
-        $montoDiario = $montoGasto / $r->diasContados;
+            $montoGasto = $gastosGenerales->first()->monto1;
+            $montoDiario = $montoGasto / $r->diasContados;
+            $cantEquipos = sizeof($r->unidades);
+            $montoDiario = $montoDiario / $cantEquipos;
 
-        $gastosGenerales->update([
-            "diferir_gasto" => 1,
-            "diferir_contador_periodos" => $r->diasContados,
-            "fecha_diferido_inicial" => $r->fechaDesde,
-            "fecha_diferido_final" => $r->fechaHasta
-        ]);
+            $gastosGenerales->update([
+                "diferir_gasto" => 1,
+                "diferir_contador_periodos" => $r->diasContados,
+                "fecha_diferido_inicial" => $r->fechaDesde,
+                "fecha_diferido_final" => $r->fechaHasta
+            ]);
 
-        $fechaDesde = Carbon::parse($r->fechaDesde);
-        $fechaHasta = Carbon::parse($r->fechaHasta);
+            foreach($r->unidades as $u){
+                $fechaDesde = Carbon::parse($r->fechaDesde);
+                $fechaHasta = Carbon::parse($r->fechaHasta);
+    
+                $Daily = [];
+                while($fechaDesde < $fechaHasta){
+                    $newDate = $fechaDesde->addDay();
+                    $fechaDesde = $newDate;
+                    $date = [
+                                "id_gasto" => $r->_IdGasto,
+                                "id_equipo" => $u,
+                                "fecha_gasto" => $newDate->format('Y-m-d'),
+                                "gasto_dia" => $montoDiario
+                            ];
+                    $Daily[] = $date;
+                }
+    
+                GastosDiferidosDetalle::insert($Daily);
+            }
 
-        $Daily = [];
-        while($fechaDesde < $fechaHasta){
-            $newDate = $fechaDesde->addDay();
-            $fechaDesde = $newDate;
-            $date = ["id_gasto" => $r->_IdGasto,"fecha_gasto" => $newDate->format('Y-m-d'),"gasto_dia" => $montoDiario];
-            $Daily[] = $date;
-        }
-
-        GastosDiferidosDetalle::insert($Daily);
-
-        return response()->json([
-                                "Titulo" => "Exito!", 
-                                "Mensaje" => "Se ha diferido el gasto exitosamente", 
-                                "TMensaje" => "success",
-                                "Fechas" => $Daily
-                           ]);
+            return response()->json([
+                                    "Titulo" => "Exito!", 
+                                    "Mensaje" => "Se ha diferido el gasto exitosamente", 
+                                    "TMensaje" => "success",
+                                    "Fechas" => $Daily
+                            ]);
         }catch(\Throwable $t){
 
             DB::rollback();

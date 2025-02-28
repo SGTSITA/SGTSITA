@@ -504,7 +504,7 @@ public function export_cxp(Request $request)
     public function getContenedorUtilidad(Request $r){
         $fechaI = $r->startDate.' 00:00:00';
         $fechaF = $r->endDate.' 00:00:00';
-        $datos = DB::select('select c.id as id_cotizacion,dc.num_contenedor,cl.nombre as cliente, op.nombre Operador, a.sueldo_viaje,dinero_viaje, pr.nombre as Proveedor,total_proveedor,
+        $datos = DB::select('select c.id as id_cotizacion,a.id_camion,dc.num_contenedor,cl.nombre as cliente, op.nombre Operador, a.sueldo_viaje,dinero_viaje, pr.nombre as Proveedor,total_proveedor,
         c.total, c.estatus,estatus_pago,c.fecha_pago,a.fecha_inicio,a.fecha_fin,DATEDIFF(a.fecha_fin,a.fecha_inicio) as tiempo_viaje
         from cotizaciones c
         left join clients cl on c.id_cliente = cl.id
@@ -517,7 +517,9 @@ public function export_cxp(Request $request)
         $Info = [];
         foreach($datos as $d){
             $diferido = 
-            GastosDiferidosDetalle::join('gastos_generales as g','gastos_diferidos_detalle.id_gasto','=','g.id')->whereBetween('fecha_gasto',[$d->fecha_inicio,$d->fecha_fin])
+            GastosDiferidosDetalle::join('gastos_generales as g','gastos_diferidos_detalle.id_gasto','=','g.id')
+            ->whereBetween('fecha_gasto',[$d->fecha_inicio,$d->fecha_fin])
+            ->where('gastos_diferidos_detalle.id_equipo',$d->id_camion)
             ->get();
 
             $detalleGastos = null;

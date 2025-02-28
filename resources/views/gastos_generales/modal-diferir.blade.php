@@ -63,15 +63,13 @@
                   </div>
                 </div>
                 <div class="col-12">
-                            <label class="mt-4 form-label">Unidades Incluidas</label>
-                            <select class="form-control" name="selectUnidades" id="selectUnidades" multiple>
-                              
-                              @foreach($equipos as $e)
-                               <option value="{{$e->id}}">{{$e->marca}} - {{$e->id_equipo}}</option>
-                              @endforeach
-                             
-                            </select>
-                          </div>
+                  <label class="mt-4 form-label">Unidades Incluidas</label>
+                  <select class="form-control" name="selectUnidades" id="selectUnidades" multiple>
+                    @foreach($equipos as $e)
+                      <option value="{{$e->id}}">{{$e->marca}} - {{$e->id_equipo}}</option>
+                    @endforeach
+                  </select>
+                </div>
                 </div>
             </div>
 

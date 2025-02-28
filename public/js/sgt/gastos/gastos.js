@@ -300,12 +300,15 @@ class MissionResultRenderer {
       return false;
     }
 
+    const select = document.getElementById("selectUnidades");
+    const unidades = Array.from(select.selectedOptions).map(option => option.value);
+
     let _IdGasto = IdGasto
 
     $.ajax({
       url: '/gastos/diferir',
       type:'post',
-      data:{_token,_IdGasto,gastoDiario,diasContados,fechaDesde: fechaDesde.value, fechaHasta: fechaHasta.value},
+      data:{_token,_IdGasto,gastoDiario,diasContados,unidades,fechaDesde: fechaDesde.value, fechaHasta: fechaHasta.value},
       beforeSend:()=>{},
       success:(response)=>{
         if(response.TMensaje == 'success'){
