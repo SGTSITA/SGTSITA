@@ -3,11 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\Bancos;
+use App\Models\Equipo;
 use App\Models\GastosGenerales;
 use App\Models\CategoriasGastos;
 use App\Models\GastosDiferidosDetalle;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+use Auth;
 use DB;
 
 class GastosGeneralesController extends Controller
@@ -18,7 +20,10 @@ class GastosGeneralesController extends Controller
         $now = Carbon::now()->format('d.m.Y');
         $initDay = Carbon::now()->subDays(15)->format('d.m.Y');
 
-        return view('gastos_generales.index', compact( 'bancos','categorias','now','initDay'));
+        $empresa = Auth::User()->id_empresa;
+        $equipos = Equipo::where('id_empresa',$empresa)->get();
+
+        return view('gastos_generales.index', compact( 'bancos','categorias','now','initDay','equipos'));
     }
 
     public function getGastos(Request $r){

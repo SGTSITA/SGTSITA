@@ -8,6 +8,7 @@ use App\Models\Bancos;
 use App\Models\Client;
 use App\Models\Cotizaciones;
 use App\Models\DocumCotizacion;
+use App\Models\Equipo;
 use App\Models\GastosExtras;
 use App\Models\GastosOperadores;
 use App\Models\GastosGenerales;
@@ -456,33 +457,8 @@ public function export_cxp(Request $request)
     }
 
     // ==================== U T I L I D A D E S ====================
+
     public function index_utilidad(){
-
-       /* $clientes = Client::where('id_empresa' ,'=',auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
-
-        $subclientes = Subclientes::where('id_empresa' ,'=',auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
-
-        $contenedores = DocumCotizacion::
-        join('cotizaciones', 'docum_cotizacion.id_cotizacion', '=', 'cotizaciones.id')
-        ->where('docum_cotizacion.num_contenedor' ,'!=', NULL)
-        ->where('docum_cotizacion.id_empresa' ,'=',auth()->user()->id_empresa)
-        ->where('cotizaciones.estatus' ,'=', 'Aprobada')
-        ->orderBy('docum_cotizacion.created_at', 'desc')->get();*/
-        
-    
-
-        /*
-        $fechaDesde = Carbon::parse($r->fechaDesde);
-        $fechaHasta = Carbon::parse($r->fechaHasta);
-
-        $Daily = [];
-        while($fechaDesde < $fechaHasta){
-            $newDate = $fechaDesde->addDay();
-            $fechaDesde = $newDate;
-            $date = ["id_gasto" => $r->_IdGasto,"fecha_gasto" => $newDate->format('Y-m-d'),"gasto_dia" => $montoDiario];
-            $Daily[] = $date;
-        }
-         */
 
         return view('reporteria.utilidad.index');
     }
