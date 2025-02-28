@@ -15,7 +15,7 @@ Gastos Generales
                                 Gastos Generales
                                 <p class="text-sm mb-0">
                                     <i class="fa fa-calendar text-success"></i>
-                                    <span class="font-weight-bold">Periodo:</span> del {{$initDay}} al {{$now}}
+                                    <span class="font-weight-bold">Periodo:</span> del 
                                 </p>
                             </h5>
 
@@ -62,6 +62,9 @@ Gastos Generales
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
+<script src="https://demos.creative-tim.com/argon-dashboard-pro/assets/js/plugins/choices.min.js"></script>
+
+
 <script>
     $(document).ready(()=>{
         getGastos('{{$initDay}}','{{$now}}');
@@ -71,6 +74,13 @@ Gastos Generales
             dateFormat: "Y-m-d", // Formato de la fecha (Año-Mes-Día)
             allowInput: false     // Permite escribir manualmente la fecha
         });
+
+        if (document.getElementById('selectUnidades')) {
+            var element = document.getElementById('selectUnidades');
+            const example = new Choices(element, {
+                removeItemButton: true
+            });
+        }
         
     });
 </script>

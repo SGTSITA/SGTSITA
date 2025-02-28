@@ -5,15 +5,11 @@
     @endphp
     @if(!isset($isExcel))
     <style>
-        /* Configuración de la página para tamaño carta en horizontal con márgenes generales */
-        @page {
-            size: letter landscape; /* Tamaño carta en orientación horizontal */
-            margin: 10mm; /* Márgenes generales alrededor de la página */
-        }
+       
 
         body {
             font-family: Arial, sans-serif;
-            font-size: 12px; /* Tamaño de fuente reducido */
+            font-size: 14px; /* Tamaño de fuente reducido */
             margin: 0; 
             padding: 0;
         }
@@ -120,7 +116,7 @@
     </style>
 @endif
     <head>
-        <title>Utilidades</title>
+        <title>Pago Operador</title>
     </head>
 
     <body>
@@ -131,53 +127,97 @@
                 <tr>
                     <td align="left">
                     <div class="left-element">
+                        <h2>COMPROBANTE DE PAGO</h2>
                         <h4>Empresa: {{ $user->Empresa->nombre }}</h4>
-                        <h4>Reporte de Utilidades</h4>
-                        <h5 >Utilidades: {{ date("d-m-Y") }}</h5>
+                        <h4>Operador: {{ $liquidacion->operadores->nombre }}</h4>
+                        <h5 >Fecha Pago: {{ date('d/m/Y',strtotime($liquidacion->fecha)) }}</h5>
                     </div>
                     </td>
                     <td align="right">
                     <div class="right-element">
-                      <h3 style="font-weight:bold !important" >Utilidad: ${{ number_format($utilidad,2) }}</h3>
+                      <table width="200">
+                        <tbody>
+                            <tr>
+                                
+                                <td align="right"> Viajes Realizados</td>
+                                <td align="right" width="70">{{$liquidacion->viajes_realizados}}</td>
+                            </tr>
+                            <tr>
+                                
+                                <td align="right"> Sueldo Viajes</td>
+                                <td align="right">$ {{number_format($liquidacion->sueldo_operador,2)}}</td>
+                            </tr>
+                            <tr>
+                            
+                                <td align="right"> Dinero Viajes</td>
+                                <td align="right">- $ {{number_format($liquidacion->dinero_viaje,2)}}</td>
+                            </tr>
+                            <tr>
+                            
+                                <td align="right"> Dinero Justificado</td>
+                                <td align="right">+ $ {{number_format($liquidacion->dinero_justificado,2)}}</td>
+                            </tr>
+                            <tr>
+                            
+                                <td align="right"><h2>Total a Pagar</h2> </td>
+                                <td align="right"><h2>$ {{number_format($liquidacion->total_pago,2)}}</h2></td>
+                            </tr>
+                        </tbody>
+                      </table>
                     </div>
                     </td>
                 </tr>
             </table>
-           
+
+            <h3>DETALLE DE VIAJES PAGADOS</h3>
 
             <table class="table text-white tabla-completa" style="color: #000; width: 100%; padding: 5px; margin: 0px; border-collapse: collapse; border: 1px solid #000;">
                 <thead>
                     <tr>
                         <th>Núm Contenedor</th>
-                        <th>Cliente</th>
-                        <th>Precio Viaje</th>
-                        <th>Pago Operación</th>
-                        <th>Gastos Extra</th>
-                        <th>Gastos Viaje</th>
-                        <th>Gastos Diferidos</th>
-                        <th>Utilidad</th>
-                        <th>Transportado Por</th>
+                        <th>Sueldo Operador</th>
+                        <th>Dinero Viaje</th>
+                        <th>Dinero Justificado</th>
+                        <th>Total Pago</th>
                     </tr>
                 </thead>
-                <tbody style="text-align: center;font-size: 100%;">
-                    @foreach ($cotizaciones as $cotizacion)
-                        <tr>
-                            <td>{{$cotizacion['numContenedor']}}</td>
-                            <td>{{$cotizacion['cliente']}}</td>
-                            <td>$ {{number_format($cotizacion['precioViaje'],2)}}</td>
-                            <td>$ {{number_format($cotizacion['pagoOperacion'],2)}}</td>
-                            <td>$ {{number_format($cotizacion['gastosExtra'],2)}}</td>
-                            <td>$ {{number_format($cotizacion['gastosViaje'],2)}}</td>
-                            <td>$ {{number_format($cotizacion['gastosDiferidos'],2)}}</td>
-                            <td @if($cotizacion['utilidad']<0) class="bg-warning" @endif>$ {{number_format($cotizacion['utilidad'],2)}}</td>
-                            <td>{{$cotizacion['transportadoPor']}}</td>
-                            
-                        </tr>
+                <tbody>
+                    @foreach($liquidacion->viajes as $v)
+                    <tr>
+                        <td>{{$v->contenedores->num_contenedor}}</td>
+                        <td align="right">$ {{number_format($v->sueldo_operador,2)}}</td>
+                        <td align="right">$ {{number_format($v->dinero_viaje,2)}}</td>
+                        <td align="right">$ {{number_format($v->dinero_justificado,2)}}</td>
+                        <td align="right">$ {{number_format($v->total_pagado,2)}}</td>
+                    </tr>
                     @endforeach
                 </tbody>
+             
             </table>
 
-          
+            <h3>DETALLE DE USO DINERO VIAJE (JUSTIFICANTES)</h3>
+            <table class="table text-white tabla-completa" style="color: #000; width: 100%; padding: 5px; margin: 0px; border-collapse: collapse; border: 1px solid #000;">
+                <thead>
+                    <tr>
+                        <th>Contenedor</th>
+                        <th>Descripción Gasto</th>
+                        <th>Sueldo Operador</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($viaticos as $v)
+                    <tr>
+                        <td>{{$v->contenedor}}</td>
+                        <td>{{$v->descripcion_gasto}}</td>
+                        <td align="right">$ {{number_format($v->monto,2)}}</td>
+
+                        
+                    </tr>
+                    @endforeach
+                </tbody>
+             
+            </table>
+      
             
     </body>
 </html>

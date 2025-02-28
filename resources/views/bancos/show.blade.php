@@ -416,13 +416,10 @@
 </script>
 <!-- CSS de Date Range Picker -->
 <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
-
 <!-- Moment.js -->
 <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/moment@2.29.1/moment.min.js"></script>
-
 <!-- JS de Date Range Picker -->
 <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
-
 <script>
 $(document).ready(function() {
     $('#daterange').daterangepicker({

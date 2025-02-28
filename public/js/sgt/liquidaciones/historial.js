@@ -102,113 +102,116 @@ class MissionResultRenderer {
     notBlank: 'No Vacíos',
     paginationPageSize: 'Registros por página'
   };
-   
+
+  const currencyFormatter = (value) => {
+    return new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(value);
+  };
+
+  const formatFecha = params => {
+    if (!params) return "";
+    const [year, month, day] = params.split("-"); // Divide YYYY-MM-DD
+    return `${day}/${month}/${year}`; // Retorna en formato d/m/Y
+  };
+
   const gridOptions = {
    pagination: true,
-      paginationPageSize: 100,
-      paginationPageSizeSelector: [100, 200, 500],
+      paginationPageSize: 10,
+      paginationPageSizeSelector: [10, 20, 50,100],
       rowSelection: {
         mode: "multiRow",
-        headerCheckbox: true,
+        headerCheckbox: false,
       },
    rowData: [
   
    ],
-
    columnDefs: [
-     { field: "IdContenedor", hide: true},
-     { field: "IdCliente", hide: true},
-     { field: "BoletaLiberacion",width: 110,cellRenderer: MissionResultRenderer },
-     { field: "DODA",width: 110,cellRenderer: MissionResultRenderer },
-     { field: "FormatoCartaPorte",width: 110,cellRenderer: MissionResultRenderer },
-     { field: "NumContenedor",filter: true, floatingFilter: true},
-     { field: "Cliente",filter: true, floatingFilter: true},
-     { field: "SubCliente",filter: true, floatingFilter: true},    
-     { field: "Origen",filter: true, floatingFilter: true},
-     { field: "Destino",filter: true, floatingFilter: true },
-     { field: "Peso",width: 100 },
-     
+     { field: "IdPago", hide: true},
+     { field: "IdOperador", hide: true},
+     { field: "IdBanco", hide: true},
+     { field: "Operador" },
+     { field: "Fecha" },
+     { field: "ViajesRealizados" },
+     { field: "SueldoOperador",width: 150, valueFormatter: params => currencyFormatter(params.value), cellStyle: { textAlign: "right" }},
+     { field: "DineroViaje",width: 150, valueFormatter: params => currencyFormatter(params.value), cellStyle: { textAlign: "right" }},
+     { field: "DineroJustificado",width: 150, valueFormatter: params => currencyFormatter(params.value), cellStyle: { textAlign: "right" }},
+     { field: "TotalPagado",width: 150, valueFormatter: params => currencyFormatter(params.value), cellStyle: { textAlign: "right" }},
    ],
   
    localeText: localeText
   };
   
-  const myGridElement = document.querySelector('#myGrid');
+  const myGridElement = document.querySelector('#gridHistorial');
   let apiGrid = agGrid.createGrid(myGridElement, gridOptions);
  // const gridInstance = new agGrid.Grid(myGridElement, gridOptions);
   
   var paginationTitle = document.querySelector("#ag-32-label");
   paginationTitle.textContent = 'Registros por página';
   
-  let IdContenedor = null;
-   
-   function getContenedoresPorAsignar(){
-    var _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+  function getHistorial(startDate, endDate){
+    let _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
     $.ajax({
-        url: '/viajes/get-asignables',
+        url:'/liquidaciones/historial/data',
         type: 'post',
-        data: {_token},
+        data:{_token,startDate,endDate},
         beforeSend:()=>{},
         success:(response)=>{
-            apiGrid.setGridOption("rowData", response)
+            apiGrid.setGridOption("rowData", response.data)
         },
-        error:()=>{
-
-        }
-    });
-   }
-
-   function assignEmpresa(_IdContenedor){
-        const modalElement = document.getElementById('cambioEmpresa');
-        const bootstrapModal = new bootstrap.Modal(modalElement);
-        bootstrapModal.show();
-        IdContenedor = _IdContenedor
-   }
-
-   function asignarContenedores(){
-    let contenedores = apiGrid.getSelectedRows();
-
-    if($("#cmbEmpresa").val() == ""){
-      Swal.fire("Seleccione Empresa","Aún no ha seleccionado Empresa, este es un campo requerido","warning");
-      return false;
-    }
-    
-    if(contenedores.length == 0){
-      Swal.fire('Seleccione contenedores','Para realizar la asignación debe seleccionar al menos un contenedor','warning');
-      return false;
-    }
-
-    Swal.fire({
-      title: '¿Asignar seleccionados?',
-      icon: 'question',
-      confirmButtonText: 'Si, asignar',
-      cancelButtonText: 'Cancelar',
-      showCancelButton: true
-    }).then((respuesta) =>{
-      if(respuesta.isConfirmed){
-        confirmarAsignarContenedores(contenedores);
-      }
+        error:()=>{}
     })
-   }
+  }
 
-   function confirmarAsignarContenedores(contenedores){
+  function getComprobantePago(){
     let _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-    let empresa = $("#cmbEmpresa").val();
-    let seleccionContenedores = JSON.stringify(contenedores)
-    $.ajax({
-      url: '/cotizaciones/asignar/empresa',
-      type: 'post',
-      data: {_token, seleccionContenedores,empresa},
-      beforeSend:()=>{
+    let liquidados = apiGrid.getSelectedRows();
+    if(liquidados.length <= 0){
+        Swal.fire('Seleccione un pago','Debe seleccionar solo un pago de la lista','warning');
+        return;
+    }
 
+    let IdOperacion = liquidados[0].IdPago;
+
+    $.ajax({
+      url: '/liquidaciones/historial/pagos/comprobante',
+      method: 'POST',
+      data: {
+          _token: _token,
+          IdOperacion: IdOperacion,
+          fileType: 'pdf'
+          
       },
-      success:(response)=>{
-        if(response.TMensaje == "success") getContenedoresPorAsignar();
-        Swal.fire(response.Titulo,response.Mensaje,response.TMensaje);
+      xhrFields: {
+        responseType: "blob" // Asegura que el tipo de respuesta sea un Blob
       },
-      error:(x, error)=>{
-        Swal.fire('Ocurrio un error',x.getMessage(),'error');
+      success: function(response) {
+        console.log(response)
+        if (response instanceof Blob) {
+          var blob = new Blob([response], { type: 'application/pdf'  });
+          var url = URL.createObjectURL(blob);
+
+          var a = document.createElement('a');
+          a.style.display = 'none';
+          a.href = url;
+          a.target = "_blank"
+         // a.download = 'Cuentas_por_pagar_{{ date('d-m-Y') }}.' + fileType;
+          document.body.appendChild(a);
+
+          // Inicia la descarga
+          a.click();
+
+          // Limpiar después de la descarga
+          window.URL.revokeObjectURL(url);
+          document.body.removeChild(a);
+        }else {
+          console.error("La respuesta no es un Blob válido:", response);
       }
-    });
-    
-   }
+
+         // alert('El archivo se ha descargado correctamente.');
+      },
+      error: function(xhr, status, error) {
+          console.error(error);
+          alert('Ocurrió un error al exportar los datos.');
+      }
+  });
+  }

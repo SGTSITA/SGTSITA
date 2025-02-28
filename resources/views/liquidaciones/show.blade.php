@@ -19,6 +19,7 @@
                     <div class="h-100">
                     <h5 class="mb-1 font-weight-bolder">
                         {{$operador->nombre}}
+                        <input type="hidden" id="IdOperador" value="{{str_pad($operador->id,10,'0',STR_PAD_LEFT)}}">
                     </h5>
                     <p class="mb-0 font-weight-bold text-sm">
                         Liquidación viajes operador
@@ -57,7 +58,10 @@
                         </h5>
 
                         <div class="float-right">
-                         
+                         <button type="button" id="btnJustificar" class="btn btn-sm bg-gradient-info">
+                            <i class="fa fa-coins"></i>
+                            Justificar Gastos
+                         </button>
                         </div>
                     </div>
                 </div>
@@ -68,13 +72,17 @@
                 </div>
                 <div class="card-footer text-end">
                     <a href="{{route('index.liquidacion')}}" class="btn btn-sn btn-link text-muted">Cancelar</a>
-                    <button class="btn btn-sm bg-gradient-info" id="btnSummaryPayment" > Aplicar pago</button>
+                    <button class="btn btn-sm bg-gradient-success" id="btnSummaryPayment" > 
+                        <i class="fa fa-check"></i>
+                        Aplicar pago
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 </div>
 @include('liquidaciones.modal-pagar')
+@include('liquidaciones.modal-justificar-gasto')
 @endsection
 
 @push('custom-javascript')

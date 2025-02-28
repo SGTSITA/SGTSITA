@@ -50,14 +50,18 @@ Reporte de Utilidades
                         <h5 id="card_title">
                                 Reporte de utilidades
                                 <p class="text-sm mb-0">
-                                   
-                                    <span class="font-weight-bold">Lista de utilidades por contenedor</span> 
-                                </p>
+                                       
+                                       <div class="font-weight-bolder text-sm"><span class="small">Periodo</span></div>
+                                       <input type="text" id="daterange" readonly 
+                                       class="form-control form-control-sm min-w-100" 
+                                       style="border: none; box-shadow: none;"
+                                       />
+                                   </p>
                             </h5>
 
                             <div class="float-right">
                             <button class="btn btn-sm btn-outline" id="btnVerDetalle">Ver Gastos</button>
-                                <button type="button" class="btn btn-sm bg-gradient-danger" id="btnVerDetalle1">
+                                <button type="button" class="btn btn-sm bg-gradient-danger" id="btnVerDetalle1" onclick="exportUtilidades()">
                                     <i class="fa fa-fw fa-money-bill"></i>  Exportar Reporte
                                 </button>
                               </div>
@@ -134,8 +138,52 @@ Reporte de Utilidades
 <script src="{{ asset('js/sgt/reporteria/rpt-utilidades.js') }}?v={{ filemtime(public_path('js/sgt/reporteria/rpt-utilidades.js')) }}"></script>
 <script src="{{asset('js/reporteria/genericExcel.js')}}"></script>
 
+<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
+<!-- Moment.js -->
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/moment@2.29.1/moment.min.js"></script>
+<!-- JS de Date Range Picker -->
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+
 <script>
-      function mostrarModal() {
+$(document).ready(function() {
+
+  
+    $('#daterange').daterangepicker({
+        opens: 'right',
+        locale: {
+            format: 'YYYY-MM-DD', // Formato de fecha
+            separator: " AL ", // Separador entre la fecha inicial y final
+            applyLabel: "Aplicar",
+            cancelLabel: "Cancelar",
+            fromLabel: "Desde",
+            toLabel: "Hasta",
+            customRangeLabel: "Personalizado",
+            daysOfWeek: ["Do", "Lu", "Ma", "Mi", "Ju", "Vi", "Sa"],
+            monthNames: ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"],
+            firstDay: 1
+        },
+        maxDate: moment()
+    }, 
+        function(start, end, label) {
+      getUtilidadesViajes(start.format('YYYY-MM-DD'),end.format('YYYY-MM-DD'));
+
+  
+    });
+
+    const today = new Date();
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(today.getDate() - 7);
+
+    const formatDate = (date) => date.toISOString().split('T')[0];
+
+    document.getElementById('daterange').value=`${formatDate(sevenDaysAgo)} AL ${formatDate(today)}`
+
+    getUtilidadesViajes(formatDate(sevenDaysAgo),formatDate(today));
+    });
+</script>
+
+<script>
+  function mostrarModal() {
     document.getElementById('miModal').style.display = 'block';
   }
 
@@ -143,7 +191,6 @@ Reporte de Utilidades
     document.getElementById('miModal').style.display = 'none';
   }
 
-  // Cerrar modal si el usuario hace clic fuera
   window.onclick = function(event) {
     const modal = document.getElementById('miModal');
     if (event.target === modal) {
@@ -151,9 +198,6 @@ Reporte de Utilidades
     }
   }
 
-    $(document).ready(()=>{
-        getUtilidadesViajes();
-    });
 </script>
 @endpush
 

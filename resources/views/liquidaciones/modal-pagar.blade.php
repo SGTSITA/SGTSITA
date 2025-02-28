@@ -43,6 +43,13 @@
                     </span>
                     <span class="text-dark ms-2 font-weight-bold" id ="sumaDineroViaje">$0</span>
                   </div>
+
+                  <div class="d-flex justify-content-between">
+                    <span class="mb-2 text-sm">
+                      Total Justificado:
+                    </span>
+                    <span class="text-dark ms-2 font-weight-bold" id ="sumaJustificados">$0</span>
+                  </div>
      
                   <div class="d-flex justify-content-between mt-4">
                     <span class="mb-2 text-lg">

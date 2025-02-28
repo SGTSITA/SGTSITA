@@ -120,8 +120,8 @@ class MissionResultRenderer {
    paginationPageSize: 10,
    paginationPageSizeSelector: [10, 20, 50,100],
    rowSelection: {
-    mode: "singleRow",
-    headerCheckbox: false,
+    mode: "multiRow",
+    headerCheckbox: true,
    },
    rowClassRules: {
     'bg-gradient-danger': params => params.data.utilidad < 0,
@@ -132,18 +132,18 @@ class MissionResultRenderer {
 
    columnDefs: [
    
-     { field: "numContenedor"},
-     { field: "cliente" },
+     { field: "numContenedor",filter: true, floatingFilter: true},
+     { field: "cliente",filter: true, floatingFilter: true },
      { field: "precioViaje",width: 150, valueFormatter: params => currencyFormatter(params.value), cellStyle: { textAlign: "right" }},
      { field: "pagoOperacion",width: 150, valueFormatter: params => currencyFormatter(params.value), cellStyle: { textAlign: "right" } },
      { field: "gastosExtra", valueFormatter: params => currencyFormatter(params.value), cellStyle: { textAlign: "right" }},
-     { field: "gastosOperador", valueFormatter: params => currencyFormatter(params.value), cellStyle: { textAlign: "right" }},
+     { field: "gastosViaje", valueFormatter: params => currencyFormatter(params.value), cellStyle: { textAlign: "right" }},
      { field: "gastosDiferidos", valueFormatter: params => currencyFormatter(params.value), cellStyle: { textAlign: "right" }},
      { field: "utilidad", valueFormatter: params => currencyFormatter(params.value), cellStyle: { textAlign: "right" } },
-     { field: "transportadoPor",width: 150},
-     { field: "operadorOrProveedor"},
-     { field: "estatusViaje"},
-     { field: "estatusPago"},
+     { field: "transportadoPor",width: 150,filter: true, floatingFilter: true},
+     { field: "operadorOrProveedor",filter: true, floatingFilter: true},
+     { field: "estatusViaje",filter: true, floatingFilter: true},
+     { field: "estatusPago",filter: true, floatingFilter: true},
      { field: "detalleGastos", hide:true},
    ],
   
@@ -159,13 +159,61 @@ class MissionResultRenderer {
   
   let IdContenedor = null;
   let btnVerDetalle = document.querySelector('#btnVerDetalle')
+
+  function exportUtilidades(){
+
+    var _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    const rowData = apiGrid.getSelectedRows();
+
+    $.ajax({
+      url: '/reporteria/utilidad/export',
+      method: 'POST',
+      data: {
+          _token: _token,
+          rowData: rowData,
+          fileType: 'pdf'
+      },
+      xhrFields: {
+        responseType: "blob" // Asegura que el tipo de respuesta sea un Blob
+      },
+      success: function(response) {
+        console.log(response)
+        if (response instanceof Blob) {
+          var blob = new Blob([response], { type: 'application/pdf'  });
+          var url = URL.createObjectURL(blob);
+
+          var a = document.createElement('a');
+          a.style.display = 'none';
+          a.href = url;
+          a.target = "_blank"
+         // a.download = 'Cuentas_por_pagar_{{ date('d-m-Y') }}.' + fileType;
+          document.body.appendChild(a);
+
+          // Inicia la descarga
+          a.click();
+
+          // Limpiar después de la descarga
+          window.URL.revokeObjectURL(url);
+          document.body.removeChild(a);
+        }else {
+          console.error("La respuesta no es un Blob válido:", response);
+      }
+
+         // alert('El archivo se ha descargado correctamente.');
+      },
+      error: function(xhr, status, error) {
+          console.error(error);
+          alert('Ocurrió un error al exportar los datos.');
+      }
+  });
+  }
    
-   function getUtilidadesViajes(){
+   function getUtilidadesViajes(startDate, endDate){
     var _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     $.ajax({
         url: '/reporteria/utilidad/ver-utilidad',
         type: 'post',
-        data: {_token},
+        data: {_token,startDate, endDate},
         beforeSend:()=>{},
         success:(response)=>{
             apiGrid.setGridOption("rowData", response)
@@ -194,12 +242,12 @@ class MissionResultRenderer {
 
       let liTemplate = `<li class="list-group-item border-0 d-flex justify-content-between ps-0 mb-2 border-radius-lg">
       <div class="d-flex flex-column">
-        <h6 class="mb-1 text-dark font-weight-bold text-sm" style="color:#333335 !important">${item.motivo}</h6>
+        <h6 class="mb-1 text-dark font-weight-bold text-sm" style="color:#333335 !important">${item.motivo_gasto}</h6>
         <span class="text-xs">${obtenerFechaEnLetra(item.fecha_gasto)}</span>
-        <span class="badge bg-purple-transparent">Diferido</span>
+        <span class="badge bg-purple-transparent">${item.tipo_gasto}</span>
       </div>
       <div class="d-flex fw-semibold align-items-right" style="color:#333335; font-size:16px;">
-       ${moneyFormat(item.gasto_dia)}
+       ${moneyFormat(item.monto_gasto)}
       </div>
     </li>`
 
@@ -211,7 +259,6 @@ class MissionResultRenderer {
    }
 
    btnVerDetalle.addEventListener('click',()=> {
-    console.log('click')
     verDetalleGastos()
    });
 
