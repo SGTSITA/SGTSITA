@@ -217,18 +217,21 @@ class PlaneacionController extends Controller
             $asignaciones->dinero_viaje = $request->get('dinero_viaje');
 
             if($request->get('id_proveedor') == NULL){
-                $asignaciones->fecha_inicio = $request->get('fecha_inicio');
-                $asignaciones->fecha_fin = $request->get('fecha_fin') . ' 23:00:00';
+               // $asignaciones->fecha_inicio = $request->get('fecha_inicio');
+                //$asignaciones->fecha_fin = $request->get('fecha_fin') . ' 23:00:00';
 
                 $asignaciones->fehca_inicio_guard = $request->get('fecha_inicio');
                 $asignaciones->fehca_fin_guard = $request->get('fecha_fin') . ' 23:00:00';
             }else{
-                $asignaciones->fecha_inicio = $request->get('fecha_inicio_proveedor');
-                $asignaciones->fecha_fin = $request->get('fecha_fin_proveedor') . ' 23:00:00';
+               // $asignaciones->fecha_inicio = $request->get('fecha_inicio_proveedor');
+                //$asignaciones->fecha_fin = $request->get('fecha_fin_proveedor') . ' 23:00:00';
 
                 $asignaciones->fehca_inicio_guard = $request->get('fecha_inicio_proveedor');
                 $asignaciones->fehca_fin_guard = $request->get('fecha_fin_proveedor') . ' 23:00:00';
             }
+
+            $asignaciones->fecha_inicio = $asignaciones->fehca_inicio_guard;
+            $asignaciones->fecha_fin = $asignaciones->fehca_fin_guard;
 
             $asignaciones->precio = $request->get('precio_proveedor');
             $asignaciones->burreo = $request->get('burreo_proveedor');
@@ -285,18 +288,21 @@ class PlaneacionController extends Controller
             $asignaciones->dinero_viaje = $request->get('dinero_viaje');
 
             if($request->get('id_proveedor') == NULL){
-                $asignaciones->fecha_inicio = $request->get('fecha_inicio');
-                $asignaciones->fecha_fin = $request->get('fecha_fin') . ' 23:00:00';
+                //$asignaciones->fecha_inicio = $request->get('fecha_inicio');
+                //$asignaciones->fecha_fin = $request->get('fecha_fin') . ' 23:00:00';
 
                 $asignaciones->fehca_inicio_guard = $request->get('fecha_inicio');
                 $asignaciones->fehca_fin_guard = $request->get('fecha_fin') . ' 23:00:00';
             }else{
-                $asignaciones->fecha_inicio = $request->get('fecha_inicio_proveedor');
-                $asignaciones->fecha_fin = $request->get('fecha_fin_proveedor') . ' 23:00:00';
+                //$asignaciones->fecha_inicio = $request->get('fecha_inicio_proveedor');
+                //$asignaciones->fecha_fin = $request->get('fecha_fin_proveedor') . ' 23:00:00';
 
                 $asignaciones->fehca_inicio_guard = $request->get('fecha_inicio_proveedor');
                 $asignaciones->fehca_fin_guard = $request->get('fecha_fin_proveedor') . ' 23:00:00';
             }
+
+            $asignaciones->fecha_inicio = $asignaciones->fehca_inicio_guard;
+            $asignaciones->fecha_fin = $asignaciones->fehca_fin_guard;
 
             $asignaciones->precio = $request->get('precio_proveedor');
             $asignaciones->burreo = $request->get('burreo_proveedor');
