@@ -512,7 +512,7 @@ public function export_cxp(Request $request)
         left join asignaciones a on dc.id = a.id_contenedor
         left join operadores op on a.id_operador = op.id
         left join proveedores pr on a.id_proveedor = pr.id
-        where a.fecha_inicio between '."'".$fechaI."'".' and '."'".$fechaF."' and c.empresa_id = ".Auth::User()->id_empresa);
+        where a.fecha_inicio between '."'".$fechaI."'".' and '."'".$fechaF."' and c.id_empresa = ".Auth::User()->id_empresa);
 
         $Info = [];
         foreach($datos as $d){
