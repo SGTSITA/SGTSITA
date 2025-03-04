@@ -520,6 +520,7 @@ public function export_cxp(Request $request)
             GastosDiferidosDetalle::join('gastos_generales as g','gastos_diferidos_detalle.id_gasto','=','g.id')
             ->whereBetween('fecha_gasto',[$d->fecha_inicio,$d->fecha_fin])
             ->where('gastos_diferidos_detalle.id_equipo',$d->id_camion)
+            ->where('g.id_empresa',Auth::User()->id_empresa)
             ->get();
 
             $detalleGastos = null;
