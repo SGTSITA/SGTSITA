@@ -131,14 +131,19 @@
                 <tr>
                     <td align="left">
                     <div class="left-element">
+                        <h2>Reporte de Utilidades</h2>
                         <h4>Empresa: {{ $user->Empresa->nombre }}</h4>
-                        <h4>Reporte de Utilidades</h4>
-                        <h5 >Utilidades: {{ date("d-m-Y") }}</h5>
+                        
+                        <h5 >Periodo: {{ date("d-m-Y",strtotime($fechaInicio)) }} al {{ date("d-m-Y",strtotime($fechaFin)) }}</h5>
+                        <h5 >Contenedores mostrados: {{ $selectedRows }} de {{ $totalRows }}</h5>
+
                     </div>
                     </td>
                     <td align="right">
                     <div class="right-element">
-                      <h3 style="font-weight:bold !important" >Utilidad: ${{ number_format($utilidad,2) }}</h3>
+                      <h3 style="font-weight:bold !important" >Utilidad Bruta: ${{ number_format($utilidad,2) }}</h3>
+                      <h3 style="font-weight:bold !important" >Otros Gastos: ${{ number_format($gastos,2) }}</h3>
+                      <h3 style="font-weight:bold !important" >Utilidad Neta: ${{ number_format($utilidad - $gastos,2) }}</h3>
                     </div>
                     </td>
                 </tr>

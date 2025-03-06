@@ -55,6 +55,7 @@ Reporte de Utilidades
                                        <input type="text" id="daterange" readonly 
                                        class="form-control form-control-sm min-w-100" 
                                        style="border: none; box-shadow: none;"
+                                       
                                        />
                                    </p>
                             </h5>
@@ -165,7 +166,9 @@ $(document).ready(function() {
         maxDate: moment()
     }, 
         function(start, end, label) {
-      getUtilidadesViajes(start.format('YYYY-MM-DD'),end.format('YYYY-MM-DD'));
+        getUtilidadesViajes(start.format('YYYY-MM-DD'),end.format('YYYY-MM-DD'));
+        $('#daterange').attr('data-start', start.format('YYYY-MM-DD'));
+        $('#daterange').attr('data-end', end.format('YYYY-MM-DD'));
 
   
     });
@@ -179,6 +182,8 @@ $(document).ready(function() {
     document.getElementById('daterange').value=`${formatDate(sevenDaysAgo)} AL ${formatDate(today)}`
 
     getUtilidadesViajes(formatDate(sevenDaysAgo),formatDate(today));
+    $('#daterange').attr('data-start', formatDate(sevenDaysAgo));
+    $('#daterange').attr('data-end', formatDate(today));
     });
 </script>
 
