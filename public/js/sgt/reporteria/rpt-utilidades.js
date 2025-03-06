@@ -164,6 +164,9 @@ class MissionResultRenderer {
 
     var _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     const rowData = apiGrid.getSelectedRows();
+    const totalRows = apiGrid.paginationGetRowCount();
+    let fechaInicio = $('#daterange').attr('data-start');
+    let fechaFin = $('#daterange').attr('data-end');
 
     $.ajax({
       url: '/reporteria/utilidad/export',
@@ -171,6 +174,9 @@ class MissionResultRenderer {
       data: {
           _token: _token,
           rowData: rowData,
+          totalRows: totalRows,
+          fechaInicio: fechaInicio,
+          fechaFin: fechaFin,
           fileType: 'pdf'
       },
       xhrFields: {
