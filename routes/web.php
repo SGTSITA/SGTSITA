@@ -178,6 +178,7 @@ Route::group(['middleware' => ['auth']], function() {
     Route::get('bancos/show/{id}', [App\Http\Controllers\BancosController::class, 'edit'])->name('edit.bancos');
     Route::get('/bancos/imprimir/{id}', [App\Http\Controllers\BancosController::class, 'pdf'])->name('pdf.print_banco');
     Route::get('bancos/buscador/{id}', [App\Http\Controllers\BancosController::class, 'advance_bancos'])->name('advance_bancos.buscador');
+    Route::put('/bancos/{id}/estado', [App\Http\Controllers\BancosController::class, 'cambiarEstado'])->name('bancos.estado');
     // ==================== C U E N T A S  P O R  C O B R A R ====================
     Route::get('cuentas/cobrar', [App\Http\Controllers\CuentasCobrarController::class, 'index'])->name('index.cobrar');
    // Route::get('cuentas/cobrar/show/{id}', [App\Http\Controllers\CuentasCobrarController::class, 'show'])->name('show.cobrar');
