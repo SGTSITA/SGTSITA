@@ -9,9 +9,11 @@ use App\Models\Bancos;
 use App\Models\Cotizaciones;
 use App\Models\GastosGenerales;
 use App\Models\BancoSaldoDiario;
+use App\Models\MovimientoBancario;
 use Session;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use DB;
 
 class BancosController extends Controller
 {
@@ -147,6 +149,11 @@ class BancosController extends Controller
         $saldoInicial = ($saldoDiario->exists()) ? $saldoDiario->first()->saldo_inicial : 0;
 
         //Movimientos
+        $movimientosBancarios = MovimientoBancario::where('id_banco',$banco->id)
+        ->where('is_active',1)
+        ->whereBetween('fecha_movimiento',[$startOfWeek, $endOfWeek])
+        ->get();
+
         $cotizaciones = Cotizaciones::where(function($query) use ($id) {
             $query->where('id_banco1', '=', $id)
                   ->orWhere('id_banco2', '=', $id);
@@ -221,7 +228,8 @@ class BancosController extends Controller
             return $item->id_banco1 == $id ? $item->monto1 : ($item->id_banco2 == $id ? $item->monto2 : 0);
         })->sum()
         + $gastos_generales->where('fecha', '>=', $fechaBanco)
-        ->sum('monto1');
+        ->sum('monto1')
+        + $movimientosBancarios->where('tipo_movimiento',0)->sum('monto');
 
         $totalEntradas = $cotizaciones->where('fecha_pago', '>=', $fechaBanco)
         ->map(function ($item) use ($id) {
@@ -230,7 +238,9 @@ class BancosController extends Controller
         + $banco_dinero_entrada->where('fecha_pago', '>=', $fechaBanco)
         ->map(function ($item) use ($id) {
             return $item->id_banco1 == $id ? $item->monto1 : ($item->id_banco2 == $id ? $item->monto2 : 0);
-        })->sum();
+        })->sum()
+        + $movimientosBancarios->where('tipo_movimiento',1)->sum('monto');
+        
 
         $saldoFinal = $saldoInicial + $totalEntradas - $totalSalidas;
 
@@ -242,6 +252,7 @@ class BancosController extends Controller
         ->merge($banco_dinero_salida_ope_varios)
         ->merge($banco_dinero_salida)
         ->merge($gastos_generales)
+        ->merge($movimientosBancarios)
         ->sortBy(function ($item) {
             if (isset($item->fecha_pago)) {
                 return Carbon::parse($item->fecha_pago);
@@ -252,6 +263,7 @@ class BancosController extends Controller
             }
             return null;
         });
+        
 
         return view('bancos.show', compact('combined', 'startOfWeek', 'fecha', 'banco', 'cotizaciones', 'proveedores', 'banco_dinero_entrada', 'banco_dinero_salida', 'banco_dinero_salida_ope', 'banco_dinero_salida_ope_varios', 'gastos_generales', 'saldoInicial','saldoFinal'));
     }
@@ -267,6 +279,12 @@ class BancosController extends Controller
         $saldoDiario = BancoSaldoDiario::where([["fecha","=",$startOfWeek],["id_banco",$banco->id]]);
         $saldoInicial = ($saldoDiario->exists()) ? $saldoDiario->first()->saldo_inicial : 0;
 
+        //Movimientos
+        $movimientosBancarios = MovimientoBancario::where('id_banco',$banco->id)
+        ->where('is_active',1)
+        ->whereBetween('fecha_movimiento',[$startOfWeek, $endOfWeek])
+        ->get();
+
         $cotizaciones = Cotizaciones::where(function($query) use ($id) {
             $query->where('id_banco1', '=', $id)
                   ->orWhere('id_banco2', '=', $id);
@@ -341,7 +359,7 @@ class BancosController extends Controller
             return $item->id_banco1 == $id ? $item->monto1 : ($item->id_banco2 == $id ? $item->monto2 : 0);
         })->sum()
         + $gastos_generales->where('fecha', '>=', $fechaBanco)
-        ->sum('monto1');
+        ->sum('monto1')+ $movimientosBancarios->where('tipo_movimiento',1)->sum('monto');;
 
         $totalEntradas = $cotizaciones->where('fecha_pago', '>=', $fechaBanco)
         ->map(function ($item) use ($id) {
@@ -350,7 +368,7 @@ class BancosController extends Controller
         + $banco_dinero_entrada->where('fecha_pago', '>=', $fechaBanco)
         ->map(function ($item) use ($id) {
             return $item->id_banco1 == $id ? $item->monto1 : ($item->id_banco2 == $id ? $item->monto2 : 0);
-        })->sum();
+        })->sum()+ $movimientosBancarios->where('tipo_movimiento',1)->sum('monto');;
 
         $saldoFinal = $saldoInicial + $totalEntradas - $totalSalidas;
 
@@ -362,6 +380,7 @@ class BancosController extends Controller
         ->merge($banco_dinero_salida_ope_varios)
         ->merge($banco_dinero_salida)
         ->merge($gastos_generales)
+        ->merge($movimientosBancarios)
         ->sortBy(function ($item) {
             if (isset($item->fecha_pago)) {
                 return Carbon::parse($item->fecha_pago);
@@ -509,6 +528,33 @@ class BancosController extends Controller
         if(!$saldoDiarios->exists()){
             $bancos = Bancos::selectRaw('id as id_banco,now() as fecha, saldo as saldo_inicial, saldo as saldo_final')->get()->toArray();     
             BancoSaldoDiario::insert($bancos);
+        }
+    }
+
+    public function registrar_movimiento(Request $r){
+        try{
+            DB::beginTransaction();
+            $movimiento = ['id_banco' => $r->bank,
+            'tipo_movimiento' => $r->tipoTransaccion,
+            'descripcion_movimiento' => $r->txtDescripcion,
+            'monto' => $r->txtMonto,
+            'fecha_movimiento' => date('Y-m-d'),
+            'is_active' => true];
+            MovimientoBancario::insert($movimiento);
+            
+            $operacion = (intval($r->tipoTransaccion) == 1) ? '+' : '-';
+
+            Bancos::where('id', $r->get('bank'))
+                ->update([
+                    "saldo" => DB::raw("saldo $operacion ".$r->txtMonto)
+                ]);
+
+            DB::commit();
+            return response()->json(["Titulo" => "Movimiento Exitoso", "Mensaje" => "Movimiento aplicado correctamente", "TMensaje" => "success"]);
+        }catch(\Throwable $t){
+            DB::rollback();
+            return response()->json(["Titulo" => "Error", "Mensaje" => "Error: ".$t->getMessage(), "TMensaje" => "error"]);
+
         }
     }
 }

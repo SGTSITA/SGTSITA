@@ -11,7 +11,7 @@
                         <h5>Buscador por fechas</h5>
                         <div class="row">
                             <div class="col-4">
-                                <label for="user_id">Rango de fecha DE:</label>
+                                <label for="user_id">Rango de fecha de:</label>
                                 <input class="form-control" type="date" id="fecha_de" name="fecha_de" required>
                             </div>
                             <div class="col-4">
@@ -102,30 +102,26 @@
       <div class="col-md-12 col-sm-12 mx-auto mt-3">
           <div class="card my-sm-5 my-lg-0">
             <div class="card-header text-center">
-            <div class="row">
-                <div class="col-lg-8 col-md-6 col-12">
-                  <div class="d-flex align-items-center">
-                
-                    <div class="px-3">
-                      <p class="text-body text-sm font-weight-bold mb-3">
-                      <span class="text-body text-xs opacity-8">
+      
+              
+                <div class="row justify-content-md-between">
+                    <div class="col-4">
+                    <p class="text-body text-sm font-weight-bold mb-3">
+                      <span class="text-body text-sm opacity-8">
                         Periodo del 
                       </span>
                       {{ \Carbon\Carbon::parse($startOfWeek)->translatedFormat('j \d\e F') }} al {{ \Carbon\Carbon::parse($fecha)->translatedFormat('j \d\e F') }}
                       </p>
-                     
                     </div>
-                  </div>
-                </div>
-          
-               
-                
-              </div>
-              
-                <div class="row justify-content-md-between">
                     @can('bancos-configuracion')
-                        <div class="col-md-4 text-start">
-                            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal" style="background-color: #030303; color: #ffffff;">Configuracion</button>
+                        <div class="col-md-8 text-end">
+                            <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal">
+                                <i class="fa fa-cogs"></i>
+                                Configuración
+                            </button>
+                            <button type="button" class="btn btn-sm bg-gradient-success" data-bs-toggle="modal" data-bs-target="#modal-form">
+                                <i class="fa fa-plus"></i> Movimiento Bancario
+                            </button>
                         </div>
                     @endcan
                     <div class="col-md-12 row">
@@ -137,13 +133,13 @@
          </div>
          <div class="col-lg-3 col-6 text-center">
             <div class="border-dashed border-1 border-secondary border-radius-md py-3">
-               <h6 class="text-primary mb-0">Cobros</h6>
+               <h6 class="text-primary mb-0">Ingresos</h6>
                <h4 class="font-weight-bolder"><span class="small" id="collections">$0.00</span></h4>
             </div>
          </div>
          <div class="col-lg-3 col-6 text-center">
             <div class="border-dashed border-1 border-secondary border-radius-md py-3">
-               <h6 class="text-primary mb-0">Pagos</h6>
+               <h6 class="text-primary mb-0">Egresos</h6>
                <h4 class="font-weight-bolder"><span class="small" id="payment">$0.00</span></h4>
             </div>
          </div>
@@ -197,8 +193,8 @@
                         <tr>
                           <th scope="col" class="pe-2 text-start ps-2 text-white">Fecha</th>
                           <th scope="col" class="pe-2 text-white">Contenedor</th>
-                          <th scope="col" class="pe-2 text-white" colspan="2">Cobros</th>
-                          <th scope="col" class="pe-2 text-white">Pagos</th>
+                          <th scope="col" class="pe-2 text-white" colspan="2">Ingresos</th>
+                          <th scope="col" class="pe-2 text-white">Egresos</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -354,6 +350,18 @@
                                     <td class="ps-4" colspan="2"></td>
                                     <td class="ps-4 ultima-columna"> $ {{ number_format($item->monto1, 0, '.', ',') }}</td>
                                 </tr>
+                                @elseif(isset($item->fecha_movimiento))
+                                <tr>
+                                    <td class="ps-4">{{ \Carbon\Carbon::parse($item->fecha_movimiento)->translatedFormat('j \d\e F') }}</td>
+                                    <td class="text-start"><b style="color: #c24f22">{{$item->descripcion_movimiento}}</b></td>
+                                    @if($item->tipo_movimiento == 1)
+                                    <td class="ps-4 penultima-columna" colspan="2" >$ {{ number_format($item->monto, 0, '.', ',') }}</td>
+                                    <td class="ps-4 ultima-columna"> </td>
+                                    @else
+                                    <td class="ps-4" colspan="2"></td>
+                                    <td class="ps-4 ultima-columna">$ {{ number_format($item->monto, 0, '.', ',') }} </td>
+                                    @endif
+                                </tr>
                             @endif
                         @endforeach
                       </tbody>
@@ -381,9 +389,10 @@
     </div>
 </div>
 @include('bancos.modal')
+@include('bancos.modal_movimiento_bancario')
 @endsection
 @section('datatable')
-
+<script src="{{ asset('js/sgt/common.js') }}?v={{ filemtime(public_path('js/sgt/common.js')) }}"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         // Calcular el total de la penúltima columna
@@ -395,6 +404,18 @@
         document.getElementById('totalPenultimaColumna').textContent = `$ ${totalPenultima.toLocaleString('en-US')}`;
         document.getElementById('collections').textContent = `$ ${totalPenultima.toLocaleString('en-US')}`;
 
+        let tipoTransaccion = document.querySelector('#tipoTransaccion');
+        let btnAgregar = document.querySelector('#btnAgregar')
+        let labelTitle = document.getElementById('labelTitle')
+
+        tipoTransaccion.addEventListener('change',(e)=>{
+            
+            btnAgregar.textContent = (e.target.value == "1") ? `Registrar Ingreso` : `Registrar Egreso`;
+            (e.target.value == "1") ? ((labelTitle).classList.remove('text-primary'), (labelTitle).classList.add('text-success'),(btnAgregar).classList.remove('bg-gradient-primary'), (btnAgregar).classList.add('bg-gradient-success')) : ((labelTitle).classList.remove('text-success'),(labelTitle).classList.add('text-primary'),(btnAgregar).classList.remove('bg-gradient-success'),(btnAgregar).classList.add('bg-gradient-primary') )
+
+           // (e.target.value == "1") ? () : ()
+
+        });
         
         // Calcular el total de la última columna
         let totalUltima = 0;
@@ -421,6 +442,38 @@
 <!-- JS de Date Range Picker -->
 <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
 <script>
+
+function addMovimientoBanco(bank){
+
+ let txtDescripcion = document.querySelector('#txtDescripcion')
+ let txtMonto = document.querySelector('#txtMonto')
+ let tipoTransaccion = document.querySelector('#tipoTransaccion')
+ let _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+ if(txtDescripcion.value.length == 0 || txtMonto.value.length == 0){
+    Swal.fire('Los campos son requeridos','Debe incluir la información de descripción y monto','warning')
+    return false;
+ }
+
+ $.ajax({
+    url: '/bancos/movimientos/registrar',
+    type:'post',
+    data:{_token,bank,txtDescripcion: txtDescripcion.value, txtMonto: txtMonto.value, tipoTransaccion: tipoTransaccion.value},
+    beforeSend:()=>{
+
+    },
+    success:(response)=>{
+        Swal.fire(response.Titulo,response.Mensaje,response.TMensaje)
+        setTimeout(() => {
+            location.reload()
+        }, 1000);
+    },
+    error:()=>{
+        Swal.fire('Error','Ha ocurrido un error','error')
+    }
+ });
+}
+
 $(document).ready(function() {
     $('#daterange').daterangepicker({
         opens: 'left',
