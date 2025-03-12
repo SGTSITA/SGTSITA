@@ -44,6 +44,7 @@ trait CommonTrait
         // Redondea a 2 decimales y añade la unidad correspondiente
         return round($tamanio, 2) . ' ' . $unidad[$exp];
     }
+    
     public static function obtenerFechaEnLetra($fecha){
         $dia= self::conocerDiaSemanaFecha($fecha);
         $num = date("j", strtotime($fecha));

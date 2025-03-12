@@ -8,7 +8,9 @@ use App\Models\Bancos;
 use App\Models\Client;
 use App\Models\Cotizaciones;
 use App\Models\DocumCotizacion;
+use App\Models\Equipo;
 use App\Models\GastosExtras;
+use App\Models\GastosOperadores;
 use App\Models\GastosGenerales;
 use App\Models\Proveedor;
 use App\Models\Subclientes;
@@ -17,6 +19,7 @@ use App\Exports\CotizacionesCXC;
 use App\Exports\GenericExport;
 use App\Exports\CxcExport;
 use App\Exports\CxpExport;
+use App\Models\GastosDiferidosDetalle;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Storage;
@@ -454,20 +457,10 @@ public function export_cxp(Request $request)
     }
 
     // ==================== U T I L I D A D E S ====================
+
     public function index_utilidad(){
 
-        $clientes = Client::where('id_empresa' ,'=',auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
-
-        $subclientes = Subclientes::where('id_empresa' ,'=',auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
-
-        $contenedores = DocumCotizacion::
-        join('cotizaciones', 'docum_cotizacion.id_cotizacion', '=', 'cotizaciones.id')
-        ->where('docum_cotizacion.num_contenedor' ,'!=', NULL)
-        ->where('docum_cotizacion.id_empresa' ,'=',auth()->user()->id_empresa)
-        ->where('cotizaciones.estatus' ,'=', 'Aprobada')
-        ->orderBy('docum_cotizacion.created_at', 'desc')->get();
-
-        return view('reporteria.utilidad.index', compact('clientes', 'subclientes', 'contenedores'));
+        return view('reporteria.utilidad.index');
     }
 
     public function advance_utilidad(Request $request) {
@@ -508,37 +501,112 @@ public function export_cxp(Request $request)
         return view('reporteria.utilidad.index', compact('asignaciones', 'clientes', 'subclientes', 'contenedores', 'fechaDe', 'fechaHasta'));
     }
 
+    public function getContenedorUtilidad(Request $r){
+        $fechaI = $r->startDate.' 00:00:00';
+        $fechaF = $r->endDate.' 00:00:00';
+        $datos = DB::select('select c.id as id_cotizacion,a.id_camion,dc.num_contenedor,cl.nombre as cliente, op.nombre Operador, a.sueldo_viaje,dinero_viaje, pr.nombre as Proveedor,total_proveedor,
+        c.total, c.estatus,estatus_pago,c.fecha_pago,a.fecha_inicio,a.fecha_fin,DATEDIFF(a.fecha_fin,a.fecha_inicio) as tiempo_viaje
+        from cotizaciones c
+        left join clients cl on c.id_cliente = cl.id
+        left join docum_cotizacion dc on c.id = dc.id_cotizacion
+        left join asignaciones a on dc.id = a.id_contenedor
+        left join operadores op on a.id_operador = op.id
+        left join proveedores pr on a.id_proveedor = pr.id
+        where a.fecha_inicio between '."'".$fechaI."'".' and '."'".$fechaF."' and c.estatus != 'Cancelada' and c.id_empresa = ".Auth::User()->id_empresa);
+
+        $Info = [];
+        foreach($datos as $d){
+            $diferido = 
+            GastosDiferidosDetalle::join('gastos_generales as g','gastos_diferidos_detalle.id_gasto','=','g.id')
+            ->whereBetween('fecha_gasto',[$d->fecha_inicio,$d->fecha_fin])
+            ->where('gastos_diferidos_detalle.id_equipo',$d->id_camion)
+            ->where('g.id_empresa',Auth::User()->id_empresa)
+            ->get();
+
+            $detalleGastos = null;
+
+            foreach($diferido as $d1){
+                $detalleGastos [] = ["fecha_gasto" => $d1->fecha_gasto, 
+                                    "monto_gasto" => $d1->gasto_dia, 
+                                    "tipo_gasto" => "DIFERIDO", 
+                                    "motivo_gasto" => $d1->motivo
+                                ];
+            }
+
+            $gastosExtra = GastosExtras::where('id_cotizacion',$d->id_cotizacion)->get();
+            $gastosOperador = GastosOperadores::where('id_cotizacion',$d->id_cotizacion)->get();
+
+            foreach($gastosExtra as $ge){
+                $detalleGastos [] = ["fecha_gasto" => $ge->created_at, 
+                "monto_gasto" => $ge->monto, 
+                "tipo_gasto" => "Gasto Extra", 
+                "motivo_gasto" => $ge->descripcion
+            ];
+            }
+
+            foreach($gastosOperador as $go){
+                $detalleGastos [] = ["fecha_gasto" => $go->fecha_pago, 
+                "monto_gasto" => $go->cantidad, 
+                "tipo_gasto" => "Gastos Viaje", 
+                "motivo_gasto" => $go->tipo
+            ];
+            }
+
+            $pagoOperacion = (is_null($d->Proveedor)) ? $d->sueldo_viaje : $d->total_proveedor;
+            $gastosDiferidos = $diferido->sum('gasto_dia');
+            $Columns = [
+                        "numContenedor" => $d->num_contenedor,
+                        "cliente" => $d->cliente,
+                        "precioViaje" => $d->total + $gastosExtra->sum('monto'),
+                        "transportadoPor" => (is_null($d->Proveedor)) ? 'Operador' : 'Proveedor',
+                        "operadorOrProveedor" => (is_null($d->Proveedor)) ? $d->Operador : $d->Proveedor,
+                        "pagoOperacion" => $pagoOperacion,
+                        "gastosExtra" => $gastosExtra->sum('monto'),
+                        "gastosViaje" => $gastosOperador->sum('cantidad'),
+                        "viajeInicia"=> $d->fecha_inicio,
+                        "viajeTermina"=> $d->fecha_fin, 
+                        "estatusViaje" => $d->estatus,     
+                        "estatusPago" => ($d->estatus_pago == 1) ? 'Pagado' : 'Por Cobrar',
+                        "gastosDiferidos" =>  $gastosDiferidos,
+                        "detalleGastos" => $detalleGastos,
+                        "utilidad" => $d->total  - $pagoOperacion - $gastosDiferidos - $gastosExtra->sum('monto') - $gastosOperador->sum('cantidad')             
+                        ];
+            $Info[] = $Columns;
+        }
+
+        return $Info;
+
+    }
+
     public function export_utilidad(Request $request){
-        $fechaDe = $request->input('fecha_de');
-        $fechaHasta = $request->input('fecha_hasta');
+        $fechaInicio = $request->input('fechaInicio');
+        $fechaFin = $request->input('fechaFin');
 
         $fecha = date('Y-m-d');
         $fechaCarbon = Carbon::parse($fecha);
-
-        $cotizacionIds = $request->input('cotizacion_ids', []);
-        if (empty($cotizacionIds)) {
-            return redirect()->back()->with('error', 'No se seleccionaron cotizaciones.');
-        }
-
-        $cotizaciones = Asignaciones::whereIn('id', $cotizacionIds)->get();
-
-        $cotizacion = Asignaciones::where('id', $cotizacionIds)->first();
+        $cotizaciones = Collect($request->rowData);//Asignaciones::whereIn('id', $cotizacionIds)->get();
+        $cotizacion = [];//Asignaciones::where('id', $cotizacionIds)->first();
         $user = User::where('id', '=', auth()->user()->id)->first();
 
-        $gastos = GastosGenerales::where('id_empresa', auth()->user()->id_empresa);
-        if ($fechaDe && $fechaHasta) {
-            $gastos = $gastos->where('fecha', '>=', $fechaDe)
-                             ->where('fecha', '<=', $fechaHasta);
-        }
+        $gastos = GastosGenerales::where('id_empresa', auth()->user()->id_empresa)
+                                ->where('diferir_gasto',0)
+                                ->whereBetween('fecha',[$fechaInicio,$fechaFin])->sum('monto1');
+       // $gastos = [];
 
-        $gastos = $gastos->get();
+        $utilidad = $cotizaciones->sum('utilidad');
 
-        if($request->btnExport == "xlsx"){
-            Excel::store(new \App\Exports\UtilidadExport($cotizaciones, $fechaCarbon, $cotizacion, $user, $gastos), 'utilidad.xlsx','public');
+        $totalRows = $request->totalRows;
+        $selectedRows = $cotizaciones->count();
+  
+
+        if($request->fileType == "xlsx"){
+            Excel::store(new \App\Exports\UtilidadExport($cotizaciones, $fechaCarbon, $cotizacion, $user, []), 'utilidad.xlsx','public');
             return Response::download(storage_path('app/public/utilidad.xlsx'), "utilidad.xlsx")->deleteFileAfterSend(true);
         }else{
-        $pdf = PDF::loadView('reporteria.utilidad.pdf', compact('cotizaciones', 'fechaCarbon', 'cotizacion', 'user', 'gastos'))->setPaper('a4', 'landscape');
-            return $pdf->download('utilidad_seleccionadas.pdf');
+        $pdf = PDF::loadView('reporteria.utilidad.pdf', 
+                compact('cotizaciones','utilidad', 'fechaInicio','fechaFin', 'cotizacion', 'user', 'gastos','totalRows','selectedRows'))
+                ->setPaper('a4', 'landscape');
+            return $pdf->stream('utilidades_rpt.pdf');
         }
     }
 

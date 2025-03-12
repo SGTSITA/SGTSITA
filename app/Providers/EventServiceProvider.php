@@ -24,6 +24,9 @@ class EventServiceProvider extends ServiceProvider
         \App\Events\NotificaNuevoDocumentoEvent::class =>[
             \App\Listeners\NotificaNuevoDocumentoListener::class,
         ],
+        \App\Events\GenericNotificationEvent::class =>[
+            \App\Listeners\GenericNotificationListener::class,
+        ],
     ];
 
     /**
