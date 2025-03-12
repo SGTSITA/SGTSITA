@@ -121,6 +121,25 @@ class BancosController extends Controller
         }
         return view('bancos.index', compact('bancos'));
     }
+    public function cambiarEstado(Request $request, $id)
+    {
+        $banco = Bancos::withTrashed()->findOrFail($id);
+    
+        if ($request->estado == 1) {
+            // Si se activa, restaurar y actualizar estado
+            $banco->restore();
+            $banco->estado = 1;
+        } else {
+            // Si se inactiva, cambiar estado y hacer soft delete
+            $banco->estado = 0;
+            $banco->delete(); // Esto llenará `deleted_at`
+        }
+    
+        $banco->save();
+    
+        return response()->json(['success' => true, 'estado' => $banco->estado, 'deleted_at' => $banco->deleted_at]);
+    }
+    
 
     public function store(Request $request){
 
