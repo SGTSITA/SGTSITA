@@ -350,6 +350,18 @@
                                     <td class="ps-4" colspan="2"></td>
                                     <td class="ps-4 ultima-columna"> $ {{ number_format($item->monto1, 0, '.', ',') }}</td>
                                 </tr>
+                                @elseif(isset($item->fecha_movimiento))
+                                <tr>
+                                    <td class="ps-4">{{ \Carbon\Carbon::parse($item->fecha_movimiento)->translatedFormat('j \d\e F') }}</td>
+                                    <td class="text-start"><b style="color: #c24f22">{{$item->descripcion_movimiento}}</b></td>
+                                    @if($item->tipo_movimiento == 1)
+                                    <td class="ps-4 penultima-columna" colspan="2" >$ {{ number_format($item->monto, 0, '.', ',') }}</td>
+                                    <td class="ps-4 ultima-columna"> </td>
+                                    @else
+                                    <td class="ps-4" colspan="2"></td>
+                                    <td class="ps-4 ultima-columna">$ {{ number_format($item->monto, 0, '.', ',') }} </td>
+                                    @endif
+                                </tr>
                             @endif
                         @endforeach
                       </tbody>
