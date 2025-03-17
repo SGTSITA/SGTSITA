@@ -42,6 +42,31 @@ class CotizacionesController extends Controller
 
         return view('cotizaciones.index', compact('empresas', 'proveedores','bancos','operadores','equipos_dolys','equipos_chasis','equipos_camiones','cotizaciones_planeadas'));
     }
+    public function getCotizacionesList()
+{
+    $cotizaciones = Cotizaciones::where('id_empresa', auth()->user()->id_empresa)
+        ->where('estatus', '=', 'Aprobada')
+        ->where('estatus_planeacion', '=', 1)
+        ->orderBy('created_at', 'desc')
+        ->with(['cliente', 'DocCotizacion.Asignaciones']) // 🔹 Cargar relaciones en la consulta
+        ->get()
+        ->map(function ($cotizacion) {
+            return [
+                'id' => $cotizacion->id,
+                'cliente' => $cotizacion->cliente ? $cotizacion->cliente->nombre : 'N/A',
+                'origen' => $cotizacion->origen,
+                'destino' => $cotizacion->destino,
+                'contenedor' => $cotizacion->DocCotizacion ? $cotizacion->DocCotizacion->num_contenedor : 'N/A',
+                'estatus' => $cotizacion->estatus,
+                'coordenadas' => optional($cotizacion->DocCotizacion)->Asignaciones ? 'Ver' : '',
+                'edit_url' => route('edit.cotizaciones', $cotizacion->id)
+            ];
+        });
+
+    return response()->json(['list' => $cotizaciones]);
+}
+
+
 
     public function index_externo(){
 
@@ -66,6 +91,33 @@ class CotizacionesController extends Controller
 
         return view('cotizaciones.index_finalizadas', compact('empresas', 'proveedores','bancos','operadores','equipos_dolys','equipos_chasis','equipos_camiones','cotizaciones_finalizadas'));
     }
+    public function getCotizacionesFinalizadas()
+    {
+        $cotizaciones = Cotizaciones::where('id_empresa', auth()->user()->id_empresa)
+            ->where('estatus', 'Finalizado')
+            ->orderBy('created_at', 'desc')
+            ->with([
+                'Cliente', 
+                'DocCotizacion.Asignaciones' // Cargar relaciones necesarias
+            ])
+            ->get()
+            ->map(function ($cotizacion) {
+                return [
+                    'id' => $cotizacion->id,
+                    'cliente' => $cotizacion->Cliente ? $cotizacion->Cliente->nombre : 'N/A',
+                    'origen' => $cotizacion->origen,
+                    'destino' => $cotizacion->destino,
+                    'contenedor' => $cotizacion->DocCotizacion ? $cotizacion->DocCotizacion->num_contenedor : 'N/A',
+                    'estatus' => $cotizacion->estatus,
+                    'coordenadas' => optional($cotizacion->DocCotizacion)->Asignaciones ? 'Ver' : 'N/A',
+                    'edit_url' => route('edit.cotizaciones', $cotizacion->id),
+                    'pdf_url' => route('pdf.cotizaciones', $cotizacion->id)
+                ];
+            });
+    
+        return response()->json(['list' => $cotizaciones]);
+    }
+    
 
     public function index_espera(){
 
