@@ -64,7 +64,7 @@ let dt = $("#kt_datatable_example_1").DataTable({
                 orderable: false,
               
                 render: function (data, type, row) {
-                    console.log(data)
+                    
                     return `
                         <a href="/cotizaciones/cotizacion${data.identifier}/${data.filePath}" target="_blank" class="btn btn-active-primary btn-sm">
                             Ver Archivo

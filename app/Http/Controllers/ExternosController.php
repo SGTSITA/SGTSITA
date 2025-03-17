@@ -172,8 +172,10 @@ class ExternosController extends Controller
                 "fileDate" => CommonTrait::obtenerFechaEnLetra(date("Y-m-d", filemtime($path))),
                 "fileSize" => CommonTrait::calculateFileSize(filesize($path)),
                 "fileType" => pathinfo($path, PATHINFO_EXTENSION),
-                "identifier" => $id
+                "identifier" => $id,
+                "fileCode" => iconv('UTF-8', 'ASCII//TRANSLIT',str_replace(' ','-',$title))
                 ];
+                //iconv('UTF-8', 'ASCII//TRANSLIT', $cadena);
         }else{
             return [];
         }

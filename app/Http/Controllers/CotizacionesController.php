@@ -426,7 +426,7 @@ class CotizacionesController extends Controller
             }
         }
 
-        Session::flash('edit', 'Se ha editado sus datos con exito');
+      
         return redirect()->route('index.cotizaciones')
             ->with('success', 'Estatus updated successfully');
     }
