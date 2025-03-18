@@ -621,6 +621,7 @@ public function export_cxp(Request $request)
 $subclientes = Subclientes::where('id_empresa', auth()->user()->id_empresa)
    ->orderBy('created_at', 'desc')
    ->get();
+   $proveedores = Proveedor::where('id_empresa', auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get(); // Agregar consulta de proveedores
 
 // Si tienes proveedores:
 // $proveedores = Proveedor::where('id_empresa', auth()->user()->id_empresa)->get();
@@ -649,28 +650,35 @@ if ($request->filled('fecha_inicio') && $request->filled('fecha_fin')) {
    $query->whereBetween('created_at', [$fechaInicio, $fechaFin]);
 }
 
-
-
 // 5. Retornar la vista, enviando además las variables necesarias
-return view('reporteria.documentos.index', [
-   'clientes' => $clientes,
-   'subclientes' => $subclientes,
-   // 'proveedores' => $proveedores, // si lo necesitas
-]);
+return view('reporteria.documentos.index', compact('clientes', 'subclientes', 'proveedores'));
 }
+
+
 public function advance_documentos(Request $request) {
+    // Obtener catálogos para los selects
     $clientes = Client::where('id_empresa', auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
     $subclientes = Subclientes::where('id_empresa', auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
+    $proveedores = Proveedor::where('id_empresa', auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
 
+    // Capturar filtros del request
     $id_client = $request->id_client;
     $id_subcliente = $request->id_subcliente;
+    $id_proveedor = $request->id_proveedor;
+    $fecha_inicio = $request->fecha_inicio;
+    $fecha_fin = $request->fecha_fin;
 
-    // Construir la consulta inicial
-    $cotizaciones = Cotizaciones::join('docum_cotizacion', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
+    // Construcción de la consulta
+    $cotizaciones = Cotizaciones::query()
         ->where('cotizaciones.id_empresa', auth()->user()->id_empresa)
-        ->where('cotizaciones.estatus', 'Aprobada')
+        ->where('cotizaciones.estatus', '!=', 'Cancelada') 
+        ->with(['DocCotizacion.Asignacion']) // Cargar la relación completa
+        ->leftJoin('docum_cotizacion', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
+        ->leftJoin('asignaciones', 'docum_cotizacion.id', '=', 'asignaciones.id_contenedor')
         ->select(
             'cotizaciones.id',
+            'cotizaciones.id_cliente',
+            'cotizaciones.id_subcliente',
             'docum_cotizacion.num_contenedor',
             'docum_cotizacion.doc_ccp',
             'docum_cotizacion.boleta_liberacion',
@@ -678,22 +686,38 @@ public function advance_documentos(Request $request) {
             'cotizaciones.carta_porte',
             'cotizaciones.img_boleta AS boleta_vacio',
             'docum_cotizacion.doc_eir',
-            DB::raw('EXISTS(SELECT 1 FROM docum_cotizacion WHERE docum_cotizacion.id_cotizacion = cotizaciones.id) as documentos_existen')
+            'asignaciones.id_proveedor',
+            'asignaciones.fecha_inicio',
+            'asignaciones.fecha_fin'
         );
 
-    if ($id_client !== null) {
-        $cotizaciones = $cotizaciones->where('cotizaciones.id_cliente', $id_client);
-
-        if ($id_subcliente !== null && $id_subcliente !== '') {
-            $cotizaciones = $cotizaciones->where('cotizaciones.id_subcliente', $id_subcliente);
-        }
+    // 📌 **Aplicar filtros**
+    
+    // 🔹 Filtrar por cliente y subcliente
+    if (!empty($id_client)) {
+        $cotizaciones->where('cotizaciones.id_cliente', $id_client);
     }
 
-    // Obtener los resultados
+    if (!empty($id_subcliente)) {
+        $cotizaciones->where('cotizaciones.id_subcliente', $id_subcliente);
+    }
+
+    // 🔹 Filtrar por proveedor
+    if (!empty($id_proveedor)) {
+        $cotizaciones->where('asignaciones.id_proveedor', $id_proveedor);
+    }
+
+    // 🔹 Filtrar por fecha de asignación
+    if (!empty($fecha_inicio) && !empty($fecha_fin)) {
+        $cotizaciones->whereBetween('asignaciones.fecha_inicio', [$fecha_inicio, $fecha_fin]);
+    }
+
+    // Obtener resultados
     $cotizaciones = $cotizaciones->get();
 
-    return view('reporteria.documentos.index', compact('cotizaciones', 'clientes', 'subclientes'));
+    return view('reporteria.documentos.index', compact('cotizaciones', 'clientes', 'subclientes', 'proveedores'));
 }
+
 
 
     public function export_documentos(Request $request){

@@ -67,52 +67,75 @@
                         <div class="container-fluid">
                             <div class="row">
                                 <div class="col-12">
-                                    <form id="searchForm" action="{{ route('advance_documentos.buscador') }}" method="GET"
-                                        onsubmit="saveFilters()">
+                                    {{-- Formulario con method="GET" (o "POST", si prefieres), SIN JS de guardado --}}
+                                    <form id="searchForm" action="{{ route('advance_documentos.buscador') }}"
+                                        method="GET">
                                         <div class="row gy-3 gx-4 align-items-end">
+
                                             <div class="col-md-2">
-                                                <label for="id_client" class="form-label fw-semibold">Buscar
-                                                    Cliente:</label>
-                                                <select class="form-select cliente py-2" name="id_client" id="id_client">
-                                                    <option selected value="">Seleccionar cliente</option>
+                                                <label for="id_client" class="form-label fw-semibold">Cliente:</label>
+                                                <select class="form-select" name="id_client" id="id_client">
+                                                    <option value="">Seleccionar cliente</option>
                                                     @foreach ($clientes as $client)
-                                                        <option value="{{ $client->id }}">{{ $client->nombre }}</option>
+                                                        <option value="{{ $client->id }}" {{-- Usar request('id_client') para recordar la selección --}}
+                                                            @if (request('id_client') == $client->id) selected @endif>
+                                                            {{ $client->nombre }}
+                                                        </option>
                                                     @endforeach
                                                 </select>
                                             </div>
+
                                             <div class="col-md-2">
-                                                <label for="id_subcliente" class="form-label fw-semibold">Buscar
-                                                    Subcliente:</label>
-                                                <select class="form-select subcliente" name="id_subcliente"
-                                                    id="id_subcliente">
-                                                    <option selected value="">Seleccionar subcliente</option>
+                                                <label for="id_subcliente"
+                                                    class="form-label fw-semibold">Subcliente:</label>
+                                                <select class="form-select" name="id_subcliente" id="id_subcliente">
+                                                    <option value="">Seleccionar subcliente</option>
+                                                    @foreach ($subclientes as $subcliente)
+                                                        <option value="{{ $subcliente->id }}"
+                                                            @if (request('id_subcliente') == $subcliente->id) selected @endif>
+                                                            {{ $subcliente->nombre }}
+                                                        </option>
+                                                    @endforeach
                                                 </select>
                                             </div>
+
                                             <div class="col-md-2">
                                                 <label for="id_proveedor" class="form-label fw-semibold">Proveedor:</label>
                                                 <select class="form-select" name="id_proveedor" id="id_proveedor">
-                                                    <option selected value="">Seleccionar proveedor</option>
+                                                    <option value="">Seleccionar proveedor</option>
+                                                    @foreach ($proveedores as $proveedor)
+                                                        <option value="{{ $proveedor->id }}"
+                                                            @if (request('id_proveedor') == $proveedor->id) selected @endif>
+                                                            {{ $proveedor->nombre }}
+                                                        </option>
+                                                    @endforeach
                                                 </select>
                                             </div>
+
                                             <div class="col-md-2">
                                                 <label for="fecha_inicio" class="form-label fw-semibold">Fecha
                                                     Inicio:</label>
                                                 <input type="date" class="form-control" name="fecha_inicio"
-                                                    id="fecha_inicio">
+                                                    id="fecha_inicio" value="{{ request('fecha_inicio') }}">
                                             </div>
+
                                             <div class="col-md-2">
                                                 <label for="fecha_fin" class="form-label fw-semibold">Fecha Fin:</label>
-                                                <input type="date" class="form-control" name="fecha_fin" id="fecha_fin">
+                                                <input type="date" class="form-control" name="fecha_fin" id="fecha_fin"
+                                                    value="{{ request('fecha_fin') }}">
                                             </div>
+
                                             <div class="col-md-2 text-start">
                                                 <button class="btn bg-gradient-info btn-xs py-1"
                                                     type="submit">Buscar</button>
                                             </div>
+
                                         </div>
                                     </form>
                                 </div>
                             </div>
                         </div>
+
                         <div class="table-responsive">
                             <div class="d-flex justify-content-between mb-3">
                                 <button type="button" id="selectAllButton"
@@ -224,11 +247,9 @@
 
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
     <script>
         $(document).ready(function() {
-
-            // Inicializar la tabla con DataTables
+            // === Inicializar la tabla con DataTables ===
             const table = $('#datatable-search').DataTable({
                 columnDefs: [{
                     orderable: false,
@@ -249,20 +270,14 @@
                 }
             });
 
-            // Al hacer click directamente en el checkbox, alternar la selección de la fila
+            // === Al hacer click en el checkbox, alternar la selección en DataTables ===
             $('#datatable-search tbody').on('click', 'td.select-checkbox input[type="checkbox"]', function(e) {
                 const $row = $(this).closest('tr');
-                // Si se chequea manualmente, selecciona la fila en DataTables
-                if (this.checked) {
-                    table.row($row).select();
-                } else {
-                    table.row($row).deselect();
-                }
-                // Evitar que se propague el evento y cause dobles selecciones
+                this.checked ? table.row($row).select() : table.row($row).deselect();
                 e.stopPropagation();
             });
 
-            // Mostrar la selección en el checkbox cuando se seleccionan filas
+            // === Mostrar la selección en los checkboxes al seleccionar filas ===
             table.on('select', function(e, dt, type, indexes) {
                 if (type === 'row') {
                     indexes.forEach(function(i) {
@@ -274,7 +289,7 @@
                 updateSelectAllButton();
             });
 
-            // Quitar la selección en el checkbox cuando se deseleccionan filas
+            // === Quitar la selección en los checkboxes al deseleccionar filas ===
             table.on('deselect', function(e, dt, type, indexes) {
                 if (type === 'row') {
                     indexes.forEach(function(i) {
@@ -286,14 +301,13 @@
                 updateSelectAllButton();
             });
 
-            // Función para actualizar el texto del botón "Seleccionar todo"
+            // === Actualizar el texto del botón "Seleccionar todo" ===
             function updateSelectAllButton() {
                 const totalRows = table.rows().count();
                 const selectedCount = table.rows({
                     selected: true
                 }).count();
                 const selectAllButton = $('#selectAllButton');
-
                 if (selectedCount === totalRows && totalRows !== 0) {
                     selectAllButton.text('Deseleccionar todo');
                 } else {
@@ -301,28 +315,20 @@
                 }
             }
 
-            // Lógica para el botón "Seleccionar todo"
+            // === Botón "Seleccionar todo" ===
             $('#selectAllButton').on('click', function() {
                 const totalRows = table.rows().count();
                 const selectedCount = table.rows({
                     selected: true
                 }).count();
-
-                // Si todo está seleccionado, deselecciona todo, de lo contrario selecciona todo
-                if (selectedCount === totalRows) {
-                    table.rows().deselect();
-                } else {
-                    table.rows().select();
-                }
+                selectedCount === totalRows ? table.rows().deselect() : table.rows().select();
             });
 
-            // Lógica para la exportación de los datos seleccionados
-            $('.exportButton').on('click', function(event) {
-                // Obtener los IDs seleccionados
+            // === Exportar datos seleccionados ===
+            $('.exportButton').on('click', function() {
                 const selectedIds = table.rows('.selected').data().toArray().map(row => row[1]);
                 console.log('IDs seleccionados:', selectedIds);
 
-                // Verificar si se han seleccionado contenedores
                 if (selectedIds.length === 0) {
                     Swal.fire({
                         icon: 'warning',
@@ -331,12 +337,10 @@
                         confirmButtonColor: '#3085d6',
                         confirmButtonText: 'OK'
                     });
-                    return; // Detener la ejecución si no hay selección
+                    return;
                 }
 
-                var fileType = $(this).data('filetype');
-
-                // Enviar los IDs seleccionados al controlador por Ajax
+                const fileType = $(this).data('filetype');
                 $.ajax({
                     url: '{{ route('export_documentos.export') }}',
                     method: 'POST',
@@ -346,30 +350,23 @@
                         fileType: fileType
                     },
                     xhrFields: {
-                        responseType: 'blob' // Indicar que esperamos una respuesta tipo blob (archivo)
+                        responseType: 'blob'
                     },
                     success: function(response) {
-                        // Crear un objeto URL del blob recibido
-                        var blob = new Blob([response], {
+                        const blob = new Blob([response], {
                             type: 'application/' + fileType
                         });
-                        var url = URL.createObjectURL(blob);
+                        const url = URL.createObjectURL(blob);
 
-                        // Crear un elemento <a> para simular el clic de descarga
-                        var a = document.createElement('a');
+                        const a = document.createElement('a');
                         a.style.display = 'none';
                         a.href = url;
                         a.download = 'documentos_seleccionados.' + fileType;
                         document.body.appendChild(a);
-
-                        // Simular el clic en el enlace para iniciar la descarga
                         a.click();
-
-                        // Limpiar después de la descarga
-                        window.URL.revokeObjectURL(url);
+                        URL.revokeObjectURL(url);
                         document.body.removeChild(a);
 
-                        // Alerta con SweetAlert2 para indicar que se ha descargado correctamente
                         Swal.fire({
                             icon: 'success',
                             title: 'Descarga completa',
@@ -391,125 +388,29 @@
                 });
             });
 
-            // Lógica para manejar la selección de subcliente basada en el cliente seleccionado
+            // === Carga dinámica de subclientes al cambiar el cliente ===
             $('#id_client').on('change', function() {
-                var clientId = $(this).val();
+                const clientId = $(this).val();
                 if (clientId) {
                     $.ajax({
                         url: '/subclientes/' + clientId,
                         type: 'GET',
                         dataType: 'json',
                         success: function(data) {
-                            $('#id_subcliente').empty();
-                            $('#id_subcliente').append(
+                            const subclienteSelect = $('#id_subcliente');
+                            subclienteSelect.empty().append(
                                 '<option selected value="">Seleccionar subcliente</option>');
-                            $.each(data, function(key, subcliente) {
-                                $('#id_subcliente').append('<option value="' +
-                                    subcliente.id + '\">' + subcliente.nombre +
-                                    '</option>');
+                            $.each(data, function(index, subcliente) {
+                                subclienteSelect.append('<option value="' + subcliente
+                                    .id + '">' + subcliente.nombre + '</option>');
                             });
                         }
                     });
                 } else {
-                    $('#id_subcliente').empty();
-                    $('#id_subcliente').append('<option selected value="">Seleccionar subcliente</option>');
+                    $('#id_subcliente').empty().append(
+                        '<option selected value="">Seleccionar subcliente</option>');
                 }
             });
         });
-        document.addEventListener("DOMContentLoaded", function() {
-            // Verificar si estamos en la vista de documentos
-            if (window.location.pathname.includes("/reporteria/documentos")) {
-                restoreFilters();
-            } else {
-                clearFilters(); // Si no está en documentos, limpiar filtros
-            }
-
-            // Guardar valores antes de enviar la búsqueda
-            document.getElementById("searchForm").addEventListener("submit", function() {
-                saveFilters();
-            });
-
-            // Detectar cambio en cliente para actualizar subclientes
-            document.getElementById("id_client").addEventListener("change", function() {
-                loadSubclients(this.value, null);
-            });
-
-            // Detectar cuando el usuario realmente deja la página
-            document.addEventListener("visibilitychange", function() {
-                if (document.hidden && !window.location.pathname.includes("documentos")) {
-                    clearFilters();
-                }
-            });
-
-            // También limpiar los filtros cuando se navega a otra página
-            window.addEventListener("beforeunload", function() {
-                if (!window.location.pathname.includes("documentos")) {
-                    clearFilters();
-                }
-            });
-        });
-
-        // Guardar valores en localStorage antes de enviar la búsqueda
-        function saveFilters() {
-            localStorage.setItem("id_client", document.getElementById("id_client").value);
-            localStorage.setItem("id_subcliente", document.getElementById("id_subcliente").value);
-            localStorage.setItem("id_proveedor", document.getElementById("id_proveedor").value);
-            localStorage.setItem("fecha_inicio", document.getElementById("fecha_inicio").value);
-            localStorage.setItem("fecha_fin", document.getElementById("fecha_fin").value);
-        }
-
-        // Restaurar valores después de recargar la página (solo si sigue en documentos)
-        function restoreFilters() {
-            if (localStorage.getItem("id_client")) {
-                document.getElementById("id_client").value = localStorage.getItem("id_client");
-                loadSubclients(localStorage.getItem("id_client"), localStorage.getItem("id_subcliente"));
-            }
-            if (localStorage.getItem("id_proveedor")) {
-                document.getElementById("id_proveedor").value = localStorage.getItem("id_proveedor");
-            }
-            if (localStorage.getItem("fecha_inicio")) {
-                document.getElementById("fecha_inicio").value = localStorage.getItem("fecha_inicio");
-            }
-            if (localStorage.getItem("fecha_fin")) {
-                document.getElementById("fecha_fin").value = localStorage.getItem("fecha_fin");
-            }
-        }
-
-        // Cargar subclientes dinámicamente según el cliente seleccionado
-        function loadSubclients(clientId, subclientId) {
-            if (clientId) {
-                $.ajax({
-                    url: '/subclientes/' + clientId,
-                    type: 'GET',
-                    dataType: 'json',
-                    success: function(data) {
-                        let subclientSelect = document.getElementById("id_subcliente");
-                        subclientSelect.innerHTML = '<option selected value="">Seleccionar subcliente</option>';
-
-                        data.forEach(function(subcliente) {
-                            let option = document.createElement("option");
-                            option.value = subcliente.id;
-                            option.textContent = subcliente.nombre;
-                            if (subclientId && subclientId === subcliente.id.toString()) {
-                                option.selected = true;
-                            }
-                            subclientSelect.appendChild(option);
-                        });
-                    }
-                });
-            } else {
-                document.getElementById("id_subcliente").innerHTML =
-                    '<option selected value="">Seleccionar subcliente</option>';
-            }
-        }
-
-        // Limpiar los filtros cuando el usuario abandona la vista de documentos
-        function clearFilters() {
-            localStorage.removeItem("id_client");
-            localStorage.removeItem("id_subcliente");
-            localStorage.removeItem("id_proveedor");
-            localStorage.removeItem("fecha_inicio");
-            localStorage.removeItem("fecha_fin");
-        }
     </script>
 @endsection
