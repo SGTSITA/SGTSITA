@@ -55,6 +55,18 @@ class Cotizaciones extends Model
     {
         return $this->hasOne(DocumCotizacion::class, 'id_cotizacion');
     }
+    public function Asignacion()
+    {
+        return $this->hasOneThrough(
+            Asignaciones::class,    // Modelo final (Asignaciones)
+            DocumCotizacion::class, // Modelo intermedio (DocumCotizacion)
+            'id_cotizacion',        // Clave en DocumCotizacion que referencia a Cotizaciones
+            'id_contenedor',        // Clave en Asignaciones que referencia a DocumCotizacion
+            'id',                   // Clave en Cotizaciones
+            'id'                    // Clave en DocumCotizacion
+        );
+    }
+
 
     public function Bancos1()
     {

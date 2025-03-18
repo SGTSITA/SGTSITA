@@ -27,9 +27,9 @@ class DocumCotizacion extends Model
         return $this->belongsTo(Cotizaciones::class, 'id_cotizacion');
     }
 
-    public function Asignaciones()
+    public function Asignacion()
     {
-        return $this->hasOne(Asignaciones::class, 'id_contenedor');
+        return $this->hasOne(Asignaciones::class, 'id_contenedor', 'id');
     }
 
     protected static function boot()
