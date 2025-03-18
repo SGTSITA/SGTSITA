@@ -73,11 +73,6 @@ class Asignaciones extends Model
     {
         return $this->belongsTo(Bancos::class, 'id_banco2_dinero_viaje');
     }
-    public function DocCotizacion()
-    {
-        return $this->belongsTo(DocumCotizacion::class, 'id_contenedor', 'id');
-    }
-
 
     public function Justificacion(){
         return $this->hasMany(ViaticosOperador::class, 'id_cotizacion','id_contenedor');
