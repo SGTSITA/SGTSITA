@@ -185,7 +185,7 @@ class MissionResultRenderer {
         responseType: "blob" // Asegura que el tipo de respuesta sea un Blob
       },
       success: function(response) {
-        console.log(response)
+       
         if (response instanceof Blob) {
           var blob = new Blob([response], { type: 'application/pdf'  });
           var url = URL.createObjectURL(blob);

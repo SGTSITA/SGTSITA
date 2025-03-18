@@ -13,6 +13,7 @@ use App\Models\Correo;
 use Illuminate\Support\Facades\Mail;
 use App\Traits\CommonTrait;
 use Carbon\Carbon;
+use ZipArchive;
 use Auth;
 
 class ExternosController extends Controller
@@ -34,6 +35,69 @@ class ExternosController extends Controller
 
     public function misViajes(){
         return view('cotizaciones.externos.viajes_solicitados');
+    }
+
+    public function ZipDownload($zipFile){
+       return response()->download($zipFile)->deleteFileAfterSend(true);
+    }
+
+    public function CfdiToZip(Request $request){
+        try{
+            $zipName = "carta-porte-".uniqid().".zip";
+
+            $zipPath = public_path($zipName); // Ruta en la carpeta public
+
+            $zip = new ZipArchive;
+    
+            if ($zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) === true) {
+                // Archivos que quieres agregar al ZIP
+                /*$files = [
+                    storage_path('app/public/ejemplo1.txt'),
+                    storage_path('app/public/ejemplo2.txt')
+                ];
+        
+                foreach ($files as $file) {
+                    if (File::exists($file)) {
+                        $zip->addFile($file, basename($file));
+                    }
+                }*/
+                foreach($request->contenedores as $c){
+                    $cotizacionQuery = Cotizaciones::join('docum_cotizacion as d', 'cotizaciones.id', '=', 'd.id_cotizacion')
+                    ->where('d.num_contenedor',$c['NumContenedor']);
+    
+                    $cotizacion = $cotizacionQuery->first();
+                    $pdf = $cotizacion->carta_porte;
+                    $xml = $cotizacion->carta_porte_xml;
+
+                    if(\File::exists(public_path('/cotizaciones/cotizacion'.$cotizacion->id_cotizacion."/$xml"))){
+                   
+                        $zip->addFile(public_path('/cotizaciones/cotizacion'.$cotizacion->id_cotizacion."/$xml"),$c['NumContenedor'].'.xml');
+                    }
+    
+                    if(\File::exists(public_path('/cotizaciones/cotizacion'.$cotizacion->id_cotizacion."/$pdf"))){
+                        $zip->addFile(public_path('/cotizaciones/cotizacion'.$cotizacion->id_cotizacion."/$pdf"), $c['NumContenedor'].'.pdf');
+                    }
+                    
+                   
+                }
+        
+                $zip->close();
+                
+            } 
+
+            
+
+           
+            return response()->json([
+                'zipUrl' => ($zipName),
+                'success' => true
+            ]);
+        }catch(\Throwable $t){
+            return response()->json([
+                'message' => $t->getMessage(),
+                'success' =>false
+            ]);
+        }
     }
 
     public function getContenedoresPendientes(Request $request){
@@ -211,8 +275,13 @@ class ExternosController extends Controller
         }
 
         if(!is_null($cotizacion->carta_porte)){
-            $preAlta = self::fileProperties($folderId,$cotizacion->carta_porte,'Carta Porte');
-            if(sizeof($preAlta) > 0) array_push($documentList,$preAlta);
+            $cpPDF = self::fileProperties($folderId,$cotizacion->carta_porte,'Carta Porte');
+            if(sizeof($cpPDF) > 0) array_push($documentList,$cpPDF);
+        }
+
+        if(!is_null($cotizacion->carta_porte_xml)){
+            $cpXML = self::fileProperties($folderId,$cotizacion->carta_porte_xml,'Carta Porte XML');
+            if(sizeof($cpXML) > 0) array_push($documentList,$cpXML);
         }
         
 

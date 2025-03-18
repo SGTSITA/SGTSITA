@@ -568,7 +568,11 @@
                       <td class="align-middle text-end">
                         <div class="d-flex px-3 py-1 justify-content-center align-items-center">
                         
-                          <button type="button" class="btn btn-sm btn-icon-only btn-rounded btn-outline-secondary mb-0 ms-2 btn-sm d-flex align-items-center justify-content-center ms-3" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Cargar archivo" data-bs-original-title="Cargar archivo">
+                          <button type="button" 
+                          class="btn btn-sm btn-icon-only btnDocs btn-rounded btn-outline-secondary mb-0 ms-2 btn-sm d-flex align-items-center justify-content-center ms-3" 
+                          data-bs-toggle="tooltip" id="btnFileBoletaLiberacion"
+                          data-bs-placement="bottom" title="Cargar archivo" 
+                          data-bs-original-title="Cargar archivo">
                             <i class="fas fa-upload" aria-hidden="true"></i>
                           </button>
                           <a href="javasrcipt:void()" target="_blank" class="openFile btn btn-sm btn-icon-only btn-rounded btn-outline-secondary mb-0 ms-2 btn-sm d-flex align-items-center justify-content-center ms-3" 
@@ -601,13 +605,13 @@
                       </td>
                       <td class="align-middle text-center text-sm">
                         <p class="text-sm font-weight-bold mb-0">
-                            <span class="badge bg-gradient-warning badge-sm">Pendiente</span>
+                            <span class="badge bg-gradient-warning badge-sm" id="badge-Doda">Pendiente</span>
                         </p>
                       </td>
                       <td class="align-middle text-end">
                         <div class="d-flex px-3 py-1 justify-content-center align-items-center">
                         
-                          <button type="button" class="btn btn-sm btn-icon-only btn-rounded btn-outline-secondary mb-0 ms-2 btn-sm d-flex align-items-center justify-content-center ms-3" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Cargar archivo" data-bs-original-title="Cargar archivo">
+                          <button type="button" id="btnFileDODA" class="btnDocs btn btn-sm btn-icon-only btn-rounded btn-outline-secondary mb-0 ms-2 btn-sm d-flex align-items-center justify-content-center ms-3" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Cargar archivo" data-bs-original-title="Cargar archivo">
                             <i class="fas fa-upload" aria-hidden="true"></i>
                           </button>
                           <a href="javasrcipt:void()" target="_blank" id="btn-ver-Doda" 
@@ -622,11 +626,11 @@
                       <td>
                         <div class="d-flex px-3 py-1">
                           <div>
-                            <img src="{{asset('img/not-file.png')}}" class="avatar me-3" alt="image">
+                            <img src="{{asset('img/not-file.png')}}" class="avatar me-3" id="img-Carta-Porte" alt="image">
                           </div>
                           <div class="d-flex flex-column justify-content-center">
                             <h6 class="mb-0 text-sm">Carta Porte PDF</h6>
-                            <p class="text-sm font-weight-bold text-secondary mb-0"><span class="text-muted">128</span> Kb</p>
+                            <p class="text-sm font-weight-bold text-secondary mb-0"><span class="text-muted" id="filSize-Carta-Porte">0</span></p>
                           </div>
                         </div>
                       </td>
@@ -637,18 +641,19 @@
                       </td>
                       <td class="align-middle text-center text-sm">
                         <p class="text-sm font-weight-bold mb-0">
-                            <span class="badge bg-gradient-warning badge-sm">Pendiente</span>
+                            <span class="badge bg-gradient-warning badge-sm" id="badge-Carta-Porte">Pendiente</span>
                         </p>
                       </td>
                       <td class="align-middle text-end">
                         <div class="d-flex px-3 py-1 justify-content-center align-items-center">
                         
-                          <button type="button" class="btn btn-sm btn-icon-only btn-rounded btn-outline-secondary mb-0 ms-2 btn-sm d-flex align-items-center justify-content-center ms-3" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Cargar archivo" data-bs-original-title="Cargar archivo">
+                          <button type="button" id="btnFileCartaPortePDF" class="btnDocs btn btn-sm btn-icon-only btn-rounded btn-outline-secondary mb-0 ms-2 btn-sm d-flex align-items-center justify-content-center ms-3" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Cargar archivo" data-bs-original-title="Cargar archivo">
                             <i class="fas fa-upload" aria-hidden="true"></i>
                           </button>
-                          <button type="button" class="btn btn-sm btn-icon-only btn-rounded btn-outline-secondary mb-0 ms-2 btn-sm d-flex align-items-center justify-content-center ms-3" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Ver Documento" data-bs-original-title="Ver Documento">
+                          <a href="javasrcipt:void()" target="_blank" class="btn btn-sm btn-icon-only btn-rounded btn-outline-secondary mb-0 ms-2 btn-sm d-flex align-items-center justify-content-center ms-3" 
+                          data-bs-toggle="tooltip" id="btn-ver-Carta-Porte" data-bs-placement="bottom" title="Ver Documento" data-bs-original-title="Ver Documento">
                             <i class="fas fa-eye" aria-hidden="true"></i>
-                          </button>
+                          </a>
                         </div>
                       </td>
                     </tr>
@@ -656,11 +661,11 @@
                       <td>
                         <div class="d-flex px-3 py-1">
                           <div>
-                            <img src="{{asset('img/not-file.png')}}" class="avatar me-3" alt="image">
+                            <img src="{{asset('img/not-file.png')}}" class="avatar me-3" alt="image" id="img-Carta-Porte-XML">
                           </div>
                           <div class="d-flex flex-column justify-content-center">
                             <h6 class="mb-0 text-sm">Carta Porte XML</h6>
-                            <p class="text-sm font-weight-bold text-secondary mb-0"><span class="text-muted">128</span> Kb</p>
+                            <p class="text-sm font-weight-bold text-secondary mb-0"><span class="text-muted" id="filSize-Carta-Porte-XML">0</span></p>
                           </div>
                         </div>
                       </td>
@@ -673,18 +678,19 @@
                       </td>
                       <td class="align-middle text-center text-sm">
                         <p class="text-sm font-weight-bold mb-0">
-                            <span class="badge bg-gradient-warning badge-sm">Pendiente</span>
+                            <span class="badge bg-gradient-warning badge-sm" id="badge-Carta-Porte-XML">Pendiente</span>
                         </p>
                       </td>
                       <td class="align-middle text-end">
                         <div class="d-flex px-3 py-1 justify-content-center align-items-center">
                         
-                          <button type="button" class="btn btn-sm btn-icon-only btn-rounded btn-outline-secondary mb-0 ms-2 btn-sm d-flex align-items-center justify-content-center ms-3" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Cargar archivo" data-bs-original-title="Cargar archivo">
+                          <button type="button" id="btnFileCartaPorteXML" class="btnDocs btn btn-sm btn-icon-only btn-rounded btn-outline-secondary mb-0 ms-2 btn-sm d-flex align-items-center justify-content-center ms-3" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Cargar archivo" data-bs-original-title="Cargar archivo">
                             <i class="fas fa-upload" aria-hidden="true"></i>
                           </button>
-                          <button type="button" class="btn btn-sm btn-icon-only btn-rounded btn-outline-secondary mb-0 ms-2 btn-sm d-flex align-items-center justify-content-center ms-3" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Ver Documento" data-bs-original-title="Ver Documento">
+                          <a href="javasrcipt:void()" target="_blank" class="btn btn-sm btn-icon-only btn-rounded btn-outline-secondary mb-0 ms-2 btn-sm d-flex align-items-center justify-content-center ms-3" 
+                          data-bs-toggle="tooltip" data-bs-placement="bottom" title="Ver Documento" data-bs-original-title="Ver Documento" id="btn-ver-Carta-Porte-XML">
                             <i class="fas fa-eye" aria-hidden="true"></i>
-                          </button>
+                          </a>
                         </div>
                       </td>
                     </tr>
@@ -1298,6 +1304,7 @@
 @include('cotizaciones.modal_agregar_gasto')
 @include('cotizaciones.modal_agregar_gasto_operador')
 @include('cotizaciones.modal_pagar_gastos_operador')
+@include('cotizaciones.modal_fileuploader')
 @endsection
 
 @section('select2')
@@ -1324,10 +1331,17 @@
     <script src="{{ asset('assets/vendor/select2/dist/js/select2.min.js')}}"></script>
     <script src="{{ asset('js/sgt/common.js') }}?v={{ filemtime(public_path('js/sgt/common.js')) }}"></script>
     <script src="{{ asset('js/sgt/cotizaciones/cotizaciones.js') }}?v={{ filemtime(public_path('js/sgt/cotizaciones/cotizaciones.js')) }}"></script>
+
+    <link href="{{asset('assets/metronic/fileuploader/font/font-fileuploader.css')}}" rel="stylesheet">
+    <link href="{{asset('assets/metronic/fileuploader/jquery.fileuploader.min.css')}}" media="all" rel="stylesheet">
+    <link href="{{asset('assets/metronic/fileuploader/jquery.fileuploader-theme-dragdrop.css')}}" media="all" rel="stylesheet">
+    <script src="{{asset('assets/metronic/fileuploader/jquery.fileuploader.min.js')}}" type="text/javascript"></script>
+
     <script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.js"></script>
     <script src="{{ asset('js/sgt/cotizaciones/cotizacion-gastos.js') }}?v={{ filemtime(public_path('js/sgt/cotizaciones/cotizacion-gastos.js')) }}"></script>
     <script src="{{ asset('js/sgt/cotizaciones/cotizacion-gastos-operador.js') }}?v={{ filemtime(public_path('js/sgt/cotizaciones/cotizacion-gastos-operador.js')) }}"></script>
 
+    <script src="{{ asset('js/sgt/cotizaciones/cotizacion-fileuploader.js') }}?v={{ filemtime(public_path('js/sgt/cotizaciones/cotizacion-fileuploader.js')) }}"></script>
     
     <script type="text/javascript">
     $(document).ready(function() {
@@ -1335,6 +1349,9 @@
     getGastosContenedor();
     getGastosOperador();
     btnPaymentStatus();
+
+    adjuntarDocumentos();
+    localStorage.setItem('numContenedor','{{$documentacion->num_contenedor}}'); 
 
     $.ajax({
         url:'/viajes/file-manager/get-file-list/{{$documentacion->num_contenedor}}',
@@ -1353,31 +1370,40 @@
                 fileSize = `filSize-${d.fileCode}`
                 iconImg = `img-${d.fileCode}`
 
-                $("#"+fileSize).text(d.fileSize)
-                $("#"+badge).removeClass('bg-gradient-warning').addClass('bg-gradient-success').text('Cargado')
-                document.querySelector("#"+btnVer).href = `/cotizaciones/cotizacion${d.identifier}/${d.filePath}`
-                
-                switch(d.fileType){
-                    case 'docx':
-                    case 'doc':
-                        fileType = 'word-logo.png'
-                        break;
-                    case 'xlsx':
-                    case 'xls':
-                    fileType = 'excel-logo.png'
-                        break;
-                    case 'jpeg':
-                    case 'png':
-                    case 'jpg':
-                      fileType = 'image-logo.png'
-                       break;
-                    case 'pdf':
-                      fileType = 'pdf-logo.png'
-                       break;
+                let imgFile = document.querySelector("#"+iconImg)
 
+                if(imgFile){
+                    $("#"+fileSize).text(d.fileSize)
+                    $("#"+badge).removeClass('bg-gradient-warning').addClass('bg-gradient-success').text('Cargado')
+                    document.querySelector("#"+btnVer).href = `/cotizaciones/cotizacion${d.identifier}/${d.filePath}`
+                    
+                    switch(d.fileType){
+                        case 'docx':
+                        case 'doc':
+                            fileType = 'word-logo.png'
+                            break;
+                        case 'xlsx':
+                        case 'xls':
+                        fileType = 'excel-logo.png'
+                            break;
+                        case 'jpeg':
+                        case 'png':
+                        case 'jpg':
+                        fileType = 'image-logo.png'
+                        break;
+                        case 'pdf':
+                        fileType = 'pdf-logo.png'
+                        break;
+                        default:
+                        fileType = '/icon/catalogo.webp'
+                        break;
+
+                    }
+
+                    imgFile.src = `/img/${fileType}`
                 }
 
-                document.querySelector("#"+iconImg).src = `/img/${fileType}`
+                
                 
             });
         },
