@@ -672,7 +672,7 @@ public function advance_documentos(Request $request) {
     $cotizaciones = Cotizaciones::query()
         ->where('cotizaciones.id_empresa', auth()->user()->id_empresa)
         ->where('cotizaciones.estatus', '!=', 'Cancelada') 
-        ->with(['DocCotizacion.Asignacion']) // Cargar la relación completa
+        ->with(['DocCotizacion.Asignaciones']) // Cargar la relación completa
         ->leftJoin('docum_cotizacion', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
         ->leftJoin('asignaciones', 'docum_cotizacion.id', '=', 'asignaciones.id_contenedor')
         ->select(
