@@ -32,7 +32,7 @@ const gridOptionsOperador = {
   };
   
   const gridElementGastosOperador = document.querySelector('#gridGastosOperador');
-  let apiGridGastosOperador = agGrid.createGrid(gridElementGastosOperador, gridOptionsOperador);
+  let apiGridGastosOperador = (gridElementGastosOperador) ? agGrid.createGrid(gridElementGastosOperador, gridOptionsOperador) : null;
  // const gridInstance = new agGrid.Grid(gridElementGastosOperador, gridOptions);
   
   var paginationTitle = document.querySelector("#ag-32-label");
@@ -50,6 +50,7 @@ const gridOptionsOperador = {
         data: {_token, numContenedor},
         beforeSend:()=>{},
         success:(response)=>{
+          if(gridElementGastosOperador){
             apiGridGastosOperador.setGridOption("rowData", response)
 
             let totalGastos = 0;
@@ -59,6 +60,8 @@ const gridOptionsOperador = {
 
             let totalGastosOperador = document.querySelector('#totalGastosOperador')
             totalGastosOperador.textContent = moneyFormat(totalGastos)
+          }
+            
 
         },
         error:()=>{
@@ -113,18 +116,26 @@ const gridOptionsOperador = {
    }
 
   let btnPayment = document.querySelector('#btnPayment')
-  btnPayment.addEventListener('click',()=>{
-     paymentGastosOperador()
-   })
+  if(btnPayment){
+    btnPayment.addEventListener('click',()=>{
+      paymentGastosOperador()
+    })
+  }
 
   function btnPaymentStatus(){
-    let seleccion = apiGridGastosOperador.getSelectedRows();
-    btnPayment.disabled = (seleccion.length == 0) ? true : false;
+    if(gridElementGastosOperador){
+      let seleccion = apiGridGastosOperador.getSelectedRows();
+      btnPayment.disabled = (seleccion.length == 0) ? true : false;
+    }
+
   }
 
    function paymentGastosOperador(){
-    let seleccionPago = apiGridGastosOperador.getSelectedRows();
-    let totalPago = 0
+    if(gridElementGastosOperador){
+      let seleccionPago = apiGridGastosOperador.getSelectedRows();
+      let totalPago = 0
+    }
+    
 
     let validarGastos = seleccionPago.every((gasto)=>{
       if (gasto.Estatus != 'Pago Pendiente') return false;
@@ -139,7 +150,7 @@ const gridOptionsOperador = {
     
     let totalPagoGastosOperador = document.querySelector('#totalPagoGastosOperador')
 
-    totalPagoGastosOperador.textContent = moneyFormat(totalPago)
+    if(totalPagoGastosOperador) totalPagoGastosOperador.textContent = moneyFormat(totalPago)
 
     const modalElement = document.getElementById('modal-pagar-gastos-operador');
     const bootstrapModal = new bootstrap.Modal(modalElement);

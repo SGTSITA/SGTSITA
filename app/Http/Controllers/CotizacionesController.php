@@ -426,7 +426,7 @@ class CotizacionesController extends Controller
             }
         }
 
-        Session::flash('edit', 'Se ha editado sus datos con exito');
+      
         return redirect()->route('index.cotizaciones')
             ->with('success', 'Estatus updated successfully');
     }
@@ -1072,19 +1072,21 @@ class CotizacionesController extends Controller
             case 'Doda': $update = ["doda" => $item['name']]; break;
             case 'CartaPorte': $update = ["doc_ccp" => $item['name'],"ccp" => "si"]; break;
             case 'PreAlta': $update = ["img_boleta" => $item['name']]; break;
+            case 'CartaPortePDF': $update = ["carta_porte" => $item['name']]; break;
+            case 'CartaPorteXML': $update = ["carta_porte_xml" => $item['name']]; break;
 
          }
 
         
-        ($r->urlRepo != 'PreAlta' ) 
+        ($r->urlRepo != 'PreAlta' && $r->urlRepo != 'CartaPortePDF' && $r->urlRepo != 'CartaPorteXML') 
          ? DocumCotizacion::where('id',$cotizacion->id_cotizacion)->update($update)
          : Cotizaciones::where('id',$cotizacion->id_cotizacion)->update($update);
 
          if ($r->urlRepo == 'PreAlta')  DocumCotizacion::where('id',$cotizacion->id_cotizacion)->update(['boleta_vacio'=>'si']);
 
-         event(new \App\Events\ConfirmarDocumentosEvent($cotizacion->id_cotizacion));
+         if(Auth::User()->id_cliente != 0) event(new \App\Events\ConfirmarDocumentosEvent($cotizacion->id_cotizacion));
 
-         if($estatus != 'En espera'){
+         if($estatus != 'En espera' && Auth::User()->id_cliente != 0){
             event(new \App\Events\NotificaNuevoDocumentoEvent($cotizacion,$r->urlRepo));
          }
 

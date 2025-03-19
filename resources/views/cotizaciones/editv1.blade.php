@@ -529,156 +529,175 @@
                                         <label style="font-size: 20px;">Num contenedor:  {{$documentacion->num_contenedor}} </label>
                                     @endif
                                     <div class="row">
-                                        <div class="col-6 form-group">
-                                            <label for="name">Num. Boleta de Liberación</label>
-                                            <div class="input-group mb-3">
-                                                <span class="input-group-text" id="basic-addon1">
-                                                    <img src="{{ asset('img/icon/9.webp') }}" alt="" width="25px">
-                                                </span>
-                                                <input name="num_boleta_liberacion" id="num_boleta_liberacion" type="text" class="form-control" value="{{$documentacion->num_boleta_liberacion}}">
-                                            </div>
-                                        </div>
+                                        <div class="col-12">
+                                        <table class="table align-items-center mb-0">
+                  <thead>
+                    <tr>
+                      <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Documento</th>
+                      <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Núm. Documento</th>
+                      <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Estatus</th>
+                      <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                  <tr>
+                      <td>
+                        <div class="d-flex px-3 py-1">
+                          <div>
+                            <img src="{{asset('img/not-file.png')}}" class="avatar me-3" alt="image" id="img-Boleta-de-liberacion">
+                          </div>
+                          <div class="d-flex flex-column justify-content-center">
+                            <h6 class="mb-0 text-sm">Boleta de liberación</h6>
+                            <p class="text-sm font-weight-bold text-secondary mb-0">
+                                <span class="text-muted" id="filSize-Boleta-de-liberacion">0</span>
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <p class="text-sm font-weight-bold mb-0">
+                        <input name="num_boleta_liberacion" id="num_boleta_liberacion" type="text" class="form-control" value="{{$documentacion->num_boleta_liberacion}}">
+                            
+                        </p>
+                      </td>
+                      <td class="align-middle text-center text-sm">
+                        <p class="text-sm font-weight-bold mb-0">
+                            <span class="badge bg-gradient-warning badge-sm" id="badge-Boleta-de-liberacion">Pendiente</span>
+                        </p>
+                      </td>
+                      <td class="align-middle text-end">
+                        <div class="d-flex px-3 py-1 justify-content-center align-items-center">
+                        
+                          <button type="button" 
+                          class="btn btn-sm btn-icon-only btnDocs btn-rounded btn-outline-secondary mb-0 ms-2 btn-sm d-flex align-items-center justify-content-center ms-3" 
+                          data-bs-toggle="tooltip" id="btnFileBoletaLiberacion"
+                          data-bs-placement="bottom" title="Cargar archivo" 
+                          data-bs-original-title="Cargar archivo">
+                            <i class="fas fa-upload" aria-hidden="true"></i>
+                          </button>
+                          <a href="javasrcipt:void()" target="_blank" class="openFile btn btn-sm btn-icon-only btn-rounded btn-outline-secondary mb-0 ms-2 btn-sm d-flex align-items-center justify-content-center ms-3" 
+                          data-bs-toggle="tooltip" 
+                          data-bs-placement="bottom" 
+                          title="Ver Documento" 
+                          data-bs-original-title="Ver Documento" id="btn-ver-Boleta-de-liberacion">
+                            <i class="fas fa-eye" aria-hidden="true"></i>
+</a>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <div class="d-flex px-3 py-1">
+                          <div>
+                            <img src="{{asset('img/not-file.png')}}" class="avatar me-3" alt="image" id="img-Doda">
+                          </div>
+                          <div class="d-flex flex-column justify-content-center">
+                            <h6 class="mb-0 text-sm">Doda</h6>
+                            <p class="text-sm font-weight-bold text-secondary mb-0"><span class="text-muted" id="filSize-Doda">0</span></p>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <p class="text-sm font-weight-bold mb-0">
+                        <input name="num_doda" id="num_doda" type="text" class="form-control" value="{{$documentacion->num_doda}}">
+                            
+                        </p>
+                      </td>
+                      <td class="align-middle text-center text-sm">
+                        <p class="text-sm font-weight-bold mb-0">
+                            <span class="badge bg-gradient-warning badge-sm" id="badge-Doda">Pendiente</span>
+                        </p>
+                      </td>
+                      <td class="align-middle text-end">
+                        <div class="d-flex px-3 py-1 justify-content-center align-items-center">
+                        
+                          <button type="button" id="btnFileDODA" class="btnDocs btn btn-sm btn-icon-only btn-rounded btn-outline-secondary mb-0 ms-2 btn-sm d-flex align-items-center justify-content-center ms-3" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Cargar archivo" data-bs-original-title="Cargar archivo">
+                            <i class="fas fa-upload" aria-hidden="true"></i>
+                          </button>
+                          <a href="javasrcipt:void()" target="_blank" id="btn-ver-Doda" 
+                          class="openFile btn btn-sm btn-icon-only btn-rounded btn-outline-secondary mb-0 ms-2 btn-sm d-flex align-items-center justify-content-center ms-3" 
+                          data-bs-toggle="tooltip" data-bs-placement="bottom" title="Ver Documento" data-bs-original-title="Ver Documento">
+                            <i class="fas fa-eye" aria-hidden="true"></i>
+                          </a>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <div class="d-flex px-3 py-1">
+                          <div>
+                            <img src="{{asset('img/not-file.png')}}" class="avatar me-3" id="img-Carta-Porte" alt="image">
+                          </div>
+                          <div class="d-flex flex-column justify-content-center">
+                            <h6 class="mb-0 text-sm">Carta Porte PDF</h6>
+                            <p class="text-sm font-weight-bold text-secondary mb-0"><span class="text-muted" id="filSize-Carta-Porte">0</span></p>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <p class="text-sm font-weight-bold mb-0">
+                        <input name="num_carta_porte" id="num_carta_porte" type="text" class="form-control" value="{{$documentacion->num_carta_porte}}">                            
+                        </p>
+                      </td>
+                      <td class="align-middle text-center text-sm">
+                        <p class="text-sm font-weight-bold mb-0">
+                            <span class="badge bg-gradient-warning badge-sm" id="badge-Carta-Porte">Pendiente</span>
+                        </p>
+                      </td>
+                      <td class="align-middle text-end">
+                        <div class="d-flex px-3 py-1 justify-content-center align-items-center">
+                        
+                          <button type="button" id="btnFileCartaPortePDF" class="btnDocs btn btn-sm btn-icon-only btn-rounded btn-outline-secondary mb-0 ms-2 btn-sm d-flex align-items-center justify-content-center ms-3" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Cargar archivo" data-bs-original-title="Cargar archivo">
+                            <i class="fas fa-upload" aria-hidden="true"></i>
+                          </button>
+                          <a href="javasrcipt:void()" target="_blank" class="btn btn-sm btn-icon-only btn-rounded btn-outline-secondary mb-0 ms-2 btn-sm d-flex align-items-center justify-content-center ms-3" 
+                          data-bs-toggle="tooltip" id="btn-ver-Carta-Porte" data-bs-placement="bottom" title="Ver Documento" data-bs-original-title="Ver Documento">
+                            <i class="fas fa-eye" aria-hidden="true"></i>
+                          </a>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <div class="d-flex px-3 py-1">
+                          <div>
+                            <img src="{{asset('img/not-file.png')}}" class="avatar me-3" alt="image" id="img-Carta-Porte-XML">
+                          </div>
+                          <div class="d-flex flex-column justify-content-center">
+                            <h6 class="mb-0 text-sm">Carta Porte XML</h6>
+                            <p class="text-sm font-weight-bold text-secondary mb-0"><span class="text-muted" id="filSize-Carta-Porte-XML">0</span></p>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <p class="text-sm font-weight-bold mb-0">
+                        <input name="num_carta_porte_xml" id="num_carta_porte_xml" type="text" class="form-control" value="{{$documentacion->num_carta_porte}}">
 
-                                        <div class="col-6 form-group">
-                                            <label for="name">Boleta de Liberación</label>
-                                            <div class="input-group mb-3">
-                                                <span class="input-group-text" id="basic-addon1">
-                                                    <img src="{{ asset('img/icon/boleto.png') }}" alt="" width="25px">
-                                                </span>
-                                                <input name="boleta_liberacion" id="boleta_liberacion" type="file" class="form-control">
-                                            </div>
+                            
+                        </p>
+                      </td>
+                      <td class="align-middle text-center text-sm">
+                        <p class="text-sm font-weight-bold mb-0">
+                            <span class="badge bg-gradient-warning badge-sm" id="badge-Carta-Porte-XML">Pendiente</span>
+                        </p>
+                      </td>
+                      <td class="align-middle text-end">
+                        <div class="d-flex px-3 py-1 justify-content-center align-items-center">
+                        
+                          <button type="button" id="btnFileCartaPorteXML" class="btnDocs btn btn-sm btn-icon-only btn-rounded btn-outline-secondary mb-0 ms-2 btn-sm d-flex align-items-center justify-content-center ms-3" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Cargar archivo" data-bs-original-title="Cargar archivo">
+                            <i class="fas fa-upload" aria-hidden="true"></i>
+                          </button>
+                          <a href="javasrcipt:void()" target="_blank" class="btn btn-sm btn-icon-only btn-rounded btn-outline-secondary mb-0 ms-2 btn-sm d-flex align-items-center justify-content-center ms-3" 
+                          data-bs-toggle="tooltip" data-bs-placement="bottom" title="Ver Documento" data-bs-original-title="Ver Documento" id="btn-ver-Carta-Porte-XML">
+                            <i class="fas fa-eye" aria-hidden="true"></i>
+                          </a>
+                        </div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
                                         </div>
-
-                                        <div class="col-6"></div>
-                                        <div class="col-6">
-                                            @if (pathinfo($documentacion->boleta_liberacion, PATHINFO_EXTENSION) == 'pdf')
-                                            <p class="text-center ">
-                                                <iframe class="mt-2" src="{{asset('cotizaciones/cotizacion'. $cotizacion->id . '/' .$documentacion->boleta_liberacion)}}" style="width: 100%; height: 100px;"></iframe>
-                                            </p>
-                                                    <a class="btn btn-sm text-dark" href="{{asset('cotizaciones/cotizacion'. $cotizacion->id . '/' .$documentacion->boleta_liberacion) }}" target="_blank" style="background: #836262; color: #ffff!important">Ver archivo</a>
-                                            @elseif (pathinfo($documentacion->boleta_liberacion, PATHINFO_EXTENSION) == 'doc')
-                                            <p class="text-center ">
-                                                <img id="blah" src="{{asset('assets/icons/docx.png') }}" alt="Imagen" style="width: 150px; height: 150px;"/>
-                                            </p>
-                                                    <a class="btn btn-sm text-dark" href="{{asset('cotizaciones/cotizacion'. $cotizacion->id . '/' .$documentacion->boleta_liberacion) }}" target="_blank" style="background: #836262; color: #ffff!important">Descargar</a>
-                                            @elseif (pathinfo($documentacion->boleta_liberacion, PATHINFO_EXTENSION) == 'docx')
-                                            <p class="text-center ">
-                                                <img id="blah" src="{{asset('assets/icons/docx.png') }}" alt="Imagen" style="width: 150px; height: 150px;"/>
-                                            </p>
-                                            <a class="btn btn-sm text-dark" href="{{asset('cotizaciones/cotizacion'. $cotizacion->id . '/' .$documentacion->boleta_liberacion) }}" target="_blank" style="background: #836262; color: #ffff!important">Descargar</a>
-                                            @elseif (pathinfo($documentacion->boleta_liberacion, PATHINFO_EXTENSION) == 'xlsx')
-                                            <p class="text-center ">
-                                                <img id="blah" src="{{asset('img/excel-logo.png') }}" alt="Imagen" style="width: 80px; height: 80px;"/>
-                                            </p>
-                                            <a class="btn btn-sm text-dark" href="{{asset('cotizaciones/cotizacion'. $cotizacion->id . '/' .$documentacion->boleta_liberacion) }}" target="_blank" style="background: #836262; color: #ffff!important">Descargar Formato</a>
-                                            @else
-                                                <p class="text-center mt-2">
-                                                    <img id="blah" src="{{asset('cotizaciones/cotizacion'. $cotizacion->id . '/' .$documentacion->boleta_liberacion) }}" alt="Imagen" style="width: 150px;height: 150%;"/><br>
-                                                </p>
-                                                    <a class="text-center text-dark btn btn-sm" href="{{asset('cotizaciones/cotizacion'. $cotizacion->id . '/' .$documentacion->boleta_liberacion) }}" target="_blank" style="background: #836262; color: #ffff!important">Ver Imagen</a>
-                                            @endif
-                                        </div>
-
-                                        <div class="col-6 form-group">
-                                            <label for="name">Num. Doda</label>
-                                            <div class="input-group mb-3">
-                                                <span class="input-group-text" id="basic-addon1">
-                                                    <img src="{{ asset('img/icon/cero.webp') }}" alt="" width="25px">
-                                                </span>
-                                                <input name="num_doda" id="num_doda" type="text" class="form-control" value="{{$documentacion->num_doda}}">
-                                            </div>
-                                        </div>
-
-                                        <div class="col-6 form-group">
-                                            <label for="name">Doda</label>
-                                            <div class="input-group mb-3">
-                                                <span class="input-group-text" id="basic-addon1">
-                                                    <img src="{{ asset('img/icon/documento.png') }}" alt="" width="25px">
-                                                </span>
-                                                <input name="doda" id="doda" type="file" class="form-control">
-                                            </div>
-                                        </div>
-
-                                        <div class="col-6"></div>
-                                        <div class="col-6">
-                                            @if (pathinfo($documentacion->doda, PATHINFO_EXTENSION) == 'pdf')
-                                            <p class="text-center ">
-                                                <iframe class="mt-2" src="{{asset('cotizaciones/cotizacion'. $cotizacion->id . '/' .$documentacion->doda)}}" style="width: 100%; height: 100px;"></iframe>
-                                            </p>
-                                                    <a class="btn btn-sm text-dark" href="{{asset('cotizaciones/cotizacion'. $cotizacion->id . '/' .$documentacion->doda) }}" target="_blank" style="background: #836262; color: #ffff!important">Ver archivo</a>
-                                            @elseif (pathinfo($documentacion->doda, PATHINFO_EXTENSION) == 'doc')
-                                            <p class="text-center ">
-                                                <img id="blah" src="{{asset('assets/icons/docx.png') }}" alt="Imagen" style="width: 150px; height: 150px;"/>
-                                            </p>
-                                                    <a class="btn btn-sm text-dark" href="{{asset('cotizaciones/cotizacion'. $cotizacion->id . '/' .$documentacion->doda) }}" target="_blank" style="background: #836262; color: #ffff!important">Descargar</a>
-                                            @elseif (pathinfo($documentacion->doda, PATHINFO_EXTENSION) == 'docx')
-                                            <p class="text-center ">
-                                                <img id="blah" src="{{asset('assets/icons/docx.png') }}" alt="Imagen" style="width: 150px; height: 150px;"/>
-                                            </p>
-                                            <a class="btn btn-sm text-dark" href="{{asset('cotizaciones/cotizacion'. $cotizacion->id . '/' .$documentacion->doda) }}" target="_blank" style="background: #836262; color: #ffff!important">Descargar</a>
-                                            @elseif (pathinfo($documentacion->doda, PATHINFO_EXTENSION) == 'xlsx')
-                                            <p class="text-center ">
-                                                <img id="blah" src="{{asset('img/excel-logo.png') }}" alt="Imagen" style="width: 80px; height: 80px;"/>
-                                            </p>
-                                            <a class="btn btn-sm text-dark" href="{{asset('cotizaciones/cotizacion'. $cotizacion->id . '/' .$documentacion->doda) }}" target="_blank" style="background: #836262; color: #ffff!important">Descargar Formato</a>
-                                            @else
-                                                <p class="text-center mt-2">
-                                                    <img id="blah" src="{{asset('cotizaciones/cotizacion'. $documentacion->id . '/' .$documentacion->doda) }}" alt="Imagen" style="width: 150px;height: 150%;"/><br>
-                                                </p>
-                                                    <a class="text-center text-dark btn btn-sm" href="{{asset('cotizaciones/cotizacion'. $cotizacion->id . '/' .$documentacion->doda) }}" target="_blank" style="background: #836262; color: #ffff!important">Ver Imagen</a>
-                                            @endif
-                                        </div>
-
-                                        <div class="col-6 form-group">
-                                            <label for="name">Num. Carta Porte</label>
-                                            <div class="input-group mb-3">
-                                                <span class="input-group-text" id="basic-addon1">
-                                                    <img src="{{ asset('img/icon/9.webp') }}" alt="" width="25px">
-                                                </span>
-                                                <input name="num_carta_porte" id="num_carta_porte" type="text" class="form-control" value="{{$documentacion->num_carta_porte}}">
-                                            </div>
-                                        </div>
-
-                                        <div class="col-6 form-group">
-                                            <label for="name">Carta Porte</label>
-                                            <div class="input-group mb-3">
-                                                <span class="input-group-text" id="basic-addon1">
-                                                    <img src="{{ asset('img/icon/boleto.png') }}" alt="" width="25px">
-                                                </span>
-                                                <input name="carta_porte" id="carta_porte" type="file" class="form-control">
-                                            </div>
-                                        </div>
-
-                                        <div class="col-6"></div>
-
-                                        <div class="col-6">
-                                            @if (pathinfo($cotizacion->carta_porte, PATHINFO_EXTENSION) == 'pdf')
-                                            <p class="text-center ">
-                                                <iframe class="mt-2" src="{{asset('cotizaciones/cotizacion'. $cotizacion->id . '/' .$cotizacion->carta_porte)}}" style="width: 100%; height: 100px;"></iframe>
-                                            </p>
-                                                    <a class="btn btn-sm text-dark" href="{{asset('cotizaciones/cotizacion'. $cotizacion->id . '/' .$cotizacion->carta_porte) }}" target="_blank" style="background: #836262; color: #ffff!important">Ver archivo</a>
-                                            @elseif (pathinfo($cotizacion->carta_porte, PATHINFO_EXTENSION) == 'doc')
-                                            <p class="text-center ">
-                                                <img id="blah" src="{{asset('assets/icons/docx.png') }}" alt="Imagen" style="width: 150px; height: 150px;"/>
-                                            </p>
-                                                    <a class="btn btn-sm text-dark" href="{{asset('cotizaciones/cotizacion'. $cotizacion->id . '/' .$cotizacion->carta_porte) }}" target="_blank" style="background: #836262; color: #ffff!important">Descargar</a>
-                                            @elseif (pathinfo($cotizacion->carta_porte, PATHINFO_EXTENSION) == 'docx')
-                                            <p class="text-center ">
-                                                <img id="blah" src="{{asset('assets/icons/docx.png') }}" alt="Imagen" style="width: 150px; height: 150px;"/>
-                                            </p>
-                                                    <a class="btn btn-sm text-dark" href="{{asset('cotizaciones/cotizacion'. $cotizacion->id . '/' .$cotizacion->carta_porte) }}" target="_blank" style="background: #836262; color: #ffff!important">Descargar</a>
-                                            @elseif (pathinfo($cotizacion->carta_porte, PATHINFO_EXTENSION) == 'xlsx')
-                                            <p class="text-center ">
-                                                <img id="blah" src="{{asset('img/excel-logo.png') }}" alt="Imagen" style="width: 80px; height: 80px;"/>
-                                            </p>
-                                            <a class="btn btn-sm text-dark" href="{{asset('cotizaciones/cotizacion'. $cotizacion->id . '/' .$cotizacion->carta_porte) }}" target="_blank" style="background: #836262; color: #ffff!important">Descargar Formato Excel</a>        
-                                            @else
-                                                <p class="text-center mt-2">
-                                                    <img id="blah" src="{{asset('/cotizaciones/cotizacion'. $cotizacion->id . '/' .$cotizacion->carta_porte) }}" alt="Imagen" style="width: 150px;height: 150%;"/><br>
-                                                </p>
-                                                    <a class="text-center text-dark btn btn-sm" href="{{asset('cotizaciones/cotizacion'. $cotizacion->id . '/' .$cotizacion->carta_porte) }}" target="_blank" style="background: #836262; color: #ffff!important">Ver Imagen</a>
-                                            @endif
-                                        </div>
+                                       
 
                                         <div class="col-2">
                                             <div class="form-group">
@@ -1285,6 +1304,7 @@
 @include('cotizaciones.modal_agregar_gasto')
 @include('cotizaciones.modal_agregar_gasto_operador')
 @include('cotizaciones.modal_pagar_gastos_operador')
+@include('cotizaciones.modal_fileuploader')
 @endsection
 
 @section('select2')
@@ -1311,10 +1331,17 @@
     <script src="{{ asset('assets/vendor/select2/dist/js/select2.min.js')}}"></script>
     <script src="{{ asset('js/sgt/common.js') }}?v={{ filemtime(public_path('js/sgt/common.js')) }}"></script>
     <script src="{{ asset('js/sgt/cotizaciones/cotizaciones.js') }}?v={{ filemtime(public_path('js/sgt/cotizaciones/cotizaciones.js')) }}"></script>
+
+    <link href="{{asset('assets/metronic/fileuploader/font/font-fileuploader.css')}}" rel="stylesheet">
+    <link href="{{asset('assets/metronic/fileuploader/jquery.fileuploader.min.css')}}" media="all" rel="stylesheet">
+    <link href="{{asset('assets/metronic/fileuploader/jquery.fileuploader-theme-dragdrop.css')}}" media="all" rel="stylesheet">
+    <script src="{{asset('assets/metronic/fileuploader/jquery.fileuploader.min.js')}}" type="text/javascript"></script>
+
     <script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.js"></script>
     <script src="{{ asset('js/sgt/cotizaciones/cotizacion-gastos.js') }}?v={{ filemtime(public_path('js/sgt/cotizaciones/cotizacion-gastos.js')) }}"></script>
     <script src="{{ asset('js/sgt/cotizaciones/cotizacion-gastos-operador.js') }}?v={{ filemtime(public_path('js/sgt/cotizaciones/cotizacion-gastos-operador.js')) }}"></script>
 
+    <script src="{{ asset('js/sgt/cotizaciones/cotizacion-fileuploader.js') }}?v={{ filemtime(public_path('js/sgt/cotizaciones/cotizacion-fileuploader.js')) }}"></script>
     
     <script type="text/javascript">
     $(document).ready(function() {
@@ -1322,6 +1349,11 @@
     getGastosContenedor();
     getGastosOperador();
     btnPaymentStatus();
+
+    adjuntarDocumentos();
+    localStorage.setItem('numContenedor','{{$documentacion->num_contenedor}}'); 
+
+    getFilesContenedor();
     });
     </script>
 
