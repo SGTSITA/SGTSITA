@@ -50,17 +50,7 @@ class ExternosController extends Controller
             $zip = new ZipArchive;
     
             if ($zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) === true) {
-                // Archivos que quieres agregar al ZIP
-                /*$files = [
-                    storage_path('app/public/ejemplo1.txt'),
-                    storage_path('app/public/ejemplo2.txt')
-                ];
-        
-                foreach ($files as $file) {
-                    if (File::exists($file)) {
-                        $zip->addFile($file, basename($file));
-                    }
-                }*/
+
                 foreach($request->contenedores as $c){
                     $cotizacionQuery = Cotizaciones::join('docum_cotizacion as d', 'cotizaciones.id', '=', 'd.id_cotizacion')
                     ->where('d.num_contenedor',$c['NumContenedor']);
@@ -265,6 +255,11 @@ class ExternosController extends Controller
         if(!is_null($documentos->doc_ccp)){
             $doc_ccp = self::fileProperties($folderId,$documentos->doc_ccp,'Formato para Carta porte');
             if(sizeof($doc_ccp) > 0) array_push($documentList,$doc_ccp);
+        }
+
+        if(!is_null($documentos->doc_eir)){
+            $doc_eir = self::fileProperties($folderId,$documentos->doc_eir,'EIR');
+            if(sizeof($doc_eir) > 0) array_push($documentList,$doc_eir);
         }
        
         $cotizacion = Cotizaciones::where('id',$documentos->id_cotizacion)->first();

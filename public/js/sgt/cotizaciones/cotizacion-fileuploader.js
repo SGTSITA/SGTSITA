@@ -126,7 +126,7 @@ function resetUploadConfig(){
             }
             
 
-            toastr.options = {
+            /*toastr.options = {
                 "closeButton": true,
                 "debug": false,
                 "newestOnTop": false,
@@ -144,7 +144,7 @@ function resetUploadConfig(){
                 "hideMethod": "fadeOut"
               };
               
-              toastr.success( `Se cargó el archivo correctamente en el contenedor ${fileSettings.titulo}`,`${fileSettings.titulo}: Carga Exitosa`);
+              toastr.success( `Se cargó el archivo correctamente en el contenedor ${fileSettings.titulo}`,`${fileSettings.titulo}: Carga Exitosa`);*/
 
         },
         onError: function(item) {
@@ -170,17 +170,77 @@ function resetUploadConfig(){
             }
         },
         onComplete: ()=>{
-
+            getFilesContenedor()
            
             setTimeout(()=> {
-       
+               
                adjuntarDocumentos()
             },2500)
             
         },
     });
+}
 
- 
+function getFilesContenedor(){
+    let numContenedor = localStorage.getItem('numContenedor')
+    $.ajax({
+        url:`/viajes/file-manager/get-file-list/${numContenedor}`,
+        type:'get',
+        beforeSend:()=>{},
+        success:(response)=>{
+            let documentos = response.data
+            let badge = null;
+            let btnVer = null;
+            let fileSize = 0;
+            let fileType = null;
+            let iconImg = null;
+            documentos.forEach((d)=>{
+                badge = `badge-${d.fileCode}` 
+                btnVer = `btn-ver-${d.fileCode}`
+                fileSize = `filSize-${d.fileCode}`
+                iconImg = `img-${d.fileCode}`
+
+                let imgFile = document.querySelector("#"+iconImg)
+
+                if(imgFile){
+                    $("#"+fileSize).text(d.fileSize)
+                    $("#"+badge).removeClass('bg-gradient-warning').addClass('bg-gradient-success').text('Cargado')
+                    document.querySelector("#"+btnVer).href = `/cotizaciones/cotizacion${d.identifier}/${d.filePath}`
+                    
+                    switch(d.fileType){
+                        case 'docx':
+                        case 'doc':
+                            fileType = 'word-logo.png'
+                            break;
+                        case 'xlsx':
+                        case 'xls':
+                        fileType = 'excel-logo.png'
+                            break;
+                        case 'jpeg':
+                        case 'png':
+                        case 'jpg':
+                        fileType = 'image-logo.png'
+                        break;
+                        case 'pdf':
+                        fileType = 'pdf-logo.png'
+                        break;
+                        default:
+                        fileType = '/icon/catalogo.webp'
+                        break;
+
+                    }
+
+                    imgFile.src = `/img/${fileType}`
+                }
+
+                
+                
+            });
+        },
+        error:()=>{
+
+        }
+    })
 }
 
 function adjuntarDocumentos() {
