@@ -217,6 +217,26 @@ class ExternosController extends Controller
         return view('cotizaciones.externos.file-manager',["numContenedor" => $r->numContenedor]);
     }
 
+    public function sendFiles1(Request $r){
+        try{
+
+            $files = ( $r->attachmentFiles);
+$attachment = [];
+            foreach($files as $file){
+                array_push($attachment,public_path($file['file']));
+            }
+
+            $emailList = (strlen($r->secondaryEmail) > 0) ? [$r->email,$r->secondaryEmail] : [$r->email];
+
+            Mail::to($emailList)
+            ->send(new \App\Mail\CustomMessageMail($r->subject,$r->message, $attachment));
+            return response()->json(["TMensaje" => "success", "Titulo" => "Mensaje enviado correctamente","Mensaje" => "Se ha enviado mensaje con los archivos seleccionados"]);
+
+        }catch(\Trhowable $t){
+            return response()->json(["TMensaje" => "error", "Titulo" => "Mensaje no enviado","Mensaje" => "Ocurrio un error mientras enviabamos su mensaje: ".$t->getMessage()]);
+        }
+    }
+
     public function fileProperties($id,$file,$title){
         $path = public_path('cotizaciones/cotizacion'.$id.'/'.$file);
         if(\File::exists($path)){

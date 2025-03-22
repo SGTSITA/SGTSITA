@@ -54,7 +54,7 @@ let dt = $("#kt_datatable_example_1").DataTable({
                 
                 return `
                     <div class="form-check form-check-sm form-check-custom form-check-solid">
-                        <input class="form-check-input" type="checkbox" value="${data}" />
+                        <input class="form-check-input" type="checkbox" value="cotizaciones/cotizacion${data.identifier}/${data.filePath}" />
                     </div>`;
             }
         },
@@ -82,9 +82,10 @@ filterSearch.addEventListener('keyup', function (e) {
 });
 
 dt.on('draw', function () {
-      //  initToggleToolbar();
+      //  
         toggleToolbars();
      //   handleDeleteRows();
+        initToggleToolbar();
         KTMenu.createInstances();
     });
 
@@ -192,6 +193,13 @@ dt.on('draw', function () {
     }
 
     const btnDocumets = document.querySelector('#btnDocs');
+    const btnAdjuntos = document.querySelector("#btnAdjuntos");
+    const buttonSendMail = document.querySelector('[data-kt-inbox-form="sendmail"]');
+    const mainEmail = document.querySelector('#compose_to');
+    const ccEmail = document.querySelector('#compose_cc');
+    const emailCC = document.querySelector('[data-kt-inbox-form="cc"]');
+    const subject = document.querySelector('#compose_subject')
+    const messageMail = document.querySelector('#kt_inbox_form_editor')
 
     function goToUploadDocuments(){
         //let contenedor = apiGrid.getSelectedRows();
@@ -207,4 +215,86 @@ dt.on('draw', function () {
         bootstrapModal.show();
    }
 
+   function modalEmail(){
+    subject.value = `Documentos Contenedor ${numContenedor}`
+    const modalElement = document.getElementById('modal-enviar-correo');
+    const bootstrapModal = new bootstrap.Modal(modalElement);
+    bootstrapModal.show();
+    
+   }
+
+   function sendEmail(){
+
+    if(!validarEmail(mainEmail.value)){
+        Swal.fire('Dirección invalida','Lo sentimos, el dato en el campo Para no es un correo electrónico','warning')
+        return false;
+    }
+
+    emailCC.classList.forEach(c => {
+        if(c == "d-flex"){
+            if(!validarEmail(ccEmail.value)){
+                Swal.fire('Dirección invalida en Cc (Copiar a)','Lo sentimos, el dato en el campo Cc no es un correo electrónico','warning')
+                return false;
+            }
+        }
+    })
+
+   if(subject.value.length == 0) {
+    Swal.fire('Escribir Asunto','Por favor introduzca asunto','warning')
+    return false;
+   }
+
+   if(messageMail.textContent.length == 0){
+    Swal.fire('Escribir mensaje','Por favor escriba un breve mensaje para el receptor','warning')
+    return false;
+   }
+
+
+   enviarCorreo();    
+   }
+
+   function enviarCorreo(){
+
+    let attachmentFiles = [];
+    const allCheckboxes = document.querySelectorAll('tbody [type="checkbox"]');
+    let checkedState = false;
+    let count = 0;
+
+    allCheckboxes.forEach(c => {
+        if (c.checked) {
+            checkedState = true;
+            count++;
+            let tmpFile = {"file":c.value}
+            attachmentFiles = [...attachmentFiles, tmpFile]
+        }
+    });
+    buttonSendMail.setAttribute("data-kt-indicator", "on")
+    let _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    fetch('/sendfiles', {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({_token: _token, email : mainEmail.value, secondaryEmail : ccEmail.value, subject: subject.value, message: messageMail.textContent, attachmentFiles: attachmentFiles, numContenedor: numContenedor })
+    })
+    .then(response => response.json())
+    .then(data => {
+        Swal.fire(data.Titulo,data.Mensaje,data.TMensaje)
+    })
+    .catch(error => console.error('Error:', error))
+    .finally(() => {
+        buttonSendMail.removeAttribute("data-kt-indicator")
+        $('#modal-enviar-correo').modal('hide')
+        mainEmail.value = '';
+        ccEmail.value = '';
+        messageMail.textContent = '';
+
+    });
+
+}
+
+   
+
    btnDocumets.addEventListener('click',goToUploadDocuments)
+   btnAdjuntos.addEventListener('click', modalEmail)
+   buttonSendMail.addEventListener("click", sendEmail)

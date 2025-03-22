@@ -1084,7 +1084,10 @@ class CotizacionesController extends Controller
 
          if ($r->urlRepo == 'PreAlta')  DocumCotizacion::where('id',$cotizacion->id_cotizacion)->update(['boleta_vacio'=>'si']);
 
-         if(Auth::User()->id_cliente != 0) event(new \App\Events\ConfirmarDocumentosEvent($cotizacion->id_cotizacion));
+         if(Auth::User()->id_cliente != 0){
+            event(new \App\Events\GenericNotificationEvent([$cotizacion->cliente->correo],'Se cargó '.$r->urlRepo.': '.$doc_cotizaciones->num_contenedor,'Hola, tu transportista cargó el documento "'.$r->urlRepo.'" del contenedor '.$doc_cotizaciones->num_contenedor));
+            event(new \App\Events\ConfirmarDocumentosEvent($cotizacion->id_cotizacion));
+         } 
 
          if($estatus != 'En espera' && Auth::User()->id_cliente != 0){
             event(new \App\Events\NotificaNuevoDocumentoEvent($cotizacion,$r->urlRepo));

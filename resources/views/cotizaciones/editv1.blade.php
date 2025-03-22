@@ -510,6 +510,11 @@
                                                             <img id="blah" src="{{asset('assets/icons/docx.png') }}" alt="Imagen" style="width: 150px; height: 150px;"/>
                                                         </p>
                                                                 <a class="btn btn-sm text-dark" href="{{asset('cotizaciones/cotizacion'. $cotizacion->id . '/' .$documentacion->doc_ccp) }}" target="_blank" style="background: #836262; color: #ffff!important">Descargar</a>
+                                                                @elseif (pathinfo($documentacion->doc_ccp, PATHINFO_EXTENSION) == 'xlsx' || pathinfo($documentacion->doc_ccp, PATHINFO_EXTENSION) == 'xls')
+                                                        <p class="text-center ">
+                                                            <img id="blah" src="{{asset('img/excel-logo.png') }}" alt="Imagen" style="width: 150px; height: 150px;"/>
+                                                        </p>
+                                                                <a class="btn btn-sm text-dark" href="{{asset('cotizaciones/cotizacion'. $cotizacion->id . '/' .$documentacion->doc_ccp) }}" target="_blank" style="background: #836262; color: #ffff!important">Descargar</a>
                                                         @else
                                                             <p class="text-center mt-2">
                                                                 <img id="blah" src="{{asset('cotizaciones/cotizacion'. $cotizacion->id . '/' .$documentacion->doc_ccp) }}" alt="Imagen" style="width: 150px;height: 150%;"/><br>

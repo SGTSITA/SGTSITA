@@ -11,7 +11,7 @@ use App\Http\Controllers\EmpresasController;
 use App\Http\Controllers\ExternosController;
 
 Route::post('/exportar-cxc', [ReporteriaController::class, 'export'])->name('exportar.cxc');
-
+Route::post('sendfiles',[ExternosController::class,'sendFiles1'])->name('file-manager.sendfiles');
 
 use App\Http\Controllers\ReporteriaController;
 
