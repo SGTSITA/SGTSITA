@@ -9,7 +9,7 @@ Route::get('gps',function(){
  return view('gps.magnitracking');
 });
 
-Route::post('sendfiles',[ExternosController::class,'sendFiles1'])->name('file-manager.sendfiles');
+
 
 Route::group(["prefix" => "viajes"], function(){
     Route::post('selector', [ExternosController::class,'selector'])->name('viajes.selector');

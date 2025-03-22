@@ -8,6 +8,7 @@ use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Mail\Mailables\Attachment;
 
 class CustomMessageMail extends Mailable
 {
@@ -16,13 +17,15 @@ class CustomMessageMail extends Mailable
     public $emailSubject;
     public $emailMessage;
     public $files;
+    public $contenedor;
 
-    public function __construct($emailSubject, $emailMessage, $files)
+    public function __construct($emailSubject, $emailMessage, $files,$contenedor = null)
     {
        
         $this->emailSubject = $emailSubject;
         $this->emailMessage = $emailMessage;
         $this->files = $files;
+        $this->contenedor = $contenedor;
     }
 
     /**

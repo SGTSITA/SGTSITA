@@ -83,6 +83,7 @@
 <script src="/assets/metronic/js/custom/apps/inbox/compose.js"></script>
 <script src="{{ asset('js/sgt/cotizaciones/file-manager.js') }}?v={{ filemtime(public_path('js/sgt/cotizaciones/file-manager.js')) }}"></script>
 <script>
+    
     $(document).ready(()=>{
         adjuntarDocumentos();
     })

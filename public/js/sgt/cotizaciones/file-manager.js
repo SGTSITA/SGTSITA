@@ -220,6 +220,7 @@ dt.on('draw', function () {
     const modalElement = document.getElementById('modal-enviar-correo');
     const bootstrapModal = new bootstrap.Modal(modalElement);
     bootstrapModal.show();
+    
    }
 
    function sendEmail(){
@@ -248,65 +249,51 @@ dt.on('draw', function () {
     return false;
    }
 
-   let attachmentFiles = [];
-   const allCheckboxes = document.querySelectorAll('tbody [type="checkbox"]');
-        let checkedState = false;
-        let count = 0;
 
-        allCheckboxes.forEach(c => {
-            if (c.checked) {
-                checkedState = true;
-                count++;
-                let tmpFile = c.value
-                attachmentFiles = [...attachmentFiles, tmpFile]
-            }
-        });
-
-        let _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-
- /*  $.ajax({
-    url:`/viajes/sendfiles/`,
-    type:'post',
-    data:{_token: _token, email : mainEmail.value, secondaryEmail : ccEmail.value, subject: subject.value, message: messageMail.textContent, attachmentFiles: attachmentFiles},
-    beforeSend:()=>{
-        t.setAttribute("data-kt-indicator", "on")
-    },
-    success:(response)=>{
-        console.log(response)
-        t.removeAttribute("data-kt-indicator")
-    },
-    error:(err)=>{
-        console.log("err"+err)
-
-        t.removeAttribute("data-kt-indicator")
-    }
-   })*/
-
-   $.ajax({
-    url:'/sendfiles/',
-    type:'post',
-    data:{_token: _token, 
-        email_ : mainEmail.value, 
-        secondaryEmail_ : ccEmail.value, 
-        subject_: subject.value, 
-        message_: messageMail.textContent, 
-        attachmentFiles_: attachmentFiles},
-    beforeSend:()=>{},
-    success:(response)=>{
-        Swal.fire(response.Titulo,response.Mensaje,response.TMensaje)
-        
-       
-    },
-    error:(err)=>{
-        console.error(err)
-        Swal.fire('Ocurrio un error','Error','error')
-    }
-})
-           
-    
-
-        
+   enviarCorreo();    
    }
+
+   function enviarCorreo(){
+
+    let attachmentFiles = [];
+    const allCheckboxes = document.querySelectorAll('tbody [type="checkbox"]');
+    let checkedState = false;
+    let count = 0;
+
+    allCheckboxes.forEach(c => {
+        if (c.checked) {
+            checkedState = true;
+            count++;
+            let tmpFile = {"file":c.value}
+            attachmentFiles = [...attachmentFiles, tmpFile]
+        }
+    });
+    buttonSendMail.setAttribute("data-kt-indicator", "on")
+    let _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    fetch('/sendfiles', {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({_token: _token, email : mainEmail.value, secondaryEmail : ccEmail.value, subject: subject.value, message: messageMail.textContent, attachmentFiles: attachmentFiles, numContenedor: numContenedor })
+    })
+    .then(response => response.json())
+    .then(data => {
+        Swal.fire(data.Titulo,data.Mensaje,data.TMensaje)
+    })
+    .catch(error => console.error('Error:', error))
+    .finally(() => {
+        buttonSendMail.removeAttribute("data-kt-indicator")
+        $('#modal-enviar-correo').modal('hide')
+        mainEmail.value = '';
+        ccEmail.value = '';
+        messageMail.textContent = '';
+
+    });
+
+}
+
+   
 
    btnDocumets.addEventListener('click',goToUploadDocuments)
    btnAdjuntos.addEventListener('click', modalEmail)

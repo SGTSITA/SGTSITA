@@ -219,16 +219,18 @@ class ExternosController extends Controller
 
     public function sendFiles1(Request $r){
         try{
-            return response()->json(["TMensaje" => "success", "Titulo" => "Mensaje enviado correctamente","Mensaje" => "Los archivos se adjuntaros y se enviaron a la dirección proporcionada"]);
 
-            $files = Collect($r->attachmentFiles);
-           
-            \Log::debug($files);
+            $files = ( $r->attachmentFiles);
+$attachment = [];
+            foreach($files as $file){
+                array_push($attachment,public_path($file['file']));
+            }
 
             $emailList = (strlen($r->secondaryEmail) > 0) ? [$r->email,$r->secondaryEmail] : [$r->email];
-           \Log::debug($emailList);
+
             Mail::to($emailList)
-            ->send(new \App\Mail\CustomMessageMail($r->subject,$r->message, $files));
+            ->send(new \App\Mail\CustomMessageMail($r->subject,$r->message, $attachment));
+            return response()->json(["TMensaje" => "success", "Titulo" => "Mensaje enviado correctamente","Mensaje" => "Se ha enviado mensaje con los archivos seleccionados"]);
 
         }catch(\Trhowable $t){
             return response()->json(["TMensaje" => "error", "Titulo" => "Mensaje no enviado","Mensaje" => "Ocurrio un error mientras enviabamos su mensaje: ".$t->getMessage()]);
