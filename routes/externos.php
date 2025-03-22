@@ -8,6 +8,9 @@ use App\Http\Controllers\UserController;
 Route::get('gps',function(){
  return view('gps.magnitracking');
 });
+
+Route::post('sendfiles',[ExternosController::class,'sendFiles1'])->name('file-manager.sendfiles');
+
 Route::group(["prefix" => "viajes"], function(){
     Route::post('selector', [ExternosController::class,'selector'])->name('viajes.selector');
     Route::get('solicitud/simple',[ExternosController::class,'solicitudSimple'])->name('viajes.simple');
@@ -22,6 +25,8 @@ Route::group(["prefix" => "viajes"], function(){
 
     Route::get('mis-viajes',[ExternosController::class,'misViajes'])->name('mis.viajes');
     Route::post('file-manager',[ExternosController::class,'fileManager'])->name('mis.file-manager');
+   
+
     Route::post('file-manager/cfdi-files',[ExternosController::class,'CfdiToZip'])->name('cfdi.file-manager');
     Route::get('file-manager/cfdi-files/{zipFile}',[ExternosController::class,'ZipDownload'])->name('cfdi.file-manager');
     Route::get('file-manager/get-file-list/{numContenedor}',[ExternosController::class,'getFilesProperties'])->name('viajes.files');
