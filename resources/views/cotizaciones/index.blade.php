@@ -8,7 +8,25 @@
             height: 500px;
             width: 100%;
         }
+
+        #cotTabs .nav-link {
+            cursor: pointer;
+        }
+
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+        }
     </style>
+
 
     <div class="container-fluid">
         <div class="row">
@@ -60,11 +78,135 @@
                     </div>
 
                     <!-- Contenedor de AG Grid -->
-                    <div id="myGrid" class="ag-theme-alpine"></div>
+                    <div id="myGrid" class="ag-theme-alpine position-relative" style="height: 500px;">
+                        <div id="gridLoadingOverlay" class="loading-overlay" style="display: none;">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Cargando...</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
+    <!-- Modal: Cambio de Empresa -->
+    <div class="modal fade" id="modalCambioEmpresa" tabindex="-1" aria-labelledby="modalCambioEmpresaLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content shadow-lg border-0 rounded-4">
+                <form method="POST" id="formCambioEmpresa" action="" enctype="multipart/form-data" class="p-3">
+                    @csrf
+                    <input type="hidden" name="_method" value="PATCH">
+
+                    <div class="modal-header  text-white rounded-top-4">
+                        <h5 class="modal-title">
+                            <i class="fa-solid fa-building-circle-arrow-right me-2"></i> Cambio de Empresa
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                            aria-label="Cerrar"></button>
+                    </div>
+
+                    <div class="modal-body pt-4">
+                        <div class="mb-3">
+                            <label for="id_empresa" class="form-label fw-semibold">Seleccione la nueva empresa *</label>
+                            <div class="input-group">
+                                <select class="form-select border-start-0" id="id_empresa" name="id_empresa" required>
+                                    <option value="">Seleccione empresa</option>
+                                    @foreach ($empresas as $empresa)
+                                        <option value="{{ $empresa->id }}">{{ $empresa->nombre }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer border-top-0 pt-3">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                            <i class="fa-solid fa-xmark me-1"></i> Cancelar
+                        </button>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fa-solid fa-floppy-disk me-1"></i> Guardar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <!-- Modal: Estatus de Documentos -->
+    <div class="modal fade" id="modalEstatusDocumentos" tabindex="-1" aria-labelledby="modalEstatusDocumentosLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-md">
+            <div class="modal-content shadow-lg border-0 rounded-4">
+                <div class="modal-header  text-white rounded-top-4">
+                    <h5 class="modal-title d-flex align-items-center" id="modalEstatusDocumentosLabel">
+                        <i class="fa-solid fa-folder-open me-2"></i> Estatus de Documentos
+                        <span id="tituloContenedor" class="ms-2 t fw-bold"></span>
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Cerrar"></button>
+                </div>
+
+                <div class="modal-body p-4">
+                    <div class="row g-3" id="estatusDocumentosBody">
+                        {{-- Aquí se insertan dinámicamente los checkboxes --}}
+                    </div>
+                </div>
+
+                <div class="modal-footer border-top-0 d-flex justify-content-end px-4 pb-4">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                        <i class="fa-solid fa-xmark me-1"></i> Cerrar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Modal: Cambio de Estatus -->
+    <div class="modal fade" id="modalCambioEstatus" tabindex="-1" aria-labelledby="modalCambioEstatusLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content shadow-lg border-0 rounded-4 overflow-hidden">
+                <form id="formCambioEstatus" method="POST" action="" enctype="multipart/form-data">
+                    @csrf
+                    <input type="hidden" name="_method" value="PATCH">
+
+                    <div class="modal-header text-white py-3">
+                        <h5 class="modal-title d-flex align-items-center" id="modalCambioEstatusLabel">
+                            <i class="fa-solid fa-sync-alt me-2"></i> Cambio de Estatus
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                            aria-label="Cerrar"></button>
+                    </div>
+
+                    <div class="modal-body px-4 py-3">
+                        <div class="mb-3">
+                            <label for="estatus" class="form-label fw-bold text-dark">
+                                Seleccione el nuevo estatus <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group rounded-3 shadow-sm">
+                                <select class="form-select border-start-0" name="estatus" id="estatus" required>
+                                    <option value="">Seleccionar Estatus</option>
+                                    <option value="Pendiente"> Pendiente</option>
+                                    <option value="Aprobada"> Aprobada</option>
+                                    <option value="Cancelada"> Cancelada</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer bg-light border-top-0 px-4 py-3 d-flex justify-content-end">
+                        <button type="button" class="btn btn-outline-secondary me-2" data-bs-dismiss="modal">
+                            <i class="fa-solid fa-xmark me-1"></i> Cancelar
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fa-solid fa-floppy-disk me-1"></i> Guardar Cambios
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+
 @endsection
 
 @push('custom-javascript')
@@ -74,5 +216,28 @@
     <!-- Nuestro JavaScript unificado -->
     <script
         src="{{ asset('js/sgt/cotizaciones/cotizaciones_list.js') }}?v={{ filemtime(public_path('js/sgt/cotizaciones/cotizaciones_list.js')) }}">
+    </script>
+
+    <!-- SweetAlert para mostrar mensajes -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            @if (session('success'))
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡Éxito!',
+                    text: "{{ session('success') }}",
+                    confirmButtonText: 'Aceptar'
+                });
+            @endif
+
+            @if (session('error'))
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: "{{ session('error') }}",
+                    confirmButtonText: 'Cerrar'
+                });
+            @endif
+        });
     </script>
 @endpush
