@@ -147,7 +147,7 @@ class MissionResultRenderer {
   var paginationTitle = document.querySelector("#ag-32-label");
   paginationTitle.textContent = 'Registros por página';
   
-  const btnDocumets = document.querySelector('#btnDocs');
+  const btnDocumets = document.querySelectorAll('.btnDocs');
   //const api = createGrid(gridDiv, gridOptions)
    
    function getContenedoresPendientes(estatus = 'En espera'){
@@ -160,7 +160,8 @@ class MissionResultRenderer {
         success:(response)=>{
             
           if(response.length > 0){
-            btnDocumets.disabled = false;
+            btnDocumets.forEach(btn => btn.disabled = false)
+            
           }
           apiGrid.setGridOption("rowData", response)
         },
@@ -369,4 +370,4 @@ class MissionResultRenderer {
       })
    }
 
-   btnDocumets.addEventListener('click',goToUploadDocuments)
+   document.querySelector('#btnDocs').addEventListener('click',goToUploadDocuments)
