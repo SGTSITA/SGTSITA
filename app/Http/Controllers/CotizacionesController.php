@@ -1066,32 +1066,32 @@ class CotizacionesController extends Controller
 			}
 
 			$json = $upload['files'];
-         //   $upload['typeOfDocument'] = $r->urlRepo;
-         switch($r->urlRepo){
-            case 'BoletaLib': $update = ["boleta_liberacion" => $item['name']]; break;
-            case 'Doda': $update = ["doda" => $item['name']]; break;
-            case 'CartaPorte': $update = ["doc_ccp" => $item['name'],"ccp" => "si"]; break;
-            case 'PreAlta': $update = ["img_boleta" => $item['name']]; break;
-            case 'CartaPortePDF': $update = ["carta_porte" => $item['name']]; break;
-            case 'CartaPorteXML': $update = ["carta_porte_xml" => $item['name']]; break;
+            //   $upload['typeOfDocument'] = $r->urlRepo;
+            switch($r->urlRepo){
+                case 'BoletaLib': $update = ["boleta_liberacion" => $item['name']]; break;
+                case 'Doda': $update = ["doda" => $item['name']]; break;
+                case 'CartaPorte': $update = ["doc_ccp" => $item['name'],"ccp" => "si"]; break;
+                case 'PreAlta': $update = ["img_boleta" => $item['name']]; break;
+                case 'CartaPortePDF': $update = ["carta_porte" => $item['name']]; break;
+                case 'CartaPorteXML': $update = ["carta_porte_xml" => $item['name']]; break;
 
-         }
+            }
 
-        
-        ($r->urlRepo != 'PreAlta' && $r->urlRepo != 'CartaPortePDF' && $r->urlRepo != 'CartaPorteXML') 
-         ? DocumCotizacion::where('id',$cotizacion->id_cotizacion)->update($update)
-         : Cotizaciones::where('id',$cotizacion->id_cotizacion)->update($update);
+            
+            ($r->urlRepo != 'PreAlta' && $r->urlRepo != 'CartaPortePDF' && $r->urlRepo != 'CartaPorteXML') 
+            ? DocumCotizacion::where('id',$cotizacion->id_cotizacion)->update($update)
+            : Cotizaciones::where('id',$cotizacion->id_cotizacion)->update($update);
 
-         if ($r->urlRepo == 'PreAlta')  DocumCotizacion::where('id',$cotizacion->id_cotizacion)->update(['boleta_vacio'=>'si']);
+            if ($r->urlRepo == 'PreAlta')  DocumCotizacion::where('id',$cotizacion->id_cotizacion)->update(['boleta_vacio'=>'si']);
 
-         if(Auth::User()->id_cliente != 0){
-            event(new \App\Events\GenericNotificationEvent([$cotizacion->cliente->correo],'Se cargó '.$r->urlRepo.': '.$doc_cotizaciones->num_contenedor,'Hola, tu transportista cargó el documento "'.$r->urlRepo.'" del contenedor '.$doc_cotizaciones->num_contenedor));
-            event(new \App\Events\ConfirmarDocumentosEvent($cotizacion->id_cotizacion));
-         } 
+            if(Auth::User()->id_cliente != 0){
+                event(new \App\Events\GenericNotificationEvent([$cotizacion->cliente->correo],'Se cargó '.$r->urlRepo.': '.$cotizacion->DocCotizacion->num_contenedor,'Hola, tu transportista cargó el documento "'.$r->urlRepo.'" del contenedor '.$cotizacion->DocCotizacion->num_contenedor));
+                event(new \App\Events\ConfirmarDocumentosEvent($cotizacion->id_cotizacion));
+            } 
 
-         if($estatus != 'En espera' && Auth::User()->id_cliente != 0){
-            event(new \App\Events\NotificaNuevoDocumentoEvent($cotizacion,$r->urlRepo));
-         }
+            if($estatus != 'En espera' && Auth::User()->id_cliente != 0){
+                event(new \App\Events\NotificaNuevoDocumentoEvent($cotizacion,$r->urlRepo));
+            }
 
 		}
 		return response()->json($upload);
