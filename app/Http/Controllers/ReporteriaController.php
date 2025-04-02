@@ -24,6 +24,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Storage;
 
+use App\Traits\CommonTrait as Common;
 use Carbon\Carbon;
 use DB;
 use PDF;
@@ -502,77 +503,113 @@ public function export_cxp(Request $request)
     }
 
     public function getContenedorUtilidad(Request $r){
-        $fechaI = $r->startDate.' 00:00:00';
-        $fechaF = $r->endDate.' 00:00:00';
-        $datos = DB::select('select c.id as id_cotizacion,a.id_camion,dc.num_contenedor,cl.nombre as cliente, op.nombre Operador, a.sueldo_viaje,dinero_viaje, pr.nombre as Proveedor,total_proveedor,
-        c.total, c.estatus,estatus_pago,c.fecha_pago,a.fecha_inicio,a.fecha_fin,DATEDIFF(a.fecha_fin,a.fecha_inicio) as tiempo_viaje
-        from cotizaciones c
-        left join clients cl on c.id_cliente = cl.id
-        left join docum_cotizacion dc on c.id = dc.id_cotizacion
-        left join asignaciones a on dc.id = a.id_contenedor
-        left join operadores op on a.id_operador = op.id
-        left join proveedores pr on a.id_proveedor = pr.id
-        where a.fecha_inicio between '."'".$fechaI."'".' and '."'".$fechaF."' and c.estatus != 'Cancelada' and c.id_empresa = ".Auth::User()->id_empresa);
+       /* */
 
-        $Info = [];
-        foreach($datos as $d){
+        $contadorPeriodos = Common::contadorPeriodos($r->startDate, $r->endDate);
+       // $datos = Collect();
+        
+       // $datos = $datos->merge($viajes);
+
+       $fechaIniciaPeriodo = $r->startDate;
+       $fechaHasta = $r->endDate;
+       $Info = [];
+        for($periodo = 1; $periodo <= $contadorPeriodos; $periodo++){
+            $finalMes = Carbon::parse($fechaIniciaPeriodo);
+            $finalMes = $finalMes->endOfMonth();
+            $fechaFinPeriodo = ($finalMes > $fechaHasta) ? $fechaHasta : $finalMes->toDateString();
+          //  $fechaIni = $fechaIniciaPeriodo;
+
             $diferido = 
             GastosDiferidosDetalle::join('gastos_generales as g','gastos_diferidos_detalle.id_gasto','=','g.id')
-            ->whereBetween('fecha_gasto',[$d->fecha_inicio,$d->fecha_fin])
-            ->where('gastos_diferidos_detalle.id_equipo',$d->id_camion)
+            ->where('fecha_gasto_inicial','>=',$fechaIniciaPeriodo)
+            ->where('fecha_gasto_final','<=',$fechaFinPeriodo)
+           // ->where('gastos_diferidos_detalle.id_equipo',$d->id_camion)
             ->where('g.id_empresa',Auth::User()->id_empresa)
             ->get();
 
-            $detalleGastos = null;
+          
 
-            foreach($diferido as $d1){
-                $detalleGastos [] = ["fecha_gasto" => $d1->fecha_gasto, 
-                                    "monto_gasto" => $d1->gasto_dia, 
-                                    "tipo_gasto" => "DIFERIDO", 
-                                    "motivo_gasto" => $d1->motivo
-                                ];
+            $fechaI = $fechaIniciaPeriodo.' 00:00:00';
+            $fechaF = $fechaFinPeriodo.' 00:00:00';
+
+            $consultar = 'select c.id as id_cotizacion,a.id_camion,dc.num_contenedor,cl.nombre as cliente, op.nombre Operador, a.sueldo_viaje,dinero_viaje, pr.nombre as Proveedor,total_proveedor,
+            c.total, c.estatus,estatus_pago,c.fecha_pago,a.fecha_inicio,a.fecha_fin,DATEDIFF(a.fecha_fin,a.fecha_inicio) as tiempo_viaje
+            from cotizaciones c
+            left join clients cl on c.id_cliente = cl.id
+            left join docum_cotizacion dc on c.id = dc.id_cotizacion
+            left join asignaciones a on dc.id = a.id_contenedor
+            left join operadores op on a.id_operador = op.id
+            left join proveedores pr on a.id_proveedor = pr.id
+            where a.fecha_inicio between '."'".$fechaI."'".' and '."'".$fechaF."' and c.estatus != 'Cancelada' and c.id_empresa = ".Auth::User()->id_empresa;
+
+            $datos = DB::select($consultar);
+
+            $viajesPeriodo = sizeof($datos);
+
+            foreach($datos as $d){
+                $detalleGastos = null;
+    
+                foreach($diferido as $d1){
+                    $detalleGastos [] = ["fecha_gasto" => $d1->fecha_gasto_inicial, 
+                                        "monto_gasto" => round($d1->gasto_dia / $viajesPeriodo ,2), 
+                                        "tipo_gasto" => "DIFERIDO", 
+                                        "motivo_gasto" => $d1->motivo
+                                    ];
+                }
+    
+                $gastosExtra = GastosExtras::where('id_cotizacion',$d->id_cotizacion)->get();
+                $gastosOperador = GastosOperadores::where('id_cotizacion',$d->id_cotizacion)->get();
+    
+                foreach($gastosExtra as $ge){
+                    $detalleGastos [] = ["fecha_gasto" => $ge->created_at, 
+                    "monto_gasto" => $ge->monto, 
+                    "tipo_gasto" => "Gasto Extra", 
+                    "motivo_gasto" => $ge->descripcion
+                ];
+                }
+    
+                foreach($gastosOperador as $go){
+                    $detalleGastos [] = ["fecha_gasto" => $go->fecha_pago, 
+                    "monto_gasto" => $go->cantidad, 
+                    "tipo_gasto" => "Gastos Viaje", 
+                    "motivo_gasto" => $go->tipo
+                ];
+                }
+    
+                $pagoOperacion = (is_null($d->Proveedor)) ? $d->sueldo_viaje : $d->total_proveedor;
+                $gastosDiferidos = round($diferido->sum('gasto_dia') / $viajesPeriodo,2);
+                $Columns = [
+                            "numContenedor" => $d->num_contenedor,
+                            "cliente" => $d->cliente,
+                            "precioViaje" => $d->total + $gastosExtra->sum('monto'),
+                            "transportadoPor" => (is_null($d->Proveedor)) ? 'Operador' : 'Proveedor',
+                            "operadorOrProveedor" => (is_null($d->Proveedor)) ? $d->Operador : $d->Proveedor,
+                            "pagoOperacion" => $pagoOperacion,
+                            "gastosExtra" => $gastosExtra->sum('monto'),
+                            "gastosViaje" => $gastosOperador->sum('cantidad'),
+                            "viajeInicia"=> $d->fecha_inicio,
+                            "viajeTermina"=> $d->fecha_fin, 
+                            "estatusViaje" => $d->estatus,     
+                            "estatusPago" => ($d->estatus_pago == 1) ? 'Pagado' : 'Por Cobrar',
+                            "gastosDiferidos" =>  $gastosDiferidos,
+                            "detalleGastos" => $detalleGastos,
+                            "utilidad" => $d->total  - $pagoOperacion - $gastosDiferidos - $gastosExtra->sum('monto') - $gastosOperador->sum('cantidad'),
+
+                            ];
+                $Info[] = $Columns;
             }
 
-            $gastosExtra = GastosExtras::where('id_cotizacion',$d->id_cotizacion)->get();
-            $gastosOperador = GastosOperadores::where('id_cotizacion',$d->id_cotizacion)->get();
-
-            foreach($gastosExtra as $ge){
-                $detalleGastos [] = ["fecha_gasto" => $ge->created_at, 
-                "monto_gasto" => $ge->monto, 
-                "tipo_gasto" => "Gasto Extra", 
-                "motivo_gasto" => $ge->descripcion
-            ];
-            }
-
-            foreach($gastosOperador as $go){
-                $detalleGastos [] = ["fecha_gasto" => $go->fecha_pago, 
-                "monto_gasto" => $go->cantidad, 
-                "tipo_gasto" => "Gastos Viaje", 
-                "motivo_gasto" => $go->tipo
-            ];
-            }
-
-            $pagoOperacion = (is_null($d->Proveedor)) ? $d->sueldo_viaje : $d->total_proveedor;
-            $gastosDiferidos = $diferido->sum('gasto_dia');
-            $Columns = [
-                        "numContenedor" => $d->num_contenedor,
-                        "cliente" => $d->cliente,
-                        "precioViaje" => $d->total + $gastosExtra->sum('monto'),
-                        "transportadoPor" => (is_null($d->Proveedor)) ? 'Operador' : 'Proveedor',
-                        "operadorOrProveedor" => (is_null($d->Proveedor)) ? $d->Operador : $d->Proveedor,
-                        "pagoOperacion" => $pagoOperacion,
-                        "gastosExtra" => $gastosExtra->sum('monto'),
-                        "gastosViaje" => $gastosOperador->sum('cantidad'),
-                        "viajeInicia"=> $d->fecha_inicio,
-                        "viajeTermina"=> $d->fecha_fin, 
-                        "estatusViaje" => $d->estatus,     
-                        "estatusPago" => ($d->estatus_pago == 1) ? 'Pagado' : 'Por Cobrar',
-                        "gastosDiferidos" =>  $gastosDiferidos,
-                        "detalleGastos" => $detalleGastos,
-                        "utilidad" => $d->total  - $pagoOperacion - $gastosDiferidos - $gastosExtra->sum('monto') - $gastosOperador->sum('cantidad')             
-                        ];
-            $Info[] = $Columns;
+            $fechaIniciaPeriodo = $finalMes->addDay()->toDateString();
+            
         }
+
+      //  $iniciaPeriodo = Carbon::parse($r->startDate)->startOfMonth();
+       // $terminaPeriodo = Carbon::parse($r->endDate)->endOfMonth();
+
+       
+
+        
+        
 
         return $Info;
 

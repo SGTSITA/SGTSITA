@@ -61,4 +61,23 @@ trait CommonTrait
         $dia = $dias[date('w', strtotime($fecha))];
         return $dia;
     }
+
+    public static function contadorPeriodos($fechaInicio, $fechaFinal){
+        $fecha1 = Carbon::parse($fechaInicio);
+        $fecha2 = Carbon::parse($fechaFinal);
+
+        $periodos = 1;
+
+        if($fecha1->month === $fecha2->month && $fecha1->year === $fecha2->year){
+            return $periodos;
+        }
+
+        while ($fecha1->year < $fecha2->year || $fecha1->month < $fecha2->month) {
+            $periodos++;
+            $fecha1->addMonths(1);
+        }
+    
+        return $periodos;
+
+    }
 }
