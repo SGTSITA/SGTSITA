@@ -372,14 +372,26 @@ public function export_cxp(Request $request)
 
         $subclientes = Subclientes::where('id_empresa' ,'=',auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
         $proveedores = Proveedor::where('id_empresa' ,'=',auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
+        $estatus = \DB::table('cotizaciones')
+    ->where('id_empresa', auth()->user()->id_empresa)
+    ->select('estatus')
+    ->distinct()
+    ->pluck('estatus');
 
-        return view('reporteria.asignaciones.index', compact('clientes', 'subclientes', 'proveedores'));
+
+        return view('reporteria.asignaciones.index', compact('clientes', 'subclientes', 'proveedores', 'estatus'));
     }
 
     public function advance_viajes(Request $request) {
         $clientes = Client::where('id_empresa' ,'=',auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
         $subclientes = Subclientes::where('id_empresa' ,'=',auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
         $proveedores = Proveedor::where('id_empresa' ,'=',auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
+        $estatus = \DB::table('cotizaciones')
+    ->where('id_empresa', auth()->user()->id_empresa)
+    ->select('estatus')
+    ->distinct()
+    ->pluck('estatus');
+
 
         $id_client = $request->id_client;
         $id_subcliente = $request->id_subcliente;
@@ -417,13 +429,14 @@ public function export_cxp(Request $request)
             $asignaciones = $asignaciones->where('asignaciones.id_proveedor', $id_proveedor);
         }
 
-        if ($request->estatus) {
-            $asignaciones = $asignaciones->where('cotizaciones.estatus', '=', $request->estatus);
+        if ($request->filled('estatus')) {
+            $asignaciones = $asignaciones->where('cotizaciones.estatus', $request->estatus);
         }
+        
 
         $asignaciones = $asignaciones->get();
 
-        return view('reporteria.asignaciones.index', compact('asignaciones', 'clientes', 'subclientes', 'proveedores'));
+        return view('reporteria.asignaciones.index', compact('asignaciones', 'clientes', 'subclientes', 'proveedores', 'estatus'));
     }
 
     public function export_viajes(Request $request){
@@ -543,118 +556,106 @@ public function export_cxp(Request $request)
     }
 
     // ==================== D O C U M E N T O S ====================
-    public function index_documentos(Request $request){
+    public function index_documentos(Request $request)
+    {
+        $clientes = Client::where('id_empresa', auth()->user()->id_empresa)
+            ->orderBy('created_at', 'desc')
+            ->get();
+    
+        $subclientes = Subclientes::where('id_empresa', auth()->user()->id_empresa)
+            ->orderBy('created_at', 'desc')
+            ->get();
+    
+        $proveedores = Proveedor::where('id_empresa', auth()->user()->id_empresa)
+            ->orderBy('created_at', 'desc')
+            ->get();
+    
+        // Construir consulta base
+        $cotizacionesQuery = Cotizaciones::query()
+            ->where('cotizaciones.id_empresa', auth()->user()->id_empresa)
+            ->where('cotizaciones.estatus', '!=', 'Cancelada')
+            ->leftJoin('docum_cotizacion', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
+            ->leftJoin('asignaciones', 'docum_cotizacion.id', '=', 'asignaciones.id_contenedor')
+            ->leftJoin('clients', 'cotizaciones.id_cliente', '=', 'clients.id')
+            ->select(
+                'cotizaciones.id',
+                'clients.nombre as cliente',
+                'docum_cotizacion.num_contenedor',
+                'docum_cotizacion.doc_ccp',
+                'docum_cotizacion.boleta_liberacion',
+                'docum_cotizacion.doda',
+                'cotizaciones.carta_porte',
+                'cotizaciones.img_boleta AS boleta_vacio',
+                'docum_cotizacion.doc_eir',
+                'asignaciones.id_proveedor',
+                'asignaciones.fecha_inicio',
+                'asignaciones.fecha_fin'
+            )
+            ->distinct();
+    
+        // Aplicar filtro por fechas si vienen del request
+        if ($request->filled('fecha_inicio') && $request->filled('fecha_fin')) {
+            $cotizacionesQuery->whereBetween('asignaciones.fecha_inicio', [
+                $request->fecha_inicio,
+                $request->fecha_fin
+            ]);
+        }
+    
+        $cotizaciones = $cotizacionesQuery->get();
+    
+        return view('reporteria.documentos.index', compact('cotizaciones', 'clientes', 'subclientes', 'proveedores'));
+    }
 
-   // 1. Obtener catálogos para los select (clientes, subclientes, proveedores, etc.)
-   $clientes = Client::where('id_empresa', auth()->user()->id_empresa)
-   ->orderBy('created_at', 'desc')
-   ->get();
+    public function export_documentos(Request $request)
+{
+    $fecha = date('Y-m-d');
+    $fechaCarbon = Carbon::parse($fecha);
 
-$subclientes = Subclientes::where('id_empresa', auth()->user()->id_empresa)
-   ->orderBy('created_at', 'desc')
-   ->get();
+    $cotizacionIds = $request->input('selected_ids', []);
 
-// Si tienes proveedores:
-// $proveedores = Proveedor::where('id_empresa', auth()->user()->id_empresa)->get();
+    if (empty($cotizacionIds)) {
+        return response()->json([
+            'success' => false,
+            'message' => 'No se seleccionaron cotizaciones.'
+        ], 400);
+    }
 
-
-// 3. Aplicar filtros según los campos recibidos en $request
-if ($request->filled('id_client')) {
-   $query->where('id_cliente', $request->id_client);
-}
-
-if ($request->filled('id_subcliente')) {
-   $query->where('id_subcliente', $request->id_subcliente);
-}
-
-if ($request->filled('id_proveedor')) {
-   $query->where('id_proveedor', $request->id_proveedor);
-}
-
-// Manejo de rango de fechas: suponiendo que la columna donde guardas la fecha es 'created_at' 
-// (ajusta el nombre si se llama distinto)
-if ($request->filled('fecha_inicio') && $request->filled('fecha_fin')) {
-   $fechaInicio = $request->fecha_inicio;
-   $fechaFin = $request->fecha_fin;
-
-   // Se puede usar whereBetween con created_at
-   $query->whereBetween('created_at', [$fechaInicio, $fechaFin]);
-}
-
-
-
-// 5. Retornar la vista, enviando además las variables necesarias
-return view('reporteria.documentos.index', [
-   'clientes' => $clientes,
-   'subclientes' => $subclientes,
-   // 'proveedores' => $proveedores, // si lo necesitas
-]);
-}
-public function advance_documentos(Request $request) {
-    $clientes = Client::where('id_empresa', auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
-    $subclientes = Subclientes::where('id_empresa', auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
-
-    $id_client = $request->id_client;
-    $id_subcliente = $request->id_subcliente;
-
-    // Construir la consulta inicial
     $cotizaciones = Cotizaciones::join('docum_cotizacion', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
-        ->where('cotizaciones.id_empresa', auth()->user()->id_empresa)
-        ->where('cotizaciones.estatus', 'Aprobada')
+        ->whereIn('cotizaciones.id', $cotizacionIds)
         ->select(
-            'cotizaciones.id',
             'docum_cotizacion.num_contenedor',
             'docum_cotizacion.doc_ccp',
             'docum_cotizacion.boleta_liberacion',
             'docum_cotizacion.doda',
             'cotizaciones.carta_porte',
-            'cotizaciones.img_boleta AS boleta_vacio',
-            'docum_cotizacion.doc_eir',
-            DB::raw('EXISTS(SELECT 1 FROM docum_cotizacion WHERE docum_cotizacion.id_cotizacion = cotizaciones.id) as documentos_existen')
-        );
-
-    if ($id_client !== null) {
-        $cotizaciones = $cotizaciones->where('cotizaciones.id_cliente', $id_client);
-
-        if ($id_subcliente !== null && $id_subcliente !== '') {
-            $cotizaciones = $cotizaciones->where('cotizaciones.id_subcliente', $id_subcliente);
-        }
-    }
-
-    // Obtener los resultados
-    $cotizaciones = $cotizaciones->get();
-
-    return view('reporteria.documentos.index', compact('cotizaciones', 'clientes', 'subclientes'));
-}
-
-
-    public function export_documentos(Request $request){
-
-        $fecha = date('Y-m-d');
-        $fechaCarbon = Carbon::parse($fecha);
-
-        $cotizacionIds = $request->input('selected_ids', []);
-
-        if (empty($cotizacionIds)) {
-            return redirect()->back()->with('error', 'se seleccionaron cotizaciones.');
-        }
-
-        $cotizaciones = Cotizaciones::join('docum_cotizacion', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
-        ->whereIn('cotizaciones.id', $cotizacionIds)
-        ->select('docum_cotizacion.num_contenedor', 'docum_cotizacion.doc_ccp', 'docum_cotizacion.boleta_liberacion', 'docum_cotizacion.doda', 'cotizaciones.carta_porte', 'docum_cotizacion.boleta_vacio', 'docum_cotizacion.doc_eir')
+            'docum_cotizacion.boleta_vacio',
+            'docum_cotizacion.doc_eir'
+        )
         ->get();
 
-        $cotizacion = Cotizaciones::where('id', $cotizacionIds)->first();
-        $user = User::where('id', '=', auth()->user()->id)->first();
-        if($request->fileType == "xlsx"){
-            Excel::store(new \App\Exports\DocumentosExport($cotizaciones, $fechaCarbon,$cotizacion,$user), 'liquidados_cxc.xlsx','public');
-            return Response::download(storage_path('app/public/liquidados_cxc.xlsx'), "liquidados_cxp.xlsx")->deleteFileAfterSend(true);
-        }else{
-        $pdf = PDF::loadView('reporteria.documentos.pdf', compact('cotizaciones', 'fechaCarbon', 'cotizacion', 'user'))->setPaper('a4', 'landscape');
-        return $pdf->stream();
-        }
-        // return $pdf->download('cotizaciones_seleccionadas.pdf');
+    $cotizacion = Cotizaciones::whereIn('id', $cotizacionIds)->first();
+    $user = User::find(auth()->id());
+
+    if ($request->fileType === 'xlsx') {
+        return Excel::download(
+            new \App\Exports\DocumentosExport($cotizaciones, $fechaCarbon, $cotizacion, $user),
+            'documentos.xlsx'
+        );
     }
+
+    if ($request->fileType === 'pdf') {
+        $pdf = PDF::loadView('reporteria.documentos.pdf', compact('cotizaciones', 'fechaCarbon', 'cotizacion', 'user'))
+                 ->setPaper('a4', 'landscape');
+
+        return $pdf->download('documentos.pdf');
+    }
+
+    return response()->json([
+        'success' => false,
+        'message' => 'Tipo de archivo no soportado.'
+    ], 400);
+}
+
 
     // ==================== L I Q U I D A D O S CXC ====================
     public function index_liquidados_cxc(){

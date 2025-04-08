@@ -16,7 +16,10 @@ use Session;
 class OperadorController extends Controller
 {
     public function index(){
-        $operadores = Operador::where('id_empresa' ,'=',auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
+        $operadores = Operador::withTrashed() 
+        ->where('id_empresa', auth()->user()->id_empresa)
+        ->orderBy('id', 'asc')
+        ->get();
         $pagos_pendientes = Asignaciones::where('id_empresa' ,'=',auth()->user()->id_empresa)->where('estatus_pagado', '=', 'Pendiente Pago')->get();
         return view('operadores.index', compact('operadores', 'pagos_pendientes'));
     }
@@ -228,4 +231,22 @@ class OperadorController extends Controller
 
         return view('operadores.pagos_pendientes', compact('pagos_pendientes', 'operador', 'bancos'));
     }
+
+    public function destroy($id)
+{
+    $operador = Operador::findOrFail($id);
+    $operador->delete(); // Soft delete
+
+    Session::flash('success', 'Operador dado de baja correctamente.');
+    return redirect()->back();
+}
+
+public function restore($id)
+{
+    $operador = Operador::withTrashed()->findOrFail($id);
+    $operador->restore();
+
+    Session::flash('success', 'Operador reactivado correctamente.');
+    return redirect()->back();
+}
 }
