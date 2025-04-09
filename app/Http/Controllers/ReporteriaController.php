@@ -707,51 +707,7 @@ public function export_cxp(Request $request)
         }
     }
 
-    // ==================== D O C U M E N T O S ====================
-
-    public function index_documentos(Request $request){
-
-   // 1. Obtener catálogos para los select (clientes, subclientes, proveedores, etc.)
-   $clientes = Client::where('id_empresa', auth()->user()->id_empresa)
-   ->orderBy('created_at', 'desc')
-   ->get();
-
-$subclientes = Subclientes::where('id_empresa', auth()->user()->id_empresa)
-   ->orderBy('created_at', 'desc')
-   ->get();
-   $proveedores = Proveedor::where('id_empresa', auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get(); // Agregar consulta de proveedores
-
-// Si tienes proveedores:
-// $proveedores = Proveedor::where('id_empresa', auth()->user()->id_empresa)->get();
-
-
-// 3. Aplicar filtros según los campos recibidos en $request
-if ($request->filled('id_client')) {
-   $query->where('id_cliente', $request->id_client);
-}
-
-if ($request->filled('id_subcliente')) {
-   $query->where('id_subcliente', $request->id_subcliente);
-}
-
-if ($request->filled('id_proveedor')) {
-   $query->where('id_proveedor', $request->id_proveedor);
-}
-
-// Manejo de rango de fechas: suponiendo que la columna donde guardas la fecha es 'created_at' 
-// (ajusta el nombre si se llama distinto)
-if ($request->filled('fecha_inicio') && $request->filled('fecha_fin')) {
-   $fechaInicio = $request->fecha_inicio;
-   $fechaFin = $request->fecha_fin;
-
-   // Se puede usar whereBetween con created_at
-   $query->whereBetween('created_at', [$fechaInicio, $fechaFin]);
-}
-
-// 5. Retornar la vista, enviando además las variables necesarias
-return view('reporteria.documentos.index', compact('clientes', 'subclientes', 'proveedores'));
-}
-
+    
 
 public function advance_documentos(Request $request) {
     // Obtener catálogos para los selects
