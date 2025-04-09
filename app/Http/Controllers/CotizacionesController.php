@@ -43,6 +43,43 @@ class CotizacionesController extends Controller
 
         return view('cotizaciones.index', compact('empresas', 'proveedores','bancos','operadores','equipos_dolys','equipos_chasis','equipos_camiones','cotizaciones_planeadas'));
     }
+    public function getCotizacionesList()
+    {
+        $cotizaciones = Cotizaciones::where('id_empresa', auth()->user()->id_empresa)
+            ->where('estatus', '=', 'Aprobada')
+            ->where('estatus_planeacion', '=', 1)
+            ->orderBy('created_at', 'desc')
+            ->with(['cliente', 'DocCotizacion.Asignaciones'])
+            ->get()
+            ->map(function ($cotizacion) {
+                return [
+                    'id' => $cotizacion->id,
+                    'cliente' => $cotizacion->cliente ? $cotizacion->cliente->nombre : 'N/A',
+                    'origen' => $cotizacion->origen,
+                    'destino' => $cotizacion->destino,
+                    'contenedor' => $cotizacion->DocCotizacion ? $cotizacion->DocCotizacion->num_contenedor : 'N/A',
+                    'estatus' => $cotizacion->estatus,
+                    'coordenadas' => optional($cotizacion->DocCotizacion)->Asignaciones ? 'Ver' : '',
+                    'id_asignacion' => optional($cotizacion->DocCotizacion)->Asignaciones->id ?? null,
+                    'edit_url' => route('edit.cotizaciones', $cotizacion->id)
+                ];
+            });
+    
+        return response()->json(['list' => $cotizaciones]);
+    }
+    public function getDocumentos($id)
+{
+    $cotizacion = Cotizaciones::with('DocCotizacion')->findOrFail($id);
+    return response()->json([
+        'num_contenedor' => $cotizacion->DocCotizacion->num_contenedor ?? null,
+        'doc_ccp' => $cotizacion->DocCotizacion->doc_ccp ?? null,
+        'boleta_liberacion' => $cotizacion->DocCotizacion->boleta_liberacion ?? null,
+        'doda' => $cotizacion->DocCotizacion->doda ?? null,
+        'carta_porte' => $cotizacion->carta_porte ?? null,
+        'boleta_vacio' => $cotizacion->DocCotizacion->boleta_vacio ?? null,
+        'doc_eir' => $cotizacion->doc_eir ?? null,
+    ]);
+}
 
     public function index_externo(){
 
@@ -67,6 +104,35 @@ class CotizacionesController extends Controller
 
         return view('cotizaciones.index_finalizadas', compact('empresas', 'proveedores','bancos','operadores','equipos_dolys','equipos_chasis','equipos_camiones','cotizaciones_finalizadas'));
     }
+    public function getCotizacionesFinalizadas()
+{
+    $cotizaciones = Cotizaciones::where('id_empresa', auth()->user()->id_empresa)
+        ->where('estatus', 'Finalizado')
+        ->orderBy('created_at', 'desc')
+        ->with([
+            'Cliente', 
+            'DocCotizacion.Asignaciones'
+        ])
+        ->get()
+        ->map(function ($cotizacion) {
+            return [
+                'id' => $cotizacion->id,
+                'cliente' => $cotizacion->Cliente ? $cotizacion->Cliente->nombre : 'N/A',
+                'origen' => $cotizacion->origen,
+                'destino' => $cotizacion->destino,
+                'contenedor' => $cotizacion->DocCotizacion ? $cotizacion->DocCotizacion->num_contenedor : 'N/A',
+                'estatus' => $cotizacion->estatus,
+                'coordenadas' => optional($cotizacion->DocCotizacion)->Asignaciones ? 'Ver' : 'N/A',
+                'id_asignacion' => optional($cotizacion->DocCotizacion)->Asignaciones->id ?? null,
+                'edit_url' => route('edit.cotizaciones', $cotizacion->id),
+                'pdf_url' => route('pdf.cotizaciones', $cotizacion->id)
+            ];
+        });
+
+    return response()->json(['list' => $cotizaciones]);
+}
+
+    
 
     public function index_espera(){
 
@@ -83,6 +149,29 @@ class CotizacionesController extends Controller
 
         return view('cotizaciones.index_espera', compact('empresas', 'proveedores','bancos','operadores','equipos_dolys','equipos_chasis','equipos_camiones','cotizaciones'));
     }
+    public function getCotizacionesEnEspera()
+{
+    $cotizaciones = Cotizaciones::where('id_empresa', auth()->user()->id_empresa)
+        ->where('estatus', 'Pendiente')
+        ->orderBy('created_at', 'desc')
+        ->with(['cliente', 'DocCotizacion.Asignaciones'])
+        ->get()
+        ->map(function ($cotizacion) {
+            return [
+                'id' => $cotizacion->id,
+                'cliente' => $cotizacion->cliente ? $cotizacion->cliente->nombre : 'N/A',
+                'origen' => $cotizacion->origen,
+                'destino' => $cotizacion->destino,
+                'contenedor' => $cotizacion->DocCotizacion ? $cotizacion->DocCotizacion->num_contenedor : 'N/A',
+                'estatus' => $cotizacion->estatus,
+                'coordenadas' => optional($cotizacion->DocCotizacion)->Asignaciones ? 'Ver' : '',
+                'edit_url' => route('edit.cotizaciones', $cotizacion->id),
+            ];
+        });
+
+    return response()->json(['list' => $cotizaciones]);
+}
+
 
     public function index_aprobadas(){
 
@@ -103,6 +192,55 @@ class CotizacionesController extends Controller
 
         return view('cotizaciones.index_aprovada', compact('empresas', 'proveedores','bancos','operadores','equipos_dolys','equipos_chasis','equipos_camiones','cotizaciones_aprovadas'));
     }
+    public function getCotizacionesAprobadas()
+{
+    $cotizaciones = Cotizaciones::where('id_empresa', auth()->user()->id_empresa)
+        ->where('estatus', 'Aprobada')
+        ->where(function($query) {
+            $query->where('estatus_planeacion', 0)
+                  ->orWhereNull('estatus_planeacion');
+        })
+        ->orderBy('created_at', 'desc')
+        ->with(['cliente', 'DocCotizacion.Asignaciones'])
+        ->get()
+        ->map(function ($cotizacion) {
+            return [
+                'id' => $cotizacion->id,
+                'cliente' => $cotizacion->cliente ? $cotizacion->cliente->nombre : 'N/A',
+                'origen' => $cotizacion->origen,
+                'destino' => $cotizacion->destino,
+                'contenedor' => $cotizacion->DocCotizacion ? $cotizacion->DocCotizacion->num_contenedor : 'N/A',
+                'estatus' => $cotizacion->estatus,
+                'coordenadas' => optional($cotizacion->DocCotizacion)->Asignaciones ? 'Ver' : '',
+                'edit_url' => route('edit.cotizaciones', $cotizacion->id),
+            ];
+        });
+
+    return response()->json(['list' => $cotizaciones]);
+}
+
+public function getCotizacionesCanceladas()
+{
+    $cotizaciones = Cotizaciones::where('id_empresa', auth()->user()->id_empresa)
+        ->where('estatus', 'Cancelada')
+        ->orderBy('created_at', 'desc')
+        ->with(['cliente', 'DocCotizacion.Asignaciones'])
+        ->get()
+        ->map(function ($cotizacion) {
+            return [
+                'id' => $cotizacion->id,
+                'cliente' => $cotizacion->cliente ? $cotizacion->cliente->nombre : 'N/A',
+                'origen' => $cotizacion->origen,
+                'destino' => $cotizacion->destino,
+                'contenedor' => $cotizacion->DocCotizacion ? $cotizacion->DocCotizacion->num_contenedor : 'N/A',
+                'estatus' => $cotizacion->estatus,
+                'coordenadas' => optional($cotizacion->DocCotizacion)->Asignaciones ? 'Ver' : '',
+                'edit_url' => route('edit.cotizaciones', $cotizacion->id),
+            ];
+        });
+
+    return response()->json(['list' => $cotizaciones]);
+}
 
     public function index_canceladas(){
 
@@ -401,36 +539,41 @@ class CotizacionesController extends Controller
         }
     }
 
-    public function update_estatus(Request $request, $id){
-        $this->validate($request, [
-            'estatus' => 'required',
-        ]);
+    public function update_estatus(Request $request, $id)
+{
+    $request->validate([
+        'estatus' => 'required',
+    ]);
 
-        $cotizaciones = Cotizaciones::find($id);
-        $cotizaciones->estatus = $request->get('estatus');
-        $cotizaciones->estatus_planeacion = null;
-        $cotizaciones->update();
+    $cotizaciones = Cotizaciones::findOrFail($id);
+    $cotizaciones->estatus = $request->get('estatus');
+    $cotizaciones->estatus_planeacion = null;
+    $cotizaciones->save();
 
-
-        if($request->get('estatus') == 'Cancelada' || $request->get('estatus') == 'Pendiente'){
-            if($cotizaciones->DocCotizacion){
-                if($cotizaciones->DocCotizacion->Asignaciones){
-                    $asignaciones_id = $cotizaciones->DocCotizacion->Asignaciones->id;
-                    $asignaciones = Asignaciones::find($asignaciones_id);
-
-                        $asignaciones->fecha_inicio = null;
-                        $asignaciones->fecha_fin = null;
-
-                    $asignaciones->update();
-                }
-            }
+    if (in_array($request->get('estatus'), ['Cancelada', 'Pendiente'])) {
+        if ($cotizaciones->DocCotizacion && $cotizaciones->DocCotizacion->Asignaciones) {
+            $asignaciones = $cotizaciones->DocCotizacion->Asignaciones;
+            $asignaciones->fecha_inicio = null;
+            $asignaciones->fecha_fin = null;
+            $asignaciones->save();
         }
-
-      
-        return redirect()->route('index.cotizaciones')
-            ->with('success', 'Estatus updated successfully');
     }
 
+
+   
+    if ($request->ajax()) {
+        return response()->json(['success' => true, 'message' => 'Estatus actualizado correctamente.']);
+
+      
+
+    }
+
+  
+    return redirect()->route('index.cotizaciones')
+        ->with('success', 'Estatus actualizado correctamente.');
+}
+
+      
     public function edit($id){
         $cotizacion = Cotizaciones::where('id', '=', $id)->first();
         $documentacion = DocumCotizacion::where('id_cotizacion', '=', $cotizacion->id)->first();
@@ -1332,7 +1475,5 @@ class CotizacionesController extends Controller
             return redirect()->route('index.cotizaciones')
                 ->with('success', 'Se ha editado sus datos con exito');
        
-
-
     }
 }

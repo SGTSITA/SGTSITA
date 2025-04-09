@@ -9,75 +9,67 @@
         <div class="row">
             <div class="col-sm-12">
                 <div class="card">
-                    <div class="card-header">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            
-                            <span id="card_title">
-                                Operadores
-                            </span>
-
-                             <div class="float-right">
-                                @can('operadores-create')
-                                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#operadoresModal" style="background: {{$configuracion->color_boton_add}}; color: #ffff">
-                                    <i class="fa fa-fw fa-plus"></i> Crear
-                                  </button>
-                                  @endcan
-                              </div>
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span id="card_title">
+                            <i class="fas fa-users me-1"></i> Operadores
+                        </span>
+                        <div class="float-right">
+                            @can('operadores-create')
+                                <button type="button" class="btn bg-gradient-info btn-xs mb-2" data-bs-toggle="modal"
+                                    data-bs-target="#operadoresModal">
+                                    <i class="fas fa-plus"></i> Crear
+                                </button>
+                            @endcan
                         </div>
                     </div>
 
                     <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-flush" id="datatable-search">
-                                <thead class="thead">
-                                    <tr>
-                                        <th class="text-center">No</th>
-                                        <th class="text-center">Nombre <img src="{{ asset('img/icon/user_predeterminado.webp') }}" alt="" width="25px"></th>
-                                        <th class="text-center">Telefono <img src="{{ asset('img/icon/fuente.webp') }}" alt="" width="25px"></th>
-                                        <th class="text-center">Acciones <img src="{{ asset('img/icon/edit.png') }}" alt="" width="25px"></th>
-                                    </tr>
-                                </thead>
-
-                                    <tbody class="text-center">
-                                        @foreach ($operadores as $operador)
-                                            <?php
-                                                $registrosPendientes = $pagos_pendientes->where('id_operador', $operador->id)->count();
-                                            ?>
-                                            <tr>
-                                                <td>{{$operador->id}}</td>
-                                                <td>{{$operador->nombre}}</td>
-                                                <td>{{$operador->telefono}}</td>
-                                                <td>
-                                                    @can('operadores-edit')
-                                                    <a type="button" class="btn btn-xs btn-outline-primary" data-bs-toggle="modal" data-bs-target="#operadoresModal_Edit{{$operador->id}}">
-                                                        <img src="{{ asset('img/icon/editar.webp') }}" alt="" width="25px">
-                                                    </a>
-                                                    @endcan
-                                                </td>
-                                            </tr>
-
-                                                @include('operadores.modal_edit')
-                                        @endforeach
-                                    </tbody>
-
-                            </table>
-                        </div>
+                        <div id="operadoresGrid" class="ag-theme-alpine" style="height: 600px; width: 100%;"></div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-@include('operadores.modal_create')
+    {{-- Modales --}}
+    @include('operadores.modal_create')
+    @foreach ($operadores as $operador)
+        @include('operadores.modal_edit')
+    @endforeach
 
+    {{-- Formularios ocultos --}}
+    <form id="form-eliminar" method="POST" style="display: none;">
+        @csrf
+        @method('DELETE')
+    </form>
+
+    <form id="form-restaurar" method="POST" style="display: none;">
+        @csrf
+    </form>
 @endsection
 
 @section('datatable')
-    <script type="text/javascript">
-        const dataTableSearch = new simpleDatatables.DataTable("#datatable-search", {
-        searchable: true,
-        fixedHeight: false
-        });
+    {{-- SweetAlert2 --}}
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
+    {{-- AG Grid --}}
+    <script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.js"></script>
+
+    {{-- Script personalizado para AG Grid --}}
+    <script>
+        const operadoresData = @json($operadores);
+        const pagosPendientes = @json($pagos_pendientes);
     </script>
+    <script src="{{ asset('js/sgt/operadores/operadores_list.js') }}"></script>
+
+    @if (Session::has('success'))
+        <script>
+            Swal.fire({
+                icon: 'success',
+                title: 'Éxito',
+                text: '{{ Session::get('success') }}',
+                confirmButtonColor: '#3085d6'
+            });
+        </script>
+    @endif
 @endsection

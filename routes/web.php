@@ -123,6 +123,11 @@ Route::group(['middleware' => ['auth']], function() {
     Route::get('operadores/show/{id}', [App\Http\Controllers\OperadorController::class, 'show'])->name('show.operadores');
     Route::patch('operadores/pago/update/{id}', [App\Http\Controllers\OperadorController::class, 'update_pago'])->name('update_pago.operadores');
     Route::get('operadores/show/pagos/{id}', [App\Http\Controllers\OperadorController::class, 'show_pagos'])->name('show_pagos.operadores');
+    // Ruta para dar de baja (soft delete) a un operador
+Route::delete('operadores/{id}', [App\Http\Controllers\OperadorController::class, 'destroy'])->name('operadores.destroy');
+
+// Ruta para restaurar (reactivar) un operador
+Route::post('operadores/{id}/restaurar', [App\Http\Controllers\OperadorController::class, 'restore'])->name('operadores.restore');
 
     // ==================== C O T I Z A C I O N E S  E X T E R N A S====================
     Route::get('/cotizaciones/index/externo', [App\Http\Controllers\CotizacionesController::class, 'index_externo'])->name('index.cotizaciones_manual');
@@ -132,9 +137,18 @@ Route::group(['middleware' => ['auth']], function() {
 
     // ==================== C O T I Z A C I O N E S ====================
     Route::get('/cotizaciones/index', [App\Http\Controllers\CotizacionesController::class, 'index'])->name('index.cotizaciones');
+    Route::get('/cotizaciones/list', [App\Http\Controllers\CotizacionesController::class, 'getCotizacionesList'])->name('cotizaciones.list');
+    Route::get('/cotizaciones/by-status', [App\Http\Controllers\CotizacionesController::class, 'getCotizacionesByStatus'])->name('cotizaciones.byStatus');
+
+
+    Route::get('/cotizaciones/finalizadas', [App\Http\Controllers\CotizacionesController::class, 'getCotizacionesFinalizadas']);
+    Route::get('/cotizaciones/espera', [App\Http\Controllers\CotizacionesController::class, 'getCotizacionesEnEspera']);
+    Route::get('/cotizaciones/aprobadas', [App\Http\Controllers\CotizacionesController::class, 'getCotizacionesAprobadas']);
+    Route::get('/cotizaciones/canceladas', [App\Http\Controllers\CotizacionesController::class, 'getCotizacionesCanceladas']);
 
     Route::get('/cotizaciones/busqueda', [App\Http\Controllers\CotizacionesController::class, 'find'])->name('busqueda.cotizaciones');
     Route::post('/cotizaciones/busqueda', [App\Http\Controllers\CotizacionesController::class, 'findExecute'])->name('exec.busqueda.cotizaciones');
+    Route::get('/cotizaciones/documentos/{id}', [App\Http\Controllers\CotizacionesController::class, 'getDocumentos']);
 
     Route::get('/cotizaciones/index_finzaliadas', [App\Http\Controllers\CotizacionesController::class, 'index_finzaliadas'])->name('index_finzaliadas.cotizaciones');
     Route::get('/cotizaciones/index_espera', [App\Http\Controllers\CotizacionesController::class, 'index_espera'])->name('index_espera.cotizaciones');

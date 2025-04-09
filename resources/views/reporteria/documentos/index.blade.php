@@ -1,305 +1,107 @@
+@extends('layouts.app')
+
 @section('template_title')
     Documentos
 @endsection
-@extends('layouts.app')
 
 @section('content')
     <style>
-        .form-check-input[type="checkbox"] {
-            -webkit-appearance: none;
-            -moz-appearance: none;
-            appearance: none;
-            width: 20px;
-            height: 20px;
-            background: #fff;
-            border: 2px solid #000;
-            border-radius: 1px;
-            position: relative;
-            cursor: pointer;
-            margin: 0 auto;
-            /* Centra la casilla en su contenedor */
-        }
-
-        .form-check-input[type="checkbox"]:checked {
-            background-color: #0d6efd;
-            /* color del fondo del checkbox al hacer check */
-            background-image: url('data:image/svg+xml;charset=UTF-8,%3Csvg fill="none" stroke="%23fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="3" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"%3E%3Cpath d="M5 13l4 4L19 7"/%3E%3C/svg%3E');
-            background-position: center;
-            background-repeat: no-repeat;
-            background-size: 70%;
-            border-color: #0d6efd;
-        }
-
-        .form-check-input[disabled] {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        input[type="date"] {
-            height: 34px !important;
-            /* Ajusta la altura para que coincida con los selects */
-            padding: 4px 8px !important;
-            /* Ajusta el padding interno */
-            font-size: 14px !important;
-            /* Mantiene un tamaño de fuente adecuado */
-            line-height: normal !important;
-        }
-
-        /* Asegurar que todos los filtros tengan la misma altura */
-        .form-select,
-        .form-control {
-            height: 32px !important;
-            /* Igualar altura de selects e inputs */
-            padding: 4px 8px !important;
-            font-size: 14px !important;
+        #myGrid {
+            height: 600px;
+            width: 100%;
         }
     </style>
+
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <div class="container-fluid py-4">
         <div class="row">
             <div class="col-12">
                 <div class="card shadow-sm border-0 rounded-3">
-                    <div class="card-header d-flex justify-content-between align-items-center"
-                        style="background-color: #ffffff;">
+                    <div class="card-header d-flex justify-content-between align-items-center bg-white">
                         <h5 class="mb-0 fw-bold">Reporte de documentos</h5>
                     </div>
+                    <div class="d-flex align-items-center gap-2" style="margin-left: 20px;">
+                        <label class="mb-0 fw-semibold text-sm"> Periodo:</label>
+                        <input type="text" id="daterange" readonly class="form-control form-control-sm"
+                            style="width: auto; min-width: 200px; box-shadow: none;" />
+                    </div>
+
+
                     <div class="card-body">
-                        <div class="container-fluid">
-                            <div class="row">
-                                <div class="col-12">
-                                    {{-- Formulario con method="GET" (o "POST", si prefieres), SIN JS de guardado --}}
-                                    <form id="searchForm" action="{{ route('advance_documentos.buscador') }}"
-                                        method="GET">
-                                        <div class="row gy-3 gx-4 align-items-end">
 
-                                            <div class="col-md-2">
-                                                <label for="id_client" class="form-label fw-semibold">Cliente:</label>
-                                                <select class="form-select" name="id_client" id="id_client">
-                                                    <option value="">Seleccionar cliente</option>
-                                                    @foreach ($clientes as $client)
-                                                        <option value="{{ $client->id }}" {{-- Usar request('id_client') para recordar la selección --}}
-                                                            @if (request('id_client') == $client->id) selected @endif>
-                                                            {{ $client->nombre }}
-                                                        </option>
-                                                    @endforeach
-                                                </select>
-                                            </div>
+                        <div class="d-flex justify-content-start my-2 gap-2">
+                            <button type="button" id="exportButtonExcel" data-filetype="xlsx"
+                                class="btn btn-outline-info btn-xs exportButton">
+                                Exportar a Excel
+                            </button>
+                            <button type="button" id="exportButtonPDF" data-filetype="pdf"
+                                class="btn btn-outline-info btn-xs exportButton">
+                                Exportar a PDF
+                            </button>
 
-                                            <div class="col-md-2">
-                                                <label for="id_subcliente"
-                                                    class="form-label fw-semibold">Subcliente:</label>
-                                                <select class="form-select" name="id_subcliente" id="id_subcliente">
-                                                    <option value="">Seleccionar subcliente</option>
-                                                    @foreach ($subclientes as $subcliente)
-                                                        <option value="{{ $subcliente->id }}"
-                                                            @if (request('id_subcliente') == $subcliente->id) selected @endif>
-                                                            {{ $subcliente->nombre }}
-                                                        </option>
-                                                    @endforeach
-                                                </select>
-                                            </div>
-
-                                            <div class="col-md-2">
-                                                <label for="id_proveedor" class="form-label fw-semibold">Proveedor:</label>
-                                                <select class="form-select" name="id_proveedor" id="id_proveedor">
-                                                    <option value="">Seleccionar proveedor</option>
-                                                    @foreach ($proveedores as $proveedor)
-                                                        <option value="{{ $proveedor->id }}"
-                                                            @if (request('id_proveedor') == $proveedor->id) selected @endif>
-                                                            {{ $proveedor->nombre }}
-                                                        </option>
-                                                    @endforeach
-                                                </select>
-                                            </div>
-
-                                            <div class="col-md-2">
-                                                <label for="fecha_inicio" class="form-label fw-semibold">Fecha
-                                                    Inicio:</label>
-                                                <input type="date" class="form-control" name="fecha_inicio"
-                                                    id="fecha_inicio" value="{{ request('fecha_inicio') }}">
-                                            </div>
-
-                                            <div class="col-md-2">
-                                                <label for="fecha_fin" class="form-label fw-semibold">Fecha Fin:</label>
-                                                <input type="date" class="form-control" name="fecha_fin" id="fecha_fin"
-                                                    value="{{ request('fecha_fin') }}">
-                                            </div>
-
-                                            <div class="col-md-2 text-start">
-                                                <button class="btn bg-gradient-info btn-xs py-1"
-                                                    type="submit">Buscar</button>
-                                            </div>
-
-                                        </div>
-                                    </form>
-                                </div>
-                            </div>
                         </div>
 
-                        <div class="table-responsive">
-                            <div class="d-flex justify-content-between mb-3">
-                                <button type="button" id="selectAllButton"
-                                    class="btn bg-gradient-info btn-xs mb-2">Seleccionar todo</button>
-                            </div>
-                            <form id="exportForm" action="{{ route('export_documentos.export') }}" method="POST">
-                                @csrf
-                                <table class="table table-bordered table-striped align-middle" id="datatable-search"
-                                    style="white-space: nowrap;">
-                                    <thead class="thead-light">
-                                        <tr>
-                                            <th class="text-center"></th>
-                                            <th class="text-center">#</th>
-                                            <th class="text-center"># Contenedor</th>
-                                            <th class="text-center">Formato CCP</th>
-                                            <th class="text-center">Boleta liberacion</th>
-                                            <th class="text-center">Doda</th>
-                                            <th class="text-center">Carta porte</th>
-                                            <th class="text-center">Boleta vacio</th>
-                                            <th class="text-center">EIR</th>
-                                            <th class="text-center">Acciones</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @if (Route::currentRouteName() != 'index_documentos.reporteria')
-                                            @foreach ($cotizaciones as $cotizacion)
-                                                <tr>
-                                                    <td class="text-center select-checkbox">
-                                                        <input type="checkbox" name="cotizacion_ids[]"
-                                                            value="{{ $cotizacion->id }}" class="form-check-input">
-                                                    </td>
-                                                    <td class="text-center">{{ $cotizacion->id }}</td>
-                                                    <td class="text-center">{{ $cotizacion->num_contenedor }}</td>
-                                                    <td class="text-center">
-                                                        <div class="form-check d-flex justify-content-center">
-                                                            <input class="form-check-input" type="checkbox"
-                                                                @if ($cotizacion->doc_ccp) checked @endif disabled>
-                                                        </div>
-                                                    </td>
-                                                    <td class="text-center">
-                                                        <div class="form-check d-flex justify-content-center">
-                                                            <input class="form-check-input" type="checkbox"
-                                                                @if ($cotizacion->boleta_liberacion) checked @endif disabled>
-                                                        </div>
-                                                    </td>
-                                                    <td class="text-center">
-                                                        <div class="form-check d-flex justify-content-center">
-                                                            <input class="form-check-input" type="checkbox"
-                                                                @if ($cotizacion->doda) checked @endif disabled>
-                                                        </div>
-                                                    </td>
-                                                    <td class="text-center">
-                                                        <div class="form-check d-flex justify-content-center">
-                                                            <input class="form-check-input" type="checkbox"
-                                                                @if ($cotizacion->carta_porte) checked @endif disabled>
-                                                        </div>
-                                                    </td>
-                                                    <td class="text-center">
-                                                        <div class="form-check d-flex justify-content-center">
-                                                            <input class="form-check-input" type="checkbox"
-                                                                @if ($cotizacion->boleta_vacio) checked @endif disabled>
-                                                        </div>
-                                                    </td>
-                                                    <td class="text-center">
-                                                        <div class="form-check d-flex justify-content-center">
-                                                            <input class="form-check-input" type="checkbox"
-                                                                @if ($cotizacion->doc_eir) checked @endif disabled>
-                                                        </div>
-                                                    </td>
-                                                    <td class="text-center">
-                                                        <a type="button" class="btn bg-gradient-info btn-xs"
-                                                            href="{{ route('edit.cotizaciones', $cotizacion->id) }}">Editar</a>
-                                                    </td>
-                                                </tr>
-                                            @endforeach
-                                        @endif
-                                    </tbody>
-                                </table>
-                                @if (isset($cotizaciones) && $cotizaciones != null)
-                                    <button type="button" id="exportButtonExcel" data-filetype="xlsx"
-                                        class="btn btn-outline-info btn-xs mb-2 mt-sm-0 mt-1 exportButton">Exportar a
-                                        Excel</button>
-                                    <button type="button" id="exportButton" data-filetype="pdf"
-                                        class="btn btn-outline-info btn-xs mb-2 mt-sm-0 mt-1 exportButton">Exportar a
-                                        PDF</button>
-                                @endif
-                            </form>
-                        </div>
+                        <!-- AG Grid -->
+                        <div id="myGrid" class="ag-theme-alpine"></div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Inyectar todos los datos disponibles y la ruta de exportación -->
+    <script>
+        window.cotizacionesData = @json($cotizaciones ?? []);
+        const exportUrl = "{{ route('export_documentos.export') }}";
+    </script>
 @endsection
 
 @section('datatable')
-    <script src="{{ asset('assets/vendor/jquery/dist/jquery.min.js') }}"></script>
-    <script src="{{ asset('assets/vendor/select2/dist/js/select2.min.js') }}"></script>
-
-    <!-- JS -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.datatables.net/2.0.8/js/dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/2.0.8/js/dataTables.bootstrap5.min.js"></script>
-    <script src="https://cdn.datatables.net/fixedcolumns/5.0.1/js/dataTables.fixedColumns.min.js"></script>
-    <script src="https://cdn.datatables.net/fixedcolumns/5.0.1/js/fixedColumns.bootstrap5.min.js"></script>
-    <script src="https://cdn.datatables.net/select/2.0.3/js/dataTables.select.min.js"></script>
-    <script src="https://cdn.datatables.net/select/2.0.3/js/select.bootstrap5.min.js"></script>
-
-    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script src="{{ asset('js/sgt/reporteria/documento.js') }}"></script>
+    <!-- Date Range Picker CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
+
+    <!-- Moment.js -->
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.29.1/moment.min.js"></script>
+
+    <!-- Date Range Picker JS -->
+    <script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
     <script>
         $(document).ready(function() {
-            // === Inicializar la tabla con DataTables ===
-            const table = $('#datatable-search').DataTable({
-                columnDefs: [{
-                    orderable: false,
-                    className: 'select-checkbox',
-                    targets: 0
-                }],
-                fixedColumns: {
-                    start: 2
-                },
-                order: [
-                    [1, 'asc']
-                ],
-                paging: true,
-                pageLength: 30,
-                select: {
-                    style: 'multi',
-                    selector: 'td:first-child'
+            const today = moment();
+            const sevenDaysAgo = moment().subtract(7, 'days');
+
+            $('#daterange').daterangepicker({
+                startDate: sevenDaysAgo,
+                endDate: today,
+                maxDate: today,
+                opens: 'right',
+                locale: {
+                    format: 'YYYY-MM-DD',
+                    separator: ' AL ',
+                    applyLabel: 'Aplicar',
+                    cancelLabel: 'Cancelar',
+                    fromLabel: 'Desde',
+                    toLabel: 'Hasta',
+                    customRangeLabel: 'Personalizado',
+                    daysOfWeek: ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa'],
+                    monthNames: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto',
+                        'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+                    ],
+                    firstDay: 1
                 }
+            }, function(start, end, label) {
+                // Aquí llamas a tu función para recargar datos
+                getDatosFiltradosPorFecha(start.format('YYYY-MM-DD'), end.format('YYYY-MM-DD'));
             });
 
-            // === Al hacer click en el checkbox, alternar la selección en DataTables ===
-            $('#datatable-search tbody').on('click', 'td.select-checkbox input[type="checkbox"]', function(e) {
-                const $row = $(this).closest('tr');
-                this.checked ? table.row($row).select() : table.row($row).deselect();
-                e.stopPropagation();
-            });
 
-            // === Mostrar la selección en los checkboxes al seleccionar filas ===
-            table.on('select', function(e, dt, type, indexes) {
-                if (type === 'row') {
-                    indexes.forEach(function(i) {
-                        const rowNode = table.row(i).node();
-                        $(rowNode).find('td.select-checkbox input[type="checkbox"]').prop('checked',
-                            true);
-                    });
-                }
-                updateSelectAllButton();
-            });
-
-            // === Quitar la selección en los checkboxes al deseleccionar filas ===
-            table.on('deselect', function(e, dt, type, indexes) {
-                if (type === 'row') {
-                    indexes.forEach(function(i) {
-                        const rowNode = table.row(i).node();
-                        $(rowNode).find('td.select-checkbox input[type="checkbox"]').prop('checked',
-                            false);
-                    });
-                }
-                updateSelectAllButton();
-            });
+            // Llama la primera vez al cargar
+            getDatosFiltradosPorFecha(sevenDaysAgo.format('YYYY-MM-DD'), today.format('YYYY-MM-DD'));
 
             // === Actualizar el texto del botón "Seleccionar todo" ===
             function updateSelectAllButton() {
@@ -411,6 +213,7 @@
                         '<option selected value="">Seleccionar subcliente</option>');
                 }
             });
+
         });
     </script>
 @endsection
