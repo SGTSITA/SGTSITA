@@ -710,87 +710,40 @@ public function export_cxp(Request $request)
     
 
 public function advance_documentos(Request $request) {
-    // Obtener catálogos para los selects
     $clientes = Client::where('id_empresa', auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
     $subclientes = Subclientes::where('id_empresa', auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
-    $proveedores = Proveedor::where('id_empresa', auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
 
-    // Capturar filtros del request
     $id_client = $request->id_client;
     $id_subcliente = $request->id_subcliente;
-    $id_proveedor = $request->id_proveedor;
-    $fecha_inicio = $request->fecha_inicio;
-    $fecha_fin = $request->fecha_fin;
 
-    // Construcción de la consulta
-    $cotizaciones = Cotizaciones::query()
+    // Construir la consulta inicial
+    $cotizaciones = Cotizaciones::join('docum_cotizacion', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
         ->where('cotizaciones.id_empresa', auth()->user()->id_empresa)
-        ->where('cotizaciones.estatus', '!=', 'Cancelada') 
-        ->with(['DocCotizacion.Asignaciones']) // Cargar la relación completa
-        ->leftJoin('docum_cotizacion', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
-        ->leftJoin('asignaciones', 'docum_cotizacion.id', '=', 'asignaciones.id_contenedor')
+        ->where('cotizaciones.estatus', 'Aprobada')
         ->select(
             'cotizaciones.id',
-            'cotizaciones.id_cliente',
-            'cotizaciones.id_subcliente',
-
             'docum_cotizacion.num_contenedor',
             'docum_cotizacion.doc_ccp',
             'docum_cotizacion.boleta_liberacion',
             'docum_cotizacion.doda',
             'cotizaciones.carta_porte',
-
-            'docum_cotizacion.boleta_vacio',
-            'docum_cotizacion.doc_eir'
-        )
-        ->get();
-
-    $cotizacion = Cotizaciones::whereIn('id', $cotizacionIds)->first();
-    $user = User::find(auth()->id());
-
-    if ($request->fileType === 'xlsx') {
-        return Excel::download(
-            new \App\Exports\DocumentosExport($cotizaciones, $fechaCarbon, $cotizacion, $user),
-            'documentos.xlsx'
-        );
-    }
-
-    if ($request->fileType === 'pdf') {
-        $pdf = PDF::loadView('reporteria.documentos.pdf', compact('cotizaciones', 'fechaCarbon', 'cotizacion', 'user'))
-                 ->setPaper('a4', 'landscape');
-
             'cotizaciones.img_boleta AS boleta_vacio',
             'docum_cotizacion.doc_eir',
-            'asignaciones.id_proveedor',
-            'asignaciones.fecha_inicio',
-            'asignaciones.fecha_fin'
+            DB::raw('EXISTS(SELECT 1 FROM docum_cotizacion WHERE docum_cotizacion.id_cotizacion = cotizaciones.id) as documentos_existen')
         );
 
-    // 📌 **Aplicar filtros**
-    
-    // 🔹 Filtrar por cliente y subcliente
-    if (!empty($id_client)) {
-        $cotizaciones->where('cotizaciones.id_cliente', $id_client);
+    if ($id_client !== null) {
+        $cotizaciones = $cotizaciones->where('cotizaciones.id_cliente', $id_client);
+
+        if ($id_subcliente !== null && $id_subcliente !== '') {
+            $cotizaciones = $cotizaciones->where('cotizaciones.id_subcliente', $id_subcliente);
+        }
     }
 
-    if (!empty($id_subcliente)) {
-        $cotizaciones->where('cotizaciones.id_subcliente', $id_subcliente);
-    }
-
-    // 🔹 Filtrar por proveedor
-    if (!empty($id_proveedor)) {
-        $cotizaciones->where('asignaciones.id_proveedor', $id_proveedor);
-    }
-
-    // 🔹 Filtrar por fecha de asignación
-    if (!empty($fecha_inicio) && !empty($fecha_fin)) {
-        $cotizaciones->whereBetween('asignaciones.fecha_inicio', [$fecha_inicio, $fecha_fin]);
-    }
-
-    // Obtener resultados
+    // Obtener los resultados
     $cotizaciones = $cotizaciones->get();
 
-    return view('reporteria.documentos.index', compact('cotizaciones', 'clientes', 'subclientes', 'proveedores'));
+    return view('reporteria.documentos.index', compact('cotizaciones', 'clientes', 'subclientes'));
 }
 
 
