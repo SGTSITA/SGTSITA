@@ -9,9 +9,11 @@ use App\Models\SatFormaPago;
 use App\Models\SatMetodoPago;
 use App\Models\SatUsoCfdi;
 use App\Models\DocumCotizacion;
+use App\Models\Correo;
 use Illuminate\Support\Facades\Mail;
 use App\Traits\CommonTrait;
 use Carbon\Carbon;
+use ZipArchive;
 use Auth;
 
 class ExternosController extends Controller
@@ -33,6 +35,59 @@ class ExternosController extends Controller
 
     public function misViajes(){
         return view('cotizaciones.externos.viajes_solicitados');
+    }
+
+    public function ZipDownload($zipFile){
+       return response()->download($zipFile)->deleteFileAfterSend(true);
+    }
+
+    public function CfdiToZip(Request $request){
+        try{
+            $zipName = "carta-porte-".uniqid().".zip";
+
+            $zipPath = public_path($zipName); // Ruta en la carpeta public
+
+            $zip = new ZipArchive;
+    
+            if ($zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) === true) {
+
+                foreach($request->contenedores as $c){
+                    $cotizacionQuery = Cotizaciones::join('docum_cotizacion as d', 'cotizaciones.id', '=', 'd.id_cotizacion')
+                    ->where('d.num_contenedor',$c['NumContenedor']);
+    
+                    $cotizacion = $cotizacionQuery->first();
+                    $pdf = $cotizacion->carta_porte;
+                    $xml = $cotizacion->carta_porte_xml;
+
+                    if(\File::exists(public_path('/cotizaciones/cotizacion'.$cotizacion->id_cotizacion."/$xml"))){
+                   
+                        $zip->addFile(public_path('/cotizaciones/cotizacion'.$cotizacion->id_cotizacion."/$xml"),$c['NumContenedor'].'.xml');
+                    }
+    
+                    if(\File::exists(public_path('/cotizaciones/cotizacion'.$cotizacion->id_cotizacion."/$pdf"))){
+                        $zip->addFile(public_path('/cotizaciones/cotizacion'.$cotizacion->id_cotizacion."/$pdf"), $c['NumContenedor'].'.pdf');
+                    }
+                    
+                   
+                }
+        
+                $zip->close();
+                
+            } 
+
+            
+
+           
+            return response()->json([
+                'zipUrl' => ($zipName),
+                'success' => true
+            ]);
+        }catch(\Throwable $t){
+            return response()->json([
+                'message' => $t->getMessage(),
+                'success' =>false
+            ]);
+        }
     }
 
     public function getContenedoresPendientes(Request $request){
@@ -110,9 +165,10 @@ class ExternosController extends Controller
                 $cliente = Client::where('id',$cotizacion->id_cliente)->first();
                 $cotizacion->save();
 
-                $emailList = [env('MAIL_NOTIFICATIONS'),Auth::User()->email];
-
-                Mail::to($emailList)->send(new \App\Mail\NotificaCotizacionMail($contenedor,$cliente));
+                $cuentasCorreo = [env('MAIL_NOTIFICATIONS'),Auth::User()->email];
+                $cuentasCorreo2 = Correo::where('cotizacion_nueva',1)->get()->pluck('correo')->toArray();
+                \Log::debug($cuentasCorreo);
+                Mail::to($cuentasCorreo)->send(new \App\Mail\NotificaCotizacionMail($contenedor,$cliente));
 
             }
         }catch(\Throwable $t){
@@ -161,6 +217,26 @@ class ExternosController extends Controller
         return view('cotizaciones.externos.file-manager',["numContenedor" => $r->numContenedor]);
     }
 
+    public function sendFiles1(Request $r){
+        try{
+
+            $files = ( $r->attachmentFiles);
+$attachment = [];
+            foreach($files as $file){
+                array_push($attachment,public_path($file['file']));
+            }
+
+            $emailList = (strlen($r->secondaryEmail) > 0) ? [$r->email,$r->secondaryEmail] : [$r->email];
+
+            Mail::to($emailList)
+            ->send(new \App\Mail\CustomMessageMail($r->subject,$r->message, $attachment));
+            return response()->json(["TMensaje" => "success", "Titulo" => "Mensaje enviado correctamente","Mensaje" => "Se ha enviado mensaje con los archivos seleccionados"]);
+
+        }catch(\Trhowable $t){
+            return response()->json(["TMensaje" => "error", "Titulo" => "Mensaje no enviado","Mensaje" => "Ocurrio un error mientras enviabamos su mensaje: ".$t->getMessage()]);
+        }
+    }
+
     public function fileProperties($id,$file,$title){
         $path = public_path('cotizaciones/cotizacion'.$id.'/'.$file);
         if(\File::exists($path)){
@@ -170,8 +246,10 @@ class ExternosController extends Controller
                 "fileDate" => CommonTrait::obtenerFechaEnLetra(date("Y-m-d", filemtime($path))),
                 "fileSize" => CommonTrait::calculateFileSize(filesize($path)),
                 "fileType" => pathinfo($path, PATHINFO_EXTENSION),
-                "identifier" => $id
+                "identifier" => $id,
+                "fileCode" => iconv('UTF-8', 'ASCII//TRANSLIT',str_replace(' ','-',$title))
                 ];
+                //iconv('UTF-8', 'ASCII//TRANSLIT', $cadena);
         }else{
             return [];
         }
@@ -198,12 +276,27 @@ class ExternosController extends Controller
             $doc_ccp = self::fileProperties($folderId,$documentos->doc_ccp,'Formato para Carta porte');
             if(sizeof($doc_ccp) > 0) array_push($documentList,$doc_ccp);
         }
+
+        if(!is_null($documentos->doc_eir)){
+            $doc_eir = self::fileProperties($folderId,$documentos->doc_eir,'EIR');
+            if(sizeof($doc_eir) > 0) array_push($documentList,$doc_eir);
+        }
        
         $cotizacion = Cotizaciones::where('id',$documentos->id_cotizacion)->first();
 
         if(!is_null($cotizacion->img_boleta)){
             $preAlta = self::fileProperties($folderId,$cotizacion->img_boleta,'Pre-Alta');
             if(sizeof($preAlta) > 0) array_push($documentList,$preAlta);
+        }
+
+        if(!is_null($cotizacion->carta_porte)){
+            $cpPDF = self::fileProperties($folderId,$cotizacion->carta_porte,'Carta Porte');
+            if(sizeof($cpPDF) > 0) array_push($documentList,$cpPDF);
+        }
+
+        if(!is_null($cotizacion->carta_porte_xml)){
+            $cpXML = self::fileProperties($folderId,$cotizacion->carta_porte_xml,'Carta Porte XML');
+            if(sizeof($cpXML) > 0) array_push($documentList,$cpXML);
         }
         
 

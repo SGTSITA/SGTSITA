@@ -5,6 +5,7 @@ namespace App\Listeners;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
 use App\Events\NotificaNuevoDocumentoEvent;
+use App\Models\Correo;
 use Auth;
 use Mail;
 
@@ -28,7 +29,13 @@ class NotificaNuevoDocumentoListener
      */
     public function handle(NotificaNuevoDocumentoEvent $event)
     {
+        $emailList1 = Correo::where('nuevo_documento',1)->get()->pluck('correo')->toArray();
+       
         $emailList = [env('MAIL_NOTIFICATIONS'),Auth::User()->email];
-        Mail::to($emailList)->send(new \App\Mail\NotificaNuevoDocumentoMail($event->cotizacion,$event->documento));
+        foreach($emailList1 as $m){
+            array_push($emailList,$m);
+        }
+
+        Mail::to($emailList1)->send(new \App\Mail\NotificaNuevoDocumentoMail($event->cotizacion,$event->documento));
     }
 }

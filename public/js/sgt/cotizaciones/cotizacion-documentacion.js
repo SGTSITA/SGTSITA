@@ -117,8 +117,8 @@ class MissionResultRenderer {
       paginationPageSize: 500,
       paginationPageSizeSelector: [200, 500, 1000],
       rowSelection: {
-        mode: "singleRow",
-        headerCheckbox: false,
+        mode: "multiRow",
+        headerCheckbox: true,
       },
    rowData: [
   
@@ -147,7 +147,7 @@ class MissionResultRenderer {
   var paginationTitle = document.querySelector("#ag-32-label");
   paginationTitle.textContent = 'Registros por página';
   
-  const btnDocumets = document.querySelector('#btnDocs');
+  const btnDocumets = document.querySelectorAll('.btnDocs');
   //const api = createGrid(gridDiv, gridOptions)
    
    function getContenedoresPendientes(estatus = 'En espera'){
@@ -160,7 +160,8 @@ class MissionResultRenderer {
         success:(response)=>{
             
           if(response.length > 0){
-            btnDocumets.disabled = false;
+            btnDocumets.forEach(btn => btn.disabled = false)
+            
           }
           apiGrid.setGridOption("rowData", response)
         },
@@ -172,7 +173,28 @@ class MissionResultRenderer {
 
    function goToUploadDocuments(){
         let contenedor = apiGrid.getSelectedRows();
-
+        if(contenedor.length != 1){
+          toastr.options = {
+            "closeButton": true,
+            "debug": false,
+            "newestOnTop": false,
+            "progressBar": true,
+            "positionClass": "toastr-top-center",
+            "preventDuplicates": false,
+            "onclick": null,
+            "showDuration": "1500",
+            "hideDuration": "1000",
+            "timeOut": "5000",
+            "extendedTimeOut": "1000",
+            "showEasing": "swing",
+            "hideEasing": "linear",
+            "showMethod": "fadeIn",
+            "hideMethod": "fadeOut"
+          };
+          
+          toastr.error( `Debe seleccionar unicamente un contenedor para esta opción`);
+          return false;
+        } 
         let numContenedor = null;
         contenedor.forEach(c => numContenedor = c.NumContenedor)
 
@@ -186,7 +208,28 @@ class MissionResultRenderer {
 
    function cancelarViajeQuestion(){
     let contenedor = apiGrid.getSelectedRows();
-    if(contenedor.length <= 0) return
+    if(contenedor.length != 1){
+      toastr.options = {
+        "closeButton": true,
+        "debug": false,
+        "newestOnTop": false,
+        "progressBar": true,
+        "positionClass": "toastr-top-center",
+        "preventDuplicates": false,
+        "onclick": null,
+        "showDuration": "1500",
+        "hideDuration": "1000",
+        "timeOut": "5000",
+        "extendedTimeOut": "1000",
+        "showEasing": "swing",
+        "hideEasing": "linear",
+        "showMethod": "fadeIn",
+        "hideMethod": "fadeOut"
+      };
+      
+      toastr.error( `Debe seleccionar unicamente un contenedor para esta opción`);
+      return false;
+    } 
     Swal.fire({
       title: '¿Desea cancelar el viaje seleccionado?',
       text:'Está a punto de cancelar el viaje, si está seguro haga click en "Si, Cancelar"',
@@ -232,7 +275,28 @@ class MissionResultRenderer {
 
       let contenedor = apiGrid.getSelectedRows();
 
-      if(contenedor.length <= 0) return
+      if(contenedor.length != 1){
+        toastr.options = {
+          "closeButton": true,
+          "debug": false,
+          "newestOnTop": false,
+          "progressBar": true,
+          "positionClass": "toastr-top-center",
+          "preventDuplicates": false,
+          "onclick": null,
+          "showDuration": "1500",
+          "hideDuration": "1000",
+          "timeOut": "5000",
+          "extendedTimeOut": "1000",
+          "showEasing": "swing",
+          "hideEasing": "linear",
+          "showMethod": "fadeIn",
+          "hideMethod": "fadeOut"
+        };
+        
+        toastr.error( `Debe seleccionar unicamente un contenedor para esta opción`);
+        return false;
+      } 
 
       let numContenedor = null;
       contenedor.forEach(c => numContenedor = c.NumContenedor)
@@ -253,4 +317,57 @@ class MissionResultRenderer {
     },1000)
    }
 
-   btnDocumets.addEventListener('click',goToUploadDocuments)
+   function getFilesCFDI(){
+      var _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+      var url = '/viajes/file-manager/cfdi-files';
+
+      let contenedores = apiGrid.getSelectedRows();
+      if(contenedores.length <= 0){
+        toastr.options = {
+          "closeButton": true,
+          "debug": false,
+          "newestOnTop": false,
+          "progressBar": true,
+          "positionClass": "toastr-top-center",
+          "preventDuplicates": false,
+          "onclick": null,
+          "showDuration": "1500",
+          "hideDuration": "1000",
+          "timeOut": "5000",
+          "extendedTimeOut": "1000",
+          "showEasing": "swing",
+          "hideEasing": "linear",
+          "showMethod": "fadeIn",
+          "hideMethod": "fadeOut"
+        };
+        
+        toastr.info( `Debe seleccionar al menos un contenedor`);
+        return false;
+      }
+
+      $.ajax({
+        url: url,
+        type:'post',
+        data:{_token, contenedores},
+        beforeSend:()=>{},
+        success:(response)=>{
+          if(response.success){
+            const fileURL = `viajes/file-manager/cfdi-files/${response.zipUrl}`
+            const link = document.createElement("a");
+            link.href = fileURL;
+            document.body.appendChild(link);
+            link.click();
+        
+            document.body.removeChild(link);
+          }else{
+            Swal.fire('Ha ocurrido un error','No se pudo descargar el archivo','warning')
+          }
+         
+        },
+        error:()=>{
+
+        }
+      })
+   }
+
+   document.querySelector('#btnDocs').addEventListener('click',goToUploadDocuments)

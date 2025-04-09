@@ -214,7 +214,7 @@ public function validarRFC(Request $request)
     $clabeExiste = CuentasBancarias::where('cuenta_clabe', $request->cuenta_clabe)->exists();
 
     return response()->json([
-        'exists' => $clabeExiste
+        'exists' => false
     ]);
 }
 

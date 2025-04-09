@@ -10,7 +10,8 @@
           <span class="text-gray-500 mt-1 fw-semibold fs-6">Lista de contenedores con <span class="text-gray-600 fw-bold">Documentos</span> pendientes </span>
         </h3>
         <div class="card-toolbar">
-        <button name="btnDocs" id="btnDocs" disabled="true" class="btn btn-sm btn-primary me-3">Cargar Documentos </button>
+        <button name="btnDocs1" id="btnDocs1" onclick="fileManager()" disabled="true" class="btnDocs btn btn-sm btn-primary me-3">Ver Documentos </button>
+        <button name="btnDocs" id="btnDocs" disabled="true" class="btnDocs btn btn-sm btn-primary me-3">Cargar Documentos </button>
         </div>
         
       </div>
