@@ -676,7 +676,7 @@ public function export_cxp(Request $request)
     }
 
     public function export_documentos(Request $request)
-{
+   {
     $fecha = date('Y-m-d');
     $fechaCarbon = Carbon::parse($fecha);
 
