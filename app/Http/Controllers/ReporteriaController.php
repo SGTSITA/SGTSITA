@@ -675,23 +675,39 @@ public function export_cxp(Request $request)
         return view('reporteria.documentos.index', compact('cotizaciones', 'clientes', 'subclientes', 'proveedores'));
     }
 
-    public function export_documentos(Request $request)
-   {
-    $fecha = date('Y-m-d');
-    $fechaCarbon = Carbon::parse($fecha);
+    public function export_utilidad(Request $request){
+        $fechaInicio = $request->input('fechaInicio');
+        $fechaFin = $request->input('fechaFin');
 
-    $cotizacionIds = $request->input('selected_ids', []);
+        $fecha = date('Y-m-d');
+        $fechaCarbon = Carbon::parse($fecha);
+        $cotizaciones = Collect($request->rowData);//Asignaciones::whereIn('id', $cotizacionIds)->get();
+        $cotizacion = [];//Asignaciones::where('id', $cotizacionIds)->first();
+        $user = User::where('id', '=', auth()->user()->id)->first();
 
-    if (empty($cotizacionIds)) {
-        return response()->json([
-            'success' => false,
-            'message' => 'No se seleccionaron cotizaciones.'
-        ], 400);
+        $gastos = GastosGenerales::where('id_empresa', auth()->user()->id_empresa)
+                                ->where('diferir_gasto',0)
+                                ->whereBetween('fecha',[$fechaInicio,$fechaFin])->sum('monto1');
+       // $gastos = [];
+
+        $utilidad = $cotizaciones->sum('utilidad');
+
+        $totalRows = $request->totalRows;
+        $selectedRows = $cotizaciones->count();
+  
+
+        if($request->fileType == "xlsx"){
+            Excel::store(new \App\Exports\UtilidadExport($cotizaciones, $fechaCarbon, $cotizacion, $user, []), 'utilidad.xlsx','public');
+            return Response::download(storage_path('app/public/utilidad.xlsx'), "utilidad.xlsx")->deleteFileAfterSend(true);
+        }else{
+        $pdf = PDF::loadView('reporteria.utilidad.pdf', 
+                compact('cotizaciones','utilidad', 'fechaInicio','fechaFin', 'cotizacion', 'user', 'gastos','totalRows','selectedRows'))
+                ->setPaper('a4', 'landscape');
+            return $pdf->stream('utilidades_rpt.pdf');
+        }
     }
 
-    $cotizaciones = Cotizaciones::join('docum_cotizacion', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
-        ->whereIn('cotizaciones.id', $cotizacionIds)
-        ->select(
+    // ==================== D O C U M E N T O S ====================
 
     public function index_documentos(Request $request){
 
