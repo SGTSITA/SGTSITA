@@ -1,16 +1,19 @@
 <!DOCTYPE html>
 <html>
-@if(!isset($isExcel))    
+@if (!isset($isExcel))
     <style>
         body {
             font-family: Arial, sans-serif;
             font-size: 16px;
-            margin-top: 50px; 
+            margin-top: 50px;
             margin-left: 40px;
         }
 
-        h3, p, th, td {
-            font-weight: normal; 
+        h3,
+        p,
+        th,
+        td {
+            font-weight: normal;
         }
 
         .registro-contenedor {
@@ -28,7 +31,8 @@
             border-collapse: collapse;
         }
 
-        table th, table td {
+        table th,
+        table td {
             border: 1px solid #000;
             padding: 8px;
         }
@@ -48,7 +52,9 @@
             color: #000;
         }
 
-        .margin_cero, .sin_espacios, .sin_margem {
+        .margin_cero,
+        .sin_espacios,
+        .sin_margem {
             margin: 0;
             padding: 0;
         }
@@ -63,7 +69,7 @@
             margin: -40px;
         }
     </style>
-@endif    
+@endif
 
 <head>
     <meta charset="UTF-8">
@@ -81,18 +87,20 @@
     @endphp
 
     <!-- Encabezado principal -->
-    <div class="contianer sin_margem">
-        <h4 class="sin_espacios2">Empresa: {{ $user->Empresa->nombre }}</h4>
-        <h4 class="sin_espacios2">Estado de cuenta</h4>
-        <h4 class="sin_espacios2">Proveedor: {{ $cotizacion->Proveedor->nombre }}</h4>
+    <div class="contianer sin_margem ">
+        <h4 class="sin_espacios2 "style="position: top: -10%;">Empresa: {{ $user->Empresa->nombre }}</h4>
+        <h4 class="sin_espacios2" style="position: top: -10%;">Estado de cuenta</h4>
+        <h4 class="sin_espacios2" style="position: top: -10%;">Proveedor: {{ $cotizacion->Proveedor->nombre }}</h4>
     </div>
 
     <div class="contianer sin_margem" style="position: relative">
-        <h5 style="position: absolute; left: 70%; top: -5%;">Estado de cuenta por pagar: {{ date('d-m-Y') }}</h5>
+        <h5 style="position: absolute; left: 70%; top: -10%;">Estado de cuenta por pagar: {{ date('d-m-Y') }}</h5>
     </div>
 
+
     <!-- Tabla principal de cuentas por pagar -->
-    <table class="table tabla-completa" style="color: #000; width: 100%; margin-top: 40px; font-size: 10px; border-collapse: collapse;">
+    <table class="table tabla-completa"
+        style="color: #000; width: 100%; margin-top: 55px; font-size: 10px; border-collapse: collapse;">
         <thead>
             <tr>
                 <th>Contratista</th>
@@ -112,7 +120,7 @@
         <tbody style="text-align: center; font-size: 10px; line-height: 1;">
             @foreach ($cotizaciones as $item)
                 @php
-                    $total_oficial = ($item->base1_proveedor + $item->iva) - $item->retencion;
+                    $total_oficial = $item->base1_proveedor + $item->iva - $item->retencion;
                     $base_factura = $item->total_proveedor - $item->base1_proveedor - $item->iva + $item->retencion;
                     $importe_vta = $base_factura - $total_oficial;
                     $suma_importeCT = $base_factura + $total_oficial;
@@ -144,26 +152,34 @@
 
     <!-- Sección de cuentas bancarias del proveedor -->
     <h3 class="sin_margem" style="background: rgb(24, 192, 141);">Contratista</h3>
-    <table class="table tabla-completa sin_margem" style="color: #000; width: 100%; font-size: 10px; margin-top: 5px; border-collapse: collapse;">
+    <table class="table tabla-completa sin_margem"
+        style="color: #000; width: 100%; font-size: 10px; margin-top: 5px; border-collapse: collapse;">
         <tbody style="text-align: left; font-size: 10px; line-height: 1;">
             @if ($cotizacion->Proveedor && $cotizacion->Proveedor->CuentasBancarias->isNotEmpty())
                 @php $contador = 1; @endphp
                 <tr>
                     @foreach ($cotizacion->Proveedor->CuentasBancarias as $cuentas)
-                        <td style="padding: 5px; border: 1px solid #ccc; text-align: left; vertical-align: top; width: 150px; min-width: 150px;">
+                        <td
+                            style="padding: 5px; border: 1px solid #ccc; text-align: left; vertical-align: top; width: 150px; min-width: 150px;">
                             <h4 style="margin: 0; font-size: 10px;">Cuenta #{{ $contador }}</h4>
                             <p>Beneficiario: {{ $cuentas->nombre_beneficiario }}</p>
                             <p>Banco: {{ $cuentas->nombre_banco }}</p>
                             <p>Cuenta: {{ $cuentas->cuenta_bancaria }}</p>
                             <p>Clabe: <b>{{ $cuentas->cuenta_clabe }}</b></p>
-                            <p>A pagar: <b>${{ number_format($contador == 1 ? $pagar1 : ($contador == 2 ? $pagar2 : 0), 2, '.', ',') }}</b></p>
+                            <p>A pagar:
+                                <b>${{ number_format($contador == 1 ? $pagar1 : ($contador == 2 ? $pagar2 : 0), 2, '.', ',') }}</b>
+                            </p>
                             @php $contador++; @endphp
                         </td>
                     @endforeach
                 </tr>
             @else
                 <tr>
-                    <td colspan="3" style="padding: 5px; border: 1px solid #ccc; text-align: center; font-size: 10px;">No se encontraron cuentas bancarias para el proveedor: <b>{{ $cotizacion->Proveedor->nombre ?? 'N/A' }}</b>.</td>
+                    <td colspan="3"
+                        style="padding: 5px; border: 1px solid #ccc; text-align: center; font-size: 10px;">No se
+                        encontraron cuentas bancarias para el proveedor:
+                        <b>{{ $cotizacion->Proveedor->nombre ?? 'N/A' }}</b>.
+                    </td>
                 </tr>
             @endif
         </tbody>
@@ -177,4 +193,5 @@
         <h4>Importe CT: ${{ number_format($importeCT, 2, '.', ',') }}</h4>
     </div>
 </body>
+
 </html>

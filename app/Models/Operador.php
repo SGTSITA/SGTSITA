@@ -29,6 +29,7 @@ class Operador extends Model
         'recomendacion',
         'foto',
         'id_empresa',
+        'curp',
     ];
 
     protected static function boot()

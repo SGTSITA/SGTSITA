@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', function () {
             id: op.id,
             nombre: op.nombre,
             telefono: op.telefono,
+            curp: op.curp,
             estatus: op.deleted_at ? 'Inactivo' : 'Activo',
             deleted_at: op.deleted_at,
             acciones: op.id,
@@ -16,7 +17,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const columnDefs = [
         { headerName: "No", field: "id", width: 80 },
         { headerName: "Nombre", field: "nombre", flex: 1, floatingFilter: true, },
-        { headerName: "Teléfono", field: "telefono", flex: 1 },
+        { headerName: "Teléfono", field: "telefono", flex: 1,  floatingFilter: true, },
+        { headerName: "Curp", field: "curp", flex: 1,  floatingFilter: true, },
         {
             headerName: "Estatus",
             field: "estatus",
@@ -51,7 +53,7 @@ document.addEventListener('DOMContentLoaded', function () {
             filter: true,
         },
         pagination: true,
-        paginationPageSize: 10,
+        paginationPageSize: 20,
     });
 });    
 
