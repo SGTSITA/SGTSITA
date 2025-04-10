@@ -73,6 +73,10 @@ class Asignaciones extends Model
     {
         return $this->belongsTo(Bancos::class, 'id_banco2_dinero_viaje');
     }
+
+    public function Justificacion(){
+        return $this->hasMany(ViaticosOperador::class, 'id_cotizacion','id_contenedor');
+    }
     
     protected static function boot()
     {

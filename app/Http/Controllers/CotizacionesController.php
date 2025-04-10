@@ -18,6 +18,7 @@ use App\Models\Operador;
 use App\Models\Proveedor;
 use App\Models\Subclientes;
 use App\Models\ClientEmpresa;
+use App\Models\BancoDineroOpe;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Carbon\Carbon;
@@ -558,9 +559,13 @@ public function getCotizacionesCanceladas()
         }
     }
 
+
    
     if ($request->ajax()) {
         return response()->json(['success' => true, 'message' => 'Estatus actualizado correctamente.']);
+
+      
+
     }
 
   
@@ -582,7 +587,9 @@ public function getCotizacionesCanceladas()
         $gastos_ope = GastosOperadores::where('id_cotizacion', '=', $cotizacion->id)->get();
         $proveedores = Proveedor::where('id_empresa', '=', auth()->user()->id_empresa)->get();
 
-        return view('cotizaciones.edit', compact('cotizacion', 'documentacion', 'clientes','gastos_extras', 'gastos_ope','proveedores'));
+        $bancos = Bancos::where('id_empresa',Auth::User()->id_empresa)->get();
+
+        return view('cotizaciones.editv1', compact('bancos','cotizacion', 'documentacion', 'clientes','gastos_extras', 'gastos_ope','proveedores'));
     }
 
     public function edit_externo($id){
@@ -726,6 +733,10 @@ public function getCotizacionesCanceladas()
                 $fileName = uniqid() . $file->getClientOriginalName();
                 $file->move($path, $fileName);
                 $cotizaciones->carta_porte = $fileName;
+
+                //Notificamos al cliente que se ha adjuntado el PDF de Carta Porte
+                
+                event(new \App\Events\GenericNotificationEvent([$cotizaciones->cliente->correo],'Se cargó Carta Porte: '.$doc_cotizaciones->num_contenedor,'Hola, tu transportista cargó el documento "Carta Porte" del contenedor '.$doc_cotizaciones->num_contenedor));
             }
 
             if ($request->hasFile("img_boleta")) {
@@ -740,42 +751,9 @@ public function getCotizacionesCanceladas()
 
             if($request->get('id_cliente_clientes') == NULL){
                 $gasto_descripcion = $request->input('gasto_descripcion');
-                $gasto_monto = $request->input('gasto_monto');
                 $ticket_ids = $request->input('ticket_id');
 
-                for ($count = 0; $count < count($gasto_descripcion); $count++) {
-                    $data = array(
-                        'id_cotizacion' => $cotizaciones->id,
-                        'descripcion' => $gasto_descripcion[$count],
-                        'monto' => $gasto_monto[$count],
-                    );
-
-                    if (isset($ticket_ids[$count])) {
-                        // Actualizar el ticket existente
-                        $ticket = GastosExtras::findOrFail($ticket_ids[$count]);
-                        $ticket->update($data);
-                    } elseif($gasto_descripcion[$count] != NULL) {
-                        // Crear un nuevo ticket
-                        GastosExtras::create($data);
-                    }
-                }
-
-                // Convertir los valores a números si son cadenas
-                // $maniobra = is_numeric($cotizaciones->maniobra) ? $cotizaciones->maniobra : 0;
-                // $burreo = is_numeric($cotizaciones->burreo) ? $cotizaciones->burreo : 0;
-                // $otro = is_numeric($cotizaciones->otro) ? $cotizaciones->otro : 0;
-                // $estadia = is_numeric($cotizaciones->estadia) ? $cotizaciones->estadia : 0;
-                // $precio_viaje = is_numeric($cotizaciones->precio_viaje) ? $cotizaciones->precio_viaje : 0;
-                // $iva = is_numeric($cotizaciones->iva) ? $cotizaciones->iva : 0;
-
-                // SUMA TOTAL DE COTIZACION
                 $suma =  $cotizaciones->total;
-
-                foreach ($gasto_monto as $monto) {
-                    // Convertir el valor a número si es una cadena
-                    $monto = is_numeric($monto) ? $monto : 0; // Si $monto no es numérico, se asume 0
-                    $suma += $monto;
-                }
                 $cotizaciones->total = $suma;
                 $cotizaciones->restante = $cotizaciones->total;
                 $cotizaciones->update();
@@ -790,36 +768,7 @@ public function getCotizacionesCanceladas()
                     $cotizaciones->update();
 
                     if($asignacion->id_proveedor == NULL){
-                        $cantidad_ope = $request->input('cantidad_ope');
-                        $tipo_ope = $request->input('tipo_ope');
-                        $ticket_ids_ope = $request->input('ticket_id_ope');
-                        $suma_cantidad_ope = 0;
-
-                        for ($count = 0; $count < count($cantidad_ope); $count++) {
-                            $suma_cantidad_ope += $cantidad_ope[$count];
-
-                            $data = array(
-                                'id_asignacion' => $asignacion->id,
-                                'id_operador' => $asignacion->id_operador,
-                                'id_cotizacion' => $cotizaciones->id,
-                                'cantidad' => $cantidad_ope[$count],
-                                'tipo' => $tipo_ope[$count],
-                            );
-
-                            if (isset($ticket_ids_ope[$count])) {
-                                // Actualizar el ticket existente
-                                $ticket = GastosOperadores::findOrFail($ticket_ids_ope[$count]);
-                                $ticket->update($data);
-                            } elseif($cantidad_ope[$count] != NULL) {
-                                // Crear un nuevo ticket
-                                GastosOperadores::create($data);
-                            }
-                        }
-
-                        $suma_ope = ($asignacion->sueldo_viaje + $suma_cantidad_ope) - $asignacion->dinero_viaje;
-                        $asignacion->pago_operador = $suma_ope;
-                        $asignacion->restante_pago_operador = $suma_ope;
-                        $asignacion->update();
+        
                     }else if($asignacion->id_operador == NULL){
 
                         $asignacion->precio = $request->get('precio_proveedor');
@@ -861,8 +810,273 @@ public function getCotizacionesCanceladas()
                 }
             }
             Session::flash('edit', 'Se ha editado sus datos con exito');
-            return redirect()->back()
-                ->with('success');
+
+            return redirect()->back();
+    }
+
+    //Obtener una lista de gastos del contenedor
+
+    public function get_gastos(Request $r){
+        $numContenedor = $r->input('numContenedor');
+        $idEmpresa = auth()->user()->id_empresa;
+
+        $contenedor = DocumCotizacion::where('num_contenedor', $numContenedor)
+                                            ->where('id_empresa', $idEmpresa)
+                                            ->first();
+
+        $gastosExtra = GastosExtras::where('id_cotizacion',$contenedor->id_cotizacion)->get();
+        $gastosContenedor = 
+        $gastosExtra->map(function($g){
+            return [
+                "IdContenedor" => $g->id_cotizacion,
+                "IdGasto" => $g->id,
+                "Gasto" => $g->descripcion,
+                "Monto" => $g->monto,
+                "Fecha" => $g->created_at
+            ];
+        });
+
+        return $gastosContenedor;
+    }
+
+
+    public function get_gastos_operador(Request $r){
+        $numContenedor = $r->input('numContenedor');
+        $idEmpresa = auth()->user()->id_empresa;
+
+        $contenedor = DocumCotizacion::where('num_contenedor', $numContenedor)
+                                            ->where('id_empresa', $idEmpresa)
+                                            ->first();
+
+        $gastosOperador = GastosOperadores::leftJoin('bancos','gastos_operadores.id_banco','=','bancos.id')
+        ->where('id_cotizacion',$contenedor->id_cotizacion)
+        ->select('bancos.nombre_banco','bancos.nombre_beneficiario','gastos_operadores.*')
+        ->get();
+        $gastosContenedor = 
+        $gastosOperador->map(function($g){
+            return [
+                "IdContenedor" => $g->id_cotizacion,
+                "IdGasto" => $g->id,
+                "Gasto" => $g->tipo,
+                "Monto" => $g->cantidad,
+                "Estatus" => $g->estatus,
+                "Fecha" => Carbon::parse($g->created_at)->format('Y-m-d'),
+                "FechaPago" => $g->fecha_pago,
+                "BancoPago" => (!is_null($g->nombre_banco) ) ? $g->nombre_banco.' / '.$g->nombre_beneficiario : '',
+            ];
+        });
+
+        return $gastosContenedor;
+    }
+    
+    // Agregar Gastos Operador
+    public function agregar_gasto_operador(Request $r){
+       
+        try{
+            DB::beginTransaction();
+
+             $numContenedor = $r->input('numContenedor');
+             $idEmpresa = auth()->user()->id_empresa;
+
+             $contenedor = DocumCotizacion::where('num_contenedor', $numContenedor)
+                                                ->where('id_empresa', $idEmpresa)
+                                                ->first();
+             $asignacion = Asignaciones::where('id_contenedor', $contenedor->id)->first();
+
+            if($r->pagoInmediato != "false" ){
+                //validar que el banco tenga saldo suficiente para efectuar el pago del gasto
+                $bancos = Bancos::where('id_empresa',Auth::User()->id_empresa)->where('id',$r->bancoPago)->first();
+                $saldoActual = $bancos->saldo;
+        
+                if($saldoActual < $r->montoGasto){
+                    return response()->json(["Titulo" => "Saldo insuficiente en Banco","Mensaje" => "La cuenta bancaria seleccionada no cuenta con saldo suficiente para registrar esta transacción","TMensaje" => "warning"]);
+                }
+
+                Bancos::where('id' ,'=',$r->bancoPago)->update(["saldo" => DB::raw("saldo - ". $r->montoGasto)]);
+
+                $banco = new BancoDineroOpe;
+                $banco->id_operador = $asignacion->id_operador;
+                
+                $banco->monto1 = $r->montoGasto;
+                $banco->metodo_pago1 = 'Transferencia';
+                $banco->descripcion_gasto = "Gasto ope: ".$r->descripcion;
+                $banco->id_banco1 = $r->bancoPago;
+
+                $contenedoresAbonos[] = [
+                    'num_contenedor' => $numContenedor,
+                    'abono' => $r->montoGasto
+                ];
+                $contenedoresAbonosJson = json_encode($contenedoresAbonos);
+
+                $banco->contenedores = $contenedoresAbonosJson;
+            
+                $banco->tipo = 'Salida';
+                $banco->fecha_pago = date('Y-m-d');
+                $banco->save();
+             }
+
+             $datosGasto = [
+                            "id_cotizacion" => $contenedor->id_cotizacion, 
+                            "id_banco" => $r->pagoInmediato != "false" ? $r->bancoPago : null, 
+                            "id_asignacion" => $asignacion->id, 
+                            "id_operador" => $asignacion->id_operador, 
+                            "cantidad" => $r->montoGasto, 
+                            "tipo" => $r->descripcion, 
+                            "estatus" => $r->pagoInmediato != "false" ? 'Pagado' : 'Pago Pendiente', 
+                            "fecha_pago" => $r->pagoInmediato != "false" ? Carbon::now() : null, 
+                            "pago_inmediato" => $r->pagoInmediato != "false" ? 1 : 0, 
+                            "created_at" => Carbon::now()
+                           ];
+
+             GastosOperadores::insert($datosGasto);
+
+             DB::commit();
+             return response()->json(["Titulo" => "Gasto agregado","Mensaje" => "Se agregó el gasto: \"{$r->descripcion}\"","TMensaje" => "success", "pagoInmediato"=> boolval($r->pagoInmediato)]);
+
+        }catch(\Throwable $t){
+            DB::rollback();
+            $idError = uniqid();
+            \Log::channel('daily')->info("$idError : ".$t->getMessage());
+            return response()->json([
+                "Titulo" => "Ha ocurrido un error",
+                "Mensaje" => "Ocurrio un error mientras procesabamos su solicitud. Cod Error $idError",
+                "TMensaje" => "warning"
+            ]);
+        }
+    }
+
+    public function pagar_gasto_operador(Request $r){
+        try{
+
+            DB::beginTransaction();
+            $bancos = Bancos::where('id_empresa',Auth::User()->id_empresa)->where('id',$r->bank)->first();
+            $saldoActual = $bancos->saldo;
+    
+            if($saldoActual < $r->totalPago){
+                return response()->json(["Titulo" => "Saldo insuficiente en Banco","Mensaje" => "La cuenta bancaria seleccionada no cuenta con saldo suficiente para registrar esta transacción","TMensaje" => "warning"]);
+            }
+
+            Bancos::where('id' ,'=',$r->bank)->update(["saldo" => DB::raw("saldo - ". $r->totalPago)]);
+
+            $idEmpresa = auth()->user()->id_empresa;
+
+            $contenedor = DocumCotizacion::where('num_contenedor', $r->numContenedor)
+                                                ->where('id_empresa', $idEmpresa)
+                                                ->first();
+
+            $asignacion = Asignaciones::where('id_contenedor', $contenedor->id)->first();
+
+            $banco = new BancoDineroOpe;
+            $banco->id_operador = $asignacion->id_operador;
+            
+            $banco->monto1 = $r->totalPago;
+            $banco->metodo_pago1 = 'Transferencia';
+            $banco->descripcion_gasto = "Pago Gastos Operador";
+            $banco->id_banco1 = $r->bank;
+
+            $pagando = $r->gastosPagar;
+            
+            foreach( $pagando as $c){
+                $contenedoresAbonos[] = [
+                    'num_contenedor' => $r->numContenedor,
+                    'abono' => $c['Monto']
+                ];
+
+                
+            }
+            
+            $Gastos = Collect($r->gastosPagar);
+            $IdGastos = $Gastos->pluck('IdGasto');
+            $contenedoresAbonosJson = json_encode($contenedoresAbonos);
+            GastosOperadores::whereIn('id',$IdGastos)->update(["estatus" => "Pagado","id_banco" => $r->bank, "fecha_pago" => Carbon::now()->format('Y-m-d')]);
+
+            $banco->contenedores = $contenedoresAbonosJson;
+        
+            $banco->tipo = 'Salida';
+            $banco->fecha_pago = date('Y-m-d');
+            $banco->save();
+
+            DB::commit();
+            return response()->json(["Titulo" => "Pago aplicado",
+                                     "Mensaje" => "Se aplicó el pago correctamente. Movimiento registrado en el historial bancario", 
+                                     "TMensaje" => "success"
+                                    ]);
+        }catch(\Throwable $t){
+            DB::rollback();
+            $idError = uniqid();
+            \Log::channel('daily')->info("$idError : ".$t->getMessage());
+            return response()->json([
+                "Titulo" => "Ha ocurrido un error",
+                "Mensaje" => "Ocurrio un error mientras procesabamos su solicitud. Cod Error $idError",
+                "TMensaje" => "error"
+            ]);
+
+        }
+    }
+
+    public function eliminar_gasto_operador(Request $r){
+
+    }
+
+    //Agregar gastos a cotizacion
+    public function agregar_gasto_cotizacion(Request $r){
+        try{
+            $numContenedor = $r->input('numContenedor');
+            $idEmpresa = auth()->user()->id_empresa;
+            DB::beginTransaction();
+            $contenedor = DocumCotizacion::where('num_contenedor', $numContenedor)
+                                                ->where('id_empresa', $idEmpresa)
+                                                ->first();
+            $data = array(
+                'id_cotizacion' => $contenedor->id_cotizacion,
+                'descripcion' => $r->descripcion,
+                'monto' => $r->montoGasto,
+            );
+    
+            GastosExtras::create($data);
+
+           // $gastosContenedor = GastosExtras::where('id_cotizacion',$contenedor->id_cotizacion)->get();
+           // $totalGastos = $gastosContenedor->sum('monto');
+
+            Cotizaciones::where('id',$contenedor->id_cotizacion)->update(["restante" => DB::raw('restante + '.$r->montoGasto)]);
+            DB::commit();
+            return response()->json(["TMensaje" => "success", "Mensaje" => "Agregado correctamente", "Titulo" => "Gasto agregado"]);
+        }catch(\Trhowable $t){
+            DB::rollback();
+            return response()->json(["TMensaje" => "error", "Mensaje" => $t->getMessage(), "Titulo" => "Error al agregar gasto"]);
+
+        }
+        
+    }
+
+    public function eliminar_gasto_cotizacion(Request $r){
+        try{
+            $numContenedor = $r->input('numContenedor');
+            $idEmpresa = auth()->user()->id_empresa;
+            DB::beginTransaction();
+            $contenedor = DocumCotizacion::where('num_contenedor', $numContenedor)
+                                         ->where('id_empresa', $idEmpresa)
+                                         ->first();
+                                         
+            $gastos = Collect($r->seleccionGastos);
+            $eliminar = $gastos->pluck('IdGasto');
+
+            $gastosContenedor = GastosExtras::where('id_cotizacion',$contenedor->id_cotizacion)->whereIn('id',$eliminar);
+            $totalGastosDescontar = $gastosContenedor->sum('monto');
+
+            $gastosContenedor->delete();
+
+            Cotizaciones::where('id',$contenedor->id_cotizacion)->update(["restante" => DB::raw('restante - '.$totalGastosDescontar)]);
+
+            DB::commit();
+            return response()->json(["TMensaje" => "success", "Mensaje" => "Eliminado correctamente", "Titulo" => "Gasto eliminado del contenedor"]);
+        }catch(\Trhowable $t){
+            DB::rollback();
+            return response()->json(["TMensaje" => "error", "Mensaje" => $t->getMessage(), "Titulo" => "Error al agregar gasto"]);
+
+        }
+        
+
     }
 
     public function update_cambio(Request $request, $id){
@@ -995,27 +1209,32 @@ public function getCotizacionesCanceladas()
 			}
 
 			$json = $upload['files'];
-         //   $upload['typeOfDocument'] = $r->urlRepo;
-         switch($r->urlRepo){
-            case 'BoletaLib': $update = ["boleta_liberacion" => $item['name']]; break;
-            case 'Doda': $update = ["doda" => $item['name']]; break;
-            case 'CartaPorte': $update = ["doc_ccp" => $item['name'],"ccp" => "si"]; break;
-            case 'PreAlta': $update = ["img_boleta" => $item['name']]; break;
+            //   $upload['typeOfDocument'] = $r->urlRepo;
+            switch($r->urlRepo){
+                case 'BoletaLib': $update = ["boleta_liberacion" => $item['name']]; break;
+                case 'Doda': $update = ["doda" => $item['name']]; break;
+                case 'CartaPorte': $update = ["doc_ccp" => $item['name'],"ccp" => "si"]; break;
+                case 'PreAlta': $update = ["img_boleta" => $item['name']]; break;
+                case 'CartaPortePDF': $update = ["carta_porte" => $item['name']]; break;
+                case 'CartaPorteXML': $update = ["carta_porte_xml" => $item['name']]; break;
 
-         }
+            }
 
-        
-        ($r->urlRepo != 'PreAlta' ) 
-         ? DocumCotizacion::where('id',$cotizacion->id_cotizacion)->update($update)
-         : Cotizaciones::where('id',$cotizacion->id_cotizacion)->update($update);
+            
+            ($r->urlRepo != 'PreAlta' && $r->urlRepo != 'CartaPortePDF' && $r->urlRepo != 'CartaPorteXML') 
+            ? DocumCotizacion::where('id',$cotizacion->id_cotizacion)->update($update)
+            : Cotizaciones::where('id',$cotizacion->id_cotizacion)->update($update);
 
-         if ($r->urlRepo == 'PreAlta')  DocumCotizacion::where('id',$cotizacion->id_cotizacion)->update(['boleta_vacio'=>'si']);
+            if ($r->urlRepo == 'PreAlta')  DocumCotizacion::where('id',$cotizacion->id_cotizacion)->update(['boleta_vacio'=>'si']);
 
-         event(new \App\Events\ConfirmarDocumentosEvent($cotizacion->id_cotizacion));
+            if(Auth::User()->id_cliente != 0){
+                event(new \App\Events\GenericNotificationEvent([$cotizacion->cliente->correo],'Se cargó '.$r->urlRepo.': '.$cotizacion->DocCotizacion->num_contenedor,'Hola, tu transportista cargó el documento "'.$r->urlRepo.'" del contenedor '.$cotizacion->DocCotizacion->num_contenedor));
+                event(new \App\Events\ConfirmarDocumentosEvent($cotizacion->id_cotizacion));
+            } 
 
-         if($estatus != 'En espera'){
-            event(new \App\Events\NotificaNuevoDocumentoEvent($cotizacion,$r->urlRepo));
-         }
+            if($estatus != 'En espera' && Auth::User()->id_cliente != 0){
+                event(new \App\Events\NotificaNuevoDocumentoEvent($cotizacion,$r->urlRepo));
+            }
 
 		}
 		return response()->json($upload);
