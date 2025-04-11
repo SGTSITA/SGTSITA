@@ -26,30 +26,32 @@
       <form class="multisteps-form__form">
         <!--single form panel-->
         <div class="card multisteps-form__panel p-3 border-radius-xl bg-white js-active" data-animation="FadeIn">
-            <div>
-                <div id="myGrid" class="ag-theme-alpine position-relative" style="height: 500px;">
+            
+          <div class="row">
+              <div class="col-sm-auto my-4 mt-3">
+                  <div class="h-100">
+                    <h5 class="mb-1 font-weight-bolder numContenedorLabel">
+                     
+                    </h5>
+                    <p class="mb-0 font-weight-bold text-sm nombreClienteLabel">
+                   
+                    </p>
+                  </div>
+              </div>
+              <div class="col-7 mt-3 text-center">
+                  <h5 class="font-weight-normal">¡Empecemos!</h5>
+                  <p>Seleccione un contenedor para iniciar la planeación</p>
+                </div>
+          </div>
+
+          <div class="row">
+                <div id="gridAprobadas" class="ag-theme-alpine position-relative" style="height: 500px;">
                     <div id="gridLoadingOverlay" class="loading-overlay" style="display: none;">
                         <div class="spinner-border text-primary" role="status">
                             <span class="visually-hidden">Cargando...</span>
                         </div>
                     </div>
                 </div>
-            </div>
-            <div class="row">
-                <div class="col-sm-auto my-4 mt-3">
-                    <div class="h-100">
-                      <h5 class="mb-1 font-weight-bolder">
-                        BMOU4757381
-                      </h5>
-                      <p class="mb-0 font-weight-bold text-sm">
-                        ANA / BOBBINET S.A DE C.V.
-                      </p>
-                    </div>
-                </div>
-                <div class="col-7 mt-3 text-center">
-                    <h5 class="font-weight-normal">¿Cómo se realizará el envío?</h5>
-                    <p>Seleccione que el tipo de viaje a realizar</p>
-                  </div>
             </div>
         
           <div class="multisteps-form__content">
@@ -248,7 +250,7 @@
 
    <!-- Nuestro JavaScript unificado -->
    <script
-       src="https://sgt.gologipro.com/js/sgt/cotizaciones/cotizaciones_list.js?v=1744206575">
+       src="/js/sgt/cotizaciones/aprobadas_list.js?v=1744206575">
    </script>
 <script src="/assets/js/plugins/multistep-form.js"></script>
 

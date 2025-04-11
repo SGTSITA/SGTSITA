@@ -1,5 +1,5 @@
 const gridOptionsOperador = {
-   pagination: true,
+      pagination: true,
       paginationPageSize: 100,
       paginationPageSizeSelector: [100, 200, 500],
       rowSelection: {
