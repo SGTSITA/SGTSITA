@@ -222,7 +222,8 @@ class MissionResultRenderer {
         data: {_token,startDate, endDate},
         beforeSend:()=>{},
         success:(response)=>{
-            apiGrid.setGridOption("rowData", response)
+            let data = JSON.parse(response)
+            apiGrid.setGridOption("rowData", data.Info)
         },
         error:()=>{
 

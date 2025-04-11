@@ -43,7 +43,7 @@ class BancosController extends Controller
             })
             ->get();
 
-            $banco_dinero_salida_ope = BancoDineroOpe::where('tipo', '=', 'Salida')
+            $banco_dinero_salida_ope = BancoDineroOpe::whereIn('tipo', ['Entrada', 'Salida'])
             ->where(function($query) use ($banco) {
                 $query->where('id_banco1', '=', $banco->id)
                       ->orWhere('id_banco2', '=', $banco->id);
@@ -188,7 +188,7 @@ class BancosController extends Controller
         ->whereBetween('fecha_pago', [$startOfWeek, $endOfWeek])
         ->get();
 
-        $banco_dinero_salida_ope = BancoDineroOpe::where('tipo', '=', 'Salida')
+        $banco_dinero_salida_ope = BancoDineroOpe::whereIn('tipo', ['Entrada','Salida'])
         ->where('contenedores', '=', NULL)
         ->where(function($query) use ($id) {
             $query->where('id_banco1', '=', $id)
@@ -197,7 +197,7 @@ class BancosController extends Controller
         ->whereBetween('fecha_pago', [$startOfWeek, $endOfWeek])
         ->get();
 
-        $banco_dinero_salida_ope_varios = BancoDineroOpe::where('tipo', '=', 'Salida')
+        $banco_dinero_salida_ope_varios = BancoDineroOpe::whereIn('tipo', ['Entrada','Salida'])
         ->where('id_cotizacion', '=', NULL)
         ->where(function($query) use ($id) {
             $query->where('id_banco1', '=', $id)

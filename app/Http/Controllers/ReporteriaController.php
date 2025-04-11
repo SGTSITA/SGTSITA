@@ -513,21 +513,22 @@ public function export_cxp(Request $request)
        $fechaIniciaPeriodo = $r->startDate;
        $fechaHasta = $r->endDate;
        $Info = [];
+       $Diferidos = [];
         for($periodo = 1; $periodo <= $contadorPeriodos; $periodo++){
             $finalMes = Carbon::parse($fechaIniciaPeriodo);
             $finalMes = $finalMes->endOfMonth();
-            $fechaFinPeriodo = ($finalMes > $fechaHasta) ? $fechaHasta : $finalMes->toDateString();
-          //  $fechaIni = $fechaIniciaPeriodo;
+            $fechaFinPeriodo = $finalMes->toDateString();
+            $fechaInialGastos = Carbon::parse($fechaIniciaPeriodo)->startOfMonth();
 
             $diferido = 
             GastosDiferidosDetalle::join('gastos_generales as g','gastos_diferidos_detalle.id_gasto','=','g.id')
-            ->where('fecha_gasto_inicial','>=',$fechaIniciaPeriodo)
+            ->where('fecha_gasto_inicial','>=',$fechaInialGastos->toDateString())
             ->where('fecha_gasto_final','<=',$fechaFinPeriodo)
            // ->where('gastos_diferidos_detalle.id_equipo',$d->id_camion)
             ->where('g.id_empresa',Auth::User()->id_empresa)
             ->get();
 
-          
+            $Diferidos[] = $diferido;
 
             $fechaI = $fechaIniciaPeriodo.' 00:00:00';
             $fechaF = $fechaFinPeriodo.' 00:00:00';
@@ -604,13 +605,8 @@ public function export_cxp(Request $request)
         }
 
       //  $iniciaPeriodo = Carbon::parse($r->startDate)->startOfMonth();
-       // $terminaPeriodo = Carbon::parse($r->endDate)->endOfMonth();
-
-       
-
-        
-        
-
+       // $terminaPeriodo = Carbon::parse($r->endDate)->endOfMonth()     
+        return json_encode(["Info" => $Info,"contadorPeriodos"=> $contadorPeriodos, "Diferidos" => $Diferidos]);
         return $Info;
 
     }

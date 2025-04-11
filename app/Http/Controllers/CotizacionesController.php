@@ -872,7 +872,50 @@ class CotizacionesController extends Controller
     }
 
     public function eliminar_gasto_operador(Request $r){
+        try{
+            DB::beginTransaction();
+            $gastos = $r->seleccionEliminarPago;
+            foreach($gastos as $g){
+                $gasto = GastosOperadores::where('id',$g['IdGasto'])->first();
+                //Devolver el dinero al banco, siempre y cuando el estatus sea "Pagado"
+                if($gasto->estatus === "Pagado"){
+                    Bancos::where('id' ,'=',$gasto->id_banco)->update(["saldo" => DB::raw("saldo + ". $gasto->cantidad)]);
 
+                    $asignacion = Asignaciones::where('id_contenedor', $g['IdContenedor'])->first();
+
+                    $banco = new BancoDineroOpe;
+                    $banco->id_operador = $asignacion->id_operador;
+                    
+                    $banco->monto1 = $gasto->cantidad;
+                    $banco->metodo_pago1 = 'Transferencia';
+                    $banco->descripcion_gasto = "Gasto Anulado: ".$g['Gasto'];
+                    $banco->id_banco1 = $gasto->id_banco;
+
+                    $contenedoresAbonos[] = [
+                        'num_contenedor' => $r->numContenedor,
+                        'abono' => $gasto->cantidad
+                    ];
+                    $contenedoresAbonosJson = json_encode($contenedoresAbonos);
+
+                    $banco->contenedores = $contenedoresAbonosJson;
+                
+                    $banco->tipo = 'Entrada';
+                    $banco->fecha_pago = date('Y-m-d');
+                    $banco->save();
+                    
+                }
+
+                $gasto->delete();
+            }
+
+            DB::commit();
+            return response()->json(["Titulo" => "Eliminado Correctamente", "Mensaje" => "El gasto fue eliminado.", "TMensaje" => "success"]);
+            
+        }catch(\Trhowable $t){
+            DB::rollback();
+            return response()->json(["Titulo" => "No pudimos eliminar el gasto", "Mensaje" => "Lo sentimos, ocurrio un error $t->getMessage()", "TMensaje" => "error"]);
+
+        }
     }
 
     //Agregar gastos a cotizacion

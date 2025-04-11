@@ -141,8 +141,8 @@ class MissionResultRenderer {
   deleteGastos()
  })
   
-  var paginationTitle = document.querySelector("#ag-32-label");
-  paginationTitle.textContent = 'Registros por página';
+  var paginationTitle1 = document.querySelector("#ag-84-label");
+  paginationTitle1.textContent = 'Registros por página';
   
   let IdContenedor = null;
 

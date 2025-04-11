@@ -161,6 +161,9 @@ class MissionResultRenderer {
   let labelDescripcionGasto = document.querySelector("#labelDescripcionGasto")
   let btnConfirmacion = document.querySelector('#btnConfirmacion')
 
+  let fromDate = null;
+  let toDate = null;
+
   
   var paginationTitle = document.querySelector("#ag-32-label");
   paginationTitle.textContent = 'Registros por página';
@@ -238,6 +241,8 @@ class MissionResultRenderer {
   })
    
    function getGastos(from,to){
+    fromDate = from
+    toDate = to
     var _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     $.ajax({
         url: '/gastos/generales/get',
@@ -296,6 +301,7 @@ class MissionResultRenderer {
                 Swal.fire(data.Titulo,data.Mensaje,data.TMensaje).then(function() {
                     if(data.TMensaje == "success"){
                       $('#exampleModal').modal('hide')
+                      getGastos(fromDate,toDate);
                     
                     }
                 });
@@ -333,6 +339,8 @@ class MissionResultRenderer {
         if(response.TMensaje == 'success'){
     
           $('#modalDiferir').modal('hide')
+          getGastos(fromDate,toDate);
+
         }
         Swal.fire(response.Titulo,response.Mensaje,response.TMensaje)
       },

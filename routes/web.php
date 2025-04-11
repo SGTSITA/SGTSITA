@@ -156,19 +156,26 @@ Route::group(['middleware' => ['auth']], function() {
     Route::post('cotizaciones/gastos-operador/registrar',[App\Http\Controllers\CotizacionesController::class, 'agregar_gasto_operador'])->name('gastos.cotizaciones');
     Route::post('cotizaciones/gastos-operador/get',[App\Http\Controllers\CotizacionesController::class, 'get_gastos_operador'])->name('gastos.cotizaciones');
     Route::post('cotizaciones/gastos-operador/pagar',[App\Http\Controllers\CotizacionesController::class, 'pagar_gasto_operador'])->name('pagar.gastos');
+    Route::post('cotizaciones/gastos-operador/eliminar',[App\Http\Controllers\CotizacionesController::class, 'eliminar_gasto_operador'])->name('eliminar.gastos');
+
 
 
 
     // ==================== P L A N E A C I O N ====================
-    Route::get('planeaciones', [App\Http\Controllers\PlaneacionController::class, 'index'])->name('index.planeaciones');
-    Route::post('planeaciones/create', [App\Http\Controllers\PlaneacionController::class, 'store'])->name('store.planeaciones');
-    Route::patch('planeaciones/update/{id}', [App\Http\Controllers\PlaneacionController::class, 'update'])->name('update.planeaciones');
-    Route::get('/planeaciones/equipos', [App\Http\Controllers\PlaneacionController::class, 'equipos'])->name('equipos.planeaciones');
-    Route::post('planeaciones/asignacion/create', [App\Http\Controllers\PlaneacionController::class, 'asignacion'])->name('asignacion.planeaciones');
-    Route::post('planeaciones/cambio/fecha', [App\Http\Controllers\PlaneacionController::class, 'edit_fecha'])->name('asignacion.edit_fecha');
-    Route::get('planeaciones/buscador', [App\Http\Controllers\PlaneacionController::class, 'advance_planeaciones'])->name('advance_planeaciones.buscador');
-
-    Route::get('planeaciones/buscador/faltantes', [App\Http\Controllers\PlaneacionController::class, 'advance_planeaciones_faltantes'])->name('advance_planeaciones_faltantes.buscador');
+    Route::group(["prefix" => "planeaciones"], function(){
+        Route::get('/', [App\Http\Controllers\PlaneacionController::class, 'index'])->name('index.planeaciones');
+        Route::post('create', [App\Http\Controllers\PlaneacionController::class, 'store'])->name('store.planeaciones');
+        Route::patch('update/{id}', [App\Http\Controllers\PlaneacionController::class, 'update'])->name('update.planeaciones');
+        Route::get('equipos', [App\Http\Controllers\PlaneacionController::class, 'equipos'])->name('equipos.planeaciones');
+        Route::post('asignacion/create', [App\Http\Controllers\PlaneacionController::class, 'asignacion'])->name('asignacion.planeaciones');
+        Route::post('cambio/fecha', [App\Http\Controllers\PlaneacionController::class, 'edit_fecha'])->name('asignacion.edit_fecha');
+        Route::get('buscador', [App\Http\Controllers\PlaneacionController::class, 'advance_planeaciones'])->name('advance_planeaciones.buscador');
+    
+        Route::get('buscador/faltantes', [App\Http\Controllers\PlaneacionController::class, 'advance_planeaciones_faltantes'])->name('advance_planeaciones_faltantes.buscador');
+        Route::post('monitor/board',[App\Http\Controllers\PlaneacionController::class, 'initBoard'])->name('planeacion.board');
+        Route::get('/programar-viaje',[App\Http\Controllers\PlaneacionController::class, 'programarViaje']);
+    });
+   
 
     // ==================== B A N C O S ====================
     Route::group(['prefix'=>'bancos','middleware' => 'finanzas:3'],function(){

@@ -32,6 +32,7 @@ const gridOptionsOperador = {
   };
   
   const gridElementGastosOperador = document.querySelector('#gridGastosOperador');
+  const btnElminar = document.querySelector('#btnDelete2')
   let apiGridGastosOperador = (gridElementGastosOperador) ? agGrid.createGrid(gridElementGastosOperador, gridOptionsOperador) : null;
  // const gridInstance = new agGrid.Grid(gridElementGastosOperador, gridOptions);
   
@@ -126,6 +127,7 @@ const gridOptionsOperador = {
     if(gridElementGastosOperador){
       let seleccion = apiGridGastosOperador.getSelectedRows();
       btnPayment.disabled = (seleccion.length == 0) ? true : false;
+      btnElminar.disabled = (seleccion.length == 0) ? true : false;
     }
 
   }
@@ -196,6 +198,53 @@ const gridOptionsOperador = {
       }
     })
    }
+
+   function eliminarGastoOperador(){
+    Swal.fire({
+      title: "¿Desea eliminar el gasto seleccionado?",
+      text: 'Estas a punto de eliminar un gasto, si se encuentra seguro haga click en "Si, Eliminar"',
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Si, Eliminar!",
+      cancelButtonText: 'Cancelar'
+    }).then((result) => {
+      if (result.isConfirmed) {
+       //
+       let seleccionEliminarPago = apiGridGastosOperador.getSelectedRows();
+       let _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+       let spanContenedor = document.querySelector("#spanContenedor");
+       let numContenedor = spanContenedor.textContent;
+
+       $.ajax({
+        url:'/cotizaciones/gastos-operador/eliminar',
+        type:'post',
+      data:{seleccionEliminarPago,numContenedor,_token},
+      beforeSend:()=>{
+
+      },
+      success:(response)=>{
+        Swal.fire(response.Titulo,response.Mensaje,response.TMensaje)
+            
+        if(response.TMensaje == "success"){
+          getGastosOperador();
+         
+        }
+      },
+      error:()=>{
+        Swal.fire("Error inesperado","Ocurrio un error mientras procesamos su solicitud","error")
+
+      }
+       })
+      }
+    });
+   }
+   
+   btnElminar.addEventListener('click',()=>{
+    eliminarGastoOperador();
+   })
 
 
    

@@ -20,12 +20,13 @@ use DB;
 use Log;
 use Session;
 use Illuminate\Support\Facades\Validator;
+use Carbon\Carbon;
 
 class PlaneacionController extends Controller
 {
     public function index(){
 
-        $cotizaciones = Cotizaciones::where('id_empresa' ,'=',auth()->user()->id_empresa)->where('estatus', '=', 'Aprobada')->where('estatus_planeacion', '=', NULL)->get();
+       /* $cotizaciones = Cotizaciones::where('id_empresa' ,'=',auth()->user()->id_empresa)->where('estatus', '=', 'Aprobada')->where('estatus_planeacion', '=', NULL)->get();
      
         $numCotizaciones = $cotizaciones->count();
         $proveedores = Proveedor::where('id_empresa' ,'=',auth()->user()->id_empresa)
@@ -101,13 +102,39 @@ class PlaneacionController extends Controller
         }
 
         $planeaciones = Asignaciones::join('docum_cotizacion', 'asignaciones.id_contenedor', '=', 'docum_cotizacion.id')
-        ->join('cotizaciones', 'docum_cotizacion.id_cotizacion', '=', 'cotizaciones.id')
-        ->where('asignaciones.fecha_inicio', '!=', NULL)->where('asignaciones.id_empresa' ,'=',auth()->user()->id_empresa)
-        ->select('cotizaciones.estatus', 'Aprobada')
-        ->select('asignaciones.*', 'docum_cotizacion.num_contenedor')
-        ->get();
+                        ->join('cotizaciones', 'docum_cotizacion.id_cotizacion', '=', 'cotizaciones.id')
+                        ->where('asignaciones.fecha_inicio', '!=', NULL)
+                        ->where('asignaciones.id_empresa' ,'=',auth()->user()->id_empresa)
+                        ->select('cotizaciones.estatus', 'Aprobada')
+                        ->select('asignaciones.*', 'docum_cotizacion.num_contenedor')
+                        ->get();*/
+        //compact('equipos', 'operadores', 'events',  'cotizaciones', 'proveedores', 'numCotizaciones', 'planeaciones')
+        return view('planeacion.index');
+    }
 
-        return view('planeacion.index', compact('equipos', 'operadores', 'events',  'cotizaciones', 'proveedores', 'numCotizaciones', 'planeaciones'));
+    public function programarViaje(){
+        return view('planeacion.planeacion-step');
+    }
+
+    public function initBoard(){
+        
+        $proveedores = Proveedor::where('id_empresa' ,'=',auth()->user()->id_empresa)->selectRaw('CONCAT(id,7000) as id,nombre as name, '."'true'".' as expanded')->get();
+        $equipos = Equipo::where('id_empresa' ,'=',auth()->user()->id_empresa)->selectRaw('CONCAT(id,5000) as id, id_equipo as name, '."'true'".' as expanded')->get();
+        $board = [];
+        $board[] = ["name" => "Sub Contratados", "id" => "S", "expanded" => true, "children" => $proveedores];
+        $board[] = ["name" => "Propios", "id" => "P", "expanded" => true, "children" => $equipos];
+
+        $planeaciones = Asignaciones::join('docum_cotizacion', 'asignaciones.id_contenedor', '=', 'docum_cotizacion.id')
+                        ->join('cotizaciones', 'docum_cotizacion.id_cotizacion', '=', 'cotizaciones.id')
+                        ->where('asignaciones.fecha_inicio', '!=', NULL)
+                        ->where('asignaciones.id_empresa' ,'=',auth()->user()->id_empresa)
+                        ->select('cotizaciones.estatus', 'Aprobada')
+                        ->select('asignaciones.*', 'docum_cotizacion.num_contenedor')
+                        ->get();
+
+      //  $extractor = [];//extractor_ventas::where('fecha_operacion','>=','2023-09-05')->orderBy('estatus_id','desc')->get();
+        $fecha = Carbon::now()->subdays(10)->format('Y-m-d');
+        return response()->json(["boardCentros"=> $board,"extractor"=>$planeaciones,"scrollDate"=> $fecha,"ek" => $equipos]);  
     }
 
     public function equipos(Request $request){
