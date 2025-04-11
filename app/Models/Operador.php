@@ -4,11 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes; // <- Importar
 use Illuminate\Support\Facades\Auth;
 
 class Operador extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes; // <- Usar el trait
+
     protected $table = 'operadores';
 
     protected $fillable = [
@@ -27,6 +29,7 @@ class Operador extends Model
         'recomendacion',
         'foto',
         'id_empresa',
+        'curp',
     ];
 
     protected static function boot()

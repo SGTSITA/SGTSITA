@@ -97,10 +97,18 @@ Route::group(['middleware' => ['auth']], function() {
 
     // ==================== P R O V E E D O R E S ====================
     Route::get('proveedores', [App\Http\Controllers\ProveedorController::class, 'index'])->name('index.proveedores');
+    Route::get('proveedores/list', [App\Http\Controllers\ProveedorController::class, 'getProveedoresList'])->name('list.proveedores');
     Route::post('proveedores/create', [App\Http\Controllers\ProveedorController::class, 'store'])->name('store.proveedores');
     Route::post('proveedores/create/cuenta', [App\Http\Controllers\ProveedorController::class, 'cuenta'])->name('cuenta.proveedores');
     Route::patch('proveedores/update/{id}', [App\Http\Controllers\ProveedorController::class, 'update'])->name('update.proveedores');
     Route::delete('proveedores/cuentas/{id}', [App\Http\Controllers\ProveedorController::class, 'destroy'])->name('cuentas.borrar');
+    Route::get('proveedores/{id}/edit', [App\Http\Controllers\ProveedorController::class, 'edit'])->name('edit.proveedores');
+    Route::get('proveedores/{id}/cuentas', [App\Http\Controllers\ProveedorController::class, 'getCuentasBancarias'])->name('cuentas.proveedores');
+    Route::patch('cuentas-bancarias/{id}/restore', [App\Http\Controllers\ProveedorController::class, 'restore'])->name('cuentas.restore');
+    Route::patch('cuentas-bancarias/{id}/estado', [App\Http\Controllers\ProveedorController::class, 'cambiarEstadoCuenta'])->name('cambiar.estado.cuentas');
+    Route::get('proveedores/validar-rfc', [App\Http\Controllers\ProveedorController::class, 'validarRFC'])->name('validar.rfc');
+    Route::get('cuentas-bancarias/validar-clabe', [App\Http\Controllers\ProveedorController::class, 'validarCLABE'])->name('validar.clabe');
+
     // ==================== E Q U I P O S ====================
     Route::get('equipos/index', [App\Http\Controllers\EquiposController::class, 'index'])->name('index.equipos');
     Route::post('equipos/create', [App\Http\Controllers\EquiposController::class, 'store'])->name('store.equipos');
@@ -115,6 +123,11 @@ Route::group(['middleware' => ['auth']], function() {
     Route::get('operadores/show/{id}', [App\Http\Controllers\OperadorController::class, 'show'])->name('show.operadores');
     Route::patch('operadores/pago/update/{id}', [App\Http\Controllers\OperadorController::class, 'update_pago'])->name('update_pago.operadores');
     Route::get('operadores/show/pagos/{id}', [App\Http\Controllers\OperadorController::class, 'show_pagos'])->name('show_pagos.operadores');
+    // Ruta para dar de baja (soft delete) a un operador
+Route::delete('operadores/{id}', [App\Http\Controllers\OperadorController::class, 'destroy'])->name('operadores.destroy');
+
+// Ruta para restaurar (reactivar) un operador
+Route::post('operadores/{id}/restaurar', [App\Http\Controllers\OperadorController::class, 'restore'])->name('operadores.restore');
 
     // ==================== C O T I Z A C I O N E S  E X T E R N A S====================
     Route::get('/cotizaciones/index/externo', [App\Http\Controllers\CotizacionesController::class, 'index_externo'])->name('index.cotizaciones_manual');
@@ -124,9 +137,18 @@ Route::group(['middleware' => ['auth']], function() {
 
     // ==================== C O T I Z A C I O N E S ====================
     Route::get('/cotizaciones/index', [App\Http\Controllers\CotizacionesController::class, 'index'])->name('index.cotizaciones');
+    Route::get('/cotizaciones/list', [App\Http\Controllers\CotizacionesController::class, 'getCotizacionesList'])->name('cotizaciones.list');
+    Route::get('/cotizaciones/by-status', [App\Http\Controllers\CotizacionesController::class, 'getCotizacionesByStatus'])->name('cotizaciones.byStatus');
+
+
+    Route::get('/cotizaciones/finalizadas', [App\Http\Controllers\CotizacionesController::class, 'getCotizacionesFinalizadas']);
+    Route::get('/cotizaciones/espera', [App\Http\Controllers\CotizacionesController::class, 'getCotizacionesEnEspera']);
+    Route::get('/cotizaciones/aprobadas', [App\Http\Controllers\CotizacionesController::class, 'getCotizacionesAprobadas']);
+    Route::get('/cotizaciones/canceladas', [App\Http\Controllers\CotizacionesController::class, 'getCotizacionesCanceladas']);
 
     Route::get('/cotizaciones/busqueda', [App\Http\Controllers\CotizacionesController::class, 'find'])->name('busqueda.cotizaciones');
     Route::post('/cotizaciones/busqueda', [App\Http\Controllers\CotizacionesController::class, 'findExecute'])->name('exec.busqueda.cotizaciones');
+    Route::get('/cotizaciones/documentos/{id}', [App\Http\Controllers\CotizacionesController::class, 'getDocumentos']);
 
     Route::get('/cotizaciones/index_finzaliadas', [App\Http\Controllers\CotizacionesController::class, 'index_finzaliadas'])->name('index_finzaliadas.cotizaciones');
     Route::get('/cotizaciones/index_espera', [App\Http\Controllers\CotizacionesController::class, 'index_espera'])->name('index_espera.cotizaciones');
@@ -178,6 +200,7 @@ Route::group(['middleware' => ['auth']], function() {
    
 
     // ==================== B A N C O S ====================
+
     Route::group(['prefix'=>'bancos','middleware' => 'finanzas:3'],function(){
         Route::get('/', [App\Http\Controllers\BancosController::class, 'index'])->name('index.bancos')->middleware('finanzas:3');
         Route::post('/create', [App\Http\Controllers\BancosController::class, 'store'])->name('store.bancos');
@@ -189,6 +212,7 @@ Route::group(['middleware' => ['auth']], function() {
         Route::get('/show/{id}', [App\Http\Controllers\BancosController::class, 'edit'])->name('edit.bancos');
         Route::get('/imprimir/{id}', [App\Http\Controllers\BancosController::class, 'pdf'])->name('pdf.print_banco');
         Route::get('/buscador/{id}', [App\Http\Controllers\BancosController::class, 'advance_bancos'])->name('advance_bancos.buscador');
+        Route::put('/bancos/{id}/estado', [App\Http\Controllers\BancosController::class, 'cambiarEstado'])->name('bancos.estado');
     });
    
     // ==================== C U E N T A S  P O R  C O B R A R ====================
