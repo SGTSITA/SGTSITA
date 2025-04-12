@@ -21,9 +21,9 @@
 
                              
                              <div class="float-right">
-                                <button type="button" class="btn btn-sm bg-gradient-info" >
+                                <a href="{{route('planeacion.programar')}}" class="btn btn-sm bg-gradient-info" >
                                     <i class="fa fa-fw fa-plus"></i>  Planear
-                                </button>
+                                </a>
                               </div>
                            
 

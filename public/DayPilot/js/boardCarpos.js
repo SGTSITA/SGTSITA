@@ -37,7 +37,7 @@
                      start: new DayPilot.Date(i.fecha_inicio),
                      end: new DayPilot.Date(i.fecha_fin),
                      id:i.id_contenedor,
-                     resource: parseInt(i.id_proveedor.toString()+"7000"), //<=======Este es el ID del recurso (maquina) donde se ha de colocar el servicio de viaje
+                     resource: (i.id_proveedor != null) ? parseInt(i.id_proveedor.toString()+"7000") : parseInt(i.id_camion.toString()+"5000"), //<=======Este es el ID del recurso (maquina) donde se ha de colocar el servicio de viaje
                      text: i.num_contenedor,
                      bubbleHtml: i.num_contenedor,
                      barColor: barColor(1),

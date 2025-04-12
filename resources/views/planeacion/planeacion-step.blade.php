@@ -6,183 +6,285 @@
 
 @section('content')
 <div class="row">
-    <div class="col-12 col-lg-8 mx-auto my-4">
-      <div class="card">
-        <div class="card-body">
-          <div class="multisteps-form__progress">
-            <button class="multisteps-form__progress-btn js-active" type="button" title="User Info">
-              <span>Tipo de servicio</span>
-            </button>
-            <button class="multisteps-form__progress-btn" type="button" title="Address">Datos del transporte</button>
-            <button class="multisteps-form__progress-btn" type="button" title="Socials">Fechas del viaje</button>
-          </div>
+  <div class="col-12 col-lg-8 mx-auto my-4">
+    <div class="card">
+      <div class="card-body">
+        <div class="multisteps-form__progress">
+          <button class="multisteps-form__progress-btn js-active" type="button" title="User Info">
+            <span>Contenedor</span>
+          </button>
+          <button class="multisteps-form__progress-btn" type="button" title="User Info">
+            <span>Tipo de servicio</span>
+          </button>
+          <button class="multisteps-form__progress-btn" type="button" title="Address">Datos del transporte</button>
+          <button class="multisteps-form__progress-btn" type="button" title="Socials">Fechas del viaje</button>
         </div>
       </div>
     </div>
   </div>
-  <!--form panels-->
-  <div class="row">
-    <div class="col-12 col-lg-8 m-auto">
-      <form class="multisteps-form__form">
-        <!--single form panel-->
-        <div class="card multisteps-form__panel p-3 border-radius-xl bg-white js-active" data-animation="FadeIn">
-            
-          <div class="row">
-              <div class="col-sm-auto my-4 mt-3">
-                  <div class="h-100">
-                    <h5 class="mb-1 font-weight-bolder numContenedorLabel">
-                     
-                    </h5>
-                    <p class="mb-0 font-weight-bold text-sm nombreClienteLabel">
-                   
-                    </p>
-                  </div>
-              </div>
-              <div class="col-7 mt-3 text-center">
-                  <h5 class="font-weight-normal">¡Empecemos!</h5>
-                  <p>Seleccione un contenedor para iniciar la planeación</p>
-                </div>
+</div>
+<!--form panels-->
+<div class="row">
+  <div class="col-12 col-lg-12 m-auto">
+    <form class="multisteps-form__form">
+      <!--single form panel-->
+      <div class="card multisteps-form__panel p-3 border-radius-xl bg-white js-active" data-animation="FadeIn">
+        <div class="row">
+          <div class="col-7 mt-3 ">
+            <h5 class="font-weight-normal text-left">¡Empecemos!</h5>
+            <p class="text-left">Seleccione un contenedor para iniciar la planeación</p>
           </div>
-
-          <div class="row">
-                <div id="gridAprobadas" class="ag-theme-alpine position-relative" style="height: 500px;">
-                    <div id="gridLoadingOverlay" class="loading-overlay" style="display: none;">
-                        <div class="spinner-border text-primary" role="status">
-                            <span class="visually-hidden">Cargando...</span>
+          <div class="col-sm-5 text-end my-3 mt-3">
+            <div class="h-100">
+              <h5 class="mb-1 font-weight-bolder numContenedorLabel" id="numContenedor"></h5>
+              <p class="mb-0 font-weight-bold text-sm nombreClienteLabel"></p>
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <div id="gridAprobadas" class="ag-theme-alpine position-relative" style="height: 500px;">
+            <div id="gridLoadingOverlay" class="loading-overlay" style="display: none;">
+              <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Cargando...</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="multisteps-form__content">
+          <div class="button-row d-flex mt-4">
+            <button class="btn bg-gradient-info btn-sm ms-auto mb-0 js-btn-next" id="nextOne" disabled="true" type="button" title="Siguiente"> Siguiente <i class="fa fa-arrow-right"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+      <!--single form panel-->
+      <div class="card multisteps-form__panel p-3 border-radius-xl bg-white" data-animation="FadeIn">
+        <div class="row">
+          <div class="col-7 mt-3 text-left">
+            <h5 class="font-weight-normal">¿Cúal medio utilizará para el envío contenedor?</h5>
+            <p>Indique como se realizará el viaje</p>
+          </div>
+          <div class="col-sm-5 text-end mt-3">
+            <div class="h-100">
+              <h5 class="mb-1 font-weight-bolder numContenedorLabel"></h5>
+              <p class="mb-0 font-weight-bold text-sm nombreClienteLabel"></p>
+            </div>
+          </div>
+        </div>
+        <div class="multisteps-form__content">
+          <div class="row mt-4">
+            <div class="row mt-4">
+              <div class="custom-radio-group">
+                <label class="custom-radio">
+                  <input type="radio" name="option" value="propio" onclick="setTipoViaje('propio')">
+                  <div class="content">
+                    <i class="fas fa-truck-moving"></i>
+                    <span>Propio</span>
+                  </div>
+                </label>
+                <label class="custom-radio">
+                  <input type="radio" name="option" value="proveedor" onclick="setTipoViaje('proveedor')">
+                  <div class="content">
+                    <i class="fas fa-trailer"></i>
+                    <span>Sub Contratado</span>
+                  </div>
+                </label>
+              </div>
+            </div>
+          </div>
+          <div class="button-row d-flex mt-4">
+            <button class="btn bg-gradient-info btn-sm mb-0 js-btn-prev" type="button" title="Anterior">
+              <i class="fa fa-arrow-left"></i> Anterior </button>
+            <button class="btn bg-gradient-info btn-sm ms-auto mb-0 js-btn-next" id="nextTwo" disabled="true" type="button" title="Siguiente"> Siguiente <i class="fa fa-arrow-right"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+      <!--single form panel-->
+      <div class="card multisteps-form__panel p-3 border-radius-xl bg-white" data-animation="FadeIn">
+        <div class="row">
+          <div class="col-7 mt-3 text-left">
+          <h5 class="font-weight-normal">Información general del viaje</h5>
+            <p>Necesitamos algo de información para programar el viaje</p>
+          </div>
+          <div class="col-sm-5 my-4 mt-3 text-end">
+            <div class="h-100">
+              <h5 class="mb-1 font-weight-bolder text-right numContenedorLabel"></h5>
+              <p class="mb-0 font-weight-bold text-sm text-right nombreClienteLabel"></p>
+            </div>
+          </div>
+        </div>
+        <div class="multisteps-form__content">
+          <div class="row mt-2">
+          <div class="col-lg-7 col-12 mt-4 mt-lg-0">
+              <h6 class="mb-0">Fecha de viaje</h6>
+              <p class="text-sm">Seleccione rango de fechas para el viaje.</p>
+              <div class="row">
+                <div class="col-md-6">
+                  <label>Fecha salida</label>
+                  <div class="form-group">
+                    <div class="input-group ">
+                      <span class="input-group-text">
+                        <div class="icon icon-shape bg-gradient-danger text-center border-radius-md mb-2">
+                          <i class="fa fa-calendar opacity-10" aria-hidden="true"></i>
                         </div>
+                      </span>
+                      <input class="form-control dateInput" name="txtFechaInicio" id="txtFechaInicio" placeholder="Fecha inicio" type="text">
                     </div>
-                </div>
-            </div>
-        
-          <div class="multisteps-form__content">
-            <div class="row mt-4">
-                <div class="custom-radio-group">
-                    <label class="custom-radio">
-                      <input type="radio" name="option" value="propio">
-                      <div class="content">
-                        <i class="fas fa-truck-moving"></i>
-                        <span>Propio</span>
-                      </div>
-                    </label>
-                  
-                    <label class="custom-radio">
-                      <input type="radio" name="option" value="proveedor">
-                      <div class="content">
-                        <i class="fas fa-trailer"></i>
-                        <span>Sub Contratado</span>
-                      </div>
-                    </label>
                   </div>
-            </div>
-            <div class="button-row d-flex mt-4">
-             
-              <button class="btn bg-gradient-dark ms-auto mb-0 js-btn-next" type="button" title="Siguiente">Siguiente</button>
+                </div>
+                <div class="col-md-6">
+                  <label>Fecha entrega</label>
+                  <div class="form-group">
+                    <div class="input-group ">
+                      <span class="input-group-text">
+                        <div class="icon icon-shape bg-gradient-danger text-center border-radius-md mb-2">
+                          <i class="fa fa-calendar opacity-10" aria-hidden="true"></i>
+                        </div>
+                      </span>
+                      <input class="form-control dateInput" name="txtFechaFinal" id="txtFechaFinal" placeholder="Fecha fin" type="text">
+                    </div>
+                  </div>
+                </div>
+            
+              </div>
             </div>
           </div>
-        </div>
-        <!--single form panel-->
-        <div class="card multisteps-form__panel p-3 border-radius-xl bg-white" data-animation="FadeIn">
-          <div class="row text-center">
-            <div class="col-10 mx-auto">
-              <h5 class="font-weight-normal">What are you doing? (checkboxes)</h5>
-              <p>Give us more details about you. What do you enjoy doing in your spare time?</p>
+          
+          <div class="row text-start mt-3">
+            <h6 class="mb-0">Información de la unidad</h6>
+            <p class="text-sm">Proporcione los datos de la unidad donde se realizará el envío.</p>
+            <div class="col-12 col-md-4  mt-2 text-start">
+              <label>Tipo de unidad</label>
+              <select class="form-control" name="cmbTipoUnidad" id="cmbTipoUnidad">
+                <option value="Sencillo">Sencillo</option>
+                <option value="Full">Full</option>
+              </select>
             </div>
+            <div class="col-12 col-md-4  mt-2 text-start">
+              <label>Unidad</label>
+              <select class="form-control" name="cmbCamion" id="cmbCamion">
+                @foreach ($equipos as $item)
+                  @if($item->tipo == "Tractos / Camiones")
+                      <option value="{{$item->id}}">{{$item->id_equipo}}</option>
+                  @endif
+                @endforeach
+              </select>
+            </div>
+            <div class="col-12 col-md-4  mt-2 text-start">
+              <label>Chasis</label>
+              <select class="form-control" name="cmbChasis" id="cmbChasis">
+              @foreach ($equipos as $item)
+                  @if($item->tipo == "Chasis / Plataforma")
+                      <option value="{{$item->id}}">{{$item->id_equipo}}</option>
+                  @endif
+                @endforeach
+              </select>
+            </div>
+            <div class="col-12 col-md-4  mt-2 text-start">
+              <label>Chasis 2</label>
+              <select class="form-control" name="cmbChasis2" id="cmbChasis2" disabled>
+                  @if($item->tipo == "Chasis / Plataforma")
+                      <option value="{{$item->id}}">{{$item->id_equipo}}</option>
+                  @endif
+              </select>
+            </div>
+            <div class="col-12 col-md-4  mt-2 text-start">
+              <label>Doly</label>
+              <select class="form-control" name="cmbDoly" id="cmbDoly" disabled>
+                @foreach ($equipos as $item)
+                  @if($item->tipo == "Chasis / Plataforma")
+                      <option value="{{$item->id}}">{{$item->id_equipo}}</option>
+                  @endif
+                @endforeach
+              </select>
+            </div>
+          
           </div>
-          <div class="multisteps-form__content">
-            <div class="row mt-4">
-              <div class="col-sm-3 ms-auto">
-                <input type="checkbox" class="btn-check" id="btncheck1" onclick="seleccionarSoloEste(this)">
-                <label class="btn btn-lg btn-outline-secondary border-2 px-6 py-5" for="btncheck1">
-                  <svg class="text-dark" width="20px" height="20px" viewBox="0 0 40 40" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-                    <title>settings</title>
-                    <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-                      <g transform="translate(-2020.000000, -442.000000)" fill="#FFFFFF" fill-rule="nonzero">
-                        <g transform="translate(1716.000000, 291.000000)">
-                          <g transform="translate(304.000000, 151.000000)">
-                            <polygon class="color-background" opacity="0.596981957" points="18.0883333 15.7316667 11.1783333 8.82166667 13.3333333 6.66666667 6.66666667 0 0 6.66666667 6.66666667 13.3333333 8.82166667 11.1783333 15.315 17.6716667"></polygon>
-                            <path class="color-background" d="M31.5666667,23.2333333 C31.0516667,23.2933333 30.53,23.3333333 30,23.3333333 C29.4916667,23.3333333 28.9866667,23.3033333 28.48,23.245 L22.4116667,30.7433333 L29.9416667,38.2733333 C32.2433333,40.575 35.9733333,40.575 38.275,38.2733333 L38.275,38.2733333 C40.5766667,35.9716667 40.5766667,32.2416667 38.275,29.94 L31.5666667,23.2333333 Z" opacity="0.596981957"></path>
-                            <path class="color-background" d="M33.785,11.285 L28.715,6.215 L34.0616667,0.868333333 C32.82,0.315 31.4483333,0 30,0 C24.4766667,0 20,4.47666667 20,10 C20,10.99 20.1483333,11.9433333 20.4166667,12.8466667 L2.435,27.3966667 C0.95,28.7083333 0.0633333333,30.595 0.00333333333,32.5733333 C-0.0583333333,34.5533333 0.71,36.4916667 2.11,37.89 C3.47,39.2516667 5.27833333,40 7.20166667,40 C9.26666667,40 11.2366667,39.1133333 12.6033333,37.565 L27.1533333,19.5833333 C28.0566667,19.8516667 29.01,20 30,20 C35.5233333,20 40,15.5233333 40,10 C40,8.55166667 39.685,7.18 39.1316667,5.93666667 L33.785,11.285 Z"></path>
-                          </g>
-                        </g>
-                      </g>
-                    </g>
-                  </svg>
-                </label>
-                <h6>Design</h6>
-              </div>
-              <div class="col-sm-3 me-auto">
-                <input type="checkbox" class="btn-check" id="btncheck3" onclick="seleccionarSoloEste(this)">
-                <label class="btn btn-lg btn-outline-secondary border-2 px-6 py-5" for="btncheck3">
-                  <svg class="text-dark" width="20px" height="20px" viewBox="0 0 40 40" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-                    <title>spaceship</title>
-                    <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-                      <g transform="translate(-1720.000000, -592.000000)" fill="#FFFFFF" fill-rule="nonzero">
-                        <g transform="translate(1716.000000, 291.000000)">
-                          <g transform="translate(4.000000, 301.000000)">
-                            <path class="color-background" d="M39.3,0.706666667 C38.9660984,0.370464027 38.5048767,0.192278529 38.0316667,0.216666667 C14.6516667,1.43666667 6.015,22.2633333 5.93166667,22.4733333 C5.68236407,23.0926189 5.82664679,23.8009159 6.29833333,24.2733333 L15.7266667,33.7016667 C16.2013871,34.1756798 16.9140329,34.3188658 17.535,34.065 C17.7433333,33.98 38.4583333,25.2466667 39.7816667,1.97666667 C39.8087196,1.50414529 39.6335979,1.04240574 39.3,0.706666667 Z M25.69,19.0233333 C24.7367525,19.9768687 23.3029475,20.2622391 22.0572426,19.7463614 C20.8115377,19.2304837 19.9992882,18.0149658 19.9992882,16.6666667 C19.9992882,15.3183676 20.8115377,14.1028496 22.0572426,13.5869719 C23.3029475,13.0710943 24.7367525,13.3564646 25.69,14.31 C26.9912731,15.6116662 26.9912731,17.7216672 25.69,19.0233333 L25.69,19.0233333 Z"></path>
-                            <path class="color-background" d="M1.855,31.4066667 C3.05106558,30.2024182 4.79973884,29.7296005 6.43969145,30.1670277 C8.07964407,30.6044549 9.36054508,31.8853559 9.7979723,33.5253085 C10.2353995,35.1652612 9.76258177,36.9139344 8.55833333,38.11 C6.70666667,39.9616667 0,40 0,40 C0,40 0,33.2566667 1.855,31.4066667 Z"></path>
-                            <path class="color-background" d="M17.2616667,3.90166667 C12.4943643,3.07192755 7.62174065,4.61673894 4.20333333,8.04166667 C3.31200265,8.94126033 2.53706177,9.94913142 1.89666667,11.0416667 C1.5109569,11.6966059 1.61721591,12.5295394 2.155,13.0666667 L5.47,16.3833333 C8.55036617,11.4946947 12.5559074,7.25476565 17.2616667,3.90166667 L17.2616667,3.90166667 Z" opacity="0.598539807"></path>
-                            <path class="color-background" d="M36.0983333,22.7383333 C36.9280725,27.5056357 35.3832611,32.3782594 31.9583333,35.7966667 C31.0587397,36.6879974 30.0508686,37.4629382 28.9583333,38.1033333 C28.3033941,38.4890431 27.4704606,38.3827841 26.9333333,37.845 L23.6166667,34.53 C28.5053053,31.4496338 32.7452344,27.4440926 36.0983333,22.7383333 L36.0983333,22.7383333 Z" opacity="0.598539807"></path>
-                          </g>
-                        </g>
-                      </g>
-                    </g>
-                  </svg>
-                </label>
-                <h6>SubContratado</h6>
-              </div>
-            </div>
-            <div class="button-row d-flex mt-4">
-              <button class="btn bg-gradient-light mb-0 js-btn-prev" type="button" title="Anterior">Anterior</button>
-              <button class="btn bg-gradient-dark ms-auto mb-0 js-btn-next" type="button" title="Siguiente">Siguiente</button>
-            </div>
-          </div>
-        </div>
-        <!--single form panel-->
-        <div class="card multisteps-form__panel p-3 border-radius-xl bg-white" data-animation="FadeIn">
-          <div class="row text-center">
-            <div class="col-10 mx-auto">
-              <h5 class="font-weight-normal">Are you living in a nice area?</h5>
-              <p>One thing I love about the later sunsets is the chance to go for a walk through the neighborhood woods before dinner</p>
-            </div>
-          </div>
-          <div class="multisteps-form__content">
-            <div class="row text-start">
-              <div class="col-12 col-md-8 ms-auto mt-3">
-                <label>Street Name</label>
-                <input class="multisteps-form__input form-control" type="text" placeholder="Eg. Soft" />
-              </div>
-              <div class="col-12 col-md-4 ms-auto mt-3">
-                <label>Street No</label>
-                <input class="multisteps-form__input form-control" type="number" placeholder="Eg. 221" />
-              </div>
-              <div class="col-12 col-md-7 ms-auto mt-3">
-                <label>City</label>
-                <input class="multisteps-form__input form-control" type="text" placeholder="Eg. Tokyo" />
-              </div>
-              <div class="col-12 col-md-5 ms-auto mt-3 text-start">
-                <label>Country</label>
-                <select class="form-control" name="choices-country" id="choices-country">
-                  <option value="Argentina">Argentina</option>
-                  <option value="Albania">Albania</option>
-                  <option value="Algeria">Algeria</option>
-                  <option value="Andorra">Andorra</option>
-                  <option value="Angola">Angola</option>
-                  <option value="Brasil">Brasil</option>
+          <div class="row mt-4">
+            <div class="col-lg-5 col-12">
+              <h6 class="mb-0">Operador</h6>
+              <p class="text-sm">Seleccione operador que transportará el contenedor.</p>
+              <div class="border-dashed border-1 border-secondary border-radius-md p-3">
+                <p class="text-xs mb-2">
+                  <span class="font-weight-bolder">Operador</span>
+                </p>
+                
+                <div class="d-flex align-items-center">
+                <select class="form-control" name="cmbOperador" id="cmbOperador">
+                  @foreach ($operadores as $item)
+                    <option value="{{$item->id}}">{{$item->nombre}}</option>
+                  @endforeach
                 </select>
+                  <!--<div class="form-group w-70">
+                    <div class="input-group bg-gray-200 is-filled">
+                      <input class="form-control form-control-sm" value="argon-dashboard-vmsk392" type="text" disabled="" onfocus="focused(this)" onfocusout="defocused(this)">
+                      <span class="input-group-text bg-transparent" data-bs-toggle="tooltip" data-bs-placement="top" aria-label="Referral code expires in 24 hours" data-bs-original-title="Referral code expires in 24 hours">
+                        <i class="ni ni-key-25"></i>
+                      </span>
+                    </div>
+                  </div>
+                  <a href="javascript:;" class="btn btn-sm btn-outline-secondary ms-2 px-3">Copy</a>-->
+                </div>
+                <!--<p class="text-xs mb-1">You cannot generate codes.</p>
+                <p class="text-xs mb-0">
+                  <a href="javascript:;">Contact us</a> to generate more referrals link.
+                </p>-->
               </div>
             </div>
-            <div class="row">
-              <div class="button-row d-flex mt-4 col-12">
-                <button class="btn bg-gradient-light mb-0 js-btn-prev" type="button" title="Prev">Anterior</button>
-                <button class="btn bg-gradient-dark ms-auto mb-0" type="button" title="Send">Programar viaje</button>
+            <div class="col-lg-7 col-12 mt-4 mt-lg-0">
+              <h6 class="mb-0">Información de pago</h6>
+              <p class="text-sm">Proporcione la información de pago.</p>
+              <div class="row">
+                <div class="col-md-6">
+                  <label>Sueldo operador</label>
+                  <div class="form-group">
+                    <div class="input-group ">
+                      <span class="input-group-text">
+                        <div class="icon icon-shape bg-gradient-success text-center border-radius-md mb-2">
+                          <i class="ni ni-money-coins opacity-10" aria-hidden="true"></i>
+                        </div>
+                      </span>
+                      <input class="form-control moneyformat" name="txtSueldoOperador" id="txtSueldoOperador" autocomplete="off" placeholder="Sueldo Operador" oninput="allowOnlyDecimals(event)" type="text">
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <label>Dinero viaje</label>
+                  <div class="form-group">
+                    <div class="input-group ">
+                      <span class="input-group-text">
+                        <div class="icon icon-shape bg-gradient-success text-center border-radius-md mb-2">
+                          <i class="ni ni-money-coins opacity-10" aria-hidden="true"></i>
+                        </div>
+                      </span>
+                      <input class="form-control moneyformat" name="txtDineroViaje" id="txtDineroViaje" autocomplete="off" placeholder="Dinero viaje" oninput="allowOnlyDecimals(event)" type="text">
+                    </div>
+                  </div>
+                </div>
+                <div class="col-12 col-md-12 text-start">
+                  <label>Banco</label>
+                  <select class="form-control" name="cmbBanco" id="cmbBanco">
+                  @foreach ($bancos as $item)
+                        <option value="{{$item->id}}">{{$item->nombre_banco}} / {{$item->nombre_beneficiario}}</option>
+                  @endforeach
+                  </select>
+                </div>
               </div>
             </div>
           </div>
+          <div class="row mt-3">
+            <div class="button-row d-flex mt-4 col-12">
+              <button class="btn bg-gradient-info btn-sm mb-0 js-btn-prev" type="button" title="Anterior">
+              <i class="fa fa-arrow-left"></i> Anterior </button>
+              <button class="btn bg-gradient-success btn-sm ms-auto mb-0" type="button" id="btnProgramar" title="Send">Programar viaje</button>
+            </div>
+          </div>
         </div>
-      </form>
-    </div>
+      </div>
+    </form>
   </div>
+</div>
 @endsection
 
 @push('custom-javascript')
@@ -244,22 +346,39 @@
 .custom-radio:hover .content {
   border-color: #007bff;
 }
+
+input.flatpickr-input[readonly] {
+  background-color: #fff !important; /* Fondo blanco */
+  cursor: pointer; /* Opcional: para que el mouse cambie a "manita" */
+}
+
+.flatpickr-day .today {
+  background: #28a745 !important; /* verde */
+  border-color: #28a745 !important; 
+  color: #fff; /* texto blanco */
+}
 </style>
    <!-- AG Grid -->
    <script src="https://unpkg.com/ag-grid-community/dist/ag-grid-community.min.js"></script>
 
    <!-- Nuestro JavaScript unificado -->
-   <script
-       src="/js/sgt/cotizaciones/aprobadas_list.js?v=1744206575">
-   </script>
-<script src="/assets/js/plugins/multistep-form.js"></script>
+   <script src="/js/sgt/cotizaciones/aprobadas_list.js?v=1744206575"></script>
+   <script src="/js/sgt/common.js?v=1744206575"></script>
 
+<script src="/assets/js/plugins/multistep-form.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
 <script>
-    function seleccionarSoloEste(checkbox) {
-        const checkboxes = document.getElementsByName('opcion');
-        checkboxes.forEach((item) => {
-            if (item !== checkbox) item.checked = false;
-        });
-    }
+document.addEventListener('DOMContentLoaded', function() {
+    flatpickr(".dateInput", {
+      dateFormat: "d/m/Y",
+      locale: "es"
+    });
+
+    let moneyformatInput = document.querySelectorAll('.moneyformat');
+
+    moneyformatInput.forEach((r) => r.value = moneyFormat(r.value))
+});
     </script>
 @endpush

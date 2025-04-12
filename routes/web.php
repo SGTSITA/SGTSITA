@@ -189,13 +189,13 @@ Route::post('operadores/{id}/restaurar', [App\Http\Controllers\OperadorControlle
         Route::post('create', [App\Http\Controllers\PlaneacionController::class, 'store'])->name('store.planeaciones');
         Route::patch('update/{id}', [App\Http\Controllers\PlaneacionController::class, 'update'])->name('update.planeaciones');
         Route::get('equipos', [App\Http\Controllers\PlaneacionController::class, 'equipos'])->name('equipos.planeaciones');
-        Route::post('asignacion/create', [App\Http\Controllers\PlaneacionController::class, 'asignacion'])->name('asignacion.planeaciones');
+        Route::post('viaje/programar', [App\Http\Controllers\PlaneacionController::class, 'asignacion'])->name('asignacion.planeaciones');
         Route::post('cambio/fecha', [App\Http\Controllers\PlaneacionController::class, 'edit_fecha'])->name('asignacion.edit_fecha');
         Route::get('buscador', [App\Http\Controllers\PlaneacionController::class, 'advance_planeaciones'])->name('advance_planeaciones.buscador');
     
         Route::get('buscador/faltantes', [App\Http\Controllers\PlaneacionController::class, 'advance_planeaciones_faltantes'])->name('advance_planeaciones_faltantes.buscador');
         Route::post('monitor/board',[App\Http\Controllers\PlaneacionController::class, 'initBoard'])->name('planeacion.board');
-        Route::get('/programar-viaje',[App\Http\Controllers\PlaneacionController::class, 'programarViaje']);
+        Route::get('/programar-viaje',[App\Http\Controllers\PlaneacionController::class, 'programarViaje'])->name('planeacion.programar');
     });
    
 
