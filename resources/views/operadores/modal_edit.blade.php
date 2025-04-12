@@ -193,19 +193,17 @@
     </div>
 </div>
 
-@if (session('curp_error'))
+@if (session('curp_error_update_' . $operador->id))
     <script>
         Swal.fire({
             icon: 'error',
-            title: 'Error',
-            text: '{{ session('curp_error') }}',
+            title: 'CURP duplicado',
+            html: `{!! addslashes(session('curp_error_update_' . $operador->id)) !!}`,
             confirmButtonText: 'Entendido'
         });
 
-        /
-        @if (isset($operador))
-            const modal = new bootstrap.Modal(document.getElementById('operadoresModal_Edit{{ $operador->id }}'));
-            modal.show();
-        @endif
+        // Abre el modal automáticamente
+        const modal = new bootstrap.Modal(document.getElementById('operadoresModal_Edit{{ $operador->id }}'));
+        modal.show();
     </script>
 @endif
