@@ -195,6 +195,7 @@ Route::post('operadores/{id}/restaurar', [App\Http\Controllers\OperadorControlle
     
         Route::get('buscador/faltantes', [App\Http\Controllers\PlaneacionController::class, 'advance_planeaciones_faltantes'])->name('advance_planeaciones_faltantes.buscador');
         Route::post('monitor/board',[App\Http\Controllers\PlaneacionController::class, 'initBoard'])->name('planeacion.board');
+        Route::post('monitor/board/info-viaje',[App\Http\Controllers\PlaneacionController::class, 'infoViaje'])->name('planeacion.info');
         Route::get('/programar-viaje',[App\Http\Controllers\PlaneacionController::class, 'programarViaje'])->name('planeacion.programar');
     });
    

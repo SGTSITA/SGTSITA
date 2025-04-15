@@ -4,7 +4,17 @@
  var allEvents = null;
  var festivos = [];
 
+function formatFecha(fechaISO){
+const fecha = new Date(fechaISO);
 
+// Obtener día, mes y año
+const dia = String(fecha.getDate()).padStart(2, '0');
+const mes = String(fecha.getMonth() + 1).padStart(2, '0'); // Los meses empiezan desde 0
+const anio = fecha.getFullYear();
+
+// Formato final
+return `${dia}/${mes}/${anio}`;
+}
  
 
  async function initBoard(){
@@ -94,9 +104,9 @@
  dp.contextMenu = new DayPilot.Menu({
      items: [
          {
-             text: "Actualizar Centro", onClick: function (args) {
+             text: "Ver Coordenadas ", onClick: function (args) {
                 Swal.fire({
-                    title: '¿Actualizar centro?',
+                    title: '¿Desea ver las corrdenadas del viaje?',
                     showDenyButton: false,
                     showCancelButton: true,
                     confirmButtonText: 'Si, Actualizar!',
@@ -107,10 +117,10 @@
                     if (result.isConfirmed) {
                         //var resp = eliminarEvento();                       
 
-                        var _token = $('input[name="_token"]').val();
+                     //   var _token = $('input[name="_token"]').val();
                         var event = args.source.data.id;
                         
-                        $.ajax({
+                      /*  $.ajax({
                         method:'post',
                         url:'/thread/programming/event/delete',
                         data:{_token: _token,event: event},
@@ -125,7 +135,7 @@
                         error:(err)=>{
                             console.log("error");
                         }
-                    })
+                    })*/
                     } 
                   })
 
@@ -232,54 +242,46 @@
  }
 
  dp.onEventClick = function (args) {
-//   console.log(args.e.data.id);
-var _token = $('input[name="_token"]').val();
-$.ajax({
-    url:'manager/monitor/board/getDataCentro',
-    type:'post',
-    data:{_token:_token, id: args.e.data.id},
-    success:(response)=>{
-        document.getElementById('labelCentro').innerHTML = response.centro;
-        document.getElementById('labelUltimaConexion').innerHTML = response.ultima_conexion;
-        document.getElementById('labelDesface').innerHTML = response.desface;
-        document.getElementById('labelIntentos').innerHTML = response.intentos;
-        document.getElementById('labelEstatus').innerHTML = response.estatus_extractor;
-        
-        $("#kt_modal_data").modal('show');
 
-    },
-    error:()=>{
+   let fechaSalida = document.querySelector('#fechaSalida')
+   fechaSalida.textContent = formatFecha(args.e.data.start.value);
 
-    }
-})
- };
+   let fechaEntrega  = document.querySelector('#fechaEntrega')
+   fechaEntrega.textContent = formatFecha(args.e.data.end.value);
+   
+   let numContenedor = document.querySelector('#numContenedorSpan')
+   numContenedor.textContent = args.e.data.text
 
- function buscarCentro(event,_sap){
-    if (event.which === 13) {    
+   let nombreTransportista = document.querySelector('#nombreTransportista')
+   let tipoViajeSpan = document.querySelector('#tipoViajeSpan')
+
     var _token = $('input[name="_token"]').val();
     $.ajax({
-        url:'manager/monitor/board/find/getDataCentro',
+        url:'/planeaciones/monitor/board/info-viaje',
         type:'post',
-        data:{_token:_token, sap: _sap},
+        data:{_token:_token, id: args.e.data.id},
         success:(response)=>{
+            nombreTransportista.textContent = response.nombre;
+            tipoViajeSpan.textContent = response.tipo
 
-            if (response.TMensaje == "success"){
-                document.getElementById('labelCentro').innerHTML = response.centro;
-                document.getElementById('labelUltimaConexion').innerHTML = response.ultima_conexion;
-                document.getElementById('labelDesface').innerHTML = response.desface;
-                document.getElementById('labelIntentos').innerHTML = response.intentos;
-                document.getElementById('labelEstatus').innerHTML = response.estatus_extractor;                    
-                $("#kt_modal_data").modal('show');
+            if(response.tipo == "Viaje subcontratado"){
+                $('#tipoViajeSpan').addClass('bg-gradient-success')
             }else{
-                Swal.fire('',response.Mensaje,response.TMensaje);
+                $('#tipoViajeSpan').addClass('bg-gradient-info')
             }
+
         },
         error:()=>{
-    
+
         }
-    }) 
-   }
- }
+    })
+
+    const modalElement = document.getElementById('viajeModal');
+    const bootstrapModal = new bootstrap.Modal(modalElement);
+    bootstrapModal.show();
+ };
+
+
 
  function barColor(i) {
      var colors = ["#A9A9A9", "#6aa84f", "#f1c232", "#cc0000"];

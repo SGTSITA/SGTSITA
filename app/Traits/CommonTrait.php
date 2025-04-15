@@ -31,7 +31,14 @@ trait CommonTrait
             return $cadena;
     }
 
-   
+    public static function TransformaFecha($Fecha){
+        $datetime = $Fecha; //01/12/2016
+        $dd = substr($datetime,0,2);
+        $mm = substr($datetime,3,2);
+        $yyyy = substr($datetime,6,9);
+        return $yyyy.'-'.$mm.'-'.$dd;
+    }
+
     public static function calculateFileSize($bytes) {
         if ($bytes == 0) {
             return "0 B";

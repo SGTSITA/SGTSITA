@@ -36,6 +36,7 @@
         </div>
     </div>
 </div>
+@include('planeacion.modal_info_planeacion')
 @endsection
 
 @push('custom-javascript')

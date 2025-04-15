@@ -148,15 +148,78 @@ const formFieldsPlaneacion = [
     {'field':'cmbBanco','id':'cmbBanco','label':'Banco','required': true, "type":"text", "trigger":"none"}
 ]
 
+const formFieldsProveedor = [
+    {'field':'txtFechaInicio','id':'txtFechaInicio','label':'Fecha salida','required': true, "type":"text", "trigger":"none"},
+    {'field':'txtFechaFinal','id':'txtFechaFinal','label':'Fecha entrega','required': true, "type":"text", "trigger":"none"},
+    {'field':'precio_proveedor','id':'precio_proveedor','label':'Costo del viaje','required': true, "type":"money", "trigger":"none"},
+    {'field':'burreo_proveedor','id':'burreo_proveedor','label':'Burreo','required': true, "type":"money", "trigger":"none"},
+    {'field':'maniobra_proveedor','id':'maniobra_proveedor','label':'Maniobra','required': true, "type":"money", "trigger":"none"},
+    {'field':'estadia_proveedor','id':'estadia_proveedor','label':'Estadía','required': true, "type":"money", "trigger":"none"},
+    {'field':'otro_proveedor','id':'otro_proveedor','label':'Otros','required': true, "type":"money", "trigger":"none"},
+    {'field':'iva_proveedor','id':'iva_proveedor','label':'IVA','required': true, "type":"money", "trigger":"none"},
+    {'field':'retencion_proveedor','id':'retencion_proveedor','label':'Retención','required': true, "type":"money", "trigger":"none"},
+    {'field':'base_factura','id':'base_factura','label':'Base 1','required': true, "type":"money", "trigger":"none"},
+    {'field':'base_taref','id':'base_taref','label':'Base 2','required': true, "type":"money", "trigger":"none"},
+    {'field':'sobrepeso_proveedor','id':'sobrepeso_proveedor','label':'Sobrepeso','required': true, "type":"money", "trigger":"none"},
+    {'field':'cantidad_sobrepeso_proveedor','id':'cantidad_sobrepeso_proveedor','label':'Precio sobrepreso','required': true, "type":"money", "trigger":"none"},
+    {'field':'total_proveedor','id':'total_proveedor','label':'Total','required': true, "type":"money", "trigger":"none"},
+    {'field':'cmbProveedor','id':'cmbProveedor','label':'Proveedor','required': true, "type":"text", "trigger":"none"}   
+]
+
+const tasa_iva = 0.16;
+const tasa_retencion = 0.04;
+
+function calculateTotal() {
+    var precio = parseFloat(reverseMoneyFormat($('#precio_proveedor').val())) || 0;
+    var burreo = parseFloat(reverseMoneyFormat($('#burreo_proveedor').val())) || 0;
+    var maniobra = parseFloat(reverseMoneyFormat($('#maniobra_proveedor').val())) || 0;
+    var estadia = parseFloat(reverseMoneyFormat($('#estadia_proveedor').val())) || 0;
+    var otro = parseFloat(reverseMoneyFormat($('#otro_proveedor').val())) || 0;
+    
+    var sobrepeso = parseFloat(reverseMoneyFormat($('#sobrepeso_proveedor').val())) || 0;
+    var cantidadsob = parseFloat(reverseMoneyFormat($('#cantidad_sobrepeso_proveedor').val())) || 0;
+
+    var sobre = cantidadsob * sobrepeso;
+    var subTotal = (precio + burreo + maniobra + estadia + otro );
+
+    const baseFactura = parseFloat(reverseMoneyFormat(document.getElementById('base_factura').value)) || 0;
+    var iva = (baseFactura * tasa_iva);
+    var retencion = (baseFactura * tasa_retencion);
+
+    document.getElementById('iva_proveedor').value = (moneyFormat(iva.toFixed(2)));
+    document.getElementById('retencion_proveedor').value = (moneyFormat(retencion.toFixed(2)));
+    var total = (precio + burreo + maniobra + estadia + otro + iva + sobre) - retencion;
+
+    const baseTaref = (total - baseFactura - iva) + retencion;
+    
+    document.getElementById('base_taref').value = moneyFormat(baseTaref.toFixed(2));
+    
+    
+    $('#total_proveedor').val(moneyFormat(total.toFixed(2)));
+
+}
+    
+// Eventos para calcular el total
+$('.fieldsCalculo').on('input', function() {
+    calculateTotal();
+    
+});
+
 function setTipoViaje(valTipoViaje){
     let nextOne = document.querySelector('#nextTwo');
     nextOne.disabled = false;
     tipoViaje = valTipoViaje;
+    if(valTipoViaje == "proveedor")
+     $("#viaje-proveedor").removeClass('d-none') , $("#viaje-propio").addClass('d-none')
+    else
+     $("#viaje-propio").removeClass('d-none') , $("#viaje-proveedor").addClass('d-none')
 }
 
 function programarViaje(){
 
-    let passValidation = formFieldsPlaneacion.every((item) => {
+    let fieldsViaje = (tipoViaje == "propio") ? formFieldsPlaneacion :  formFieldsProveedor
+
+    let passValidation = fieldsViaje.every((item) => {
         let field = document.getElementById(item.field);
         if(field){
             if(item.required === true && field.value.length == 0){
@@ -171,7 +234,7 @@ function programarViaje(){
 
    const formData = {};
 
-   formFieldsPlaneacion.forEach((item) =>{
+   fieldsViaje.forEach((item) =>{
     var input = item.field;
     var inputValue = document.getElementById(input);
     if(inputValue){
@@ -185,6 +248,7 @@ function programarViaje(){
 
    formData["_token"] = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
    formData["num_contenedor"] = document.querySelector('#numContenedor').textContent
+   formData["tipoViaje"] = tipoViaje
    let url = '/planeaciones/viaje/programar'
 
     $.ajax({
