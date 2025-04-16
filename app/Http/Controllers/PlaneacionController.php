@@ -130,99 +130,30 @@ class PlaneacionController extends Controller
 
     public function initBoard(){
         
-        $proveedores = Proveedor::where('id_empresa' ,'=',auth()->user()->id_empresa)->selectRaw('CONCAT(id,7000) as id,nombre as name, '."'true'".' as expanded')->get();
+       /* $proveedores = Proveedor::where('id_empresa' ,'=',auth()->user()->id_empresa)->selectRaw('CONCAT(id,7000) as id,nombre as name, '."'true'".' as expanded')->get();
         $equipos = Equipo::where('id_empresa' ,'=',auth()->user()->id_empresa)->selectRaw('CONCAT(id,5000) as id, id_equipo as name, '."'true'".' as expanded')->get();
-        $board = [];
+        
         $board[] = ["name" => "Sub Contratados", "id" => "S", "expanded" => true, "children" => $proveedores];
-        $board[] = ["name" => "Propios", "id" => "P", "expanded" => true, "children" => $equipos];
+        $board[] = ["name" => "Propios", "id" => "P", "expanded" => true, "children" => $equipos];*/
 
         $planeaciones = Asignaciones::join('docum_cotizacion', 'asignaciones.id_contenedor', '=', 'docum_cotizacion.id')
                         ->join('cotizaciones', 'docum_cotizacion.id_cotizacion', '=', 'cotizaciones.id')
                         ->where('asignaciones.fecha_inicio', '!=', NULL)
                         ->where('asignaciones.id_empresa' ,'=',auth()->user()->id_empresa)
-                        ->select('cotizaciones.estatus', 'Aprobada')
-                        ->select('asignaciones.*', 'docum_cotizacion.num_contenedor')
+                        ->where('cotizaciones.estatus', 'Aprobada')
+                        ->where('estatus_planeacion','=', 1)
+                        ->select('asignaciones.*', 'docum_cotizacion.num_contenedor','cotizaciones.id_cliente')
                         ->get();
 
-      //  $extractor = [];//extractor_ventas::where('fecha_operacion','>=','2023-09-05')->orderBy('estatus_id','desc')->get();
+        $clientes = $planeaciones->unique('id_cliente')->pluck('id_cliente');
+        $clientesData = Client::whereIn('id' ,$clientes)->selectRaw('id, nombre as name, '."'true'".' as expanded')->get();
+
+        $board = [];
+        $board[] = ["name" => "Clientes", "id" => "S", "expanded" => true, "children" => $clientesData];
+      //  $board[] = ["name" => "Propios", "id" => "P", "expanded" => true, "children" => $equipos];
+
         $fecha = Carbon::now()->subdays(10)->format('Y-m-d');
-        return response()->json(["boardCentros"=> $board,"extractor"=>$planeaciones,"scrollDate"=> $fecha,"ek" => $equipos]);  
-    }
-
-    public function equipos(Request $request){
-        $fechaInicio = $request->fecha_inicio;
-        $fechaFin = $request->fecha_fin;
-
-        if($fechaInicio  &&  $fechaFin){
-            $camionesAsignados = Asignaciones::where('id_empresa' ,'=',auth()->user()->id_empresa)
-            ->whereNotNull('id_camion')
-            ->where(function ($query) use ($fechaInicio, $fechaFin) {
-                $query->where('fecha_inicio', '<=', $fechaFin)
-                      ->where('fecha_fin', '>=', $fechaInicio);
-            })
-            ->pluck('id_camion');
-
-            $camionesNoAsignados = Equipo::where('id_empresa' ,'=',auth()->user()->id_empresa)
-            ->where('tipo', 'LIKE', '%Camiones%')
-            ->whereNotIn('id', $camionesAsignados)
-            ->orWhereNotIn('id', function ($query) {
-                $query->select('id_camion')->from('asignaciones')->whereNull('id_camion');
-            })
-            ->get();
-
-            $chasisAsignados = Asignaciones::where('id_empresa' ,'=',auth()->user()->id_empresa)
-            ->whereNotNull('id_chasis')
-            ->where(function ($query) use ($fechaInicio, $fechaFin) {
-                $query->where('fecha_inicio', '<=', $fechaFin)
-                      ->where('fecha_fin', '>=', $fechaInicio);
-            })
-            ->pluck('id_chasis');
-
-            $chasisNoAsignados = Equipo::where('id_empresa' ,'=',auth()->user()->id_empresa)
-            ->where('tipo', 'LIKE', '%Chasis%')
-                ->whereNotIn('id', $chasisAsignados)
-                ->orWhereNotIn('id', function ($query) {
-                    $query->select('id_chasis')->from('asignaciones')->whereNull('id_chasis');
-                })
-                ->get();
-
-            $dolysAsignados = Asignaciones::where('id_empresa' ,'=',auth()->user()->id_empresa)
-            ->whereNotNull('id_camion')
-            ->where(function ($query) use ($fechaInicio, $fechaFin) {
-                $query->where('fecha_inicio', '<=', $fechaFin)
-                        ->where('fecha_fin', '>=', $fechaInicio);
-            })
-            ->pluck('id_camion');
-
-            $dolysNoAsignados = Equipo::where('id_empresa' ,'=',auth()->user()->id_empresa)
-            ->where('tipo', 'LIKE', '%Dolys%')
-                ->whereNotIn('id', $dolysAsignados)
-                ->orWhereNotIn('id', function ($query) {
-                    $query->select('id_camion')->from('asignaciones')->whereNull('id_camion');
-                })
-                ->get();
-
-            $operadorAsignados = Asignaciones::where('id_empresa' ,'=',auth()->user()->id_empresa)
-            ->whereNotNull('id_operador')
-            ->where(function ($query) use ($fechaInicio, $fechaFin) {
-                $query->where('fecha_inicio', '<=', $fechaFin)
-                        ->where('fecha_fin', '>=', $fechaInicio);
-            })
-            ->pluck('id_operador');
-
-            $operadorNoAsignados = Operador::where('id_empresa' ,'=',auth()->user()->id_empresa)
-            ->whereNotIn('id', $operadorAsignados)
-                ->orWhereNotIn('id', function ($query) {
-                    $query->select('id_operador')->from('asignaciones')->whereNull('id_operador');
-                })
-                ->get();
-
-
-            $bancos = Bancos::where('id_empresa' ,'=',auth()->user()->id_empresa)->where('saldo', '>', '0')->get();
-
-            return view('planeacion.resultado_equipos', ['bancos' => $bancos, 'dolysNoAsignados' => $dolysNoAsignados, 'camionesNoAsignados' => $camionesNoAsignados, 'chasisNoAsignados' => $chasisNoAsignados, 'operadorNoAsignados' => $operadorNoAsignados]);
-
-        }
+        return response()->json(["boardCentros"=> $board,"extractor"=>$planeaciones,"scrollDate"=> $fecha]);  
     }
 
     public function asignacion(Request $request){
@@ -426,6 +357,89 @@ class PlaneacionController extends Controller
        
     }
 
+    public function finalizarViaje(Request $request){
+        $cotizaciones = Cotizaciones::find($request->idCotizacion); 
+        $cotizaciones->estatus = 'Finalizado';
+        $cotizaciones->update();
+        return response()->json(["Titulo" => "Viaje finalizado","Mensaje" => "Has finalizado correctamente el viaje", "TMensaje" => "success"]);
+    }
+
+    public function equipos(Request $request){
+        $fechaInicio = $request->fecha_inicio;
+        $fechaFin = $request->fecha_fin;
+
+        if($fechaInicio  &&  $fechaFin){
+            $camionesAsignados = Asignaciones::where('id_empresa' ,'=',auth()->user()->id_empresa)
+            ->whereNotNull('id_camion')
+            ->where(function ($query) use ($fechaInicio, $fechaFin) {
+                $query->where('fecha_inicio', '<=', $fechaFin)
+                      ->where('fecha_fin', '>=', $fechaInicio);
+            })
+            ->pluck('id_camion');
+
+            $camionesNoAsignados = Equipo::where('id_empresa' ,'=',auth()->user()->id_empresa)
+            ->where('tipo', 'LIKE', '%Camiones%')
+            ->whereNotIn('id', $camionesAsignados)
+            ->orWhereNotIn('id', function ($query) {
+                $query->select('id_camion')->from('asignaciones')->whereNull('id_camion');
+            })
+            ->get();
+
+            $chasisAsignados = Asignaciones::where('id_empresa' ,'=',auth()->user()->id_empresa)
+            ->whereNotNull('id_chasis')
+            ->where(function ($query) use ($fechaInicio, $fechaFin) {
+                $query->where('fecha_inicio', '<=', $fechaFin)
+                      ->where('fecha_fin', '>=', $fechaInicio);
+            })
+            ->pluck('id_chasis');
+
+            $chasisNoAsignados = Equipo::where('id_empresa' ,'=',auth()->user()->id_empresa)
+            ->where('tipo', 'LIKE', '%Chasis%')
+                ->whereNotIn('id', $chasisAsignados)
+                ->orWhereNotIn('id', function ($query) {
+                    $query->select('id_chasis')->from('asignaciones')->whereNull('id_chasis');
+                })
+                ->get();
+
+            $dolysAsignados = Asignaciones::where('id_empresa' ,'=',auth()->user()->id_empresa)
+            ->whereNotNull('id_camion')
+            ->where(function ($query) use ($fechaInicio, $fechaFin) {
+                $query->where('fecha_inicio', '<=', $fechaFin)
+                        ->where('fecha_fin', '>=', $fechaInicio);
+            })
+            ->pluck('id_camion');
+
+            $dolysNoAsignados = Equipo::where('id_empresa' ,'=',auth()->user()->id_empresa)
+            ->where('tipo', 'LIKE', '%Dolys%')
+                ->whereNotIn('id', $dolysAsignados)
+                ->orWhereNotIn('id', function ($query) {
+                    $query->select('id_camion')->from('asignaciones')->whereNull('id_camion');
+                })
+                ->get();
+
+            $operadorAsignados = Asignaciones::where('id_empresa' ,'=',auth()->user()->id_empresa)
+            ->whereNotNull('id_operador')
+            ->where(function ($query) use ($fechaInicio, $fechaFin) {
+                $query->where('fecha_inicio', '<=', $fechaFin)
+                        ->where('fecha_fin', '>=', $fechaInicio);
+            })
+            ->pluck('id_operador');
+
+            $operadorNoAsignados = Operador::where('id_empresa' ,'=',auth()->user()->id_empresa)
+            ->whereNotIn('id', $operadorAsignados)
+                ->orWhereNotIn('id', function ($query) {
+                    $query->select('id_operador')->from('asignaciones')->whereNull('id_operador');
+                })
+                ->get();
+
+
+            $bancos = Bancos::where('id_empresa' ,'=',auth()->user()->id_empresa)->where('saldo', '>', '0')->get();
+
+            return view('planeacion.resultado_equipos', ['bancos' => $bancos, 'dolysNoAsignados' => $dolysNoAsignados, 'camionesNoAsignados' => $camionesNoAsignados, 'chasisNoAsignados' => $chasisNoAsignados, 'operadorNoAsignados' => $operadorNoAsignados]);
+
+        }
+    }
+
     public function edit_fecha(Request $request)
     {
         $id = $request->get('urlId');
@@ -462,11 +476,11 @@ class PlaneacionController extends Controller
 
     public function infoViaje(Request $request){
         $asignaciones = Asignaciones::where('id_contenedor','=',$request->id)->first();
-        
+        $cotizacion = Cotizaciones::where('id','=',$request->id)->first();
         if($asignaciones->Proveedor == NULL){
-            return ["nombre"=>$asignaciones->nombreOperadorSub, "tipo" => "Viaje Propio"];
+            return ["nombre"=>$asignaciones->nombreOperadorSub, "tipo" => "Viaje Propio", "cotizacion" => $cotizacion, "cliente" => $cotizacion->Cliente, "subcliente" => $cotizacion->Subcliente];
         }
-        return ["nombre"=>$asignaciones->Proveedor->nombre, "tipo" => "Viaje subcontratado"];
+        return ["nombre"=>$asignaciones->Proveedor->nombre, "tipo" => "Viaje subcontratado", "cotizacion" => $cotizacion, "cliente" => $cotizacion->Cliente, "subcliente" => $cotizacion->Subcliente];
         
     }
 

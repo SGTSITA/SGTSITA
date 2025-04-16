@@ -47,7 +47,7 @@ return `${dia}/${mes}/${anio}`;
                      start: new DayPilot.Date(i.fecha_inicio),
                      end: new DayPilot.Date(i.fecha_fin),
                      id:i.id_contenedor,
-                     resource: (i.id_proveedor != null) ? parseInt(i.id_proveedor.toString()+"7000") : parseInt(i.id_camion.toString()+"5000"), //<=======Este es el ID del recurso (maquina) donde se ha de colocar el servicio de viaje
+                     resource: parseInt(i.id_cliente),//(i.id_cliente != null) ? parseInt(i.id_proveedor.toString()+"7000") : parseInt(i.id_camion.toString()+"5000"), //<=======Este es el ID del recurso (maquina) donde se ha de colocar el servicio de viaje
                      text: i.num_contenedor,
                      bubbleHtml: i.num_contenedor,
                      barColor: barColor(1),
@@ -255,6 +255,11 @@ return `${dia}/${mes}/${anio}`;
    let nombreTransportista = document.querySelector('#nombreTransportista')
    let tipoViajeSpan = document.querySelector('#tipoViajeSpan')
 
+   let origen = document.querySelector('#origen')
+   let destino = document.querySelector('#destino')
+   let nombreCliente = document.querySelector('#nombreCliente')
+   let nombreSubcliente = document.querySelector('#nombreSubcliente')
+
     var _token = $('input[name="_token"]').val();
     $.ajax({
         url:'/planeaciones/monitor/board/info-viaje',
@@ -264,11 +269,20 @@ return `${dia}/${mes}/${anio}`;
             nombreTransportista.textContent = response.nombre;
             tipoViajeSpan.textContent = response.tipo
 
-            if(response.tipo == "Viaje subcontratado"){
+            origen.textContent = response.cotizacion.origen
+            destino.textContent = response.cotizacion.destino
+            nombreCliente.textContent = response.cliente.nombre
+            nombreSubcliente.textContent = response.subcliente.nombre
+
+            if(response.tipo == "Viaje Propio"){
                 $('#tipoViajeSpan').addClass('bg-gradient-success')
             }else{
                 $('#tipoViajeSpan').addClass('bg-gradient-info')
             }
+
+            //Once en true para que se ejecute una sola vez y se elimine el listener
+            btnFinalizar.addEventListener('click', () => finalizarViaje(args.e.data.id,numContenedor.textContent), { once: true });
+
 
         },
         error:()=>{
@@ -281,7 +295,41 @@ return `${dia}/${mes}/${anio}`;
     bootstrapModal.show();
  };
 
+function finalizarViaje(idCotizacion, numContenedor){
+    $("#viajeModal").modal('hide')
+    var _token = $('input[name="_token"]').val();
+    Swal.fire({
+        title: `Finalizar viaje ${numContenedor}`,
+        text: `¿Se encuentra seguro que desea finalizar el viaje? Una vez realizada esta acción no se podrá deshacer`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, continuar',
+        cancelButtonText: 'Cancelar',
+      }).then((result) => {
+        if (result.isConfirmed) {
 
+            fetch(`/planeaciones/viaje/finalizar`,
+            {
+                method: 'POST',  
+                headers: {
+                    'Content-Type': 'application/json', 
+                },
+                body: JSON.stringify({
+                    _token: _token,
+                    idCotizacion: idCotizacion
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                Swal.fire(data.Titulo,data.Mensaje,data.TMensaje)
+            })
+            .catch(error => {
+                Swal.fire('Error', 'No pudimos finalizar el viaje', 'error');
+            });
+        } 
+      });
+      
+}
 
  function barColor(i) {
      var colors = ["#A9A9A9", "#6aa84f", "#f1c232", "#cc0000"];
