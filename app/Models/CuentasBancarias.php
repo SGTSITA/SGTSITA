@@ -19,8 +19,11 @@ class CuentasBancarias extends Model
         'nombre_banco',
         'cuenta_clabe',
         'id_empresa',
-        'activo' // Nuevo campo de activación
+        'activo',
+        'cuenta_1', // 🔹 Agregar esto
+        'cuenta_2', // 🔹 Y esto también
     ];
+    
 
     protected $dates = ['deleted_at']; // Indica que SoftDeletes usará la columna deleted_at
 

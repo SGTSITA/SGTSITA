@@ -108,6 +108,7 @@ Route::group(['middleware' => ['auth']], function() {
     Route::patch('cuentas-bancarias/{id}/estado', [App\Http\Controllers\ProveedorController::class, 'cambiarEstadoCuenta'])->name('cambiar.estado.cuentas');
     Route::get('proveedores/validar-rfc', [App\Http\Controllers\ProveedorController::class, 'validarRFC'])->name('validar.rfc');
     Route::get('cuentas-bancarias/validar-clabe', [App\Http\Controllers\ProveedorController::class, 'validarCLABE'])->name('validar.clabe');
+    Route::patch('/cuentas-bancarias/{id}/prioridad', [App\Http\Controllers\ProveedorController::class, 'definirCuentaPrioridad']);
 
     // ==================== E Q U I P O S ====================
     Route::get('equipos/index', [App\Http\Controllers\EquiposController::class, 'index'])->name('index.equipos');

@@ -67,37 +67,4 @@
 
     <!-- Date Range Picker JS -->
     <script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
-    <script>
-        $(document).ready(function() {
-            const today = moment();
-            const sevenDaysAgo = moment().subtract(7, 'days');
-
-            $('#daterange').daterangepicker({
-                startDate: sevenDaysAgo,
-                endDate: today,
-                maxDate: today,
-                opens: 'right',
-                locale: {
-                    format: 'YYYY-MM-DD',
-                    separator: ' AL ',
-                    applyLabel: 'Aplicar',
-                    cancelLabel: 'Cancelar',
-                    fromLabel: 'Desde',
-                    toLabel: 'Hasta',
-                    customRangeLabel: 'Personalizado',
-                    daysOfWeek: ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa'],
-                    monthNames: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto',
-                        'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
-                    ],
-                    firstDay: 1
-                }
-            }, function(start, end, label) {
-                // Aquí llamas a tu función para recargar datos
-                getDatosFiltradosPorFecha(start.format('YYYY-MM-DD'), end.format('YYYY-MM-DD'));
-            });
-
-            // Llama la primera vez al cargar
-            getDatosFiltradosPorFecha(sevenDaysAgo.format('YYYY-MM-DD'), today.format('YYYY-MM-DD'));
-        });
-    </script>
 @endsection

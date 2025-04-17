@@ -19,8 +19,11 @@
                                 <th>Cuenta</th>
                                 <th>CLABE</th>
                                 <th>Activo</th>
+                                <th>Cuenta 1</th>
+                                <th>Cuenta 2</th>
                             </tr>
                         </thead>
+
                         <tbody id="cuentasBancariasBody" class="text-center">
                             <!-- Se llenará dinámicamente con JavaScript -->
                         </tbody>
