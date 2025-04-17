@@ -282,6 +282,7 @@ return `${dia}/${mes}/${anio}`;
 
             //Once en true para que se ejecute una sola vez y se elimine el listener
             btnFinalizar.addEventListener('click', () => finalizarViaje(args.e.data.id,numContenedor.textContent), { once: true });
+            btnDeshacer.addEventListener('click', () => anularPlaneacion(args.e.data.id,numContenedor.textContent), { once: true });
 
 
         },
@@ -294,6 +295,42 @@ return `${dia}/${mes}/${anio}`;
     const bootstrapModal = new bootstrap.Modal(modalElement);
     bootstrapModal.show();
  };
+
+function anularPlaneacion(idCotizacion, numContenedor){
+    $("#viajeModal").modal('hide')
+    var _token = $('input[name="_token"]').val();
+    Swal.fire({
+        title: `Quitar programación ${numContenedor}`,
+        text: `¿Desea cancelar la programación actual del viaje? Una vez realizada esta acción no se podrá deshacer`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, continuar',
+        cancelButtonText: 'Cancelar',
+      }).then((result) => {
+        if (result.isConfirmed) {
+
+            fetch(`/planeaciones/viaje/programa/anular`,
+            {
+                method: 'POST',  
+                headers: {
+                    'Content-Type': 'application/json', 
+                },
+                body: JSON.stringify({
+                    _token: _token,
+                    idCotizacion: idCotizacion,
+                    numContenedor:numContenedor
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                Swal.fire(data.Titulo,data.Mensaje,data.TMensaje)
+            })
+            .catch(error => {
+                Swal.fire('Error', 'No pudimos anular el programa del viaje', 'error');
+            });
+        } 
+      });
+}
 
 function finalizarViaje(idCotizacion, numContenedor){
     $("#viajeModal").modal('hide')
