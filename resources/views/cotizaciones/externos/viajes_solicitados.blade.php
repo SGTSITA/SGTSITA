@@ -26,7 +26,7 @@
               <!--end::Menu separator-->
               <!--begin::Menu item-->
               <div class="menu-item px-3">
-                <a href="#" class="menu-link px-3 text-muted disabled-link"> Editar Viaje </a>
+                <a class="menu-link px-3" onclick="getFilesCFDI()"> Obtener CFDI Carta Porte </a>
               </div>
               <div class="menu-item px-3">
                 <a class="menu-link px-3" onclick="cancelarViajeQuestion()"> Cancelar Viaje </a>

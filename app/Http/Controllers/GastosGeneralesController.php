@@ -103,7 +103,7 @@ class GastosGeneralesController extends Controller
 
             $montoGasto = $gastosGenerales->first()->monto1;
             $montoDiario = $montoGasto / $r->diasContados;
-            $cantEquipos = sizeof($r->unidades);
+           // $cantEquipos = sizeof($r->unidades);
             $montoDiario = $montoDiario / $cantEquipos;
 
             $gastosGenerales->update([
@@ -113,7 +113,30 @@ class GastosGeneralesController extends Controller
                 "fecha_diferido_final" => $r->fechaHasta
             ]);
 
-            foreach($r->unidades as $u){
+            $fechaDesde = Carbon::parse($r->fechaDesde);
+            $fechaHasta = Carbon::parse($r->fechaHasta);
+            $fechaIniciaPeriodo = $fechaDesde->toDateString();
+            
+            for($periodo = 1; $periodo <= $r->diasContados; $periodo++){
+                $finalMes = Carbon::parse($fechaIniciaPeriodo);
+                $finalMes = $finalMes->endOfMonth();
+                $fechaFinPeriodo = ($finalMes > $fechaHasta) ? $fechaHasta->toDateString() : $finalMes->toDateString();
+                $fechaIni = $fechaIniciaPeriodo;
+
+                $date = [
+                    "id_gasto" => $r->_IdGasto,
+                    "fecha_gasto_inicial" => $fechaIni,
+                    "fecha_gasto_final" => $fechaFinPeriodo,
+                    "gasto_dia" => $montoDiario
+                ];
+                $Daily[] = $date;
+
+                $fechaIniciaPeriodo = $finalMes->addDay()->toDateString();
+            }
+
+            GastosDiferidosDetalle::insert($Daily);
+
+            /*foreach($r->unidades as $u){
                 $fechaDesde = Carbon::parse($r->fechaDesde);
                 $fechaHasta = Carbon::parse($r->fechaHasta);
     
@@ -128,10 +151,10 @@ class GastosGeneralesController extends Controller
                                 "gasto_dia" => $montoDiario
                             ];
                     $Daily[] = $date;
-                }
+                }*/
     
-                GastosDiferidosDetalle::insert($Daily);
-            }
+             //   
+            //}
 
             return response()->json([
                                     "Titulo" => "Exito!", 

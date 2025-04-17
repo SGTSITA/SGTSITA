@@ -22,7 +22,6 @@
       
         <!--begin::Add customer-->
         <button type="button" class="btn btn-sm btn-primary" name="btnDocs" id="btnDocs">
-        <i class="ki-duotone ki-folder-up fs-2"><span class="path1"></span><span class="path2"></span></i>
             Agregar documento
         </button>
         <!--end::Add customer-->
@@ -35,11 +34,13 @@
             Archivos seleccionados: <span class="me-2" data-kt-docs-table-select="selected_count"></span> 
         </div>
 
-        <button type="button" class="btn btn-sm btn-danger" data-kt-docs-table-select="delete_selected">
-            Eliminar selección
+        <button type="button" class="btn btn-sm btn-success" name="btnAdjuntos" id="btnAdjuntos">
+        <i class="ki-duotone ki-folder-up fs-2"><span class="path1"></span><span class="path2"></span></i>
+            Enviar archivos
         </button>
     </div>
     <!--end::Group actions-->
+    
 </div>
 <!--end::Wrapper-->
 
@@ -64,10 +65,12 @@
     
     </tbody>
 </table>
+
 <!--end::Datatable-->
     </div>
 </div>
 @include('cotizaciones.externos.modal_fileuploader')
+@include('cotizaciones.externos.email_compose')
 @endsection
 
 @push('javascript')
@@ -77,8 +80,10 @@
 <link href="{{asset('assets/metronic/fileuploader/jquery.fileuploader-theme-dragdrop.css')}}" media="all" rel="stylesheet">
 <script src="{{asset('assets/metronic/fileuploader/jquery.fileuploader.min.js')}}" type="text/javascript"></script>
 <script src="{{asset('assets/metronic/fileuploader/cotizacion-cliente-externo.js')}}" type="text/javascript"></script>
+<script src="/assets/metronic/js/custom/apps/inbox/compose.js"></script>
 <script src="{{ asset('js/sgt/cotizaciones/file-manager.js') }}?v={{ filemtime(public_path('js/sgt/cotizaciones/file-manager.js')) }}"></script>
 <script>
+    
     $(document).ready(()=>{
         adjuntarDocumentos();
     })

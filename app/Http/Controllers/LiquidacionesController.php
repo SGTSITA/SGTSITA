@@ -38,7 +38,7 @@ class LiquidacionesController extends Controller
         $datosPago = $asignacion_operador->map(function($ope){
             return [
                 "IdOperador" => $ope->id_operador,
-                "Operador" => $ope->operador->nombre,
+                "Operador" => (!is_null($ope->operador)) ?$ope->operador->nombre: 'N/A',
                 "SueldoViaje" => $ope->sueldo_viaje,
                 "DineroViaje" => $ope->dinero_viaje,
                 "MontoPago" => $ope->total_pago,
