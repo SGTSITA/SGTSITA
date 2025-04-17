@@ -45,13 +45,13 @@
                   <h6 class="mb-3">Resumen</h6>
                   <div class="d-flex justify-content-between">
                     <span class="mb-2 text-sm">
-                      Días periodo:
+                      Periodos:
                     </span>
                     <span class="text-dark font-weight-bold ms-2" id="labelDiasPeriodo">0</span>
                   </div>
                   <div class="d-flex justify-content-between">
                     <span class="mb-2 text-sm">
-                      Gasto por día:
+                      Gasto por periodo:
                     </span>
                     <span class="text-dark font-weight-bold ms-2" id="labelGastoDiario">$ 0</span>
                   </div>
@@ -76,7 +76,7 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-sm btn-link text-muted" data-bs-dismiss="modal">Cancelar</button>
                 <button type="button" class="btn btn-sm bg-gradient-success" id="btnConfirmacion" > 
-                  Diferir pago
+                  Diferir gasto
                 </button>
               </div>
         

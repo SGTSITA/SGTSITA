@@ -161,6 +161,9 @@ class MissionResultRenderer {
   let labelDescripcionGasto = document.querySelector("#labelDescripcionGasto")
   let btnConfirmacion = document.querySelector('#btnConfirmacion')
 
+  let fromDate = null;
+  let toDate = null;
+
   
   var paginationTitle = document.querySelector("#ag-32-label");
   paginationTitle.textContent = 'Registros por página';
@@ -181,12 +184,31 @@ class MissionResultRenderer {
     return Math.floor(diferenciaMs / unDia);
  }
 
+ function diferenciaEnMeses(fecha1, fecha2) {
+  let inicio = new Date(fecha1+ "T00:00:00");
+  let fin = new Date(fecha2+ "T00:00:00");
+  
+    let periodos = 1; // Siempre hay al menos un periodo
+
+    if (inicio.getFullYear() === fin.getFullYear() && inicio.getMonth() === fin.getMonth()) {
+      return periodos;
+    }
+
+    // Mientras no lleguemos al mes y año de la fecha final
+    while (inicio.getFullYear() < fin.getFullYear() || inicio.getMonth() < fin.getMonth()) {
+      periodos++;
+      inicio.setMonth(inicio.getMonth() + 1);
+    }
+
+    return periodos;
+}
+
   function calcDays(){
     let fechaI = document.getElementById('txtDiferirFechaInicia');
     let fechaF = document.getElementById('txtDiferirFechaTermina');
 
     if(fechaI.value.length > 0 && fechaF.value.length > 0){
-     let diasContados = diferenciaEnDias(fechaI.value, fechaF.value)
+     let diasContados = diferenciaEnMeses(fechaI.value, fechaF.value)
      labelDiasPeriodo.textContent = diasContados
 
      let amount = reverseMoneyFormat(labelMontoGasto.textContent)
@@ -219,6 +241,8 @@ class MissionResultRenderer {
   })
    
    function getGastos(from,to){
+    fromDate = from
+    toDate = to
     var _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     $.ajax({
         url: '/gastos/generales/get',
@@ -277,6 +301,7 @@ class MissionResultRenderer {
                 Swal.fire(data.Titulo,data.Mensaje,data.TMensaje).then(function() {
                     if(data.TMensaje == "success"){
                       $('#exampleModal').modal('hide')
+                      getGastos(fromDate,toDate);
                     
                     }
                 });
@@ -314,6 +339,8 @@ class MissionResultRenderer {
         if(response.TMensaje == 'success'){
     
           $('#modalDiferir').modal('hide')
+          getGastos(fromDate,toDate);
+
         }
         Swal.fire(response.Titulo,response.Mensaje,response.TMensaje)
       },

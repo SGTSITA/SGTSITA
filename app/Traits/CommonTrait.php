@@ -31,7 +31,14 @@ trait CommonTrait
             return $cadena;
     }
 
-   
+    public static function TransformaFecha($Fecha){
+        $datetime = $Fecha; //01/12/2016
+        $dd = substr($datetime,0,2);
+        $mm = substr($datetime,3,2);
+        $yyyy = substr($datetime,6,9);
+        return $yyyy.'-'.$mm.'-'.$dd;
+    }
+
     public static function calculateFileSize($bytes) {
         if ($bytes == 0) {
             return "0 B";
@@ -60,5 +67,24 @@ trait CommonTrait
         $dias = array('Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado');
         $dia = $dias[date('w', strtotime($fecha))];
         return $dia;
+    }
+
+    public static function contadorPeriodos($fechaInicio, $fechaFinal){
+        $fecha1 = Carbon::parse($fechaInicio);
+        $fecha2 = Carbon::parse($fechaFinal);
+
+        $periodos = 1;
+
+        if($fecha1->month === $fecha2->month && $fecha1->year === $fecha2->year){
+            return $periodos;
+        }
+
+        while ($fecha1->year < $fecha2->year || $fecha1->month < $fecha2->month) {
+            $periodos++;
+            $fecha1->addMonths(1);
+        }
+    
+        return $periodos;
+
     }
 }

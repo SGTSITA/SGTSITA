@@ -289,40 +289,22 @@
                                         @endif
                                     </td>
                                     <td class="ps-4 penultima-columna" colspan="2">
-                                        @if(!isset($item->id_operador))
-                                            @if(!isset($item->tipo))
-                                                @if (isset($item->id_banco1) && $item->id_banco1 == $banco->id)
-                                                    $ {{ number_format($item->monto1, 0, '.', ',') }}
-                                                @else
-                                                    $ {{ number_format($item->monto2, 0, '.', ',') }}
-                                                @endif
-                                            @else
-                                                @if ($item->tipo == 'Entrada')
+                                    @if ($item->tipo == 'Entrada')
                                                     @if (isset($item->id_banco1) && $item->id_banco1 == $banco->id)
                                                         $ {{ number_format($item->monto1, 0, '.', ',') }}
                                                     @else
                                                         $ {{ number_format($item->monto2, 0, '.', ',') }}
                                                     @endif
                                                 @endif
-                                            @endif
-                                        @endif
                                     </td>
                                     <td class="ps-4 ultima-columna">
-                                        @if(isset($item->id_operador))
-                                            @if (isset($item->id_banco1) && $item->id_banco1 == $banco->id)
-                                                $ {{ number_format($item->monto1, 0, '.', ',') }}
-                                            @else
-                                                $ {{ number_format($item->monto2, 0, '.', ',') }}
-                                            @endif
-                                        @else
-                                            @if ($item->tipo == 'Salida')
+                                    @if ($item->tipo == 'Salida')
                                                 @if (isset($item->id_banco1) && $item->id_banco1 == $banco->id)
                                                     $ {{ number_format($item->monto1, 0, '.', ',') }}
                                                 @else
                                                     $ {{ number_format($item->monto2, 0, '.', ',') }}
                                                 @endif
                                             @endif
-                                        @endif
                                     </td>
                                 </tr>
                             @elseif(isset($item->fecha_pago_proveedor))
