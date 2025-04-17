@@ -15,10 +15,11 @@ document.addEventListener("DOMContentLoaded", function () {
     const columnDefs = [
         { headerCheckboxSelection: true, checkboxSelection: true, width: 50 },
         { headerName: "No", field: "id", sortable: true, filter: true },
-        { headerName: "Cliente", field: "cliente", sortable: true, filter: true },
-        { headerName: "Origen", field: "origen", sortable: true, filter: true },
-        { headerName: "Destino", field: "destino", sortable: true, filter: true },
-        { headerName: "# Contenedor", field: "contenedor", sortable: true, filter: true },
+        { headerName: "Cliente", field: "cliente", sortable: true, filter: true, minWidth: 150 },
+        { headerName: "# Contenedor", field: "contenedor", sortable: true, filter: true, minWidth: 150 ,cellStyle: { backgroundColor: '#f9f5fc' } },
+        { headerName: "Origen", field: "origen", sortable: true, filter: true, minWidth: 150  },
+        { headerName: "Destino", field: "destino", sortable: true, filter: true, minWidth: 150  },
+        
         {
             headerName: "Estatus",
             field: "estatus",
