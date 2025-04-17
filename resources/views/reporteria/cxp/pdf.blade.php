@@ -4,29 +4,36 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            font-size: 16px;
+            font-size: 10px;
+            /* 🔽 Tamaño general reducido */
             margin-top: 50px;
             margin-left: 40px;
         }
 
         h3,
+        h4,
+        h5,
         p,
         th,
         td {
             font-weight: normal;
+            font-size: 10px;
+            /* 🔽 Aplica a títulos y párrafos */
+            margin: 0;
+            padding: 0;
         }
 
         .registro-contenedor {
             border: 2px solid #000;
             margin-bottom: 20px;
-            padding: 15px;
+            padding: 10px;
             border-radius: 5px;
         }
 
         .registro-contenedor table {
             margin-bottom: 10px;
             font-family: Arial, sans-serif;
-            font-size: 12px;
+            font-size: 9px;
             width: 100%;
             border-collapse: collapse;
         }
@@ -34,34 +41,48 @@
         table th,
         table td {
             border: 1px solid #000;
-            padding: 8px;
+            padding: 4px;
+            font-size: 9px;
+        }
+
+        .tabla-completa thead th {
+            background-color: #007BFF;
+            color: white;
+            font-weight: bold;
+            font-size: 9px;
+            text-align: center;
+            padding: 4px;
+        }
+
+        .tabla-completa td {
+            font-size: 8.5px;
+            padding: 4px;
+        }
+
+        .tabla-completa {
+            font-size: 8.5px;
+            border-collapse: collapse;
         }
 
         .totales {
-            margin-top: 20px;
-            font-size: 16px;
+            margin-top: 15px;
+            font-size: 9.5px;
         }
 
         .totales h3 {
             font-weight: bold;
-            font-size: 16px;
+            font-size: 10px;
+            margin-bottom: 5px;
         }
 
-        .totales p {
-            font-size: 1.2em;
-            color: #000;
-        }
-
-        .margin_cero,
-        .sin_espacios,
-        .sin_margem {
-            margin: 0;
-            padding: 0;
+        .totales h4 {
+            font-size: 9.5px;
+            margin: 2px 0;
         }
 
         .sin_espacios2 {
             margin: 2px;
-            font-size: 12px;
+            font-size: 9.5px;
         }
 
         .contianer {
@@ -70,6 +91,31 @@
         }
     </style>
 @endif
+
+<style>
+    .tabla-completa thead th {
+        background-color: #007BFF;
+        /* Azul claro */
+        color: white;
+        font-weight: bold;
+        font-size: 9px;
+        /* 🔽 Tamaño reducido */
+        text-align: center;
+        padding: 4px;
+        /* 🔽 Menos espacio para más compacidad */
+    }
+
+    .tabla-completa td {
+        font-size: 8.5px;
+        /* 🔽 Letra más pequeña */
+        padding: 4px;
+    }
+
+    .tabla-completa {
+        font-size: 8.5px;
+        border-collapse: collapse;
+    }
+</style>
 
 <head>
     <meta charset="UTF-8">
@@ -94,7 +140,7 @@
     </div>
 
     <div class="contianer sin_margem" style="position: relative">
-        <h5 style="position: absolute; left: 70%; top: -10%;">Estado de cuenta por pagar: {{ date('d-m-Y') }}</h5>
+        <h5 style="position: absolute; left: 70%; top: -5%;">Estado de cuenta por pagar: {{ date('d-m-Y') }}</h5>
     </div>
 
 
@@ -103,7 +149,7 @@
         style="color: #000; width: 100%; margin-top: 55px; font-size: 10px; border-collapse: collapse;">
         <thead>
             <tr>
-                <th>Contratista</th>
+                <th>Facturado a</th>
                 <th>Contenedor</th>
                 <th>Importe CT</th>
                 <th>A pagar 1</th>
@@ -150,8 +196,6 @@
         </tbody>
     </table>
 
-    <!-- Sección de cuentas bancarias del proveedor -->
-    <h3 class="sin_margem" style="background: rgb(24, 192, 141);">Contratista</h3>
     <table class="table tabla-completa sin_margem"
         style="color: #000; width: 100%; font-size: 10px; margin-top: 5px; border-collapse: collapse;">
         <tbody style="text-align: left; font-size: 10px; line-height: 1;">

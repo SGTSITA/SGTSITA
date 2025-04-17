@@ -305,11 +305,24 @@ function openCuentasBancariasModal(idProveedor) {
             document.getElementById("cuentasProveedorNombre").textContent = data.proveedor ? data.proveedor.nombre : "Desconocido";
 
             if (data.success) {
+                // 🔹 Verifica si ya hay una cuenta marcada como 1 o 2
+                let cuenta1Seleccionada = data.cuentas.find(c => c.cuenta_1);
+                let cuenta2Seleccionada = data.cuentas.find(c => c.cuenta_2);
+
                 if (data.cuentas.length > 0) {
                     data.cuentas.forEach((cuenta, index) => {
                         let estadoSwitch = cuenta.deleted_at === null ? "checked" : "";
                         let estadoTexto = cuenta.deleted_at === null ? "Activo" : "Inactivo";
                         let estadoClase = cuenta.deleted_at === null ? "text-success" : "text-danger";
+
+                        let cuenta1Checked = cuenta.cuenta_1 ? 'checked' : '';
+                        let cuenta2Checked = cuenta.cuenta_2 ? 'checked' : '';
+
+                        // 🔹 Deshabilita si ya hay otra cuenta asignada como 1 o 2
+                        let disableCuenta1 = (cuenta1Seleccionada && !cuenta.cuenta_1) || cuenta.deleted_at !== null ? 'disabled' : '';
+let disableCuenta2 = (cuenta2Seleccionada && !cuenta.cuenta_2) || cuenta.deleted_at !== null ? 'disabled' : '';
+
+                        
 
                         let row = `
                             <tr>
@@ -326,67 +339,27 @@ function openCuentasBancariasModal(idProveedor) {
                                         <span class="ms-2 ${estadoClase}" id="estadoTexto${cuenta.id}">${estadoTexto}</span>
                                     </div>
                                 </td>
-                            </tr>`;
-                        tbody.innerHTML += row;
-                    });
-
-                    $("#cuentasBancariasModal").modal("show");
-
-                } else {
-                    Swal.fire({
-                        title: "Sin cuentas bancarias",
-                        text: "Este proveedor no tiene cuentas bancarias registradas. Para verlas, primero debes añadir una.",
-                        icon: "info",
-                        confirmButtonText: "Aceptar"
-                    });
-                }
-            } else {
-                Swal.fire("Error", "No se pudieron cargar las cuentas bancarias.", "error");
-            }
-        })
-        .catch(error => {
-            Swal.fire("Error", "Hubo un problema al obtener los datos.", "error");
-            console.error("Error al cargar cuentas bancarias:", error);
-        });
-}
-function openCuentasBancariasModal(idProveedor) {
-    fetch(`/proveedores/${idProveedor}/cuentas`)
-        .then(response => response.json())
-        .then(data => {
-            let tbody = document.getElementById("cuentasBancariasBody");
-            tbody.innerHTML = "";
-
-            // 🔹 Asignar el nombre del proveedor
-            document.getElementById("cuentasProveedorNombre").textContent = data.proveedor ? data.proveedor.nombre : "Desconocido";
-
-            if (data.success) {
-                if (data.cuentas.length > 0) {
-                    data.cuentas.forEach((cuenta, index) => {
-                        let estadoSwitch = cuenta.deleted_at === null ? "checked" : "";
-                        let estadoTexto = cuenta.deleted_at === null ? "Activo" : "Inactivo";
-                        let estadoClase = cuenta.deleted_at === null ? "text-success" : "text-danger";
-
-                        let row = `
-                            <tr>
-                                <td>${index + 1}</td>
-                                <td>${cuenta.nombre_banco}</td>
-                                <td>${cuenta.nombre_beneficiario}</td>
-                                <td>${cuenta.cuenta_bancaria}</td>
-                                <td>${cuenta.cuenta_clabe}</td>
-                                <td class="text-center">
-                                    <div class="form-check form-switch d-flex justify-content-center">
-                                        <input class="form-check-input" type="checkbox" role="switch" 
-                                            id="switchCuenta${cuenta.id}" ${estadoSwitch} 
-                                            onchange="toggleCuentaEstado(${cuenta.id})">
-                                        <span class="ms-2 ${estadoClase}" id="estadoTexto${cuenta.id}">${estadoTexto}</span>
-                                    </div>
+                                <td>
+                                    <input type="checkbox"
+                                           ${cuenta1Checked}
+                                           ${disableCuenta1}
+                                           data-id="${cuenta.id}"
+                                           data-tipo="1"
+                                           onchange="actualizarCuentaPrioridad(${cuenta.id}, 1, this.checked)">
+                                </td>
+                                <td>
+                                    <input type="checkbox"
+                                           ${cuenta2Checked}
+                                           ${disableCuenta2}
+                                           data-id="${cuenta.id}"
+                                           data-tipo="2"
+                                           onchange="actualizarCuentaPrioridad(${cuenta.id}, 2, this.checked)">
                                 </td>
                             </tr>`;
                         tbody.innerHTML += row;
                     });
 
                     $("#cuentasBancariasModal").modal("show");
-
                 } else {
                     Swal.fire({
                         title: "Sin cuentas bancarias",
@@ -405,6 +378,66 @@ function openCuentasBancariasModal(idProveedor) {
         });
 }
 
+
+
+function actualizarCuentaPrioridad(idCuenta, tipo, estado) {
+    fetch(`/cuentas-bancarias/${idCuenta}/prioridad`, {
+        method: 'PATCH',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: JSON.stringify({
+            tipo: tipo,
+            estado: estado
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            Swal.fire({
+                title: "Éxito",
+                text: data.message,
+                icon: "success"
+            }).then(() => {
+                const checkboxes = document.querySelectorAll(`input[data-tipo='${tipo}']`);
+
+                if (estado) {
+                    // 🔹 Activado: marcar actual y desactivar los demás
+                    checkboxes.forEach(input => {
+                        input.checked = false;
+                        input.disabled = false;
+                    });
+
+                    const currentCheckbox = document.querySelector(`input[data-id='${idCuenta}'][data-tipo='${tipo}']`);
+                    currentCheckbox.checked = true;
+
+                    checkboxes.forEach(input => {
+                        if (input !== currentCheckbox) {
+                            input.disabled = true;
+                        }
+                    });
+                } else {
+                    // 🔴 Deseleccionado: activar todos los de esa columna
+                    checkboxes.forEach(input => {
+                        input.disabled = false;
+                    });
+
+                    Swal.fire({
+                        icon: 'warning',
+                        title: `Cuenta ${tipo} desasignada`,
+                        text: `Asegúrate de seleccionar otra cuenta como Cuenta ${tipo}.`,
+                        confirmButtonText: 'Entendido'
+                    });
+                }
+            });
+        }
+    })
+    .catch(err => {
+        Swal.fire("Error", "No se pudo actualizar la prioridad.", "error");
+        console.error(err);
+    });
+}
 
 
 

@@ -246,7 +246,7 @@
                 event.preventDefault(); // Evitar comportamiento predeterminado del formulario
 
                 const selectedIds = table.rows('.selected').data().toArray().map(row => row[
-                1]); // Obtener los IDs seleccionados
+                    1]); // Obtener los IDs seleccionados
 
                 // Verificar si no se seleccionó ninguna fila
                 if (selectedIds.length === 0) {
