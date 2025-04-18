@@ -717,16 +717,57 @@ public function advance_documentos(Request $request) {
 
 
 
-    public function export_documentos(Request $request){
 
-        $fecha = date('Y-m-d');
-        $fechaCarbon = Carbon::parse($fecha);
+public function export_documentos(Request $request)
+{
 
-        $cotizacionIds = $request->input('selected_ids', []);
+    ini_set('memory_limit', '512M');
+ini_set('max_execution_time', 120);
+    $fecha = date('Y-m-d');
+    $fechaCarbon = Carbon::parse($fecha);
+    $cotizacionIds = $request->input('selected_ids', []);
 
+    if (empty($cotizacionIds)) {
+        return response()->json([
+            'success' => false,
+            'message' => 'No se seleccionaron cotizaciones.'
+        ], 400);
+    }
 
+    $cotizaciones = Cotizaciones::join('docum_cotizacion', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
+        ->whereIn('cotizaciones.id', $cotizacionIds)
+        ->select(
+            'docum_cotizacion.num_contenedor',
+            'docum_cotizacion.doc_ccp',
+            'docum_cotizacion.boleta_liberacion',
+            'docum_cotizacion.doda',
+            'cotizaciones.carta_porte',
+            'docum_cotizacion.boleta_vacio',
+            'docum_cotizacion.doc_eir'
+        )
+        ->get();
+
+    $cotizacion = Cotizaciones::whereIn('id', $cotizacionIds)->get(); 
+    $user = auth()->user();
+
+    if ($request->fileType === 'xlsx') {
+        return Excel::download(
+            new \App\Exports\DocumentosExport($cotizaciones, $fechaCarbon, $cotizacion, $user),
+            'documentos.xlsx'
+        );
+    }
+
+    if ($request->fileType === 'pdf') {
+        $pdf = PDF::loadView('reporteria.documentos.pdf', compact('cotizaciones', 'fechaCarbon', 'cotizacion', 'user'))
+            ->setPaper('a4', 'landscape');
         return $pdf->download('documentos.pdf');
     }
+
+    return response()->json([
+        'success' => false,
+        'message' => 'Tipo de archivo no soportado.'
+    ], 400);
+}
 
 
 
