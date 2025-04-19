@@ -25,6 +25,7 @@ use Carbon\Carbon;
 use Session;
 use DB;
 use Auth;
+use App\Events\EnvioCorreoCoordenadasEvent;
 
 class CotizacionesController extends Controller
 {
@@ -257,7 +258,29 @@ public function getCotizacionesCanceladas()
 
         return view('cotizaciones.index_cancelada', compact('empresas', 'proveedores','bancos','operadores','equipos_dolys','equipos_chasis','equipos_camiones','cotizaciones_canceladas'));
     }
-
+    public function getCotizacionesId($id)
+    {
+        $cotizaciones = Cotizaciones::where('id', $id)
+            //->where('id_empresa', auth()->user()->id_empresa)
+            ->orderBy('created_at', 'desc')
+            ->with(['cliente', 'DocCotizacion.Asignaciones'])
+            ->get()
+            ->map(function ($cotizacion) {
+                return [
+                    'id' => $cotizacion->id,
+                    'cliente' => $cotizacion->cliente ? $cotizacion->cliente->nombre : 'N/A',
+                    'origen' => $cotizacion->origen,
+                    'destino' => $cotizacion->destino,
+                    'contenedor' => $cotizacion->DocCotizacion ? $cotizacion->DocCotizacion->num_contenedor : 'N/A',
+                    'estatus' => $cotizacion->estatus,
+                    'coordenadas' => optional($cotizacion->DocCotizacion)->Asignaciones ? 'Ver' : '',
+                    'edit_url' => route('edit.cotizaciones', $cotizacion->id),
+                ];
+            });
+    
+            
+        return response()->json(['list' => $cotizaciones]);
+    }
     public function solicitudesEntrantes(){
         $empresas = Empresas::get();
         return view('cotizaciones.solicitudes_clientes',compact('empresas'));
@@ -1476,4 +1499,15 @@ public function getCotizacionesCanceladas()
                 ->with('success', 'Se ha editado sus datos con exito');
        
     }
+    public function enviarCorreo(Request $request)
+    {
+        $datos = $request->only('correo', 'asunto', 'mensaje','link');
+        \Log::info('Evento disparado con datos: ', $datos);
+        event(new \App\Events\EnvioCorreoCoordenadasEvent($datos));
+
+        return response()->json(['success' => true]);
+    }
+
+
+   
 }

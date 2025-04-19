@@ -326,7 +326,7 @@
                         href="{{ route('index.catalogo') }}" target="">
                         <div
                             class="icon icon-shape icon-sm text-center  me-2 d-flex align-items-center justify-content-center">
-                            <img src="{{ asset('img/icon/catalogo.webp.webp') }}" alt="" width="20px">
+                            <img src="{{ asset('img/icon/catalogo.webp') }}" alt="" width="20px">
                         </div>
                         <span class="nav-link-text ms-1"><b>XIII</b> Catálogo</span>
                     </a>

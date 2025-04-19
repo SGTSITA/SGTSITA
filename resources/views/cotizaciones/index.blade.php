@@ -2,6 +2,7 @@
 
 @section('template_title', 'Cotizaciones')
 
+
 @section('content')
     <style>
         #myGrid {
@@ -46,7 +47,7 @@
                         <ul class="nav nav-pills nav-fill p-1 flex-row" id="cotTabs">
                             <li class="nav-item">
                                 <a class="nav-link active" data-status="planeadas">
-                                    <i class="fa-solid fa-clipboard-list" style="font-size: 18px;"></i>
+                                    <i class="fa-solid fa-clipboard-list " style="font-size: 18px;"></i>
                                     <span class="ms-2">Planeadas</span>
                                 </a>
                             </li>
@@ -89,6 +90,54 @@
             </div>
         </div>
     </div>
+    <!-- Modal Coordenadas con Tabs -->
+<div class="modal" id="modalCoordenadas" tabindex="-1" style="display:none;">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content p-3">
+      <h5>Compartir coordenadas</h5>
+        <div class="form-group">
+            <label for="optipoCuestionario">Seleccione tipo de cuestionario</label>
+            <select id="optipoCuestionario" name="tipoCuestionario" class="form-control">
+                <option value="" disabled selected>Seleccione tipo</option>
+                <option value="b">Burrero</option>
+                <option value="f">Foráneo</option>
+                <option value="c">Completo</option>
+            </select>
+        </div>
+      <!-- Tabs -->
+      <ul class="nav nav-tabs mb-3">
+        
+        <li class="nav-item">
+          <a class="nav-link active" href="#" onclick="mostrarTab('mail')">📧 Mail</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#" onclick="mostrarTab('whatsapp')">📲 WhatsApp</a>
+        </li>
+      </ul>
+      <input type="hidden" id="idAsignacionCompartir" value="">
+      <!-- Tab contenido: MAIL -->
+      <div id="tab-mail" class="tab-content">
+                @include('emails.email-coordenadas')
+      </div>
+
+      <!-- Tab contenido: WHATSAPP -->
+      <div id="tab-whatsapp" class="tab-content" style="display: none;">
+            
+
+            <label>Contenedor:</label>
+            <div id="wmensajeText" class="mb-2"></div>
+
+            <label>Enlace para compartir por WhatsApp:</label>
+            <input type="text" id="linkWhatsapp" class="form-control mb-2" readonly>
+
+            <button class="btn btn-primary mb-2" onclick="copiarDesdeInput('linkWhatsapp')">📋 Copiar enlace</button>
+            <a href="#" id="whatsappLink" class="btn btn-success" target="_blank" onclick="guardarYAbrirWhatsApp(event)">Abrir WhatsApp</a>
+        </div>
+
+      <button class="btn btn-secondary mt-2" onclick="cerrarModal()">Cerrar</button>
+    </div>
+  </div>
+</div>
     <!-- Modal: Cambio de Empresa -->
     <div class="modal fade" id="modalCambioEmpresa" tabindex="-1" aria-labelledby="modalCambioEmpresaLabel"
         aria-hidden="true">
