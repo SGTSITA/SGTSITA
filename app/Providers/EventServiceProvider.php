@@ -27,6 +27,9 @@ class EventServiceProvider extends ServiceProvider
         \App\Events\GenericNotificationEvent::class =>[
             \App\Listeners\GenericNotificationListener::class,
         ],
+        \App\Events\EnvioCorreoCoordenadasEvent::class =>[
+            \App\Listeners\EnviarCorreoCoordenadasListener::class,
+        ],
     ];
 
     /**

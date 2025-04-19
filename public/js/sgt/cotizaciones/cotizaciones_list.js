@@ -46,9 +46,14 @@ document.addEventListener("DOMContentLoaded", function () {
             cellRenderer: function (params) {
                 if (params.data.id_asignacion) {
                     return `
-                        <a href="/coordenadas/${params.data.id_asignacion}" class="btn btn-sm btn-outline-info" title="Ver coordenadas">
-                            <i class="fa fa-map-marker-alt"></i> Coord.
-                        </a>
+                    <button class="btn btn-sm btn-outline-info" 
+                    onclick="abrirModalCoordenadas(${params.data.id_asignacion})" 
+                     title="Compartir coordenadas">
+                     <i class="fa fa-map-marker-alt"></i> Compartir
+                     </button>
+                         <input type="hidden" id="idCotizacionCompartir" value="${params.data.id}">
+                         <input type="hidden" id="idAsignacionCompartir" value="${params.data.id_asignacion}">
+                         
                     `;
                 }
                 return `<span class="text-muted">N/A</span>`;
@@ -273,7 +278,275 @@ function abrirDocumentos(idCotizacion) {
             Swal.fire('Error', 'No se pudieron obtener los documentos', 'error');
         });
 }
+document.addEventListener('DOMContentLoaded', function () {
+    // Abrir el modal
+    window.abrirModalCoordenadas = function(id_asignacion) {
+        const modal = document.getElementById('modalCoordenadas');
+        if (modal) {
+            modal.style.display = 'block';
+        
+            // Backdrop
+            if (!document.querySelector('.modal-backdrop')) {
+                const backdrop = document.createElement('div');
+                backdrop.classList.add('modal-backdrop');
+                backdrop.style.position = 'fixed';
+                backdrop.style.top = '0';
+                backdrop.style.left = '0';
+                backdrop.style.width = '100%';
+                backdrop.style.height = '100%';
+                backdrop.style.backgroundColor = 'rgba(0,0,0,0.5)';
+                backdrop.style.zIndex = '1040';
+                document.body.appendChild(backdrop);
+            }
+        
+            document.body.classList.add('modal-open');
+            document.body.style.overflow = 'hidden';
+        
+            // Activar tab Mail por defecto
+            cambiarTab('mail');
+        }
+
+        // Asegúrate de que el select para tipo de cuestionario exista
+        const tipoSelect = document.getElementById('optipoCuestionario');
+        if (tipoSelect) {
+            tipoSelect.addEventListener('change', function() {
+                // Verifica si se seleccionó una opción válida
+                const tipoSeleccionado = tipoSelect.value;
+
+                if (tipoSeleccionado) {
+                    // Aquí haces el fetch solo si hay una opción seleccionada
+                    fetchCotizacion(id_asignacion, tipoSeleccionado);
+                } else {
+                    // Si no hay selección válida, limpiamos los datos
+                    limpiarDatos();
+                }
+            });
+        }
+    };
+
+    // Función para buscar los datos de la cotización
+    function fetchCotizacion(id_asignacion, tipoCuestionario) {
+        const link = `${window.location.origin}/coordenadas/${id_asignacion}/${tipoCuestionario}`;
+        let _url = `/cotizaciones/${id_asignacion}`;
+
+        fetch(_url)
+            .then(response => response.json())
+            .then(data => {
+                if (!data.list || data.list.length === 0) {
+                    let messageNoData = "No se encontró información para esta cotización.";
+                    // Limpiar la información cuando no se encuentra
+                    limpiarDatos(messageNoData);
+                    return;
+                }
+
+                const item = data.list[0];
+                const mensaje = ` ${item.contenedor}`;
+                // mail
+                document.getElementById('linkMail').innerText = link;
+                document.getElementById('mensajeText').innerText = mensaje;
+                // whatsapp
+                document.getElementById("wmensajeText").innerText = mensaje;
+                document.getElementById("linkWhatsapp").value = link;
+
+                // 🟢 Armamos el link para WhatsApp
+                const textoWhatsapp = `Contenedor: ${mensaje}\n\n${link}`;
+                document.getElementById("whatsappLink").href = `https://wa.me/?text=${encodeURIComponent(textoWhatsapp)}`;
+            })
+            .catch(error => {
+                console.error("❌ Error al obtener info de cotizaciones:", error);
+            });
+    }
+
+    // Función para limpiar los datos
+    function limpiarDatos(message = "") {
+        // Limpiar los valores cuando no se selecciona una opción válida
+        document.getElementById('linkMail').innerText = message;
+        document.getElementById('asuntoText').innerText = "";
+        document.getElementById('mensajeText').innerText = "";
+        document.getElementById("wasuntoText").innerText = message;
+        document.getElementById("wmensajeText").innerText = "";
+        document.getElementById("linkWhatsapp").value = "";
+        document.getElementById("whatsappLink").href = "#";
+        document.getElementById("idAsignacionCompartir").value = "";
+    }
+});
+function cambiarTab(tabId) {
+    // Ocultamos todos los divs con clase 'tab-content'
+    const tabs = document.querySelectorAll('.tab-content');
+    tabs.forEach(tab => {
+        tab.style.display = 'none';
+    });
+
+    // Mostramos solo el que corresponde
+    const tabToShow = document.getElementById('tab-' + tabId);
+    if (tabToShow) {
+        tabToShow.style.display = 'block';
+    } else {
+        console.error(`No se encontró el tab: tab-${tabId}`);
+    }
+}
+
+function mostrarTab(tab) {
+    // Ocultar ambos
+    document.getElementById('tab-mail').style.display = 'none';
+    document.getElementById('tab-whatsapp').style.display = 'none';
+
+    // Quitar clase activa
+    const tabs = document.querySelectorAll('.nav-link');
+    tabs.forEach(el => el.classList.remove('active'));
+
+    // Mostrar el tab seleccionado
+    document.getElementById(`tab-${tab}`).style.display = 'block';
+
+    // Activar tab
+    document.querySelector(`.nav-link[href="#"][onclick*="${tab}"]`).classList.add('active');
+}
+
+function cerrarModal() {
+    const modal = document.getElementById('modalCoordenadas');
+
+    if (modal) {
+        modal.style.display = 'none';
+    }
+
+    // Eliminar el fondo oscuro si existe
+    const backdrop = document.querySelector('.modal-backdrop');
+    if (backdrop) {
+        backdrop.remove();
+    }
+
+    // Quitar la clase modal-open del body
+    document.body.classList.remove('modal-open');
+    document.body.style.overflow = ''; // restaurar scroll
+}
+
+function copiarDesdeInput(inputId) {
+    const input = document.getElementById(inputId);
+    input.select();
+    input.setSelectionRange(0, 99999);
+    document.execCommand("copy");
+    alert("¡Enlace copiado!");
+}
 
 
+function enviarMailCoordenadas() {
 
+    const mensaje = document.getElementById('mensajeText').innerText;
+    const asunto = 'No. contenedor: ' + mensaje;
 
+    const link = document.getElementById('linkMail').innerText;
+    const correo = document.getElementById('correoDestino').value;
+ 
+    fetch('/cotizaciones/mail-coordenadas', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+        },
+        body: JSON.stringify({
+            correo: correo,
+            asunto: asunto,
+            mensaje: mensaje,
+            link:  link
+        })
+    })
+    .then(res => res.json())
+    .then(data => alert('Correo enviado ✅'))
+    .catch(err => console.error('Error:', err));
+    saveCoordenadas();
+    
+}
+function guardarYAbrirWhatsApp(event) {
+    event.preventDefault(); // Evita que el enlace se abra inmediatamente
+    saveCoordenadas();
+    window.open(document.getElementById('whatsappLink').href, '_blank');
+       
+}
+
+function saveCoordenadas() {
+
+    let idAsignacionSave= document.getElementById("idAsignacionCompartir").value;
+    let idCotizacionSave= document.getElementById("idCotizacionCompartir").value;
+    if (idAsignacionSave != null)
+    {
+
+        let tipoFlujo = null;
+        let registroPuerto = null;
+        let dentroPuerto = null;
+        let descargaVacio = null;
+        let cargadoContenedor = null;
+        let filaFiscal = null;
+        let moduladoTipo = null;
+        let moduladoCoordenada = null;
+        let enDestino = null;
+        let inicioDescarga = null;
+        let finDescarga = null;
+        let recepcionDocFirmados = null;
+        
+        let tipoFlujoDatetime = null;
+        let registroPuertoDatetime = null;
+        let dentroPuertoDatetime = null;
+        let descargaVacioDatetime = null;
+        let cargadoContenedorDatetime = null;
+        let filaFiscalDatetime = null;
+        let moduladoTipoDatetime = null;
+        let moduladoCoordenadaDatetime = null;
+        let enDestinoDatetime = null;
+        let inicioDescargaDatetime = null;
+        let finDescargaDatetime = null;
+        let recepcionDocFirmadosDatetime = null;
+     
+     
+        const data = {
+         idAsig: idAsignacionSave,
+         idCotSave: idCotizacionSave,
+     
+         tipo_flujo: tipoFlujo ?? null,
+         registro_puerto: registroPuerto ?? null,
+         dentro_puerto: dentroPuerto ?? null,
+         descarga_vacio: descargaVacio ?? null,
+         cargado_contenedor: cargadoContenedor ?? null,
+         fila_fiscal: filaFiscal ?? null,
+         modulado_tipo: moduladoTipo ?? null,
+         modulado_coordenada: moduladoCoordenada ?? null,
+         en_destino: enDestino ?? null,
+         inicio_descarga: inicioDescarga ?? null,
+         fin_descarga: finDescarga ?? null,
+         recepcion_doc_firmados: recepcionDocFirmados ?? null,
+     
+         tipo_flujo_datatime: tipoFlujoDatetime ?? null,
+         registro_puerto_datatime: registroPuertoDatetime ?? null,
+         dentro_puerto_datatime: dentroPuertoDatetime ?? null,
+         descarga_vacio_datatime: descargaVacioDatetime ?? null,
+         cargado_contenedor_datatime: cargadoContenedorDatetime ?? null,
+         fila_fiscal_datatime: filaFiscalDatetime ?? null,
+         modulado_tipo_datatime: moduladoTipoDatetime ?? null,
+         modulado_coordenada_datatime: moduladoCoordenadaDatetime ?? null,
+         en_destino_datatime: enDestinoDatetime ?? null,
+         inicio_descarga_datatime: inicioDescargaDatetime ?? null,
+         fin_descarga_datatime: finDescargaDatetime ?? null,
+         recepcion_doc_firmados_datatime: recepcionDocFirmadosDatetime ?? null,
+        }  ;
+     
+         fetch('/coordenadas/save', {
+             method: 'POST',
+             headers: {
+                 'Content-Type': 'application/json',
+                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+             },
+             body: JSON.stringify(data)
+         })
+         .then(res => {
+            if (res.status === 204) {
+                console.log('Coordenadas Actualizadas ✅');
+            } else {
+                return res.json().then(data => {
+                    console.log('Coordenadas Actualizadas ✅');
+                });
+            }
+        })
+        .catch(err => console.error('Error:', err));
+    
+    }
+    
+}

@@ -38,6 +38,10 @@ class Coordenadas extends Model
         'inicio_descarga_datatime',
         'fin_descarga_datatime',
         'recepcion_doc_firmados_datatime',
+        'cargado_patio',
+        'cargado_patio_datetime',
+        'descarga_patio',
+        'descarga_patio_datatime'
     ];
 
     public function Cotizacion()
