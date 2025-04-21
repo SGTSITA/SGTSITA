@@ -504,7 +504,7 @@ public function export_cxp(Request $request)
                 'fecha_salida' => \Carbon\Carbon::parse($a->fehca_inicio_guard)->format('d-m-Y'),
                 'fecha_llegada' => \Carbon\Carbon::parse($a->fehca_fin_guard)->format('d-m-Y'),
                 'estatus' => $a->Contenedor->Cotizacion->estatus ?? '',
-                'proveedor' => $a->Proveedor->nombre ?? '-', // ✅ Añádelo aquí también
+                'proveedor' => $a->Proveedor->nombre ?? '-', 
             ];
         })->toArray();
         
@@ -529,7 +529,7 @@ public function export_cxp(Request $request)
     $exportAll = $request->input('exportAll') === 'true';
     $cotizacionIds = $request->input('cotizacion_ids', []);
 
-    // ✅ Detectar si se exporta todo o solo selección
+    //  Detectar si se exporta todo o solo selección
     if ($exportAll) {
         $cotizaciones = Asignaciones::with(['Contenedor.Cotizacion.Cliente', 'Contenedor.Cotizacion.Subcliente'])
             ->where('id_empresa', auth()->user()->id_empresa)

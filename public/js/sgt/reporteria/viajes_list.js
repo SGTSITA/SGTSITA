@@ -3,7 +3,15 @@ document.addEventListener('DOMContentLoaded', () => {
     let gridApi = null;
 
     const columnDefs = [
-        { headerName: "ID", field: "id", checkboxSelection: true, headerCheckboxSelection: true, width: 100, cellClass: 'text-center' },
+        { 
+            headerName: "ID", 
+            field: "id", 
+            checkboxSelection: true, 
+            headerCheckboxSelection: true, 
+            headerCheckboxSelectionFilteredOnly: true, // ✅ clave
+            width: 100, 
+            cellClass: 'text-center' 
+          },
         { headerName: "Contenedor", field: "contenedor", filter: 'agTextColumnFilter', floatingFilter: true, flex: 1 },
         { headerName: "Proveedor", field: "proveedor", filter: 'agTextColumnFilter', floatingFilter: true, flex: 1 },
         { headerName: "Cliente", field: "cliente", filter: 'agTextColumnFilter', floatingFilter: true, flex: 1 },
@@ -21,7 +29,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const fecha = moment(item.fecha_salida, 'DD-MM-YYYY');
             return fecha.isValid() && fecha.isBetween(moment().subtract(7, 'days'), moment(), 'day', '[]');
         }),
+        suppressRowClickSelection: false,
         rowSelection: 'multiple',
+        groupSelectsFiltered: true,
         pagination: true,
         paginationPageSize: 30,
         defaultColDef: {
@@ -32,7 +42,10 @@ document.addEventListener('DOMContentLoaded', () => {
         animateRows: true,
         onGridReady: (params) => {
             gridApi = params.api;
-        }
+        },
+        onFilterChanged: () => {
+            gridApi.deselectAll(); 
+        },
     };
 
     const grid = agGrid.createGrid(gridDiv, gridOptions);
