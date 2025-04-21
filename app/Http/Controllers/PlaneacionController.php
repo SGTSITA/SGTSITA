@@ -104,14 +104,36 @@ class PlaneacionController extends Controller
     public function infoViaje(Request $request){
         $asignaciones = Asignaciones::where('id_contenedor','=',$request->id)->first();
         $cotizacion = Cotizaciones::where('id','=',$request->id)->first();
+
+        $documentos = Cotizaciones::query()
+        ->where('cotizaciones.id', $request->id)
+        ->leftJoin('docum_cotizacion', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
+        ->leftJoin('asignaciones', 'docum_cotizacion.id', '=', 'asignaciones.id_contenedor')
+        ->leftJoin('clients', 'cotizaciones.id_cliente', '=', 'clients.id')
+        ->select(
+            'cotizaciones.id',
+            'clients.nombre as cliente',
+            'docum_cotizacion.num_contenedor',
+            'docum_cotizacion.doc_ccp',
+            'docum_cotizacion.boleta_liberacion',
+            'docum_cotizacion.doda',
+            'cotizaciones.carta_porte',
+            'cotizaciones.img_boleta AS boleta_vacio',
+            'docum_cotizacion.doc_eir',
+            'asignaciones.id_proveedor',
+            'asignaciones.fecha_inicio',
+            'asignaciones.fecha_fin'
+        )
+        ->first();
+
         if($asignaciones->Proveedor == NULL){
-            return ["nombre"=>$asignaciones->Operador->nombre, "tipo" => "Viaje Propio", "cotizacion" => $cotizacion, "cliente" => $cotizacion->Cliente, "subcliente" => $cotizacion->Subcliente];
+            return ["nombre"=>$asignaciones->Operador->nombre, "tipo" => "Viaje Propio", "cotizacion" => $cotizacion, "cliente" => $cotizacion->Cliente, "subcliente" => $cotizacion->Subcliente, "documentos" => $documentos];
         }
-        return ["nombre"=>$asignaciones->Proveedor->nombre, "tipo" => "Viaje subcontratado", "cotizacion" => $cotizacion, "cliente" => $cotizacion->Cliente, "subcliente" => $cotizacion->Subcliente];
+        return ["nombre"=>$asignaciones->Proveedor->nombre, "tipo" => "Viaje subcontratado", "cotizacion" => $cotizacion, "cliente" => $cotizacion->Cliente, "subcliente" => $cotizacion->Subcliente, "documentos" => $documentos];
         
     }
 
-    public function initBoard(){
+    public function initBoard(Request $request){
         
        /* $proveedores = Proveedor::where('id_empresa' ,'=',auth()->user()->id_empresa)->selectRaw('CONCAT(id,7000) as id,nombre as name, '."'true'".' as expanded')->get();
         $equipos = Equipo::where('id_empresa' ,'=',auth()->user()->id_empresa)->selectRaw('CONCAT(id,5000) as id, id_equipo as name, '."'true'".' as expanded')->get();
@@ -121,7 +143,7 @@ class PlaneacionController extends Controller
 
         $planeaciones = Asignaciones::join('docum_cotizacion', 'asignaciones.id_contenedor', '=', 'docum_cotizacion.id')
                         ->join('cotizaciones', 'docum_cotizacion.id_cotizacion', '=', 'cotizaciones.id')
-                        ->where('asignaciones.fecha_inicio', '!=', NULL)
+                        ->where('asignaciones.fecha_inicio', '>=', $request->fromDate)
                         ->where('asignaciones.id_empresa' ,'=',auth()->user()->id_empresa)
                         ->where('cotizaciones.estatus', 'Aprobada')
                         ->where('estatus_planeacion','=', 1)

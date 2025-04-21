@@ -1,4 +1,4 @@
-<div class="modal fade" id="viajeModal" tabindex="-1" role="dialog" aria-labelledby="viajeModalLabel" aria-hidden="true">
+<div class="modal modal-lg fade" id="viajeModal" tabindex="-1" role="dialog" aria-labelledby="viajeModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content">
       <div class="modal-header d-flex justify-content-between align-items-center">
@@ -46,6 +46,35 @@
                 <p class="text-sm">
                 Nombre: <b id="nombreTransportista"></b>
                 </p>
+            </div>
+           
+        </div>
+        <div class="">
+           <h6 class="mt-3">Documentos</h6>
+           <div>
+            <table width="100%" style="width: 100%; table-layout: fixed; text-align: center; border-collapse: collapse;">
+              <thead>
+                <tr>
+                  <th>Boleta de Liberación</th>
+                  <th>Carta Porte</th>
+                  <th>DODA</th>
+                  <th>Boleta Vacío</th>
+                  <th>EIR</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="documentos" id="boleta_liberacion"><i class="fas fa-circle-xmark text-secondary fa-lg"></i></td>
+                  <td class="documentos" id="doc_ccp"><i class="fas fa-circle-xmark text-secondary fa-lg"></i></td>
+                  <td class="documentos" id="doda"><i class="fas fa-circle-xmark text-secondary fa-lg"></i></td>
+                  <td class="documentos" id="boleta_vacio"><i class="fas fa-circle-xmark text-secondary fa-lg"></i></td>
+                  <td class="documentos" id="doc_eir"><i class="fas fa-circle-xmark text-secondary fa-lg"></i></td>
+                </tr>
+               
+              </tbody>
+              
+            </table>
+               
             </div>
            
         </div>

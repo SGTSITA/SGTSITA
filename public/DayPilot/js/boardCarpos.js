@@ -3,6 +3,7 @@
 
  var allEvents = null;
  var festivos = [];
+ let dpReady = false;
 
 function formatFecha(fechaISO){
 const fecha = new Date(fechaISO);
@@ -17,20 +18,25 @@ return `${dia}/${mes}/${anio}`;
 }
  
 
- async function initBoard(){
+ async function initBoard(fromDate,toDate){
 
      var _token = $('input[name="_token"]').val();
     
      const result = await $.ajax({
          method:'post',
          url:'/planeaciones/monitor/board',
-         data:{_token: _token},
+         data:{_token: _token, fromDate: fromDate},
          beforeSend:()=>{
+            if ( dpReady) {
+                dp.events.list = [];  // Vacía la lista de eventos
+                dp.update();
+            }
          },
          success:(resp)=>{
            
             
              dp.resources = resp.boardCentros;
+             dp.startDate = fromDate
              //Horizonte
              /*dp.separators = [
                  {color: "red", location: info.Horizonte}
@@ -50,9 +56,9 @@ return `${dia}/${mes}/${anio}`;
                      resource: parseInt(i.id_cliente),//(i.id_cliente != null) ? parseInt(i.id_proveedor.toString()+"7000") : parseInt(i.id_camion.toString()+"5000"), //<=======Este es el ID del recurso (maquina) donde se ha de colocar el servicio de viaje
                      text: i.num_contenedor,
                      bubbleHtml: i.num_contenedor,
-                     barColor: barColor(1),
-                     barBackColor: barBackColor(1),
-                     backColor:  barBackColor(1),
+                     barColor: barColor(x),
+                     barBackColor: barBackColor(x),
+                     backColor:  barBackColor(x),
                      complete: 100,
                      tooltip:i.num_contenedor
                      };
@@ -63,10 +69,19 @@ return `${dia}/${mes}/${anio}`;
              });
              }
 
-
-             dp.init();
+             if ( dpReady) {
+              
+                dp.update();
+            }else{
+                dp.init();
+                dpReady = true;
+            }
              
-             dp.scrollTo(new DayPilot.Date(resp.scrollDate));                   
+             dp.scrollTo(new DayPilot.Date(fromDate));        
+
+            
+             
+                        
          },
          error:(e)=>{
              console.log('Ocurrio un error: '+e);
@@ -79,13 +94,17 @@ return `${dia}/${mes}/${anio}`;
  
 
  /**Configuracion de DayPilot */
-
- var dp = new DayPilot.Scheduler("dp");
  var mySugesstions = [];
  var allEvents = [];
 
- dp.startDate = "2025-01-01";
+
+ var dp = new DayPilot.Scheduler("dp");
+
+ dp.startDate = $('#daterange').attr('data-start');
  dp.days = 365;
+ dp.cellWidth = 90;
+ dp.rowMarginBottom = 10;
+ dp.rowMarginTop = 10;
  dp.scale = "Day";
  dp.locale = "es-mx";
  dp.timeHeaders = [
@@ -193,6 +212,7 @@ return `${dia}/${mes}/${anio}`;
     }
 };*/
 
+
  // event moving
  dp.onEventMoved = function (args) {
      //console.log(args.e);
@@ -265,6 +285,20 @@ return `${dia}/${mes}/${anio}`;
         url:'/planeaciones/monitor/board/info-viaje',
         type:'post',
         data:{_token:_token, id: args.e.data.id},
+        beforeSend:()=>{
+            let docum = document.querySelectorAll('.documentos')
+            docum.forEach((d) => {
+                d.innerHTML = `--`
+            })
+
+            nombreTransportista.textContent = "--"
+            tipoViajeSpan.textContent = "--"
+
+            origen.textContent = "--"
+            destino.textContent = "--"
+            nombreCliente.textContent = "--"
+            nombreSubcliente.textContent = "--"
+        },
         success:(response)=>{
             nombreTransportista.textContent = response.nombre;
             tipoViajeSpan.textContent = response.tipo
@@ -284,7 +318,18 @@ return `${dia}/${mes}/${anio}`;
             btnFinalizar.addEventListener('click', () => finalizarViaje(args.e.data.id,numContenedor.textContent), { once: true });
             btnDeshacer.addEventListener('click', () => anularPlaneacion(args.e.data.id,numContenedor.textContent), { once: true });
 
-
+            let documentos = response.documentos
+            let docs = Object.keys(documentos)
+            docs.forEach(doc => {
+                let documento = document.querySelector("#"+doc)
+                if(documento){
+                    valorDoc = documentos[doc]
+                    documento.innerHTML = (valorDoc != null) ?
+                     `<i class="fas fa-circle-check text-success fa-lg"></i>` :
+                     `<i class="fas fa-circle-xmark text-secondary fa-lg"></i>`
+                }
+                
+            })
         },
         error:()=>{
 
@@ -388,7 +433,3 @@ function zooming(ev) {
     dp.scrollTo(start);
 }
 
-
- $(document).ready(()=>{
-    initBoard();
-})
