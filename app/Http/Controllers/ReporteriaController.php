@@ -706,7 +706,7 @@ public function export_cxp(Request $request)
 
         $fecha = date('Y-m-d');
         $fechaCarbon = Carbon::parse($fecha);
-        $cotizaciones = Collect($request->rowData);//Asignaciones::whereIn('id', $cotizacionIds)->get();
+        $cotizaciones = Collect(json_decode($request->rowData,true));//Asignaciones::whereIn('id', $cotizacionIds)->get();
         $cotizacion = [];//Asignaciones::where('id', $cotizacionIds)->first();
         $user = User::where('id', '=', auth()->user()->id)->first();
 

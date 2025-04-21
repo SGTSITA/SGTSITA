@@ -163,7 +163,7 @@ class MissionResultRenderer {
   function exportUtilidades(){
 
     var _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-    const rowData = apiGrid.getSelectedRows();
+    const rowData = JSON.stringify( apiGrid.getSelectedRows());
     const totalRows = apiGrid.paginationGetRowCount();
     let fechaInicio = $('#daterange').attr('data-start');
     let fechaFin = $('#daterange').attr('data-end');

@@ -34,7 +34,7 @@ return `${dia}/${mes}/${anio}`;
          },
          success:(resp)=>{
            
-            
+             
              dp.resources = resp.boardCentros;
              dp.startDate = fromDate
              //Horizonte
@@ -42,12 +42,13 @@ return `${dia}/${mes}/${anio}`;
                  {color: "red", location: info.Horizonte}
              ];*/
              //Mostrar los eventos planificados previamente
-             var x = 0;
+            
              allEvents = resp.extractor;
              TarifasHilos = resp.TarifasHilo;
              festivos = resp.festivos;
              if(allEvents != null){
                  resp.extractor.forEach((i)=>{
+                 let x = Math.floor(Math.random() * 8) + 1;
                  if(i.fecha_inicio !== null){
                      var e = {
                      start: new DayPilot.Date(i.fecha_inicio),
@@ -65,7 +66,7 @@ return `${dia}/${mes}/${anio}`;
                  }
                  dp.events.list.push(e);
                 // const threads = array1.findIndex(element => element > 10);
-                 x = (x == 4) ? 0 : x + 1;
+                
              });
              }
 
@@ -414,13 +415,13 @@ function finalizarViaje(idCotizacion, numContenedor){
 }
 
  function barColor(i) {
-     var colors = ["#A9A9A9", "#6aa84f", "#f1c232", "#cc0000"];
-     return colors[i % 4];
+     var colors = ["#A9A9A9", "#6aa84f", "#f1c232", "#cc0000","#C8A2C8","#0057B8"];
+     return colors[i % 6];
  }
 
  function barBackColor(i) {
-     var colors = ["#CBCBCB", "#b6d7a8", "#ffe599", "#ea9999"];
-     return colors[i % 4];
+     var colors = ["#CBCBCB", "#b6d7a8", "#ffe599", "#ea9999","#D8BFD8","#87CEEB"];
+     return colors[i % 6];
  }
 
 function zooming(ev) {
