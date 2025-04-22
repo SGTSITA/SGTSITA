@@ -383,7 +383,8 @@ public function export_cxp(Request $request)
     ->pluck('estatus');
     $asignaciones = Asignaciones::with([
         'Contenedor.Cotizacion.Cliente',
-        'Contenedor.Cotizacion.Subcliente'
+        'Contenedor.Cotizacion.Subcliente',
+        'Proveedor'
     ])
     ->where('id_empresa', auth()->user()->id_empresa)
     ->get();
@@ -399,11 +400,47 @@ public function export_cxp(Request $request)
             'fecha_salida' => \Carbon\Carbon::parse($a->fehca_inicio_guard)->format('d-m-Y'),
             'fecha_llegada' => \Carbon\Carbon::parse($a->fehca_fin_guard)->format('d-m-Y'),
             'estatus' => $a->Contenedor->Cotizacion->estatus ?? '',
+            'proveedor' => $a->Proveedor->nombre ?? '-',
         ];
     })->toArray();
 
     return view('reporteria.asignaciones.index', compact('clientes', 'subclientes', 'proveedores', 'estatus', 'asignaciones', 'viajesData'));
     }
+    public function getViajesFiltrados(Request $request)
+    {
+        $fechaInicio = $request->query('fecha_inicio');
+        $fechaFin = $request->query('fecha_fin');
+    
+        $asignaciones = Asignaciones::with([
+            'Contenedor.Cotizacion.Cliente',
+            'Contenedor.Cotizacion.Subcliente',
+            'Proveedor'
+        ])
+        ->where('id_empresa', auth()->user()->id_empresa)
+        ->whereBetween('fehca_inicio_guard', [
+            Carbon::parse($fechaInicio)->startOfDay(),
+            Carbon::parse($fechaFin)->endOfDay()
+        ])
+        ->get();
+    
+        $viajesData = $asignaciones->map(function ($a) {
+            return [
+                'id' => $a->id,
+                'cliente' => $a->Contenedor->Cotizacion->Cliente->nombre ?? '-',
+                'subcliente' => $a->Contenedor->Cotizacion->Subcliente->nombre ?? '-',
+                'origen' => $a->Contenedor->Cotizacion->origen ?? '',
+                'destino' => $a->Contenedor->Cotizacion->destino ?? '',
+                'contenedor' => $a->Contenedor->num_contenedor ?? '',
+                'fecha_salida' => optional($a->fehca_inicio_guard)->format('d-m-Y'),
+                'fecha_llegada' => optional($a->fehca_fin_guard)->format('d-m-Y'),
+                'estatus' => $a->Contenedor->Cotizacion->estatus ?? '',
+                'proveedor' => $a->Proveedor->nombre ?? '-',
+            ];
+        });
+    
+        return response()->json($viajesData);
+    }
+
 
     public function advance_viajes(Request $request)
     {
@@ -455,6 +492,8 @@ public function export_cxp(Request $request)
     
         $asignaciones = $asignaciones->get();
     
+        $asignaciones = $asignaciones->get();
+
         $viajesData = $asignaciones->map(function ($a) {
             return [
                 'id' => $a->id,
@@ -466,6 +505,7 @@ public function export_cxp(Request $request)
                 'fecha_salida' => \Carbon\Carbon::parse($a->fehca_inicio_guard)->format('d-m-Y'),
                 'fecha_llegada' => \Carbon\Carbon::parse($a->fehca_fin_guard)->format('d-m-Y'),
                 'estatus' => $a->Contenedor->Cotizacion->estatus ?? '',
+                'proveedor' => $a->Proveedor->nombre ?? '-', 
             ];
         })->toArray();
         
@@ -490,7 +530,7 @@ public function export_cxp(Request $request)
     $exportAll = $request->input('exportAll') === 'true';
     $cotizacionIds = $request->input('cotizacion_ids', []);
 
-    // ✅ Detectar si se exporta todo o solo selección
+    //  Detectar si se exporta todo o solo selección
     if ($exportAll) {
         $cotizaciones = Asignaciones::with(['Contenedor.Cotizacion.Cliente', 'Contenedor.Cotizacion.Subcliente'])
             ->where('id_empresa', auth()->user()->id_empresa)
@@ -538,6 +578,8 @@ public function export_cxp(Request $request)
             'cotizacion' => $cotizacion,
             'user' => $user
         ])->setPaper('a4', 'landscape');
+        set_time_limit(120); // 2 minutos
+    ini_set('memory_limit', '512M');
 
         return $pdf->download('viajes_' . $fecha . '.pdf');
     }

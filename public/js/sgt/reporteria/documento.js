@@ -8,11 +8,13 @@ document.addEventListener('DOMContentLoaded', () => {
             field: "id",
             checkboxSelection: true,
             headerCheckboxSelection: true,
+            headerCheckboxSelectionFilteredOnly: true, 
             cellClass: 'text-center',
             filter: 'agNumberColumnFilter',
             floatingFilter: true,
             width: 130
         },
+        
         {
             headerName: "Cliente",
             field: "cliente",
@@ -96,6 +98,8 @@ document.addEventListener('DOMContentLoaded', () => {
         paginationPageSize: 30,
         paginationPageSizeSelector: [30, 50, 100],
         rowSelection: 'multiple',
+        suppressRowClickSelection: false,
+        groupSelectsFiltered: true,
         defaultColDef: {
             sortable: true,
             filter: true,
@@ -104,8 +108,12 @@ document.addEventListener('DOMContentLoaded', () => {
         animateRows: true,
         onGridReady: (params) => {
             gridApi = params.api;
+        },
+        onFilterChanged: () => {
+            if (gridApi) gridApi.deselectAll();
         }
     };
+    
 
     agGrid.createGrid(gridDiv, gridOptions);
     function checkboxRenderer(params) {
