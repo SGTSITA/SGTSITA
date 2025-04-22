@@ -327,7 +327,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // Función para buscar los datos de la cotización
     function fetchCotizacion(id_asignacion, tipoCuestionario) {
         const link = `${window.location.origin}/coordenadas/${id_asignacion}/${tipoCuestionario}`;
-        let _url = `/cotizaciones/${id_asignacion}`;
+        let _url = `/cotizaciones/get/${id_asignacion}`;
 
         fetch(_url)
             .then(response => response.json())
