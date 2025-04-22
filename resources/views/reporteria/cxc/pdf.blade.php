@@ -185,7 +185,8 @@
                     <td style="padding: 2px; border: 1px solid #000;">{{ $cotizacion->DocCotizacion->num_contenedor }}
                     </td>
                     <td style="padding: 2px; border: 1px solid #000; color: #020202; background: yellow;">
-                        {{ $cotizacion->id_subcliente ? $cotizacion->Subcliente->nombre : '' }}</td>
+                        {{ $cotizacion->id_subcliente && $cotizacion->Subcliente ? $cotizacion->Subcliente->nombre : 'N/A' }}
+                    </td>
                     <td style="padding: 2px; border: 1px solid #000; color: #ffffff; background: #2778c4;">
                         {{ $cotizacion->destino }}</td>
                     <td style="padding: 2px; border: 1px solid #000;">{{ $cotizacion->peso_contenedor }}</td>
@@ -416,7 +417,7 @@
                                 $cuenta1 = $cotizacion->base_factura + $cotizacion->iva - $cotizacion->retencion;
                                 $totalFacturaProveedor += $cuenta1;
 
-                                $facturadoA = $cotizacion->Subcliente->nombre ?? 'Sin facturado';
+                                $facturadoA = $cotizacion->Subcliente->nombre ?? 'N/A';
                                 if (!isset($facturadosPorProveedor[$facturadoA])) {
                                     $facturadosPorProveedor[$facturadoA] = 0;
                                 }

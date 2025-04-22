@@ -179,7 +179,8 @@
                     $totalImporteVTA += $importe_vta;
                 @endphp
                 <tr>
-                    <td>{{ $cotizacion->Proveedor->nombre }}</td>
+                    <td>{{ optional($item->Contenedor->Cotizacion->Subcliente)->nombre ?? 'N/A' }}
+                    </td>
                     <td>{{ $item->Contenedor->num_contenedor }}</td>
                     <td>${{ number_format($suma_importeCT, 2, '.', ',') }}</td>
                     <td>${{ number_format($total_oficial, 2, '.', ',') }}</td>

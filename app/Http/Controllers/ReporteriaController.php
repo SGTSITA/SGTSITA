@@ -334,7 +334,12 @@ public function export_cxp(Request $request)
     }
 
     // Cargar las cotizaciones con sus proveedores y cuentas bancarias
-    $cotizaciones = Asignaciones::with('Proveedor.CuentasBancarias')->whereIn('id', $cotizacionIds)->get();
+    $cotizaciones = Asignaciones::with([
+        'Proveedor.CuentasBancarias',
+        'Contenedor.Cotizacion.Subcliente'
+    ])->whereIn('id', $cotizacionIds)->get();
+    
+    
     $bancos_oficiales = Bancos::where('tipo', '=', 'Oficial')->get();
     $bancos_no_oficiales = Bancos::where('tipo', '=', 'No Oficial')->get();
 
