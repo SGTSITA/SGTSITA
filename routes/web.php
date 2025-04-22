@@ -145,7 +145,7 @@ Route::post('operadores/{id}/restaurar', [App\Http\Controllers\OperadorControlle
     Route::get('/cotizaciones/espera', [App\Http\Controllers\CotizacionesController::class, 'getCotizacionesEnEspera']);
     Route::get('/cotizaciones/aprobadas', [App\Http\Controllers\CotizacionesController::class, 'getCotizacionesAprobadas']);
     Route::get('/cotizaciones/canceladas', [App\Http\Controllers\CotizacionesController::class, 'getCotizacionesCanceladas']);
-    Route::get('/cotizaciones/{id}', [App\Http\Controllers\CotizacionesController::class, 'getCotizacionesId']);
+    Route::get('/cotizaciones/get/{id}', [App\Http\Controllers\CotizacionesController::class, 'getCotizacionesId']);
     Route::post('/cotizaciones/mail-coordenadas', [App\Http\Controllers\CotizacionesController::class, 'enviarCorreo']);
 
 
