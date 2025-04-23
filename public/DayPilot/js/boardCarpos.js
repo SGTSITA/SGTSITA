@@ -4,6 +4,7 @@
  var allEvents = null;
  var festivos = [];
  let dpReady = false;
+ let buscarContenedor  = document.querySelector('#txtBuscarContenedor')
 
 function formatFecha(fechaISO){
 const fecha = new Date(fechaISO);
@@ -263,15 +264,18 @@ return `${dia}/${mes}/${anio}`;
  }
 
  dp.onEventClick = function (args) {
+   getInfoViaje(args.e.data.start.value,args.e.data.end.value, args.e.data.text, args.e.data.id);
+ };
 
-   let fechaSalida = document.querySelector('#fechaSalida')
-   fechaSalida.textContent = formatFecha(args.e.data.start.value);
+ function getInfoViaje(startDate, endDate, numContenedor_, idContendor){
+    let fechaSalida = document.querySelector('#fechaSalida')
+   fechaSalida.textContent = formatFecha(startDate);
 
    let fechaEntrega  = document.querySelector('#fechaEntrega')
-   fechaEntrega.textContent = formatFecha(args.e.data.end.value);
+   fechaEntrega.textContent = formatFecha(endDate);
    
    let numContenedor = document.querySelector('#numContenedorSpan')
-   numContenedor.textContent = args.e.data.text
+   numContenedor.textContent = numContenedor_
 
    let nombreTransportista = document.querySelector('#nombreTransportista')
    let tipoViajeSpan = document.querySelector('#tipoViajeSpan')
@@ -280,12 +284,13 @@ return `${dia}/${mes}/${anio}`;
    let destino = document.querySelector('#destino')
    let nombreCliente = document.querySelector('#nombreCliente')
    let nombreSubcliente = document.querySelector('#nombreSubcliente')
+   
 
     var _token = $('input[name="_token"]').val();
     $.ajax({
         url:'/planeaciones/monitor/board/info-viaje',
         type:'post',
-        data:{_token:_token, id: args.e.data.id},
+        data:{_token:_token, id: idContendor},
         beforeSend:()=>{
             let docum = document.querySelectorAll('.documentos')
             docum.forEach((d) => {
@@ -316,8 +321,8 @@ return `${dia}/${mes}/${anio}`;
             }
 
             //Once en true para que se ejecute una sola vez y se elimine el listener
-            btnFinalizar.addEventListener('click', () => finalizarViaje(args.e.data.id,numContenedor.textContent), { once: true });
-            btnDeshacer.addEventListener('click', () => anularPlaneacion(args.e.data.id,numContenedor.textContent), { once: true });
+            btnFinalizar.addEventListener('click', () => finalizarViaje(idContendor,numContenedor_), { once: true });
+            btnDeshacer.addEventListener('click', () => anularPlaneacion(idContendor,numContenedor_), { once: true });
 
             let documentos = response.documentos
             let docs = Object.keys(documentos)
@@ -340,7 +345,7 @@ return `${dia}/${mes}/${anio}`;
     const modalElement = document.getElementById('viajeModal');
     const bootstrapModal = new bootstrap.Modal(modalElement);
     bootstrapModal.show();
- };
+ }
 
 function anularPlaneacion(idCotizacion, numContenedor){
     $("#viajeModal").modal('hide')
@@ -413,6 +418,32 @@ function finalizarViaje(idCotizacion, numContenedor){
       });
       
 }
+
+function encontrarContenedor(contenedor){
+    let busqueda = allEvents
+    const resultados = busqueda.filter(f => f.num_contenedor === contenedor)
+    if(resultados.length != 1){
+        Swal.fire("No se encontró contenedor", `No existe ningún contenedor "PLANEADO" con el numero de contenedor proporcionado`,'warning')
+        return
+    }
+
+    let fromDate = resultados[resultados.length - 1]?.fecha_inicio;
+    let toDate = resultados[resultados.length - 1]?.fecha_fin;
+    let numContenedor = resultados[resultados.length - 1]?.num_contenedor;
+    let idContendor = resultados[resultados.length - 1]?.id_contenedor;
+
+    if ( dpReady) {
+        dp.scrollTo(new DayPilot.Date(fromDate));    
+        getInfoViaje(fromDate, toDate, numContenedor, idContendor)
+    }
+     
+}
+
+buscarContenedor.addEventListener('keypress',e => {
+    if (e.key === 'Enter') {
+    encontrarContenedor(e.target.value)
+    }
+})
 
  function barColor(i) {
      var colors = ["#A9A9A9", "#6aa84f", "#f1c232", "#cc0000","#C8A2C8","#0057B8"];

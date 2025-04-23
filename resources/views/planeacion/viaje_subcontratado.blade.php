@@ -8,6 +8,7 @@
       </p>
       <div class="d-flex align-items-center">
         <select class="form-control" name="cmbProveedor" id="cmbProveedor"> 
+            <option value="">Seleccione Proveedor</option>
             @foreach ($proveedores as $item) 
             <option value="{{$item->id}}">{{$item->nombre}}</option> 
             @endforeach 

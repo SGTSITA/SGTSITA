@@ -163,7 +163,7 @@ const formFieldsProveedor = [
     {'field':'sobrepeso_proveedor','id':'sobrepeso_proveedor','label':'Sobrepeso','required': true, "type":"money", "trigger":"none"},
     {'field':'cantidad_sobrepeso_proveedor','id':'cantidad_sobrepeso_proveedor','label':'Precio sobrepreso','required': true, "type":"money", "trigger":"none"},
     {'field':'total_proveedor','id':'total_proveedor','label':'Total','required': true, "type":"money", "trigger":"none"},
-    {'field':'cmbProveedor','id':'cmbProveedor','label':'Proveedor','required': true, "type":"text", "trigger":"none"}   
+    {'field':'cmbProveedor','id':'cmbProveedor','label':'Proveedor','required': true, "type":"select", "trigger":"none"}   
 ]
 
 const tasa_iva = 0.16;

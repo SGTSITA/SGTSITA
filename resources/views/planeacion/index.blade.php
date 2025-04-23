@@ -25,11 +25,16 @@
                             </h5>
 
                              
-                             <div class="float-right">
+                            
+                                <div class="search-container">
+                                    <i class="fas fa-search search-icon"></i>
+                                    <input type="text" id="txtBuscarContenedor" class="input-apple-style" placeholder="Buscar...">
+                                </div>
+
                                 <a href="{{route('planeacion.programar')}}" class="btn btn-sm bg-gradient-info" >
                                     <i class="fa fa-fw fa-plus"></i>  Planear
                                 </a>
-                              </div>
+                             
                            
 
                         </div>
@@ -45,6 +50,47 @@
 @endsection
 
 @push('custom-javascript')
+<style>
+.search-container {
+  position: relative;
+  width: 100%;
+  max-width: 400px;
+}
+
+.search-icon {
+  position: absolute;
+  top: 50%;
+  left: 12px;
+  transform: translateY(-50%);
+  color: #aaa;
+  font-size: 14px;
+  pointer-events: none;
+}
+
+.input-apple-style {
+  width: 100%;
+  padding: 8px 14px 8px 36px;
+  font-size: 15px;
+  border: none;
+  border-radius: 9999px;
+  background-color: #e9ecef;
+  color: #333;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.05);
+  transition: all 0.2s ease;
+  outline: none;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+.input-apple-style::placeholder {
+  color: #bbb;
+  font-weight: 300;
+}
+
+.input-apple-style:focus {
+  background-color: #fff;
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.2), inset 0 0 0 1px rgba(0,0,0,0.05);
+}
+</style>
 <script src="{{asset('DayPilot/js/daypilot-all.min.js?v=2022.3.5384')}}"></script>    
 <script src="{{asset('DayPilot/helpers/v2/app.js?v=2022.3.5384')}}"></script>
 <script type="text/javascript" src="{{asset('DayPilot/js/boardCarpos.js')}}"></script>

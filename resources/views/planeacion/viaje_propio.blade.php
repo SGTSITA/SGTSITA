@@ -61,6 +61,7 @@
                 
                 <div class="d-flex align-items-center">
                 <select class="form-control" name="cmbOperador" id="cmbOperador">
+                  <option value="">Seleccione operador</option>
                   @foreach ($operadores as $item)
                     <option value="{{$item->id}}">{{$item->nombre}}</option>
                   @endforeach
@@ -114,6 +115,7 @@
                 <div class="col-12 col-md-12 text-start">
                   <label>Banco</label>
                   <select class="form-control" name="cmbBanco" id="cmbBanco">
+                  <option value="">Seleccione banco</option>
                   @foreach ($bancos as $item)
                         <option value="{{$item->id}}">{{$item->nombre_banco}} / {{$item->nombre_beneficiario}}</option>
                   @endforeach
