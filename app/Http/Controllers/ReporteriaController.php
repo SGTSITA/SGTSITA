@@ -20,6 +20,7 @@ use App\Exports\GenericExport;
 use App\Exports\CxcExport;
 use App\Exports\CxpExport;
 use App\Models\GastosDiferidosDetalle;
+use App\Models\CuentaGlobal;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Storage;
@@ -118,6 +119,7 @@ class ReporteriaController extends Controller
 
         $cotizacion = Cotizaciones::where('id', $cotizacionIds)->first();
         $user = User::where('id', '=', auth()->user()->id)->first();
+        $cuentaGlobal = CuentaGlobal::first();
 
         $cotizaciones = Cotizaciones::whereIn('id', $cotizacionIds)->get();
         if(in_array($cotizacion->id_empresa,[2,6])){
@@ -133,7 +135,7 @@ class ReporteriaController extends Controller
             Excel::store(new CxcExport($cotizaciones, $fechaCarbon, $bancos_oficiales, $bancos_no_oficiales, $cotizacion, $user), 'cotizaciones_cxc.xlsx','public');
             return Response::download(storage_path('app/public/cotizaciones_cxc.xlsx'), "cxc.xlsx")->deleteFileAfterSend(true);
         }else{
-            $pdf = PDF::loadView('reporteria.cxc.pdf', compact('cotizaciones', 'fechaCarbon', 'bancos_oficiales', 'bancos_no_oficiales', 'cotizacion', 'user'))->setPaper([0, 0, 595, 1200], 'landscape');
+            $pdf = PDF::loadView('reporteria.cxc.pdf', compact('cotizaciones', 'fechaCarbon', 'bancos_oficiales', 'bancos_no_oficiales', 'cotizacion', 'user','cuentaGlobal'))->setPaper([0, 0, 595, 1200], 'landscape');
 
             // Generar el nombre del archivo
             $fileName = 'cxc_' . implode('_', $cotizacionIds) . '.pdf';

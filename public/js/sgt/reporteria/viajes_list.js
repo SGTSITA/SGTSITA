@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
             field: "id", 
             checkboxSelection: true, 
             headerCheckboxSelection: true, 
-            headerCheckboxSelectionFilteredOnly: true, // ✅ clave
+            headerCheckboxSelectionFilteredOnly: true, 
             width: 100, 
             cellClass: 'text-center' 
           },
@@ -18,8 +18,6 @@ document.addEventListener('DOMContentLoaded', () => {
         { headerName: "Subcliente", field: "subcliente", filter: 'agTextColumnFilter', floatingFilter: true, flex: 1 },
         { headerName: "Origen", field: "origen", filter: 'agTextColumnFilter', floatingFilter: true, flex: 1 },
         { headerName: "Destino", field: "destino", filter: 'agTextColumnFilter', floatingFilter: true, flex: 1 },
-        { headerName: "Fecha salida", field: "fecha_salida", filter: 'agDateColumnFilter', floatingFilter: true, width: 140 },
-        { headerName: "Fecha llegada", field: "fecha_llegada", filter: 'agDateColumnFilter', floatingFilter: true, width: 140 },
         { headerName: "Estatus", field: "estatus", filter: 'agTextColumnFilter', floatingFilter: true, width: 150 }
     ];
 

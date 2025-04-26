@@ -470,11 +470,17 @@
             <table class="table text-white"
                 style="color: #000; width: 100%; padding: 0; font-size: 7px; border-collapse: collapse; table-layout: fixed;">
                 @php
-                    $cuentaGlobal = [
-                        'beneficiario' => 'Nombre Global Beneficiario',
-                        'banco' => 'Banco Global',
-                        'clabe' => '000000000000000000',
-                    ];
+                    $cuentaGlobal = isset($cuentaGlobal)
+                        ? [
+                            'beneficiario' => $cuentaGlobal->nombre_beneficiario ?? '---',
+                            'banco' => $cuentaGlobal->banco ?? '---',
+                            'clabe' => $cuentaGlobal->clabe ?? '---',
+                        ]
+                        : [
+                            'beneficiario' => '---',
+                            'banco' => '---',
+                            'clabe' => '---',
+                        ];
                 @endphp
 
                 <tbody style="text-align: center; font-size: 7px;">
