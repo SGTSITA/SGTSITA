@@ -24,7 +24,7 @@ class CorreoCoordenadasMail extends Mailable
     {
         
 
-                    return $this->subject($this->datos['asunto'])->view('emails.coordenadas');
+          return $this->subject($this->datos['asunto'])->view('emails.coordenadas');
                     
     }
 }

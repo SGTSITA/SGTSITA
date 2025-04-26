@@ -67,8 +67,18 @@ Route::get('/dashboard', [HomeController::class, 'index'])->name('dashboard');
 
 // ==================== C O O R D E N A D A S ====================
 
-Route::get('coordenadas/{id}/{tc}', [App\Http\Controllers\CoordenadasController::class, 'index'])->name('index.cooredenadas');
+Route::get('coordenadas/questions/{id}/{tc}', [App\Http\Controllers\CoordenadasController::class, 'index'])->name('index.cooredenadas');
 Route::post('coordenadas/edit/{id}', [App\Http\Controllers\CoordenadasController::class, 'edit'])->name('edit.cooredenadas');
+//R
+Route::get('/coordenadas/cotizaciones/get/{id}', [App\Http\Controllers\CotizacionesController::class, 'getCotizacionesId']);
+Route::post('coordenadas/cotizaciones/mail-coordenadas', [App\Http\Controllers\CotizacionesController::class, 'enviarCorreo'])->name('correo.CoordenadaCompartirMail');
+Route::post('coordenadas/compartir/save', [App\Http\Controllers\CoordenadasController::class, 'store'])->name('guardar.CoordenadaCompartir');
+Route::post('coordenadas/guardarresp', [App\Http\Controllers\CoordenadasController::class, 'guardarRespuesta'])->name('guardar.respuestaCoordenada');
+Route::get('coordenadas/mapas', [App\Http\Controllers\CoordenadasController::class, 'indexMapa'])->name('ver.coordenadamapa');
+Route::get('/coordenadas/contenedor/search', [App\Http\Controllers\CoordenadasController::class, 'getcoorcontenedor'])->name('getcoorcontenedor');
+
+//R
+
 
 Route::group(['middleware' => ['auth']], function() {
     Route::resource('roles', RoleController::class);
@@ -145,12 +155,12 @@ Route::post('operadores/{id}/restaurar', [App\Http\Controllers\OperadorControlle
     Route::get('/cotizaciones/espera', [App\Http\Controllers\CotizacionesController::class, 'getCotizacionesEnEspera']);
     Route::get('/cotizaciones/aprobadas', [App\Http\Controllers\CotizacionesController::class, 'getCotizacionesAprobadas']);
     Route::get('/cotizaciones/canceladas', [App\Http\Controllers\CotizacionesController::class, 'getCotizacionesCanceladas']);
-    Route::get('/cotizaciones/get/{id}', [App\Http\Controllers\CotizacionesController::class, 'getCotizacionesId']);
-    Route::post('/cotizaciones/mail-coordenadas', [App\Http\Controllers\CotizacionesController::class, 'enviarCorreo']);
 
+    // Route::get('/cotizaciones/get/{id}', [App\Http\Controllers\CotizacionesController::class, 'getCotizacionesId']);
+    // Route::post('/cotizaciones/mail-coordenadas', [App\Http\Controllers\CotizacionesController::class, 'enviarCorreo']);
+    // Route::post('/coordenadas/save', [App\Http\Controllers\CoordenadasController::class, 'store']);
+    // Route::post('/guardarresp', [App\Http\Controllers\CoordenadasController::class, 'guardarRespuesta'])->name('guardar.respuesta');
 
-    Route::post('/coordenadas/save', [App\Http\Controllers\CoordenadasController::class, 'store']);
-    Route::post('/guardarresp', [App\Http\Controllers\CoordenadasController::class, 'guardarRespuesta'])->name('guardar.respuesta');
 
     Route::get('/cotizaciones/busqueda', [App\Http\Controllers\CotizacionesController::class, 'find'])->name('busqueda.cotizaciones');
     Route::post('/cotizaciones/busqueda', [App\Http\Controllers\CotizacionesController::class, 'findExecute'])->name('exec.busqueda.cotizaciones');

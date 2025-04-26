@@ -778,6 +778,21 @@
 
                 </form>
 
+
+                <div id="infoEstatica" class="mb-4 p-4 text-dark"
+        style="width: 100%; max-width: 600px; background-color: white; border-radius: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+        <input type="hidden" id="id_asignacion" value="{{ $coordenadas-> id_asignacion }}">
+        <input type="hidden" id="id_coordenada" value="{{ $coordenadas-> id_coordenadas }}">
+        <p>📋 <strong>Subcontratado: </strong>{{ $coordenadas-> nombre_empresa  .' - '. $coordenadas-> tipo_contrato}}</p>
+        <p><strong>Teléfono operador:</strong> {{ $coordenadas-> telefono }}</p>
+        <p><strong>No contenedor:</strong> {{ $coordenadas-> num_contenedor }}</p>
+        <p><strong>Num. placas:</strong> {{ $coordenadas-> placas }}</p>
+        <p><strong>Nombre del operador:</strong> {{ $coordenadas-> nombre }}</p>
+
+        
+       
+      </div>
+
               </div>
             </div>
           </div>

@@ -43,19 +43,17 @@ document.addEventListener("DOMContentLoaded", function () {
             sortable: false,
             filter: false,
             cellRenderer: function (params) {
-                if (params.data.id_asignacion) {
+                
                     return `
                     <button class="btn btn-sm btn-outline-info" 
-                    onclick="abrirModalCoordenadas(${params.data.id_asignacion})" 
+                    onclick="abrirModalCoordenadas(${params.data.id},${params.data.id_asignacion})" 
                      title="Compartir coordenadas">
                      <i class="fa fa-map-marker-alt"></i> Compartir
                      </button>
-                         <input type="hidden" id="idCotizacionCompartir" value="${params.data.id}">
-                         <input type="hidden" id="idAsignacionCompartir" value="${params.data.id_asignacion}">
-                         
+                                               
                     `;
-                }
-                return `<span class="text-muted">N/A</span>`;
+                
+               
             }
         },
         {
@@ -122,9 +120,9 @@ document.addEventListener("DOMContentLoaded", function () {
                     `;
                 } else if (currentTab === "canceladas") {
                     acciones = `
-<button class="btn btn-sm btn-outline-warning" onclick="abrirDocumentos(${params.data.id})" title="Ver Documentos">
+    <button class="btn btn-sm btn-outline-warning" onclick="abrirDocumentos(${params.data.id})" title="Ver Documentos">
     <i class="fa fa-folder"></i>
-</button>
+    </button>
 
                     `;
                 }
@@ -173,6 +171,200 @@ document.addEventListener("DOMContentLoaded", function () {
             .finally(() => {
                 overlay.style.display = "none"; 
             });
+    }
+
+    // Abrir el modal
+    window.abrirModalCoordenadas = function(id_cotizacion,idAsignacion) {
+        const modal = document.getElementById('modalCoordenadas');
+
+        if (modal) {
+            modal.style.display = 'block';
+            limpiarDatos();
+            // Backdrop
+            if (!document.querySelector('.modal-backdrop')) {
+                const backdrop = document.createElement('div');
+                backdrop.classList.add('modal-backdrop');
+                backdrop.style.position = 'fixed';
+                backdrop.style.top = '0';
+                backdrop.style.left = '0';
+                backdrop.style.width = '100%';
+                backdrop.style.height = '100%';
+                backdrop.style.backgroundColor = 'rgba(0,0,0,0.5)';
+                backdrop.style.zIndex = '1040';
+                document.body.appendChild(backdrop);
+            }
+        
+            document.body.classList.add('modal-open');
+            document.body.style.overflow = 'hidden';
+        
+            document.getElementById('idCotizacionCompartir').value =id_cotizacion;
+            document.getElementById('idAsignacionCompartir').value =idAsignacion;
+    
+            // Activar tab Mail por defecto
+            cambiarTab('mail');
+        }
+
+        // Asegúrate de que el select para tipo de cuestionario exista
+        const tipoSelect = document.getElementById('optipoCuestionario');
+        if (tipoSelect) {
+            tipoSelect.addEventListener('change', function() {
+                // Verifica si se seleccionó una opción válida
+                const tipoSeleccionado = tipoSelect.value;
+
+                if (tipoSeleccionado) {
+                    //limpiarDatos("");
+                    // Aquí haces el fetch solo si hay una opción seleccionada
+                    fetchCotizacion(id_cotizacion, tipoSeleccionado);
+                } else {
+                    // Si no hay selección válida, limpiamos los datos
+                    limpiarDatos();
+                }
+            });
+        }
+    };
+
+    // Función para buscar los datos de la cotización
+    function fetchCotizacion(id_cotizacion, tipoCuestionario) {
+        const link = `${window.location.origin}/coordenadas/questions/${id_cotizacion}/${tipoCuestionario}`;
+        let _url = `/coordenadas/cotizaciones/get/${id_cotizacion}`;
+       
+        fetch(_url)
+            .then(response => response.json())
+            .then(data => {
+                if (!data.list || data.list.length === 0) {
+                    let messageNoData = "No se encontró información para esta cotización.";
+                    // Limpiar la información cuando no se encuentra
+                    limpiarDatos(messageNoData);
+                    return;
+                }
+
+                let bPasaValidacion = 0;
+
+                const item = data.list[0];
+                const mensaje = ` ${item.contenedor}`;
+                if (data.coordenada) {
+                  
+                    document.getElementById('estadoC').value = data.coordenada.tipo_c_estado ?? 0;
+                    document.getElementById('estadoB').value = data.coordenada.tipo_b_estado ?? 0;
+                    document.getElementById('estadoF').value = data.coordenada.tipo_f_estado ?? 0;
+                    
+                    let tVslidacion = '';
+
+                    const estadoC = parseInt(document.getElementById('estadoC').value);//completo solo 1 vez, si ya esta finalizado y no se puede elegir otro tipo
+                    const estadoB = parseInt(document.getElementById('estadoB').value);
+                    const estadoF = parseInt(document.getElementById('estadoF').value);
+                 
+                    if ([estadoC, estadoB, estadoF].includes(2)) {
+                        if (estadoC ===2){
+                            alert('El cuestionario "Completo" ya ha sido finalizado, no se puede compartir.');
+
+                        }else if(estadoB ===2  ){
+
+                            alert('El cuestionario "Burrero" ya ha sido finalizado, no se puede compartir.');
+
+                        }else if (estadoF===2){
+                            alert('El cuestionario "Foraneo" ya ha sido finalizado, no se puede compartir.');
+                        }
+
+                    }
+                    else {
+                         // Un contenedor puede tener, burrero y foraneo, pero si es completo ya no se podrá elegir, validar compartir coordenadas.
+                         bPasaValidacion=  validarselectTipoCuentio(estadoC,estadoB,estadoF)
+                    }
+                                     
+                    
+
+                } else {
+                    bPasaValidacion=1;
+                    // Primera vez compartiendo, todo en 0
+                    document.getElementById('estadoC').value = 0;
+                    document.getElementById('estadoB').value = 0;
+                    document.getElementById('estadoF').value = 0;
+                    validarselectTipoCuentio(estadoC,estadoB,estadoF)
+                }
+
+
+
+                if (bPasaValidacion===1) {
+                    // mail
+                    document.getElementById('linkMail').innerText = link;
+                    document.getElementById('mensajeText').innerText = mensaje;
+                    // whatsapp
+                    document.getElementById("wmensajeText").innerText = mensaje;
+                    document.getElementById("linkWhatsapp").value = link;
+                    // 🟢 Armamos el link para WhatsApp
+                    const textoWhatsapp = `Contenedor: ${mensaje}\n\n${link}`;
+                    document.getElementById("whatsappLink").href = `https://wa.me/?text=${encodeURIComponent(textoWhatsapp)}`;
+                }else {
+                    console.error("❌ Validacion de estatus de cuestionario");
+                }
+               
+
+                
+            })
+            .catch(error => {
+                console.error("❌ Error al obtener info de cotizaciones:", error);
+            });
+    }
+
+    function validarselectTipoCuentio(estadoC,estadoB,estadoF){
+
+        const selectTipoCuestionario = document.getElementById('optipoCuestionario');
+let selecvalueuser = selectTipoCuestionario.value;
+    // Deshabilitar las opciones basadas en el estado de los cuestionarios
+    if(selecvalueuser==='b' || selecvalueuser==='f'){
+        if (estadoC === 1 ) {
+                // Si tipo C ya se compartió, deshabilitar opción b y f
+            //  selectTipoCuestionario.querySelector('option[value="b"]').disabled = true;
+            // selectTipoCuestionario.querySelector('option[value="f"]').disabled = true;
+            alert('El cuestionario "completo" ya ha sido compartido, no se puede compartir otro tipo.');
+            return 0;
+            }else if (estadoC ===0) {
+                return 1;
+        }
+    }
+    
+    if (selecvalueuser==='c' ){
+        if ((estadoB === 1 || estadoF===1) ) {
+            // Si tipo B o f ya se compartió, deshabilitar opción c
+            //selectTipoCuestionario.querySelector('option[value="c"]').disabled = true;
+           alert('El cuestionario "Burrero/Foraneo" ya ha sido compartido, no se puede compartir otro tipo.');
+    
+           return 0;
+        }else if ((estadoB === 0 || estadoF===0)){
+            return 1;
+
+        }
+
+    }
+    
+   
+    
+   
+    // Si ninguno está compartido, asegúrate de que todas las opciones estén habilitadas
+    if (estadoC === 0 && estadoB === 0 && estadoF === 0) {
+        // selectTipoCuestionario.querySelector('option[value="c"]').disabled = false;
+        // selectTipoCuestionario.querySelector('option[value="b"]').disabled = false;
+        // selectTipoCuestionario.querySelector('option[value="f"]').disabled = false;
+        retLocal=1;
+    }
+    return 1
+    }
+    // Función para limpiar los datos
+    function limpiarDatos(message = "") {
+        // Limpiar los valores cuando no se selecciona una opción válida
+        document.getElementById('linkMail').innerText = message;
+       
+        document.getElementById('mensajeText').innerText = "";
+        document.getElementById('correoDestino').value="";
+        document.getElementById("wmensajeText").innerText = "";
+        document.getElementById("linkWhatsapp").value = "";
+        document.getElementById("whatsappLink").href = "#";
+        document.getElementById("idAsignacionCompartir").value = "";
+        const select = document.getElementById('optipoCuestionario');
+        select.selectedIndex = 0;
+        document.getElementById('idCotizacionCompartir').value ="";
+        document.getElementById('idAsignacionCompartir').value ="";
     }
 });      
 
@@ -277,98 +469,7 @@ function abrirDocumentos(idCotizacion) {
             Swal.fire('Error', 'No se pudieron obtener los documentos', 'error');
         });
 }
-document.addEventListener('DOMContentLoaded', function () {
-    // Abrir el modal
-    window.abrirModalCoordenadas = function(id_asignacion) {
-        const modal = document.getElementById('modalCoordenadas');
-        if (modal) {
-            modal.style.display = 'block';
-        
-            // Backdrop
-            if (!document.querySelector('.modal-backdrop')) {
-                const backdrop = document.createElement('div');
-                backdrop.classList.add('modal-backdrop');
-                backdrop.style.position = 'fixed';
-                backdrop.style.top = '0';
-                backdrop.style.left = '0';
-                backdrop.style.width = '100%';
-                backdrop.style.height = '100%';
-                backdrop.style.backgroundColor = 'rgba(0,0,0,0.5)';
-                backdrop.style.zIndex = '1040';
-                document.body.appendChild(backdrop);
-            }
-        
-            document.body.classList.add('modal-open');
-            document.body.style.overflow = 'hidden';
-        
-            // Activar tab Mail por defecto
-            cambiarTab('mail');
-        }
 
-        // Asegúrate de que el select para tipo de cuestionario exista
-        const tipoSelect = document.getElementById('optipoCuestionario');
-        if (tipoSelect) {
-            tipoSelect.addEventListener('change', function() {
-                // Verifica si se seleccionó una opción válida
-                const tipoSeleccionado = tipoSelect.value;
-
-                if (tipoSeleccionado) {
-                    // Aquí haces el fetch solo si hay una opción seleccionada
-                    fetchCotizacion(id_asignacion, tipoSeleccionado);
-                } else {
-                    // Si no hay selección válida, limpiamos los datos
-                    limpiarDatos();
-                }
-            });
-        }
-    };
-
-    // Función para buscar los datos de la cotización
-    function fetchCotizacion(id_asignacion, tipoCuestionario) {
-        const link = `${window.location.origin}/coordenadas/${id_asignacion}/${tipoCuestionario}`;
-        let _url = `/cotizaciones/get/${id_asignacion}`;
-
-        fetch(_url)
-            .then(response => response.json())
-            .then(data => {
-                if (!data.list || data.list.length === 0) {
-                    let messageNoData = "No se encontró información para esta cotización.";
-                    // Limpiar la información cuando no se encuentra
-                    limpiarDatos(messageNoData);
-                    return;
-                }
-
-                const item = data.list[0];
-                const mensaje = ` ${item.contenedor}`;
-                // mail
-                document.getElementById('linkMail').innerText = link;
-                document.getElementById('mensajeText').innerText = mensaje;
-                // whatsapp
-                document.getElementById("wmensajeText").innerText = mensaje;
-                document.getElementById("linkWhatsapp").value = link;
-
-                // 🟢 Armamos el link para WhatsApp
-                const textoWhatsapp = `Contenedor: ${mensaje}\n\n${link}`;
-                document.getElementById("whatsappLink").href = `https://wa.me/?text=${encodeURIComponent(textoWhatsapp)}`;
-            })
-            .catch(error => {
-                console.error("❌ Error al obtener info de cotizaciones:", error);
-            });
-    }
-
-    // Función para limpiar los datos
-    function limpiarDatos(message = "") {
-        // Limpiar los valores cuando no se selecciona una opción válida
-        document.getElementById('linkMail').innerText = message;
-        document.getElementById('asuntoText').innerText = "";
-        document.getElementById('mensajeText').innerText = "";
-        document.getElementById("wasuntoText").innerText = message;
-        document.getElementById("wmensajeText").innerText = "";
-        document.getElementById("linkWhatsapp").value = "";
-        document.getElementById("whatsappLink").href = "#";
-        document.getElementById("idAsignacionCompartir").value = "";
-    }
-});
 function cambiarTab(tabId) {
     // Ocultamos todos los divs con clase 'tab-content'
     const tabs = document.querySelectorAll('.tab-content');
@@ -403,7 +504,7 @@ function mostrarTab(tab) {
 
 function cerrarModal() {
     const modal = document.getElementById('modalCoordenadas');
-
+    limpCampos();
     if (modal) {
         modal.style.display = 'none';
     }
@@ -413,12 +514,26 @@ function cerrarModal() {
     if (backdrop) {
         backdrop.remove();
     }
-
+    
     // Quitar la clase modal-open del body
     document.body.classList.remove('modal-open');
     document.body.style.overflow = ''; // restaurar scroll
 }
 
+function limpCampos(){
+    document.getElementById('linkMail').innerText = "";
+       
+    document.getElementById('mensajeText').innerText = "";
+    document.getElementById('correoDestino').value="";
+    document.getElementById("wmensajeText").innerText = "";
+    document.getElementById("linkWhatsapp").value = "";
+    document.getElementById("whatsappLink").href = "#";
+    document.getElementById("idAsignacionCompartir").value = "";
+    const select = document.getElementById('optipoCuestionario');
+    select.selectedIndex = 0;
+    document.getElementById('idCotizacionCompartir').value ="";
+    document.getElementById('idAsignacionCompartir').value ="";
+}
 function copiarDesdeInput(inputId) {
     const input = document.getElementById(inputId);
     input.select();
@@ -436,7 +551,7 @@ function enviarMailCoordenadas() {
     const link = document.getElementById('linkMail').innerText;
     const correo = document.getElementById('correoDestino').value;
  
-    fetch('/cotizaciones/mail-coordenadas', {
+    fetch('/coordenadas/cotizaciones/mail-coordenadas', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -466,6 +581,8 @@ function saveCoordenadas() {
 
     let idAsignacionSave= document.getElementById("idAsignacionCompartir").value;
     let idCotizacionSave= document.getElementById("idCotizacionCompartir").value;
+    let typeQuestion= document.getElementById("optipoCuestionario").value;
+    
     if (idAsignacionSave != null)
     {
 
@@ -494,7 +611,18 @@ function saveCoordenadas() {
         let inicioDescargaDatetime = null;
         let finDescargaDatetime = null;
         let recepcionDocFirmadosDatetime = null;
-     
+        let tipo_c_estado = document.getElementById('estadoC').value;
+        let tipo_b_estado =document.getElementById('estadoB').value;
+        let tipo_f_estado = document.getElementById('estadoF').value;
+
+             
+        if (typeQuestion =='b'){
+            tipo_b_estado=1;
+        }else if (typeQuestion =='c'){
+            tipo_c_estado=1;
+        }else if (typeQuestion =='f'){
+            tipo_f_estado=1;
+        }
      
         const data = {
          idAsig: idAsignacionSave,
@@ -525,9 +653,14 @@ function saveCoordenadas() {
          inicio_descarga_datatime: inicioDescargaDatetime ?? null,
          fin_descarga_datatime: finDescargaDatetime ?? null,
          recepcion_doc_firmados_datatime: recepcionDocFirmadosDatetime ?? null,
+
+          tipo_c_estado :tipo_c_estado,
+             tipo_b_estado :tipo_b_estado,
+        tipo_f_estado :tipo_f_estado
+     
         }  ;
      
-         fetch('/coordenadas/save', {
+         fetch('/coordenadas/compartir/save', {
              method: 'POST',
              headers: {
                  'Content-Type': 'application/json',

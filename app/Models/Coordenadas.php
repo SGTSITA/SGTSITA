@@ -41,7 +41,10 @@ class Coordenadas extends Model
         'cargado_patio',
         'cargado_patio_datetime',
         'descarga_patio',
-        'descarga_patio_datatime'
+        'descarga_patio_datatime',
+        'tipo_c_estado' ,
+        'tipo_b_estado',
+        'tipo_f_estado',
     ];
 
     public function Cotizacion()

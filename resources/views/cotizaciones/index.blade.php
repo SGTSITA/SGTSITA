@@ -90,6 +90,13 @@
             </div>
         </div>
     </div>
+    <div id="estadoCuestionarios" style="display: none;">
+        <input type="hidden" id="estadoC" name="estadoC" value="0">
+        <input type="hidden" id="estadoB" name="estadoB" value="0">
+        <input type="hidden" id="estadoF" name="estadoF" value="0">
+    </div>
+    <input type="hidden" id="idCotizacionCompartir" value="">
+    <input type="hidden" id="idAsignacionCompartir" value="">
     <!-- Modal Coordenadas con Tabs -->
 <div class="modal" id="modalCoordenadas" tabindex="-1" style="display:none;">
   <div class="modal-dialog modal-dialog-centered">
@@ -114,7 +121,7 @@
           <a class="nav-link" href="#" onclick="mostrarTab('whatsapp')">📲 WhatsApp</a>
         </li>
       </ul>
-      <input type="hidden" id="idAsignacionCompartir" value="">
+   
       <!-- Tab contenido: MAIL -->
       <div id="tab-mail" class="tab-content">
                 @include('emails.email-coordenadas')

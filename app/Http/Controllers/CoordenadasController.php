@@ -9,13 +9,102 @@ use Illuminate\Support\Facades\DB;
 
 class CoordenadasController extends Controller
 {
+
+
+
+    public function indexMapa(){
+        return view('coordendas.vercoor');
+
+    }
+
+    public function  getcoorcontenedor(Request  $request) 
+    {
+        $query = $request->query('query');
+
+        $preguntas_A = [
+            [ 'texto' => "1) ¿ Registro en Puerto ?", 'campo' => 'registro_puerto', 'tooltip' => "Registro en Puerto" ],
+            [ 'texto' => "2) ¿ Dentro de Puerto ?", 'campo' => 'dentro_puerto', 'tooltip' => "Dentro de Puerto" ],
+            [ 'texto' => "3) ¿ Descarga Vacío ?", 'campo' => 'descarga_vacio', 'tooltip' => "Descarga Vacío" ],
+            [ 'texto' => "4) ¿ Cargado Contenedor ?", 'campo' => 'cargado_contenedor', 'tooltip' => "Cargado Contenedor" ],
+            [ 'texto' => "5) ¿ En Fila Fiscal ?", 'campo' => 'fila_fiscal', 'tooltip' => "En Fila Fiscal" ],
+            [ 'texto' => "6) ¿ Modulado ?", 'campo' => 'modulado_tipo', 'tooltip' => "Modulado" ],
+            [ 'texto' => "7) ¿ Descarga en patio ?", 'campo' => 'descarga_patio', 'tooltip' => "Descarga en patio" ],
+            [ 'texto' => "8) ¿Carga en patio?", 'campo' => 'cargado_patio', 'tooltip' => "Carga en patio" ],
+            [ 'texto' => "9) ¿Inicio ruta?", 'campo' => 'en_destino', 'tooltip' => "Inicio ruta" ],
+            [ 'texto' => "10)¿Inicia carga?", 'campo' => 'inicio_descarga', 'tooltip' => "Inicia carga" ],
+            [ 'texto' => "11)¿Fin descarga?", 'campo' => 'fin_descarga', 'tooltip' => "Fin descarga" ],
+            [ 'texto' => "12 ¿Recepción Doctos Firmados?", 'campo' => 'recepcion_doc_firmados', 'tooltip' => "Recepción Doctos Firmados" ],
+        ];
+
+
+
+
+
+        $datos = DB::table('cotizaciones')
+            ->select(
+                'cotizaciones.id',
+                'asignaciones.id as idasignacion',
+                'clients.nombre as cliente',
+                'cotizaciones.origen',
+                'cotizaciones.destino',
+                'docum_cotizacion.num_contenedor as contenedor',
+                'cotizaciones.estatus',
+
+                // Coordenadas
+                'coordenadas.registro_puerto',
+                'coordenadas.registro_puerto_datatime',
+                'coordenadas.dentro_puerto',
+                'coordenadas.dentro_puerto_datatime',
+                'coordenadas.descarga_vacio',
+                'coordenadas.descarga_vacio_datatime',
+                'coordenadas.cargado_contenedor',
+                'coordenadas.cargado_contenedor_datatime',
+                'coordenadas.fila_fiscal',
+                'coordenadas.fila_fiscal_datatime',
+                'coordenadas.modulado_tipo',
+                'coordenadas.modulado_tipo_datatime',
+                'coordenadas.modulado_coordenada',
+                'coordenadas.modulado_coordenada_datatime',
+                'coordenadas.en_destino',
+                'coordenadas.en_destino_datatime',
+                'coordenadas.inicio_descarga',
+                'coordenadas.inicio_descarga_datatime',
+                'coordenadas.fin_descarga',
+                'coordenadas.fin_descarga_datatime',
+                'coordenadas.recepcion_doc_firmados',
+                'coordenadas.recepcion_doc_firmados_datatime',
+                'coordenadas.descarga_patio',
+                'coordenadas.descarga_patio_datetime',
+                'coordenadas.cargado_patio',
+                'coordenadas.cargado_patio_datetime'
+            )
+            ->join('clients', 'cotizaciones.id_cliente', '=', 'clients.id')
+            ->join('docum_cotizacion', 'docum_cotizacion.id_cotizacion', '=', 'cotizaciones.id')
+            ->join('asignaciones', 'asignaciones.id_contenedor', '=', 'docum_cotizacion.id')
+            ->leftJoin('coordenadas', 'coordenadas.id_asignacion', '=', 'asignaciones.id')
+            ->where('docum_cotizacion.num_contenedor', $query) 
+            ->first();
+
+        if ($datos) {
+            return response()->json([
+                'success' => true,
+                'datos' => $datos,
+                'preguntas' => $preguntas_A,
+            ]);
+        } else {
+            return response()->json(['success' => false]);
+        }
+        
+    }
     public function index($id,$tipoCuestionario){
 
-       
+      
         $asignaciones = DB::table('asignaciones')
+        ->join('docum_cotizacion', 'docum_cotizacion.id', '=', 'asignaciones.id_contenedor')
     ->select(
         'asignaciones.id',
         'asignaciones.id_camion',
+        'docum_cotizacion.num_contenedor',
         DB::raw("CASE WHEN asignaciones.id_proveedor IS NULL THEN asignaciones.id_operador ELSE asignaciones.id_proveedor END as beneficiario_id"),
         DB::raw("CASE WHEN asignaciones.id_proveedor IS NULL THEN 'Propio' ELSE 'Subcontratado' END as tipo_contrato")
     );
@@ -39,19 +128,36 @@ $coordenadas = DB::table('coordenadas as coor')
         'eq.placas',
         'beneficiarios.nombre',
         'em.nombre as nombre_empresa',
-        'registro_puerto',
+        'asig.num_contenedor',
+        'coor.registro_puerto' ,
+        'coor.registro_puerto_datatime' ,
         'coor.dentro_puerto' ,
+        'coor.dentro_puerto_datatime' ,
         'coor.descarga_vacio' ,
+        'coor.descarga_vacio_datatime' ,
         'coor.cargado_contenedor' ,
+        'coor.cargado_contenedor_datatime' ,
         'coor.fila_fiscal' ,
+        'coor.fila_fiscal_datatime' ,
         'coor.modulado_tipo' ,
+        'coor.modulado_tipo_datatime' ,
         'coor.modulado_coordenada' ,
+        'coor.modulado_coordenada_datatime' ,
         'coor.en_destino' ,
+        'coor.en_destino_datatime' ,
         'coor.inicio_descarga' ,
+        'coor.inicio_descarga_datatime' ,
         'coor.fin_descarga' ,
+        'coor.fin_descarga_datatime',
         'coor.recepcion_doc_firmados',
-        'coor.descarga_patio',
-        'coor.cargado_patio'
+        'coor.recepcion_doc_firmados_datatime' ,
+        'coor.descarga_patio' ,
+        'coor.descarga_patio_datetime' ,
+        'coor.cargado_patio',
+        'coor.cargado_patio_datetime',
+        'tipo_c_estado' ,
+        'tipo_b_estado',
+        'tipo_f_estado',
 
     )
     ->joinSub($asignaciones, 'asig', function ($join) {
@@ -63,8 +169,48 @@ $coordenadas = DB::table('coordenadas as coor')
     })
     ->join('empresas as em', 'em.id', '=', 'beneficiarios.id_empresa')
     ->leftJoin('equipos as eq', 'asig.id_camion', '=', 'eq.id')
-    ->where('coor.id_asignacion', $id)
+    ->where('coor.id_cotizacion', $id)
     ->first();
+
+    if (!$coordenadas) {
+        $coordenadas = (object)[
+            'id_coordenadas' => null,
+            'id_asignacion' => 0,
+            'id_cotizacion' => $id,
+            'tipo_contrato' => '',
+            'telefono' => '',
+            'placas' => '',
+            'nombre' => '',
+            'nombre_empresa' => 'No se encontraron registros de coordenadas',
+            'num_contenedor' => '',
+            'registro_puerto' => '',
+            'registro_puerto_datatime' => '',
+            'dentro_puerto' => '',
+            'dentro_puerto_datatime' => '',
+            'descarga_vacio' => '',
+            'descarga_vacio_datatime' => '',
+            'cargado_contenedor' => '',
+            'cargado_contenedor_datatime' => '',
+            'fila_fiscal' => '',
+            'fila_fiscal_datatime' => '',
+            'modulado_tipo' => '',
+            'modulado_tipo_datatime' => '',
+            'modulado_coordenada' => '',
+            'modulado_coordenada_datatime' => '',
+            'en_destino' => '',
+            'en_destino_datatime' => '',
+            'inicio_descarga' => '',
+            'inicio_descarga_datatime' => '',
+            'fin_descarga' => '',
+            'fin_descarga_datatime' => '',
+            'recepcion_doc_firmados' => '',
+            'recepcion_doc_firmados_datatime' => '',
+            'descarga_patio' => '',
+            'descarga_patio_datetime' => '',
+            'cargado_patio' => '',
+            'cargado_patio_datetime' => ''
+        ];
+    }
 
         return view('coordendas.index',compact('coordenadas','tipoCuestionario'));
 
@@ -105,6 +251,9 @@ $coordenadas = DB::table('coordenadas as coor')
                 'inicio_descarga_datatime' => $request->inicio_descarga_datatime ?? null,
                 'fin_descarga_datatime' => $request->fin_descarga_datatime ?? null,
                 'recepcion_doc_firmados_datatime' => $request->recepcion_doc_firmados_datatime ?? null,
+                'tipo_c_estado' => $request->tipo_c_estado,
+                'tipo_b_estado' => $request-> tipo_b_estado,
+                'tipo_f_estado' => $request-> tipo_f_estado,
             ]);
         
             return response()->json([
