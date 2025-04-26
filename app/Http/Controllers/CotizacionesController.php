@@ -264,26 +264,23 @@ public function getCotizacionesCanceladas()
     }
     public function getCotizacionesId($id)
     {
-        $cotizaciones = Cotizaciones::where('id', $id)
-            //->where('id_empresa', auth()->user()->id_empresa)
-            ->orderBy('created_at', 'desc')
-            ->with(['cliente', 'DocCotizacion.Asignaciones'])
-            ->get()
-            ->map(function ($cotizacion) {
-                return [
-                    'id' => $cotizacion->id,
-                    'cliente' => $cotizacion->cliente ? $cotizacion->cliente->nombre : 'N/A',
-                    'origen' => $cotizacion->origen,
-                    'destino' => $cotizacion->destino,
-                    'contenedor' => $cotizacion->DocCotizacion ? $cotizacion->DocCotizacion->num_contenedor : 'N/A',
-                    'estatus' => $cotizacion->estatus,
-                    'coordenadas' => optional($cotizacion->DocCotizacion)->Asignaciones ? 'Ver' : '',
-                    'edit_url' => route('edit.cotizaciones', $cotizacion->id),
-                ];
-            });
-    
-            
-        return response()->json(['list' => $cotizaciones]);
+        $cotizacion = DB::table('cotizaciones')
+        ->join('clients', 'cotizaciones.id_cliente', '=', 'clients.id')
+        ->join('docum_cotizacion', 'docum_cotizacion.id_cotizacion', '=', 'cotizaciones.id')
+        ->join('asignaciones', 'asignaciones.id_contenedor', '=', 'docum_cotizacion.id')
+        ->where('cotizaciones.id', $id)
+        ->select('cotizaciones.id','asignaciones.id as id_Asignacion', 'clients.nombre as cliente', 'cotizaciones.origen', 'cotizaciones.destino',
+        'docum_cotizacion.num_contenedor as contenedor','cotizaciones.estatus')
+        ->get();
+
+        $idAsignacion = $cotizacion->isNotEmpty() ? $cotizacion->first()->id_Asignacion : null;
+
+        $coordenada = Coordenadas::where('id_asignacion', $idAsignacion)
+        ->where('id_cotizacion', $id)
+        ->select('tipo_c_estado', 'tipo_b_estado', 'tipo_f_estado') 
+        ->first();
+     
+        return response()->json(['list' =>  $cotizacion , 'coordenada' => $coordenada]);
     }
     public function solicitudesEntrantes(){
         $empresas = Empresas::get();
