@@ -240,6 +240,7 @@ class PlaneacionController extends Controller
                 $asignaciones->base1_proveedor = $request->get('base_factura');
                 $asignaciones->base2_proveedor = $request->get('base_taref');
                 $asignaciones->total_tonelada = round(floatVal($request->get('sobrepeso_proveedor')) * floatVal($request->get('cantidad_sobrepeso_proveedor')),4);
+                $cotizacion->prove_restante = $asignaciones->total_proveedor;
             }
             
            /* 
