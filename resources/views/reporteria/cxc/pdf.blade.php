@@ -318,11 +318,16 @@
             <table class="table text-white"
                 style="color: #000; width: 100%; padding: 0; font-size: 7px; border-collapse: collapse; table-layout: fixed;">
                 @php
-                    $cuentaGlobal = isset($cuentaGlobal)
+                    use App\Models\Bancos;
+
+                    // Buscar directamente el banco que tenga cuenta_global = 1
+                    $bancoGlobal = Bancos::where('cuenta_global', 1)->first();
+
+                    $cuentaGlobal = $bancoGlobal
                         ? [
-                            'beneficiario' => $cuentaGlobal->nombre_beneficiario ?? '---',
-                            'banco' => $cuentaGlobal->banco ?? '---',
-                            'clabe' => $cuentaGlobal->clabe ?? '---',
+                            'beneficiario' => $bancoGlobal->nombre_beneficiario ?? '---',
+                            'banco' => $bancoGlobal->nombre_banco ?? '---',
+                            'clabe' => $bancoGlobal->clabe ?? '---',
                         ]
                         : [
                             'beneficiario' => '---',
@@ -330,6 +335,7 @@
                             'clabe' => '---',
                         ];
                 @endphp
+
 
                 <tbody style="text-align: center; font-size: 7px;">
                     @foreach ($proveedoresConCuentas as $index => $proveedor)

@@ -576,4 +576,34 @@ class BancosController extends Controller
 
         }
     }
+
+    public function cambiarCuentaGlobal(Request $request, $id)
+{
+    $bancoSeleccionado = Bancos::findOrFail($id);
+
+    if ($bancoSeleccionado->cuenta_global) {
+        // Si ya era cuenta global, simplemente lo apagamos
+        $bancoSeleccionado->cuenta_global = false;
+        $bancoSeleccionado->save();
+
+        return response()->json(['success' => true, 'message' => 'Cuenta global desactivada.']);
+    } else {
+        // Verificar si ya existe un banco con cuenta_global activa
+        $cuentaGlobalExistente = Bancos::where('cuenta_global', true)->where('id_empresa', auth()->user()->id_empresa)->first();
+
+        if ($cuentaGlobalExistente) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ya existe una cuenta global activa. Debes desactivarla primero.'
+            ]);
+        }
+
+        // Activamos este banco como cuenta global
+        $bancoSeleccionado->cuenta_global = true;
+        $bancoSeleccionado->save();
+
+        return response()->json(['success' => true, 'message' => 'Cuenta global activada correctamente.']);
+    }
+}
+
 }
