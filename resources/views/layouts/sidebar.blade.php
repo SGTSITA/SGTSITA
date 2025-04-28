@@ -319,7 +319,19 @@
                     </a>
                 </li-->
             @endcan
-
+            @can('coordenadasv')
+            <li class="nav-item">
+                    <a class="nav-link"
+                        href="{{ route('ver.coordenadamapa')  }}" target="">
+                        <div
+                            class="icon icon-shape icon-sm text-center  me-2 d-flex align-items-center justify-content-center">
+                            <img src="{{ asset('img/icon/mapa-de-la-ciudad.webp') }}" alt="" width="20px">
+                        </div>
+                        <span class="nav-link-text ms-1"><b>XII</b> Coordenadas</span>
+                    </a>
+                </li>
+               
+            @endcan
             @can('catalogo')
                 <li class="nav-item">
                     <a class="nav-link {{ Request::is('catalogo*') ? 'active' : '' }}"
@@ -328,7 +340,7 @@
                             class="icon icon-shape icon-sm text-center  me-2 d-flex align-items-center justify-content-center">
                             <img src="{{ asset('img/icon/catalogo.webp') }}" alt="" width="20px">
                         </div>
-                        <span class="nav-link-text ms-1"><b>XIII</b> Catálogo</span>
+                        <span class="nav-link-text ms-1"><b>XIV</b> Catálogo</span>
                     </a>
                 </li>
             @endcan

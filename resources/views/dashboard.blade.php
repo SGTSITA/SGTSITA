@@ -291,7 +291,7 @@
                     <div class="col-8">
                         <a href="{{ route('ver.coordenadamapa') }}">
                             <p style="margin: 0">Consulta</p>
-                            <h5>Coordenadas</h5>
+                            <h5>XIII Coordenadas</h5>
                         </a>
                     </div>
 
@@ -307,7 +307,7 @@
             <div class="icon icon-shape icon-sm text-center  me-2 d-flex align-items-center justify-content-center">
                 <img src="{{ asset('img/icon/catalogo.webp') }}" alt="" width="20px">
             </div>
-            <span class="nav-link-text ms-1"><b>XIII</b> Catálogo</span>
+            <span class="nav-link-text ms-1"><b>XIV</b> Catálogo</span>
             </a>
         </li>
     @endcan

@@ -2,10 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use Illuminate\Http\Request;
 use App\Models\Coordenadas;
+use App\Models\Client;
+use App\Models\Subclientes;
+use App\Models\Proveedor;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+
+
+use Auth;
 
 class CoordenadasController extends Controller
 {
@@ -13,13 +20,39 @@ class CoordenadasController extends Controller
 
 
     public function indexMapa(){
-        return view('coordendas.vercoor');
+             return view('coordendas.vercoor');
 
     }
 
     public function  getcoorcontenedor(Request  $request) 
     {
-        $query = $request->query('query');
+        $params = $request->query();
+
+        $proveedor = $params['proveedor'] ?? null;  
+        $cliente = $params['cliente'] ?? null;
+        $subcliente = $params['subcliente'] ?? null;
+        $fecha_inicio = $params['fecha_inicio'] ?? null;
+        $fecha_fin = $params['fecha_fin'] ?? null;
+        $contenedor = $params['contenedor'] ?? null;
+
+        $asignaciones = DB::table('asignaciones')
+        ->join('docum_cotizacion', 'docum_cotizacion.id', '=', 'asignaciones.id_contenedor')
+    ->select(
+        'asignaciones.id',
+        'asignaciones.id_camion',
+        'docum_cotizacion.num_contenedor','asignaciones.fecha_inicio','asignaciones.id_contenedor',
+        DB::raw("CASE WHEN asignaciones.id_proveedor IS NULL THEN asignaciones.id_operador ELSE asignaciones.id_proveedor END as beneficiario_id"),
+        DB::raw("CASE WHEN asignaciones.id_proveedor IS NULL THEN 'Propio' ELSE 'Subcontratado' END as tipo_contrato")
+    );
+
+        $beneficiarios = DB::table(function ($query) {
+            $query->select('id', 'nombre', 'telefono', DB::raw("'Propio' as tipo_contrato"), 'id_empresa')
+                ->from('operadores')
+                ->union(
+                    DB::table('proveedores')
+                        ->select('id', 'nombre', 'telefono', DB::raw("'Subcontratado' as tipo_contrato"), 'id_empresa')
+                );
+        }, 'beneficiarios');
 
         $preguntas_A = [
             [ 'texto' => "1) ¿ Registro en Puerto ?", 'campo' => 'registro_puerto', 'tooltip' => "Registro en Puerto" ],
@@ -37,53 +70,74 @@ class CoordenadasController extends Controller
         ];
 
 
-
-
-
         $datos = DB::table('cotizaciones')
-            ->select(
-                'cotizaciones.id',
-                'asignaciones.id as idasignacion',
-                'clients.nombre as cliente',
-                'cotizaciones.origen',
-                'cotizaciones.destino',
-                'docum_cotizacion.num_contenedor as contenedor',
-                'cotizaciones.estatus',
+    ->select(
+        'cotizaciones.id',
+        'asig.id as idasignacion',
+        'clients.nombre as cliente',
+        'cotizaciones.origen',
+        'cotizaciones.destino',
+        'asig.num_contenedor as contenedor', // Cambié esto para que utilice el campo correcto de asignaciones
+        'cotizaciones.estatus',
+        // Coordenadas
+        'coordenadas.registro_puerto',
+        'coordenadas.registro_puerto_datatime',
+        'coordenadas.dentro_puerto',
+        'coordenadas.dentro_puerto_datatime',
+        'coordenadas.descarga_vacio',
+        'coordenadas.descarga_vacio_datatime',
+        'coordenadas.cargado_contenedor',
+        'coordenadas.cargado_contenedor_datatime',
+        'coordenadas.fila_fiscal',
+        'coordenadas.fila_fiscal_datatime',
+        'coordenadas.modulado_tipo',
+        'coordenadas.modulado_tipo_datatime',
+        'coordenadas.modulado_coordenada',
+        'coordenadas.modulado_coordenada_datatime',
+        'coordenadas.en_destino',
+        'coordenadas.en_destino_datatime',
+        'coordenadas.inicio_descarga',
+        'coordenadas.inicio_descarga_datatime',
+        'coordenadas.fin_descarga',
+        'coordenadas.fin_descarga_datatime',
+        'coordenadas.recepcion_doc_firmados',
+        'coordenadas.recepcion_doc_firmados_datatime',
+        'coordenadas.descarga_patio',
+        'coordenadas.descarga_patio_datetime',
+        'coordenadas.cargado_patio',
+        'coordenadas.cargado_patio_datetime'
+    )
+    ->join('clients', 'cotizaciones.id_cliente', '=', 'clients.id')
+    // Elimino el join a docum_cotizacion aquí ya que la subconsulta asignaciones ya lo contiene
+    ->joinSub($asignaciones, 'asig', function ($join) {
+        $join->on('asig.id_contenedor', '=', 'cotizaciones.id'); // Este es el correcto para relacionar las cotizaciones con asignaciones
+    })
+    ->Join('coordenadas', 'coordenadas.id_asignacion', '=', 'asig.id') // El leftJoin a coordenadas sigue igual
+    ->joinSub($beneficiarios, 'beneficiarios', function ($join) {
+        $join->on('asig.beneficiario_id', '=', 'beneficiarios.id')
+             ->on('asig.tipo_contrato', '=', 'beneficiarios.tipo_contrato');
+    })
+    ->leftJoin('subclientes','subclientes.id_cliente','=','beneficiarios.id')
+    ->when($proveedor, function ($query) use ($proveedor) {
+        return $query->where('beneficiarios.id', $proveedor);
+    })
+    ->when($cliente, function ($query) use ($cliente) {
+        return $query->where('beneficiarios.id', $cliente);
+    })
+    ->when($subcliente, function ($query) use ($subcliente) {
+        return $query->where('subclientes.id', $subcliente);
+    })
+    ->when($fecha_inicio && $fecha_fin, function ($query) use ($fecha_inicio, $fecha_fin) {
+        return $query->whereBetween('asig.fecha_inicio', [$fecha_inicio, $fecha_fin]);
+    })
+    ->when($contenedor, function ($query) use ($contenedor) {
+        return $query->where('asig.num_contenedor', $contenedor); // Cambio para usar el num_contenedor desde asignaciones
+    })
+    ->get();
+            
+           
 
-                // Coordenadas
-                'coordenadas.registro_puerto',
-                'coordenadas.registro_puerto_datatime',
-                'coordenadas.dentro_puerto',
-                'coordenadas.dentro_puerto_datatime',
-                'coordenadas.descarga_vacio',
-                'coordenadas.descarga_vacio_datatime',
-                'coordenadas.cargado_contenedor',
-                'coordenadas.cargado_contenedor_datatime',
-                'coordenadas.fila_fiscal',
-                'coordenadas.fila_fiscal_datatime',
-                'coordenadas.modulado_tipo',
-                'coordenadas.modulado_tipo_datatime',
-                'coordenadas.modulado_coordenada',
-                'coordenadas.modulado_coordenada_datatime',
-                'coordenadas.en_destino',
-                'coordenadas.en_destino_datatime',
-                'coordenadas.inicio_descarga',
-                'coordenadas.inicio_descarga_datatime',
-                'coordenadas.fin_descarga',
-                'coordenadas.fin_descarga_datatime',
-                'coordenadas.recepcion_doc_firmados',
-                'coordenadas.recepcion_doc_firmados_datatime',
-                'coordenadas.descarga_patio',
-                'coordenadas.descarga_patio_datetime',
-                'coordenadas.cargado_patio',
-                'coordenadas.cargado_patio_datetime'
-            )
-            ->join('clients', 'cotizaciones.id_cliente', '=', 'clients.id')
-            ->join('docum_cotizacion', 'docum_cotizacion.id_cotizacion', '=', 'cotizaciones.id')
-            ->join('asignaciones', 'asignaciones.id_contenedor', '=', 'docum_cotizacion.id')
-            ->leftJoin('coordenadas', 'coordenadas.id_asignacion', '=', 'asignaciones.id')
-            ->where('docum_cotizacion.num_contenedor', $query) 
-            ->first();
+          
 
         if ($datos) {
             return response()->json([
@@ -338,4 +392,34 @@ $coordenadas = DB::table('coordenadas as coor')
         return redirect()->back();
 
     }
+    
+    public function getEntidadesPC()
+    {
+       
+        
+        $proveedores = Proveedor::where('id_empresa', auth()->user()->id_empresa)
+                                ->orderBy('created_at', 'desc')
+                                ->get(['id', 'nombre']); 
+
+       
+        $clientes = Client::join('client_empresa as ce', 'clients.id', '=', 'ce.id_client')
+                        ->where('ce.id_empresa', Auth::User()->id_empresa)
+                        ->where('is_active', 1)
+                        ->orderBy('nombre')
+                        ->get(['clients.id', 'clients.nombre']); 
+
+        
+        return response()->json([
+            'proveedor' => $proveedores,
+            'client' => $clientes
+        ]);
+    }
+    public function getSubclientes($clienteId)
+        {
+            $subclientes = Subclientes::where('id_cliente', $clienteId)
+                            ->orderBy('created_at', 'desc')
+                            ->get(['id', 'nombre']); // Trae solo lo necesario
+
+            return response()->json($subclientes);
+        }
 }
