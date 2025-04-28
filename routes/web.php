@@ -45,6 +45,7 @@ Route::post('/exportar-cxc', [ReporteriaController::class, 'export'])->name('exp
 |
 */
 include('externos.php');
+include('api.php');
 
 Route::get('/', function () {
     return view('auth.login');

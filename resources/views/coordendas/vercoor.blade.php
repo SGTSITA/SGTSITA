@@ -9,23 +9,78 @@
     <div class="row justify-content-center">
         <div class="col-sm-12">
             <div class="card shadow-lg border-0 bg-white rounded-4 p-4">
-                <div class="mb-4">
-                <input type="text"  id="buscadorContenedor" 
-                        placeholder="Buscar contenedor..." 
-                        class="form-control shadow-sm border-2 border-blue-300 focus:border-blue-500 rounded-pill"
-                    />
-                </div>
-
-                <h3 class="text-xl font-semibold text-center mb-3">Mapa de Coordenadas</h3>
-
-                <div id="map" 
-                    style="height: 600px; width: 100%;" 
+            <div class="mb-4 d-flex align-items-center justify-content-between">
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalFiltros" id="btnEditarFiltros">
+                    Editar Filtros
+                </button>
+                <h3 class="text-xl font-semibold text-center mb-0">Mapa de Coordenadas</h3>
+            </div>
+            <div id="map" 
+                    style="height: 800px; width: 100%;" 
                     class="rounded-4 border-4 border-blue-500 shadow-md">
                 </div>
-            </div>
         </div>
     </div>
 </div>
+
+
+
+<div class="modal fade" id="filtroModal" tabindex="-1" aria-labelledby="filtroModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="filtroModalLabel">Filtros de Búsqueda</h5>
+        <!-- Botón de cierre del modal -->
+        <button type="button" class="btn-close" id="btnCerrarModal" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="formFiltros">
+          <div class="mb-3">
+            <label for="fecha_inicio" class="form-label">Fecha Inicio</label>
+            <input type="date" class="form-control" name="fecha_inicio" id="fecha_inicio">
+          </div>
+          <div class="mb-3">
+            <label for="fecha_fin" class="form-label">Fecha Fin</label>
+            <input type="date" class="form-control" name="fecha_fin" id="fecha_fin">
+          </div>
+          <div class="mb-3">
+            <label for="contenedor" class="form-label">Contenedor</label>
+            <input type="text" class="form-control" name="contenedor" id="contenedor">
+          </div>
+
+          <div class="mb-3">
+            <label for="proveedor" class="form-label">Proveedor</label>
+            <select class="form-select" name="proveedor" id="proveedor">
+              <option value="">Seleccione un proveedor</option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label for="cliente" class="form-label">Cliente</label>
+            <select class="form-select" name="cliente" id="cliente">
+              <option value="">Seleccione un cliente</option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label for="subcliente" class="form-label">Subcliente</label>
+            <select class="form-select" name="subcliente" id="subcliente">
+              <option value="">Seleccione un subcliente</option>
+            </select>
+          </div>
+
+          <div class="modal-footer">
+                    <button type="button" onclick="limpiarFiltros()" class="btn btn-secondary">
+                Limpiar Filtros
+            </button>
+            <button type="submit" class="btn btn-primary">Aplicar Filtros</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
     
 @endsection
 
@@ -35,6 +90,10 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+
+<!-- JS de Select2 -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
     <!-- Nuestro JavaScript unificado -->
     <script

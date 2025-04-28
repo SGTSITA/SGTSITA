@@ -139,7 +139,7 @@
       <div style="background-color: #eee; border-radius: 10px; overflow: hidden;">
         <div id="barraProgreso" style="height: 20px; width: 0%; background-color: #4caf50; transition: width 0.3s;"></div>
       </div>
-       <p id="textoProgreso" class="mt-1 text-dark" style="font-weight: bold;">Progreso: 0%</p>
+       <p id="textoProgreso" class="mt-1 text-dark" style="font-weight: bold;">Pregunta {{$primeraSinResponder }} de {{ count($preguntas) }} </p>
   </div>
     </div>
     
