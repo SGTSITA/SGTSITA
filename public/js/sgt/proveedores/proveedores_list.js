@@ -418,7 +418,7 @@ function actualizarCuentaPrioridad(idCuenta, tipo, estado) {
                         }
                     });
                 } else {
-                    // 🔴 Deseleccionado: activar todos los de esa columna
+                    //  Deseleccionado: activar todos los de esa columna
                     checkboxes.forEach(input => {
                         input.disabled = false;
                     });
@@ -484,3 +484,42 @@ function agregarCuentaBancaria(idProveedor, nombreProveedor) {
     // Mostrar el modal
     $("#modalCrearCuenta").modal("show");
 }
+
+function openCuentaGlobalModal() {
+    fetch('/cuenta-global')
+        .then(res => res.json())
+        .then(data => {
+            document.getElementById("global_beneficiario").value = data?.nombre_beneficiario || "";
+            document.getElementById("global_banco").value = data?.banco || "";
+            document.getElementById("global_cuenta").value = data?.cuenta || "";
+            document.getElementById("global_clabe").value = data?.clabe || "";
+            $("#modalCuentaGlobal").modal("show");
+        });
+}
+
+document.getElementById("formCuentaGlobal").addEventListener("submit", function (event) {
+    event.preventDefault();
+
+    const formData = new FormData(this);
+
+    fetch('/cuenta-global/update', {
+        method: "POST",
+        headers: {
+            "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute("content"),
+        },
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            Swal.fire("¡Éxito!", "Cuenta Global actualizada correctamente.", "success");
+            $("#modalCuentaGlobal").modal("hide");
+        } else {
+            Swal.fire("Error", "No se pudo actualizar la cuenta global.", "error");
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        Swal.fire("Error", "Hubo un error inesperado.", "error");
+    });
+});

@@ -9,6 +9,7 @@ use App\Http\Controllers\ClientController;
 use App\Http\Controllers\PermisosController;
 use App\Http\Controllers\EmpresasController;
 use App\Http\Controllers\ExternosController;
+use App\Http\Controllers\CuentaGlobalController;
 
 Route::post('/exportar-cxc', [ReporteriaController::class, 'export'])->name('exportar.cxc');
 Route::post('sendfiles',[ExternosController::class,'sendFiles1'])->name('file-manager.sendfiles');
@@ -341,4 +342,9 @@ Route::post('/correo', [App\Http\Controllers\CorreoController::class, 'update'])
 
 Route::get('/configmec', [App\Http\Controllers\ConfigMecController::class, 'index'])->name('configmec');
 Route::post('/configmec', [App\Http\Controllers\ConfigMecController::class, 'update'])->name('configmec.update');
+
+//Rotas para la gestion de cuentas bancaria global
+
+Route::get('/cuenta-global', [App\Http\Controllers\CuentaGlobalController::class, 'show']);
+Route::post('/cuenta-global/update', [App\Http\Controllers\CuentaGlobalController::class, 'update']);
 
