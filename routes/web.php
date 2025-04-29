@@ -76,6 +76,7 @@ Route::post('coordenadas/cotizaciones/mail-coordenadas', [App\Http\Controllers\C
 Route::post('coordenadas/compartir/save', [App\Http\Controllers\CoordenadasController::class, 'store'])->name('guardar.CoordenadaCompartir');
 Route::post('coordenadas/guardarresp', [App\Http\Controllers\CoordenadasController::class, 'guardarRespuesta'])->name('guardar.respuestaCoordenada');
 Route::get('coordenadas/mapas', [App\Http\Controllers\CoordenadasController::class, 'indexMapa'])->name('ver.coordenadamapa');
+Route::get('coordenadas/busqueda', [App\Http\Controllers\CoordenadasController::class, 'indexSeach'])->name('seach.coordenadas');
 Route::get('/coordenadas/contenedor/search', [App\Http\Controllers\CoordenadasController::class, 'getcoorcontenedor'])->name('getcoorcontenedor');
 
 //R

@@ -73,12 +73,14 @@
     $tipo = $tipoCuestionario;
     $preguntas = $preguntas_A[$tipo];
     $primeraSinResponder = null;
+    $trespuestas =0;
 @endphp
 
 @foreach ($preguntas as $i => $pregunta)
     @php
         $campo = $pregunta['campo'];
         $respuesta = isset($coordenadas->$campo) ? $coordenadas->$campo : null;
+         $trespuestas =$i 
     @endphp
 
     @if (!$respuesta && $primeraSinResponder === null)
@@ -87,15 +89,19 @@
     @endif
 @endforeach
 
-@if (is_null($primeraSinResponder))
+@if (is_null($primeraSinResponder)) 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            // Aquí puedes pasar el número total de preguntas si lo necesitas
+            // ya se respondieron todas
             actualizarProgresoInicial({{ count($preguntas) }});
         });
     </script>
 @endif
 
+@if ($trespuestas +1 === count($preguntas) )
+@php  $primeraSinResponder  = count($preguntas); @endphp
+<script>  document.addEventListener('DOMContentLoaded', function () { ocultarCarrucelFinal()  });</script>
+@endif
    
       <!-- Info Estática -->
       
@@ -109,7 +115,16 @@
         <input type="hidden" id="estadoF" name="estadoF" value="{{ $coordenadas->tipo_f_estado }}">
 
         <h5 class="card-title mb-3 text-primary">
-            📋 Información del Viaje
+            📋 Información del Viaje Tipo:  
+             @if( $tipo  === 'b')
+             Burrero
+             @endif
+             @if( $tipo === 'f')
+             Foraneo
+             @endif
+             @if( $tipo === 'c')
+             Completo
+             @endif
         </h5>
 
         <ul class="list-group list-group-flush">
@@ -139,7 +154,7 @@
       <div style="background-color: #eee; border-radius: 10px; overflow: hidden;">
         <div id="barraProgreso" style="height: 20px; width: 0%; background-color: #4caf50; transition: width 0.3s;"></div>
       </div>
-       <p id="textoProgreso" class="mt-1 text-dark" style="font-weight: bold;">Pregunta {{$primeraSinResponder }} de {{ count($preguntas) }} </p>
+       <p id="textoProgreso" class="mt-2 text-dark" style="font-weight: bold;">Pregunta 0 de {{count($preguntas) }} </p>
   </div>
     </div>
     
@@ -156,7 +171,7 @@
 
     @foreach ($preguntas as $index => $pregunta)
            
-        <div class="pregunta" style="display: {{ $index === $primeraSinResponder ? 'block' : 'none' }};" data-index="{{ $index }}">
+        <div class="pregunta" id="pregunta" style="display: {{ $index === $primeraSinResponder ? 'block' : 'none' }};" data-index="{{ $index }}">
                     <div class="p-4 mb-3 text-dark"
                         style="background-color: white; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">
                         <h4>{{ $pregunta['texto'] }}</h4>
@@ -173,7 +188,7 @@
                                     <label for="{{ $pregunta['campo'] }}_tipo">Selecciona una opción</label>
                                 </div>
                             @else
-                              {{-- Si no hay opciones, muestra botones Sí / No --}}
+                              {{-- Si no hay opciones, muestra boton Sí  --}}
                               <div class="d-flex gap-3 mt-3">
                                   <button class="btn btn-success" onclick="guardarRespuesta({{ $index }}, '{{ $tipo }}')">✔️ Sí</button>
                                   
@@ -186,36 +201,45 @@
          <script> 
           document.addEventListener('DOMContentLoaded', function () {
             actualizarProgresoInicial({{  $index }}); 
-});
+                });
          </script>
           @endif
-        
+         
     @endforeach
-</div>
- 
-      <!-- Resumen final -->
-      <div id="resumen" class="mt-5" style="display: none;">
-        <h4 class="text-white">✅ Respuestas registradas:</h4>
-        <pre id="resumenRespuestas" style="background: rgba(255,255,255,0.9); padding: 15px; border-radius: 10px;"></pre>
-      </div>
-
+    </div>
+        <div id="mensajeFinal" style="display:none; width: 100%; max-width: 600px; margin-top: 20px;">
+            <div class="p-6 text-center" style="background-color: #d4edda; color: #155724; border-radius: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+                <h3 style="font-size: 24px; margin-bottom: 10px;">✅ Maniobra Finalizada</h3>
+                
+            </div>
+        </div>
+    
     </div>
   </div>
   @endif
 </main>
 <script>
 
-  let indiceActual = 0;
+let indiceActual = {{ $primeraSinResponder }};
 
-const totalPreguntas = {{ count($preguntas) }}; // Asegúrate de que esta variable esté definida correctamente en el Blade
+const totalPreguntas = {{ count($preguntas) }}; 
 
 let respuestas = [];
 
 function mostrarPregunta(index) {
+    let colorback =generarColorAleatorio();
     const preguntas = document.querySelectorAll('.pregunta');
     preguntas[indiceActual].style.display = 'none'; // Ocultar la pregunta actual
     indiceActual = index; // Actualizar el índice de la pregunta
     preguntas[indiceActual].style.display = 'block'; // Mostrar la siguiente pregunta
+    const contenedorInterior = preguntas[indiceActual].querySelector('.p-4.mb-3.text-dark');
+    contenedorInterior.style.backgroundColor = colorback;
+    const titulo = contenedorInterior.querySelector('h4');
+            if (esColorClaro(colorback)) {
+                titulo.style.color = "#222222"; // Letras oscuras
+            } else {
+                titulo.style.color = "#ffffff"; // Letras blancas
+            }
 }
 
 
@@ -258,9 +282,9 @@ function guardarRespuesta(index,tquestio) {
 
         const idAsignacion = document.getElementById('id_asignacion')?.value || null;
         const idCoordenada = document.getElementById('id_coordenada')?.value || null;
-        const estadoC = document.getElementById('estadoC')?.value || null;
-        const estadoB = document.getElementById('estadoB')?.value || null;
-        const estadoF = document.getElementById('estadoF')?.value || null;
+        let estadoC = document.getElementById('estadoC')?.value || null;
+        let estadoB = document.getElementById('estadoB')?.value || null;
+        let estadoF = document.getElementById('estadoF')?.value || null;
 
        if( (index+1) == totalPreguntas ){
           if (tquestio ==='c'){
@@ -270,6 +294,8 @@ function guardarRespuesta(index,tquestio) {
           }else if (tquestio ==='f'){
             estadoF=2;
           }
+
+          ocultarCarrucelFinal();
 
        }
 
@@ -312,6 +338,7 @@ function guardarRespuesta(index,tquestio) {
             if (index < totalPreguntas - 1) {
                 mostrarPregunta(index + 1);
                 actualizarProgreso();
+                
             } 
         })
         .catch(err => {
@@ -322,21 +349,29 @@ function guardarRespuesta(index,tquestio) {
         alert('No se pudo obtener la ubicación');
     });
 }
+function ocultarCarrucelFinal(){
+
+    document.getElementById('carruselPreguntas').style.display = 'none'; // Oculta las preguntas
+    document.getElementById('mensajeFinal').style.display = 'block';
+
+
+}
 function actualizarProgreso() {
  const preguntaActual= indiceActual+1;
-    const porcentaje = Math.round((preguntaActual / totalPreguntas) * 100);
+    const porcentaje = Math.round((preguntaActual / (totalPreguntas+1)) * 100);
 
     // Actualiza barra y texto
     document.getElementById('barraProgreso').style.width = porcentaje + '%';
-    document.getElementById('textoProgreso').textContent = `Progreso: ${porcentaje}%`;
+    document.getElementById('textoProgreso').textContent = `Pregunta: ${preguntaActual} de ${totalPreguntas}`;
 }
 function actualizarProgresoInicial(indiceGuardado) {
- const preguntaActual= indiceGuardado;
+ const preguntaActual= indiceGuardado +1;
     const porcentaje = Math.round((preguntaActual / totalPreguntas) * 100);
 
     // Actualiza barra y texto
     document.getElementById('barraProgreso').style.width = porcentaje + '%';
-    document.getElementById('textoProgreso').textContent = `Progreso: ${porcentaje}%`;
+    document.getElementById('textoProgreso').textContent = `Pregunta: ${preguntaActual} de ${totalPreguntas}`;
+    cambiarColorPregunta();
 }
 function abrirEnMapsfila_fiscal(coordenadas) {
 
@@ -344,6 +379,39 @@ function abrirEnMapsfila_fiscal(coordenadas) {
   var url = 'https://www.google.com/maps/search/?api=1&query=' + coordenadasFormato;
   window.open(url, '_blank');
  }
+
+ function generarColorAleatorio() {
+    // Genera un color aleatorio en formato hexadecimal
+    const letras = '0123456789ABCDEF';
+    let color = '#';
+    for (let i = 0; i < 6; i++) {
+        color += letras[Math.floor(Math.random() * 16)];
+    }
+    return color;
+}
+
+function esColorClaro(colorHex) {
+    // Extraer los valores R, G y B
+    const r = parseInt(colorHex.substr(1,2), 16);
+    const g = parseInt(colorHex.substr(3,2), 16);
+    const b = parseInt(colorHex.substr(5,2), 16);
+    // Calcular el brillo
+    const brillo = (r * 299 + g * 587 + b * 114) / 1000;
+    return brillo > 155; // Si es mayor, el color es claro
+}
+
+function cambiarColorPregunta() {
+    let colorbackx = generarColorAleatorio();
+    const preguntasx = document.querySelectorAll('.pregunta');
+    const contenedorInterior = preguntasx[indiceActual].querySelector('.p-4.mb-3.text-dark');
+    contenedorInterior.style.backgroundColor = colorbackx;
+    const titulo = contenedorInterior.querySelector('h4');
+            if (esColorClaro(colorbackx)) {
+                titulo.style.color = "#222222"; // Letras oscuras
+            } else {
+                titulo.style.color = "#ffffff"; // Letras blancas
+            }
+}
 
 
 </script>
