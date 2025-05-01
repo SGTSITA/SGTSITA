@@ -165,10 +165,7 @@ function getCoordenadasList(parametros) {
             });
     }
 
-    
-});
-
-document.getElementById("formFiltros").addEventListener("submit", function (e) {
+    document.getElementById("formFiltros").addEventListener("submit", function (e) {
         e.preventDefault();
     
        
@@ -183,6 +180,11 @@ document.getElementById("formFiltros").addEventListener("submit", function (e) {
         
 
     });
+
+    
+});
+
+
 
 
     document.addEventListener('click', function(e) {
