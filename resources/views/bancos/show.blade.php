@@ -30,9 +30,9 @@
     <div class="container-fluid my-5 py-2">
 
         <!--div class="row">
-                        <div class="col-12">
-                            
-                        </div-->
+                            <div class="col-12">
+                                
+                            </div-->
 
         <div class="col-12 card">
             <div class=" card-header m-2 ">
@@ -177,13 +177,13 @@
                             </div>
                         </div>
                         <!--div class="col-lg-3 col-md-7 text-md-end text-start mt-5">
-                                        <h6 class="d-block mt-2 mb-0">Saldo inicial:</h6>
-                                        <h6 class="text-secondary" id="saldo-inicial">${{ number_format($saldoInicial, 2, '.', ',') }} </h6>
-                                    </div>
-                                    <div class="col-lg-3 col-md-7 text-md-end text-start mt-5">
-                                        <h6 class="d-block mt-2 mb-0">Total en Banco:</h6>
-                                        <h6 class="text-secondary">${{ number_format($saldoFinal, 2, '.', ',') }} </h6>
-                                    </div-->
+                                            <h6 class="d-block mt-2 mb-0">Saldo inicial:</h6>
+                                            <h6 class="text-secondary" id="saldo-inicial">${{ number_format($saldoInicial, 2, '.', ',') }} </h6>
+                                        </div>
+                                        <div class="col-lg-3 col-md-7 text-md-end text-start mt-5">
+                                            <h6 class="d-block mt-2 mb-0">Total en Banco:</h6>
+                                            <h6 class="text-secondary">${{ number_format($saldoFinal, 2, '.', ',') }} </h6>
+                                        </div-->
                     </div>
                     <br>
                     <div class="row justify-content-md-between">
@@ -191,23 +191,23 @@
 
                         </div>
                         <!--iv class="col-lg-5 col-md-7 mt-auto">
-                                  <div class="row mt-md-5 mt-4 text-md-end text-start">
-                                    <div class="col-md-6">
-                                      <h6 class="text-secondary mb-0">Inicio de Semana:</h6>
-                                    </div>
-                                    <div class="col-md-6">
-                                      <h6 class="text-dark mb-0">{{ \Carbon\Carbon::parse($startOfWeek)->translatedFormat('j \d\e F') }}</h6>
-                                    </div>
-                                  </div>
-                                  <div class="row text-md-end text-start">
-                                    <div class="col-md-6">
-                                      <h6 class="text-secondary mb-0">Dia actual:</h6>
-                                    </div>
-                                    <div class="col-md-6">
-                                      <h6 class="text-dark mb-0">{{ \Carbon\Carbon::parse($startOfWeek)->format('Y-m-d') }} AL {{ \Carbon\Carbon::parse($fecha)->format('Y-m-d') }}</h6>
-                                    </div>
-                                  </div>
-                                </div-->
+                                      <div class="row mt-md-5 mt-4 text-md-end text-start">
+                                        <div class="col-md-6">
+                                          <h6 class="text-secondary mb-0">Inicio de Semana:</h6>
+                                        </div>
+                                        <div class="col-md-6">
+                                          <h6 class="text-dark mb-0">{{ \Carbon\Carbon::parse($startOfWeek)->translatedFormat('j \d\e F') }}</h6>
+                                        </div>
+                                      </div>
+                                      <div class="row text-md-end text-start">
+                                        <div class="col-md-6">
+                                          <h6 class="text-secondary mb-0">Dia actual:</h6>
+                                        </div>
+                                        <div class="col-md-6">
+                                          <h6 class="text-dark mb-0">{{ \Carbon\Carbon::parse($startOfWeek)->format('Y-m-d') }} AL {{ \Carbon\Carbon::parse($fecha)->format('Y-m-d') }}</h6>
+                                        </div>
+                                      </div>
+                                    </div-->
                     </div>
                 </div>
                 <div class="card-body">
