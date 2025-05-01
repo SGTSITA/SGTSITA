@@ -15,10 +15,11 @@ document.addEventListener("DOMContentLoaded", function () {
     const columnDefs = [
         { headerCheckboxSelection: true, checkboxSelection: true, width: 50 },
         { headerName: "No", field: "id", sortable: true, filter: true },
-        { headerName: "Cliente", field: "cliente", sortable: true, filter: true },
-        { headerName: "Origen", field: "origen", sortable: true, filter: true },
-        { headerName: "Destino", field: "destino", sortable: true, filter: true },
-        { headerName: "# Contenedor", field: "contenedor", sortable: true, filter: true },
+        { headerName: "Cliente", field: "cliente", sortable: true, filter: true, minWidth: 150 },
+        { headerName: "# Contenedor", field: "contenedor", sortable: true, filter: true, minWidth: 150 ,cellStyle: { backgroundColor: '#f9f5fc' } },
+        { headerName: "Origen", field: "origen", sortable: true, filter: true, minWidth: 150  },
+        { headerName: "Destino", field: "destino", sortable: true, filter: true, minWidth: 150  },
+        
         {
             headerName: "Estatus",
             field: "estatus",
@@ -43,14 +44,17 @@ document.addEventListener("DOMContentLoaded", function () {
             sortable: false,
             filter: false,
             cellRenderer: function (params) {
-                if (params.data.id_asignacion) {
+                
                     return `
-                        <a href="/coordenadas/${params.data.id_asignacion}" class="btn btn-sm btn-outline-info" title="Ver coordenadas">
-                            <i class="fa fa-map-marker-alt"></i> Coord.
-                        </a>
+                    <button class="btn btn-sm btn-outline-info" 
+                    onclick="abrirModalCoordenadas(${params.data.id},${params.data.id_asignacion})" 
+                     title="Compartir coordenadas">
+                     <i class="fa fa-map-marker-alt"></i> Compartir
+                     </button>
+                                               
                     `;
-                }
-                return `<span class="text-muted">N/A</span>`;
+                
+               
             }
         },
         {
@@ -117,9 +121,9 @@ document.addEventListener("DOMContentLoaded", function () {
                     `;
                 } else if (currentTab === "canceladas") {
                     acciones = `
-<button class="btn btn-sm btn-outline-warning" onclick="abrirDocumentos(${params.data.id})" title="Ver Documentos">
+    <button class="btn btn-sm btn-outline-warning" onclick="abrirDocumentos(${params.data.id})" title="Ver Documentos">
     <i class="fa fa-folder"></i>
-</button>
+    </button>
 
                     `;
                 }
@@ -168,6 +172,200 @@ document.addEventListener("DOMContentLoaded", function () {
             .finally(() => {
                 overlay.style.display = "none"; 
             });
+    }
+
+    // Abrir el modal
+    window.abrirModalCoordenadas = function(id_cotizacion,idAsignacion) {
+        const modal = document.getElementById('modalCoordenadas');
+
+        if (modal) {
+            modal.style.display = 'block';
+            limpiarDatos();
+            // Backdrop
+            if (!document.querySelector('.modal-backdrop')) {
+                const backdrop = document.createElement('div');
+                backdrop.classList.add('modal-backdrop');
+                backdrop.style.position = 'fixed';
+                backdrop.style.top = '0';
+                backdrop.style.left = '0';
+                backdrop.style.width = '100%';
+                backdrop.style.height = '100%';
+                backdrop.style.backgroundColor = 'rgba(0,0,0,0.5)';
+                backdrop.style.zIndex = '1040';
+                document.body.appendChild(backdrop);
+            }
+        
+            document.body.classList.add('modal-open');
+            document.body.style.overflow = 'hidden';
+        
+            document.getElementById('idCotizacionCompartir').value =id_cotizacion;
+            document.getElementById('idAsignacionCompartir').value =idAsignacion;
+    
+            // Activar tab Mail por defecto
+            cambiarTab('mail');
+        }
+
+        // Asegúrate de que el select para tipo de cuestionario exista
+        const tipoSelect = document.getElementById('optipoCuestionario');
+        if (tipoSelect) {
+            tipoSelect.addEventListener('change', function() {
+                // Verifica si se seleccionó una opción válida
+                const tipoSeleccionado = tipoSelect.value;
+
+                if (tipoSeleccionado) {
+                    //limpiarDatos("");
+                    // Aquí haces el fetch solo si hay una opción seleccionada
+                    fetchCotizacion(id_cotizacion, tipoSeleccionado);
+                } else {
+                    // Si no hay selección válida, limpiamos los datos
+                    limpiarDatos();
+                }
+            });
+        }
+    };
+
+    // Función para buscar los datos de la cotización
+    function fetchCotizacion(id_cotizacion, tipoCuestionario) {
+        const link = `${window.location.origin}/coordenadas/questions/${id_cotizacion}/${tipoCuestionario}`;
+        let _url = `/coordenadas/cotizaciones/get/${id_cotizacion}`;
+       
+        fetch(_url)
+            .then(response => response.json())
+            .then(data => {
+                if (!data.list || data.list.length === 0) {
+                    let messageNoData = "No se encontró información para esta cotización.";
+                    // Limpiar la información cuando no se encuentra
+                    limpiarDatos(messageNoData);
+                    return;
+                }
+
+                let bPasaValidacion = 0;
+
+                const item = data.list[0];
+                const mensaje = ` ${item.contenedor}`;
+                if (data.coordenada) {
+                  
+                    document.getElementById('estadoC').value = data.coordenada.tipo_c_estado ?? 0;
+                    document.getElementById('estadoB').value = data.coordenada.tipo_b_estado ?? 0;
+                    document.getElementById('estadoF').value = data.coordenada.tipo_f_estado ?? 0;
+                    
+                    let tVslidacion = '';
+
+                    const estadoC = parseInt(document.getElementById('estadoC').value);//completo solo 1 vez, si ya esta finalizado y no se puede elegir otro tipo
+                    const estadoB = parseInt(document.getElementById('estadoB').value);
+                    const estadoF = parseInt(document.getElementById('estadoF').value);
+                 
+                    if ([estadoC, estadoB, estadoF].includes(2)) {
+                        if (estadoC ===2){
+                            alert('El cuestionario "Completo" ya ha sido finalizado, no se puede compartir.');
+
+                        }else if(estadoB ===2  ){
+
+                            alert('El cuestionario "Burrero" ya ha sido finalizado, no se puede compartir.');
+
+                        }else if (estadoF===2){
+                            alert('El cuestionario "Foraneo" ya ha sido finalizado, no se puede compartir.');
+                        }
+
+                    }
+                    else {
+                         // Un contenedor puede tener, burrero y foraneo, pero si es completo ya no se podrá elegir, validar compartir coordenadas.
+                         bPasaValidacion=  validarselectTipoCuentio(estadoC,estadoB,estadoF)
+                    }
+                                     
+                    
+
+                } else {
+                    bPasaValidacion=1;
+                    // Primera vez compartiendo, todo en 0
+                    document.getElementById('estadoC').value = 0;
+                    document.getElementById('estadoB').value = 0;
+                    document.getElementById('estadoF').value = 0;
+                    validarselectTipoCuentio(estadoC,estadoB,estadoF)
+                }
+
+
+
+                if (bPasaValidacion===1) {
+                    // mail
+                    document.getElementById('linkMail').innerText = link;
+                    document.getElementById('mensajeText').innerText = mensaje;
+                    // whatsapp
+                    document.getElementById("wmensajeText").innerText = mensaje;
+                    document.getElementById("linkWhatsapp").value = link;
+                    // 🟢 Armamos el link para WhatsApp
+                    const textoWhatsapp = `Contenedor: ${mensaje}\n\n${link}`;
+                    document.getElementById("whatsappLink").href = `https://wa.me/?text=${encodeURIComponent(textoWhatsapp)}`;
+                }else {
+                    console.error("❌ Validacion de estatus de cuestionario");
+                }
+               
+
+                
+            })
+            .catch(error => {
+                console.error("❌ Error al obtener info de cotizaciones:", error);
+            });
+    }
+
+    function validarselectTipoCuentio(estadoC,estadoB,estadoF){
+
+        const selectTipoCuestionario = document.getElementById('optipoCuestionario');
+let selecvalueuser = selectTipoCuestionario.value;
+    // Deshabilitar las opciones basadas en el estado de los cuestionarios
+    if(selecvalueuser==='b' || selecvalueuser==='f'){
+        if (estadoC === 1 ) {
+                // Si tipo C ya se compartió, deshabilitar opción b y f
+            //  selectTipoCuestionario.querySelector('option[value="b"]').disabled = true;
+            // selectTipoCuestionario.querySelector('option[value="f"]').disabled = true;
+            alert('El cuestionario "completo" ya ha sido compartido, no se puede compartir otro tipo.');
+            return 0;
+            }else if (estadoC ===0) {
+                return 1;
+        }
+    }
+    
+    if (selecvalueuser==='c' ){
+        if ((estadoB === 1 || estadoF===1) ) {
+            // Si tipo B o f ya se compartió, deshabilitar opción c
+            //selectTipoCuestionario.querySelector('option[value="c"]').disabled = true;
+           alert('El cuestionario "Burrero/Foraneo" ya ha sido compartido, no se puede compartir otro tipo.');
+    
+           return 0;
+        }else if ((estadoB === 0 || estadoF===0)){
+            return 1;
+
+        }
+
+    }
+    
+   
+    
+   
+    // Si ninguno está compartido, asegúrate de que todas las opciones estén habilitadas
+    if (estadoC === 0 && estadoB === 0 && estadoF === 0) {
+        // selectTipoCuestionario.querySelector('option[value="c"]').disabled = false;
+        // selectTipoCuestionario.querySelector('option[value="b"]').disabled = false;
+        // selectTipoCuestionario.querySelector('option[value="f"]').disabled = false;
+        retLocal=1;
+    }
+    return 1
+    }
+    // Función para limpiar los datos
+    function limpiarDatos(message = "") {
+        // Limpiar los valores cuando no se selecciona una opción válida
+        document.getElementById('linkMail').innerText = message;
+       
+        document.getElementById('mensajeText').innerText = "";
+        document.getElementById('correoDestino').value="";
+        document.getElementById("wmensajeText").innerText = "";
+        document.getElementById("linkWhatsapp").value = "";
+        document.getElementById("whatsappLink").href = "#";
+        document.getElementById("idAsignacionCompartir").value = "";
+        const select = document.getElementById('optipoCuestionario');
+        select.selectedIndex = 0;
+        document.getElementById('idCotizacionCompartir').value ="";
+        document.getElementById('idAsignacionCompartir').value ="";
     }
 });      
 
@@ -273,6 +471,215 @@ function abrirDocumentos(idCotizacion) {
         });
 }
 
+function cambiarTab(tabId) {
+    // Ocultamos todos los divs con clase 'tab-content'
+    const tabs = document.querySelectorAll('.tab-content');
+    tabs.forEach(tab => {
+        tab.style.display = 'none';
+    });
+
+    // Mostramos solo el que corresponde
+    const tabToShow = document.getElementById('tab-' + tabId);
+    if (tabToShow) {
+        tabToShow.style.display = 'block';
+    } else {
+        console.error(`No se encontró el tab: tab-${tabId}`);
+    }
+}
+
+function mostrarTab(tab) {
+    // Ocultar ambos
+    document.getElementById('tab-mail').style.display = 'none';
+    document.getElementById('tab-whatsapp').style.display = 'none';
+
+    // Quitar clase activa
+    const tabs = document.querySelectorAll('.nav-link');
+    tabs.forEach(el => el.classList.remove('active'));
+
+    // Mostrar el tab seleccionado
+    document.getElementById(`tab-${tab}`).style.display = 'block';
+
+    // Activar tab
+    document.querySelector(`.nav-link[href="#"][onclick*="${tab}"]`).classList.add('active');
+}
+
+function cerrarModal() {
+    const modal = document.getElementById('modalCoordenadas');
+    limpCampos();
+    if (modal) {
+        modal.style.display = 'none';
+    }
+
+    // Eliminar el fondo oscuro si existe
+    const backdrop = document.querySelector('.modal-backdrop');
+    if (backdrop) {
+        backdrop.remove();
+    }
+    
+    // Quitar la clase modal-open del body
+    document.body.classList.remove('modal-open');
+    document.body.style.overflow = ''; // restaurar scroll
+}
+
+function limpCampos(){
+    document.getElementById('linkMail').innerText = "";
+       
+    document.getElementById('mensajeText').innerText = "";
+    document.getElementById('correoDestino').value="";
+    document.getElementById("wmensajeText").innerText = "";
+    document.getElementById("linkWhatsapp").value = "";
+    document.getElementById("whatsappLink").href = "#";
+    document.getElementById("idAsignacionCompartir").value = "";
+    const select = document.getElementById('optipoCuestionario');
+    select.selectedIndex = 0;
+    document.getElementById('idCotizacionCompartir').value ="";
+    document.getElementById('idAsignacionCompartir').value ="";
+}
+function copiarDesdeInput(inputId) {
+    const input = document.getElementById(inputId);
+    input.select();
+    input.setSelectionRange(0, 99999);
+    document.execCommand("copy");
+    alert("¡Enlace copiado!");
+}
 
 
+function enviarMailCoordenadas() {
 
+    const mensaje = document.getElementById('mensajeText').innerText;
+    const asunto = 'No. contenedor: ' + mensaje;
+
+    const link = document.getElementById('linkMail').innerText;
+    const correo = document.getElementById('correoDestino').value;
+ 
+    fetch('/coordenadas/cotizaciones/mail-coordenadas', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+        },
+        body: JSON.stringify({
+            correo: correo,
+            asunto: asunto,
+            mensaje: mensaje,
+            link:  link
+        })
+    })
+    .then(res => res.json())
+    .then(data => alert('Correo enviado ✅'))
+    .catch(err => console.error('Error:', err));
+    saveCoordenadas();
+    
+}
+function guardarYAbrirWhatsApp(event) {
+    event.preventDefault(); // Evita que el enlace se abra inmediatamente
+    saveCoordenadas();
+    window.open(document.getElementById('whatsappLink').href, '_blank');
+       
+}
+
+function saveCoordenadas() {
+
+    let idAsignacionSave= document.getElementById("idAsignacionCompartir").value;
+    let idCotizacionSave= document.getElementById("idCotizacionCompartir").value;
+    let typeQuestion= document.getElementById("optipoCuestionario").value;
+    
+    if (idAsignacionSave != null)
+    {
+
+        let tipoFlujo = null;
+        let registroPuerto = null;
+        let dentroPuerto = null;
+        let descargaVacio = null;
+        let cargadoContenedor = null;
+        let filaFiscal = null;
+        let moduladoTipo = null;
+        let moduladoCoordenada = null;
+        let enDestino = null;
+        let inicioDescarga = null;
+        let finDescarga = null;
+        let recepcionDocFirmados = null;
+        
+        let tipoFlujoDatetime = null;
+        let registroPuertoDatetime = null;
+        let dentroPuertoDatetime = null;
+        let descargaVacioDatetime = null;
+        let cargadoContenedorDatetime = null;
+        let filaFiscalDatetime = null;
+        let moduladoTipoDatetime = null;
+        let moduladoCoordenadaDatetime = null;
+        let enDestinoDatetime = null;
+        let inicioDescargaDatetime = null;
+        let finDescargaDatetime = null;
+        let recepcionDocFirmadosDatetime = null;
+        let tipo_c_estado = document.getElementById('estadoC').value;
+        let tipo_b_estado =document.getElementById('estadoB').value;
+        let tipo_f_estado = document.getElementById('estadoF').value;
+
+             
+        if (typeQuestion =='b'){
+            tipo_b_estado=1;
+        }else if (typeQuestion =='c'){
+            tipo_c_estado=1;
+        }else if (typeQuestion =='f'){
+            tipo_f_estado=1;
+        }
+     
+        const data = {
+         idAsig: idAsignacionSave,
+         idCotSave: idCotizacionSave,
+     
+         tipo_flujo: tipoFlujo ?? null,
+         registro_puerto: registroPuerto ?? null,
+         dentro_puerto: dentroPuerto ?? null,
+         descarga_vacio: descargaVacio ?? null,
+         cargado_contenedor: cargadoContenedor ?? null,
+         fila_fiscal: filaFiscal ?? null,
+         modulado_tipo: moduladoTipo ?? null,
+         modulado_coordenada: moduladoCoordenada ?? null,
+         en_destino: enDestino ?? null,
+         inicio_descarga: inicioDescarga ?? null,
+         fin_descarga: finDescarga ?? null,
+         recepcion_doc_firmados: recepcionDocFirmados ?? null,
+     
+         tipo_flujo_datatime: tipoFlujoDatetime ?? null,
+         registro_puerto_datatime: registroPuertoDatetime ?? null,
+         dentro_puerto_datatime: dentroPuertoDatetime ?? null,
+         descarga_vacio_datatime: descargaVacioDatetime ?? null,
+         cargado_contenedor_datatime: cargadoContenedorDatetime ?? null,
+         fila_fiscal_datatime: filaFiscalDatetime ?? null,
+         modulado_tipo_datatime: moduladoTipoDatetime ?? null,
+         modulado_coordenada_datatime: moduladoCoordenadaDatetime ?? null,
+         en_destino_datatime: enDestinoDatetime ?? null,
+         inicio_descarga_datatime: inicioDescargaDatetime ?? null,
+         fin_descarga_datatime: finDescargaDatetime ?? null,
+         recepcion_doc_firmados_datatime: recepcionDocFirmadosDatetime ?? null,
+
+          tipo_c_estado :tipo_c_estado,
+             tipo_b_estado :tipo_b_estado,
+        tipo_f_estado :tipo_f_estado
+     
+        }  ;
+     
+         fetch('/coordenadas/compartir/save', {
+             method: 'POST',
+             headers: {
+                 'Content-Type': 'application/json',
+                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+             },
+             body: JSON.stringify(data)
+         })
+         .then(res => {
+            if (res.status === 204) {
+                console.log('Coordenadas Actualizadas ✅');
+            } else {
+                return res.json().then(data => {
+                    console.log('Coordenadas Actualizadas ✅');
+                });
+            }
+        })
+        .catch(err => console.error('Error:', err));
+    
+    }
+    
+}

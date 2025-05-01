@@ -51,3 +51,19 @@ function changeTag(tagId,value){
  var tag = document.querySelector("#"+tagId);
  tag.textContent = value;
 }
+
+function obtenerFechaEnLetra(fecha) {
+    const dia = conocerDiaSemanaFecha(fecha);
+    const num = new Date(fecha).getDate();
+    const anno = new Date(fecha).getFullYear();
+    const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+    const mes = meses[new Date(fecha).getMonth()];
+
+    return `${dia}, ${num} de ${mes} del ${anno}`;
+}
+
+function conocerDiaSemanaFecha(fecha) {
+    const dias = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+    const dia = new Date(fecha).getDay();
+    return dias[dia];
+}

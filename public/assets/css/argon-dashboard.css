@@ -4602,17 +4602,31 @@ fieldset:disabled .btn {
   border: 0;
   border-radius: var(--bs-nav-pills-border-radius);
 }
-
+#cotTabs {
+  --bs-nav-pills-link-active-bg: #344767;
+}
 .nav-pills .nav-link:disabled {
   color: var(--bs-nav-link-disabled-color);
   background-color: transparent;
   border-color: transparent;
 }
-
 .nav-pills .nav-link.active,
 .nav-pills .show>.nav-link {
   color: var(--bs-nav-pills-link-active-color);
   background-color: var(--bs-nav-pills-link-active-bg);
+}
+.nav-pills .nav-link {
+  color: #344767  !important;
+  transition: 0.3s ease;
+}
+
+.nav-pills .nav-link i {
+  transition: 0.3s ease;
+}
+
+/* ACTIVE - Cambia el fondo al color del texto y las letras se ponen blancas */
+.nav-pills .nav-link.active {
+  color: white !important;
 }
 
 .nav-fill>.nav-link,
@@ -23685,11 +23699,12 @@ hr.horizontal.gray-light {
   z-index: 3;
   color: #344767;
   border-radius: 0.5rem;
-  background-color: inherit;
+ 
 }
 
 .nav.nav-pills .nav-link.active {
   animation: 0.2s ease;
+
 }
 
 .nav.nav-pills .nav-link:hover:not(.active) {

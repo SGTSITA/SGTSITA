@@ -57,6 +57,25 @@
         textRecinto.value = (elemento.attributes['data-kt-plan'].value != 'recinto-si') ? '' : 'recinto-si';
       });
     });
+
+    $(".fechas").daterangepicker({
+      singleDatePicker: true,
+      locale: {
+            format: 'YYYY-MM-DD', // Formato día/mes/año
+            applyLabel: "Aplicar",
+            cancelLabel: "Cancelar",
+            fromLabel: "Desde",
+            toLabel: "Hasta",
+            customRangeLabel: "Rango personalizado",
+            weekLabel: "S",
+            daysOfWeek: ["Do", "Lu", "Ma", "Mi", "Ju", "Vi", "Sa"],
+            monthNames: [
+                "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", 
+                "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+            ],
+            firstDay: 1 
+      }
+    });
   })
 
 

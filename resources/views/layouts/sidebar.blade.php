@@ -153,6 +153,7 @@
                 </li>
             @endcan
 
+
             @can('cuentas-cobrar')
                 <li class="nav-item">
                     <a class="nav-link {{ Request::is('cuentas/cobrar*') ? 'active' : '' }}"
@@ -180,17 +181,29 @@
             @endcan
 
             @can('gastos-generales')
-                <li class="nav-item">
-                    <a class="nav-link {{ Request::is('gastos/generales*') ? 'active' : '' }}"
-                        href="{{ route('index.gastos_generales') }}" target="">
-                        <div
-                            class="icon icon-shape icon-sm text-center  me-2 d-flex align-items-center justify-content-center">
-                            <img src="{{ asset('img/icon/billetera.png') }}" alt="" width="20px">
-                        </div>
-                        <span class="nav-link-text ms-1"><b>X</b> Gastos Generales</span>
-                    </a>
-                </li>
-            @endcan
+ 
+            <a data-bs-toggle="collapse" href="#pagesGastos" class="nav-link {{ (Request::is('gastos/generales*') ? 'active' : '') }}" target="">
+                <div class="icon icon-shape icon-sm text-center  me-2 d-flex align-items-center justify-content-center">
+                    <img src="{{ asset('img/icon/billetera.png') }}" alt="" width="20px">
+                </div>
+                <span class="nav-link-text ms-1"><b>X</b> Gastos</span>
+            </a>
+
+            <div class="collapse " id="pagesGastos">
+                <ul class="nav ms-4">
+                    <li class="nav-item ">
+                        <a class="nav-link {{ (Request::is('gastos/generales*') ? 'show' : '') }}" href="{{ route('index.gastos_generales') }}" >
+                          <span class="sidenav-mini-icon"> P </span>
+                          <span class="sidenav-normal">Gastos Generales</span>
+                        </a>
+                        <!--a class="nav-link {{ (Request::is('gastos/generales*') ? 'show' : '') }}" href="{{ route('index.gastos_operativos') }}">
+                          <span class="sidenav-mini-icon"> P </span>
+                          <span class="sidenav-normal">Gastos Operativos</span>
+                        </a-->
+                    </li>
+                </ul>
+            </div>
+          @endcan
 
             @can('reportes')
                 <a data-bs-toggle="collapse" href="#pagesExamplesReporteria"
@@ -268,27 +281,66 @@
             @endcan
 
             @can('liquidaciones')
-                <li class="nav-item">
+            <a data-bs-toggle="collapse" href="#pagesLiquidaciones"
+                    class="nav-link {{ Request::is('reporteria/cotizaciones*') ? 'active' : '' }}"
+                    aria-controls="pagesLiquidaciones" role="button" aria-expanded="false">
+                    <div
+                        class="icon icon-shape icon-sm text-center  me-2 d-flex align-items-center justify-content-center">
+                        <img src="{{ asset('img/icon/pago-en-efectivo.png') }}" alt="" width="20px">
+                    </div>
+                    <span class="nav-link-text ms-1"><b>XII</b> Liquidaciones</span>
+                </a>
+
+                <div class="collapse " id="pagesLiquidaciones">
+                    <ul class="nav ms-4">
+                        <li class="nav-item ">
+
+                                <a class="nav-link {{ Request::is('reporteria/cotizaciones/cxc*') ? 'show' : '' }}"
+                                    href="{{ route('index.liquidacion') }}">
+                                    <span class="sidenav-mini-icon"> P </span>
+                                    <span class="sidenav-normal">Liquidar Operadores</span>
+                                </a>
+                                <a class="nav-link {{ Request::is('reporteria/cotizaciones/cxp*') ? 'show' : '' }}"
+                                    href="{{ route('historial.liquidacion') }}">
+                                    <span class="sidenav-mini-icon"> P </span>
+                                    <span class="sidenav-normal">Historial Liquidaciones</span>
+                                </a>
+                        </li>
+                    </ul>
+                </div>
+                <!--li class="nav-item">
                     <a class="nav-link {{ Request::is('liquidaciones*') ? 'active' : '' }}"
                         href="{{ route('index.liquidacion') }}" target="">
                         <div
                             class="icon icon-shape icon-sm text-center  me-2 d-flex align-items-center justify-content-center">
                             <img src="{{ asset('img/icon/pago-en-efectivo.png') }}" alt="" width="20px">
                         </div>
-                        <span class="nav-link-text ms-1"><b>XII</b> Liquidaciones</span>
+                       
+                    </a>
+                </li-->
+            @endcan
+            @can('coordenadasv')
+            <li class="nav-item">
+                    <a class="nav-link"
+                        href="{{ route('ver.coordenadamapa')  }}" target="">
+                        <div
+                            class="icon icon-shape icon-sm text-center  me-2 d-flex align-items-center justify-content-center">
+                            <img src="{{ asset('img/icon/mapa-de-la-ciudad.webp') }}" alt="" width="20px">
+                        </div>
+                        <span class="nav-link-text ms-1"><b>XII</b> Coordenadas</span>
                     </a>
                 </li>
+               
             @endcan
-
             @can('catalogo')
                 <li class="nav-item">
                     <a class="nav-link {{ Request::is('catalogo*') ? 'active' : '' }}"
                         href="{{ route('index.catalogo') }}" target="">
                         <div
                             class="icon icon-shape icon-sm text-center  me-2 d-flex align-items-center justify-content-center">
-                            <img src="{{ asset('img/icon/catalogo.webp.webp') }}" alt="" width="20px">
+                            <img src="{{ asset('img/icon/catalogo.webp') }}" alt="" width="20px">
                         </div>
-                        <span class="nav-link-text ms-1"><b>XIII</b> Catálogo</span>
+                        <span class="nav-link-text ms-1"><b>XIV</b> Catálogo</span>
                     </a>
                 </li>
             @endcan

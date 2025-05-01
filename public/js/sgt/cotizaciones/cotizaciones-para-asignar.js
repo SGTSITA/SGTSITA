@@ -125,7 +125,7 @@ class MissionResultRenderer {
      { field: "Cliente",filter: true, floatingFilter: true},
      { field: "SubCliente",filter: true, floatingFilter: true},    
      { field: "Origen",filter: true, floatingFilter: true},
-     { field: "Destino" },
+     { field: "Destino",filter: true, floatingFilter: true },
      { field: "Peso",width: 100 },
      
    ],

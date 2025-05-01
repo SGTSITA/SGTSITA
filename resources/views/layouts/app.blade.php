@@ -14,8 +14,12 @@
     @yield('template_title') - {{$configuracion->nombre_sistema}}
   </title>
 
-  <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700" rel="stylesheet" />
+  
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
   <!-- Nucleo Icons -->
+  <link href="{{ asset('assets/css/icons.css')}}" rel="stylesheet" />
+  <!--link href="{{ asset('assets/css/styles.css')}}" rel="stylesheet" /-->
   <link href="{{ asset('assets/css/nucleo-icons.css')}}" rel="stylesheet" />
   <link href="{{ asset('assets/css/nucleo-svg.css')}}" rel="stylesheet" />
   <!-- Font Awesome Icons -->
@@ -49,6 +53,10 @@
         .card .card-header {
             padding: 1.5rem 1.5rem 0 1.5rem;
         }
+
+        body {
+    font-family: 'Inter', sans-serif;
+}
     </style>
 
 </head>
@@ -79,11 +87,6 @@
         @include('equipos.modal_create')
         @include('bancos.modal_create')
 
-
-       <!-- Modal lateral Congif -->
-        @include('layouts.footer')
-      <!-- End Modal lateral Congif -->
-
     </div>
   </main>
 
@@ -98,11 +101,12 @@
   {{-- <script src="{{ asset('assets/vendor/jquery/dist/jquery.min.js')}}"></script> --}}
 
   <script src="{{ asset('assets/js/core/popper.min.js')}}"></script>
-
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta2/dist/js/bootstrap.bundle.min.js"></script>
   <script src="{{ asset('assets/js/core/bootstrap.min.js')}}"></script>
   <script src="{{ asset('assets/js/plugins/perfect-scrollbar.min.js')}}"></script>
   <script src="{{ asset('assets/js/plugins/smooth-scrollbar.min.js')}}"></script>
-  <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
 
   <script src="{{ asset('assets/js/plugins/datatables.js')}}"></script>
 
@@ -116,25 +120,14 @@
         var token = $('meta[name="csrf-token"]').attr('content');
     </script>
 
-<script>
-  let backButton =  document.getElementById('backButton');
-  if(backButton){
-    backButton.addEventListener('click', function(event) {
-        event.preventDefault(); // Evitar el comportamiento predeterminado del enlace
-        history.back(); // Volver a la página anterior
 
-    });
-  }
-    
-</script>
 
   @yield('datatable')
 
   @yield('fullcalendar')
   @yield('alerta')
 
-  <!-- Github buttons -->
-  {{-- <script async defer src="https://buttons.github.io/buttons.js"></script> --}}
+
 
   @yield('select2')
   @stack('custom-javascript')
