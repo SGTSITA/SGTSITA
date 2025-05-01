@@ -91,6 +91,7 @@ document.addEventListener('DOMContentLoaded', function () {
             { data: 6, type: 'checkbox', className: 'htCenter' }, // Cancelación de Viaje
             { data: 7, type: 'checkbox', className: 'htCenter' }, // Nuevo Documento Cargado
             { data: 8, type: 'checkbox', className: 'htCenter' }  // Viaje Modificado
+
         ],
         hiddenColumns: {
             columns: [0, 3], // Oculta la columna Referencia e ID

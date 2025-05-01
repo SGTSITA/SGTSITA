@@ -11,7 +11,7 @@
                 <h5>Buscador por fechas</h5>
                 <div class="row">
                     <div class="col-4">
-                        <label for="user_id">Rango de fecha DE:</label>
+                        <label for="user_id">Rango de fecha de:</label>
                         <input class="form-control" type="date" id="fecha_de" name="fecha_de" required>
                     </div>
                     <div class="col-4">

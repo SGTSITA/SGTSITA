@@ -278,13 +278,36 @@
         </div>
     @endcan
 
+    @can('coordenadasv')
+        <div class="col-4">
+            <div class="card p-3 mb-4">
+                <div class="row">
+                    <div class="col-2 my-auto">
+                        <a href="{{ route('ver.coordenadamapa') }}">
+                            <img src="{{ asset('img/icon/mapa-de-la-ciudad.webp') }}" alt="" width="35px">
+                        </a>
+                    </div>
+
+                    <div class="col-8">
+                        <a href="{{ route('ver.coordenadamapa') }}">
+                            <p style="margin: 0">Consulta</p>
+                            <h5>XIII Coordenadas</h5>
+                        </a>
+                    </div>
+
+                    <div class="col-2 my-auto">
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endcan
     @can('catalogo')
         <li class="nav-item">
             <a class="nav-link {{ (Request::is('catalogo*') ? 'active' : '') }}" href="{{ route('index.catalogo') }}" target="">
             <div class="icon icon-shape icon-sm text-center  me-2 d-flex align-items-center justify-content-center">
-                <img src="{{ asset('img/icon/catalogo.webp.webp') }}" alt="" width="20px">
+                <img src="{{ asset('img/icon/catalogo.webp') }}" alt="" width="20px">
             </div>
-            <span class="nav-link-text ms-1"><b>XIII</b> Catálogo</span>
+            <span class="nav-link-text ms-1"><b>XIV</b> Catálogo</span>
             </a>
         </li>
     @endcan
