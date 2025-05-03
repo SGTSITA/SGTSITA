@@ -101,7 +101,7 @@
   {{-- <script src="{{ asset('assets/vendor/jquery/dist/jquery.min.js')}}"></script> --}}
 
   <script src="{{ asset('assets/js/core/popper.min.js')}}"></script>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta2/dist/js/bootstrap.bundle.min.js"></script>
+  <!--script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta2/dist/js/bootstrap.bundle.min.js"></script-->
   <script src="{{ asset('assets/js/core/bootstrap.min.js')}}"></script>
   <script src="{{ asset('assets/js/plugins/perfect-scrollbar.min.js')}}"></script>
   <script src="{{ asset('assets/js/plugins/smooth-scrollbar.min.js')}}"></script>
