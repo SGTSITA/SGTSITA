@@ -12,7 +12,49 @@
                 <div class="card">
                     <div class="card-header">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
-                            
+                            <h3 class="mb-3">Editar Cotizacion</h3>
+                            <div class="col-3 offset-3">
+                            <div><span class="text-sm text-muted text-bold" id="referencia_full">{{$cotizacion->referencia_full}}</span></div>
+                                <div class="option-group">
+                                    @if($cotizacion->tipo_viaje != "full")                                    
+                                    <label class="custom-option selected">
+                                        <input type="radio" checked name="plan" value="sencillo" onchange="handleSelection(this)">
+                                        <i class="fas fa-truck icon"></i>
+                                        <span class="text">Sencillo</span>
+                                        <i class="fas fa-check check-icon"></i>
+                                    </label>
+                                    @else
+                                    <label class="custom-option selected">
+                                        <input type="radio" name="plan" value="full" onchange="handleSelection(this)">
+                                        <i class="fas fa-truck-moving icon"></i>
+                                        <span class="text">Full</span>
+                                        <i class="fas fa-check check-icon"></i>
+                                    </label>
+                                    @endif
+                                </div>
+                                
+                            </div>
+                        </div>
+                        <div class="row">
+                        <div class="col-12">
+                                        <div class="custom-nav-tabs">
+                                            <label class="custom-nav-item">
+                                                <input type="radio" checked="checked" value="Contenedor-A" class="custom-nav-radio" name="contenedorTabs" id="tab1" />
+                                                <div class="custom-nav-link active">
+                                                <i class="ni ni-box-2 text-warning text-gradient"></i>
+                                                <h6>Contenedor A</h6>
+                                                </div>
+                                            </label>
+
+                                            <label class="custom-nav-item @if($cotizacion->tipo_viaje != 'full') d-none @endif" id="tab-contenedor-b">
+                                                <input type="radio" class="custom-nav-radio" value="Contenedor-B" name="contenedorTabs" id="tab2" />
+                                                <div class="custom-nav-link">
+                                                <i class="ni ni-box-2 text-info text-gradient"></i>
+                                                <h6>Contenedor B</h6>
+                                                </div>
+                                            </label>
+                                        </div>
+                                    </div>
                         </div>
                     </div>
 
@@ -62,12 +104,13 @@
 
                             <div class="tab-content" id="nav-tabContent">
                                 <div class="tab-pane fade show active" id="nav-cotizacion" role="tabpanel" aria-labelledby="nav-cotizacion-tab" tabindex="0">
-                                    <h3 class="mb-5">Datos de cotizacion</h3>
+                                                                
 
                                     @error('num_contenedor') <h4 class="error text-danger">{{ $message }}</h4> @enderror
 
 
                                     <div class="row">
+                                    <h3 class="mb-5 mt5">Datos de cotizacion</h3>
                                             @if ($documentacion->num_contenedor != NULL)
                                                 <label style="font-size: 20px;">Num contenedor:  {{$documentacion->num_contenedor}} </label>
                                             @endif
@@ -1356,7 +1399,150 @@
     <script src="{{ asset('js/sgt/cotizaciones/cotizacion-gastos-operador.js') }}?v={{ filemtime(public_path('js/sgt/cotizaciones/cotizacion-gastos-operador.js')) }}"></script>
 
     <script src="{{ asset('js/sgt/cotizaciones/cotizacion-fileuploader.js') }}?v={{ filemtime(public_path('js/sgt/cotizaciones/cotizacion-fileuploader.js')) }}"></script>
-    
+    <style>
+  .custom-nav-tabs {
+    display: flex;
+    width: 100%;
+    border-bottom: none;
+    gap: 0.3rem;
+  }
+
+  .custom-nav-item {
+    flex: 1;
+    text-align: center;
+  }
+
+  .custom-nav-link {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 14px;
+    background-color: #f1f1f1;
+    color: #999;
+    border-radius: 12px 12px 0 0;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 0.3s ease;
+  }
+
+  .custom-nav-link i {
+    font-size: 20px;
+    color: inherit !important;
+  }
+
+  .custom-nav-link h6 {
+    margin: 2px 0 0;
+    font-size: 1rem;
+    font-weight: 500;
+    color: inherit;
+  }
+
+  .custom-nav-link.active {
+    background-color: #fff;
+    color: #111;
+    border: 1px solid #0d6efd; /* más delgado */
+    border-bottom: 2px solid #fff;
+   
+    transform: scale(1.02);
+    z-index: 1;
+  }
+
+  .custom-nav-link.active h6 {
+    font-weight: 600; /* negrita */
+  }
+
+  .custom-nav-link:not(.active) i {
+    color: #bbb;
+  }
+
+  .custom-nav-link:not(.active) h6 {
+    color: #aaa;
+  }
+
+  .custom-nav-radio {
+    display: none;
+  }
+</style>
+<style>
+  .option-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    max-width: 100%;
+  }
+
+  .custom-option {
+    position: relative;
+    display: flex;
+    align-items: center;
+    border: 1px dashed #ccc;
+    border-radius: 8px;
+    padding: 12px 16px;
+    min-height: 79px;
+    flex: 1 1 200px;
+    cursor: pointer;
+    transition: background-color 0.2s, border-color 0.2s;
+  }
+
+  .custom-option input[type="radio"] {
+    display: none;
+  }
+
+  .custom-option .icon {
+    margin-right: 16px;
+    font-size: 24px;
+    color: #ccc;
+    flex-shrink: 0;
+    transition: color 0.2s;
+  }
+
+  .custom-option .text {
+    font-size: 1rem;
+    color: #333;
+  }
+
+  .custom-option.selected {
+    background-color: #e6f4ff;
+    border-color: #007BFF;
+  }
+
+  .custom-option.selected .icon {
+    color: #007BFF;
+  }
+
+  .check-icon {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  background-color: #a5dc86;
+  border-radius: 50%;
+  padding: 4px;
+  font-size: 14px;
+  color: white;
+  display: none;
+}
+
+  .custom-option.selected .check-icon {
+    display: inline-block;
+  }
+</style>
+<script>
+  // JavaScript para manejar la clase 'active'
+  const radios = document.querySelectorAll('.custom-nav-radio');
+  const links = document.querySelectorAll('.custom-nav-link');
+
+  radios.forEach((radio, index) => {
+    radio.addEventListener('change', () => {
+      links.forEach((link) => link.classList.remove('active')); // Remover la clase active de todos
+      links[index].classList.add('active'); 
+      let Contenedor = radios[index].value
+      showInfoContenedor(Contenedor)
+    });
+  });
+</script>
+
     <script type="text/javascript">
     $(document).ready(function() {
     $('.cliente').select2();
@@ -1560,6 +1746,7 @@
 
 <script>
         document.addEventListener('DOMContentLoaded', function () {
+            
             let condicionRecinto = document.querySelectorAll('.recinto');
             let inputRecinto = document.querySelector('#input-recinto');
             let textRecinto = document.querySelector('#text_recinto');
@@ -1574,7 +1761,7 @@
           
               
                //elemento.classList.toggle('active',elemento.attributes['data-kt-plan'].value == 'recinto-si' && '{{$cotizacion->uso_recinto}}' == 1) 
-
+               getContenedoresOnFull()
 
             });
         });

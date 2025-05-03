@@ -26,6 +26,7 @@ use Session;
 use DB;
 use Auth;
 use App\Events\EnvioCorreoCoordenadasEvent;
+use App\Traits\CommonTrait as Common;
 
 class CotizacionesController extends Controller
 {
@@ -152,6 +153,7 @@ class CotizacionesController extends Controller
 
         return view('cotizaciones.index_espera', compact('empresas', 'proveedores','bancos','operadores','equipos_dolys','equipos_chasis','equipos_camiones','cotizaciones'));
     }
+
     public function getCotizacionesEnEspera()
     {
         $cotizaciones = Cotizaciones::where('id_empresa', auth()->user()->id_empresa)
@@ -262,6 +264,7 @@ public function getCotizacionesCanceladas()
 
         return view('cotizaciones.index_cancelada', compact('empresas', 'proveedores','bancos','operadores','equipos_dolys','equipos_chasis','equipos_camiones','cotizaciones_canceladas'));
     }
+
     public function getCotizacionesId($id)
     {
         $cotizacion = DB::table('cotizaciones')
@@ -282,6 +285,7 @@ public function getCotizacionesCanceladas()
      
         return response()->json(['list' =>  $cotizacion , 'coordenada' => $coordenada]);
     }
+
     public function solicitudesEntrantes(){
         $empresas = Empresas::get();
         return view('cotizaciones.solicitudes_clientes',compact('empresas'));
@@ -360,6 +364,89 @@ public function getCotizacionesCanceladas()
         return response()->json($subclientes);
     }
 
+    public function storeV2(Request $request){
+
+        $Contenedores = $request->Contenedores;
+        $idEmpresa = auth()->user()->id_empresa;
+        $cliente = $request->get('id_cliente');
+
+        try{
+            DB::beginTransaction();
+            //Primero validar si el contenedor existe
+            foreach($Contenedores as $contenedor){
+                $numContenedor = $contenedor['num_contenedor'];
+                
+                $contenedorExistente = DocumCotizacion::where('num_contenedor', $numContenedor)
+                                                    ->where('id_empresa', $idEmpresa)
+                                                    ->first();
+
+                if ($contenedorExistente) {
+                    return response()->json(["Titulo" => "Contenedor $numContenedor creado previamente", "Mensaje" => "El contenedor ya existe en la empresa", "TMensaje" => "warning"]);
+                }
+            }
+
+            
+            $fullUUID = Common::generarUuidV4();  
+        
+
+            //Ahora guardamos
+            foreach($Contenedores as $contenedor){
+                $cotizaciones = new Cotizaciones;
+                $cotizaciones->id_cliente = $cliente;
+                $cotizaciones->id_subcliente = $request->get('id_subcliente');;
+                $cotizaciones->origen = $request->origen;
+                $cotizaciones->destino = $request->destino;
+                $cotizaciones->tamano = $contenedor['tamano'];
+                $cotizaciones->peso_contenedor = $contenedor['peso_contenedor'];
+
+                $cotizaciones->otro = $request->otro;
+                $cotizaciones->fecha_modulacion = $contenedor['fecha_modulacion'];
+                $cotizaciones->fecha_entrega = $contenedor['fecha_entrega'];
+                $cotizaciones->iva = $request->iva;
+                $cotizaciones->retencion = $request->retencion;
+                $cotizaciones->peso_reglamentario = $request->peso_reglamentario;
+                $cotizaciones->precio_sobre_peso = $request->precio_sobre_peso;
+                $cotizaciones->sobrepeso = $contenedor['sobrepeso'];
+                $cotizaciones->estatus = ($request->has('uuid')) ? 'En espera' : 'Pendiente';
+                $cotizaciones->precio_viaje = $request->precio_viaje;
+                $cotizaciones->burreo = $request->burreo;
+                $cotizaciones->maniobra = $request->maniobra;
+                $cotizaciones->estadia = $request->estadia;
+                $cotizaciones->base_factura = $request->base_factura;
+                $cotizaciones->base_taref = $request->base_taref;
+                $cotizaciones->recinto_clientes = null;
+                $cotizaciones->precio_tonelada = $contenedor['precio_tonelada'];
+
+                $cotizaciones->tipo_viaje = $request->TipoCotizacion;
+                $cotizaciones->jerarquia = $contenedor['jerarquia'];
+                if($request->TipoCotizacion == "Full"){
+                    $cotizaciones->referencia_full =  $fullUUID;  
+                }
+
+               
+                $cotizaciones->total = $request->total;
+                $cotizaciones->restante = $cotizaciones->total;
+                $cotizaciones->estatus_pago = '0';
+
+                $cotizaciones->save();
+
+                $docucotizaciones = new DocumCotizacion;
+                $docucotizaciones->id_cotizacion = $cotizaciones->id;
+                $docucotizaciones->num_contenedor = $contenedor['num_contenedor'];
+                $docucotizaciones->save();
+            }
+
+            DB::commit();
+            return response()->json(["TMensaje" => "success", "Mensaje" =>  "Creado Correctamente","datos"=> $request->all()]);
+            
+        }catch(\Throwable $t){
+            DB::rollback();
+            return response()->json(["TMensaje" => "error", "Mensaje" =>  "No se pudo crear el viaje: ".$t->getMessage()]);
+
+        }
+        
+    }
+
     public function store(Request $request){
         
         if($request->get('num_contenedor') != NULL){
@@ -372,7 +459,6 @@ public function getCotizacionesCanceladas()
 
             if ($contenedorExistente) {
                 return response()->json(["Titulo" => "Contenedor creado previamente", "Mensaje" => "El contenedor ya existe en la empresa", "TMensaje" => "warning"]);
-               // return redirect()->back()->with('error', 'El contenedor ya existe en la empresa.');
             }
         }
 
@@ -463,16 +549,6 @@ public function getCotizacionesCanceladas()
 
         return response()->json(["Titulo" => "Proceso satisfactorio", "Mensaje" => "Cotización creada con exito", "TMensaje" => "success"]);
 
-
-        if($request->get('id_cliente_clientes')){
-            Session::flash('success', 'Se ha guardado sus datos con exito');
-            return redirect()->route('index.cotizaciones')
-                ->with('success', 'Cotizacion created successfully.');
-        }else{
-            Session::flash('success', 'Se ha guardado sus datos con exito');
-            return redirect()->route('index.cotizaciones_manual')
-                ->with('success', 'Cotizacion created successfully.');
-        }
     }
 
     public function storeMultiple(Request $request){
@@ -614,6 +690,11 @@ public function getCotizacionesCanceladas()
         $bancos = Bancos::where('id_empresa',Auth::User()->id_empresa)->get();
 
         return view('cotizaciones.editv1', compact('bancos','cotizacion', 'documentacion', 'clientes','gastos_extras', 'gastos_ope','proveedores'));
+    }
+
+    public function cotizacionesFull(Request $request){        
+        $cotizaciones = Cotizaciones::leftJoin('docum_cotizacion as d','cotizaciones.id','=','d.id_cotizacion')->where('referencia_full', '=', $request->uuid)->get();
+        return $cotizaciones;
     }
 
     public function edit_externo($id){
