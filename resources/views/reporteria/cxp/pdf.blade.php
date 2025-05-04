@@ -90,32 +90,33 @@
             margin: -40px;
         }
     </style>
+    <style>
+        .tabla-completa thead th {
+            background-color: #007BFF;
+            /* Azul claro */
+            color: white;
+            font-weight: bold;
+            font-size: 9px;
+            /* 🔽 Tamaño reducido */
+            text-align: center;
+            padding: 4px;
+            /* 🔽 Menos espacio para más compacidad */
+        }
+
+        .tabla-completa td {
+            font-size: 8.5px;
+            /* 🔽 Letra más pequeña */
+            padding: 4px;
+        }
+
+        .tabla-completa {
+            font-size: 8.5px;
+            border-collapse: collapse;
+        }
+    </style>
 @endif
 
-<style>
-    .tabla-completa thead th {
-        background-color: #007BFF;
-        /* Azul claro */
-        color: white;
-        font-weight: bold;
-        font-size: 9px;
-        /* 🔽 Tamaño reducido */
-        text-align: center;
-        padding: 4px;
-        /* 🔽 Menos espacio para más compacidad */
-    }
 
-    .tabla-completa td {
-        font-size: 8.5px;
-        /* 🔽 Letra más pequeña */
-        padding: 4px;
-    }
-
-    .tabla-completa {
-        font-size: 8.5px;
-        border-collapse: collapse;
-    }
-</style>
 
 <head>
     <meta charset="UTF-8">

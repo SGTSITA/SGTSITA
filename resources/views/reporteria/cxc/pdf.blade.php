@@ -247,6 +247,10 @@
         @endphp
 
         <div style="width: 48%; padding: 0; box-sizing: border-box;">
+            <h3
+                style="text-align: center; font-size: 8px; color: white; background-color: #6289b1; margin: 2px 0; padding: 2px;">
+                Base 1
+            </h3>
             <table class="table text-white"
                 style="color: #000; width: 100%; padding: 2px; font-size: 6px; border-collapse: collapse;">
                 @if ($empresaActual == 6 || $empresaActual == 2)
@@ -369,119 +373,102 @@
         </div>
 
 
-        <!-- Contenedor de la Tabla de Totales No Oficiales -->
+
         <!-- Contenedor de la Tabla de Totales No Oficiales -->
         <div style="width: 48%; padding: 0; box-sizing: border-box;">
             <h3
-                style="text-align: center; font-size: 8px; color: white; background-color: #2c3e50; margin: 2px 0; padding: 2px;">
+                style="text-align: center; font-size: 8px; color: white; background-color: #0080ff; margin: 2px 0; padding: 2px;">
                 Base 2
             </h3>
-            <table class="table text-white"
-                style="color: #000; width: 100%; padding: 0; font-size: 7px; border-collapse: collapse; table-layout: fixed;">
-                @php
 
-                    $bancoGlobal = Bancos::where('cuenta_global', 1)->first();
+            @php
+                $empresaActual = auth()->user()->id_empresa;
+                $bancoGlobal = Bancos::where('cuenta_global', 1)->first();
 
-                    $cuentaGlobal = $bancoGlobal
-                        ? [
-                            'beneficiario' => $bancoGlobal->nombre_beneficiario ?? '---',
-                            'banco' => $bancoGlobal->nombre_banco ?? '---',
-                            'clabe' => $bancoGlobal->clabe ?? '---',
-                        ]
-                        : [
-                            'beneficiario' => '---',
-                            'banco' => '---',
-                            'clabe' => '---',
+                $cuentaGlobal = $bancoGlobal
+                    ? [
+                        'beneficiario' => $bancoGlobal->nombre_beneficiario ?? '---',
+                        'banco' => $bancoGlobal->nombre_banco ?? '---',
+                        'clabe' => $bancoGlobal->clabe ?? '---',
+                    ]
+                    : [
+                        'beneficiario' => '---',
+                        'banco' => '---',
+                        'clabe' => '---',
+                    ];
+
+                $subclientesUnicos = [];
+                $totalesPorProveedor = [];
+
+                foreach ($cotizaciones as $cotizacion) {
+                    $proveedorId = optional(optional($cotizacion->DocCotizacion)->Asignaciones)->id_proveedor;
+                    $baseTaref =
+                        floatval($cotizacion->total ?? 0) -
+                        floatval($cotizacion->base_factura ?? 0) -
+                        floatval($cotizacion->iva ?? 0) +
+                        floatval($cotizacion->retencion ?? 0);
+                    $subcliente = $cotizacion->Subcliente->nombre ?? 'N/A ';
+
+                    if (!isset($totalesPorProveedor[$proveedorId])) {
+                        $totalesPorProveedor[$proveedorId] = [
+                            'nombre' =>
+                                optional(optional($cotizacion->DocCotizacion)->Asignaciones)->Proveedor->nombre ??
+                                'Proveedor desconocido',
+                            'total' => 0,
+                            'subclientes' => [],
                         ];
+                    }
 
-                    $empresaActual = auth()->user()->id_empresa;
-                @endphp
+                    $totalesPorProveedor[$proveedorId]['total'] += $baseTaref;
+                    $totalesPorProveedor[$proveedorId]['subclientes'][$subcliente] =
+                        ($totalesPorProveedor[$proveedorId]['subclientes'][$subcliente] ?? 0) + $baseTaref;
+                    $subclientesUnicos[$subcliente] = true;
+                }
 
-                <tbody style="text-align: center; font-size: 7px;">
-                    @if ($empresaActual == 2 || $empresaActual == 6)
-                        @php
-                            $subclientesTotales = [];
-                            foreach ($cotizaciones as $cotizacion) {
-                                $baseTaref =
-                                    floatval($cotizacion->total ?? 0) -
-                                    floatval($cotizacion->base_factura ?? 0) -
-                                    floatval($cotizacion->iva ?? 0) +
-                                    floatval($cotizacion->retencion ?? 0);
-                                $subcliente = $cotizacion->Subcliente->nombre ?? 'Sin facturado';
-                                if (!isset($subclientesTotales[$subcliente])) {
-                                    $subclientesTotales[$subcliente] = 0;
-                                }
-                                $subclientesTotales[$subcliente] += $baseTaref;
-                            }
-                        @endphp
+                $subclientesLista = array_keys($subclientesUnicos);
+            @endphp
 
-                        <tr style="background-color: #f1f1f1; height: 18px;">
-                            <td rowspan="1"
-                                style="padding: 3px; border: 1px solid #ccc; text-align: center; vertical-align: middle; height: 18px;">
-                                {{ $cuentaGlobal['beneficiario'] }}<br>
-                                {{ $cuentaGlobal['banco'] }}<br>
-                                No. {{ $cuentaGlobal['clabe'] }}
-                            </td>
-                            <td colspan="2"
-                                style="padding: 3px; border: 1px solid #ccc; vertical-align: top; text-align: left;">
-                                @foreach ($subclientesTotales as $subcliente => $total)
-                                    <p style="margin: 0; padding: 0; font-size: 7px;">
-                                        {{ $subcliente }} - ${{ number_format($total, 2, '.', ',') }}
-                                    </p>
-                                @endforeach
-                            </td>
-                        </tr>
-                    @else
-                        @foreach ($proveedoresConCuentas as $index => $proveedor)
-                            @php
-                                $totalNoOficialProveedor = 0;
-                                $facturadosPorProveedor = [];
-
-                                if (isset($cotizacionesPorProveedor[$proveedor->id])) {
-                                    $cotizacionesProveedor = $cotizacionesPorProveedor[$proveedor->id];
-                                    foreach ($cotizacionesProveedor as $cotizacion) {
-                                        $baseTaref =
-                                            floatval($cotizacion->total ?? 0) -
-                                            floatval($cotizacion->base_factura ?? 0) -
-                                            floatval($cotizacion->iva ?? 0) +
-                                            floatval($cotizacion->retencion ?? 0);
-                                        $facturadoA = $cotizacion->Subcliente->nombre ?? 'Sin facturado';
-                                        if (!isset($facturadosPorProveedor[$facturadoA])) {
-                                            $facturadosPorProveedor[$facturadoA] = 0;
-                                        }
-                                        $facturadosPorProveedor[$facturadoA] += $baseTaref;
-                                        $totalNoOficialProveedor += $baseTaref;
-                                    }
-                                }
-                            @endphp
-
-                            <tr style="background-color: {{ $index % 2 == 0 ? '#f1f1f1' : '#e0e0e0' }}; height: 18px;">
-                                @if ($index == 0)
-                                    <td rowspan="{{ count($proveedoresConCuentas) }}"
-                                        style="padding: 3px; border: 1px solid #ccc; text-align: center; vertical-align: middle;">
-                                        {{ $cuentaGlobal['beneficiario'] }}<br>
-                                        {{ $cuentaGlobal['banco'] }}<br>
-                                        No. {{ $cuentaGlobal['clabe'] }}
-                                    </td>
-                                @endif
-
-                                <td style="padding: 3px; border: 1px solid #ccc; text-align: left;">
-                                    {{ $proveedor->nombre }} -
-                                    ${{ number_format($totalNoOficialProveedor, 2, '.', ',') }}
-                                </td>
-                                <td colspan="2" style="padding: 3px; border: 1px solid #ccc; text-align: left;">
-                                    @foreach ($facturadosPorProveedor as $facturadoA => $total)
-                                        <p style="margin: 0; padding: 0; font-size: 7px;">
-                                            {{ $facturadoA }} - ${{ number_format($total, 2, '.', ',') }}
-                                        </p>
-                                    @endforeach
-                                </td>
-                            </tr>
+            <table class="table text-white"
+                style="color: #000; width: 100%; padding: 0; font-size: 7px; border-collapse: collapse;">
+                <thead>
+                    <tr style="font-size: 7px; background-color: #2c3e50; color: white;">
+                        <th style="padding: 2px; border: 1px solid #000;">Cuenta Global</th>
+                        <th style="padding: 2px; border: 1px solid #000;">Proveedor</th>
+                        <th style="padding: 2px; border: 1px solid #000;">Total</th>
+                        @foreach ($subclientesLista as $subcliente)
+                            <th style="padding: 2px; border: 1px solid #000;">{{ $subcliente }}</th>
                         @endforeach
-                    @endif
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach ($totalesPorProveedor as $index => $prov)
+                        <tr style="background-color: {{ $loop->odd ? '#f1f1f1' : '#e0e0e0' }};">
+                            @if ($loop->first)
+                                <td rowspan="{{ count($totalesPorProveedor) }}"
+                                    style="padding: 2px; border: 1px solid #ccc; text-align: center; vertical-align: middle;">
+                                    {{ $cuentaGlobal['beneficiario'] }}<br>
+                                    {{ $cuentaGlobal['banco'] }}<br>
+                                    No. {{ $cuentaGlobal['clabe'] }}
+                                </td>
+                            @endif
+                            <td style="padding: 2px; border: 1px solid #ccc;">{{ $prov['nombre'] }}</td>
+                            <td style="padding: 2px; border: 1px solid #ccc;">
+                                ${{ number_format($prov['total'], 2, '.', ',') }}
+                            </td>
+                            @foreach ($subclientesLista as $subcliente)
+                                <td style="padding: 2px; border: 1px solid #ccc;">
+                                    @php
+                                        $monto = $prov['subclientes'][$subcliente] ?? 0;
+                                    @endphp
+                                    {{ $monto > 0 ? '$' . number_format($monto, 2, '.', ',') : '-' }}
+                                </td>
+                            @endforeach
+                        </tr>
+                    @endforeach
                 </tbody>
             </table>
         </div>
+
 
     </div>
 
