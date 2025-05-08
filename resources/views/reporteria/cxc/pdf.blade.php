@@ -443,7 +443,13 @@
                 <tbody>
                     @foreach ($totalesPorProveedor as $index => $prov)
                         <tr style="background-color: {{ $loop->odd ? '#f1f1f1' : '#e0e0e0' }};">
-                            @if ($loop->first)
+                            @if (isset($isExcel))
+                                <td style="padding: 2px; border: 1px solid #ccc; text-align: center;">
+                                    {{ $cuentaGlobal['beneficiario'] }}<br>
+                                    {{ $cuentaGlobal['banco'] }}<br>
+                                    No. {{ $cuentaGlobal['clabe'] }}
+                                </td>
+                            @elseif ($loop->first)
                                 <td rowspan="{{ count($totalesPorProveedor) }}"
                                     style="padding: 2px; border: 1px solid #ccc; text-align: center; vertical-align: middle;">
                                     {{ $cuentaGlobal['beneficiario'] }}<br>
@@ -451,6 +457,7 @@
                                     No. {{ $cuentaGlobal['clabe'] }}
                                 </td>
                             @endif
+
                             <td style="padding: 2px; border: 1px solid #ccc;">{{ $prov['nombre'] }}</td>
                             <td style="padding: 2px; border: 1px solid #ccc;">
                                 ${{ number_format($prov['total'], 2, '.', ',') }}
