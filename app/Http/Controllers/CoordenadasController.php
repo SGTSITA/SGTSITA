@@ -17,7 +17,52 @@ use Auth;
 class CoordenadasController extends Controller
 {
 
+    
+    
+    //externos cliente MEC
+    public function extindexMapa(){
+        $idCliente = Auth::User()->id_cliente;
+        return view('cotizaciones.externos.coorVer',compact('idCliente'));
 
+        }
+        public function extindexSeach(){
+            $idCliente = Auth::User()->id_cliente;
+        return view('cotizaciones.externos.coorSearch',compact('idCliente'));
+        }
+
+
+        public function extcompartir(){
+            $idCliente = Auth::User()->id_cliente;
+        return view('cotizaciones.externos.coorCompartir',compact('idCliente'));
+        }
+
+
+        public function getCotizCoordenadasList()
+        {
+            $cotizaciones = Cotizaciones::where('id_empresa', auth()->user()->id_empresa)
+                ->where('estatus', '=', 'Aprobada')
+                ->where('estatus_planeacion', '=', 1)
+                ->orderBy('created_at', 'desc')
+                ->with(['cliente', 'DocCotizacion.Asignaciones'])             
+                ->get()
+                ->map(function ($cotizacion) {
+                    return [
+                        'id' => $cotizacion->id,
+                        'cliente' => $cotizacion->cliente ? $cotizacion->cliente->nombre : 'N/A',
+                        'origen' => $cotizacion->origen,
+                        'destino' => $cotizacion->destino,
+                        'contenedor' => $cotizacion->DocCotizacion ? $cotizacion->DocCotizacion->num_contenedor : 'N/A',
+                        'estatus' => $cotizacion->estatus,
+                        'coordenadas' => optional($cotizacion->DocCotizacion)->Asignaciones ? 'Compartir' : '',
+                        'id_asignacion' => optional($cotizacion->DocCotizacion)->Asignaciones->id ?? null
+                        
+                    ];
+                });
+        
+            return response()->json(['list' => $cotizaciones]);
+        }
+
+    //end externos
 
     public function indexMapa(){
              return view('coordendas.vercoor');
@@ -32,11 +77,11 @@ class CoordenadasController extends Controller
         $preguntas_A = [
             [ 'texto' => "1) ¿ Registro en Puerto ?", 'campo' => 'registro_puerto', 'tooltip' => "Registro en Puerto" ],
             [ 'texto' => "2) ¿ Dentro de Puerto ?", 'campo' => 'dentro_puerto', 'tooltip' => "Dentro de Puerto" ],
-            [ 'texto' => "3) ¿ Descarga Vacío ?", 'campo' => 'descarga_vacio', 'tooltip' => "Descarga Vacío" ],
-            [ 'texto' => "4) ¿ Cargado Contenedor ?", 'campo' => 'cargado_contenedor', 'tooltip' => "Cargado Contenedor" ],
-            [ 'texto' => "5) ¿ En Fila Fiscal ?", 'campo' => 'fila_fiscal', 'tooltip' => "En Fila Fiscal" ],
-            [ 'texto' => "6) ¿ Modulado ?", 'campo' => 'modulado_tipo', 'tooltip' => "Modulado" ],
-            [ 'texto' => "7) ¿ Descarga en patio ?", 'campo' => 'descarga_patio', 'tooltip' => "Descarga en patio" ],
+            [ 'texto' => "3) ¿ Cargado Contenedor ?", 'campo' => 'cargado_contenedor', 'tooltip' => "Cargado Contenedor" ],
+            [ 'texto' => "4) ¿ En Fila Fiscal ?", 'campo' => 'fila_fiscal', 'tooltip' => "En Fila Fiscal" ],
+            [ 'texto' => "5) ¿ Modulado ?", 'campo' => 'modulado_tipo', 'tooltip' => "Modulado" ],
+            [ 'texto' => "6) ¿ Descarga en patio ?", 'campo' => 'descarga_patio', 'tooltip' => "Descarga en patio" ],
+            [ 'texto' => "7)  Toma Foto de Boleta de Patio", 'campo' => 'toma_foto_patio', 'tooltip' => "Toma Foto de Boleta de Patio" ],
             [ 'texto' => "8) ¿Carga en patio?", 'campo' => 'cargado_patio', 'tooltip' => "Carga en patio" ],
             [ 'texto' => "9) ¿Inicio ruta?", 'campo' => 'en_destino', 'tooltip' => "Inicio ruta" ],
             [ 'texto' => "10)¿Inicia carga?", 'campo' => 'inicio_descarga', 'tooltip' => "Inicia carga" ],
@@ -52,7 +97,10 @@ class CoordenadasController extends Controller
         $fecha_inicio = $params['fecha_inicio'] ?? null;
         $fecha_fin = $params['fecha_fin'] ?? null;
         $contenedor = $params['contenedor'] ?? null;
-
+        $idCliente = $params['idCliente'] ?? null;
+        $contenedoresVarios = $params['contenedores'] ?? null;
+        
+        
         $asignaciones = DB::table('asignaciones')
         ->join('docum_cotizacion', 'docum_cotizacion.id', '=', 'asignaciones.id_contenedor')
     ->select(
@@ -144,7 +192,10 @@ class CoordenadasController extends Controller
         return $query->where('beneficiarios.id', $proveedor);
     })
     ->when($cliente, function ($query) use ($cliente) {
-        return $query->where('beneficiarios.id', $cliente);
+        return $query->where('clients.id', $cliente);
+    })
+    ->when($idCliente, function ($query) use ($idCliente) {
+        return $query->where('clients.id', $idCliente);
     })
     ->when($subcliente, function ($query) use ($subcliente) {
         return $query->whereExists(function ($subq) use ($subcliente) {
@@ -159,6 +210,15 @@ class CoordenadasController extends Controller
     })
     ->when($contenedor, function ($query) use ($contenedor) {
         return $query->where('asig.num_contenedor', $contenedor); 
+    })
+    ->when($contenedoresVarios, function ($query) use ($contenedoresVarios) {
+        $contenedores = array_filter(array_map('trim', explode(';', $contenedoresVarios)));
+    
+        if (count($contenedores) > 1) {
+            return $query->whereIn('asig.num_contenedor', $contenedores);
+        } else {
+            return $query->where('asig.num_contenedor', $contenedores[0]);
+        }
     })
     ->get();
             

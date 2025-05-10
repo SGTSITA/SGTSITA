@@ -9,11 +9,11 @@ const preguntasPorTipo = {
         { texto: "7)¿ Descarga en patio ?", campo: "descarga_patio" },
     ],
     f: [
-        { texto: "1)¿Carga en patio?", campo: "cargado_patio" },
-        { texto: "2)¿Inicio ruta?", campo: "en_destino" },
+        { texto: "1) ¿Carga en patio?", campo: "cargado_patio" },
+        { texto: "2) ¿Inicio ruta?", campo: "en_destino" },
         { texto: "3)¿Inicia carga?", campo: "inicio_descarga" },
         { texto: "4)¿Fin descarga?", campo: "fin_descarga" },
-        { texto: "5)¿Recepción Doctos Firmados?", campo: "recepcion_doc_firmados" },
+        { texto: "5 ¿Recepción Doctos Firmados?", campo: "recepcion_doc_firmados" },
     ],
     c: [
         { texto: "¿1) Registro en Puerto ?", campo: "registro_puerto" },
@@ -30,12 +30,32 @@ const preguntasPorTipo = {
 };
 
 
+let contenedoresDisponibles = [];
+function cargarinicial()
+{
+    const params = new URLSearchParams({
+        idCliente: idCliente,
+        
+    });
+
+    fetch(`/coordenadas/contenedor/search?${params.toString()}`)
+      .then(response => response.json())
+      .then(data => {
+        
+         contenedoresDisponibles   = data.datos;
+        
+          
+      })
+      .catch(error => {
+          console.error('Error al traer coordenadas:', error);
+      });
+}
 
 
 document.addEventListener("DOMContentLoaded", function () {
     let gridApi;
 
-
+    cargarinicial();
 
     let mapModal = document.getElementById('modalMapa');
     if (mapModal) {
@@ -52,9 +72,7 @@ let PreguntaA;
 
     const columnDefs = [
         { headerCheckboxSelection: true, checkboxSelection: true, width: 50 },
-        { headerName: "No Coti", field: "id_cotizacion", sortable: true, filter: true },
-        { headerName: "No Asig", field: "id_asignacion", sortable: true, filter: true },
-        { headerName: "No Coor", field: "id_coordenada", sortable: true, filter: true },
+        
         { headerName: "Cliente", field: "cliente", sortable: true, filter: true },
         { headerName: "Origen", field: "origen", sortable: true, filter: true },
         { headerName: "Destino", field: "destino", sortable: true, filter: true },
@@ -74,7 +92,7 @@ let PreguntaA;
                             data-tipo="c"
                             data-info='${JSON.stringify(params.data).replace(/'/g, "&#39;")}' 
                             title="Ver progreso...">
-                            <i class="fa fa-sync-alt me-1"></i> ${params.data.Estatus_Burrero}
+                            <i class="fa fa-chart-line me-1"></i> ${params.data.Estatus_Burrero}
                         </button>
                 `;
             }
@@ -95,7 +113,7 @@ let PreguntaA;
                     data-tipo="c"
                     data-info='${JSON.stringify(params.data).replace(/'/g, "&#39;")}' 
                     title="Ver progreso...">
-                    <i class="fa fa-sync-alt me-1"></i> ${params.data.Estatus_Foraneo}
+                    <i class="fa fa-tasks me-1"></i> ${params.data.Estatus_Foraneo}
                 </button>
                 `;
             }
@@ -115,7 +133,7 @@ let PreguntaA;
             data-tipo="c"
             data-info='${JSON.stringify(params.data).replace(/'/g, "&#39;")}' 
             title="Ver progreso...">
-        <i class="fa fa-sync-alt me-1"></i> ${params.data.Estatus_Completo}
+        <i class="fa fa-hourglass-half me-1"></i> ${params.data.Estatus_Completo}
     </button>
                 `;
             }
@@ -139,10 +157,59 @@ let PreguntaA;
     
 
     
+//load primero cojn el cliente
+    const params = new URLSearchParams({
+        idCliente: idCliente,
+        
+    });
 
 
-    
-        getCoordenadasList("");
+    const clienteSelect = document.getElementById('cliente');
+clienteSelect.addEventListener('change', function () {
+    const clienteId = this.value;
+    const subclienteSelect = document.getElementById('subcliente');
+
+    // Limpia las opciones anteriores
+    subclienteSelect.innerHTML = '<option value="">Seleccione un subcliente</option>';
+
+    if (clienteId) {
+        // Puedes mostrar un "cargando..." si quieres
+        const loadingOption = document.createElement('option');
+        loadingOption.textContent = 'Cargando subclientes...';
+        loadingOption.disabled = true;
+        loadingOption.selected = true;
+        subclienteSelect.appendChild(loadingOption);
+
+        fetch(`/api/coordenadas/subclientes/${clienteId}`)
+            .then(response => response.json())
+            .then(subclientes => {
+                subclienteSelect.innerHTML = '<option value="">Seleccione un subcliente</option>'; // Resetea
+
+                if (subclientes.length > 0) {
+                    subclientes.forEach(subcliente => {
+                        const option = document.createElement('option');
+                        option.value = subcliente.id;
+                        option.textContent = subcliente.nombre;
+                        subclienteSelect.appendChild(option);
+                    });
+
+                    
+                } else {
+                    const option = document.createElement('option');
+                    option.textContent = 'No hay subclientes disponibles';
+                    option.disabled = true;
+                    subclienteSelect.appendChild(option);
+                }
+            })
+            .catch(error => {
+                console.error('Error al cargar subclientes:', error);
+                subclienteSelect.innerHTML = '<option value="">Error al cargar subclientes</option>';
+            });
+    }
+});
+
+    getEntidadesPC();
+        getCoordenadasList(params);
    
 function getCoordenadasList(parametros) {
         const overlay = document.getElementById("gridLoadingOverlay");
@@ -165,17 +232,61 @@ function getCoordenadasList(parametros) {
             });
     }
 
+
+    function getEntidadesPC(){
+        fetch('/api/coordenadas/entidadesPC')
+        .then(response => response.json())
+        .then(data => {
+            //const proveedorSelect = document.getElementById('proveedor');
+            const clienteSelect = document.getElementById('cliente');
+
+            // Añadir una opción predeterminada
+          //  proveedorSelect.innerHTML = '<option value="">Seleccione un proveedor</option>';
+            clienteSelect.innerHTML = '<option value="">Seleccione un cliente</option>';
+
+            // Cargar proveedores
+            // data.proveedor.forEach(proveedor => {
+            //     const option = document.createElement('option');
+            //     option.value = proveedor.id;
+            //     option.textContent = proveedor.nombre;
+            //     proveedorSelect.appendChild(option);
+            // });
+
+            // Cargar clientes
+            data.client.forEach(cliente => {
+                const option = document.createElement('option');
+                option.value = cliente.id;
+                option.textContent = cliente.nombre;
+                if (cliente.id == idCliente) {
+                    option.selected = true;
+                    clienteSelect.disabled = true;
+                }
+                clienteSelect.appendChild(option);
+            });
+
+            clienteSelect.dispatchEvent(new Event('change'));
+        })
+        .catch(error => console.error('Error al cargar proveedores y clientes:', error))
+
+    }
+
     document.getElementById("formFiltros").addEventListener("submit", function (e) {
         e.preventDefault();
     
        
     
-        const form = e.target;
-        const formData = new FormData(form);
-        const params = new URLSearchParams(formData);
-    
-        
-        getCoordenadasList(params.toString()); 
+        const formData = new FormData(this);
+        const queryParams = new URLSearchParams();
+      
+        formData.forEach((valor, clave) => {
+          if (valor.trim() !== '') {
+            queryParams.append(clave, valor);
+          }
+        });
+      
+        queryParams.append("idCliente", idCliente);
+
+        getCoordenadasList(queryParams.toString()); 
         
         
 
@@ -248,16 +359,25 @@ function getCoordenadasList(parametros) {
    
 function limpiarFiltros() {
   
-    const modal = document.getElementById('filtroModal'); 
+    const modal = document.getElementById('formFiltros'); 
     const inputs = modal.querySelectorAll('input, select, textarea');
 
     inputs.forEach(element => {
         if (element.tagName === 'SELECT') {
-            element.selectedIndex = 0; 
+            if (element.disabled == false ){
+                element.selectedIndex = 0; 
+            }
         } else {
             element.value = ''; 
         }
     });
+    seleccionados.length = 0;
+    document.getElementById('contenedores-seleccionados').innerHTML = '';
+    const inputContenedores = document.getElementById('contenedores');
+        if (inputContenedores) {
+            inputContenedores.value = '';
+        }
+
 
 }
 
@@ -299,4 +419,82 @@ function makeDraggable(element) {
             isMouseDown = false;
         });
     }
+}
+
+
+
+
+const seleccionados = [];
+
+function mostrarSugerencias() {
+    const input = document.getElementById('contenedor-input');
+    const filtro = input.value.trim().toUpperCase();
+    const sugerenciasDiv = document.getElementById('sugerencias');
+    sugerenciasDiv.innerHTML = '';
+
+    if (filtro.length === 0) {
+        sugerenciasDiv.style.display = 'none';
+        return;
+    }
+
+    const filtrados = contenedoresDisponibles.filter(c =>
+        
+        (c.contenedor || '').toUpperCase().includes(filtro) &&
+!seleccionados.includes(c.contenedor)
+    );
+
+    filtrados.forEach(c => {
+        const item = document.createElement('div');
+        item.textContent = c.contenedor;
+        item.style.padding = '5px';
+        item.style.cursor = 'pointer';
+        item.onclick = () => seleccionarContenedor(c.contenedor);
+        sugerenciasDiv.appendChild(item);
+    });
+
+    sugerenciasDiv.style.display = filtrados.length ? 'block' : 'none';
+}
+
+function seleccionarContenedor(valor) {
+    seleccionados.push(valor);
+    document.getElementById('contenedor-input').value = '';
+    document.getElementById('sugerencias').style.display = 'none';
+    actualizarVista();
+}
+
+function agregarContenedor() {
+    const input = document.getElementById('contenedor-input');
+    const valor = input.value.trim().toUpperCase();
+    if (valor && contenedoresDisponibles.includes(valor) && !seleccionados.includes(valor)) {
+        seleccionados.push(valor);
+        input.value = '';
+        actualizarVista();
+    }
+}
+
+function eliminarContenedor(idx) {
+    seleccionados.splice(idx, 1);
+    actualizarVista();
+}
+
+function actualizarVista() {
+    const div = document.getElementById('contenedores-seleccionados');
+    div.innerHTML = '';
+
+    seleccionados.forEach((cont, i) => {
+        div.innerHTML += `
+             <span class="badge bg-secondary me-1">
+        ${cont}
+        <button type="button" 
+            onclick="eliminarContenedor(${i})" 
+            style="background:none; border:none; color:red; margin-left:5px; font-weight:bold;" 
+            title="Eliminar">
+            &times;
+        </button>
+    </span>
+            
+        `;
+    });
+
+    document.getElementById('contenedores').value = seleccionados.join(';');
 }

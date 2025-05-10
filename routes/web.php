@@ -79,6 +79,8 @@ Route::get('coordenadas/mapas', [App\Http\Controllers\CoordenadasController::cla
 Route::get('coordenadas/busqueda', [App\Http\Controllers\CoordenadasController::class, 'indexSeach'])->name('seach.coordenadas');
 Route::get('/coordenadas/contenedor/search', [App\Http\Controllers\CoordenadasController::class, 'getcoorcontenedor'])->name('getcoorcontenedor');
 
+
+
 //R
 
 

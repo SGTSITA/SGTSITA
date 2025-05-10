@@ -51,3 +51,14 @@ Route::group(['prefix' => 'manager'], function(){
     Route::post('/usuarios/store',[UserController::class,'store'])->name('usuario.store');
 
 });
+
+
+Route::group(['prefix' => 'coordenadas'], function(){
+    //externos coordenadas MEC
+Route::get('coordenadas/extmapas', [App\Http\Controllers\CoordenadasController::class, 'extindexMapa'])->name('ver.extcoordenadamapa');
+Route::get('coordenadas/extbusqueda', [App\Http\Controllers\CoordenadasController::class, 'extindexSeach'])->name('seach.extcoordenadas');
+Route::get('coordenadas/extcompartir', [App\Http\Controllers\CoordenadasController::class, 'extcompartir'])->name('extcompartircoor');
+
+   
+
+});
