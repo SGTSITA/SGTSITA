@@ -55,14 +55,36 @@ document.addEventListener("DOMContentLoaded", function () {
         pagination: true,
         paginationPageSize: 50,
         paginationPageSizeSelector: [50, 100, 500],
+        domLayout: 'autoHeight', 
         rowSelection: {
             mode: "singleRow",
             headerCheckbox: false,
         },
         columnDefs: [
             { headerName: "No", field: "id", width: 80 , hide: true},
+            { headerName: "ContenedorPrincipal", field: "labelContenedor", hide: true},
+            
             { headerName: "Sub Cliente", field: "subcliente", width: 80 , hide: true},
-            { headerName: "# Contenedor", field: "contenedor", width: 200,filter: true, floatingFilter: true },
+            { headerName: "# Contenedor", 
+              field: "contenedor", 
+              width: 200,
+              filter: true, 
+              floatingFilter: true,
+              autoHeight: true, // Permite que la fila se ajuste en altura
+              cellStyle:params => {
+                  const styles = {
+                    'white-space': 'normal',
+                    'line-height': '1.5',
+                  };
+              
+                  // Si la cotización es tipo "Full", aplicar fondo 
+                  if (params.data.tipo === 'Full') {
+                    styles['background-color'] = '#ffe5b4'; 
+                  }
+              
+                  return styles;
+                },
+            },
             { headerName: "Cliente", field: "cliente", width: 150,filter: true, floatingFilter: true },
             { headerName: "Origen", field: "origen", width: 200 ,filter: true, floatingFilter: true},
             { headerName: "Destino", field: "destino", width: 200, filter: true, floatingFilter: true },
@@ -117,6 +139,7 @@ document.addEventListener("DOMContentLoaded", function () {
             seleccion.forEach((contenedor) =>{
                 numContenedorLabel.forEach(lb=> lb.textContent = contenedor.contenedor)
                 nombreClienteLabel.forEach(cl => cl.textContent = `${contenedor.cliente} / ${contenedor.subcliente}`)
+                localStorage.setItem('numContenedor',contenedor.labelContenedor)
             })
 
             let nextOne = document.querySelector('#nextOne');
@@ -247,7 +270,7 @@ function programarViaje(){
    });
 
    formData["_token"] = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-   formData["num_contenedor"] = document.querySelector('#numContenedor').textContent
+   formData["num_contenedor"] =  localStorage.getItem('numContenedor') //document.querySelector('#numContenedor').textContent
    formData["tipoViaje"] = tipoViaje
    let url = '/planeaciones/viaje/programar'
 

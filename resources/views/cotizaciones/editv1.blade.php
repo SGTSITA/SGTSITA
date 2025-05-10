@@ -14,18 +14,18 @@
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                             <h3 class="mb-3">Editar Cotizacion</h3>
                             <div class="col-3 offset-3">
-                            <div><span class="text-sm text-muted text-bold" id="referencia_full">{{$cotizacion->referencia_full}}</span></div>
+                            <div><span class="text-xs text-muted text-bold" id="referencia_full">{{$cotizacion->referencia_full}}</span></div>
                                 <div class="option-group">
-                                    @if($cotizacion->tipo_viaje != "full")                                    
+                                    @if($cotizacion->tipo_viaje != "Full")                                    
                                     <label class="custom-option selected">
-                                        <input type="radio" checked name="plan" value="sencillo" onchange="handleSelection(this)">
+                                        <input type="radio" checked name="plan" value="Sencillo" onchange="handleSelection(this)">
                                         <i class="fas fa-truck icon"></i>
                                         <span class="text">Sencillo</span>
                                         <i class="fas fa-check check-icon"></i>
                                     </label>
                                     @else
                                     <label class="custom-option selected">
-                                        <input type="radio" name="plan" value="full" onchange="handleSelection(this)">
+                                        <input type="radio" checked name="plan" value="Full" onchange="handleSelection(this)">
                                         <i class="fas fa-truck-moving icon"></i>
                                         <span class="text">Full</span>
                                         <i class="fas fa-check check-icon"></i>
@@ -46,7 +46,7 @@
                                                 </div>
                                             </label>
 
-                                            <label class="custom-nav-item @if($cotizacion->tipo_viaje != 'full') d-none @endif" id="tab-contenedor-b">
+                                            <label class="custom-nav-item @if($cotizacion->tipo_viaje != 'Full') d-none @endif" id="tab-contenedor-b">
                                                 <input type="radio" class="custom-nav-radio" value="Contenedor-B" name="contenedorTabs" id="tab2" />
                                                 <div class="custom-nav-link">
                                                 <i class="ni ni-box-2 text-info text-gradient"></i>
@@ -66,9 +66,7 @@
                                 <img src="{{ asset('img/icon/validando-billete.webp') }}" alt="" width="40px"> Cotización
                             </button>
 
-                              <button class="nav-link custom-tab" id="nav-Bloque-tab" data-bs-toggle="tab" data-bs-target="#nav-Bloque" type="button" role="tab" aria-controls="nav-Bloque" aria-selected="true">
-                                <img src="{{ asset('img/icon/contenedores.png') }}" alt="" width="40px"> Bloque
-                              </button>
+                              
 
                               <button class="nav-link custom-tab" id="nav-Contenedor-tab" data-bs-toggle="tab" data-bs-target="#nav-Contenedor" type="button" role="tab" aria-controls="nav-Contenedor" aria-selected="false">
                                 <img src="{{ asset('img/icon/contenedor.png') }}" alt="" width="40px"> Contenedor
@@ -76,6 +74,10 @@
 
                               <button class="nav-link custom-tab" id="nav-Documentacion-tab" data-bs-toggle="tab" data-bs-target="#nav-Documentacion" type="button" role="tab" aria-controls="nav-Documentacion" aria-selected="false">
                                 <img src="{{ asset('img/icon/pdf.webp') }}" alt="" width="40px"> Documentación
+                              </button>
+
+                              <button class="nav-link custom-tab" id="nav-Bloque-tab" data-bs-toggle="tab" data-bs-target="#nav-Bloque" type="button" role="tab" aria-controls="nav-Bloque" aria-selected="true">
+                                <img src="{{ asset('img/icon/contenedores.png') }}" alt="" width="40px"> Bloque
                               </button>
 
                               <button class="nav-link custom-tab" id="nav-Gastos-tab" data-bs-toggle="tab" data-bs-target="#nav-Gastos" type="button" role="tab" aria-controls="nav-Gastos" aria-selected="false">
@@ -98,7 +100,8 @@
                         </nav>
 
 
-                        <form method="POST" action="{{ route('update.cotizaciones', $cotizacion->id) }}" id="cotizacionesUpdate" enctype="multipart/form-data" role="form">
+                        <form method="POST" action="{{ route('update.cotizaciones', $cotizacion->id) }}" 
+                        id="cotizacionCreateMultiple" enctype="multipart/form-data" sgt-cotizacion-action="edit" role="form">
                             @csrf
                             <input type="hidden" name="_method" value="PATCH">
 
@@ -112,7 +115,7 @@
                                     <div class="row">
                                     <h3 class="mb-5 mt5">Datos de cotizacion</h3>
                                             @if ($documentacion->num_contenedor != NULL)
-                                                <label style="font-size: 20px;">Num contenedor:  {{$documentacion->num_contenedor}} </label>
+                                                <label style="font-size: 20px;" class="labelNumContedor" id="labelNumContenedor-1">Num contenedor:  {{$documentacion->num_contenedor}} </label>
                                             @endif
 
                                             <div class="col-6 form-group">
@@ -291,7 +294,6 @@
                                                     <input name="sobrepeso" id="sobrepeso" type="text" class="form-control calculo-cotizacion" autocomplete="off" readonly value="{{$cotizacion->sobrepeso}}">
                                                 </div>
                                             </div>
-
                                             <div class="col-3 form-group">
                                                 <label for="name">Precio Sobre Peso</label>
                                                 <div class="input-group mb-3">
@@ -302,6 +304,28 @@
                                                 </div>
                                             </div>
 
+                                    <div class="col-3 form-group">
+                                        <label for="name">Sobre Peso Viaje</label>
+                                        <div class="input-group mb-3">
+                                            <span class="input-group-text" id="basic-addon1">
+                                                <img src="{{ asset('img/icon/peso.png') }}" alt="" width="25px">
+                                            </span>
+                                            <input name="sobrepeso_viaje" id="sobrepeso_viaje" type="text" autocomplete="off" class="form-control moneyformat calculo-cotizacion" oninput="allowOnlyDecimals(event)">
+                                        </div>
+                                    </div>
+
+                                    <div class="col-3 form-group">
+                                        <label for="name">Total Sobre Peso Viaje</label>
+                                        <div class="input-group mb-3">
+                                            <span class="input-group-text" id="basic-addon1">
+                                                <img src="{{ asset('img/icon/peso.png') }}" alt="" width="25px">
+                                            </span>
+                                            <input name="total_sobrepeso_viaje" id="total_sobrepeso_viaje" type="text" autocomplete="off" class="form-control moneyformat calculo-cotizacion" oninput="allowOnlyDecimals(event)">
+                                        </div>
+                                    </div>
+
+                                            
+
                                             <div class="col-3 form-group">
                                                 <label for="name">Precio Tonelada</label>
                                                 <div class="input-group mb-3">
@@ -311,7 +335,7 @@
                                                     <input name="precio_tonelada" id="precio_tonelada" type="text" class="form-control moneyformat calculo-cotizacion" oninput="allowOnlyDecimals(event)" autocomplete="off" value="{{$cotizacion->precio_tonelada}}" readonly>
                                                 </div>
                                             </div>
-                                            <div class="col-6"></div>
+                                          
 
                                             <div class="col-3 form-group">
                                                 <label for="name">Precio Viaje</label>
@@ -437,7 +461,7 @@
                                 <div class="tab-pane fade" id="nav-Bloque" role="tabpanel" aria-labelledby="nav-Bloque-tab" tabindex="0">
                                     <h3 class="mb-5 mt-3">Bloque de Entrada</h3>
                                     @if ($documentacion->num_contenedor != NULL)
-                                        <label style="font-size: 20px;">Num contenedor:  {{$documentacion->num_contenedor}} </label>
+                                        <label style="font-size: 20px;" class="labelNumContedor" id="labelNumContenedor-2">Num contenedor:  {{$documentacion->num_contenedor}} </label>
                                     @endif
                                     <div class="row">
                                         <div class="col-4 form-group">
@@ -475,7 +499,7 @@
                                 <div class="tab-pane fade" id="nav-Contenedor" role="tabpanel" aria-labelledby="nav-Contenedor-tab" tabindex="0">
                                     <h3 class="mb-5 mt-3">Contenedor</h3>
                                     @if ($documentacion->num_contenedor != NULL)
-                                        <label style="font-size: 20px;">Num contenedor:  {{$documentacion->num_contenedor}} </label>
+                                        <label style="font-size: 20px;" class="labelNumContedor" id="labelNumContenedor-3">Num contenedor:  {{$documentacion->num_contenedor}} </label>
                                     @endif
                                     <div class="row">
                                         <div class="col-4 form-group">
@@ -574,7 +598,7 @@
                                 <div class="tab-pane fade" id="nav-Documentacion" role="tabpanel" aria-labelledby="nav-Documentacion-tab" tabindex="0">
                                     <h3 class="mt-3 mb-5">Documentación</h3>
                                     @if ($documentacion->num_contenedor != NULL)
-                                        <label style="font-size: 20px;">Num contenedor:  {{$documentacion->num_contenedor}} </label>
+                                        <label style="font-size: 20px;" class="labelNumContedor" id="labelNumContenedor-4">Num contenedor:  {{$documentacion->num_contenedor}} </label>
                                     @endif
                                     <div class="row">
                                         <div class="col-12">
@@ -1011,7 +1035,7 @@
                                                     </div>
                                                 </div>
 
-                                                <div class="col-4 form-group">
+                                                <div class="col-3 form-group">
                                                     <label for="name">Sobrepeso</label>
                                                     <div class="input-group mb-3">
                                                         <span class="input-group-text" id="basic-addon1">
@@ -1021,7 +1045,7 @@
                                                     </div>
                                                 </div>
 
-                                                <div class="col-4 form-group">
+                                                <div class="col-3 form-group">
                                                     <label for="name">Precio Sobre Peso</label>
                                                     <div class="input-group mb-3">
                                                         <span class="input-group-text" id="basic-addon1">
@@ -1031,7 +1055,7 @@
                                                     </div>
                                                 </div>
 
-                                                <div class="col-4 form-group">
+                                                <div class="col-3 form-group">
                                                     <label for="name">Total tonelada {{ ($cotizacion->sobrepeso)}}</label>
                                                     <div class="input-group mb-3">
                                                         <span class="input-group-text" id="basic-addon1">
@@ -1544,7 +1568,7 @@
 </script>
 
     <script type="text/javascript">
-    $(document).ready(function() {
+    $(document).ready(async function() {
     $('.cliente').select2();
     getGastosContenedor();
     getGastosOperador();
@@ -1552,51 +1576,14 @@
 
     adjuntarDocumentos();
     localStorage.setItem('numContenedor','{{$documentacion->num_contenedor}}'); 
-
+    await getContenedoresOnFull()
     getFilesContenedor();
     });
     </script>
 
-    <script type="text/javascript">
-        // ============= Agregar mas inputs dinamicamente =============
-        $('.clonar').click(function() {
-        // Clona el .input-group
-        var $clone = $('#formulario .clonars').last().clone();
+   
 
-        // Borra los valores de los inputs clonados
-        $clone.find(':input').each(function () {
-            if ($(this).is('select')) {
-            this.selectedIndex = 0;
-            } else {
-            this.value = '';
-            }
-        });
-
-        // Agrega lo clonado al final del #formulario
-        $clone.appendTo('#formulario');
-        });
-
-    </script>
-
-    <script>
-        // ============= Agregar mas inputs dinamicamente =============
-        $('.clonar2').click(function() {
-        // Clona el .input-group
-        var $clone = $('#formulario2 .clonars2').last().clone();
-
-        // Borra los valores de los inputs clonados
-        $clone.find(':input').each(function () {
-            if ($(this).is('select')) {
-            this.selectedIndex = 0;
-            } else {
-            this.value = '';
-            }
-        });
-
-        // Agrega lo clonado al final del #formulario2
-        $clone.appendTo('#formulario2');
-        });
-    </script>
+    
 
     <script>
          document.addEventListener('DOMContentLoaded', function () {
@@ -1719,7 +1706,7 @@
     <script>
         $(document).ready(()=>{
             
-            calcularTotal()
+            //calcularTotal()
 
             formFields.forEach((item) =>{
                 if(item.type == "money") {
@@ -1761,7 +1748,7 @@
           
               
                //elemento.classList.toggle('active',elemento.attributes['data-kt-plan'].value == 'recinto-si' && '{{$cotizacion->uso_recinto}}' == 1) 
-               getContenedoresOnFull()
+             
 
             });
         });

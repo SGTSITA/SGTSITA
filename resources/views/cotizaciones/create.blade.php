@@ -35,7 +35,8 @@
                     </div>
 
                     <div class="card-body">
-                        <form method="POST" action="{{ route('v2store.cotizaciones') }}" id="cotizacionCreateMultiple" enctype="multipart/form-data" role="form">
+                        <form method="POST" action="{{ route('v2store.cotizaciones') }}" 
+                        id="cotizacionCreateMultiple" enctype="multipart/form-data" sgt-cotizacion-action="create" role="form">
                             @csrf
 
                             <div class="modal-body">

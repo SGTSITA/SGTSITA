@@ -183,6 +183,7 @@ function resetUploadConfig(){
 
 function getFilesContenedor(){
     let numContenedor = localStorage.getItem('numContenedor')
+    let requiredFiles = [{"fileCode" : "Boleta-de-liberacion"},{"fileCode" : "Doda"},{"fileCode":"Carta-Porte"},{"fileCode":"Carta-Porte"},{'fileCode': 'Carta-Porte-XML'}]
     $.ajax({
         url:`/viajes/file-manager/get-file-list/${numContenedor}`,
         type:'get',
@@ -194,6 +195,15 @@ function getFilesContenedor(){
             let fileSize = 0;
             let fileType = null;
             let iconImg = null;
+
+            requiredFiles.forEach((f)=>{
+                iconImg = `img-${f.fileCode}`
+                let imgFile = document.querySelector("#"+iconImg)
+                imgFile.src = `/img/not-file.png`
+                $(`#filSize-${f.fileCode}`).text('0 KB')
+                $(`#badge-${f.fileCode}` ).addClass('bg-gradient-warning').removeClass('bg-gradient-success').text('Pendiente')
+                document.querySelector(`#btn-ver-${f.fileCode}`).href = `javascipt:void()`
+            })
             documentos.forEach((d)=>{
                 badge = `badge-${d.fileCode}` 
                 btnVer = `btn-ver-${d.fileCode}`

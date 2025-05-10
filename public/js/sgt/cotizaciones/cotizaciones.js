@@ -23,8 +23,30 @@ const formFields = [
     {'field':'iva', 'id':'iva','label':'IVA','required': false, "type":"money", "master": true},
     {'field':'retencion', 'id':'retencion','label':'Retención','required': false, "type":"money", "master": true},
     {'field':'base_taref', 'id':'base_taref','label':'Base 2','required': false, "type":"money", "master": true},
-    {'field':'total', 'id':'total','label':'Total','required': false, "type":"money", "master": true},   
+    {'field':'total', 'id':'total','label':'Total','required': false, "type":"money", "master": true},  
+    {'field':'terminal', 'id':'terminal','label':'Terminal','required': false, "type":"text", "master": false},  
+    {'field':'num_autorizacion', 'id':'num_autorizacion','label':'Num. Autorización','required': false, "type":"text", "master": false},  
+    {'field':'bloque', 'id':'bloque','label':'Block','required': false, "type":"text", "master": false},       
 ];
+
+const editFormFields = [
+    {'field':'terminal', 'id':'terminal','label':'Terminal','required': false, "type":"text", "master": false},
+    {'field':'num_autorizacion', 'id':'num_autorizacion','label':'Num. Autorización','required': false, "type":"text", "master": false},
+    {'field':'bloque', 'id':'bloque','label':'Block','required': false, "type":"text", "master": false},
+    {'field':'bloque_hora_i', 'id':'bloque_hora_i','label':'Hora inicio bloque','required': false, "type":"text", "master": false},
+    {'field':'bloque_hora_f', 'id':'bloque_hora_f','label':'Hora fin bloque','required': false, "type":"text", "master": false},
+    {'field':'num_boleta_liberacion', 'id':'num_boleta_liberacion','label':'Núm. Boleta de Liberación','required': false, "type":"text", "master": false},
+    {'field':'num_doda', 'id':'num_doda','label':'Num. Doda','required': false, "type":"text", "master": false},
+    {'field':'num_carta_porte', 'id':'num_carta_porte','label':'Núm. Carta Porte','required': false, "type":"text", "master": false},
+    {'field':'boleta_vacio', 'id':'boleta_vacio','label':'Boleta vacio','required': false, "type":"text", "master": false},
+    {'field':'fecha_boleta_vacio', 'id':'fecha_boleta_vacio','label':'Fecha Boleta vacío','required': false, "type":"text", "master": false},
+    {'field':'eir', 'id':'eir','label':'EIR','required': false, "type":"text", "master": false},    
+    {'field':'direccion_recinto', 'id':'direccion_recinto','label':'Dirección recinto','required': false, "type":"text", "master": false},  
+    {'field':'text_recinto', 'id':'text_recinto','label':'¿Va a recinto?','required': false, "type":"text", "master": false},  
+    {'field':'fecha_modulacion', 'id':'fecha_modulacion','label':'Fecha modulación','required': false, "type":"text", "master": false},  
+    {'field':'fecha_entrega', 'id':'fecha_entrega','label':'Fecha Entrega','required': false, "type":"text", "master": false},  
+    {'field':'fecha_eir', 'id':'fecha_eir','label':'Fecha EIR','required': false, "type":"text", "master": false},  
+]
 
 let Contenedores = [];
 let ContenedorA = []
@@ -127,6 +149,7 @@ function calcularTotal(modulo = 'crear') {
     const totalFormateado = moneyFormat(totalFinal);
     const field_total = fields.find( i => i.field == "total");
     document.getElementById(field_total.id).value = totalFormateado;
+  //  console.log(totalFormateado)
 
 }
 
@@ -322,7 +345,7 @@ function getClientes(clienteId){
     });
 }
 
-function getContenedoresOnFull(){
+async function getContenedoresOnFull(){
     let _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     let referencia = document.querySelector('#referencia_full')
 
@@ -331,7 +354,7 @@ function getContenedoresOnFull(){
     if(uuid.length == 0) return false
     let ContenedorFields = ContenedorA
 
-$.ajax({
+await $.ajax({
     url:'/cotizaciones/full',
     type:'post',
     data:{_token, uuid},
@@ -340,6 +363,9 @@ $.ajax({
         
         ContenedorA = response[0]
         ContenedorB = response[1]
+
+        sobrePesoViaje()
+        calcularTotal()
         
     },
     error:()=>{
@@ -348,7 +374,7 @@ $.ajax({
 })
 }
 
-function initContenedores(Contenedor){
+function initContenedores(Contenedor, action = 'create'){
     const formData = {};
     let specificFields = formFields.filter((f) => f.master == false )
     
@@ -420,7 +446,15 @@ function showInfoContenedor(Contenedor){
             }
         }
        });
-       
+
+       let labelNumContedor = document.querySelectorAll('.labelNumContedor')
+       labelNumContedor.forEach((c) =>{
+        let cont = document.getElementById(c.id)
+        if(cont) cont.textContent = fieldsContenedor['num_contenedor']
+       })
+
+       localStorage.setItem('numContenedor',fieldsContenedor['num_contenedor'])
+       getFilesContenedor()
        
        calcularTotal()
        valorSobrePrecioContenedor()
@@ -457,6 +491,9 @@ async function  validarContenedores (Contenedor) {
 
 $("#cotizacionCreateMultiple").on("submit", async function(e){
     e.preventDefault();
+
+    const actionFrm = this.getAttribute("sgt-cotizacion-action");
+
     var form = $(this);
     var url = form.attr('action');
     let input = document.querySelector('input[name="plan"]:checked');
@@ -464,7 +501,7 @@ $("#cotizacionCreateMultiple").on("submit", async function(e){
     
     let tabSelected = document.querySelector('input[name="contenedorTabs"]:checked');
    
-    initContenedores(tabSelected.value)
+    initContenedores(tabSelected.value,actionFrm)
     
    let isValidForm = await validarContenedores('Contenedor-A');
    
@@ -530,7 +567,7 @@ $("#cotizacionCreateMultiple").on("submit", async function(e){
     }
     });
 /** */
-console.log(contenedores)
+
     formData["_token"] = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     formData["id_cliente"] = $("#id_cliente").val();
     formData["id_subcliente"] = selectSubClient.value;

@@ -164,6 +164,7 @@ class PlaneacionController extends Controller
     public function asignacion(Request $request){
 
         $numContenedor = $request->get('num_contenedor');
+       // $numContenedor = ($request->cmbTipoUnidad == "Full") ? substr($numContenedor,0,12) : $numContenedor;
         $fechaInicio = common::TransformaFecha($request->txtFechaInicio);
         $fechaFinal = common::TransformaFecha($request->txtFechaFinal);
         
