@@ -857,12 +857,12 @@ public function getCotizacionesCanceladas()
             $doc_cotizaciones->num_contenedor = $numContenedor;
             $doc_cotizaciones->terminal = $contenedor['terminal'];
             $doc_cotizaciones->num_autorizacion = $contenedor['num_autorizacion'];
-            $doc_cotizaciones->num_boleta_liberacion = $contenedor['num_boleta_liberacion'];
+            $doc_cotizaciones->num_boleta_liberacion = $contenedor['num_boleta_liberacion'] || '';
             $doc_cotizaciones->num_doda = $contenedor['num_doda'];
             $doc_cotizaciones->num_carta_porte = $contenedor['num_carta_porte'];
-            $doc_cotizaciones->boleta_vacio = $contenedor['boleta_vacio'];
+         //   $doc_cotizaciones->boleta_vacio = $contenedor['boleta_vacio'];
             $doc_cotizaciones->fecha_boleta_vacio = $contenedor['fecha_boleta_vacio'];
-            $doc_cotizaciones->eir = $contenedor['eir'];
+           // $doc_cotizaciones->eir = $contenedor['eir'];
 
           /*  if ($request->hasFile("doc_eir")) {
                 $file = $request->file('doc_eir');
@@ -888,7 +888,7 @@ public function getCotizacionesCanceladas()
                 $doc_cotizaciones->doda = $fileName;
             }*/
 
-            $doc_cotizaciones->ccp = $contenedor['ccp'];
+         //   $doc_cotizaciones->ccp = $contenedor['ccp'];
 
             /*if ($request->hasFile("doc_ccp")) {
                 $file = $request->file('doc_ccp');
@@ -901,31 +901,31 @@ public function getCotizacionesCanceladas()
             $doc_cotizaciones->update();
 
             $cotizaciones = Cotizaciones::where('id', '=', $id)->first();
-            $cotizaciones->id_cliente = $contenedor['id_cliente'];
-            $cotizaciones->id_subcliente = $contenedor['id_subcliente'];
-            $cotizaciones->origen = $contenedor['origen'];
-            $cotizaciones->destino = $contenedor['destino'];
-            $cotizaciones->direccion_entrega = $contenedor['direccion_entrega'];
+            $cotizaciones->id_cliente = $request->id_cliente;
+            $cotizaciones->id_subcliente = $request->id_subcliente;
+            $cotizaciones->origen = $request->origen;
+            $cotizaciones->destino = $request->destino;
+            $cotizaciones->direccion_entrega = $request->direccion_entrega;
             $cotizaciones->uso_recinto = ($request->text_recinto == 'recinto-si') ? 1 : 0;
             $cotizaciones->direccion_recinto = $request->direccion_recinto ;
-            $cotizaciones->burreo = $contenedor['burreo'];
-            $cotizaciones->estadia = $contenedor['estadia'];
+            $cotizaciones->burreo = $request->burreo;
+            $cotizaciones->estadia = $request->estadia;
             $cotizaciones->fecha_modulacion = $contenedor['fecha_modulacion'];
             $cotizaciones->fecha_entrega = $contenedor['fecha_entrega'];
-            $cotizaciones->precio_viaje = $contenedor['precio_viaje'];
+            $cotizaciones->precio_viaje = $request->precio_viaje;
             $cotizaciones->tamano = $contenedor['tamano'];
             $cotizaciones->peso_contenedor = $contenedor['peso_contenedor'];
-            $cotizaciones->maniobra = $contenedor['maniobra'];
-            $cotizaciones->otro = $contenedor['otro'];
-            $cotizaciones->iva = $contenedor['iva'];
-            $cotizaciones->retencion = $contenedor['retencion'];
+            $cotizaciones->maniobra = $request->maniobra;
+            $cotizaciones->otro = $request->otro;
+            $cotizaciones->iva = $request->iva;
+            $cotizaciones->retencion = $request->retencion;
             $cotizaciones->bloque = $contenedor['bloque'];
             $cotizaciones->bloque_hora_i = $contenedor['bloque_hora_i'];
             $cotizaciones->bloque_hora_f = $contenedor['bloque_hora_f'];
-            $cotizaciones->peso_reglamentario = $contenedor['peso_reglamentario'];
+            $cotizaciones->peso_reglamentario = $request->peso_reglamentario;
             $cotizaciones->fecha_eir = $contenedor['fecha_eir'];
-            $cotizaciones->base_factura = $contenedor['base_factura'];
-            $cotizaciones->base_taref = $contenedor['base_taref'];
+            $cotizaciones->base_factura = $request->base_factura;
+            $cotizaciones->base_taref = $request->base_taref;
 
            /* if($request->get('id_cliente_clientes') == NULL){
                 if($request->get('cot_peso_contenedor') > $request->get('peso_reglamentario')){
@@ -1478,6 +1478,8 @@ public function getCotizacionesCanceladas()
                 case 'PreAlta': $update = ["img_boleta" => $item['name']]; break;
                 case 'CartaPortePDF': $update = ["carta_porte" => $item['name']]; break;
                 case 'CartaPorteXML': $update = ["carta_porte_xml" => $item['name']]; break;
+                case 'EIR': $update = ["doc_eir" => $item['name'], 'eir' => "si"]; break;
+                case 'CCP': $update = ["doc_ccp" => $item['name'], 'ccp' => "si"]; break;
 
             }
 

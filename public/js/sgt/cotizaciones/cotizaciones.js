@@ -1,6 +1,8 @@
 const tasa_iva = 0.16;
 const tasa_retencion = 0.04;
 const catalogo_clientes = document.querySelector("#txtClientes");
+const formCotizacion = document.querySelector('#cotizacionCreateMultiple')
+const frmMode = formCotizacion.getAttribute("sgt-cotizacion-action");
 
 const formFields = [
     {'field':'origen', 'id':'origen','label':'Origen','required': true, "type":"text", "master": true},
@@ -391,6 +393,20 @@ function initContenedores(Contenedor, action = 'create'){
     });
 
     //Agregar manualmente 2 campos
+    if(action == "edit"){
+        editFormFields.forEach((item) =>{
+            var input = item.field;
+            var inputValue = document.getElementById(input);
+            if(inputValue){
+                if(item.type == "money"){
+                    formData[input] = (inputValue.value.length > 0) ? parseFloat(reverseMoneyFormat(inputValue.value)) : 0;
+                }else{
+                    formData[input] = inputValue.value;
+                }
+            }
+        })
+    }
+
    formData['sobrepeso'] = sobrepesoInput.value;
    //formData['precio_sobre_peso'] = precioSobrePesoInput.value;
 
@@ -404,6 +420,7 @@ function initContenedores(Contenedor, action = 'create'){
         ContenedorB = {...formData}
       
     }
+    
 }
 
 function valorSobrePrecioContenedor(){
@@ -427,9 +444,10 @@ function valorSobrePrecioContenedor(){
 }
 
 function showInfoContenedor(Contenedor){
+    
     //Guardamos los datos del contenedor activo
     let contenedorActivo = (Contenedor == 'Contenedor-A')  ? 'Contenedor-B' : 'Contenedor-A';
-    initContenedores(contenedorActivo)
+    initContenedores(contenedorActivo,frmMode)
     //Cargamos los datos del contenedor que se desea visualizar
     let fieldsContenedor = (Contenedor == 'Contenedor-A')  ? ContenedorA : ContenedorB;
 

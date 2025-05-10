@@ -533,65 +533,9 @@
                                             </div>
                                         </div>
 
-                                        <div class="col-2">
-                                            <div class="form-group">
-                                                <label>¿CCP - Carta Porte?</label><br>
-                                                @if ($documentacion->ccp == 'si')
-                                                    <input class="form-check-input" type="radio" name="ccp" value="si" id="option_si_ccp" checked> Sí<br>
-                                                    <input class="form-check-input" type="radio" name="ccp" value="no" id="option_no_ccp"> No
-                                                @else
-                                                    <input class="form-check-input" type="radio" name="ccp" value="si" id="option_si_ccp"> Sí<br>
-                                                    <input class="form-check-input" type="radio" name="ccp" value="no" id="option_no_ccp" checked> No
-                                                @endif
-                                            </div>
-                                        </div>
+                                      
 
-                                        <div class="col-6">
-                                            @if ($documentacion->ccp == 'si')
-                                                <div class="form-group" id="inputFieldccp">
-                                            @else
-                                                <div class="form-group" id="inputFieldccp" style="display: none;">
-                                            @endif
-                                                <label for="input">Documento CCP:</label>
-                                                <div class="input-group mb-3">
-                                                    <span class="input-group-text" id="basic-addon1">
-                                                        <img src="{{ asset('img/icon/calendario.webp') }}" alt="" width="25px">
-                                                    </span>
-                                                    <input name="doc_ccp" id="doc_ccp" type="file" class="form-control">
-                                                </div>
-
-                                                @if ($documentacion->ccp == 'si')
-                                                    <div class="col-6">
-                                                        @if (pathinfo($documentacion->doc_ccp, PATHINFO_EXTENSION) == 'pdf')
-                                                        <p class="text-center ">
-                                                            <iframe class="mt-2" src="{{asset('cotizaciones/cotizacion'. $cotizacion->id . '/' .$documentacion->doc_ccp)}}" style="width: 100%; height: 100px;"></iframe>
-                                                        </p>
-                                                                <a class="btn btn-sm text-dark" href="{{asset('cotizaciones/cotizacion'. $cotizacion->id . '/' .$documentacion->doc_ccp) }}" target="_blank" style="background: #836262; color: #ffff!important">Ver archivo</a>
-                                                        @elseif (pathinfo($documentacion->doc_ccp, PATHINFO_EXTENSION) == 'doc')
-                                                        <p class="text-center ">
-                                                            <img id="blah" src="{{asset('assets/icons/docx.png') }}" alt="Imagen" style="width: 150px; height: 150px;"/>
-                                                        </p>
-                                                                <a class="btn btn-sm text-dark" href="{{asset('cotizaciones/cotizacion'. $cotizacion->id . '/' .$documentacion->doc_ccp) }}" target="_blank" style="background: #836262; color: #ffff!important">Descargar</a>
-                                                        @elseif (pathinfo($documentacion->doc_ccp, PATHINFO_EXTENSION) == 'docx')
-                                                        <p class="text-center ">
-                                                            <img id="blah" src="{{asset('assets/icons/docx.png') }}" alt="Imagen" style="width: 150px; height: 150px;"/>
-                                                        </p>
-                                                                <a class="btn btn-sm text-dark" href="{{asset('cotizaciones/cotizacion'. $cotizacion->id . '/' .$documentacion->doc_ccp) }}" target="_blank" style="background: #836262; color: #ffff!important">Descargar</a>
-                                                                @elseif (pathinfo($documentacion->doc_ccp, PATHINFO_EXTENSION) == 'xlsx' || pathinfo($documentacion->doc_ccp, PATHINFO_EXTENSION) == 'xls')
-                                                        <p class="text-center ">
-                                                            <img id="blah" src="{{asset('img/excel-logo.png') }}" alt="Imagen" style="width: 150px; height: 150px;"/>
-                                                        </p>
-                                                                <a class="btn btn-sm text-dark" href="{{asset('cotizaciones/cotizacion'. $cotizacion->id . '/' .$documentacion->doc_ccp) }}" target="_blank" style="background: #836262; color: #ffff!important">Descargar</a>
-                                                        @else
-                                                            <p class="text-center mt-2">
-                                                                <img id="blah" src="{{asset('cotizaciones/cotizacion'. $cotizacion->id . '/' .$documentacion->doc_ccp) }}" alt="Imagen" style="width: 150px;height: 150%;"/><br>
-                                                            </p>
-                                                                <a class="text-center text-dark btn btn-sm" href="{{asset('cotizaciones/cotizacion'. $cotizacion->id . '/' .$documentacion->doc_ccp) }}" target="_blank" style="background: #836262; color: #ffff!important">Ver Imagen</a>
-                                                        @endif
-                                                    </div>
-                                                @endif
-                                            </div>
-                                        </div>
+                                     
                                     </div>
                                 </div>
 
@@ -766,150 +710,157 @@
                         </div>
                       </td>
                     </tr>
+                    <tr>
+                      <td>
+                        <div class="d-flex px-3 py-1">
+                          <div>
+                            <img src="{{asset('img/not-file.png')}}" class="avatar me-3" alt="image" id="img-Formato-para-Carta-porte">
+                          </div>
+                          <div class="d-flex flex-column justify-content-center">
+                            <h6 class="mb-0 text-sm">CCP</h6>
+                            <p class="text-sm font-weight-bold text-secondary mb-0">
+                                <span class="text-muted" id="filSize-Formato-para-Carta-porte">0</span>
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <p class="text-sm font-weight-bold mb-0">
+                        <input name="ccp" id="ccp" type="text" class="form-control" value="{{$documentacion->ccp}}">
+                            
+                        </p>
+                      </td>
+                      <td class="align-middle text-center text-sm">
+                        <p class="text-sm font-weight-bold mb-0">
+                            <span class="badge bg-gradient-warning badge-sm" id="badge-Formato-para-Carta-porte">Pendiente</span>
+                        </p>
+                      </td>
+                      <td class="align-middle text-end">
+                        <div class="d-flex px-3 py-1 justify-content-center align-items-center">
+                        
+                          <button type="button" 
+                          class="btn btn-sm btn-icon-only btnDocs btn-rounded btn-outline-secondary mb-0 ms-2 btn-sm d-flex align-items-center justify-content-center ms-3" 
+                          data-bs-toggle="tooltip" id="btnFileFormato-para-Carta-porte"
+                          data-bs-placement="bottom" title="Cargar archivo" 
+                          data-bs-original-title="Cargar archivo">
+                            <i class="fas fa-upload" aria-hidden="true"></i>
+                          </button>
+                          <a href="javasrcipt:void()" target="_blank" class="openFile btn btn-sm btn-icon-only btn-rounded btn-outline-secondary mb-0 ms-2 btn-sm d-flex align-items-center justify-content-center ms-3" 
+                          data-bs-toggle="tooltip" 
+                          data-bs-placement="bottom" 
+                          title="Ver Documento" 
+                          data-bs-original-title="Ver Documento" id="btn-ver-Formato-para-Carta-porte">
+                            <i class="fas fa-eye" aria-hidden="true"></i>
+</a>
+                        </div>
+                      </td>
+                    </tr>
+
+                    <tr>
+                      <td>
+                        <div class="d-flex px-3 py-1">
+                          <div>
+                            <img src="{{asset('img/not-file.png')}}" class="avatar me-3" alt="image" id="img-Pre-Alta">
+                          </div>
+                          <div class="d-flex flex-column justify-content-center">
+                            <h6 class="mb-0 text-sm">Prealta - Boleta vacío</h6>
+                            <p class="text-sm font-weight-bold text-secondary mb-0">
+                                <span class="text-muted" id="filSize-Pre-Alta">0</span>
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <p class="text-sm font-weight-bold mb-0">
+                        <input name="fecha_boleta_vacio" id="fecha_boleta_vacio" type="date" class="form-control" value="{{$documentacion->fecha_boleta_vacio}}">
+                            
+                        </p>
+                      </td>
+                      <td class="align-middle text-center text-sm">
+                        <p class="text-sm font-weight-bold mb-0">
+                            <span class="badge bg-gradient-warning badge-sm" id="badge-Pre-Alta">Pendiente</span>
+                        </p>
+                      </td>
+                      <td class="align-middle text-end">
+                        <div class="d-flex px-3 py-1 justify-content-center align-items-center">
+                        
+                          <button type="button" 
+                          class="btn btn-sm btn-icon-only btnDocs btn-rounded btn-outline-secondary mb-0 ms-2 btn-sm d-flex align-items-center justify-content-center ms-3" 
+                          data-bs-toggle="tooltip" id="btnFilePre-Alta"
+                          data-bs-placement="bottom" title="Cargar archivo" 
+                          data-bs-original-title="Cargar archivo">
+                            <i class="fas fa-upload" aria-hidden="true"></i>
+                          </button>
+                          <a href="javasrcipt:void()" target="_blank" class="openFile btn btn-sm btn-icon-only btn-rounded btn-outline-secondary mb-0 ms-2 btn-sm d-flex align-items-center justify-content-center ms-3" 
+                          data-bs-toggle="tooltip" 
+                          data-bs-placement="bottom" 
+                          title="Ver Documento" 
+                          data-bs-original-title="Ver Documento" id="btn-ver-Pre-Alta">
+                            <i class="fas fa-eye" aria-hidden="true"></i>
+</a>
+                        </div>
+                      </td>
+                    </tr>
+
+                    <tr>
+                      <td>
+                        <div class="d-flex px-3 py-1">
+                          <div>
+                            <img src="{{asset('img/not-file.png')}}" class="avatar me-3" alt="image" id="img-eir">
+                          </div>
+                          <div class="d-flex flex-column justify-content-center">
+                            <h6 class="mb-0 text-sm">EIR - Comprobante vacío</h6>
+                            <p class="text-sm font-weight-bold text-secondary mb-0">
+                                <span class="text-muted" id="filSize-eir">0</span>
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <p class="text-sm font-weight-bold mb-0">
+                        <input name="fecha_eir" id="fecha_eir" type="date" class="form-control" value="{{$cotizacion->fecha_eir}}">
+                            
+                        </p>
+                      </td>
+                      <td class="align-middle text-center text-sm">
+                        <p class="text-sm font-weight-bold mb-0">
+                            <span class="badge bg-gradient-warning badge-sm" id="badge-eir">Pendiente</span>
+                        </p>
+                      </td>
+                      <td class="align-middle text-end">
+                        <div class="d-flex px-3 py-1 justify-content-center align-items-center">
+                        
+                          <button type="button" 
+                          class="btn btn-sm btn-icon-only btnDocs btn-rounded btn-outline-secondary mb-0 ms-2 btn-sm d-flex align-items-center justify-content-center ms-3" 
+                          data-bs-toggle="tooltip" id="btnFileeir"
+                          data-bs-placement="bottom" title="Cargar archivo" 
+                          data-bs-original-title="Cargar archivo">
+                            <i class="fas fa-upload" aria-hidden="true"></i>
+                          </button>
+                          <a href="javasrcipt:void()" target="_blank" class="openFile btn btn-sm btn-icon-only btn-rounded btn-outline-secondary mb-0 ms-2 btn-sm d-flex align-items-center justify-content-center ms-3" 
+                          data-bs-toggle="tooltip" 
+                          data-bs-placement="bottom" 
+                          title="Ver Documento" 
+                          data-bs-original-title="Ver Documento" id="btn-ver-eir">
+                            <i class="fas fa-eye" aria-hidden="true"></i>
+</a>
+                        </div>
+                      </td>
+                    </tr>
                   </tbody>
                 </table>
                                         </div>
                                        
 
-                                        <div class="col-2">
-                                            <div class="form-group">
-                                                <label>¿Prealta?</label><br>
-                                                @if ($documentacion->boleta_vacio == 'si')
-                                                    <input class="form-check-input" type="radio" name="boleta_vacio" value="si" id="option_si" checked> Sí<br>
-                                                    <input class="form-check-input" type="radio" name="boleta_vacio" value="no" id="option_no"> No
-                                                @else
-                                                    <input class="form-check-input" type="radio" name="boleta_vacio" value="si" id="option_si"> Sí<br>
-                                                    <input class="form-check-input" type="radio" name="boleta_vacio" value="no" id="option_no" checked> No
-                                                @endif
-                                            </div>
-                                        </div>
+                                      
 
-                                        <div class="col-4">
-                                            @if ($documentacion->boleta_vacio == 'si')
-                                                <div class="form-group" id="inputField">
-                                            @else
-                                                <div class="form-group" id="inputField" style="display: none;">
-                                            @endif
-                                                <label for="input">Fecha Boleta Vacio:</label>
-                                                <div class="input-group mb-3">
-                                                    <span class="input-group-text" id="basic-addon1">
-                                                        <img src="{{ asset('img/icon/calendario.webp') }}" alt="" width="25px">
-                                                    </span>
-                                                    <input name="fecha_boleta_vacio" id="fecha_boleta_vacio" type="date" class="form-control" value="{{$documentacion->fecha_boleta_vacio}}">
-                                                </div>
-                                            </div>
-                                        </div>
+                                      
 
-                                        <div class="col-6">
-                                            @if ($documentacion->boleta_vacio == 'si')
-                                                <div class="form-group" id="inputFieldIMG">
-                                            @else
-                                                <div class="form-group" id="inputFieldIMG" style="display: none;">
-                                            @endif
-                                                <label for="input">IMG Boleta Vacio:</label>
-                                                <div class="input-group mb-3">
-                                                    <span class="input-group-text" id="basic-addon1">
-                                                        <img src="{{ asset('img/icon/calendario.webp') }}" alt="" width="25px">
-                                                    </span>
-                                                    <input name="img_boleta" id="img_boleta" type="file" class="form-control">
-                                                </div>
-                                            </div>
-                                        </div>
+                                      
 
-                                        <div class="col-6">
-                                            @if (pathinfo($cotizacion->img_boleta, PATHINFO_EXTENSION) == 'pdf')
-                                            <p class="text-center ">
-                                                <iframe class="mt-2" src="{{asset('cotizaciones/cotizacion'. $cotizacion->id . '/' .$cotizacion->img_boleta)}}" style="width: 100%; height: 50px;"></iframe>
-                                            </p>
-                                                    <a class="btn btn-sm text-dark" href="{{asset('cotizaciones/cotizacion'. $cotizacion->id . '/' .$cotizacion->img_boleta) }}" target="_blank" style="background: #836262; color: #ffff!important">Ver archivo</a>
-                                            @elseif (pathinfo($cotizacion->img_boleta, PATHINFO_EXTENSION) == 'doc')
-                                            <p class="text-center ">
-                                                <img id="blah" src="{{asset('/assets/icons/docx.png') }}" alt="Imagen" style="width: 150px; height: 150px;"/>
-                                            </p>
-                                                    <a class="btn btn-sm text-dark" href="{{asset('cotizaciones/cotizacion'. $cotizacion->id . '/' .$cotizacion->img_boleta) }}" target="_blank" style="background: #836262; color: #ffff!important">Descargar</a>
-                                            @elseif (pathinfo($cotizacion->img_boleta, PATHINFO_EXTENSION) == 'docx')
-                                            <p class="text-center ">
-                                                <img id="blah" src="{{asset('/assets/icons/docx.png') }}" alt="Imagen" style="width: 150px; height: 150px;"/>
-                                            </p>
-                                                    <a class="btn btn-sm text-dark" href="{{asset('cotizaciones/cotizacion'. $cotizacion->id . '/' .$cotizacion->img_boleta) }}" target="_blank" style="background: #836262; color: #ffff!important">Descargar</a>
-                                            @else
-                                                <p class="text-center mt-2">
-                                                    <img id="blah" src="{{asset('cotizaciones/cotizacion'. $cotizacion->id . '/' .$cotizacion->img_boleta) }}" alt="Imagen" style="width: 150px;height: 150%;"/><br>
-                                                </p>
-                                                    <a class="text-center text-dark btn btn-sm" href="{{asset('cotizaciones/cotizacion'. $cotizacion->id . '/' .$cotizacion->img_boleta) }}" target="_blank" style="background: #836262; color: #ffff!important">Ver Imagen</a>
-                                            @endif
-                                        </div>
+                                     
 
-                                        <div class="col-6"></div>
-
-                                        <div class="col-2">
-                                            <div class="form-group">
-                                                <label>Comprobante de vacio?</label><br>
-                                                @if ($documentacion->eir == 'si')
-                                                    <input class="form-check-input" type="radio" name="eir" value="si" id="eir_si" checked> Sí<br>
-                                                    <input class="form-check-input" type="radio" name="eir" value="no" id="eir_no"> No
-                                                @else
-                                                    <input class="form-check-input" type="radio" name="eir" value="si" id="eir_si"> Sí<br>
-                                                    <input class="form-check-input" type="radio" name="eir" value="no" id="eir_no" checked> No
-                                                @endif
-                                            </div>
-                                        </div>
-
-                                        <div class="col-4">
-                                            @if ($documentacion->eir == 'si')
-                                                <div class="form-group" id="inputEir">
-                                            @else
-                                                <div class="form-group" id="inputEir" style="display: none;">
-                                            @endif
-                                                <label for="input">Doc EIR:</label>
-                                                <div class="input-group mb-3">
-                                                    <span class="input-group-text" id="basic-addon1">
-                                                        <img src="{{ asset('img/icon/boleto.png') }}" alt="" width="25px">
-                                                    </span>
-                                                    <input name="doc_eir" id="doc_eir" type="file" class="form-control">
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div class="col-4">
-                                            @if ($documentacion->eir == 'si')
-                                                <div class="form-group" id="inputEirFecha">
-                                            @else
-                                                <div class="form-group" id="inputEirFecha" style="display: none;">
-                                            @endif
-                                                <label for="input">Fecha EIR:</label>
-                                                <div class="input-group mb-3">
-                                                    <span class="input-group-text" id="basic-addon1">
-                                                        <img src="{{ asset('img/icon/boleto.png') }}" alt="" width="25px">
-                                                    </span>
-                                                    <input name="fecha_eir" id="fecha_eir" type="date" class="form-control" value="{{$cotizacion->fecha_eir}}">
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div class="col-6">
-                                            @if (pathinfo($documentacion->doc_eir, PATHINFO_EXTENSION) == 'pdf')
-                                            <p class="text-center ">
-                                                <iframe class="mt-2" src="{{asset('cotizaciones/cotizacion'. $documentacion->id . '/' .$documentacion->doc_eir)}}" style="width: 100%; height: 50px;"></iframe>
-                                            </p>
-                                                    <a class="btn btn-sm text-dark" href="{{asset('cotizaciones/cotizacion'. $documentacion->id . '/' .$documentacion->doc_eir) }}" target="_blank" style="background: #836262; color: #ffff!important">Ver archivo</a>
-                                            @elseif (pathinfo($documentacion->doc_eir, PATHINFO_EXTENSION) == 'doc')
-                                            <p class="text-center ">
-                                                <img id="blah" src="{{asset('assets/icons/docx.png') }}" alt="Imagen" style="width: 150px; height: 150px;"/>
-                                            </p>
-                                                    <a class="btn btn-sm text-dark" href="{{asset('cotizaciones/cotizacion'. $documentacion->id . '/' .$documentacion->doc_eir) }}" target="_blank" style="background: #836262; color: #ffff!important">Descargar</a>
-                                            @elseif (pathinfo($documentacion->doc_eir, PATHINFO_EXTENSION) == 'docx')
-                                            <p class="text-center ">
-                                                <img id="blah" src="{{asset('assets/icons/docx.png') }}" alt="Imagen" style="width: 150px; height: 150px;"/>
-                                            </p>
-                                                    <a class="btn btn-sm text-dark" href="{{asset('cotizaciones/cotizacion'. $documentacion->id . '/' .$documentacion->doc_eir) }}" target="_blank" style="background: #836262; color: #ffff!important">Descargar</a>
-                                            @else
-                                                <p class="text-center mt-2">
-                                                    <img id="blah" src="{{asset('cotizaciones/cotizacion'. $documentacion->id . '/' .$documentacion->doc_eir) }}" alt="Imagen" style="width: 150px;height: 150%;"/><br>
-                                                </p>
-                                                    <a class="text-center text-dark btn btn-sm" href="{{asset('cotizaciones/cotizacion'. $documentacion->id . '/' .$documentacion->doc_eir) }}" target="_blank" style="background: #836262; color: #ffff!important">Ver Imagen</a>
-                                            @endif
-                                        </div>
+                                 
                                     </div>
                                 </div>
 
