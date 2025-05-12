@@ -799,26 +799,29 @@ public function export_cxp(Request $request)
     
         // Construir consulta base
         $cotizacionesQuery = Cotizaciones::query()
-            ->where('cotizaciones.id_empresa', auth()->user()->id_empresa)
-            ->where('cotizaciones.estatus', '!=', 'Cancelada')
-            ->leftJoin('docum_cotizacion', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
-            ->leftJoin('asignaciones', 'docum_cotizacion.id', '=', 'asignaciones.id_contenedor')
-            ->leftJoin('clients', 'cotizaciones.id_cliente', '=', 'clients.id')
-            ->select(
-                'cotizaciones.id',
-                'clients.nombre as cliente',
-                'docum_cotizacion.num_contenedor',
-                'docum_cotizacion.doc_ccp',
-                'docum_cotizacion.boleta_liberacion',
-                'docum_cotizacion.doda',
-                'cotizaciones.carta_porte',
-                'cotizaciones.img_boleta AS boleta_vacio',
-                'docum_cotizacion.doc_eir',
-                'asignaciones.id_proveedor',
-                'asignaciones.fecha_inicio',
-                'asignaciones.fecha_fin'
-            )
-            ->distinct();
+    ->where('cotizaciones.id_empresa', auth()->user()->id_empresa)
+    ->where('cotizaciones.estatus', '!=', 'Cancelada')
+    ->leftJoin('docum_cotizacion', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
+    ->leftJoin('asignaciones', 'docum_cotizacion.id', '=', 'asignaciones.id_contenedor')
+    ->leftJoin('clients', 'cotizaciones.id_cliente', '=', 'clients.id')
+    ->leftJoin('proveedores', 'asignaciones.id_proveedor', '=', 'proveedores.id') // <-- importante
+    ->select(
+        'cotizaciones.id',
+        'clients.nombre as cliente',
+        'docum_cotizacion.num_contenedor',
+        'docum_cotizacion.doc_ccp',
+        'docum_cotizacion.boleta_liberacion',
+        'docum_cotizacion.doda',
+        'cotizaciones.carta_porte',
+        'cotizaciones.img_boleta AS boleta_vacio',
+        'docum_cotizacion.doc_eir',
+        'proveedores.nombre as proveedor', // <-- nuevo campo
+        'asignaciones.fecha_inicio',
+        'asignaciones.fecha_fin'
+    )
+    ->distinct();
+
+
     
         // Aplicar filtro por fechas si vienen del request
         if ($request->filled('fecha_inicio') && $request->filled('fecha_fin')) {
