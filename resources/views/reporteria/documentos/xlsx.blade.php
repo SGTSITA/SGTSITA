@@ -88,33 +88,33 @@
         <tbody>
             @foreach ($cotizaciones as $cotizacion)
                 <tr>
-                    <td>{{ $cotizacion->num_contenedor }}</td>
+                    <td>{{ $cotizacion['num_contenedor'] }}</td>
                     @if (!isset($isExcel))
                         <td><span
-                                class="status-check {{ $cotizacion->doc_ccp ? 'checked' : 'unchecked' }}">{{ $cotizacion->doc_ccp ? '✔' : '✖' }}</span>
+                                class="status-check {{ $cotizacion['doc_ccp'] ? 'checked' : 'unchecked' }}">{{ $cotizacion['doc_ccp'] ? '✔' : '✖' }}</span>
                         </td>
                         <td><span
-                                class="status-check {{ $cotizacion->boleta_liberacion ? 'checked' : 'unchecked' }}">{{ $cotizacion->boleta_liberacion ? '✔' : '✖' }}</span>
+                                class="status-check {{ $cotizacion['boleta_liberacion'] ? 'checked' : 'unchecked' }}">{{ $cotizacion['boleta_liberacion'] ? '✔' : '✖' }}</span>
                         </td>
                         <td><span
-                                class="status-check {{ $cotizacion->doda ? 'checked' : 'unchecked' }}">{{ $cotizacion->doda ? '✔' : '✖' }}</span>
+                                class="status-check {{ $cotizacion['doda'] ? 'checked' : 'unchecked' }}">{{ $cotizacion['doda'] ? '✔' : '✖' }}</span>
                         </td>
                         <td><span
-                                class="status-check {{ $cotizacion->carta_porte ? 'checked' : 'unchecked' }}">{{ $cotizacion->carta_porte ? '✔' : '✖' }}</span>
+                                class="status-check {{ $cotizacion['carta_porte'] ? 'checked' : 'unchecked' }}">{{ $cotizacion['carta_porte'] ? '✔' : '✖' }}</span>
                         </td>
                         <td><span
-                                class="status-check {{ $cotizacion->boleta_vacio ? 'checked' : 'unchecked' }}">{{ $cotizacion->boleta_vacio ? '✔' : '✖' }}</span>
+                                class="status-check {{ $cotizacion['boleta_vacio'] ? 'checked' : 'unchecked' }}">{{ $cotizacion['boleta_vacio'] ? '✔' : '✖' }}</span>
                         </td>
                         <td><span
-                                class="status-check {{ $cotizacion->doc_eir ? 'checked' : 'unchecked' }}">{{ $cotizacion->doc_eir ? '✔' : '✖' }}</span>
+                                class="status-check {{ $cotizacion['doc_eir'] ? 'checked' : 'unchecked' }}">{{ $cotizacion['doc_eir'] ? '✔' : '✖' }}</span>
                         </td>
                     @else
-                        <td>{{ $cotizacion->doc_ccp ? '✔' : '✖' }}</td>
-                        <td>{{ $cotizacion->boleta_liberacion ? '✔' : '✖' }}</td>
-                        <td>{{ $cotizacion->doda ? '✔' : '✖' }}</td>
-                        <td>{{ $cotizacion->carta_porte ? '✔' : '✖' }}</td>
-                        <td>{{ $cotizacion->boleta_vacio ? '✔' : '✖' }}</td>
-                        <td>{{ $cotizacion->doc_eir ? '✔' : '✖' }}</td>
+                        <td>{{ $cotizacion['doc_ccp'] ? '✔' : '✖' }}</td>
+                        <td>{{ $cotizacion['boleta_liberacion'] ? '✔' : '✖' }}</td>
+                        <td>{{ $cotizacion['doda'] ? '✔' : '✖' }}</td>
+                        <td>{{ $cotizacion['carta_porte'] ? '✔' : '✖' }}</td>
+                        <td>{{ $cotizacion['boleta_vacio'] ? '✔' : '✖' }}</td>
+                        <td>{{ $cotizacion['doc_eir'] ? '✔' : '✖' }}</td>
                     @endif
                 </tr>
             @endforeach
