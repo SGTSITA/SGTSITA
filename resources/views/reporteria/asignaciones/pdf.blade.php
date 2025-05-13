@@ -1,4 +1,7 @@
-@php use Carbon\Carbon; @endphp
+@php 
+ use Carbon\Carbon; 
+ use App\Http\Controllers\ReporteriaController;
+@endphp
 
 @if (!isset($isExcel))
     <!DOCTYPE html>
@@ -71,8 +74,14 @@
     </thead>
     <tbody>
         @foreach ($cotizaciones as $cotizacion)
+          @php
+            $numContenedor = $cotizacion->Contenedor->num_contenedor;
+            $contenedor2 = ReporteriaController::getContenedorSecundario($cotizacion->Contenedor->Cotizacion->referencia_full);
+            $numContenedor .= $contenedor2;
+          @endphp
+          
             <tr>
-                <td>{{ $cotizacion->Contenedor->num_contenedor ?? '-' }}</td>
+                <td>{{ $numContenedor ?? '-' }}</td>
                 <td>{{ $cotizacion->Contenedor->Cotizacion->Cliente->nombre ?? '-' }}</td>
                 <td>
                     @if ($cotizacion->Contenedor->Cotizacion->id_subcliente)

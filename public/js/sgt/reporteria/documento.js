@@ -23,13 +23,27 @@ document.addEventListener('DOMContentLoaded', () => {
             width: 180,
             cellClass: 'text-center'
         },
-        {
-            headerName: "Contenedor",
-            field: "num_contenedor",
-            filter: 'agTextColumnFilter',
-            floatingFilter: true,
-            width: 140
-        },
+        { headerName: "# Contenedor", 
+              field: "num_contenedor", 
+              width: 200,
+              filter: true, 
+              floatingFilter: true,
+              autoHeight: true, // Permite que la fila se ajuste en altura
+              cellStyle:params => {
+                  const styles = {
+                    'white-space': 'normal',
+                    'line-height': '1.5',
+                  };
+              
+                  // Si la cotización es tipo "Full", aplicar fondo 
+                  if (params.data.tipo === 'Full') {
+                    styles['background-color'] = '#ffe5b4'; 
+                  }
+              
+                  return styles;
+                },
+            },
+       
         {
             headerName: "Formato CCP",
             field: "doc_ccp",

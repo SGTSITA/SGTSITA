@@ -88,7 +88,8 @@ class LiquidacionesController extends Controller
                 "IdAsignacion" => $c->id,
                 "IdOperador" => $c->id_operador,
                 "IdContenedor" => $c->id_contenedor,
-                "Contenedor" => $numContenedor,
+                "Contenedores" => $numContenedor,
+                "ContenedorPrincipal" => $c->contenedor->num_contenedor,
                 "SueldoViaje" => $c->sueldo_viaje,
                 "DineroViaje" => $c->dinero_viaje,
                 "GastosJustificados" => (!is_null($c->justificacion)) ? $c->justificacion->sum('monto') : 0,
@@ -143,8 +144,6 @@ class LiquidacionesController extends Controller
             }
 
             $contenedores = collect($request->pagoContenedores);
-
-            
 
             $liquidacion = new Liquidaciones;
             $liquidacion->id_operador = $request->_IdOperador;
