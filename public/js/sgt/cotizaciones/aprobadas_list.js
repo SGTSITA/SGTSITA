@@ -57,7 +57,7 @@ document.addEventListener("DOMContentLoaded", function () {
         paginationPageSizeSelector: [50, 100, 500],
         domLayout: 'autoHeight', 
         rowSelection: {
-            mode: "singleRow",
+            mode: "multiRow",
             headerCheckbox: false,
         },
         columnDefs: [
@@ -130,32 +130,47 @@ document.addEventListener("DOMContentLoaded", function () {
     };
 
     let apiGridAprobadas = agGrid.createGrid(gridDiv, gridOptions);
+    let tipoViaje = null
+    let cmbTipoUnidad = document.querySelector('#cmbTipoUnidad')
+    let cmbChasis = document.querySelector('#cmbChasis')
+    let cmbChasis2 = document.querySelector('#cmbChasis2')
+    let cmbDoly  = document.querySelector('#cmbDoly')
+    let btnProgramar = document.querySelector('#btnProgramar')
+    let contenedores = []
 
     function  seleccionContenedor(){
         if(gridDiv){
             let seleccion = apiGridAprobadas.getSelectedRows();
+            let bntNextOne = document.querySelector('#nextOne')
+            if(seleccion.length > 2){
+                Swal.fire('Maximo 2 contenedores','Lo sentimos, solo puede seleccionar maximo 2 contenedores, estos deben ser de un mismo cliente','warning')
+                bntNextOne.disabled = true
+                return false
+            }
+
+            cmbTipoUnidad.value = (seleccion.length == 2) ? "Full" : "Sencillo"
+            cmbTipoUnidad.dispatchEvent(new Event('change'));
+
             let numContenedorLabel = document.querySelectorAll('.numContenedorLabel');
             let nombreClienteLabel = document.querySelectorAll('.nombreClienteLabel');
+            let contenedoresLabel = '';
+            contenedores = []
             seleccion.forEach((contenedor) =>{
-                numContenedorLabel.forEach(lb=> lb.textContent = contenedor.contenedor)
+                contenedoresLabel += (contenedoresLabel.length > 0 ) ? ` / ${contenedor.contenedor}` : contenedor.contenedor
                 nombreClienteLabel.forEach(cl => cl.textContent = `${contenedor.cliente} / ${contenedor.subcliente}`)
-                localStorage.setItem('numContenedor',contenedor.labelContenedor)
+                contenedores = [...contenedores,contenedor.labelContenedor]
+                localStorage.setItem('numContenedor',JSON.stringify(contenedores))
             })
 
-            let nextOne = document.querySelector('#nextOne');
-            nextOne.disabled = false;
+            numContenedorLabel.forEach(lb=> lb.textContent = contenedoresLabel)
+            bntNextOne.disabled = false
           }
     }
 
   
 });
 
-let tipoViaje = null
-let cmbTipoUnidad = document.querySelector('#cmbTipoUnidad')
-let cmbChasis = document.querySelector('#cmbChasis')
-let cmbChasis2 = document.querySelector('#cmbChasis2')
-let cmbDoly  = document.querySelector('#cmbDoly')
-let btnProgramar = document.querySelector('#btnProgramar')
+
 
 const formFieldsPlaneacion = [
     {'field':'txtFechaInicio','id':'txtFechaInicio','label':'Fecha salida','required': true, "type":"text", "trigger":"none"},
@@ -270,7 +285,7 @@ function programarViaje(){
    });
 
    formData["_token"] = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-   formData["num_contenedor"] =  localStorage.getItem('numContenedor') //document.querySelector('#numContenedor').textContent
+   formData["num_contenedor"] =  localStorage.getItem('numContenedor') 
    formData["tipoViaje"] = tipoViaje
    let url = '/planeaciones/viaje/programar'
 

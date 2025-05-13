@@ -35,15 +35,11 @@ class CotizacionesController extends Controller
         $cotizaciones_planeadas = Cotizaciones::where('id_empresa' ,'=',auth()->user()->id_empresa)->where('estatus','=','Aprobada')->where('estatus_planeacion','=', 1)->orderBy('created_at', 'desc')
         ->select('id_cliente', 'origen', 'destino', 'id', 'estatus')->get();
 
-        $equipos_dolys = Equipo::where('id_empresa' ,'=',auth()->user()->id_empresa)->where('tipo','=','Dolys')->get();
-        $equipos_chasis = Equipo::where('id_empresa' ,'=',auth()->user()->id_empresa)->where('tipo','=','Chasis / Plataforma')->get();
-        $equipos_camiones = Equipo::where('id_empresa' ,'=',auth()->user()->id_empresa)->where('tipo','=','Tractos / Camiones')->get();
-        $operadores = Operador::get();
-        $bancos = Bancos::get();
-        $proveedores = Proveedor::get();
+        
         $empresas = Empresas::get();
 
-        return view('cotizaciones.index', compact('empresas', 'proveedores','bancos','operadores','equipos_dolys','equipos_chasis','equipos_camiones','cotizaciones_planeadas'));
+      //  return view('cotizaciones.index');
+        return view('cotizaciones.index', compact('empresas'));
     }
 
     public function getCotizacionesList()
@@ -51,6 +47,7 @@ class CotizacionesController extends Controller
         $cotizaciones = Cotizaciones::where('id_empresa', auth()->user()->id_empresa)
             ->where('estatus', '=', 'Aprobada')
             ->where('estatus_planeacion', '=', 1)
+            ->where('jerarquia', "!=",'Secundario')
             ->orderBy('created_at', 'desc')
             ->with(['cliente', 'DocCotizacion.Asignaciones'])
             ->get()
@@ -127,6 +124,7 @@ class CotizacionesController extends Controller
     {
         $cotizaciones = Cotizaciones::where('id_empresa', auth()->user()->id_empresa)
             ->where('estatus', 'Finalizado')
+            ->where('jerarquia', "!=",'Secundario')
             ->orderBy('created_at', 'desc')
             ->with([
                 'Cliente',
@@ -250,6 +248,7 @@ class CotizacionesController extends Controller
     {
         $cotizaciones = Cotizaciones::where('id_empresa', auth()->user()->id_empresa)
             ->where('estatus', 'Aprobada')
+            ->where('jerarquia', "!=",'Secundario')
             ->where(function($query) {
                 $query->where('estatus_planeacion', 0)
                     ->orWhereNull('estatus_planeacion');
@@ -294,6 +293,7 @@ public function getCotizacionesCanceladas()
 {
     $cotizaciones = Cotizaciones::where('id_empresa', auth()->user()->id_empresa)
         ->where('estatus', 'Cancelada')
+        ->where('jerarquia', "!=",'Secundario')
         ->orderBy('created_at', 'desc')
         ->with(['cliente', 'DocCotizacion.Asignaciones'])
         ->get()
@@ -772,7 +772,10 @@ public function getCotizacionesCanceladas()
     }
 
     public function cotizacionesFull(Request $request){
-        $cotizaciones = Cotizaciones::leftJoin('docum_cotizacion as d','cotizaciones.id','=','d.id_cotizacion')->where('referencia_full', '=', $request->uuid)->get();
+        $cotizaciones = Cotizaciones::leftJoin('docum_cotizacion as d','cotizaciones.id','=','d.id_cotizacion')
+                                                ->where('referencia_full', '=', $request->uuid)
+                                                ->orderBy('jerarquia')
+                                                ->get();
         return $cotizaciones;
     }
 

@@ -7,6 +7,7 @@ use App\Models\BancoDineroOpe;
 use App\Models\Bancos;
 use App\Models\DocumCotizacion;
 use App\Models\GastosOperadores;
+use App\Models\Cotizaciones;
 use App\Models\Operador;
 use App\Models\Liquidaciones;
 use App\Models\LiquidacionContenedor;
@@ -69,12 +70,25 @@ class LiquidacionesController extends Controller
         ->get();
 
         $contenedores = $asignacion_operador->map(function($c){
-            //ViaticosOperador::where()
+            
+            $numContenedor = $c->contenedor->num_contenedor;
+
+            if(!is_null($c->contenedor->cotizacion->referencia_full)){
+                $secundaria = Cotizaciones::where('referencia_full', $c->contenedor->cotizacion->referencia_full)
+                        ->where('jerarquia', 'Secundario')
+                        ->with('DocCotizacion.Asignaciones')
+                        ->first();
+
+                    if ($secundaria && $secundaria->DocCotizacion) {
+                        $numContenedor .= ' / ' . $secundaria->DocCotizacion->num_contenedor;
+                    }
+            }
+
             return [
                 "IdAsignacion" => $c->id,
                 "IdOperador" => $c->id_operador,
                 "IdContenedor" => $c->id_contenedor,
-                "Contenedor" => $c->contenedor->num_contenedor,
+                "Contenedor" => $numContenedor,
                 "SueldoViaje" => $c->sueldo_viaje,
                 "DineroViaje" => $c->dinero_viaje,
                 "GastosJustificados" => (!is_null($c->justificacion)) ? $c->justificacion->sum('monto') : 0,

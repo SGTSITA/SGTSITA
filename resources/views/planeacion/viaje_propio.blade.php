@@ -3,7 +3,7 @@
             <p class="text-sm">Proporcione los datos de la unidad donde se realizará el envío.</p>
             <div class="col-12 col-md-4  mt-2 text-start">
               <label>Tipo de unidad</label>
-              <select class="form-control" name="cmbTipoUnidad" id="cmbTipoUnidad">
+              <select class="form-control" name="cmbTipoUnidad" id="cmbTipoUnidad" disabled>
                 <option value="Sencillo">Sencillo</option>
                 <option value="Full">Full</option>
               </select>
