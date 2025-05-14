@@ -23,9 +23,27 @@ class CoordenadasController extends Controller
              return view('coordendas.vercoor');
 
     }
+    public function indexSeach(){
+        return view('coordendas.search');
+    }
 
     public function  getcoorcontenedor(Request  $request) 
     {
+        $preguntas_A = [
+            [ 'texto' => "1) ¿ Registro en Puerto ?", 'campo' => 'registro_puerto', 'tooltip' => "Registro en Puerto" ],
+            [ 'texto' => "2) ¿ Dentro de Puerto ?", 'campo' => 'dentro_puerto', 'tooltip' => "Dentro de Puerto" ],
+            [ 'texto' => "3) ¿ Descarga Vacío ?", 'campo' => 'descarga_vacio', 'tooltip' => "Descarga Vacío" ],
+            [ 'texto' => "4) ¿ Cargado Contenedor ?", 'campo' => 'cargado_contenedor', 'tooltip' => "Cargado Contenedor" ],
+            [ 'texto' => "5) ¿ En Fila Fiscal ?", 'campo' => 'fila_fiscal', 'tooltip' => "En Fila Fiscal" ],
+            [ 'texto' => "6) ¿ Modulado ?", 'campo' => 'modulado_tipo', 'tooltip' => "Modulado" ],
+            [ 'texto' => "7) ¿ Descarga en patio ?", 'campo' => 'descarga_patio', 'tooltip' => "Descarga en patio" ],
+            [ 'texto' => "8) ¿Carga en patio?", 'campo' => 'cargado_patio', 'tooltip' => "Carga en patio" ],
+            [ 'texto' => "9) ¿Inicio ruta?", 'campo' => 'en_destino', 'tooltip' => "Inicio ruta" ],
+            [ 'texto' => "10)¿Inicia carga?", 'campo' => 'inicio_descarga', 'tooltip' => "Inicia carga" ],
+            [ 'texto' => "11)¿Fin descarga?", 'campo' => 'fin_descarga', 'tooltip' => "Fin descarga" ],
+            [ 'texto' => "12 ¿Recepción Doctos Firmados?", 'campo' => 'recepcion_doc_firmados', 'tooltip' => "Recepción Doctos Firmados" ],
+        ];
+
         $params = $request->query();
 
         $proveedor = $params['proveedor'] ?? null;  
@@ -54,26 +72,12 @@ class CoordenadasController extends Controller
                 );
         }, 'beneficiarios');
 
-        $preguntas_A = [
-            [ 'texto' => "1) ¿ Registro en Puerto ?", 'campo' => 'registro_puerto', 'tooltip' => "Registro en Puerto" ],
-            [ 'texto' => "2) ¿ Dentro de Puerto ?", 'campo' => 'dentro_puerto', 'tooltip' => "Dentro de Puerto" ],
-            [ 'texto' => "3) ¿ Descarga Vacío ?", 'campo' => 'descarga_vacio', 'tooltip' => "Descarga Vacío" ],
-            [ 'texto' => "4) ¿ Cargado Contenedor ?", 'campo' => 'cargado_contenedor', 'tooltip' => "Cargado Contenedor" ],
-            [ 'texto' => "5) ¿ En Fila Fiscal ?", 'campo' => 'fila_fiscal', 'tooltip' => "En Fila Fiscal" ],
-            [ 'texto' => "6) ¿ Modulado ?", 'campo' => 'modulado_tipo', 'tooltip' => "Modulado" ],
-            [ 'texto' => "7) ¿ Descarga en patio ?", 'campo' => 'descarga_patio', 'tooltip' => "Descarga en patio" ],
-            [ 'texto' => "8) ¿Carga en patio?", 'campo' => 'cargado_patio', 'tooltip' => "Carga en patio" ],
-            [ 'texto' => "9) ¿Inicio ruta?", 'campo' => 'en_destino', 'tooltip' => "Inicio ruta" ],
-            [ 'texto' => "10)¿Inicia carga?", 'campo' => 'inicio_descarga', 'tooltip' => "Inicia carga" ],
-            [ 'texto' => "11)¿Fin descarga?", 'campo' => 'fin_descarga', 'tooltip' => "Fin descarga" ],
-            [ 'texto' => "12 ¿Recepción Doctos Firmados?", 'campo' => 'recepcion_doc_firmados', 'tooltip' => "Recepción Doctos Firmados" ],
-        ];
-
-
+  
         $datos = DB::table('cotizaciones')
     ->select(
-        'cotizaciones.id',
-        'asig.id as idasignacion',
+        'cotizaciones.id as id_cotizacion',
+        'asig.id as id_asignacion',
+        'coordenadas.id as id_coordenada',
         'clients.nombre as cliente',
         'cotizaciones.origen',
         'cotizaciones.destino',
@@ -105,19 +109,37 @@ class CoordenadasController extends Controller
         'coordenadas.descarga_patio',
         'coordenadas.descarga_patio_datetime',
         'coordenadas.cargado_patio',
-        'coordenadas.cargado_patio_datetime'
+        'coordenadas.cargado_patio_datetime',
+        'tipo_b_estado',
+        DB::raw("CASE tipo_b_estado 
+        WHEN 0 THEN 'No Iniciado' 
+        WHEN 1 THEN 'Iniciado' 
+        WHEN 2 THEN 'Finalizado' 
+         END as Estatus_Burrero"),
+         'tipo_f_estado',
+        DB::raw("CASE tipo_f_estado 
+        WHEN 0 THEN 'No Iniciado' 
+        WHEN 1 THEN 'Iniciado' 
+        WHEN 2 THEN 'Finalizado' 
+         END as Estatus_Foraneo"),
+         'tipo_c_estado',
+        DB::raw("CASE tipo_c_estado 
+        WHEN 0 THEN 'No Iniciado' 
+        WHEN 1 THEN 'Iniciado' 
+        WHEN 2 THEN 'Finalizado' 
+     END as Estatus_Completo")
     )
     ->join('clients', 'cotizaciones.id_cliente', '=', 'clients.id')
-    // Elimino el join a docum_cotizacion aquí ya que la subconsulta asignaciones ya lo contiene
-    ->joinSub($asignaciones, 'asig', function ($join) {
-        $join->on('asig.id_contenedor', '=', 'cotizaciones.id'); // Este es el correcto para relacionar las cotizaciones con asignaciones
+    
+   ->joinSub($asignaciones, 'asig', function ($join) {
+      $join->on('asig.id_contenedor', '=', 'cotizaciones.id'); 
     })
-    ->Join('coordenadas', 'coordenadas.id_asignacion', '=', 'asig.id') // El leftJoin a coordenadas sigue igual
+    ->Join('coordenadas', 'coordenadas.id_asignacion', '=', 'asig.id') 
     ->joinSub($beneficiarios, 'beneficiarios', function ($join) {
         $join->on('asig.beneficiario_id', '=', 'beneficiarios.id')
              ->on('asig.tipo_contrato', '=', 'beneficiarios.tipo_contrato');
     })
-    ->leftJoin('subclientes','subclientes.id_cliente','=','beneficiarios.id')
+    //->leftJoin('subclientes','subclientes.id_cliente','=','beneficiarios.id')
     ->when($proveedor, function ($query) use ($proveedor) {
         return $query->where('beneficiarios.id', $proveedor);
     })
@@ -125,13 +147,18 @@ class CoordenadasController extends Controller
         return $query->where('beneficiarios.id', $cliente);
     })
     ->when($subcliente, function ($query) use ($subcliente) {
-        return $query->where('subclientes.id', $subcliente);
+        return $query->whereExists(function ($subq) use ($subcliente) {
+            $subq->select(DB::raw(1))
+                ->from('subclientes')
+                ->where('subclientes.id', '=', $subcliente)
+                ->whereColumn('subclientes.id_cliente', '=', 'clients.id');
+        });
     })
     ->when($fecha_inicio && $fecha_fin, function ($query) use ($fecha_inicio, $fecha_fin) {
         return $query->whereBetween('asig.fecha_inicio', [$fecha_inicio, $fecha_fin]);
     })
     ->when($contenedor, function ($query) use ($contenedor) {
-        return $query->where('asig.num_contenedor', $contenedor); // Cambio para usar el num_contenedor desde asignaciones
+        return $query->where('asig.num_contenedor', $contenedor); 
     })
     ->get();
             

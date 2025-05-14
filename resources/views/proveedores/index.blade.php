@@ -15,9 +15,6 @@
                                     +&nbsp; Nuevo Proveedor
                                 </a>
                             @endcan
-                            <button class="btn btn-dark btn-sm" onclick="openCuentaGlobalModal()">
-                                <i class="fas fa-coins"></i> Cuenta Global
-                            </button>
                         </div>
                     </div>
 

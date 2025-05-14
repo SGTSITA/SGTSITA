@@ -45,6 +45,15 @@ document.addEventListener('DOMContentLoaded', () => {
             },
        
         {
+    headerName: "Proveedor",
+    field: "proveedor",
+    filter: 'agTextColumnFilter',
+    floatingFilter: true,
+    width: 180,
+    cellClass: 'text-center'
+},
+
+        {
             headerName: "Formato CCP",
             field: "doc_ccp",
             cellRenderer: checkboxRenderer,

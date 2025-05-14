@@ -848,6 +848,7 @@ public function export_cxp(Request $request)
     
         // Construir consulta base
         $cotizacionesQuery = Cotizaciones::query()
+
             ->where('cotizaciones.id_empresa', auth()->user()->id_empresa)
             ->where('cotizaciones.estatus', '!=', 'Cancelada')
             ->where('cotizaciones.jerarquia',"Principal")
@@ -870,6 +871,7 @@ public function export_cxp(Request $request)
                 'cotizaciones.referencia_full',
             )
             ->distinct();
+
     
         // Aplicar filtro por fechas si vienen del request
         if ($request->filled('fecha_inicio') && $request->filled('fecha_fin')) {
