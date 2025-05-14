@@ -49,6 +49,7 @@ class CuentasPagarController extends Controller
         $cotizacionesPorPagar = Cotizaciones::join('docum_cotizacion', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
         ->join('asignaciones', 'docum_cotizacion.id', '=', 'asignaciones.id_contenedor')
         ->where('asignaciones.id_camion', '=', NULL)
+        ->where('jerarquia','Principal')
         ->where(function($query) {
             $query->where('cotizaciones.estatus', '=', 'Aprobada')
                   ->orWhere('cotizaciones.estatus', '=', 'Finalizado');
@@ -65,13 +66,27 @@ class CuentasPagarController extends Controller
             'cotizaciones.id_cuenta_prov',
             'cotizaciones.dinero_cuenta_prov',
             'cotizaciones.id_cuenta_prov2',
-            'cotizaciones.dinero_cuenta_prov2'
+            'cotizaciones.dinero_cuenta_prov2',
+            'cotizaciones.referencia_full'
         )
         ->get();
 
         $handsOnTableData = $cotizacionesPorPagar->map(function($item){
+            $numContenedor = $item->num_contenedor;
+
+            if(!is_null($item->referencia_full)){
+                $secundaria = Cotizaciones::where('referencia_full', $item->referencia_full)
+                        ->where('jerarquia', 'Secundario')
+                        ->with('DocCotizacion.Asignaciones')
+                        ->first();
+
+                    if ($secundaria && $secundaria->DocCotizacion) {
+                        $numContenedor .= ' / ' . $secundaria->DocCotizacion->num_contenedor;
+                    }
+            }
+
             return [
-                $item->num_contenedor,
+                $numContenedor,
                 ($item->estatus == 'Aprobada') ? "En Curso" : $item->estatus,
                 $item->prove_restante,
                 $item->prove_restante,

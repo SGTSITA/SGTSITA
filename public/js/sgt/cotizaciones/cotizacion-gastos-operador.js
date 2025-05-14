@@ -242,6 +242,7 @@ const gridOptionsOperador = {
     });
    }
    
+   if(btnElminar)
    btnElminar.addEventListener('click',()=>{
     eliminarGastoOperador();
    })

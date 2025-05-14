@@ -142,7 +142,7 @@ class MissionResultRenderer {
  })
   
   var paginationTitle1 = document.querySelector("#ag-84-label");
-  paginationTitle1.textContent = 'Registros por página';
+  if(paginationTitle1) paginationTitle1.textContent = 'Registros por página';
   
   let IdContenedor = null;
 

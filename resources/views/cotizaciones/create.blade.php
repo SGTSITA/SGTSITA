@@ -11,27 +11,48 @@
                 <div class="card">
                     <div class="card-header">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
+                        
                         <h3 class="mb-3">Crear Cotizacion</h3>
-                            
+                        <div class="col-6 ">
+
+                            <div class="option-group">
+                                <label class="custom-option selected">
+                                    <input type="radio" checked name="plan" value="Sencillo" onchange="handleSelection(this)">
+                                    <i class="fas fa-truck icon"></i>
+                                    <span class="text">Sencillo</span>
+                                    <i class="fas fa-check check-icon"></i>
+                                </label>
+
+                                <label class="custom-option">
+                                    <input type="radio" name="plan" value="Full" onchange="handleSelection(this)">
+                                    <i class="fas fa-truck-moving icon"></i>
+                                    <span class="text">Full</span>
+                                    <i class="fas fa-check check-icon"></i>
+                                </label>
+                            </div>
+                        </div>
                         </div>
                     </div>
 
                     <div class="card-body">
-                        <form method="POST" action="{{ route('store.cotizaciones') }}" id="cotizacionCreate" enctype="multipart/form-data" role="form">
+                        <form method="POST" action="{{ route('v2store.cotizaciones') }}" 
+                        id="cotizacionCreateMultiple" enctype="multipart/form-data" sgt-cotizacion-action="create" role="form">
                             @csrf
 
                             <div class="modal-body">
                                 <div class="row">
+                                
                                 <hr class="horizontal dark mt-0 mb-4">
                                     <div class="col-12">
                                         <div class="row">
+                                            
                                             <!--div class="col-3">
                                                 <label for="precio">Nuevo cliente</label><br>
                                                 <button class="btn btn-success btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#collapseExample" aria-expanded="false" aria-controls="collapseExample">
                                                     Agregar <img src="{{ asset('assets/icons/cliente.png') }}" alt="" width="25px">
                                                 </button>
                                             </div-->
-                                            <div class="col-4 col-md-5">
+                                            <div class="col-4 col-md-6">
                                                 <ul class="list-group">
                                                     <li class="list-group-item border-1 border-dashed d-flex p-4 mb-2 bg-gray-100 border-radius-lg">
                                                     <div class="d-flex flex-column">
@@ -52,7 +73,7 @@
                                                 </ul>
                                             </div>
 
-                                            <div class="col-4 col-md-5">
+                                            <div class="col-4 col-md-6">
                                                 <ul class="list-group">
                                                     <li class="list-group-item border-1 border-dashed d-flex p-4 mb-2 bg-gray-100 border-radius-lg">
                                                     <div class="d-flex flex-column">
@@ -69,8 +90,8 @@
                                                     </li>
                                                 </ul>
                                             </div>
-                                            <div class="col-lg-2 col-md-2 col-2 my-auto text-end">
-                                            <a href="javascript:;" class="btn btn-sm bg-gradient-info mb-0"><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">Crear Cliente</font></font></a>
+                                            <!--div class="col-lg-2 col-md-2 col-2 my-auto text-end">
+                                                <a href="javascript:;" class="btn btn-sm bg-gradient-info mb-0"><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">Crear Cliente</font></font></a>
                                                 <p class="text-sm mt-2 mb-0">
                                                    
                                                     <font style="vertical-align: inherit;">
@@ -78,7 +99,7 @@
                                                     </font>
                                                    
                                                 </p>
-                                            </div>
+                                            </div-->
                                         </div>
                                     </div>
                                 <hr class="horizontal dark mt-0 mb-4">
@@ -144,78 +165,6 @@
                                             <input name="destino" id="destino" autocomplete="off" type="text" class="form-control" value="APARTADO">@error('destino') <span class="error text-danger">{{ $message }}</span> @enderror
                                         </div>
                                     </div>
-
-                                    <div class="col-3 form-group">
-                                        <label for="name">Num. Contenedor</label>
-                                        <div class="input-group mb-3">
-                                            <span class="input-group-text" id="basic-addon1">
-                                                <img src="{{ asset('img/icon/contenedor.png') }}" alt="" width="25px">
-                                            </span>
-                                            <input name="num_contenedor" id="num_contenedor" type="text" class="form-control" autocomplete="off">@error('num_contenedor') <span class="error text-danger">{{ $message }}</span> @enderror
-                                        </div>
-                                    </div>
-
-                                    <div class="col-3 form-group">
-                                        <label for="name">Tamaño Contenedor</label>
-                                        <div class="input-group mb-3">
-                                            <span class="input-group-text" id="basic-addon1">
-                                                <img src="{{ asset('img/icon/escala.png') }}" alt="" width="25px">
-                                            </span>
-                                            <input name="tamano" id="tamano" autocomplete="off" type="text" oninput="allowOnlyDecimals(event)" class="form-control"value="{{old('tamano')}}">@error('tamano') <span class="error text-danger">{{ $message }}</span> @enderror
-                                        </div>
-                                    </div>
-
-                                    <div class="col-3 form-group">
-                                        <label for="name">Peso Reglamentario</label>
-                                        <div class="input-group mb-3">
-                                            <span class="input-group-text" id="basic-addon1">
-                                                <img src="{{ asset('img/icon/perdida-de-peso.png') }}" alt="" width="25px">
-                                            </span>
-                                            <input name="peso_reglamentario" autocomplete="off" id="peso_reglamentario" type="number" class="form-control calculo-cotizacion" value="22">
-                                        </div>
-                                    </div>
-
-                                    <div class="col-3 form-group">
-                                        <label for="name">Peso Contenedor</label>
-                                        <div class="input-group mb-3">
-                                            <span class="input-group-text" id="basic-addon1">
-                                                <img src="{{ asset('img/icon/peso.png') }}" alt="" width="25px">
-                                            </span>
-                                            <input name="peso_contenedor" id="peso_contenedor" autocomplete="off" type="text" class="form-control calculo-cotizacion" oninput="allowOnlyDecimals(event)">
-                                        </div>
-                                    </div>
-
-                                    <div class="col-3 form-group">
-                                        <label for="name">Sobrepeso</label>
-                                        <div class="input-group mb-3">
-                                            <span class="input-group-text" id="basic-addon1">
-                                                <img src="{{ asset('img/icon/pesa-rusa.png') }}" alt="" width="25px">
-                                            </span>
-                                            <input name="sobrepeso" id="sobrepeso" type="text" autocomplete="off" class="form-control calculo-cotizacion" readonly>
-                                        </div>
-                                    </div>
-
-                                    <div class="col-3 form-group">
-                                        <label for="name">Precio Sobre Peso</label>
-                                        <div class="input-group mb-3">
-                                            <span class="input-group-text" id="basic-addon1">
-                                                <img src="{{ asset('img/icon/tonelada.png') }}" alt="" width="25px">
-                                            </span>
-                                            <input name="precio_sobre_peso" id="precio_sobre_peso" type="text" autocomplete="off" class="form-control moneyformat calculo-cotizacion" oninput="allowOnlyDecimals(event)">
-                                        </div>
-                                    </div>
-
-                                    <div class="col-3 form-group">
-                                        <label for="name">Precio Tonelada</label>
-                                        <div class="input-group mb-3">
-                                            <span class="input-group-text" id="basic-addon1">
-                                                <img src="{{ asset('img/icon/tonelada.png') }}" alt="" width="25px">
-                                            </span>
-                                            <input name="precio_tonelada" id="precio_tonelada" type="text" autocomplete="off" class="form-control moneyformat calculo-cotizacion" value="0" oninput="allowOnlyDecimals(event)" readonly>
-                                        </div>
-                                    </div>
-
-                                    <div class="col-3"></div>
 
                                     <div class="col-3 form-group">
                                         <label for="name">Precio Viaje</label>
@@ -286,6 +235,35 @@
                                             <input name="retencion" readonly id="retencion" autocomplete="off" type="text" class="form-control" oninput="allowOnlyDecimals(event)">
                                         </div>
                                     </div>
+                                    <div class="col-4 form-group">
+                                        <label for="name">Precio Sobre Peso</label>
+                                        <div class="input-group mb-3">
+                                            <span class="input-group-text" id="basic-addon1">
+                                                <img src="{{ asset('img/icon/tonelada.png') }}" alt="" width="25px">
+                                            </span>
+                                            <input name="precio_sobre_peso" id="precio_sobre_peso" type="text" autocomplete="off" class="form-control moneyformat calculo-cotizacion" oninput="allowOnlyDecimals(event)">
+                                        </div>
+                                    </div>
+
+                                    <div class="col-4 form-group">
+                                        <label for="name">Sobre Peso Viaje</label>
+                                        <div class="input-group mb-3">
+                                            <span class="input-group-text" id="basic-addon1">
+                                                <img src="{{ asset('img/icon/peso.png') }}" alt="" width="25px">
+                                            </span>
+                                            <input name="sobrepeso_viaje" id="sobrepeso_viaje" type="text" autocomplete="off" class="form-control moneyformat calculo-cotizacion" oninput="allowOnlyDecimals(event)">
+                                        </div>
+                                    </div>
+
+                                    <div class="col-4 form-group">
+                                        <label for="name">Total Sobre Peso Viaje</label>
+                                        <div class="input-group mb-3">
+                                            <span class="input-group-text" id="basic-addon1">
+                                                <img src="{{ asset('img/icon/peso.png') }}" alt="" width="25px">
+                                            </span>
+                                            <input name="total_sobrepeso_viaje" id="total_sobrepeso_viaje" type="text" autocomplete="off" class="form-control moneyformat calculo-cotizacion" oninput="allowOnlyDecimals(event)">
+                                        </div>
+                                    </div>
 
                                     <div class="col-4 form-group">
                                         <label for="name">Base 1</label>
@@ -306,7 +284,8 @@
                                             <input name="base_taref" id="base_taref" autocomplete="off" type="float" readonly class="form-control moneyformat calculo-cotizacion" oninput="allowOnlyDecimals(event)">
                                         </div>
                                     </div>
-                                    <div class="col-4"></div>
+                                   
+                                    
 
                                     <div class="col-4 form-group">
                                         <label for="name">Total</label>
@@ -314,9 +293,99 @@
                                             <span class="input-group-text" id="basic-addon1">
                                                 <img src="{{ asset('img/icon/monedas.webp') }}" alt="" width="25px">
                                             </span>
-                                            <input name="total" id="total" readonly type="float" class="form-control moneyformat calculo-cotizacion" oninput="allowOnlyDecimals(event)">
+                                            <input name="total" id="total" readonly type="float" class="form-control moneyformat calculo-cotizacion total-cotizacion" oninput="allowOnlyDecimals(event)">
                                         </div>
                                     </div>
+
+                                    <div class="col-12">
+                                        <div class="custom-nav-tabs">
+                                            <label class="custom-nav-item">
+                                                <input type="radio" checked="checked" value="Contenedor-A" class="custom-nav-radio" name="contenedorTabs" id="tab1" />
+                                                <div class="custom-nav-link active">
+                                               
+                                                <h6><i class="ni ni-box-2 text-warning text-gradient"></i> Contenedor A  </h6>
+                                                </div>
+                                            </label>
+
+                                            <label class="custom-nav-item d-none" id="tab-contenedor-b">
+                                                <input type="radio" class="custom-nav-radio" value="Contenedor-B" name="contenedorTabs" id="tab2" />
+                                                <div class="custom-nav-link">
+                                               
+                                                <h6> <i class="ni ni-box-2 text-info text-gradient"></i> Contenedor B</h6>
+                                                </div>
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                
+
+                                    
+
+                                    <div class="col-3 form-group">
+                                        <label for="name">Num. Contenedor</label>
+                                        <div class="input-group mb-3">
+                                            <span class="input-group-text" id="basic-addon1">
+                                                <img src="{{ asset('img/icon/contenedor.png') }}" alt="" width="25px">
+                                            </span>
+                                            <input name="num_contenedor" id="num_contenedor" type="text" class="form-control" autocomplete="off">@error('num_contenedor') <span class="error text-danger">{{ $message }}</span> @enderror
+                                        </div>
+                                    </div>
+
+                                    <div class="col-3 form-group">
+                                        <label for="name">Tamaño Contenedor</label>
+                                        <div class="input-group mb-3">
+                                            <span class="input-group-text" id="basic-addon1">
+                                                <img src="{{ asset('img/icon/escala.png') }}" alt="" width="25px">
+                                            </span>
+                                            <input name="tamano" id="tamano" autocomplete="off" type="text" oninput="allowOnlyDecimals(event)" class="form-control"value="{{old('tamano')}}">@error('tamano') <span class="error text-danger">{{ $message }}</span> @enderror
+                                        </div>
+                                    </div>
+
+                                    <div class="col-3 form-group">
+                                        <label for="name">Peso Reglamentario</label>
+                                        <div class="input-group mb-3">
+                                            <span class="input-group-text" id="basic-addon1">
+                                                <img src="{{ asset('img/icon/perdida-de-peso.png') }}" alt="" width="25px">
+                                            </span>
+                                            <input name="peso_reglamentario" autocomplete="off" id="peso_reglamentario" type="number" class="form-control calculo-cotizacion" value="22">
+                                        </div>
+                                    </div>
+
+                                    <div class="col-3 form-group">
+                                        <label for="name">Peso Contenedor</label>
+                                        <div class="input-group mb-3">
+                                            <span class="input-group-text" id="basic-addon1">
+                                                <img src="{{ asset('img/icon/peso.png') }}" alt="" width="25px">
+                                            </span>
+                                            <input name="peso_contenedor" id="peso_contenedor" autocomplete="off" type="text" class="form-control calculo-cotizacion" oninput="allowOnlyDecimals(event)">
+                                        </div>
+                                    </div>
+
+                                    <div class="col-3 form-group">
+                                        <label for="name">Sobrepeso Contenedor</label>
+                                        <div class="input-group mb-3">
+                                            <span class="input-group-text" id="basic-addon1">
+                                                <img src="{{ asset('img/icon/pesa-rusa.png') }}" alt="" width="25px">
+                                            </span>
+                                            <input name="sobrepeso" id="sobrepeso" type="text" autocomplete="off" class="form-control calculo-cotizacion" readonly>
+                                        </div>
+                                    </div>
+
+                                    
+
+                                    <div class="col-3 form-group">
+                                        <label for="name">Precio Tonelada</label>
+                                        <div class="input-group mb-3">
+                                            <span class="input-group-text" id="basic-addon1">
+                                                <img src="{{ asset('img/icon/tonelada.png') }}" alt="" width="25px">
+                                            </span>
+                                            <input name="precio_tonelada" id="precio_tonelada" type="text" autocomplete="off" class="form-control moneyformat calculo-cotizacion" value="0" oninput="allowOnlyDecimals(event)" readonly>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-3"></div>
+
+                                    
 
                                     <div class="col-4 form-group">
                                         <label for="name">Fecha modulación</label>
@@ -357,6 +426,71 @@
 
 @section('select2')
 <style>
+  .option-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    max-width: 100%;
+  }
+
+  .custom-option {
+    position: relative;
+    display: flex;
+    align-items: center;
+    border: 1px dashed #ccc;
+    border-radius: 8px;
+    padding: 12px 16px;
+    min-height: 79px;
+    flex: 1 1 200px;
+    cursor: pointer;
+    transition: background-color 0.2s, border-color 0.2s;
+  }
+
+  .custom-option input[type="radio"] {
+    display: none;
+  }
+
+  .custom-option .icon {
+    margin-right: 16px;
+    font-size: 24px;
+    color: #ccc;
+    flex-shrink: 0;
+    transition: color 0.2s;
+  }
+
+  .custom-option .text {
+    font-size: 1rem;
+    color: #333;
+  }
+
+  .custom-option.selected {
+    background-color: #e6f4ff;
+    border-color: #007BFF;
+  }
+
+  .custom-option.selected .icon {
+    color: #007BFF;
+  }
+
+  .check-icon {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  background-color: #a5dc86;
+  border-radius: 50%;
+  padding: 4px;
+  font-size: 14px;
+  color: white;
+  display: none;
+}
+
+  .custom-option.selected .check-icon {
+    display: inline-block;
+  }
+</style>
+
+<style>
     /* Fondo transparente y sin bordes */
 .select2-container .select2-selection--single {
   background-color: transparent !important;
@@ -375,6 +509,73 @@
   background-color: transparent !important;
 }
 </style>
+
+<style>
+  .custom-nav-tabs {
+    display: flex;
+    width: 100%;
+    border-bottom: none;
+    gap: 0.3rem;
+  }
+
+  .custom-nav-item {
+    flex: 1;
+    text-align: center;
+  }
+
+  .custom-nav-link {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3px; /* Ajustado para reducir la altura */
+  background-color: #f1f1f1;
+  color: #999;
+  border-radius: 12px 12px 0 0;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.3s ease;
+}
+
+  .custom-nav-link i {
+    font-size: 20px;
+    color: inherit !important;
+  }
+
+  .custom-nav-link h6 {
+    margin: 2px 0 0;
+    font-size: 1rem;
+    font-weight: 500;
+    color: inherit;
+  }
+
+  .custom-nav-link.active {
+    background-color: #fff;
+    color: #111;
+    border: 1px solid #0d6efd; /* más delgado */
+    border-bottom: 2px solid #fff;
+   
+    transform: scale(1.02);
+    z-index: 1;
+  }
+
+  .custom-nav-link.active h6 {
+    font-weight: 600; /* negrita */
+  }
+
+  .custom-nav-link:not(.active) i {
+    color: #bbb;
+  }
+
+  .custom-nav-link:not(.active) h6 {
+    color: #aaa;
+  }
+
+  .custom-nav-radio {
+    display: none;
+  }
+</style>
+
 @endsection
 
 @push('custom-javascript')
@@ -382,12 +583,40 @@
 <script src="{{ asset('assets/vendor/select2/dist/js/select2.min.js')}}"></script>
 <script src="{{ asset('js/sgt/common.js') }}?v={{ filemtime(public_path('js/sgt/common.js')) }}"></script>
 <script src="{{ asset('js/sgt/cotizaciones/cotizaciones.js') }}?v={{ filemtime(public_path('js/sgt/cotizaciones/cotizaciones.js')) }}"></script>
+<script>
+  // JavaScript para manejar la clase 'active'
+  const radios = document.querySelectorAll('.custom-nav-radio');
+  const links = document.querySelectorAll('.custom-nav-link');
 
+  radios.forEach((radio, index) => {
+    radio.addEventListener('change', () => {
+      links.forEach((link) => link.classList.remove('active')); // Remover la clase active de todos
+      links[index].classList.add('active'); 
+      let Contenedor = radios[index].value
+      showInfoContenedor(Contenedor)
+    });
+  });
+</script>
 
+<script>
+  function handleSelection(input) {
+    let tabB = document.querySelector("#tab-contenedor-b")
+    document.querySelectorAll('.custom-option').forEach(opt =>{
+         opt.classList.remove('selected')
+         
+        });
+    input.parentElement.classList.add('selected');
+    if(input.parentElement.innerText == "Full") {tabB.classList.remove('d-none')}  else {tabB.classList.add('d-none')}
+    sobrePesoViaje()
+  }
+</script>
 <script>
    $(document).ready(()=>{
         $('.cliente').select2();
         $('#id_subcliente').select2();
+        initContenedores('Contenedor-A')
+        initContenedores('Contenedor-B')
+        showInfoContenedor('Contenedor-A')
    });
 </script>
 @endpush

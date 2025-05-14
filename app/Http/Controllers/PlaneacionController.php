@@ -134,41 +134,53 @@ class PlaneacionController extends Controller
     }
 
     public function initBoard(Request $request){
-        
-       /* $proveedores = Proveedor::where('id_empresa' ,'=',auth()->user()->id_empresa)->selectRaw('CONCAT(id,7000) as id,nombre as name, '."'true'".' as expanded')->get();
-        $equipos = Equipo::where('id_empresa' ,'=',auth()->user()->id_empresa)->selectRaw('CONCAT(id,5000) as id, id_equipo as name, '."'true'".' as expanded')->get();
-        
-        $board[] = ["name" => "Sub Contratados", "id" => "S", "expanded" => true, "children" => $proveedores];
-        $board[] = ["name" => "Propios", "id" => "P", "expanded" => true, "children" => $equipos];*/
-
         $planeaciones = Asignaciones::join('docum_cotizacion', 'asignaciones.id_contenedor', '=', 'docum_cotizacion.id')
                         ->join('cotizaciones', 'docum_cotizacion.id_cotizacion', '=', 'cotizaciones.id')
                         ->where('asignaciones.fecha_inicio', '>=', $request->fromDate)
                         ->where('asignaciones.id_empresa' ,'=',auth()->user()->id_empresa)
                         ->where('cotizaciones.estatus', 'Aprobada')
                         ->where('estatus_planeacion','=', 1)
-                        ->select('asignaciones.*', 'docum_cotizacion.num_contenedor','cotizaciones.id_cliente')
+                        ->select('asignaciones.*', 'docum_cotizacion.num_contenedor','cotizaciones.id_cliente','cotizaciones.referencia_full','cotizaciones.tipo_viaje')
                         ->get();
+
+        $extractor = $planeaciones->map(function($p){
+            $itemNumContenedor = $p->num_contenedor;
+            if($p->tipo_viaje == "Full"){
+                $cotizacionFull = Cotizaciones::where('referencia_full',$p->referencia_full)->where('jerarquia','Secundario')->first();
+                $contenedorSecundario = DocumCotizacion::where("id_cotizacion",$cotizacionFull->id)->first();
+                $itemNumContenedor .= " / ".$contenedorSecundario->num_contenedor;
+            }
+            return [
+                    "fecha_inicio" => $p->fecha_inicio,
+                    "fecha_fin" => $p->fecha_fin,
+                    "id_contenedor" => $p->id_contenedor,
+                    "id_cliente" => $p->id_cliente,
+                    "num_contenedor" => $itemNumContenedor
+                   ];
+        });
 
         $clientes = $planeaciones->unique('id_cliente')->pluck('id_cliente');
         $clientesData = Client::whereIn('id' ,$clientes)->selectRaw('id, nombre as name, '."'true'".' as expanded')->get();
 
         $board = [];
         $board[] = ["name" => "Clientes", "id" => "S", "expanded" => true, "children" => $clientesData];
-      //  $board[] = ["name" => "Propios", "id" => "P", "expanded" => true, "children" => $equipos];
-
+      
         $fecha = Carbon::now()->subdays(10)->format('Y-m-d');
-        return response()->json(["boardCentros"=> $board,"extractor"=>$planeaciones,"scrollDate"=> $fecha]);  
+        return response()->json(["boardCentros"=> $board,"extractor"=>$extractor,"scrollDate"=> $fecha]);  
     }
 
     public function asignacion(Request $request){
 
-        $numContenedor = $request->get('num_contenedor');
+        $numContenedores = json_decode($request->get('num_contenedor'));
+        $numContenedor = $numContenedores[0];
+       // $numContenedor = ($request->cmbTipoUnidad == "Full") ? substr($numContenedor,0,12) : $numContenedor;
+        
         $fechaInicio = common::TransformaFecha($request->txtFechaInicio);
         $fechaFinal = common::TransformaFecha($request->txtFechaFinal);
         
         $contenedor = DocumCotizacion::where('num_contenedor',$numContenedor)->first();
         $cotizacion = Cotizaciones::where('id', '=',  $contenedor->id_cotizacion)->first();
+        
       
         try{
 
@@ -259,11 +271,28 @@ class PlaneacionController extends Controller
             $cotizacion->tipo_viaje = $request->get('cmbTipoUnidad');
             $cotizacion->update();
 
-            DB::commit();
+            
 
             $cotizacion_data = [
                 "tipo_viaje" => $cotizacion->tipo_viaje,
             ];
+
+            if(sizeof($numContenedores) == 2){
+                $fullUUID = Common::generarUuidV4();
+                foreach($numContenedores as $i => $cont){
+                    $contenedor = DocumCotizacion::where('num_contenedor',$cont)->first();
+                    $cotizacion = Cotizaciones::where('id', '=',  $contenedor->id_cotizacion)->first();
+                    $cotizacion->referencia_full = $fullUUID;
+                    $cotizacion->jerarquia = ($i == 0) ? 'Principal' : 'Secundario';
+                    \Log::debug("index: $i contenedor: $cont jerarquia: $cotizacion->jerarquia");
+                    $cotizacion->estatus_planeacion = 1;
+                    $cotizacion->tipo_viaje = 'Full';
+                    $cotizacion->update();
+
+                }
+            }
+
+            DB::commit();
     
             return response()->json(["TMensaje"=>"success","Titulo" => "Planeado correctamente", "Mensaje" => "Se ha programado correctamente el viaje del contenedor",'success' => true, 'cotizacion_data' => $cotizacion_data]);
 

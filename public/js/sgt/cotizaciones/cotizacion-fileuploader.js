@@ -2,12 +2,15 @@ let urlRepo = '';
 
 var _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
-var [BoletaLib, Doda, PreAlta,CartaPortePDF,CartaPorteXML] = [
+var [BoletaLib, Doda, PreAlta,CartaPortePDF,CartaPorteXML,CCP, EIR] = [
     {"opcion":"BoletaLib","titulo":"Boleta de Liberación","agGrid": "BoletaLiberacion"},
     {"opcion":"Doda","titulo":"DODA","agGrid": "DODA"},
     {"opcion":"PreAlta","titulo":"Pre Alta","agGrid": "PreAlta"},
     {"opcion":"CartaPortePDF","titulo":"Carta Porte PDF","agGrid": "CartaPorte"},
     {"opcion":"CartaPorteXML","titulo":"Carta Porte XML","agGrid": "CartaPorteXML"},
+    {"opcion":"CCP","titulo":"CCP - Carta Porte","agGrid": "CCP"},
+    {"opcion":"EIR","titulo":"EIR - Comprobante de vacío","agGrid": "EIR"},
+    
 ];
 
 let fileSettings = BoletaLib;
@@ -19,9 +22,25 @@ let btnFileCartaPorteXML = document.querySelector('#btnFileCartaPorteXML');
 
 let btnFileDODA = document.querySelector('#btnFileDODA');
 let btnFileBoletaLiberacion = document.querySelector('#btnFileBoletaLiberacion');
+let btnFileccp = document.querySelector('#btnFileFormato-para-Carta-porte');
+let btnFileEir = document.querySelector('#btnFileeir');
+let btnBoletaVacio = document.querySelector("#btnFilePre-Alta")
+
 
 btnFileDODA.addEventListener('click',()=>{
     fileSettings = Doda;
+})
+
+btnBoletaVacio.addEventListener('click',()=>{
+    fileSettings = PreAlta;
+})
+
+btnFileccp.addEventListener('click',()=>{
+    fileSettings = CCP;
+})
+
+btnFileEir.addEventListener('click',()=>{
+    fileSettings = EIR;
 })
 
 btnFileBoletaLiberacion.addEventListener('click',()=>{
@@ -183,6 +202,15 @@ function resetUploadConfig(){
 
 function getFilesContenedor(){
     let numContenedor = localStorage.getItem('numContenedor')
+    let requiredFiles = [
+                            {"fileCode" : "Boleta-de-liberacion"},
+                            {"fileCode" : "Doda"},
+                            {"fileCode":"Carta-Porte"},
+                            {'fileCode': 'Carta-Porte-XML'},
+                            {"fileCode" : "Formato-para-Carta-porte"},
+                            {"fileCode":"Pre-Alta"},
+                            {"fileCode" : "eir"}
+                        ]
     $.ajax({
         url:`/viajes/file-manager/get-file-list/${numContenedor}`,
         type:'get',
@@ -194,6 +222,15 @@ function getFilesContenedor(){
             let fileSize = 0;
             let fileType = null;
             let iconImg = null;
+
+            requiredFiles.forEach((f)=>{
+                iconImg = `img-${f.fileCode}`
+                let imgFile = document.querySelector("#"+iconImg)
+                imgFile.src = `/img/not-file.png`
+                $(`#filSize-${f.fileCode}`).text('0 KB')
+                $(`#badge-${f.fileCode}` ).addClass('bg-gradient-warning').removeClass('bg-gradient-success').text('Pendiente')
+                document.querySelector(`#btn-ver-${f.fileCode}`).href = `javascipt:void()`
+            })
             documentos.forEach((d)=>{
                 badge = `badge-${d.fileCode}` 
                 btnVer = `btn-ver-${d.fileCode}`

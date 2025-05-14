@@ -45,8 +45,9 @@ return `${dia}/${mes}/${anio}`;
              //Mostrar los eventos planificados previamente
             
              allEvents = resp.extractor;
-             TarifasHilos = resp.TarifasHilo;
-             festivos = resp.festivos;
+             //TarifasHilos = resp.TarifasHilo;
+             //festivos = resp.festivos;
+             
              if(allEvents != null){
                  resp.extractor.forEach((i)=>{
                  let x = Math.floor(Math.random() * 8) + 1;
@@ -125,7 +126,7 @@ return `${dia}/${mes}/${anio}`;
  dp.contextMenu = new DayPilot.Menu({
      items: [
          {
-             text: "Ver Coordenadas ", onClick: function (args) {
+             text: "... ", onClick: function (args) {
                 Swal.fire({
                     title: '¿Desea ver las corrdenadas del viaje?',
                     showDenyButton: false,
@@ -292,6 +293,7 @@ return `${dia}/${mes}/${anio}`;
         type:'post',
         data:{_token:_token, id: idContendor},
         beforeSend:()=>{
+            mostrarLoading('Espere un momento, cargando información del contenedor...')
             let docum = document.querySelectorAll('.documentos')
             docum.forEach((d) => {
                 d.innerHTML = `--`
@@ -306,6 +308,7 @@ return `${dia}/${mes}/${anio}`;
             nombreSubcliente.textContent = "--"
         },
         success:(response)=>{
+            ocultarLoading()
             nombreTransportista.textContent = response.nombre;
             tipoViajeSpan.textContent = response.tipo
 
@@ -338,7 +341,7 @@ return `${dia}/${mes}/${anio}`;
             })
         },
         error:()=>{
-
+            ocultarLoading()
         }
     })
 
@@ -410,6 +413,10 @@ function finalizarViaje(idCotizacion, numContenedor){
             .then(response => response.json())
             .then(data => {
                 Swal.fire(data.Titulo,data.Mensaje,data.TMensaje)
+                if(data.TMensaje == "success"){
+                     dp.events.remove(idCotizacion); //Eliminar del board
+                }
+
             })
             .catch(error => {
                 Swal.fire('Error', 'No pudimos finalizar el viaje', 'error');

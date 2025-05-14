@@ -267,7 +267,7 @@
 
 @push('custom-javascript')
     <!-- AG Grid -->
-    <script src="https://unpkg.com/ag-grid-community/dist/ag-grid-community.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.js"></script>
 
     <!-- Nuestro JavaScript unificado -->
     <script
