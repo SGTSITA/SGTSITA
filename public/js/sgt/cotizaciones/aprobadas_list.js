@@ -294,9 +294,11 @@ function programarViaje(){
         type: "post",
         data: formData,
         beforeSend:function(){
-        
+            mostrarLoading('Planeando viaje... espere un momento')
+            btnProgramar.disabled = true 
         },
         success:function(data){
+            ocultarLoading();
                 Swal.fire(data.Titulo,data.Mensaje,data.TMensaje).then(function() {
                     if(data.TMensaje == "success"){
                         
@@ -305,7 +307,9 @@ function programarViaje(){
                     }
                 });
         },
-        error:function(){       
+        error:function(){     
+            ocultarLoading();  
+            btnProgramar.disabled = false 
         Swal.fire("Error","Ha ocurrido un error, intentelo nuevamente","error");
         }
     });

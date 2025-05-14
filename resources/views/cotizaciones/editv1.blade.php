@@ -14,7 +14,7 @@
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                             <h3 class="mb-3">Editar Cotizacion</h3>
                             <div class="col-3 offset-3">
-                            <div><span class="text-xs text-muted text-bold" id="referencia_full">{{$cotizacion->referencia_full}}</span></div>
+                            <div><span class="text-xs text-muted text-bold d-none" id="referencia_full">{{$cotizacion->referencia_full}}</span></div>
                                 <div class="option-group">
                                     @if($cotizacion->tipo_viaje != "Full")                                    
                                     <label class="custom-option selected">
@@ -310,7 +310,7 @@
                                             <span class="input-group-text" id="basic-addon1">
                                                 <img src="{{ asset('img/icon/peso.png') }}" alt="" width="25px">
                                             </span>
-                                            <input name="sobrepeso_viaje" id="sobrepeso_viaje" type="text" autocomplete="off" class="form-control moneyformat calculo-cotizacion" oninput="allowOnlyDecimals(event)">
+                                            <input name="sobrepeso_viaje" id="sobrepeso_viaje" readonly type="text" autocomplete="off" class="form-control moneyformat calculo-cotizacion" oninput="allowOnlyDecimals(event)">
                                         </div>
                                     </div>
 
@@ -320,7 +320,7 @@
                                             <span class="input-group-text" id="basic-addon1">
                                                 <img src="{{ asset('img/icon/peso.png') }}" alt="" width="25px">
                                             </span>
-                                            <input name="total_sobrepeso_viaje" id="total_sobrepeso_viaje" type="text" autocomplete="off" class="form-control moneyformat calculo-cotizacion" oninput="allowOnlyDecimals(event)">
+                                            <input name="total_sobrepeso_viaje" id="total_sobrepeso_viaje" readonly type="text" autocomplete="off" class="form-control moneyformat calculo-cotizacion" oninput="allowOnlyDecimals(event)">
                                         </div>
                                     </div>
 
@@ -433,7 +433,7 @@
                                                     <span class="input-group-text" id="basic-addon1">
                                                         <img src="{{ asset('img/icon/monedas.webp') }}" alt="" width="25px">
                                                     </span>
-                                                    <input type="text" class="form-control txtSumGastos" value="0" readonly>
+                                                    <input type="text" class="form-control txtSumGastos" id="txtSumGastos" value="0" readonly>
                                                 </div>
                                             </div>
                                             <div class="col-4 form-group">
@@ -442,7 +442,7 @@
                                                     <span class="input-group-text" id="basic-addon1">
                                                         <img src="{{ asset('img/icon/monedas.webp') }}" alt="" width="25px">
                                                     </span>
-                                                    <input name="total" id="total" type="float" class="form-control moneyformat calculo-cotizacion" readonly>
+                                                    <input name="total1" id="total1" type="float" class="form-control moneyformat calculo-cotizacion total-cotizacion" readonly>
                                                 </div>
                                             </div>
                                             <div class="col-4 form-group">
@@ -451,7 +451,7 @@
                                                 <span class="input-group-text" id="basic-addon1">
                                                     <img src="{{ asset('img/icon/monedas.webp') }}" alt="" width="25px">
                                                 </span>
-                                                <input type="text" class="form-control txtResultGastos" id="txtResultGastos1" value="{{ $cotizacion->total }}" readonly>
+                                                <input type="text" class="form-control txtResultGastos" id="total" value="{{ $cotizacion->total }}" readonly>
                                             </div>
                                         </div>
 
@@ -556,6 +556,51 @@
                     </tr>
                   </thead>
                   <tbody>
+                  <tr>
+                      <td>
+                        <div class="d-flex px-3 py-1">
+                          <div>
+                            <img src="{{asset('img/not-file.png')}}" class="avatar me-3" alt="image" id="img-Formato-para-Carta-porte">
+                          </div>
+                          <div class="d-flex flex-column justify-content-center">
+                            <h6 class="mb-0 text-sm">Formato CCP</h6>
+                            <p class="text-sm font-weight-bold text-secondary mb-0">
+                                <span class="text-muted" id="filSize-Formato-para-Carta-porte">0</span>
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <p class="text-sm font-weight-bold mb-0">
+                        <input name="ccp" id="ccp" type="text" class="form-control" value="{{$documentacion->ccp}}">
+                            
+                        </p>
+                      </td>
+                      <td class="align-middle text-center text-sm">
+                        <p class="text-sm font-weight-bold mb-0">
+                            <span class="badge bg-gradient-warning badge-sm" id="badge-Formato-para-Carta-porte">Pendiente</span>
+                        </p>
+                      </td>
+                      <td class="align-middle text-end">
+                        <div class="d-flex px-3 py-1 justify-content-center align-items-center">
+                        
+                          <button type="button" 
+                          class="btn btn-sm btn-icon-only btnDocs btn-rounded btn-outline-secondary mb-0 ms-2 btn-sm d-flex align-items-center justify-content-center ms-3" 
+                          data-bs-toggle="tooltip" id="btnFileFormato-para-Carta-porte"
+                          data-bs-placement="bottom" title="Cargar archivo" 
+                          data-bs-original-title="Cargar archivo">
+                            <i class="fas fa-upload" aria-hidden="true"></i>
+                          </button>
+                          <a href="javasrcipt:void()" target="_blank" class="openFile btn btn-sm btn-icon-only btn-rounded btn-outline-secondary mb-0 ms-2 btn-sm d-flex align-items-center justify-content-center ms-3" 
+                          data-bs-toggle="tooltip" 
+                          data-bs-placement="bottom" 
+                          title="Ver Documento" 
+                          data-bs-original-title="Ver Documento" id="btn-ver-Formato-para-Carta-porte">
+                            <i class="fas fa-eye" aria-hidden="true"></i>
+</a>
+                        </div>
+                      </td>
+                    </tr>
                   <tr>
                       <td>
                         <div class="d-flex px-3 py-1">
@@ -710,51 +755,7 @@
                         </div>
                       </td>
                     </tr>
-                    <tr>
-                      <td>
-                        <div class="d-flex px-3 py-1">
-                          <div>
-                            <img src="{{asset('img/not-file.png')}}" class="avatar me-3" alt="image" id="img-Formato-para-Carta-porte">
-                          </div>
-                          <div class="d-flex flex-column justify-content-center">
-                            <h6 class="mb-0 text-sm">CCP</h6>
-                            <p class="text-sm font-weight-bold text-secondary mb-0">
-                                <span class="text-muted" id="filSize-Formato-para-Carta-porte">0</span>
-                            </p>
-                          </div>
-                        </div>
-                      </td>
-                      <td>
-                        <p class="text-sm font-weight-bold mb-0">
-                        <input name="ccp" id="ccp" type="text" class="form-control" value="{{$documentacion->ccp}}">
-                            
-                        </p>
-                      </td>
-                      <td class="align-middle text-center text-sm">
-                        <p class="text-sm font-weight-bold mb-0">
-                            <span class="badge bg-gradient-warning badge-sm" id="badge-Formato-para-Carta-porte">Pendiente</span>
-                        </p>
-                      </td>
-                      <td class="align-middle text-end">
-                        <div class="d-flex px-3 py-1 justify-content-center align-items-center">
-                        
-                          <button type="button" 
-                          class="btn btn-sm btn-icon-only btnDocs btn-rounded btn-outline-secondary mb-0 ms-2 btn-sm d-flex align-items-center justify-content-center ms-3" 
-                          data-bs-toggle="tooltip" id="btnFileFormato-para-Carta-porte"
-                          data-bs-placement="bottom" title="Cargar archivo" 
-                          data-bs-original-title="Cargar archivo">
-                            <i class="fas fa-upload" aria-hidden="true"></i>
-                          </button>
-                          <a href="javasrcipt:void()" target="_blank" class="openFile btn btn-sm btn-icon-only btn-rounded btn-outline-secondary mb-0 ms-2 btn-sm d-flex align-items-center justify-content-center ms-3" 
-                          data-bs-toggle="tooltip" 
-                          data-bs-placement="bottom" 
-                          title="Ver Documento" 
-                          data-bs-original-title="Ver Documento" id="btn-ver-Formato-para-Carta-porte">
-                            <i class="fas fa-eye" aria-hidden="true"></i>
-</a>
-                        </div>
-                      </td>
-                    </tr>
+                    
 
                     <tr>
                       <td>
@@ -899,7 +900,7 @@
                                                 <span class="input-group-text" id="basic-addon1">
                                                     <img src="{{ asset('img/icon/monedas.webp') }}" alt="" width="25px">
                                                 </span>
-                                                <input type="text" id="txtTotalCotizacion" class="form-control" value="{{ $cotizacion->total }}" readonly>
+                                                <input type="text" id="txtTotalCotizacion" class="form-control total-cotizacion" value="{{ $cotizacion->total }}" readonly>
                                             </div>
                                         </div>
                                         <div class="col-4 form-group">
@@ -1516,106 +1517,26 @@
       showInfoContenedor(Contenedor)
     });
   });
+
+ 
 </script>
 
     <script type="text/javascript">
     $(document).ready(async function() {
-    $('.cliente').select2();
-    getGastosContenedor();
-    getGastosOperador();
-    btnPaymentStatus();
+        $('.cliente').select2();
+        getGastosContenedor();
+        getGastosOperador();
+        btnPaymentStatus();
 
-    adjuntarDocumentos();
-    localStorage.setItem('numContenedor','{{$documentacion->num_contenedor}}'); 
-    await getContenedoresOnFull()
-    getFilesContenedor();
+        adjuntarDocumentos();
+        localStorage.setItem('numContenedor','{{$documentacion->num_contenedor}}'); 
+        await getContenedoresOnFull()
+       // showInfoContenedor('Contenedor-A')
+      
+        getFilesContenedor();
     });
-    </script>
 
-   
-
-    
-
-    <script>
-         document.addEventListener('DOMContentLoaded', function () {
-            // Obtener referencias a los elementos
-            var optionSi = document.getElementById('option_si_ccp');
-            var optionNo = document.getElementById('option_no_ccp');
-            var inputFieldIMG = document.getElementById('inputFieldccp');
-
-            // Función para controlar la visibilidad del campo de entrada
-            function toggleInputField() {
-                // Si el radio button "Sí" está seleccionado, mostrar el campo de entrada
-                if (optionSi.checked) {
-                    inputFieldIMG.style.display = 'block';
-                } else {
-                    inputFieldIMG.style.display = 'none';
-                }
-            }
-
-            // Agregar eventos change a los radio buttons
-            optionSi.addEventListener('change', toggleInputField);
-            optionNo.addEventListener('change', toggleInputField);
-
-            // Llamar a la función inicialmente para asegurarse de que el campo se oculte o muestre correctamente
-            toggleInputField();
-        });
-
-        document.addEventListener('DOMContentLoaded', function () {
-            // Obtener referencias a los elementos
-            var optionSi = document.getElementById('option_si');
-            var optionNo = document.getElementById('option_no');
-            var inputField = document.getElementById('inputField');
-            var inputFieldIMG = document.getElementById('inputFieldIMG');
-
-            // Función para controlar la visibilidad del campo de entrada
-            function toggleInputField() {
-                // Si el radio button "Sí" está seleccionado, mostrar el campo de entrada
-                if (optionSi.checked) {
-                    inputField.style.display = 'block';
-                    inputFieldIMG.style.display = 'block';
-                } else {
-                    inputField.style.display = 'none';
-                    inputFieldIMG.style.display = 'none';
-                }
-            }
-
-            // Agregar eventos change a los radio buttons
-            optionSi.addEventListener('change', toggleInputField);
-            optionNo.addEventListener('change', toggleInputField);
-
-            // Llamar a la función inicialmente para asegurarse de que el campo se oculte o muestre correctamente
-            toggleInputField();
-        });
-
-        document.addEventListener('DOMContentLoaded', function () {
-            // Obtener referencias a los elementos
-            var eirSi = document.getElementById('eir_si');
-            var eirNo = document.getElementById('eir_no');
-            var inputEir = document.getElementById('inputEir');
-            var inputEirFecha = document.getElementById('inputEirFecha');
-
-            // Función para controlar la visibilidad del campo de entrada
-            function toggleInputEir() {
-                // Si el radio button "Sí" está seleccionado, mostrar el campo de entrada
-                if (eirSi.checked) {
-                    inputEir.style.display = 'block';
-                    inputEirFecha.style.display = 'block';
-                } else {
-                    inputEir.style.display = 'none';
-                    inputEirFecha.style.display = 'none';
-                }
-            }
-
-            // Agregar eventos change a los radio buttons
-            eirSi.addEventListener('change', toggleInputEir);
-            eirNo.addEventListener('change', toggleInputEir);
-
-            // Llamar a la función inicialmente para asegurarse de que el campo se oculte o muestre correctamente
-            toggleInputEir();
-        });
-
-        $(document).ready(function() {
+    $(document).ready(function() {
             function loadSubclientes(clienteId, selectedSubclienteId = null) {
                 if (clienteId) {
                     $.ajax({
@@ -1650,14 +1571,10 @@
             var initialSubclienteId = '{{ $cotizacion->id_subcliente }}';
             loadSubclientes(initialClienteId, initialSubclienteId);
         });
-    </script>
 
-    
-
-    <script>
         $(document).ready(()=>{
             
-            //calcularTotal()
+            sobrePesoViaje()
 
             formFields.forEach((item) =>{
                 if(item.type == "money") {
@@ -1680,9 +1597,7 @@
 
            
         })
-    </script>
 
-<script>
         document.addEventListener('DOMContentLoaded', function () {
             
             let condicionRecinto = document.querySelectorAll('.recinto');
@@ -1695,10 +1610,6 @@
                     inputRecinto.classList.toggle('d-none',elemento.attributes['data-kt-plan'].value != 'recinto-si') 
                     textRecinto.value = (elemento.attributes['data-kt-plan'].value != 'recinto-si') ? '' : 'recinto-si';
                 });
-                
-          
-              
-               //elemento.classList.toggle('active',elemento.attributes['data-kt-plan'].value == 'recinto-si' && '{{$cotizacion->uso_recinto}}' == 1) 
              
 
             });

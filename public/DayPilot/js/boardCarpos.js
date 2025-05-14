@@ -293,6 +293,7 @@ return `${dia}/${mes}/${anio}`;
         type:'post',
         data:{_token:_token, id: idContendor},
         beforeSend:()=>{
+            mostrarLoading('Espere un momento, cargando información del contenedor...')
             let docum = document.querySelectorAll('.documentos')
             docum.forEach((d) => {
                 d.innerHTML = `--`
@@ -307,6 +308,7 @@ return `${dia}/${mes}/${anio}`;
             nombreSubcliente.textContent = "--"
         },
         success:(response)=>{
+            ocultarLoading()
             nombreTransportista.textContent = response.nombre;
             tipoViajeSpan.textContent = response.tipo
 
@@ -339,7 +341,7 @@ return `${dia}/${mes}/${anio}`;
             })
         },
         error:()=>{
-
+            ocultarLoading()
         }
     })
 

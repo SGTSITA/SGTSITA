@@ -48,6 +48,7 @@ const editFormFields = [
     {'field':'fecha_modulacion', 'id':'fecha_modulacion','label':'Fecha modulación','required': false, "type":"text", "master": false},  
     {'field':'fecha_entrega', 'id':'fecha_entrega','label':'Fecha Entrega','required': false, "type":"text", "master": false},  
     {'field':'fecha_eir', 'id':'fecha_eir','label':'Fecha EIR','required': false, "type":"text", "master": false},  
+    {'field':'total', 'id':'total','label':'Total + Gastos','required': false, "type":"money", "master": false}, 
 ]
 
 let Contenedores = [];
@@ -74,15 +75,15 @@ const formFieldsFacturacion = [
 ]
 
 const formFieldsProveedor = [
-    {'field':'precio_viaje','id':'precio_proveedor','label':'Costo Viaje','required': false, "type":"money"},
-    {'field':'burreo','id':'burreo_proveedor','label':'Burreo Proveedor','required': false, "type":"money"},
-    {'field':'maniobra','id':'maniobra_proveedor','label':'Maniobra Proveedor','required': false, "type":"money"},
-    {'field':'estadia','id':'estadia_proveedor','label':'Estadía','required': false, "type":"money"},
-    {'field':'sobrepeso','id':'cantidad_sobrepeso_proveedor','label':'Sobre Peso','required': false, "type":"text"},
-    {'field':'precio_sobre_peso','id':'sobrepeso_proveedor','label':'Precio Sobre Peso','required': false, "type":"money"},
+    {'field':'precio_viaje','id':'precio_proveedor','label':'Costo Viaje','required': true, "type":"money"},
+    {'field':'burreo','id':'burreo_proveedor','label':'Burreo Proveedor','required': true, "type":"money"},
+    {'field':'maniobra','id':'maniobra_proveedor','label':'Maniobra Proveedor','required': true, "type":"money"},
+    {'field':'estadia','id':'estadia_proveedor','label':'Estadía','required': true, "type":"money"},
+    {'field':'sobrepeso','id':'cantidad_sobrepeso_proveedor','label':'Sobre Peso','required': true, "type":"text"},
+    {'field':'precio_sobre_peso','id':'sobrepeso_proveedor','label':'Precio Sobre Peso','required': true, "type":"money"},
     {'field':'precio_tonelada','id':'total_tonelada','label':'Total Tonelada','required': false, "type":"money"},
-    {'field':'base_factura','id':'base1_proveedor','label':'Base 1','required': false, "type":"money"},
-    {'field':'base_taref','id':'base2_proveedor','label':'Base 2','required': false, "type":"money"},
+    {'field':'base_factura','id':'base1_proveedor','label':'Base 1','required': true, "type":"money"},
+    {'field':'base_taref','id':'base2_proveedor','label':'Base 2','required': true, "type":"money"},
     {'field':'otro','id':'otro_proveedor','label':'Otros','required': false, "type":"money"},
     {'field':'iva','id':'iva_proveedor','label':'IVA','required': false, "type":"money"},
     {'field':'retencion','id':'retencion_proveedor','label':'Retención','required': false, "type":"money"},
@@ -139,18 +140,24 @@ function calcularTotal(modulo = 'crear') {
     // Sumar el valor de Precio Tonelada al total
     const totalFinal = totalConRetencion + precioTonelada;
     
+
+
+    let SumGastos = parseFloat(reverseMoneyFormat(document.querySelector("#txtSumGastos").value)) || 0;
+    
+    let txtResultGastos  = document.querySelectorAll(".txtResultGastos");
+    txtResultGastos.forEach((r) => r.value = moneyFormat(totalFinal + SumGastos))
+    let totalCotizacion  = document.querySelectorAll(".total-cotizacion");
+    totalCotizacion.forEach((r) => r.value = moneyFormat(totalFinal))
     //baseTaref Corresponde a Base 2
     const baseTaref = (totalFinal - baseFactura - iva) + retencion;
-
-
     // Mostrar el resultado en el input de base_taref
     const field_base_taref = fields.find( i => i.field == "base_taref");
     document.getElementById(field_base_taref.id).value = moneyFormat(baseTaref);
 
     // Formatear el total con comas
-    const totalFormateado = moneyFormat(totalFinal);
-    const field_total = fields.find( i => i.field == "total");
-    document.getElementById(field_total.id).value = totalFormateado;
+    //const totalFormateado = moneyFormat(totalFinal);
+    //const field_total = fields.find( i => i.field == "total");
+   // document.getElementById(field_total.id).value = totalFormateado;
   //  console.log(totalFormateado)
 
 }
@@ -231,11 +238,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
        
 
-        var sobrePesoProveedor = document.getElementById('cantidad_sobrepeso_proveedor');
-        if(sobrePesoProveedor){
-            sobrePesoProveedor.value = sobrepeso.toFixed(4);
-            
-        }
+       
         sobrePesoViaje()
         // Calcular el total
         calcularTotal();
@@ -289,7 +292,14 @@ function sobrePesoViaje(){
     let precio = reverseMoneyFormat(precioSobrePesoInpu.value)
 
     totalSobrePesoViaje.value = moneyFormat( parseFloat( viajeSobrePeso || 0) * parseFloat( precio || 0))
+
+    var sobrePesoProveedor = document.getElementById('cantidad_sobrepeso_proveedor');
+    if(sobrePesoProveedor){
+        sobrePesoProveedor.value = viajeSobrePeso.toFixed(4);
+        
+    }
 }
+
 function calcularSobrepeso() {
     var pesoReglamentario = parseFloat(pesoReglamentarioInput.value) || 0;
     var pesoContenedor = parseFloat(pesoContenedorInput.value) || 0;
@@ -584,13 +594,44 @@ $("#cotizacionCreateMultiple").on("submit", async function(e){
         }
     }
     });
-/** */
+
+/**Si estamos editando y tiene asignado un proveedor... validar campos de proveedor */
+    if(actionFrm == "edit"){
+        
+        var passValidation = formFieldsProveedor.every((item) => {
+            var field = document.getElementById(item.field);
+            if(field){
+                if(item.required === true && field.value.length == 0){
+                    Swal.fire("El campo "+item.label+" es obligatorio","Parece que no ha proporcionado información en el campo "+item.label,"warning");
+                    return false;
+                }
+            }
+            return true;
+        })
+    
+        if(!passValidation) return passValidation;
+
+        formFieldsProveedor.forEach((item) =>{
+            var input = item.id;
+            var inputValue = document.getElementById(input);
+            if(inputValue){
+                if(item.type == "money"){
+                    formData[input] = (inputValue.value.length > 0) ? parseFloat(reverseMoneyFormat(inputValue.value)) : 0;
+                }else{
+                    formData[input] = inputValue.value;
+                }
+            }
+            });
+        
+    }
 
     formData["_token"] = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     formData["id_cliente"] = $("#id_cliente").val();
     formData["id_subcliente"] = selectSubClient.value;
     formData["Contenedores"] = contenedores
     formData["TipoCotizacion"] = tipoCotizacion
+    formData["sobrePeso"] = sobrePeso
+    formData["precioSobrePeso"] = reverseMoneyFormat(precioSobrePeso)
 
 
     $.ajax({

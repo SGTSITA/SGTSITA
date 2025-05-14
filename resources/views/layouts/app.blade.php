@@ -32,8 +32,8 @@
 
   <!-- CSS Files -->
   <link id="pagestyle" href="{{ asset('assets/css/argon-dashboard.css?v=2.0.4')}}" rel="stylesheet" />
-
-
+  <link rel="stylesheet" href="{{ asset('css/sgt/loading.css')}}">
+  
   <style>
         input:before {
             content: attr(data-date);
@@ -64,6 +64,27 @@
 <body class="g-sidenav-show   bg-gray-100">
   <div class="min-height-300  position-absolute w-100" style="background-color: {{$configuracion->color_principal}}!important;"></div>
   <div id="page-loader"><span class="preloader-interior"></span></div>
+  <!-- Loading Overlay -->
+  <div id="loading-overlay">
+    <div class="loading-content">
+      <div class="sk-circle">
+        <div class="sk-circle1 sk-child"></div>
+        <div class="sk-circle2 sk-child"></div>
+        <div class="sk-circle3 sk-child"></div>
+        <div class="sk-circle4 sk-child"></div>
+        <div class="sk-circle5 sk-child"></div>
+        <div class="sk-circle6 sk-child"></div>
+        <div class="sk-circle7 sk-child"></div>
+        <div class="sk-circle8 sk-child"></div>
+        <div class="sk-circle9 sk-child"></div>
+        <div class="sk-circle10 sk-child"></div>
+        <div class="sk-circle11 sk-child"></div>
+        <div class="sk-circle12 sk-child"></div>
+      </div>
+      <div class="loading-text" id="loading-text">Procesando solicitud…</div>
+    </div>
+  </div>
+
 
    <!-- Sidenav -->
     @include('layouts.sidebar')
@@ -90,6 +111,7 @@
     </div>
   </main>
 
+  <script src="{{ asset('js/sgt/common.js')}}"></script>
   @yield('js_custom')
 
    <!-- Modal lateral Congif -->
@@ -111,6 +133,7 @@
   <script src="{{ asset('assets/js/plugins/datatables.js')}}"></script>
 
   <script src="{{ asset('assets/js/argon-dashboard.min.js')}}"></script>
+  
 
 
   <script type="text/javascript" src="{{ asset('assets/js/sweetalert2.all.min.js') }}"></script>

@@ -808,8 +808,6 @@ public function getCotizacionesCanceladas()
     }
 
     public function update(Request $request, $id){
-
-            //
             $idEmpresa = auth()->user()->id_empresa;
             $Contenedores = $request->Contenedores;
             $referencia_full = null;
@@ -819,25 +817,7 @@ public function getCotizacionesCanceladas()
             }
             DB::beginTransaction();
             //Primero validar si el contenedor existe
-          /*  foreach($Contenedores as $contenedor){
-                $numContenedor = $contenedor['num_contenedor'];
-
-                
-            }*/
-
-            // Verificar si se está editando un registro existente
-            /*if ($numContenedor != NULL) {
-                // Verificar si el contenedor ya existe en la misma empresa, excluyendo el registro actual
-                $contenedorExistente = DocumCotizacion::where('num_contenedor', $numContenedor)
-                                                    ->where('id_empresa', $idEmpresa)
-                                                    ->where('id_cotizacion', '!=', $id) // Excluir el registro actual
-                                                    ->first();
-
-                if ($contenedorExistente) {
-                    // Si el contenedor ya existe, redirigir a la vista con un mensaje de error
-                    return redirect()->back()->with('error', 'El contenedor ya existe en la empresa.');
-                }
-            }*/
+      
             foreach($Contenedores as $contenedor){
 
                 $numContenedor = $contenedor['num_contenedor'];
@@ -863,44 +843,7 @@ public function getCotizacionesCanceladas()
             $doc_cotizaciones->num_boleta_liberacion = $contenedor['num_boleta_liberacion'] || '';
             $doc_cotizaciones->num_doda = $contenedor['num_doda'];
             $doc_cotizaciones->num_carta_porte = $contenedor['num_carta_porte'];
-         //   $doc_cotizaciones->boleta_vacio = $contenedor['boleta_vacio'];
             $doc_cotizaciones->fecha_boleta_vacio = $contenedor['fecha_boleta_vacio'];
-           // $doc_cotizaciones->eir = $contenedor['eir'];
-
-          /*  if ($request->hasFile("doc_eir")) {
-                $file = $request->file('doc_eir');
-                $path = public_path() . '/cotizaciones/cotizacion'. $id;
-                $fileName = uniqid() . $file->getClientOriginalName();
-                $file->move($path, $fileName);
-                $doc_cotizaciones->doc_eir = $fileName;
-            }
-
-            if ($request->hasFile("boleta_liberacion")) {
-                $file = $request->file('boleta_liberacion');
-                $path = public_path() . '/cotizaciones/cotizacion'. $id;
-                $fileName = uniqid() . $file->getClientOriginalName();
-                $file->move($path, $fileName);
-                $doc_cotizaciones->boleta_liberacion = $fileName;
-            }
-
-            if ($request->hasFile("doda")) {
-                $file = $request->file('doda');
-                $path = public_path() . '/cotizaciones/cotizacion'. $id;
-                $fileName = uniqid() . $file->getClientOriginalName();
-                $file->move($path, $fileName);
-                $doc_cotizaciones->doda = $fileName;
-            }*/
-
-         //   $doc_cotizaciones->ccp = $contenedor['ccp'];
-
-            /*if ($request->hasFile("doc_ccp")) {
-                $file = $request->file('doc_ccp');
-                $path = public_path() . '/cotizaciones/cotizacion'. $id;
-                $fileName = uniqid() . $file->getClientOriginalName();
-                $file->move($path, $fileName);
-                $doc_cotizaciones->doc_ccp = $fileName;
-            }*/
-
             $doc_cotizaciones->update();
 
             $cotizaciones = Cotizaciones::where('id', '=', $id)->first();
@@ -929,20 +872,10 @@ public function getCotizacionesCanceladas()
             $cotizaciones->fecha_eir = $contenedor['fecha_eir'];
             $cotizaciones->base_factura = $request->base_factura;
             $cotizaciones->base_taref = $request->base_taref;
+            $cotizaciones->sobrepeso = $contenedor['sobrepeso'];
+            $cotizaciones->precio_sobre_peso = $request->precioSobrePeso;
+            $cotizaciones->total = $request->total;
 
-           /* if($request->get('id_cliente_clientes') == NULL){
-                if($request->get('cot_peso_contenedor') > $request->get('peso_reglamentario')){
-                    $sobrepeso = $request->get('cot_peso_contenedor') - $request->get('peso_reglamentario');
-                }else{
-                    $sobrepeso = 0;
-                }
-                $cotizaciones->sobrepeso = $sobrepeso;
-                $precio_tonelada = str_replace(',', '', $request->get('precio_sobre_peso'));
-                $cotizaciones->precio_sobre_peso = $precio_tonelada;
-                $cotizaciones->precio_tonelada = $request->get('precio_tonelada');
-                $total = ($cotizaciones->precio_tonelada + $request->get('cot_precio_viaje') + $request->get('cot_burreo') + $request->get('cot_maniobra') + $request->get('cot_estadia') + $request->get('cot_otro') + $request->get('cot_iva')) - $request->get('cot_retencion');
-                $cotizaciones->total = $request->get('total');
-            }*/
 
            /* if ($request->hasFile("carta_porte")) {
                 $file = $request->file('carta_porte');
@@ -956,15 +889,33 @@ public function getCotizacionesCanceladas()
                 event(new \App\Events\GenericNotificationEvent([$cotizaciones->cliente->correo],'Se cargó Carta Porte: '.$doc_cotizaciones->num_contenedor,'Hola, tu transportista cargó el documento "Carta Porte" del contenedor '.$doc_cotizaciones->num_contenedor));
             }
 
-            if ($request->hasFile("img_boleta")) {
-                $file = $request->file('img_boleta');
-                $path = public_path() . '/cotizaciones/cotizacion'. $id;
-                $fileName = uniqid() . $file->getClientOriginalName();
-                $file->move($path, $fileName);
-                $cotizaciones->img_boleta = $fileName;
-            }*/
+*/
+            $cotizaciones->restante = $request->total;
+            
+
+            $asignacion = Asignaciones::where('id_contenedor', $id)->first();
+            if(!is_null($asignacion)){
+                $cotizaciones->prove_restante = $request->get('total_proveedor');
+
+                $asignacion->precio = $request->get('precio_proveedor');
+                $asignacion->burreo = $request->get('burreo_proveedor');
+                $asignacion->maniobra = $request->get('maniobra_proveedor');
+                $asignacion->estadia = $request->get('estadia_proveedor');
+                $asignacion->otro = $request->get('otro_proveedor');
+                $asignacion->sobrepeso_proveedor = $request->get('sobrepeso_proveedor');
+                $asignacion->total_tonelada = $request->get('total_tonelada');
+                $asignacion->base1_proveedor = $request->get('base1_proveedor');
+                $asignacion->base2_proveedor = $request->get('base2_proveedor');
+
+                $asignacion->iva = $request->get('iva_proveedor');
+                $asignacion->retencion = $request->get('retencion_proveedor');
+                $asignacion->total_proveedor = $request->get('total_proveedor');
+              //  $asignacion->id_proveedor = $request->id_proveedor;
+                $asignacion->update();
+            }
 
             $cotizaciones->update();
+
         }
            /* if($request->get('id_cliente_clientes') == NULL){
                 $gasto_descripcion = $request->input('gasto_descripcion');
@@ -975,54 +926,19 @@ public function getCotizacionesCanceladas()
                 $cotizaciones->restante = $cotizaciones->total;
                 $cotizaciones->update();
 
-                $asignacion = Asignaciones::where('id_contenedor', '=', $doc_cotizaciones->id)->first();
+                
 
 
                 if ($asignacion) {
                     if($asignacion->id_proveedor != NULL){
-                        $cotizaciones->prove_restante = $request->get('total_proveedor');
+                        
                     }
                     $cotizaciones->update();
 
                     if($asignacion->id_proveedor == NULL){
 
                     }else if($asignacion->id_operador == NULL){
-
-                        $asignacion->precio = $request->get('precio_proveedor');
-                        $asignacion->burreo = $request->get('burreo_proveedor');
-                        $asignacion->maniobra = $request->get('maniobra_proveedor');
-                        $asignacion->estadia = $request->get('estadia_proveedor');
-                        $asignacion->otro = $request->get('otro_proveedor');
-                        $asignacion->sobrepeso_proveedor = $request->get('sobrepeso_proveedor');
-                        $asignacion->total_tonelada = $request->get('total_tonelada');
-                        $asignacion->base1_proveedor = $request->get('base1_proveedor');
-                        $asignacion->base2_proveedor = $request->get('base2_proveedor');
-
-                        $asignacion->otro2 = $request->get('otro2');
-                        $asignacion->otro3 = $request->get('otro3');
-                        $asignacion->otro4 = $request->get('otro4');
-                        $asignacion->otro5 = $request->get('otro5');
-                        $asignacion->otro6 = $request->get('otro6');
-                        $asignacion->otro7 = $request->get('otro7');
-                        $asignacion->otro8 = $request->get('otro8');
-                        $asignacion->otro9 = $request->get('otro9');
-
-                        $asignacion->descripcion_otro1 = $request->get('descripcion_otro1');
-                        $asignacion->descripcion_otro2 = $request->get('descripcion_otro2');
-                        $asignacion->descripcion_otro3 = $request->get('descripcion_otro3');
-                        $asignacion->descripcion_otro4 = $request->get('descripcion_otro4');
-                        $asignacion->descripcion_otro5 = $request->get('descripcion_otro5');
-                        $asignacion->descripcion_otro6 = $request->get('descripcion_otro6');
-                        $asignacion->descripcion_otro7 = $request->get('descripcion_otro7');
-                        $asignacion->descripcion_otro8 = $request->get('descripcion_otro8');
-                        $asignacion->descripcion_otro9 = $request->get('descripcion_otro9');
-                        $asignacion->descripcion_otro10 = $request->get('descripcion_otro10');
-
-                        $asignacion->iva = $request->get('iva_proveedor');
-                        $asignacion->retencion = $request->get('retencion_proveedor');
-                        $asignacion->total_proveedor = $request->get('total_proveedor');
-                        $asignacion->id_proveedor = $request->id_proveedor;
-                        $asignacion->update();
+                        
                     }
                 }
             }*/
