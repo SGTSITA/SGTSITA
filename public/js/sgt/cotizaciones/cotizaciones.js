@@ -141,12 +141,14 @@ function calcularTotal(modulo = 'crear') {
     const totalFinal = totalConRetencion + precioTonelada;
     
 
-
-    let SumGastos = parseFloat(reverseMoneyFormat(document.querySelector("#txtSumGastos").value)) || 0;
+    if((modulo != "proveedores")){
+        let SumGastos = parseFloat(reverseMoneyFormat(document.querySelector("#txtSumGastos").value)) || 0;
+        let txtResultGastos  = document.querySelectorAll(".txtResultGastos");
+        txtResultGastos.forEach((r) => r.value = moneyFormat(totalFinal + SumGastos))
+    }
     
-    let txtResultGastos  = document.querySelectorAll(".txtResultGastos");
-    txtResultGastos.forEach((r) => r.value = moneyFormat(totalFinal + SumGastos))
-    let totalCotizacion  = document.querySelectorAll(".total-cotizacion");
+
+    let totalCotizacion  = (modulo == "proveedores") ? document.querySelectorAll(".total-cotizacion-proveedor") : document.querySelectorAll(".total-cotizacion");
     totalCotizacion.forEach((r) => r.value = moneyFormat(totalFinal))
     //baseTaref Corresponde a Base 2
     const baseTaref = (totalFinal - baseFactura - iva) + retencion;
