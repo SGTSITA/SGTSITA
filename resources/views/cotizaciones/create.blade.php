@@ -293,7 +293,7 @@
                                             <span class="input-group-text" id="basic-addon1">
                                                 <img src="{{ asset('img/icon/monedas.webp') }}" alt="" width="25px">
                                             </span>
-                                            <input name="total" id="total" readonly type="float" class="form-control moneyformat calculo-cotizacion" oninput="allowOnlyDecimals(event)">
+                                            <input name="total" id="total" readonly type="float" class="form-control moneyformat calculo-cotizacion total-cotizacion" oninput="allowOnlyDecimals(event)">
                                         </div>
                                     </div>
 

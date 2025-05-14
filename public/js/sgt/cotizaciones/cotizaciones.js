@@ -141,7 +141,7 @@ function calcularTotal(modulo = 'crear') {
     const totalFinal = totalConRetencion + precioTonelada;
     
 
-    if((modulo != "proveedores")){
+    if((modulo != "proveedores") && document.querySelector("#txtSumGastos")){
         let SumGastos = parseFloat(reverseMoneyFormat(document.querySelector("#txtSumGastos").value)) || 0;
         let txtResultGastos  = document.querySelectorAll(".txtResultGastos");
         txtResultGastos.forEach((r) => r.value = moneyFormat(totalFinal + SumGastos))
