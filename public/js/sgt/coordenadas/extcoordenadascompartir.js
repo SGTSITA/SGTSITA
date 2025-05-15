@@ -1,244 +1,88 @@
-const localeText = {
-    page: 'Página',
-    more: 'Más',
-    to: 'a',
-    of: 'de',
-    next: 'Siguiente',
-    last: 'Último',
-    first: 'Primero',
-    previous: 'Anterior',
-    loadingOoo: 'Cargando...',
-    selectAll: 'Seleccionar todo',
-    searchOoo: 'Buscar...',
-    blanks: 'Vacíos',
-    filterOoo: 'Filtrar...',
-    applyFilter: 'Aplicar filtro...',
-    equals: 'Igual',
-    notEqual: 'Distinto',
-    lessThan: 'Menor que',
-    greaterThan: 'Mayor que',
-    contains: 'Contiene',
-    notContains: 'No contiene',
-    startsWith: 'Empieza con',
-    endsWith: 'Termina con',
-    andCondition: 'Y',
-    orCondition: 'O',
-    group: 'Grupo',
-    columns: 'Columnas',
-    filters: 'Filtros',
-    pivotMode: 'Modo Pivote',
-    groups: 'Grupos',
-    values: 'Valores',
-    noRowsToShow: 'Sin filas para mostrar',
-    pinColumn: 'Fijar columna',
-    autosizeThiscolumn: 'Ajustar columna',
-    copy: 'Copiar',
-    resetColumns: 'Restablecer columnas',
-    blank: 'Vacíos',
-    notBlank: 'No Vacíos',
-    paginationPageSize: 'Registros por página'
-  };
+const preguntasPorTipo = {
+    b: [
+        { texto: "1)¿ Registro en Puerto ?", campo: "registro_puerto" },
+        { texto: "2)¿ Dentro de Puerto ?", campo: "dentro_puerto" },
+        { texto: "3)¿ Descarga Vacío ?", campo: "descarga_vacio" },
+        { texto: "4)¿ Cargado Contenedor ?", campo: "cargado_contenedor" },
+        { texto: "5)¿ En Fila Fiscal ?", campo: "fila_fiscal" },
+        { texto: "6)¿ Modulado ?", campo: "modulado_tipo", opciones: ["5.1) Verde","5.2) Amarillo","5.3) Rojo", "5.4) OVT"] },
+        { texto: "7)¿ Descarga en patio ?", campo: "descarga_patio" },
+    ],
+    f: [
+        { texto: "1) ¿Carga en patio?", campo: "cargado_patio" },
+        { texto: "2) ¿Inicio ruta?", campo: "en_destino" },
+        { texto: "3)¿Inicia carga?", campo: "inicio_descarga" },
+        { texto: "4)¿Fin descarga?", campo: "fin_descarga" },
+        { texto: "5 ¿Recepción Doctos Firmados?", campo: "recepcion_doc_firmados" },
+    ],
+    c: [
+        { texto: "¿1) Registro en Puerto ?", campo: "registro_puerto" },
+        { texto: "¿2) Dentro de Puerto ?", campo: "dentro_puerto" },
+        { texto: "¿3) Descarga Vacío?", campo: "descarga_vacio" },
+        { texto: "¿4) Cargado Contenedor?", campo: "cargado_contenedor" },
+        { texto: "¿5) En Fila Fiscal?", campo: "fila_fiscal" },
+        { texto: "¿6) Modulado?", campo: "modulado_tipo", opciones: ["5.1) Verde","5.2) Amarillo","5.3) Rojo", "5.4) OVT"] },
+        { texto: "¿7) En Destino?", campo: "en_destino" },
+        { texto: "¿8) Inicio Descarga?", campo: "inicio_descarga" },
+        { texto: "¿9) Fin Descarga?", campo: "fin_descarga" },
+        { texto: "¿10) Recepción Doctos Firmados?", campo: "recepcion_doc_firmados" },
+    ],
+};
+
+
+
 
 document.addEventListener("DOMContentLoaded", function () {
     let gridApi;
-    let currentTab = "planeadas";
 
-    const tabs = document.querySelectorAll('#cotTabs .nav-link');
-    tabs.forEach(tab => {
-        tab.addEventListener("click", function () {
-            tabs.forEach(t => t.classList.remove("active"));
-            this.classList.add("active");
-            currentTab = this.getAttribute("data-status");
-            getCotizacionesList();
-        });
-    });
+    
+
+  let PreguntaA;
+
+
+
+  
 
     const columnDefs = [
-        { headerCheckboxSelection: true, checkboxSelection: true, width: 30 },
-        { headerName: "No", field: "id", sortable: true, filter: true , hide: true},
-        { headerName: "Tipo Viaje", field: "tipo", sortable: true, filter: true , hide: true},
-        { headerName: "Cliente", field: "cliente", sortable: true, filter: true, minWidth: 150 },
-        {   headerName: "# Contenedor", 
-            field: "contenedor", 
-            sortable: true, 
-            filter: true, 
-            minWidth: 150 ,
-            autoHeight: true, // Permite que la fila se ajuste en altura
-            cellStyle:params => {
-                const styles = {
-                  'white-space': 'normal',
-                  'line-height': '1.5',
-                };
-            
-                // Si la cotización es tipo "Full", aplicar fondo 
-                if (params.data.tipo === 'Full') {
-                  styles['background-color'] = '#ffe5b4'; 
-                }
-            
-                return styles;
-              },
-        },
-        { headerName: "Origen", field: "origen", sortable: true, filter: true, minWidth: 150  },
-        { headerName: "Destino", field: "destino", sortable: true, filter: true, minWidth: 150  },
-        
+        { headerCheckboxSelection: true, checkboxSelection: true, width: 50 },
+        { headerName: "Cliente", field: "cliente", sortable: true, filter: true },
+        { headerName: "# Contenedor", field: "contenedor", sortable: true, filter: true },
+        { headerName: "Origen", field: "origen", sortable: true, filter: true },
+        { headerName: "Destino", field: "destino", sortable: true, filter: true },
         {
-            headerName: "Estatus",
-            field: "estatus",
+            headerName: "Compartir",
+            field: "tipo_b_estado",
             minWidth: 180,
             cellRenderer: function (params) {
-                let color = "secondary";
-                if (params.data.estatus === "Aprobada") color = "success";
-                else if (params.data.estatus === "Cancelada") color = "danger";
-                else if (params.data.estatus === "Pendiente") color = "warning";
-        
+                      
                 return `
-                    <button class="btn btn-sm btn-outline-${color}" onclick="abrirCambioEstatus(${params.data.id})" title="Cambiar estatus">
-                        <i class="fa fa-sync-alt me-1"></i> ${params.data.estatus}
-                    </button>
+                        <button class="btn btn-sm btn-outline-success ms-2" 
+        onclick='abrirModalCoordenadas(${params.data.id_cotizacion},${params.data.id_asignacion})' 
+        title="Compartir coordenadas">
+        <i class="fa fa-share-alt me-1"></i> Compartir
+    </button>
                 `;
             }
-        },        
-        {
-            headerName: "Coordenadas",
-            field: "coordenadas",
-            minWidth: 180,
-            sortable: false,
-            filter: false,
-            cellRenderer: function (params) {
-                
-                    return `
-                    <button class="btn btn-sm btn-outline-info" 
-                    onclick="abrirModalCoordenadas(${params.data.id},${params.data.id_asignacion})" 
-                     title="Compartir coordenadas">
-                     <i class="fa fa-map-marker-alt"></i> Compartir
-                     </button>
-                                               
-                    `;
-                
-               
-            }
-        },
-        {
-            headerName: "Acciones",
-            field: "acciones",
-            minWidth: 500,
-            cellRenderer: function (params) {
-                let acciones = "";
-
-                if (currentTab === "planeadas") {
-                    acciones = `
-                        <a href="${params.data.edit_url}" class="btn btn-sm btn-outline-secondary" title="Editar">
-                            <i class="fa fa-edit"></i>
-                        </a>
-                        <button class="btn btn-sm btn-outline-primary" onclick="abrirCambioEmpresa(${params.data.id})" title="Cambiar Empresa">
-                            <i class="fa fa-exchange-alt"></i>
-                        </button>
-                        <button class="btn btn-sm btn-outline-warning" onclick="abrirDocumentos(${params.data.id})" title="Ver Documentos">
-                            <i class="fa fa-folder"></i>
-                        </button>
-                        ${params.data.tipo_asignacion === "Propio" ? `
-                            <button class="btn btn-sm btn-outline-success" data-bs-toggle="modal" data-bs-target="#cambioModal${params.data.id}" title="Asignación: Propio">
-                                Propio
-                            </button>
-                        ` : `
-                            <button class="btn btn-sm btn-outline-dark" data-bs-toggle="modal" data-bs-target="#cambioModal${params.data.id}" title="Asignación: Subcontratado">
-                                Sub.
-                            </button>
-                        `}`;
-                } else if (currentTab === "finalizadas") {
-                    acciones = `
-                    <a href="${params.data.edit_url}" class="btn btn-sm btn-outline-secondary" title="Editar">
-                            <i class="fa fa-edit"></i>
-                        </a>
-                        <button class="btn btn-sm btn-outline-primary" onclick="descargarPDF(${params.data.id})" title="Descargar PDF">
-                            <i class="fa fa-file-pdf"></i>
-                        </button>
-                        <button class="btn btn-sm btn-outline-info" onclick="abrirDocumentos(${params.data.id})" title="Ver Documentos">
-                            <i class="fa fa-folder"></i>
-                        </button>
-                    `;
-                } else if (currentTab === "en_espera") {
-                    acciones = `
-                        <a href="${params.data.edit_url}" class="btn btn-sm btn-outline-secondary" title="Editar">
-                            <i class="fa fa-edit"></i>
-                        </a>
-                        <button class="btn btn-sm btn-outline-info" onclick="abrirDocumentos(${params.data.id})" title="Ver Documentos">
-                            <i class="fa fa-folder"></i>
-                        </button>
-                     
-                    `;
-                } else if (currentTab === "aprobadas") {
-                    acciones = `
-                     <a href="${params.data.edit_url}" class="btn btn-sm btn-outline-secondary" title="Editar">
-                            <i class="fa fa-edit"></i>
-                        </a>
-                        <button class="btn btn-sm btn-outline-primary" onclick="abrirCambioEmpresa(${params.data.id})" title="Cambiar Empresa">
-                            <i class="fa fa-exchange-alt"></i>
-                        </button>
-                        <button class="btn btn-sm btn-outline-info" onclick="abrirDocumentos(${params.data.id})" title="Ver Documentos">
-                            <i class="fa fa-folder"></i>
-                        </button>
-                       
-                    `;
-                } else if (currentTab === "canceladas") {
-                    acciones = `
-    <button class="btn btn-sm btn-outline-warning" onclick="abrirDocumentos(${params.data.id})" title="Ver Documentos">
-    <i class="fa fa-folder"></i>
-    </button>
-
-                    `;
-                }
-
-                return acciones;
-            }
-        }
+        }       
+       
     ];
+    
 
     const gridOptions = {
         columnDefs: columnDefs,
-        domLayout: 'autoHeight', 
         pagination: true,
-        paginationPageSize: 10,
-        paginationPageSizeSelector: [10, 50, 100],
+        paginationPageSize: 100,
         rowSelection: "multiple",
         defaultColDef: {
             resizable: true,
             flex: 1
         },
-        localeText: localeText
     };
 
     const myGridElement = document.querySelector("#myGrid");
     gridApi = agGrid.createGrid(myGridElement, gridOptions);
-
-    getCotizacionesList();
-
-    function getCotizacionesList() {
-        const overlay = document.getElementById("gridLoadingOverlay");
-        overlay.style.display = "flex";
     
-        let url = "/cotizaciones/list";
-        if (currentTab === "finalizadas") url = "/cotizaciones/finalizadas";
-        if (currentTab === "en_espera") url = "/cotizaciones/espera";
-        if (currentTab === "aprobadas") url = "/cotizaciones/aprobadas";
-        if (currentTab === "canceladas") url = "/cotizaciones/canceladas";
-    
-        gridApi.setGridOption("rowData", []); 
-    
-        fetch(url)
-            .then(response => response.json())
-            .then(data => {
-                gridApi.setGridOption("rowData", data.list);
-            })
-            .catch(error => {
-                console.error("❌ Error al obtener la lista de cotizaciones:", error);
-            })
-            .finally(() => {
-                overlay.style.display = "none"; 
-            });
-    }
 
-    // Abrir el modal
     window.abrirModalCoordenadas = function(id_cotizacion,idAsignacion) {
         const modal = document.getElementById('modalCoordenadas');
 
@@ -288,7 +132,6 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     };
 
-    // Función para buscar los datos de la cotización
     function fetchCotizacion(id_cotizacion, tipoCuestionario) {
         const link = `${window.location.origin}/coordenadas/questions/${id_cotizacion}/${tipoCuestionario}`;
         let _url = `/coordenadas/cotizaciones/get/${id_cotizacion}`;
@@ -415,7 +258,7 @@ let selecvalueuser = selectTipoCuestionario.value;
     }
     return 1
     }
-    // Función para limpiar los datos
+
     function limpiarDatos(message = "") {
         // Limpiar los valores cuando no se selecciona una opción válida
         document.getElementById('linkMail').innerText = message;
@@ -431,110 +274,258 @@ let selecvalueuser = selectTipoCuestionario.value;
         document.getElementById('idCotizacionCompartir').value ="";
         document.getElementById('idAsignacionCompartir').value ="";
     }
-});      
 
-
-function abrirDocumentos(idCotizacion) {
-    $(`#estatusDoc${idCotizacion}`).modal("show");
-}
-
-function descargarPDF(idCotizacion) {
-    const fecha = new Date().toISOString().slice(0, 10); // formato: YYYY-MM-DD
-    const link = document.createElement('a');
-    link.href = `/cotizaciones/pdf/${idCotizacion}`;
-    link.download = `cotizacion_${idCotizacion}_${fecha}.pdf`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-}
-
-
-function aprobarCotizacion(idCotizacion) {
-    Swal.fire({
-        title: "¿Aprobar cotización?",
-        icon: "question",
-        showCancelButton: true,
-        confirmButtonText: "Sí, aprobar"
-    }).then((result) => {
-        if (result.isConfirmed) {
-            fetch(`/cotizaciones/update/estatus/${idCotizacion}`, {
-                method: "PATCH",
-                headers: {
-                    "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute("content")
-                },
-                body: JSON.stringify({ estatus: "Aprobada" })
-            })
-            .then(() => Swal.fire("Aprobada", "Cotización aprobada", "success"))
-            .then(() => getCotizacionesList());
-        }
+    const params = new URLSearchParams({
+        idCliente: idCliente,
+        
     });
-}
-function abrirCambioEmpresa(idCotizacion) {
-    const form = document.getElementById("formCambioEmpresa");
-    const route = `/cotizaciones/cambiar/empresa/${idCotizacion}`;
-    form.setAttribute("action", route);
-
-    const modal = new bootstrap.Modal(document.getElementById("modalCambioEmpresa"));
-    modal.show();
-}
 
 
-function abrirCambioEstatus(idCotizacion) {
-    const form = document.getElementById("formCambioEstatus");
+    const clienteSelect = document.getElementById('cliente');
+clienteSelect.addEventListener('change', function () {
+    const clienteId = this.value;
+    const subclienteSelect = document.getElementById('subcliente');
 
-    if (!form) {
-        console.error("❌ No se encontró el formulario #formCambioEstatus");
-        return;
+  
+    subclienteSelect.innerHTML = '<option value="">Seleccione un subcliente</option>';
+
+    if (clienteId) {
+        // Puedes mostrar un "cargando..." si quieres
+        const loadingOption = document.createElement('option');
+        loadingOption.textContent = 'Cargando subclientes...';
+        loadingOption.disabled = true;
+        loadingOption.selected = true;
+        subclienteSelect.appendChild(loadingOption);
+
+        fetch(`/api/coordenadas/subclientes/${clienteId}`)
+            .then(response => response.json())
+            .then(subclientes => {
+                subclienteSelect.innerHTML = '<option value="">Seleccione un subcliente</option>'; // Resetea
+
+                if (subclientes.length > 0) {
+                    subclientes.forEach(subcliente => {
+                        const option = document.createElement('option');
+                        option.value = subcliente.id;
+                        option.textContent = subcliente.nombre;
+                        subclienteSelect.appendChild(option);
+                    });
+
+                    
+                } else {
+                    const option = document.createElement('option');
+                    option.textContent = 'No hay subclientes disponibles';
+                    option.disabled = true;
+                    subclienteSelect.appendChild(option);
+                }
+            })
+            .catch(error => {
+                console.error('Error al cargar subclientes:', error);
+                subclienteSelect.innerHTML = '<option value="">Error al cargar subclientes</option>';
+            });
+    }
+});
+
+    getEntidadesPC();
+        getCoordenadasList(params);
+   
+function getCoordenadasList(parametros) {
+        const overlay = document.getElementById("gridLoadingOverlay");
+        overlay.style.display = "flex";
+    
+              
+        gridApi.setGridOption("rowData", []); 
+    
+        fetch("/coordenadas/contenedor/search?" + parametros.toString())
+            .then(response => response.json())
+            .then(data => {
+                PreguntaA= data.preguntas;
+                gridApi.setGridOption("rowData", data.datos);
+            })
+            .catch(error => {
+                console.error("❌ Error al obtener la lista de coordenadas:", error);
+            })
+            .finally(() => {
+                overlay.style.display = "none"; 
+            });
     }
 
-    // Setear la acción del formulario
-    form.action = `/cotizaciones/update/estatus/${idCotizacion}`;
 
-    // Mostrar el modal
-    const modal = new bootstrap.Modal(document.getElementById("modalCambioEstatus"));
-    modal.show();
-}
-function abrirDocumentos(idCotizacion) {
-    fetch(`/cotizaciones/documentos/${idCotizacion}`)
+    function getEntidadesPC(){
+        fetch('/api/coordenadas/entidadesPC')
         .then(response => response.json())
         .then(data => {
-            const modal = new bootstrap.Modal(document.getElementById("modalEstatusDocumentos"));
-            const titulo = document.getElementById("tituloContenedor");
-            const cuerpo = document.getElementById("estatusDocumentosBody");
+            //const proveedorSelect = document.getElementById('proveedor');
+            const clienteSelect = document.getElementById('cliente');
 
-            titulo.innerText = `#${data.num_contenedor ?? 'N/A'}`;
-            cuerpo.innerHTML = '';
+            // Añadir una opción predeterminada
+          //  proveedorSelect.innerHTML = '<option value="">Seleccione un proveedor</option>';
+            clienteSelect.innerHTML = '<option value="">Seleccione un cliente</option>';
 
-            const campos = [
-                { label: 'Num contenedor', valor: data.num_contenedor },
-                { label: 'Documento CCP', valor: data.doc_ccp },
-                { label: 'Boleta de Liberación', valor: data.boleta_liberacion },
-                { label: 'Doda', valor: data.doda },
-                { label: 'Carta Porte', valor: data.carta_porte },
-                { label: 'Boleta Vacio', valor: data.boleta_vacio === 'si' },
-                { label: 'EIR', valor: data.doc_eir },
-                // { label: 'Foto Patio', valor: data.foto_patio },
-            ];
+            // Cargar proveedores
+            // data.proveedor.forEach(proveedor => {
+            //     const option = document.createElement('option');
+            //     option.value = proveedor.id;
+            //     option.textContent = proveedor.nombre;
+            //     proveedorSelect.appendChild(option);
+            // });
 
-            campos.forEach(item => {
-                const col = document.createElement('div');
-                col.className = 'col-6';
-                col.innerHTML = `
-                    <div class="d-flex align-items-center gap-2">
-                        <i class="fa-solid ${item.valor ? 'fa-check-circle text-success' : 'fa-times-circle text-muted'}"></i>
-                        <span class="fw-semibold">${item.label}</span>
-                    </div>
-                `;
-                cuerpo.appendChild(col);
+            // Cargar clientes
+            data.client.forEach(cliente => {
+                const option = document.createElement('option');
+                option.value = cliente.id;
+                option.textContent = cliente.nombre;
+                if (cliente.id == idCliente) {
+                    option.selected = true;
+                    clienteSelect.disabled = true;
+                }
+                clienteSelect.appendChild(option);
             });
-        
-            modal.show();
+
+            clienteSelect.dispatchEvent(new Event('change'));
         })
-        .catch(error => {
-            console.error('Error al obtener documentos:', error);
-            Swal.fire('Error', 'No se pudieron obtener los documentos', 'error');
-        });
+        .catch(error => console.error('Error al cargar proveedores y clientes:', error))
+
+    }
+
+    document.getElementById("formFiltros").addEventListener("submit", function (e) {
+        e.preventDefault();
+    
+       
+    
+        const form = e.target;
+        const formData = new FormData(form);
+        const params = new URLSearchParams(formData);
+    
+        params.append("idCliente", idCliente);
+
+        getCoordenadasList(params.toString()); 
+        
+        
+
+    });
+
+    
+});
+
+
+
+
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.ver-mapa-btn')) {
+            const btn = e.target.closest('.ver-mapa-btn');
+            const tipo = btn.dataset.tipo;
+            const info = JSON.parse(btn.dataset.info);
+            abrirModalCuestionario(tipo, info);
+        }
+    });
+
+   
+    
+    function abrirModalCuestionario(tipoCuestionario, parametersW){
+        const preguntas = preguntasPorTipo[tipoCuestionario];
+        let contenido = "";
+    let contenedor =  parametersW["contenedor"];
+    document.getElementById("numeroContenedor").textContent = "# Contenedor:  " +  contenedor;
+        preguntas.forEach(p => {
+            const valor = parametersW[p.campo];
+    
+            if (valor && typeof valor === 'string' && valor.includes(',')) {
+                const [lat, lng] = valor.split(',').map(v => parseFloat(v.trim()));
+            
+                if (!isNaN(lat) && !isNaN(lng)) {
+                    contenido += `
+                        <div class="d-flex flex-column justify-content-between border rounded p-2 mb-2" style="min-height: 100px;">
+                            <div class="mb-2"><strong>${p.texto}</strong></div>
+                            <div class="mt-auto">
+                                <button onclick="verMapa(${lat}, ${lng})" class="btn btn-sm btn-primary ms-2" id="btnVerMapa">Ver Mapa</button>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    contenido += `<div><strong>${p.texto}</strong> </div>`;
+                }
+            } else {
+                contenido += `<div><strong>${p.texto}</strong> <span>Sin responder</span></div>`;
+            }
+    
+       
+    
+        document.getElementById("modal-body-cuestionario").innerHTML = contenido;
+        
+
+        document.getElementById('myModal').style.display = 'block';
+
+    })
 }
+   
+    
+      function closeModal() {
+        document.getElementById('myModal').style.display = 'none';
+      }
+    
+      window.onclick = function(event) {
+        if (event.target === document.getElementById('myModal')) {
+          closeModal();
+        }
+      }
+   
+function limpiarFiltros() {
+  
+    const modal = document.getElementById('filtroModal'); 
+    const inputs = modal.querySelectorAll('input, select, textarea');
+
+    inputs.forEach(element => {
+        if (element.tagName === 'SELECT') {
+            if (element.disabled == false ){
+                element.selectedIndex = 0; 
+            }
+        } else {
+            element.value = ''; 
+        }
+    });
+
+}
+
+function verMapa(lat, lng) {
+    const url = `https://maps.google.com/maps?q=${lat},${lng}&z=15&output=embed`;
+    document.getElementById('iframeMapa').src = url;
+    document.getElementById('modalMapa').style.display = 'block';
+}
+
+function cerrarModalMapa() {
+    document.getElementById('modalMapa').style.display = 'none';
+    document.getElementById('iframeMapa').src = ''; 
+}
+
+
+
+
+
+function makeDraggable(element) {
+    let isMouseDown = false;
+    let offsetX, offsetY;
+
+    const modalHeader = element.querySelector('.modal-header');
+    if (modalHeader) {
+        modalHeader.addEventListener('mousedown', function (e) {
+            isMouseDown = true;
+            offsetX = e.clientX - element.offsetLeft;
+            offsetY = e.clientY - element.offsetTop;
+        });
+
+        window.addEventListener('mousemove', function (e) {
+            if (isMouseDown) {
+                element.style.left = (e.clientX - offsetX) + 'px';
+                element.style.top = (e.clientY - offsetY) + 'px';
+            }
+        });
+
+        window.addEventListener('mouseup', function () {
+            isMouseDown = false;
+        });
+    }
+}
+
 
 function cambiarTab(tabId) {
     // Ocultamos todos los divs con clase 'tab-content'
@@ -748,3 +739,4 @@ function saveCoordenadas() {
     }
     
 }
+

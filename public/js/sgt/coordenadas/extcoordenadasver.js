@@ -5,7 +5,6 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap contributors'
 }).addTo(map);
 
-
     const camposUbicacion = [
   { key: "toma_foto_patio", orden: 15 },
   { key: "cargado_patio", orden: 14 },
@@ -26,7 +25,6 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 
 // Mostrar el modal de Bootstrap al cargar la página
 window.onload = function() {
-
   var filtroModal = new bootstrap.Modal(document.getElementById('filtroModal'));
   filtroModal.show();
 
@@ -48,14 +46,17 @@ window.onload = function() {
       console.warn('Geolocalización no soportada por este navegador.');
   }
 };
-
-
 let contenedoresDisponibles = [];
 
 
 function cargarinicial()
 {
-       fetch(`/coordenadas/contenedor/search?`)
+    const params = new URLSearchParams({
+        idCliente: idCliente,
+        
+    });
+
+    fetch(`/coordenadas/contenedor/search?${params.toString()}`)
       .then(response => response.json())
       .then(data => {
         
@@ -81,19 +82,16 @@ document.getElementById('formFiltros').addEventListener('submit', function(event
     }
   });
 
+  queryParams.append("idCliente", idCliente);
+const mostrarUltimaUbicacion = document.getElementById("ubicacion-toggle").checked;
   limpiarMarcadores(); // Limpia los anteriores antes de buscar nuevos
-
-  const mostrarUltimaUbicacion = document.getElementById("ubicacion-toggle").checked;
 
   fetch(`/coordenadas/contenedor/search?${queryParams.toString()}`)
       .then(response => response.json())
       .then(data => {
           const preguntas = data.preguntas;
           const datos = data.datos;
-
-
-
-          datos.forEach(contenedor => {
+              datos.forEach(contenedor => {
             if (mostrarUltimaUbicacion) {
                 for (let i = 0; i < camposUbicacion.length; i++) {
             const campo = camposUbicacion[i].key;
@@ -145,7 +143,7 @@ document.getElementById('formFiltros').addEventListener('submit', function(event
 
       
         });
-
+          
           // Cierra el modal después de aplicar los filtros
           var modal = bootstrap.Modal.getInstance(document.getElementById('filtroModal'));
           modal.hide();
@@ -165,7 +163,8 @@ function limpiarMarcadores() {
     }
 }
 
-document.getElementById('cliente').addEventListener('change', function () {
+const clienteSelect = document.getElementById('cliente');
+clienteSelect.addEventListener('change', function () {
     const clienteId = this.value;
     const subclienteSelect = document.getElementById('subcliente');
 
@@ -208,9 +207,10 @@ document.getElementById('cliente').addEventListener('change', function () {
     }
 });
 document.addEventListener('DOMContentLoaded', function () {
-     cargarinicial();
+    cargarinicial();
     const btnEditarFiltros = document.getElementById('btnEditarFiltros');
     const btnCerrarModal = document.getElementById('btnCerrarModal');
+
 
  var filtroModal = new bootstrap.Modal(document.getElementById('filtroModal'));
     if (filtroModal && btnEditarFiltros && btnCerrarModal) {
@@ -233,28 +233,34 @@ document.addEventListener('DOMContentLoaded', function () {
             fetch('/api/coordenadas/entidadesPC')
             .then(response => response.json())
             .then(data => {
-                const proveedorSelect = document.getElementById('proveedor');
+               // const proveedorSelect = document.getElementById('proveedor');
                 const clienteSelect = document.getElementById('cliente');
 
                 // Añadir una opción predeterminada
-                proveedorSelect.innerHTML = '<option value="">Seleccione un proveedor</option>';
+              //  proveedorSelect.innerHTML = '<option value="">Seleccione un proveedor</option>';
                 clienteSelect.innerHTML = '<option value="">Seleccione un cliente</option>';
 
                 // Cargar proveedores
-                data.proveedor.forEach(proveedor => {
-                    const option = document.createElement('option');
-                    option.value = proveedor.id;
-                    option.textContent = proveedor.nombre;
-                    proveedorSelect.appendChild(option);
-                });
+                // data.proveedor.forEach(proveedor => {
+                //     const option = document.createElement('option');
+                //     option.value = proveedor.id;
+                //     option.textContent = proveedor.nombre;
+                //     proveedorSelect.appendChild(option);
+                // });
 
                 // Cargar clientes
                 data.client.forEach(cliente => {
                     const option = document.createElement('option');
                     option.value = cliente.id;
                     option.textContent = cliente.nombre;
+                    if (cliente.id == idCliente) {
+                        option.selected = true;
+                        clienteSelect.disabled = true;
+                    }
                     clienteSelect.appendChild(option);
                 });
+
+                clienteSelect.dispatchEvent(new Event('change'));
             })
             .catch(error => console.error('Error al cargar proveedores y clientes:', error))
 
@@ -275,15 +281,27 @@ function limpiarFiltros() {
 
     inputs.forEach(element => {
         if (element.tagName === 'SELECT') {
-            element.selectedIndex = 0; 
+            if (element.disabled == false ){
+                element.selectedIndex = 0; 
+            }
+            
         } else {
             element.value = ''; 
         }
     });
 
+    seleccionados.length = 0;
+    document.getElementById('contenedores-seleccionados').innerHTML = '';
+    const inputContenedores = document.getElementById('contenedores');
+        if (inputContenedores) {
+            inputContenedores.value = '';
+        }
+
 }
 
-const seleccionados = [];
+
+
+    const seleccionados = [];
 
     function mostrarSugerencias() {
         const input = document.getElementById('contenedor-input');
@@ -358,9 +376,7 @@ const seleccionados = [];
         document.getElementById('contenedores').value = seleccionados.join(';');
     }
 
-
-  
-
+    
 document.getElementById('ubicacion-toggle').addEventListener('change', function() {
     const ubicacionTexto = document.getElementById('ubicacion-texto');
     
@@ -370,5 +386,4 @@ document.getElementById('ubicacion-toggle').addEventListener('change', function(
         ubicacionTexto.textContent = 'Todas las ubicaciones';
     }
 });
-
 

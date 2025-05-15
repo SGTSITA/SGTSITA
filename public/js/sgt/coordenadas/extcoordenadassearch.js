@@ -9,11 +9,11 @@ const preguntasPorTipo = {
         { texto: "7) Toma Foto de Boleta de Patio", campo: "toma_foto_patio" },
     ],
     f: [
-        { texto: "1)¿Carga en patio?", campo: "cargado_patio" },
-        { texto: "2)¿Inicio ruta?", campo: "en_destino" },
+        { texto: "1) ¿Carga en patio?", campo: "cargado_patio" },
+        { texto: "2) ¿Inicio ruta?", campo: "en_destino" },
         { texto: "3)¿Inicia carga?", campo: "inicio_descarga" },
         { texto: "4)¿Fin descarga?", campo: "fin_descarga" },
-        { texto: "5)¿Recepción Doctos Firmados?", campo: "recepcion_doc_firmados" },
+        { texto: "5 ¿Recepción Doctos Firmados?", campo: "recepcion_doc_firmados" },
     ],
     c: [
         { texto: "¿1) Registro en Puerto ?", campo: "registro_puerto" },
@@ -30,12 +30,31 @@ const preguntasPorTipo = {
 
 
 let contenedoresDisponibles = [];
+function cargarinicial()
+{
+    const params = new URLSearchParams({
+        idCliente: idCliente,
+        
+    });
+
+    fetch(`/coordenadas/contenedor/search?${params.toString()}`)
+      .then(response => response.json())
+      .then(data => {
+        
+         contenedoresDisponibles   = data.datos;
+        
+          
+      })
+      .catch(error => {
+          console.error('Error al traer coordenadas:', error);
+      });
+}
 
 
 document.addEventListener("DOMContentLoaded", function () {
     let gridApi;
 
-
+    cargarinicial();
 
     let mapModal = document.getElementById('modalMapa');
     if (mapModal) {
@@ -51,7 +70,7 @@ let PreguntaA;
   
 
     const columnDefs = [
-        {
+       {
         headerCheckboxSelection: true,
         checkboxSelection: true,
         width: 40, 
@@ -59,18 +78,15 @@ let PreguntaA;
         suppressSizeToFit: true,
         resizable: false
         },
-        // { headerName: "No Coti", field: "id_cotizacion", sortable: true, filter: true },
-        // { headerName: "No Asig", field: "id_asignacion", sortable: true, filter: true },
-        // { headerName: "No Coor", field: "id_coordenada", sortable: true, filter: true },
         { headerName: "Cliente", field: "cliente", sortable: true, filter: true },
         { headerName: "# Contenedor", field: "contenedor", sortable: true, filter: true },
         { headerName: "Origen", field: "origen", sortable: true, filter: true },
         { headerName: "Destino", field: "destino", sortable: true, filter: true },
-       
+        
         {
             headerName: "E Burrero",
             field: "Estatus_Burrero",
-            minWidth: 180,
+            minWidth: 130,
             cellRenderer: function (params) {
                 let color = "secondary";
                 let clasIcon ="fa fa-hourglass-half me-1"
@@ -99,7 +115,7 @@ let PreguntaA;
         {
             headerName: "E Foraneo",
             field: "Estatus_Foraneo",
-            minWidth: 180,
+            minWidth: 150,
             cellRenderer: function (params) {
                 let color = "secondary";
                 let clasIcon ="fa fa-hourglass-half me-1"
@@ -129,7 +145,7 @@ let PreguntaA;
         {
             headerName: "E Completo",
             field: "Estatus_Completo",
-            minWidth: 180,
+            minWidth: 150,
             cellRenderer: function (params) {
                 let color = "secondary";
                 let clasIcon ="fa fa-hourglass-half me-1"
@@ -151,9 +167,10 @@ let PreguntaA;
                      <button class="btn btn-sm btn-outline-${color} ver-mapa-btn" 
                     data-tipo="c"
                     data-info='${JSON.stringify(params.data).replace(/'/g, "&#39;")}' 
+                    
                     title="Ver progreso...">
                 <i class="${clasIcon}"></i> ${params.data.Estatus_Completo}
-                     </button>
+            </button>
                 `;
             }
         }
@@ -176,9 +193,59 @@ let PreguntaA;
     
 
     
+//load primero cojn el cliente
+    const params = new URLSearchParams({
+        idCliente: idCliente,
+        
+    });
 
-    
-        getCoordenadasList("");
+
+    const clienteSelect = document.getElementById('cliente');
+clienteSelect.addEventListener('change', function () {
+    const clienteId = this.value;
+    const subclienteSelect = document.getElementById('subcliente');
+
+    // Limpia las opciones anteriores
+    subclienteSelect.innerHTML = '<option value="">Seleccione un subcliente</option>';
+
+    if (clienteId) {
+        // Puedes mostrar un "cargando..." si quieres
+        const loadingOption = document.createElement('option');
+        loadingOption.textContent = 'Cargando subclientes...';
+        loadingOption.disabled = true;
+        loadingOption.selected = true;
+        subclienteSelect.appendChild(loadingOption);
+
+        fetch(`/api/coordenadas/subclientes/${clienteId}`)
+            .then(response => response.json())
+            .then(subclientes => {
+                subclienteSelect.innerHTML = '<option value="">Seleccione un subcliente</option>'; // Resetea
+
+                if (subclientes.length > 0) {
+                    subclientes.forEach(subcliente => {
+                        const option = document.createElement('option');
+                        option.value = subcliente.id;
+                        option.textContent = subcliente.nombre;
+                        subclienteSelect.appendChild(option);
+                    });
+
+                    
+                } else {
+                    const option = document.createElement('option');
+                    option.textContent = 'No hay subclientes disponibles';
+                    option.disabled = true;
+                    subclienteSelect.appendChild(option);
+                }
+            })
+            .catch(error => {
+                console.error('Error al cargar subclientes:', error);
+                subclienteSelect.innerHTML = '<option value="">Error al cargar subclientes</option>';
+            });
+    }
+});
+
+    getEntidadesPC();
+        getCoordenadasList(params);
    
 function getCoordenadasList(parametros) {
         const overlay = document.getElementById("gridLoadingOverlay");
@@ -191,7 +258,6 @@ function getCoordenadasList(parametros) {
             .then(response => response.json())
             .then(data => {
                 PreguntaA= data.preguntas;
-                contenedoresDisponibles   = data.datos;
                 gridApi.setGridOption("rowData", data.datos);
             })
             .catch(error => {
@@ -202,17 +268,61 @@ function getCoordenadasList(parametros) {
             });
     }
 
+
+    function getEntidadesPC(){
+        fetch('/api/coordenadas/entidadesPC')
+        .then(response => response.json())
+        .then(data => {
+            //const proveedorSelect = document.getElementById('proveedor');
+            const clienteSelect = document.getElementById('cliente');
+
+            // Añadir una opción predeterminada
+          //  proveedorSelect.innerHTML = '<option value="">Seleccione un proveedor</option>';
+            clienteSelect.innerHTML = '<option value="">Seleccione un cliente</option>';
+
+            // Cargar proveedores
+            // data.proveedor.forEach(proveedor => {
+            //     const option = document.createElement('option');
+            //     option.value = proveedor.id;
+            //     option.textContent = proveedor.nombre;
+            //     proveedorSelect.appendChild(option);
+            // });
+
+            // Cargar clientes
+            data.client.forEach(cliente => {
+                const option = document.createElement('option');
+                option.value = cliente.id;
+                option.textContent = cliente.nombre;
+                if (cliente.id == idCliente) {
+                    option.selected = true;
+                    clienteSelect.disabled = true;
+                }
+                clienteSelect.appendChild(option);
+            });
+
+            clienteSelect.dispatchEvent(new Event('change'));
+        })
+        .catch(error => console.error('Error al cargar proveedores y clientes:', error))
+
+    }
+
     document.getElementById("formFiltros").addEventListener("submit", function (e) {
         e.preventDefault();
     
        
     
-        const form = e.target;
-        const formData = new FormData(form);
-        const params = new URLSearchParams(formData);
-    
-        
-        getCoordenadasList(params.toString()); 
+        const formData = new FormData(this);
+        const queryParams = new URLSearchParams();
+      
+        formData.forEach((valor, clave) => {
+          if (valor.trim() !== '') {
+            queryParams.append(clave, valor);
+          }
+        });
+      
+        queryParams.append("idCliente", idCliente);
+
+        getCoordenadasList(queryParams.toString()); 
         
         
 
@@ -239,6 +349,8 @@ function getCoordenadasList(parametros) {
         const preguntas = preguntasPorTipo[tipoCuestionario];
         let contenido = "";
     let contenedor =  parametersW["contenedor"];
+    let id_cotizacion =  parametersW["id_cotizacion"];
+    
     document.getElementById("numeroContenedor").textContent = "# Contenedor:  " +  contenedor;
         preguntas.forEach(p => {
             const valor = parametersW[p.campo];
@@ -259,7 +371,48 @@ function getCoordenadasList(parametros) {
                     contenido += `<div><strong>${p.texto}</strong> </div>`;
                 }
             } else {
-                contenido += `<div><strong>${p.texto}</strong> <span>Sin responder</span></div>`;
+                let msjNo='Sin responder';
+                if (p.texto==='7) Toma Foto de Boleta de Patio' && valor ==='1'){ // ya se cargo foto y puede verse
+                    //tendria q buscar la direccion para la foto
+
+                    fetch("{{ url('coordenadas/coordenadas/extsearchDoctos') }}", {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                            },
+                            body: JSON.stringify({
+                                id_cotizacion: id_cotizacion,
+                                contenedor: contenedor
+                            })
+                        })
+                        .then(response => response.json())
+                        .then(data2 => {
+                            
+                            contenido += `
+                                <div class="d-flex flex-column justify-content-between border rounded p-2 mb-2" style="min-height: 100px;">
+                                    <div class="mb-2"><strong>${p.texto}</strong></div>
+                                    <div class="mt-auto">
+                                        <a href="/cotizaciones/cotizacion${data2.inCotizacion}/${data2.filePath}" target="_blank" class="btn btn-active-primary btn-sm">
+                                            Ver Archivo
+                                    </a>
+                                    </div>
+                                </div>
+                            `;
+
+                            console.log('Éxito:', data);
+                        })
+                        .catch(error => {
+                            console.error('Error en la petición:', error);
+                        });
+
+//end fetch buscar archivo
+                    
+                }else {
+                    msjNo='NO';
+                }
+                
+                contenido += `<div><strong>${p.texto}</strong> <span>${msjNo}</span></div>`;
             }
     
        
@@ -285,16 +438,25 @@ function getCoordenadasList(parametros) {
    
 function limpiarFiltros() {
   
-    const modal = document.getElementById('filtroModal'); 
+    const modal = document.getElementById('formFiltros'); 
     const inputs = modal.querySelectorAll('input, select, textarea');
 
     inputs.forEach(element => {
         if (element.tagName === 'SELECT') {
-            element.selectedIndex = 0; 
+            if (element.disabled == false ){
+                element.selectedIndex = 0; 
+            }
         } else {
             element.value = ''; 
         }
     });
+    seleccionados.length = 0;
+    document.getElementById('contenedores-seleccionados').innerHTML = '';
+    const inputContenedores = document.getElementById('contenedores');
+        if (inputContenedores) {
+            inputContenedores.value = '';
+        }
+
 
 }
 
@@ -337,6 +499,7 @@ function makeDraggable(element) {
         });
     }
 }
+
 
 
 

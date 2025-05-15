@@ -1,15 +1,18 @@
-@extends('layouts.app')
-
-@section('template_title', 'Buscar Coordenadas')
+@extends('layouts.usuario_externo')
 
 
-@section('content')
+
+@section('WorkSpace')
+    
 <style>
     input[type="date"], select.form-select {
   height: 35px; /* Ajusta el valor según necesites */
   padding: .375rem .75rem; /* Igualar el padding de otros campos */
 }
 </style>
+<script>
+    const idCliente = @json($idCliente);
+</script>
     
 <div class="container-fluid py-4 px-3 bg-gray-100 min-h-screen">
     <div class="row justify-content-center">
@@ -20,28 +23,26 @@
                 </div>
            
                 <div class="card mb-3">
-                   
+                  
                     <div class="card-body py-3">
                         <form id="formFiltros">
                         <div class="row g-2">
-                            <div class="col-md-2">
-                                <label for="contenedor-input" class="form-label">Contenedores</label>
-                                <input type="text" class="form-control" id="contenedor-input" oninput="mostrarSugerencias()" placeholder="Buscar contenedor...">
-                                <div id="sugerencias" style="border: 1px solid #ccc; max-height: 150px; overflow-y: auto; display: none; position: absolute; background: white; z-index: 1050; width: 100%;"></div>
-                                <button type="button" class="btn btn-sm btn-outline-secondary mt-2" onclick="agregarContenedor()">Agregar</button>
-                                <div id="contenedores-seleccionados" class="mt-2"></div>
-                                <input type="hidden" name="contenedores" id="contenedores">
+                         <div class="col-md-2">
+                        
+                            <label for="contenedor-input" class="form-label">Contenedores</label>
+                            <input type="text" class="form-control" id="contenedor-input" oninput="mostrarSugerencias()" placeholder="Buscar contenedor...">
+                            <div id="sugerencias" style="border: 1px solid #ccc; max-height: 150px; overflow-y: auto; display: none; position: absolute; background: white; z-index: 1050; width: 100%;"></div>
+                            <button type="button" class="btn btn-sm btn-outline-secondary mt-2" onclick="agregarContenedor()">Agregar</button>
+                            <div id="contenedores-seleccionados" class="mt-2"></div>
+                            <input type="hidden" name="contenedores" id="contenedores">
+                    
                             </div>
-
-                            <div class="col-md-4">
+                            <!-- <div class="col-md-4">
                             <label for="proveedor" class="form-label small">Proveedor</label>
                             <select class="form-select form-select-sm" name="proveedor" id="proveedor">
                                 <option value="">Todos</option>
                             </select>
-                            </div>
-                        </div>
-                        
-                        <div class="row g-2">
+                            </div> -->
                             <div class="col-md-2">
                             <label for="fecha_inicio" class="form-label small">Fecha Inicio</label>
                             <input type="date" class="form-control form-control-sm" name="fecha_inicio" id="fecha_inicio">
@@ -51,17 +52,21 @@
                             <label for="fecha_fin" class="form-label small">Fecha Fin</label>
                             <input type="date" class="form-control form-control-sm" name="fecha_fin" id="fecha_fin">
                             </div>
+                        </div>
+                        
+                        <div class="row g-2">
+                           
 
                            
 
-                            <div class="col-md-2">
+                            <div class="col-md-3">
                             <label for="cliente" class="form-label small">Cliente</label>
                             <select class="form-select form-select-sm" name="cliente" id="cliente">
                                 <option value="">Todos</option>
                             </select>
                             </div>
 
-                            <div class="col-md-2">
+                            <div class="col-md-3">
                             <label for="subcliente" class="form-label small">Subcliente</label>
                             <select class="form-select form-select-sm" name="subcliente" id="subcliente">
                                 <option value="">Todos</option>
@@ -121,7 +126,7 @@
     <button onclick="cerrarModalMapa()" style="position: absolute; top: 10px; right: 15px;">Cerrar</button>
     <h5>Ubicación</h5>
     </div>
-    <div id="contenedorMapa" style="width: 100%; height: 84%;">
+    <div id="contenedorMapa" style="width: 100%; height: 80%;">
         <iframe id="iframeMapa" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
     </div>
 </div>
@@ -147,7 +152,7 @@
     
 @endsection
 
-@push('custom-javascript')
+@push('javascript')
     <!-- AG Grid -->
     <script src="https://unpkg.com/ag-grid-community/dist/ag-grid-community.min.js"></script>
  
@@ -156,7 +161,7 @@
 
     <!-- Nuestro JavaScript unificado -->
     <script
-        src="{{ asset('js/sgt/coordenadas/coordenadassearch.js') }}?v={{ filemtime(public_path('js/sgt/coordenadas/coordenadassearch.js')) }}">
+        src="{{ asset('js/sgt/coordenadas/extcoordenadassearch.js') }}?v={{ filemtime(public_path('js/sgt/coordenadas/extcoordenadassearch.js')) }}">
     </script>
 
     <!-- SweetAlert para mostrar mensajes -->

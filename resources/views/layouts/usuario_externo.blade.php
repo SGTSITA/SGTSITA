@@ -119,6 +119,52 @@
                     </div>
                   </div>
                 </div>
+                <!--coordenadas -->
+                <div data-kt-menu-trigger="click" class="menu-item menu-accordion">
+                  <span class="menu-link">
+                    <span class="menu-icon">
+                      <i class="ki-duotone ki-black-right fs-2"></i>
+                    </span>
+                    <span class="menu-title">Coordenadas</span>
+                    <span class="menu-arrow"></span>
+                  </span>
+                  <div class="menu-sub menu-sub-accordion">
+                    <div class="menu-item">
+                      <a href="{{route('ver.extcoordenadamapa')}}" class="menu-link">
+                        <span class="menu-bullet">
+                          <span class="bullet bullet-dot"></span>
+                        </span>
+                        <span class="menu-title">Mapas</span>
+                      </a>
+                    </div>
+                    <div class="menu-item">
+                      <a href="{{ route('seach.extcoordenadas') }}" class="menu-link">
+                        <span class="menu-bullet">
+                          <span class="bullet bullet-dot"></span>
+                        </span>
+                        <span class="menu-title">Busqueda</span>
+                      </a>
+                    </div>
+                    <div class="menu-item">
+                      <a href="{{ route('extcompartircoor') }}" class="menu-link">
+                        <span class="menu-bullet">
+                          <span class="bullet bullet-dot"></span>
+                        </span>
+                        <span class="menu-title">Compartir Coordenadas</span>
+                      </a>
+                    </div>
+                  </div>
+                </div>
+
+            <!--coordenadas -->
+
+
+
+
+
+
+
+
               </div>
             </div>
           </div>
@@ -181,10 +227,10 @@
                     <span class="path2"></span>
                   </i>
                 </div>
-                <a href="/" class="d-flex align-items-center">
+                <!-- <a href="/" class="d-flex align-items-center">
                   <img alt="Logo" src="/assets/metronic/media/logos/demo3.svg" class="theme-light-show h-20px" />
                   <img alt="Logo" src="/assets/metronic/media/logos/demo3-dark.svg" class="theme-dark-show h-20px" />
-                </a>
+                </a> -->
               </div>
               <div class="d-flex align-items-center flex-shrink-0 mb-0 mb-lg-0">
                 <div id="kt_header_search" class="header-search d-flex align-items-center w-lg-250px" data-kt-search-keypress="true" data-kt-search-min-length="2" data-kt-search-enter="enter" data-kt-search-layout="menu" data-kt-search-responsive="lg" data-kt-menu-trigger="auto" data-kt-menu-permanent="true" data-kt-menu-placement="bottom-end">

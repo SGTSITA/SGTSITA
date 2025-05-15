@@ -19,6 +19,7 @@ class DocumCotizacion extends Model
         'boleta_liberacion',
         'doda',
         'id_empresa',
+        'foto_patio',
 
     ];
 

@@ -1,77 +1,11 @@
-@extends('layouts.app')
-
-@section('template_title', 'Ver Coordenadas')
+@extends('layouts.usuario_externo')
 
 
-@section('content')
-<style>
-.switch {
-  position: relative;
-  display: inline-block;
-  width: 200px; /* Ancho mayor para incluir el texto */
-  height: 30px;
-}
 
-.switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
-.slider {
-  position: absolute;
-  cursor: pointer;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: #ccc;
-  transition: 0.4s;
-  border-radius: 34px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-weight: bold;
-}
-
-.slider span {
-  position: absolute;
-  transition: 0.4s;
-  font-size: 14px;
-}
-
-.slider:before {
-  position: absolute;
-  content: "";
-  height: 22px;
-  width: 22px;
-  border-radius: 50%;
-  background-color: white;
-  transition: 0.4s;
-  left: 4px;
-}
-
-input:checked + .slider {
-  background-color: #4CAF50;
-}
-
-input:checked + .slider:before {
-  transform: translateX(170px); /* Mueve el círculo completamente a la derecha */
-}
-
-input:checked + .slider #ubicacion-texto {
-  transform: translateX(80px); /* Mueve el texto hacia la derecha cuando activado */
-}
-
-input:not(:checked) + .slider #ubicacion-texto {
-  transform: translateX(-80px); /* Mueve el texto a la izquierda cuando desactivado */
-}
-.btn-close {
-    filter: invert(1); /* Invierte el color (útil en fondos blancos) */
-}
-</style>
-    
+@section('WorkSpace')
+<script>
+    const idCliente = @json($idCliente);
+</script>
 <div class="container-fluid py-4 px-3 bg-gray-100 min-h-screen">
     <div class="row justify-content-center">
         <div class="col-sm-12">
@@ -102,7 +36,7 @@ input:not(:checked) + .slider #ubicacion-texto {
       </div>
       <div class="modal-body">
         <form id="formFiltros">
-             <div class="mb-3">
+          <div class="mb-3">
             <label for="fecha_inicio" class="form-label">Fecha Inicio</label>
             <input type="date" class="form-control" name="fecha_inicio" id="fecha_inicio">
           </div>
@@ -110,8 +44,7 @@ input:not(:checked) + .slider #ubicacion-texto {
             <label for="fecha_fin" class="form-label">Fecha Fin</label>
             <input type="date" class="form-control" name="fecha_fin" id="fecha_fin">
           </div>
-         
-           <div class="mb-3 position-relative">
+          <div class="mb-3 position-relative">
             <label for="contenedor-input" class="form-label">Contenedores</label>
             <input type="text" class="form-control" id="contenedor-input" oninput="mostrarSugerencias()" placeholder="Buscar contenedor...">
             <div id="sugerencias" style="border: 1px solid #ccc; max-height: 150px; overflow-y: auto; display: none; position: absolute; background: white; z-index: 1050; width: 100%;"></div>
@@ -120,12 +53,12 @@ input:not(:checked) + .slider #ubicacion-texto {
             <input type="hidden" name="contenedores" id="contenedores">
           </div>
 
-          <div class="mb-3">
+          <!-- <div class="mb-3">
             <label for="proveedor" class="form-label">Proveedor</label>
             <select class="form-select" name="proveedor" id="proveedor">
               <option value="">Seleccione un proveedor</option>
             </select>
-          </div>
+          </div> -->
 
           <div class="mb-3">
             <label for="cliente" class="form-label">Cliente</label>
@@ -140,7 +73,6 @@ input:not(:checked) + .slider #ubicacion-texto {
               <option value="">Seleccione un subcliente</option>
             </select>
           </div>
-          
           <div class="mb-3">
             <label for="ubicacion-toggle" class="form-label">Ubicación</label>
             <div class="form-check form-switch">
@@ -150,8 +82,8 @@ input:not(:checked) + .slider #ubicacion-texto {
           </div>
 
           <div class="modal-footer">
-            <button type="button" onclick="limpiarFiltros()" class="btn btn-secondary">
-              Limpiar Filtros
+                    <button type="button" onclick="limpiarFiltros()" class="btn btn-secondary">
+                Limpiar Filtros
             </button>
             <button type="submit" class="btn btn-primary">Aplicar Filtros</button>
           </div>
@@ -164,20 +96,15 @@ input:not(:checked) + .slider #ubicacion-texto {
     
 @endsection
 
-@push('custom-javascript')
+@push('javascript')
     <!-- AG Grid -->
     <script src="https://unpkg.com/ag-grid-community/dist/ag-grid-community.min.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-
-<!-- JS de Select2 -->
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-
     <!-- Nuestro JavaScript unificado -->
     <script
-        src="{{ asset('js/sgt/coordenadas/coordenadasver.js') }}?v={{ filemtime(public_path('js/sgt/coordenadas/coordenadasver.js')) }}">
+        src="{{ asset('js/sgt/coordenadas/extcoordenadasver.js') }}?v={{ filemtime(public_path('js/sgt/coordenadas/extcoordenadasver.js')) }}">
     </script>
 
     <!-- SweetAlert para mostrar mensajes -->
