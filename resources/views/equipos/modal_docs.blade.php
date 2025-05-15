@@ -1,108 +1,110 @@
-<div class="modal fade" id="documenotsdigitales-{{$item->id}}" tabindex="-1" aria-labelledby="equipoModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Editar Equipo #{{$item->id}} </h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-
-        <form method="POST" action="{{ route('update.equipos', $item->id) }}" id="" enctype="multipart/form-data" role="form">
-            <input type="hidden" name="_method" value="PATCH">
-
-            @csrf
-
-            <div class="modal-body">
-                <div class="row">
-
-                    <div class="col-12 mb-3 mt-3">
-                        <h4 class="text-center">Documentos Digitales</h4>
-                    </div>
-
-                    <div class="col-6 text-center">
-                        <h5>Tarjeta de Circulacion</h5>
-                        @if($item->tarjeta_circulacion == NULL)
-
-                        <label for="name">Tarjeta de Circulacion *</label>
-                        <div class="input-group mb-3">
-                            <span class="input-group-text" id="basic-addon1">
-                                <img src="{{ asset('img/icon/business-card-design.webp') }}" alt="" width="25px">
-                            </span>
-                            <input name="tarjeta_circulacion" id="tarjeta_circulacion" type="file" class="form-control" value="{{$item->acceso}}">
-                        </div>
-
-                        @else
-
-                        @if (pathinfo($item->tarjeta_circulacion, PATHINFO_EXTENSION) == 'pdf')
-                        <p class="text-center ">
-                            <iframe class="mt-2" src="{{asset('equipos/'.$item->tarjeta_circulacion)}}" style="width: 80%; height: 250px;"></iframe>
-                        </p>
-                                <a class="btn btn-sm text-dark" href="{{asset('equipos/'.$item->tarjeta_circulacion) }}" target="_blank" style="background: #836262; color: #ffff!important">Ver archivo</a>
-                        @elseif (pathinfo($item->tarjeta_circulacion, PATHINFO_EXTENSION) == 'doc')
-                        <p class="text-center ">
-                            <img id="blah" src="{{asset('assets/user/icons/docx.png') }}" alt="Imagen" style="width: 150px; height: 150px;"/>
-                        </p>
-                                <a class="btn btn-sm text-dark" href="{{asset('equipos/'.$item->tarjeta_circulacion) }}" target="_blank" style="background: #836262; color: #ffff!important">Descargar</a>
-                        @elseif (pathinfo($item->tarjeta_circulacion, PATHINFO_EXTENSION) == 'docx')
-                        <p class="text-center ">
-                            <img id="blah" src="{{asset('assets/user/icons/docx.png') }}" alt="Imagen" style="width: 150px; height: 150px;"/>
-                        </p>
-                                <a class="btn btn-sm text-dark" href="{{asset('equipos/'.$item->tarjeta_circulacion) }}" target="_blank" style="background: #836262; color: #ffff!important">Descargar</a>
-                        @else
-                            <p class="text-center mt-2">
-                                <img id="blah" src="{{asset('equipos/'.$item->tarjeta_circulacion) }}" alt="Imagen" style="width: 150px;height: 150%;"/><br>
-                            </p>
-                                <a class="text-center text-dark btn btn-sm" href="{{asset('equipos/'.$item->tarjeta_circulacion) }}" target="_blank" style="background: #836262; color: #ffff!important">Ver Imagen</a>
-                        @endif
-
-                        @endif
-                    </div>
-
-                    <div class="col-6 text-center">
-                        <h5>Poliza de Seguro</h5>
-
-                        @if($item->poliza_seguro == NULL)
-                        <label for="name">Poliza de Seguro *</label>
-                        <div class="input-group mb-3">
-                            <span class="input-group-text" id="basic-addon1">
-                                <img src="{{ asset('img/icon/factura.png.webp') }}" alt="" width="25px">
-                            </span>
-                            <input name="poliza_seguro" id="poliza_seguro" type="file" class="form-control">
-                        </div>
-                        @else
-
-                            @if (pathinfo($item->poliza_seguro, PATHINFO_EXTENSION) == 'pdf')
-                            <p class="text-center ">
-                                <iframe class="mt-2" src="{{asset('equipos/'.$item->poliza_seguro)}}" style="width: 80%; height: 250px;"></iframe>
-                            </p>
-                                    <a class="btn btn-sm text-dark" href="{{asset('equipos/'.$item->poliza_seguro) }}" target="_blank" style="background: #836262; color: #ffff!important">Ver archivo</a>
-                            @elseif (pathinfo($item->poliza_seguro, PATHINFO_EXTENSION) == 'doc')
-                            <p class="text-center ">
-                                <img id="blah" src="{{asset('assets/user/icons/docx.png') }}" alt="Imagen" style="width: 150px; height: 150px;"/>
-                            </p>
-                                    <a class="btn btn-sm text-dark" href="{{asset('equipos/'.$item->poliza_seguro) }}" target="_blank" style="background: #836262; color: #ffff!important">Descargar</a>
-                            @elseif (pathinfo($item->poliza_seguro, PATHINFO_EXTENSION) == 'docx')
-                            <p class="text-center ">
-                                <img id="blah" src="{{asset('assets/user/icons/docx.png') }}" alt="Imagen" style="width: 150px; height: 150px;"/>
-                            </p>
-                                    <a class="btn btn-sm text-dark" href="{{asset('equipos/'.$item->poliza_seguro) }}" target="_blank" style="background: #836262; color: #ffff!important">Descargar</a>
-                            @else
-                                <p class="text-center mt-2">
-                                    <img id="blah" src="{{asset('equipos/'.$item->poliza_seguro) }}" alt="Imagen" style="width: 150px;height: 150%;"/><br>
-                                </p>
-                                    <a class="text-center text-dark btn btn-sm" href="{{asset('equipos/'.$item->poliza_seguro) }}" target="_blank" style="background: #836262; color: #ffff!important">Ver Imagen</a>
-                            @endif
-
-                        @endif
-                    </div>
-
-                </div>
+<div class="modal fade" id="documenotsdigitales-{{ $item->id }}" tabindex="-1" aria-labelledby="equipoModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content border-0 shadow-sm">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title">Documentos del Equipo <strong>#{{ $item->id_equipo }}</strong></h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                    aria-label="Close"></button>
             </div>
 
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="submit" class="btn btn-primary">Guardar</button>
-              </div>
-        </form>
-      </div>
+            <form method="POST" action="{{ route('update.equipos', $item->id) }}" enctype="multipart/form-data"
+                class="form-editar-equipo" data-id="{{ $item->id }}">
+                @csrf
+                <input type="hidden" name="_method" value="PATCH">
+                <input type="hidden" name="tipo" value="{{ $item->tipo }}">
+
+                <div class="modal-body">
+                    <h5 class="text-center mb-4">Documentos Digitales</h5>
+
+                    <div class="row g-4">
+
+                        <!-- Tarjeta de Circulación -->
+                        <div class="col-md-6">
+                            <div class="card h-100">
+                                <div class="card-header text-center bg-secondary text-white">
+                                    <strong>Tarjeta de Circulación</strong>
+                                </div>
+                                <div class="card-body text-center">
+                                    @if (!$item->tarjeta_circulacion)
+                                        <div class="mb-3">
+                                            <label class="form-label">Subir archivo *</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text"><i class="fas fa-id-card"></i></span>
+                                                <input type="file" name="tarjeta_circulacion" class="form-control">
+                                            </div>
+                                        </div>
+                                    @else
+                                        @php $ext = pathinfo($item->tarjeta_circulacion, PATHINFO_EXTENSION); @endphp
+                                        @if ($ext === 'pdf')
+                                            <iframe src="{{ asset('equipos/' . $item->tarjeta_circulacion) }}"
+                                                style="width:100%; height:250px;" class="rounded border"></iframe>
+                                        @elseif (in_array($ext, ['doc', 'docx']))
+                                            <img src="{{ asset('assets/user/icons/docx.png') }}" alt="Documento Word"
+                                                class="img-fluid" style="max-height:150px;">
+                                        @else
+                                            <img src="{{ asset('equipos/' . $item->tarjeta_circulacion) }}"
+                                                alt="Imagen" class="img-fluid rounded" style="max-height:150px;">
+                                        @endif
+                                        <a href="{{ asset('equipos/' . $item->tarjeta_circulacion) }}" target="_blank"
+                                            class="btn btn-sm mt-2 btn-outline-primary w-100">
+                                            Ver / Descargar
+                                        </a>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Póliza de Seguro -->
+                        <div class="col-md-6">
+                            <div class="card h-100">
+                                <div class="card-header text-center bg-secondary text-white">
+                                    <strong>Póliza de Seguro</strong>
+                                </div>
+                                <div class="card-body text-center">
+                                    @if (!$item->poliza_seguro)
+                                        <div class="mb-3">
+                                            <label class="form-label">Subir archivo *</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text"><i
+                                                        class="fas fa-file-invoice"></i></span>
+                                                <input type="file" name="poliza_seguro" class="form-control">
+                                            </div>
+                                        </div>
+                                    @else
+                                        @php $ext = pathinfo($item->poliza_seguro, PATHINFO_EXTENSION); @endphp
+                                        @if ($ext === 'pdf')
+                                            <iframe src="{{ asset('equipos/' . $item->poliza_seguro) }}"
+                                                style="width:100%; height:250px;" class="rounded border"></iframe>
+                                        @elseif (in_array($ext, ['doc', 'docx']))
+                                            <img src="{{ asset('assets/user/icons/docx.png') }}" alt="Documento Word"
+                                                class="img-fluid" style="max-height:150px;">
+                                        @else
+                                            <img src="{{ asset('equipos/' . $item->poliza_seguro) }}" alt="Imagen"
+                                                class="img-fluid rounded" style="max-height:150px;">
+                                        @endif
+                                        <a href="{{ asset('equipos/' . $item->poliza_seguro) }}" target="_blank"
+                                            class="btn btn-sm mt-2 btn-outline-primary w-100">
+                                            Ver / Descargar
+                                        </a>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times-circle"></i> Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Guardar Cambios
+                    </button>
+                </div>
+
+            </form>
+        </div>
     </div>
-  </div>
+</div>
