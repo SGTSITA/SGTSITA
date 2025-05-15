@@ -96,7 +96,7 @@ class ExternosController extends Controller
                                                 ->where('cotizaciones.id_cliente' ,'=',Auth::User()->id_cliente)
                                                 ->where('estatus',$condicion,'En espera')
                                                 ->orderBy('created_at', 'desc')
-                                                ->selectRaw('cotizaciones.*, d.num_contenedor,d.doc_eir,doc_ccp ,d.boleta_liberacion,d.doda')
+                                                ->selectRaw('cotizaciones.*, d.num_contenedor,d.doc_eir,doc_ccp ,d.boleta_liberacion,d.doda,d.foto_patio')
                                                 ->get();
                                                 
 
@@ -110,6 +110,7 @@ class ExternosController extends Controller
                 "Peso" => $c->peso_contenedor,
                 "BoletaLiberacion" => ($c->boleta_liberacion == null) ? false : true,
                 "DODA" => ($c->doda == null) ? false : true,
+                "foto_patio" => ($c->foto_patio == null) ? false : true,
                 "FormatoCartaPorte" => ($c->doc_ccp == null) ? false : true,
                 "PreAlta" => ($c->img_boleta == null) ? false : true,
                 "FechaSolicitud" => Carbon::parse($c->created_at)->format('Y-m-d')
@@ -237,7 +238,7 @@ $attachment = [];
         }
     }
 
-    public function fileProperties($id,$file,$title){
+    public function fileProperties($id,$file,$title,){
         $path = public_path('cotizaciones/cotizacion'.$id.'/'.$file);
         if(\File::exists($path)){
             return [
@@ -281,7 +282,11 @@ $attachment = [];
             $doc_eir = self::fileProperties($folderId,$documentos->doc_eir,'EIR');
             if(sizeof($doc_eir) > 0) array_push($documentList,$doc_eir);
         }
-       
+        if(!is_null($documentos->foto_patio)){
+           
+            $doc_foto_patio = self::fileProperties($folderId, $documentos->foto_patio, 'Foto patio');
+            if(sizeof($doc_foto_patio) > 0) array_push($documentList, $doc_foto_patio);
+        }
         $cotizacion = Cotizaciones::where('id',$documentos->id_cotizacion)->first();
 
         if(!is_null($cotizacion->img_boleta)){
@@ -303,5 +308,23 @@ $attachment = [];
         return ["data"=>$documentList,"numContenedor" => $numContenedor,"documentos" =>$documentos];
                 
 
+    }
+
+    public function filePropertiescoordenadas($id,$file,$title,){
+        $path = public_path('coordenadas/'.$id.'/'.$file);
+        if(\File::exists($path)){
+            return [
+                "filePath" => $file,
+                'fileName'=> $title,
+                "fileDate" => CommonTrait::obtenerFechaEnLetra(date("Y-m-d", filemtime($path))),
+                "fileSize" => CommonTrait::calculateFileSize(filesize($path)),
+                "fileType" => pathinfo($path, PATHINFO_EXTENSION),
+                "identifier" => $id,
+                "fileCode" => iconv('UTF-8', 'ASCII//TRANSLIT',str_replace(' ','-',$title))
+                ];
+                //iconv('UTF-8', 'ASCII//TRANSLIT', $cadena);
+        }else{
+            return [];
+        }
     }
 }

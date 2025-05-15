@@ -43,11 +43,11 @@
         'b' => [
             [ 'texto' => "1)¿ Registro en Puerto ?", 'campo' => 'registro_puerto' ],
             [ 'texto' => "2)¿ Dentro de Puerto ?", 'campo' => 'dentro_puerto' ],
-            [ 'texto' => "3)¿ Descarga Vacío ?", 'campo' => 'descarga_vacio' ],
-            [ 'texto' => "4)¿ Cargado Contenedor ?", 'campo' => 'cargado_contenedor' ],
-            [ 'texto' => "5)¿ En Fila Fiscal ?", 'campo' => 'fila_fiscal' ],
-            [ 'texto' => "6)¿ Modulado ?", 'campo' => 'modulado_tipo', 'opciones' => ["6.1) Verde","6.2) Amarillo","6.3) Rojo", "6.4) OVT"] ],
-            [ 'texto' => "7)¿ Descarga en patio ?", 'campo' => 'descarga_patio' ],
+            [ 'texto' => "3)¿ Cargado Contenedor ?", 'campo' => 'cargado_contenedor' ],
+            [ 'texto' => "4)¿ En Fila Fiscal ?", 'campo' => 'fila_fiscal' ],
+            [ 'texto' => "5)¿ Modulado ?", 'campo' => 'modulado_tipo', 'opciones' => ["6.1) Verde","6.2) Amarillo","6.3) Rojo", "6.4) OVT"] ],
+            [ 'texto' => "6)¿ Descarga en patio ?", 'campo' => 'descarga_patio' ],
+            [ 'texto' => "7)Toma Foto de Boleta de Patio", 'campo' => 'toma_foto_patio','Archivo' => 'Si'  ],
         ],
         'f' => [
             [ 'texto' => "1) ¿Carga en patio?", 'campo' => 'cargado_patio' ],
@@ -59,14 +59,13 @@
         'c' => [
             [ 'texto' => "¿1) Registro en Puerto ?", 'campo' => 'registro_puerto' ],
             [ 'texto' => "¿2) Dentro de Puerto ?", 'campo' => 'dentro_puerto' ],
-            [ 'texto' => "¿3) Descarga Vacío?", 'campo' => 'descarga_vacio' ],
-            [ 'texto' => "¿4) Cargado Contenedor?", 'campo' => 'cargado_contenedor' ],
-            [ 'texto' => "¿5) En Fila Fiscal?", 'campo' => 'fila_fiscal'],
-            [ 'texto' => "¿6) Modulado?", 'campo' => 'modulado_tipo', 'opciones' => ["6.1) Verde","6.2) Amarillo","6.3) Rojo", "6.4) OVT"] ],
-            [ 'texto' => "¿7) En Destino?", 'campo' => 'en_destino' ],
-            [ 'texto' => "¿8) Inicio Descarga?", 'campo' => 'inicio_descarga' ],
-            [ 'texto' => "¿9) Fin Descarga?", 'campo' => 'fin_descarga' ],
-            [ 'texto' => "¿10) Recepción Doctos Firmados?", 'campo' => 'recepcion_doc_firmados' ],
+            [ 'texto' => "¿3) Cargado Contenedor?", 'campo' => 'cargado_contenedor' ],
+            [ 'texto' => "¿4) En Fila Fiscal?", 'campo' => 'fila_fiscal'],
+            [ 'texto' => "¿5) Modulado?", 'campo' => 'modulado_tipo', 'opciones' => ["6.1) Verde","6.2) Amarillo","6.3) Rojo", "6.4) OVT"] ],
+            [ 'texto' => "¿6) En Destino?", 'campo' => 'en_destino' ],
+            [ 'texto' => "¿7) Inicio Descarga?", 'campo' => 'inicio_descarga' ],
+            [ 'texto' => "¿8) Fin Descarga?", 'campo' => 'fin_descarga' ],
+            [ 'texto' => "¿9) Recepción Doctos Firmados?", 'campo' => 'recepcion_doc_firmados' ],
         ]
     ];
 
@@ -76,17 +75,22 @@
     $trespuestas =0;
 @endphp
 
+
+@php
+    $trespuestas = 0;
+@endphp
+
 @foreach ($preguntas as $i => $pregunta)
     @php
         $campo = $pregunta['campo'];
         $respuesta = isset($coordenadas->$campo) ? $coordenadas->$campo : null;
-         $trespuestas =$i 
-    @endphp
 
-    @if (!$respuesta && $primeraSinResponder === null)
-        @php $primeraSinResponder = $i; @endphp
-        @break
-    @endif
+        if ($respuesta) {
+            $trespuestas++;
+        } elseif ($primeraSinResponder === null) {
+            $primeraSinResponder = $i;
+        }
+    @endphp
 @endforeach
 
 @if (is_null($primeraSinResponder)) 
@@ -98,9 +102,13 @@
     </script>
 @endif
 
-@if ($trespuestas +1 === count($preguntas) )
-@php  $primeraSinResponder  = count($preguntas); @endphp
-<script>  document.addEventListener('DOMContentLoaded', function () { ocultarCarrucelFinal()  });</script>
+@if ($trespuestas === count($preguntas))
+    @php  $primeraSinResponder  = count($preguntas); @endphp
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            ocultarCarrucelFinal();
+        });
+    </script>
 @endif
    
       <!-- Info Estática -->
@@ -187,6 +195,34 @@
                                     </select>
                                     <label for="{{ $pregunta['campo'] }}_tipo">Selecciona una opción</label>
                                 </div>
+                            @elseif  (isset($pregunta['Archivo']) && strtolower($pregunta['Archivo']) === 'si')
+                            <script> 
+                              
+                            document.addEventListener('DOMContentLoaded', function () {
+                                Camarayfoto();
+                            });
+                            </script>
+                            <div class="d-flex gap-3 mt-3">
+                                <div class="d-flex gap-3 mt-3">
+                                    <form id="formArchivoPregunta" enctype="multipart/form-data">
+                                        @csrf
+                                        <input type="hidden" name="cotizacion_id" value="{{ $id_cotizacion }}">
+                                        <input type="hidden" name="id_coordenada" value="{{ $idCordenada }}">
+
+                                        <div class="mb-3">
+                                            <label for="documento_pregunta_8" class="form-label">Toma una foto</label>
+                                            <!-- El elemento para mostrar la vista previa de la foto -->
+                                            <video id="vista_previa" width="100%" height="auto" style="display:block;" autoplay></video>
+                                            <canvas id="foto_canvas" style="display:none;"></canvas>
+                                            <input type="hidden" name="documento_pregunta_8" id="documento_pregunta_8">
+                                        </div>
+
+                                        <button type="button" class="btn btn-primary" onclick="capturarYEnviarFoto()">Capturar y Enviar</button>
+                                    </form>
+
+                                </div>
+
+                            </div>
                             @else
                               {{-- Si no hay opciones, muestra boton Sí  --}}
                               <div class="d-flex gap-3 mt-3">
@@ -218,7 +254,9 @@
   </div>
   @endif
 </main>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
+    
 
 let indiceActual = {{ $primeraSinResponder }};
 
@@ -247,11 +285,12 @@ const columnasPorTipo = {
     b: [
         { columna: 'registro_puerto', datetime: 'registro_puerto_datatime' },
         { columna: 'dentro_puerto', datetime: 'dentro_puerto_datatime' },
-        { columna: 'descarga_vacio', datetime: 'descarga_vacio_datatime' },
         { columna: 'cargado_contenedor', datetime: 'cargado_contenedor_datatime' },
         { columna: 'fila_fiscal', datetime: 'fila_fiscal_datatime' },
         { columna: 'modulado_tipo', datetime: 'modulado_tipo_datatime' },
         { columna: 'descarga_patio', datetime: 'descarga_patio_datetime' },
+        { columna: 'toma_foto_patio', datetime: 'toma_foto_patio_datetime' },
+        
     ],
     f: [
         { columna: 'cargado_patio', datetime: 'cargado_patio_datetime' },
@@ -412,6 +451,75 @@ function cambiarColorPregunta() {
                 titulo.style.color = "#ffffff"; // Letras blancas
             }
 }
+const video = document.getElementById('vista_previa');
+const canvas = document.getElementById('foto_canvas');
+ 
+function Camarayfoto(){
+    navigator.mediaDevices.getUserMedia({ video: true })
+    .then(stream => {
+        video.srcObject = stream;
+    })
+    .catch(error => {
+        alert("No se pudo acceder a la cámara: " + error);
+    });
 
+
+}
+
+function capturarYEnviarFoto() {
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const context = canvas.getContext('2d');
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    canvas.toBlob(blob => {
+        const formData = new FormData();
+        formData.append('_token', document.querySelector('[name=_token]').value);
+        formData.append('cotizacion_id', document.querySelector('[name=cotizacion_id]').value);
+        formData.append('id_coordenada', document.querySelector('[name=id_coordenada]').value);
+        formData.append('documento_pregunta_8', blob, 'foto.png');
+
+        fetch("{{ route('coordenadas.archivo') }}", {
+            method: 'POST',
+            body: formData
+        }).then(response => {
+            if (response.ok) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Foto enviada',
+                    text: 'La imagen fue enviada correctamente.'
+                });
+                let stream = video.srcObject;
+                    if (stream) {
+                        let tracks = stream.getTracks();
+                        tracks.forEach(track => track.stop());
+                        video.srcObject = null;
+                    }
+
+                    video.style.display = 'none';
+                    canvas.style.display = 'block'; 
+
+                  
+                    document.querySelector('button[onclick="capturarYEnviarFoto()"]').disabled = true;
+
+
+                    actualizarProgreso()
+                    ocultarCarrucelFinal();
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Hubo un problema al enviar la foto.'
+                });
+            }
+        }).catch(error => {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Fallo al enviar la foto: ' + error
+            });
+        });
+    }, 'image/png');
+}
 
 </script>

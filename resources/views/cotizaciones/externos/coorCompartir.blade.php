@@ -3,16 +3,11 @@
 
 
 @section('WorkSpace')
-    
-<style>
-    input[type="date"], select.form-select {
-  height: 35px; /* Ajusta el valor según necesites */
-  padding: .375rem .75rem; /* Igualar el padding de otros campos */
-}
-</style>
+
 <script>
     const idCliente = @json($idCliente);
 </script>
+
 <div id="estadoCuestionarios" style="display: none;">
         <input type="hidden" id="estadoC" name="estadoC" value="0">
         <input type="hidden" id="estadoB" name="estadoB" value="0">
@@ -68,14 +63,16 @@
   </div>
 </div>
 </div>
+
 <div class="container-fluid py-4 px-3 bg-gray-100 min-h-screen">
     <div class="row justify-content-center">
         <div class="col-sm-12">
             <div class="card shadow-lg border-0 bg-white rounded-4 p-4">
-                <div class="mb-4 d-flex align-items-center justify-content-between">
+            <div class="mb-4 d-flex align-items-center justify-content-between">
                     <h3 class="text-xl font-semibold text-center mb-0">Busqueda de Coordenadas Lista</h3>
                 </div>
-           
+
+
                 <div class="card mb-3">
                     <div class="card-header py-2">
                         <h6 class="mb-0">Filtros de Búsqueda</h6>
@@ -138,7 +135,8 @@
                         </form>
                     </div>
                     </div>
-                
+
+
                     <div id="myGrid" class="ag-theme-alpine position-relative" style="height: 500px;">
                         <div id="gridLoadingOverlay" class="loading-overlay" style="display: none;">
                             <div class="spinner-border text-primary" role="status">
@@ -146,44 +144,27 @@
                             </div>
                         </div>
                     </div>
-            </div>
+            
         </div>
     </div>
-    
 </div>
 
 
 
-
-<!-- Estilos -->
-<style>
-
- 
-
-  #btnVerMapa {
-  font-size: 11px;       /* texto más pequeño */
-  padding: 2px 6px;      /* menos relleno */
-}
-
-#btnCerrar {
-  margin-top: -8px;  /* Sube el botón */
-}
-</style>
-
-
-    
+   
 @endsection
 
 @push('javascript')
     <!-- AG Grid -->
     <script src="https://unpkg.com/ag-grid-community/dist/ag-grid-community.min.js"></script>
- 
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 
 
     <!-- Nuestro JavaScript unificado -->
     <script
-        src="{{ asset('js/sgt/coordenadas/extcoordenadascompartir.js') }}?v={{ filemtime(public_path('js/sgt/coordenadas/extcoordenadascompartir.js')) }}">
+    src="{{ asset('js/sgt/coordenadas/extcoordenadascompartir.js') }}?v={{ filemtime(public_path('js/sgt/coordenadas/extcoordenadascompartir.js')) }}">
     </script>
 
     <!-- SweetAlert para mostrar mensajes -->

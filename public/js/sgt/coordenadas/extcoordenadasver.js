@@ -5,6 +5,24 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap contributors'
 }).addTo(map);
 
+    const camposUbicacion = [
+  { key: "toma_foto_patio", orden: 15 },
+  { key: "cargado_patio", orden: 14 },
+  { key: "descarga_patio", orden: 13 },
+  { key: "recepcion_doc_firmados", orden: 12 },
+  { key: "fin_descarga", orden: 11 },
+  { key: "inicio_descarga", orden: 10 },
+  { key: "en_destino", orden: 9 },
+  { key: "modulado_coordenada", orden: 8 },
+  { key: "modulado_tipo", orden: 7 },
+  { key: "fila_fiscal", orden: 6 },
+  { key: "cargado_contenedor", orden: 5 },
+  { key: "descarga_vacio", orden: 4 },
+  { key: "dentro_puerto", orden: 3 },
+  { key: "registro_puerto", orden: 2 },
+  { key: "tipo_flujo", orden: 1 }
+];
+
 // Mostrar el modal de Bootstrap al cargar la página
 window.onload = function() {
   var filtroModal = new bootstrap.Modal(document.getElementById('filtroModal'));
@@ -65,7 +83,7 @@ document.getElementById('formFiltros').addEventListener('submit', function(event
   });
 
   queryParams.append("idCliente", idCliente);
-
+const mostrarUltimaUbicacion = document.getElementById("ubicacion-toggle").checked;
   limpiarMarcadores(); // Limpia los anteriores antes de buscar nuevos
 
   fetch(`/coordenadas/contenedor/search?${queryParams.toString()}`)
@@ -73,28 +91,59 @@ document.getElementById('formFiltros').addEventListener('submit', function(event
       .then(data => {
           const preguntas = data.preguntas;
           const datos = data.datos;
+              datos.forEach(contenedor => {
+            if (mostrarUltimaUbicacion) {
+                for (let i = 0; i < camposUbicacion.length; i++) {
+            const campo = camposUbicacion[i].key;
+            const valor = contenedor[campo];
 
-          datos.forEach(contenedor => {
-            preguntas.forEach(pregunta => {
-                const campo = pregunta.campo;
-                const valor = contenedor[campo];
-        
-                if (valor) {
-                    const coords = valor.split(',');
-                    if (coords.length === 2) {
-                        const lat = parseFloat(coords[0]);
-                        const lng = parseFloat(coords[1]);
-        
-                        const marker = L.marker([lat, lng])
-                            .addTo(map)
-                            .bindTooltip(`${pregunta.tooltip} <br> Contenedor: <strong>${contenedor.contenedor}</strong>`)
-                            .openTooltip();
-        
-                        window.markers.push(marker);
-                    }
+            if (valor) {
+                const coords = valor.split(',');
+                if (coords.length === 2) {
+                    const lat = parseFloat(coords[0]);
+                    const lng = parseFloat(coords[1]);
+
+                    const marker = L.marker([lat, lng])
+                        .addTo(map)
+                        .bindTooltip(`Última ubicación: ${campo.replace(/_/g, ' ')}<br>Contenedor: <strong>${contenedor.contenedor}</strong>`)
+                        .openTooltip();
+
+                    window.markers.push(marker);
+                    break;
                 }
-            });
+                else {
+                console.log(`Formato incorrecto de coordenadas: ${valor}`);
+            }   
+            }
+        }
+            }
+            else {
+
+                preguntas.forEach(pregunta => {
+                        const campo = pregunta.campo;
+                        const valor = contenedor[campo];
+
+                        if (valor) {
+                            const coords = valor.split(',');
+                            if (coords.length === 2) {
+                                const lat = parseFloat(coords[0]);
+                                const lng = parseFloat(coords[1]);
+
+                                const marker = L.marker([lat, lng])
+                                    .addTo(map)
+                                    .bindTooltip(`${pregunta.tooltip}<br>Contenedor: <strong>${contenedor.contenedor}</strong>`)
+                                    .openTooltip();
+
+                                window.markers.push(marker);
+                            }
+                        }
+                    });
+
+            }
+
+      
         });
+          
           // Cierra el modal después de aplicar los filtros
           var modal = bootstrap.Modal.getInstance(document.getElementById('filtroModal'));
           modal.hide();
@@ -326,4 +375,15 @@ function limpiarFiltros() {
 
         document.getElementById('contenedores').value = seleccionados.join(';');
     }
+
+    
+document.getElementById('ubicacion-toggle').addEventListener('change', function() {
+    const ubicacionTexto = document.getElementById('ubicacion-texto');
+    
+    if (this.checked) {
+        ubicacionTexto.textContent = 'Última ubicación';
+    } else {
+        ubicacionTexto.textContent = 'Todas las ubicaciones';
+    }
+});
 

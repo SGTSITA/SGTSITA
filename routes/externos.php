@@ -58,6 +58,7 @@ Route::group(['prefix' => 'coordenadas'], function(){
 Route::get('coordenadas/extmapas', [App\Http\Controllers\CoordenadasController::class, 'extindexMapa'])->name('ver.extcoordenadamapa');
 Route::get('coordenadas/extbusqueda', [App\Http\Controllers\CoordenadasController::class, 'extindexSeach'])->name('seach.extcoordenadas');
 Route::get('coordenadas/extcompartir', [App\Http\Controllers\CoordenadasController::class, 'extcompartir'])->name('extcompartircoor');
+Route::post('coordenadas/extsearchDoctos', [App\Http\Controllers\CoordenadasController::class, 'encontrarURLfoto'])->name('extsearchDoctos');
 
    
 

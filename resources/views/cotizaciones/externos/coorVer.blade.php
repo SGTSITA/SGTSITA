@@ -73,6 +73,13 @@
               <option value="">Seleccione un subcliente</option>
             </select>
           </div>
+          <div class="mb-3">
+            <label for="ubicacion-toggle" class="form-label">Ubicación</label>
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" role="switch" id="ubicacion-toggle" checked aria-checked="true">
+              <label class="form-check-label" id="ubicacion-texto" for="ubicacion-toggle">Última ubicación</label>
+            </div>
+          </div>
 
           <div class="modal-footer">
                     <button type="button" onclick="limpiarFiltros()" class="btn btn-secondary">
@@ -94,11 +101,6 @@
     <script src="https://unpkg.com/ag-grid-community/dist/ag-grid-community.min.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-
-<!-- JS de Select2 -->
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
     <!-- Nuestro JavaScript unificado -->
     <script

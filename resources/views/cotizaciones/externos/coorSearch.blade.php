@@ -23,10 +23,7 @@
                 </div>
            
                 <div class="card mb-3">
-                    <div class="card-header py-2">
-                        <h6 class="mb-0">Filtros de Búsqueda</h6>
-                    </div>
-
+                  
                     <div class="card-body py-3">
                         <form id="formFiltros">
                         <div class="row g-2">

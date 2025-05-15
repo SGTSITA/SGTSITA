@@ -79,7 +79,7 @@ Route::get('coordenadas/mapas', [App\Http\Controllers\CoordenadasController::cla
 Route::get('coordenadas/busqueda', [App\Http\Controllers\CoordenadasController::class, 'indexSeach'])->name('seach.coordenadas');
 Route::get('/coordenadas/contenedor/search', [App\Http\Controllers\CoordenadasController::class, 'getcoorcontenedor'])->name('getcoorcontenedor');
 
-
+Route::post('/coordenadas/archivo', [App\Http\Controllers\CoordenadasController::class, 'subirArchivo'])->name('coordenadas.archivo');
 
 //R
 

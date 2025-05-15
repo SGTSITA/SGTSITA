@@ -45,11 +45,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const columnDefs = [
         { headerCheckboxSelection: true, checkboxSelection: true, width: 50 },
-       
         { headerName: "Cliente", field: "cliente", sortable: true, filter: true },
+        { headerName: "# Contenedor", field: "contenedor", sortable: true, filter: true },
         { headerName: "Origen", field: "origen", sortable: true, filter: true },
         { headerName: "Destino", field: "destino", sortable: true, filter: true },
-        { headerName: "# Contenedor", field: "contenedor", sortable: true, filter: true },
         {
             headerName: "Compartir",
             field: "tipo_b_estado",

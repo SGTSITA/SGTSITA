@@ -79,6 +79,7 @@ class CotizacionesController extends Controller
         'carta_porte' => $cotizacion->carta_porte ?? null,
         'boleta_vacio' => $cotizacion->DocCotizacion->boleta_vacio ?? null,
         'doc_eir' => $cotizacion->doc_eir ?? null,
+        'foto_patio' => $cotizacion->DocCotizacion->foto_patio ?? null,
     ]);
 }
 

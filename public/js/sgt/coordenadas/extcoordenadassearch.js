@@ -2,11 +2,11 @@ const preguntasPorTipo = {
     b: [
         { texto: "1)¿ Registro en Puerto ?", campo: "registro_puerto" },
         { texto: "2)¿ Dentro de Puerto ?", campo: "dentro_puerto" },
-        { texto: "3)¿ Descarga Vacío ?", campo: "descarga_vacio" },
-        { texto: "4)¿ Cargado Contenedor ?", campo: "cargado_contenedor" },
-        { texto: "5)¿ En Fila Fiscal ?", campo: "fila_fiscal" },
-        { texto: "6)¿ Modulado ?", campo: "modulado_tipo", opciones: ["5.1) Verde","5.2) Amarillo","5.3) Rojo", "5.4) OVT"] },
-        { texto: "7)¿ Descarga en patio ?", campo: "descarga_patio" },
+        { texto: "3)¿ Cargado Contenedor ?", campo: "cargado_contenedor" },
+        { texto: "4)¿ En Fila Fiscal ?", campo: "fila_fiscal" },
+        { texto: "5)¿ Modulado ?", campo: "modulado_tipo", opciones: ["5.1) Verde","5.2) Amarillo","5.3) Rojo", "5.4) OVT"] },
+        { texto: "6)¿ Descarga en patio ?", campo: "descarga_patio" },
+        { texto: "7) Toma Foto de Boleta de Patio", campo: "toma_foto_patio" },
     ],
     f: [
         { texto: "1) ¿Carga en patio?", campo: "cargado_patio" },
@@ -18,14 +18,13 @@ const preguntasPorTipo = {
     c: [
         { texto: "¿1) Registro en Puerto ?", campo: "registro_puerto" },
         { texto: "¿2) Dentro de Puerto ?", campo: "dentro_puerto" },
-        { texto: "¿3) Descarga Vacío?", campo: "descarga_vacio" },
-        { texto: "¿4) Cargado Contenedor?", campo: "cargado_contenedor" },
-        { texto: "¿5) En Fila Fiscal?", campo: "fila_fiscal" },
-        { texto: "¿6) Modulado?", campo: "modulado_tipo", opciones: ["5.1) Verde","5.2) Amarillo","5.3) Rojo", "5.4) OVT"] },
-        { texto: "¿7) En Destino?", campo: "en_destino" },
-        { texto: "¿8) Inicio Descarga?", campo: "inicio_descarga" },
-        { texto: "¿9) Fin Descarga?", campo: "fin_descarga" },
-        { texto: "¿10) Recepción Doctos Firmados?", campo: "recepcion_doc_firmados" },
+        { texto: "¿3) Cargado Contenedor?", campo: "cargado_contenedor" },
+        { texto: "¿4) En Fila Fiscal?", campo: "fila_fiscal" },
+        { texto: "¿5) Modulado?", campo: "modulado_tipo", opciones: ["5.1) Verde","5.2) Amarillo","5.3) Rojo", "5.4) OVT"] },
+        { texto: "¿6) En Destino?", campo: "en_destino" },
+        { texto: "¿7) Inicio Descarga?", campo: "inicio_descarga" },
+        { texto: "¿8) Fin Descarga?", campo: "fin_descarga" },
+        { texto: "¿9) Recepción Doctos Firmados?", campo: "recepcion_doc_firmados" },
     ],
 };
 
@@ -71,28 +70,44 @@ let PreguntaA;
   
 
     const columnDefs = [
-        { headerCheckboxSelection: true, checkboxSelection: true, width: 50 },
-        
+       {
+        headerCheckboxSelection: true,
+        checkboxSelection: true,
+        width: 40, 
+        pinned: "left", 
+        suppressSizeToFit: true,
+        resizable: false
+        },
         { headerName: "Cliente", field: "cliente", sortable: true, filter: true },
+        { headerName: "# Contenedor", field: "contenedor", sortable: true, filter: true },
         { headerName: "Origen", field: "origen", sortable: true, filter: true },
         { headerName: "Destino", field: "destino", sortable: true, filter: true },
-        { headerName: "# Contenedor", field: "contenedor", sortable: true, filter: true },
+        
         {
             headerName: "E Burrero",
             field: "Estatus_Burrero",
-            minWidth: 180,
+            minWidth: 130,
             cellRenderer: function (params) {
                 let color = "secondary";
-                if (params.data.tipo_b_estado === "2") color = "success";
-                else if (params.data.tipo_b_estado === "1") color = "danger";
-                else if (params.data.tipo_b_estado === "0") color = "warning";
-        
-                return `
+                let clasIcon ="fa fa-hourglass-half me-1"
+                if (String(params.data.tipo_b_estado) === "2"){
+                color = "success";
+                clasIcon="fa fa-check-circle me-1 text-success";
+                } 
+                else if (String(params.data.tipo_b_estado) === "1"){
+                color = "primary";
+                 clasIcon=" fa fa-play-circle me-1";
+                } 
+                else if (String(params.data.tipo_b_estado) === "0") {
+                    color = "warning";
+                     clasIcon="fa fa-hourglass-half me-1";
+                }
+               return `
                         <button class="btn btn-sm btn-outline-${color} ver-mapa-btn" 
-                            data-tipo="c"
+                            data-tipo="b"
                             data-info='${JSON.stringify(params.data).replace(/'/g, "&#39;")}' 
                             title="Ver progreso...">
-                            <i class="fa fa-chart-line me-1"></i> ${params.data.Estatus_Burrero}
+                            <i class="${clasIcon}"></i> ${params.data.Estatus_Burrero}
                         </button>
                 `;
             }
@@ -100,20 +115,29 @@ let PreguntaA;
         {
             headerName: "E Foraneo",
             field: "Estatus_Foraneo",
-            minWidth: 180,
+            minWidth: 150,
             cellRenderer: function (params) {
                 let color = "secondary";
-                if (params.data.tipo_f_estado === "2") color = "success";
-                else if (params.data.tipo_f_estado === "1") color = "danger";
-                else if (params.data.tipo_f_estado === "0") color = "warning";
-        
-                return `
+                let clasIcon ="fa fa-hourglass-half me-1"
+                if (String(params.data.tipo_f_estado) === "2"){
+                color = "success";
+                clasIcon="fa fa-check-circle me-1 text-success";
+                } 
+                else if (String(params.data.tipo_f_estado) === "1"){
+                color = "primary";
+                 clasIcon=" fa fa-play-circle me-1";
+                } 
+                else if (String(params.data.tipo_f_estado) === "0") {
+                    color = "warning";
+                     clasIcon="fa fa-hourglass-half me-1";
+                }
+                            return `
                   
                     <button class="btn btn-sm btn-outline-${color} ver-mapa-btn" 
-                    data-tipo="c"
+                    data-tipo="f"
                     data-info='${JSON.stringify(params.data).replace(/'/g, "&#39;")}' 
                     title="Ver progreso...">
-                    <i class="fa fa-tasks me-1"></i> ${params.data.Estatus_Foraneo}
+                    <i class="${clasIcon}"></i> ${params.data.Estatus_Foraneo}
                 </button>
                 `;
             }
@@ -121,20 +145,32 @@ let PreguntaA;
         {
             headerName: "E Completo",
             field: "Estatus_Completo",
-            minWidth: 180,
+            minWidth: 150,
             cellRenderer: function (params) {
                 let color = "secondary";
-                if (params.data.tipo_c_estado === "2") color = "success";
-                else if (params.data.tipo_c_estado === "1") color = "danger";
-                else if (params.data.tipo_c_estado === "0") color = "warning";
-        
+                let clasIcon ="fa fa-hourglass-half me-1"
+                if (String(params.data.tipo_c_estado) === "2"){
+                color = "success";
+                clasIcon="fa fa-check-circle me-1 text-success";
+                } 
+                else if (String(params.data.tipo_c_estado) === "1"){
+                color = "primary";
+                 clasIcon=" fa fa-play-circle me-1";
+                } 
+                else if (String(params.data.tipo_c_estado) === "0") {
+                    color = "warning";
+                     clasIcon="fa fa-hourglass-half me-1";
+                }
+
+                       
                 return `
                      <button class="btn btn-sm btn-outline-${color} ver-mapa-btn" 
-            data-tipo="c"
-            data-info='${JSON.stringify(params.data).replace(/'/g, "&#39;")}' 
-            title="Ver progreso...">
-        <i class="fa fa-hourglass-half me-1"></i> ${params.data.Estatus_Completo}
-    </button>
+                    data-tipo="c"
+                    data-info='${JSON.stringify(params.data).replace(/'/g, "&#39;")}' 
+                    
+                    title="Ver progreso...">
+                <i class="${clasIcon}"></i> ${params.data.Estatus_Completo}
+            </button>
                 `;
             }
         }
@@ -313,6 +349,8 @@ function getCoordenadasList(parametros) {
         const preguntas = preguntasPorTipo[tipoCuestionario];
         let contenido = "";
     let contenedor =  parametersW["contenedor"];
+    let id_cotizacion =  parametersW["id_cotizacion"];
+    
     document.getElementById("numeroContenedor").textContent = "# Contenedor:  " +  contenedor;
         preguntas.forEach(p => {
             const valor = parametersW[p.campo];
@@ -333,7 +371,48 @@ function getCoordenadasList(parametros) {
                     contenido += `<div><strong>${p.texto}</strong> </div>`;
                 }
             } else {
-                contenido += `<div><strong>${p.texto}</strong> <span>Sin responder</span></div>`;
+                let msjNo='Sin responder';
+                if (p.texto==='7) Toma Foto de Boleta de Patio' && valor ==='1'){ // ya se cargo foto y puede verse
+                    //tendria q buscar la direccion para la foto
+
+                    fetch("{{ url('coordenadas/coordenadas/extsearchDoctos') }}", {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                            },
+                            body: JSON.stringify({
+                                id_cotizacion: id_cotizacion,
+                                contenedor: contenedor
+                            })
+                        })
+                        .then(response => response.json())
+                        .then(data2 => {
+                            
+                            contenido += `
+                                <div class="d-flex flex-column justify-content-between border rounded p-2 mb-2" style="min-height: 100px;">
+                                    <div class="mb-2"><strong>${p.texto}</strong></div>
+                                    <div class="mt-auto">
+                                        <a href="/cotizaciones/cotizacion${data2.inCotizacion}/${data2.filePath}" target="_blank" class="btn btn-active-primary btn-sm">
+                                            Ver Archivo
+                                    </a>
+                                    </div>
+                                </div>
+                            `;
+
+                            console.log('Éxito:', data);
+                        })
+                        .catch(error => {
+                            console.error('Error en la petición:', error);
+                        });
+
+//end fetch buscar archivo
+                    
+                }else {
+                    msjNo='NO';
+                }
+                
+                contenido += `<div><strong>${p.texto}</strong> <span>${msjNo}</span></div>`;
             }
     
        

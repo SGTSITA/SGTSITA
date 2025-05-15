@@ -45,6 +45,8 @@ class Coordenadas extends Model
         'tipo_c_estado' ,
         'tipo_b_estado',
         'tipo_f_estado',
+        'toma_foto_patio',
+        'toma_foto_patio_datetime',
     ];
 
     public function Cotizacion()
