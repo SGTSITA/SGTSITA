@@ -3,283 +3,176 @@
 @section('template_title')
     Equipos
 @endsection
+<style>
+    .ag-theme-alpine .ag-cell {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 1.5rem !important;
+        padding: 8px 4px !important;
+        overflow: visible !important;
+    }
+
+    .ag-theme-alpine .ag-cell i {
+        font-size: 1.25rem;
+        /* asegúrate que sea visible */
+        line-height: 1 !important;
+    }
+</style>
+<style>
+    /* Centrado vertical y horizontal */
+    .ag-theme-alpine .ag-cell.actions-cell {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        padding-top: 6px;
+        padding-bottom: 6px;
+    }
+
+    /* Estilo uniforme para los botones */
+    .ag-theme-alpine .actions-cell .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.3rem 0.45rem;
+        height: 32px;
+        width: 32px;
+        font-size: 14px;
+    }
+
+    /* Íconos centrados dentro del botón */
+    .ag-theme-alpine .actions-cell i {
+        margin: 0;
+    }
+</style>
+
+
+
+<style>
+    .nav-pills .nav-link {
+        font-size: 0.85rem;
+        padding: 6px 12px;
+        color: #333;
+        border-radius: 0.5rem;
+        transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    .nav-pills .nav-link i {
+        font-size: 16px;
+    }
+
+    .nav-pills .nav-link.active {
+        background-color: #354f8e !important;
+        color: #fff !important;
+    }
+
+    .nav-pills .nav-link:hover {
+        background-color: #e6e6e6;
+        color: #111;
+    }
+</style>
 
 @section('content')
     <div class="container-fluid">
         <div class="row">
             <div class="col-sm-12">
                 <div class="card">
-                    <div class="card-header">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span id="card_title">
-                                Equipos
-                            </span>
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span id="card_title">Equipos</span>
 
-                            @can('equipos-create')
-                             <div class="float-right">
-                                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#equipoModal" style="background: {{$configuracion->color_boton_add}}; color: #ffff">
-                                    <i class="fa fa-fw fa-plus"></i> Crear
-                                  </button>
-                              </div>
-                            @endcan
-                        </div>
+                        @can('equipos-create')
+                            <a type="button" class="btn bg-gradient-info btn-xs mb-2" data-bs-toggle="modal"
+                                data-bs-target="#equipoModal">
+                                <i class="fa fa-fw fa-plus"></i>&nbsp; Crear Equipo
+                            </a>
+                        @endcan
                     </div>
 
-                    <nav class="mx-auto">
-                        <div class="nav nav-tabs" id="nav-tab" role="tablist">
-                          <button class="nav-link active" id="nav-home-tab" data-bs-toggle="tab" data-bs-target="#nav-home" type="button" role="tab" aria-controls="nav-home" aria-selected="true">
-                            <img src="{{ asset('img/icon/chasis.png') }}" alt="" width="40px">  Dollys
-                          </button>
+                    <div class="nav-wrapper position-relative end-0">
+                        <ul class="nav nav-pills nav-fill p-1 flex-row" id="equiposTabs">
+                            <li class="nav-item">
+                                <a class="nav-link active" id="tab-camiones" data-bs-toggle="tab"
+                                    data-bs-target="#nav-camiones" role="tab">
+                                    <i class="fa-solid fa-truck me-2"></i>
+                                    Tractos / Camiones
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" id="tab-chasis" data-bs-toggle="tab" data-bs-target="#nav-chasis"
+                                    role="tab">
+                                    <i class="fa-solid fa-truck-ramp-box me-2"></i>
+                                    Chasis / Plataforma
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" id="tab-dollys" data-bs-toggle="tab" data-bs-target="#nav-dollys"
+                                    role="tab">
+                                    <i class="fa-solid fa-truck-monster me-2"></i>
+                                    Dollys
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
 
-                          <button class="nav-link" id="nav-profile-tab" data-bs-toggle="tab" data-bs-target="#nav-profile" type="button" role="tab" aria-controls="nav-profile" aria-selected="false">
-                            <img src="{{ asset('img/icon/troca.png') }}" alt="" width="40px">  Chasis Plataforma
-                          </button>
-
-                          <button class="nav-link" id="nav-contact-tab" data-bs-toggle="tab" data-bs-target="#nav-contact" type="button" role="tab" aria-controls="nav-contact" aria-selected="false">
-                            <img src="{{ asset('img/icon/camion.png') }}" alt="" width="40px">  Tractos / Camiones
-                          </button>
-                        </div>
-                      </nav>
-
-                      <div class="tab-content" id="nav-tabContent">
-                        <div class="tab-pane fade show active" id="nav-home" role="tabpanel" aria-labelledby="nav-home-tab" tabindex="0">
+                    <div class="tab-content" id="nav-tabContent">
+                        <!-- Camiones -->
+                        <div class="tab-pane fade show active" id="nav-camiones" role="tabpanel"
+                            aria-labelledby="tab-camiones" tabindex="0">
                             <div class="card-body">
-                                <div class="table-responsive">
-                                    <table class="table table-flush" id="datatable-search2">
-                                        <thead class="thead">
-                                            <tr>
-                                                <th>No</th>
-                                                <th>Folio  <img src="{{ asset('img/icon/fuente.webp') }}" alt="" width="25px"></th>
-                                                <th>Vehiculo <img src="{{ asset('img/icon/coche.png') }}" alt="" width="25px"></th>
-                                                <th>Acceso <img src="{{ asset('img/icon/iniciar-sesion.png') }}" alt="" width="25px"></th>
-                                                <th>ID Interno <img src="{{ asset('img/icon/fuente.webp') }}" alt="" width="25px"></th>
-                                                <th>Fecha Alta <img src="{{ asset('img/icon/calendar-dar.webp') }}" alt="" width="25px"></th>
-                                                <th>Acciones <img src="{{ asset('img/icon/edit.png') }}" alt="" width="25px"></th>
-                                            </tr>
-                                        </thead>
-
-                                            <tbody>
-                                                @foreach ($equipos_dolys as $item)
-                                                    <tr>
-                                                        <td>{{$item->id}}</td>
-                                                        <td>{{$item->id_equipo}}</td>
-                                                        <td>
-                                                            <ul>
-                                                                <li>Marca : {{$item->marca}}</li>
-                                                                <li>Año : {{$item->year}}</li>
-                                                                <li>Modelo : {{$item->modelo}}</li>
-                                                                <li>Num Serie : {{$item->num_serie}}</li>
-                                                                <li>Placas : {{$item->placas}}</li>                                                            </ul>
-                                                        </td>
-                                                        <td>{{$item->acceso}}</td>
-                                                        <td>{{$item->id_equipo}}</td>
-                                                        <td>{{$item->fecha}}</td>
-                                                        <td>
-                                                            @can('equipos-edit')
-                                                            <button type="button" class="btn btn-xs btn-outline-primary" data-bs-toggle="modal" data-bs-target="#equipoEditModal-{{$item->id}}">
-                                                                <img src="{{ asset('img/icon/editar.webp') }}" alt="" width="25px">
-                                                            </button>
-                                                            @endcan
-
-                                                            @can('equipos-documentos')
-                                                            <button type="button" class="btn btn-xs btn-outline-success" data-bs-toggle="modal" data-bs-target="#documenotsdigitales-{{$item->id}}">
-                                                                <img src="{{ asset('img/icon/galeria-de-imagenes.webp') }}" alt="" width="25px">
-                                                            </button>
-                                                            @endcan
-
-                                                            @can('equipos-delete')
-                                                            <form method="POST" class="d-inline" action="{{ route('desactivar.equipos', $item->id) }}" id="" enctype="multipart/form-data" role="form">
-                                                               <input type="hidden" name="_method" value="PATCH">
-                                                               @csrf
-
-                                                               <input type="hidden" name="tipo" value="desactivado">
-
-                                                               <button type="submit" class="btn btn-xs btn-outline-warning" >
-                                                                   <img src="{{ asset('img/icon/borrar.webp') }}" alt="" width="25px">
-                                                               </button>
-                                                            </form>
-                                                            @endcan
-                                                        </td>
-                                                    </tr>
-                                                    @include('equipos.modal_edit')
-                                                    @include('equipos.modal_docs')
-
-                                                @endforeach
-                                            </tbody>
-
-                                    </table>
-                                </div>
+                                <div id="gridCamiones" class="ag-theme-alpine" style="height: 500px;"></div>
                             </div>
                         </div>
 
-                        <div class="tab-pane fade" id="nav-profile" role="tabpanel" aria-labelledby="nav-profile-tab" tabindex="0">
+                        <!-- Chasis -->
+                        <div class="tab-pane fade" id="nav-chasis" role="tabpanel" aria-labelledby="tab-chasis"
+                            tabindex="0">
                             <div class="card-body">
-                                <div class="table-responsive">
-                                    <table class="table table-flush" id="datatable-search3">
-                                        <thead class="thead">
-                                            <tr>
-                                                <th>No</th>
-                                                <th>Folio  <img src="{{ asset('img/icon/fuente.webp') }}" alt="" width="25px"></th>
-                                                <th>Vehiculo <img src="{{ asset('img/icon/coche.png') }}" alt="" width="25px"></th>
-                                                <th>Acceso <img src="{{ asset('img/icon/iniciar-sesion.png') }}" alt="" width="25px"></th>
-                                                <th>ID Interno <img src="{{ asset('img/icon/fuente.webp') }}" alt="" width="25px"></th>
-                                                <th>Fecha Alta <img src="{{ asset('img/icon/calendar-dar.webp') }}" alt="" width="25px"></th>
-                                                <th>Acciones <img src="{{ asset('img/icon/edit.png') }}" alt="" width="25px"></th>
-                                            </tr>
-                                        </thead>
-
-                                            <tbody>
-                                                @foreach ($equipos_chasis as $item)
-                                                    <tr>
-                                                        <td>{{$item->id}}</td>
-                                                        <td>{{$item->id_equipo}}</td>
-                                                        <td>
-                                                            <ul>
-                                                                <li>Marca : {{$item->marca}}</li>
-                                                                <li>Año : {{$item->year}}</li>
-                                                                <li>Modelo : {{$item->modelo}}</li>
-                                                                <li>Motor : {{$item->motor}}</li>
-                                                                <li>Num Serie : {{$item->num_serie}}</li>
-                                                                <li>Placas : {{$item->placas}}</li>                                                            </ul>
-                                                        </td>
-                                                        <td>{{$item->acceso}}</td>
-                                                        <td>{{$item->id_equipo}}</td>
-                                                        <td>{{$item->fecha}}</td>
-                                                        <td>
-                                                            @can('equipos-edit')
-                                                            <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#equipoEditModal-{{$item->id}}">
-                                                                <img src="{{ asset('img/icon/editar.webp') }}" alt="" width="25px">
-                                                            </button>
-                                                             @endcan
-                                                            @can('equipos-documentos')
-                                                            <button type="button" class="btn btn-sm btn-outline-success" data-bs-toggle="modal" data-bs-target="#documenotsdigitales-{{$item->id}}">
-                                                                <img src="{{ asset('img/icon/galeria-de-imagenes.webp') }}" alt="" width="25px">
-                                                            </button>
-                                                             @endcan
-
-                                                             @can('equipos-delete')
-                                                             <form method="POST" class="d-inline" action="{{ route('desactivar.equipos', $item->id) }}" id="" enctype="multipart/form-data" role="form">
-                                                                <input type="hidden" name="_method" value="PATCH">
-                                                                @csrf
-
-                                                                <input type="hidden" name="tipo" value="desactivado">
-
-                                                                <button type="submit" class="btn btn-xs btn-outline-warning" >
-                                                                    <img src="{{ asset('img/icon/borrar.webp') }}" alt="" width="25px">
-                                                                </button>
-                                                             </form>
-                                                             @endcan
-                                                        </td>
-                                                    </tr>
-                                                    @include('equipos.modal_edit')
-                                                    @include('equipos.modal_docs')
-
-                                                @endforeach
-                                            </tbody>
-
-                                    </table>
-                                </div>
+                                <div id="gridChasis" class="ag-theme-alpine" style="height: 500px;"></div>
                             </div>
                         </div>
 
-                        <div class="tab-pane fade" id="nav-contact" role="tabpanel" aria-labelledby="nav-contact-tab" tabindex="0">
-                            <div class="table-responsive">
-                                <div class="card-body">
-                                    <div class="table-responsive">
-                                        <table class="table table-flush" id="datatable-search">
-                                            <thead class="thead">
-                                                <tr>
-                                                    <th>No</th>
-                                                    <th>Folio  <img src="{{ asset('img/icon/fuente.webp') }}" alt="" width="25px"></th>
-                                                    <th>Vehiculo <img src="{{ asset('img/icon/coche.png') }}" alt="" width="25px"></th>
-                                                    <th>Acceso <img src="{{ asset('img/icon/iniciar-sesion.png') }}" alt="" width="25px"></th>
-                                                    <th>Fecha Alta <img src="{{ asset('img/icon/calendar-dar.webp') }}" alt="" width="25px"></th>
-                                                    <th>Acciones <img src="{{ asset('img/icon/edit.png') }}" alt="" width="25px"></th>
-                                                </tr>
-                                            </thead>
-
-                                                <tbody>
-                                                    @foreach ($equipos_camiones as $item)
-                                                        <tr>
-                                                            <td>{{$item->id}}</td>
-                                                            <td>{{$item->id_equipo}}</td>
-                                                            <td>
-                                                                <ul>
-                                                                    <li>Marca : {{$item->marca}}</li>
-                                                                    <li>Año : {{$item->year}}</li>
-                                                                    <li>Modelo : {{$item->modelo}}</li>
-                                                                    <li>Motor : {{$item->motor}}</li>
-                                                                    <li>Num Serie : {{$item->num_serie}}</li>
-                                                                    <li>Placas : {{$item->placas}}</li>
-                                                                </ul>
-                                                            </td>
-                                                            <td>{{$item->acceso}}</td>
-                                                            <td>{{$item->fecha}}</td>
-                                                            <td>
-                                                                @can('equipos-edit')
-                                                                <button type="button" class="btn btn-xs btn-outline-primary" data-bs-toggle="modal" data-bs-target="#equipoEditModal-{{$item->id}}">
-                                                                    <img src="{{ asset('img/icon/editar.webp') }}" alt="" width="25px">
-                                                                </button>
-                                                                 @endcan
-
-                                                                @can('equipos-documentos')
-                                                                <button type="button" class="btn btn-xs btn-outline-success" data-bs-toggle="modal" data-bs-target="#documenotsdigitales-{{$item->id}}">
-                                                                    <img src="{{ asset('img/icon/galeria-de-imagenes.webp') }}" alt="" width="25px">
-                                                                </button>
-                                                                @endcan
-
-                                                                 @can('equipos-delete')
-                                                                    <form method="POST" class="d-inline" action="{{ route('desactivar.equipos', $item->id) }}" id="" enctype="multipart/form-data" role="form">
-                                                                        <input type="hidden" name="_method" value="PATCH">
-                                                                        @csrf
-
-                                                                        <input type="hidden" name="tipo" value="desactivado">
-
-                                                                        <button type="submit" class="btn btn-xs btn-outline-warning" >
-                                                                            <img src="{{ asset('img/icon/borrar.webp') }}" alt="" width="25px">
-                                                                        </button>
-                                                                    </form>
-                                                                 @endcan
-
-                                                            </td>
-                                                        </tr>
-                                                        @include('equipos.modal_edit')
-                                                        @include('equipos.modal_docs')
-
-                                                    @endforeach
-                                                </tbody>
-
-                                        </table>
-                                    </div>
-                                </div>
+                        <!-- Dollys -->
+                        <div class="tab-pane fade" id="nav-dollys" role="tabpanel" aria-labelledby="tab-dollys"
+                            tabindex="0">
+                            <div class="card-body">
+                                <div id="gridDolys" class="ag-theme-alpine" style="height: 500px;"></div>
                             </div>
-                      </div>
-
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-@include('equipos.modal_create')
+    @include('equipos.modal_create')
 
+    @foreach ($equipos_dolys as $item)
+        @include('equipos.modal_edit', ['item' => $item])
+    @endforeach
+    @foreach ($equipos_chasis as $item)
+        @include('equipos.modal_edit', ['item' => $item])
+    @endforeach
+    @foreach ($equipos_camiones as $item)
+        @include('equipos.modal_edit', ['item' => $item])
+    @endforeach
+
+    @foreach ($equipos_dolys as $item)
+        @include('equipos.modal_docs', ['item' => $item])
+    @endforeach
+
+    @foreach ($equipos_chasis as $item)
+        @include('equipos.modal_docs', ['item' => $item])
+    @endforeach
+
+    @foreach ($equipos_camiones as $item)
+        @include('equipos.modal_docs', ['item' => $item])
+    @endforeach
 @endsection
-
 @section('datatable')
-    <script type="text/javascript">
-        const dataTableSearch = new simpleDatatables.DataTable("#datatable-search", {
-        searchable: true,
-        fixedHeight: false
-        });
-
-        const dataTableSearch = new simpleDatatables.DataTable("#datatable-search2", {
-        searchable: true,
-        fixedHeight: false
-        });
-
-        const dataTableSearch = new simpleDatatables.DataTable("#datatable-search3", {
-        searchable: true,
-        fixedHeight: false
-        });
-
-    </script>
+    <script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.js"></script>
+    <script src="{{ asset('js/sgt/equipos/equipos_list.js') }}"></script>
+    {{-- Forzar carga de FA con defer --}}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+        integrity="sha512-papapasdf..." crossorigin="anonymous" referrerpolicy="no-referrer" />
 @endsection

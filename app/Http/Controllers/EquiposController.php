@@ -8,151 +8,202 @@ use Session;
 
 class EquiposController extends Controller
 {
-    public function index(){
-        $fechaActual = date('Y-m-d');
+   public function index()
+{
+    $fechaActual = date('Y-m-d');
 
-        $equipos_dolys = Equipo::where('id_empresa' ,'=',auth()->user()->id_empresa)->where('tipo','=','Dolys')->orderBy('created_at', 'desc')->get();
-        $equipos_chasis = Equipo::where('id_empresa' ,'=',auth()->user()->id_empresa)->where('tipo','=','Chasis / Plataforma')->orderBy('created_at', 'desc')->get();
-        $equipos_camiones = Equipo::where('id_empresa' ,'=',auth()->user()->id_empresa)->where('tipo','=','Tractos / Camiones')->orderBy('created_at', 'desc')->get();
+    $equipos_dolys = Equipo::where('id_empresa', auth()->user()->id_empresa)
+        ->where('tipo', 'Dolys')
+        ->where('activo', true)
+        ->orderBy('created_at', 'desc')
+        ->get();
 
-        return view('equipos.index', compact('equipos_dolys','equipos_chasis','equipos_camiones', 'fechaActual'));
-    }
+    $equipos_chasis = Equipo::where('id_empresa', auth()->user()->id_empresa)
+        ->where('tipo', 'Chasis / Plataforma')
+        ->where('activo', true)
+        ->orderBy('created_at', 'desc')
+        ->get();
 
-    public function store(Request $request){
+    $equipos_camiones = Equipo::where('id_empresa', auth()->user()->id_empresa)
+        ->where('tipo', 'Tractos / Camiones')
+        ->where('activo', true)
+        ->orderBy('created_at', 'desc')
+        ->get();
+
+    return view('equipos.index', compact('equipos_dolys','equipos_chasis','equipos_camiones', 'fechaActual'));
+}
 
 
-        $proveedor = new Equipo;
+  public function store(Request $request)
+{
+    $proveedor = new Equipo;
 
-        if($request->get('marca') != NULL){
-            $proveedor->folio = $request->get('folio');
-            $proveedor->tipo = 'Tractos / Camiones';
-            $proveedor->id_equipo = $request->get('id_equipo');
-            $proveedor->marca = $request->get('marca');
-            $proveedor->motor = $request->get('motor');
-            $proveedor->placas = $request->get('placas');
-            $proveedor->year = $request->get('year');
-            $proveedor->num_serie = $request->get('num_serie');
-            $proveedor->modelo = $request->get('modelo');
-            $proveedor->acceso = $request->get('acceso');
-
-            if ($request->hasFile("tarjeta_circulacion")) {
-                $file = $request->file('tarjeta_circulacion');
-                $path = public_path() . '/equipos';
-                $fileName = uniqid() . $file->getClientOriginalName();
-                $file->move($path, $fileName);
-                $proveedor->tarjeta_circulacion = $fileName;
-            }
-
-            if ($request->hasFile("poliza_seguro")) {
-                $file = $request->file('poliza_seguro');
-                $path = public_path() . '/equipos';
-                $fileName = uniqid() . $file->getClientOriginalName();
-                $file->move($path, $fileName);
-                $proveedor->poliza_seguro = $fileName;
-            }
-
-            $proveedor->fecha = $request->get('fecha');
-            $proveedor->save();
-        }else if($request->get('marca_chasis') != NULL){
-
-            $proveedor->tipo = 'Chasis / Plataforma';
-            $proveedor->id_equipo = $request->get('id_equipo_chasis');
-            $proveedor->marca = $request->get('marca_chasis');
-            $proveedor->motor = $request->get('motor_chasis');
-            $proveedor->placas = $request->get('placas_chasis');
-            $proveedor->year = $request->get('year_chasis');
-            $proveedor->num_serie = $request->get('num_serie_chasis');
-            $proveedor->modelo = $request->get('modelo_chasis');
-            $proveedor->acceso = $request->get('acceso_chasis');
-
-            if ($request->hasFile("tarjeta_circulacion_chasis")) {
-                $file = $request->file('tarjeta_circulacion_chasis');
-                $path = public_path() . '/equipos';
-                $fileName = uniqid() . $file->getClientOriginalName();
-                $file->move($path, $fileName);
-                $proveedor->tarjeta_circulacion = $fileName;
-            }
-
-            if ($request->hasFile("poliza_seguro_chasis")) {
-                $file = $request->file('poliza_seguro_chasis');
-                $path = public_path() . '/equipos';
-                $fileName = uniqid() . $file->getClientOriginalName();
-                $file->move($path, $fileName);
-                $proveedor->poliza_seguro = $fileName;
-            }
-
-            $proveedor->folio = $request->get('folio');
-            $proveedor->fecha = $request->get('fecha_chasis');
-            $proveedor->save();
-
-        }else if($request->get('marca_doly') != NULL){
-            $proveedor->tipo = 'Dolys';
-            $proveedor->folio = $request->get('folio');
-            $proveedor->id_equipo = $request->get('id_equipo_doly');
-            $proveedor->year = $request->get('year_doly');
-            $proveedor->marca = $request->get('marca_doly');
-            $proveedor->placas = $request->get('placas_doly');
-            $proveedor->num_serie = $request->get('num_serie_doly');
-            $proveedor->fecha = $request->get('fecha_doly');
-
-            if ($request->hasFile("tarjeta_circulacion_doly")) {
-                $file = $request->file('tarjeta_circulacion_doly');
-                $path = public_path() . '/equipos';
-                $fileName = uniqid() . $file->getClientOriginalName();
-                $file->move($path, $fileName);
-                $proveedor->tarjeta_circulacion = $fileName;
-            }
-
-            if ($request->hasFile("poliza_seguro_doly")) {
-                $file = $request->file('poliza_seguro_doly');
-                $path = public_path() . '/equipos';
-                $fileName = uniqid() . $file->getClientOriginalName();
-                $file->move($path, $fileName);
-                $proveedor->poliza_seguro = $fileName;
-            }
-
-            $proveedor->save();
-        }
-
-        Session::flash('success', 'Se ha guardado sus datos con exito');
-        return redirect()->back()
-            ->with('success', 'Equipo creado con exito.');
-
-    }
-
-    public function update(Request $request, Equipo $id)
-    {
+    // === Tractos / Camiones ===
+    if ($request->get('marca') != null) {
+        $proveedor->tipo = 'Tractos / Camiones';
+        $proveedor->folio = $request->get('folio');
+        $proveedor->id_equipo = $request->get('id_equipo');
+        $proveedor->marca = $request->get('marca');
+        $proveedor->motor = $request->get('motor');
+        $proveedor->placas = $request->get('placas');
+        $proveedor->year = $request->get('year');
+        $proveedor->num_serie = $request->get('num_serie');
+        $proveedor->modelo = $request->get('modelo');
+        $proveedor->acceso = $request->get('acceso');
+        $proveedor->fecha = $request->get('fecha');
+        $proveedor->activo = true;
 
         if ($request->hasFile("tarjeta_circulacion")) {
             $file = $request->file('tarjeta_circulacion');
-            $path = public_path() . '/equipos';
             $fileName = uniqid() . $file->getClientOriginalName();
-            $file->move($path, $fileName);
-            $request->tarjeta_circulacion = $fileName;
+            $file->move(public_path('/equipos'), $fileName);
+            $proveedor->tarjeta_circulacion = $fileName;
         }
 
         if ($request->hasFile("poliza_seguro")) {
             $file = $request->file('poliza_seguro');
-            $path = public_path() . '/equipos';
             $fileName = uniqid() . $file->getClientOriginalName();
-            $file->move($path, $fileName);
-            $request->poliza_seguro = $fileName;
+            $file->move(public_path('/equipos'), $fileName);
+            $proveedor->poliza_seguro = $fileName;
         }
 
-        $id->update($request->all());
+        $proveedor->save();
 
-        Session::flash('edit', 'Se ha editado sus datos con exito');
-        return redirect()->back()->with('success', 'Equipo actualizado exitosamente');
+    // === Chasis / Plataforma ===
+    } elseif ($request->get('marca_chasis') != null) {
+        $proveedor->tipo = 'Chasis / Plataforma';
+        $proveedor->folio = $request->get('folio');
+        $proveedor->id_equipo = $request->get('id_equipo_chasis');
+        $proveedor->marca = $request->get('marca_chasis');
+        $proveedor->motor = $request->get('motor_chasis');
+        $proveedor->placas = $request->get('placas_chasis');
+        $proveedor->year = $request->get('year_chasis');
+        $proveedor->num_serie = $request->get('num_serie_chasis');
+        $proveedor->modelo = $request->get('modelo_chasis');
+        $proveedor->acceso = $request->get('acceso_chasis');
+        $proveedor->fecha = $request->get('fecha_chasis');
+        $proveedor->activo = true;
 
+        if ($request->hasFile("tarjeta_circulacion_chasis")) {
+            $file = $request->file('tarjeta_circulacion_chasis');
+            $fileName = uniqid() . $file->getClientOriginalName();
+            $file->move(public_path('/equipos'), $fileName);
+            $proveedor->tarjeta_circulacion = $fileName;
+        }
+
+        if ($request->hasFile("poliza_seguro_chasis")) {
+            $file = $request->file('poliza_seguro_chasis');
+            $fileName = uniqid() . $file->getClientOriginalName();
+            $file->move(public_path('/equipos'), $fileName);
+            $proveedor->poliza_seguro = $fileName;
+        }
+
+        $proveedor->save();
+
+    // === Dolys ===
+    } elseif ($request->get('marca_doly') != null) {
+        $proveedor->tipo = 'Dolys';
+        $proveedor->folio = $request->get('folio');
+        $proveedor->id_equipo = $request->get('id_equipo_doly');
+        $proveedor->year = $request->get('year_doly');
+        $proveedor->marca = $request->get('marca_doly');
+        $proveedor->placas = $request->get('placas_doly');
+        $proveedor->num_serie = $request->get('num_serie_doly');
+        $proveedor->modelo = $request->get('modelo_doly');
+        $proveedor->acceso = $request->get('acceso_doly');
+        $proveedor->fecha = $request->get('fecha_doly');
+        $proveedor->activo = true;
+
+        if ($request->hasFile("tarjeta_circulacion_doly")) {
+            $file = $request->file('tarjeta_circulacion_doly');
+            $fileName = uniqid() . $file->getClientOriginalName();
+            $file->move(public_path('/equipos'), $fileName);
+            $proveedor->tarjeta_circulacion = $fileName;
+        }
+
+        if ($request->hasFile("poliza_seguro_doly")) {
+            $file = $request->file('poliza_seguro_doly');
+            $fileName = uniqid() . $file->getClientOriginalName();
+            $file->move(public_path('/equipos'), $fileName);
+            $proveedor->poliza_seguro = $fileName;
+        }
+
+        $proveedor->save();
     }
 
-    public function desactivar(Request $request, Equipo $id)
-    {
+    Session::flash('success', 'Se ha guardado sus datos con éxito');
+    return redirect()->back()->with('success', 'Equipo creado con éxito.');
+}
 
-        $id->update($request->all());
 
-        Session::flash('edit', 'Se ha editado sus datos con exito');
-        return redirect()->back()->with('success', 'Equipo actualizado exitosamente');
+public function update(Request $request, $id)
+{
+    $equipo = Equipo::findOrFail($id);
+    $data = []; // respaldo
 
+    if ($request->tipo === 'Tractos / Camiones') {
+        $data = $request->only([
+            'id_equipo', 'fecha', 'year', 'marca', 'modelo', 'placas',
+            'num_serie', 'motor', 'acceso'
+        ]);
+    } elseif ($request->tipo === 'Chasis / Plataforma') {
+        $data = $request->only([
+            'id_equipo', 'fecha', 'year', 'marca', 'modelo', 'placas',
+            'num_serie', 'motor', 'acceso', 'folio'
+        ]);
+    } elseif ($request->tipo === 'Dolys') {
+        $data = $request->only([
+            'id_equipo', 'fecha', 'year', 'marca', 'modelo', 'placas',
+            'num_serie', 'acceso'
+        ]);
+    } else {
+        return response()->json([
+            'success' => false,
+            'message' => 'Tipo de equipo no reconocido.'
+        ]);
     }
+
+    if ($request->hasFile("tarjeta_circulacion")) {
+        $file = $request->file("tarjeta_circulacion");
+        $fileName = uniqid() . $file->getClientOriginalName();
+        $file->move(public_path("/equipos"), $fileName);
+        $data['tarjeta_circulacion'] = $fileName;
+    }
+
+    if ($request->hasFile("poliza_seguro")) {
+        $file = $request->file("poliza_seguro");
+        $fileName = uniqid() . $file->getClientOriginalName();
+        $file->move(public_path("/equipos"), $fileName);
+        $data['poliza_seguro'] = $fileName;
+    }
+
+    $equipo->update($data);
+
+    return response()->json(['success' => true, 'message' => 'Equipo actualizado con éxito']);
+}
+
+
+public function desactivar(Request $request, Equipo $id)
+{
+    $id->activo = false;
+    $id->save();
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Equipo desactivado exitosamente'
+    ]);
+}
+
+
+
+
+
+    //Nuevos controlladores
+
+    public function data()
+{
+    $empresa = auth()->user()->id_empresa;
+    return response()->json(Equipo::where('id_empresa', $empresa)->get());
+}
+
 }
