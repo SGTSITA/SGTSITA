@@ -135,6 +135,26 @@ public function validarRFC(Request $request)
         'message' => 'Cuenta bancaria creada exitosamente'
     ]);
 }
+public function definirCuentaPrioridad(Request $request, $id)
+{
+    $cuenta = CuentasBancarias::findOrFail($id);
+    $tipo = $request->tipo; // 1 o 2
+    $checked = $request->estado;
+
+    // 🔹 Limpiar cuenta_1 o cuenta_2 a todas las cuentas del mismo proveedor
+    CuentasBancarias::where('id_proveedores', $cuenta->id_proveedores)->update([
+        "cuenta_{$tipo}" => false
+    ]);
+
+    // 🔹 Asignar cuenta actual
+    $cuenta->update(["cuenta_{$tipo}" => $checked]);
+
+    return response()->json([
+        'success' => true,
+        'message' => "Cuenta marcada como Cuenta {$tipo}."
+    ]);
+}
+
 
 
     // Eliminar una cuenta bancaria

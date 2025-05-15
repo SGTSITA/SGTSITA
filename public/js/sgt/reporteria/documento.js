@@ -8,11 +8,13 @@ document.addEventListener('DOMContentLoaded', () => {
             field: "id",
             checkboxSelection: true,
             headerCheckboxSelection: true,
+            headerCheckboxSelectionFilteredOnly: true, 
             cellClass: 'text-center',
             filter: 'agNumberColumnFilter',
             floatingFilter: true,
             width: 130
         },
+        
         {
             headerName: "Cliente",
             field: "cliente",
@@ -21,13 +23,36 @@ document.addEventListener('DOMContentLoaded', () => {
             width: 180,
             cellClass: 'text-center'
         },
+        { headerName: "# Contenedor", 
+              field: "num_contenedor", 
+              width: 200,
+              filter: true, 
+              floatingFilter: true,
+              autoHeight: true, // Permite que la fila se ajuste en altura
+              cellStyle:params => {
+                  const styles = {
+                    'white-space': 'normal',
+                    'line-height': '1.5',
+                  };
+              
+                  // Si la cotización es tipo "Full", aplicar fondo 
+                  if (params.data.tipo === 'Full') {
+                    styles['background-color'] = '#ffe5b4'; 
+                  }
+              
+                  return styles;
+                },
+            },
+       
         {
-            headerName: "Contenedor",
-            field: "num_contenedor",
-            filter: 'agTextColumnFilter',
-            floatingFilter: true,
-            width: 140
-        },
+    headerName: "Proveedor",
+    field: "proveedor",
+    filter: 'agTextColumnFilter',
+    floatingFilter: true,
+    width: 180,
+    cellClass: 'text-center'
+},
+
         {
             headerName: "Formato CCP",
             field: "doc_ccp",
@@ -96,6 +121,8 @@ document.addEventListener('DOMContentLoaded', () => {
         paginationPageSize: 30,
         paginationPageSizeSelector: [30, 50, 100],
         rowSelection: 'multiple',
+        suppressRowClickSelection: false,
+        groupSelectsFiltered: true,
         defaultColDef: {
             sortable: true,
             filter: true,
@@ -104,8 +131,12 @@ document.addEventListener('DOMContentLoaded', () => {
         animateRows: true,
         onGridReady: (params) => {
             gridApi = params.api;
+        },
+        onFilterChanged: () => {
+            if (gridApi) gridApi.deselectAll();
         }
     };
+    
 
     agGrid.createGrid(gridDiv, gridOptions);
     function checkboxRenderer(params) {

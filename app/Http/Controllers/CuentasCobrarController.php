@@ -15,6 +15,7 @@ class CuentasCobrarController extends Controller
     public function index(){
         $cotizacionesPorCliente = Cotizaciones::join('docum_cotizacion', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
         ->where('cotizaciones.estatus_pago', '=', '0')
+        ->where('jerarquia','Principal')
         ->where('cotizaciones.id_empresa', '=', auth()->user()->id_empresa)
         ->where('cotizaciones.restante', '>', 0)
         ->where(function($query) {
@@ -36,6 +37,7 @@ class CuentasCobrarController extends Controller
         $cotizacion = Cotizaciones::join('docum_cotizacion', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
         ->where('cotizaciones.id_empresa', '=', auth()->user()->id_empresa)
         ->where('cotizaciones.estatus_pago', '=', '0')
+        ->where('jerarquia','Principal')
         ->where('cotizaciones.restante', '>', 0)
         ->where(function($query) {
             $query->where('cotizaciones.estatus', '=', 'Aprobada')
@@ -61,6 +63,7 @@ class CuentasCobrarController extends Controller
         $cotizacionesPorPagar = Cotizaciones::join('docum_cotizacion', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
         ->where('cotizaciones.id_empresa', '=', auth()->user()->id_empresa)
         ->where('cotizaciones.estatus_pago', '=', '0')
+        ->where('jerarquia','Principal')
         ->where('cotizaciones.restante', '>', 0)
         ->where(function($query) {
             $query->where('cotizaciones.estatus', '=', 'Aprobada')
@@ -74,8 +77,21 @@ class CuentasCobrarController extends Controller
             $subCliente = ($item->id_subcliente != NULL) ? $item->Subcliente->nombre." / ".$item->Subcliente->telefono : "";
             $tipoViaje = ($item->tipo_viaje == NULL || $item->tipo_viaje == 'Seleccionar Opcion') ? "Subcontratado" : $item->tipo_viaje;
 
+            $numContenedor = $item->DocCotizacion->num_contenedor;
+
+            if(!is_null($item->referencia_full)){
+                $secundaria = Cotizaciones::where('referencia_full', $item->referencia_full)
+                        ->where('jerarquia', 'Secundario')
+                        ->with('DocCotizacion.Asignaciones')
+                        ->first();
+
+                    if ($secundaria && $secundaria->DocCotizacion) {
+                        $numContenedor .= ' / ' . $secundaria->DocCotizacion->num_contenedor;
+                    }
+            }
+
             return [
-                $item->DocCotizacion->num_contenedor,
+                $numContenedor,
                 $subCliente,
                 $tipoViaje,
                 ($item->estatus == 'Aprobada') ? "En Curso" : $item->estatus,

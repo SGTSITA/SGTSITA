@@ -31,7 +31,14 @@ trait CommonTrait
             return $cadena;
     }
 
-   
+    public static function TransformaFecha($Fecha){
+        $datetime = $Fecha; //01/12/2016
+        $dd = substr($datetime,0,2);
+        $mm = substr($datetime,3,2);
+        $yyyy = substr($datetime,6,9);
+        return $yyyy.'-'.$mm.'-'.$dd;
+    }
+
     public static function calculateFileSize($bytes) {
         if ($bytes == 0) {
             return "0 B";
@@ -60,5 +67,37 @@ trait CommonTrait
         $dias = array('Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado');
         $dia = $dias[date('w', strtotime($fecha))];
         return $dia;
+    }
+
+    public static function contadorPeriodos($fechaInicio, $fechaFinal){
+        $fecha1 = Carbon::parse($fechaInicio);
+        $fecha2 = Carbon::parse($fechaFinal);
+
+        $periodos = 1;
+
+        if($fecha1->month === $fecha2->month && $fecha1->year === $fecha2->year){
+            return $periodos;
+        }
+
+        while ($fecha1->year < $fecha2->year || $fecha1->month < $fecha2->month) {
+            $periodos++;
+            $fecha1->addMonths(1);
+        }
+    
+        return $periodos;
+
+    }
+
+    public  static function generarUuidV4() {
+        $data = random_bytes(16);
+    
+        // Establecer la versión a 0100 (UUID v4)
+        $data[6] = chr((ord($data[6]) & 0x0f) | 0x40);
+    
+        // Establecer los bits 6 y 7 del reloj a 10
+        $data[8] = chr((ord($data[8]) & 0x3f) | 0x80);
+    
+        // Convertir a representación textual
+        return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
     }
 }

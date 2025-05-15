@@ -138,7 +138,8 @@ class MissionResultRenderer {
      { field: "IdAsignacion", hide: true},
      { field: "IdOperador", hide: true},
      { field: "IdContenedor", hide: true},
-     { field: "Contenedor" },
+     { field: "ContenedorPrincipal", hide: true},
+     { field: "Contenedores" },
      { field: "SueldoViaje",width: 150, valueFormatter: params => currencyFormatter(params.value), cellStyle: { textAlign: "right" }},
      { field: "DineroViaje",width: 150, valueFormatter: params => currencyFormatter(params.value), cellStyle: { textAlign: "right" }},
      { field: "GastosJustificados",width: 150, valueFormatter: params => currencyFormatter(params.value), cellStyle: { textAlign: "right" }},
@@ -304,7 +305,7 @@ class MissionResultRenderer {
     justificaContenedores.forEach((cn)=>{
       DineroViaje = cn.DineroViaje
       GastosJustificados = cn.GastosJustificados || 0
-      numContenedor = cn.Contenedor
+      numContenedor = cn.ContenedorPrincipal
     })
 
     let sinJustificar = DineroViaje - GastosJustificados;

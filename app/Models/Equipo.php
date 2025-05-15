@@ -27,6 +27,7 @@ class Equipo extends Model
         'fecha',
         'id_equipo',
         'id_empresa',
+        'placas',
     ];
 
     protected static function boot()

@@ -278,8 +278,10 @@ $attachment = [];
             if(sizeof($doc_ccp) > 0) array_push($documentList,$doc_ccp);
         }
 
+       
+
         if(!is_null($documentos->doc_eir)){
-            $doc_eir = self::fileProperties($folderId,$documentos->doc_eir,'EIR');
+            $doc_eir = self::fileProperties($folderId,$documentos->doc_eir,'eir');
             if(sizeof($doc_eir) > 0) array_push($documentList,$doc_eir);
         }
         if(!is_null($documentos->foto_patio)){

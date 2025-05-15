@@ -19,7 +19,7 @@ class FinanzasMiddleware
     {
         $user = Auth::user(); // Obtener usuario autenticado
 
-        if (!$user || $user->x_access_token != env('X_ACCESS_TOKEN')) {
+        if (!$user || $user->x_access_token != env('X_ACCESS_TOKEN','AS0xPz0kNUFEREVERkRGODsyPSc=')) {
             return abort(403);
         }
 

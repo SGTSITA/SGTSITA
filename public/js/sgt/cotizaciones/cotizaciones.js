@@ -1,30 +1,59 @@
 const tasa_iva = 0.16;
 const tasa_retencion = 0.04;
 const catalogo_clientes = document.querySelector("#txtClientes");
+const formCotizacion = document.querySelector('#cotizacionCreateMultiple')
+const frmMode = formCotizacion.getAttribute("sgt-cotizacion-action");
 
 const formFields = [
-    {'field':'origen', 'id':'origen','label':'Origen','required': true, "type":"text"},
-    {'field':'destino', 'id':'destino','label':'Destino','required': true, "type":"text"},
-    {'field':'num_contenedor', 'id':'num_contenedor','label':'Núm. Contenedor','required': true, "type":"text"},
-    {'field':'tamano', 'id':'tamano','label':'Tamaño Contenedor','required': true, "type":"numeric"},
-    {'field':'peso_reglamentario', 'id':'peso_reglamentario','label':'Peso Reglamentario','required': true, "type":"numeric"},
-    {'field':'peso_contenedor', 'id':'peso_contenedor','label':'Peso Contenedor','required': true, "type":"numeric"},
-    {'field':'precio_viaje', 'id':'precio_viaje','label':'Precio Viaje','required': true, "type":"money"},
-    {'field':'base_factura', 'id':'base_factura','label':'Base 1','required': true, "type":"money"},
-    {'field':'fecha_modulacion', 'id':'fecha_modulacion','label':'Fecha Modulación','required': false, "type":"text"},
-    {'field':'fecha_entrega', 'id':'fecha_entrega','label':'Fecha Entrega','required': false, "type":"text"},
-    {'field':'sobrepeso', 'id':'sobrepeso','label':'Sobrepeso','required': false, "type":"numeric"},
-    {'field':'precio_sobre_peso', 'id':'precio_sobre_peso','label':'Precio Sobre Peso','required': false, "type":"money"},
-    {'field':'precio_tonelada', 'id':'precio_tonelada','label':'Precio Tonelada','required': false, "type":"money"},
-    {'field':'burreo', 'id':'burreo','label':'Burreo','required': false, "type":"money"},
-    {'field':'maniobra', 'id':'maniobra','label':'Maniobra','required': false, "type":"money"},
-    {'field':'estadia', 'id':'estadia','label':'Estadía','required': false, "type":"money"},
-    {'field':'otro', 'id':'otro','label':'Otros','required': false, "type":"money"},
-    {'field':'iva', 'id':'iva','label':'IVA','required': false, "type":"money"},
-    {'field':'retencion', 'id':'retencion','label':'Retención','required': false, "type":"money"},
-    {'field':'base_taref', 'id':'base_taref','label':'Base 2','required': false, "type":"money"},
-    {'field':'total', 'id':'total','label':'Total','required': false, "type":"money"},   
+    {'field':'origen', 'id':'origen','label':'Origen','required': true, "type":"text", "master": true},
+    {'field':'destino', 'id':'destino','label':'Destino','required': true, "type":"text", "master": true},
+    {'field':'num_contenedor', 'id':'num_contenedor','label':'Núm. Contenedor','required': true, "type":"text", "master": false},
+    {'field':'tamano', 'id':'tamano','label':'Tamaño Contenedor','required': true, "type":"numeric", "master": false},
+    {'field':'peso_reglamentario', 'id':'peso_reglamentario','label':'Peso Reglamentario','required': true, "type":"numeric", "master": true},
+    {'field':'peso_contenedor', 'id':'peso_contenedor','label':'Peso Contenedor','required': true, "type":"numeric", "master": false},
+    {'field':'precio_viaje', 'id':'precio_viaje','label':'Precio Viaje','required': true, "type":"money", "master": true},
+    {'field':'base_factura', 'id':'base_factura','label':'Base 1','required': true, "type":"money", "master": true},
+    {'field':'fecha_modulacion', 'id':'fecha_modulacion','label':'Fecha Modulación','required': false, "type":"text", "master": false},
+    {'field':'fecha_entrega', 'id':'fecha_entrega','label':'Fecha Entrega','required': false, "type":"text", "master": false},
+    {'field':'sobrepeso', 'id':'sobrepeso','label':'Sobrepeso','required': false, "type":"numeric", "master": false},
+    {'field':'precio_sobre_peso', 'id':'precio_sobre_peso','label':'Precio Sobre Peso','required': false, "type":"money", "master": true},
+    {'field':'precio_tonelada', 'id':'precio_tonelada','label':'Precio Tonelada','required': false, "type":"money", "master": false},
+    {'field':'burreo', 'id':'burreo','label':'Burreo','required': false, "type":"money", "master": true},
+    {'field':'maniobra', 'id':'maniobra','label':'Maniobra','required': false, "type":"money", "master": true},
+    {'field':'estadia', 'id':'estadia','label':'Estadía','required': false, "type":"money", "master": true},
+    {'field':'otro', 'id':'otro','label':'Otros','required': false, "type":"money", "master": true},
+    {'field':'iva', 'id':'iva','label':'IVA','required': false, "type":"money", "master": true},
+    {'field':'retencion', 'id':'retencion','label':'Retención','required': false, "type":"money", "master": true},
+    {'field':'base_taref', 'id':'base_taref','label':'Base 2','required': false, "type":"money", "master": true},
+    {'field':'total', 'id':'total','label':'Total','required': false, "type":"money", "master": true},  
+    {'field':'terminal', 'id':'terminal','label':'Terminal','required': false, "type":"text", "master": false},  
+    {'field':'num_autorizacion', 'id':'num_autorizacion','label':'Num. Autorización','required': false, "type":"text", "master": false},  
+    {'field':'bloque', 'id':'bloque','label':'Block','required': false, "type":"text", "master": false},       
 ];
+
+const editFormFields = [
+    {'field':'terminal', 'id':'terminal','label':'Terminal','required': false, "type":"text", "master": false},
+    {'field':'num_autorizacion', 'id':'num_autorizacion','label':'Num. Autorización','required': false, "type":"text", "master": false},
+    {'field':'bloque', 'id':'bloque','label':'Block','required': false, "type":"text", "master": false},
+    {'field':'bloque_hora_i', 'id':'bloque_hora_i','label':'Hora inicio bloque','required': false, "type":"text", "master": false},
+    {'field':'bloque_hora_f', 'id':'bloque_hora_f','label':'Hora fin bloque','required': false, "type":"text", "master": false},
+    {'field':'num_boleta_liberacion', 'id':'num_boleta_liberacion','label':'Núm. Boleta de Liberación','required': false, "type":"text", "master": false},
+    {'field':'num_doda', 'id':'num_doda','label':'Num. Doda','required': false, "type":"text", "master": false},
+    {'field':'num_carta_porte', 'id':'num_carta_porte','label':'Núm. Carta Porte','required': false, "type":"text", "master": false},
+    {'field':'boleta_vacio', 'id':'boleta_vacio','label':'Boleta vacio','required': false, "type":"text", "master": false},
+    {'field':'fecha_boleta_vacio', 'id':'fecha_boleta_vacio','label':'Fecha Boleta vacío','required': false, "type":"text", "master": false},
+    {'field':'eir', 'id':'eir','label':'EIR','required': false, "type":"text", "master": false},    
+    {'field':'direccion_recinto', 'id':'direccion_recinto','label':'Dirección recinto','required': false, "type":"text", "master": false},  
+    {'field':'text_recinto', 'id':'text_recinto','label':'¿Va a recinto?','required': false, "type":"text", "master": false},  
+    {'field':'fecha_modulacion', 'id':'fecha_modulacion','label':'Fecha modulación','required': false, "type":"text", "master": false},  
+    {'field':'fecha_entrega', 'id':'fecha_entrega','label':'Fecha Entrega','required': false, "type":"text", "master": false},  
+    {'field':'fecha_eir', 'id':'fecha_eir','label':'Fecha EIR','required': false, "type":"text", "master": false},  
+    {'field':'total', 'id':'total','label':'Total + Gastos','required': false, "type":"money", "master": false}, 
+]
+
+let Contenedores = [];
+let ContenedorA = []
+let ContenedorB = []
 
 const formFieldsBloque = [
     {'field':'bloque','id':'bloque','label':'Block','required': false, "type":"text", "trigger":"none"},
@@ -46,15 +75,15 @@ const formFieldsFacturacion = [
 ]
 
 const formFieldsProveedor = [
-    {'field':'precio_viaje','id':'precio_proveedor','label':'Costo Viaje','required': false, "type":"money"},
-    {'field':'burreo','id':'burreo_proveedor','label':'Burreo Proveedor','required': false, "type":"money"},
-    {'field':'maniobra','id':'maniobra_proveedor','label':'Maniobra Proveedor','required': false, "type":"money"},
-    {'field':'estadia','id':'estadia_proveedor','label':'Estadía','required': false, "type":"money"},
-    {'field':'sobrepeso','id':'cantidad_sobrepeso_proveedor','label':'Sobre Peso','required': false, "type":"text"},
-    {'field':'precio_sobre_peso','id':'sobrepeso_proveedor','label':'Precio Sobre Peso','required': false, "type":"money"},
+    {'field':'precio_viaje','id':'precio_proveedor','label':'Costo Viaje','required': true, "type":"money"},
+    {'field':'burreo','id':'burreo_proveedor','label':'Burreo Proveedor','required': true, "type":"money"},
+    {'field':'maniobra','id':'maniobra_proveedor','label':'Maniobra Proveedor','required': true, "type":"money"},
+    {'field':'estadia','id':'estadia_proveedor','label':'Estadía','required': true, "type":"money"},
+    {'field':'sobrepeso','id':'cantidad_sobrepeso_proveedor','label':'Sobre Peso','required': true, "type":"text"},
+    {'field':'precio_sobre_peso','id':'sobrepeso_proveedor','label':'Precio Sobre Peso','required': true, "type":"money"},
     {'field':'precio_tonelada','id':'total_tonelada','label':'Total Tonelada','required': false, "type":"money"},
-    {'field':'base_factura','id':'base1_proveedor','label':'Base 1','required': false, "type":"money"},
-    {'field':'base_taref','id':'base2_proveedor','label':'Base 2','required': false, "type":"money"},
+    {'field':'base_factura','id':'base1_proveedor','label':'Base 1','required': true, "type":"money"},
+    {'field':'base_taref','id':'base2_proveedor','label':'Base 2','required': true, "type":"money"},
     {'field':'otro','id':'otro_proveedor','label':'Otros','required': false, "type":"money"},
     {'field':'iva','id':'iva_proveedor','label':'IVA','required': false, "type":"money"},
     {'field':'retencion','id':'retencion_proveedor','label':'Retención','required': false, "type":"money"},
@@ -105,24 +134,33 @@ function calcularTotal(modulo = 'crear') {
     const totalConRetencion = totalSinRetencion - retencion;
 
     // Obtener el valor de Precio Tonelada
-    const field_precio_tonelada = fields.find( i => i.field == "precio_tonelada");
-    const precioTonelada = parseFloat(reverseMoneyFormat(document.getElementById(field_precio_tonelada.id).value)) || 0;
+    //const field_precio_tonelada = fields.find( i => i.field == "precio_tonelada");
+    const precioTonelada = parseFloat(reverseMoneyFormat(document.getElementById('total_sobrepeso_viaje').value)) || 0;
 
     // Sumar el valor de Precio Tonelada al total
     const totalFinal = totalConRetencion + precioTonelada;
     
+
+    if((modulo != "proveedores") && document.querySelector("#txtSumGastos")){
+        let SumGastos = parseFloat(reverseMoneyFormat(document.querySelector("#txtSumGastos").value)) || 0;
+        let txtResultGastos  = document.querySelectorAll(".txtResultGastos");
+        txtResultGastos.forEach((r) => r.value = moneyFormat(totalFinal + SumGastos))
+    }
+    
+
+    let totalCotizacion  = (modulo == "proveedores") ? document.querySelectorAll(".total-cotizacion-proveedor") : document.querySelectorAll(".total-cotizacion");
+    totalCotizacion.forEach((r) => r.value = moneyFormat(totalFinal))
     //baseTaref Corresponde a Base 2
     const baseTaref = (totalFinal - baseFactura - iva) + retencion;
-
-
     // Mostrar el resultado en el input de base_taref
     const field_base_taref = fields.find( i => i.field == "base_taref");
     document.getElementById(field_base_taref.id).value = moneyFormat(baseTaref);
 
     // Formatear el total con comas
-    const totalFormateado = moneyFormat(totalFinal);
-    const field_total = fields.find( i => i.field == "total");
-    document.getElementById(field_total.id).value = totalFormateado;
+    //const totalFormateado = moneyFormat(totalFinal);
+    //const field_total = fields.find( i => i.field == "total");
+   // document.getElementById(field_total.id).value = totalFormateado;
+  //  console.log(totalFormateado)
 
 }
 
@@ -134,6 +172,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     var precioSobrePesoInput = document.getElementById('precio_sobre_peso');
     var precioToneladaInput = document.getElementById('precio_tonelada');
+    var precioToneladaViajeInput = document.getElementById('total_sobrepeso_viaje');
 
     var precioSobrePesoProveedor = document.getElementById('sobrepeso_proveedor')
     var sobrePesoProveedor = document.getElementById('cantidad_sobrepeso_proveedor');
@@ -144,6 +183,8 @@ document.addEventListener('DOMContentLoaded', function () {
     pesoContenedorInput.addEventListener('input', calcularSobrepeso);
     pesoContenedorInput.addEventListener('input', calcularSobrepeso);
     pesoContenedorInput.addEventListener('input', valorSobrePrecio);
+
+    var sobrepesoViajeInput = document.getElementById('sobrepeso_viaje');
 
 
     function valorSobrePrecio(){
@@ -158,6 +199,10 @@ document.addEventListener('DOMContentLoaded', function () {
    
         // Mostrar el resultado en el campo "Precio Tonelada"
         precioToneladaInput.value = moneyFormat(resultado); 
+
+        //Tomar en cuenta el sobrepeso de todos los contenedores. Para obtener el sobrepeso del viaje
+        let sobrePeso = reverseMoneyFormat(sobrepesoViajeInput.value)
+        precioToneladaViajeInput.value = moneyFormat(sobrePeso * precioSobrePeso)
    
         // Calcular el total
         calcularTotal();
@@ -181,6 +226,7 @@ document.addEventListener('DOMContentLoaded', function () {
 }
     // Función para calcular el sobrepeso
     function calcularSobrepeso() {
+     
         var pesoReglamentario = parseFloat(pesoReglamentarioInput.value) || 0;
         var pesoContenedor = parseFloat(pesoContenedorInput.value) || 0;
 
@@ -194,11 +240,8 @@ document.addEventListener('DOMContentLoaded', function () {
         }
        
 
-        var sobrePesoProveedor = document.getElementById('cantidad_sobrepeso_proveedor');
-        if(sobrePesoProveedor){
-            sobrePesoProveedor.value = sobrepeso.toFixed(4);
-            
-        }
+       
+        sobrePesoViaje()
         // Calcular el total
         calcularTotal();
     }
@@ -234,7 +277,30 @@ document.addEventListener('DOMContentLoaded', function () {
 var pesoReglamentarioInput = document.getElementById('peso_reglamentario');
 var sobrepesoInput = document.getElementById('sobrepeso');
 var pesoContenedorInput = document.getElementById('peso_contenedor');
+var sobrePesoViajeInput = document.querySelector('#sobrepeso_viaje')
+var totalSobrePesoViaje = document.querySelector('#total_sobrepeso_viaje')
+var precioSobrePesoInpu = document.getElementById('precio_sobre_peso');
 pesoContenedorInput.addEventListener('input', calcularSobrepeso);
+
+function sobrePesoViaje(){
+    let tabSelected = document.querySelector('input[name="contenedorTabs"]:checked');
+    initContenedores(tabSelected.value)
+
+    let tipoViajeSelected = document.querySelector('input[name="plan"]:checked');
+
+    let sobrePesoB = (tipoViajeSelected.value == "Sencillo") ? 0 : parseFloat( ContenedorB['sobrepeso'] || 0)
+    let viajeSobrePeso = parseFloat( ContenedorA['sobrepeso'] || 0) + sobrePesoB
+    sobrePesoViajeInput.value = viajeSobrePeso
+    let precio = reverseMoneyFormat(precioSobrePesoInpu.value)
+
+    totalSobrePesoViaje.value = moneyFormat( parseFloat( viajeSobrePeso || 0) * parseFloat( precio || 0))
+
+    var sobrePesoProveedor = document.getElementById('cantidad_sobrepeso_proveedor');
+    if(sobrePesoProveedor){
+        sobrePesoProveedor.value = viajeSobrePeso.toFixed(4);
+        
+    }
+}
 
 function calcularSobrepeso() {
     var pesoReglamentario = parseFloat(pesoReglamentarioInput.value) || 0;
@@ -253,6 +319,8 @@ function calcularSobrepeso() {
         sobrePesoProveedor.value = sobrepeso.toFixed(4);
         
     }
+
+    sobrePesoViaje()
     // Calcular el total
     calcularTotal();
 }
@@ -290,6 +358,308 @@ function getClientes(clienteId){
         }
     });
 }
+
+async function getContenedoresOnFull(){
+    let _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    let referencia = document.querySelector('#referencia_full')
+
+    let uuid = referencia.textContent
+
+    if(uuid.length == 0) return false
+    let ContenedorFields = ContenedorA
+
+await $.ajax({
+    url:'/cotizaciones/full',
+    type:'post',
+    data:{_token, uuid},
+    beforeSend:()=>{},
+    success:(response)=>{
+        
+        ContenedorA = response[0]
+        ContenedorB = response[1]
+
+        sobrePesoViaje()
+        calcularTotal()
+        
+    },
+    error:()=>{
+
+    }
+})
+}
+
+function initContenedores(Contenedor, action = 'create'){
+    const formData = {};
+    let specificFields = formFields.filter((f) => f.master == false )
+    
+    specificFields.forEach((item) =>{
+     var input = item.field;
+     var inputValue = document.getElementById(input);
+     if(inputValue){
+         if(item.type == "money"){
+             formData[input] = (inputValue.value.length > 0) ? parseFloat(reverseMoneyFormat(inputValue.value)) : 0;
+         }else{
+             formData[input] = inputValue.value;
+         }
+     }
+    });
+
+    //Agregar manualmente 2 campos
+    if(action == "edit"){
+        editFormFields.forEach((item) =>{
+            var input = item.field;
+            var inputValue = document.getElementById(input);
+            if(inputValue){
+                if(item.type == "money"){
+                    formData[input] = (inputValue.value.length > 0) ? parseFloat(reverseMoneyFormat(inputValue.value)) : 0;
+                }else{
+                    formData[input] = inputValue.value;
+                }
+            }
+        })
+    }
+
+   formData['sobrepeso'] = sobrepesoInput.value;
+   //formData['precio_sobre_peso'] = precioSobrePesoInput.value;
+
+    formData['Contenedor'] = Contenedor
+    if(Contenedor == "Contenedor-A"){
+        formData['jerarquia'] = 'Principal'
+        ContenedorA = {...formData}
+        
+    }else{
+        formData['jerarquia'] = 'Secundario'
+        ContenedorB = {...formData}
+      
+    }
+    
+}
+
+function valorSobrePrecioContenedor(){
+    var precioSobrePesoInput = document.getElementById('precio_sobre_peso');
+    var precioToneladaInput = document.getElementById('precio_tonelada');
+    var sobrepesoInput = document.getElementById('sobrepeso');
+    // Obtener el valor de Sobrepeso
+    var sobrepeso = parseFloat(sobrepesoInput.value.replace(/,/g, '')) || 0;
+
+    // Obtener el valor de Precio Sobre Peso
+    var precioSobrePeso = parseFloat(reverseMoneyFormat(precioSobrePesoInput.value)) || 0;
+
+    // Calcular el resultado de la multiplicación
+    var resultado = sobrepeso * precioSobrePeso;
+
+    // Mostrar el resultado en el campo "Precio Tonelada"
+    precioToneladaInput.value = moneyFormat(resultado); 
+
+    // Calcular el total
+   // calcularTotal();
+}
+
+function showInfoContenedor(Contenedor){
+    
+    //Guardamos los datos del contenedor activo
+    let contenedorActivo = (Contenedor == 'Contenedor-A')  ? 'Contenedor-B' : 'Contenedor-A';
+    initContenedores(contenedorActivo,frmMode)
+    //Cargamos los datos del contenedor que se desea visualizar
+    let fieldsContenedor = (Contenedor == 'Contenedor-A')  ? ContenedorA : ContenedorB;
+
+    let specificFields = formFields.filter((f) => f.master == false )
+    
+    specificFields.forEach((item) =>{
+        var input = item.field;
+        var htmlField = document.getElementById(input);
+        if(htmlField){
+            if(item.type == "money"){
+                htmlField.value = moneyFormat(fieldsContenedor[input]);
+            }else{
+                htmlField.value = fieldsContenedor[input];
+            }
+        }
+       });
+
+       let labelNumContedor = document.querySelectorAll('.labelNumContedor')
+       labelNumContedor.forEach((c) =>{
+        let cont = document.getElementById(c.id)
+        if(cont) cont.textContent = fieldsContenedor['num_contenedor']
+       })
+
+       localStorage.setItem('numContenedor',fieldsContenedor['num_contenedor'])
+       getFilesContenedor()
+       
+       calcularTotal()
+       valorSobrePrecioContenedor()
+}
+
+async function  validarContenedores (Contenedor) {
+    let fieldsContenedor = (Contenedor == 'Contenedor-A')  ? ContenedorA : ContenedorB;
+    let specificFields = formFields.filter((f) => f.master == false )
+    
+    var passValidation = specificFields.every((item) => {
+        var field = fieldsContenedor[item.field];
+       
+            if(item.required === true && field.length == 0){
+                Swal.fire(`Lo sentimos, el campo "${item.label}" de "${Contenedor}" es obligatorio.`,"Parece que no ha proporcionado información en el campo "+item.label,"warning");
+                return false;
+            }
+        
+        return true;
+    })
+
+   if(!passValidation) return passValidation;
+
+   //Validaciones con condicionantes
+   /*let sobrePeso = fieldsContenedor['sobrepeso'];
+   let precioSobrePeso = fieldsContenedor['precio_sobre_peso'];
+   if(sobrePeso > 0 && precioSobrePeso.length <= 0){
+        Swal.fire(`Lo sentimos, el campo "Precio Sobre Peso" de "${Contenedor}" es obligatorio`,"Parece que no ha proporcionado información en el campo Precio Sobre Peso","warning");
+        return false;
+   }*/
+
+   return true;
+  
+}
+
+$("#cotizacionCreateMultiple").on("submit", async function(e){
+    e.preventDefault();
+
+    const actionFrm = this.getAttribute("sgt-cotizacion-action");
+
+    var form = $(this);
+    var url = form.attr('action');
+    let input = document.querySelector('input[name="plan"]:checked');
+    let tipoCotizacion = input.value
+    
+    let tabSelected = document.querySelector('input[name="contenedorTabs"]:checked');
+   
+    initContenedores(tabSelected.value,actionFrm)
+    
+   let isValidForm = await validarContenedores('Contenedor-A');
+   
+   if(tipoCotizacion == "Full" && isValidForm){
+    isValidForm = await validarContenedores('Contenedor-B');
+   }
+   
+   if(!isValidForm) return false
+
+    if($("#id_cliente").val() == ""){
+        Swal.fire("Seleccione Cliente","Aún no ha seleccionado Cliente, este es un campo requerido","warning");
+        return false;
+    }
+
+    const selectSubClient = document.getElementById("id_subcliente");
+    const subClientQty = selectSubClient.options.length;
+
+    if(subClientQty > 1 && $("#id_subcliente").val() == ""){
+        Swal.fire("Seleccione SubCliente","Aún no ha seleccionado SubCliente, este es un campo requerido","warning");
+        return false;
+    }
+
+    let contenedores = [];
+    contenedores = [...contenedores, ContenedorA]
+    
+    if(tipoCotizacion == "Full" ){
+        contenedores = [...contenedores, ContenedorB]
+    }
+   
+/** */
+    var passValidation = formFields.every((item) => {
+        var field = document.getElementById(item.field);
+        if(field && item.master == true){
+            if(item.required === true && field.value.length == 0){
+                Swal.fire("El campo "+item.label+" es obligatorio","Parece que no ha proporcionado información en el campo "+item.label,"warning");
+                return false;
+            }
+        }
+        return true;
+    })
+
+    if(!passValidation) return passValidation;
+
+    //Validaciones con condicionantes
+    let sobrePeso = document.getElementById('sobrepeso').value;
+    let precioSobrePeso = document.getElementById('precio_sobre_peso').value;
+    if(sobrePeso > 0 && precioSobrePeso.length <= 0){
+        Swal.fire("El campo Precio Sobre Peso es obligatorio","Parece que no ha proporcionado información en el campo Precio Sobre Peso","warning");
+        return false;
+    }
+
+    const formData = {};
+
+    formFields.forEach((item) =>{
+    var input = item.field;
+    var inputValue = document.getElementById(input);
+    if(inputValue && item.master == true){
+        if(item.type == "money"){
+            formData[input] = (inputValue.value.length > 0) ? parseFloat(reverseMoneyFormat(inputValue.value)) : 0;
+        }else{
+            formData[input] = inputValue.value;
+        }
+    }
+    });
+
+/**Si estamos editando y tiene asignado un proveedor... validar campos de proveedor */
+    if(actionFrm == "edit"){
+        
+        var passValidation = formFieldsProveedor.every((item) => {
+            var field = document.getElementById(item.field);
+            if(field){
+                if(item.required === true && field.value.length == 0){
+                    Swal.fire("El campo "+item.label+" es obligatorio","Parece que no ha proporcionado información en el campo "+item.label,"warning");
+                    return false;
+                }
+            }
+            return true;
+        })
+    
+        if(!passValidation) return passValidation;
+
+        formFieldsProveedor.forEach((item) =>{
+            var input = item.id;
+            var inputValue = document.getElementById(input);
+            if(inputValue){
+                if(item.type == "money"){
+                    formData[input] = (inputValue.value.length > 0) ? parseFloat(reverseMoneyFormat(inputValue.value)) : 0;
+                }else{
+                    formData[input] = inputValue.value;
+                }
+            }
+            });
+        
+    }
+
+    formData["_token"] = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    formData["id_cliente"] = $("#id_cliente").val();
+    formData["id_subcliente"] = selectSubClient.value;
+    formData["Contenedores"] = contenedores
+    formData["TipoCotizacion"] = tipoCotizacion
+    formData["sobrePeso"] = sobrePeso
+    formData["precioSobrePeso"] = reverseMoneyFormat(precioSobrePeso)
+
+
+    $.ajax({
+        url: url,
+        type: "post",
+        data: formData,
+        beforeSend:function(){
+        
+        },
+        success:function(data){
+                Swal.fire(data.Titulo,data.Mensaje,data.TMensaje).then(function() {
+                    if(data.TMensaje == "success"){
+                       
+                            location.reload();
+                        
+                    
+                    }
+                });
+        },
+        error:function(){       
+        Swal.fire("Error","Ha ocurrido un error, intentelo nuevamente","error");
+        }
+    })
+   
+    
+});
 
 $("#cotizacionCreate").on("submit", function(e){
     e.preventDefault();
