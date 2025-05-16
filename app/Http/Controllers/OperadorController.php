@@ -56,15 +56,31 @@ class OperadorController extends Controller
         $validator = Validator::make($request->all(), [
             'curp' => 'required|string|unique:operadores,curp,' . $id->id . ',id,id_empresa,' . auth()->user()->id_empresa,
         ], [
-            'curp.unique' => 'Ya existe un operador registrado con esta CURP.',
             'curp.required' => 'El campo CURP es obligatorio.',
+            'curp.unique' => 'validacion_curp_personalizada', // marcador especial
         ]);
     
         if ($validator->fails()) {
+            $errores = $validator->errors();
+    
+            if ($errores->has('curp') && $errores->first('curp') === 'validacion_curp_personalizada') {
+                $operadorExistente = Operador::where('curp', $request->curp)
+                    ->where('id_empresa', auth()->user()->id_empresa)
+                    ->where('id', '!=', $id->id)
+                    ->first();
+    
+                if ($operadorExistente) {
+                    $mensaje = "El CURP <strong>{$operadorExistente->curp}</strong> ya está registrado para el operador <strong>{$operadorExistente->nombre}</strong>.";
+    
+                    return redirect()->back()
+                        ->withInput()
+                        ->with('curp_error_update_' . $id->id, $mensaje); // usamos clave única por modal
+                }
+            }
+    
             return redirect()->back()
                 ->withErrors($validator)
-                ->withInput()
-                ->with('curp_error', $validator->errors()->first('curp'));
+                ->withInput();
         }
     
         $id->update($request->all());
@@ -75,73 +91,90 @@ class OperadorController extends Controller
     
 
     public function store(Request $request)
-{
-    // Validación del CURP único por empresa
-    $validator = Validator::make($request->all(), [
-        'curp' => 'required|string|unique:operadores,curp,NULL,id,id_empresa,' . auth()->user()->id_empresa,
-    ], [
-        'curp.unique' => 'Ya existe un operador registrado con esta CURP.',
-        'curp.required' => 'El campo CURP es obligatorio.',
-    ]);
-
-    if ($validator->fails()) {
-        return redirect()->back()
-            ->withErrors($validator)
-            ->withInput()
-            ->with('curp_error', $validator->errors()->first('curp'));
+    {
+        // Validación con Validator
+        $validator = Validator::make($request->all(), [
+            'curp' => 'required|string|unique:operadores,curp,NULL,id,id_empresa,' . auth()->user()->id_empresa,
+        ], [
+            'curp.required' => 'El campo CURP es obligatorio.',
+            'curp.unique' => 'validacion_curp_personalizada', // marcador especial
+        ]);
+    
+        // Si hay errores
+        if ($validator->fails()) {
+            $errores = $validator->errors();
+    
+            // Si el error es por CURP duplicado, lo personalizamos
+            if ($errores->has('curp') && $errores->first('curp') === 'validacion_curp_personalizada') {
+                $operadorExistente = Operador::where('curp', $request->curp)
+                    ->where('id_empresa', auth()->user()->id_empresa)
+                    ->first();
+    
+                if ($operadorExistente) {
+                    $mensaje = "El CURP <strong>{$operadorExistente->curp}</strong> ya está registrado para el operador <strong>{$operadorExistente->nombre}</strong>.";
+                    return redirect()->back()
+                        ->withInput()
+                        ->with('curp_error', $mensaje);
+                }
+            }
+    
+            // Otros errores (no de CURP)
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput();
+        }
+    
+        // Crear nuevo operador (misma lógica tuya, intacta)
+        $operador = new Operador;
+        $operador->curp = $request->get('curp');
+        $operador->nombre = $request->get('nombre');
+        $operador->correo = $request->get('correo');
+        $operador->telefono = $request->get('telefono');
+        $operador->domicilio = $request->get('domicilio');
+        $operador->fecha_nacimiento = $request->get('fecha_nacimiento');
+        $operador->acceso = $request->get('acceso');
+        $operador->tipo_sangre = $request->get('tipo_sangre');
+        $operador->nss = $request->get('nss');
+        $operador->recomendacion = $request->get('recomendacion');
+        $operador->foto = $request->get('foto');
+    
+        // Manejo de archivos
+        $path = public_path() . '/operador';
+    
+        if ($request->hasFile("comprobante_domicilio")) {
+            $file = $request->file('comprobante_domicilio');
+            $fileName = uniqid() . $file->getClientOriginalName();
+            $file->move($path, $fileName);
+            $operador->comprobante_domicilio = $fileName;
+        }
+    
+        if ($request->hasFile("ine")) {
+            $file = $request->file('ine');
+            $fileName = uniqid() . $file->getClientOriginalName();
+            $file->move($path, $fileName);
+            $operador->ine = $fileName;
+        }
+    
+        if ($request->hasFile("cedula_fiscal")) {
+            $file = $request->file('cedula_fiscal');
+            $fileName = uniqid() . $file->getClientOriginalName();
+            $file->move($path, $fileName);
+            $operador->cedula_fiscal = $fileName;
+        }
+    
+        if ($request->hasFile("licencia_conducir")) {
+            $file = $request->file('licencia_conducir');
+            $fileName = uniqid() . $file->getClientOriginalName();
+            $file->move($path, $fileName);
+            $operador->licencia_conducir = $fileName;
+        }
+    
+        $operador->save();
+    
+        Session::flash('success', 'Se ha guardado sus datos con éxito');
+        return redirect()->back()->with('success', 'Operador creado correctamente.');
     }
-
-    // Crear nuevo operador
-    $operador = new Operador;
-    $operador->curp = $request->get('curp'); // Guardamos el CURP
-    $operador->nombre = $request->get('nombre');
-    $operador->correo = $request->get('correo');
-    $operador->telefono = $request->get('telefono');
-    $operador->domicilio = $request->get('domicilio');
-    $operador->fecha_nacimiento = $request->get('fecha_nacimiento');
-    $operador->acceso = $request->get('acceso');
-    $operador->tipo_sangre = $request->get('tipo_sangre');
-    $operador->nss = $request->get('nss');
-    $operador->recomendacion = $request->get('recomendacion');
-    $operador->foto = $request->get('foto');
-
-    // Manejo de archivos
-    $path = public_path() . '/operador';
-
-    if ($request->hasFile("comprobante_domicilio")) {
-        $file = $request->file('comprobante_domicilio');
-        $fileName = uniqid() . $file->getClientOriginalName();
-        $file->move($path, $fileName);
-        $operador->comprobante_domicilio = $fileName;
-    }
-
-    if ($request->hasFile("ine")) {
-        $file = $request->file('ine');
-        $fileName = uniqid() . $file->getClientOriginalName();
-        $file->move($path, $fileName);
-        $operador->ine = $fileName;
-    }
-
-    if ($request->hasFile("cedula_fiscal")) {
-        $file = $request->file('cedula_fiscal');
-        $fileName = uniqid() . $file->getClientOriginalName();
-        $file->move($path, $fileName);
-        $operador->cedula_fiscal = $fileName;
-    }
-
-    if ($request->hasFile("licencia_conducir")) {
-        $file = $request->file('licencia_conducir');
-        $fileName = uniqid() . $file->getClientOriginalName();
-        $file->move($path, $fileName);
-        $operador->licencia_conducir = $fileName;
-    }
-
-    // Guardar operador
-    $operador->save();
-
-    Session::flash('success', 'Se ha guardado sus datos con éxito');
-    return redirect()->back()->with('success', 'Operador creado correctamente.');
-}
+    
 
     public function update_pago(Request $request, $id){
 
@@ -263,14 +296,26 @@ class OperadorController extends Controller
     }
 
     public function destroy($id)
-{
-    $operador = Operador::findOrFail($id);
-    $operador->delete(); // Soft delete
-
-    Session::flash('success', 'Operador dado de baja correctamente.');
-    return redirect()->back();
-}
-
+    {
+        $operador = Operador::findOrFail($id);
+    
+        // Verificar si tiene pagos pendientes
+        $tieneRestante = Asignaciones::where('id_operador', $id)
+            ->where('id_empresa', auth()->user()->id_empresa)
+            ->where('restante_pago_operador', '>', 0)
+            ->exists();
+    
+        if ($tieneRestante) {
+            $nombre = $operador->nombre;
+            return redirect()->back()->with('operador_con_restante', "El operador <strong>$nombre</strong> tiene pagos pendientes y no puede ser dado de baja.");
+        }
+    
+        $operador->delete();
+    
+        Session::flash('success', 'Operador dado de baja correctamente.');
+        return redirect()->back();
+    }
+    
 public function restore($id)
 {
     $operador = Operador::withTrashed()->findOrFail($id);

@@ -182,16 +182,13 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
 @if (session('curp_error'))
     <script>
         Swal.fire({
             icon: 'error',
-            title: 'Error',
-            text: '{{ session('curp_error') }}',
+            title: 'CURP duplicado',
+            html: `{!! addslashes(session('curp_error')) !!}`, // escapa comillas
             confirmButtonText: 'Entendido'
         });
-        const modal = new bootstrap.Modal(document.getElementById('operadoresModal'));
-        modal.show();
     </script>
 @endif

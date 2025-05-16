@@ -72,4 +72,15 @@
             });
         </script>
     @endif
+    @if (session('operador_con_restante'))
+        <script>
+            Swal.fire({
+                icon: 'warning',
+                title: 'No se puede dar de baja',
+                html: `{!! addslashes(session('operador_con_restante')) !!}`,
+                confirmButtonText: 'Entendido',
+                confirmButtonColor: '#d33'
+            });
+        </script>
+    @endif
 @endsection

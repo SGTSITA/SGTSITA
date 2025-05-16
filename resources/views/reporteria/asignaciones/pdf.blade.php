@@ -1,82 +1,108 @@
-<!DOCTYPE html>
-<html>
-    @php
-        use Carbon\Carbon;
-    @endphp
-    @if(!isset($isExcel))   
-    <style>
-        .registro-contenedor {
-            border: 2px solid #000; /* Cambia el color y grosor del borde según tus necesidades */
-            margin-bottom: 20px; /* Espacio entre cada registro */
-            padding: 15px; /* Espacio interno alrededor de las tablas */
-            border-radius: 5px; /* Bordes redondeados, opcional */
-        }
+@php 
+ use Carbon\Carbon; 
+ use App\Http\Controllers\ReporteriaController;
+@endphp
 
-        .registro-contenedor table {
-            margin-bottom: 10px; /* Espacio entre tablas dentro del mismo contenedor */
-        }
+@if (!isset($isExcel))
+    <!DOCTYPE html>
+    <html>
 
-        .totales {
-            margin-top: 20px;
-        }
-
-        .totales h3 {
-            font-weight: bold;
-        }
-
-        .totales p {
-            font-size: 1.2em;
-            color: #000;
-        }
-    </style>
-    @endif
     <head>
-        <title>Viajes</title>
+        <title>Reporte de Viajes</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                color: #000;
+                font-size: 12px;
+                margin: 20px;
+            }
+
+            .titulo {
+                text-align: center;
+                margin-bottom: 20px;
+            }
+
+            .datos-empresa {
+                display: flex;
+                justify-content: space-between;
+                margin-bottom: 10px;
+            }
+
+            .tabla-viajes {
+                width: 100%;
+                border-collapse: collapse;
+                margin-top: 20px;
+            }
+
+            .tabla-viajes th,
+            .tabla-viajes td {
+                border: 1px solid #000;
+                padding: 8px;
+                text-align: center;
+            }
+
+            .tabla-viajes th {
+                background-color: #f2f2f2;
+                font-weight: bold;
+            }
+        </style>
     </head>
 
     <body>
+@endif
 
-            <div class="contianer" style="position: relative">
-                <h4>Empresa: {{ $user->Empresa->nombre }}</h4>
-                <h4>Viajes</h4>
-            </div>
-            <div class="contianer" style="position: relative">
-                <h5 style="position: absolute;left:75%;">Viajes: {{ date("d-m-Y") }}</h5><br>
-            </div>
+{{-- Empresa y fecha (siempre visibles) --}}
+<div style="margin-bottom: 10px;">
+    <h4 style="margin: 0;">Empresa: {{ $user->Empresa->nombre }}</h4>
+    <div style="text-align: right;"><strong>Fecha:</strong> {{ date('d-m-Y') }}</div>
+    <h4 style="margin-top: 5px;">Viajes</h4>
+</div>
 
-            <table class="table text-white tabla-completa" style="color: #000;width: 100%;padding: 30px; font-size: 12px">
-                <thead>
-                    <tr>
-                        <th>Contenedor</th>
-                        <th>Cliente</th>
-                        <th>Subcliente</th>
-                        <th>Origen</th>
-                        <th>Destino</th>
-                        <th>Estatus</th>
-                        <th>Fecha salida</th>
-                        <th>Fecha llegada</th>
-                    </tr>
-                </thead>
-                <tbody style="text-align: center;font-size: 100%;">
-                    @foreach ($cotizaciones as $cotizacion)
-                        <tr>
-                            <td>{{$cotizacion->Contenedor->num_contenedor}}</td>
-                            <td>{{$cotizacion->Contenedor->Cotizacion->Cliente->nombre}}</td>
-                            <td>
-                                @if ($cotizacion->Contenedor->Cotizacion->id_subcliente != NULL)
-                                    {{$cotizacion->Contenedor->Cotizacion->Subcliente->nombre}} / {{$cotizacion->Contenedor->Cotizacion->Subcliente->telefono}}
-                                @else
-                                    -
-                                @endif
-                            </td>
-                            <td>{{$cotizacion->Contenedor->Cotizacion->origen}}</td>
-                            <td>{{$cotizacion->Contenedor->Cotizacion->destino}}</td>
-                            <td>{{$cotizacion->Contenedor->Cotizacion->estatus}}</td>
-                            <td>{{ Carbon::parse($cotizacion->fehca_inicio_guard)->format('d-m-Y') }}</td>
-                            <td>{{ Carbon::parse($cotizacion->fehca_fin_guard)->format('d-m-Y') }}</td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
+{{-- Tabla --}}
+<table class="{{ !isset($isExcel) ? 'tabla-viajes' : '' }}">
+    <thead>
+        <tr>
+            <th>Contenedor</th>
+            <th>Cliente</th>
+            <th>Subcliente</th>
+            <th>Origen</th>
+            <th>Destino</th>
+            <th>Estatus</th>
+            <th>Fecha salida</th>
+            <th>Fecha llegada</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach ($cotizaciones as $cotizacion)
+          @php
+            $numContenedor = $cotizacion->Contenedor->num_contenedor;
+            $contenedor2 = ReporteriaController::getContenedorSecundario($cotizacion->Contenedor->Cotizacion->referencia_full);
+            $numContenedor .= $contenedor2;
+          @endphp
+          
+            <tr>
+                <td>{{ $numContenedor ?? '-' }}</td>
+                <td>{{ $cotizacion->Contenedor->Cotizacion->Cliente->nombre ?? '-' }}</td>
+                <td>
+                    @if ($cotizacion->Contenedor->Cotizacion->id_subcliente)
+                        {{ $cotizacion->Contenedor->Cotizacion->Subcliente->nombre ?? '-' }} /
+                        {{ $cotizacion->Contenedor->Cotizacion->Subcliente->telefono ?? '-' }}
+                    @else
+                        -
+                    @endif
+                </td>
+                <td>{{ $cotizacion->Contenedor->Cotizacion->origen ?? '-' }}</td>
+                <td>{{ $cotizacion->Contenedor->Cotizacion->destino ?? '-' }}</td>
+                <td>{{ $cotizacion->Contenedor->Cotizacion->estatus ?? '-' }}</td>
+                <td>{{ Carbon::parse($cotizacion->fehca_inicio_guard)->format('d-m-Y') }}</td>
+                <td>{{ Carbon::parse($cotizacion->fehca_fin_guard)->format('d-m-Y') }}</td>
+            </tr>
+        @endforeach
+    </tbody>
+</table>
+
+@if (!isset($isExcel))
     </body>
-</html>
+
+    </html>
+@endif

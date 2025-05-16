@@ -1,3 +1,25 @@
+function mostrarLoading(text = "Espere un momento...") {
+    
+    let label = document.querySelector('#loading-text')
+    label.textContent = text
+
+    document.getElementById('loading-overlay').style.display = 'flex'
+}
+
+function ocultarLoading() {
+document.getElementById('loading-overlay').style.display = 'none';
+}
+
+function simularEvento() {
+mostrarLoading();
+
+// Simula una operación
+setTimeout(() => {
+    
+    ocultarLoading();
+}, 2000);
+}
+
 function allowOnlyDecimals(event) {
     const input = event.target;
     const regex = /^[0-9]*\.?[0-9]*$/;

@@ -239,7 +239,7 @@
 
             $('.exportButton').on('click', function(event) {
                 const selectedIds = table.rows('.selected').data().toArray().map(row => row[
-                1]); // Obtener los IDs seleccionados
+                    1]); // Obtener los IDs seleccionados
 
                 if (selectedIds.length === 0) {
                     $('#warningMessage').removeClass('d-none');

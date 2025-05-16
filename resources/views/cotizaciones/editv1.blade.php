@@ -12,7 +12,49 @@
                 <div class="card">
                     <div class="card-header">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
-                            
+                            <h3 class="mb-3">Editar Cotizacion</h3>
+                            <div class="col-3 offset-3">
+                            <div><span class="text-xs text-muted text-bold d-none" id="referencia_full">{{$cotizacion->referencia_full}}</span></div>
+                                <div class="option-group">
+                                    @if($cotizacion->tipo_viaje != "Full")                                    
+                                    <label class="custom-option selected">
+                                        <input type="radio" checked name="plan" value="Sencillo" onchange="handleSelection(this)">
+                                        <i class="fas fa-truck icon"></i>
+                                        <span class="text">Sencillo</span>
+                                        <i class="fas fa-check check-icon"></i>
+                                    </label>
+                                    @else
+                                    <label class="custom-option selected">
+                                        <input type="radio" checked name="plan" value="Full" onchange="handleSelection(this)">
+                                        <i class="fas fa-truck-moving icon"></i>
+                                        <span class="text">Full</span>
+                                        <i class="fas fa-check check-icon"></i>
+                                    </label>
+                                    @endif
+                                </div>
+                                
+                            </div>
+                        </div>
+                        <div class="row">
+                        <div class="col-12">
+                                        <div class="custom-nav-tabs">
+                                            <label class="custom-nav-item">
+                                                <input type="radio" checked="checked" value="Contenedor-A" class="custom-nav-radio" name="contenedorTabs" id="tab1" />
+                                                <div class="custom-nav-link active">
+                                                <i class="ni ni-box-2 text-warning text-gradient"></i>
+                                                <h6>Contenedor A</h6>
+                                                </div>
+                                            </label>
+
+                                            <label class="custom-nav-item @if($cotizacion->tipo_viaje != 'Full') d-none @endif" id="tab-contenedor-b">
+                                                <input type="radio" class="custom-nav-radio" value="Contenedor-B" name="contenedorTabs" id="tab2" />
+                                                <div class="custom-nav-link">
+                                                <i class="ni ni-box-2 text-info text-gradient"></i>
+                                                <h6>Contenedor B</h6>
+                                                </div>
+                                            </label>
+                                        </div>
+                                    </div>
                         </div>
                     </div>
 
@@ -24,9 +66,7 @@
                                 <img src="{{ asset('img/icon/validando-billete.webp') }}" alt="" width="40px"> Cotización
                             </button>
 
-                              <button class="nav-link custom-tab" id="nav-Bloque-tab" data-bs-toggle="tab" data-bs-target="#nav-Bloque" type="button" role="tab" aria-controls="nav-Bloque" aria-selected="true">
-                                <img src="{{ asset('img/icon/contenedores.png') }}" alt="" width="40px"> Bloque
-                              </button>
+                              
 
                               <button class="nav-link custom-tab" id="nav-Contenedor-tab" data-bs-toggle="tab" data-bs-target="#nav-Contenedor" type="button" role="tab" aria-controls="nav-Contenedor" aria-selected="false">
                                 <img src="{{ asset('img/icon/contenedor.png') }}" alt="" width="40px"> Contenedor
@@ -34,6 +74,10 @@
 
                               <button class="nav-link custom-tab" id="nav-Documentacion-tab" data-bs-toggle="tab" data-bs-target="#nav-Documentacion" type="button" role="tab" aria-controls="nav-Documentacion" aria-selected="false">
                                 <img src="{{ asset('img/icon/pdf.webp') }}" alt="" width="40px"> Documentación
+                              </button>
+
+                              <button class="nav-link custom-tab" id="nav-Bloque-tab" data-bs-toggle="tab" data-bs-target="#nav-Bloque" type="button" role="tab" aria-controls="nav-Bloque" aria-selected="true">
+                                <img src="{{ asset('img/icon/contenedores.png') }}" alt="" width="40px"> Bloque
                               </button>
 
                               <button class="nav-link custom-tab" id="nav-Gastos-tab" data-bs-toggle="tab" data-bs-target="#nav-Gastos" type="button" role="tab" aria-controls="nav-Gastos" aria-selected="false">
@@ -56,20 +100,22 @@
                         </nav>
 
 
-                        <form method="POST" action="{{ route('update.cotizaciones', $cotizacion->id) }}" id="cotizacionesUpdate" enctype="multipart/form-data" role="form">
+                        <form method="POST" action="{{ route('update.cotizaciones', $cotizacion->id) }}" 
+                        id="cotizacionCreateMultiple" enctype="multipart/form-data" sgt-cotizacion-action="edit" role="form">
                             @csrf
                             <input type="hidden" name="_method" value="PATCH">
 
                             <div class="tab-content" id="nav-tabContent">
                                 <div class="tab-pane fade show active" id="nav-cotizacion" role="tabpanel" aria-labelledby="nav-cotizacion-tab" tabindex="0">
-                                    <h3 class="mb-5">Datos de cotizacion</h3>
+                                                                
 
                                     @error('num_contenedor') <h4 class="error text-danger">{{ $message }}</h4> @enderror
 
 
                                     <div class="row">
+                                    <h3 class="mb-5 mt5">Datos de cotizacion</h3>
                                             @if ($documentacion->num_contenedor != NULL)
-                                                <label style="font-size: 20px;">Num contenedor:  {{$documentacion->num_contenedor}} </label>
+                                                <label style="font-size: 20px;" class="labelNumContedor" id="labelNumContenedor-1">Num contenedor:  {{$documentacion->num_contenedor}} </label>
                                             @endif
 
                                             <div class="col-6 form-group">
@@ -248,7 +294,6 @@
                                                     <input name="sobrepeso" id="sobrepeso" type="text" class="form-control calculo-cotizacion" autocomplete="off" readonly value="{{$cotizacion->sobrepeso}}">
                                                 </div>
                                             </div>
-
                                             <div class="col-3 form-group">
                                                 <label for="name">Precio Sobre Peso</label>
                                                 <div class="input-group mb-3">
@@ -259,6 +304,28 @@
                                                 </div>
                                             </div>
 
+                                    <div class="col-3 form-group">
+                                        <label for="name">Sobre Peso Viaje</label>
+                                        <div class="input-group mb-3">
+                                            <span class="input-group-text" id="basic-addon1">
+                                                <img src="{{ asset('img/icon/peso.png') }}" alt="" width="25px">
+                                            </span>
+                                            <input name="sobrepeso_viaje" id="sobrepeso_viaje" readonly type="text" autocomplete="off" class="form-control moneyformat calculo-cotizacion" oninput="allowOnlyDecimals(event)">
+                                        </div>
+                                    </div>
+
+                                    <div class="col-3 form-group">
+                                        <label for="name">Total Sobre Peso Viaje</label>
+                                        <div class="input-group mb-3">
+                                            <span class="input-group-text" id="basic-addon1">
+                                                <img src="{{ asset('img/icon/peso.png') }}" alt="" width="25px">
+                                            </span>
+                                            <input name="total_sobrepeso_viaje" id="total_sobrepeso_viaje" readonly type="text" autocomplete="off" class="form-control moneyformat calculo-cotizacion" oninput="allowOnlyDecimals(event)">
+                                        </div>
+                                    </div>
+
+                                            
+
                                             <div class="col-3 form-group">
                                                 <label for="name">Precio Tonelada</label>
                                                 <div class="input-group mb-3">
@@ -268,7 +335,7 @@
                                                     <input name="precio_tonelada" id="precio_tonelada" type="text" class="form-control moneyformat calculo-cotizacion" oninput="allowOnlyDecimals(event)" autocomplete="off" value="{{$cotizacion->precio_tonelada}}" readonly>
                                                 </div>
                                             </div>
-                                            <div class="col-6"></div>
+                                          
 
                                             <div class="col-3 form-group">
                                                 <label for="name">Precio Viaje</label>
@@ -366,7 +433,7 @@
                                                     <span class="input-group-text" id="basic-addon1">
                                                         <img src="{{ asset('img/icon/monedas.webp') }}" alt="" width="25px">
                                                     </span>
-                                                    <input type="text" class="form-control txtSumGastos" value="0" readonly>
+                                                    <input type="text" class="form-control txtSumGastos" id="txtSumGastos" value="0" readonly>
                                                 </div>
                                             </div>
                                             <div class="col-4 form-group">
@@ -375,7 +442,7 @@
                                                     <span class="input-group-text" id="basic-addon1">
                                                         <img src="{{ asset('img/icon/monedas.webp') }}" alt="" width="25px">
                                                     </span>
-                                                    <input name="total" id="total" type="float" class="form-control moneyformat calculo-cotizacion" readonly>
+                                                    <input name="total1" id="total1" type="float" class="form-control moneyformat calculo-cotizacion total-cotizacion" readonly>
                                                 </div>
                                             </div>
                                             <div class="col-4 form-group">
@@ -384,7 +451,7 @@
                                                 <span class="input-group-text" id="basic-addon1">
                                                     <img src="{{ asset('img/icon/monedas.webp') }}" alt="" width="25px">
                                                 </span>
-                                                <input type="text" class="form-control txtResultGastos" id="txtResultGastos1" value="{{ $cotizacion->total }}" readonly>
+                                                <input type="text" class="form-control txtResultGastos" id="total" value="{{ $cotizacion->total }}" readonly>
                                             </div>
                                         </div>
 
@@ -394,7 +461,7 @@
                                 <div class="tab-pane fade" id="nav-Bloque" role="tabpanel" aria-labelledby="nav-Bloque-tab" tabindex="0">
                                     <h3 class="mb-5 mt-3">Bloque de Entrada</h3>
                                     @if ($documentacion->num_contenedor != NULL)
-                                        <label style="font-size: 20px;">Num contenedor:  {{$documentacion->num_contenedor}} </label>
+                                        <label style="font-size: 20px;" class="labelNumContedor" id="labelNumContenedor-2">Num contenedor:  {{$documentacion->num_contenedor}} </label>
                                     @endif
                                     <div class="row">
                                         <div class="col-4 form-group">
@@ -432,7 +499,7 @@
                                 <div class="tab-pane fade" id="nav-Contenedor" role="tabpanel" aria-labelledby="nav-Contenedor-tab" tabindex="0">
                                     <h3 class="mb-5 mt-3">Contenedor</h3>
                                     @if ($documentacion->num_contenedor != NULL)
-                                        <label style="font-size: 20px;">Num contenedor:  {{$documentacion->num_contenedor}} </label>
+                                        <label style="font-size: 20px;" class="labelNumContedor" id="labelNumContenedor-3">Num contenedor:  {{$documentacion->num_contenedor}} </label>
                                     @endif
                                     <div class="row">
                                         <div class="col-4 form-group">
@@ -466,72 +533,16 @@
                                             </div>
                                         </div>
 
-                                        <div class="col-2">
-                                            <div class="form-group">
-                                                <label>¿CCP - Carta Porte?</label><br>
-                                                @if ($documentacion->ccp == 'si')
-                                                    <input class="form-check-input" type="radio" name="ccp" value="si" id="option_si_ccp" checked> Sí<br>
-                                                    <input class="form-check-input" type="radio" name="ccp" value="no" id="option_no_ccp"> No
-                                                @else
-                                                    <input class="form-check-input" type="radio" name="ccp" value="si" id="option_si_ccp"> Sí<br>
-                                                    <input class="form-check-input" type="radio" name="ccp" value="no" id="option_no_ccp" checked> No
-                                                @endif
-                                            </div>
-                                        </div>
+                                      
 
-                                        <div class="col-6">
-                                            @if ($documentacion->ccp == 'si')
-                                                <div class="form-group" id="inputFieldccp">
-                                            @else
-                                                <div class="form-group" id="inputFieldccp" style="display: none;">
-                                            @endif
-                                                <label for="input">Documento CCP:</label>
-                                                <div class="input-group mb-3">
-                                                    <span class="input-group-text" id="basic-addon1">
-                                                        <img src="{{ asset('img/icon/calendario.webp') }}" alt="" width="25px">
-                                                    </span>
-                                                    <input name="doc_ccp" id="doc_ccp" type="file" class="form-control">
-                                                </div>
-
-                                                @if ($documentacion->ccp == 'si')
-                                                    <div class="col-6">
-                                                        @if (pathinfo($documentacion->doc_ccp, PATHINFO_EXTENSION) == 'pdf')
-                                                        <p class="text-center ">
-                                                            <iframe class="mt-2" src="{{asset('cotizaciones/cotizacion'. $cotizacion->id . '/' .$documentacion->doc_ccp)}}" style="width: 100%; height: 100px;"></iframe>
-                                                        </p>
-                                                                <a class="btn btn-sm text-dark" href="{{asset('cotizaciones/cotizacion'. $cotizacion->id . '/' .$documentacion->doc_ccp) }}" target="_blank" style="background: #836262; color: #ffff!important">Ver archivo</a>
-                                                        @elseif (pathinfo($documentacion->doc_ccp, PATHINFO_EXTENSION) == 'doc')
-                                                        <p class="text-center ">
-                                                            <img id="blah" src="{{asset('assets/icons/docx.png') }}" alt="Imagen" style="width: 150px; height: 150px;"/>
-                                                        </p>
-                                                                <a class="btn btn-sm text-dark" href="{{asset('cotizaciones/cotizacion'. $cotizacion->id . '/' .$documentacion->doc_ccp) }}" target="_blank" style="background: #836262; color: #ffff!important">Descargar</a>
-                                                        @elseif (pathinfo($documentacion->doc_ccp, PATHINFO_EXTENSION) == 'docx')
-                                                        <p class="text-center ">
-                                                            <img id="blah" src="{{asset('assets/icons/docx.png') }}" alt="Imagen" style="width: 150px; height: 150px;"/>
-                                                        </p>
-                                                                <a class="btn btn-sm text-dark" href="{{asset('cotizaciones/cotizacion'. $cotizacion->id . '/' .$documentacion->doc_ccp) }}" target="_blank" style="background: #836262; color: #ffff!important">Descargar</a>
-                                                                @elseif (pathinfo($documentacion->doc_ccp, PATHINFO_EXTENSION) == 'xlsx' || pathinfo($documentacion->doc_ccp, PATHINFO_EXTENSION) == 'xls')
-                                                        <p class="text-center ">
-                                                            <img id="blah" src="{{asset('img/excel-logo.png') }}" alt="Imagen" style="width: 150px; height: 150px;"/>
-                                                        </p>
-                                                                <a class="btn btn-sm text-dark" href="{{asset('cotizaciones/cotizacion'. $cotizacion->id . '/' .$documentacion->doc_ccp) }}" target="_blank" style="background: #836262; color: #ffff!important">Descargar</a>
-                                                        @else
-                                                            <p class="text-center mt-2">
-                                                                <img id="blah" src="{{asset('cotizaciones/cotizacion'. $cotizacion->id . '/' .$documentacion->doc_ccp) }}" alt="Imagen" style="width: 150px;height: 150%;"/><br>
-                                                            </p>
-                                                                <a class="text-center text-dark btn btn-sm" href="{{asset('cotizaciones/cotizacion'. $cotizacion->id . '/' .$documentacion->doc_ccp) }}" target="_blank" style="background: #836262; color: #ffff!important">Ver Imagen</a>
-                                                        @endif
-                                                    </div>
-                                                @endif
-                                            </div>
-                                        </div>
+                                     
                                     </div>
                                 </div>
 
                                 <div class="tab-pane fade" id="nav-Documentacion" role="tabpanel" aria-labelledby="nav-Documentacion-tab" tabindex="0">
                                     <h3 class="mt-3 mb-5">Documentación</h3>
                                     @if ($documentacion->num_contenedor != NULL)
-                                        <label style="font-size: 20px;">Num contenedor:  {{$documentacion->num_contenedor}} </label>
+                                        <label style="font-size: 20px;" class="labelNumContedor" id="labelNumContenedor-4">Num contenedor:  {{$documentacion->num_contenedor}} </label>
                                     @endif
                                     <div class="row">
                                         <div class="col-12">
@@ -545,6 +556,51 @@
                     </tr>
                   </thead>
                   <tbody>
+                  <tr>
+                      <td>
+                        <div class="d-flex px-3 py-1">
+                          <div>
+                            <img src="{{asset('img/not-file.png')}}" class="avatar me-3" alt="image" id="img-Formato-para-Carta-porte">
+                          </div>
+                          <div class="d-flex flex-column justify-content-center">
+                            <h6 class="mb-0 text-sm">Formato CCP</h6>
+                            <p class="text-sm font-weight-bold text-secondary mb-0">
+                                <span class="text-muted" id="filSize-Formato-para-Carta-porte">0</span>
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <p class="text-sm font-weight-bold mb-0">
+                        <input name="ccp" id="ccp" type="text" class="form-control" value="{{$documentacion->ccp}}">
+                            
+                        </p>
+                      </td>
+                      <td class="align-middle text-center text-sm">
+                        <p class="text-sm font-weight-bold mb-0">
+                            <span class="badge bg-gradient-warning badge-sm" id="badge-Formato-para-Carta-porte">Pendiente</span>
+                        </p>
+                      </td>
+                      <td class="align-middle text-end">
+                        <div class="d-flex px-3 py-1 justify-content-center align-items-center">
+                        
+                          <button type="button" 
+                          class="btn btn-sm btn-icon-only btnDocs btn-rounded btn-outline-secondary mb-0 ms-2 btn-sm d-flex align-items-center justify-content-center ms-3" 
+                          data-bs-toggle="tooltip" id="btnFileFormato-para-Carta-porte"
+                          data-bs-placement="bottom" title="Cargar archivo" 
+                          data-bs-original-title="Cargar archivo">
+                            <i class="fas fa-upload" aria-hidden="true"></i>
+                          </button>
+                          <a href="javasrcipt:void()" target="_blank" class="openFile btn btn-sm btn-icon-only btn-rounded btn-outline-secondary mb-0 ms-2 btn-sm d-flex align-items-center justify-content-center ms-3" 
+                          data-bs-toggle="tooltip" 
+                          data-bs-placement="bottom" 
+                          title="Ver Documento" 
+                          data-bs-original-title="Ver Documento" id="btn-ver-Formato-para-Carta-porte">
+                            <i class="fas fa-eye" aria-hidden="true"></i>
+</a>
+                        </div>
+                      </td>
+                    </tr>
                   <tr>
                       <td>
                         <div class="d-flex px-3 py-1">
@@ -699,150 +755,113 @@
                         </div>
                       </td>
                     </tr>
+                    
+
+                    <tr>
+                      <td>
+                        <div class="d-flex px-3 py-1">
+                          <div>
+                            <img src="{{asset('img/not-file.png')}}" class="avatar me-3" alt="image" id="img-Pre-Alta">
+                          </div>
+                          <div class="d-flex flex-column justify-content-center">
+                            <h6 class="mb-0 text-sm">Prealta - Boleta vacío</h6>
+                            <p class="text-sm font-weight-bold text-secondary mb-0">
+                                <span class="text-muted" id="filSize-Pre-Alta">0</span>
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <p class="text-sm font-weight-bold mb-0">
+                        <input name="fecha_boleta_vacio" id="fecha_boleta_vacio" type="date" class="form-control" value="{{$documentacion->fecha_boleta_vacio}}">
+                            
+                        </p>
+                      </td>
+                      <td class="align-middle text-center text-sm">
+                        <p class="text-sm font-weight-bold mb-0">
+                            <span class="badge bg-gradient-warning badge-sm" id="badge-Pre-Alta">Pendiente</span>
+                        </p>
+                      </td>
+                      <td class="align-middle text-end">
+                        <div class="d-flex px-3 py-1 justify-content-center align-items-center">
+                        
+                          <button type="button" 
+                          class="btn btn-sm btn-icon-only btnDocs btn-rounded btn-outline-secondary mb-0 ms-2 btn-sm d-flex align-items-center justify-content-center ms-3" 
+                          data-bs-toggle="tooltip" id="btnFilePre-Alta"
+                          data-bs-placement="bottom" title="Cargar archivo" 
+                          data-bs-original-title="Cargar archivo">
+                            <i class="fas fa-upload" aria-hidden="true"></i>
+                          </button>
+                          <a href="javasrcipt:void()" target="_blank" class="openFile btn btn-sm btn-icon-only btn-rounded btn-outline-secondary mb-0 ms-2 btn-sm d-flex align-items-center justify-content-center ms-3" 
+                          data-bs-toggle="tooltip" 
+                          data-bs-placement="bottom" 
+                          title="Ver Documento" 
+                          data-bs-original-title="Ver Documento" id="btn-ver-Pre-Alta">
+                            <i class="fas fa-eye" aria-hidden="true"></i>
+</a>
+                        </div>
+                      </td>
+                    </tr>
+
+                    <tr>
+                      <td>
+                        <div class="d-flex px-3 py-1">
+                          <div>
+                            <img src="{{asset('img/not-file.png')}}" class="avatar me-3" alt="image" id="img-eir">
+                          </div>
+                          <div class="d-flex flex-column justify-content-center">
+                            <h6 class="mb-0 text-sm">EIR - Comprobante vacío</h6>
+                            <p class="text-sm font-weight-bold text-secondary mb-0">
+                                <span class="text-muted" id="filSize-eir">0</span>
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <p class="text-sm font-weight-bold mb-0">
+                        <input name="fecha_eir" id="fecha_eir" type="date" class="form-control" value="{{$cotizacion->fecha_eir}}">
+                            
+                        </p>
+                      </td>
+                      <td class="align-middle text-center text-sm">
+                        <p class="text-sm font-weight-bold mb-0">
+                            <span class="badge bg-gradient-warning badge-sm" id="badge-eir">Pendiente</span>
+                        </p>
+                      </td>
+                      <td class="align-middle text-end">
+                        <div class="d-flex px-3 py-1 justify-content-center align-items-center">
+                        
+                          <button type="button" 
+                          class="btn btn-sm btn-icon-only btnDocs btn-rounded btn-outline-secondary mb-0 ms-2 btn-sm d-flex align-items-center justify-content-center ms-3" 
+                          data-bs-toggle="tooltip" id="btnFileeir"
+                          data-bs-placement="bottom" title="Cargar archivo" 
+                          data-bs-original-title="Cargar archivo">
+                            <i class="fas fa-upload" aria-hidden="true"></i>
+                          </button>
+                          <a href="javasrcipt:void()" target="_blank" class="openFile btn btn-sm btn-icon-only btn-rounded btn-outline-secondary mb-0 ms-2 btn-sm d-flex align-items-center justify-content-center ms-3" 
+                          data-bs-toggle="tooltip" 
+                          data-bs-placement="bottom" 
+                          title="Ver Documento" 
+                          data-bs-original-title="Ver Documento" id="btn-ver-eir">
+                            <i class="fas fa-eye" aria-hidden="true"></i>
+</a>
+                        </div>
+                      </td>
+                    </tr>
                   </tbody>
                 </table>
                                         </div>
                                        
 
-                                        <div class="col-2">
-                                            <div class="form-group">
-                                                <label>¿Prealta?</label><br>
-                                                @if ($documentacion->boleta_vacio == 'si')
-                                                    <input class="form-check-input" type="radio" name="boleta_vacio" value="si" id="option_si" checked> Sí<br>
-                                                    <input class="form-check-input" type="radio" name="boleta_vacio" value="no" id="option_no"> No
-                                                @else
-                                                    <input class="form-check-input" type="radio" name="boleta_vacio" value="si" id="option_si"> Sí<br>
-                                                    <input class="form-check-input" type="radio" name="boleta_vacio" value="no" id="option_no" checked> No
-                                                @endif
-                                            </div>
-                                        </div>
+                                      
 
-                                        <div class="col-4">
-                                            @if ($documentacion->boleta_vacio == 'si')
-                                                <div class="form-group" id="inputField">
-                                            @else
-                                                <div class="form-group" id="inputField" style="display: none;">
-                                            @endif
-                                                <label for="input">Fecha Boleta Vacio:</label>
-                                                <div class="input-group mb-3">
-                                                    <span class="input-group-text" id="basic-addon1">
-                                                        <img src="{{ asset('img/icon/calendario.webp') }}" alt="" width="25px">
-                                                    </span>
-                                                    <input name="fecha_boleta_vacio" id="fecha_boleta_vacio" type="date" class="form-control" value="{{$documentacion->fecha_boleta_vacio}}">
-                                                </div>
-                                            </div>
-                                        </div>
+                                      
 
-                                        <div class="col-6">
-                                            @if ($documentacion->boleta_vacio == 'si')
-                                                <div class="form-group" id="inputFieldIMG">
-                                            @else
-                                                <div class="form-group" id="inputFieldIMG" style="display: none;">
-                                            @endif
-                                                <label for="input">IMG Boleta Vacio:</label>
-                                                <div class="input-group mb-3">
-                                                    <span class="input-group-text" id="basic-addon1">
-                                                        <img src="{{ asset('img/icon/calendario.webp') }}" alt="" width="25px">
-                                                    </span>
-                                                    <input name="img_boleta" id="img_boleta" type="file" class="form-control">
-                                                </div>
-                                            </div>
-                                        </div>
+                                      
 
-                                        <div class="col-6">
-                                            @if (pathinfo($cotizacion->img_boleta, PATHINFO_EXTENSION) == 'pdf')
-                                            <p class="text-center ">
-                                                <iframe class="mt-2" src="{{asset('cotizaciones/cotizacion'. $cotizacion->id . '/' .$cotizacion->img_boleta)}}" style="width: 100%; height: 50px;"></iframe>
-                                            </p>
-                                                    <a class="btn btn-sm text-dark" href="{{asset('cotizaciones/cotizacion'. $cotizacion->id . '/' .$cotizacion->img_boleta) }}" target="_blank" style="background: #836262; color: #ffff!important">Ver archivo</a>
-                                            @elseif (pathinfo($cotizacion->img_boleta, PATHINFO_EXTENSION) == 'doc')
-                                            <p class="text-center ">
-                                                <img id="blah" src="{{asset('/assets/icons/docx.png') }}" alt="Imagen" style="width: 150px; height: 150px;"/>
-                                            </p>
-                                                    <a class="btn btn-sm text-dark" href="{{asset('cotizaciones/cotizacion'. $cotizacion->id . '/' .$cotizacion->img_boleta) }}" target="_blank" style="background: #836262; color: #ffff!important">Descargar</a>
-                                            @elseif (pathinfo($cotizacion->img_boleta, PATHINFO_EXTENSION) == 'docx')
-                                            <p class="text-center ">
-                                                <img id="blah" src="{{asset('/assets/icons/docx.png') }}" alt="Imagen" style="width: 150px; height: 150px;"/>
-                                            </p>
-                                                    <a class="btn btn-sm text-dark" href="{{asset('cotizaciones/cotizacion'. $cotizacion->id . '/' .$cotizacion->img_boleta) }}" target="_blank" style="background: #836262; color: #ffff!important">Descargar</a>
-                                            @else
-                                                <p class="text-center mt-2">
-                                                    <img id="blah" src="{{asset('cotizaciones/cotizacion'. $cotizacion->id . '/' .$cotizacion->img_boleta) }}" alt="Imagen" style="width: 150px;height: 150%;"/><br>
-                                                </p>
-                                                    <a class="text-center text-dark btn btn-sm" href="{{asset('cotizaciones/cotizacion'. $cotizacion->id . '/' .$cotizacion->img_boleta) }}" target="_blank" style="background: #836262; color: #ffff!important">Ver Imagen</a>
-                                            @endif
-                                        </div>
+                                     
 
-                                        <div class="col-6"></div>
-
-                                        <div class="col-2">
-                                            <div class="form-group">
-                                                <label>Comprobante de vacio?</label><br>
-                                                @if ($documentacion->eir == 'si')
-                                                    <input class="form-check-input" type="radio" name="eir" value="si" id="eir_si" checked> Sí<br>
-                                                    <input class="form-check-input" type="radio" name="eir" value="no" id="eir_no"> No
-                                                @else
-                                                    <input class="form-check-input" type="radio" name="eir" value="si" id="eir_si"> Sí<br>
-                                                    <input class="form-check-input" type="radio" name="eir" value="no" id="eir_no" checked> No
-                                                @endif
-                                            </div>
-                                        </div>
-
-                                        <div class="col-4">
-                                            @if ($documentacion->eir == 'si')
-                                                <div class="form-group" id="inputEir">
-                                            @else
-                                                <div class="form-group" id="inputEir" style="display: none;">
-                                            @endif
-                                                <label for="input">Doc EIR:</label>
-                                                <div class="input-group mb-3">
-                                                    <span class="input-group-text" id="basic-addon1">
-                                                        <img src="{{ asset('img/icon/boleto.png') }}" alt="" width="25px">
-                                                    </span>
-                                                    <input name="doc_eir" id="doc_eir" type="file" class="form-control">
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div class="col-4">
-                                            @if ($documentacion->eir == 'si')
-                                                <div class="form-group" id="inputEirFecha">
-                                            @else
-                                                <div class="form-group" id="inputEirFecha" style="display: none;">
-                                            @endif
-                                                <label for="input">Fecha EIR:</label>
-                                                <div class="input-group mb-3">
-                                                    <span class="input-group-text" id="basic-addon1">
-                                                        <img src="{{ asset('img/icon/boleto.png') }}" alt="" width="25px">
-                                                    </span>
-                                                    <input name="fecha_eir" id="fecha_eir" type="date" class="form-control" value="{{$cotizacion->fecha_eir}}">
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div class="col-6">
-                                            @if (pathinfo($documentacion->doc_eir, PATHINFO_EXTENSION) == 'pdf')
-                                            <p class="text-center ">
-                                                <iframe class="mt-2" src="{{asset('cotizaciones/cotizacion'. $documentacion->id . '/' .$documentacion->doc_eir)}}" style="width: 100%; height: 50px;"></iframe>
-                                            </p>
-                                                    <a class="btn btn-sm text-dark" href="{{asset('cotizaciones/cotizacion'. $documentacion->id . '/' .$documentacion->doc_eir) }}" target="_blank" style="background: #836262; color: #ffff!important">Ver archivo</a>
-                                            @elseif (pathinfo($documentacion->doc_eir, PATHINFO_EXTENSION) == 'doc')
-                                            <p class="text-center ">
-                                                <img id="blah" src="{{asset('assets/icons/docx.png') }}" alt="Imagen" style="width: 150px; height: 150px;"/>
-                                            </p>
-                                                    <a class="btn btn-sm text-dark" href="{{asset('cotizaciones/cotizacion'. $documentacion->id . '/' .$documentacion->doc_eir) }}" target="_blank" style="background: #836262; color: #ffff!important">Descargar</a>
-                                            @elseif (pathinfo($documentacion->doc_eir, PATHINFO_EXTENSION) == 'docx')
-                                            <p class="text-center ">
-                                                <img id="blah" src="{{asset('assets/icons/docx.png') }}" alt="Imagen" style="width: 150px; height: 150px;"/>
-                                            </p>
-                                                    <a class="btn btn-sm text-dark" href="{{asset('cotizaciones/cotizacion'. $documentacion->id . '/' .$documentacion->doc_eir) }}" target="_blank" style="background: #836262; color: #ffff!important">Descargar</a>
-                                            @else
-                                                <p class="text-center mt-2">
-                                                    <img id="blah" src="{{asset('cotizaciones/cotizacion'. $documentacion->id . '/' .$documentacion->doc_eir) }}" alt="Imagen" style="width: 150px;height: 150%;"/><br>
-                                                </p>
-                                                    <a class="text-center text-dark btn btn-sm" href="{{asset('cotizaciones/cotizacion'. $documentacion->id . '/' .$documentacion->doc_eir) }}" target="_blank" style="background: #836262; color: #ffff!important">Ver Imagen</a>
-                                            @endif
-                                        </div>
+                                 
                                     </div>
                                 </div>
 
@@ -881,7 +900,7 @@
                                                 <span class="input-group-text" id="basic-addon1">
                                                     <img src="{{ asset('img/icon/monedas.webp') }}" alt="" width="25px">
                                                 </span>
-                                                <input type="text" id="txtTotalCotizacion" class="form-control" value="{{ $cotizacion->total }}" readonly>
+                                                <input type="text" id="txtTotalCotizacion" class="form-control total-cotizacion" value="{{ $cotizacion->total }}" readonly>
                                             </div>
                                         </div>
                                         <div class="col-4 form-group">
@@ -968,7 +987,7 @@
                                                     </div>
                                                 </div>
 
-                                                <div class="col-4 form-group">
+                                                <div class="col-3 form-group">
                                                     <label for="name">Sobrepeso</label>
                                                     <div class="input-group mb-3">
                                                         <span class="input-group-text" id="basic-addon1">
@@ -978,7 +997,7 @@
                                                     </div>
                                                 </div>
 
-                                                <div class="col-4 form-group">
+                                                <div class="col-3 form-group">
                                                     <label for="name">Precio Sobre Peso</label>
                                                     <div class="input-group mb-3">
                                                         <span class="input-group-text" id="basic-addon1">
@@ -988,7 +1007,7 @@
                                                     </div>
                                                 </div>
 
-                                                <div class="col-4 form-group">
+                                                <div class="col-3 form-group">
                                                     <label for="name">Total tonelada {{ ($cotizacion->sobrepeso)}}</label>
                                                     <div class="input-group mb-3">
                                                         <span class="input-group-text" id="basic-addon1">
@@ -1040,179 +1059,7 @@
                                                     </div>
                                                 </div>
 
-                                                <div class="row">
-                                                    <div class="col-12">
-                                                        <p class="d-inline-flex gap-1">
-                                                            <a class="btn btn-primary" data-bs-toggle="collapse" href="#collapseExample" role="button" aria-expanded="false" aria-controls="collapseExample">
-                                                             Agregar mas campos de Otros
-                                                            </a>
-
-                                                          </p>
-                                                          <div class="collapse row" id="collapseExample">
-
-                                                                <div class="col-3 form-group">
-                                                                    <label for="name">Otros 2 </label>
-                                                                    <div class="input-group mb-3">
-                                                                        <span class="input-group-text" id="basic-addon1">
-                                                                            <img src="{{ asset('img/icon/inventario.png.webp') }}" alt="" width="25px">
-                                                                        </span>
-                                                                        <input name="otro2" id="otro2" type="float" class="form-control" value="{{$documentacion->Asignaciones->otro2}}">
-                                                                    </div>
-                                                                </div>
-
-                                                                <div class="col-3 form-group">
-                                                                    <label for="name">Descripcion Otros 2</label>
-                                                                    <div class="input-group mb-3">
-                                                                        <span class="input-group-text" id="basic-addon1">
-                                                                            <img src="{{ asset('img/icon/edit.png') }}" alt="" width="25px">
-                                                                        </span>
-                                                                        <input name="descripcion_otro2" id="descripcion_otro2" type="text" class="form-control" value="{{$documentacion->Asignaciones->descripcion_otro2}}">
-                                                                    </div>
-                                                                </div>
-
-                                                                <div class="col-3 form-group">
-                                                                    <label for="name">Otros 3 </label>
-                                                                    <div class="input-group mb-3">
-                                                                        <span class="input-group-text" id="basic-addon1">
-                                                                            <img src="{{ asset('img/icon/inventario.png.webp') }}" alt="" width="25px">
-                                                                        </span>
-                                                                        <input name="otro3" id="otro3" type="float" class="form-control" value="{{$documentacion->Asignaciones->otro3}}">
-                                                                    </div>
-                                                                </div>
-
-                                                                <div class="col-3 form-group">
-                                                                    <label for="name">Descripcion Otros 3</label>
-                                                                    <div class="input-group mb-3">
-                                                                        <span class="input-group-text" id="basic-addon1">
-                                                                            <img src="{{ asset('img/icon/edit.png') }}" alt="" width="25px">
-                                                                        </span>
-                                                                        <input name="descripcion_otro3" id="descripcion_otro3" type="text" class="form-control" value="{{$documentacion->Asignaciones->descripcion_otro3}}">
-                                                                    </div>
-                                                                </div>
-
-                                                                <div class="col-3 form-group">
-                                                                    <label for="name">Otros 4 </label>
-                                                                    <div class="input-group mb-3">
-                                                                        <span class="input-group-text" id="basic-addon1">
-                                                                            <img src="{{ asset('img/icon/inventario.png.webp') }}" alt="" width="25px">
-                                                                        </span>
-                                                                        <input name="otro4" id="otro4" type="float" class="form-control" value="{{$documentacion->Asignaciones->otro4}}">
-                                                                    </div>
-                                                                </div>
-
-                                                                <div class="col-3 form-group">
-                                                                    <label for="name">Descripcion Otros 4</label>
-                                                                    <div class="input-group mb-3">
-                                                                        <span class="input-group-text" id="basic-addon1">
-                                                                            <img src="{{ asset('img/icon/edit.png') }}" alt="" width="25px">
-                                                                        </span>
-                                                                        <input name="descripcion_otro4" id="descripcion_otro4" type="text" class="form-control" value="{{$documentacion->Asignaciones->descripcion_otro4}}">
-                                                                    </div>
-                                                                </div>
-
-                                                                <div class="col-3 form-group">
-                                                                    <label for="name">Otros 5 </label>
-                                                                    <div class="input-group mb-3">
-                                                                        <span class="input-group-text" id="basic-addon1">
-                                                                            <img src="{{ asset('img/icon/inventario.png.webp') }}" alt="" width="25px">
-                                                                        </span>
-                                                                        <input name="otro5" id="otro5" type="float" class="form-control" value="{{$documentacion->Asignaciones->otro5}}">
-                                                                    </div>
-                                                                </div>
-
-                                                                <div class="col-3 form-group">
-                                                                    <label for="name">Descripcion Otros 5</label>
-                                                                    <div class="input-group mb-3">
-                                                                        <span class="input-group-text" id="basic-addon1">
-                                                                            <img src="{{ asset('img/icon/edit.png') }}" alt="" width="25px">
-                                                                        </span>
-                                                                        <input name="descripcion_otro5" id="descripcion_otro5" type="text" class="form-control" value="{{$documentacion->Asignaciones->descripcion_otro5}}">
-                                                                    </div>
-                                                                </div>
-
-                                                                <div class="col-3 form-group">
-                                                                    <label for="name">Otros 6 </label>
-                                                                    <div class="input-group mb-3">
-                                                                        <span class="input-group-text" id="basic-addon1">
-                                                                            <img src="{{ asset('img/icon/inventario.png.webp') }}" alt="" width="25px">
-                                                                        </span>
-                                                                        <input name="otro6" id="otro6" type="float" class="form-control" value="{{$documentacion->Asignaciones->otro6}}">
-                                                                    </div>
-                                                                </div>
-
-                                                                <div class="col-3 form-group">
-                                                                    <label for="name">Descripcion Otros 6</label>
-                                                                    <div class="input-group mb-3">
-                                                                        <span class="input-group-text" id="basic-addon1">
-                                                                            <img src="{{ asset('img/icon/edit.png') }}" alt="" width="25px">
-                                                                        </span>
-                                                                        <input name="descripcion_otro6" id="descripcion_otro6" type="text" class="form-control" value="{{$documentacion->Asignaciones->descripcion_otro6}}">
-                                                                    </div>
-                                                                </div>
-
-                                                                <div class="col-3 form-group">
-                                                                    <label for="name">Otros 7 </label>
-                                                                    <div class="input-group mb-3">
-                                                                        <span class="input-group-text" id="basic-addon1">
-                                                                            <img src="{{ asset('img/icon/inventario.png.webp') }}" alt="" width="25px">
-                                                                        </span>
-                                                                        <input name="otro7" id="otro7" type="float" class="form-control" value="{{$documentacion->Asignaciones->otro7}}">
-                                                                    </div>
-                                                                </div>
-
-                                                                <div class="col-3 form-group">
-                                                                    <label for="name">Descripcion Otros 7</label>
-                                                                    <div class="input-group mb-3">
-                                                                        <span class="input-group-text" id="basic-addon1">
-                                                                            <img src="{{ asset('img/icon/edit.png') }}" alt="" width="25px">
-                                                                        </span>
-                                                                        <input name="descripcion_otro7" id="descripcion_otro7" type="text" class="form-control" value="{{$documentacion->Asignaciones->descripcion_otro7}}">
-                                                                    </div>
-                                                                </div>
-
-                                                                <div class="col-3 form-group">
-                                                                    <label for="name">Otros 8 </label>
-                                                                    <div class="input-group mb-3">
-                                                                        <span class="input-group-text" id="basic-addon1">
-                                                                            <img src="{{ asset('img/icon/inventario.png.webp') }}" alt="" width="25px">
-                                                                        </span>
-                                                                        <input name="otro8" id="otro8" type="float" class="form-control" value="{{$documentacion->Asignaciones->otro8}}">
-                                                                    </div>
-                                                                </div>
-
-                                                                <div class="col-3 form-group">
-                                                                    <label for="name">Descripcion Otros 8</label>
-                                                                    <div class="input-group mb-3">
-                                                                        <span class="input-group-text" id="basic-addon1">
-                                                                            <img src="{{ asset('img/icon/edit.png') }}" alt="" width="25px">
-                                                                        </span>
-                                                                        <input name="descripcion_otro8" id="descripcion_otro8" type="text" class="form-control" value="{{$documentacion->Asignaciones->descripcion_otro8}}">
-                                                                    </div>
-                                                                </div>
-
-                                                                <div class="col-3 form-group">
-                                                                    <label for="name">Otros 9 </label>
-                                                                    <div class="input-group mb-3">
-                                                                        <span class="input-group-text" id="basic-addon1">
-                                                                            <img src="{{ asset('img/icon/inventario.png.webp') }}" alt="" width="25px">
-                                                                        </span>
-                                                                        <input name="otro9" id="otro9" type="float" class="form-control" value="{{$documentacion->Asignaciones->otro9}}">
-                                                                    </div>
-                                                                </div>
-
-                                                                <div class="col-3 form-group">
-                                                                    <label for="name">Descripcion Otros 9</label>
-                                                                    <div class="input-group mb-3">
-                                                                        <span class="input-group-text" id="basic-addon1">
-                                                                            <img src="{{ asset('img/icon/edit.png') }}" alt="" width="25px">
-                                                                        </span>
-                                                                        <input name="descripcion_otro10" id="descripcion_otro10" type="text" class="form-control" value="{{$documentacion->Asignaciones->descripcion_otro10}}">
-                                                                    </div>
-                                                                </div>
-
-                                                          </div>
-                                                    </div>
-                                                </div>
+                                             
 
                                                 <div class="col-4 form-group">
                                                     <label for="name">IVA</label>
@@ -1240,7 +1087,7 @@
                                                         <span class="input-group-text" id="basic-addon1">
                                                             <img src="{{ asset('img/icon/monedas.webp') }}" alt="" width="25px">
                                                         </span>
-                                                        <input name="total_proveedor" id="total_proveedor" type="text" class="form-control moneyformat calculo-proveedor" value="{{$documentacion->Asignaciones->total_proveedor}}" readonly>
+                                                        <input name="total_proveedor" id="total_proveedor" type="text" class="form-control moneyformat calculo-proveedor total-cotizacion-proveedor" value="{{$documentacion->Asignaciones->total_proveedor}}" readonly>
                                                     </div>
                                                 </div>
                                             </div>
@@ -1261,9 +1108,18 @@
                                                                 </div>
                                                             </div>
                                                             <div class="col-4 text-center">
-                                                               <button type="button" class="btn btn-sm bg-gradient-warning" id="btnPayment">
+                                                               
+                                                                <button type="button" class="btn btn-sm bg-gradient-info" id="btnEdit">
                                                                     <i class="fa fa-fw fa-coins"></i>
-                                                                    Pagar Pendientes
+                                                                    Editar
+                                                                </button>
+                                                                <button type="button" class="btn btn-sm bg-gradient-danger" id="btnDelete2">
+                                                                    <i class="fa fa-fw fa-trash"></i>
+                                                                    Eliminar
+                                                                </button>
+                                                                <button type="button" class="btn btn-sm bg-gradient-warning" id="btnPayment">
+                                                                    <i class="fa fa-fw fa-coins"></i>
+                                                                    Pagar
                                                                 </button>
                                                                 <button type="button" data-bs-toggle="modal" data-bs-target="#modal-gastos-operador" class="btn btn-sm bg-gradient-success" id="btnNuevoGasto">
                                                                 Registrar Gasto
@@ -1347,142 +1203,168 @@
     <script src="{{ asset('js/sgt/cotizaciones/cotizacion-gastos-operador.js') }}?v={{ filemtime(public_path('js/sgt/cotizaciones/cotizacion-gastos-operador.js')) }}"></script>
 
     <script src="{{ asset('js/sgt/cotizaciones/cotizacion-fileuploader.js') }}?v={{ filemtime(public_path('js/sgt/cotizaciones/cotizacion-fileuploader.js')) }}"></script>
-    
-    <script type="text/javascript">
-    $(document).ready(function() {
-    $('.cliente').select2();
-    getGastosContenedor();
-    getGastosOperador();
-    btnPaymentStatus();
+    <style>
+  .custom-nav-tabs {
+    display: flex;
+    width: 100%;
+    border-bottom: none;
+    gap: 0.3rem;
+  }
 
-    adjuntarDocumentos();
-    localStorage.setItem('numContenedor','{{$documentacion->num_contenedor}}'); 
+  .custom-nav-item {
+    flex: 1;
+    text-align: center;
+  }
 
-    getFilesContenedor();
+  .custom-nav-link {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 14px;
+    background-color: #f1f1f1;
+    color: #999;
+    border-radius: 12px 12px 0 0;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 0.3s ease;
+  }
+
+  .custom-nav-link i {
+    font-size: 20px;
+    color: inherit !important;
+  }
+
+  .custom-nav-link h6 {
+    margin: 2px 0 0;
+    font-size: 1rem;
+    font-weight: 500;
+    color: inherit;
+  }
+
+  .custom-nav-link.active {
+    background-color: #fff;
+    color: #111;
+    border: 1px solid #0d6efd; /* más delgado */
+    border-bottom: 2px solid #fff;
+   
+    transform: scale(1.02);
+    z-index: 1;
+  }
+
+  .custom-nav-link.active h6 {
+    font-weight: 600; /* negrita */
+  }
+
+  .custom-nav-link:not(.active) i {
+    color: #bbb;
+  }
+
+  .custom-nav-link:not(.active) h6 {
+    color: #aaa;
+  }
+
+  .custom-nav-radio {
+    display: none;
+  }
+</style>
+<style>
+  .option-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    max-width: 100%;
+  }
+
+  .custom-option {
+    position: relative;
+    display: flex;
+    align-items: center;
+    border: 1px dashed #ccc;
+    border-radius: 8px;
+    padding: 12px 16px;
+    min-height: 79px;
+    flex: 1 1 200px;
+    cursor: pointer;
+    transition: background-color 0.2s, border-color 0.2s;
+  }
+
+  .custom-option input[type="radio"] {
+    display: none;
+  }
+
+  .custom-option .icon {
+    margin-right: 16px;
+    font-size: 24px;
+    color: #ccc;
+    flex-shrink: 0;
+    transition: color 0.2s;
+  }
+
+  .custom-option .text {
+    font-size: 1rem;
+    color: #333;
+  }
+
+  .custom-option.selected {
+    background-color: #e6f4ff;
+    border-color: #007BFF;
+  }
+
+  .custom-option.selected .icon {
+    color: #007BFF;
+  }
+
+  .check-icon {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  background-color: #a5dc86;
+  border-radius: 50%;
+  padding: 4px;
+  font-size: 14px;
+  color: white;
+  display: none;
+}
+
+  .custom-option.selected .check-icon {
+    display: inline-block;
+  }
+</style>
+<script>
+  // JavaScript para manejar la clase 'active'
+  const radios = document.querySelectorAll('.custom-nav-radio');
+  const links = document.querySelectorAll('.custom-nav-link');
+
+  radios.forEach((radio, index) => {
+    radio.addEventListener('change', () => {
+      links.forEach((link) => link.classList.remove('active')); // Remover la clase active de todos
+      links[index].classList.add('active'); 
+      let Contenedor = radios[index].value
+      showInfoContenedor(Contenedor)
     });
-    </script>
+  });
+
+ 
+</script>
 
     <script type="text/javascript">
-        // ============= Agregar mas inputs dinamicamente =============
-        $('.clonar').click(function() {
-        // Clona el .input-group
-        var $clone = $('#formulario .clonars').last().clone();
+    $(document).ready(async function() {
+        $('.cliente').select2();
+        getGastosContenedor();
+        getGastosOperador();
+        btnPaymentStatus();
 
-        // Borra los valores de los inputs clonados
-        $clone.find(':input').each(function () {
-            if ($(this).is('select')) {
-            this.selectedIndex = 0;
-            } else {
-            this.value = '';
-            }
-        });
+        adjuntarDocumentos();
+        localStorage.setItem('numContenedor','{{$documentacion->num_contenedor}}'); 
+        await getContenedoresOnFull()
+       // showInfoContenedor('Contenedor-A')
+      
+        getFilesContenedor();
+    });
 
-        // Agrega lo clonado al final del #formulario
-        $clone.appendTo('#formulario');
-        });
-
-    </script>
-
-    <script>
-        // ============= Agregar mas inputs dinamicamente =============
-        $('.clonar2').click(function() {
-        // Clona el .input-group
-        var $clone = $('#formulario2 .clonars2').last().clone();
-
-        // Borra los valores de los inputs clonados
-        $clone.find(':input').each(function () {
-            if ($(this).is('select')) {
-            this.selectedIndex = 0;
-            } else {
-            this.value = '';
-            }
-        });
-
-        // Agrega lo clonado al final del #formulario2
-        $clone.appendTo('#formulario2');
-        });
-    </script>
-
-    <script>
-         document.addEventListener('DOMContentLoaded', function () {
-            // Obtener referencias a los elementos
-            var optionSi = document.getElementById('option_si_ccp');
-            var optionNo = document.getElementById('option_no_ccp');
-            var inputFieldIMG = document.getElementById('inputFieldccp');
-
-            // Función para controlar la visibilidad del campo de entrada
-            function toggleInputField() {
-                // Si el radio button "Sí" está seleccionado, mostrar el campo de entrada
-                if (optionSi.checked) {
-                    inputFieldIMG.style.display = 'block';
-                } else {
-                    inputFieldIMG.style.display = 'none';
-                }
-            }
-
-            // Agregar eventos change a los radio buttons
-            optionSi.addEventListener('change', toggleInputField);
-            optionNo.addEventListener('change', toggleInputField);
-
-            // Llamar a la función inicialmente para asegurarse de que el campo se oculte o muestre correctamente
-            toggleInputField();
-        });
-
-        document.addEventListener('DOMContentLoaded', function () {
-            // Obtener referencias a los elementos
-            var optionSi = document.getElementById('option_si');
-            var optionNo = document.getElementById('option_no');
-            var inputField = document.getElementById('inputField');
-            var inputFieldIMG = document.getElementById('inputFieldIMG');
-
-            // Función para controlar la visibilidad del campo de entrada
-            function toggleInputField() {
-                // Si el radio button "Sí" está seleccionado, mostrar el campo de entrada
-                if (optionSi.checked) {
-                    inputField.style.display = 'block';
-                    inputFieldIMG.style.display = 'block';
-                } else {
-                    inputField.style.display = 'none';
-                    inputFieldIMG.style.display = 'none';
-                }
-            }
-
-            // Agregar eventos change a los radio buttons
-            optionSi.addEventListener('change', toggleInputField);
-            optionNo.addEventListener('change', toggleInputField);
-
-            // Llamar a la función inicialmente para asegurarse de que el campo se oculte o muestre correctamente
-            toggleInputField();
-        });
-
-        document.addEventListener('DOMContentLoaded', function () {
-            // Obtener referencias a los elementos
-            var eirSi = document.getElementById('eir_si');
-            var eirNo = document.getElementById('eir_no');
-            var inputEir = document.getElementById('inputEir');
-            var inputEirFecha = document.getElementById('inputEirFecha');
-
-            // Función para controlar la visibilidad del campo de entrada
-            function toggleInputEir() {
-                // Si el radio button "Sí" está seleccionado, mostrar el campo de entrada
-                if (eirSi.checked) {
-                    inputEir.style.display = 'block';
-                    inputEirFecha.style.display = 'block';
-                } else {
-                    inputEir.style.display = 'none';
-                    inputEirFecha.style.display = 'none';
-                }
-            }
-
-            // Agregar eventos change a los radio buttons
-            eirSi.addEventListener('change', toggleInputEir);
-            eirNo.addEventListener('change', toggleInputEir);
-
-            // Llamar a la función inicialmente para asegurarse de que el campo se oculte o muestre correctamente
-            toggleInputEir();
-        });
-
-        $(document).ready(function() {
+    $(document).ready(function() {
             function loadSubclientes(clienteId, selectedSubclienteId = null) {
                 if (clienteId) {
                     $.ajax({
@@ -1517,14 +1399,10 @@
             var initialSubclienteId = '{{ $cotizacion->id_subcliente }}';
             loadSubclientes(initialClienteId, initialSubclienteId);
         });
-    </script>
 
-    
-
-    <script>
         $(document).ready(()=>{
             
-            calcularTotal()
+            sobrePesoViaje()
 
             formFields.forEach((item) =>{
                 if(item.type == "money") {
@@ -1547,10 +1425,9 @@
 
            
         })
-    </script>
 
-<script>
         document.addEventListener('DOMContentLoaded', function () {
+            
             let condicionRecinto = document.querySelectorAll('.recinto');
             let inputRecinto = document.querySelector('#input-recinto');
             let textRecinto = document.querySelector('#text_recinto');
@@ -1561,11 +1438,7 @@
                     inputRecinto.classList.toggle('d-none',elemento.attributes['data-kt-plan'].value != 'recinto-si') 
                     textRecinto.value = (elemento.attributes['data-kt-plan'].value != 'recinto-si') ? '' : 'recinto-si';
                 });
-                
-          
-              
-               //elemento.classList.toggle('active',elemento.attributes['data-kt-plan'].value == 'recinto-si' && '{{$cotizacion->uso_recinto}}' == 1) 
-
+             
 
             });
         });

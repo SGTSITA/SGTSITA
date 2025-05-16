@@ -1,3 +1,44 @@
+const localeText = {
+    page: 'Página',
+    more: 'Más',
+    to: 'a',
+    of: 'de',
+    next: 'Siguiente',
+    last: 'Último',
+    first: 'Primero',
+    previous: 'Anterior',
+    loadingOoo: 'Cargando...',
+    selectAll: 'Seleccionar todo',
+    searchOoo: 'Buscar...',
+    blanks: 'Vacíos',
+    filterOoo: 'Filtrar...',
+    applyFilter: 'Aplicar filtro...',
+    equals: 'Igual',
+    notEqual: 'Distinto',
+    lessThan: 'Menor que',
+    greaterThan: 'Mayor que',
+    contains: 'Contiene',
+    notContains: 'No contiene',
+    startsWith: 'Empieza con',
+    endsWith: 'Termina con',
+    andCondition: 'Y',
+    orCondition: 'O',
+    group: 'Grupo',
+    columns: 'Columnas',
+    filters: 'Filtros',
+    pivotMode: 'Modo Pivote',
+    groups: 'Grupos',
+    values: 'Valores',
+    noRowsToShow: 'Sin filas para mostrar',
+    pinColumn: 'Fijar columna',
+    autosizeThiscolumn: 'Ajustar columna',
+    copy: 'Copiar',
+    resetColumns: 'Restablecer columnas',
+    blank: 'Vacíos',
+    notBlank: 'No Vacíos',
+    paginationPageSize: 'Registros por página'
+  };
+
 document.addEventListener("DOMContentLoaded", function () {
     let gridApi;
     let currentTab = "planeadas";
@@ -13,12 +54,33 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     const columnDefs = [
-        { headerCheckboxSelection: true, checkboxSelection: true, width: 50 },
-        { headerName: "No", field: "id", sortable: true, filter: true },
-        { headerName: "Cliente", field: "cliente", sortable: true, filter: true },
-        { headerName: "Origen", field: "origen", sortable: true, filter: true },
-        { headerName: "Destino", field: "destino", sortable: true, filter: true },
-        { headerName: "# Contenedor", field: "contenedor", sortable: true, filter: true },
+        { headerCheckboxSelection: true, checkboxSelection: true, width: 30 },
+        { headerName: "No", field: "id", sortable: true, filter: true , hide: true},
+        { headerName: "Tipo Viaje", field: "tipo", sortable: true, filter: true , hide: true},
+        { headerName: "Cliente", field: "cliente", sortable: true, filter: true, minWidth: 150 },
+        {   headerName: "# Contenedor", 
+            field: "contenedor", 
+            sortable: true, 
+            filter: true, 
+            minWidth: 150 ,
+            autoHeight: true, // Permite que la fila se ajuste en altura
+            cellStyle:params => {
+                const styles = {
+                  'white-space': 'normal',
+                  'line-height': '1.5',
+                };
+            
+                // Si la cotización es tipo "Full", aplicar fondo 
+                if (params.data.tipo === 'Full') {
+                  styles['background-color'] = '#ffe5b4'; 
+                }
+            
+                return styles;
+              },
+        },
+        { headerName: "Origen", field: "origen", sortable: true, filter: true, minWidth: 150  },
+        { headerName: "Destino", field: "destino", sortable: true, filter: true, minWidth: 150  },
+        
         {
             headerName: "Estatus",
             field: "estatus",
@@ -134,13 +196,16 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const gridOptions = {
         columnDefs: columnDefs,
+        domLayout: 'autoHeight', 
         pagination: true,
-        paginationPageSize: 100,
+        paginationPageSize: 10,
+        paginationPageSizeSelector: [10, 50, 100],
         rowSelection: "multiple",
         defaultColDef: {
             resizable: true,
             flex: 1
         },
+        localeText: localeText
     };
 
     const myGridElement = document.querySelector("#myGrid");
