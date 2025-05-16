@@ -77,6 +77,7 @@ Route::post('coordenadas/cotizaciones/mail-coordenadas', [App\Http\Controllers\C
 Route::post('coordenadas/compartir/save', [App\Http\Controllers\CoordenadasController::class, 'store'])->name('guardar.CoordenadaCompartir');
 Route::post('coordenadas/guardarresp', [App\Http\Controllers\CoordenadasController::class, 'guardarRespuesta'])->name('guardar.respuestaCoordenada');
 Route::get('coordenadas/mapas', [App\Http\Controllers\CoordenadasController::class, 'indexMapa'])->name('ver.coordenadamapa');
+Route::get('coordenadas/busqueda', [App\Http\Controllers\CoordenadasController::class, 'indexSeach'])->name('seach.coordenadas');
 Route::get('/coordenadas/contenedor/search', [App\Http\Controllers\CoordenadasController::class, 'getcoorcontenedor'])->name('getcoorcontenedor');
 
 //R
@@ -227,6 +228,7 @@ Route::post('operadores/{id}/restaurar', [App\Http\Controllers\OperadorControlle
 
     // ==================== B A N C O S ====================
 
+
     Route::group(['prefix'=>'bancos','middleware' => 'finanzas:3'],function(){
         Route::get('/', [App\Http\Controllers\BancosController::class, 'index'])->name('index.bancos')->middleware('finanzas:3');
         Route::post('/create', [App\Http\Controllers\BancosController::class, 'store'])->name('store.bancos');
@@ -239,8 +241,10 @@ Route::post('operadores/{id}/restaurar', [App\Http\Controllers\OperadorControlle
         Route::get('/imprimir/{id}', [App\Http\Controllers\BancosController::class, 'pdf'])->name('pdf.print_banco');
         Route::get('/buscador/{id}', [App\Http\Controllers\BancosController::class, 'advance_bancos'])->name('advance_bancos.buscador');
         Route::put('/bancos/{id}/estado', [App\Http\Controllers\BancosController::class, 'cambiarEstado'])->name('bancos.estado');
+        Route::post('/cambiar-cuenta-global/{id}', [App\Http\Controllers\BancosController::class, 'cambiarCuentaGlobal'])->name('bancos.cambiarCuentaGlobal');
     });
    
+
     // ==================== C U E N T A S  P O R  C O B R A R ====================
     Route::get('cuentas/cobrar', [App\Http\Controllers\CuentasCobrarController::class, 'index'])->name('index.cobrar');
    // Route::get('cuentas/cobrar/show/{id}', [App\Http\Controllers\CuentasCobrarController::class, 'show'])->name('show.cobrar');
