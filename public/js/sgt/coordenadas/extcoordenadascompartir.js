@@ -543,7 +543,9 @@ function cambiarTab(tabId) {
     }
 }
 
-function mostrarTab(tab) {
+function mostrarTab(tab, event) {
+    event.preventDefault();
+
     // Ocultar ambos
     document.getElementById('tab-mail').style.display = 'none';
     document.getElementById('tab-whatsapp').style.display = 'none';
@@ -556,7 +558,7 @@ function mostrarTab(tab) {
     document.getElementById(`tab-${tab}`).style.display = 'block';
 
     // Activar tab
-    document.querySelector(`.nav-link[href="#"][onclick*="${tab}"]`).classList.add('active');
+    event.currentTarget.classList.add('active');
 }
 
 function cerrarModal() {
