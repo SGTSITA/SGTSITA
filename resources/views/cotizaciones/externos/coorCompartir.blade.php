@@ -32,10 +32,12 @@
       <ul class="nav nav-tabs mb-3">
         
         <li class="nav-item">
-          <a class="nav-link active" href="#" onclick="mostrarTab('mail')">📧 Mail</a>
+            <a href="#" class="nav-link active" onclick="mostrarTab('mail', event)">📧 Mail</a>
+          <!-- <a class="nav-link active" href="#" onclick="mostrarTab('mail')"></a> -->
         </li>
         <li class="nav-item">
-          <a class="nav-link" href="#" onclick="mostrarTab('whatsapp')">📲 WhatsApp</a>
+            <a href="#" class="nav-link" onclick="mostrarTab('whatsapp', event)">📲 WhatsApp</a>
+          <!-- <a class="nav-link" href="#" onclick="mostrarTab('whatsapp')">📲 WhatsApp</a> -->
         </li>
       </ul>
    
