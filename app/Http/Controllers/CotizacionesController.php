@@ -592,7 +592,7 @@ public function getCotizacionesCanceladas()
                 $total = str_replace(',', '', $request->get('total'));
             }
         }else{
-            $cotizaciones->precio_tonelada = $request->get('precio_tonelada');
+            $cotizaciones->precio_tonelada = $request->get('precio_tonelada') ?? 0;
             $total = 0;
         }
 
