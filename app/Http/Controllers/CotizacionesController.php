@@ -583,10 +583,10 @@ public function getCotizacionesCanceladas()
         $cotizaciones->base_factura = $request->get('base_factura');
         $cotizaciones->base_taref = $request->get('base_taref');
         $cotizaciones->recinto_clientes = $request->get('recinto_clientes');
-        $cotizaciones->precio_tonelada = $request->get('precio_tonelada') ?? 0;
+        $cotizaciones->precio_tonelada = 0;
 
         if($request->get('id_cliente_clientes') == NULL){
-            $precio_tonelada = str_replace(',', '', $request->get('precio_tonelada'));
+            $precio_tonelada = 0;
             $cotizaciones->precio_tonelada = $precio_tonelada;
 
             if($request->get('total') == NULL){
@@ -595,7 +595,7 @@ public function getCotizacionesCanceladas()
                 $total = str_replace(',', '', $request->get('total'));
             }
         }else{
-            $cotizaciones->precio_tonelada = $request->get('precio_tonelada') ?? 0;
+            $cotizaciones->precio_tonelada = 0;
             $total = 0;
         }
 
