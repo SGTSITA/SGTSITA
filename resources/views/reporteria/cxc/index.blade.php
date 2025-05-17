@@ -108,6 +108,7 @@
                                                     width="25px">Destino</th>
                                             <th><img src="{{ asset('img/icon/contenedor.png') }}" alt=""
                                                     width="25px"># Contenedor</th>
+                                            <th>Tipo</th>
                                             <th><img src="{{ asset('img/icon/semaforos.webp') }}" alt=""
                                                     width="25px">Estatus</th>
                                         </tr>
@@ -128,7 +129,20 @@
                                                     <td>{{ $cotizacion->Subcliente->nombre ?? '-' }}</td>
                                                     <td>{{ $cotizacion->origen }}</td>
                                                     <td>{{ $cotizacion->destino }}</td>
-                                                    <td>{{ $cotizacion->DocCotizacion->num_contenedor }}</td>
+                                                    @php
+                                                        $numContenedor =
+                                                            $cotizacion->DocCotizacion->num_contenedor ?? '';
+                                                        if (
+                                                            $cotizacion->jerarquia === 'Principal' &&
+                                                            $cotizacion->referencia_full
+                                                        ) {
+                                                            $numContenedor .= ' / ' . $cotizacion->referencia_full;
+                                                        }
+                                                    @endphp
+                                                    <td>{{ $numContenedor }}</td>
+                                                    <td>{{ $cotizacion->jerarquia === 'Principal' && $cotizacion->referencia_full ? 'Full' : 'Sencillo' }}
+                                                    </td>
+
                                                     <td>
                                                         @can('cotizaciones-estatus')
                                                             <button type="button"
