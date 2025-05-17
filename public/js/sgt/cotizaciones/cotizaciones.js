@@ -2,7 +2,7 @@ const tasa_iva = 0.16;
 const tasa_retencion = 0.04;
 const catalogo_clientes = document.querySelector("#txtClientes");
 const formCotizacion = document.querySelector('#cotizacionCreateMultiple')
-const frmMode = formCotizacion.getAttribute("sgt-cotizacion-action");
+const frmMode = (formCotizacion) ? formCotizacion.getAttribute("sgt-cotizacion-action") : null;
 
 const formFields = [
     {'field':'origen', 'id':'origen','label':'Origen','required': true, "type":"text", "master": true},

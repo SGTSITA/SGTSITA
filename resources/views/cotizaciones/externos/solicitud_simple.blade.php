@@ -15,7 +15,7 @@
       </div>
       <div class="card-body">
         <div class="timeline timeline-border-dashed">
-          <form method="POST" action="{{ route('store.cotizaciones') }}" id="cotizacionCreate" enctype="multipart/form-data" role="form">
+          <form method="POST" action="{{ route('store.cotizaciones') }}" sgt-cotizacion-action="crear" id="cotizacionCreate" enctype="multipart/form-data" role="form">
             @csrf
             <input type="hidden" value="{{Auth::User()->id_cliente}}" name="id_cliente" id="id_cliente"> 
             @include('cotizaciones.externos.datos_generales') 
