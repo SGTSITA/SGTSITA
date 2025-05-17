@@ -147,6 +147,7 @@
                 <th style="padding: 2px; border: 1px solid #000;">Peso</th>
                 <th style="padding: 2px; border: 1px solid #000;">Tam. Cont.</th>
                 <th style="padding: 2px; border: 1px solid #000;">Burreo</th>
+                <th style="padding: 2px; border: 1px solid #000;">Maniobra</th>
                 <th style="padding: 2px; border: 1px solid #000;">Estadia</th>
                 <th style="padding: 2px; border: 1px solid #000;">Sobre peso</th>
                 <th style="padding: 2px; border: 1px solid #000;">Otro</th>
@@ -181,8 +182,14 @@
                     </td>
                     <td style="padding: 2px; border: 1px solid #000;">
                         {{ optional($cotizacion->DocCotizacion->Asignaciones->Proveedor)->nombre ?? '-' }}</td>
-                    <td style="padding: 2px; border: 1px solid #000;">{{ $cotizacion->DocCotizacion->num_contenedor }}
-                    </td>
+                    @php
+                        $numContenedor = $cotizacion->DocCotizacion->num_contenedor ?? '';
+                        if ($cotizacion->jerarquia === 'Principal' && $cotizacion->referencia_full) {
+                            $numContenedor .= ' / ' . $cotizacion->referencia_full;
+                        }
+                    @endphp
+                    <td style="padding: 2px; border: 1px solid #000;">{{ $numContenedor }}</td>
+
                     <td style="padding: 2px; border: 1px solid #000; color: #020202; background: yellow;">
                         {{ $cotizacion->id_subcliente && $cotizacion->Subcliente ? $cotizacion->Subcliente->nombre : 'N/A' }}
                     </td>
@@ -194,6 +201,8 @@
                         {{ number_format($cotizacion->burreo, 2, '.', ',') }}</td>
                     <td style="padding: 2px; border: 1px solid #000;">$
                         {{ number_format($cotizacion->maniobra, 2, '.', ',') }}</td>
+                    <td style="padding: 2px; border: 1px solid #000;">
+                        ${{ number_format($cotizacion->estadia, 2, '.', ',') }}</td>
                     <td style="padding: 2px; border: 1px solid #000;">$
                         {{ number_format($cotizacion->precio_tonelada, 2, '.', ',') }}</td>
                     <td style="padding: 2px; border: 1px solid #000;">$
