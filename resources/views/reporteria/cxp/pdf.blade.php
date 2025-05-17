@@ -182,7 +182,19 @@
                 <tr>
                     <td>{{ optional($item->Contenedor->Cotizacion->Subcliente)->nombre ?? 'N/A' }}
                     </td>
-                    <td>{{ $item->Contenedor->num_contenedor }}</td>
+                    @php
+                        $numContenedor = optional($item->Contenedor)->num_contenedor ?? '';
+                        $cot = optional($item->Contenedor)->Cotizacion;
+
+                        if ($cot && $cot->jerarquia === 'Principal' && $cot->referencia_full) {
+                            $sec = \App\Models\Cotizaciones::find($cot->referencia_full);
+                            $numContSec = optional($sec->DocCotizacion)->num_contenedor;
+                            if ($numContSec) {
+                                $numContenedor .= ' / ' . $numContSec;
+                            }
+                        }
+                    @endphp
+                    <td>{{ $numContenedor }}</td>
                     <td>${{ number_format($suma_importeCT, 2, '.', ',') }}</td>
                     <td>${{ number_format($total_oficial, 2, '.', ',') }}</td>
                     <td>${{ number_format($base_factura, 2, '.', ',') }}</td>

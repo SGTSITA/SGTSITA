@@ -119,7 +119,33 @@
                                                     <td>{{ $cotizacion->id }}</td>
                                                     <td>{{ $cotizacion->origen }}</td>
                                                     <td>{{ $cotizacion->destino }}</td>
-                                                    <td>{{ $cotizacion->num_contenedor }}</td>
+                                                    @php
+                                                        $cotizacionOriginal = \App\Models\Cotizaciones::find(
+                                                            $cotizacion->id_cotizacion,
+                                                        );
+                                                        $numContenedor = $cotizacion->num_contenedor ?? '';
+
+                                                        if (
+                                                            $cotizacionOriginal &&
+                                                            $cotizacionOriginal->jerarquia === 'Principal' &&
+                                                            $cotizacionOriginal->referencia_full
+                                                        ) {
+                                                            $cotSecundaria = \App\Models\Cotizaciones::with(
+                                                                'DocCotizacion',
+                                                            )
+                                                                ->where('id', $cotizacionOriginal->referencia_full)
+                                                                ->first();
+
+                                                            $contenedorSec = optional($cotSecundaria->DocCotizacion)
+                                                                ->num_contenedor;
+
+                                                            if ($contenedorSec) {
+                                                                $numContenedor .= ' / ' . $contenedorSec;
+                                                            }
+                                                        }
+                                                    @endphp
+
+                                                    <td>{{ $numContenedor }}</td>
 
                                                     <td>
                                                         @can('cotizaciones-estatus')

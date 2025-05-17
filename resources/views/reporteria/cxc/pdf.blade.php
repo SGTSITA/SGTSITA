@@ -184,11 +184,17 @@
                         {{ optional($cotizacion->DocCotizacion->Asignaciones->Proveedor)->nombre ?? '-' }}</td>
                     @php
                         $numContenedor = $cotizacion->DocCotizacion->num_contenedor ?? '';
+
                         if ($cotizacion->jerarquia === 'Principal' && $cotizacion->referencia_full) {
-                            $numContenedor .= ' / ' . $cotizacion->referencia_full;
+                            $cotSecundaria = \App\Models\Cotizaciones::find($cotizacion->referencia_full);
+                            $contenedorSec = optional($cotSecundaria->DocCotizacion)->num_contenedor;
+                            if ($contenedorSec) {
+                                $numContenedor .= ' / ' . $contenedorSec;
+                            }
                         }
                     @endphp
                     <td style="padding: 2px; border: 1px solid #000;">{{ $numContenedor }}</td>
+
 
                     <td style="padding: 2px; border: 1px solid #000; color: #020202; background: yellow;">
                         {{ $cotizacion->id_subcliente && $cotizacion->Subcliente ? $cotizacion->Subcliente->nombre : 'N/A' }}
