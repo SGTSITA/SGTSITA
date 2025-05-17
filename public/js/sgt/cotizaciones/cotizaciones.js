@@ -49,6 +49,8 @@ const editFormFields = [
     {'field':'fecha_entrega', 'id':'fecha_entrega','label':'Fecha Entrega','required': false, "type":"text", "master": false},  
     {'field':'fecha_eir', 'id':'fecha_eir','label':'Fecha EIR','required': false, "type":"text", "master": false},  
     {'field':'total', 'id':'total','label':'Total + Gastos','required': false, "type":"money", "master": false}, 
+    {'field':'direccion_entrega', 'id':'direccion_entrega','label':'Dirección de entrega','required': false, "type":"text", "master": false}, 
+    
 ]
 
 let Contenedores = [];
