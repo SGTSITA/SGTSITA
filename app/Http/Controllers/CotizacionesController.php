@@ -854,7 +854,7 @@ public function getCotizacionesCanceladas()
             $cotizaciones->id_subcliente = $request->id_subcliente;
             $cotizaciones->origen = $request->origen;
             $cotizaciones->destino = $request->destino;
-            $cotizaciones->direccion_entrega = $request->direccion_entrega;
+            $cotizaciones->direccion_entrega = $contenedor['direccion_entrega'];
             $cotizaciones->uso_recinto = ($request->text_recinto == 'recinto-si') ? 1 : 0;
             $cotizaciones->direccion_recinto = $request->direccion_recinto ;
             $cotizaciones->burreo = $request->burreo;
