@@ -119,7 +119,17 @@
                                                     <td>{{ $cotizacion->id }}</td>
                                                     <td>{{ $cotizacion->origen }}</td>
                                                     <td>{{ $cotizacion->destino }}</td>
-                                                    <td>{{ $cotizacion->num_contenedor }}</td>
+                                                    @php
+                                                        $numContenedor = $cotizacion->num_contenedor ?? '';
+                                                        if (
+                                                            $cotizacion->jerarquia === 'Principal' &&
+                                                            $cotizacion->referencia_full
+                                                        ) {
+                                                            $numContenedor .= ' / ' . $cotizacion->referencia_full;
+                                                        }
+                                                    @endphp
+                                                    <td>{{ $numContenedor }}</td>
+
 
                                                     <td>
                                                         @can('cotizaciones-estatus')
