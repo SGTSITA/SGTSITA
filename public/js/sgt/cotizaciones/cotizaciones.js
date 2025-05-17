@@ -75,6 +75,7 @@ const formFieldsFacturacion = [
 ]
 
 const formFieldsProveedor = [
+    {'field':'id_proveedor','id':'id_proveedor','label':'Proveedor','required': true, "type":"text"},
     {'field':'precio_viaje','id':'precio_proveedor','label':'Costo Viaje','required': true, "type":"money"},
     {'field':'burreo','id':'burreo_proveedor','label':'Burreo Proveedor','required': true, "type":"money"},
     {'field':'maniobra','id':'maniobra_proveedor','label':'Maniobra Proveedor','required': true, "type":"money"},

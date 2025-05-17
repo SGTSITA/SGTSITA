@@ -913,7 +913,7 @@ public function getCotizacionesCanceladas()
                 $asignacion->iva = $request->get('iva_proveedor');
                 $asignacion->retencion = $request->get('retencion_proveedor');
                 $asignacion->total_proveedor = $request->get('total_proveedor');
-              //  $asignacion->id_proveedor = $request->id_proveedor;
+                $asignacion->id_proveedor = $request->id_proveedor;
                 $asignacion->update();
             }
 
