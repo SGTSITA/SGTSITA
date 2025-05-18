@@ -130,23 +130,20 @@
                                                             $cotizacionOriginal->jerarquia === 'Principal' &&
                                                             $cotizacionOriginal->referencia_full
                                                         ) {
-                                                            $cotSecundaria = \App\Models\Cotizaciones::with(
-                                                                'DocCotizacion',
-                                                            )
-                                                                ->where('id', $cotizacionOriginal->referencia_full)
-                                                                ->first();
-
-                                                            $contenedorSec = optional($cotSecundaria->DocCotizacion)
-                                                                ->num_contenedor;
+                                                            $contenedorSec = optional(
+                                                                optional(
+                                                                    \App\Models\Cotizaciones::find(
+                                                                        $cotizacionOriginal->referencia_full,
+                                                                    ),
+                                                                )->DocCotizacion,
+                                                            )->num_contenedor;
 
                                                             if ($contenedorSec) {
                                                                 $numContenedor .= ' / ' . $contenedorSec;
                                                             }
                                                         }
                                                     @endphp
-
                                                     <td>{{ $numContenedor }}</td>
-
                                                     <td>
                                                         @can('cotizaciones-estatus')
                                                             @if ($cotizacion->estatus == 'Aprobada')

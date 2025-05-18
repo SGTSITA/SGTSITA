@@ -130,24 +130,29 @@
                                                     <td>{{ $cotizacion->origen }}</td>
                                                     <td>{{ $cotizacion->destino }}</td>
                                                     @php
+                                                        // Evitar error si no existe DocCotizacion
                                                         $numContenedor =
-                                                            $cotizacion->DocCotizacion->num_contenedor ?? '';
+                                                            optional($cotizacion->DocCotizacion)->num_contenedor ?? '';
 
                                                         if (
                                                             $cotizacion->jerarquia === 'Principal' &&
                                                             $cotizacion->referencia_full
                                                         ) {
-                                                            $cotSecundaria = \App\Models\Cotizaciones::find(
-                                                                $cotizacion->referencia_full,
-                                                            ); // buscar por ID UUID
+                                                            $cotSecundaria = \App\Models\Cotizaciones::with(
+                                                                'DocCotizacion',
+                                                            )->find($cotizacion->referencia_full);
+
                                                             $contenedorSec = optional($cotSecundaria->DocCotizacion)
                                                                 ->num_contenedor;
+
                                                             if ($contenedorSec) {
                                                                 $numContenedor .= ' / ' . $contenedorSec;
                                                             }
                                                         }
                                                     @endphp
+
                                                     <td>{{ $numContenedor }}</td>
+
 
                                                     <td>{{ $cotizacion->jerarquia === 'Principal' && $cotizacion->referencia_full ? 'Full' : 'Sencillo' }}
                                                     </td>
