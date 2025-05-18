@@ -263,7 +263,7 @@ class CotizacionesController extends Controller
                 $contenedor = $cotizacion->DocCotizacion ? $cotizacion->DocCotizacion->num_contenedor : 'N/A';
 
                 // Si es tipo 'Full', buscamos la secundaria para obtener su contenedor
-                if ($cotizacion->tipo_viaje === 'Full') {
+                if (!is_null($cotizacion->referencia_full )) {
                     $secundaria = Cotizaciones::where('referencia_full', $cotizacion->referencia_full)
                         ->where('jerarquia', 'Secundario')
                         ->with('DocCotizacion.Asignaciones')
@@ -285,7 +285,8 @@ class CotizacionesController extends Controller
                     'estatus' => $cotizacion->estatus,
                     'coordenadas' => optional($cotizacion->DocCotizacion)->Asignaciones ? 'Ver' : '',
                     'edit_url' => route('edit.cotizaciones', $cotizacion->id),
-                    'tipo' => $cotizacion->tipo_viaje
+                    'tipo' => $cotizacion->tipo_viaje,
+                    'referencia_full' => $cotizacion->referencia_full
                 ];
             });
 
@@ -847,6 +848,7 @@ public function getCotizacionesCanceladas()
             $doc_cotizaciones->num_doda = $contenedor['num_doda'];
             $doc_cotizaciones->num_carta_porte = $contenedor['num_carta_porte'];
             $doc_cotizaciones->fecha_boleta_vacio = $contenedor['fecha_boleta_vacio'];
+            $doc_cotizaciones->ccp = $contenedor['ccp'];
             $doc_cotizaciones->update();
 
             $cotizaciones = Cotizaciones::where('id', '=', $id)->first();
@@ -877,6 +879,7 @@ public function getCotizacionesCanceladas()
             $cotizaciones->base_taref = $request->base_taref;
             $cotizaciones->sobrepeso = $contenedor['sobrepeso'];
             $cotizaciones->precio_sobre_peso = $request->precioSobrePeso;
+            
             $cotizaciones->total = $request->total;
 
 

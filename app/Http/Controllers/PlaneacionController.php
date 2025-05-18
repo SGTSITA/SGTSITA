@@ -75,6 +75,10 @@ class PlaneacionController extends Controller
                 $banco->save();
             }
 
+            if(!is_null($cotizaciones->referencia_full)){
+                $contenedor2 = Cotizaciones::where('referencia_full',$cotizaciones->referencia_full)->update(["estatus_planeacion" => 0]);
+            }
+
             $cotizaciones->estatus = 'Aprobada';
             $cotizaciones->estatus_planeacion = 0;
             $cotizaciones->update();

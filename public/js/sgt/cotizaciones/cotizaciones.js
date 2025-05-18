@@ -43,6 +43,7 @@ const editFormFields = [
     {'field':'boleta_vacio', 'id':'boleta_vacio','label':'Boleta vacio','required': false, "type":"text", "master": false},
     {'field':'fecha_boleta_vacio', 'id':'fecha_boleta_vacio','label':'Fecha Boleta vacío','required': false, "type":"text", "master": false},
     {'field':'eir', 'id':'eir','label':'EIR','required': false, "type":"text", "master": false},    
+    {'field':'ccp', 'id':'ccp','label':'Formato CCP','required': false, "type":"text", "master": false},    
     {'field':'direccion_recinto', 'id':'direccion_recinto','label':'Dirección recinto','required': false, "type":"text", "master": false},  
     {'field':'text_recinto', 'id':'text_recinto','label':'¿Va a recinto?','required': false, "type":"text", "master": false},  
     {'field':'fecha_modulacion', 'id':'fecha_modulacion','label':'Fecha modulación','required': false, "type":"text", "master": false},  
