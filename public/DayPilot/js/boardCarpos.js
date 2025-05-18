@@ -105,7 +105,7 @@ return `${dia}/${mes}/${anio}`;
 
  dp.startDate = $('#daterange').attr('data-start');
  dp.days = 365;
- dp.cellWidth = 90;
+ dp.cellWidth = 110;
  dp.rowMarginBottom = 10;
  dp.rowMarginTop = 10;
  dp.scale = "Day";
@@ -378,6 +378,9 @@ function anularPlaneacion(idCotizacion, numContenedor){
             .then(response => response.json())
             .then(data => {
                 Swal.fire(data.Titulo,data.Mensaje,data.TMensaje)
+                if(data.TMensaje == "success"){
+                    dp.events.remove(idCotizacion); //Eliminar del board
+               }
             })
             .catch(error => {
                 Swal.fire('Error', 'No pudimos anular el programa del viaje', 'error');
@@ -428,7 +431,7 @@ function finalizarViaje(idCotizacion, numContenedor){
 
 function encontrarContenedor(contenedor){
     let busqueda = allEvents
-    const resultados = busqueda.filter(f => f.num_contenedor === contenedor)
+    const resultados = busqueda.filter(f => f.num_contenedor?.includes(contenedor))
     if(resultados.length != 1){
         Swal.fire("No se encontró contenedor", `No existe ningún contenedor "PLANEADO" con el numero de contenedor proporcionado`,'warning')
         return

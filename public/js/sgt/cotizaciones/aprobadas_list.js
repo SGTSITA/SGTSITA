@@ -63,7 +63,7 @@ document.addEventListener("DOMContentLoaded", function () {
         columnDefs: [
             { headerName: "No", field: "id", width: 80 , hide: true},
             { headerName: "ContenedorPrincipal", field: "labelContenedor", hide: true},
-            
+            { headerName: "Full", field: "referencia_full", hide: true},
             { headerName: "Sub Cliente", field: "subcliente", width: 80 , hide: true},
             { headerName: "# Contenedor", 
               field: "contenedor", 
@@ -142,25 +142,34 @@ document.addEventListener("DOMContentLoaded", function () {
         if(gridDiv){
             let seleccion = apiGridAprobadas.getSelectedRows();
             let bntNextOne = document.querySelector('#nextOne')
+            bntNextOne.disabled = true
             if(seleccion.length > 2){
                 Swal.fire('Maximo 2 contenedores','Lo sentimos, solo puede seleccionar maximo 2 contenedores, estos deben ser de un mismo cliente','warning')
-                bntNextOne.disabled = true
+                
                 return false
             }
-
-            cmbTipoUnidad.value = (seleccion.length == 2) ? "Full" : "Sencillo"
-            cmbTipoUnidad.dispatchEvent(new Event('change'));
 
             let numContenedorLabel = document.querySelectorAll('.numContenedorLabel');
             let nombreClienteLabel = document.querySelectorAll('.nombreClienteLabel');
             let contenedoresLabel = '';
+            let isFull = false;
             contenedores = []
             seleccion.forEach((contenedor) =>{
                 contenedoresLabel += (contenedoresLabel.length > 0 ) ? ` / ${contenedor.contenedor}` : contenedor.contenedor
                 nombreClienteLabel.forEach(cl => cl.textContent = `${contenedor.cliente} / ${contenedor.subcliente}`)
                 contenedores = [...contenedores,contenedor.labelContenedor]
+                isFull = (!isFull && contenedor.referencia_full?.length > 0) ? true : isFull ;
                 localStorage.setItem('numContenedor',JSON.stringify(contenedores))
             })
+
+            if(isFull && seleccion.length >= 2){
+                Swal.fire('Operación FULL invalida','Lo sentimos, su selección contiene un viaje FULL, este no puede viajar con mas contenedores','warning')
+               
+                return false
+            }
+
+            cmbTipoUnidad.value = (seleccion.length == 2 || isFull) ? "Full" : "Sencillo"
+            cmbTipoUnidad.dispatchEvent(new Event('change'));
 
             numContenedorLabel.forEach(lb=> lb.textContent = contenedoresLabel)
             bntNextOne.disabled = false
