@@ -29,6 +29,7 @@
     <form class="multisteps-form__form">
       <!--single form panel-->
       <div class="card multisteps-form__panel p-3 border-radius-xl bg-white js-active" data-animation="FadeIn">
+        <div class="card-body">
         <div class="row">
           <div class="col-7 mt-3 ">
             <h5 class="font-weight-normal text-left">¡Empecemos!</h5>
@@ -50,6 +51,8 @@
             </div>
           </div>
         </div>
+        </div>
+       
         
         <div class="card-footer">
         <div class="multisteps-form__content">
