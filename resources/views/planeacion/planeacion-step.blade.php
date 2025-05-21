@@ -50,11 +50,14 @@
             </div>
           </div>
         </div>
+        
+        <div class="card-footer">
         <div class="multisteps-form__content">
           <div class="button-row d-flex mt-4">
             <button class="btn bg-gradient-info btn-sm ms-auto mb-0 js-btn-next" id="nextOne" disabled="true" type="button" title="Siguiente"> Siguiente <i class="fa fa-arrow-right"></i>
             </button>
           </div>
+        </div>
         </div>
       </div>
       <!--single form panel-->
