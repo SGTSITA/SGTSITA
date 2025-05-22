@@ -333,3 +333,36 @@ document.addEventListener('submit', async function (e) {
         }
     }
 });
+
+
+document.addEventListener('DOMContentLoaded', () => {
+    const btnCrearEquipo = document.querySelector('[data-bs-target="#equipoModal"]');
+
+    if (btnCrearEquipo) {
+        btnCrearEquipo.addEventListener('click', () => {
+            const activeTab = document.querySelector('#equiposTabs .nav-link.active');
+            let tipo = 'Tractos / Camiones';
+
+            if (activeTab?.id === 'tab-chasis') tipo = 'Chasis / Plataforma';
+            else if (activeTab?.id === 'tab-dollys') tipo = 'Dolys';
+
+            document.getElementById('tipoActivo').value = tipo;
+
+            // Activar pestaña interna correctamente
+            let tabId = '#pills-home-tab';
+            if (tipo === 'Chasis / Plataforma') tabId = '#pills-profile-tab';
+            if (tipo === 'Dolys') tabId = '#pills-dolys-tab';
+
+            // Quitar la clase active de todas las pestañas antes de activar la correcta
+            document.querySelectorAll('#pills-tab .nav-link').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('#pills-tabContent .tab-pane').forEach(el => {
+                el.classList.remove('show', 'active');
+            });
+
+            // Activar pestaña seleccionada
+            const targetTab = document.querySelector(tabId);
+            const tab = new bootstrap.Tab(targetTab);
+            tab.show();
+        });
+    }
+});
