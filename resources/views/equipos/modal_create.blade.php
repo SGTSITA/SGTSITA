@@ -65,6 +65,7 @@
             </div>
             <form method="POST" action="{{ route('store.equipos') }}" enctype="multipart/form-data" role="form">
                 @csrf
+                <input type="hidden" id="tipoActivo" name="tipoActivo">
                 <div class="modal-body">
                     <div class="row">
                         <div class="col-12">
@@ -94,7 +95,7 @@
 
                             <div class="tab-content" id="pills-tabContent">
                                 <!-- Tracto / Camión -->
-                                <div class="tab-pane fade show active" id="pills-home" role="tabpanel"
+                                <div class="tab-pane show active" id="pills-home" role="tabpanel"
                                     aria-labelledby="pills-home-tab" tabindex="0">
                                     <div class="form-section">
                                         <h6>Datos del Tracto / Camión</h6>
@@ -159,7 +160,7 @@
                                 </div>
 
                                 <!-- Chasis Plataforma -->
-                                <div class="tab-pane fade" id="pills-profile" role="tabpanel"
+                                <div class="tab-pane" id="pills-profile" role="tabpanel"
                                     aria-labelledby="pills-profile-tab" tabindex="0">
                                     <div class="form-section">
                                         <h6>Datos del Chasis Plataforma</h6>
@@ -236,7 +237,7 @@
                                 </div>
 
                                 <!-- Dolys -->
-                                <div class="tab-pane fade" id="pills-dolys" role="tabpanel"
+                                <div class="tab-pane" id="pills-dolys" role="tabpanel"
                                     aria-labelledby="pills-dolys-tab" tabindex="0">
                                     <div class="form-section">
                                         <h6>Datos del Doly</h6>
