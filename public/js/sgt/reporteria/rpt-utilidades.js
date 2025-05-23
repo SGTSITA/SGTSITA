@@ -182,8 +182,12 @@ class MissionResultRenderer {
       xhrFields: {
         responseType: "blob" // Asegura que el tipo de respuesta sea un Blob
       },
+      beforeSend:()=>{
+        mostrarLoading('Preparando reporte... espere un momento')
+            
+      },
       success: function(response) {
-        console.log(response)
+        ocultarLoading();
         if (response instanceof Blob) {
           var blob = new Blob([response], { type: 'application/pdf'  });
           var url = URL.createObjectURL(blob);
@@ -208,7 +212,7 @@ class MissionResultRenderer {
          // alert('El archivo se ha descargado correctamente.');
       },
       error: function(xhr, status, error) {
-          console.error(error);
+        ocultarLoading();
           alert('Ocurrió un error al exportar los datos.');
       }
   });
@@ -220,13 +224,16 @@ class MissionResultRenderer {
         url: '/reporteria/utilidad/ver-utilidad',
         type: 'post',
         data: {_token,startDate, endDate},
-        beforeSend:()=>{},
+        beforeSend:()=>{
+          mostrarLoading('Consultando viajes...')
+        },
         success:(response)=>{
+          ocultarLoading();
             let data = JSON.parse(response)
             apiGrid.setGridOption("rowData", data.Info)
         },
         error:()=>{
-
+          ocultarLoading();
         }
     });
    }
