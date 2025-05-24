@@ -238,7 +238,7 @@
                                                                     <b
                                                                         style="color: #c22237">{{ $item->Cliente->nombre }}</b>
                                                                 </a>
-                                                            @elseif(isset($item->Cliente))
+                                                            @elseif(isset($item->Cliente) || isset( $item->descripcion))
                                                                 {{-- Provisional --}}
                                                                 @if ($item->tipo == 'Salida')
                                                                     <a data-bs-toggle="collapse"
@@ -246,7 +246,10 @@
                                                                         aria-controls="pagesEntrada" role="button"
                                                                         aria-expanded="false">
                                                                         Varios <br> <b
-                                                                            style="color: #22c2ba">{{ $item->Cliente2->nombre }}</b>
+                                                                            style="color: #22c2ba">
+                                                                            {{ optional($item->Cliente2)->nombre }}
+                                                                            {{ optional($item)->descripcion }}
+                                                                        </b>
                                                                     </a>
                                                                     @if ($item->contenedores != null)
                                                                         <div class="collapse "
@@ -296,7 +299,7 @@
                                                                         </div>
                                                                     @endif
                                                                 @endif
-                                                            @elseif(isset($item->Proveedor))
+                                                            @elseif(isset($item->Proveedor) )
                                                                 <a data-bs-toggle="collapse"
                                                                     href="#pagesEntrada{{ $item->id }}"
                                                                     aria-controls="pagesEntrada" role="button"
