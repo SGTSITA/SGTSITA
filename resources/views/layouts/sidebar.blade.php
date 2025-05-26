@@ -190,22 +190,23 @@
                     <span class="nav-link-text ms-1"><b>X</b> Gastos</span>
                 </a>
 
-                <div class="collapse " id="pagesGastos">
-                    <ul class="nav ms-4">
-                        <li class="nav-item ">
-                            <a class="nav-link {{ Request::is('gastos/generales*') ? 'show' : '' }}"
-                                href="{{ route('index.gastos_generales') }}">
-                                <span class="sidenav-mini-icon"> P </span>
-                                <span class="sidenav-normal">Gastos Generales</span>
-                            </a>
-                            <!--a class="nav-link {{ Request::is('gastos/generales*') ? 'show' : '' }}" href="{{ route('index.gastos_operativos') }}">
-                                              <span class="sidenav-mini-icon"> P </span>
-                                              <span class="sidenav-normal">Gastos Operativos</span>
-                                            </a-->
-                        </li>
-                    </ul>
-                </div>
-            @endcan
+
+            <div class="collapse " id="pagesGastos">
+                <ul class="nav ms-4">
+                    <li class="nav-item ">
+                        <a class="nav-link {{ (Request::is('gastos/generales*') ? 'show' : '') }}" href="{{ route('index.gastos_generales') }}" >
+                          <span class="sidenav-mini-icon"> P </span>
+                          <span class="sidenav-normal">Gastos Generales</span>
+                        </a>
+                        <a class="nav-link {{ (Request::is('gastos/generales*') ? 'show' : '') }}" href="{{ route('index.gastos_por_pagar') }}">
+                          <span class="sidenav-mini-icon"> P </span>
+                          <span class="sidenav-normal">Gastos por Pagar</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+          @endcan
+
 
             @can('reportes')
                 <a data-bs-toggle="collapse" href="#pagesExamplesReporteria"

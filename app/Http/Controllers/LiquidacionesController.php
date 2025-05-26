@@ -161,7 +161,7 @@ class LiquidacionesController extends Controller
                         'id_liquidacion' => $liquidacion->id,
                         'id_contenedor' => $contenedor['IdContenedor'] ,
                         'sueldo_operador' => $contenedor['SueldoViaje'] ,
-                        'dinero_viaje' => $contenedor['DineroViaje'] ,
+                        'dinero_viaje' => $contenedor['DineroViaje'] ?? 0,
                         'dinero_justificado' => $contenedor['GastosJustificados'] ,
                         'total_pagado' => $contenedor['MontoPago'] ,
                         ];
@@ -173,6 +173,7 @@ class LiquidacionesController extends Controller
                 $saldoContenedor = $asignacion->restante_pago_operador;
                 $asignacion->restante_pago_operador = $saldoContenedor - $c['MontoPago'];
                 $asignacion->fecha_pago_operador = date('Y-m-d');
+
                 if(($saldoContenedor - $c['MontoPago']) == 0){
                     $asignacion->estatus_pagado = 'Pagado';
                 }
@@ -180,13 +181,7 @@ class LiquidacionesController extends Controller
 
                 $cotizacion = DocumCotizacion::where('id', '=', $asignacion->id_contenedor)->first();
     
-                $banco = new BancoDineroOpe;
-                $banco->id_operador = $asignacion->id_operador;
                 
-                $banco->monto1 = $c['MontoPago'];
-                $banco->metodo_pago1 = 'Transferencia';
-                $banco->descripcion_gasto = 'Sueldos y salarios';
-                $banco->id_banco1 = $request->bancoId;
 
                 $contenedoresAbonos[] = [
                     'num_contenedor' => $cotizacion->num_contenedor,
@@ -194,12 +189,20 @@ class LiquidacionesController extends Controller
                 ];
                 $contenedoresAbonosJson = json_encode($contenedoresAbonos);
 
-                $banco->contenedores = $contenedoresAbonosJson;
-            
-                $banco->tipo = 'Salida';
-                $banco->fecha_pago = date('Y-m-d');
-                $banco->save();
             }
+
+            $banco = new BancoDineroOpe;
+            $banco->id_operador = $request->_IdOperador;
+            
+            $banco->monto1 = $contenedores->sum('MontoPago');;
+            $banco->metodo_pago1 = 'Transferencia';
+            $banco->descripcion_gasto = 'Pago operador';
+            $banco->id_banco1 = $request->bancoId;
+            $banco->contenedores = $contenedoresAbonosJson;
+        
+            $banco->tipo = 'Salida';
+            $banco->fecha_pago = date('Y-m-d');
+            $banco->save();
 
             Bancos::where('id' ,'=',$request->bancoId)->update(["saldo" => DB::raw("saldo - ". $request->totalMontoPago)]);
             DB::commit();
@@ -248,7 +251,7 @@ class LiquidacionesController extends Controller
             "SueldoOperador" => $h->sueldo_operador,
             "DineroViaje" => $h->dinero_viaje,
             "DineroJustificado" => $h->dinero_justificado,
-            "TotalPagado" => $h->total_pagado
+            "TotalPagado" => $h->total_pago
         ];
     });
 

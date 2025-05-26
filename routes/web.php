@@ -176,10 +176,12 @@ Route::post('operadores/{id}/restaurar', [App\Http\Controllers\OperadorControlle
     Route::post('/cotizaciones/busqueda', [App\Http\Controllers\CotizacionesController::class, 'findExecute'])->name('exec.busqueda.cotizaciones');
     Route::get('/cotizaciones/documentos/{id}', [App\Http\Controllers\CotizacionesController::class, 'getDocumentos']);
 
+    /*
     Route::get('/cotizaciones/index_finzaliadas', [App\Http\Controllers\CotizacionesController::class, 'index_finzaliadas'])->name('index_finzaliadas.cotizaciones');
     Route::get('/cotizaciones/index_espera', [App\Http\Controllers\CotizacionesController::class, 'index_espera'])->name('index_espera.cotizaciones');
     Route::get('/cotizaciones/index_aprobadas', [App\Http\Controllers\CotizacionesController::class, 'index_aprobadas'])->name('index_aprobadas.cotizaciones');
     Route::get('/cotizaciones/index_canceladas', [App\Http\Controllers\CotizacionesController::class, 'index_canceladas'])->name('index_canceladas.cotizaciones');
+    */
 
 
 
@@ -330,7 +332,9 @@ Route::post('operadores/{id}/restaurar', [App\Http\Controllers\OperadorControlle
     Route::post('gastos/generales/get',[App\Http\Controllers\GastosGeneralesController::class, 'getGastos'])->name('get.gastos_generales');
     Route::post('gastos/generales/create', [App\Http\Controllers\GastosGeneralesController::class, 'store'])->name('store.gastos_generales');
     Route::post('gastos/diferir',[App\Http\Controllers\GastosGeneralesController::class, 'diferir'])->name('diferir.gastos_generales');
-    Route::get('gastos/operativos',[App\Http\Controllers\GastosGeneralesController::class, 'index'])->name('index.gastos_operativos');
+    Route::get('gastos/por-pagar',[App\Http\Controllers\GastosContenedoresController::class, 'IndexPayment'])->name('index.gastos_por_pagar');
+    Route::post('gastos/getGxp',[App\Http\Controllers\GastosContenedoresController::class, 'getGxp'])->name('get.gastos_por_pagar');
+    Route::post('gastos/payGxp',[App\Http\Controllers\GastosContenedoresController::class, 'PagarGastosMultiple'])->name('pay.gastos_por_pagar');
 
     // ==================== C A T A L O G O ====================
     Route::get('catalogo', [App\Http\Controllers\CatalogoController::class, 'index'])->name('index.catalogo');

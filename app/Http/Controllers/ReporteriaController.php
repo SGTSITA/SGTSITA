@@ -483,7 +483,7 @@ public function export_cxp(Request $request)
                 return $numContenedor;
             }
 
-    }
+        }
                     
     }
 
@@ -721,7 +721,7 @@ public function export_cxp(Request $request)
             $fechaF = $fechaFinPeriodo.' 00:00:00';
 
             $consultar = 'select c.id as id_cotizacion,a.id_camion,dc.num_contenedor,cl.nombre as cliente, op.nombre Operador, a.sueldo_viaje,dinero_viaje, pr.nombre as Proveedor,total_proveedor,
-            c.total, c.estatus,estatus_pago,c.fecha_pago,a.fecha_inicio,a.fecha_fin,DATEDIFF(a.fecha_fin,a.fecha_inicio) as tiempo_viaje
+            c.total, c.estatus,estatus_pago,c.fecha_pago,a.fecha_inicio,a.fecha_fin,DATEDIFF(a.fecha_fin,a.fecha_inicio) as tiempo_viaje,c.referencia_full
             from cotizaciones c
             left join clients cl on c.id_cliente = cl.id
             left join docum_cotizacion dc on c.id = dc.id_cotizacion
@@ -763,11 +763,25 @@ public function export_cxp(Request $request)
                     "motivo_gasto" => $go->tipo
                 ];
                 }
+
+                $contenedor = $d->num_contenedor;
+
+                if (!is_null($d->referencia_full )) {
+                    $secundaria = Cotizaciones::where('referencia_full', $d->referencia_full)
+                        ->where('jerarquia', 'Secundario')
+                        ->with('DocCotizacion.Asignaciones')
+                        ->first();
+
+                    if ($secundaria && $secundaria->DocCotizacion) {
+                        $contenedor .= ' / ' . $secundaria->DocCotizacion->num_contenedor;
+                    }
+                }
+
     
                 $pagoOperacion = (is_null($d->Proveedor)) ? $d->sueldo_viaje : $d->total_proveedor;
                 $gastosDiferidos = round($diferido->sum('gasto_dia') / $viajesPeriodo,2);
                 $Columns = [
-                            "numContenedor" => $d->num_contenedor,
+                            "numContenedor" => $contenedor,
                             "cliente" => $d->cliente,
                             "precioViaje" => $d->total + $gastosExtra->sum('monto'),
                             "transportadoPor" => (is_null($d->Proveedor)) ? 'Operador' : 'Proveedor',
