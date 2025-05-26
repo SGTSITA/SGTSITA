@@ -1308,7 +1308,7 @@ public function index_gxp(Request $request)
         $asignacion = $g->Asignaciones;
         return [
             'id' => $g->id,
-            'proveedor' => optional($asignacion->Proveedor)->nombre ?? '-',
+            'operador' => optional($g->Operador)->nombre ?? '-',
             'cliente' => optional($asignacion->Contenedor->Cotizacion->Cliente)->nombre ?? '-',
             'subcliente' => optional($asignacion->Contenedor->Cotizacion->Subcliente)->nombre ?? '-',
             'num_contenedor' => optional($asignacion->Contenedor)->num_contenedor ?? '-',
@@ -1350,54 +1350,62 @@ public function getGastosPorPagarData()
         }
 
         return [
-            'proveedor' => $proveedorNombre,
-            'cliente' => optional($asignacion?->Contenedor?->Cotizacion?->Cliente)->nombre ?? '-',
-            'subcliente' => optional($asignacion?->Contenedor?->Cotizacion?->Subcliente)->nombre ?? '-',
-            'num_contenedor' => optional($asignacion?->Contenedor)->num_contenedor ?? '-',
-            'monto' => $g->cantidad ?? 0,
-            'motivo' => $g->tipo ?? 'Gasto pendiente',
-            'fecha_movimiento' => $g->created_at,
-            'fecha_aplicacion' => $g->fecha_pago,
-        ];
+    'id' => $g->id,
+    'operador' => optional($g->Operador)->nombre ?? '-',
+    'cliente' => optional($a?->Contenedor?->Cotizacion?->Cliente)->nombre ?? '-',
+    'subcliente' => optional($a?->Contenedor?->Cotizacion?->Subcliente)->nombre ?? '-',
+    'num_contenedor' => optional($a?->Contenedor)->num_contenedor ?? '-',
+    'monto' => $g->cantidad ?? 0,
+    'motivo' => $g->tipo ?? 'Gasto pendiente',
+    'fecha_movimiento' => $g->created_at ? Carbon::parse($g->created_at)->format('d/m/Y') : '-',
+    'fecha_aplicacion' => $g->fecha_pago ? Carbon::parse($g->fecha_pago)->format('d/m/Y') : '-',
+];
+
     });
 
     return response()->json($data);
 }
 
-public function exportSeleccionadosExcel(Request $request)
-{
-    $ids = $request->input('selected_ids', []);
-    return \Maatwebsite\Excel\Facades\Excel::download(new GastosPorPagarExport($ids), 'gastos_por_pagar.xlsx');
-}
-
-public function exportSeleccionadosPDF(Request $request)
-{
-    $ids = $request->input('selected_ids', []);
-    $data = (new GastosPorPagarExport($ids))->view()->getData();
-
-    $pdf = \PDF::loadView('reporteria.gxp.pdf', ['gastos' => $data['gastos']]);
-    return $pdf->download('gastos_por_pagar.pdf');
-}
 
 public function exportGastosPorPagar(Request $request)
 {
-    $ids = $request->input('selected_ids', []);
-    $fileType = $request->input('fileType');
+    try {
+        $ids = $request->input('selected_ids', []);
+        $fileType = $request->input('fileType');
 
-    $export = new GastosPorPagarExport($ids);
+        $export = new \App\Exports\GastosPorPagarExport($ids);
 
-    if ($fileType === 'xlsx') {
-        return \Maatwebsite\Excel\Facades\Excel::download($export, 'gastos_por_pagar.xlsx');
+        if ($fileType === 'xlsx') {
+            return \Maatwebsite\Excel\Facades\Excel::download($export, 'gastos_por_pagar.xlsx');
+        }
+
+        if ($fileType === 'pdf') {
+            $gastos = collect($export->getGastosData())->map(function ($g) {
+                return is_array($g) ? $g : (array) $g;
+            });
+
+            return \PDF::loadView('reporteria.gxp.pdf', [
+    'gastos' => $gastos,
+    'empresa' => auth()->user()->Empresa->nombre ?? 'Sin Empresa'
+])->setPaper('a4', 'landscape')->download('gastos_por_pagar.pdf');
+
+
+        }
+
+        return response()->json(['error' => 'Tipo de archivo no válido'], 400);
+
+    } catch (\Throwable $e) {
+        \Log::error('Error al exportar gastos', [
+            'message' => $e->getMessage(),
+            'file' => $e->getFile(),
+            'line' => $e->getLine()
+        ]);
+
+        return response()->json(['error' => 'Error interno del servidor'], 500);
     }
-
-    if ($fileType === 'pdf') {
-        $gastos = $export->getGastosData();
-        $pdf = \PDF::loadView('reporteria.gxp.pdf', ['gastos' => $gastos]);
-        return $pdf->download('gastos_por_pagar.pdf');
-    }
-
-    return response()->json(['error' => 'Tipo de archivo no válido'], 400);
 }
+
+
 
 
 

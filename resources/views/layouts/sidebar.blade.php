@@ -51,8 +51,8 @@
 
             @can('equipos-list')
                 <li class="nav-item">
-                    <a class="nav-link {{ Request::is('equipos*') ? 'active' : '' }}"
-                        href="{{ route('index.equipos') }}" target="">
+                    <a class="nav-link {{ Request::is('equipos*') ? 'active' : '' }}" href="{{ route('index.equipos') }}"
+                        target="">
                         <div
                             class="icon icon-shape icon-sm text-center  me-2 d-flex align-items-center justify-content-center">
                             <img src="{{ asset('img/icon/referencia.webp') }}" alt="" width="20px">
@@ -142,8 +142,8 @@
 
             @can('bancos-list')
                 <li class="nav-item">
-                    <a class="nav-link {{ Request::is('bancos*') ? 'active' : '' }}"
-                        href="{{ route('index.bancos') }}" target="">
+                    <a class="nav-link {{ Request::is('bancos*') ? 'active' : '' }}" href="{{ route('index.bancos') }}"
+                        target="">
                         <div
                             class="icon icon-shape icon-sm text-center  me-2 d-flex align-items-center justify-content-center">
                             <img src="{{ asset('img/icon/banco.png') }}" alt="" width="20px">
@@ -181,13 +181,15 @@
             @endcan
 
             @can('gastos-generales')
- 
-            <a data-bs-toggle="collapse" href="#pagesGastos" class="nav-link {{ (Request::is('gastos/generales*') ? 'active' : '') }}" target="">
-                <div class="icon icon-shape icon-sm text-center  me-2 d-flex align-items-center justify-content-center">
-                    <img src="{{ asset('img/icon/billetera.png') }}" alt="" width="20px">
-                </div>
-                <span class="nav-link-text ms-1"><b>X</b> Gastos</span>
-            </a>
+                <a data-bs-toggle="collapse" href="#pagesGastos"
+                    class="nav-link {{ Request::is('gastos/generales*') ? 'active' : '' }}" target="">
+                    <div
+                        class="icon icon-shape icon-sm text-center  me-2 d-flex align-items-center justify-content-center">
+                        <img src="{{ asset('img/icon/billetera.png') }}" alt="" width="20px">
+                    </div>
+                    <span class="nav-link-text ms-1"><b>X</b> Gastos</span>
+                </a>
+
 
             <div class="collapse " id="pagesGastos">
                 <ul class="nav ms-4">
@@ -204,6 +206,7 @@
                 </ul>
             </div>
           @endcan
+
 
             @can('reportes')
                 <a data-bs-toggle="collapse" href="#pagesExamplesReporteria"
@@ -274,6 +277,11 @@
                                     <span class="sidenav-normal">Liquidados cxp</span>
                                 </a>
                             @endcan
+                            <a class="nav-link {{ Request::is('reporteria/gastos-pagar*') ? 'show' : '' }}"
+                                href="{{ route('index_gxp.reporteria') }}">
+                                <span class="sidenav-mini-icon"> P </span>
+                                <span class="sidenav-normal">Gastos por pagar</span>
+                            </a>
                         </li>
                     </ul>
                 </div>
@@ -281,7 +289,7 @@
             @endcan
 
             @can('liquidaciones')
-            <a data-bs-toggle="collapse" href="#pagesLiquidaciones"
+                <a data-bs-toggle="collapse" href="#pagesLiquidaciones"
                     class="nav-link {{ Request::is('reporteria/cotizaciones*') ? 'active' : '' }}"
                     aria-controls="pagesLiquidaciones" role="button" aria-expanded="false">
                     <div
@@ -295,35 +303,36 @@
                     <ul class="nav ms-4">
                         <li class="nav-item ">
 
-                                <a class="nav-link {{ Request::is('reporteria/cotizaciones/cxc*') ? 'show' : '' }}"
-                                    href="{{ route('index.liquidacion') }}">
-                                    <span class="sidenav-mini-icon"> P </span>
-                                    <span class="sidenav-normal">Liquidar Operadores</span>
-                                </a>
-                                <a class="nav-link {{ Request::is('reporteria/cotizaciones/cxp*') ? 'show' : '' }}"
-                                    href="{{ route('historial.liquidacion') }}">
-                                    <span class="sidenav-mini-icon"> P </span>
-                                    <span class="sidenav-normal">Historial Liquidaciones</span>
-                                </a>
+                            <a class="nav-link {{ Request::is('reporteria/cotizaciones/cxc*') ? 'show' : '' }}"
+                                href="{{ route('index.liquidacion') }}">
+                                <span class="sidenav-mini-icon"> P </span>
+                                <span class="sidenav-normal">Liquidar Operadores</span>
+                            </a>
+                            <a class="nav-link {{ Request::is('reporteria/cotizaciones/cxp*') ? 'show' : '' }}"
+                                href="{{ route('historial.liquidacion') }}">
+                                <span class="sidenav-mini-icon"> P </span>
+                                <span class="sidenav-normal">Historial Liquidaciones</span>
+                            </a>
                         </li>
                     </ul>
                 </div>
                 <!--li class="nav-item">
-                    <a class="nav-link {{ Request::is('liquidaciones*') ? 'active' : '' }}"
-                        href="{{ route('index.liquidacion') }}" target="">
-                        <div
-                            class="icon icon-shape icon-sm text-center  me-2 d-flex align-items-center justify-content-center">
-                            <img src="{{ asset('img/icon/pago-en-efectivo.png') }}" alt="" width="20px">
-                        </div>
-                       
-                    </a>
-                </li-->
+                                        <a class="nav-link {{ Request::is('liquidaciones*') ? 'active' : '' }}"
+                                            href="{{ route('index.liquidacion') }}" target="">
+                                            <div
+                                                class="icon icon-shape icon-sm text-center  me-2 d-flex align-items-center justify-content-center">
+                                                <img src="{{ asset('img/icon/pago-en-efectivo.png') }}" alt="" width="20px">
+                                            </div>
+                                           
+                                        </a>
+                                    </li-->
             @endcan
             @can('coordenadasv')
-            <a data-bs-toggle="collapse" href="#pagesExamplesCoordenadas"
+                <a data-bs-toggle="collapse" href="#pagesExamplesCoordenadas"
                     class="nav-link {{ Request::is('coordenadas*') ? 'active' : '' }}"
                     aria-controls="pagesExamplesCoordenadas" role="button" aria-expanded="false">
-                    <div class="icon icon-shape icon-sm text-center  me-2 d-flex align-items-center justify-content-center">
+                    <div
+                        class="icon icon-shape icon-sm text-center  me-2 d-flex align-items-center justify-content-center">
                         <img src="{{ asset('img/icon/mapa-de-la-ciudad.webp') }}" alt="" width="20px">
                     </div>
                     <span class="nav-link-text ms-1"><b>XIII</b> Coordenadas</span>
@@ -333,7 +342,7 @@
                     <ul class="nav ms-4">
                         <li class="nav-item ">
                             <a class="nav-link {{ Request::is('coordenadas/mapas') ? 'show' : '' }}"
-                                href="{{  route('ver.coordenadamapa')  }}">
+                                href="{{ route('ver.coordenadamapa') }}">
                                 <span class="sidenav-mini-icon"> P </span>
                                 <span class="sidenav-normal">Ver Mapas</span>
                             </a>
@@ -341,12 +350,10 @@
                                 href="{{ route('seach.coordenadas') }}">
                                 <span class="sidenav-mini-icon"> P </span>
                                 <span class="sidenav-normal">Busqueda Coordenadas</span>
-                            </a>                         
+                            </a>
                         </li>
                     </ul>
                 </div>
-
-                            
             @endcan
             @can('catalogo')
                 <li class="nav-item">
