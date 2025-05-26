@@ -108,21 +108,7 @@ class CotizacionesController extends Controller
         return view('cotizaciones.externos.index', compact('cotizaciones_emitidas'));
     }
 
-    public function index_finzaliadas(){
-
-        $cotizaciones_finalizadas = Cotizaciones::where('id_empresa' ,'=',auth()->user()->id_empresa)->where('estatus','=','Finalizado')->orderBy('created_at', 'desc')
-        ->select('id_cliente', 'origen', 'destino', 'id', 'estatus')->get();
-
-        $equipos_dolys = Equipo::where('id_empresa' ,'=',auth()->user()->id_empresa)->where('tipo','=','Dolys')->get();
-        $equipos_chasis = Equipo::where('id_empresa' ,'=',auth()->user()->id_empresa)->where('tipo','=','Chasis / Plataforma')->get();
-        $equipos_camiones = Equipo::where('id_empresa' ,'=',auth()->user()->id_empresa)->where('tipo','=','Tractos / Camiones')->get();
-        $operadores = Operador::get();
-        $bancos = Bancos::get();
-        $proveedores = Proveedor::get();
-        $empresas = Empresas::get();
-
-        return view('cotizaciones.index_finalizadas', compact('empresas', 'proveedores','bancos','operadores','equipos_dolys','equipos_chasis','equipos_camiones','cotizaciones_finalizadas'));
-    }
+   
     public function getCotizacionesFinalizadas()
     {
         $cotizaciones = Cotizaciones::where('id_empresa', auth()->user()->id_empresa)
@@ -169,21 +155,7 @@ class CotizacionesController extends Controller
 
 
 
-    public function index_espera(){
-
-        $cotizaciones = Cotizaciones::where('id_empresa' ,'=',auth()->user()->id_empresa)->where('estatus','=','Pendiente')->orderBy('created_at', 'desc')
-        ->select('id_cliente', 'origen', 'destino', 'id', 'estatus')->get();
-
-        $equipos_dolys = Equipo::where('id_empresa' ,'=',auth()->user()->id_empresa)->where('tipo','=','Dolys')->get();
-        $equipos_chasis = Equipo::where('id_empresa' ,'=',auth()->user()->id_empresa)->where('tipo','=','Chasis / Plataforma')->get();
-        $equipos_camiones = Equipo::where('id_empresa' ,'=',auth()->user()->id_empresa)->where('tipo','=','Tractos / Camiones')->get();
-        $operadores = Operador::get();
-        $bancos = Bancos::get();
-        $proveedores = Proveedor::get();
-        $empresas = Empresas::get();
-
-        return view('cotizaciones.index_espera', compact('empresas', 'proveedores','bancos','operadores','equipos_dolys','equipos_chasis','equipos_camiones','cotizaciones'));
-    }
+   
 
     public function getCotizacionesEnEspera()
     {
@@ -227,25 +199,7 @@ class CotizacionesController extends Controller
     }
 
 
-    public function index_aprobadas(){
-
-        $cotizaciones_aprovadas = Cotizaciones::where('id_empresa' ,'=',auth()->user()->id_empresa)->where('estatus','=','Aprobada')
-        ->where(function($query) {
-            $query->where('estatus_planeacion', '=', 0)
-                  ->orWhere('estatus_planeacion', '=', NULL);
-        })->orderBy('created_at', 'desc')
-        ->select('id_cliente', 'origen', 'destino', 'id', 'estatus')->get();
-
-        $equipos_dolys = Equipo::where('id_empresa' ,'=',auth()->user()->id_empresa)->where('tipo','=','Dolys')->get();
-        $equipos_chasis = Equipo::where('id_empresa' ,'=',auth()->user()->id_empresa)->where('tipo','=','Chasis / Plataforma')->get();
-        $equipos_camiones = Equipo::where('id_empresa' ,'=',auth()->user()->id_empresa)->where('tipo','=','Tractos / Camiones')->get();
-        $operadores = Operador::get();
-        $bancos = Bancos::get();
-        $proveedores = Proveedor::get();
-        $empresas = Empresas::get();
-
-        return view('cotizaciones.index_aprovada', compact('empresas', 'proveedores','bancos','operadores','equipos_dolys','equipos_chasis','equipos_camiones','cotizaciones_aprovadas'));
-    }
+   
 
     public function getCotizacionesAprobadas()
     {
@@ -332,21 +286,7 @@ public function getCotizacionesCanceladas()
     return response()->json(['list' => $cotizaciones]);
 }
 
-    public function index_canceladas(){
-
-        $cotizaciones_canceladas = Cotizaciones::where('id_empresa' ,'=',auth()->user()->id_empresa)->where('estatus','=','Cancelada')->orderBy('created_at', 'desc')
-        ->select('id_cliente', 'origen', 'destino', 'id', 'estatus')->get();
-
-        $equipos_dolys = Equipo::where('id_empresa' ,'=',auth()->user()->id_empresa)->where('tipo','=','Dolys')->get();
-        $equipos_chasis = Equipo::where('id_empresa' ,'=',auth()->user()->id_empresa)->where('tipo','=','Chasis / Plataforma')->get();
-        $equipos_camiones = Equipo::where('id_empresa' ,'=',auth()->user()->id_empresa)->where('tipo','=','Tractos / Camiones')->get();
-        $operadores = Operador::get();
-        $bancos = Bancos::get();
-        $proveedores = Proveedor::get();
-        $empresas = Empresas::get();
-
-        return view('cotizaciones.index_cancelada', compact('empresas', 'proveedores','bancos','operadores','equipos_dolys','equipos_chasis','equipos_camiones','cotizaciones_canceladas'));
-    }
+   
 
     public function getCotizacionesId($id)
     {
