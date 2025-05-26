@@ -178,21 +178,26 @@
                 @endphp
                 <tr style="font-size: 7px; border: 1px solid #000;">
                     <td style="padding: 2px; border: 1px solid #000;">
-                        {{ Carbon\Carbon::parse($cotizacion->DocCotizacion->Asignaciones->fehca_inicio_guard)->format('d-m-Y') }}
+                        @php
+                            $fechaInicio = optional(optional(optional($cotizacion->DocCotizacion)->Asignaciones))
+                                ->fehca_inicio_guard;
+                        @endphp
+                        {{ $fechaInicio ? \Carbon\Carbon::parse($fechaInicio)->format('d-m-Y') : 'Sin fecha' }}
                     </td>
                     <td style="padding: 2px; border: 1px solid #000;">
-                        {{ optional($cotizacion->DocCotizacion->Asignaciones->Proveedor)->nombre ?? '-' }}</td>
-                    @php
-                        $numContenedor = $cotizacion->DocCotizacion->num_contenedor ?? '';
+                        {{ optional(optional($cotizacion->DocCotizacion)->Asignaciones)->Proveedor->nombre ?? '-' }}
 
-                        if ($cotizacion->jerarquia === 'Principal' && $cotizacion->referencia_full) {
-                            $cotSecundaria = \App\Models\Cotizaciones::find($cotizacion->referencia_full);
-                            $contenedorSec = optional($cotSecundaria->DocCotizacion)->num_contenedor;
-                            if ($contenedorSec) {
-                                $numContenedor .= ' / ' . $contenedorSec;
+                        @php
+                            $numContenedor = optional($cotizacion->DocCotizacion)->num_contenedor ?? '';
+                            if ($cotizacion->jerarquia === 'Principal' && $cotizacion->referencia_full) {
+                                $cotSecundaria = \App\Models\Cotizaciones::find($cotizacion->referencia_full);
+                                $contenedorSec = optional($cotSecundaria?->DocCotizacion)->num_contenedor;
+
+                                if ($contenedorSec) {
+                                    $numContenedor .= ' / ' . $contenedorSec;
+                                }
                             }
-                        }
-                    @endphp
+                        @endphp
                     <td style="padding: 2px; border: 1px solid #000;">{{ $numContenedor }}</td>
 
 
