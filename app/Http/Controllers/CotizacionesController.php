@@ -786,6 +786,7 @@ public function getCotizacionesCanceladas()
             $doc_cotizaciones->num_carta_porte = $contenedor['num_carta_porte'];
             $doc_cotizaciones->fecha_boleta_vacio = $contenedor['fecha_boleta_vacio'];
             $doc_cotizaciones->ccp = $contenedor['ccp'];
+            $doc_cotizaciones->cima = $contenedor['cima'];
             $doc_cotizaciones->update();
 
             $cotizaciones = Cotizaciones::where('id', '=', $id)->first();
