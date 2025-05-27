@@ -293,6 +293,7 @@ return `${dia}/${mes}/${anio}`;
         type:'post',
         data:{_token:_token, id: idContendor},
         beforeSend:()=>{
+            $("#cima-label").addClass('d-none')
             mostrarLoading('Espere un momento, cargando información del contenedor...')
             let docum = document.querySelectorAll('.documentos')
             docum.forEach((d) => {
@@ -327,15 +328,21 @@ return `${dia}/${mes}/${anio}`;
             btnFinalizar.addEventListener('click', () => finalizarViaje(idContendor,numContenedor_), { once: true });
             btnDeshacer.addEventListener('click', () => anularPlaneacion(idContendor,numContenedor_), { once: true });
 
-            let documentos = response.documentos
+            let documentos = response.documents
             let docs = Object.keys(documentos)
             docs.forEach(doc => {
                 let documento = document.querySelector("#"+doc)
+                valorDoc = documentos[doc]
                 if(documento){
-                    valorDoc = documentos[doc]
+                    
                     documento.innerHTML = (valorDoc != null) ?
                      `<i class="fas fa-circle-check text-success fa-lg"></i>` :
                      `<i class="fas fa-circle-xmark text-secondary fa-lg"></i>`
+                }
+
+                if(doc == 'cima' && valorDoc == 1){
+                    $("#cima-label").removeClass('d-none')
+
                 }
                 
             })

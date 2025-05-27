@@ -497,11 +497,27 @@
                                 </div>
 
                                 <div class="tab-pane fade" id="nav-Contenedor" role="tabpanel" aria-labelledby="nav-Contenedor-tab" tabindex="0">
-                                    <h3 class="mb-5 mt-3">Contenedor</h3>
-                                    @if ($documentacion->num_contenedor != NULL)
-                                        <label style="font-size: 20px;" class="labelNumContedor" id="labelNumContenedor-3">Num contenedor:  {{$documentacion->num_contenedor}} </label>
-                                    @endif
+                                    
                                     <div class="row">
+                                    <h3 class="mb-3 mt-3">Contenedor</h3>
+                                    <ul class="list-group">
+                                        <li class="list-group-item border-1 border-dashed d-flex p-4 mb-2 bg-gray-100 border-radius-lg">
+                                        <div class="d-flex flex-column">
+                                            <h6 class="mb-2 text-md labelNumContedor" id="labelNumContenedor-3">Núm contenedor:  {{$documentacion->num_contenedor}} </h6>
+                                            <span class="mb-2 text-sm">
+                                                Administrado por CIMA: <span class="text-dark font-weight-bold ms-2">
+                                                <select class="form-select bg-transparent cliente d-inline-block"  data-toggle="select" id="cima" name="cima" >
+                                                    <option value="1" @if($documentacion->cima == 1) selected @endif >Si</option>
+                                                    <option value="0" @if($documentacion->cima == 0) selected @endif>No</option>
+                                                </select></span>
+                                            </span>
+                                            
+                                            
+                                        </div>
+                                        </li>
+                                    </ul>
+                                   
+                                  
                                         <div class="col-4 form-group">
                                             <label for="name">Num. Contenedor</label>
                                             <div class="input-group mb-3">

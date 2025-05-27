@@ -119,6 +119,7 @@ class PlaneacionController extends Controller
             'clients.nombre as cliente',
             'docum_cotizacion.num_contenedor',
             'docum_cotizacion.doc_ccp',
+            'docum_cotizacion.cima',
             'docum_cotizacion.boleta_liberacion',
             'docum_cotizacion.doda',
             'cotizaciones.carta_porte',
@@ -128,12 +129,78 @@ class PlaneacionController extends Controller
             'asignaciones.fecha_inicio',
             'asignaciones.fecha_fin'
         )
-        ->first();
+        ->get();
+
+        $misDocumentos = 
+        $documentos->map(function($cot){
+            $numContenedor = $cot->num_contenedor;
+            $docCCP = $cot->doc_ccp;
+            $doda = $cot->doda;
+            $boletaLiberacion = $cot->boleta_liberacion;
+            $cartaPorte = $cot->carta_porte;
+            $boletaVacio = $cot->boleta_vacio;
+            $docEir = $cot->doc_eir;
+            $tipo = "";
+    
+            if(!is_null($cot->referencia_full)){
+                    $secundaria = Cotizaciones::where('referencia_full', $cot->referencia_full)
+                    ->where('jerarquia', 'Secundario')
+                    ->with('DocCotizacion.Asignaciones')
+                    ->first();
+    
+                    $docCCP = ($docCCP && $secundaria->DocCotizacion->doc_ccp) ? true : false;
+                    $doda = ($doda && $secundaria->DocCotizacion->doda) ? true : false;
+                    $docEir = ($docEir && $secundaria->DocCotizacion->doc_eir) ? true : false;
+    
+                    $boletaLiberacion = ($boletaLiberacion && $secundaria->DocCotizacion->boleta_liberacion) ? true : false;
+                    $cartaPorte = ($cartaPorte && $secundaria->carta_porte) ? true : false;
+                    $boletaVacio = ($boletaVacio && $secundaria->img_boleta) ? true : false;
+    
+    
+                    if ($secundaria && $secundaria->DocCotizacion) {
+                        $numContenedor .= ' / ' . $secundaria->DocCotizacion->num_contenedor;
+                    }
+                    $tipo = "Full";
+            }
+    
+            return [
+                "id"=> $cot->id,
+                "cliente"=> $cot->cliente,
+                "num_contenedor"=>$numContenedor,
+                "doc_ccp"=> $docCCP,
+                "boleta_liberacion"=> $boletaLiberacion,
+                "doda"=> $doda,
+                "cima"=> $cot->cima,
+                "carta_porte"=> $cartaPorte,
+                "boleta_vacio"=> $boletaVacio,
+                "doc_eir"=> $docEir,
+                "id_proveedor"=> $cot->id_proveedor,
+                "fecha_inicio"=> $cot->fecha_inicio,
+                "fecha_fin"=> $cot->fecha_fin,
+                "tipo" => $tipo
+            ];
+        });
 
         if($asignaciones->Proveedor == NULL){
-            return ["nombre"=>$asignaciones->Operador->nombre, "tipo" => "Viaje Propio", "cotizacion" => $cotizacion, "cliente" => $cotizacion->Cliente, "subcliente" => $cotizacion->Subcliente, "documentos" => $documentos];
+            return [
+                        "nombre"=>$asignaciones->Operador->nombre, 
+                        "tipo" => "Viaje Propio", 
+                        "cotizacion" => $cotizacion, 
+                        "cliente" => $cotizacion->Cliente, 
+                        "subcliente" => $cotizacion->Subcliente, 
+                        "documentos" => $documentos->first(),
+                        "documents" => $misDocumentos->first()
+                    ];
         }
-        return ["nombre"=>$asignaciones->Proveedor->nombre, "tipo" => "Viaje subcontratado", "cotizacion" => $cotizacion, "cliente" => $cotizacion->Cliente, "subcliente" => $cotizacion->Subcliente, "documentos" => $documentos];
+        return [
+                    "nombre"=>$asignaciones->Proveedor->nombre, 
+                    "tipo" => "Viaje subcontratado", 
+                    "cotizacion" => $cotizacion, 
+                    "cliente" => $cotizacion->Cliente, 
+                    "subcliente" => $cotizacion->Subcliente, 
+                    "documentos" => $documentos->first(),
+                    "documents" => $misDocumentos->first()
+                ];
         
     }
 

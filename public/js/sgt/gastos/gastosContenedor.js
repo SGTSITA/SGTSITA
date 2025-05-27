@@ -140,7 +140,7 @@ class MissionResultRenderer {
    columnDefs: [
      { field: "IdGasto", hide: true},
      { field: "NumContenedor" ,filter: true,floatingFilter: true},
-     { field: "Descripcion" },
+     { field: "Descripcion",filter: true,floatingFilter: true },
      { field: "Monto",width: 150, valueFormatter: params => currencyFormatter(params.value), cellStyle: { textAlign: "right" }},
      { field: "FechaGasto",filter: true, floatingFilter: true,valueFormatter: params => formatFecha(params.value)},
   
