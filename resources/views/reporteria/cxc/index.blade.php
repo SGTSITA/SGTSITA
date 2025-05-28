@@ -108,6 +108,7 @@
                                                     width="25px">Destino</th>
                                             <th><img src="{{ asset('img/icon/contenedor.png') }}" alt=""
                                                     width="25px"># Contenedor</th>
+                                            <th>Tipo</th>
                                             <th><img src="{{ asset('img/icon/semaforos.webp') }}" alt=""
                                                     width="25px">Estatus</th>
                                         </tr>
@@ -128,7 +129,37 @@
                                                     <td>{{ $cotizacion->Subcliente->nombre ?? '-' }}</td>
                                                     <td>{{ $cotizacion->origen }}</td>
                                                     <td>{{ $cotizacion->destino }}</td>
-                                                    <td>{{ $cotizacion->DocCotizacion->num_contenedor }}</td>
+                                                    @php
+                                                        $docPrincipal = optional($cotizacion->DocCotizacion);
+                                                        $numContenedor = $docPrincipal->num_contenedor ?? '';
+
+                                                        if (
+                                                            $cotizacion->jerarquia === 'Principal' &&
+                                                            $cotizacion->referencia_full
+                                                        ) {
+                                                            $cotSecundaria = \App\Models\Cotizaciones::where(
+                                                                'referencia_full',
+                                                                $cotizacion->referencia_full,
+                                                            )
+                                                                ->where('jerarquia', 'Secundario')
+                                                                ->with('DocCotizacion')
+                                                                ->first();
+
+                                                            $docSecundaria = optional($cotSecundaria)->DocCotizacion;
+                                                            if ($docSecundaria && $docSecundaria->num_contenedor) {
+                                                                $numContenedor .=
+                                                                    ' / ' . $docSecundaria->num_contenedor;
+                                                            }
+                                                        }
+                                                    @endphp
+
+
+
+                                                    <td>{{ $numContenedor }}</td>
+
+                                                    <td>{{ $cotizacion->jerarquia === 'Principal' && $cotizacion->referencia_full ? 'Full' : 'Sencillo' }}
+                                                    </td>
+
                                                     <td>
                                                         @can('cotizaciones-estatus')
                                                             <button type="button"

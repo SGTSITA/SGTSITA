@@ -80,6 +80,8 @@ Route::get('coordenadas/mapas', [App\Http\Controllers\CoordenadasController::cla
 Route::get('coordenadas/busqueda', [App\Http\Controllers\CoordenadasController::class, 'indexSeach'])->name('seach.coordenadas');
 Route::get('/coordenadas/contenedor/search', [App\Http\Controllers\CoordenadasController::class, 'getcoorcontenedor'])->name('getcoorcontenedor');
 
+Route::post('/coordenadas/archivo', [App\Http\Controllers\CoordenadasController::class, 'subirArchivo'])->name('coordenadas.archivo');
+
 //R
 
 
@@ -124,10 +126,13 @@ Route::group(['middleware' => ['auth']], function() {
     Route::patch('/cuentas-bancarias/{id}/prioridad', [App\Http\Controllers\ProveedorController::class, 'definirCuentaPrioridad']);
 
     // ==================== E Q U I P O S ====================
-    Route::get('equipos/index', [App\Http\Controllers\EquiposController::class, 'index'])->name('index.equipos');
-    Route::post('equipos/create', [App\Http\Controllers\EquiposController::class, 'store'])->name('store.equipos');
-    Route::patch('equipos/update/{id}', [App\Http\Controllers\EquiposController::class, 'update'])->name('update.equipos');
+     Route::get('equipos/index', [App\Http\Controllers\EquiposController::class, 'index'])->name('index.equipos');
+     Route::post('equipos/create', [App\Http\Controllers\EquiposController::class, 'store'])->name('store.equipos');
+     Route::patch('equipos/update/{id}', [App\Http\Controllers\EquiposController::class, 'update'])->name('update.equipos');
     Route::patch('equipos/desactivar/{id}', [App\Http\Controllers\EquiposController::class, 'desactivar'])->name('desactivar.equipos');
+
+    Route::get('/equipos/data', [App\Http\Controllers\EquiposController::class, 'data'])->name('equipos.data');
+
 
     // ==================== O P E R A D O R E S ====================
     Route::get('operadores', [App\Http\Controllers\OperadorController::class, 'index'])->name('index.operadores');
@@ -300,6 +305,13 @@ Route::post('operadores/{id}/restaurar', [App\Http\Controllers\OperadorControlle
     Route::post('reporteria/liquidados/cxp/export', [App\Http\Controllers\ReporteriaController::class, 'export_liquidados_cxp'])->name('liquidados_cxp.export');
 
     Route::post('reporteria/excel/export',[App\Http\Controllers\ReporteriaController::class, 'exportGenericExcel'])->name('generic_excel');
+
+    Route::get('reporteria/gastos-pagar', [App\Http\Controllers\ReporteriaController::class, 'index_gxp'])->name('index_gxp.reporteria');
+    Route::get('reporteria/gastos-pagar/data', [App\Http\Controllers\ReporteriaController::class, 'getGastosPorPagarData'])->name('gxp.data');
+    Route::post('reporteria/gastos-pagar/export', [App\Http\Controllers\ReporteriaController::class, 'exportGastosPorPagar'])->name('gxp.export');
+
+
+
     // ==================== L I Q U I D A C I O N E S ====================
     Route::get('liquidaciones', [App\Http\Controllers\LiquidacionesController::class, 'index'])->name('index.liquidacion');
     Route::get('liquidaciones/historial', [App\Http\Controllers\LiquidacionesController::class, 'historialPagos'])->name('historial.liquidacion');

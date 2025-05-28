@@ -84,6 +84,7 @@ class CotizacionesController extends Controller
     }
 
     public function getDocumentos($id)
+
     {
         $cotizacion = Cotizaciones::with('DocCotizacion')->findOrFail($id);
         return response()->json([
@@ -94,8 +95,10 @@ class CotizacionesController extends Controller
             'carta_porte' => $cotizacion->carta_porte ?? null,
             'boleta_vacio' => $cotizacion->DocCotizacion->boleta_vacio ?? null,
             'doc_eir' => $cotizacion->doc_eir ?? null,
+            'foto_patio' => $cotizacion->DocCotizacion->foto_patio ?? null,
         ]);
     }
+
 
     public function index_externo(){
 

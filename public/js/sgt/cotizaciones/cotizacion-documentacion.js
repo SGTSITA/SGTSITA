@@ -129,6 +129,7 @@ class MissionResultRenderer {
      { field: "DODA",width: 110,cellRenderer: MissionResultRenderer },
      { field: "FormatoCartaPorte",width: 150,cellRenderer: MissionResultRenderer },
      { field: "PreAlta",width: 110,cellRenderer: MissionResultRenderer },
+     { field: "foto_patio",width: 110,cellRenderer: MissionResultRenderer },
      { field: "NumContenedor",filter: true, floatingFilter: true},
      { field: "Estatus",filter: true, floatingFilter: true, cellClassRules: ragCellClassRules},
      { field: "Origen",filter: true, floatingFilter: true},

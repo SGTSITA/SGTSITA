@@ -513,6 +513,7 @@ function abrirDocumentos(idCotizacion) {
                 { label: 'Carta Porte', valor: data.carta_porte },
                 { label: 'Boleta Vacio', valor: data.boleta_vacio === 'si' },
                 { label: 'EIR', valor: data.doc_eir },
+                // { label: 'Foto Patio', valor: data.foto_patio },
             ];
 
             campos.forEach(item => {

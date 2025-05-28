@@ -5,8 +5,28 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap contributors'
 }).addTo(map);
 
+
+    const camposUbicacion = [
+  { key: "toma_foto_patio", orden: 15 },
+  { key: "cargado_patio", orden: 14 },
+  { key: "descarga_patio", orden: 13 },
+  { key: "recepcion_doc_firmados", orden: 12 },
+  { key: "fin_descarga", orden: 11 },
+  { key: "inicio_descarga", orden: 10 },
+  { key: "en_destino", orden: 9 },
+  { key: "modulado_coordenada", orden: 8 },
+  { key: "modulado_tipo", orden: 7 },
+  { key: "fila_fiscal", orden: 6 },
+  { key: "cargado_contenedor", orden: 5 },
+  { key: "descarga_vacio", orden: 4 },
+  { key: "dentro_puerto", orden: 3 },
+  { key: "registro_puerto", orden: 2 },
+  { key: "tipo_flujo", orden: 1 }
+];
+
 // Mostrar el modal de Bootstrap al cargar la página
 window.onload = function() {
+
   var filtroModal = new bootstrap.Modal(document.getElementById('filtroModal'));
   filtroModal.show();
 
@@ -29,6 +49,25 @@ window.onload = function() {
   }
 };
 
+
+let contenedoresDisponibles = [];
+
+
+function cargarinicial()
+{
+       fetch(`/coordenadas/contenedor/search?`)
+      .then(response => response.json())
+      .then(data => {
+        
+         contenedoresDisponibles   = data.datos;
+        
+          
+      })
+      .catch(error => {
+          console.error('Error al traer coordenadas:', error);
+      });
+}
+
 // Enviar filtros al backend
 document.getElementById('formFiltros').addEventListener('submit', function(event) {
   event.preventDefault();
@@ -44,32 +83,67 @@ document.getElementById('formFiltros').addEventListener('submit', function(event
 
   limpiarMarcadores(); // Limpia los anteriores antes de buscar nuevos
 
+  const mostrarUltimaUbicacion = document.getElementById("ubicacion-toggle").checked;
+
   fetch(`/coordenadas/contenedor/search?${queryParams.toString()}`)
       .then(response => response.json())
       .then(data => {
           const preguntas = data.preguntas;
           const datos = data.datos;
 
+
+
           datos.forEach(contenedor => {
-            preguntas.forEach(pregunta => {
-                const campo = pregunta.campo;
-                const valor = contenedor[campo];
-        
-                if (valor) {
-                    const coords = valor.split(',');
-                    if (coords.length === 2) {
-                        const lat = parseFloat(coords[0]);
-                        const lng = parseFloat(coords[1]);
-        
-                        const marker = L.marker([lat, lng])
-                            .addTo(map)
-                            .bindTooltip(`${pregunta.tooltip} <br> Contenedor: <strong>${contenedor.contenedor}</strong>`)
-                            .openTooltip();
-        
-                        window.markers.push(marker);
-                    }
+            if (mostrarUltimaUbicacion) {
+                for (let i = 0; i < camposUbicacion.length; i++) {
+            const campo = camposUbicacion[i].key;
+            const valor = contenedor[campo];
+
+            if (valor) {
+                const coords = valor.split(',');
+                if (coords.length === 2) {
+                    const lat = parseFloat(coords[0]);
+                    const lng = parseFloat(coords[1]);
+
+                    const marker = L.marker([lat, lng])
+                        .addTo(map)
+                        .bindTooltip(`Última ubicación: ${campo.replace(/_/g, ' ')}<br>Contenedor: <strong>${contenedor.contenedor}</strong>`)
+                        .openTooltip();
+
+                    window.markers.push(marker);
+                    break;
                 }
-            });
+                else {
+                console.log(`Formato incorrecto de coordenadas: ${valor}`);
+            }   
+            }
+        }
+            }
+            else {
+
+                preguntas.forEach(pregunta => {
+                        const campo = pregunta.campo;
+                        const valor = contenedor[campo];
+
+                        if (valor) {
+                            const coords = valor.split(',');
+                            if (coords.length === 2) {
+                                const lat = parseFloat(coords[0]);
+                                const lng = parseFloat(coords[1]);
+
+                                const marker = L.marker([lat, lng])
+                                    .addTo(map)
+                                    .bindTooltip(`${pregunta.tooltip}<br>Contenedor: <strong>${contenedor.contenedor}</strong>`)
+                                    .openTooltip();
+
+                                window.markers.push(marker);
+                            }
+                        }
+                    });
+
+            }
+
+      
         });
 
           // Cierra el modal después de aplicar los filtros
@@ -134,7 +208,7 @@ document.getElementById('cliente').addEventListener('change', function () {
     }
 });
 document.addEventListener('DOMContentLoaded', function () {
-    
+     cargarinicial();
     const btnEditarFiltros = document.getElementById('btnEditarFiltros');
     const btnCerrarModal = document.getElementById('btnCerrarModal');
 
@@ -208,3 +282,93 @@ function limpiarFiltros() {
     });
 
 }
+
+const seleccionados = [];
+
+    function mostrarSugerencias() {
+        const input = document.getElementById('contenedor-input');
+        const filtro = input.value.trim().toUpperCase();
+        const sugerenciasDiv = document.getElementById('sugerencias');
+        sugerenciasDiv.innerHTML = '';
+
+        if (filtro.length === 0) {
+            sugerenciasDiv.style.display = 'none';
+            return;
+        }
+
+        const filtrados = contenedoresDisponibles.filter(c =>
+            
+            (c.contenedor || '').toUpperCase().includes(filtro) &&
+    !seleccionados.includes(c.contenedor)
+        );
+
+        filtrados.forEach(c => {
+            const item = document.createElement('div');
+            item.textContent = c.contenedor;
+            item.style.padding = '5px';
+            item.style.cursor = 'pointer';
+            item.onclick = () => seleccionarContenedor(c.contenedor);
+            sugerenciasDiv.appendChild(item);
+        });
+
+        sugerenciasDiv.style.display = filtrados.length ? 'block' : 'none';
+    }
+
+    function seleccionarContenedor(valor) {
+        seleccionados.push(valor);
+        document.getElementById('contenedor-input').value = '';
+        document.getElementById('sugerencias').style.display = 'none';
+        actualizarVista();
+    }
+
+    function agregarContenedor() {
+        const input = document.getElementById('contenedor-input');
+        const valor = input.value.trim().toUpperCase();
+        if (valor && contenedoresDisponibles.includes(valor) && !seleccionados.includes(valor)) {
+            seleccionados.push(valor);
+            input.value = '';
+            actualizarVista();
+        }
+    }
+
+    function eliminarContenedor(idx) {
+        seleccionados.splice(idx, 1);
+        actualizarVista();
+    }
+
+    function actualizarVista() {
+        const div = document.getElementById('contenedores-seleccionados');
+        div.innerHTML = '';
+
+        seleccionados.forEach((cont, i) => {
+            div.innerHTML += `
+                 <span class="badge bg-secondary me-1">
+            ${cont}
+            <button type="button" 
+                onclick="eliminarContenedor(${i})" 
+                style="background:none; border:none; color:red; margin-left:5px; font-weight:bold;" 
+                title="Eliminar">
+                &times;
+            </button>
+        </span>
+                
+            `;
+        });
+
+        document.getElementById('contenedores').value = seleccionados.join(';');
+    }
+
+
+  
+
+document.getElementById('ubicacion-toggle').addEventListener('change', function() {
+    const ubicacionTexto = document.getElementById('ubicacion-texto');
+    
+    if (this.checked) {
+        ubicacionTexto.textContent = 'Última ubicación';
+    } else {
+        ubicacionTexto.textContent = 'Todas las ubicaciones';
+    }
+});
+
+

@@ -2,34 +2,34 @@ const preguntasPorTipo = {
     b: [
         { texto: "1)¿ Registro en Puerto ?", campo: "registro_puerto" },
         { texto: "2)¿ Dentro de Puerto ?", campo: "dentro_puerto" },
-        { texto: "3)¿ Descarga Vacío ?", campo: "descarga_vacio" },
-        { texto: "4)¿ Cargado Contenedor ?", campo: "cargado_contenedor" },
-        { texto: "5)¿ En Fila Fiscal ?", campo: "fila_fiscal" },
-        { texto: "6)¿ Modulado ?", campo: "modulado_tipo", opciones: ["5.1) Verde","5.2) Amarillo","5.3) Rojo", "5.4) OVT"] },
-        { texto: "7)¿ Descarga en patio ?", campo: "descarga_patio" },
+        { texto: "3)¿ Cargado Contenedor ?", campo: "cargado_contenedor" },
+        { texto: "4)¿ En Fila Fiscal ?", campo: "fila_fiscal" },
+        { texto: "5)¿ Modulado ?", campo: "modulado_tipo", opciones: ["5.1) Verde","5.2) Amarillo","5.3) Rojo", "5.4) OVT"] },
+        { texto: "6)¿ Descarga en patio ?", campo: "descarga_patio" },
+        { texto: "7) Toma Foto de Boleta de Patio", campo: "toma_foto_patio" },
     ],
     f: [
-        { texto: "8) ¿Carga en patio?", campo: "cargado_patio" },
-        { texto: "9) ¿Inicio ruta?", campo: "en_destino" },
-        { texto: "10)¿Inicia carga?", campo: "inicio_descarga" },
-        { texto: "11)¿Fin descarga?", campo: "fin_descarga" },
-        { texto: "12 ¿Recepción Doctos Firmados?", campo: "recepcion_doc_firmados" },
+        { texto: "1)¿Carga en patio?", campo: "cargado_patio" },
+        { texto: "2)¿Inicio ruta?", campo: "en_destino" },
+        { texto: "3)¿Inicia carga?", campo: "inicio_descarga" },
+        { texto: "4)¿Fin descarga?", campo: "fin_descarga" },
+        { texto: "5)¿Recepción Doctos Firmados?", campo: "recepcion_doc_firmados" },
     ],
     c: [
         { texto: "¿1) Registro en Puerto ?", campo: "registro_puerto" },
         { texto: "¿2) Dentro de Puerto ?", campo: "dentro_puerto" },
-        { texto: "¿3) Descarga Vacío?", campo: "descarga_vacio" },
-        { texto: "¿4) Cargado Contenedor?", campo: "cargado_contenedor" },
-        { texto: "¿5) En Fila Fiscal?", campo: "fila_fiscal" },
-        { texto: "¿6) Modulado?", campo: "modulado_tipo", opciones: ["5.1) Verde","5.2) Amarillo","5.3) Rojo", "5.4) OVT"] },
-        { texto: "¿7) En Destino?", campo: "en_destino" },
-        { texto: "¿8) Inicio Descarga?", campo: "inicio_descarga" },
-        { texto: "¿9) Fin Descarga?", campo: "fin_descarga" },
-        { texto: "¿10) Recepción Doctos Firmados?", campo: "recepcion_doc_firmados" },
+        { texto: "¿3) Cargado Contenedor?", campo: "cargado_contenedor" },
+        { texto: "¿4) En Fila Fiscal?", campo: "fila_fiscal" },
+        { texto: "¿5) Modulado?", campo: "modulado_tipo", opciones: ["5.1) Verde","5.2) Amarillo","5.3) Rojo", "5.4) OVT"] },
+        { texto: "¿6) En Destino?", campo: "en_destino" },
+        { texto: "¿7) Inicio Descarga?", campo: "inicio_descarga" },
+        { texto: "¿8) Fin Descarga?", campo: "fin_descarga" },
+        { texto: "¿9) Recepción Doctos Firmados?", campo: "recepcion_doc_firmados" },
     ],
 };
 
 
+let contenedoresDisponibles = [];
 
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -51,30 +51,47 @@ let PreguntaA;
   
 
     const columnDefs = [
-        { headerCheckboxSelection: true, checkboxSelection: true, width: 50 },
-        { headerName: "No Coti", field: "id_cotizacion", sortable: true, filter: true },
-        { headerName: "No Asig", field: "id_asignacion", sortable: true, filter: true },
-        { headerName: "No Coor", field: "id_coordenada", sortable: true, filter: true },
+        {
+        headerCheckboxSelection: true,
+        checkboxSelection: true,
+        width: 40, 
+        pinned: "left", 
+        suppressSizeToFit: true,
+        resizable: false
+        },
+        // { headerName: "No Coti", field: "id_cotizacion", sortable: true, filter: true },
+        // { headerName: "No Asig", field: "id_asignacion", sortable: true, filter: true },
+        // { headerName: "No Coor", field: "id_coordenada", sortable: true, filter: true },
         { headerName: "Cliente", field: "cliente", sortable: true, filter: true },
+        { headerName: "# Contenedor", field: "contenedor", sortable: true, filter: true },
         { headerName: "Origen", field: "origen", sortable: true, filter: true },
         { headerName: "Destino", field: "destino", sortable: true, filter: true },
-        { headerName: "# Contenedor", field: "contenedor", sortable: true, filter: true },
+       
         {
             headerName: "E Burrero",
             field: "Estatus_Burrero",
             minWidth: 180,
             cellRenderer: function (params) {
                 let color = "secondary";
-                if (params.data.tipo_b_estado === "2") color = "success";
-                else if (params.data.tipo_b_estado === "1") color = "danger";
-                else if (params.data.tipo_b_estado === "0") color = "warning";
-        
-                return `
+                let clasIcon ="fa fa-hourglass-half me-1"
+                if (String(params.data.tipo_b_estado) === "2"){
+                color = "success";
+                clasIcon="fa fa-check-circle me-1 text-success";
+                } 
+                else if (String(params.data.tipo_b_estado) === "1"){
+                color = "primary";
+                 clasIcon=" fa fa-play-circle me-1";
+                } 
+                else if (String(params.data.tipo_b_estado) === "0") {
+                    color = "warning";
+                     clasIcon="fa fa-hourglass-half me-1";
+                }
+               return `
                         <button class="btn btn-sm btn-outline-${color} ver-mapa-btn" 
-                            data-tipo="c"
+                            data-tipo="b"
                             data-info='${JSON.stringify(params.data).replace(/'/g, "&#39;")}' 
                             title="Ver progreso...">
-                            <i class="fa fa-sync-alt me-1"></i> ${params.data.Estatus_Burrero}
+                            <i class="${clasIcon}"></i> ${params.data.Estatus_Burrero}
                         </button>
                 `;
             }
@@ -85,17 +102,26 @@ let PreguntaA;
             minWidth: 180,
             cellRenderer: function (params) {
                 let color = "secondary";
-                if (params.data.tipo_f_estado === "2") color = "success";
-                else if (params.data.tipo_f_estado === "1") color = "danger";
-                else if (params.data.tipo_f_estado === "0") color = "warning";
-        
-                return `
+                let clasIcon ="fa fa-hourglass-half me-1"
+                if (String(params.data.tipo_f_estado) === "2"){
+                color = "success";
+                clasIcon="fa fa-check-circle me-1 text-success";
+                } 
+                else if (String(params.data.tipo_f_estado) === "1"){
+                color = "primary";
+                 clasIcon=" fa fa-play-circle me-1";
+                } 
+                else if (String(params.data.tipo_f_estado) === "0") {
+                    color = "warning";
+                     clasIcon="fa fa-hourglass-half me-1";
+                }
+                            return `
                   
                     <button class="btn btn-sm btn-outline-${color} ver-mapa-btn" 
-                    data-tipo="c"
+                    data-tipo="f"
                     data-info='${JSON.stringify(params.data).replace(/'/g, "&#39;")}' 
                     title="Ver progreso...">
-                    <i class="fa fa-sync-alt me-1"></i> ${params.data.Estatus_Foraneo}
+                    <i class="${clasIcon}"></i> ${params.data.Estatus_Foraneo}
                 </button>
                 `;
             }
@@ -106,17 +132,28 @@ let PreguntaA;
             minWidth: 180,
             cellRenderer: function (params) {
                 let color = "secondary";
-                if (params.data.tipo_c_estado === "2") color = "success";
-                else if (params.data.tipo_c_estado === "1") color = "danger";
-                else if (params.data.tipo_c_estado === "0") color = "warning";
-        
+                let clasIcon ="fa fa-hourglass-half me-1"
+                if (String(params.data.tipo_c_estado) === "2"){
+                color = "success";
+                clasIcon="fa fa-check-circle me-1 text-success";
+                } 
+                else if (String(params.data.tipo_c_estado) === "1"){
+                color = "primary";
+                 clasIcon=" fa fa-play-circle me-1";
+                } 
+                else if (String(params.data.tipo_c_estado) === "0") {
+                    color = "warning";
+                     clasIcon="fa fa-hourglass-half me-1";
+                }
+
+                       
                 return `
                      <button class="btn btn-sm btn-outline-${color} ver-mapa-btn" 
-            data-tipo="c"
-            data-info='${JSON.stringify(params.data).replace(/'/g, "&#39;")}' 
-            title="Ver progreso...">
-        <i class="fa fa-sync-alt me-1"></i> ${params.data.Estatus_Completo}
-    </button>
+                    data-tipo="c"
+                    data-info='${JSON.stringify(params.data).replace(/'/g, "&#39;")}' 
+                    title="Ver progreso...">
+                <i class="${clasIcon}"></i> ${params.data.Estatus_Completo}
+                     </button>
                 `;
             }
         }
@@ -140,7 +177,6 @@ let PreguntaA;
 
     
 
-
     
         getCoordenadasList("");
    
@@ -155,6 +191,7 @@ function getCoordenadasList(parametros) {
             .then(response => response.json())
             .then(data => {
                 PreguntaA= data.preguntas;
+                contenedoresDisponibles   = data.datos;
                 gridApi.setGridOption("rowData", data.datos);
             })
             .catch(error => {
@@ -299,4 +336,81 @@ function makeDraggable(element) {
             isMouseDown = false;
         });
     }
+}
+
+
+
+const seleccionados = [];
+
+function mostrarSugerencias() {
+    const input = document.getElementById('contenedor-input');
+    const filtro = input.value.trim().toUpperCase();
+    const sugerenciasDiv = document.getElementById('sugerencias');
+    sugerenciasDiv.innerHTML = '';
+
+    if (filtro.length === 0) {
+        sugerenciasDiv.style.display = 'none';
+        return;
+    }
+
+    const filtrados = contenedoresDisponibles.filter(c =>
+        
+        (c.contenedor || '').toUpperCase().includes(filtro) &&
+!seleccionados.includes(c.contenedor)
+    );
+
+    filtrados.forEach(c => {
+        const item = document.createElement('div');
+        item.textContent = c.contenedor;
+        item.style.padding = '5px';
+        item.style.cursor = 'pointer';
+        item.onclick = () => seleccionarContenedor(c.contenedor);
+        sugerenciasDiv.appendChild(item);
+    });
+
+    sugerenciasDiv.style.display = filtrados.length ? 'block' : 'none';
+}
+
+function seleccionarContenedor(valor) {
+    seleccionados.push(valor);
+    document.getElementById('contenedor-input').value = '';
+    document.getElementById('sugerencias').style.display = 'none';
+    actualizarVista();
+}
+
+function agregarContenedor() {
+    const input = document.getElementById('contenedor-input');
+    const valor = input.value.trim().toUpperCase();
+    if (valor && contenedoresDisponibles.includes(valor) && !seleccionados.includes(valor)) {
+        seleccionados.push(valor);
+        input.value = '';
+        actualizarVista();
+    }
+}
+
+function eliminarContenedor(idx) {
+    seleccionados.splice(idx, 1);
+    actualizarVista();
+}
+
+function actualizarVista() {
+    const div = document.getElementById('contenedores-seleccionados');
+    div.innerHTML = '';
+
+    seleccionados.forEach((cont, i) => {
+        div.innerHTML += `
+             <span class="badge bg-secondary me-1">
+        ${cont}
+        <button type="button" 
+            onclick="eliminarContenedor(${i})" 
+            style="background:none; border:none; color:red; margin-left:5px; font-weight:bold;" 
+            title="Eliminar">
+            &times;
+        </button>
+    </span>
+            
+        `;
+    });
+
+    document.getElementById('contenedores').value = seleccionados.join(';');
 }

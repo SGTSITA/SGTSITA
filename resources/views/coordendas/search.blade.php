@@ -20,16 +20,17 @@
                 </div>
            
                 <div class="card mb-3">
-                    <div class="card-header py-2">
-                        <h6 class="mb-0">Filtros de Búsqueda</h6>
-                    </div>
-
+                   
                     <div class="card-body py-3">
                         <form id="formFiltros">
                         <div class="row g-2">
-                         <div class="col-md-2">
-                            <label for="contenedor" class="form-label small"># Contenedor</label>
-                            <input type="text" class="form-control form-control-sm" name="contenedor" id="contenedor">
+                            <div class="col-md-2">
+                                <label for="contenedor-input" class="form-label">Contenedores</label>
+                                <input type="text" class="form-control" id="contenedor-input" oninput="mostrarSugerencias()" placeholder="Buscar contenedor...">
+                                <div id="sugerencias" style="border: 1px solid #ccc; max-height: 150px; overflow-y: auto; display: none; position: absolute; background: white; z-index: 1050; width: 100%;"></div>
+                                <button type="button" class="btn btn-sm btn-outline-secondary mt-2" onclick="agregarContenedor()">Agregar</button>
+                                <div id="contenedores-seleccionados" class="mt-2"></div>
+                                <input type="hidden" name="contenedores" id="contenedores">
                             </div>
 
                             <div class="col-md-4">
