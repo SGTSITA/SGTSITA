@@ -137,9 +137,14 @@
                                                             $cotizacion->jerarquia === 'Principal' &&
                                                             $cotizacion->referencia_full
                                                         ) {
-                                                            $cotSecundaria = \App\Models\Cotizaciones::with(
-                                                                'DocCotizacion',
-                                                            )->find($cotizacion->referencia_full);
+                                                            $cotSecundaria = \App\Models\Cotizaciones::where(
+                                                                'referencia_full',
+                                                                $cotizacion->referencia_full,
+                                                            )
+                                                                ->where('jerarquia', 'Secundario')
+                                                                ->with('DocCotizacion')
+                                                                ->first();
+
                                                             $docSecundaria = optional($cotSecundaria)->DocCotizacion;
                                                             if ($docSecundaria && $docSecundaria->num_contenedor) {
                                                                 $numContenedor .=
@@ -147,6 +152,7 @@
                                                             }
                                                         }
                                                     @endphp
+
 
 
                                                     <td>{{ $numContenedor }}</td>
