@@ -187,13 +187,20 @@
                         $cot = optional($item->Contenedor)->Cotizacion;
 
                         if ($cot && $cot->jerarquia === 'Principal' && $cot->referencia_full) {
-                            $sec = \App\Models\Cotizaciones::find($cot->referencia_full);
-                            $numContSec = optional($sec->DocCotizacion)->num_contenedor;
+                            $sec = \App\Models\Cotizaciones::where('referencia_full', $cot->referencia_full)
+                                ->where('jerarquia', 'Secundario')
+                                ->where('id', '!=', $cot->id)
+                                ->with('DocCotizacion')
+                                ->first();
+
+                            $numContSec = optional($sec?->DocCotizacion)->num_contenedor;
+
                             if ($numContSec) {
                                 $numContenedor .= ' / ' . $numContSec;
                             }
                         }
                     @endphp
+
                     <td>{{ $numContenedor }}</td>
                     <td>${{ number_format($suma_importeCT, 2, '.', ',') }}</td>
                     <td>${{ number_format($total_oficial, 2, '.', ',') }}</td>

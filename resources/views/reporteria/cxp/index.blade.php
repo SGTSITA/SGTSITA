@@ -130,18 +130,23 @@
                                                             $cotizacionOriginal->jerarquia === 'Principal' &&
                                                             $cotizacionOriginal->referencia_full
                                                         ) {
-                                                            $contenedorSec = optional(
-                                                                optional(
-                                                                    \App\Models\Cotizaciones::find(
-                                                                        $cotizacionOriginal->referencia_full,
-                                                                    ),
-                                                                )->DocCotizacion,
-                                                            )->num_contenedor;
+                                                            $cotSecundaria = \App\Models\Cotizaciones::where(
+                                                                'referencia_full',
+                                                                $cotizacionOriginal->referencia_full,
+                                                            )
+                                                                ->where('jerarquia', 'Secundario')
+                                                                ->where('id', '!=', $cotizacionOriginal->id)
+                                                                ->with('DocCotizacion')
+                                                                ->first();
+
+                                                            $contenedorSec = optional($cotSecundaria?->DocCotizacion)
+                                                                ->num_contenedor;
 
                                                             if ($contenedorSec) {
                                                                 $numContenedor .= ' / ' . $contenedorSec;
                                                             }
                                                         }
+
                                                     @endphp
                                                     <td>{{ $numContenedor }}</td>
                                                     <td>
