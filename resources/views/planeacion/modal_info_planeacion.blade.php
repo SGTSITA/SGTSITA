@@ -65,7 +65,7 @@
             </h6>
             <div class="text-center d-none" id="cima-label">
               <div class="border-dashed border-1 border-secondary border-radius-md py-3">
-                <h6 class="text-primary mb-0">Operado por:</h6>
+                <h6 class="text-primary mb-0">Entregar vacío:</h6>
                 <h4 class="font-weight-bolder"><span class="small" id="currentBalance">CIMA</span></h4>
               </div>
             </div>
