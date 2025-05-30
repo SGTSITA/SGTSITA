@@ -69,8 +69,8 @@ trait GlobalGpsTrait
                     'body' => $response->body(),
                 ]);
 
-                new ApiResponse(
-                        success: true,
+              return  new ApiResponse(
+                        success: false,
                         data: $response->json(),
                         message: 'Consulta exitosa',
                         status: $response->status()
@@ -91,7 +91,7 @@ trait GlobalGpsTrait
                 'message' => $e->getMessage(),
             ]);
 
-            new ApiResponse(
+          return  new ApiResponse(
                         success: false,
                         data: null,
                         message: 'Excepción HTTP: ' .$e->getMessage(),
@@ -103,7 +103,7 @@ trait GlobalGpsTrait
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
-            new ApiResponse(
+         return   new ApiResponse(
                         success: false,
                         data: null,
                         message: 'Error inesperado::getDeviceRealTimeLocation => ' .$e->getMessage(),

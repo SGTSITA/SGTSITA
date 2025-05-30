@@ -35,4 +35,10 @@ return [
         'url_base' => env('GLOBAL_GPS_API_URL')
     ],
 
+    'SkyAngelGps' => [
+        'url_base' => env('SKY_ANGEL_GPS_URL'),
+        'username' => env('SKY_ANGEL_GPS_USERNAME'),
+        'password' => env('SKY_ANGEL_GPS_PASSWORD')
+    ]
+
 ];

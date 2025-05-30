@@ -10,10 +10,11 @@ use App\Http\Controllers\PermisosController;
 use App\Http\Controllers\EmpresasController;
 use App\Http\Controllers\ExternosController;
 use App\Http\Controllers\CuentaGlobalController;
-use App\Http\Controllers\GloblaGpsController;
+use App\Http\Controllers\GpsController;
 
-Route::group(["prefix" => "globalgps"],function(){
- Route::get('ubicacion/by-imei',[GloblaGpsController::class,'obtenerUbicacionByImei'])->name('ubicacion.byimei');
+Route::group(["prefix" => "gps"],function(){
+ Route::get('globalgps/ubicacion/by-imei/{imei}',[GpsController::class,'obtenerUbicacionByImei'])->name('ubicacion.byimei');
+ Route::get('skyangel/ubicacion/',[GpsController::class,'getLocationSkyAngel'])->name('ubicacion.byimei');
 });
 
 Route::post('/exportar-cxc', [ReporteriaController::class, 'export'])->name('exportar.cxc');
