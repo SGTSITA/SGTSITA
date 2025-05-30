@@ -10,6 +10,11 @@ use App\Http\Controllers\PermisosController;
 use App\Http\Controllers\EmpresasController;
 use App\Http\Controllers\ExternosController;
 use App\Http\Controllers\CuentaGlobalController;
+use App\Http\Controllers\GloblaGpsController;
+
+Route::group(["prefix" => "globalgps"],function(){
+ Route::get('ubicacion/by-imei',[GloblaGpsController::class,'obtenerUbicacionByImei'])->name('ubicacion.byimei');
+});
 
 Route::post('/exportar-cxc', [ReporteriaController::class, 'export'])->name('exportar.cxc');
 Route::post('sendfiles',[ExternosController::class,'sendFiles1'])->name('file-manager.sendfiles');
