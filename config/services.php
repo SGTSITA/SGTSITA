@@ -29,5 +29,10 @@ return [
         'secret' => env('AWS_SECRET_ACCESS_KEY'),
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
+    'globalGps' => [
+        'appkey' => env('GLOBAL_GPS_ACCESS_KEY'),
+        'appid' => env('GLOBAL_GPS_APP_ID'),
+        'url_base' => env('GLOBAL_GPS_API_URL')
+    ],
 
 ];
