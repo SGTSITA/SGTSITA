@@ -16,34 +16,28 @@ class CustomAuthController extends Controller
 
     public function customLogin(Request $request)
     {
-
-
-    if($request->password == true ){
-
         $request->validate([
-            'email' => 'required',
-            'password' => 'required',
-        ]);
+                'email' => 'required|email',
+                'password' => 'required',
+            ]);
 
+            $credentials = $request->only('email', 'password');
 
-        $credentials = $request->only('email', 'password');
-        if (Auth::attempt($credentials)) {
-            return redirect()->intended('dashboard')
-                        ->withSuccess('Signed in');
-        }
+            if (Auth::attempt($credentials)) {
+                $request->session()->regenerate();
 
-      //  return redirect("login")->withSuccess('Login details are not valid');
-      return response([
-                            "mensaje"=>"Las credenciales de acceso son incorrectas. Verifique su información"
-                        ],401);
+              
 
-    }else{
+                return response()->json([
+                    'mensaje' => 'Inicio de sesión exitoso',
+                    'redirect' => route('dashboard'),
+                  
+                ]);
+            }
 
-        $client = Client::where('email', $request->email)->firstOrFail();
-
-
-
-    }
+            return response()->json([
+                'mensaje' => 'Las credenciales de acceso son incorrectas. Verifique su información.'
+            ], 401);
 
     }
 
@@ -85,6 +79,20 @@ class CustomAuthController extends Controller
     }
 
     public function signOut() {
+        
+       $user = auth()->user();
+
+    
+    $empresaInicial = UserEmpresa::where('id_user', $user->id)
+        ->where('empresaInicial', 1)
+        ->first();
+
+    if ($empresaInicial) {
+        
+        $user->id_empresa = $empresaInicial->id_empresa;
+        $user->save();
+    }
+    
         Session::flush();
         Auth::logout();
 

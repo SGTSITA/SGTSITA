@@ -24,5 +24,8 @@ class Configuracion extends Model
         'icon_boton_save',
         'color_boton_close',
         'icon_boton_close',
+        'user_id',
     ];
+
+   
 }

@@ -35,7 +35,7 @@
 @push('javascript')
 <script src="{{ asset('js/sgt/common.js') }}?v={{ filemtime(public_path('js/sgt/common.js')) }}"></script>
 <script src="{{ asset('js/sgt/cotizaciones/cotizaciones.js') }}?v={{ filemtime(public_path('js/sgt/cotizaciones/cotizaciones.js')) }}"></script>
-<script src="{{asset('assets/metronic/fileuploader/cotizacion-cliente-externo.js')}}?v={{ filemtime(public_path('js/sgt/cotizaciones/cotizaciones.js')) }}" type="text/javascript"></script>
+<script src="{{ asset('assets/metronic/fileuploader/cotizacion-cliente-externo.js')}}?v={{ filemtime(public_path('js/sgt/cotizaciones/cotizaciones.js')) }}" type="text/javascript"></script>
 
 <script>
   $(document).ready(() =>{

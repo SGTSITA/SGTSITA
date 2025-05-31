@@ -341,7 +341,12 @@
                                 href="{{ route('seach.coordenadas') }}">
                                 <span class="sidenav-mini-icon"> P </span>
                                 <span class="sidenav-normal">Busqueda Coordenadas</span>
-                            </a>                         
+                            </a> 
+                            <a class="nav-link {{ Request::is('coordenadas/rastrear') ? 'show' : '' }}"
+                                href="{{ route('rastrearContenedor') }}">
+                                <span class="sidenav-mini-icon"> P </span>
+                                <span class="sidenav-normal">Rastrear Viajes</span>
+                            </a>                          
                         </li>
                     </ul>
                 </div>
@@ -402,6 +407,19 @@
                             </a>
                         </li>
                     @endcan
+
+                    <!-- @can('usuarios-empresas')
+                        <li class="nav-item ">
+                            <a class="nav-link {{ Request::is('usuarios-empresas*') ? 'show' : '' }}"
+                                href="{{ route('Usuarios-empresas.index') }}">
+                                <span class="sidenav-mini-icon"> P </span>
+                                <span class="sidenav-normal">Usuarios Empresas </span>
+                            </a>
+                        </li>
+                    @endcan -->
+
+
+                    
 
                     <!-- Nueva opción de Correo -->
                     <li class="nav-item ">

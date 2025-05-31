@@ -1,8 +1,7 @@
+
 const tasa_iva = 0.16;
 const tasa_retencion = 0.04;
-const catalogo_clientes = document.querySelector("#txtClientes");
-const formCotizacion = document.querySelector('#cotizacionCreateMultiple')
-const frmMode = formCotizacion.getAttribute("sgt-cotizacion-action");
+
 
 const formFields = [
     {'field':'origen', 'id':'origen','label':'Origen','required': true, "type":"text", "master": true},
@@ -164,7 +163,29 @@ function calcularTotal(modulo = 'crear') {
 
 }
 
+function getClientes(clienteId){
+    $.ajax({
+        type: 'GET',
+        url: '/subclientes/' + clienteId,
+        success: function(data) {
+            $('#id_subcliente').empty();
+            $('#id_subcliente').append('<option value="">Seleccionar subcliente</option>');
+            $.each(data, function(key, subcliente) {
+                $('#id_subcliente').append('<option value="' + subcliente.id + '">' + subcliente.nombre + '</option>');
+            });
+            $('#id_subcliente').select2();
+        }
+    });
+}
 document.addEventListener('DOMContentLoaded', function () {
+    const catalogo_clientes = document.querySelector("#txtClientes");
+        const formCotizacion = document.querySelector('#cotizacionCreateMultiple');
+
+        let frmMode = null;
+
+        if (formCotizacion && formCotizacion.hasAttribute('sgt-cotizacionCreate-action')) {
+            frmMode = formCotizacion.getAttribute('sgt-cotizacionCreate-action');
+        }
     // Obtener elementos del DOM
     var pesoReglamentarioInput = document.getElementById('peso_reglamentario');
     var pesoContenedorInput = document.getElementById('peso_contenedor');
@@ -344,20 +365,7 @@ $('#id_cliente').change(function() {
    
 });
 
-function getClientes(clienteId){
-    $.ajax({
-        type: 'GET',
-        url: '/subclientes/' + clienteId,
-        success: function(data) {
-            $('#id_subcliente').empty();
-            $('#id_subcliente').append('<option value="">Seleccionar subcliente</option>');
-            $.each(data, function(key, subcliente) {
-                $('#id_subcliente').append('<option value="' + subcliente.id + '">' + subcliente.nombre + '</option>');
-            });
-            $('#id_subcliente').select2();
-        }
-    });
-}
+
 
 async function getContenedoresOnFull(){
     let _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
@@ -891,3 +899,4 @@ $("#cotizacionesUpdate").on("submit",(e)=>{
 
    e.target.submit();
 })
+

@@ -41,6 +41,8 @@
                   <h1 class="text-gray-900 fw-bolder mb-3"> Hola, bienvenido </h1>
                   <div class="text-gray-500 fw-semibold fs-6"> Introduzca sus credenciales para iniciar sesión </div>
                 </div>
+      
+                <a href="{{ url('/auth/google') }}">Iniciar sesión con Google</a>
                 <div class="separator separator-content my-14"></div>
                 <div class="fv-row mb-8">
                   <input type="text" placeholder="Email" name="email" autocomplete="off" class="form-control bg-transparent" />
