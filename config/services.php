@@ -35,5 +35,10 @@ return [
     'client_secret' => env('GOOGLE_CLIENT_SECRET'),
     'redirect' => env('GOOGLE_REDIRECT_URI'),
 ],
+'globalGps' => [
+    'appid' => env('GLOBAL_GPS_APP_ID'),
+    'appkey' => env('GLOBAL_GPS_ACCESS_KEY'),
+    'url_base' => env('GLOBAL_GPS_API_URL'),
+],
 
 ];

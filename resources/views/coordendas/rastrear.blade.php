@@ -80,6 +80,9 @@ input:not(:checked) + .slider #ubicacion-texto {
                 <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalFiltros" id="btnEditarFiltros">
                     Editar Filtros
                 </button>
+             <button id="btnDetener2" class="btn btn-danger mt-2" style="display: none;">
+  <i class="bi bi-pause-circle"></i> Detener actualización
+</button>
                 <h3 class="text-xl font-semibold text-center mb-0">Seguimiento Contenedores</h3>
             </div>
             <div id="map" 
@@ -99,17 +102,20 @@ input:not(:checked) + .slider #ubicacion-texto {
         <h5 class="modal-title" id="filtroModalLabel">Filtros de Búsqueda</h5>
         <!-- Botón de cierre del modal -->
         <button type="button" class="btn-close" id="btnCerrarModal" data-bs-dismiss="modal" aria-label="Close"></button>
+      <button id="btnDetener" class="btn btn-danger mt-2" style="display: none;">
+  <i class="bi bi-pause-circle"></i> Detener actualización
+</button>
       </div>
       <div class="modal-body">
         <form id="formFiltros">
-             <div class="mb-3">
+             <!-- <div class="mb-3">
             <label for="fecha_inicio" class="form-label">Fecha Inicio</label>
             <input type="date" class="form-control" name="fecha_inicio" id="fecha_inicio">
           </div>
           <div class="mb-3">
             <label for="fecha_fin" class="form-label">Fecha Fin</label>
             <input type="date" class="form-control" name="fecha_fin" id="fecha_fin">
-          </div>
+          </div> -->
          
            <div class="mb-3 position-relative">
             <label for="contenedor-input" class="form-label">Contenedores</label>
@@ -118,37 +124,31 @@ input:not(:checked) + .slider #ubicacion-texto {
             <button type="button" class="btn btn-sm btn-outline-secondary mt-2" onclick="agregarContenedor()">Agregar</button>
             <div id="contenedores-seleccionados" class="mt-2"></div>
             <input type="hidden" name="contenedores" id="contenedores">
+            <input type="hidden" id="ItemsSelects" name="ItemsSelects">
           </div>
 
-          <div class="mb-3">
+          <!-- <div class="mb-3">
             <label for="proveedor" class="form-label">Proveedor</label>
             <select class="form-select" name="proveedor" id="proveedor">
               <option value="">Seleccione un proveedor</option>
             </select>
-          </div>
+          </div> -->
 
-          <div class="mb-3">
+          <!-- <div class="mb-3">
             <label for="cliente" class="form-label">Cliente</label>
             <select class="form-select" name="cliente" id="cliente">
               <option value="">Seleccione un cliente</option>
             </select>
-          </div>
+          </div> -->
 
-          <div class="mb-3">
+          <!-- <div class="mb-3">
             <label for="subcliente" class="form-label">Subcliente</label>
             <select class="form-select" name="subcliente" id="subcliente">
               <option value="">Seleccione un subcliente</option>
             </select>
-          </div>
+          </div> -->
           
-          <div class="mb-3">
-            <label for="ubicacion-toggle" class="form-label">Ubicación</label>
-            <div class="form-check form-switch">
-              <input class="form-check-input" type="checkbox" role="switch" id="ubicacion-toggle" checked aria-checked="true">
-              <label class="form-check-label" id="ubicacion-texto" for="ubicacion-toggle">Última ubicación</label>
-            </div>
-          </div>
-
+          
           <div class="modal-footer">
             <button type="button" onclick="limpiarFiltros()" class="btn btn-secondary">
               Limpiar Filtros

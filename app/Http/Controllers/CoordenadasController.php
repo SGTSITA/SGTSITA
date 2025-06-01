@@ -632,39 +632,30 @@ $idCordenada= $coordenadas->id_coordenadas;
 
         public function  getEquiposGps(Request  $request) 
     {
-        $preguntas_A = [
-            [ 'texto' => "1) ¿ Registro en Puerto ?", 'campo' => 'registro_puerto', 'tooltip' => "Registro en Puerto" ],
-            [ 'texto' => "2) ¿ Dentro de Puerto ?", 'campo' => 'dentro_puerto', 'tooltip' => "Dentro de Puerto" ],
-            [ 'texto' => "3) ¿ Cargado Contenedor ?", 'campo' => 'cargado_contenedor', 'tooltip' => "Cargado Contenedor" ],
-            [ 'texto' => "4) ¿ En Fila Fiscal ?", 'campo' => 'fila_fiscal', 'tooltip' => "En Fila Fiscal" ],
-            [ 'texto' => "5) ¿ Modulado ?", 'campo' => 'modulado_tipo', 'tooltip' => "Modulado" ],
-            [ 'texto' => "6) ¿ Descarga en patio ?", 'campo' => 'descarga_patio', 'tooltip' => "Descarga en patio" ],
-            [ 'texto' => "7)  Toma Foto de Boleta de Patio", 'campo' => 'toma_foto_patio', 'tooltip' => "Toma Foto de Boleta de Patio" ],
-            [ 'texto' => "8) ¿Carga en patio?", 'campo' => 'cargado_patio', 'tooltip' => "Carga en patio" ],
-            [ 'texto' => "9) ¿Inicio ruta?", 'campo' => 'en_destino', 'tooltip' => "Inicio ruta" ],
-            [ 'texto' => "10)¿Inicia carga?", 'campo' => 'inicio_descarga', 'tooltip' => "Inicia carga" ],
-            [ 'texto' => "11)¿Fin descarga?", 'campo' => 'fin_descarga', 'tooltip' => "Fin descarga" ],
-            [ 'texto' => "12) ¿Recepción Doctos Firmados?", 'campo' => 'recepcion_doc_firmados', 'tooltip' => "Recepción Doctos Firmados" ],
-        ];
+       
 
         $params = $request->query();
 
-        $proveedor = $params['proveedor'] ?? null;  
-        $cliente = $params['cliente'] ?? null;
-        $subcliente = $params['subcliente'] ?? null;
-        $fecha_inicio = $params['fecha_inicio'] ?? null;
-        $fecha_fin = $params['fecha_fin'] ?? null;
-        $contenedor = $params['contenedor'] ?? null;
-        $idCliente = $params['idCliente'] ?? null;
+       // $proveedor = $params['proveedor'] ?? null;  
+       // $cliente = $params['cliente'] ?? null;
+       // $subcliente = $params['subcliente'] ?? null;
+       // $fecha_inicio = $params['fecha_inicio'] ?? null;
+       // $fecha_fin = $params['fecha_fin'] ?? null;
+       // $contenedor = $params['contenedor'] ?? null;
+       // $idCliente = $params['idCliente'] ?? null;
         $contenedoresVarios = $params['contenedores'] ?? null;
         
         
         $asignaciones = DB::table('asignaciones')
-        ->join('docum_cotizacion', 'docum_cotizacion.id', '=', 'asignaciones.id_contenedor')
+    ->join('docum_cotizacion', 'docum_cotizacion.id', '=', 'asignaciones.id_contenedor')
+    ->join('equipos', 'equipos.id', '=', 'asignaciones.id_camion') // 👈 INNER JOIN agregado aquí
     ->select(
         'asignaciones.id',
         'asignaciones.id_camion',
-        'docum_cotizacion.num_contenedor','asignaciones.fecha_inicio','asignaciones.id_contenedor','foto_patio',
+        'docum_cotizacion.num_contenedor',
+        'asignaciones.fecha_inicio',
+        'asignaciones.id_contenedor',
+        'equipos.imei', 
         DB::raw("CASE WHEN asignaciones.id_proveedor IS NULL THEN asignaciones.id_operador ELSE asignaciones.id_proveedor END as beneficiario_id"),
         DB::raw("CASE WHEN asignaciones.id_proveedor IS NULL THEN 'Propio' ELSE 'Subcontratado' END as tipo_contrato")
     );
@@ -687,8 +678,9 @@ $idCordenada= $coordenadas->id_coordenadas;
         'clients.nombre as cliente',
         'cotizaciones.origen',
         'cotizaciones.destino',
-        'asig.num_contenedor as contenedor', // Cambié esto para que utilice el campo correcto de asignaciones
+        'asig.num_contenedor as contenedor', 
         'cotizaciones.estatus',
+        'asig.imei'
        
     )
     ->join('clients', 'cotizaciones.id_cliente', '=', 'clients.id')
@@ -701,30 +693,31 @@ $idCordenada= $coordenadas->id_coordenadas;
         $join->on('asig.beneficiario_id', '=', 'beneficiarios.id')
              ->on('asig.tipo_contrato', '=', 'beneficiarios.tipo_contrato');
     })
+     ->whereNotNull('asig.imei')
     //->leftJoin('subclientes','subclientes.id_cliente','=','beneficiarios.id')
-    ->when($proveedor, function ($query) use ($proveedor) {
-        return $query->where('beneficiarios.id', $proveedor);
-    })
-    ->when($cliente, function ($query) use ($cliente) {
-        return $query->where('clients.id', $cliente);
-    })
-    ->when($idCliente, function ($query) use ($idCliente) {
-        return $query->where('clients.id', $idCliente);
-    })
-    ->when($subcliente, function ($query) use ($subcliente) {
-        return $query->whereExists(function ($subq) use ($subcliente) {
-            $subq->select(DB::raw(1))
-                ->from('subclientes')
-                ->where('subclientes.id', '=', $subcliente)
-                ->whereColumn('subclientes.id_cliente', '=', 'clients.id');
-        });
-    })
-    ->when($fecha_inicio && $fecha_fin, function ($query) use ($fecha_inicio, $fecha_fin) {
-        return $query->whereBetween('asig.fecha_inicio', [$fecha_inicio, $fecha_fin]);
-    })
-    ->when($contenedor, function ($query) use ($contenedor) {
-        return $query->where('asig.num_contenedor', $contenedor); 
-    })
+    // ->when($proveedor, function ($query) use ($proveedor) {
+    //     return $query->where('beneficiarios.id', $proveedor);
+    // })
+    // ->when($cliente, function ($query) use ($cliente) {
+    //     return $query->where('clients.id', $cliente);
+    // })
+    // ->when($idCliente, function ($query) use ($idCliente) {
+    //     return $query->where('clients.id', $idCliente);
+    // })
+    // ->when($subcliente, function ($query) use ($subcliente) {
+    //     return $query->whereExists(function ($subq) use ($subcliente) {
+    //         $subq->select(DB::raw(1))
+    //             ->from('subclientes')
+    //             ->where('subclientes.id', '=', $subcliente)
+    //             ->whereColumn('subclientes.id_cliente', '=', 'clients.id');
+    //     });
+    // })
+    // ->when($fecha_inicio && $fecha_fin, function ($query) use ($fecha_inicio, $fecha_fin) {
+    //     return $query->whereBetween('asig.fecha_inicio', [$fecha_inicio, $fecha_fin]);
+    // })
+    // ->when($contenedor, function ($query) use ($contenedor) {
+    //     return $query->where('asig.num_contenedor', $contenedor); 
+    // })
     ->when($contenedoresVarios, function ($query) use ($contenedoresVarios) {
         $contenedores = array_filter(array_map('trim', explode(';', $contenedoresVarios)));
     
@@ -733,29 +726,13 @@ $idCordenada= $coordenadas->id_coordenadas;
         } else {
             return $query->where('asig.num_contenedor', $contenedores[0]);
         }
-    }) ->where(function($query) {
-        $query->whereNotNull('tipo_flujo')
-            ->orWhereNotNull('registro_puerto')
-            ->orWhereNotNull('dentro_puerto')
-            ->orWhereNotNull('descarga_vacio')
-            ->orWhereNotNull('cargado_contenedor')
-            ->orWhereNotNull('fila_fiscal')
-            ->orWhereNotNull('modulado_tipo')
-            ->orWhereNotNull('modulado_coordenada')
-            ->orWhereNotNull('en_destino')
-            ->orWhereNotNull('inicio_descarga')
-            ->orWhereNotNull('fin_descarga')
-            ->orWhereNotNull('recepcion_doc_firmados')
-            ->orWhereNotNull('descarga_patio')
-            ->orWhereNotNull('cargado_patio');
-    })
+    }) 
     ->get();
             
           if ($datos) {
             return response()->json([
                 'success' => true,
-                'datos' => $datos,
-                'preguntas' => $preguntas_A,
+                'datos' => $datos
             ]);
         } else {
             return response()->json(['success' => false]);

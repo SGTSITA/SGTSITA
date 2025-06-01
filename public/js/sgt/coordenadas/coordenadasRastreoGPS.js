@@ -6,71 +6,12 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 }).addTo(map);
 
 
-    const camposUbicacion = [
-  { key: "toma_foto_patio", orden: 15 },
-  { key: "cargado_patio", orden: 14 },
-  { key: "descarga_patio", orden: 13 },
-  { key: "recepcion_doc_firmados", orden: 12 },
-  { key: "fin_descarga", orden: 11 },
-  { key: "inicio_descarga", orden: 10 },
-  { key: "en_destino", orden: 9 },
-  { key: "modulado_coordenada", orden: 8 },
-  { key: "modulado_tipo", orden: 7 },
-  { key: "fila_fiscal", orden: 6 },
-  { key: "cargado_contenedor", orden: 5 },
-  { key: "descarga_vacio", orden: 4 },
-  { key: "dentro_puerto", orden: 3 },
-  { key: "registro_puerto", orden: 2 },
-  { key: "tipo_flujo", orden: 1 }
-];
-
-// Mostrar el modal de Bootstrap al cargar la página
-// window.onload = function() {
-
-//   var filtroModal = new bootstrap.Modal(document.getElementById('filtroModal'));
-//   filtroModal.show();
-
-//   // Centrar mapa en ubicación actual
-//   if (navigator.geolocation) {
-//       navigator.geolocation.getCurrentPosition(function (position) {
-//           const lat = position.coords.latitude;
-//           const lng = position.coords.longitude;
-//           map.setView([lat, lng], 9);
-
-//           const marker = L.marker([lat, lng]).addTo(map)
-//               .bindPopup('Buscar Contenedores').openPopup();
-
-//           window.markers.push(marker);
-//       }, function (error) {
-//           console.warn('No se pudo obtener la ubicación:', error.message);
-//       });
-//   } else {
-//       console.warn('Geolocalización no soportada por este navegador.');
-//   }
-// };
 let marker = null;
 
-async function actualizarUbicacion() {
-    try {
-        const res = await fetch("/coordenadas/ubicacion-vehiculo");
-        const data = await res.json();
+  
+      
 
-        const lat = data.lat;
-        const lng = data.lng;
 
-        if (marker) {
-            marker.setLatLng([lat, lng]);
-        } else {
-            marker = L.marker([lat, lng]).addTo(map);
-            map.setView([lat, lng], 15);
-        }
-    } catch (error) {
-        console.error("Error obteniendo ubicación:", error);
-    }
-}
-
-// Llama cada 5 segundos
-//etInterval(actualizarUbicacion, 5000);
 
 let contenedoresDisponibles = [];
 
@@ -90,36 +31,89 @@ function cargarinicial()
     });
 }
 
-// Enviar filtros al backend
+let intervalId = null;
+
 document.getElementById('formFiltros').addEventListener('submit', function(event) {
   event.preventDefault();
 
-  const formData = new FormData(this);
-  const queryParams = new URLSearchParams();
+    document.getElementById('ItemsSelects').value = ItemsSelects.join(';');
+if (!ItemsSelects || ItemsSelects.length === 0) {
+    alert('Por favor, seleccione al menos un contenedor.');
+    return;
+  }
 
-  formData.forEach((valor, clave) => {
-    if (valor.trim() !== '') {
-      queryParams.append(clave, valor);
-    }
-  });
 
-  limpiarMarcadores(); // Limpia los anteriores antes de buscar nuevos
-
-  const mostrarUltimaUbicacion = document.getElementById("ubicacion-toggle").checked;
-
-//   fetch(`/coordenadas/contenedor/searchEquGps?${queryParams.toString()}`)
-//       .then(response => response.json())
-//       .then(data => {
-          
-actualizarUbicacion();
-//           // Cierra el modal después de aplicar los filtros
-//           var modal = bootstrap.Modal.getInstance(document.getElementById('filtroModal'));
-//           modal.hide();
-//       })
-//       .catch(error => {
-//           console.error('Error al traer coordenadas:', error);
-//       });
+  actualizarUbicacion(ItemsSelects);
+  document.getElementById('btnDetener').style.display = 'inline-block';
+  document.getElementById('btnDetener2').style.display = 'inline-block';
+  if (intervalId) clearInterval(intervalId);
+  
+  intervalId = setInterval(() => {
+    actualizarUbicacion(ItemsSelects);
+  }, 5000);
 });
+  limpiarMarcadores();
+
+function actualizarUbicacion(imeis) {
+    let responseOk = false;
+  fetch("/coordenadas/ubicacion-vehiculo", {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+    },
+    body: JSON.stringify({ imeis: imeis })
+  })
+  .then(res => res.json())
+  .then(data => {
+    //console.log('Ubicaciones recibidas:', data);
+    const dataUbi= data;
+
+    
+responseOk = true;
+    if (Array.isArray(dataUbi)) {
+      dataUbi.forEach((item, index) => {
+        let latlocal = item.ubicacion.data.lat;
+        let lnglocal = item.ubicacion.data.lng;
+        if (latlocal && lnglocal) {
+          const newMarker = L.marker([latlocal, lnglocal]).addTo(map).bindPopup(item.contenedor).openPopup();
+        if (index === 0) map.setView([latlocal, lnglocal], 15);
+        
+        }
+      });
+    } else {
+      console.warn('La respuesta no es un array de ubicaciones:', data);
+    }
+    if (responseOk){
+         const modalElement = document.getElementById('filtroModal'); 
+      const filtroModal = bootstrap.Modal.getInstance(modalElement) || new bootstrap.Modal(modalElement);
+      filtroModal.hide();
+    }
+  
+  })
+  .catch(error => {
+    console.error('Error al obtener ubicaciones:', error);
+  });
+}
+
+// Para detener la actualización con un botón
+document.getElementById('btnDetener').addEventListener('click', function() {
+  detener();
+});
+document.getElementById('btnDetener2').addEventListener('click', function() {
+  detener();
+});
+
+function detener(){
+    if(intervalId) {
+    clearInterval(intervalId);
+    intervalId = null;
+    document.getElementById('btnDetener').style.display = 'none';
+    document.getElementById('btnDetener2').style.display = 'none';
+  }
+}
+
+
 
 // Función para limpiar marcadores
 function limpiarMarcadores() {
@@ -131,48 +125,7 @@ function limpiarMarcadores() {
     }
 }
 
-document.getElementById('cliente').addEventListener('change', function () {
-    const clienteId = this.value;
-    const subclienteSelect = document.getElementById('subcliente');
 
-    // Limpia las opciones anteriores
-    subclienteSelect.innerHTML = '<option value="">Seleccione un subcliente</option>';
-
-    if (clienteId) {
-        // Puedes mostrar un "cargando..." si quieres
-        const loadingOption = document.createElement('option');
-        loadingOption.textContent = 'Cargando subclientes...';
-        loadingOption.disabled = true;
-        loadingOption.selected = true;
-        subclienteSelect.appendChild(loadingOption);
-
-        fetch(`/api/coordenadas/subclientes/${clienteId}`)
-            .then(response => response.json())
-            .then(subclientes => {
-                subclienteSelect.innerHTML = '<option value="">Seleccione un subcliente</option>'; // Resetea
-
-                if (subclientes.length > 0) {
-                    subclientes.forEach(subcliente => {
-                        const option = document.createElement('option');
-                        option.value = subcliente.id;
-                        option.textContent = subcliente.nombre;
-                        subclienteSelect.appendChild(option);
-                    });
-
-                    
-                } else {
-                    const option = document.createElement('option');
-                    option.textContent = 'No hay subclientes disponibles';
-                    option.disabled = true;
-                    subclienteSelect.appendChild(option);
-                }
-            })
-            .catch(error => {
-                console.error('Error al cargar subclientes:', error);
-                subclienteSelect.innerHTML = '<option value="">Error al cargar subclientes</option>';
-            });
-    }
-});
 document.addEventListener('DOMContentLoaded', function () {
      cargarinicial();
     const btnEditarFiltros = document.getElementById('btnEditarFiltros');
@@ -195,39 +148,9 @@ document.addEventListener('DOMContentLoaded', function () {
             } else {
                 console.error("Botón de cierre no encontrado.");
             }
-
-            fetch('/api/coordenadas/entidadesPC')
-            .then(response => response.json())
-            .then(data => {
-                const proveedorSelect = document.getElementById('proveedor');
-                const clienteSelect = document.getElementById('cliente');
-
-                // Añadir una opción predeterminada
-                proveedorSelect.innerHTML = '<option value="">Seleccione un proveedor</option>';
-                clienteSelect.innerHTML = '<option value="">Seleccione un cliente</option>';
-
-                // Cargar proveedores
-                data.proveedor.forEach(proveedor => {
-                    const option = document.createElement('option');
-                    option.value = proveedor.id;
-                    option.textContent = proveedor.nombre;
-                    proveedorSelect.appendChild(option);
-                });
-
-                // Cargar clientes
-                data.client.forEach(cliente => {
-                    const option = document.createElement('option');
-                    option.value = cliente.id;
-                    option.textContent = cliente.nombre;
-                    clienteSelect.appendChild(option);
-                });
-            })
-            .catch(error => console.error('Error al cargar proveedores y clientes:', error))
-
-
-
-
         }, 100);
+
+        filtroModal.show();
 
         } else {
             console.error("No se encontraron los elementos necesarios.");
@@ -247,9 +170,17 @@ function limpiarFiltros() {
         }
     });
 
+     seleccionados.length = 0; 
+  ItemsSelects.length = 0;
+ const div = document.getElementById('contenedores-seleccionados');
+        div.innerHTML = '';
+
+  document.getElementById('ItemsSelects').value = '';
+
 }
 
 const seleccionados = [];
+const ItemsSelects = [];
 
     function mostrarSugerencias() {
         const input = document.getElementById('contenedor-input');
@@ -266,6 +197,8 @@ const seleccionados = [];
             
             (c.contenedor || '').toUpperCase().includes(filtro) &&
     !seleccionados.includes(c.contenedor)
+
+
         );
 
         filtrados.forEach(c => {
@@ -282,6 +215,9 @@ const seleccionados = [];
 
     function seleccionarContenedor(valor) {
         seleccionados.push(valor);
+         const contenedorData = contenedoresDisponibles.find(c => c.contenedor === valor);
+
+         ItemsSelects.push(valor +"-" +contenedorData.imei);
         document.getElementById('contenedor-input').value = '';
         document.getElementById('sugerencias').style.display = 'none';
         actualizarVista();
@@ -292,6 +228,7 @@ const seleccionados = [];
         const valor = input.value.trim().toUpperCase();
         if (valor && contenedoresDisponibles.includes(valor) && !seleccionados.includes(valor)) {
             seleccionados.push(valor);
+           
             input.value = '';
             actualizarVista();
         }
@@ -299,6 +236,7 @@ const seleccionados = [];
 
     function eliminarContenedor(idx) {
         seleccionados.splice(idx, 1);
+          ItemsSelects.splice(idx, 1);
         actualizarVista();
     }
 
@@ -322,19 +260,20 @@ const seleccionados = [];
         });
 
         document.getElementById('contenedores').value = seleccionados.join(';');
+        document.getElementById('ItemsSelects').value = ItemsSelects.join(';');
     }
 
 
   
 
-document.getElementById('ubicacion-toggle').addEventListener('change', function() {
-    const ubicacionTexto = document.getElementById('ubicacion-texto');
+// document.getElementById('ubicacion-toggle').addEventListener('change', function() {
+//     const ubicacionTexto = document.getElementById('ubicacion-texto');
     
-    if (this.checked) {
-        ubicacionTexto.textContent = 'Última ubicación';
-    } else {
-        ubicacionTexto.textContent = 'Todas las ubicaciones';
-    }
-});
+//     if (this.checked) {
+//         ubicacionTexto.textContent = 'Última ubicación';
+//     } else {
+//         ubicacionTexto.textContent = 'Todas las ubicaciones';
+//     }
+// });
 
 

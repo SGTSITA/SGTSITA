@@ -126,7 +126,7 @@ Route::get('/coordenadas/rastrear', [App\Http\Controllers\CoordenadasController:
 Route::post('/coordenadas/archivo', [App\Http\Controllers\CoordenadasController::class, 'subirArchivo'])->name('coordenadas.archivo');
 
 Route::get('/coordenadas/contenedor/searchEquGps', [App\Http\Controllers\CoordenadasController::class, 'getEquiposGps'])->name('getEquiposGps');
-Route::get('/coordenadas/ubicacion-vehiculo', [App\Http\Controllers\GPSController::class, 'ubicacion'])->name('coordenadas.ubicacion');
+Route::post('/coordenadas/ubicacion-vehiculo', [App\Http\Controllers\GpsController::class, 'obtenerUbicacionByImei'])->name('coordenadas.ubicacion');
 
 //R
 
