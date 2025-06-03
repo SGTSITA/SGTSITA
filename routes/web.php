@@ -375,3 +375,10 @@ Route::post('/configmec', [App\Http\Controllers\ConfigMecController::class, 'upd
 Route::get('/cuenta-global', [App\Http\Controllers\CuentaGlobalController::class, 'show']);
 Route::post('/cuenta-global/update', [App\Http\Controllers\CuentaGlobalController::class, 'update']);
 
+    Route::get('/gps', [App\Http\Controllers\GpsCompanyController::class, 'index'])->name('gps.index');
+    Route::get('/gps/data', [App\Http\Controllers\GpsCompanyController::class, 'data']);
+    Route::post('/gps/store', [App\Http\Controllers\GpsCompanyController::class, 'store']);
+    Route::put('/gps/{id}', [App\Http\Controllers\GpsCompanyController::class, 'update']);
+    Route::delete('/gps/{id}', [App\Http\Controllers\GpsCompanyController::class, 'destroy']);
+    Route::post('/gps/restore/{id}', [App\Http\Controllers\GpsCompanyController::class, 'restore']);
+

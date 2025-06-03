@@ -50,17 +50,37 @@
             @endcan
 
             @can('equipos-list')
-                <li class="nav-item">
-                    <a class="nav-link {{ Request::is('equipos*') ? 'active' : '' }}" href="{{ route('index.equipos') }}"
-                        target="">
-                        <div
-                            class="icon icon-shape icon-sm text-center  me-2 d-flex align-items-center justify-content-center">
-                            <img src="{{ asset('img/icon/referencia.webp') }}" alt="" width="20px">
-                        </div>
-                        <span class="nav-link-text ms-1"><b>III</b> Equipos</span>
-                    </a>
-                </li>
+                <a data-bs-toggle="collapse" href="#pagesCatalogoEquipos"
+                    class="nav-link {{ Request::is('equipos*') || Request::is('gps*') ? 'active' : '' }}"
+                    aria-controls="pagesCatalogoEquipos" role="button" aria-expanded="false">
+                    <div class="icon icon-shape icon-sm text-center me-2 d-flex align-items-center justify-content-center">
+                        <img src="{{ asset('img/icon/referencia.webp') }}" alt="" width="20px">
+                    </div>
+                    <span class="nav-link-text ms-1"><b>III</b> Equipos</span>
+                </a>
+
+                <div class="collapse {{ Request::is('equipos*') || Request::is('gps*') ? 'show' : '' }}"
+                    id="pagesCatalogoEquipos">
+                    <ul class="nav ms-4">
+                        <li class="nav-item">
+                            <a class="nav-link {{ Request::is('equipos*') ? 'active' : '' }}"
+                                href="{{ route('index.equipos') }}">
+                                <span class="sidenav-mini-icon"> E </span>
+                                <span class="sidenav-normal">Equipos</span>
+                            </a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link {{ Request::is('gps*') ? 'active' : '' }}" href="{{ route('gps.index') }}">
+                                <span class="sidenav-mini-icon"> G </span>
+                                <span class="sidenav-normal">Proveedores GPS</span>
+                            </a>
+                        </li>
+
+                    </ul>
+                </div>
             @endcan
+
 
             @can('operadores-list')
                 <li class="nav-item">
@@ -191,21 +211,23 @@
                 </a>
 
 
-            <div class="collapse " id="pagesGastos">
-                <ul class="nav ms-4">
-                    <li class="nav-item ">
-                        <a class="nav-link {{ (Request::is('gastos/generales*') ? 'show' : '') }}" href="{{ route('index.gastos_generales') }}" >
-                          <span class="sidenav-mini-icon"> P </span>
-                          <span class="sidenav-normal">Gastos Generales</span>
-                        </a>
-                        <a class="nav-link {{ (Request::is('gastos/generales*') ? 'show' : '') }}" href="{{ route('index.gastos_por_pagar') }}">
-                          <span class="sidenav-mini-icon"> P </span>
-                          <span class="sidenav-normal">Gastos por Pagar</span>
-                        </a>
-                    </li>
-                </ul>
-            </div>
-          @endcan
+                <div class="collapse " id="pagesGastos">
+                    <ul class="nav ms-4">
+                        <li class="nav-item ">
+                            <a class="nav-link {{ Request::is('gastos/generales*') ? 'show' : '' }}"
+                                href="{{ route('index.gastos_generales') }}">
+                                <span class="sidenav-mini-icon"> P </span>
+                                <span class="sidenav-normal">Gastos Generales</span>
+                            </a>
+                            <a class="nav-link {{ Request::is('gastos/generales*') ? 'show' : '' }}"
+                                href="{{ route('index.gastos_por_pagar') }}">
+                                <span class="sidenav-mini-icon"> P </span>
+                                <span class="sidenav-normal">Gastos por Pagar</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            @endcan
 
 
             @can('reportes')
@@ -317,15 +339,15 @@
                     </ul>
                 </div>
                 <!--li class="nav-item">
-                                        <a class="nav-link {{ Request::is('liquidaciones*') ? 'active' : '' }}"
-                                            href="{{ route('index.liquidacion') }}" target="">
-                                            <div
-                                                class="icon icon-shape icon-sm text-center  me-2 d-flex align-items-center justify-content-center">
-                                                <img src="{{ asset('img/icon/pago-en-efectivo.png') }}" alt="" width="20px">
-                                            </div>
-                                           
-                                        </a>
-                                    </li-->
+                                                        <a class="nav-link {{ Request::is('liquidaciones*') ? 'active' : '' }}"
+                                                            href="{{ route('index.liquidacion') }}" target="">
+                                                            <div
+                                                                class="icon icon-shape icon-sm text-center  me-2 d-flex align-items-center justify-content-center">
+                                                                <img src="{{ asset('img/icon/pago-en-efectivo.png') }}" alt="" width="20px">
+                                                            </div>
+                                                           
+                                                        </a>
+                                                    </li-->
             @endcan
             @can('coordenadasv')
                 <a data-bs-toggle="collapse" href="#pagesExamplesCoordenadas"
