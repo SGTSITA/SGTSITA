@@ -23,7 +23,7 @@
                                   <span class="input-group-text" id="basic-addon1">
                                       <img src="{{ asset('img/icon/calendar-dar.webp') }}" alt="" width="25px">
                                   </span>
-                                  <input name="txtDiferirFechaInicia" id="txtDiferirFechaInicia" autocomplete="off" type="text" class="form-control fechas fechasDiferir" required>
+                                  <input name="txtDiferirFechaInicia1" id="txtDiferirFechaInicia1" autocomplete="off" type="text" class="form-control fechas fechasDiferir" required>
                               </div>
                           </div>
 
@@ -33,7 +33,7 @@
                                   <span class="input-group-text" id="basic-addon1">
                                       <img src="{{ asset('img/icon/calendar-dar.webp') }}" alt="" width="25px">
                                   </span>
-                                  <input name="txtDiferirFechaTermina" id="txtDiferirFechaTermina" autocomplete="off" type="text" class="form-control fechas fechasDiferir" required>
+                                  <input name="txtDiferirFechaTermina1" id="txtDiferirFechaTermina1" autocomplete="off" type="text" class="form-control fechas fechasDiferir" required>
                               </div>
                           </div>
                           
@@ -47,13 +47,13 @@
                     <span class="mb-2 text-sm">
                       Periodos:
                     </span>
-                    <span class="text-dark font-weight-bold ms-2" id="labelDiasPeriodo">0</span>
+                    <span class="text-dark font-weight-bold ms-2" id="labelDiasPeriodo1">0</span>
                   </div>
                   <div class="d-flex justify-content-between">
                     <span class="mb-2 text-sm">
                       Gasto por periodo:
                     </span>
-                    <span class="text-dark font-weight-bold ms-2" id="labelGastoDiario">$ 0</span>
+                    <span class="text-dark font-weight-bold ms-2" id="labelGastoDiario1">$ 0</span>
                   </div>
                   <div class="d-flex justify-content-between mt-4">
                     <span class="mb-2 text-lg">

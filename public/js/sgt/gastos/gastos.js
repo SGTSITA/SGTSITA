@@ -3,9 +3,19 @@ const gastosFormFields = [
     {'field':'monto1', 'id':'monto1','label':'Monto','required': true, "type":"money"},
     {'field':'categoria_movimiento', 'id':'categoria_movimiento','label':'Categoría','required': true, "type":"text"},
     {'field':'fecha_movimiento', 'id':'fecha_movimiento','label':'Fecha movimiento','required': true, "type":"text"},
-    {'field':'fecha_aplicacion', 'id':'fecha_aplicacion','label':'Fecha aplicación','required': true, "type":"text"},
+    {'field':'fecha_aplicacion', 'id':'fecha_aplicacion','label':'Fecha aplicación','required': false, "type":"text"},
     {'field':'id_banco1', 'id':'id_banco1','label':'Fecha aplicación','required': true, "type":"text"},
 ];
+
+document.getElementById("tipoPago").addEventListener("change", function () {
+  const seccion = document.getElementById("seccionDiferido");
+  if (this.value === "1") {
+    const bsCollapse = new bootstrap.Collapse(seccion, { show: true });
+  } else {
+    const bsCollapse = bootstrap.Collapse.getInstance(seccion);
+    if (bsCollapse) bsCollapse.hide();
+  }
+});
 
 class MissionResultRenderer {
     eGui;
@@ -155,6 +165,7 @@ class MissionResultRenderer {
   const myGridElement = document.querySelector('#myGrid');
   let apiGrid = agGrid.createGrid(myGridElement, gridOptions);
   let btnDiferir = document.querySelector('#btnDiferir');
+  let monto1 = document.querySelector('#monto1')
   let labelMontoGasto = document.querySelector('#labelMontoGasto')
   let labelGastoDiario = document.querySelector('#labelGastoDiario')
   let labelDiasPeriodo = document.querySelector('#labelDiasPeriodo')
@@ -164,14 +175,16 @@ class MissionResultRenderer {
   let fromDate = null;
   let toDate = null;
 
+  monto1.addEventListener('input', async (e) => labelMontoGasto.textContent = await moneyFormat(e.target.value), calcDays())
+
   
   var paginationTitle = document.querySelector("#ag-32-label");
   paginationTitle.textContent = 'Registros por página';
   
   document.querySelectorAll(".fechasDiferir").forEach(elemento => {
-  elemento.addEventListener("focus", () => calcDays());
-  elemento.addEventListener("blur", () => calcDays());
-  elemento.addEventListener("change", () => calcDays());
+    elemento.addEventListener("focus", () => calcDays());
+    elemento.addEventListener("blur", () => calcDays());
+    elemento.addEventListener("change", () => calcDays());
 });
 
   let IdGasto = null;
@@ -211,7 +224,7 @@ class MissionResultRenderer {
      let diasContados = diferenciaEnMeses(fechaI.value, fechaF.value)
      labelDiasPeriodo.textContent = diasContados
 
-     let amount = reverseMoneyFormat(labelMontoGasto.textContent)
+     let amount = (monto1.value.length > 0) ? reverseMoneyFormat(monto1.value) : 0
      let dailyAmount = parseFloat(amount) / diasContados
      labelGastoDiario.textContent = moneyFormat(dailyAmount)
     }
