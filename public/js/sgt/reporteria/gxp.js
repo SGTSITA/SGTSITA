@@ -41,12 +41,30 @@ document.addEventListener('DOMContentLoaded', () => {
             valueFormatter: dateFormatter,
             filter: 'agDateColumnFilter',
             floatingFilter: true
-        }
+        },
+        {
+            headerName: "Fecha Inicio",
+            field: "fecha_inicio",
+            valueFormatter: dateFormatter,
+            filter: 'agDateColumnFilter',
+            floatingFilter: true
+        },
+        {
+            headerName: "Fecha Fin",
+            field: "fecha_fin",
+            valueFormatter: dateFormatter,
+            filter: 'agDateColumnFilter',
+            floatingFilter: true
+        },
+
     ];
 
     const gridOptions = {
         columnDefs,
-        rowData: window.cotizacionesData || [],
+        rowData: (window.cotizacionesData || []).filter(item => {
+            const fecha = moment(item.fecha_inicio, 'YYYY-MM-DD');
+            return fecha.isValid() && fecha.isBetween(moment().subtract(7, 'days'), moment(), 'day', '[]');
+        }),
         pagination: true,
         paginationPageSize: 30,
         paginationPageSizeSelector: [30, 50, 100],
@@ -67,9 +85,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    agGrid.createGrid(gridDiv, gridOptions);
+    const grid = agGrid.createGrid(gridDiv, gridOptions);
+    gridApi = grid.api;
 
-    // Exportar a Excel o PDF
     // Exportar a Excel o PDF
     document.querySelectorAll('.exportButton').forEach(button => {
         button.addEventListener('click', async function () {
@@ -138,4 +156,37 @@ document.addEventListener('DOMContentLoaded', () => {
         const date = new Date(params.value);
         return date.toLocaleDateString('es-MX');
     }
+
+    const startDate = moment().subtract(7, 'days');
+    const endDate = moment();
+
+    $('#daterange').daterangepicker({
+        startDate,
+        endDate,
+        maxDate: moment(),
+        opens: 'right',
+        locale: {
+            format: 'YYYY-MM-DD',
+            separator: ' al ',
+            applyLabel: 'Aplicar',
+            cancelLabel: 'Cancelar',
+            fromLabel: 'Desde',
+            toLabel: 'Hasta',
+            daysOfWeek: ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa'],
+            monthNames: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto',
+                'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'],
+            firstDay: 1
+        }
+    }, function (start, end) {
+        // ⚡ Filtro local sin fetch
+        const filtrado = (window.cotizacionesData || []).filter(item => {
+            const fecha = moment(item.fecha_inicio, 'YYYY-MM-DD');
+            return fecha.isValid() && fecha.isBetween(start, end, 'day', '[]');
+        });
+
+
+        if (gridApi) {
+            gridApi.setGridOption('rowData', filtrado);
+        }
+    });
 });

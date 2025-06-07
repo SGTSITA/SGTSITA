@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Http\Controllers;
-
+use App\Models\GpsCompany;
 use App\Models\Equipo;
 use Illuminate\Http\Request;
 use Session;
@@ -29,8 +29,16 @@ class EquiposController extends Controller
         ->where('activo', true)
         ->orderBy('created_at', 'desc')
         ->get();
+    $gps_companies = GpsCompany::all();
 
-    return view('equipos.index', compact('equipos_dolys','equipos_chasis','equipos_camiones', 'fechaActual'));
+
+    return view('equipos.index', compact(
+    'equipos_dolys',
+    'equipos_chasis',
+    'equipos_camiones',
+    'fechaActual',
+    'gps_companies'
+));
 }
 
 
@@ -205,5 +213,18 @@ public function desactivar(Request $request, Equipo $id)
     $empresa = auth()->user()->id_empresa;
     return response()->json(Equipo::where('id_empresa', $empresa)->get());
 }
+
+public function asignarGps(Request $request, $id)
+{
+    $equipo = Equipo::findOrFail($id);
+    $equipo->gps_company_id = $request->gps_company_id;
+    $equipo->save();
+
+    return response()->json([
+        'success' => true,
+        'message' => 'GPS asignado correctamente.'
+    ]);
+}
+
 
 }
