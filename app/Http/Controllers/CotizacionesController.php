@@ -965,6 +965,7 @@ public function getCotizacionesCanceladas()
              $contenedor = DocumCotizacion::where('num_contenedor', $numContenedor)
                                                 ->where('id_empresa', $idEmpresa)
                                                 ->first();
+                                                
              $asignacion = Asignaciones::where('id_contenedor', $contenedor->id)->first();
 
             if($r->pagoInmediato != "false" ){

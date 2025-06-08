@@ -5,7 +5,14 @@ const gastosFormFields = [
     {'field':'fecha_movimiento', 'id':'fecha_movimiento','label':'Fecha movimiento','required': true, "type":"text"},
     {'field':'fecha_aplicacion', 'id':'fecha_aplicacion','label':'Fecha aplicación','required': false, "type":"text"},
     {'field':'id_banco1', 'id':'id_banco1','label':'Fecha aplicación','required': true, "type":"text"},
+    {'field':'tipoPago', 'id':'tipoPago','label':'Tipo de Pago','required': true, "type":"select"},
 ];
+
+const formFieldsDiferir = [
+  {'field':'txtDiferirFechaInicia','id':'txtDiferirFechaInicia','label':'Fecha inicio Pago Diferido','required': false, "type":"text", "trigger":"tipoPago"},
+  {'field':'txtDiferirFechaTermina','id':'txtDiferirFechaTermina','label':'Fecha Finalización Pago Diferido','required': false, "type":"text", "trigger":"tipoPago"},
+  
+]
 
 document.getElementById("tipoPago").addEventListener("change", function () {
   const seccion = document.getElementById("seccionDiferido");
@@ -238,10 +245,10 @@ class MissionResultRenderer {
       return;
     } 
 
-    if(gasto[0].Diferido == "Diferido"){
+    /*if(gasto[0].Diferido == "Diferido"){
       Swal.fire('Previamente diferido','Este gasto ya fue diferido previtamente','warning');
       return;
-    }
+    }*/
 
     labelMontoGasto.textContent = moneyFormat(gasto[0].Monto)
     labelDescripcionGasto.textContent = gasto[0].Descripcion
@@ -302,7 +309,37 @@ class MissionResultRenderer {
     }
    });
 
+   
+   passValidation = formFieldsDiferir.every((item) => {
+      let trigger = item.trigger;
+      let field = document.getElementById(item.field);
+
+      if(trigger != "none"){
+          let primaryField = document.getElementById(trigger);
+          if(primaryField.value == 1 && field.value.length == 0){
+              Swal.fire("El campo "+item.label+" es obligatorio","Parece que no ha proporcionado información en el campo "+item.label,"warning");
+              return false;
+          }
+      }
+      
+      if(field){
+          if(item.required === true && field.value.length == 0){
+              Swal.fire("El campo "+item.label+" es obligatorio","Parece que no ha proporcionado información en el campo "+item.label,"warning");
+              return false;
+          }
+      }
+      
+      formData[item.field] = field.value;
+      return true;
+
+  });
+
+if(!passValidation) return passValidation;
+
    formData["_token"] = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+   formData["gastoDiario"] = labelGastoDiario.textContent
+   formData["numPeriodos"] = labelDiasPeriodo.textContent
+
    $.ajax({
         url: '/gastos/generales/create',
         type: "post",
@@ -315,6 +352,22 @@ class MissionResultRenderer {
                     if(data.TMensaje == "success"){
                       $('#exampleModal').modal('hide')
                       getGastos(fromDate,toDate);
+
+                      gastosFormFields.forEach((item) =>{
+                          var input = item.field;
+                          var inputValue = document.getElementById(input);
+                          if(inputValue && item.type != 'select'){
+                            inputValue.value = "";
+                          }
+                       });
+
+                       formFieldsDiferir.forEach((item) =>{
+                          var input = item.field;
+                          var inputValue = document.getElementById(input);
+                          if(inputValue){
+                            inputValue.value = "";
+                          }
+                       });
                     
                     }
                 });
@@ -326,27 +379,35 @@ class MissionResultRenderer {
   })
 
   function diferirGasto(){
-    let fechaDesde = document.getElementById('txtDiferirFechaInicia')
+    /*let fechaDesde = document.getElementById('txtDiferirFechaInicia')
     let fechaHasta = document.getElementById('txtDiferirFechaTermina')
 
     let gastoDiario = labelGastoDiario.textContent
-    let diasContados = labelDiasPeriodo.textContent
+    let diasContados = labelDiasPeriodo.textContent*/
+
     let _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
-    if(fechaDesde.value.length == 0 || fechaHasta.value.length == 0){
+    /*if(fechaDesde.value.length == 0 || fechaHasta.value.length == 0){
       Swal.fire('Definir periodo','Por favor seleccione la fecha inicial y final del periodo','warning');
       return false;
-    }
+    }*/
 
     const select = document.getElementById("selectUnidades");
     const unidades = Array.from(select.selectedOptions).map(option => option.value);
+
+    const selectViaje = document.getElementById("selectViajes");
+    const viajes = Array.from(selectViaje.selectedOptions).map(option => option.value);
+
+
+    let input = document.querySelector('input[name="formasAplicar"]:checked');
+    let formasAplicar = input.value
 
     let _IdGasto = IdGasto
 
     $.ajax({
       url: '/gastos/diferir',
       type:'post',
-      data:{_token,_IdGasto,gastoDiario,diasContados,unidades,fechaDesde: fechaDesde.value, fechaHasta: fechaHasta.value},
+      data:{_token,_IdGasto,unidades,viajes, formasAplicar},
       beforeSend:()=>{},
       success:(response)=>{
         if(response.TMensaje == 'success'){

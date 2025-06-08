@@ -50,7 +50,7 @@ class BancosController extends Controller
             })
             ->get();
 
-            $gastos_generales = GastosGenerales::where('id_banco1', '=', $banco->id)->get();
+            $gastos_generales = GastosGenerales::where('id_banco1', '=', $banco->id)->where('is_active',1)->get();
 
             $banco_entrada = 0;
             $banco_salida = 0;
@@ -121,6 +121,7 @@ class BancosController extends Controller
         }
         return view('bancos.index', compact('bancos'));
     }
+
     public function cambiarEstado(Request $request, $id)
     {
         $banco = Bancos::withTrashed()->findOrFail($id);
@@ -226,6 +227,7 @@ class BancosController extends Controller
         ->get();
 
         $gastos_generales = GastosGenerales::where('id_banco1', '=', $id)
+        ->where('is_active',1)
         ->whereBetween('fecha', [$startOfWeek, $endOfWeek])
         ->get();
 
