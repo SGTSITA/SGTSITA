@@ -21,37 +21,34 @@ function accionesRenderer(params) {
     const token = document.querySelector('meta[name="csrf-token"]').content;
 
     return `
-        <div style="display: flex; justify-content: center; align-items: center; height: 100%;">
-            <div class="d-flex gap-2 align-items-center">
-                <button type="button"
-                    class="btn btn-sm btn-outline-secondary btn-editar-equipo"
-                    data-id="${id}"
-                    data-bs-toggle="modal"
-                    data-bs-target="#equipoEditModal-${id}"
-                    title="Editar">
-                    <i class="fas fa-edit"></i>
-                </button>
+    <div class="d-flex gap-2 align-items-center justify-content-center">
+        <button type="button" class="btn btn-sm btn-outline-secondary btn-editar-equipo"
+            data-id="${id}" data-bs-toggle="modal" data-bs-target="#equipoEditModal-${id}" title="Editar">
+            <i class="fas fa-edit"></i>
+        </button>
 
-                <button type="button" class="btn btn-sm btn-outline-secondary" title="Ver documentos"
-                    data-bs-toggle="modal" data-bs-target="#documenotsdigitales-${id}">
-                    <i class="fas fa-folder-open"></i>
-                </button>
-<form method="POST" action="/equipos/desactivar/${id}" 
-      class="form-desactivar-equipo" 
-      data-id="${id}" 
-      style="margin: 0; padding: 0; display: inline-block;">
-    <input type="hidden" name="_token" value="${token}">
-    <input type="hidden" name="_method" value="PATCH">
-    <input type="hidden" name="tipo" value="desactivado">
-    <button type="submit" class="btn btn-sm btn-outline-secondary" title="Desactivar">
-        <i class="fas fa-trash"></i>
-    </button>
-</form>
+        <button type="button" class="btn btn-sm btn-outline-secondary"
+            data-bs-toggle="modal" data-bs-target="#documenotsdigitales-${id}" title="Ver documentos">
+            <i class="fas fa-folder-open"></i>
+        </button>
 
+        <button type="button" class="btn btn-sm btn-outline-secondary"
+            data-id="${id}" data-bs-toggle="modal" data-bs-target="#asignarGpsModal-${id}" title="Asignar GPS">
+            <i class="fas fa-satellite-dish"></i>
+        </button>
 
-            </div >
-        </div >
-        `;
+        <form method="POST" action="/equipos/desactivar/${id}" 
+              class="form-desactivar-equipo" data-id="${id}"
+              style="margin: 0; padding: 0; display: inline-block;">
+            <input type="hidden" name="_token" value="${token}">
+            <input type="hidden" name="_method" value="PATCH">
+            <input type="hidden" name="tipo" value="desactivado">
+            <button type="submit" class="btn btn-sm btn-outline-secondary" title="Desactivar">
+                <i class="fas fa-trash"></i>
+            </button>
+        </form>
+    </div>`;
+
 }
 
 function crearGrid(id, tipo) {
@@ -109,7 +106,7 @@ function crearGrid(id, tipo) {
         headerName: "Acciones",
         field: "id",
         cellRenderer: accionesRenderer,
-        width: 260,
+        width: 300,
         cellClass: 'text-center',
         suppressSizeToFit: true,
         sortable: false,
@@ -366,3 +363,54 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+
+
+document.addEventListener('change', async function (e) {
+    if (e.target.classList.contains('switch-toggle-gps')) {
+        const equipoId = e.target.dataset.equipoId;
+        const gpsCompanyId = e.target.dataset.gpsId;
+        const isChecked = e.target.checked;
+        const csrf = document.querySelector('meta[name="csrf-token"]').content;
+
+        // 🔁 Si se activó, desactiva los otros
+        if (isChecked) {
+            document.querySelectorAll(`.switch-toggle-gps[data-equipo-id="${equipoId}"]`).forEach(el => {
+                if (el !== e.target) el.checked = false;
+            });
+        }
+
+        try {
+            const response = await fetch(`/equipos/asignar-gps/${equipoId}`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': csrf,
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({
+                    gps_company_id: isChecked ? gpsCompanyId : null
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'success',
+                    title: isChecked ? 'GPS asignado' : 'GPS eliminado',
+                    showConfirmButton: false,
+                    timer: 1500
+                });
+                await fetchEquiposData();
+            } else {
+                Swal.fire('Error', result.message || 'No se pudo guardar el cambio.', 'error');
+            }
+        } catch (error) {
+            console.error(error);
+            Swal.fire('Error', 'Fallo la conexión con el servidor.', 'error');
+        }
+    }
+});
+

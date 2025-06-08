@@ -42,4 +42,8 @@ class Equipo extends Model
             $empresa->id_empresa = Auth::user()->id_empresa;
         });
     }
+    public function gps()
+{
+    return $this->belongsTo(GpsCompany::class, 'gps_company_id');
+}
 }

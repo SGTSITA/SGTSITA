@@ -41,6 +41,8 @@ class GastosContenedoresController extends Controller
           
             'FechaGasto' => Carbon::parse($g->created_at)->format('Y-m-d'),
             'FechaPago' => $g->fecha_pago,
+             'fecha_inicio' => optional($asignacion)->fecha_inicio,
+'fecha_fin' => optional($asignacion)->fecha_fin,
         ];
     });
 
