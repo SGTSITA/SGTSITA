@@ -879,6 +879,7 @@ public function export_cxp(Request $request)
                 'cotizaciones.carta_porte',
                 'cotizaciones.img_boleta AS boleta_vacio',
                 'docum_cotizacion.doc_eir',
+                'docum_cotizacion.cima',
                 'asignaciones.id_proveedor',
                 'asignaciones.fecha_inicio',
                 'asignaciones.fecha_fin',
@@ -905,6 +906,7 @@ public function export_cxp(Request $request)
     $cartaPorte = $cot->carta_porte;
     $boletaVacio = $cot->boleta_vacio;
     $docEir = $cot->doc_eir;
+    
     $tipo = "";
 
     $proveedorNombre = null;
@@ -931,21 +933,23 @@ public function export_cxp(Request $request)
         $tipo = "Full";
     }
 
-    return [
-        "id"=> $cot->id,
-        "cliente"=> $cot->cliente,
-        "num_contenedor"=>$numContenedor,
-        "doc_ccp"=> $docCCP,
-        "boleta_liberacion"=> $boletaLiberacion,
-        "doda"=> $doda,
-        "carta_porte"=> $cartaPorte,
-        "boleta_vacio"=> $boletaVacio,
-        "doc_eir"=> $docEir,
-        "proveedor" => $proveedorNombre,
-        "fecha_inicio"=> $cot->fecha_inicio,
-        "fecha_fin"=> $cot->fecha_fin,
-        "tipo" => $tipo
-    ];
+   return [
+    "id"=> $cot->id,
+    "cliente"=> $cot->cliente,
+    "num_contenedor"=>$numContenedor,
+    "doc_ccp"=> $docCCP,
+    "boleta_liberacion"=> $boletaLiberacion,
+    "doda"=> $doda,
+    "carta_porte"=> $cartaPorte,
+    "boleta_vacio"=> $boletaVacio,
+    "doc_eir"=> $docEir,
+    "proveedor" => $proveedorNombre,
+    "fecha_inicio"=> $cot->fecha_inicio,
+    "fecha_fin"=> $cot->fecha_fin,
+    "tipo" => $tipo,
+    "cima" => $cot->cima // 👈 agrega esta línea
+];
+
 });
 
     
@@ -1022,6 +1026,7 @@ public function export_documentos(Request $request)
             'cotizaciones.carta_porte',
             'docum_cotizacion.boleta_vacio',
             'docum_cotizacion.doc_eir',
+            'docum_cotizacion.cima',
             'cotizaciones.referencia_full'
         )
         ->get();
@@ -1072,7 +1077,8 @@ public function export_documentos(Request $request)
             "id_proveedor"=> $cot->id_proveedor,
             "fecha_inicio"=> $cot->fecha_inicio,
             "fecha_fin"=> $cot->fecha_fin,
-            "tipo" => $tipo
+            "tipo" => $tipo,
+            "cima" => $cot->cima,
         ];
     });
 
