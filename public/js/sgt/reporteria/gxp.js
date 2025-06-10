@@ -1,6 +1,17 @@
 document.addEventListener('DOMContentLoaded', () => {
     const gridDiv = document.querySelector('#myGrid');
     let gridApi = null;
+    const dateComparator = (filterDate, cellValue) => {
+        if (!cellValue) return -1;
+        const cellDate = new Date(cellValue);
+        // Resetear horas para comparación exacta
+        cellDate.setHours(0, 0, 0, 0);
+        filterDate.setHours(0, 0, 0, 0);
+
+        if (cellDate < filterDate) return -1;
+        if (cellDate > filterDate) return 1;
+        return 0;
+    };
 
     const columnDefs = [
         {
@@ -33,38 +44,46 @@ document.addEventListener('DOMContentLoaded', () => {
             field: "fecha_movimiento",
             valueFormatter: dateFormatter,
             filter: 'agDateColumnFilter',
-            floatingFilter: true
-        },
-        {
-            headerName: "Fecha Aplicación",
-            field: "fecha_aplicacion",
-            valueFormatter: dateFormatter,
-            filter: 'agDateColumnFilter',
-            floatingFilter: true
+            floatingFilter: true,
+            filterParams: {
+                comparator: dateComparator
+            }
         },
         {
             headerName: "Fecha Inicio",
             field: "fecha_inicio",
             valueFormatter: dateFormatter,
             filter: 'agDateColumnFilter',
-            floatingFilter: true
+            floatingFilter: true,
+            filterParams: {
+                comparator: dateComparator
+            }
         },
         {
             headerName: "Fecha Fin",
             field: "fecha_fin",
             valueFormatter: dateFormatter,
             filter: 'agDateColumnFilter',
-            floatingFilter: true
+            floatingFilter: true,
+            filterParams: {
+                comparator: dateComparator
+            }
         },
-
     ];
 
     const gridOptions = {
         columnDefs,
-        rowData: (window.cotizacionesData || []).filter(item => {
-            const fecha = moment(item.fecha_inicio, 'YYYY-MM-DD');
-            return fecha.isValid() && fecha.isBetween(moment().subtract(7, 'days'), moment(), 'day', '[]');
+        rowData: (window.cotizacionesData || []).map(item => ({
+            ...item,
+            fecha_inicio: item.fecha_inicio ? new Date(item.fecha_inicio) : null,
+            fecha_fin: item.fecha_fin ? new Date(item.fecha_fin) : null,
+            fecha_movimiento: item.fecha_movimiento ? new Date(item.fecha_movimiento) : null,
+            fecha_aplicacion: item.fecha_aplicacion ? new Date(item.fecha_aplicacion) : null,
+        })).filter(item => {
+            const fecha = item.fecha_inicio;
+            return fecha instanceof Date && !isNaN(fecha) && moment(fecha).isBetween(moment().subtract(7, 'days'), moment(), 'day', '[]');
         }),
+
         pagination: true,
         paginationPageSize: 30,
         paginationPageSizeSelector: [30, 50, 100],
@@ -143,7 +162,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
 
-
     function currencyFormatter(params) {
         return new Intl.NumberFormat('es-MX', {
             style: 'currency',
@@ -179,10 +197,23 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }, function (start, end) {
         // ⚡ Filtro local sin fetch
-        const filtrado = (window.cotizacionesData || []).filter(item => {
-            const fecha = moment(item.fecha_inicio, 'YYYY-MM-DD');
-            return fecha.isValid() && fecha.isBetween(start, end, 'day', '[]');
+        const filtrado = (window.cotizacionesData || []).map(item => ({
+            ...item,
+            fecha_inicio: item.fecha_inicio ? new Date(item.fecha_inicio) : null,
+            fecha_fin: item.fecha_fin ? new Date(item.fecha_fin) : null,
+            fecha_movimiento: item.fecha_movimiento ? new Date(item.fecha_movimiento) : null,
+        })).filter(item => {
+            const fi = item.fecha_inicio;
+            const ff = item.fecha_fin;
+            const fm = item.fecha_movimiento;
+
+            return (
+                (fi instanceof Date && !isNaN(fi) && moment(fi).isBetween(start, end, 'day', '[]')) ||
+                (ff instanceof Date && !isNaN(ff) && moment(ff).isBetween(start, end, 'day', '[]')) ||
+                (fm instanceof Date && !isNaN(fm) && moment(fm).isBetween(start, end, 'day', '[]'))
+            );
         });
+
 
 
         if (gridApi) {

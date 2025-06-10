@@ -124,6 +124,17 @@ const formatFecha = (fecha) => {
   const anio = date.getFullYear();
   return `${dia}/${mes}/${anio}`;
 };
+const dateComparator = (filterDate, cellValue) => {
+  if (!cellValue) return -1;
+  const cellDate = new Date(cellValue);
+  cellDate.setHours(0, 0, 0, 0);
+  filterDate.setHours(0, 0, 0, 0);
+
+  if (cellDate < filterDate) return -1;
+  if (cellDate > filterDate) return 1;
+  return 0;
+};
+
 
 
 const gridOptions = {
@@ -142,25 +153,41 @@ const gridOptions = {
   ],
 
   columnDefs: [
-    { field: "IdGasto", hide: true },
+    {
+      field: "IdGasto",
+      hide: true,
+      checkboxSelection: true,
+      headerCheckboxSelection: true,
+      headerCheckboxSelectionFilteredOnly: true,
+    },
     { field: "NumContenedor", filter: true, floatingFilter: true },
     { field: "Descripcion", filter: true, floatingFilter: true },
     { field: "Monto", width: 150, valueFormatter: params => currencyFormatter(params.value), cellStyle: { textAlign: "right" } },
-    { field: "FechaGasto", filter: true, floatingFilter: true, valueFormatter: params => formatFecha(params.value) },
+    {
+      field: "FechaGasto",
+      headerName: "Fecha movimiento",
+      filter: 'agDateColumnFilter',
+      floatingFilter: true,
+      valueFormatter: params => formatFecha(params.value),
+      filterParams: { comparator: dateComparator }
+    },
     {
       field: "fecha_inicio",
       headerName: "Fecha inicio",
-      filter: true,
+      filter: 'agDateColumnFilter',
       floatingFilter: true,
-      valueFormatter: params => formatFecha(params.value)
+      valueFormatter: params => formatFecha(params.value),
+      filterParams: { comparator: dateComparator }
     },
     {
       field: "fecha_fin",
       headerName: "Fecha fin",
-      filter: true,
+      filter: 'agDateColumnFilter',
       floatingFilter: true,
-      valueFormatter: params => formatFecha(params.value)
+      valueFormatter: params => formatFecha(params.value),
+      filterParams: { comparator: dateComparator }
     },
+
 
   ],
 
@@ -187,7 +214,13 @@ document.querySelectorAll(".fechasDiferir").forEach(elemento => {
 let IdGasto = null;
 
 function seleccionGastosContenedor() {
-  let seleccion = apiGrid.getSelectedRows();
+  let seleccion = [];
+  apiGrid.forEachNodeAfterFilterAndSort((node) => {
+    if (node.isSelected()) {
+      seleccion.push(node.data);
+    }
+  });
+
   let totalPago = 0;
   seleccion.forEach((contenedor) => {
     totalPago += parseFloat(contenedor.Monto);
@@ -198,6 +231,7 @@ function seleccionGastosContenedor() {
   //  totalPagoLabel.textContent = moneyFormat(totalPago)
 }
 
+
 function makePayment() {
   const modalElement = document.getElementById('modal-pagar-gastos');
   const bootstrapModal = new bootstrap.Modal(modalElement);
@@ -205,41 +239,42 @@ function makePayment() {
 }
 
 function applyPaymentGastos() {
-  let totalPagoGastos = document.querySelector('#totalPago1')
+  let totalPagoGastos = document.querySelector('#totalPago1');
+  let totalPago = reverseMoneyFormat(totalPagoGastos.textContent);
 
-  let totalPago = reverseMoneyFormat(totalPagoGastos.textContent)
-
-  let bancosPagoGastos = document.querySelector('#bancosPagoGastos')
+  let bancosPagoGastos = document.querySelector('#bancosPagoGastos');
   let bank = bancosPagoGastos.value;
 
-
-
-  let gastosPagar = apiGrid.getSelectedRows();
   let _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
+  // 🔁 Solo seleccionados visibles
+  let gastosPagar = [];
+  apiGrid.forEachNodeAfterFilterAndSort((node) => {
+    if (node.isSelected()) {
+      gastosPagar.push(node.data);
+    }
+  });
 
   $.ajax({
     url: '/gastos/payGxp',
     type: 'post',
     data: { totalPago, bank, gastosPagar, _token },
-    beforeSend: () => {
-      mostrarLoading('Aplicando pago...')
-    },
+    beforeSend: () => mostrarLoading('Aplicando pago...'),
     success: (response) => {
-      Swal.fire(response.Titulo, response.Mensaje, response.TMensaje)
-      ocultarLoading()
-      if (response.TMensaje == "success") {
+      Swal.fire(response.Titulo, response.Mensaje, response.TMensaje);
+      ocultarLoading();
+      if (response.TMensaje === "success") {
         getGxp();
-        $('#modalPagar').modal('hide')
+        $('#modalPagar').modal('hide');
       }
     },
     error: () => {
-      ocultarLoading()
-      Swal.fire("Error inesperado", "Ocurrio un error mientras procesamos su solicitud", "error")
-
+      ocultarLoading();
+      Swal.fire("Error inesperado", "Ocurrió un error mientras procesamos su solicitud", "error");
     }
-  })
+  });
 }
+
 
 let gridDataOriginal = [];
 
@@ -254,7 +289,13 @@ function getGxp() {
       mostrarLoading('Cargando gastos... espere un momento');
     },
     success: (response) => {
-      gridDataOriginal = response.contenedores || [];
+      gridDataOriginal = (response.contenedores || []).map(row => ({
+        ...row,
+        fecha_inicio: row.fecha_inicio ? new Date(row.fecha_inicio) : null,
+        fecha_fin: row.fecha_fin ? new Date(row.fecha_fin) : null,
+        FechaGasto: row.FechaGasto ? new Date(row.FechaGasto) : null,
+      }));
+
 
       // 🔽 Aplica filtro de últimos 7 días después de cargar
       const hoy = moment().endOf('day');
@@ -275,13 +316,21 @@ function filtrarPorFechas(inicio, fin) {
   const fechaFin = new Date(fin);
 
   const filtrados = gridDataOriginal.filter(row => {
-    const fechaRow = new Date(row.fecha_inicio || row.FechaInicio);
-    return fechaRow >= fechaInicio && fechaRow <= fechaFin;
+    const fi = row.fecha_inicio instanceof Date ? row.fecha_inicio : new Date(row.fecha_inicio);
+    const ff = row.fecha_fin instanceof Date ? row.fecha_fin : new Date(row.fecha_fin);
+    const fm = row.FechaGasto instanceof Date ? row.FechaGasto : new Date(row.FechaGasto);
+
+    return (
+      (fi && !isNaN(fi) && fi >= fechaInicio && fi <= fechaFin) ||
+      (ff && !isNaN(ff) && ff >= fechaInicio && ff <= fechaFin) ||
+      (fm && !isNaN(fm) && fm >= fechaInicio && fm <= fechaFin)
+    );
   });
 
   apiGrid.setGridOption("rowData", filtrados);
   seleccionGastosContenedor();
 }
+
 
 $(function () {
   const hoy = moment().endOf('day'); // hoy hasta 23:59

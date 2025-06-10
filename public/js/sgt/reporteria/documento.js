@@ -8,13 +8,13 @@ document.addEventListener('DOMContentLoaded', () => {
             field: "id",
             checkboxSelection: true,
             headerCheckboxSelection: true,
-            headerCheckboxSelectionFilteredOnly: true, 
+            headerCheckboxSelectionFilteredOnly: true,
             cellClass: 'text-center',
             filter: 'agNumberColumnFilter',
             floatingFilter: true,
             width: 130
         },
-        
+
         {
             headerName: "Cliente",
             field: "cliente",
@@ -23,35 +23,36 @@ document.addEventListener('DOMContentLoaded', () => {
             width: 180,
             cellClass: 'text-center'
         },
-        { headerName: "# Contenedor", 
-              field: "num_contenedor", 
-              width: 200,
-              filter: true, 
-              floatingFilter: true,
-              autoHeight: true, // Permite que la fila se ajuste en altura
-              cellStyle:params => {
-                  const styles = {
+        {
+            headerName: "# Contenedor",
+            field: "num_contenedor",
+            width: 200,
+            filter: true,
+            floatingFilter: true,
+            autoHeight: true, // Permite que la fila se ajuste en altura
+            cellStyle: params => {
+                const styles = {
                     'white-space': 'normal',
                     'line-height': '1.5',
-                  };
-              
-                  // Si la cotización es tipo "Full", aplicar fondo 
-                  if (params.data.tipo === 'Full') {
-                    styles['background-color'] = '#ffe5b4'; 
-                  }
-              
-                  return styles;
-                },
+                };
+
+                // Si la cotización es tipo "Full", aplicar fondo 
+                if (params.data.tipo === 'Full') {
+                    styles['background-color'] = '#ffe5b4';
+                }
+
+                return styles;
             },
-       
+        },
+
         {
-    headerName: "Proveedor",
-    field: "proveedor",
-    filter: 'agTextColumnFilter',
-    floatingFilter: true,
-    width: 180,
-    cellClass: 'text-center'
-},
+            headerName: "Proveedor",
+            field: "proveedor",
+            filter: 'agTextColumnFilter',
+            floatingFilter: true,
+            width: 180,
+            cellClass: 'text-center'
+        },
 
         {
             headerName: "Formato CCP",
@@ -136,27 +137,36 @@ document.addEventListener('DOMContentLoaded', () => {
             if (gridApi) gridApi.deselectAll();
         }
     };
-    
+
 
     agGrid.createGrid(gridDiv, gridOptions);
     function checkboxRenderer(params) {
+        if (params.colDef.field === 'doc_eir' && params.data.cima === 1) {
+            return `
+            <div class="text-center" title="Documento CIMA">
+               <span class="badge rounded-pill bg-success text-white px-3 py-2">CIMA</span>
+            </div>
+        `;
+        }
+
         if (params.value) {
             return `
-                <div class="text-center" title="Documento subido">
-                    <i class="fas fa-circle-check text-success fa-lg"></i>
-                </div>
-            `;
+            <div class="text-center" title="Documento subido">
+                <i class="fas fa-circle-check text-success fa-lg"></i>
+            </div>
+        `;
         } else {
             return `
-                <div class="text-center" title="Documento no subido">
-                    <i class="fas fa-circle-xmark text-secondary fa-lg"></i>
-                </div>
-            `;
+            <div class="text-center" title="Documento no subido">
+                <i class="fas fa-circle-xmark text-secondary fa-lg"></i>
+            </div>
+        `;
         }
     }
-    
-    
-    
+
+
+
+
 
     // Exportar a Excel o PDF
     document.querySelectorAll('.exportButton').forEach(button => {
