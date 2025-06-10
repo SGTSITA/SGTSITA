@@ -202,52 +202,70 @@ class GastosGeneralesController extends Controller
             
             $gastosGenerales = GastosGenerales::where('id',$r->_IdGasto)->first();
 
-            if($r->formasAplicar == "Viaje"){
-                $listaViajes = $r->viajes;
-                $numViajes = sizeof($listaViajes);
-                $montoGasto = $gastosGenerales->monto1;
-                $montoViaje = $montoGasto / $numViajes;
+            switch($r->formasAplicar){
+                case  "Viaje":
+                    $listaViajes = $r->viajes;
+                    $numViajes = sizeof($listaViajes);
+                    $montoGasto = $gastosGenerales->monto1;
+                    $montoViaje = $montoGasto / $numViajes;
+    
+                    //Generar Json
+                    //{"aplicacion":"viajes","elementos":[{"contenedor": "abcd"},{"contenedor":"defg"}]}
+                    $contenedores = [];
+    
+                    foreach($listaViajes as $lv){
+                        $contenedor = DocumCotizacion::where('id_cotizacion', $lv)
+                                                    ->first();
+    
+                        $contenedores[] = [
+                            'num_contenedor' => $contenedor->num_contenedor,
+                            'monto' => $montoViaje
+                        ];
+    
+                        $asignacion = Asignaciones::where('id_contenedor', $lv)->first();
+    
+                        //Añadir la parte proporcional a cada viaje de la lista
+                        $datosGasto = [
+                            "id_cotizacion" => $contenedor->id_cotizacion,
+                            "id_banco" =>  null,
+                            "id_asignacion" => $asignacion->id,
+                            "id_operador" => $asignacion->id_operador,
+                            "cantidad" => $montoViaje,
+                            "tipo" => $gastosGenerales->motivo,
+                            "estatus" => 'Pago Pendiente',
+                            "fecha_pago" => null,
+                            "pago_inmediato" => 0,
+                            "created_at" => Carbon::now()
+                        ];
+    
+                        GastosOperadores::insert($datosGasto);
+                    }
+    
+                    $aplicacion = ["aplicacion" => "viajes", "elementos" => $contenedores];
+                    
+                break;
+                case "Equipo":
+                    $listaEquipos = $r->unidades;
+                    $equipos = [];
 
-                //Generar Json
-                //{"aplicacion":"viajes","elementos":[{"contenedor": "abcd"},{"contenedor":"defg"}]}
-                $contenedores = [];
+                    foreach ($listaEquipos as $le){
+                        $equipos[] = [
+                            'equipo' => $le
+                         
+                        ];
+                    }
 
-                foreach($listaViajes as $lv){
-                    $contenedor = DocumCotizacion::where('id_cotizacion', $lv)
-                                                ->first();
+                    $aplicacion = ["aplicacion" => "equipos", "elementos" => $equipos];
 
-                    $contenedores[] = [
-                        'num_contenedor' => $contenedor->num_contenedor,
-                        'monto' => $montoViaje
-                    ];
-
-                    $asignacion = Asignaciones::where('id_contenedor', $lv)->first();
-
-                    //Añadir la parte proporcional a cada viaje de la lista
-                    $datosGasto = [
-                        "id_cotizacion" => $contenedor->id_cotizacion,
-                        "id_banco" =>  null,
-                        "id_asignacion" => $asignacion->id,
-                        "id_operador" => $asignacion->id_operador,
-                        "cantidad" => $montoViaje,
-                        "tipo" => $gastosGenerales->motivo,
-                        "estatus" => 'Pago Pendiente',
-                        "fecha_pago" => null,
-                        "pago_inmediato" => 0,
-                        "created_at" => Carbon::now()
-                    ];
-
-                    GastosOperadores::insert($datosGasto);
-                }
-
-                $aplicacion = ["aplicacion" => "viajes", "elementos" => $contenedores];
-
-                $gastosGenerales->aplicacion_gasto =  json_encode($aplicacion);
-                $gastosGenerales->save();
-
-                
+                    break;
+                default:
+                    $aplicacion = ["aplicacion" => "periodo", "elementos" => []];
+                break;
             }
-
+            
+            $gastosGenerales->aplicacion_gasto =  json_encode($aplicacion);
+            $gastosGenerales->save();
+            
             DB::commit();
 
            /* $montoGasto = $gastosGenerales->first()->monto1;
