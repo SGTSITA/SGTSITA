@@ -191,19 +191,24 @@ public function update(Request $request, $id)
 }
 
 
-public function desactivar(Request $request, Equipo $id)
+public function desactivar(Request $request, $id)
 {
-    $id->activo = false;
-    $id->save();
+    $equipo = Equipo::findOrFail($id);
+    $tipo = $request->input('tipo');
+
+    if ($tipo === 'desactivado') {
+        $equipo->activo = false;
+    } elseif ($tipo === 'activado') {
+        $equipo->activo = true;
+    }
+
+    $equipo->save();
 
     return response()->json([
         'success' => true,
-        'message' => 'Equipo desactivado exitosamente'
+        'message' => $tipo === 'desactivado' ? 'Equipo desactivado' : 'Equipo reactivado'
     ]);
 }
-
-
-
 
 
     //Nuevos controlladores
@@ -217,12 +222,13 @@ public function desactivar(Request $request, Equipo $id)
 public function asignarGps(Request $request, $id)
 {
     $equipo = Equipo::findOrFail($id);
-    $equipo->gps_company_id = $request->gps_company_id;
+    $equipo->gps_company_id = $request->gps_company_id ?: null;
+    $equipo->imei = $request->imei ?: null;
     $equipo->save();
 
     return response()->json([
         'success' => true,
-        'message' => 'GPS asignado correctamente.'
+        'message' => 'Asignación de GPS e IMEI actualizada correctamente.'
     ]);
 }
 
