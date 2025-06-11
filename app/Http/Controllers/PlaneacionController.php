@@ -355,7 +355,7 @@ class PlaneacionController extends Controller
                     $cotizacion = Cotizaciones::where('id', '=',  $contenedor->id_cotizacion)->first();
                     $cotizacion->referencia_full = $fullUUID;
                     $cotizacion->jerarquia = ($i == 0) ? 'Principal' : 'Secundario';
-                    \Log::debug("index: $i contenedor: $cont jerarquia: $cotizacion->jerarquia");
+                  //  \Log::debug("index: $i contenedor: $cont jerarquia: $cotizacion->jerarquia");
                     $cotizacion->estatus_planeacion = 1;
                     $cotizacion->tipo_viaje = 'Full';
                     $cotizacion->update();

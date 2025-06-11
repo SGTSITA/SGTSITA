@@ -21,8 +21,8 @@ Gastos Generales
 
                               @can('gastos-create')
                              <div class="float-right">
-                                <button type="button" class="btn btn-sm bg-gradient-warning" id="btnDiferir">
-                                    <i class="fa fa-fw fa-coins"></i>  Diferir
+                                <button type="button" class="btn btn-sm bg-gradient-success" id="btnDiferir">
+                                    <i class="fa fa-fw fa-coins"></i> Aplicar Pago
                                 </button>
                                 <button type="button" class="btn btn-sm bg-gradient-info" data-bs-toggle="modal" data-bs-target="#exampleModal">
                                     <i class="fa fa-fw fa-plus"></i>  Agregar Gasto
@@ -52,10 +52,78 @@ Gastos Generales
     background-color: #cc222244;
 }
 
+.rag-warning{
+    background-color: #ffff3344;
+    
+}
+
 .rag-green {
     background-color: #33cc3344;
 }
+.option-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    max-width: 100%;
+  }
+
+  .custom-option {
+    position: relative;
+    display: flex;
+    align-items: center;
+    border: 1px dashed #ccc;
+    border-radius: 8px;
+    padding: 12px 16px;
+    min-height: 79px;
+    flex: 1 1 200px;
+    cursor: pointer;
+    transition: background-color 0.2s, border-color 0.2s;
+  }
+
+  .custom-option input[type="radio"] {
+    display: none;
+  }
+
+  .custom-option .icon {
+    margin-right: 16px;
+    font-size: 24px;
+    color: #ccc;
+    flex-shrink: 0;
+    transition: color 0.2s;
+  }
+
+  .custom-option .text {
+    font-size: 1rem;
+    color: #333;
+  }
+
+  .custom-option.selected {
+    background-color: #e6f4ff;
+    border-color: #007BFF;
+  }
+
+  .custom-option.selected .icon {
+    color: #007BFF;
+  }
+
+  .check-icon {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  background-color: #a5dc86;
+  border-radius: 50%;
+  padding: 4px;
+  font-size: 14px;
+  color: white;
+  display: none;
+}
+
+  .custom-option.selected .check-icon {
+    display: inline-block;
+  }
 </style>
+
 <script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.js"></script>
 <script src="{{ asset('js/sgt/common.js') }}?v={{ filemtime(public_path('js/sgt/common.js')) }}"></script>
 <script src="{{ asset('js/sgt/gastos/gastos.js') }}?v={{ filemtime(public_path('js/sgt/gastos/gastos.js')) }}"></script>
@@ -81,7 +149,33 @@ Gastos Generales
                 removeItemButton: true
             });
         }
+
+        if (document.getElementById('selectViajes')) {
+            var element = document.getElementById('selectViajes');
+            const example = new Choices(element, {
+                removeItemButton: true
+            });
+        }
         
     });
+</script>
+<script>
+  function handleSelection(input) {
+    
+    document.querySelectorAll('.custom-option').forEach(opt =>{
+        opt.classList.remove('selected') 
+    });
+    
+    input.parentElement.classList.add('selected');
+
+    document.querySelectorAll(".aplicacion-gastos").forEach( opt => {
+        opt.classList.add('d-none')
+    })
+
+    if(input.parentElement.innerText == "Viaje") document.querySelector("#aplicacion-viaje").classList.remove('d-none');
+    if(input.parentElement.innerText == "Equipo") document.querySelector("#aplicacion-equipo").classList.remove('d-none');
+    
+    
+  }
 </script>
 @endpush

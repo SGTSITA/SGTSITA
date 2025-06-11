@@ -318,6 +318,4 @@
 
 @section('content')
 
-
-@include('planeacion.vista_calendar')
 @endsection
