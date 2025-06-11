@@ -720,23 +720,27 @@ public function export_cxp(Request $request)
             $fechaF = $fechaFinPeriodo.' 00:00:00';
 
             //Obtener los gastos de las unidades (vehiculos)
-            $gastosUnidadQuery = "SELECT a.id_camion, gg.motivo, COUNT(DISTINCT a.id) AS total_asignaciones,
-                COALESCE(SUM( gg.monto1 / JSON_LENGTH(JSON_EXTRACT(gg.aplicacion_gasto, '$.elementos')) ), 0) AS total_gastos_periodo,
-                COALESCE(SUM( gg.monto1 / JSON_LENGTH(JSON_EXTRACT(gg.aplicacion_gasto, '$.elementos')) ), 0) / COUNT(DISTINCT a.id) AS gasto_por_viaje
-            FROM asignaciones a
-            LEFT JOIN gastos_generales gg 
-                ON gg.aplicacion_gasto IS NOT NULL
-                AND JSON_VALID(gg.aplicacion_gasto) = 1
-                AND JSON_UNQUOTE(JSON_EXTRACT(gg.aplicacion_gasto, '$.aplicacion')) = 'equipos'
-                AND JSON_CONTAINS(
-                    JSON_EXTRACT(gg.aplicacion_gasto, '$.elementos'),
-                    JSON_OBJECT('equipo', CAST(a.id_camion AS CHAR)),
-                    '$'
-                    )
-                AND gg.fecha BETWEEN '$fechaI' AND '$fechaF'
-            WHERE a.fecha_inicio BETWEEN '$fechaI' AND '$fechaF'
-                AND a.id_camion IS NOT NULL
-            GROUP BY a.id_camion, gg.motivo;";
+            $gastosUnidadQuery = "SELECT 
+            a.id_camion,
+            gg.motivo,
+            COUNT(DISTINCT a.id) AS total_asignaciones,
+            COALESCE(SUM(DISTINCT gg.monto1 / JSON_LENGTH(JSON_EXTRACT(gg.aplicacion_gasto, '$.elementos'))), 0) AS total_gastos_periodo,
+            COALESCE(SUM(DISTINCT gg.monto1 / JSON_LENGTH(JSON_EXTRACT(gg.aplicacion_gasto, '$.elementos'))), 0) / COUNT(DISTINCT a.id) AS gasto_por_viaje
+        FROM asignaciones a
+        LEFT JOIN gastos_generales gg 
+            ON gg.aplicacion_gasto IS NOT NULL
+            AND JSON_VALID(gg.aplicacion_gasto) = 1
+            AND JSON_UNQUOTE(JSON_EXTRACT(gg.aplicacion_gasto, '$.aplicacion')) = 'equipos'
+            AND JSON_CONTAINS(
+                JSON_EXTRACT(gg.aplicacion_gasto, '$.elementos'),
+                JSON_OBJECT('equipo', CAST(a.id_camion AS CHAR)),
+                '$'
+            )
+            AND gg.fecha BETWEEN '$fechaI' AND '$fechaF'
+        WHERE a.fecha_inicio BETWEEN '$fechaI' AND '$fechaF'
+          AND a.id_camion IS NOT NULL
+        GROUP BY a.id_camion, gg.motivo;
+        ";
 
           
 
@@ -861,7 +865,7 @@ public function export_cxp(Request $request)
         $user = User::where('id', '=', auth()->user()->id)->first();
 
         $gastos = GastosGenerales::where('id_empresa', auth()->user()->id_empresa)
-                                ->where('diferir_gasto',0)
+                                ->where('aplicacion_gasto','like',"%periodo%")
                                 ->whereBetween('fecha',[$fechaInicio,$fechaFin])->sum('monto1');
        // $gastos = [];
 
