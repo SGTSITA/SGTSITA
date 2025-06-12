@@ -53,8 +53,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
     var gridOptions = {
         pagination: true,
-        paginationPageSize: 50,
-        paginationPageSizeSelector: [50, 100, 500],
+        paginationPageSize: 10,
+        paginationPageSizeSelector: [10, 50, 100],
         domLayout: 'autoHeight', 
         rowSelection: {
             mode: "multiRow",
