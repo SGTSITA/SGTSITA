@@ -400,11 +400,6 @@ $(function () {
   filtrarPorFechas(hace7Dias.format('YYYY-MM-DD'), hoy.format('YYYY-MM-DD'));
 });
 
-
-
-
-
-
 $(".moneyformat").on("focus", (e) => {
   var val = e.target.value;
   e.target.value = reverseMoneyFormat(val);
@@ -414,3 +409,53 @@ $(".moneyformat").on("blur", (e) => {
   var val = e.target.value;
   e.target.value = moneyFormat(val);
 })
+
+document.querySelectorAll('.exportButton').forEach(button => {
+  button.addEventListener('click', async function () {
+    const selectedRows = apiGrid.getSelectedRows();
+    const selectedIds = selectedRows.map(row => row.IdGasto);
+
+    if (selectedIds.length === 0) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Sin selección',
+        text: 'Seleccione al menos un gasto para exportar.',
+      });
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('_token', document.querySelector('meta[name="csrf-token"]').content);
+    formData.append('fileType', this.dataset.filetype);
+    selectedIds.forEach(id => formData.append('selected_ids[]', id));
+
+    try {
+      const response = await fetch('/gastos/exportar', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!response.ok) throw new Error("Error al exportar el archivo.");
+
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = downloadUrl;
+      a.download = `gastos_por_pagar.${this.dataset.filetype}`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+
+      Swal.fire({
+        icon: 'success',
+        title: 'Archivo generado',
+        text: `El archivo se descargó como ${this.dataset.filetype.toUpperCase()}.`,
+        timer: 3000,
+        showConfirmButton: true
+      });
+
+    } catch (err) {
+      Swal.fire('Error', err.message, 'error');
+    }
+  });
+});

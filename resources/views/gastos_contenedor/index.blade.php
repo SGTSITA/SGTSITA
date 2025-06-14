@@ -37,8 +37,20 @@
                             <input type="text" id="daterange" readonly class="form-control form-control-sm"
                                 style="width: auto; min-width: 220px; box-shadow: none;" />
                         </div>
+                        <div class="d-flex justify-content-start my-2 gap-2">
+                            <button type="button" id="exportButtonExcel" data-filetype="xlsx"
+                                class="btn btn-outline-info btn-xs exportButton">
+                                Exportar a Excel
+                            </button>
+                            <button type="button" id="exportButtonPDF" data-filetype="pdf"
+                                class="btn btn-outline-info btn-xs exportButton">
+                                Exportar a PDF
+                            </button>
+                        </div>
+
 
                     </div>
+
 
                     <div class="card-body"style=" padding: 0rem 1.5rem 1.5rem 1.5rem;">
                         <div class="row">

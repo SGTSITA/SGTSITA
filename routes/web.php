@@ -341,6 +341,8 @@ Route::post('operadores/{id}/restaurar', [App\Http\Controllers\OperadorControlle
     Route::get('gastos/por-pagar',[App\Http\Controllers\GastosContenedoresController::class, 'IndexPayment'])->name('index.gastos_por_pagar');
     Route::post('gastos/getGxp',[App\Http\Controllers\GastosContenedoresController::class, 'getGxp'])->name('get.gastos_por_pagar');
     Route::post('gastos/payGxp',[App\Http\Controllers\GastosContenedoresController::class, 'PagarGastosMultiple'])->name('pay.gastos_por_pagar');
+     Route::post('gastos/exportar', [App\Http\Controllers\GastosContenedoresController::class, 'exportarSeleccionados'])->name('gastos.exportar');
+
 
     // ==================== C A T A L O G O ====================
     Route::get('catalogo', [App\Http\Controllers\CatalogoController::class, 'index'])->name('index.catalogo');
@@ -383,3 +385,5 @@ Route::post('/cuenta-global/update', [App\Http\Controllers\CuentaGlobalControlle
     Route::delete('/gps/{id}', [App\Http\Controllers\GpsCompanyController::class, 'destroy']);
     Route::post('/gps/restore/{id}', [App\Http\Controllers\GpsCompanyController::class, 'restore']);
 
+
+   
