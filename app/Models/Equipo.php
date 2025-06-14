@@ -28,6 +28,7 @@ class Equipo extends Model
         'id_equipo',
         'id_empresa',
         'placas',
+        'imei'
     ];
 
     protected static function boot()

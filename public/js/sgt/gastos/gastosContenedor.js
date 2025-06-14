@@ -135,6 +135,18 @@ const dateComparator = (filterDate, cellValue) => {
   return 0;
 };
 
+function limpiarSeleccionNoVisible() {
+  apiGrid.forEachNode((node) => {
+    if (node.isSelected() && !node.displayed) {
+      node.setSelected(false);
+    }
+  });
+
+  // Opcional: recalcula total al eliminar selección
+  seleccionGastosContenedor();
+}
+
+
 
 
 const gridOptions = {
@@ -159,17 +171,24 @@ const gridOptions = {
       checkboxSelection: true,
       headerCheckboxSelection: true,
       headerCheckboxSelectionFilteredOnly: true,
+      width: 100
     },
-    { field: "NumContenedor", filter: true, floatingFilter: true },
-    { field: "Descripcion", filter: true, floatingFilter: true },
-    { field: "Monto", width: 150, valueFormatter: params => currencyFormatter(params.value), cellStyle: { textAlign: "right" } },
+    { field: "NumContenedor", filter: true, floatingFilter: true, width: 200 },
+    { field: "Descripcion", filter: true, floatingFilter: true, width: 250 },
+    {
+      field: "Monto",
+      width: 180,
+      valueFormatter: params => currencyFormatter(params.value),
+      cellStyle: { textAlign: "right" }
+    },
     {
       field: "FechaGasto",
       headerName: "Fecha movimiento",
       filter: 'agDateColumnFilter',
       floatingFilter: true,
       valueFormatter: params => formatFecha(params.value),
-      filterParams: { comparator: dateComparator }
+      filterParams: { comparator: dateComparator },
+      width: 220
     },
     {
       field: "fecha_inicio",
@@ -177,7 +196,8 @@ const gridOptions = {
       filter: 'agDateColumnFilter',
       floatingFilter: true,
       valueFormatter: params => formatFecha(params.value),
-      filterParams: { comparator: dateComparator }
+      filterParams: { comparator: dateComparator },
+      width: 220
     },
     {
       field: "fecha_fin",
@@ -185,16 +205,27 @@ const gridOptions = {
       filter: 'agDateColumnFilter',
       floatingFilter: true,
       valueFormatter: params => formatFecha(params.value),
-      filterParams: { comparator: dateComparator }
-    },
-
-
+      filterParams: { comparator: dateComparator },
+      width: 220
+    }
   ],
 
   localeText: localeText,
   onRowSelected: (event) => {
     seleccionGastosContenedor()
   },
+  // ✅ Selección manual
+  onRowSelected: () => {
+    seleccionGastosContenedor();
+  },
+
+  // ✅ Limpieza automática al filtrar o paginar
+  onFilterChanged: () => {
+    limpiarSeleccionNoVisible();
+  },
+  onPaginationChanged: () => {
+    limpiarSeleccionNoVisible();
+  }
 };
 
 const myGridElement = document.querySelector('#myGrid');
@@ -312,24 +343,24 @@ function getGxp() {
 
 
 function filtrarPorFechas(inicio, fin) {
-  const fechaInicio = new Date(inicio);
-  const fechaFin = new Date(fin);
+  const fechaInicio = moment(inicio, 'YYYY-MM-DD').startOf('day');
+  const fechaFin = moment(fin, 'YYYY-MM-DD').endOf('day');
 
   const filtrados = gridDataOriginal.filter(row => {
-    const fi = row.fecha_inicio instanceof Date ? row.fecha_inicio : new Date(row.fecha_inicio);
-    const ff = row.fecha_fin instanceof Date ? row.fecha_fin : new Date(row.fecha_fin);
-    const fm = row.FechaGasto instanceof Date ? row.FechaGasto : new Date(row.FechaGasto);
+    const fi = row.fecha_inicio instanceof Date ? moment(row.fecha_inicio) : null;
+    const ff = row.fecha_fin instanceof Date ? moment(row.fecha_fin) : null;
 
-    return (
-      (fi && !isNaN(fi) && fi >= fechaInicio && fi <= fechaFin) ||
-      (ff && !isNaN(ff) && ff >= fechaInicio && ff <= fechaFin) ||
-      (fm && !isNaN(fm) && fm >= fechaInicio && fm <= fechaFin)
-    );
+    if (!fi || !ff || !fi.isValid() || !ff.isValid()) return false;
+
+    // ✅ Solo incluir si ambos están dentro del rango
+    return fi.isSameOrAfter(fechaInicio) && ff.isSameOrBefore(fechaFin);
   });
 
   apiGrid.setGridOption("rowData", filtrados);
+  apiGrid.deselectAll();
   seleccionGastosContenedor();
 }
+
 
 
 $(function () {
@@ -340,7 +371,7 @@ $(function () {
   $('#daterange').daterangepicker({
     startDate: hace7Dias,
     endDate: hoy,
-    maxDate: hoy, // ⛔ bloquear fechas futuras
+    maxDate: hoy, //  bloquear fechas futuras
     locale: {
       format: 'YYYY-MM-DD',
       separator: ' - ',
@@ -369,11 +400,6 @@ $(function () {
   filtrarPorFechas(hace7Dias.format('YYYY-MM-DD'), hoy.format('YYYY-MM-DD'));
 });
 
-
-
-
-
-
 $(".moneyformat").on("focus", (e) => {
   var val = e.target.value;
   e.target.value = reverseMoneyFormat(val);
@@ -383,3 +409,53 @@ $(".moneyformat").on("blur", (e) => {
   var val = e.target.value;
   e.target.value = moneyFormat(val);
 })
+
+document.querySelectorAll('.exportButton').forEach(button => {
+  button.addEventListener('click', async function () {
+    const selectedRows = apiGrid.getSelectedRows();
+    const selectedIds = selectedRows.map(row => row.IdGasto);
+
+    if (selectedIds.length === 0) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Sin selección',
+        text: 'Seleccione al menos un gasto para exportar.',
+      });
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('_token', document.querySelector('meta[name="csrf-token"]').content);
+    formData.append('fileType', this.dataset.filetype);
+    selectedIds.forEach(id => formData.append('selected_ids[]', id));
+
+    try {
+      const response = await fetch('/gastos/exportar', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!response.ok) throw new Error("Error al exportar el archivo.");
+
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = downloadUrl;
+      a.download = `gastos_por_pagar.${this.dataset.filetype}`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+
+      Swal.fire({
+        icon: 'success',
+        title: 'Archivo generado',
+        text: `El archivo se descargó como ${this.dataset.filetype.toUpperCase()}.`,
+        timer: 3000,
+        showConfirmButton: true
+      });
+
+    } catch (err) {
+      Swal.fire('Error', err.message, 'error');
+    }
+  });
+});

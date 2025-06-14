@@ -205,14 +205,20 @@ document.addEventListener('DOMContentLoaded', () => {
         })).filter(item => {
             const fi = item.fecha_inicio;
             const ff = item.fecha_fin;
-            const fm = item.fecha_movimiento;
 
             return (
-                (fi instanceof Date && !isNaN(fi) && moment(fi).isBetween(start, end, 'day', '[]')) ||
-                (ff instanceof Date && !isNaN(ff) && moment(ff).isBetween(start, end, 'day', '[]')) ||
-                (fm instanceof Date && !isNaN(fm) && moment(fm).isBetween(start, end, 'day', '[]'))
+                fi instanceof Date && ff instanceof Date &&
+                !isNaN(fi) && !isNaN(ff) &&
+                moment(fi).isSameOrAfter(start, 'day') &&
+                moment(ff).isSameOrBefore(end, 'day')
             );
         });
+
+        if (gridApi) {
+            gridApi.setGridOption('rowData', filtrado);
+            gridApi.deselectAll(); // Limpia los seleccionados que ya no están
+        }
+
 
 
 
