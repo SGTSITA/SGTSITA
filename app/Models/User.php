@@ -23,6 +23,7 @@ class User extends Authenticatable
         'id_empresa',
         'password',
         'id_cliente',
+        'consecutivo_conboy',
     ];
 
     /**

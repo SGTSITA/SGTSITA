@@ -93,69 +93,91 @@ input:not(:checked) + .slider #ubicacion-texto {
     </div>
 </div>
 
-
-
-<div class="modal fade" id="filtroModal" tabindex="-1" aria-labelledby="filtroModalLabel" aria-hidden="true">
+<div class="modal fade" id="filtroModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="filtroModalLabel">Filtros de Búsqueda</h5>
-        <!-- Botón de cierre del modal -->
-        <button type="button" class="btn-close" id="btnCerrarModal" data-bs-dismiss="modal" aria-label="Close"></button>
+      <form id="filtroForm">
+        <div class="modal-body">
+          <button type="button" class="btn-close" id="btnCerrarModal" data-bs-dismiss="modal" aria-label="Close"></button>
       <button id="btnDetener" class="btn btn-danger mt-2" style="display: none;">
   <i class="bi bi-pause-circle"></i> Detener actualización
 </button>
+    <!-- Nav tabs -->
+    <ul class="nav nav-tabs" id="filtroTabs" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="convoy-tab" data-bs-toggle="tab" data-bs-target="#filtro-convoy" type="button" role="tab">
+          Filtrar por Convoy
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="contenedor-tab" data-bs-toggle="tab" data-bs-target="#filtro-contenedor" type="button" role="tab">
+          Filtrar por Contenedor
+        </button>
+      </li>
+    </ul>
+
+    <!-- Tab panes -->
+    <div class="tab-content pt-3">
+      <!-- CONVOY TAB -->
+      <div class="tab-pane fade show active" id="filtro-convoy" role="tabpanel">
+        <div class="mb-3">
+          <label for="convoys" class="form-label">Convoy</label>
+          <select class="form-select" name="conboy" id="convoys">
+            <option value="">Seleccione un convoy</option>
+          </select>
+        </div>
       </div>
-      <div class="modal-body">
-        <form id="formFiltros">
-             <!-- <div class="mb-3">
-            <label for="fecha_inicio" class="form-label">Fecha Inicio</label>
-            <input type="date" class="form-control" name="fecha_inicio" id="fecha_inicio">
-          </div>
-          <div class="mb-3">
-            <label for="fecha_fin" class="form-label">Fecha Fin</label>
-            <input type="date" class="form-control" name="fecha_fin" id="fecha_fin">
-          </div> -->
-         
-           <div class="mb-3 position-relative">
-            <label for="contenedor-input" class="form-label">Contenedores</label>
-            <input type="text" class="form-control" id="contenedor-input" oninput="mostrarSugerencias()" placeholder="Buscar contenedor...">
-            <div id="sugerencias" style="border: 1px solid #ccc; max-height: 150px; overflow-y: auto; display: none; position: absolute; background: white; z-index: 1050; width: 100%;"></div>
-            <button type="button" class="btn btn-sm btn-outline-secondary mt-2" onclick="agregarContenedor()">Agregar</button>
-            <div id="contenedores-seleccionados" class="mt-2"></div>
-            <input type="hidden" name="contenedores" id="contenedores">
-            <input type="hidden" id="ItemsSelects" name="ItemsSelects">
-          </div>
 
-          <!-- <div class="mb-3">
-            <label for="proveedor" class="form-label">Proveedor</label>
-            <select class="form-select" name="proveedor" id="proveedor">
-              <option value="">Seleccione un proveedor</option>
-            </select>
-          </div> -->
+      <!-- CONTENEDOR TAB -->
+      <div class="tab-pane fade" id="filtro-contenedor" role="tabpanel">
+        <div class="mb-3 position-relative">
+          <label for="contenedor-input" class="form-label">Contenedores</label>
+          <input type="text" class="form-control" id="contenedor-input" oninput="mostrarSugerencias()" placeholder="Buscar contenedor...">
+          <div id="sugerencias" style="border: 1px solid #ccc; max-height: 150px; overflow-y: auto; display: none; position: absolute; background: white; z-index: 1050; width: 100%;"></div>
+          <button type="button" class="btn btn-sm btn-outline-secondary mt-2" onclick="agregarContenedor()">Agregar</button>
+          <div id="contenedores-seleccionados" class="mt-2"></div>
+          <input type="hidden" name="contenedores" id="contenedores">
+          <input type="hidden" id="ItemsSelects" name="ItemsSelects">
+        </div>
+      </div>
+    </div>
 
-          <!-- <div class="mb-3">
-            <label for="cliente" class="form-label">Cliente</label>
-            <select class="form-select" name="cliente" id="cliente">
-              <option value="">Seleccione un cliente</option>
-            </select>
-          </div> -->
+    <!-- Tipo búsqueda común -->
+    <div class="mb-3 mt-2">
+      <label for="tipo" class="form-label">Tipo Búsqueda</label>
+      <select class="form-select" name="tipo" id="tipo">
+        <option value="Global" selected>Global</option>
+        <option value="skyGps">skyGps</option>
+      </select>
+    </div>
 
-          <!-- <div class="mb-3">
-            <label for="subcliente" class="form-label">Subcliente</label>
-            <select class="form-select" name="subcliente" id="subcliente">
-              <option value="">Seleccione un subcliente</option>
-            </select>
-          </div> -->
-          
-          
-          <div class="modal-footer">
-            <button type="button" onclick="limpiarFiltros()" class="btn btn-secondary">
-              Limpiar Filtros
-            </button>
-            <button type="submit" class="btn btn-primary">Aplicar Filtros</button>
-          </div>
-        </form>
+    <!-- Botones -->
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" onclick="limpiarFiltros()">Limpiar</button>
+      <button type="submit" class="btn btn-primary">Aplicar Filtro</button>
+    </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="modalInfoViaje" tabindex="-1" aria-labelledby="modalInfoViajeLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content shadow-lg rounded-4">
+      <div class="modal-header bg-primary text-white rounded-top-4">
+        <h5 class="modal-title" id="modalInfoViajeLabel">
+          <i class="bi bi-truck-front-fill me-2"></i> Información del Viaje
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body" id="contenidoModalViaje">
+        <!-- Aquí se insertará el contenido dinámico -->
+      </div>
+      <div class="modal-footer bg-light rounded-bottom-4">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          <i class="bi bi-x-circle"></i> Cerrar
+        </button>
       </div>
     </div>
   </div>

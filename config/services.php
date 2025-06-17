@@ -34,11 +34,15 @@ return [
     'client_id' => env('GOOGLE_CLIENT_ID'),
     'client_secret' => env('GOOGLE_CLIENT_SECRET'),
     'redirect' => env('GOOGLE_REDIRECT_URI'),
-],
-'globalGps' => [
-    'appid' => env('GLOBAL_GPS_APP_ID'),
-    'appkey' => env('GLOBAL_GPS_ACCESS_KEY'),
-    'url_base' => env('GLOBAL_GPS_API_URL'),
-],
-
+    ],
+    'globalGps' => [
+        'appid' => env('GLOBAL_GPS_APP_ID'),
+        'appkey' => env('GLOBAL_GPS_ACCESS_KEY'),
+        'url_base' => env('GLOBAL_GPS_API_URL'),
+    ],
+ 'SkyAngelGps' => [
+        'url_base' => env('SKY_ANGEL_GPS_URL'),
+        'username' => env('SKY_ANGEL_GPS_USERNAME'),
+        'password' => env('SKY_ANGEL_GPS_PASSWORD')
+    ]
 ];

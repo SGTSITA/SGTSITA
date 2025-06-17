@@ -12,9 +12,21 @@ let marker = null;
       
 
 
-
+let detalleConvoys;
 let contenedoresDisponibles = [];
+function cargarConvoysEnSelect(convoys) {
+  const select = document.getElementById('convoys');
 
+  // Limpiar opciones actuales excepto la primera
+  select.innerHTML = '<option value="">Seleccione un convoy</option>';
+
+  convoys.forEach(convoy => {
+    const option = document.createElement('option');
+    option.value = convoy.id; // puedes usar convoy.no_conboy si prefieres
+    option.textContent = `${convoy.no_conboy} - ${convoy.nombre}`;
+    select.appendChild(option);
+  });
+}
 
 function cargarinicial()
 {
@@ -23,7 +35,8 @@ function cargarinicial()
     .then(data => {
         
          contenedoresDisponibles   = data.datos;
-        
+      cargarConvoysEnSelect( data.conboys);
+    detalleConvoys =   data.dataConten;
           
       })
   .catch(error => {
@@ -31,16 +44,43 @@ function cargarinicial()
     });
 }
 
+
+function obtenerImeisPorConvoyId(convoyId) {
+    return detalleConvoys
+    .filter(item => item.conboy_id == convoyId && item.imei && item.id_contenedor)
+    .map(item => item.num_contenedor + "-" + item.imei + "-" + item.id_contenedor);
+}
+
+
 let intervalId = null;
-
-document.getElementById('formFiltros').addEventListener('submit', function(event) {
+let idConvoyOContenedor=0;
+document.getElementById('filtroModal').addEventListener('submit', function(event) {
   event.preventDefault();
+let tipoBusqueda ='IMEIS';
 
-    document.getElementById('ItemsSelects').value = ItemsSelects.join(';');
-if (!ItemsSelects || ItemsSelects.length === 0) {
-    alert('Por favor, seleccione al menos un contenedor.');
+  const convoy = document.getElementById("convoys").value;
+  const contenedores = document.getElementById("contenedores").value;
+
+  if (!convoy && !contenedores) {
+    alert("Debes seleccionar al menos un convoy o un contenedor.");
     return;
   }
+
+if (convoy && (!contenedores || ItemsSelects.length === 0)) {
+    ItemsSelects = obtenerImeisPorConvoyId(convoy);
+    tipoBusqueda ='CONVOY';
+    idConvoyOContenedor=convoy;
+  }
+
+  if (!ItemsSelects || ItemsSelects.length === 0) {
+    alert('Por favor, seleccione al menos un contenedor o un convoy con IMEIs.');
+    return;
+  }
+
+  // Set hidden input por si necesitas backend
+  document.getElementById('ItemsSelects').value = ItemsSelects.join(';');
+
+  
 
 
   actualizarUbicacion(ItemsSelects);
@@ -52,9 +92,34 @@ if (!ItemsSelects || ItemsSelects.length === 0) {
     actualizarUbicacion(ItemsSelects);
   }, 5000);
 });
-  limpiarMarcadores();
+  
+function actualizarUbicacionReal(coordenadaData){
+    fetch('/coordenadas/rastrear/savehistori', {
+        method: 'POST',
+         headers: {
+      'Content-Type': 'application/json',
+      'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+    },
+    body: JSON.stringify(coordenadaData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            console.log('Coordenada guardada:', data.data);
+        } else {
+            console.warn('Error al guardar coordenada', data);
+        }
+    })
+    .catch(error => {
+        console.error('Error en la solicitud:', error);
+    });
 
+}
 function actualizarUbicacion(imeis) {
+  const selectElement = document.getElementById('tipo');
+
+let tipo = selectElement.value;
+
     let responseOk = false;
   fetch("/coordenadas/ubicacion-vehiculo", {
     method: 'POST',
@@ -62,24 +127,119 @@ function actualizarUbicacion(imeis) {
       'Content-Type': 'application/json',
       'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
     },
-    body: JSON.stringify({ imeis: imeis })
+    body: JSON.stringify({ imeis: imeis , tipo: tipo})
   })
   .then(res => res.json())
   .then(data => {
     //console.log('Ubicaciones recibidas:', data);
     const dataUbi= data;
 
-    
+limpiarMarcadores();
 responseOk = true;
     if (Array.isArray(dataUbi)) {
       dataUbi.forEach((item, index) => {
-        let latlocal = item.ubicacion.data.lat;
-        let lnglocal = item.ubicacion.data.lng;
+         let latlocal ='';
+        let lnglocal='';
+        let nEconomico='';
+        let id_contenConvoy ='';
+        if(tipo ==='skyGps'){
+        let arrayData = item.ubicacion.data;
+        if (Array.isArray(arrayData) && arrayData.length === 0) {
+            console.warn('La respuesta fue exitosa pero `data` está vacío.');
+            return
+          }
+          arrayData.forEach((item2, index) => {
+              nEconomico =' No Economico:' +item2.economico +' imei:' + item2.imei ;
+              latlocal= item2.tracks[0].position.latitude;
+              lnglocal= item2.tracks[0].position.longitude;
+                 id_contenConvoy=  item2.id_contenendor;
+              if (latlocal && lnglocal) {
+
+                 const newMarker = L.marker([latlocal, lnglocal]).addTo(map).bindPopup(nEconomico).openPopup();
+                window.markers.push(newMarker);
+                     newMarker.on('click', () => {
+            const contenedor = item.contenedor;
+             const info = contenedoresDisponibles.find(d => d.contenedor === contenedor);
+                if (!info) {
+                  alert("Información del viaje no disponible.");
+                  return;
+                }
+
+                const contenido = `
+                  <div class="p-3">
+                    <h5 class="mb-2">🚚 Información del Viaje</h5>
+                    <p><strong>Cliente:</strong> ${info.cliente}</p>
+                    <p><strong>Contenedor:</strong> ${info.contenedor}</p>
+                    <p><strong>Origen:</strong> ${info.origen}</p>
+                    <p><strong>Destino:</strong> ${info.destino}</p>
+                    <p><strong>Contrato:</strong> ${info.tipo_contrato}</p>
+                    <p><strong>IMEI:</strong> ${info.imei}</p>
+                    <p><strong>Fecha Inicio:</strong> ${info.fecha_inicio}</p>
+                  </div>
+                `;
+
+              document.getElementById('contenidoModalViaje').innerHTML = contenido;
+
+              // Mostrar el modal con Bootstrap 5
+              const modal = new bootstrap.Modal(document.getElementById('modalInfoViaje'));
+              modal.show();
+            });
+                
+              }
+          })
+
+
+        }else {
+             latlocal = item.ubicacion.data.lat;
+         lnglocal = item.ubicacion.data.lng;
+         id_contenConvoy=  item.id_contenendor;
         if (latlocal && lnglocal) {
+    
           const newMarker = L.marker([latlocal, lnglocal]).addTo(map).bindPopup(item.contenedor).openPopup();
+            window.markers.push(newMarker);
+
+          newMarker.on('click', () => {
+            const contenedor = item.contenedor;
+             const info = contenedoresDisponibles.find(d => d.contenedor === contenedor);
+                if (!info) {
+                  alert("Información del viaje no disponible.");
+                  return;
+                }
+
+                const contenido = `
+                  <div class="p-3">
+                    <h5 class="mb-2">🚚 Información del Viaje</h5>
+                    <p><strong>Cliente:</strong> ${info.cliente}</p>
+                    <p><strong>Contenedor:</strong> ${info.contenedor}</p>
+                    <p><strong>Origen:</strong> ${info.origen}</p>
+                    <p><strong>Destino:</strong> ${info.destino}</p>
+                    <p><strong>Contrato:</strong> ${info.tipo_contrato}</p>
+                    <p><strong>IMEI:</strong> ${info.imei}</p>
+                    <p><strong>Fecha Inicio:</strong> ${info.fecha_inicio}</p>
+                  </div>
+                `;
+
+              document.getElementById('contenidoModalViaje').innerHTML = contenido;
+
+              // Mostrar el modal con Bootstrap 5
+              const modal = new bootstrap.Modal(document.getElementById('modalInfoViaje'));
+              modal.show();
+            });
         if (index === 0) map.setView([latlocal, lnglocal], 15);
         
         }
+        }
+      const datasave = {
+          latitud: latlocal,
+          longitud: lnglocal,
+          ubicacionable_id: idConvoyOContenedor,
+          tipo: tipo
+      };
+        if (idConvoyOContenedor!= ""){
+      actualizarUbicacionReal(datasave)
+        }
+        
+      
       });
     } else {
       console.warn('La respuesta no es un array de ubicaciones:', data);
@@ -93,6 +253,7 @@ responseOk = true;
   })
   .catch(error => {
     console.error('Error al obtener ubicaciones:', error);
+    detener();
   });
 }
 
@@ -117,12 +278,15 @@ function detener(){
 
 // Función para limpiar marcadores
 function limpiarMarcadores() {
-    if (window.markers && window.markers.length > 0) {
-        window.markers.forEach(marker => {
+   if (!window.markers) window.markers = [];
+
+    window.markers.forEach(marker => {
+        if (map.hasLayer(marker)) {
             map.removeLayer(marker);
-        });
-        window.markers = [];
-    }
+        }
+    });
+
+    window.markers = [];
 }
 
 
@@ -139,7 +303,7 @@ document.addEventListener('DOMContentLoaded', function () {
             filtroModal.show();
         });
 
-        setTimeout(function () {
+       
             if (btnCerrarModal) {
                 // Cerrar modal
                 btnCerrarModal.addEventListener('click', function () {
@@ -148,7 +312,7 @@ document.addEventListener('DOMContentLoaded', function () {
             } else {
                 console.error("Botón de cierre no encontrado.");
             }
-        }, 100);
+       
 
         filtroModal.show();
 
@@ -176,11 +340,12 @@ function limpiarFiltros() {
         div.innerHTML = '';
 
   document.getElementById('ItemsSelects').value = '';
+  limpiarMarcadores();
 
 }
 
 const seleccionados = [];
-const ItemsSelects = [];
+let ItemsSelects = [];
 
     function mostrarSugerencias() {
         const input = document.getElementById('contenedor-input');
@@ -217,7 +382,7 @@ const ItemsSelects = [];
         seleccionados.push(valor);
          const contenedorData = contenedoresDisponibles.find(c => c.contenedor === valor);
 
-         ItemsSelects.push(valor +"-" +contenedorData.imei);
+         ItemsSelects.push(valor +"-" +contenedorData.imei+"-"+ contenedorData.id_contenedor);
         document.getElementById('contenedor-input').value = '';
         document.getElementById('sugerencias').style.display = 'none';
         actualizarVista();
