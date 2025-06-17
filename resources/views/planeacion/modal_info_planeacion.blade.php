@@ -4,11 +4,17 @@
       <div class="modal-header d-flex justify-content-between align-items-center">
         <h5 class="modal-title" id="viajeModalLabel">
             Detalle planeación</h5>
-            <p class="text-sm"><span class="badge badge-sm" id="tipoViajeSpan">Viaje Subcontratado</span></p>
+            <p class="text-sm">
+              <span class="badge badge-sm" id="tipoViajeSpan">
+                Viaje Subcontratado
+              </span>
+              
+            </p>
        
       </div>
       <div class="modal-body">
         <div class="d-flex justify-content-between align-items-center">
+          
             <div>
                 <h6>Núm Contenedor: <span id="numContenedorSpan"></span></h6>
                 <p class="text-sm mb-0">
@@ -24,6 +30,10 @@
                 Destino: <b id="destino"></b>
                 </p>
             </div>
+
+            
+
+            
             
         </div>
         <div class="">
@@ -50,7 +60,15 @@
            
         </div>
         <div class="">
-           <h6 class="mt-3">Documentos</h6>
+           <h6 class="mt-3">
+              Documentos
+            </h6>
+            <div class="text-center d-none" id="cima-label">
+              <div class="border-dashed border-1 border-secondary border-radius-md py-3">
+                <h6 class="text-primary mb-0">Entregar vacío:</h6>
+                <h4 class="font-weight-bolder"><span class="small" id="currentBalance">CIMA</span></h4>
+              </div>
+            </div>
            <div>
             <table width="100%" style="width: 100%; table-layout: fixed; text-align: center; border-collapse: collapse;">
               <thead>

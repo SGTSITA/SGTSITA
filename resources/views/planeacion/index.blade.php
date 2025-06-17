@@ -51,6 +51,10 @@
 
 @push('custom-javascript')
 <style>
+    #dp {
+  flex: 1;
+  min-height: 0;
+}
 .search-container {
   position: relative;
   width: 100%;

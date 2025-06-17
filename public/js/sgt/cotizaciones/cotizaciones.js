@@ -1,7 +1,13 @@
 
 const tasa_iva = 0.16;
 const tasa_retencion = 0.04;
+<<<<<<< HEAD
 
+=======
+const catalogo_clientes = document.querySelector("#txtClientes");
+const formCotizacion = document.querySelector('#cotizacionCreateMultiple')
+const frmMode = (formCotizacion) ? formCotizacion.getAttribute("sgt-cotizacion-action") : null;
+>>>>>>> main
 
 const formFields = [
     {'field':'origen', 'id':'origen','label':'Origen','required': true, "type":"text", "master": true},
@@ -41,13 +47,17 @@ const editFormFields = [
     {'field':'num_carta_porte', 'id':'num_carta_porte','label':'Núm. Carta Porte','required': false, "type":"text", "master": false},
     {'field':'boleta_vacio', 'id':'boleta_vacio','label':'Boleta vacio','required': false, "type":"text", "master": false},
     {'field':'fecha_boleta_vacio', 'id':'fecha_boleta_vacio','label':'Fecha Boleta vacío','required': false, "type":"text", "master": false},
-    {'field':'eir', 'id':'eir','label':'EIR','required': false, "type":"text", "master": false},    
+    {'field':'eir', 'id':'eir','label':'EIR','required': false, "type":"text", "master": false},
+    {'field':'cima', 'id':'cima','label':'Administrado por CIMA','required': false, "type":"text", "master": false},    
+    {'field':'ccp', 'id':'ccp','label':'Formato CCP','required': false, "type":"text", "master": false},    
     {'field':'direccion_recinto', 'id':'direccion_recinto','label':'Dirección recinto','required': false, "type":"text", "master": false},  
     {'field':'text_recinto', 'id':'text_recinto','label':'¿Va a recinto?','required': false, "type":"text", "master": false},  
     {'field':'fecha_modulacion', 'id':'fecha_modulacion','label':'Fecha modulación','required': false, "type":"text", "master": false},  
     {'field':'fecha_entrega', 'id':'fecha_entrega','label':'Fecha Entrega','required': false, "type":"text", "master": false},  
     {'field':'fecha_eir', 'id':'fecha_eir','label':'Fecha EIR','required': false, "type":"text", "master": false},  
     {'field':'total', 'id':'total','label':'Total + Gastos','required': false, "type":"money", "master": false}, 
+    {'field':'direccion_entrega', 'id':'direccion_entrega','label':'Dirección de entrega','required': false, "type":"text", "master": false}, 
+    
 ]
 
 let Contenedores = [];
@@ -74,6 +84,7 @@ const formFieldsFacturacion = [
 ]
 
 const formFieldsProveedor = [
+    {'field':'id_proveedor','id':'id_proveedor','label':'Proveedor','required': true, "type":"text"},
     {'field':'precio_viaje','id':'precio_proveedor','label':'Costo Viaje','required': true, "type":"money"},
     {'field':'burreo','id':'burreo_proveedor','label':'Burreo Proveedor','required': true, "type":"money"},
     {'field':'maniobra','id':'maniobra_proveedor','label':'Maniobra Proveedor','required': true, "type":"money"},

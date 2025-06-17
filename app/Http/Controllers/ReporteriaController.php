@@ -483,7 +483,7 @@ public function export_cxp(Request $request)
                 return $numContenedor;
             }
 
-    }
+        }
                     
     }
 
@@ -707,27 +707,56 @@ public function export_cxp(Request $request)
             $fechaFinPeriodo = $finalMes->toDateString();
             $fechaInialGastos = Carbon::parse($fechaIniciaPeriodo)->startOfMonth();
 
-            $diferido = 
-            GastosDiferidosDetalle::join('gastos_generales as g','gastos_diferidos_detalle.id_gasto','=','g.id')
-            ->where('fecha_gasto_inicial','>=',$fechaInialGastos->toDateString())
-            ->where('fecha_gasto_final','<=',$fechaFinPeriodo)
+            /*$diferido = 
+            GastosGenerales::whereBetween('fecha',[$fechaInialGastos->toDateString(),$fechaFinPeriodo])
+            ->whereNotNull('aplicacion_gasto')
+          //  ->where('fecha_gasto_final','<=',$fechaFinPeriodo)
            // ->where('gastos_diferidos_detalle.id_equipo',$d->id_camion)
-            ->where('g.id_empresa',Auth::User()->id_empresa)
+            ->where('id_empresa',Auth::User()->id_empresa)
             ->get();
 
-            $Diferidos[] = $diferido;
-
+            $Diferidos[] = $diferido;*/
             $fechaI = $fechaIniciaPeriodo.' 00:00:00';
             $fechaF = $fechaFinPeriodo.' 00:00:00';
 
+            //Obtener los gastos de las unidades (vehiculos)
+            $gastosUnidadQuery = "SELECT 
+            a.id_camion,
+            gg.motivo,
+            COUNT(DISTINCT a.id) AS total_asignaciones,
+            COALESCE(SUM(DISTINCT gg.monto1 / JSON_LENGTH(JSON_EXTRACT(gg.aplicacion_gasto, '$.elementos'))), 0) AS total_gastos_periodo,
+            COALESCE(SUM(DISTINCT gg.monto1 / JSON_LENGTH(JSON_EXTRACT(gg.aplicacion_gasto, '$.elementos'))), 0) / COUNT(DISTINCT a.id) AS gasto_por_viaje
+        FROM asignaciones a
+        LEFT JOIN gastos_generales gg 
+            ON gg.aplicacion_gasto IS NOT NULL
+            AND JSON_VALID(gg.aplicacion_gasto) = 1
+            AND JSON_UNQUOTE(JSON_EXTRACT(gg.aplicacion_gasto, '$.aplicacion')) = 'equipos'
+            AND JSON_CONTAINS(
+                JSON_EXTRACT(gg.aplicacion_gasto, '$.elementos'),
+                JSON_OBJECT('equipo', CAST(a.id_camion AS CHAR)),
+                '$'
+            )
+            AND gg.fecha BETWEEN '$fechaI' AND '$fechaF'
+        WHERE a.fecha_inicio BETWEEN '$fechaI' AND '$fechaF'
+          AND a.id_camion IS NOT NULL
+        GROUP BY a.id_camion, gg.motivo;
+        ";
+
+          
+
+            $gastosUnidad = Collect(DB::select($gastosUnidadQuery));
+
+            
+
             $consultar = 'select c.id as id_cotizacion,a.id_camion,dc.num_contenedor,cl.nombre as cliente, op.nombre Operador, a.sueldo_viaje,dinero_viaje, pr.nombre as Proveedor,total_proveedor,
-            c.total, c.estatus,estatus_pago,c.fecha_pago,a.fecha_inicio,a.fecha_fin,DATEDIFF(a.fecha_fin,a.fecha_inicio) as tiempo_viaje
+            c.total, c.estatus,estatus_pago,c.fecha_pago,a.fecha_inicio,a.fecha_fin,DATEDIFF(a.fecha_fin,a.fecha_inicio) as tiempo_viaje,c.referencia_full
             from cotizaciones c
             left join clients cl on c.id_cliente = cl.id
             left join docum_cotizacion dc on c.id = dc.id_cotizacion
             left join asignaciones a on dc.id = a.id_contenedor
             left join operadores op on a.id_operador = op.id
             left join proveedores pr on a.id_proveedor = pr.id
+            left join equipos eq on a.id_camion = eq.id
             where a.fecha_inicio between '."'".$fechaI."'".' and '."'".$fechaF."' and c.estatus != 'Cancelada' and c.id_empresa = ".Auth::User()->id_empresa;
 
             $datos = DB::select($consultar);
@@ -737,13 +766,26 @@ public function export_cxp(Request $request)
             foreach($datos as $d){
                 $detalleGastos = null;
     
-                foreach($diferido as $d1){
+                /*foreach($diferido as $d1){
                     $detalleGastos [] = ["fecha_gasto" => $d1->fecha_gasto_inicial, 
                                         "monto_gasto" => round($d1->gasto_dia / $viajesPeriodo ,2), 
                                         "tipo_gasto" => "DIFERIDO", 
                                         "motivo_gasto" => $d1->motivo
                                     ];
+                }*/
+
+                $camion = $gastosUnidad->where('id_camion', $d->id_camion);
+
+                foreach ($camion as $gc) {
+                    // Accedés a $fila->total_asignaciones, $fila->total_gastos_periodo, etc.
+                    $detalleGastos [] = ["fecha_gasto" => $fechaI, 
+                                        "monto_gasto" => round($gc->gasto_por_viaje ,2), 
+                                        "tipo_gasto" => "DIFERIDO", 
+                                        "motivo_gasto" => $gc->motivo
+                                    ];
                 }
+
+                
     
                 $gastosExtra = GastosExtras::where('id_cotizacion',$d->id_cotizacion)->get();
                 $gastosOperador = GastosOperadores::where('id_cotizacion',$d->id_cotizacion)->get();
@@ -763,11 +805,25 @@ public function export_cxp(Request $request)
                     "motivo_gasto" => $go->tipo
                 ];
                 }
+
+                $contenedor = $d->num_contenedor;
+
+                if (!is_null($d->referencia_full )) {
+                    $secundaria = Cotizaciones::where('referencia_full', $d->referencia_full)
+                        ->where('jerarquia', 'Secundario')
+                        ->with('DocCotizacion.Asignaciones')
+                        ->first();
+
+                    if ($secundaria && $secundaria->DocCotizacion) {
+                        $contenedor .= ' / ' . $secundaria->DocCotizacion->num_contenedor;
+                    }
+                }
+
     
                 $pagoOperacion = (is_null($d->Proveedor)) ? $d->sueldo_viaje : $d->total_proveedor;
-                $gastosDiferidos = round($diferido->sum('gasto_dia') / $viajesPeriodo,2);
+                $gastosDiferidos = round($camion->sum('gasto_por_viaje') ,2);
                 $Columns = [
-                            "numContenedor" => $d->num_contenedor,
+                            "numContenedor" => $contenedor,
                             "cliente" => $d->cliente,
                             "precioViaje" => $d->total + $gastosExtra->sum('monto'),
                             "transportadoPor" => (is_null($d->Proveedor)) ? 'Operador' : 'Proveedor',
@@ -809,7 +865,7 @@ public function export_cxp(Request $request)
         $user = User::where('id', '=', auth()->user()->id)->first();
 
         $gastos = GastosGenerales::where('id_empresa', auth()->user()->id_empresa)
-                                ->where('diferir_gasto',0)
+                                ->where('aplicacion_gasto','like',"%periodo%")
                                 ->whereBetween('fecha',[$fechaInicio,$fechaFin])->sum('monto1');
        // $gastos = [];
 
@@ -865,6 +921,7 @@ public function export_cxp(Request $request)
                 'cotizaciones.carta_porte',
                 'cotizaciones.img_boleta AS boleta_vacio',
                 'docum_cotizacion.doc_eir',
+                'docum_cotizacion.cima',
                 'asignaciones.id_proveedor',
                 'asignaciones.fecha_inicio',
                 'asignaciones.fecha_fin',
@@ -883,53 +940,60 @@ public function export_cxp(Request $request)
     
         $cotizaciones = $cotizacionesQuery->get();
         
-        $cotizaciones = $cotizaciones->map(function($cot){
-            $numContenedor = $cot->num_contenedor;
-            $docCCP = $cot->doc_ccp;
-            $doda = $cot->doda;
-            $boletaLiberacion = $cot->boleta_liberacion;
-            $cartaPorte = $cot->carta_porte;
-            $boletaVacio = $cot->boleta_vacio;
-            $docEir = $cot->doc_eir;
-            $tipo = "";
+       $cotizaciones = $cotizaciones->map(function($cot){
+    $numContenedor = $cot->num_contenedor;
+    $docCCP = $cot->doc_ccp;
+    $doda = $cot->doda;
+    $boletaLiberacion = $cot->boleta_liberacion;
+    $cartaPorte = $cot->carta_porte;
+    $boletaVacio = $cot->boleta_vacio;
+    $docEir = $cot->doc_eir;
+    
+    $tipo = "";
 
-            if(!is_null($cot->referencia_full)){
-                    $secundaria = Cotizaciones::where('referencia_full', $cot->referencia_full)
-                    ->where('jerarquia', 'Secundario')
-                    ->with('DocCotizacion.Asignaciones')
-                    ->first();
+    $proveedorNombre = null;
+    if ($cot->id_proveedor) {
+        $proveedor = \App\Models\Proveedor::find($cot->id_proveedor);
+        $proveedorNombre = $proveedor ? $proveedor->nombre : null;
+    }
 
-                    $docCCP = ($docCCP && $secundaria->DocCotizacion->doc_ccp) ? true : false;
-                    $doda = ($doda && $secundaria->DocCotizacion->doda) ? true : false;
-                    $docEir = ($docEir && $secundaria->DocCotizacion->doc_eir) ? true : false;
+    if(!is_null($cot->referencia_full)){
+        $secundaria = \App\Models\Cotizaciones::where('referencia_full', $cot->referencia_full)
+            ->where('jerarquia', 'Secundario')
+            ->with('DocCotizacion.Asignaciones')
+            ->first();
 
-                    $boletaLiberacion = ($boletaLiberacion && $secundaria->DocCotizacion->boleta_liberacion) ? true : false;
-                    $cartaPorte = ($cartaPorte && $secundaria->carta_porte) ? true : false;
-                    $boletaVacio = ($boletaVacio && $secundaria->img_boleta) ? true : false;
+        if ($secundaria && $secundaria->DocCotizacion) {
+            $docCCP = ($docCCP && $secundaria->DocCotizacion->doc_ccp) ? true : false;
+            $doda = ($doda && $secundaria->DocCotizacion->doda) ? true : false;
+            $docEir = ($docEir && $secundaria->DocCotizacion->doc_eir) ? true : false;
+            $boletaLiberacion = ($boletaLiberacion && $secundaria->DocCotizacion->boleta_liberacion) ? true : false;
+            $cartaPorte = ($cartaPorte && $secundaria->carta_porte) ? true : false;
+            $boletaVacio = ($boletaVacio && $secundaria->img_boleta) ? true : false;
+            $numContenedor .= '  ' . $secundaria->DocCotizacion->num_contenedor;
+        }
+        $tipo = "Full";
+    }
 
+   return [
+    "id"=> $cot->id,
+    "cliente"=> $cot->cliente,
+    "num_contenedor"=>$numContenedor,
+    "doc_ccp"=> $docCCP,
+    "boleta_liberacion"=> $boletaLiberacion,
+    "doda"=> $doda,
+    "carta_porte"=> $cartaPorte,
+    "boleta_vacio"=> $boletaVacio,
+    "doc_eir"=> $docEir,
+    "proveedor" => $proveedorNombre,
+    "fecha_inicio"=> $cot->fecha_inicio,
+    "fecha_fin"=> $cot->fecha_fin,
+    "tipo" => $tipo,
+    "cima" => $cot->cima // 👈 agrega esta línea
+];
 
-                    if ($secundaria && $secundaria->DocCotizacion) {
-                        $numContenedor .= '  ' . $secundaria->DocCotizacion->num_contenedor;
-                    }
-                    $tipo = "Full";
-            }
+});
 
-            return [
-                "id"=> $cot->id,
-                "cliente"=> $cot->cliente,
-                "num_contenedor"=>$numContenedor,
-                "doc_ccp"=> $docCCP,
-                "boleta_liberacion"=> $boletaLiberacion,
-                "doda"=> $doda,
-                "carta_porte"=> $cartaPorte,
-                "boleta_vacio"=> $boletaVacio,
-                "doc_eir"=> $docEir,
-                "id_proveedor"=> $cot->id_proveedor,
-                "fecha_inicio"=> $cot->fecha_inicio,
-                "fecha_fin"=> $cot->fecha_fin,
-                "tipo" => $tipo
-            ];
-        });
     
         return view('reporteria.documentos.index', compact('cotizaciones', 'clientes', 'subclientes', 'proveedores'));
     }
@@ -1004,6 +1068,7 @@ public function export_documentos(Request $request)
             'cotizaciones.carta_porte',
             'docum_cotizacion.boleta_vacio',
             'docum_cotizacion.doc_eir',
+            'docum_cotizacion.cima',
             'cotizaciones.referencia_full'
         )
         ->get();
@@ -1054,7 +1119,8 @@ public function export_documentos(Request $request)
             "id_proveedor"=> $cot->id_proveedor,
             "fecha_inicio"=> $cot->fecha_inicio,
             "fecha_fin"=> $cot->fecha_fin,
-            "tipo" => $tipo
+            "tipo" => $tipo,
+            "cima" => $cot->cima,
         ];
     });
 
@@ -1266,4 +1332,125 @@ public function export_documentos(Request $request)
             return Response::download($filePath, $fileName)->deleteFileAfterSend(true);
         }
     }
+
+  // Dentro de ReporteriaController.php
+
+public function index_gxp(Request $request)
+{
+    $gastos = GastosOperadores::with([
+        'Asignaciones.Proveedor',
+        'Asignaciones.Contenedor.Cotizacion.Cliente',
+        'Asignaciones.Contenedor.Cotizacion.Subcliente'
+    ])
+    ->whereHas('Asignaciones', fn ($q) => $q->where('id_empresa', auth()->user()->id_empresa))
+    ->where('estatus', '!=', 'Pagado')
+    ->get();
+
+    $data = $gastos->map(function ($g) {
+        $asignacion = $g->Asignaciones;
+
+        return [
+            'id' => $g->id,
+            'operador' => optional($g->Operador)->nombre ?? '-',
+            'cliente' => optional($asignacion->Contenedor->Cotizacion->Cliente)->nombre ?? '-',
+            'subcliente' => optional($asignacion->Contenedor->Cotizacion->Subcliente)->nombre ?? '-',
+            'num_contenedor' => optional($asignacion->Contenedor)->num_contenedor ?? '-',
+            'monto' => $g->cantidad ?? 0,
+            'motivo' => $g->tipo ?? 'Gasto pendiente',
+            'fecha_inicio' => $asignacion?->fecha_inicio,
+            'fecha_fin' => $asignacion?->fecha_fin,
+            'fecha_movimiento' => $g->created_at,
+            'fecha_aplicacion' => $g->fecha_pago,
+        ];
+    });
+
+    return view('reporteria.gxp.index', ['gastos' => $data]);
+}
+
+
+
+public function getGastosPorPagarData()
+{
+    $idEmpresa = auth()->user()->id_empresa;
+
+    $gastos = GastosOperadores::with([
+        'Asignaciones.Contenedor.Cotizacion.Cliente',
+        'Asignaciones.Contenedor.Cotizacion.Subcliente'
+    ])
+    ->whereHas('Asignaciones', function ($q) use ($idEmpresa) {
+        $q->where('id_empresa', $idEmpresa);
+    })
+    ->where('estatus', '!=', 'Pagado')
+    ->get();
+
+    $data = $gastos->map(function ($g) {
+        $asignacion = $g->Asignaciones;
+
+        $proveedorNombre = '-';
+        if ($asignacion && $asignacion->id_proveedor) {
+            $proveedor = \App\Models\Proveedor::find($asignacion->id_proveedor);
+            $proveedorNombre = $proveedor?->nombre ?? '-';
+        }
+
+        return [
+            'id' => $g->id,
+            'operador' => optional($g->Operador)->nombre ?? '-',
+            'cliente' => optional($asignacion?->Contenedor?->Cotizacion?->Cliente)->nombre ?? '-',
+            'subcliente' => optional($asignacion?->Contenedor?->Cotizacion?->Subcliente)->nombre ?? '-',
+            'num_contenedor' => optional($asignacion?->Contenedor)->num_contenedor ?? '-',
+            'monto' => $g->cantidad ?? 0,
+            'motivo' => $g->tipo ?? 'Gasto pendiente',
+            'fecha_movimiento' => $g->created_at ? Carbon::parse($g->created_at)->format('Y-m-d') : null,
+            'fecha_aplicacion' => $g->fecha_pago ? Carbon::parse($g->fecha_pago)->format('Y-m-d') : null,
+            'fecha_inicio' => $asignacion?->fecha_inicio ? Carbon::parse($asignacion->fecha_inicio)->format('Y-m-d') : null,
+            'fecha_fin' => $asignacion?->fecha_fin ? Carbon::parse($asignacion->fecha_fin)->format('Y-m-d') : null,
+        ];
+    });
+
+    return response()->json($data);
+}
+
+
+public function exportGastosPorPagar(Request $request)
+{
+    try {
+        $ids = $request->input('selected_ids', []);
+        $fileType = $request->input('fileType');
+
+        $export = new \App\Exports\GastosPorPagarExport($ids);
+
+        if ($fileType === 'xlsx') {
+            return \Maatwebsite\Excel\Facades\Excel::download($export, 'gastos_por_pagar.xlsx');
+        }
+
+        if ($fileType === 'pdf') {
+            $gastos = collect($export->getGastosData())->map(function ($g) {
+                return is_array($g) ? $g : (array) $g;
+            });
+
+            return \PDF::loadView('reporteria.gxp.pdf', [
+    'gastos' => $gastos,
+    'empresa' => auth()->user()->Empresa->nombre ?? 'Sin Empresa'
+])->setPaper('a4', 'landscape')->download('gastos_por_pagar.pdf');
+
+
+        }
+
+        return response()->json(['error' => 'Tipo de archivo no válido'], 400);
+
+    } catch (\Throwable $e) {
+        \Log::error('Error al exportar gastos', [
+            'message' => $e->getMessage(),
+            'file' => $e->getFile(),
+            'line' => $e->getLine()
+        ]);
+
+        return response()->json(['error' => 'Error interno del servidor'], 500);
+    }
+}
+
+
+
+
+
 }

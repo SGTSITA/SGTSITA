@@ -55,6 +55,16 @@
         .unchecked {
             background-color: red;
         }
+
+        .cima-badge {
+            display: inline-block;
+            background-color: green;
+            color: white;
+            border-radius: 10px;
+            padding: 2px 8px;
+            font-weight: bold;
+            font-size: 9px;
+        }
     </style>
 @endif
 
@@ -85,12 +95,26 @@
                 <tr>
                     <td>{{ $cotizacion['num_contenedor'] }}</td>
                     <td><span class="status-check {{ $cotizacion['doc_ccp'] ? 'checked' : 'unchecked' }}"></span></td>
-                    <td><span class="status-check {{ $cotizacion['boleta_liberacion'] ? 'checked' : 'unchecked' }}"></span>
+                    <td><span
+                            class="status-check {{ $cotizacion['boleta_liberacion'] ? 'checked' : 'unchecked' }}"></span>
                     </td>
                     <td><span class="status-check {{ $cotizacion['doda'] ? 'checked' : 'unchecked' }}"></span></td>
-                    <td><span class="status-check {{ $cotizacion['carta_porte'] ? 'checked' : 'unchecked' }}"></span></td>
-                    <td><span class="status-check {{ $cotizacion['boleta_vacio'] ? 'checked' : 'unchecked' }}"></span></td>
-                    <td><span class="status-check {{ $cotizacion['doc_eir'] ? 'checked' : 'unchecked' }}"></span></td>
+                    <td><span class="status-check {{ $cotizacion['carta_porte'] ? 'checked' : 'unchecked' }}"></span>
+                    </td>
+                    <td><span class="status-check {{ $cotizacion['boleta_vacio'] ? 'checked' : 'unchecked' }}"></span>
+                    </td>
+                    <td>
+                        @if (isset($cotizacion['cima']) && $cotizacion['cima'] == 1)
+                            <div
+                                style="background-color: green; color: white; border-radius: 5px; padding: 2px 6px; font-weight: bold; font-size: 9px; display: inline-block; width: 40px;">
+                                CIMA
+                            </div>
+                        @else
+                            <span class="status-check {{ $cotizacion['doc_eir'] ? 'checked' : 'unchecked' }}"></span>
+                        @endif
+                    </td>
+
+
                 </tr>
             @endforeach
         </tbody>

@@ -147,6 +147,7 @@
                 <th style="padding: 2px; border: 1px solid #000;">Peso</th>
                 <th style="padding: 2px; border: 1px solid #000;">Tam. Cont.</th>
                 <th style="padding: 2px; border: 1px solid #000;">Burreo</th>
+                <th style="padding: 2px; border: 1px solid #000;">Maniobra</th>
                 <th style="padding: 2px; border: 1px solid #000;">Estadia</th>
                 <th style="padding: 2px; border: 1px solid #000;">Sobre peso</th>
                 <th style="padding: 2px; border: 1px solid #000;">Otro</th>
@@ -177,12 +178,37 @@
                 @endphp
                 <tr style="font-size: 7px; border: 1px solid #000;">
                     <td style="padding: 2px; border: 1px solid #000;">
-                        {{ Carbon\Carbon::parse($cotizacion->DocCotizacion->Asignaciones->fehca_inicio_guard)->format('d-m-Y') }}
+                        @php
+                            $fechaInicio = optional(optional(optional($cotizacion->DocCotizacion)->Asignaciones))
+                                ->fehca_inicio_guard;
+                        @endphp
+                        {{ $fechaInicio ? \Carbon\Carbon::parse($fechaInicio)->format('d-m-Y') : 'Sin fecha' }}
                     </td>
                     <td style="padding: 2px; border: 1px solid #000;">
-                        {{ optional($cotizacion->DocCotizacion->Asignaciones->Proveedor)->nombre ?? '-' }}</td>
-                    <td style="padding: 2px; border: 1px solid #000;">{{ $cotizacion->DocCotizacion->num_contenedor }}
-                    </td>
+                        {{ optional(optional($cotizacion->DocCotizacion)->Asignaciones)->Proveedor->nombre ?? '-' }}
+
+                        @php
+                            $numContenedor = optional($cotizacion->DocCotizacion)->num_contenedor ?? '';
+
+                            if ($cotizacion->jerarquia === 'Principal' && $cotizacion->referencia_full) {
+                                $cotSecundaria = \App\Models\Cotizaciones::where(
+                                    'referencia_full',
+                                    $cotizacion->referencia_full,
+                                )
+                                    ->where('jerarquia', 'Secundario')
+                                    ->with('DocCotizacion')
+                                    ->first();
+
+                                $contenedorSec = optional($cotSecundaria?->DocCotizacion)->num_contenedor;
+                                if ($contenedorSec) {
+                                    $numContenedor .= ' / ' . $contenedorSec;
+                                }
+                            }
+                        @endphp
+
+                    <td style="padding: 2px; border: 1px solid #000;">{{ $numContenedor }}</td>
+
+
                     <td style="padding: 2px; border: 1px solid #000; color: #020202; background: yellow;">
                         {{ $cotizacion->id_subcliente && $cotizacion->Subcliente ? $cotizacion->Subcliente->nombre : 'N/A' }}
                     </td>
@@ -194,6 +220,8 @@
                         {{ number_format($cotizacion->burreo, 2, '.', ',') }}</td>
                     <td style="padding: 2px; border: 1px solid #000;">$
                         {{ number_format($cotizacion->maniobra, 2, '.', ',') }}</td>
+                    <td style="padding: 2px; border: 1px solid #000;">
+                        ${{ number_format($cotizacion->estadia, 2, '.', ',') }}</td>
                     <td style="padding: 2px; border: 1px solid #000;">$
                         {{ number_format($cotizacion->precio_tonelada, 2, '.', ',') }}</td>
                     <td style="padding: 2px; border: 1px solid #000;">$

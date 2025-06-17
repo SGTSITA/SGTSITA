@@ -28,6 +28,7 @@ class Equipo extends Model
         'id_equipo',
         'id_empresa',
         'placas',
+        'imei'
     ];
 
     protected static function boot()
@@ -42,4 +43,8 @@ class Equipo extends Model
             $empresa->id_empresa = Auth::user()->id_empresa;
         });
     }
+    public function gps()
+{
+    return $this->belongsTo(GpsCompany::class, 'gps_company_id');
+}
 }

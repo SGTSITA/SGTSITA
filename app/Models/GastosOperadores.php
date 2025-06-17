@@ -9,6 +9,7 @@ class GastosOperadores extends Model
 {
     use HasFactory;
     protected $table = 'gastos_operadores';
+      public $timestamps = true;
 
     protected $fillable = [
         'id_asignacion',

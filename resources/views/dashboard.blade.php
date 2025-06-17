@@ -318,6 +318,7 @@
 
 @section('content')
 
+<<<<<<< HEAD
 
 @include('planeacion.vista_calendar')
 <!--modal cambiar de empresa menu  -->
@@ -349,4 +350,6 @@
     </div>
   </div>
 </div>
+=======
+>>>>>>> main
 @endsection

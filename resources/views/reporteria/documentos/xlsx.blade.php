@@ -114,7 +114,13 @@
                         <td>{{ $cotizacion['doda'] ? '✔' : '✖' }}</td>
                         <td>{{ $cotizacion['carta_porte'] ? '✔' : '✖' }}</td>
                         <td>{{ $cotizacion['boleta_vacio'] ? '✔' : '✖' }}</td>
-                        <td>{{ $cotizacion['doc_eir'] ? '✔' : '✖' }}</td>
+                        <td>
+                            @if (isset($cotizacion['cima']) && $cotizacion['cima'] == 1)
+                                CIMA
+                            @else
+                                {{ $cotizacion['doc_eir'] ? '✔' : '✖' }}
+                            @endif
+                        </td>
                     @endif
                 </tr>
             @endforeach

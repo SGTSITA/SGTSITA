@@ -108,21 +108,7 @@ class CotizacionesController extends Controller
         return view('cotizaciones.externos.index', compact('cotizaciones_emitidas'));
     }
 
-    public function index_finzaliadas(){
-
-        $cotizaciones_finalizadas = Cotizaciones::where('id_empresa' ,'=',auth()->user()->id_empresa)->where('estatus','=','Finalizado')->orderBy('created_at', 'desc')
-        ->select('id_cliente', 'origen', 'destino', 'id', 'estatus')->get();
-
-        $equipos_dolys = Equipo::where('id_empresa' ,'=',auth()->user()->id_empresa)->where('tipo','=','Dolys')->get();
-        $equipos_chasis = Equipo::where('id_empresa' ,'=',auth()->user()->id_empresa)->where('tipo','=','Chasis / Plataforma')->get();
-        $equipos_camiones = Equipo::where('id_empresa' ,'=',auth()->user()->id_empresa)->where('tipo','=','Tractos / Camiones')->get();
-        $operadores = Operador::get();
-        $bancos = Bancos::get();
-        $proveedores = Proveedor::get();
-        $empresas = Empresas::get();
-
-        return view('cotizaciones.index_finalizadas', compact('empresas', 'proveedores','bancos','operadores','equipos_dolys','equipos_chasis','equipos_camiones','cotizaciones_finalizadas'));
-    }
+   
     public function getCotizacionesFinalizadas()
     {
         $cotizaciones = Cotizaciones::where('id_empresa', auth()->user()->id_empresa)
@@ -169,21 +155,7 @@ class CotizacionesController extends Controller
 
 
 
-    public function index_espera(){
-
-        $cotizaciones = Cotizaciones::where('id_empresa' ,'=',auth()->user()->id_empresa)->where('estatus','=','Pendiente')->orderBy('created_at', 'desc')
-        ->select('id_cliente', 'origen', 'destino', 'id', 'estatus')->get();
-
-        $equipos_dolys = Equipo::where('id_empresa' ,'=',auth()->user()->id_empresa)->where('tipo','=','Dolys')->get();
-        $equipos_chasis = Equipo::where('id_empresa' ,'=',auth()->user()->id_empresa)->where('tipo','=','Chasis / Plataforma')->get();
-        $equipos_camiones = Equipo::where('id_empresa' ,'=',auth()->user()->id_empresa)->where('tipo','=','Tractos / Camiones')->get();
-        $operadores = Operador::get();
-        $bancos = Bancos::get();
-        $proveedores = Proveedor::get();
-        $empresas = Empresas::get();
-
-        return view('cotizaciones.index_espera', compact('empresas', 'proveedores','bancos','operadores','equipos_dolys','equipos_chasis','equipos_camiones','cotizaciones'));
-    }
+   
 
     public function getCotizacionesEnEspera()
     {
@@ -227,25 +199,7 @@ class CotizacionesController extends Controller
     }
 
 
-    public function index_aprobadas(){
-
-        $cotizaciones_aprovadas = Cotizaciones::where('id_empresa' ,'=',auth()->user()->id_empresa)->where('estatus','=','Aprobada')
-        ->where(function($query) {
-            $query->where('estatus_planeacion', '=', 0)
-                  ->orWhere('estatus_planeacion', '=', NULL);
-        })->orderBy('created_at', 'desc')
-        ->select('id_cliente', 'origen', 'destino', 'id', 'estatus')->get();
-
-        $equipos_dolys = Equipo::where('id_empresa' ,'=',auth()->user()->id_empresa)->where('tipo','=','Dolys')->get();
-        $equipos_chasis = Equipo::where('id_empresa' ,'=',auth()->user()->id_empresa)->where('tipo','=','Chasis / Plataforma')->get();
-        $equipos_camiones = Equipo::where('id_empresa' ,'=',auth()->user()->id_empresa)->where('tipo','=','Tractos / Camiones')->get();
-        $operadores = Operador::get();
-        $bancos = Bancos::get();
-        $proveedores = Proveedor::get();
-        $empresas = Empresas::get();
-
-        return view('cotizaciones.index_aprovada', compact('empresas', 'proveedores','bancos','operadores','equipos_dolys','equipos_chasis','equipos_camiones','cotizaciones_aprovadas'));
-    }
+   
 
     public function getCotizacionesAprobadas()
     {
@@ -263,7 +217,7 @@ class CotizacionesController extends Controller
                 $contenedor = $cotizacion->DocCotizacion ? $cotizacion->DocCotizacion->num_contenedor : 'N/A';
 
                 // Si es tipo 'Full', buscamos la secundaria para obtener su contenedor
-                if ($cotizacion->tipo_viaje === 'Full') {
+                if (!is_null($cotizacion->referencia_full )) {
                     $secundaria = Cotizaciones::where('referencia_full', $cotizacion->referencia_full)
                         ->where('jerarquia', 'Secundario')
                         ->with('DocCotizacion.Asignaciones')
@@ -285,7 +239,8 @@ class CotizacionesController extends Controller
                     'estatus' => $cotizacion->estatus,
                     'coordenadas' => optional($cotizacion->DocCotizacion)->Asignaciones ? 'Ver' : '',
                     'edit_url' => route('edit.cotizaciones', $cotizacion->id),
-                    'tipo' => $cotizacion->tipo_viaje
+                    'tipo' => $cotizacion->tipo_viaje,
+                    'referencia_full' => $cotizacion->referencia_full
                 ];
             });
 
@@ -331,21 +286,7 @@ public function getCotizacionesCanceladas()
     return response()->json(['list' => $cotizaciones]);
 }
 
-    public function index_canceladas(){
-
-        $cotizaciones_canceladas = Cotizaciones::where('id_empresa' ,'=',auth()->user()->id_empresa)->where('estatus','=','Cancelada')->orderBy('created_at', 'desc')
-        ->select('id_cliente', 'origen', 'destino', 'id', 'estatus')->get();
-
-        $equipos_dolys = Equipo::where('id_empresa' ,'=',auth()->user()->id_empresa)->where('tipo','=','Dolys')->get();
-        $equipos_chasis = Equipo::where('id_empresa' ,'=',auth()->user()->id_empresa)->where('tipo','=','Chasis / Plataforma')->get();
-        $equipos_camiones = Equipo::where('id_empresa' ,'=',auth()->user()->id_empresa)->where('tipo','=','Tractos / Camiones')->get();
-        $operadores = Operador::get();
-        $bancos = Bancos::get();
-        $proveedores = Proveedor::get();
-        $empresas = Empresas::get();
-
-        return view('cotizaciones.index_cancelada', compact('empresas', 'proveedores','bancos','operadores','equipos_dolys','equipos_chasis','equipos_camiones','cotizaciones_canceladas'));
-    }
+   
 
     public function getCotizacionesId($id)
     {
@@ -583,10 +524,10 @@ public function getCotizacionesCanceladas()
         $cotizaciones->base_factura = $request->get('base_factura');
         $cotizaciones->base_taref = $request->get('base_taref');
         $cotizaciones->recinto_clientes = $request->get('recinto_clientes');
-        $cotizaciones->precio_tonelada = $request->get('precio_tonelada');
+        $cotizaciones->precio_tonelada = 0;
 
         if($request->get('id_cliente_clientes') == NULL){
-            $precio_tonelada = str_replace(',', '', $request->get('precio_tonelada'));
+            $precio_tonelada = 0;
             $cotizaciones->precio_tonelada = $precio_tonelada;
 
             if($request->get('total') == NULL){
@@ -595,7 +536,7 @@ public function getCotizacionesCanceladas()
                 $total = str_replace(',', '', $request->get('total'));
             }
         }else{
-            $cotizaciones->precio_tonelada = $request->get('precio_tonelada');
+            $cotizaciones->precio_tonelada = 0;
             $total = 0;
         }
 
@@ -847,6 +788,8 @@ public function getCotizacionesCanceladas()
             $doc_cotizaciones->num_doda = $contenedor['num_doda'];
             $doc_cotizaciones->num_carta_porte = $contenedor['num_carta_porte'];
             $doc_cotizaciones->fecha_boleta_vacio = $contenedor['fecha_boleta_vacio'];
+            $doc_cotizaciones->ccp = $contenedor['ccp'];
+            $doc_cotizaciones->cima = $contenedor['cima'];
             $doc_cotizaciones->update();
 
             $cotizaciones = Cotizaciones::where('id', '=', $id)->first();
@@ -854,7 +797,7 @@ public function getCotizacionesCanceladas()
             $cotizaciones->id_subcliente = $request->id_subcliente;
             $cotizaciones->origen = $request->origen;
             $cotizaciones->destino = $request->destino;
-            $cotizaciones->direccion_entrega = $request->direccion_entrega;
+            $cotizaciones->direccion_entrega = $contenedor['direccion_entrega'];
             $cotizaciones->uso_recinto = ($request->text_recinto == 'recinto-si') ? 1 : 0;
             $cotizaciones->direccion_recinto = $request->direccion_recinto ;
             $cotizaciones->burreo = $request->burreo;
@@ -877,6 +820,7 @@ public function getCotizacionesCanceladas()
             $cotizaciones->base_taref = $request->base_taref;
             $cotizaciones->sobrepeso = $contenedor['sobrepeso'];
             $cotizaciones->precio_sobre_peso = $request->precioSobrePeso;
+            
             $cotizaciones->total = $request->total;
 
 
@@ -913,7 +857,7 @@ public function getCotizacionesCanceladas()
                 $asignacion->iva = $request->get('iva_proveedor');
                 $asignacion->retencion = $request->get('retencion_proveedor');
                 $asignacion->total_proveedor = $request->get('total_proveedor');
-              //  $asignacion->id_proveedor = $request->id_proveedor;
+                $asignacion->id_proveedor = $request->id_proveedor;
                 $asignacion->update();
             }
 
@@ -1021,6 +965,7 @@ public function getCotizacionesCanceladas()
              $contenedor = DocumCotizacion::where('num_contenedor', $numContenedor)
                                                 ->where('id_empresa', $idEmpresa)
                                                 ->first();
+                                                
              $asignacion = Asignaciones::where('id_contenedor', $contenedor->id)->first();
 
             if($r->pagoInmediato != "false" ){

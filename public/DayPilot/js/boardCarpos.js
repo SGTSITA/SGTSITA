@@ -37,7 +37,7 @@ return `${dia}/${mes}/${anio}`;
            
              
              dp.resources = resp.boardCentros;
-             dp.startDate = fromDate
+             
              //Horizonte
              /*dp.separators = [
                  {color: "red", location: info.Horizonte}
@@ -47,11 +47,12 @@ return `${dia}/${mes}/${anio}`;
              allEvents = resp.extractor;
              //TarifasHilos = resp.TarifasHilo;
              //festivos = resp.festivos;
-             
+             let scrollToDate = null;
              if(allEvents != null){
                  resp.extractor.forEach((i)=>{
                  let x = Math.floor(Math.random() * 8) + 1;
                  if(i.fecha_inicio !== null){
+                     scrollToDate = scrollToDate ?? new DayPilot.Date(i.fecha_inicio)
                      var e = {
                      start: new DayPilot.Date(i.fecha_inicio),
                      end: new DayPilot.Date(i.fecha_fin),
@@ -71,6 +72,8 @@ return `${dia}/${mes}/${anio}`;
                 
              });
              }
+
+             dp.startDate = scrollToDate.addDays(-2)
 
              if ( dpReady) {
               
@@ -105,7 +108,7 @@ return `${dia}/${mes}/${anio}`;
 
  dp.startDate = $('#daterange').attr('data-start');
  dp.days = 365;
- dp.cellWidth = 90;
+ dp.cellWidth = 110;
  dp.rowMarginBottom = 10;
  dp.rowMarginTop = 10;
  dp.scale = "Day";
@@ -293,6 +296,7 @@ return `${dia}/${mes}/${anio}`;
         type:'post',
         data:{_token:_token, id: idContendor},
         beforeSend:()=>{
+            $("#cima-label").addClass('d-none')
             mostrarLoading('Espere un momento, cargando información del contenedor...')
             let docum = document.querySelectorAll('.documentos')
             docum.forEach((d) => {
@@ -327,15 +331,21 @@ return `${dia}/${mes}/${anio}`;
             btnFinalizar.addEventListener('click', () => finalizarViaje(idContendor,numContenedor_), { once: true });
             btnDeshacer.addEventListener('click', () => anularPlaneacion(idContendor,numContenedor_), { once: true });
 
-            let documentos = response.documentos
+            let documentos = response.documents
             let docs = Object.keys(documentos)
             docs.forEach(doc => {
                 let documento = document.querySelector("#"+doc)
+                valorDoc = documentos[doc]
                 if(documento){
-                    valorDoc = documentos[doc]
+                    
                     documento.innerHTML = (valorDoc != null) ?
                      `<i class="fas fa-circle-check text-success fa-lg"></i>` :
                      `<i class="fas fa-circle-xmark text-secondary fa-lg"></i>`
+                }
+
+                if(doc == 'cima' && valorDoc == 1){
+                    $("#cima-label").removeClass('d-none')
+
                 }
                 
             })
@@ -378,6 +388,9 @@ function anularPlaneacion(idCotizacion, numContenedor){
             .then(response => response.json())
             .then(data => {
                 Swal.fire(data.Titulo,data.Mensaje,data.TMensaje)
+                if(data.TMensaje == "success"){
+                    dp.events.remove(idCotizacion); //Eliminar del board
+               }
             })
             .catch(error => {
                 Swal.fire('Error', 'No pudimos anular el programa del viaje', 'error');
@@ -428,7 +441,7 @@ function finalizarViaje(idCotizacion, numContenedor){
 
 function encontrarContenedor(contenedor){
     let busqueda = allEvents
-    const resultados = busqueda.filter(f => f.num_contenedor === contenedor)
+    const resultados = busqueda.filter(f => f.num_contenedor?.includes(contenedor))
     if(resultados.length != 1){
         Swal.fire("No se encontró contenedor", `No existe ningún contenedor "PLANEADO" con el numero de contenedor proporcionado`,'warning')
         return

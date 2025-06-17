@@ -179,15 +179,17 @@ class MissionResultRenderer {
         url: '/liquidaciones/viajes/operador',
         type: 'post',
         data: {_token, operador},
-        beforeSend:()=>{},
+        beforeSend:()=>{
+          mostrarLoading('Obteniendo viajes')
+        },
         success:(response)=>{
             apiGrid.setGridOption("rowData", response.viajes)
             dTotalPago.textContent = moneyFormat(response.totalPago)
             dNumViajes.textContent = response.numViajes
-            
+            ocultarLoading()
         },
         error:()=>{
-
+          ocultarLoading()
         }
     });
    }
@@ -208,7 +210,7 @@ class MissionResultRenderer {
     pagoContenedores.forEach((c)=>{
        suma = suma + parseFloat(c.MontoPago);
        sumSalario = sumSalario + parseFloat(c.SueldoViaje);
-       sumDineroViaje = sumDineroViaje + parseFloat(c.DineroViaje);
+       sumDineroViaje = parseFloat(sumDineroViaje ?? 0)  + parseFloat(c.DineroViaje ?? 0);
        sumJustificado = sumJustificado + parseFloat(c.GastosJustificados);
 
     });
@@ -302,19 +304,21 @@ class MissionResultRenderer {
     let DineroViaje = 0;
     let GastosJustificados = 0;
     let numContenedor;
+    let IdOperador = null;
     justificaContenedores.forEach((cn)=>{
       DineroViaje = cn.DineroViaje
       GastosJustificados = cn.GastosJustificados || 0
       numContenedor = cn.ContenedorPrincipal
+      IdOperador = cn.IdOperador
     })
 
     let sinJustificar = DineroViaje - GastosJustificados;
     let montoJustificacion = reverseMoneyFormat( document.getElementById("txtMonto").value);
     
-    if(montoJustificacion > 0 && montoJustificacion > sinJustificar){
+    /*if(montoJustificacion > 0 && montoJustificacion > sinJustificar){
       Swal.fire("Monto a justificar incorrecto",`El monto a justificar debe ser mayor a cero y no debe superar el monto pendiente de Dinero de Viaje. Monto pendiente por justificar ${moneyFormat(sinJustificar)}`,"warning");
       return false;
-    }
+    }*/
 
     let _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
@@ -334,7 +338,8 @@ class MissionResultRenderer {
         Swal.fire(response.Titulo,response.Mensaje,response.TMensaje)
         $('#exampleModal').modal('hide')
         if(response.TMensaje == "success"){
-          setTimeout(()=>{location.reload()},350)
+         // setTimeout(()=>{location.reload()},350)
+         mostrarViajesOperador(IdOperador)
           
         }
       },
