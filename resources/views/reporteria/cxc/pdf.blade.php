@@ -223,7 +223,8 @@
                     <td style="padding: 2px; border: 1px solid #000;">
                         ${{ number_format($cotizacion->estadia, 2, '.', ',') }}</td>
                     <td style="padding: 2px; border: 1px solid #000;">$
-                        {{ number_format($cotizacion->precio_tonelada, 2, '.', ',') }}</td>
+                        {{ number_format(($cotizacion->sobrepeso ?? 0) * ($cotizacion->precio_sobre_peso ?? 0), 2, '.', ',') }}
+                    </td>
                     <td style="padding: 2px; border: 1px solid #000;">$
                         {{ number_format($cotizacion->otro, 2, '.', ',') }}</td>
                     <td style="padding: 2px; border: 1px solid #000;">$
