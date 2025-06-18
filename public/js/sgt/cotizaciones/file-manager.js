@@ -194,8 +194,10 @@ dt.on('draw', function () {
 
     const btnDocumets = document.querySelector('#btnDocs');
     const btnAdjuntos = document.querySelector("#btnAdjuntos");
+    const btnWhatsApp = document.querySelector("#btnWhatsApp");
     const buttonSendMail = document.querySelector('[data-kt-inbox-form="sendmail"]');
     const mainEmail = document.querySelector('#compose_to');
+    const phoneWhatsApp = document.querySelector('#phone_wa');
     const ccEmail = document.querySelector('#compose_cc');
     const emailCC = document.querySelector('[data-kt-inbox-form="cc"]');
     const subject = document.querySelector('#compose_subject')
@@ -217,15 +219,35 @@ dt.on('draw', function () {
 
    function modalEmail(){
     subject.value = `Documentos Contenedor ${numContenedor}`
+    const tag = document.getElementById("tagEnvioDocumentos")
+    $("#emailAddress").removeClass('d-none')
+    $("#phoneNumber").addClass('d-none')
+    buttonSendMail.setAttribute("data-kt-inbox-form","sendmail")
+    tag.textContent = 'Enviar documentos vía Correo Electrónico'
     const modalElement = document.getElementById('modal-enviar-correo');
     const bootstrapModal = new bootstrap.Modal(modalElement);
     bootstrapModal.show();
     
    }
 
+   function modalWhatsApp(){
+    const tag = document.getElementById("tagEnvioDocumentos")
+    $("#phoneNumber").removeClass('d-none')
+    $("#emailAddress").addClass('d-none')
+    buttonSendMail.setAttribute("data-kt-inbox-form","WhatsApp")
+    
+    tag.textContent = 'Enviar documentos vía WhatsApp'
+    subject.value = `Documentos Contenedor ${numContenedor}`
+    const modalElement = document.getElementById('modal-enviar-correo');
+    const bootstrapModal = new bootstrap.Modal(modalElement);
+    bootstrapModal.show();
+   }
+
    function sendEmail(){
 
-    if(!validarEmail(mainEmail.value)){
+    let channel = buttonSendMail.getAttribute("data-kt-inbox-form")
+
+    if(!validarEmail(mainEmail.value) && channel == "sendmail"){
         Swal.fire('Dirección invalida','Lo sentimos, el dato en el campo Para no es un correo electrónico','warning')
         return false;
     }
@@ -264,18 +286,34 @@ dt.on('draw', function () {
         if (c.checked) {
             checkedState = true;
             count++;
-            let tmpFile = {"file":c.value}
+
+            const row = c.closest('tr');
+            const labelText = row.querySelector('td:nth-child(2)').textContent.trim();
+
+            let tmpFile = {"file":c.value, "documentSubject": labelText}
             attachmentFiles = [...attachmentFiles, tmpFile]
         }
     });
+
     buttonSendMail.setAttribute("data-kt-indicator", "on")
+    let channel = buttonSendMail.getAttribute("data-kt-inbox-form")
     let _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     fetch('/sendfiles', {
     method: 'POST',
     headers: {
         'Content-Type': 'application/json'
     },
-    body: JSON.stringify({_token: _token, email : mainEmail.value, secondaryEmail : ccEmail.value, subject: subject.value, message: messageMail.textContent, attachmentFiles: attachmentFiles, numContenedor: numContenedor })
+    body: JSON.stringify({
+        _token: _token, 
+        channel, 
+        wa_phone : phoneWhatsApp.value,        
+        email : mainEmail.value, 
+        secondaryEmail : ccEmail.value, 
+        subject: subject.value, 
+        message: messageMail.textContent, 
+        attachmentFiles: attachmentFiles, 
+        numContenedor: numContenedor 
+    })
     })
     .then(response => response.json())
     .then(data => {
@@ -297,4 +335,5 @@ dt.on('draw', function () {
 
    btnDocumets.addEventListener('click',goToUploadDocuments)
    btnAdjuntos.addEventListener('click', modalEmail)
+   btnWhatsApp.addEventListener('click', modalWhatsApp)
    buttonSendMail.addEventListener("click", sendEmail)
