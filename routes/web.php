@@ -145,6 +145,8 @@ Route::post('coordenadas/conboys/update', [App\Http\Controllers\ConboysControlle
 Route::delete('coordenadas/conboys/delete', [App\Http\Controllers\ConboysController::class, 'destroy'])->name('destroy.conboys');
 
 Route::get('coordenadas/conboys/getconboys', [App\Http\Controllers\ConboysController::class, 'getConboys'])->name('getConboys.conboys');
+Route::get('/coordenadas/conboys/getHistorialUbicaciones', [App\Http\Controllers\ConboysController::class, 'getHistorialUbicaciones'])->name('getHistorialUbicaciones.conboys');
+
 
 Route::post('coordenadas/rastrear/savehistori', [App\Http\Controllers\ConboysController::class, 'guardarCoordenadasseguimintos'])->name('rastrear.savehistori');
 Route::get('coordenadas/conboys/encontrar/', [App\Http\Controllers\ConboysController::class, 'indexconvoy'])->name('find-convoy');
@@ -152,9 +154,11 @@ Route::get('coordenadas/conboys/encontrar/', [App\Http\Controllers\ConboysContro
 
 Route::get('/coordenadas/conboys/getconvoy/{numero}', [App\Http\Controllers\ConboysController::class, 'buscarPorNumero'])->name('findbyNumber');
 Route::post('/coordenadas/conboys/agregar', [App\Http\Controllers\ConboysController::class, 'addContenedores'])->name('updateConvoyEmpresas');
-Route::post('/coordenadas/conboys/historialUbi', [App\Http\Controllers\ConboysController::class, 'HistorialUbicaciones'])->name('HistorialUbicaciones');
+Route::get('/coordenadas/conboys/historialUbi', [App\Http\Controllers\ConboysController::class, 'HistorialUbicaciones'])->name('HistorialUbicaciones');
 
-
+Route::get('/mapa-comparacion', function () {
+    return view('conboys.mapa_comparacion');
+});
 //R
 
 

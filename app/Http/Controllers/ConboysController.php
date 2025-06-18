@@ -275,26 +275,26 @@ class ConboysController extends Controller
 
 
          $contenedoresPropiosAsignados = DB::table('conboys')
-    ->join('conboys_contenedores', 'conboys_contenedores.conboy_id', '=', 'conboys.id')
-    ->join('docum_cotizacion', 'docum_cotizacion.id', '=', 'conboys_contenedores.id_contenedor')
-    ->where('docum_cotizacion.id_empresa', $idEmpresa)
-    ->select('conboys.id','docum_cotizacion.num_contenedor','docum_cotizacion.id as id_contenedor') 
-    ->get();
+        ->join('conboys_contenedores', 'conboys_contenedores.conboy_id', '=', 'conboys.id')
+        ->join('docum_cotizacion', 'docum_cotizacion.id', '=', 'conboys_contenedores.id_contenedor')
+        ->where('docum_cotizacion.id_empresa', $idEmpresa)
+        ->select('conboys.id','docum_cotizacion.num_contenedor','docum_cotizacion.id as id_contenedor') 
+        ->get();
 
 
 
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'nombre' => $convoy->nombre,
-                'fecha_inicio' => $convoy->fecha_inicio,
-                'fecha_fin' => $convoy->fecha_fin,
-                'no_conboy'=> $convoy->no_conboy,
-                'idconvoy'=> $convoy->id,
-                'contenedoresPropios'=>$contenedoresPropios,
-                'contenedoresPropiosAsignados'=>$contenedoresPropiosAsignados,
-                    ]
-        ]);
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'nombre' => $convoy->nombre,
+                    'fecha_inicio' => $convoy->fecha_inicio,
+                    'fecha_fin' => $convoy->fecha_fin,
+                    'no_conboy'=> $convoy->no_conboy,
+                    'idconvoy'=> $convoy->id,
+                    'contenedoresPropios'=>$contenedoresPropios,
+                    'contenedoresPropiosAsignados'=>$contenedoresPropiosAsignados,
+                        ]
+            ]);
     }
 
     public function addContenedores(Request $request)
@@ -351,6 +351,46 @@ class ConboysController extends Controller
 
     public function HistorialUbicaciones(){
         return view('conboys.ubicaciones');
+    }
+
+
+    public function getHistorialUbicaciones(){
+ $idEmpresa = Auth::User()->id_empresa;
+$cotizacion = DB::table('cotizaciones')
+    ->join('clients', 'cotizaciones.id_cliente', '=', 'clients.id')
+    ->join('docum_cotizacion', 'docum_cotizacion.id_cotizacion', '=', 'cotizaciones.id')
+    ->join('asignaciones', 'asignaciones.id_contenedor', '=', 'docum_cotizacion.id')
+    ->join('coordenadas_historial', 'coordenadas_historial.ubicacionable_id', '=', 'docum_cotizacion.id')
+     ->where('docum_cotizacion.id_empresa', '=', $idEmpresa)
+    ->groupBy(
+        'cotizaciones.id',
+        'asignaciones.id',
+        'clients.nombre',
+        'cotizaciones.origen',
+        'cotizaciones.destino',
+        'docum_cotizacion.num_contenedor',
+        'cotizaciones.estatus'
+    )
+    ->select(
+        'cotizaciones.id',
+        'asignaciones.id as id_Asignacion',
+        'clients.nombre as cliente',
+        'cotizaciones.origen',
+        'cotizaciones.destino',
+        'docum_cotizacion.num_contenedor as contenedor',
+        'cotizaciones.estatus',
+        'cotizaciones.latitud',
+        'cotizaciones.longitud',
+        DB::raw('MAX(coordenadas_historial.registrado_en) as ultima_fecha'),
+        DB::raw('MAX(coordenadas_historial.latitud) as latitud_seguimiento'),
+        DB::raw('MAX(coordenadas_historial.longitud) as longitud_seguimiento')
+    )
+    ->get();
+
+
+
+    return response()->json($cotizacion);
+
     }
 
    

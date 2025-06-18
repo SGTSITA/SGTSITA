@@ -56,7 +56,7 @@
   </div>
 </div>
 
-<<!-- Modal Mejorado -->
+<!-- Modal Mejorado -->
 <div class="modal fade" id="modalBuscarConvoy" tabindex="-1" aria-labelledby="modalBuscarConvoyLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
   <div class="modal-dialog modal-lg modal-dialog-centered">
     <div class="modal-content rounded-4">
