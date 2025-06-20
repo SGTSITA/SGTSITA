@@ -125,7 +125,7 @@ class GastosGeneralesController extends Controller
             $gasto_general->id_empresa = auth()->user()->id_empresa;
             $gasto_general->is_active = ($request->get('tipoPago') == 1) ? 0 : 1;
             $gasto_general->diferir_gasto = $request->get('tipoPago');
-            $gasto_general->pago_realizado = ($request->get('tipoPago') == 1) ? 0 : 1;
+            $gasto_general->pago_realizado = (intval($request->get('tipoPago')) == 0) ? 1 : 0;
             
             $gasto_general->save();
 
