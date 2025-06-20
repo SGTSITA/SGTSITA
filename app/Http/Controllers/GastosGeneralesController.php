@@ -73,7 +73,7 @@ class GastosGeneralesController extends Controller
     }
 
     public function getGastos(Request $r){
-       $fechaInicial = Carbon::parse($r->from)->format('Y-m-d');
+       $fechaInicial = Carbon::parse($r->from)->startOfMonth()->format('Y-m-d');
        $fechaFinal = Carbon::parse($r->to)->format('Y-m-d');
 
        $gastos = GastosGenerales::where('id_empresa' ,'=',auth()->user()->id_empresa)
@@ -92,7 +92,8 @@ class GastosGeneralesController extends Controller
                      "FechaGasto" => $g->fecha,
                      "FechaContabilizado" => $g->fecha,
                      "Estatus" => true,
-                     "Diferido" => ($g->diferir_gasto == 1) ? 'Diferido' : ''
+                     "Diferido" => ($g->diferir_gasto == 1) ? 'Diferido' : '',
+                     "GastoAplicado" => (!is_null($g->aplicacion_gasto)) ? true : false
                    ];
         });
 
@@ -195,6 +196,56 @@ class GastosGeneralesController extends Controller
 
     }
 
+    public function eliminarGasto(Request $r){
+        try{
+            DB::beginTransaction();
+            $gastosGenerales = GastosGenerales::where('id',$r->IdGasto)->first();
+
+            GastosOperadores::where('id_gasto_origen',$r->IdGasto)->delete();
+            //Devolver el dinero al banco, siempre y cuando el estatus sea "Pagado"
+            if($gastosGenerales->pago_realizado === 1){
+                Bancos::where('id' ,'=',$gastosGenerales->id_banco1)->update(["saldo" => DB::raw("saldo + ". $gastosGenerales->monto1)]);
+
+               /* $asignacion = Asignaciones::where('id_contenedor', $g['IdContenedor'])->first();
+
+                $banco = new BancoDineroOpe;
+                $banco->id_operador = $asignacion->id_operador;
+
+                $banco->monto1 = $gasto->cantidad;
+                $banco->metodo_pago1 = 'Transferencia';
+                $banco->descripcion_gasto = "Gasto Anulado: ".$g['Gasto'];
+                $banco->id_banco1 = $gasto->id_banco;
+
+                $contenedoresAbonos[] = [
+                    'num_contenedor' => $r->numContenedor,
+                    'abono' => $gasto->cantidad
+                ];
+                $contenedoresAbonosJson = json_encode($contenedoresAbonos);
+
+                $banco->contenedores = $contenedoresAbonosJson;
+
+                $banco->tipo = 'Entrada';
+                $banco->fecha_pago = date('Y-m-d');
+                $banco->save();*/
+
+            }
+            $gastosGenerales->delete();
+            DB::commit();
+
+            return response()->json([
+                                    "Titulo" => "Exito!", 
+                                    "Mensaje" => "Se ha eliminado el gasto exitosamente", 
+                                    "TMensaje" => "success",                                    
+                            ]);
+        }catch(\Throwable $t){
+
+            DB::rollback();
+            \Log::channel('daily')->info("Error: GastosGeneralesController->eliminarGasto->".$t->getMessage());
+            return response()->json(["Titulo" => "Gasto no aplicado","Mensaje" => "Ha ocurrido un error, no se puede aplicar el gasto", "TMensaje" => "error"]);
+
+        }
+    }
+
     public function aplicarGastos(Request $r){
         try{
 
@@ -234,10 +285,11 @@ class GastosGeneralesController extends Controller
                             "tipo" => $gastosGenerales->motivo,
                             "estatus" => 'Pago Pendiente',
                             "fecha_pago" => null,
-                            "pago_inmediato" => 0,
+                            "pago_inmediato" => $gastosGenerales->diferir_gasto  ,
+                            "id_gasto_origen" => $r->_IdGasto,
                             "created_at" => Carbon::now()
                         ];
-    
+                        
                         GastosOperadores::insert($datosGasto);
                     }
     
@@ -268,60 +320,7 @@ class GastosGeneralesController extends Controller
             
             DB::commit();
 
-           /* $montoGasto = $gastosGenerales->first()->monto1;
-            $montoDiario = $montoGasto / $r->diasContados;
-           // $cantEquipos = sizeof($r->unidades);
-            $montoDiario = $montoDiario / $cantEquipos;
-
-            $gastosGenerales->update([
-                "diferir_gasto" => 1,
-                "diferir_contador_periodos" => $r->diasContados,
-                "fecha_diferido_inicial" => $r->fechaDesde,
-                "fecha_diferido_final" => $r->fechaHasta
-            ]);
-
-            $fechaDesde = Carbon::parse($r->fechaDesde);
-            $fechaHasta = Carbon::parse($r->fechaHasta);
-            $fechaIniciaPeriodo = $fechaDesde->toDateString();
-            
-            for($periodo = 1; $periodo <= $r->diasContados; $periodo++){
-                $finalMes = Carbon::parse($fechaIniciaPeriodo);
-                $finalMes = $finalMes->endOfMonth();
-                $fechaFinPeriodo = ($finalMes > $fechaHasta) ? $fechaHasta->toDateString() : $finalMes->toDateString();
-                $fechaIni = $fechaIniciaPeriodo;
-
-                $date = [
-                    "id_gasto" => $r->_IdGasto,
-                    "fecha_gasto_inicial" => $fechaIni,
-                    "fecha_gasto_final" => $fechaFinPeriodo,
-                    "gasto_dia" => $montoDiario
-                ];
-                $Daily[] = $date;
-
-                $fechaIniciaPeriodo = $finalMes->addDay()->toDateString();
-            }
-
-            GastosDiferidosDetalle::insert($Daily);*/
-
-            /*foreach($r->unidades as $u){
-                $fechaDesde = Carbon::parse($r->fechaDesde);
-                $fechaHasta = Carbon::parse($r->fechaHasta);
-    
-                $Daily = [];
-                while($fechaDesde < $fechaHasta){
-                    $newDate = $fechaDesde->addDay();
-                    $fechaDesde = $newDate;
-                    $date = [
-                                "id_gasto" => $r->_IdGasto,
-                                "id_equipo" => $u,
-                                "fecha_gasto" => $newDate->format('Y-m-d'),
-                                "gasto_dia" => $montoDiario
-                            ];
-                    $Daily[] = $date;
-                }*/
-    
-             //   
-            //}
+         
 
             return response()->json([
                                     "Titulo" => "Exito!", 

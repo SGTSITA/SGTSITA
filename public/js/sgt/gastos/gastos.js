@@ -163,7 +163,8 @@ class MissionResultRenderer {
      { field: "FechaGasto",filter: true, floatingFilter: true,valueFormatter: params => formatFecha(params.value)},
      { field: "FechaContabilizado",filter: true, floatingFilter: true,valueFormatter: params => formatFecha(params.value)},    
      { field: "Estatus",cellRenderer: MissionResultRenderer},
-     { field: "Diferido"}
+     { field: "Diferido"},
+     { field: "GastoAplicado", hide: true}
    ],
   
    localeText: localeText
@@ -172,6 +173,7 @@ class MissionResultRenderer {
   const myGridElement = document.querySelector('#myGrid');
   let apiGrid = agGrid.createGrid(myGridElement, gridOptions);
   let btnDiferir = document.querySelector('#btnDiferir');
+  let btnEliminarGasto = document.querySelector('#btnEliminarGasto');
   let monto1 = document.querySelector('#monto1')
   let labelMontoGasto = document.querySelector('#labelMontoGasto')
   let labelGastoDiario = document.querySelector('#labelGastoDiario')
@@ -237,6 +239,52 @@ class MissionResultRenderer {
     }
   }
 
+  btnEliminarGasto.addEventListener('click',()=>{
+    let gasto = apiGrid.getSelectedRows();
+
+    if(gasto.length <= 0 || gasto.length > 1){
+      Swal.fire('Seleccionar UN Gasto','Debe seleccionar el gasto que desea eliminar','warning');
+      return;
+    } 
+
+    IdGasto = gasto[0].IdGasto
+    var _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+
+    Swal.fire({
+      title: '¿Desea eliminar este gasto?',
+      text: 'Esta acción no se prodrá deshacer.',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, continuar',
+      cancelButtonText: 'Cancelar',
+      reverseButtons: true 
+    }).then((result) => {
+      if (result.isConfirmed) {
+        $.ajax({
+          url:'/gastos/generales/delete',
+          type:'post',
+          data:{IdGasto, _token},
+          beforeSend:()=>{},
+          success:()=>{
+            Swal.fire(data.Titulo, data.Mensaje, data.TMensaje)
+            if(data.TMensaje == "success"){
+              getGastos(fromDate,toDate);
+            }
+          },
+          error:()=>{
+            Swal.fire('Error', 'Ha ocurrido un error AJAX', 'error')
+
+          }
+        })
+      } else if (result.dismiss === Swal.DismissReason.cancel) {
+        
+      }
+    });
+    
+
+  })
+
   btnDiferir.addEventListener('click',()=>{
     let gasto = apiGrid.getSelectedRows();
 
@@ -245,10 +293,10 @@ class MissionResultRenderer {
       return;
     } 
 
-    /*if(gasto[0].Diferido == "Diferido"){
-      Swal.fire('Previamente diferido','Este gasto ya fue diferido previtamente','warning');
+    if(gasto[0].GastoAplicado == true){
+      Swal.fire('Gasto Previamente aplicado','Lo sentimos, el gastos que está intentado APLICAR, ha sido utilizado previamente','warning');
       return;
-    }*/
+    }
 
     labelMontoGasto.textContent = moneyFormat(gasto[0].Monto)
     labelDescripcionGasto.textContent = gasto[0].Descripcion
