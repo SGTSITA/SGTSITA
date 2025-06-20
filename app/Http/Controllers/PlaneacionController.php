@@ -122,6 +122,7 @@ class PlaneacionController extends Controller
             'docum_cotizacion.cima',
             'docum_cotizacion.boleta_liberacion',
             'docum_cotizacion.doda',
+            'cotizaciones.referencia_full',
             'cotizaciones.carta_porte',
             'cotizaciones.img_boleta AS boleta_vacio',
             'docum_cotizacion.doc_eir',
@@ -140,7 +141,7 @@ class PlaneacionController extends Controller
             $cartaPorte = $cot->carta_porte;
             $boletaVacio = $cot->boleta_vacio;
             $docEir = $cot->doc_eir;
-            $tipo = "";
+            $tipo = "--";
     
             if(!is_null($cot->referencia_full)){
                     $secundaria = Cotizaciones::where('referencia_full', $cot->referencia_full)
