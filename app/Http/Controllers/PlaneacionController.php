@@ -150,7 +150,7 @@ class PlaneacionController extends Controller
     
                     $docCCP = ($docCCP && $secundaria->DocCotizacion->doc_ccp) ? true : false;
                     $doda = ($doda && $secundaria->DocCotizacion->doda) ? true : false;
-                    $docEir = ($docEir && $secundaria->DocCotizacion->doc_eir) ? true : false;
+                    $docEir = ($docEir && !is_null($secundaria->DocCotizacion->doc_eir)) ? true : false;
     
                     $boletaLiberacion = ($boletaLiberacion && $secundaria->DocCotizacion->boleta_liberacion) ? true : false;
                     $cartaPorte = ($cartaPorte && $secundaria->carta_porte) ? true : false;
