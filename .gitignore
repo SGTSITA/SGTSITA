@@ -27,3 +27,4 @@ Homestead.json
 Dockerfile
 docker-compose.yml
 /apache
+/public/uploads/
