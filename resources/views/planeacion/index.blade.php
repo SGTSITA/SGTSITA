@@ -51,6 +51,10 @@
 
 @push('custom-javascript')
 <style>
+    #dp {
+  flex: 1;
+  min-height: 0;
+}
 .search-container {
   position: relative;
   width: 100%;
@@ -93,7 +97,8 @@
 </style>
 <script src="{{asset('DayPilot/js/daypilot-all.min.js?v=2022.3.5384')}}"></script>    
 <script src="{{asset('DayPilot/helpers/v2/app.js?v=2022.3.5384')}}"></script>
-<script type="text/javascript" src="{{asset('DayPilot/js/boardCarpos.js')}}"></script>
+<script type="text/javascript" src="{{asset('DayPilot/js/boardCarpos.js')}}?v={{ filemtime(public_path('DayPilot/js/boardCarpos.js')) }}"></script>
+
 <!-- Date Range Picker CSS -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
 

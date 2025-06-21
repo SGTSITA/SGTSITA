@@ -37,7 +37,7 @@ return `${dia}/${mes}/${anio}`;
            
              
              dp.resources = resp.boardCentros;
-             dp.startDate = fromDate
+             
              //Horizonte
              /*dp.separators = [
                  {color: "red", location: info.Horizonte}
@@ -47,11 +47,12 @@ return `${dia}/${mes}/${anio}`;
              allEvents = resp.extractor;
              //TarifasHilos = resp.TarifasHilo;
              //festivos = resp.festivos;
-             
+             let scrollToDate = null;
              if(allEvents != null){
                  resp.extractor.forEach((i)=>{
                  let x = Math.floor(Math.random() * 8) + 1;
                  if(i.fecha_inicio !== null){
+                     scrollToDate = scrollToDate ?? new DayPilot.Date(i.fecha_inicio)
                      var e = {
                      start: new DayPilot.Date(i.fecha_inicio),
                      end: new DayPilot.Date(i.fecha_fin),
@@ -71,6 +72,8 @@ return `${dia}/${mes}/${anio}`;
                 
              });
              }
+
+             dp.startDate = scrollToDate.addDays(-2)
 
              if ( dpReady) {
               
@@ -335,7 +338,7 @@ return `${dia}/${mes}/${anio}`;
                 valorDoc = documentos[doc]
                 if(documento){
                     
-                    documento.innerHTML = (valorDoc != null) ?
+                    documento.innerHTML = (valorDoc != false && valorDoc != null) ?
                      `<i class="fas fa-circle-check text-success fa-lg"></i>` :
                      `<i class="fas fa-circle-xmark text-secondary fa-lg"></i>`
                 }

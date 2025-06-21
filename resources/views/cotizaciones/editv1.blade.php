@@ -16,7 +16,7 @@
                             <div class="col-3 offset-3">
                             <div><span class="text-xs text-muted text-bold d-none" id="referencia_full">{{$cotizacion->referencia_full}}</span></div>
                                 <div class="option-group">
-                                    @if($cotizacion->tipo_viaje != "Full")                                    
+                                    @if((is_null($cotizacion->referencia_full)))                                    
                                     <label class="custom-option selected">
                                         <input type="radio" checked name="plan" value="Sencillo" onchange="handleSelection(this)">
                                         <i class="fas fa-truck icon"></i>
@@ -46,7 +46,7 @@
                                                 </div>
                                             </label>
 
-                                            <label class="custom-nav-item @if($cotizacion->tipo_viaje != 'Full') d-none @endif" id="tab-contenedor-b">
+                                            <label class="custom-nav-item @if((is_null($cotizacion->referencia_full))) d-none @endif" id="tab-contenedor-b">
                                                 <input type="radio" class="custom-nav-radio" value="Contenedor-B" name="contenedorTabs" id="tab2" />
                                                 <div class="custom-nav-link">
                                                 <i class="ni ni-box-2 text-info text-gradient"></i>
