@@ -11,6 +11,7 @@ use App\Http\Controllers\EmpresasController;
 use App\Http\Controllers\ExternosController;
 use App\Http\Controllers\CuentaGlobalController;
 use App\Http\Controllers\GloblaGpsController;
+use App\Http\Controllers\ContactoController;
 
 Route::group(["prefix" => "globalgps"],function(){
  Route::get('ubicacion/by-imei',[GloblaGpsController::class,'obtenerUbicacionByImei'])->name('ubicacion.byimei');
@@ -386,4 +387,13 @@ Route::post('/cuenta-global/update', [App\Http\Controllers\CuentaGlobalControlle
     Route::post('/gps/restore/{id}', [App\Http\Controllers\GpsCompanyController::class, 'restore']);
 
 
-   
+
+Route::get('/contactos', [App\Http\Controllers\ContactoController::class, 'index'])->name('contactos.index');
+Route::get('/contactos/create', [App\Http\Controllers\ContactoController::class, 'create'])->name('contactos.create');
+Route::post('/contactos', [App\Http\Controllers\ContactoController::class, 'store'])->name('contactos.store');
+Route::get('/contactos/list', [App\Http\Controllers\ContactoController::class, 'list'])->name('contactos.list');
+Route::delete('/contactos/{id}', [App\Http\Controllers\ContactoController::class, 'inactivar'])->name('contactos.inactivar');
+Route::put('/contactos/{id}/restore', [App\Http\Controllers\ContactoController::class, 'activar'])->name('contactos.activar');
+Route::get('/contactos/editar/{id}', [App\Http\Controllers\ContactoController::class, 'edit'])->name('contactos.edit');
+Route::put('/contactos/{id}', [App\Http\Controllers\ContactoController::class, 'update'])->name('contactos.update');
+Route::get('/contactos/editar/{id}', [App\Http\Controllers\ContactoController::class, 'edit'])->name('contactos.edit');
