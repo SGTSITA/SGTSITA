@@ -167,6 +167,155 @@
                                     </div>
                                 </div>
                             </div>
+      <div class="page d-flex flex-row flex-column-fluid">
+        <div id="kt_aside" class="aside py-9" data-kt-drawer="true" data-kt-drawer-name="aside" data-kt-drawer-activate="{default: true, lg: false}" data-kt-drawer-overlay="true" data-kt-drawer-width="{default:'200px', '300px': '250px'}" data-kt-drawer-direction="start" data-kt-drawer-toggle="#kt_aside_toggle">
+          <div class="aside-logo flex-column-auto px-9 mb-9" id="kt_aside_logo">
+            <a href="/home">
+              <img alt="Logo" src="/assets/metronic/logo-color-sgt.png" class="h-25px logo theme-light-show" />
+              <img alt="Logo" src="/assets/metronic/logo-gris-sgt.png" class="h-25px logo theme-dark-show" />
+            </a>
+          </div>
+          <div class="aside-menu flex-column-fluid ps-5 pe-3 mb-9" id="kt_aside_menu">
+            <div class="w-100 hover-scroll-overlay-y d-flex pe-3" id="kt_aside_menu_wrapper" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-height="auto" data-kt-scroll-dependencies="#kt_aside_logo, #kt_aside_footer" data-kt-scroll-wrappers="#kt_aside, #kt_aside_menu, #kt_aside_menu_wrapper" data-kt-scroll-offset="100">
+              <div class="menu menu-column menu-rounded menu-sub-indention menu-active-bg fw-semibold my-auto" id="#kt_aside_menu" data-kt-menu="true">
+                <div data-kt-menu-trigger="click" class="menu-item menu-accordion">
+                  <span class="menu-link">
+                    <span class="menu-icon">
+                      <i class="ki-duotone ki-black-right fs-2"></i>
+                    </span>
+                    <span class="menu-title">Sub Clientes</span>
+                    <span class="menu-arrow"></span>
+                  </span>
+                  <div class="menu-sub menu-sub-accordion">
+                    <div class="menu-item">
+                      <a class="menu-link" href="{{ route('subcliente.index') }}">
+                        <span class="menu-bullet">
+                          <span class="bullet bullet-dot"></span>
+                        </span>
+                        <span class="menu-title">Crear Sub Cliente</span>
+                      </a>
+                    </div>
+                    <div class="menu-item">
+                      <a href="{{route('client.subcliente.list')}}" class="menu-link">
+                        <span class="menu-bullet">
+                          <span class="bullet bullet-dot"></span>
+                        </span>
+                        <span class="menu-title">Editar Sub Cliente</span>
+                      </a>
+                    </div>
+                  </div>
+                </div>
+      
+                <div data-kt-menu-trigger="click" class="menu-item menu-accordion">
+                  <span class="menu-link">
+                    <span class="menu-icon">
+                      <i class="ki-duotone ki-black-right fs-2"></i>
+                    </span>
+                    <span class="menu-title">Viajes</span>
+                    <span class="menu-arrow"></span>
+                  </span>
+                  <div class="menu-sub menu-sub-accordion">
+                    <div class="menu-item">
+                      <a href="{{route('dashboard')}}" class="menu-link">
+                        <span class="menu-bullet">
+                          <span class="bullet bullet-dot"></span>
+                        </span>
+                        <span class="menu-title">Solicitar Viaje</span>
+                      </a>
+                    </div>
+                    <div class="menu-item">
+                      <a href="{{ route('mis.viajes') }}" class="menu-link">
+                        <span class="menu-bullet">
+                          <span class="bullet bullet-dot"></span>
+                        </span>
+                        <span class="menu-title">Mis Viajes</span>
+                      </a>
+                    </div>
+                  </div>
+                </div>
+                <div data-kt-menu-trigger="click" class="menu-item menu-accordion">
+                  <span class="menu-link">
+                    <span class="menu-icon">
+                      <i class="ki-duotone ki-black-right fs-2"></i>
+                    </span>
+                    <span class="menu-title">Correo</span>
+                    <span class="menu-arrow"></span>
+                  </span>
+                  <div class="menu-sub menu-sub-accordion">
+                    <div class="menu-item">
+                      <a href="{{route('configmec')}}" class="menu-link">
+                        <span class="menu-bullet">
+                          <span class="bullet bullet-dot"></span>
+                        </span>
+                        <span class="menu-title">Correos</span>
+                      </a>
+                    </div>
+                  </div>
+                </div>
+                <!--coordenadas -->
+                <div data-kt-menu-trigger="click" class="menu-item menu-accordion">
+                  <span class="menu-link">
+                    <span class="menu-icon">
+                      <i class="ki-duotone ki-black-right fs-2"></i>
+                    </span>
+                    <span class="menu-title">Coordenadas</span>
+                    <span class="menu-arrow"></span>
+                  </span>
+                  <div class="menu-sub menu-sub-accordion">
+                    <div class="menu-item">
+                      <a href="{{route('ver.extcoordenadamapa')}}" class="menu-link">
+                        <span class="menu-bullet">
+                          <span class="bullet bullet-dot"></span>
+                        </span>
+                        <span class="menu-title">Mapas</span>
+                      </a>
+                    </div>
+                    <div class="menu-item">
+                      <a href="{{ route('seach.extcoordenadas') }}" class="menu-link">
+                        <span class="menu-bullet">
+                          <span class="bullet bullet-dot"></span>
+                        </span>
+                        <span class="menu-title">Busqueda</span>
+                      </a>
+                    </div>
+                    <div class="menu-item">
+                      <a href="{{ route('extcompartircoor') }}" class="menu-link">
+                        <span class="menu-bullet">
+                          <span class="bullet bullet-dot"></span>
+                        </span>
+                        <span class="menu-title">Compartir Coordenadas</span>
+                      </a>
+                    </div>
+
+                     <div class="menu-item">
+                      <a href="{{ route('exrastrearContenedor') }}" class="menu-link">
+                        <span class="menu-bullet">
+                          <span class="bullet bullet-dot"></span>
+                        </span>
+                        <span class="menu-title">Rastrear Viajes</span>
+                      </a>
+                    </div>
+                     <div class="menu-item">
+                      <a href="{{ route('exindex.conboys') }}" class="menu-link">
+                        <span class="menu-bullet">
+                          <span class="bullet bullet-dot"></span>
+                        </span>
+                        <span class="menu-title">Convoys Virtuales</span>
+                      </a>
+                    </div>
+                     <div class="menu-item">
+                      <a href="{{ route('exfind-convoy') }}" class="menu-link">
+                        <span class="menu-bullet">
+                          <span class="bullet bullet-dot"></span>
+                        </span>
+                        <span class="menu-title">Encontrar Convoys</span>
+                      </a>
+                    </div>
+
+
+                     
+                  </div>
+                </div>
 
                             <!--coordenadas -->
                             <!-- contactos -->
