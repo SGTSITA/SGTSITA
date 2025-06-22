@@ -338,7 +338,7 @@ return `${dia}/${mes}/${anio}`;
                 valorDoc = documentos[doc]
                 if(documento){
                     
-                    documento.innerHTML = (valorDoc != null) ?
+                    documento.innerHTML = (valorDoc != false && valorDoc != null) ?
                      `<i class="fas fa-circle-check text-success fa-lg"></i>` :
                      `<i class="fas fa-circle-xmark text-secondary fa-lg"></i>`
                 }

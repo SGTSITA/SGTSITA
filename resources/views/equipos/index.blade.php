@@ -168,6 +168,16 @@
     @foreach ($equipos_camiones as $item)
         @include('equipos.modal_docs', ['item' => $item])
     @endforeach
+
+    @foreach ($equipos_dolys as $item)
+        @include('equipos.modal_asignar_gps', ['item' => $item, 'gps_companies' => $gps_companies])
+    @endforeach
+    @foreach ($equipos_chasis as $item)
+        @include('equipos.modal_asignar_gps', ['item' => $item, 'gps_companies' => $gps_companies])
+    @endforeach
+    @foreach ($equipos_camiones as $item)
+        @include('equipos.modal_asignar_gps', ['item' => $item, 'gps_companies' => $gps_companies])
+    @endforeach
 @endsection
 @section('datatable')
     <script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.js"></script>

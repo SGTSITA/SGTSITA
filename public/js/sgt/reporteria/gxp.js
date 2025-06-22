@@ -1,6 +1,17 @@
 document.addEventListener('DOMContentLoaded', () => {
     const gridDiv = document.querySelector('#myGrid');
     let gridApi = null;
+    const dateComparator = (filterDate, cellValue) => {
+        if (!cellValue) return -1;
+        const cellDate = new Date(cellValue);
+        // Resetear horas para comparación exacta
+        cellDate.setHours(0, 0, 0, 0);
+        filterDate.setHours(0, 0, 0, 0);
+
+        if (cellDate < filterDate) return -1;
+        if (cellDate > filterDate) return 1;
+        return 0;
+    };
 
     const columnDefs = [
         {
@@ -33,20 +44,46 @@ document.addEventListener('DOMContentLoaded', () => {
             field: "fecha_movimiento",
             valueFormatter: dateFormatter,
             filter: 'agDateColumnFilter',
-            floatingFilter: true
+            floatingFilter: true,
+            filterParams: {
+                comparator: dateComparator
+            }
         },
         {
-            headerName: "Fecha Aplicación",
-            field: "fecha_aplicacion",
+            headerName: "Fecha Inicio",
+            field: "fecha_inicio",
             valueFormatter: dateFormatter,
             filter: 'agDateColumnFilter',
-            floatingFilter: true
-        }
+            floatingFilter: true,
+            filterParams: {
+                comparator: dateComparator
+            }
+        },
+        {
+            headerName: "Fecha Fin",
+            field: "fecha_fin",
+            valueFormatter: dateFormatter,
+            filter: 'agDateColumnFilter',
+            floatingFilter: true,
+            filterParams: {
+                comparator: dateComparator
+            }
+        },
     ];
 
     const gridOptions = {
         columnDefs,
-        rowData: window.cotizacionesData || [],
+        rowData: (window.cotizacionesData || []).map(item => ({
+            ...item,
+            fecha_inicio: item.fecha_inicio ? new Date(item.fecha_inicio) : null,
+            fecha_fin: item.fecha_fin ? new Date(item.fecha_fin) : null,
+            fecha_movimiento: item.fecha_movimiento ? new Date(item.fecha_movimiento) : null,
+            fecha_aplicacion: item.fecha_aplicacion ? new Date(item.fecha_aplicacion) : null,
+        })).filter(item => {
+            const fecha = item.fecha_inicio;
+            return fecha instanceof Date && !isNaN(fecha) && moment(fecha).isBetween(moment().subtract(7, 'days'), moment(), 'day', '[]');
+        }),
+
         pagination: true,
         paginationPageSize: 30,
         paginationPageSizeSelector: [30, 50, 100],
@@ -67,9 +104,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    agGrid.createGrid(gridDiv, gridOptions);
+    const grid = agGrid.createGrid(gridDiv, gridOptions);
+    gridApi = grid.api;
 
-    // Exportar a Excel o PDF
     // Exportar a Excel o PDF
     document.querySelectorAll('.exportButton').forEach(button => {
         button.addEventListener('click', async function () {
@@ -125,7 +162,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
 
-
     function currencyFormatter(params) {
         return new Intl.NumberFormat('es-MX', {
             style: 'currency',
@@ -138,4 +174,56 @@ document.addEventListener('DOMContentLoaded', () => {
         const date = new Date(params.value);
         return date.toLocaleDateString('es-MX');
     }
+
+    const startDate = moment().subtract(7, 'days');
+    const endDate = moment();
+
+    $('#daterange').daterangepicker({
+        startDate,
+        endDate,
+        maxDate: moment(),
+        opens: 'right',
+        locale: {
+            format: 'YYYY-MM-DD',
+            separator: ' al ',
+            applyLabel: 'Aplicar',
+            cancelLabel: 'Cancelar',
+            fromLabel: 'Desde',
+            toLabel: 'Hasta',
+            daysOfWeek: ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa'],
+            monthNames: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto',
+                'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'],
+            firstDay: 1
+        }
+    }, function (start, end) {
+        // ⚡ Filtro local sin fetch
+        const filtrado = (window.cotizacionesData || []).map(item => ({
+            ...item,
+            fecha_inicio: item.fecha_inicio ? new Date(item.fecha_inicio) : null,
+            fecha_fin: item.fecha_fin ? new Date(item.fecha_fin) : null,
+            fecha_movimiento: item.fecha_movimiento ? new Date(item.fecha_movimiento) : null,
+        })).filter(item => {
+            const fi = item.fecha_inicio;
+            const ff = item.fecha_fin;
+
+            return (
+                fi instanceof Date && ff instanceof Date &&
+                !isNaN(fi) && !isNaN(ff) &&
+                moment(fi).isSameOrAfter(start, 'day') &&
+                moment(ff).isSameOrBefore(end, 'day')
+            );
+        });
+
+        if (gridApi) {
+            gridApi.setGridOption('rowData', filtrado);
+            gridApi.deselectAll(); // Limpia los seleccionados que ya no están
+        }
+
+
+
+
+        if (gridApi) {
+            gridApi.setGridOption('rowData', filtrado);
+        }
+    });
 });

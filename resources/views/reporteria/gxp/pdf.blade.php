@@ -71,7 +71,6 @@
                 <th>Monto</th>
                 <th>Motivo</th>
                 <th>Fecha Movimiento</th>
-                <th>Fecha Aplicación</th>
             </tr>
         </thead>
 
@@ -88,7 +87,6 @@
                     </td>
                     <td>{{ $gasto['motivo'] ?? '-' }}</td>
                     <td>{{ $gasto['fecha_movimiento'] ?? '-' }}</td>
-                    <td>{{ $gasto['fecha_aplicacion'] ?? '-' }}</td>
                 </tr>
             @endforeach
         </tbody>

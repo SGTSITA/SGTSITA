@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Hash;
 use Session;
 use App\Models\User;
+use App\Models\UserEmpresa;
 use Illuminate\Support\Facades\Auth;
 class CustomAuthController extends Controller
 {
@@ -85,9 +86,23 @@ class CustomAuthController extends Controller
     }
 
     public function signOut() {
+        
+       $user = auth()->user();
+
+    
+        $empresaInicial = UserEmpresa::where('id_user', $user->id)
+        ->where('empresaInicial', 1)
+        ->first();
+
+    if ($empresaInicial) {
+        
+        $user->id_empresa = $empresaInicial->id_empresa;
+        $user->save();
+    }
+    
         Session::flush();
         Auth::logout();
 
-        return Redirect('login');
+        return Redirect('/');
     }
 }

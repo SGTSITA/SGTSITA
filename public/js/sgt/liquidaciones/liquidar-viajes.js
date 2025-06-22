@@ -330,7 +330,7 @@ class MissionResultRenderer {
     $.ajax({
       url:'/liquidaciones/viajes/gastos/justificar',
       type:'post',
-      data:{_token, montoJustificacion,numContenedor, txtDescripcion},
+      data:{_token, montoJustificacion,numContenedor, txtDescripcion, sinJustificar},
       beforeSend:()=>{
 
       },
@@ -338,7 +338,8 @@ class MissionResultRenderer {
         Swal.fire(response.Titulo,response.Mensaje,response.TMensaje)
         $('#exampleModal').modal('hide')
         if(response.TMensaje == "success"){
-         // setTimeout(()=>{location.reload()},350)
+          document.getElementById("txtMonto").value = '';
+          document.getElementById('txtDescripcion').value = '';
          mostrarViajesOperador(IdOperador)
           
         }

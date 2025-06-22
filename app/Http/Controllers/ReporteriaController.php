@@ -921,6 +921,7 @@ public function export_cxp(Request $request)
                 'cotizaciones.carta_porte',
                 'cotizaciones.img_boleta AS boleta_vacio',
                 'docum_cotizacion.doc_eir',
+                'docum_cotizacion.cima',
                 'asignaciones.id_proveedor',
                 'asignaciones.fecha_inicio',
                 'asignaciones.fecha_fin',
@@ -947,6 +948,7 @@ public function export_cxp(Request $request)
     $cartaPorte = $cot->carta_porte;
     $boletaVacio = $cot->boleta_vacio;
     $docEir = $cot->doc_eir;
+    
     $tipo = "";
 
     $proveedorNombre = null;
@@ -973,21 +975,23 @@ public function export_cxp(Request $request)
         $tipo = "Full";
     }
 
-    return [
-        "id"=> $cot->id,
-        "cliente"=> $cot->cliente,
-        "num_contenedor"=>$numContenedor,
-        "doc_ccp"=> $docCCP,
-        "boleta_liberacion"=> $boletaLiberacion,
-        "doda"=> $doda,
-        "carta_porte"=> $cartaPorte,
-        "boleta_vacio"=> $boletaVacio,
-        "doc_eir"=> $docEir,
-        "proveedor" => $proveedorNombre,
-        "fecha_inicio"=> $cot->fecha_inicio,
-        "fecha_fin"=> $cot->fecha_fin,
-        "tipo" => $tipo
-    ];
+   return [
+    "id"=> $cot->id,
+    "cliente"=> $cot->cliente,
+    "num_contenedor"=>$numContenedor,
+    "doc_ccp"=> $docCCP,
+    "boleta_liberacion"=> $boletaLiberacion,
+    "doda"=> $doda,
+    "carta_porte"=> $cartaPorte,
+    "boleta_vacio"=> $boletaVacio,
+    "doc_eir"=> $docEir,
+    "proveedor" => $proveedorNombre,
+    "fecha_inicio"=> $cot->fecha_inicio,
+    "fecha_fin"=> $cot->fecha_fin,
+    "tipo" => $tipo,
+    "cima" => $cot->cima // 👈 agrega esta línea
+];
+
 });
 
     
@@ -1064,6 +1068,7 @@ public function export_documentos(Request $request)
             'cotizaciones.carta_porte',
             'docum_cotizacion.boleta_vacio',
             'docum_cotizacion.doc_eir',
+            'docum_cotizacion.cima',
             'cotizaciones.referencia_full'
         )
         ->get();
@@ -1114,7 +1119,8 @@ public function export_documentos(Request $request)
             "id_proveedor"=> $cot->id_proveedor,
             "fecha_inicio"=> $cot->fecha_inicio,
             "fecha_fin"=> $cot->fecha_fin,
-            "tipo" => $tipo
+            "tipo" => $tipo,
+            "cima" => $cot->cima,
         ];
     });
 
@@ -1331,23 +1337,18 @@ public function export_documentos(Request $request)
 
 public function index_gxp(Request $request)
 {
-    $fecha_inicio = $request->get('fecha_inicio');
-    $fecha_fin = $request->get('fecha_fin');
-
     $gastos = GastosOperadores::with([
         'Asignaciones.Proveedor',
         'Asignaciones.Contenedor.Cotizacion.Cliente',
         'Asignaciones.Contenedor.Cotizacion.Subcliente'
     ])
     ->whereHas('Asignaciones', fn ($q) => $q->where('id_empresa', auth()->user()->id_empresa))
-    ->where('estatus', '!=', 'Pagado');
+    ->where('estatus', '!=', 'Pagado')
+    ->get();
 
-    if ($fecha_inicio && $fecha_fin) {
-        $gastos->whereBetween('created_at', [$fecha_inicio . ' 00:00:00', $fecha_fin . ' 23:59:59']);
-    }
-
-    $data = $gastos->get()->map(function ($g) {
+    $data = $gastos->map(function ($g) {
         $asignacion = $g->Asignaciones;
+
         return [
             'id' => $g->id,
             'operador' => optional($g->Operador)->nombre ?? '-',
@@ -1356,15 +1357,16 @@ public function index_gxp(Request $request)
             'num_contenedor' => optional($asignacion->Contenedor)->num_contenedor ?? '-',
             'monto' => $g->cantidad ?? 0,
             'motivo' => $g->tipo ?? 'Gasto pendiente',
+            'fecha_inicio' => $asignacion?->fecha_inicio,
+            'fecha_fin' => $asignacion?->fecha_fin,
             'fecha_movimiento' => $g->created_at,
             'fecha_aplicacion' => $g->fecha_pago,
         ];
     });
 
-    return view('reporteria.gxp.index', [
-        'gastos' => $data,
-    ]);
+    return view('reporteria.gxp.index', ['gastos' => $data]);
 }
+
 
 
 public function getGastosPorPagarData()
@@ -1384,7 +1386,6 @@ public function getGastosPorPagarData()
     $data = $gastos->map(function ($g) {
         $asignacion = $g->Asignaciones;
 
-        // buscar el nombre del proveedor con el ID que está en la asignación
         $proveedorNombre = '-';
         if ($asignacion && $asignacion->id_proveedor) {
             $proveedor = \App\Models\Proveedor::find($asignacion->id_proveedor);
@@ -1392,17 +1393,18 @@ public function getGastosPorPagarData()
         }
 
         return [
-    'id' => $g->id,
-    'operador' => optional($g->Operador)->nombre ?? '-',
-    'cliente' => optional($a?->Contenedor?->Cotizacion?->Cliente)->nombre ?? '-',
-    'subcliente' => optional($a?->Contenedor?->Cotizacion?->Subcliente)->nombre ?? '-',
-    'num_contenedor' => optional($a?->Contenedor)->num_contenedor ?? '-',
-    'monto' => $g->cantidad ?? 0,
-    'motivo' => $g->tipo ?? 'Gasto pendiente',
-    'fecha_movimiento' => $g->created_at ? Carbon::parse($g->created_at)->format('d/m/Y') : '-',
-    'fecha_aplicacion' => $g->fecha_pago ? Carbon::parse($g->fecha_pago)->format('d/m/Y') : '-',
-];
-
+            'id' => $g->id,
+            'operador' => optional($g->Operador)->nombre ?? '-',
+            'cliente' => optional($asignacion?->Contenedor?->Cotizacion?->Cliente)->nombre ?? '-',
+            'subcliente' => optional($asignacion?->Contenedor?->Cotizacion?->Subcliente)->nombre ?? '-',
+            'num_contenedor' => optional($asignacion?->Contenedor)->num_contenedor ?? '-',
+            'monto' => $g->cantidad ?? 0,
+            'motivo' => $g->tipo ?? 'Gasto pendiente',
+            'fecha_movimiento' => $g->created_at ? Carbon::parse($g->created_at)->format('Y-m-d') : null,
+            'fecha_aplicacion' => $g->fecha_pago ? Carbon::parse($g->fecha_pago)->format('Y-m-d') : null,
+            'fecha_inicio' => $asignacion?->fecha_inicio ? Carbon::parse($asignacion->fecha_inicio)->format('Y-m-d') : null,
+            'fecha_fin' => $asignacion?->fecha_fin ? Carbon::parse($asignacion->fecha_fin)->format('Y-m-d') : null,
+        ];
     });
 
     return response()->json($data);

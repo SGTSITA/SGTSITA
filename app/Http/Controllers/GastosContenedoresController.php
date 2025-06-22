@@ -10,6 +10,9 @@ use App\Models\BancoDinero;
 use Auth;
 use DB;
 use Carbon\Carbon;
+use App\Exports\GastosPorPagarExport;
+use Maatwebsite\Excel\Facades\Excel;
+use PDF;
 
 
 class GastosContenedoresController extends Controller
@@ -41,6 +44,8 @@ class GastosContenedoresController extends Controller
           
             'FechaGasto' => Carbon::parse($g->created_at)->format('Y-m-d'),
             'FechaPago' => $g->fecha_pago,
+             'fecha_inicio' => optional($asignacion)->fecha_inicio,
+'fecha_fin' => optional($asignacion)->fecha_fin,
         ];
     });
 
@@ -128,4 +133,30 @@ class GastosContenedoresController extends Controller
 
         }
     }
+
+    public function exportarSeleccionados(Request $request)
+{
+    $ids = $request->input('selected_ids', []);
+    $tipo = $request->input('fileType');
+
+    if (empty($ids)) {
+        return response()->json(['error' => 'No hay registros seleccionados.'], 422);
+    }
+
+    $exportador = new GastosPorPagarExport($ids); // ✅ Ya recibe los IDs
+
+    if ($tipo === 'xlsx') {
+        return Excel::download($exportador, 'gastos_seleccionados.xlsx');
+    }
+
+    if ($tipo === 'pdf') {
+        $pdf = PDF::loadView('reporteria.gxp.excel', [
+            'gastos' => $exportador->getGastosData($ids), // Usa tu lógica existente
+            'isExcel' => false
+        ]);
+        return $pdf->download('gastos_seleccionados.pdf');
+    }
+
+    return response()->json(['error' => 'Tipo no válido'], 400);
+}
 }
