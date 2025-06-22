@@ -13,7 +13,7 @@ use App\Http\Controllers\CuentaGlobalController;
 
 use App\Http\Controllers\GpsController;
 use App\Http\Controllers\ContactoController;
-
+use App\Http\Controllers\ReporteriaController;
 
 Route::group(["prefix" => "gps"],function(){
  Route::get('globalgps/ubicacion/by-imei/{imei}',[GpsController::class,'obtenerUbicacionByImei'])->name('ubicacion.byimei');
@@ -23,7 +23,7 @@ Route::group(["prefix" => "gps"],function(){
 Route::post('/exportar-cxc', [ReporteriaController::class, 'export'])->name('exportar.cxc');
 Route::post('sendfiles',[ExternosController::class,'sendFiles1'])->name('file-manager.sendfiles');
 
-use App\Http\Controllers\ReporteriaController;
+
 
 // Ruta para mostrar el formulario de búsqueda
 Route::get('/reporteria', [ReporteriaController::class, 'index'])->name('reporteria.index');
@@ -58,8 +58,14 @@ include('externos.php');
 include('api.php');
 
 Route::get('/', function () {
-    return view('auth.login');
+    return view('landing.index');
+   // return view('auth.login');
+
 });
+
+Route::get('aviso-privacidad',function(){
+    return view('landing.aviso-privacidad');
+})->name('aviso-privacidad');
 
 // =============== M O D U L O   login custom ===============================
 
