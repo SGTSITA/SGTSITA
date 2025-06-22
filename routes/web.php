@@ -24,8 +24,8 @@ Route::group(["prefix" => "gps"],function(){
 
 Route::group(["prefix" => "whatsapp"],function(){
     Route::get('sendtext/{phone}/{text}',[WhatsAppController::class,'sendText'])->name('whatsapp.text');
-    Route::get('webhook',[WhatsAppController::class,'verifyWebHook'])->name('whatsapp.verify.webhook');
-    Route::post('webhook',[WhatsAppController::class,'webHook'])->name('whatsapp.webhook');
+    Route::get('webhook',[WhatsAppController::class,'webHook'])->name('whatsapp.webhook');
+    Route::post('webhook',[WhatsAppController::class,'verifyWebHook'])->name('whatsapp.verify.webhook');
 
 });
 
