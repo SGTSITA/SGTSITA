@@ -1,8 +1,9 @@
-@extends('layouts.usuario_externo')
+@extends('layouts.app')
+
+@section('template_title', 'Convoys')
 
 
-
-@section('WorkSpace')
+@section('content')
 <style>
     #contenedoreseditar {
         font-size: 0.85rem;
@@ -163,6 +164,10 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 
+<!-- JS de Select2 -->
+
+
+    <!-- Nuestro JavaScript unificado -->
     <script
         src="{{ asset('js/sgt/coordenadas/coordenadasconboys.js') }}?v={{ filemtime(public_path('js/sgt/coordenadas/coordenadasconboys.js')) }}">
     </script>

@@ -57,18 +57,18 @@ input:checked + .slider {
 }
 
 input:checked + .slider:before {
-  transform: translateX(170px); /* Mueve el círculo completamente a la derecha */
+  transform: translateX(170px); 
 }
 
 input:checked + .slider #ubicacion-texto {
-  transform: translateX(80px); /* Mueve el texto hacia la derecha cuando activado */
+  transform: translateX(80px); 
 }
 
 input:not(:checked) + .slider #ubicacion-texto {
-  transform: translateX(-80px); /* Mueve el texto a la izquierda cuando desactivado */
+  transform: translateX(-80px); 
 }
 .btn-close {
-    filter: invert(1); /* Invierte el color (útil en fondos blancos) */
+    filter: invert(1); 
 }
 </style>
     

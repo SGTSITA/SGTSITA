@@ -122,7 +122,7 @@
 
 @endsection
 
-@push('custom-javascript')
+@push('javascript')
     <!-- AG Grid -->
     <script src="https://unpkg.com/ag-grid-community/dist/ag-grid-community.min.js"></script>
 

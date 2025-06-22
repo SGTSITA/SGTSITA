@@ -12,6 +12,21 @@ use Illuminate\Support\Facades\Auth;
 
 class ConboysController extends Controller
 {
+    //externos
+    public function exindex()
+    {
+         
+
+        return view('mec.coordenadas.index');
+    }
+
+ public function  exindexconvoy()
+    {
+            return view('mec.coordenadas.indexconvoy');
+
+    }
+
+    //end externos
      public function index()
     {
          

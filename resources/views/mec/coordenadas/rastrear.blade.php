@@ -1,7 +1,5 @@
 @extends('layouts.usuario_externo')
 
-
-
 @section('WorkSpace')
 <style>
 .switch {
@@ -70,7 +68,7 @@ input:not(:checked) + .slider #ubicacion-texto {
     filter: invert(1); /* Invierte el color (útil en fondos blancos) */
 }
 </style>
-    
+
 <div class="container-fluid py-4 px-3 bg-gray-100 min-h-screen">
     <div class="row justify-content-center">
         <div class="col-sm-12">
@@ -178,8 +176,8 @@ input:not(:checked) + .slider #ubicacion-texto {
   <div class="modal-dialog modal-dialog-centered modal-lg">
     <div class="modal-content shadow-lg rounded-4">
       <div class="modal-header bg-primary text-white rounded-top-4">
-        <h5 class="modal-title" id="modalInfoViajeLabel">
-          <i class="bi bi-truck-front-fill me-2"></i> Información del Viaje
+      <h5 class="modal-title text-white" id="modalInfoViajeLabel">
+          <i class="bi bi-truck-front-fill me-2 text-white"></i> Información del Viaje
         </h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
       </div>
@@ -193,14 +191,10 @@ input:not(:checked) + .slider #ubicacion-texto {
       </div>
     </div>
   </div>
-</div>
-
-    
 @endsection
 
-@push('custom-javascript')
-    <!-- AG Grid -->
-    <script src="https://unpkg.com/ag-grid-community/dist/ag-grid-community.min.js"></script>
+@push('javascript')
+<script src="https://unpkg.com/ag-grid-community/dist/ag-grid-community.min.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
@@ -213,4 +207,7 @@ input:not(:checked) + .slider #ubicacion-texto {
         src="{{ asset('js/sgt/coordenadas/coordenadasRastreoGPS.js') }}?v={{ filemtime(public_path('js/sgt/coordenadas/coordenadasRastreoGPS.js')) }}">
     </script>
 
+
 @endpush
+
+
