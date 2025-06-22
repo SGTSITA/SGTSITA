@@ -228,7 +228,7 @@ class ExternosController extends Controller
                 WhatsAppController::sendText($r->wa_phone, $r->message);
                 foreach($files as $file){
                     $urlFile = "https://sgt.gologipro.com/".public_path($file['file']);
-                    $urlFile = str_replace('/var/www/html/public/','',$urlFile);
+                    $urlFile = str_replace('/var/www/html/SGTSITA/public/','',$urlFile);
                     $fileLabel = $file['documentSubject']." del contenedor ".$r->numContenedor;
                     $enviar = WhatsAppController::sendFile($r->wa_phone,'document', $urlFile, $fileLabel,$file['documentSubject']);
                     \Log::debug($enviar);
