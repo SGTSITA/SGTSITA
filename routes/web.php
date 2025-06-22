@@ -11,6 +11,8 @@ use App\Http\Controllers\EmpresasController;
 use App\Http\Controllers\ExternosController;
 use App\Http\Controllers\CuentaGlobalController;
 
+use App\Http\Controllers\WhatsAppController;
+
 use App\Http\Controllers\GpsController;
 use App\Http\Controllers\ContactoController;
 use App\Http\Controllers\ReporteriaController;
@@ -18,6 +20,13 @@ use App\Http\Controllers\ReporteriaController;
 Route::group(["prefix" => "gps"],function(){
  Route::get('globalgps/ubicacion/by-imei/{imei}',[GpsController::class,'obtenerUbicacionByImei'])->name('ubicacion.byimei');
  Route::get('skyangel/ubicacion/',[GpsController::class,'getLocationSkyAngel'])->name('ubicacion.byimei');
+});
+
+Route::group(["prefix" => "whatsapp"],function(){
+    Route::get('sendtext/{phone}/{text}',[WhatsAppController::class,'sendText'])->name('whatsapp.text');
+    Route::get('webhook',[WhatsAppController::class,'verifyWebHook'])->name('whatsapp.verify.webhook');
+    Route::post('webhook',[WhatsAppController::class,'verifyWebHook'])->name('whatsapp.webhook');
+
 });
 
 Route::post('/exportar-cxc', [ReporteriaController::class, 'export'])->name('exportar.cxc');

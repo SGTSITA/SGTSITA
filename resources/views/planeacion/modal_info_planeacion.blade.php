@@ -74,7 +74,7 @@
               <thead>
                 <tr>
                   <th>Boleta de Liberación</th>
-                  <th>Carta Porte</th>
+                  <th>Formato CCP</th>
                   <th>DODA</th>
                   <th>Boleta Vacío</th>
                   <th>EIR</th>
