@@ -20,8 +20,10 @@ Route::group(["prefix" => "gps"],function(){
 
 Route::group(["prefix" => "whatsapp"],function(){
     Route::get('sendtext/{phone}/{text}',[WhatsAppController::class,'sendText'])->name('whatsapp.text');
-    Route::get('skyangel/ubicacion/',[GpsController::class,'getLocationSkyAngel'])->name('ubicacion.byimei');
-   });
+    Route::get('webhook',[WhatsAppController::class,'verifyWebHook'])->name('whatsapp.verify.webhook');
+    Route::post('webhook',[WhatsAppController::class,'verifyWebHook'])->name('whatsapp.webhook');
+
+});
 
 Route::post('/exportar-cxc', [ReporteriaController::class, 'export'])->name('exportar.cxc');
 Route::post('sendfiles',[ExternosController::class,'sendFiles1'])->name('file-manager.sendfiles');
