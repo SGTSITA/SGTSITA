@@ -165,10 +165,34 @@
                                             <span class="menu-title">Compartir Coordenadas</span>
                                         </a>
                                     </div>
+                                    <div class="menu-item">
+                                        <a href="{{ route('exrastrearContenedor') }}" class="menu-link">
+                                            <span class="menu-bullet">
+                                            <span class="bullet bullet-dot"></span>
+                                            </span>
+                                            <span class="menu-title">Rastrear Viajes</span>
+                                        </a>
+                                        </div>
+                                        <div class="menu-item">
+                                        <a href="{{ route('exindex.conboys') }}" class="menu-link">
+                                            <span class="menu-bullet">
+                                            <span class="bullet bullet-dot"></span>
+                                            </span>
+                                            <span class="menu-title">Convoys Virtuales</span>
+                                        </a>
+                                        </div>
+                                        <div class="menu-item">
+                                        <a href="{{ route('exfind-convoy') }}" class="menu-link">
+                                            <span class="menu-bullet">
+                                            <span class="bullet bullet-dot"></span>
+                                            </span>
+                                            <span class="menu-title">Encontrar Convoys</span>
+                                        </a>
+                                    </div>
                                 </div>
                             </div>
-
-                            <!--coordenadas -->
+                                 <!--END coordenadas -->
+                           
                             <!-- contactos -->
                             <div data-kt-menu-trigger="click" class="menu-item menu-accordion">
                                 <span class="menu-link">

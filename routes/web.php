@@ -96,7 +96,33 @@ Route::get('coordenadas/busqueda', [App\Http\Controllers\CoordenadasController::
 Route::get('/coordenadas/contenedor/search', [App\Http\Controllers\CoordenadasController::class, 'getcoorcontenedor'])->name('getcoorcontenedor');
 
 Route::post('/coordenadas/archivo', [App\Http\Controllers\CoordenadasController::class, 'subirArchivo'])->name('coordenadas.archivo');
+Route::get('/coordenadas/contenedor/searchEquGps', [App\Http\Controllers\CoordenadasController::class, 'getEquiposGps'])->name('getEquiposGps');
+Route::post('/coordenadas/ubicacion-vehiculo', [App\Http\Controllers\GpsController::class, 'obtenerUbicacionByImei'])->name('coordenadas.ubicacion');
 
+//coordenadas -> conboys virtuales
+
+Route::get('coordenadas/conboys', [App\Http\Controllers\ConboysController::class, 'index'])->name('index.conboys');
+Route::get('coordenadas/conboys/create', [App\Http\Controllers\ConboysController::class, 'create'])->name('create.conboys');
+Route::post('coordenadas/conboys/store', [App\Http\Controllers\ConboysController::class, 'store'])->name('store.conboys');
+Route::get('coordenadas/conboys/edit/{id}', [App\Http\Controllers\ConboysController::class, 'edit'])->name('edit.conboys');
+Route::post('coordenadas/conboys/update', [App\Http\Controllers\ConboysController::class, 'update'])->name('update.conboys');
+Route::delete('coordenadas/conboys/delete', [App\Http\Controllers\ConboysController::class, 'destroy'])->name('destroy.conboys');
+
+Route::get('coordenadas/conboys/getconboys', [App\Http\Controllers\ConboysController::class, 'getConboys'])->name('getConboys.conboys');
+Route::get('/coordenadas/conboys/getHistorialUbicaciones', [App\Http\Controllers\ConboysController::class, 'getHistorialUbicaciones'])->name('getHistorialUbicaciones.conboys');
+
+
+Route::post('coordenadas/rastrear/savehistori', [App\Http\Controllers\ConboysController::class, 'guardarCoordenadasseguimintos'])->name('rastrear.savehistori');
+Route::get('coordenadas/conboys/encontrar/', [App\Http\Controllers\ConboysController::class, 'indexconvoy'])->name('find-convoy');
+
+
+Route::get('/coordenadas/conboys/getconvoy/{numero}', [App\Http\Controllers\ConboysController::class, 'buscarPorNumero'])->name('findbyNumber');
+Route::post('/coordenadas/conboys/agregar', [App\Http\Controllers\ConboysController::class, 'addContenedores'])->name('updateConvoyEmpresas');
+Route::get('/coordenadas/conboys/historialUbi', [App\Http\Controllers\ConboysController::class, 'HistorialUbicaciones'])->name('HistorialUbicaciones');
+
+Route::get('/mapa-comparacion', function () {
+    return view('conboys.mapa_comparacion');
+});
 //R
 
 

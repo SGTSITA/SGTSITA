@@ -59,7 +59,9 @@ Route::get('coordenadas/extmapas', [App\Http\Controllers\CoordenadasController::
 Route::get('coordenadas/extbusqueda', [App\Http\Controllers\CoordenadasController::class, 'extindexSeach'])->name('seach.extcoordenadas');
 Route::get('coordenadas/extcompartir', [App\Http\Controllers\CoordenadasController::class, 'extcompartir'])->name('extcompartircoor');
 Route::post('coordenadas/extsearchDoctos', [App\Http\Controllers\CoordenadasController::class, 'encontrarURLfoto'])->name('extsearchDoctos');
-
-   
+//ext 
+Route::get('/coordenadas/exrastrear', [App\Http\Controllers\CoordenadasController::class, 'exrastrearIndex'])->name('exrastrearContenedor');
+Route::get('coordenadas/exconboys', [App\Http\Controllers\ConboysController::class, 'exindex'])->name('exindex.conboys');
+Route::get('coordenadas/conboys/ex-encontrar/', [App\Http\Controllers\ConboysController::class, 'exindexconvoy'])->name('exfind-convoy');
 
 });
