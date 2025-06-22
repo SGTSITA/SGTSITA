@@ -8,7 +8,7 @@ class WhatsAppController extends Controller
 {
 
     public static function sendText($phone, $message){
-      $endpoint = 'https://graph.facebook.com/v22.0/688210844375094/messages';
+      $endpoint = 'https://graph.facebook.com/v22.0/708560132336379/messages';
       $token = ENV('WHATSAPP_TOKEN');
 		
 		  $Header = array('Content-Type:application/json',
@@ -45,7 +45,7 @@ class WhatsAppController extends Controller
     public static function sendFile($phone, $typeFile, $urlFile, $caption, $titleFile)
     {
         try {
-            $endpoint = 'https://graph.facebook.com/v22.0/688210844375094/messages';
+            $endpoint = 'https://graph.facebook.com/v22.0/708560132336379/messages';
             $token = env('WHATSAPP_TOKEN');
 
             $headers = [
