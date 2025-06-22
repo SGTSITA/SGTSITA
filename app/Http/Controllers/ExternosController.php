@@ -232,6 +232,7 @@ class ExternosController extends Controller
                     $fileLabel = $file['documentSubject']." del contenedor ".$r->numContenedor;
                     $enviar = WhatsAppController::sendFile($r->wa_phone,'document', $urlFile, $fileLabel,$file['documentSubject']);
                     \Log::debug($enviar);
+                    \Log::debug($urlFile);
                 }
                 return response()->json(["TMensaje" => "success", "Titulo" => "Mensaje WhatsApp enviado correctamente","Mensaje" => "Se ha enviado mensaje con los archivos seleccionados"]);
 
