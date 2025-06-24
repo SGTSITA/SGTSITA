@@ -226,14 +226,22 @@
                                                 </div>
                                             </div>
 
-                                            <div class="col-12">
-                                                <h5 class="fw-bold mb-2  mt-3">Dirección entrega</h5>
-                                                <div class="input-group" >
-                                                    <span class="input-group-text">Dirección Entrega</span>
-                                                    <textarea class="form-control" name="direccion_entrega" id="direccion_entrega" aria-label="Dirección Entrega">{{$cotizacion->direccion_entrega}}</textarea>
+                                           <div class="col-12">
+                                                <h5 class="fw-bold mb-2 mt-3">Dirección entrega</h5>
+
+                                                <!-- <label class="form-label" for="direccion_entrega">Dirección Entrega</label> -->
+                                                <textarea class="form-control" placeholder="Dirección entrega" name="direccion_entrega" id="direccion_entrega" aria-label="Dirección Entrega">{{$cotizacion->direccion_entrega}}</textarea>
+
+                                                <div class="mt-2">
+                                                    <button type="button"  class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#mapModal">📍 Seleccionar en mapa</button>
                                                 </div>
+
+                                                <input class="form-control" type="hidden" name="latitud" id="latitud" value="{{ $cotizacion->latitud }}">
+                                                <input class="form-control" type="hidden" name="longitud" id="longitud" value="{{ $cotizacion->longitud }}">
+                                                <input class="form-control" type="hidden" name="direccion_mapa" id="direccion_mapa" value="{{ $cotizacion->direccion_mapa }}">
+                                                <input class="form-control" type="hidden" name="fecha_seleccion" id="fecha_seleccion" value="{{ $cotizacion->fecha_seleccion }}">
                                             </div>
-                                            </div>
+                                        </div>
 
                                             <div class="col-6 mt-2 form-group">
                                                 <label for="name">Fecha modulación</label>
@@ -1186,6 +1194,8 @@
 @include('cotizaciones.modal_agregar_gasto_operador')
 @include('cotizaciones.modal_pagar_gastos_operador')
 @include('cotizaciones.modal_fileuploader')
+@include('cotizaciones.modal_mapa_Direccion')
+
 @endsection
 
 @section('select2')
@@ -1208,6 +1218,8 @@
     background-color: transparent !important;
     }
     </style>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script src="{{ asset('assets/vendor/jquery/dist/jquery.min.js')}}"></script>
     <script src="{{ asset('assets/vendor/select2/dist/js/select2.min.js')}}"></script>
     <script src="{{ asset('js/sgt/common.js') }}?v={{ filemtime(public_path('js/sgt/common.js')) }}"></script>
@@ -1223,6 +1235,7 @@
     <script src="{{ asset('js/sgt/cotizaciones/cotizacion-gastos-operador.js') }}?v={{ filemtime(public_path('js/sgt/cotizaciones/cotizacion-gastos-operador.js')) }}"></script>
 
     <script src="{{ asset('js/sgt/cotizaciones/cotizacion-fileuploader.js') }}?v={{ filemtime(public_path('js/sgt/cotizaciones/cotizacion-fileuploader.js')) }}"></script>
+    
     <style>
   .custom-nav-tabs {
     display: flex;

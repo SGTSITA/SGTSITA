@@ -1,7 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-
+use Laravel\Socialite\Facades\Socialite;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
@@ -22,12 +22,17 @@ Route::group(["prefix" => "gps"],function(){
  Route::get('skyangel/ubicacion/',[GpsController::class,'getLocationSkyAngel'])->name('ubicacion.byimei');
 });
 
+
+
+use App\Models\User;
+
 Route::group(["prefix" => "whatsapp"],function(){
     Route::get('sendtext/{phone}/{text}',[WhatsAppController::class,'sendText'])->name('whatsapp.text');
     Route::get('webhook',[WhatsAppController::class,'webHook'])->name('whatsapp.webhook');
     Route::post('webhook',[WhatsAppController::class,'verifyWebHook'])->name('whatsapp.verify.webhook');
 
 });
+
 
 Route::post('/exportar-cxc', [ReporteriaController::class, 'export'])->name('exportar.cxc');
 Route::post('sendfiles',[ExternosController::class,'sendFiles1'])->name('file-manager.sendfiles');
@@ -85,7 +90,45 @@ Route::get('registration', [App\Http\Controllers\CustomAuthController::class, 'r
 Route::post('custom-registration', [App\Http\Controllers\CustomAuthController::class, 'customRegistration'])->name('register.custom');
 Route::get('signout', [App\Http\Controllers\CustomAuthController::class, 'signOut'])->name('signout');
 
+//cambio empresa usuario 
+Route::post('/cambiar-empresa', [App\Http\Controllers\UserController::class, 'cambiarEmpresa'])->name('usuario.cambiarEmpresa');
+//
 
+//google
+Route::get('/auth/google', function () {
+    return Socialite::driver('google')->redirect();
+})->name('google.redirect');
+
+// Callback de Google
+Route::get('/auth/google/callback', function () {
+    $googleUser = Socialite::driver('google')->stateless()->user();
+
+    $user = \App\Models\User::where('email', $googleUser->getEmail())->first();
+
+    if ($user) {
+        // Solo actualiza los datos de Google, sin tocar la contraseña
+        $user->update([
+            'google_id' => $googleUser->getId(),
+            'avatar' => $googleUser->getAvatar(),
+            'name' => $googleUser->getName(),
+        ]);
+    } else {
+        // Usuario nuevo desde Google
+        $user = \App\Models\User::create([
+            'email' => $googleUser->getEmail(),
+            'name' => $googleUser->getName(),
+            'google_id' => $googleUser->getId(),
+            'avatar' => $googleUser->getAvatar(),
+            'password' => Hash::make(Str::random(24)),
+            'id_empresa' => 1,
+            'id_cliente' => 0,
+        ]);
+    }
+
+    Auth::login($user);
+    return redirect('/dashboard');
+});
+//
 Auth::routes();
 
 Route::get('/dashboard', [HomeController::class, 'index'])->name('dashboard');
@@ -103,6 +146,8 @@ Route::post('coordenadas/guardarresp', [App\Http\Controllers\CoordenadasControll
 Route::get('coordenadas/mapas', [App\Http\Controllers\CoordenadasController::class, 'indexMapa'])->name('ver.coordenadamapa');
 Route::get('coordenadas/busqueda', [App\Http\Controllers\CoordenadasController::class, 'indexSeach'])->name('seach.coordenadas');
 Route::get('/coordenadas/contenedor/search', [App\Http\Controllers\CoordenadasController::class, 'getcoorcontenedor'])->name('getcoorcontenedor');
+
+Route::get('/coordenadas/rastrear', [App\Http\Controllers\CoordenadasController::class, 'rastrearIndex'])->name('rastrearContenedor');
 
 Route::post('/coordenadas/archivo', [App\Http\Controllers\CoordenadasController::class, 'subirArchivo'])->name('coordenadas.archivo');
 Route::get('/coordenadas/contenedor/searchEquGps', [App\Http\Controllers\CoordenadasController::class, 'getEquiposGps'])->name('getEquiposGps');
@@ -133,6 +178,8 @@ Route::get('/mapa-comparacion', function () {
     return view('conboys.mapa_comparacion');
 });
 //R
+
+
 
 
 Route::group(['middleware' => ['auth']], function() {

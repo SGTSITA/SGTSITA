@@ -318,4 +318,34 @@
 
 @section('content')
 
+
+<!--modal cambiar de empresa menu  -->
+  <div class="modal fade" id="modalCambiarEmpresa" tabindex="-1" aria-labelledby="modalCambiarEmpresaLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form method="POST" action="{{ route('usuario.cambiarEmpresa') }}">
+        @csrf
+        <div class="modal-header">
+     
+          <h5 class="modal-title" id="modalCambiarEmpresaLabel">Seleccionar Empresa</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          <label for="empresa">Empresa:</label>
+          <select name="empresa_id" id="empresa_id" class="form-control" required>
+            @foreach ($empresasAsignadas as $empresa)
+                <option value="{{ $empresa->id }}" {{ $empresa->id == $empActual ? 'selected' : '' }}>
+                  {{ $empresa->id ."-". $empresa->nombre }}
+                </option>
+            @endforeach
+          </select>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Cambiar</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
 @endsection

@@ -17,9 +17,9 @@
                   Regresar
               </a>
 
-              <h3 class="mb-3">Users Management</h3>
+              <h3 class="mb-3">Usuarios</h3>
 
-              <a class="btn" href="{{ route('users.create') }}" style="background: {{$configuracion->color_boton_add}}; color: #ffff"> Create New User</a>
+              <a class="btn" href="{{ route('users.create') }}" style="background: {{$configuracion->color_boton_add}}; color: #ffff"> Nuevo Usuario</a>
                 </div>
             </div>
 

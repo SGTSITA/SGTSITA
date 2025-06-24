@@ -838,6 +838,11 @@ public function getCotizacionesCanceladas()
 
 */
             $cotizaciones->restante = $request->total;
+
+            $cotizaciones->latitud=  $request->latitud;
+            $cotizaciones->longitud = $request->longitud;
+             $cotizaciones->direccion_mapa = $request->direccion_mapa;
+             
             
 
             $asignacion = Asignaciones::where('id_contenedor', $id)->first();
