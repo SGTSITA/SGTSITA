@@ -13,19 +13,22 @@ Gastos Generales
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                             <h5 id="card_title">
                                 Gastos Generales
-                                <p class="text-sm mb-0">
+                                <!--p class="text-sm mb-0">
                                     <i class="fa fa-calendar text-success"></i>
-                                    <span class="font-weight-bold">Periodo:</span> del 
-                                </p>
+                                    <span class="font-weight-bold">Periodo:</span> del  
+                                </p-->
                             </h5>
 
                               @can('gastos-create')
                              <div class="float-right">
+                                <button type="button" class="btn btn-sm bg-gradient-info" data-bs-toggle="modal" data-bs-target="#exampleModal">
+                                    <i class="fa fa-fw fa-plus"></i>  Agregar Gasto
+                                </button>
                                 <button type="button" class="btn btn-sm bg-gradient-success" id="btnDiferir">
                                     <i class="fa fa-fw fa-coins"></i> Aplicar Pago
                                 </button>
-                                <button type="button" class="btn btn-sm bg-gradient-info" data-bs-toggle="modal" data-bs-target="#exampleModal">
-                                    <i class="fa fa-fw fa-plus"></i>  Agregar Gasto
+                                <button type="button" class="btn btn-sm bg-gradient-danger" id="btnEliminarGasto">
+                                    <i class="fa fa-fw fa-trash"></i>  Eliminar Gasto
                                 </button>
                               </div>
                               @endcan

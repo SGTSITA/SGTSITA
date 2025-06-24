@@ -300,12 +300,19 @@ function saveconvoys(datap,urlSave) {
         title: 'Guardado correctamente',
         text: data.message + ' ' + data.no_conboy,
         icon: 'success',
-        confirmButtonText: 'Aceptar'
+        confirmButtonText: 'Aceptar',
+        timer: 1500
+    }).then(() => {
+
+      setTimeout(() => {
+        window.location.reload(); 
+    }, 300); 
+
     });
 
 
      
-    cargaConboys();
+    
   })
   .catch(error => {
     console.error('Error al guardar un conboy:', error);
@@ -415,7 +422,9 @@ const ItemsSelects = [];
     }
 }
 
-function mostrarTab(tab) {
+function mostrarTab(tab, event) {
+    event.preventDefault();
+
     // Ocultar ambos
     document.getElementById('tab-mail').style.display = 'none';
     document.getElementById('tab-whatsapp').style.display = 'none';
@@ -428,7 +437,7 @@ function mostrarTab(tab) {
     document.getElementById(`tab-${tab}`).style.display = 'block';
 
     // Activar tab
-    document.querySelector(`.nav-link[href="#"][onclick*="${tab}"]`).classList.add('active');
+    event.currentTarget.classList.add('active');
 }
 
 function cerrarModal() {

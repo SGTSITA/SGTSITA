@@ -8,9 +8,10 @@ use App\Models\Coordenadas;
 use App\Models\Client;
 use App\Models\Subclientes;
 use App\Models\Proveedor;
+use App\Models\Equipo;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
-use App\Models\Conboys;
+
 
 use Auth;
 
@@ -105,6 +106,15 @@ class CoordenadasController extends Controller
             return [];
         }
     }
+
+
+
+     public function exrastrearIndex(){
+
+             return view('mec.coordenadas.rastrear');
+        }
+
+
     //end externos
 
     public function indexMapa(){
@@ -146,13 +156,13 @@ class CoordenadasController extends Controller
         
         $asignaciones = DB::table('asignaciones')
         ->join('docum_cotizacion', 'docum_cotizacion.id', '=', 'asignaciones.id_contenedor')
-    ->select(
+        ->select(
         'asignaciones.id',
         'asignaciones.id_camion',
         'docum_cotizacion.num_contenedor','asignaciones.fecha_inicio','asignaciones.id_contenedor','foto_patio',
         DB::raw("CASE WHEN asignaciones.id_proveedor IS NULL THEN asignaciones.id_operador ELSE asignaciones.id_proveedor END as beneficiario_id"),
         DB::raw("CASE WHEN asignaciones.id_proveedor IS NULL THEN 'Propio' ELSE 'Subcontratado' END as tipo_contrato")
-    );
+        );
 
         $beneficiarios = DB::table(function ($query) {
             $query->select('id', 'nombre', 'telefono', DB::raw("'Propio' as tipo_contrato"), 'id_empresa')
@@ -165,7 +175,7 @@ class CoordenadasController extends Controller
 
   
         $datos = DB::table('cotizaciones')
-    ->select(
+     ->select(
         'cotizaciones.id as id_cotizacion',
         'asig.id as id_asignacion',
         'coordenadas.id as id_coordenada',
@@ -221,7 +231,7 @@ class CoordenadasController extends Controller
      END as Estatus_Completo"),
      'asig.foto_patio',
      'coordenadas.toma_foto_patio'
-    )
+     )
     ->join('clients', 'cotizaciones.id_cliente', '=', 'clients.id')
     
    ->joinSub($asignaciones, 'asig', function ($join) {
@@ -632,17 +642,17 @@ $idCordenada= $coordenadas->id_coordenadas;
 
         public function  getEquiposGps(Request  $request) 
     {
-       
+
+        $cliendID = auth()->user()->id_cliente;
+       if($cliendID != 0)
+       {
+        $idCliente =$cliendID;
+       }
+         
 
         $params = $request->query();
 
-       // $proveedor = $params['proveedor'] ?? null;  
-       // $cliente = $params['cliente'] ?? null;
-       // $subcliente = $params['subcliente'] ?? null;
-       // $fecha_inicio = $params['fecha_inicio'] ?? null;
-       // $fecha_fin = $params['fecha_fin'] ?? null;
-       // $contenedor = $params['contenedor'] ?? null;
-       // $idCliente = $params['idCliente'] ?? null;
+      
         $contenedoresVarios = $params['contenedores'] ?? null;
         
         $idEmpresa = Auth::User()->id_empresa;
@@ -655,6 +665,7 @@ $idCordenada= $coordenadas->id_coordenadas;
         'asignaciones.id_camion',
         'docum_cotizacion.num_contenedor',
         'asignaciones.fecha_inicio',
+        'asignaciones.fecha_fin',
         
         'equipos.imei', 
         DB::raw("CASE WHEN asignaciones.id_proveedor IS NULL THEN asignaciones.id_operador ELSE asignaciones.id_proveedor END as beneficiario_id"),
@@ -685,6 +696,7 @@ $idCordenada= $coordenadas->id_coordenadas;
        'asig.id_contenedor',
        'asig.tipo_contrato',
        'asig.fecha_inicio',
+       'asig.fecha_fin',
        
     )
     ->join('clients', 'cotizaciones.id_cliente', '=', 'clients.id')
@@ -707,41 +719,57 @@ $idCordenada= $coordenadas->id_coordenadas;
         } else {
             return $query->where('asig.num_contenedor', $contenedores[0]);
         }
-    }) 
+    })->when($idCliente, function ($query) use ($idCliente) {
+         return $query->where('cotizaciones.id_cliente', $idCliente);
+    })    
+    ->where('cotizaciones.estatus', '=', 'Aprobada')
     ->get();
 
  
 
-     $conboys = DB::table('conboys')
-        ->select(
-            'conboys.id',
-            'conboys.no_conboy',
-            'conboys.nombre',
-            'conboys.fecha_inicio',
-            'conboys.fecha_fin',
-            'conboys.user_id'
-        )
-        ->whereIn('conboys.id', function ($query) use ($idEmpresa) {
-            $query->select('conboys_contenedores.conboy_id')
-                ->from('conboys_contenedores')
-                ->join('docum_cotizacion', 'docum_cotizacion.id', '=', 'conboys_contenedores.id_contenedor')
-                ->where('docum_cotizacion.id_empresa', '=', $idEmpresa);
-        })
-        ->get();
+    $conboys = DB::table('conboys')
+    ->join('conboys_contenedores', 'conboys.id', '=', 'conboys_contenedores.conboy_id')
+    ->join('docum_cotizacion', 'docum_cotizacion.id', '=', 'conboys_contenedores.id_contenedor')
+    ->join('cotizaciones', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
+    ->select(
+        'conboys.id',
+        'conboys.no_conboy',
+        'conboys.nombre',
+        'conboys.fecha_inicio',
+        'conboys.fecha_fin',
+        'conboys.user_id'
+    )
+    ->where('docum_cotizacion.id_empresa', '=', $idEmpresa)
+    ->when($idCliente, function ($query) use ($idCliente) {
+        return $query->where('cotizaciones.id_cliente', $idCliente);
+    })
+    ->distinct()
+    ->get();
 
 
      $conboysdetalle =  DB::table('conboys_contenedores')
         ->join('docum_cotizacion', 'docum_cotizacion.id', '=', 'conboys_contenedores.id_contenedor')
         ->join('asignaciones', 'asignaciones.id_contenedor', '=', 'conboys_contenedores.id_contenedor')
+        ->join('cotizaciones', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
         ->join('equipos', 'equipos.id', '=', 'asignaciones.id_camion')
         ->select(
             'conboys_contenedores.conboy_id',
             'conboys_contenedores.id_contenedor',
             'docum_cotizacion.num_contenedor',
-            'equipos.imei',
+            'equipos.imei'
             
         )->where('docum_cotizacion.id_empresa','=',$idEmpresa)
+            ->when($idCliente, function ($query) use ($idCliente) {
+                        return $query->where('cotizaciones.id_cliente', $idCliente);
+                    })
         ->get();
+
+
+
+        $equipos = Equipo::select('id', 'imei', 'tipo', 'marca', 'id_equipo', 'placas')
+    ->where('id_empresa', $idEmpresa)
+     ->whereNotNull('imei')
+    ->get();
             
           if ($datos) {
             return response()->json([
@@ -749,6 +777,7 @@ $idCordenada= $coordenadas->id_coordenadas;
                 'datos' => $datos,
                 'conboys'=> $conboys,
                 'dataConten'=> $conboysdetalle,
+                'equipos'=> $equipos,
             ]);
         } else {
             return response()->json(['success' => false]);

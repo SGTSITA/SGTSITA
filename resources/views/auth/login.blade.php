@@ -75,10 +75,12 @@
             <a href="/" class="mb-0 mb-lg-8">
               <img alt="Logo" src="/assets/metronic/logo-blanco-sgt.png" class="h-35px h-lg-40px" />
             </a>
-            <img class="d-none d-lg-block mx-auto w-275px w-md-50 w-xl-500px mb-10 mb-lg-15" src="/assets/metronic/login-screen.png" alt="" />
             <h1 class="d-none d-lg-block text-white fs-2qx fw-bolder text-center mb-8"> Sistema de Gestión de Transporte </h1>
             <div class="d-none d-lg-block text-white fs-base text-center"> Planeación, coordinación y control del movimiento de mercancías de un lugar a otro. Esto incluye la planificación, implementación y control del transporte de productos y servicios. <a href="#" class="opacity-75-hover text-warning fw-bold me-1"></a>
             </div>
+
+            <img class="d-none d-lg-block mx-auto w-275px w-md-50 w-xl-500px mb-10 mb-lg-15" src="/assets/metronic/ship.webp" alt="" />
+
           </div>
         </div>
       </div>

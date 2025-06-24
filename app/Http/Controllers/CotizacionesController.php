@@ -55,7 +55,7 @@ class CotizacionesController extends Controller
                 $contenedor = $cotizacion->DocCotizacion ? $cotizacion->DocCotizacion->num_contenedor : 'N/A';
 
                 // Si es tipo 'Full', buscamos la secundaria para obtener su contenedor
-                if ($cotizacion->tipo_viaje === 'Full') {
+                if (!is_null($cotizacion->referencia_full)) {
                     $secundaria = Cotizaciones::where('referencia_full', $cotizacion->referencia_full)
                         ->where('jerarquia', 'Secundario')
                         ->with('DocCotizacion.Asignaciones')
@@ -76,7 +76,7 @@ class CotizacionesController extends Controller
                     'coordenadas' => optional($cotizacion->DocCotizacion)->Asignaciones ? 'Ver' : '',
                     'id_asignacion' => optional($cotizacion->DocCotizacion)->Asignaciones->id ?? null,
                     'edit_url' => route('edit.cotizaciones', $cotizacion->id),
-                    'tipo' => $cotizacion->tipo_viaje
+                    'tipo' => (!is_null($cotizacion->referencia_full)) ? 'Full' : 'Sencillo'
                 ];
             });
 
@@ -124,7 +124,7 @@ class CotizacionesController extends Controller
                 $contenedor = $cotizacion->DocCotizacion ? $cotizacion->DocCotizacion->num_contenedor : 'N/A';
 
                 // Si es tipo 'Full', buscamos la secundaria para obtener su contenedor
-                if ($cotizacion->tipo_viaje === 'Full') {
+                if (!is_null($cotizacion->referencia_full)) {
                     $secundaria = Cotizaciones::where('referencia_full', $cotizacion->referencia_full)
                         ->where('jerarquia', 'Secundario')
                         ->with('DocCotizacion.Asignaciones')
@@ -146,7 +146,7 @@ class CotizacionesController extends Controller
                     'id_asignacion' => optional($cotizacion->DocCotizacion)->Asignaciones->id ?? null,
                     'edit_url' => route('edit.cotizaciones', $cotizacion->id),
                     'pdf_url' => route('pdf.cotizaciones', $cotizacion->id),
-                    'tipo' => $cotizacion->tipo_viaje
+                    'tipo' => (!is_null($cotizacion->referencia_full)) ? 'Full' : 'Sencillo'
                 ];
             });
 
@@ -169,7 +169,7 @@ class CotizacionesController extends Controller
                 $contenedor = $cotizacion->DocCotizacion ? $cotizacion->DocCotizacion->num_contenedor : 'N/A';
 
                 // Si es tipo 'Full', buscamos la secundaria para obtener su contenedor
-                if ($cotizacion->tipo_viaje === 'Full') {
+                if (!is_null($cotizacion->referencia_full)) {
                     $secundaria = Cotizaciones::where('referencia_full', $cotizacion->referencia_full)
                         ->where('jerarquia', 'Secundario')
                         ->with('DocCotizacion.Asignaciones')
@@ -189,7 +189,7 @@ class CotizacionesController extends Controller
                     'estatus' => $cotizacion->estatus,
                     'coordenadas' => optional($cotizacion->DocCotizacion)->Asignaciones ? 'Ver' : '',
                     'edit_url' => route('edit.cotizaciones', $cotizacion->id),
-                    'tipo' => $cotizacion->tipo_viaje
+                    'tipo' => (!is_null($cotizacion->referencia_full)) ? 'Full' : 'Sencillo'
                 ];
 
 
@@ -217,7 +217,7 @@ class CotizacionesController extends Controller
                 $contenedor = $cotizacion->DocCotizacion ? $cotizacion->DocCotizacion->num_contenedor : 'N/A';
 
                 // Si es tipo 'Full', buscamos la secundaria para obtener su contenedor
-                if (!is_null($cotizacion->referencia_full )) {
+                if (!is_null($cotizacion->referencia_full)) {
                     $secundaria = Cotizaciones::where('referencia_full', $cotizacion->referencia_full)
                         ->where('jerarquia', 'Secundario')
                         ->with('DocCotizacion.Asignaciones')
@@ -239,7 +239,7 @@ class CotizacionesController extends Controller
                     'estatus' => $cotizacion->estatus,
                     'coordenadas' => optional($cotizacion->DocCotizacion)->Asignaciones ? 'Ver' : '',
                     'edit_url' => route('edit.cotizaciones', $cotizacion->id),
-                    'tipo' => $cotizacion->tipo_viaje,
+                    'tipo' => (!is_null($cotizacion->referencia_full)) ? 'Full' : 'Sencillo',
                     'referencia_full' => $cotizacion->referencia_full
                 ];
             });
@@ -259,7 +259,7 @@ public function getCotizacionesCanceladas()
             $contenedor = $cotizacion->DocCotizacion ? $cotizacion->DocCotizacion->num_contenedor : 'N/A';
 
                 // Si es tipo 'Full', buscamos la secundaria para obtener su contenedor
-                if ($cotizacion->tipo_viaje === 'Full') {
+                if (!is_null($cotizacion->referencia_full)) {
                     $secundaria = Cotizaciones::where('referencia_full', $cotizacion->referencia_full)
                         ->where('jerarquia', 'Secundario')
                         ->with('DocCotizacion.Asignaciones')
@@ -279,7 +279,7 @@ public function getCotizacionesCanceladas()
                 'estatus' => $cotizacion->estatus,
                 'coordenadas' => optional($cotizacion->DocCotizacion)->Asignaciones ? 'Ver' : '',
                 'edit_url' => route('edit.cotizaciones', $cotizacion->id),
-                'tipo' => $cotizacion->tipo_viaje
+                'tipo' => (!is_null($cotizacion->referencia_full)) ? 'Full' : 'Sencillo'
             ];
         });
 

@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Hash;
 use Session;
 use App\Models\User;
+use App\Models\UserEmpresa;
 use Illuminate\Support\Facades\Auth;
 class CustomAuthController extends Controller
 {
@@ -16,28 +17,34 @@ class CustomAuthController extends Controller
 
     public function customLogin(Request $request)
     {
+
+
+    if($request->password == true ){
+
         $request->validate([
-                'email' => 'required|email',
-                'password' => 'required',
-            ]);
+            'email' => 'required',
+            'password' => 'required',
+        ]);
 
-            $credentials = $request->only('email', 'password');
 
-            if (Auth::attempt($credentials)) {
-                $request->session()->regenerate();
+        $credentials = $request->only('email', 'password');
+        if (Auth::attempt($credentials)) {
+            return redirect()->intended('dashboard')
+                        ->withSuccess('Signed in');
+        }
 
-              
+      //  return redirect("login")->withSuccess('Login details are not valid');
+      return response([
+                            "mensaje"=>"Las credenciales de acceso son incorrectas. Verifique su información"
+                        ],401);
 
-                return response()->json([
-                    'mensaje' => 'Inicio de sesión exitoso',
-                    'redirect' => route('dashboard'),
-                  
-                ]);
-            }
+    }else{
 
-            return response()->json([
-                'mensaje' => 'Las credenciales de acceso son incorrectas. Verifique su información.'
-            ], 401);
+        $client = Client::where('email', $request->email)->firstOrFail();
+
+
+
+    }
 
     }
 
@@ -83,7 +90,7 @@ class CustomAuthController extends Controller
        $user = auth()->user();
 
     
-    $empresaInicial = UserEmpresa::where('id_user', $user->id)
+        $empresaInicial = UserEmpresa::where('id_user', $user->id)
         ->where('empresaInicial', 1)
         ->first();
 

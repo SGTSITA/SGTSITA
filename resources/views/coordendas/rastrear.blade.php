@@ -57,18 +57,18 @@ input:checked + .slider {
 }
 
 input:checked + .slider:before {
-  transform: translateX(170px); /* Mueve el círculo completamente a la derecha */
+  transform: translateX(170px); 
 }
 
 input:checked + .slider #ubicacion-texto {
-  transform: translateX(80px); /* Mueve el texto hacia la derecha cuando activado */
+  transform: translateX(80px); 
 }
 
 input:not(:checked) + .slider #ubicacion-texto {
-  transform: translateX(-80px); /* Mueve el texto a la izquierda cuando desactivado */
+  transform: translateX(-80px); 
 }
 .btn-close {
-    filter: invert(1); /* Invierte el color (útil en fondos blancos) */
+    filter: invert(1); 
 }
 </style>
     
@@ -83,7 +83,7 @@ input:not(:checked) + .slider #ubicacion-texto {
              <button id="btnDetener2" class="btn btn-danger mt-2" style="display: none;">
   <i class="bi bi-pause-circle"></i> Detener actualización
 </button>
-                <h3 class="text-xl font-semibold text-center mb-0">Seguimiento Contenedores</h3>
+                <h3 class="text-xl font-semibold text-center mb-0" id="tituloSeguimiento">Seguimiento Convoys</h3>
             </div>
             <div id="map" 
                     style="height: 800px; width: 100%;" 
@@ -105,13 +105,18 @@ input:not(:checked) + .slider #ubicacion-texto {
     <!-- Nav tabs -->
     <ul class="nav nav-tabs" id="filtroTabs" role="tablist">
       <li class="nav-item" role="presentation">
-        <button class="nav-link active" id="convoy-tab" data-bs-toggle="tab" data-bs-target="#filtro-convoy" type="button" role="tab">
+        <button class="nav-link active" id="convoy-tab" data-bs-toggle="tab" data-bs-target="#filtro-convoy" data-id="Convoys" type="button" role="tab">
           Filtrar por Convoy
         </button>
       </li>
       <li class="nav-item" role="presentation">
-        <button class="nav-link" id="contenedor-tab" data-bs-toggle="tab" data-bs-target="#filtro-contenedor" type="button" role="tab">
+        <button class="nav-link" id="contenedor-tab" data-bs-toggle="tab" data-bs-target="#filtro-contenedor" data-id="Contenedores" type="button" role="tab">
           Filtrar por Contenedor
+        </button>
+      </li>
+       <li class="nav-item" role="presentation">
+        <button class="nav-link" id="equipo-tab" data-bs-toggle="tab" data-bs-target="#filtro-Equipo"  data-id="Equipos" type="button" role="tab">
+          Equipo
         </button>
       </li>
     </ul>
@@ -141,6 +146,14 @@ input:not(:checked) + .slider #ubicacion-texto {
         </div>
       </div>
     </div>
+       <div class="tab-pane fade" id="filtro-Equipo" role="tabpanel">
+        <div class="mb-3 position-relative">
+          <label for="Equipo" class="form-label">Equipo</label>
+          <select class="form-select" name="equipo" id="Equipo">
+            <option value="">Seleccione un Equipo</option>
+          </select>
+        </div>
+      </div>
 
     <!-- Tipo búsqueda común -->
     <div class="mb-3 mt-2">

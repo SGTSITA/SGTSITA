@@ -222,7 +222,22 @@ class ExternosController extends Controller
         try{
 
             $files = ( $r->attachmentFiles);
-$attachment = [];
+            $attachment = [];
+
+            if($r->channel == "WhatsApp"){
+                WhatsAppController::sendText($r->wa_phone, $r->message);
+                foreach($files as $file){
+                    $urlFile = "https://sgt.gologipro.com/".public_path($file['file']);
+                    $urlFile = str_replace('/var/www/html/SGTSITA/public/','',$urlFile);
+                    $fileLabel = $file['documentSubject']." del contenedor ".$r->numContenedor;
+                    $enviar = WhatsAppController::sendFile($r->wa_phone,'document', $urlFile, $fileLabel,$file['documentSubject']);
+                    \Log::debug($enviar);
+                    \Log::debug($urlFile);
+                }
+                return response()->json(["TMensaje" => "success", "Titulo" => "Mensaje WhatsApp enviado correctamente","Mensaje" => "Se ha enviado mensaje con los archivos seleccionados"]);
+
+            }
+            
             foreach($files as $file){
                 array_push($attachment,public_path($file['file']));
             }

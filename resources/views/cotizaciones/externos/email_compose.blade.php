@@ -4,7 +4,7 @@
       <div class="modal-body p-0">
         <div class="card">
           <div class="card-header d-flex align-items-center justify-content-between py-3">
-            <h2 class="card-title m-0"> Escribir mensaje </h2>
+            <h2 class="card-title m-0" id="tagEnvioDocumentos"> Enviar documentos: WhatsApp</h2>
             <!--begin::Toggle-->
             <a href="#" class="btn btn-sm btn-icon btn-color-primary btn-light btn-active-light-primary d-lg-none" data-bs-toggle="tooltip" data-bs-dismiss="click" data-bs-placement="top" title="Toggle inbox menu" id="kt_inbox_aside_toggle">
               <i class="ki-duotone ki-burger-menu-2 fs-3 m-0">
@@ -28,7 +28,7 @@
               <!--begin::Body-->
               <div class="d-block">
                 <!--begin::To-->
-                <div class="d-flex align-items-center border-bottom px-8 min-h-50px">
+                <div id="emailAddress" class="d-flex align-items-center border-bottom px-8 min-h-50px">
                   <!--begin::Label-->
                   <div class="text-gray-900 fw-bold w-75px"> Para: </div>
                   <!--end::Label-->
@@ -41,6 +41,15 @@
                     <span class="d-none text-muted fs-bold cursor-pointer text-hover-primary" data-kt-inbox-form="bcc_button">Bcc</span>
                   </div>
                   <!--end::CC & BCC buttons-->
+                </div>
+                <div id="phoneNumber" class="d-flex align-items-center border-bottom px-8 min-h-50px">
+                  <!--begin::Label-->
+                  <div class="text-gray-900 fw-bold w-75px"> Teléfono: </div>
+                  <!--end::Label-->
+                  <!--begin::Input-->
+                  <input type="text" class="form-control form-control-transparent border-0" name="phone_wa" id="phone_wa" />
+                  <!--end::Input-->
+                 
                 </div>
                 <!--end::To-->
                 <!--begin::CC-->

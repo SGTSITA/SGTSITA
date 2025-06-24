@@ -9,41 +9,76 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
 
     <style>
-        body, html {
-            margin: 0;
-            padding: 0;
-            height: 100%;
-        }
+        html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
 
-        #info {
-            background-color: white;
-            padding: 1rem;
-            border-bottom: 1px solid #ccc;
-            z-index: 1000;
-            position: fixed;
-            width: 100%;
-        }
+#mapaComparacion {
+    height: 100vh; /* Ocupa toda la altura visible del navegador */
+    width: 100%;
+    margin: 0;
+    border: none;
+    border-radius: 0;
+}
+     #info table {
+    width: 100%;
+    border-collapse: collapse;
+    box-shadow: 0 0 10px rgba(0,0,0,0.05);
+    font-family: 'Segoe UI', sans-serif;
+    font-size: 14px; /* Más pequeña */
+}
 
-        #mapaComparacion {
-            position: absolute;
-            top: 130px; /* altura del panel superior */
-            bottom: 0;
-            width: 100%;
-        }
+#info th, #info td {
+    border: 1px solid #dee2e6;
+    padding: 6px 8px; /* Menos padding = menos altura */
+    text-align: center;
+    line-height: 1.2; /* Más compacto verticalmente */
+}
 
-        .info-item {
-            margin-bottom: 0.5rem;
-        }
+#info thead {
+    background-color: #0d6efd;
+    color: white;
+}
+
+#info tbody td span {
+    font-weight: 500;
+}
+
+#info tr:nth-child(even) {
+    background-color: #f8f9fa;
+}
+
+  
     </style>
 </head>
 <body>
 
-    <div id="info">
-        <div class="info-item"><strong>Contenedor:</strong> <span id="contenedorSpan"></span></div>
-        <div class="info-item"><strong>Ubicación esperada:</strong> <span id="esperadaSpan"></span></div>
-        <div class="info-item"><strong>Ubicación GPS:</strong> <span id="gpsSpan"></span></div>
-        <div class="info-item"><strong>Distancia aproximada:</strong> <span id="distanciaSpan"></span> km</div>
+    <div id="info" class="container mt-3">
+    <div class="table-responsive">
+        <table class="table table-bordered align-middle text-center shadow-sm">
+            <thead class="table-primary">
+                <tr>
+                    <th>Contenedor</th>
+                    <th>Ubicación esperada</th>
+                    <th>Ubicación GPS</th>
+                    <th>Distancia aprox.</th>
+                    <th>Tiempo llegada</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><span id="contenedorSpan" class="fw-semibold"></span></td>
+                    <td><span id="esperadaSpan"></span></td>
+                    <td><span id="gpsSpan"></span></td>
+                    <td><span id="distanciaSpan">km</span></td>
+                    <td><span id="TiempoLLegadaSpan">00 hrs - 00 min : 00 seg</span></td>
+                </tr>
+            </tbody>
+        </table>
     </div>
+</div>
 
     <div id="mapaComparacion"></div>
 
@@ -91,6 +126,10 @@
         L.marker([lat2, lon2]).addTo(mapa).bindPopup("Ubicación GPS final");
 
         L.polyline([[lat1, lon1], [lat2, lon2]], { color: 'red' }).addTo(mapa);
+
+        setTimeout(() => {
+    mapa.invalidateSize();
+}, 300);
     </script>
 </body>
 </html>

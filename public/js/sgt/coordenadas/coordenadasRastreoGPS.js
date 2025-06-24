@@ -22,12 +22,25 @@ function cargarConvoysEnSelect(convoys) {
 
   convoys.forEach(convoy => {
     const option = document.createElement('option');
-    option.value = convoy.id; // puedes usar convoy.no_conboy si prefieres
+    option.value = convoy.id; 
     option.textContent = `${convoy.no_conboy} - ${convoy.nombre}`;
     select.appendChild(option);
   });
 }
+function cargarEquiposEnSelect(dataequipos) {
+  const select = document.getElementById('Equipo');
 
+  // Limpiar opciones actuales excepto la primera
+  select.innerHTML = '<option value="">Seleccione un equipo</option>';
+
+  dataequipos.forEach(equipo => {
+    const option = document.createElement('option');
+    option.value = `${equipo.id_equipo}|${equipo.imei}|${equipo.id}`;
+    const textoPlaca = equipo.placas?.trim() ? equipo.placas : 'SIN PLACA';
+    option.textContent = `${equipo.id_equipo } - ${equipo.marca}- ${equipo.tipo}- ${textoPlaca}`;
+    select.appendChild(option);
+  });
+}
 function cargarinicial()
 {
        fetch(`/coordenadas/contenedor/searchEquGps?`)
@@ -36,6 +49,7 @@ function cargarinicial()
         
          contenedoresDisponibles   = data.datos;
       cargarConvoysEnSelect( data.conboys);
+      cargarEquiposEnSelect( data.equipos);
     detalleConvoys =   data.dataConten;
           
       })
@@ -48,9 +62,13 @@ function cargarinicial()
 function obtenerImeisPorConvoyId(convoyId) {
     return detalleConvoys
     .filter(item => item.conboy_id == convoyId && item.imei && item.id_contenedor)
-    .map(item => item.num_contenedor + "-" + item.imei + "-" + item.id_contenedor);
+    .map(item => item.num_contenedor + "|" + item.imei + "|" + item.id_contenedor);
 }
 
+function obtenerTabActivo() {
+    const tabActivo = document.querySelector('#filtroTabs .nav-link.active');
+    return tabActivo ? tabActivo.getAttribute('data-bs-target') : null;
+}
 
 let intervalId = null;
 let idConvoyOContenedor=0;
@@ -58,24 +76,50 @@ document.getElementById('filtroModal').addEventListener('submit', function(event
   event.preventDefault();
 let tipoBusqueda ='IMEIS';
 
-  const convoy = document.getElementById("convoys").value;
-  const contenedores = document.getElementById("contenedores").value;
+ // const convoy = document.getElementById("convoys").value;
+  //const contenedores = document.getElementById("contenedores").value;
+  //const equipoC = equipoCdocument.getElementById("Equipo").value;
 
-  if (!convoy && !contenedores) {
-    alert("Debes seleccionar al menos un convoy o un contenedor.");
-    return;
-  }
+   const tab = obtenerTabActivo();
 
-if (convoy && (!contenedores || ItemsSelects.length === 0)) {
-    ItemsSelects = obtenerImeisPorConvoyId(convoy);
-    tipoBusqueda ='CONVOY';
-    idConvoyOContenedor=convoy;
-  }
+    switch (tab) {
+        case '#filtro-convoy':
+            const convoy = document.getElementById('convoys').value;
+            if (!convoy) {
+                alert('Seleccione un convoy');
+                return false;
+            }
+            ItemsSelects = obtenerImeisPorConvoyId(convoy);
+            break;
 
-  if (!ItemsSelects || ItemsSelects.length === 0) {
-    alert('Por favor, seleccione al menos un contenedor o un convoy con IMEIs.');
-    return;
-  }
+        case '#filtro-contenedor':
+            const contenedores = document.getElementById('contenedores').value;
+            if (!contenedores) {
+                alert('Agregue al menos un contenedor');
+                return false;
+            }
+            break;
+
+        case '#filtro-Equipo':
+            const equipo = document.getElementById('Equipo').value;
+            ItemsSelects.push(equipo);
+            if (!equipo) {
+                alert('Seleccione un equipo');
+                return false;
+            }
+            break;
+
+        default:
+            alert('No se detectó un filtro válido');
+            return false;
+    }
+
+
+
+
+
+
+
 
   // Set hidden input por si necesitas backend
   document.getElementById('ItemsSelects').value = ItemsSelects.join(';');
@@ -83,13 +127,13 @@ if (convoy && (!contenedores || ItemsSelects.length === 0)) {
   
 
 
-  actualizarUbicacion(ItemsSelects);
+  actualizarUbicacion(ItemsSelects,tab);
   document.getElementById('btnDetener').style.display = 'inline-block';
   document.getElementById('btnDetener2').style.display = 'inline-block';
   if (intervalId) clearInterval(intervalId);
   
   intervalId = setInterval(() => {
-    actualizarUbicacion(ItemsSelects);
+    actualizarUbicacion(ItemsSelects,tab);
   }, 5000);
 });
   
@@ -115,7 +159,7 @@ function actualizarUbicacionReal(coordenadaData){
     });
 
 }
-function actualizarUbicacion(imeis) {
+function actualizarUbicacion(imeis,t) {
   const selectElement = document.getElementById('tipo');
 
 let tipo = selectElement.value;
@@ -161,8 +205,27 @@ responseOk = true;
             const contenedor = item.contenedor;
              const info = contenedoresDisponibles.find(d => d.contenedor === contenedor);
                 if (!info) {
-                  alert("Información del viaje no disponible.");
+                  if(t='#filtro-Equipo'){
+                      if(t='#filtro-Equipo'){
+                    const ahora = new Date();
+                       info = contenedoresDisponibles.find(d => {
+                            const inicio = new Date(d.fecha_inicio);
+                            const fin = new Date(d.fecha_fin);
+
+                            return ahora >= inicio && ahora <= fin;
+                        });
+                         console.log(info);
+                         if (!info) {
+                          alert("Información del viaje no encontrada.");
+                          return;
+                         }
+                  }
+                }else {
+                    alert("Información del viaje no disponible.");
                   return;
+                  }
+
+                  
                 }
 
                 const contenido = `
@@ -200,10 +263,25 @@ responseOk = true;
 
           newMarker.on('click', () => {
             const contenedor = item.contenedor;
-             const info = contenedoresDisponibles.find(d => d.contenedor === contenedor);
+             let info = contenedoresDisponibles.find(d => d.contenedor === contenedor);
                 if (!info) {
-                  alert("Información del viaje no disponible.");
+                   if(t='#filtro-Equipo'){
+                    const ahora = new Date();
+                       info = contenedoresDisponibles.find(d => {
+                            const inicio = new Date(d.fecha_inicio);
+                            const fin = new Date(d.fecha_fin);
+
+                            return ahora >= inicio && ahora <= fin;
+                        });
+                         console.log(info);
+                         if (!info) {
+                          alert("Información del viaje no encontrada.");
+                          return;
+                         }
+                  }else {
+                    alert("Información del viaje no encontrada.");
                   return;
+                  }
                 }
 
                 const contenido = `
@@ -319,6 +397,24 @@ document.addEventListener('DOMContentLoaded', function () {
         } else {
             console.error("No se encontraron los elementos necesarios.");
         }
+
+
+
+
+         const tabLinks = document.querySelectorAll('#filtroTabs button[data-bs-toggle="tab"]');
+          const tituloFiltroDiv = document.getElementById('tituloSeguimiento');
+            tabLinks.forEach(function (tab) {
+              tab.addEventListener('shown.bs.tab', function (event) {
+               
+                console.log('Tab actual:', event.target.id);
+                console.log('Tab anterior:', event.relatedTarget?.id);
+                 const dataId = event.target.getAttribute('data-id');
+                  if (dataId && tituloFiltroDiv) {
+                      tituloFiltroDiv.textContent = 'Seguimiento  ' + dataId;
+                    }
+               
+              });
+            });
 });
 
 function limpiarFiltros() {
@@ -382,7 +478,7 @@ let ItemsSelects = [];
         seleccionados.push(valor);
          const contenedorData = contenedoresDisponibles.find(c => c.contenedor === valor);
 
-         ItemsSelects.push(valor +"-" +contenedorData.imei+"-"+ contenedorData.id_contenedor);
+         ItemsSelects.push(valor +"|" +contenedorData.imei+"|"+ contenedorData.id_contenedor);
         document.getElementById('contenedor-input').value = '';
         document.getElementById('sugerencias').style.display = 'none';
         actualizarVista();

@@ -108,7 +108,8 @@ let datap = {
                     confirmButtonText: 'Aceptar'
                 });
 
-
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('modalBuscarConvoy'));
+                    modal.hide();
 
             } else {
                 Swal.fire({

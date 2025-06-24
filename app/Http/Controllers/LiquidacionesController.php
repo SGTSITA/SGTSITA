@@ -111,7 +111,10 @@ class LiquidacionesController extends Controller
     public function justificarGastos(Request $r){
         try{
             DB::beginTransaction();
-            $documCotizacion = DocumCotizacion::where('num_contenedor',$r->numContenedor)->first();
+            $idEmpresa = auth()->user()->id_empresa;
+            $documCotizacion = DocumCotizacion::where('num_contenedor',$r->numContenedor)
+                                              ->where('id_empresa', $idEmpresa)
+                                              ->first();
             ViaticosOperador::insert([
                                         "id_cotizacion" => $documCotizacion->id_cotizacion,
                                         "descripcion_gasto" => $r->txtDescripcion,
@@ -121,6 +124,76 @@ class LiquidacionesController extends Controller
             $asignacion = Asignaciones::where('id_contenedor',$documCotizacion->id)->update([
                 "restante_pago_operador" => DB::raw('restante_pago_operador + '.$r->montoJustificacion)
             ]);
+
+            //Los gastos que sean justificados por el operador, deberan reflejarse en el viaje correspondiente
+                                                
+             $asignacion = Asignaciones::where('id_contenedor', $documCotizacion->id)->first();
+
+            /*if($r->pagoInmediato != "false" ){
+                //validar que el banco tenga saldo suficiente para efectuar el pago del gasto
+                $bancos = Bancos::where('id_empresa',Auth::User()->id_empresa)->where('id',$r->bancoPago)->first();
+                $saldoActual = $bancos->saldo;
+
+                if($saldoActual < $r->montoGasto){
+                    return response()->json(["Titulo" => "Saldo insuficiente en Banco","Mensaje" => "La cuenta bancaria seleccionada no cuenta con saldo suficiente para registrar esta transacción","TMensaje" => "warning"]);
+                }
+
+                Bancos::where('id' ,'=',$r->bancoPago)->update(["saldo" => DB::raw("saldo - ". $r->montoGasto)]);
+
+                $banco = new BancoDineroOpe;
+                $banco->id_operador = $asignacion->id_operador;
+
+                $banco->monto1 = $r->montoGasto;
+                $banco->metodo_pago1 = 'Transferencia';
+                $banco->descripcion_gasto = "Gasto ope: ".$r->descripcion;
+                $banco->id_banco1 = $r->bancoPago;
+
+                $contenedoresAbonos[] = [
+                    'num_contenedor' => $r->numContenedor,
+                    'abono' => $r->montoGasto
+                ];
+                $contenedoresAbonosJson = json_encode($contenedoresAbonos);
+
+                $banco->contenedores = $contenedoresAbonosJson;
+
+                $banco->tipo = 'Salida';
+                $banco->fecha_pago = date('Y-m-d');
+                $banco->save();
+             }*/
+
+             $datosGasto = [
+                            "id_cotizacion" => $documCotizacion->id_cotizacion,
+                            "id_banco" => null,
+                            "id_asignacion" => $asignacion->id,
+                            "id_operador" => $asignacion->id_operador,
+                            "cantidad" => ($r->montoJustificacion > $r->sinJustificar) ? $r->sinJustificar : $r->montoJustificacion, //Registrar solo el monto por justificar del dinero entregado para viaje, el excedente se registra en otra partida
+                            "tipo" => $r->txtDescripcion,
+                            "estatus" =>  'Pagado' ,
+                            "fecha_pago" => null,
+                            "pago_inmediato" => 1,
+                            "created_at" => Carbon::now()
+                           ];
+
+             GastosOperadores::insert($datosGasto);
+
+             //Registramos el excedente en una nueva partida y lo dejamos como pendiente de pago
+             if($r->montoJustificacion > $r->sinJustificar){
+                $datosGasto = [
+                    "id_cotizacion" => $documCotizacion->id_cotizacion,
+                    "id_banco" => null,
+                    "id_asignacion" => $asignacion->id,
+                    "id_operador" => $asignacion->id_operador,
+                    "cantidad" => $r->montoJustificacion - $r->sinJustificar, //Registrar solo el monto por justificar del dinero entregado para viaje, el exedente se registra en otra partida
+                    "tipo" => $r->txtDescripcion . "** Excedente",
+                    "estatus" =>  'Pago Pendiente' ,
+                    "fecha_pago" => null,
+                    "pago_inmediato" => 0,
+                    "created_at" => Carbon::now()
+                   ];
+
+                GastosOperadores::insert($datosGasto);
+             }
+             //Fin
 
             DB::commit();
 

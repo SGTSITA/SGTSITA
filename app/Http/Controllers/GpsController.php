@@ -21,7 +21,7 @@ class GpsController extends Controller
 
             foreach ($datos as $dato) {
                 if (!empty($dato)) {
-                    [ $contenedor ,$imei,$id_contenendor] = explode('-', $dato);
+                    [ $contenedor ,$imei,$id_contenendor] = explode('|', $dato);
                     $ubicacion = GlobalGps::getDeviceRealTimeLocation($imei);
                     $resultados[] = [
                         'contenedor' => $contenedor,
@@ -65,8 +65,6 @@ class GpsController extends Controller
 
 
     public function getLocationSkyAngel(){
-
-        
         //Sustituir por valores de BD cuando se tenga la implementacion
         $username = config('services.SkyAngelGps.username');
         $password = config('services.SkyAngelGps.password');

@@ -10,7 +10,12 @@ use App\Http\Controllers\PermisosController;
 use App\Http\Controllers\EmpresasController;
 use App\Http\Controllers\ExternosController;
 use App\Http\Controllers\CuentaGlobalController;
+
+use App\Http\Controllers\WhatsAppController;
+
 use App\Http\Controllers\GpsController;
+use App\Http\Controllers\ContactoController;
+use App\Http\Controllers\ReporteriaController;
 
 Route::group(["prefix" => "gps"],function(){
  Route::get('globalgps/ubicacion/by-imei/{imei}',[GpsController::class,'obtenerUbicacionByImei'])->name('ubicacion.byimei');
@@ -18,12 +23,21 @@ Route::group(["prefix" => "gps"],function(){
 });
 
 
+
 use App\Models\User;
+
+Route::group(["prefix" => "whatsapp"],function(){
+    Route::get('sendtext/{phone}/{text}',[WhatsAppController::class,'sendText'])->name('whatsapp.text');
+    Route::get('webhook',[WhatsAppController::class,'webHook'])->name('whatsapp.webhook');
+    Route::post('webhook',[WhatsAppController::class,'verifyWebHook'])->name('whatsapp.verify.webhook');
+
+});
+
 
 Route::post('/exportar-cxc', [ReporteriaController::class, 'export'])->name('exportar.cxc');
 Route::post('sendfiles',[ExternosController::class,'sendFiles1'])->name('file-manager.sendfiles');
 
-use App\Http\Controllers\ReporteriaController;
+
 
 // Ruta para mostrar el formulario de búsqueda
 Route::get('/reporteria', [ReporteriaController::class, 'index'])->name('reporteria.index');
@@ -58,8 +72,14 @@ include('externos.php');
 include('api.php');
 
 Route::get('/', function () {
-    return view('auth.login');
+    return view('landing.index');
+   // return view('auth.login');
+
 });
+
+Route::get('aviso-privacidad',function(){
+    return view('landing.aviso-privacidad');
+})->name('aviso-privacidad');
 
 // =============== M O D U L O   login custom ===============================
 
@@ -130,10 +150,8 @@ Route::get('/coordenadas/contenedor/search', [App\Http\Controllers\CoordenadasCo
 Route::get('/coordenadas/rastrear', [App\Http\Controllers\CoordenadasController::class, 'rastrearIndex'])->name('rastrearContenedor');
 
 Route::post('/coordenadas/archivo', [App\Http\Controllers\CoordenadasController::class, 'subirArchivo'])->name('coordenadas.archivo');
-
 Route::get('/coordenadas/contenedor/searchEquGps', [App\Http\Controllers\CoordenadasController::class, 'getEquiposGps'])->name('getEquiposGps');
 Route::post('/coordenadas/ubicacion-vehiculo', [App\Http\Controllers\GpsController::class, 'obtenerUbicacionByImei'])->name('coordenadas.ubicacion');
-
 
 //coordenadas -> conboys virtuales
 
@@ -411,6 +429,7 @@ Route::post('operadores/{id}/restaurar', [App\Http\Controllers\OperadorControlle
     Route::get('gastos/generales',[App\Http\Controllers\GastosGeneralesController::class, 'index'])->name('index.gastos_generales');
     Route::post('gastos/generales/get',[App\Http\Controllers\GastosGeneralesController::class, 'getGastos'])->name('get.gastos_generales');
     Route::post('gastos/generales/create', [App\Http\Controllers\GastosGeneralesController::class, 'store'])->name('store.gastos_generales');
+    Route::post('gastos/generales/delete', [App\Http\Controllers\GastosGeneralesController::class, 'eliminarGasto'])->name('delete.gastos_generales');
     Route::post('gastos/diferir',[App\Http\Controllers\GastosGeneralesController::class, 'aplicarGastos'])->name('diferir.gastos_generales');
     Route::get('gastos/por-pagar',[App\Http\Controllers\GastosContenedoresController::class, 'IndexPayment'])->name('index.gastos_por_pagar');
     Route::post('gastos/getGxp',[App\Http\Controllers\GastosContenedoresController::class, 'getGxp'])->name('get.gastos_por_pagar');
@@ -460,4 +479,13 @@ Route::post('/cuenta-global/update', [App\Http\Controllers\CuentaGlobalControlle
     Route::post('/gps/restore/{id}', [App\Http\Controllers\GpsCompanyController::class, 'restore']);
 
 
-   
+
+Route::get('/contactos', [App\Http\Controllers\ContactoController::class, 'index'])->name('contactos.index');
+Route::get('/contactos/create', [App\Http\Controllers\ContactoController::class, 'create'])->name('contactos.create');
+Route::post('/contactos', [App\Http\Controllers\ContactoController::class, 'store'])->name('contactos.store');
+Route::get('/contactos/list', [App\Http\Controllers\ContactoController::class, 'list'])->name('contactos.list');
+Route::delete('/contactos/{id}', [App\Http\Controllers\ContactoController::class, 'inactivar'])->name('contactos.inactivar');
+Route::put('/contactos/{id}/restore', [App\Http\Controllers\ContactoController::class, 'activar'])->name('contactos.activar');
+Route::get('/contactos/editar/{id}', [App\Http\Controllers\ContactoController::class, 'edit'])->name('contactos.edit');
+Route::put('/contactos/{id}', [App\Http\Controllers\ContactoController::class, 'update'])->name('contactos.update');
+Route::get('/contactos/editar/{id}', [App\Http\Controllers\ContactoController::class, 'edit'])->name('contactos.edit');

@@ -12,6 +12,21 @@ use Illuminate\Support\Facades\Auth;
 
 class ConboysController extends Controller
 {
+    //externos
+    public function exindex()
+    {
+         
+
+        return view('mec.coordenadas.index');
+    }
+
+ public function  exindexconvoy()
+    {
+            return view('mec.coordenadas.indexconvoy');
+
+    }
+
+    //end externos
      public function index()
     {
          
@@ -180,14 +195,25 @@ class ConboysController extends Controller
         if ($convoy ){
             
            if (is_array($items)) {
-           $quitarAnteriores =  conboysContenedores::find($id_convoy);
-           $quitarAnteriores ->delete();
+         
+         
                 foreach ($items as $item) {
                     [$contenedor, $id_contenedor] = explode('-', $item);
-                    conboysContenedores::create([
-                        'conboy_id' => $convoy->id,
-                        'id_contenedor' => $id_contenedor
-                        ]);
+
+                    $existe = ConboysContenedores::where('conboy_id', $id_convoy)
+                                    ->where('id_contenedor', $id_contenedor)
+                                    ->exists();
+
+
+                        if (!$existe) {
+                            conboysContenedores::create([
+                                                    'conboy_id' => $convoy->id,
+                                                    'id_contenedor' => $id_contenedor
+                                                    ]);
+
+
+                        }
+                   
                     }
                 }
                 else{
@@ -263,6 +289,7 @@ class ConboysController extends Controller
         $contenedoresPropios  = DB::table('asignaciones')
         ->join('docum_cotizacion', 'docum_cotizacion.id', '=', 'asignaciones.id_contenedor')
          ->join('equipos', 'equipos.id', '=', 'asignaciones.id_camion')
+           ->join('cotizaciones', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
          ->select(
         'docum_cotizacion.id as id_contenedor',
         'asignaciones.id',
@@ -271,13 +298,16 @@ class ConboysController extends Controller
         'asignaciones.fecha_inicio',
         
         'equipos.imei',
-         )->where('asignaciones.id_empresa','=',$idEmpresa)->get();
+         )->where('cotizaciones.estatus', '=', 'Aprobada')
+         ->where('asignaciones.id_empresa','=',$idEmpresa)
+         ->get();
 
 
          $contenedoresPropiosAsignados = DB::table('conboys')
         ->join('conboys_contenedores', 'conboys_contenedores.conboy_id', '=', 'conboys.id')
         ->join('docum_cotizacion', 'docum_cotizacion.id', '=', 'conboys_contenedores.id_contenedor')
         ->where('docum_cotizacion.id_empresa', $idEmpresa)
+        ->where('conboys.no_conboy',  $numero)
         ->select('conboys.id','docum_cotizacion.num_contenedor','docum_cotizacion.id as id_contenedor') 
         ->get();
 
