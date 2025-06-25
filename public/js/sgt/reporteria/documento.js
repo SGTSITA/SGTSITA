@@ -4,44 +4,60 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const columnDefs = [
         {
-            headerName: "Num",
-            field: "id",
+            headerName: "Fecha inicio",
+            field: "fecha_inicio",
             checkboxSelection: true,
             headerCheckboxSelection: true,
             headerCheckboxSelectionFilteredOnly: true,
             cellClass: 'text-center',
-            filter: 'agNumberColumnFilter',
+            filter: 'agDateColumnFilter',
             floatingFilter: true,
-            width: 130
+            width: 160,
+            valueFormatter: (params) => {
+                if (!params.value) return '';
+                const date = new Date(params.value);
+                const day = String(date.getDate()).padStart(2, '0');
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const year = date.getFullYear();
+                return `${day}-${month}-${year}`;
+            },
+            filterParams: {
+                comparator: function (filterLocalDateAtMidnight, cellValue) {
+                    const cellDate = new Date(cellValue);
+                    const cellDateNoTime = new Date(cellDate.getFullYear(), cellDate.getMonth(), cellDate.getDate());
+                    if (cellDateNoTime < filterLocalDateAtMidnight) return -1;
+                    if (cellDateNoTime > filterLocalDateAtMidnight) return 1;
+                    return 0;
+                },
+                browserDatePicker: true,
+            },
         },
-
         {
             headerName: "Cliente",
             field: "cliente",
             filter: 'agTextColumnFilter',
             floatingFilter: true,
-            width: 180,
+            width: 100,
             cellClass: 'text-center'
         },
         {
             headerName: "# Contenedor",
             field: "num_contenedor",
-            width: 200,
+            width: 170,
             filter: true,
             floatingFilter: true,
-            autoHeight: true, // Permite que la fila se ajuste en altura
-            cellStyle: params => {
-                const styles = {
-                    'white-space': 'normal',
-                    'line-height': '1.5',
-                };
+            autoHeight: true,
+            cellRenderer: (params) => {
+                const contenedor = params.value || '';
+                const tipo = params.data.tipo;
+                const isFull = tipo === 'Full';
 
-                // Si la cotización es tipo "Full", aplicar fondo 
-                if (params.data.tipo === 'Full') {
-                    styles['background-color'] = '#ffe5b4';
-                }
-
-                return styles;
+                return `
+            <div style="white-space: normal; line-height: 1.4;">
+                ${contenedor}
+                ${isFull ? `<span class="badge bg-warning text-dark ms-2">FULL</span>` : ''}
+            </div>
+        `;
             },
         },
 
@@ -50,7 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
             field: "proveedor",
             filter: 'agTextColumnFilter',
             floatingFilter: true,
-            width: 180,
+            width: 130,
             cellClass: 'text-center'
         },
 
@@ -59,7 +75,7 @@ document.addEventListener('DOMContentLoaded', () => {
             field: "doc_ccp",
             cellRenderer: checkboxRenderer,
             filter: 'agTextColumnFilter',
-            width: 130,
+            width: 120,
             cellClass: 'text-center'
         },
         {
@@ -67,7 +83,7 @@ document.addEventListener('DOMContentLoaded', () => {
             field: "boleta_liberacion",
             cellRenderer: checkboxRenderer,
             filter: 'agTextColumnFilter',
-            width: 140,
+            width: 120,
             cellClass: 'text-center'
         },
         {
@@ -83,7 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
             field: "carta_porte",
             cellRenderer: checkboxRenderer,
             filter: 'agTextColumnFilter',
-            width: 130,
+            width: 120,
             cellClass: 'text-center'
         },
         {
@@ -91,7 +107,7 @@ document.addEventListener('DOMContentLoaded', () => {
             field: "boleta_vacio",
             cellRenderer: checkboxRenderer,
             filter: 'agTextColumnFilter',
-            width: 130,
+            width: 120,
             cellClass: 'text-center'
         },
         {
@@ -99,7 +115,7 @@ document.addEventListener('DOMContentLoaded', () => {
             field: "doc_eir",
             cellRenderer: checkboxRenderer,
             filter: 'agTextColumnFilter',
-            width: 110,
+            width: 120,
             cellClass: 'text-center'
         },
         {
@@ -141,27 +157,47 @@ document.addEventListener('DOMContentLoaded', () => {
 
     agGrid.createGrid(gridDiv, gridOptions);
     function checkboxRenderer(params) {
-        if (params.colDef.field === 'doc_eir' && params.data.cima === 1) {
+        const data = params.data || {};
+        const field = params.colDef.field;
+
+        // Función auxiliar para renderizar estado genérico
+        const renderIcon = (estado, isCima = false) => {
+            if (isCima) {
+                return `<span class="badge bg-success text-white px-2 py-1">CIMA</span>`;
+            }
+            if (estado) {
+                return `<i class="fas fa-circle-check text-success fa-lg"></i>`;
+            }
+            return `<i class="fas fa-circle-xmark text-secondary fa-lg"></i>`;
+        };
+
+        // === CASO ESPECIAL: doc_eir con Full ===
+        if (field === 'doc_eir') {
+            if (data.tipo === 'Full') {
+                const primario = renderIcon(data.eir_primario ?? false, data.cima_primario === 1);
+                const secundario = renderIcon(data.eir_secundario ?? false, data.cima_secundario === 1);
+
+                return `
+                <div class="text-center" title="EIR/CIMA de ambos contenedores">
+                    ${primario} / ${secundario}
+                </div>
+            `;
+            }
+
+            // No Full → mostrar solo uno (cima o eir)
             return `
-            <div class="text-center" title="Documento CIMA">
-               <span class="badge rounded-pill bg-success text-white px-3 py-2">CIMA</span>
+            <div class="text-center">
+                ${renderIcon(params.value, data.cima === 1)}
             </div>
         `;
         }
 
-        if (params.value) {
-            return `
-            <div class="text-center" title="Documento subido">
-                <i class="fas fa-circle-check text-success fa-lg"></i>
-            </div>
-        `;
-        } else {
-            return `
-            <div class="text-center" title="Documento no subido">
-                <i class="fas fa-circle-xmark text-secondary fa-lg"></i>
-            </div>
-        `;
-        }
+        // === CASO GENERAL PARA OTRAS COLUMNAS ===
+        return `
+        <div class="text-center">
+            ${renderIcon(params.value)}
+        </div>
+    `;
     }
 
 
