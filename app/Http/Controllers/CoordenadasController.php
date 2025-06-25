@@ -643,8 +643,9 @@ $idCordenada= $coordenadas->id_coordenadas;
         public function  getEquiposGps(Request  $request) 
     {
 
+         $idCliente =0;
         $cliendID = auth()->user()->id_cliente;
-       if($cliendID != 0)
+       if($cliendID !== 0)
        {
         $idCliente =$cliendID;
        }
@@ -719,9 +720,9 @@ $idCordenada= $coordenadas->id_coordenadas;
         } else {
             return $query->where('asig.num_contenedor', $contenedores[0]);
         }
-    })->when($idCliente, function ($query) use ($idCliente) {
-         return $query->where('cotizaciones.id_cliente', $idCliente);
-    })    
+    })->when($idCliente !== 0, function ($query) use ($idCliente) {
+    return $query->where('cotizaciones.id_cliente', $idCliente);
+})   
     ->where('cotizaciones.estatus', '=', 'Aprobada')
     ->get();
 
@@ -740,9 +741,9 @@ $idCordenada= $coordenadas->id_coordenadas;
         'conboys.user_id'
     )
     ->where('docum_cotizacion.id_empresa', '=', $idEmpresa)
-    ->when($idCliente, function ($query) use ($idCliente) {
-        return $query->where('cotizaciones.id_cliente', $idCliente);
-    })
+    ->when($idCliente !== 0, function ($query) use ($idCliente) {
+    return $query->where('cotizaciones.id_cliente', $idCliente);
+})   
     ->distinct()
     ->get();
 
@@ -759,9 +760,9 @@ $idCordenada= $coordenadas->id_coordenadas;
             'equipos.imei'
             
         )->where('docum_cotizacion.id_empresa','=',$idEmpresa)
-            ->when($idCliente, function ($query) use ($idCliente) {
-                        return $query->where('cotizaciones.id_cliente', $idCliente);
-                    })
+            ->when($idCliente !== 0, function ($query) use ($idCliente) {
+    return $query->where('cotizaciones.id_cliente', $idCliente);
+})   
         ->get();
 
 
