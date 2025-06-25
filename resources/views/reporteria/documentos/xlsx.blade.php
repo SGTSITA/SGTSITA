@@ -115,10 +115,32 @@
                         <td>{{ $cotizacion['carta_porte'] ? '✔' : '✖' }}</td>
                         <td>{{ $cotizacion['boleta_vacio'] ? '✔' : '✖' }}</td>
                         <td>
-                            @if (isset($cotizacion['cima']) && $cotizacion['cima'] == 1)
-                                CIMA
+                            @php
+                                $isFull = $cotizacion['tipo'] === 'Full';
+
+                                $eir1 = $isFull
+                                    ? $cotizacion['eir_primario'] ?? false
+                                    : $cotizacion['doc_eir'] ?? false;
+                                $eir2 = $isFull ? $cotizacion['eir_secundario'] ?? false : null;
+
+                                $cima1 = $isFull ? $cotizacion['cima_primario'] ?? 0 : $cotizacion['cima'] ?? 0;
+                                $cima2 = $isFull ? $cotizacion['cima_secundario'] ?? 0 : null;
+
+                                $renderEstadoExcel = function ($eir, $cima) {
+                                    if ((int) $cima === 1) {
+                                        return 'CIMA';
+                                    }
+                                    if ($eir) {
+                                        return '✔';
+                                    }
+                                    return '✖';
+                                };
+                            @endphp
+
+                            @if ($isFull)
+                                {{ $renderEstadoExcel($eir1, $cima1) }} / {{ $renderEstadoExcel($eir2, $cima2) }}
                             @else
-                                {{ $cotizacion['doc_eir'] ? '✔' : '✖' }}
+                                {{ $renderEstadoExcel($eir1, $cima1) }}
                             @endif
                         </td>
                     @endif
