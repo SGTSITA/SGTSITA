@@ -42,6 +42,59 @@ class WhatsAppController extends Controller
 		  return json_encode($response);
     }
 
+    //Este metodo recibe la data lista para ser enviada, lo que permite que se envie todo tipo de mensaje de WhatsApp
+    public static function sendWhatsAppMessage($data){
+        
+        try {
+            $endpoint = 'https://graph.facebook.com/v22.0/708560132336379/messages';
+            $token = env('WHATSAPP_TOKEN');
+
+            $headers = [
+                'Content-Type:application/json',
+                'Authorization:Bearer ' . $token,
+            ];
+
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $endpoint);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+            curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'POST');
+            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+            $result = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $curlError = curl_error($ch);
+            curl_close($ch);
+
+            if ($result === false) {
+                throw new \Exception('Error al ejecutar cURL: ' . $curlError);
+            }
+
+            $respuestaAPI = json_decode($result);
+
+            if ($httpCode === 200) {
+                return response()->json([
+                    "code" => $httpCode,
+                    "respuesta" => '',
+                    "status" => "Mensaje enviado"
+                ]);
+            } else {
+                $mensajeError = $respuestaAPI->error->message ?? 'Error desconocido';
+                return response()->json([
+                    "code" => $httpCode,
+                    "respuesta" => $mensajeError,
+                    "status" => "Validación incorrecta - Registros no encontrados"
+                ]);
+            }
+        } catch (\Exception $e) {
+            return response()->json([
+                "code" => 500,
+                "respuesta" => $e->getMessage(),
+                "status" => "Error en el servidor"
+            ]);
+        }
+    }
+
     public static function sendFile($phone, $typeFile, $urlFile, $caption, $titleFile)
     {
         try {
