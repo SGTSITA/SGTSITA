@@ -118,4 +118,15 @@
             });
         });
     </script>
+    @if ($errors->any())
+        <script>
+            Swal.fire({
+                icon: 'info',
+                title: 'Atención',
+                html: `{!! implode('<br>', $errors->all()) !!}`,
+                confirmButtonText: 'Entendido'
+            });
+        </script>
+    @endif
+
 @endpush

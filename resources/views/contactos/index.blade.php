@@ -18,3 +18,18 @@
     <script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.js"></script>
     <script src="{{ asset('js/sgt/contactos/contactos.js') }}"></script>
 @endpush
+@push('javascript')
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="{{ asset('js/sgt/contactos/contactos.js') }}"></script>
+
+    @if (session('success'))
+        <script>
+            Swal.fire({
+                icon: 'success',
+                title: 'Éxito',
+                html: `{!! session('success') !!}`,
+                confirmButtonText: 'Aceptar'
+            });
+        </script>
+    @endif
+@endpush
