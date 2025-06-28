@@ -705,7 +705,7 @@ $idCordenada= $coordenadas->id_coordenadas;
    ->joinSub($asignaciones, 'asig', function ($join) {
       $join->on('asig.id_contenedor', '=', 'cotizaciones.id'); 
     })
-    ->Join('coordenadas', 'coordenadas.id_asignacion', '=', 'asig.id') 
+    ->LeftJoin('coordenadas', 'coordenadas.id_asignacion', '=', 'asig.id') 
     ->joinSub($beneficiarios, 'beneficiarios', function ($join) {
         $join->on('asig.beneficiario_id', '=', 'beneficiarios.id')
              ->on('asig.tipo_contrato', '=', 'beneficiarios.tipo_contrato');
@@ -722,7 +722,7 @@ $idCordenada= $coordenadas->id_coordenadas;
         }
     })->when($idCliente !== 0, function ($query) use ($idCliente) {
     return $query->where('cotizaciones.id_cliente', $idCliente);
-})   
+    })   
     ->where('cotizaciones.estatus', '=', 'Aprobada')
     ->get();
 
