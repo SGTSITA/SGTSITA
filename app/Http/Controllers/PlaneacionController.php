@@ -124,6 +124,7 @@ class PlaneacionController extends Controller
             'docum_cotizacion.doda',
             'cotizaciones.referencia_full',
             'cotizaciones.carta_porte',
+            'cotizaciones.carta_porte_xml',
             'cotizaciones.img_boleta AS boleta_vacio',
             'docum_cotizacion.doc_eir',
             'asignaciones.id_proveedor',
@@ -139,6 +140,7 @@ class PlaneacionController extends Controller
             $doda = $cot->doda;
             $boletaLiberacion = $cot->boleta_liberacion;
             $cartaPorte = $cot->carta_porte;
+            $cartaPorteXml = $cot->carta_porte_xml;
             $boletaVacio = $cot->boleta_vacio;
             $docEir = $cot->doc_eir;
             $tipo = "--";
@@ -155,6 +157,8 @@ class PlaneacionController extends Controller
     
                     $boletaLiberacion = ($boletaLiberacion && $secundaria->DocCotizacion->boleta_liberacion) ? true : false;
                     $cartaPorte = ($cartaPorte && $secundaria->carta_porte) ? true : false;
+                    $cartaPorteXml = ($cartaPorteXml && $secundaria->carta_porte_xml) ? true : false;
+
                     $boletaVacio = ($boletaVacio && $secundaria->img_boleta) ? true : false;
     
     
@@ -173,6 +177,7 @@ class PlaneacionController extends Controller
                 "doda"=> $doda,
                 "cima"=> $cot->cima,
                 "carta_porte"=> $cartaPorte,
+                "carta_porte_xml"=> $cartaPorteXml,
                 "boleta_vacio"=> $boletaVacio,
                 "doc_eir"=> $docEir,
                 "id_proveedor"=> $cot->id_proveedor,
@@ -193,6 +198,7 @@ class PlaneacionController extends Controller
                         "documents" => $misDocumentos->first()
                     ];
         }
+
         return [
                     "nombre"=>$asignaciones->Proveedor->nombre, 
                     "tipo" => "Viaje subcontratado", 
