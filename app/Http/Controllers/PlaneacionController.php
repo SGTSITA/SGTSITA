@@ -213,6 +213,7 @@ class PlaneacionController extends Controller
                         ->where('cotizaciones.estatus', 'Aprobada')
                         ->where('estatus_planeacion','=', 1)
                         ->select('asignaciones.*', 'docum_cotizacion.num_contenedor','cotizaciones.id_cliente','cotizaciones.referencia_full','cotizaciones.tipo_viaje')
+                        ->orderBy('fecha_inicio')
                         ->get();
 
         $extractor = $planeaciones->map(function($p){
