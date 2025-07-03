@@ -1,64 +1,71 @@
 @extends('layouts.app')
 
 @section('template_title')
-    Editar Client
+    Editar Rol
 @endsection
 
 @section('content')
-
-<div class="container-fluid mt-3">
-      <div class="row">
-        <div class="col">
-          <div class="card">
-            <!-- Card header -->
-            <div class="card-header">
-              <h3 class="mb-3">Edit Role</h3>
-               <a class="btn" href="{{ route('roles.index') }}" style="background: {{$configuracion->color_boton_close}}; color: #ffff"> Back</a>
-                    @if (count($errors) > 0)
-                      <div class="alert alert-danger">
-                        <strong>Whoops!</strong> There were some problems with your input.<br><br>
-                        <ul>
-                           @foreach ($errors->all() as $error)
-                             <li>{{ $error }}</li>
-                           @endforeach
-                        </ul>
-                      </div>
-                    @endif
-            </div>
-
-            <div class="card-body mb-5">
-
-                {!! Form::model($role, ['method' => 'PATCH','route' => ['roles.update', $role->id]]) !!}
-                <div class="row">
-                    <div class="col-xs-12 col-sm-12 col-md-6">
-                        <div class="form-group">
-                            <strong>Name:</strong>
-                            {!! Form::text('name', null, array('placeholder' => 'Name','class' => 'form-control')) !!}
-                        </div>
+    <div class="container-fluid py-4">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="card border-0 shadow-lg rounded-4">
+                    <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0 text-primary fw-bold">
+                            <i class="fas fa-user-shield me-2"></i>Editar Rol
+                        </h4>
+                        <a href="{{ route('roles.index') }}" class="btn btn-sm rounded-pill"
+                            style="background: {{ $configuracion->color_boton_close }}; color: #fff;">
+                            <i class="fas fa-arrow-left me-1"></i> Regresar
+                        </a>
                     </div>
-                    <div class="col-xs-12 col-sm-12 col-md-6">
-                        <div class="form-group">
-                            <strong>Permission:</strong>
-                            <br/>
-                            @foreach($permission as $value)
-                                <label>{{ Form::checkbox('permission[]', $value->id, in_array($value->id, $rolePermissions) ? true : false, array('class' => 'name')) }}
-                                {{ $value->name }}</label>
-                            <br/>
-                            @endforeach
+
+                    <div class="card-body px-4 py-4">
+                        @if ($errors->any())
+                            <div class="alert alert-danger rounded-3">
+                                <strong>¡Ups!</strong> Corrige los siguientes errores:<br>
+                                <ul class="mb-0 mt-2">
+                                    @foreach ($errors->all() as $error)
+                                        <li>{{ $error }}</li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        @endif
+
+                        {!! Form::model($role, ['method' => 'PATCH', 'route' => ['roles.update', $role->id]]) !!}
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">Nombre del Rol</label>
+                            {!! Form::text('name', null, ['class' => 'form-control rounded-3', 'placeholder' => 'Ej. Administrador']) !!}
                         </div>
-                    </div>
-                    <div class="col-xs-12 col-sm-12 col-md-12 text-center">
-                        <button type="submit" class="btn btn-primary" style="background: {{$configuracion->color_boton_save}}; color: #ffff">Submit</button>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold mb-2">Permisos Disponibles</label>
+                            <div class="row">
+                                @foreach ($permission as $value)
+                                    <div class="col-md-4 mb-2">
+                                        <div class="form-check form-switch">
+                                            {!! Form::checkbox('permission[]', $value->id, in_array($value->id, $rolePermissions), [
+                                                'class' => 'form-check-input',
+                                                'id' => 'perm_' . $value->id,
+                                            ]) !!}
+                                            <label class="form-check-label" for="perm_{{ $value->id }}">
+                                                {{ ucfirst($value->name) }}
+                                            </label>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+
+                        <div class="text-center mt-4">
+                            <button type="submit" class="btn rounded-pill px-4"
+                                style="background: {{ $configuracion->color_boton_save }}; color: #fff;">
+                                <i class="fas fa-save me-2"></i>Guardar Cambios
+                            </button>
+                        </div>
+                        {!! Form::close() !!}
                     </div>
                 </div>
-                {!! Form::close() !!}
-
             </div>
-
-          </div>
         </div>
-      </div>
-</div>
-
-
+    </div>
 @endsection

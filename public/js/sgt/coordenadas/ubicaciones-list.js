@@ -208,10 +208,13 @@ function toRad(value) {
     const longitud_seguimiento = parseFloat(data.longitud_seguimiento);
 
 
+
     abrirMapaEnNuevaPestana(latitud,longitud,latitud_seguimiento,longitud_seguimiento,data.contenedor);
 
        
         };
+
+
 
     container.appendChild(btnRastrear);
     return container;

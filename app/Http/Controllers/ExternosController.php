@@ -222,7 +222,66 @@ class ExternosController extends Controller
         try{
 
             $files = ( $r->attachmentFiles);
-$attachment = [];
+            $attachment = [];
+
+            if($r->channel == "WhatsApp"){
+
+                //WhatsAppController::sendWhatsAppMessage($r->wa_phone, $r->message);
+                foreach($files as $file){
+                    $urlFile = "https://sgt.gologipro.com/".public_path($file['file']);
+                    $urlFile = str_replace('/var/www/html/SGTSITA/public/','',$urlFile);
+                    $fileLabel = $file['documentSubject']." del contenedor ".$r->numContenedor;
+
+                    $data = [
+                        "messaging_product" => "whatsapp",
+                        "to" => "52$r->wa_phone",
+                        "type" => "template",
+                        "template" => [
+                            "name" => "purchase_receipt_1",
+                            "language" => [
+                                "code" => "es_MX"
+                            ],
+                            "components" => [
+                                [
+                                    "type" => "header",
+                                    "parameters" => [
+                                        [
+                                            "type" => "document",
+                                            "document" => [
+                                                "link" => $urlFile,
+                                                "filename" => $file['documentSubject']
+                                            ]
+                                        ]
+                                    ]
+                                ],
+                                [
+                                    "type" => "body",
+                                    "parameters" => [
+                                        [
+                                            "type" => "text",
+                                            "text" => "Buen día 👋"
+                                        ],
+                                        [
+                                            "type" => "text",
+                                            "text" => $file['documentSubject']
+                                        ],
+                                        [
+                                            "type" => "text",
+                                            "text" => $r->numContenedor
+                                        ]
+                                    ]
+                                ]
+                            ]
+                        ]
+                    ];
+
+                    $enviar = WhatsAppController::sendWhatsAppMessage($data);
+
+                }
+                return response()->json(["TMensaje" => "success", "Titulo" => "Mensaje WhatsApp enviado correctamente","Mensaje" => "Se ha enviado mensaje con los archivos seleccionados"]);
+
+            }
+            
             foreach($files as $file){
                 array_push($attachment,public_path($file['file']));
             }

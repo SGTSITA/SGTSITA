@@ -39,6 +39,12 @@ class Cotizaciones extends Model
         'prove_restante',
         'id_cuenta_prov',
         'id_cuenta_prov2',
+        'latitud',
+        'longitud',
+        'direccion_mapa',
+        'fecha_seleccion_ubicacion',
+        'fecha_seleccion',
+
     ];
 
     public function Cliente()

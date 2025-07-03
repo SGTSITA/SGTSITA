@@ -74,9 +74,12 @@
               <thead>
                 <tr>
                   <th>Boleta de Liberación</th>
-                  <th>Carta Porte</th>
+                  <th>Formato CCP</th>
                   <th>DODA</th>
                   <th>Boleta Vacío</th>
+                  
+                  <th>Carta Porte XML</th>
+                  <th>Carta Porte PDF</th>
                   <th>EIR</th>
                 </tr>
               </thead>
@@ -86,6 +89,8 @@
                   <td class="documentos" id="doc_ccp"><i class="fas fa-circle-xmark text-secondary fa-lg"></i></td>
                   <td class="documentos" id="doda"><i class="fas fa-circle-xmark text-secondary fa-lg"></i></td>
                   <td class="documentos" id="boleta_vacio"><i class="fas fa-circle-xmark text-secondary fa-lg"></i></td>
+                  <td class="documentos" id="carta_porte_xml"><i class="fas fa-circle-xmark text-secondary fa-lg"></i></td>
+                  <td class="documentos" id="carta_porte"><i class="fas fa-circle-xmark text-secondary fa-lg"></i></td>
                   <td class="documentos" id="doc_eir"><i class="fas fa-circle-xmark text-secondary fa-lg"></i></td>
                 </tr>
                
