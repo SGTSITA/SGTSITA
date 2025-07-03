@@ -222,9 +222,15 @@
                         {{ number_format($cotizacion->maniobra, 2, '.', ',') }}</td>
                     <td style="padding: 2px; border: 1px solid #000;">
                         ${{ number_format($cotizacion->estadia, 2, '.', ',') }}</td>
+                    @php
+                        $sobrepeso = ($cotizacion->peso_contenedor ?? 0) - ($cotizacion->peso_reglamentario ?? 0);
+                        $sobrepeso_calc = $sobrepeso * ($cotizacion->precio_sobre_peso ?? 0);
+                    @endphp
+
                     <td style="padding: 2px; border: 1px solid #000;">$
-                        {{ number_format(($cotizacion->sobrepeso ?? 0) * ($cotizacion->precio_sobre_peso ?? 0), 2, '.', ',') }}
+                        {{ number_format($sobrepeso_calc, 2, '.', ',') }}
                     </td>
+
                     <td style="padding: 2px; border: 1px solid #000;">$
                         {{ number_format($cotizacion->otro, 2, '.', ',') }}</td>
                     <td style="padding: 2px; border: 1px solid #000;">$

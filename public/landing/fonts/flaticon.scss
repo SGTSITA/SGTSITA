@@ -1,0 +1,205 @@
+$flaticon-font: "flaticon";
+
+@font-face {
+    font-family: $flaticon-font;
+    src: url("../fonts/flaticon.woff2?46cbd5aaf58197642bdde868cb49ca8d") format("woff2"),
+url("../fonts/flaticon.woff?46cbd5aaf58197642bdde868cb49ca8d") format("woff"),
+url("../fonts/flaticon.eot?46cbd5aaf58197642bdde868cb49ca8d#iefix") format("embedded-opentype"),
+url("../fonts/flaticon.ttf?46cbd5aaf58197642bdde868cb49ca8d") format("truetype"),
+url("../fonts/flaticon.svg?46cbd5aaf58197642bdde868cb49ca8d#flaticon") format("svg");
+}
+
+i[class^="pbmit-shipex-"]:before, i[class*=" pbmit-shipex-icon-"]:before {
+    font-family: flaticon !important;
+    font-style: normal;
+    font-weight: normal !important;
+    font-variant: normal;
+    text-transform: none;
+    line-height: 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+$flaticon-map: (
+    "logistics-delievry": "\f101",
+    "warehouse": "\f102",
+    "delivery-truck": "\f103",
+    "delivery-truck-1": "\f104",
+    "up-sign": "\f105",
+    "box": "\f106",
+    "online-store": "\f107",
+    "checklist": "\f108",
+    "correspondence": "\f109",
+    "delivery-box": "\f10a",
+    "package": "\f10b",
+    "delivery-courier": "\f10c",
+    "map-location": "\f10d",
+    "delivery-time": "\f10e",
+    "letter-box": "\f10f",
+    "calendar": "\f110",
+    "airplane": "\f111",
+    "email": "\f112",
+    "factory": "\f113",
+    "fragile": "\f114",
+    "house": "\f115",
+    "location": "\f116",
+    "targeting": "\f117",
+    "cargo-ship": "\f118",
+    "container": "\f119",
+    "quote": "\f11a",
+    "menu": "\f11b",
+    "arrow": "\f11c",
+    "check-mark": "\f11d",
+    "play-button": "\f11e",
+    "telephone": "\f11f",
+    "phone-call": "\f120",
+    "arrow-up": "\f121",
+    "right-arrow": "\f122",
+    "top-right": "\f123",
+    "up-right-arrow": "\f124",
+    "arrow-down": "\f125",
+    "arrow-down-1": "\f126",
+    "tick": "\f127",
+    "levels": "\f128",
+    "messages": "\f129",
+    "location-point": "\f12a",
+    "location-1": "\f12b",
+    "call": "\f12c",
+    "schedule": "\f12d",
+);
+
+.pbmit-shipex-icon-logistics-delievry:before {
+    content: map-get($flaticon-map, "logistics-delievry");
+}
+.pbmit-shipex-icon-warehouse:before {
+    content: map-get($flaticon-map, "warehouse");
+}
+.pbmit-shipex-icon-delivery-truck:before {
+    content: map-get($flaticon-map, "delivery-truck");
+}
+.pbmit-shipex-icon-delivery-truck-1:before {
+    content: map-get($flaticon-map, "delivery-truck-1");
+}
+.pbmit-shipex-icon-up-sign:before {
+    content: map-get($flaticon-map, "up-sign");
+}
+.pbmit-shipex-icon-box:before {
+    content: map-get($flaticon-map, "box");
+}
+.pbmit-shipex-icon-online-store:before {
+    content: map-get($flaticon-map, "online-store");
+}
+.pbmit-shipex-icon-checklist:before {
+    content: map-get($flaticon-map, "checklist");
+}
+.pbmit-shipex-icon-correspondence:before {
+    content: map-get($flaticon-map, "correspondence");
+}
+.pbmit-shipex-icon-delivery-box:before {
+    content: map-get($flaticon-map, "delivery-box");
+}
+.pbmit-shipex-icon-package:before {
+    content: map-get($flaticon-map, "package");
+}
+.pbmit-shipex-icon-delivery-courier:before {
+    content: map-get($flaticon-map, "delivery-courier");
+}
+.pbmit-shipex-icon-map-location:before {
+    content: map-get($flaticon-map, "map-location");
+}
+.pbmit-shipex-icon-delivery-time:before {
+    content: map-get($flaticon-map, "delivery-time");
+}
+.pbmit-shipex-icon-letter-box:before {
+    content: map-get($flaticon-map, "letter-box");
+}
+.pbmit-shipex-icon-calendar:before {
+    content: map-get($flaticon-map, "calendar");
+}
+.pbmit-shipex-icon-airplane:before {
+    content: map-get($flaticon-map, "airplane");
+}
+.pbmit-shipex-icon-email:before {
+    content: map-get($flaticon-map, "email");
+}
+.pbmit-shipex-icon-factory:before {
+    content: map-get($flaticon-map, "factory");
+}
+.pbmit-shipex-icon-fragile:before {
+    content: map-get($flaticon-map, "fragile");
+}
+.pbmit-shipex-icon-house:before {
+    content: map-get($flaticon-map, "house");
+}
+.pbmit-shipex-icon-location:before {
+    content: map-get($flaticon-map, "location");
+}
+.pbmit-shipex-icon-targeting:before {
+    content: map-get($flaticon-map, "targeting");
+}
+.pbmit-shipex-icon-cargo-ship:before {
+    content: map-get($flaticon-map, "cargo-ship");
+}
+.pbmit-shipex-icon-container:before {
+    content: map-get($flaticon-map, "container");
+}
+.pbmit-shipex-icon-quote:before {
+    content: map-get($flaticon-map, "quote");
+}
+.pbmit-shipex-icon-menu:before {
+    content: map-get($flaticon-map, "menu");
+}
+.pbmit-shipex-icon-arrow:before {
+    content: map-get($flaticon-map, "arrow");
+}
+.pbmit-shipex-icon-check-mark:before {
+    content: map-get($flaticon-map, "check-mark");
+}
+.pbmit-shipex-icon-play-button:before {
+    content: map-get($flaticon-map, "play-button");
+}
+.pbmit-shipex-icon-telephone:before {
+    content: map-get($flaticon-map, "telephone");
+}
+.pbmit-shipex-icon-phone-call:before {
+    content: map-get($flaticon-map, "phone-call");
+}
+.pbmit-shipex-icon-arrow-up:before {
+    content: map-get($flaticon-map, "arrow-up");
+}
+.pbmit-shipex-icon-right-arrow:before {
+    content: map-get($flaticon-map, "right-arrow");
+}
+.pbmit-shipex-icon-top-right:before {
+    content: map-get($flaticon-map, "top-right");
+}
+.pbmit-shipex-icon-up-right-arrow:before {
+    content: map-get($flaticon-map, "up-right-arrow");
+}
+.pbmit-shipex-icon-arrow-down:before {
+    content: map-get($flaticon-map, "arrow-down");
+}
+.pbmit-shipex-icon-arrow-down-1:before {
+    content: map-get($flaticon-map, "arrow-down-1");
+}
+.pbmit-shipex-icon-tick:before {
+    content: map-get($flaticon-map, "tick");
+}
+.pbmit-shipex-icon-levels:before {
+    content: map-get($flaticon-map, "levels");
+}
+.pbmit-shipex-icon-messages:before {
+    content: map-get($flaticon-map, "messages");
+}
+.pbmit-shipex-icon-location-point:before {
+    content: map-get($flaticon-map, "location-point");
+}
+.pbmit-shipex-icon-location-1:before {
+    content: map-get($flaticon-map, "location-1");
+}
+.pbmit-shipex-icon-call:before {
+    content: map-get($flaticon-map, "call");
+}
+.pbmit-shipex-icon-schedule:before {
+    content: map-get($flaticon-map, "schedule");
+}

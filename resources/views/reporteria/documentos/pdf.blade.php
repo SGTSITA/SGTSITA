@@ -104,15 +104,34 @@
                     <td><span class="status-check {{ $cotizacion['boleta_vacio'] ? 'checked' : 'unchecked' }}"></span>
                     </td>
                     <td>
-                        @if (isset($cotizacion['cima']) && $cotizacion['cima'] == 1)
-                            <div
-                                style="background-color: green; color: white; border-radius: 5px; padding: 2px 6px; font-weight: bold; font-size: 9px; display: inline-block; width: 40px;">
-                                CIMA
-                            </div>
+                        @php
+                            $esFull = $cotizacion['tipo'] === 'Full';
+
+                            $eir1 = $esFull ? $cotizacion['eir_primario'] ?? false : $cotizacion['doc_eir'] ?? false;
+                            $eir2 = $esFull ? $cotizacion['eir_secundario'] ?? false : null;
+
+                            $cima1 = $esFull ? $cotizacion['cima_primario'] ?? 0 : $cotizacion['cima'] ?? 0;
+                            $cima2 = $esFull ? $cotizacion['cima_secundario'] ?? 0 : null;
+
+                            $renderEstado = function ($eir, $cima) {
+                                if ($cima == 1) {
+                                    return '<span class="cima-badge">CIMA</span>';
+                                }
+                                if ($eir) {
+                                    return '<span class="status-check checked"></span>';
+                                }
+                                return '<span class="status-check unchecked"></span>';
+                            };
+                        @endphp
+
+                        @if ($esFull)
+                            {!! $renderEstado($eir1, $cima1) !!} /
+                            {!! $renderEstado($eir2, $cima2) !!}
                         @else
-                            <span class="status-check {{ $cotizacion['doc_eir'] ? 'checked' : 'unchecked' }}"></span>
+                            {!! $renderEstado($eir1, $cima1) !!}
                         @endif
                     </td>
+
 
 
                 </tr>

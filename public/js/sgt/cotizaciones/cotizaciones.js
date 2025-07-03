@@ -186,7 +186,6 @@ function getClientes(clienteId){
     });
 }
 
-
 function cargarmapas(){
        var modal = document.getElementById('mapModal');
     modal.addEventListener('shown.bs.modal', function () {
@@ -278,6 +277,7 @@ function cargarmapas(){
 }
 document.addEventListener('DOMContentLoaded', function () {
     cargarmapas();
+
     const catalogo_clientes = document.querySelector("#txtClientes");
         const formCotizacion = document.querySelector('#cotizacionCreateMultiple');
 
@@ -393,13 +393,55 @@ document.addEventListener('DOMContentLoaded', function () {
     inputMoneyFormatProveedores.on('input',()=>{calcularTotal('proveedores')})
 
 
- 
-    
+ var modal = document.getElementById('mapModal');
+    modal.addEventListener('shown.bs.modal', function () {
+        if (!map) {
+            map = L.map('map').setView([19.4326, -99.1332], 12); // CDMX por defecto
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(map);
 
- 
+            map.on('click', function (e) {
+                const lat = e.latlng.lat.toFixed(6);
+                const lng = e.latlng.lng.toFixed(6);
+                if (marker) marker.remove();
+                marker = L.marker([lat, lng]).addTo(map);
+                document.getElementById('latitud').value = lat;
+                document.getElementById('longitud').value = lng;
+
+             
+                fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        const direccion = data.display_name;
+                        document.getElementById('direccion_entrega').value = direccion;
+                        document.getElementById('direccion_mapa').value = direccion;
+
+                        
+                    });
+            });
+        } else {
+            setTimeout(() => map.invalidateSize(), 200);
+        }
+    });
 
    
-    
+    document.getElementById('searchInput').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            const query = this.value;
+            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`)
+                .then(res => res.json())
+                .then(results => {
+                    if (results.length > 0) {
+                        const lat = parseFloat(results[0].lat);
+                        const lon = parseFloat(results[0].lon);
+                        map.setView([lat, lon], 16);
+                    }
+                });
+        }
+    });
+
 });
 
 function resolverUrlMapa(url){
@@ -829,7 +871,12 @@ $("#cotizacionCreateMultiple").on("submit", async function(e){
     formData["direccion_mapa"] = document.getElementById("direccion_mapa")?.value ?? null;
     formData["fecha_seleccion"] = document.getElementById("fecha_seleccion")?.value ?? null;
 
-  
+
+    formData["latitud"] = document.getElementById("latitud")?.value ?? null;
+    formData["longitud"] = document.getElementById("longitud")?.value ?? null;
+    formData["direccion_mapa"] = document.getElementById("direccion_mapa")?.value ?? null;
+    formData["fecha_seleccion"] = document.getElementById("fecha_seleccion")?.value ?? null;
+
 
     $.ajax({
         url: url,
@@ -1093,3 +1140,7 @@ $("#cotizacionesUpdate").on("submit",(e)=>{
 
    e.target.submit();
 })
+
+
+
+

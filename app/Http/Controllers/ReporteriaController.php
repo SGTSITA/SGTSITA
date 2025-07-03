@@ -950,6 +950,10 @@ public function export_cxp(Request $request)
     $docEir = $cot->doc_eir;
     
     $tipo = "";
+    $eirPrimario = $cot->doc_eir;
+$cimaPrimario = $cot->cima;
+$eirSecundario = null;
+$cimaSecundario = null;
 
     $proveedorNombre = null;
     if ($cot->id_proveedor) {
@@ -957,23 +961,27 @@ public function export_cxp(Request $request)
         $proveedorNombre = $proveedor ? $proveedor->nombre : null;
     }
 
-    if(!is_null($cot->referencia_full)){
-        $secundaria = \App\Models\Cotizaciones::where('referencia_full', $cot->referencia_full)
-            ->where('jerarquia', 'Secundario')
-            ->with('DocCotizacion.Asignaciones')
-            ->first();
+    if (!is_null($cot->referencia_full)) {
+    $secundaria = \App\Models\Cotizaciones::where('referencia_full', $cot->referencia_full)
+        ->where('jerarquia', 'Secundario')
+        ->with('DocCotizacion')
+        ->first();
 
-        if ($secundaria && $secundaria->DocCotizacion) {
-            $docCCP = ($docCCP && $secundaria->DocCotizacion->doc_ccp) ? true : false;
-            $doda = ($doda && $secundaria->DocCotizacion->doda) ? true : false;
-            $docEir = ($docEir && $secundaria->DocCotizacion->doc_eir) ? true : false;
-            $boletaLiberacion = ($boletaLiberacion && $secundaria->DocCotizacion->boleta_liberacion) ? true : false;
-            $cartaPorte = ($cartaPorte && $secundaria->carta_porte) ? true : false;
-            $boletaVacio = ($boletaVacio && $secundaria->img_boleta) ? true : false;
-            $numContenedor .= '  ' . $secundaria->DocCotizacion->num_contenedor;
-        }
-        $tipo = "Full";
+    if ($secundaria && $secundaria->DocCotizacion) {
+        $eirSecundario = $secundaria->DocCotizacion->doc_eir;
+        $cimaSecundario = $secundaria->DocCotizacion->cima;
+
+        $docCCP = ($docCCP && $secundaria->DocCotizacion->doc_ccp) ? true : false;
+        $doda = ($doda && $secundaria->DocCotizacion->doda) ? true : false;
+        $docEir = ($docEir && $secundaria->DocCotizacion->doc_eir) ? true : false;
+        $boletaLiberacion = ($boletaLiberacion && $secundaria->DocCotizacion->boleta_liberacion) ? true : false;
+        $cartaPorte = ($cartaPorte && $secundaria->carta_porte) ? true : false;
+        $boletaVacio = ($boletaVacio && $secundaria->img_boleta) ? true : false;
+        $numContenedor .= '/' . $secundaria->DocCotizacion->num_contenedor;
     }
+
+    $tipo = 'Full';
+}
 
    return [
     "id"=> $cot->id,
@@ -989,7 +997,11 @@ public function export_cxp(Request $request)
     "fecha_inicio"=> $cot->fecha_inicio,
     "fecha_fin"=> $cot->fecha_fin,
     "tipo" => $tipo,
-    "cima" => $cot->cima // 👈 agrega esta línea
+    "cima" => $cot->cima, //  agrega esta línea
+    "eir_primario" => $eirPrimario,
+"eir_secundario" => $eirSecundario,
+"cima_primario" => $cimaPrimario,
+"cima_secundario" => $cimaSecundario,
 ];
 
 });
@@ -1076,53 +1088,67 @@ public function export_documentos(Request $request)
     $cotizacion = Cotizaciones::whereIn('id', $cotizacionIds)->get(); 
 
     $cotizaciones = $cotizaciones1->map(function($cot){
-        $numContenedor = $cot->num_contenedor;
-        $docCCP = $cot->doc_ccp;
-        $doda = $cot->doda;
-        $boletaLiberacion = $cot->boleta_liberacion;
-        $cartaPorte = $cot->carta_porte;
-        $boletaVacio = $cot->boleta_vacio;
-        $docEir = $cot->doc_eir;
-        $tipo = "";
+    $numContenedor = $cot->num_contenedor;
+    $docCCP = $cot->doc_ccp;
+    $doda = $cot->doda;
+    $boletaLiberacion = $cot->boleta_liberacion;
+    $cartaPorte = $cot->carta_porte;
+    $boletaVacio = $cot->boleta_vacio;
+    $docEir = $cot->doc_eir;
+    $tipo = "";
+    
+    // Nuevos campos para EIR y CIMA individuales
+    $eirPrimario = $docEir;
+    $cimaPrimario = $cot->cima;
+    $eirSecundario = null;
+    $cimaSecundario = null;
 
-        if(!is_null($cot->referencia_full)){
-                $secundaria = Cotizaciones::where('referencia_full', $cot->referencia_full)
-                ->where('jerarquia', 'Secundario')
-                ->with('DocCotizacion.Asignaciones')
-                ->first();
+    if (!is_null($cot->referencia_full)) {
+        $secundaria = \App\Models\Cotizaciones::where('referencia_full', $cot->referencia_full)
+            ->where('jerarquia', 'Secundario')
+            ->with('DocCotizacion')
+            ->first();
 
-                $docCCP = ($docCCP && $secundaria->DocCotizacion->doc_ccp) ? true : false;
-                $doda = ($doda && $secundaria->DocCotizacion->doda) ? true : false;
-                $docEir = ($docEir && $secundaria->DocCotizacion->doc_eir) ? true : false;
+        if ($secundaria && $secundaria->DocCotizacion) {
+            $eirSecundario = $secundaria->DocCotizacion->doc_eir;
+            $cimaSecundario = $secundaria->DocCotizacion->cima;
 
-                $boletaLiberacion = ($boletaLiberacion && $secundaria->DocCotizacion->boleta_liberacion) ? true : false;
-                $cartaPorte = ($cartaPorte && $secundaria->carta_porte) ? true : false;
-                $boletaVacio = ($boletaVacio && $secundaria->img_boleta) ? true : false;
+            $docCCP = ($docCCP && $secundaria->DocCotizacion->doc_ccp) ? true : false;
+            $doda = ($doda && $secundaria->DocCotizacion->doda) ? true : false;
+            $docEir = ($docEir && $secundaria->DocCotizacion->doc_eir) ? true : false;
+            $boletaLiberacion = ($boletaLiberacion && $secundaria->DocCotizacion->boleta_liberacion) ? true : false;
+            $cartaPorte = ($cartaPorte && $secundaria->carta_porte) ? true : false;
+            $boletaVacio = ($boletaVacio && $secundaria->img_boleta) ? true : false;
 
-
-                if ($secundaria && $secundaria->DocCotizacion) {
-                    $numContenedor .= ' / ' . $secundaria->DocCotizacion->num_contenedor;
-                }
-                $tipo = "Full";
+            $numContenedor .= ' / ' . $secundaria->DocCotizacion->num_contenedor;
+            $tipo = "Full";
         }
+    }
 
-        return [
-            "id"=> $cot->id,
-            "cliente"=> $cot->cliente,
-            "num_contenedor"=>$numContenedor,
-            "doc_ccp"=> $docCCP,
-            "boleta_liberacion"=> $boletaLiberacion,
-            "doda"=> $doda,
-            "carta_porte"=> $cartaPorte,
-            "boleta_vacio"=> $boletaVacio,
-            "doc_eir"=> $docEir,
-            "id_proveedor"=> $cot->id_proveedor,
-            "fecha_inicio"=> $cot->fecha_inicio,
-            "fecha_fin"=> $cot->fecha_fin,
-            "tipo" => $tipo,
-            "cima" => $cot->cima,
-        ];
-    });
+    return [
+        "id"=> $cot->id,
+        "cliente"=> $cot->cliente ?? null,
+        "num_contenedor"=> $numContenedor,
+        "doc_ccp"=> $docCCP,
+        "boleta_liberacion"=> $boletaLiberacion,
+        "doda"=> $doda,
+        "carta_porte"=> $cartaPorte,
+        "boleta_vacio"=> $boletaVacio,
+        "doc_eir"=> $docEir,
+        "id_proveedor"=> $cot->id_proveedor ?? null,
+        "fecha_inicio"=> $cot->fecha_inicio ?? null,
+        "fecha_fin"=> $cot->fecha_fin ?? null,
+        "tipo" => $tipo,
+        "cima" => $cot->cima,
+
+        // 👇 Agregados para PDF dinámico
+        "eir_primario" => $eirPrimario,
+        "eir_secundario" => $eirSecundario,
+        "cima_primario" => $cimaPrimario,
+        "cima_secundario" => $cimaSecundario,
+    ];
+});
+
 
     $user = auth()->user();
 

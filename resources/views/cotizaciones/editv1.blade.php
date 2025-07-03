@@ -241,7 +241,7 @@
                                                 <input class="form-control" type="hidden" name="direccion_mapa" id="direccion_mapa" value="{{ $cotizacion->direccion_mapa }}">
                                                 <input class="form-control" type="hidden" name="fecha_seleccion" id="fecha_seleccion" value="{{ $cotizacion->fecha_seleccion }}">
                                             </div>
-                                            </div>
+                                        </div>
 
                                             <div class="col-6 mt-2 form-group">
                                                 <label for="name">Fecha modulación</label>
@@ -1195,6 +1195,7 @@
 @include('cotizaciones.modal_pagar_gastos_operador')
 @include('cotizaciones.modal_fileuploader')
 @include('cotizaciones.modal_mapa_Direccion')
+
 @endsection
 
 @section('select2')
@@ -1234,6 +1235,7 @@
     <script src="{{ asset('js/sgt/cotizaciones/cotizacion-gastos-operador.js') }}?v={{ filemtime(public_path('js/sgt/cotizaciones/cotizacion-gastos-operador.js')) }}"></script>
 
     <script src="{{ asset('js/sgt/cotizaciones/cotizacion-fileuploader.js') }}?v={{ filemtime(public_path('js/sgt/cotizaciones/cotizacion-fileuploader.js')) }}"></script>
+    
     <style>
   .custom-nav-tabs {
     display: flex;
