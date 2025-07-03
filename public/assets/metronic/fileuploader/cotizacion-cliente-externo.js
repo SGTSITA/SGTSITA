@@ -17,21 +17,30 @@ let btnFileDODA = document.querySelector('#btnFileDODA');
 let btnFileBoletaLiberacion = document.querySelector('#btnFileBoletaLiberacion');
 let btnPreAlta = document.querySelector("#btnFilePrealta");
 
-btnFileCartaPorte.addEventListener('click',()=>{
+if (btnFileCartaPorte) {
+  btnFileCartaPorte.addEventListener('click', () => {
     fileSettings = CartaPorte;
-})
-
-btnFileDODA.addEventListener('click',()=>{
+  });
+}
+if (btnFileDODA) {
+    btnFileDODA.addEventListener('click',()=>{
     fileSettings = Doda;
 })
+}
 
+if (btnFileBoletaLiberacion) {
 btnFileBoletaLiberacion.addEventListener('click',()=>{
     fileSettings = BoletaLib;
 })
+}
 
+
+if (btnPreAlta) {
 btnPreAlta.addEventListener('click',()=>{
     fileSettings = PreAlta
 })
+}
+
 
 function getSubClientes() {
     var clienteId = $(this).val();
@@ -222,4 +231,3 @@ function adjuntarDocumentos() {
    // api.uploadStart(); // Iniciar la carga manualmente
 
 }
-

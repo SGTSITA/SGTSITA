@@ -1,6 +1,20 @@
 @extends('layouts.usuario_externo')
 
 @section('WorkSpace')
+<div class="modal fade" id="mapModal" tabindex="-1" aria-labelledby="mapModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered modal-fullscreen-md-down">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Selecciona una ubicación</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <input type="text" id="searchInput" class="form-control mb-2" placeholder="Buscar código postal, dirección o una url de https://maps.app.goo.gl">
+        <div id="map" style="height: 500px;"></div>
+      </div>
+    </div>
+  </div>
+</div>
 <div class="row gx-5 gx-xl-10">
   <div class="col-sm-12 mb-5 mb-xl-10">
     <div class="card card-flush h-lg-100">
@@ -21,6 +35,7 @@
             @include('cotizaciones.externos.datos_generales') 
             @include('cotizaciones.externos.datos_facturacion')
             @include('cotizaciones.externos.datos_bloque')
+           
         </div>
       </div>
       <div class="separator separator-dashed mb-8"></div>
@@ -30,9 +45,12 @@
   </div>
 </div>
 </div>
+
 @endsection
 
 @push('javascript')
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="{{ asset('js/sgt/common.js') }}?v={{ filemtime(public_path('js/sgt/common.js')) }}"></script>
 <script src="{{ asset('js/sgt/cotizaciones/cotizaciones.js') }}?v={{ filemtime(public_path('js/sgt/cotizaciones/cotizaciones.js')) }}"></script>
 <script src="{{asset('assets/metronic/fileuploader/cotizacion-cliente-externo.js')}}?v={{ filemtime(public_path('js/sgt/cotizaciones/cotizaciones.js')) }}" type="text/javascript"></script>
