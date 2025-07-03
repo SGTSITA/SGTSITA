@@ -278,6 +278,8 @@ Route::post('operadores/{id}/restaurar', [App\Http\Controllers\OperadorControlle
 
     Route::get('/cotizaciones/busqueda', [App\Http\Controllers\CotizacionesController::class, 'find'])->name('busqueda.cotizaciones');
     Route::post('/cotizaciones/full', [App\Http\Controllers\CotizacionesController::class, 'cotizacionesFull'])->name('cotizaciones.full');
+    Route::post('/cotizaciones/transformar/full', [App\Http\Controllers\CotizacionesController::class, 'convertirFull'])->name('cotizaciones.transform.full');
+
     Route::post('/cotizaciones/busqueda', [App\Http\Controllers\CotizacionesController::class, 'findExecute'])->name('exec.busqueda.cotizaciones');
     Route::get('/cotizaciones/documentos/{id}', [App\Http\Controllers\CotizacionesController::class, 'getDocumentos']);
 

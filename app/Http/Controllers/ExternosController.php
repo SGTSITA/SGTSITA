@@ -95,6 +95,7 @@ class ExternosController extends Controller
         $contenedoresPendientes = Cotizaciones::join('docum_cotizacion as d', 'cotizaciones.id', '=', 'd.id_cotizacion')
                                                 ->where('cotizaciones.id_cliente' ,'=',Auth::User()->id_cliente)
                                                 ->where('estatus',$condicion,'En espera')
+                                                ->where('jerarquia', "!=",'Secundario')
                                                 ->orderBy('created_at', 'desc')
                                                 ->selectRaw('cotizaciones.*, d.num_contenedor,d.doc_eir,doc_ccp ,d.boleta_liberacion,d.doda,d.foto_patio')
                                                 ->get();
@@ -102,18 +103,51 @@ class ExternosController extends Controller
 
         $resultContenedores = 
         $contenedoresPendientes->map(function($c){
+
+            $numContenedor = $c->num_contenedor;
+            $docCCP = ($c->doc_ccp == null) ? false : true;
+            $doda = ($c->doda == null) ? false : true;
+            $boletaLiberacion = ($c->boleta_liberacion == null) ? false : true;
+            $cartaPorte = $c->carta_porte;
+            $boletaVacio = ($c->img_boleta == null) ? false : true;
+            $docEir = $c->doc_eir;
+            $fotoPatio = ($c->foto_patio == null) ? false : true;
+            $tipo = "Sencillo";
+
+            if (!is_null($c->referencia_full)) {
+                $secundaria = Cotizaciones::where('referencia_full', $c->referencia_full)
+                    ->where('jerarquia', 'Secundario')
+                    ->with('DocCotizacion.Asignaciones')
+                    ->first();
+
+                if ($secundaria && $secundaria->DocCotizacion) {
+                    $docCCP = ($docCCP && $secundaria->DocCotizacion->doc_ccp) ? true : false;
+                    $doda = ($doda && $secundaria->DocCotizacion->doda) ? true : false;
+                    $docEir = ($docEir && $secundaria->DocCotizacion->doc_eir) ? true : false;
+                    $boletaLiberacion = ($boletaLiberacion && $secundaria->DocCotizacion->boleta_liberacion) ? true : false;
+                    $cartaPorte = ($cartaPorte && $secundaria->carta_porte) ? true : false;
+                    $boletaVacio = ($boletaVacio && $secundaria->img_boleta) ? true : false;
+                    $fotoPatio = ($fotoPatio && $secundaria->foto_patio) ? true : false;
+                    $numContenedor .= '  ' . $secundaria->DocCotizacion->num_contenedor;
+                }
+
+                $tipo = "Full";
+            }
+
             return [
-                "NumContenedor" => $c->num_contenedor,
+                "NumContenedor" => $numContenedor,
                 "Estatus" => ($c->estatus == "NO ASIGNADA") ? "Viaje solicitado" : $c->estatus,
                 "Origen" => $c->origen, 
                 "Destino" => $c->destino, 
                 "Peso" => $c->peso_contenedor,
-                "BoletaLiberacion" => ($c->boleta_liberacion == null) ? false : true,
-                "DODA" => ($c->doda == null) ? false : true,
-                "foto_patio" => ($c->foto_patio == null) ? false : true,
-                "FormatoCartaPorte" => ($c->doc_ccp == null) ? false : true,
-                "PreAlta" => ($c->img_boleta == null) ? false : true,
-                "FechaSolicitud" => Carbon::parse($c->created_at)->format('Y-m-d')
+                "BoletaLiberacion" => $boletaLiberacion,
+                "DODA" => $doda,
+                "foto_patio" => $fotoPatio,
+                "FormatoCartaPorte" => $docCCP,
+                "PreAlta" => $boletaVacio,
+                "FechaSolicitud" => Carbon::parse($c->created_at)->format('Y-m-d'),
+                "tipo" => $tipo,
+                "id" => $c->id
             ];
         });
 
