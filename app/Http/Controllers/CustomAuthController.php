@@ -89,9 +89,6 @@ class CustomAuthController extends Controller
         
        $user = auth()->user();
 
-    
-
-    
         Session::flush();
         Auth::logout();
 
