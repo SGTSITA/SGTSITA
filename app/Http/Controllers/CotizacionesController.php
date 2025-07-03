@@ -552,7 +552,9 @@ public function getCotizacionesCanceladas()
             $cotizaciones->direccion_recinto = $request->direccion_recinto;
             $cotizaciones->uso_recinto = ($request->text_recinto == 'recinto-si') ? 1 : 0;
         }
-
+   $cotizaciones->latitud=  $request->latitud;
+            $cotizaciones->longitud = $request->longitud;
+             $cotizaciones->direccion_mapa = $request->direccion_mapa;
         $cotizaciones->save();
 
         $doc_cotizaciones = Cotizaciones::where('id', '=', $cotizaciones->id)->first();
@@ -831,7 +833,7 @@ public function getCotizacionesCanceladas()
             $cotizaciones->base_taref = $request->base_taref;
             $cotizaciones->sobrepeso = $contenedor['sobrepeso'];
             $cotizaciones->precio_sobre_peso = $request->precioSobrePeso;
-            //coordenadas para comparar ubicaciones
+            //coordenadas para comparar
             $cotizaciones->total = $request->total;
             $cotizaciones->latitud=  $request->latitud;
             $cotizaciones->longitud = $request->longitud;

@@ -231,4 +231,3 @@ function adjuntarDocumentos() {
    // api.uploadStart(); // Iniciar la carga manualmente
 
 }
-

@@ -262,4 +262,3 @@
       </div>
       <!--end::Timeline content-->    
       </div>
-      @include('cotizaciones.modal_mapa_Direccion')
