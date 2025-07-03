@@ -1218,7 +1218,7 @@
     background-color: transparent !important;
     }
     </style>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+        <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script src="{{ asset('assets/vendor/jquery/dist/jquery.min.js')}}"></script>
     <script src="{{ asset('assets/vendor/select2/dist/js/select2.min.js')}}"></script>

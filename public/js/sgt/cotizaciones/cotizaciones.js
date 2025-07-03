@@ -298,6 +298,95 @@ document.addEventListener('DOMContentLoaded', function () {
     inputMoneyFormat.on('input',()=>{calcularTotal()})
     var inputMoneyFormatProveedores = $('.calculo-proveedor');
     inputMoneyFormatProveedores.on('input',()=>{calcularTotal('proveedores')})
+
+
+     var modal = document.getElementById('mapModal');
+    modal.addEventListener('shown.bs.modal', function () {
+        if (!map) {
+            map = L.map('map').setView([19.4326, -99.1332], 12); // CDMX por defecto
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(map);
+
+            map.on('click', function (e) {
+                const lat = e.latlng.lat.toFixed(6);
+                const lng = e.latlng.lng.toFixed(6);
+                if (marker) marker.remove();
+                marker = L.marker([lat, lng]).addTo(map);
+                document.getElementById('latitud').value = lat;
+                document.getElementById('longitud').value = lng;
+
+             
+                fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        const direccion = data.display_name;
+                        document.getElementById('direccion_entrega').value = direccion;
+                        document.getElementById('direccion_mapa').value = direccion;
+
+                        
+                    });
+            });
+        } else {
+            setTimeout(() => map.invalidateSize(), 200);
+        }
+
+        const lat = document.getElementById('latitud').value;
+    const lng = document.getElementById('longitud').value;
+    const direccion = document.getElementById('direccion_entrega').value;
+
+    if ((!lat || !lng) && direccion) {
+        // Buscar la dirección automáticamente (geocoding)
+        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(direccion)}`)
+            .then(res => res.json())
+            .then(results => {
+                if (results.length > 0) {
+                    const latitud = parseFloat(results[0].lat);
+                    const longitud = parseFloat(results[0].lon);
+
+                    map.setView([latitud, longitud], 16);
+
+                    if (marker) marker.remove();
+                    marker = L.marker([latitud, longitud]).addTo(map);
+
+                    document.getElementById('latitud').value = latitud.toFixed(6);
+                    document.getElementById('longitud').value = longitud.toFixed(6);
+                    document.getElementById('direccion_mapa').value = direccion;
+                } else {
+                    // Mostrar mensaje si no se encuentra
+                    alert("No se pudo localizar la dirección. Verifica el formato o selecciona manualmente.");
+                }
+            })
+            .catch(err => {
+                console.error("Error al buscar dirección:", err);
+                alert("Error al contactar el servicio de mapas.");
+            });
+    }
+
+    });
+
+   
+    document.getElementById('searchInput').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+             let query ="";
+            if (esShortUrlGoogleMaps(this.value)) {
+               resolverUrlMapa(this.value);
+            } else {
+              query  = formatearDireccion(this.value);
+            }
+          
+            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`)
+                .then(res => res.json())
+                .then(results => {
+                    if (results.length > 0) {
+                        const lat = parseFloat(results[0].lat);
+                        const lon = parseFloat(results[0].lon);
+                        map.setView([lat, lon], 16);
+                    }
+                });
+        }
+    });
     
  var modal = document.getElementById('mapModal');
     modal.addEventListener('shown.bs.modal', function () {
@@ -348,6 +437,80 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 });
+
+function resolverUrlMapa(url){
+    let _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    fetch('/coordenadas/resolver-link-google', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                     'X-CSRF-TOKEN': token,
+                    'Accept': 'application/json',
+                },
+                body: JSON.stringify({ shortUrl: url })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.lat && data.lng) {
+                    // Mostrar en mapa (Leaflet)
+                    map.setView([data.lat, data.lng], 16);
+
+                    if (marker) marker.remove();
+                    marker = L.marker([data.lat, data.lng]).addTo(map);
+
+                    document.getElementById('latitud').value = data.lat.toFixed(6);
+                    document.getElementById('longitud').value = data.lng.toFixed(6);
+                    document.getElementById('direccion_entrega').value = data.formatted_address || 'Ubicación desde Google Maps';
+                    document.getElementById('direccion_mapa').value = data.formatted_address || 'Ubicación desde Google Maps';
+                } else {
+                    alert('No se pudo obtener la ubicación desde el enlace.');
+                }
+            })
+            .catch(err => {
+                console.error('Error en la petición:', err);
+                alert('Error al contactar al servidor.');
+            });
+}
+
+function esShortUrlGoogleMaps(url) {
+    const regex = /^https?:\/\/maps\.app\.goo\.gl\/.+$/i;
+    return regex.test(url);
+}
+
+function formatearDireccion(raw) {
+    if (!raw || typeof raw !== 'string') return '';
+
+    let dir = raw.trim().toLowerCase();
+
+    // Reemplazos opcionales que solo aplican si detectamos ciertas palabras clave
+    const reemplazos = [
+        { regex: /\bcp\b/gi, texto: '' },
+        { regex: /\bedo de mexico\b/gi, texto: 'Estado de México' },
+        { regex: /\bsan\b/gi, texto: 'San' },
+        { regex: /\bprolongacion\b/gi, texto: 'Prolongación' },
+        { regex: /\blecheria\b/gi, texto: 'Lechería' },
+        { regex: /\btulantongo\b/gi, texto: 'Tulantongo' },
+        { regex: /\bjuarez\b/gi, texto: 'Juárez' }
+    ];
+
+    reemplazos.forEach(r => {
+        dir = dir.replace(r.regex, r.texto);
+    });
+
+    dir = dir.replace(/\s{2,}/g, ' ');
+    dir = dir.replace(/,+/g, ',');
+    dir = dir.replace(/(^,|,$)/g, '');
+
+    // Capitalizar cada palabra
+    dir = dir.split(' ').map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
+
+    // Agregar ", México" si no lo contiene
+    if (!dir.toLowerCase().includes('méxico')) {
+        dir += ', México';
+    }
+
+    return dir;
+}
 
 var pesoReglamentarioInput = document.getElementById('peso_reglamentario');
 var sobrepesoInput = document.getElementById('sobrepeso');
@@ -696,6 +859,11 @@ $("#cotizacionCreateMultiple").on("submit", async function(e){
     formData["TipoCotizacion"] = tipoCotizacion
     formData["sobrePeso"] = sobrePeso
     formData["precioSobrePeso"] = reverseMoneyFormat(precioSobrePeso)
+ //coordenadas para comparacion
+    formData["latitud"] = document.getElementById("latitud")?.value ?? null;
+    formData["longitud"] = document.getElementById("longitud")?.value ?? null;
+    formData["direccion_mapa"] = document.getElementById("direccion_mapa")?.value ?? null;
+    formData["fecha_seleccion"] = document.getElementById("fecha_seleccion")?.value ?? null;
 
     //
     formData["latitud"] = document.getElementById("latitud")?.value ?? null;

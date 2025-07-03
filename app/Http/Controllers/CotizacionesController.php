@@ -820,9 +820,11 @@ public function getCotizacionesCanceladas()
             $cotizaciones->base_taref = $request->base_taref;
             $cotizaciones->sobrepeso = $contenedor['sobrepeso'];
             $cotizaciones->precio_sobre_peso = $request->precioSobrePeso;
-            
+            //coordenadas para comparar ubicaciones
             $cotizaciones->total = $request->total;
-
+            $cotizaciones->latitud=  $request->latitud;
+            $cotizaciones->longitud = $request->longitud;
+             $cotizaciones->direccion_mapa = $request->direccion_mapa;
 
            /* if ($request->hasFile("carta_porte")) {
                 $file = $request->file('carta_porte');
