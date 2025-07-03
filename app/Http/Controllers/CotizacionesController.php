@@ -725,6 +725,17 @@ public function getCotizacionesCanceladas()
         return $cotizaciones;
     }
 
+    public function convertirFull(Request $request){
+        $fullUUID = Common::generarUuidV4();
+        $viajes = $request->seleccion;
+       
+        for($x = 0; $x < (sizeof($viajes)); $x++){
+            $jerarquia = ($x == 0) ? 'Principal' : 'Secundario';
+            Cotizaciones::where('id', $viajes[$x]['id'])->update(["tipo_viaje" => "Full","referencia_full" => $fullUUID, 'jerarquia' => $jerarquia]);
+        }
+        return response()->json(["Titulo" => "Proceso satisfactorio", "Mensaje" => "Se ha realizado la fusion de viajes a tipo Full", "TMensaje" => "success"]);
+    }
+
     public function edit_externo($id){
         $cotizacion = Cotizaciones::where('id', '=', $id)->first();
         $documentacion = DocumCotizacion::where('id_cotizacion', '=', $cotizacion->id)->first();
@@ -842,6 +853,11 @@ public function getCotizacionesCanceladas()
 
 */
             $cotizaciones->restante = $request->total;
+
+            $cotizaciones->latitud=  $request->latitud;
+            $cotizaciones->longitud = $request->longitud;
+             $cotizaciones->direccion_mapa = $request->direccion_mapa;
+             
             
 
             $asignacion = Asignaciones::where('id_contenedor', $id)->first();

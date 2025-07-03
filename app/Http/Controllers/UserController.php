@@ -168,4 +168,19 @@ class UserController extends Controller
         return redirect()->route('users.index')
                         ->with('success','User deleted successfully');
     }
+
+
+   public function cambiarEmpresa(Request $request)
+    {
+        $request->validate([
+            'empresa_id' => 'required|exists:empresas,id',
+        ]);
+
+    
+         $user = auth()->user();
+        $user->id_empresa = $request->empresa_id;
+        $user->save();
+
+        return redirect()->back()->with('success', 'Empresa cambiada correctamente.');
+    }
 }

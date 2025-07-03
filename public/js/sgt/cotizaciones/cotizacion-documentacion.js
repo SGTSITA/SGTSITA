@@ -125,12 +125,32 @@ class MissionResultRenderer {
    ],
 
    columnDefs: [
+     { field: "id", hide: true },
+     { field: "tipo", hide: true },
      { field: "BoletaLiberacion",width: 110,cellRenderer: MissionResultRenderer },
      { field: "DODA",width: 110,cellRenderer: MissionResultRenderer },
      { field: "FormatoCartaPorte",width: 150,cellRenderer: MissionResultRenderer },
      { field: "PreAlta",width: 110,cellRenderer: MissionResultRenderer },
      { field: "foto_patio",width: 110,cellRenderer: MissionResultRenderer },
-     { field: "NumContenedor",filter: true, floatingFilter: true},
+     {
+     field: "NumContenedor", 
+     sortable: true, 
+     filter: true, 
+     minWidth: 150 ,
+     autoHeight: true, // Permite que la fila se ajuste en altura
+     cellStyle:params => {
+         const styles = {
+           'white-space': 'normal',
+           'line-height': '1.5',
+         };
+     
+         // Si la cotización es tipo "Full", aplicar fondo 
+         if (params.data.tipo === 'Full') {
+           styles['background-color'] = '#ffe5b4'; 
+         }
+     
+         return styles;
+       },},
      { field: "Estatus",filter: true, floatingFilter: true, cellClassRules: ragCellClassRules},
      { field: "Origen",filter: true, floatingFilter: true},
      { field: "Destino" },
@@ -268,6 +288,51 @@ class MissionResultRenderer {
         Swal.fire("Ocurrio un error","No se pudo procesar la solicitud", "error");
       }
     });
+   }
+
+   function viajeFull(){
+    let seleccion = apiGrid.getSelectedRows();
+       
+
+        if(seleccion.length > 2){
+            Swal.fire('Maximo 2 contenedores','Lo sentimos, solo puede seleccionar maximo 2 contenedores, estos deben ser de un mismo cliente','warning')
+            return false
+        }
+
+        Swal.fire({
+            title: '¿Estás seguro?',
+            text: "Quiere unir los contenedores seleccionados en un viaje Full.",
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, continuar',
+            cancelButtonText: 'No, cancelar',
+            reverseButtons: true // Opcional: invierte el orden de los botones
+          }).then((result) => {
+            if (result.isConfirmed) {
+                let _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+              $.ajax({
+                url:'/cotizaciones/transformar/full',
+                type:'post',
+                data:{_token, seleccion},
+                beforeSend:()=>{
+                  
+                },
+                success:(response)=>{
+                    Swal.fire(response.Titulo, response.Mensaje, response.TMensaje)
+                    if(response.TMensaje == "success"){
+                        getCotizacionesList();
+                    }
+                   
+                },
+                error:()=>{
+                   
+                }
+              })
+            } else if (result.dismiss === Swal.DismissReason.cancel) {
+              // Acción si el usuario canceló
+              console.log("El usuario canceló");
+            }
+          });
    }
 
    function fileManager(){
