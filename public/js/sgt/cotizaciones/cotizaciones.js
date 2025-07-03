@@ -450,7 +450,7 @@ function resolverUrlMapa(url){
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                     'X-CSRF-TOKEN': token,
+                     'X-CSRF-TOKEN': _token,
                     'Accept': 'application/json',
                 },
                 body: JSON.stringify({ shortUrl: url })
