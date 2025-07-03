@@ -26,6 +26,10 @@ class ConboysController extends Controller
 
     }
 
+    public function extHistorialUbicaciones(){
+        return view('mec.coordenadas.contenedores-ubic');
+    }
+
     //end externos
      public function index()
     {

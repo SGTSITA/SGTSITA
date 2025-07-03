@@ -28,10 +28,12 @@
 @section('WorkSpace')
     <div class="card shadow-sm">
         <div class="card-header bg-white border-bottom">
-            <h3 class="card-title fw-bold"><i class="fas fa-address-card me-2 text-primary"></i>Agregar Contacto</h3>
+            <h3 class="card-title fw-bold">
+                <i class="fas fa-address-card me-2 text-primary"></i>Agregar Contacto
+            </h3>
         </div>
         <div class="card-body">
-            <form method="POST" action="{{ route('contactos.store') }}" enctype="multipart/form-data">
+            <form id="formContacto" enctype="multipart/form-data">
                 @csrf
 
                 <div class="mb-3 text-center">
@@ -49,9 +51,6 @@
                         <span class="text-muted small d-block">Foto del contacto</span>
                     </div>
                 </div>
-
-
-
 
                 <div class="mb-3">
                     <label for="nombre" class="form-label">Nombre</label>
@@ -94,6 +93,7 @@
         </div>
     </div>
 @endsection
+
 @push('javascript')
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -101,7 +101,6 @@
             const preview = document.getElementById('preview-foto');
 
             input.addEventListener('change', function(e) {
-                console.log('Archivo seleccionado:', e.target.files[0]);
                 const file = e.target.files[0];
                 if (file) {
                     const reader = new FileReader();
@@ -109,6 +108,53 @@
                         preview.src = event.target.result;
                     };
                     reader.readAsDataURL(file);
+                }
+            });
+
+            const form = document.getElementById('formContacto');
+
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+
+                const formData = new FormData(form);
+
+                try {
+                    const response = await fetch("{{ route('contactos.store') }}", {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')
+                                .getAttribute('content'),
+                            'Accept': 'application/json'
+                        },
+                        body: formData
+                    });
+
+                    const result = await response.json();
+
+                    if (!result.success) {
+                        Swal.fire({
+                            icon: 'info',
+                            title: 'Atención',
+                            html: result.message,
+                            confirmButtonText: 'Entendido'
+                        });
+                        return;
+                    }
+
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Contacto guardado',
+                        text: result.message,
+                        timer: 1500,
+                        showConfirmButton: false
+                    }).then(() => {
+                        window.location.href = "{{ route('contactos.index') }}";
+                    });
+
+
+                } catch (error) {
+                    console.error(error);
+                    Swal.fire('Error', 'Ocurrió un error al guardar el contacto.', 'error');
                 }
             });
         });

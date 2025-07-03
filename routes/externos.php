@@ -63,5 +63,7 @@ Route::post('coordenadas/extsearchDoctos', [App\Http\Controllers\CoordenadasCont
 Route::get('/coordenadas/exrastrear', [App\Http\Controllers\CoordenadasController::class, 'exrastrearIndex'])->name('exrastrearContenedor');
 Route::get('coordenadas/exconboys', [App\Http\Controllers\ConboysController::class, 'exindex'])->name('exindex.conboys');
 Route::get('coordenadas/conboys/ex-encontrar/', [App\Http\Controllers\ConboysController::class, 'exindexconvoy'])->name('exfind-convoy');
+Route::get('/coordenadas/ext/historialUbi', [App\Http\Controllers\ConboysController::class, 'extHistorialUbicaciones'])->name('extHistorialUbicaciones');
+
 
 });

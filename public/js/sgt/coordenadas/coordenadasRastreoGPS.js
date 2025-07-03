@@ -35,7 +35,7 @@ function cargarEquiposEnSelect(dataequipos) {
 
   dataequipos.forEach(equipo => {
     const option = document.createElement('option');
-    option.value = `${equipo.id_equipo}|${equipo.imei}|${equipo.id}`;
+    option.value = `${equipo.id_equipo}|${equipo.imei}|${equipo.id}|${equipo.tipoGps}`;
     const textoPlaca = equipo.placas?.trim() ? equipo.placas : 'SIN PLACA';
     option.textContent = `${equipo.id_equipo } - ${equipo.marca}- ${equipo.tipo}- ${textoPlaca}`;
     select.appendChild(option);
@@ -62,7 +62,7 @@ function cargarinicial()
 function obtenerImeisPorConvoyId(convoyId) {
     return detalleConvoys
     .filter(item => item.conboy_id == convoyId && item.imei && item.id_contenedor)
-    .map(item => item.num_contenedor + "|" + item.imei + "|" + item.id_contenedor);
+    .map(item => item.num_contenedor + "|" + item.imei + "|" + item.id_contenedor+"|"+item.tipoGps);
 }
 
 function obtenerTabActivo() {
@@ -160,9 +160,9 @@ function actualizarUbicacionReal(coordenadaData){
 
 }
 function actualizarUbicacion(imeis,t) {
-  const selectElement = document.getElementById('tipo');
+ 
 
-let tipo = selectElement.value;
+let tipo = "";
 
     let responseOk = false;
   fetch("/coordenadas/ubicacion-vehiculo", {
@@ -171,7 +171,7 @@ let tipo = selectElement.value;
       'Content-Type': 'application/json',
       'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
     },
-    body: JSON.stringify({ imeis: imeis , tipo: tipo})
+    body: JSON.stringify({ imeis: imeis})
   })
   .then(res => res.json())
   .then(data => {
@@ -182,6 +182,7 @@ limpiarMarcadores();
 responseOk = true;
     if (Array.isArray(dataUbi)) {
       dataUbi.forEach((item, index) => {
+        tipo= item.tipogps;
          let latlocal ='';
         let lnglocal='';
         let nEconomico='';
@@ -255,17 +256,18 @@ responseOk = true;
         }else {
              latlocal = item.ubicacion.data.lat;
          lnglocal = item.ubicacion.data.lng;
-         id_contenConvoy=  item.id_contenendor;
+         idConvoyOContenedor=  item.id_contenendor;
         if (latlocal && lnglocal) {
     
           const newMarker = L.marker([latlocal, lnglocal]).addTo(map).bindPopup(item.contenedor).openPopup();
             window.markers.push(newMarker);
-
+          tipo= tipo + ' '+ item.contenedor;
           newMarker.on('click', () => {
             const contenedor = item.contenedor;
              let info = contenedoresDisponibles.find(d => d.contenedor === contenedor);
                 if (!info) {
                    if(t='#filtro-Equipo'){
+                   
                     const ahora = new Date();
                        info = contenedoresDisponibles.find(d => {
                             const inicio = new Date(d.fecha_inicio);
@@ -283,6 +285,13 @@ responseOk = true;
                   return;
                   }
                 }
+                let extraInfo = '';
+
+                if (t === '#filtro-Equipo') {
+                  extraInfo = `
+                    <p><strong>IMEI CHASIS:</strong> ${info.imei_chasis}</p>
+                           `;
+                }
 
                 const contenido = `
                   <div class="p-3">
@@ -292,8 +301,10 @@ responseOk = true;
                     <p><strong>Origen:</strong> ${info.origen}</p>
                     <p><strong>Destino:</strong> ${info.destino}</p>
                     <p><strong>Contrato:</strong> ${info.tipo_contrato}</p>
-                    <p><strong>IMEI:</strong> ${info.imei}</p>
                     <p><strong>Fecha Inicio:</strong> ${info.fecha_inicio}</p>
+                    <p><strong>IMEI:</strong> ${info.imei}</p>
+                   
+                                   ${extraInfo}
                   </div>
                 `;
 
@@ -304,6 +315,7 @@ responseOk = true;
               modal.show();
             });
         if (index === 0) map.setView([latlocal, lnglocal], 15);
+
         
         }
         }
@@ -478,7 +490,7 @@ let ItemsSelects = [];
         seleccionados.push(valor);
          const contenedorData = contenedoresDisponibles.find(c => c.contenedor === valor);
 
-         ItemsSelects.push(valor +"|" +contenedorData.imei+"|"+ contenedorData.id_contenedor);
+         ItemsSelects.push(valor +"|" +contenedorData.imei+"|"+ contenedorData.id_contenedor+"|"+ contenedorData.tipoGps);
         document.getElementById('contenedor-input').value = '';
         document.getElementById('sugerencias').style.display = 'none';
         actualizarVista();
