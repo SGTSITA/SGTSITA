@@ -17,6 +17,9 @@ use App\Http\Controllers\WhatsAppController;
 use App\Http\Controllers\GpsController;
 use App\Http\Controllers\ContactoController;
 use App\Http\Controllers\ReporteriaController;
+use App\Http\Controllers\MepController;
+
+use App\Models\User;
 
 Route::group(["prefix" => "gps"],function(){
  Route::get('globalgps/ubicacion/by-imei/{imei}',[GpsController::class,'obtenerUbicacionByImei'])->name('ubicacion.byimei');
@@ -24,8 +27,14 @@ Route::group(["prefix" => "gps"],function(){
 });
 
 
+Route::group(["prefix" => "mep"], function(){
+ Route::get('viajes',[MepController::class, 'index'])->name('mep.index');
+ Route::get('viajes/list',[MepController::class, 'getCotizacionesList'])->name('mep.viajes');
+ Route::get('viajes/finalizadas',[MepController::class, 'getCotizacionesFinalizadas'])->name('mep.viajes');
+ Route::post('viajes/operador/asignar',[MepController::class, 'asignarOperador'])->name('mep.asignaoperdor');
 
-use App\Models\User;
+});
+
 
 Route::group(["prefix" => "whatsapp"],function(){
     Route::get('sendtext/{phone}/{text}',[WhatsAppController::class,'sendText'])->name('whatsapp.text');

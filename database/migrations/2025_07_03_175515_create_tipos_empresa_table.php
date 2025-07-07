@@ -15,6 +15,7 @@ return new class extends Migration
     {
         Schema::create('tipos_empresa', function (Blueprint $table) {
             $table->id();
+            $table->string('tipo_empresa');
             $table->timestamps();
         });
     }

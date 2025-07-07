@@ -96,15 +96,15 @@
             @endcan
 
 
-            @can('cotizaciones-externas')
+            @can('proveedores-viajes')
                 <li class="nav-item">
-                    <a class="nav-link {{ Request::is('cotizaciones*') ? 'active' : '' }}"
-                        href="{{ route('index.cotizaciones_manual') }}" target="">
+                    <a class="nav-link {{ Request::is('viajes*') ? 'active' : '' }}"
+                        href="{{ route('mep.index') }}" target="">
                         <div
                             class="icon icon-shape icon-sm text-center  me-2 d-flex align-items-center justify-content-center">
-                            <img src="{{ asset('img/icon/factura.png.webp') }}" alt="" width="20px">
+                            <img src="{{ asset('img/icon/contenedor.png') }}" alt="" width="20px">
                         </div>
-                        <span class="nav-link-text ms-1"><b>V</b> Cotizaciones Manual</span>
+                        <span class="nav-link-text ms-1"><b>V</b> Viajes</span>
                     </a>
                 </li>
             @endcan
@@ -374,26 +374,6 @@
                                 <span class="sidenav-normal">Busqueda Coordenadas</span>
                             </a> 
                             <a class="nav-link {{ Request::is('coordenadas/rastrear') ? 'show' : '' }}"
-                                href="{{ route('rastrearContenedor') }}">
-                                <span class="sidenav-mini-icon"> R </span>
-                                <span class="sidenav-normal">Rastrear Viajes</span>
-                            </a>    
-                            <a class="nav-link {{ Request::is('coordenadas/conboys') ? 'show' : '' }}"
-                                href="{{ route('index.conboys') }}">
-                                <span class="sidenav-mini-icon"> C </span>
-                                <span class="sidenav-normal">Convoys Virtuales</span>
-                            </a>  
-                             <a class="nav-link {{ Request::is('coordenadas/conboys') ? 'show' : '' }}"
-                                href="{{ route('find-convoy') }}">
-                                <span class="sidenav-mini-icon"> E </span>
-                                <span class="sidenav-normal">Encontrar Convoys</span>
-                            </a>  
-                            <a class="nav-link {{ Request::is('coordenadas/conboys') ? 'show' : '' }}"
-                                href="{{ route('HistorialUbicaciones') }}">
-                                <span class="sidenav-mini-icon"> H </span>
-                                <span class="sidenav-normal">Historial Ubicaciones</span>
-                            </a>
-                                <a class="nav-link {{ Request::is('coordenadas/rastrear') ? 'show' : '' }}"
                                 href="{{ route('rastrearContenedor') }}">
                                 <span class="sidenav-mini-icon"> R </span>
                                 <span class="sidenav-normal">Rastrear Viajes</span>
