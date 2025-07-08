@@ -2,38 +2,116 @@
 <div class="modal fade" id="viajeModal" tabindex="-1" aria-labelledby="viajeModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-dialog-centered">
     <div class="modal-content shadow rounded-4 border-0">
-      
       <!-- Encabezado -->
       <div class="modal-header bg-light border-bottom">
         <h5 class="modal-title fw-semibold" id="viajeModalLabel">Resumen del Viaje Seleccionado</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
       </div>
-      
       <!-- Cuerpo -->
       <div class="modal-body">
         <form>
-          <div class="row g-3 mb-3">
+          <div class="row  ">
+          <h6>Datos del Operador
+          <span class="form-text text-muted text-xs d-block ms-1">
+                La información del operador quedará registrada para que puedas utilizarlo en el futuro. Si deseas asignarlo nuevamente, solo haz clic en el ícono de búsqueda.
+              </span>
+          </h6>
+             
             <div class="col-md-6">
-              <label for="operadorSelect" class="form-label">Operador</label>
-              <select class="form-select" id="operadorSelect">
-                <option selected disabled>Seleccione un operador</option>
-                @foreach($operadores as $e)
-                    <option value="{{$e->id}}">{{$e->nombre}}</option>
-                @endforeach
-              </select>
+            <label for="operadorSelect" class="form-label">Nombre</label>
+              <div class="position-relative w-100">
+                <input type="text" class="form-control form-control-sm ps-3 pe-5 rounded-pill" placeholder="Nombre completo del operador...">
+                <!-- Icono convertido en botón -->
+                <button type="button" class="btn btn-sm position-absolute end-0 top-50 translate-middle-y me-2 p-1 rounded-circle ">
+                  <i class="fas fa-search "></i>
+                </button>
+              </div>
+             
             </div>
             <div class="col-md-6">
-              <label for="unidadSelect" class="form-label">Unidad</label>
-              <select class="form-select" id="unidadSelect">
-                <option selected disabled>Seleccione una unidad</option>
-                @foreach($equipo as $e)
-                    <option value="{{$e->id}}">{{$e->id_equipo}}</option>
-                @endforeach
-              </select>
+              <label for="operadorSelect" class="form-label">Teléfono</label>
+              <div class="position-relative w-100" style="max-width: 300px;">
+                <input type="text" class="form-control form-control-sm ps-3 pe-5 rounded-pill " placeholder="Teléfono del operador...">
+                <span class="position-absolute end-0 top-50 translate-middle-y pe-3 text-muted">
+                  <i class="fas fa-phone"></i>
+                </span>
+              </div>
             </div>
           </div>
 
-          <div class="row g-3">
+          <div class="row mt-3">
+          <h6>Datos de la Unidad
+            <span class="form-text text-muted text-xs d-block ms-1">
+                La información de la unidad asignada se almacenará para que puedas seleccionarlo fácilmente en futuros viajes.
+            </span>
+          </h6>
+              
+            <div class="col-md-4">
+              <label for="operadorSelect" class="form-label">Núm Eco/ Núm Unidad / Identificador</label>
+              <div class="position-relative w-100">
+                <input type="text" class="form-control form-control-sm ps-3 pe-5 rounded-pill text-uppercase" placeholder="Ej SF0001...">
+                <!-- Icono convertido en botón -->
+                <button type="button" class="btn btn-sm position-absolute end-0 top-50 translate-middle-y me-2 p-1 rounded-circle ">
+                  <i class="fas fa-search "></i>
+                </button>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <label for="operadorSelect" class="form-label">Placas</label>
+              <div class="position-relative w-100" style="max-width: 300px;">
+                <input type="text" class="form-control form-control-sm ps-3 pe-5 rounded-pill text-uppercase" placeholder="Placas...">
+                <span class="position-absolute end-0 top-50 translate-middle-y pe-3 text-muted">
+                  <i class="fas fa-barcode"></i>
+                </span>
+              </div>
+            </div>
+
+            <div class="col-md-3">
+              <label for="operadorSelect" class="form-label">Núm Serie / VIN</label>
+              <div class="position-relative w-100" style="max-width: 300px;">
+                <input type="text" class="form-control form-control-sm ps-3 pe-5 rounded-pill text-uppercase" placeholder="Serie de la unidad">
+                <span class="position-absolute end-0 top-50 translate-middle-y pe-3 text-muted">
+                  <i class="fas fa-qrcode"></i>
+                </span>
+              </div>
+            </div>
+            
+          </div>
+
+          <div class="row">
+          <div class="col-md-4">
+            <label for="placasSelect" class="form-label">Compañia GPS</label>
+            <div class="position-relative w-100" style="max-width: 300px;">
+              <select id="placasSelect" class="form-select form-select-sm ps-3 pe-5 rounded-pill text-uppercase">
+                <option value="">Selecciona compañia GPS...</option>
+                <option value="ABC123">ABC123</option>
+                <option value="XYZ789">XYZ789</option>
+                <option value="JKL456">JKL456</option>
+              </select>
+              <span class="position-absolute end-0 top-50 translate-middle-y pe-3 text-muted">
+                <i class="fas fa-satellite-dish"></i>
+              </span>
+            </div>
+           
+
+            </div>
+            <div class="col-md-3">
+              <label for="operadorSelect" class="form-label">IMEI</label>
+              <div class="position-relative w-100" style="max-width: 300px;">
+                <input type="text" class="form-control form-control-sm ps-3 pe-5 rounded-pill text-uppercase" placeholder="Imei GPS...">
+                <span class="position-absolute end-0 top-50 translate-middle-y pe-3 text-muted">
+                  <i class="fas fa-microchip"></i>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div class="row mt-3">
+          <h6>Datos del viaje
+            <span class="form-text text-muted text-xs d-block ms-1">
+            A continuación, encontrará los datos oficiales asociados al viaje.
+            </span>
+          </h6>
             <div class="col-md-6">
               <label class="form-label">Número de Contenedor</label>
               <p id="numeroContenedor" class="form-control-plaintext text-dark"></p>
@@ -57,17 +135,13 @@
           </div>
         </form>
       </div>
-
       <!-- Pie de modal -->
       <div class="modal-footer bg-light border-top">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-          <i class="bi bi-x-circle me-1"></i> Cerrar
-        </button>
-        <button type="button" class="btn bg-gradient-success" id="btnAsignaOperador" >
-          <i class="bi bi-save me-1"></i> Guardar
-        </button>
+          <i class="bi bi-x-circle me-1"></i> Cerrar </button>
+        <button type="button" class="btn bg-gradient-success" id="btnAsignaOperador">
+          <i class="bi bi-save me-1"></i> Guardar </button>
       </div>
-
     </div>
   </div>
 </div>
