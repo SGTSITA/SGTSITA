@@ -10,14 +10,22 @@ use App\Models\Asignaciones;
 use App\Models\Cotizaciones;
 use App\Models\Equipo;
 use App\Models\Operador;
+use App\Models\GpsCompany;
 
 class MepController extends Controller
 {
     public function index(){
         $empresas = Empresas::get();
-        $equipo = Equipo::where('id_empresa',auth()->user()->id_empresa)->get();
+        
+        $gpsCompanies = GpsCompany::orderBy('nombre')->get();
+        return view('mep.viajes.index', compact('empresas','gpsCompanies'));
+    }
+
+    public function getCatalogosMep(Request $request){
+        $unidades = Equipo::where('id_empresa',auth()->user()->id_empresa)->get();
         $operadores = Operador::where('id_empresa',auth()->user()->id_empresa)->get();
-        return view('mep.viajes.index', compact('empresas','equipo','operadores'));
+
+        return response()->json(["TMensaje" => "success", "unidades" => $unidades, "operadores" => $operadores]);
     }
 
     public function getCotizacionesList()

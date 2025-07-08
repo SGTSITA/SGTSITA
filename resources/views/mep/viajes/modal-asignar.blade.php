@@ -20,9 +20,14 @@
             <div class="col-md-6">
             <label for="operadorSelect" class="form-label">Nombre</label>
               <div class="position-relative w-100">
-                <input type="text" class="form-control form-control-sm ps-3 pe-5 rounded-pill" placeholder="Nombre completo del operador...">
+                <input 
+                type="text" 
+                class="form-control form-control-sm ps-3 pe-5 rounded-pill" 
+                placeholder="Nombre completo del operador..."
+                id="txtOperador"
+                >
                 <!-- Icono convertido en botón -->
-                <button type="button" class="btn btn-sm position-absolute end-0 top-50 translate-middle-y me-2 p-1 rounded-circle ">
+                <button type="button" class="btn btn-sm position-absolute end-0 top-50 translate-middle-y me-2 p-1 rounded-circle " onclick = "buscarOperador(txtOperador.value)">
                   <i class="fas fa-search "></i>
                 </button>
               </div>
@@ -31,14 +36,19 @@
             <div class="col-md-6">
               <label for="operadorSelect" class="form-label">Teléfono</label>
               <div class="position-relative w-100" style="max-width: 300px;">
-                <input type="text" class="form-control form-control-sm ps-3 pe-5 rounded-pill " placeholder="Teléfono del operador...">
+                <input 
+                type="text" 
+                class="form-control form-control-sm ps-3 pe-5 rounded-pill " 
+                placeholder="Teléfono del operador..."
+                id="txtTelefono"
+                >
                 <span class="position-absolute end-0 top-50 translate-middle-y pe-3 text-muted">
                   <i class="fas fa-phone"></i>
                 </span>
               </div>
             </div>
           </div>
-
+          <hr class="horizontal dark mt-4 mb-4">
           <div class="row mt-3">
           <h6>Datos de la Unidad
             <span class="form-text text-muted text-xs d-block ms-1">
@@ -49,9 +59,13 @@
             <div class="col-md-4">
               <label for="operadorSelect" class="form-label">Núm Eco/ Núm Unidad / Identificador</label>
               <div class="position-relative w-100">
-                <input type="text" class="form-control form-control-sm ps-3 pe-5 rounded-pill text-uppercase" placeholder="Ej SF0001...">
+                <input type="text" 
+                class="form-control form-control-sm ps-3 pe-5 rounded-pill text-uppercase" 
+                placeholder="Ej. SF001..."
+                id="txtNumUnidad"
+                >
                 <!-- Icono convertido en botón -->
-                <button type="button" class="btn btn-sm position-absolute end-0 top-50 translate-middle-y me-2 p-1 rounded-circle ">
+                <button type="button" class="btn btn-sm position-absolute end-0 top-50 translate-middle-y me-2 p-1 rounded-circle " onclick="buscarUnidad(txtNumUnidad.value)">
                   <i class="fas fa-search "></i>
                 </button>
               </div>
@@ -59,7 +73,7 @@
             <div class="col-md-3">
               <label for="operadorSelect" class="form-label">Placas</label>
               <div class="position-relative w-100" style="max-width: 300px;">
-                <input type="text" class="form-control form-control-sm ps-3 pe-5 rounded-pill text-uppercase" placeholder="Placas...">
+                <input type="text" class="form-control form-control-sm ps-3 pe-5 rounded-pill text-uppercase" id="txtPlacas" placeholder="Placas...">
                 <span class="position-absolute end-0 top-50 translate-middle-y pe-3 text-muted">
                   <i class="fas fa-barcode"></i>
                 </span>
@@ -69,7 +83,7 @@
             <div class="col-md-3">
               <label for="operadorSelect" class="form-label">Núm Serie / VIN</label>
               <div class="position-relative w-100" style="max-width: 300px;">
-                <input type="text" class="form-control form-control-sm ps-3 pe-5 rounded-pill text-uppercase" placeholder="Serie de la unidad">
+                <input type="text" class="form-control form-control-sm ps-3 pe-5 rounded-pill text-uppercase" id="txtSerie" placeholder="Serie de la unidad">
                 <span class="position-absolute end-0 top-50 translate-middle-y pe-3 text-muted">
                   <i class="fas fa-qrcode"></i>
                 </span>
@@ -83,10 +97,11 @@
             <label for="placasSelect" class="form-label">Compañia GPS</label>
             <div class="position-relative w-100" style="max-width: 300px;">
               <select id="placasSelect" class="form-select form-select-sm ps-3 pe-5 rounded-pill text-uppercase">
-                <option value="">Selecciona compañia GPS...</option>
-                <option value="ABC123">ABC123</option>
-                <option value="XYZ789">XYZ789</option>
-                <option value="JKL456">JKL456</option>
+                <option value="" disabled selected>Selecciona compañia GPS...</option>
+                @foreach($gpsCompanies as $gps)
+                <option value="{{$gps->id}}">{{$gps->nombre}}</option>
+                @endforeach
+             
               </select>
               <span class="position-absolute end-0 top-50 translate-middle-y pe-3 text-muted">
                 <i class="fas fa-satellite-dish"></i>
@@ -98,13 +113,14 @@
             <div class="col-md-3">
               <label for="operadorSelect" class="form-label">IMEI</label>
               <div class="position-relative w-100" style="max-width: 300px;">
-                <input type="text" class="form-control form-control-sm ps-3 pe-5 rounded-pill text-uppercase" placeholder="Imei GPS...">
+                <input type="text" class="form-control form-control-sm ps-3 pe-5 rounded-pill text-uppercase" id="txtImei" placeholder="Imei GPS...">
                 <span class="position-absolute end-0 top-50 translate-middle-y pe-3 text-muted">
                   <i class="fas fa-microchip"></i>
                 </span>
               </div>
             </div>
           </div>
+          <hr class="horizontal dark mt-4 mb-4">
 
           <div class="row mt-3">
           <h6>Datos del viaje

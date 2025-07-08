@@ -5,6 +5,12 @@
 
 @section('content')
     <style>
+        .toast-middle-center {
+            top: 50% !important;
+            left: 50% !important;
+            transform: translate(-50%, -50%) !important;
+            position: fixed !important;
+        }
         #myGrid {
             height: 500px;
             width: 100%;
@@ -119,104 +125,8 @@
             </div>
         </div>
     </div>
-    <div id="estadoCuestionarios" style="display: none;">
-        <input type="hidden" id="estadoC" name="estadoC" value="0">
-        <input type="hidden" id="estadoB" name="estadoB" value="0">
-        <input type="hidden" id="estadoF" name="estadoF" value="0">
-    </div>
-    <input type="hidden" id="idCotizacionCompartir" value="">
-    <input type="hidden" id="idAsignacionCompartir" value="">
-    <!-- Modal Coordenadas con Tabs -->
-<div class="modal" id="modalCoordenadas" tabindex="-1" style="display:none;">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content p-3">
-      <h5>Compartir coordenadas</h5>
-        <div class="form-group">
-            <label for="optipoCuestionario">Seleccione tipo de cuestionario</label>
-            <select id="optipoCuestionario" name="tipoCuestionario" class="form-control">
-                <option value="" disabled selected>Seleccione tipo</option>
-                <option value="b">Burrero</option>
-                <option value="f">Foráneo</option>
-                <option value="c">Completo</option>
-            </select>
-        </div>
-      <!-- Tabs -->
-      <ul class="nav nav-tabs mb-3">
-        
-        <li class="nav-item">
-          <a class="nav-link active" href="#" onclick="mostrarTab('mail')">📧 Mail</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="#" onclick="mostrarTab('whatsapp')">📲 WhatsApp</a>
-        </li>
-      </ul>
    
-      <!-- Tab contenido: MAIL -->
-      <div id="tab-mail" class="tab-content">
-                @include('emails.email-coordenadas')
-      </div>
 
-      <!-- Tab contenido: WHATSAPP -->
-      <div id="tab-whatsapp" class="tab-content" style="display: none;">
-            
-
-            <label>Contenedor:</label>
-            <div id="wmensajeText" class="mb-2"></div>
-
-            <label>Enlace para compartir por WhatsApp:</label>
-            <input type="text" id="linkWhatsapp" class="form-control mb-2" readonly>
-
-            <button class="btn btn-primary mb-2" onclick="copiarDesdeInput('linkWhatsapp')">📋 Copiar enlace</button>
-            <a href="#" id="whatsappLink" class="btn btn-success" target="_blank" onclick="guardarYAbrirWhatsApp(event)">Abrir WhatsApp</a>
-        </div>
-
-      <button class="btn btn-secondary mt-2" onclick="cerrarModal()">Cerrar</button>
-    </div>
-  </div>
-</div>
-    <!-- Modal: Cambio de Empresa -->
-    <div class="modal fade" id="modalCambioEmpresa" tabindex="-1" aria-labelledby="modalCambioEmpresaLabel"
-        aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content shadow-lg border-0 rounded-4">
-                <form method="POST" id="formCambioEmpresa" action="" enctype="multipart/form-data" class="p-3">
-                    @csrf
-                    <input type="hidden" name="_method" value="PATCH">
-
-                    <div class="modal-header  text-white rounded-top-4">
-                        <h5 class="modal-title">
-                            <i class="fa-solid fa-building-circle-arrow-right me-2"></i> Cambio de Empresa
-                        </h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
-                            aria-label="Cerrar"></button>
-                    </div>
-
-                    <div class="modal-body pt-4">
-                        <div class="mb-3">
-                            <label for="id_empresa" class="form-label fw-semibold">Seleccione la nueva empresa *</label>
-                            <div class="input-group">
-                                <select class="form-select border-start-0" id="id_empresa" name="id_empresa" required>
-                                    <option value="">Seleccione empresa</option>
-                                    @foreach ($empresas as $empresa)
-                                        <option value="{{ $empresa->id }}">{{ $empresa->nombre }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="modal-footer border-top-0 pt-3">
-                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
-                            <i class="fa-solid fa-xmark me-1"></i> Cancelar
-                        </button>
-                        <button type="submit" class="btn btn-success">
-                            <i class="fa-solid fa-floppy-disk me-1"></i> Guardar
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
     <!-- Modal: Estatus de Documentos -->
     <div class="modal fade" id="modalEstatusDocumentos" tabindex="-1" aria-labelledby="modalEstatusDocumentosLabel"
         aria-hidden="true">
@@ -308,7 +218,9 @@
 
     <script src="{{ asset('js/mep/viajes/viajes-fileuploader.js') }}?v={{ filemtime(public_path('js/mep/viajes/viajes-fileuploader.js')) }}"></script>
 
-    <!-- Nuestro JavaScript unificado -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+
     <script
     src="{{ asset('js/mep/viajes/cotizaciones_list.js') }}?v={{ filemtime(public_path('js/mep/viajes/cotizaciones_list.js')) }}">
     </script>
@@ -317,23 +229,7 @@
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             adjuntarDocumentos();
-            @if (session('success'))
-                Swal.fire({
-                    icon: 'success',
-                    title: '¡Éxito!',
-                    text: "{{ session('success') }}",
-                    confirmButtonText: 'Aceptar'
-                });
-            @endif
-
-            @if (session('error'))
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: "{{ session('error') }}",
-                    confirmButtonText: 'Cerrar'
-                });
-            @endif
+            getCatalogoOperadorUnidad();
         });
     </script>
 @endpush
