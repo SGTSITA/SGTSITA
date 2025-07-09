@@ -259,60 +259,63 @@ class ExternosController extends Controller
             $attachment = [];
 
             if($r->channel == "WhatsApp"){
+                if(sizeof($r->wa_phone) == 0) return response()->json(["Titulo" => "Seleccione contactos","TMensaje" => "warning" , "Mensaje" => "Para enviar la documentación seleccionada debe seleccionar un contacto"]);
 
-                //WhatsAppController::sendWhatsAppMessage($r->wa_phone, $r->message);
-                foreach($files as $file){
-                    $urlFile = "https://sgt.gologipro.com/".public_path($file['file']);
-                    $urlFile = str_replace('/var/www/html/SGTSITA/public/','',$urlFile);
-                    $fileLabel = $file['documentSubject']." del contenedor ".$r->numContenedor;
+                foreach($r->wa_phone as $phone){
+                    //WhatsAppController::sendWhatsAppMessage($r->wa_phone, $r->message);
+                    foreach($files as $file){
+                        $urlFile = "https://sgt.gologipro.com/".public_path($file['file']);
+                        $urlFile = str_replace('/var/www/html/SGTSITA/public/','',$urlFile);
+                        $fileLabel = $file['documentSubject']." del contenedor ".$r->numContenedor;
 
-                    $data = [
-                        "messaging_product" => "whatsapp",
-                        "to" => "52$r->wa_phone",
-                        "type" => "template",
-                        "template" => [
-                            "name" => "purchase_receipt_1",
-                            "language" => [
-                                "code" => "es_MX"
-                            ],
-                            "components" => [
-                                [
-                                    "type" => "header",
-                                    "parameters" => [
-                                        [
-                                            "type" => "document",
-                                            "document" => [
-                                                "link" => $urlFile,
-                                                "filename" => $file['documentSubject']
+                        $data = [
+                            "messaging_product" => "whatsapp",
+                            "to" => "52$phone",
+                            "type" => "template",
+                            "template" => [
+                                "name" => "purchase_receipt_1",
+                                "language" => [
+                                    "code" => "es_MX"
+                                ],
+                                "components" => [
+                                    [
+                                        "type" => "header",
+                                        "parameters" => [
+                                            [
+                                                "type" => "document",
+                                                "document" => [
+                                                    "link" => $urlFile,
+                                                    "filename" => $file['documentSubject']
+                                                ]
                                             ]
                                         ]
-                                    ]
-                                ],
-                                [
-                                    "type" => "body",
-                                    "parameters" => [
-                                        [
-                                            "type" => "text",
-                                            "text" => "Buen día 👋"
-                                        ],
-                                        [
-                                            "type" => "text",
-                                            "text" => $file['documentSubject']
-                                        ],
-                                        [
-                                            "type" => "text",
-                                            "text" => $r->numContenedor
+                                    ],
+                                    [
+                                        "type" => "body",
+                                        "parameters" => [
+                                            [
+                                                "type" => "text",
+                                                "text" => "Buen día 👋"
+                                            ],
+                                            [
+                                                "type" => "text",
+                                                "text" => $file['documentSubject']
+                                            ],
+                                            [
+                                                "type" => "text",
+                                                "text" => $r->numContenedor
+                                            ]
                                         ]
                                     ]
                                 ]
                             ]
-                        ]
-                    ];
+                        ];
 
-                    $enviar = WhatsAppController::sendWhatsAppMessage($data);
+                        $enviar = WhatsAppController::sendWhatsAppMessage($data);
 
+                    }
                 }
-                return response()->json(["TMensaje" => "success", "Titulo" => "Mensaje WhatsApp enviado correctamente","Mensaje" => "Se ha enviado mensaje con los archivos seleccionados"]);
+                    return response()->json(["TMensaje" => "success", "Titulo" => "Mensaje WhatsApp enviado correctamente","Mensaje" => "Se ha enviado mensaje con los archivos seleccionados"]);
 
             }
             

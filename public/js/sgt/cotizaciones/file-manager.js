@@ -255,6 +255,7 @@ function renderTags() {
 
     contactosSeleccionados.forEach(c => {
         const tag = document.createElement('div');
+        tag.dataset.telefono = c.telefono
         tag.className = 'tag d-flex align-items-center bg-light rounded-pill px-2 py-1 gap-2';
         tag.innerHTML = `
             <img src="${c.foto ?? '/assets/images/faces/default-avatar.png'}" class="rounded-circle" width="25" height="25" />
@@ -404,6 +405,9 @@ function enviarCorreo() {
         }
     });
 
+    const tags = document.querySelectorAll("#telefono_wa_wrapper .tag");
+    const telefonos = Array.from(tags).map(tag => tag.dataset.telefono);
+
     buttonSendMail.setAttribute("data-kt-indicator", "on")
     let channel = buttonSendMail.getAttribute("data-kt-inbox-form")
     let _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
@@ -415,7 +419,7 @@ function enviarCorreo() {
         body: JSON.stringify({
             _token: _token,
             channel,
-            wa_phone: phoneWhatsApp.value,
+            wa_phone: telefonos,
             email: mainEmail.value,
             secondaryEmail: ccEmail.value,
             subject: subject.value,
@@ -434,7 +438,9 @@ function enviarCorreo() {
             $('#modal-enviar-correo').modal('hide')
             mainEmail.value = '';
             ccEmail.value = '';
-            messageMail.textContent = '';
+            if (window.quillEditor) {
+                window.quillEditor.setText(""); // Limpia el contenido sin desactivar el editor
+            }
 
         });
 
