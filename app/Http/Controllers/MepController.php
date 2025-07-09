@@ -125,9 +125,44 @@ class MepController extends Controller
         
         $contenedor = $r->input('contenenedor');
         $idAsignacion = $contenedor['id_asignacion'];
-        //return $idAsignacion;
 
-        Asignaciones::where('id',$idAsignacion)->update(["id_operador"=>$r->operador,"id_camion" => $r->unidad]);
+        $formData = $r->formData;
+
+        //Verificar operador
+        $operador = Operador::where('id_empresa',auth()->user()->id_empresa)->where('nombre',$formData['txtOperador']);
+        if(!$operador->exists()){
+            $operador = new Operador;
+            $operador->nombre = $formData['txtOperador'];
+            $operador->telefono = $formData['txtTelefono'];
+            $operador->save();
+        }else{
+            $operador = $operador->first();
+            $operador->telefono = $formData['txtTelefono'];
+            $operador->update();
+        }
+
+        $idOperador = $operador->id;
+
+        $unidad = Equipo::where('id_empresa',auth()->user()->id_empresa)->where('id_equipo',$formData['txtNumUnidad']);
+        if(!$unidad->exists()){
+            $unidad = new Equipo;
+            $unidad->id_equipo = $formData['txtNumUnidad'];
+            $unidad->imei = $formData['txtImei'];
+            $unidad->placas = $formData['txtPlacas'];
+            $unidad->num_serie = $formData['txtSerie'];
+            $unidad->tipo = 'Tractos / Camiones';
+            $unidad->save();
+        }else{
+            $unidad = $unidad->first();
+            $unidad->imei = $formData['txtImei'];
+            $unidad->placas = $formData['txtPlacas'];
+            $unidad->num_serie = $formData['txtSerie'];
+            $unidad->update();
+        }
+
+        $idunidad = $unidad->id;
+
+        Asignaciones::where('id',$idAsignacion)->update(["id_operador"=>$idOperador,"id_camion" => $idunidad]);
         return response()->json(["TMensaje" => "success", "Titulo" => "Se ha realizado la asignacion correctamente","Mensaje" => ""]);
     }
 }

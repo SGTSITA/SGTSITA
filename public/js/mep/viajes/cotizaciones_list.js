@@ -42,6 +42,18 @@ const localeText = {
   let operadores = [];
   let unidades = [];
 
+  const formFieldsMep = [
+    {'field':'txtOperador','id':'txtOperador','label':'Nombre operador','required': true, "type":"text", "trigger":"none"},
+    {'field':'txtTelefono','id':'txtTelefono','label':'Teléfono','required': true, "type":"text", "trigger":"none"},
+    {'field':'txtNumUnidad','id':'txtNumUnidad','label':'Núm Eco/ Núm Unidad / Identificador','required': true, "type":"text", "trigger":"none"},
+    {'field':'txtPlacas','id':'txtPlacas','label':'Placas','required': true, "type":"text", "trigger":"none"},
+    {'field':'txtSerie','id':'txtSerie','label':'Núm Serie / VIN','required': true, "type":"text", "trigger":"none"},
+    {'field':'selectGPS','id':'selectGPS','label':'Compañia GPS','required': true, "type":"text", "trigger":"none"},
+    {'field':'txtImei','id':'txtImei','label':'IMEI','required': true, "type":"text", "trigger":"none"},
+
+]
+
+
   const btnFull = document.querySelector('#btnFull')
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -305,9 +317,37 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function asignarOperador2() {
         let seleccion = gridApi.getSelectedRows();
-        let operador = document.getElementById('operadorSelect')
-        let unidad = document.getElementById('unidadSelect')
-        let data = {"contenenedor":seleccion[0],"operador": operador.value,"unidad": unidad.value};
+        const formData = {};
+
+        //formFieldsMep
+    let passValidation = formFieldsMep.every((item) => {
+
+        let field = document.getElementById(item.field);
+        if(field){
+            if(item.required === true && field.value.length == 0){
+                Swal.fire("El campo "+item.label+" es obligatorio","Parece que no ha proporcionado información en el campo "+item.label,"warning");
+                return false;
+            }
+        }
+
+        if (field.dataset.mepUnidad) {
+            formData['mepUnidad'] = field.dataset.mepUnidad
+        }
+
+        if (field.dataset.mepOperador) {
+            formData['mepOperador'] = field.dataset.mepOperador
+        }
+
+        formData[item.field] = field.value;
+        return true;
+
+    });
+
+    if(!passValidation) return passValidation;
+
+        
+
+        let data = {"contenenedor":seleccion[0],"formData":formData};
         fetch('/mep/viajes/operador/asignar', {
           method: 'POST',
           headers: {
@@ -368,11 +408,16 @@ function buscarOperador(nombre){
     let txtTelefono = document.querySelector('#txtTelefono')
 
     toastr.options.positionClass = 'toast-middle-center';
+    let txtOperador = document.querySelector("#txtOperador")
+    
+
     if(operador){
         txtTelefono.value = operador.telefono
+        txtOperador.dataset.mepOperador = operador.id
         toastr.success('Operador identificado');
     }else{
         txtTelefono.value = ''
+        txtOperador.dataset.mepOperador = 0
         toastr.warning('Operador no encontrado');
     }
     
@@ -381,26 +426,35 @@ function buscarOperador(nombre){
 function buscarUnidad(numUnidad){
     
     let unidad = unidades.find(u =>{
-        console.log(u.id_equipo)
-        console.log(numUnidad)
-
         return (u.id_equipo === numUnidad.toUpperCase()) ? u : false
     })
 
     let txtPlacas = document.querySelector('#txtPlacas')
     let txtSerie = document.querySelector('#txtSerie')
     let txtImei = document.querySelector('#txtImei')
+    let selectGPS = document.querySelector('#selectGPS')
+
+    let txtNumUnidad = document.querySelector("#txtNumUnidad")
 
     toastr.options.positionClass = 'toast-middle-center';
     if(unidad){
         txtPlacas.value = unidad.placas
         txtSerie.value = unidad.num_serie
         txtImei.value = unidad.imei
+        
+        txtNumUnidad.dataset.mepUnidad = unidad.id
+        for (let i = 0; i < selectGPS.options.length; i++) {
+            if (selectGPS.options[i].value === String(unidad.gps_company_id)) {
+              selectGPS.selectedIndex = i;
+              break;
+            }
+        }
         toastr.success('Unidad identificado');
     }else{
         txtPlacas.value = ''
         txtSerie.value = ''
         txtImei.value = ''
+        txtNumUnidad.dataset.mepUnidad = 0
         toastr.warning('No se encontró unidad');
     }
     

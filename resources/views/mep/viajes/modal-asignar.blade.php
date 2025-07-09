@@ -25,6 +25,7 @@
                 class="form-control form-control-sm ps-3 pe-5 rounded-pill" 
                 placeholder="Nombre completo del operador..."
                 id="txtOperador"
+                data-mep-operador="0"
                 >
                 <!-- Icono convertido en botón -->
                 <button type="button" class="btn btn-sm position-absolute end-0 top-50 translate-middle-y me-2 p-1 rounded-circle " onclick = "buscarOperador(txtOperador.value)">
@@ -63,6 +64,7 @@
                 class="form-control form-control-sm ps-3 pe-5 rounded-pill text-uppercase" 
                 placeholder="Ej. SF001..."
                 id="txtNumUnidad"
+                data-mep-unidad="0"
                 >
                 <!-- Icono convertido en botón -->
                 <button type="button" class="btn btn-sm position-absolute end-0 top-50 translate-middle-y me-2 p-1 rounded-circle " onclick="buscarUnidad(txtNumUnidad.value)">
@@ -73,7 +75,8 @@
             <div class="col-md-3">
               <label for="operadorSelect" class="form-label">Placas</label>
               <div class="position-relative w-100" style="max-width: 300px;">
-                <input type="text" class="form-control form-control-sm ps-3 pe-5 rounded-pill text-uppercase" id="txtPlacas" placeholder="Placas...">
+                <input type="text" class="form-control form-control-sm ps-3 pe-5 rounded-pill text-uppercase" 
+                id="txtPlacas" placeholder="Placas...">
                 <span class="position-absolute end-0 top-50 translate-middle-y pe-3 text-muted">
                   <i class="fas fa-barcode"></i>
                 </span>
@@ -83,7 +86,8 @@
             <div class="col-md-3">
               <label for="operadorSelect" class="form-label">Núm Serie / VIN</label>
               <div class="position-relative w-100" style="max-width: 300px;">
-                <input type="text" class="form-control form-control-sm ps-3 pe-5 rounded-pill text-uppercase" id="txtSerie" placeholder="Serie de la unidad">
+                <input type="text" class="form-control form-control-sm ps-3 pe-5 rounded-pill text-uppercase" 
+                id="txtSerie" placeholder="Serie de la unidad">
                 <span class="position-absolute end-0 top-50 translate-middle-y pe-3 text-muted">
                   <i class="fas fa-qrcode"></i>
                 </span>
@@ -94,9 +98,9 @@
 
           <div class="row">
           <div class="col-md-4">
-            <label for="placasSelect" class="form-label">Compañia GPS</label>
+            <label for="selectGPS" class="form-label">Compañia GPS</label>
             <div class="position-relative w-100" style="max-width: 300px;">
-              <select id="placasSelect" class="form-select form-select-sm ps-3 pe-5 rounded-pill text-uppercase">
+              <select id="selectGPS" class="form-select form-select-sm ps-3 pe-5 rounded-pill text-uppercase">
                 <option value="" disabled selected>Selecciona compañia GPS...</option>
                 @foreach($gpsCompanies as $gps)
                 <option value="{{$gps->id}}">{{$gps->nombre}}</option>
