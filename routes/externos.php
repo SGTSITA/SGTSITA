@@ -29,7 +29,8 @@ Route::group(["prefix" => "viajes"], function(){
 
     Route::post('file-manager/cfdi-files',[ExternosController::class,'CfdiToZip'])->name('cfdi.file-manager');
     Route::get('file-manager/cfdi-files/{zipFile}',[ExternosController::class,'ZipDownload'])->name('cfdi.file-manager');
-    Route::get('file-manager/get-file-list/{numContenedor}',[ExternosController::class,'getFilesProperties'])->name('viajes.files');
+    Route::get('file-manager/get-file-list', [ExternosController::class, 'getFilesProperties'])->name('viajes.files');
+
 
     Route::post('/get-asignables',[ExternosController::class,'getContenedoresAsignables'])->name('viajes.asignables');
 });

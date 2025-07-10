@@ -1,7 +1,12 @@
 
 let tagNumContenedor = document.querySelector("#numContenedor");
 let numContenedor = tagNumContenedor.textContent;
-let urlGetFiles = `/viajes/file-manager/get-file-list/${numContenedor}`;
+
+// Si Full, el numContenedor debe traer los dos separados por coma o espacio
+let contenedores = numContenedor.includes(',') ? numContenedor.split(',') : [numContenedor];
+
+let urlGetFiles = `/viajes/file-manager/get-file-list?contenedores=${contenedores.join(',')}`;
+
 
 let dt = $("#kt_datatable_example_1").DataTable({
     select: false,
