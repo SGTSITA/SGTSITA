@@ -84,7 +84,7 @@
 <link href="{{asset('assets/metronic/fileuploader/jquery.fileuploader-theme-dragdrop.css')}}" media="all" rel="stylesheet">
 <script src="{{asset('assets/metronic/fileuploader/jquery.fileuploader.min.js')}}" type="text/javascript"></script>
 <script src="{{asset('assets/metronic/fileuploader/cotizacion-cliente-externo.js')}}" type="text/javascript"></script>
-<script src="/assets/metronic/js/custom/apps/inbox/compose.js"></script>
+<script src="{{ asset('/assets/metronic/js/custom/apps/inbox/compose.js') }}?v={{ filemtime(public_path('/assets/metronic/js/custom/apps/inbox/compose.js')) }}"></script>
 <script src="{{ asset('js/sgt/cotizaciones/file-manager.js') }}?v={{ filemtime(public_path('js/sgt/cotizaciones/file-manager.js')) }}"></script>
 <script>
     

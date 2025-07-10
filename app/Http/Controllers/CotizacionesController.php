@@ -552,7 +552,9 @@ public function getCotizacionesCanceladas()
             $cotizaciones->direccion_recinto = $request->direccion_recinto;
             $cotizaciones->uso_recinto = ($request->text_recinto == 'recinto-si') ? 1 : 0;
         }
-
+   $cotizaciones->latitud=  $request->latitud;
+            $cotizaciones->longitud = $request->longitud;
+             $cotizaciones->direccion_mapa = $request->direccion_mapa;
         $cotizaciones->save();
 
         $doc_cotizaciones = Cotizaciones::where('id', '=', $cotizaciones->id)->first();
@@ -723,6 +725,17 @@ public function getCotizacionesCanceladas()
         return $cotizaciones;
     }
 
+    public function convertirFull(Request $request){
+        $fullUUID = Common::generarUuidV4();
+        $viajes = $request->seleccion;
+       
+        for($x = 0; $x < (sizeof($viajes)); $x++){
+            $jerarquia = ($x == 0) ? 'Principal' : 'Secundario';
+            Cotizaciones::where('id', $viajes[$x]['id'])->update(["tipo_viaje" => "Full","referencia_full" => $fullUUID, 'jerarquia' => $jerarquia]);
+        }
+        return response()->json(["Titulo" => "Proceso satisfactorio", "Mensaje" => "Se ha realizado la fusion de viajes a tipo Full", "TMensaje" => "success"]);
+    }
+
     public function edit_externo($id){
         $cotizacion = Cotizaciones::where('id', '=', $id)->first();
         $documentacion = DocumCotizacion::where('id_cotizacion', '=', $cotizacion->id)->first();
@@ -820,9 +833,11 @@ public function getCotizacionesCanceladas()
             $cotizaciones->base_taref = $request->base_taref;
             $cotizaciones->sobrepeso = $contenedor['sobrepeso'];
             $cotizaciones->precio_sobre_peso = $request->precioSobrePeso;
-            
+            //coordenadas para comparar
             $cotizaciones->total = $request->total;
-
+            $cotizaciones->latitud=  $request->latitud;
+            $cotizaciones->longitud = $request->longitud;
+             $cotizaciones->direccion_mapa = $request->direccion_mapa;
 
            /* if ($request->hasFile("carta_porte")) {
                 $file = $request->file('carta_porte');

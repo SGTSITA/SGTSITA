@@ -36,9 +36,14 @@
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <span id="card_title">Cotizaciones</span>
                         @can('cotizaciones-create')
-                            <a type="button" class="btn bg-gradient-info btn-xs mb-2" href="{{ route('create.cotizaciones') }}">
-                                +&nbsp; Crear Cotizacion
-                            </a>
+                            <div>
+                                <a type="button" class="btn bg-gradient-info btn-xs mb-2" href="{{ route('create.cotizaciones') }}">
+                                    +&nbsp; Crear Cotizacion
+                                </a>
+                                <button type="button" class="btn bg-gradient-success btn-xs mb-2" id="btnFull" disabled>
+                                    <i class="fas fa-truck-moving"></i> Convertir a Full
+                                </button>
+                            </div>
                         @endcan
                     </div>
 

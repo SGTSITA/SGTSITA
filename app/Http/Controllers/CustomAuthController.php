@@ -89,17 +89,6 @@ class CustomAuthController extends Controller
         
        $user = auth()->user();
 
-    
-        $empresaInicial = UserEmpresa::where('id_user', $user->id)
-        ->where('empresaInicial', 1)
-        ->first();
-
-    if ($empresaInicial) {
-        
-        $user->id_empresa = $empresaInicial->id_empresa;
-        $user->save();
-    }
-    
         Session::flush();
         Auth::logout();
 

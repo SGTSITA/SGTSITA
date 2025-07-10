@@ -70,6 +70,9 @@
               
               <!--begin::Menu separator-->
               <div class="separator mt-3 opacity-75"></div>
+              <div class="menu-item px-3">
+                <a class="menu-link px-3 " onclick="viajeFull()"> Viajar en Full </a>
+              </div>
               <!--end::Menu separator-->
               <!--begin::Menu item-->
               <div class="menu-item px-3">

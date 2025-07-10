@@ -10,6 +10,7 @@ use App\Http\Controllers\PermisosController;
 use App\Http\Controllers\EmpresasController;
 use App\Http\Controllers\ExternosController;
 use App\Http\Controllers\CuentaGlobalController;
+use App\Http\Controllers\GoogleLinkResolverController;
 
 use App\Http\Controllers\WhatsAppController;
 
@@ -174,9 +175,15 @@ Route::get('/coordenadas/conboys/getconvoy/{numero}', [App\Http\Controllers\Conb
 Route::post('/coordenadas/conboys/agregar', [App\Http\Controllers\ConboysController::class, 'addContenedores'])->name('updateConvoyEmpresas');
 Route::get('/coordenadas/conboys/historialUbi', [App\Http\Controllers\ConboysController::class, 'HistorialUbicaciones'])->name('HistorialUbicaciones');
 
+Route::post('/coordenadas/resolver-link-google', [App\Http\Controllers\GoogleLinkResolverController::class, 'resolver']);
+
 Route::get('/mapa-comparacion', function () {
     return view('conboys.mapa_comparacion');
 });
+
+
+//NUEVO SERVICIO DE GPS 
+Route::get('/gps/{imei}/detalle', [GpsController::class, 'detalleDispositivo']);
 //R
 
 
@@ -271,6 +278,8 @@ Route::post('operadores/{id}/restaurar', [App\Http\Controllers\OperadorControlle
 
     Route::get('/cotizaciones/busqueda', [App\Http\Controllers\CotizacionesController::class, 'find'])->name('busqueda.cotizaciones');
     Route::post('/cotizaciones/full', [App\Http\Controllers\CotizacionesController::class, 'cotizacionesFull'])->name('cotizaciones.full');
+    Route::post('/cotizaciones/transformar/full', [App\Http\Controllers\CotizacionesController::class, 'convertirFull'])->name('cotizaciones.transform.full');
+
     Route::post('/cotizaciones/busqueda', [App\Http\Controllers\CotizacionesController::class, 'findExecute'])->name('exec.busqueda.cotizaciones');
     Route::get('/cotizaciones/documentos/{id}', [App\Http\Controllers\CotizacionesController::class, 'getDocumentos']);
 

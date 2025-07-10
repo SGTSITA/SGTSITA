@@ -155,14 +155,14 @@ input:not(:checked) + .slider #ubicacion-texto {
         </div>
       </div>
 
-    <!-- Tipo búsqueda común -->
+    {{-- <!-- Tipo búsqueda común -->
     <div class="mb-3 mt-2">
       <label for="tipo" class="form-label">Tipo Búsqueda</label>
       <select class="form-select" name="tipo" id="tipo">
         <option value="Global" selected>Global</option>
         <option value="skyGps">skyGps</option>
       </select>
-    </div>
+    </div> --}}
 
     <!-- Botones -->
     <div class="modal-footer">
