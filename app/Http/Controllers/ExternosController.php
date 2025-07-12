@@ -354,54 +354,56 @@ class ExternosController extends Controller
 
     public function getFilesProperties($numContenedor){
 
-        $documentos = DocumCotizacion::where('num_contenedor',$numContenedor)->first();
-        $folderId = $documentos->id;
+        $numContenedor = preg_replace('/\s+/', '*', $numContenedor);
+        $contenedores = explode('*',$numContenedor);
         $documentList = array();
 
-        if(!is_null($documentos->doda)){
-            $doda = self::fileProperties($folderId,$documentos->doda,'Doda');
-            if(sizeof($doda) > 0) array_push($documentList,$doda);
-        }
+        foreach($contenedores as $cont){
+            $documentos = DocumCotizacion::where('num_contenedor',$cont)->first();
+            $folderId = $documentos->id;
 
-        if(!is_null($documentos->boleta_liberacion)){
-            $boleta_liberacion = self::fileProperties($folderId,$documentos->boleta_liberacion,'Boleta de liberación');
-            if(sizeof($boleta_liberacion) > 0) array_push($documentList,$boleta_liberacion);
-        }
+            if(!is_null($documentos->doda)){
+                $doda = self::fileProperties($folderId,$documentos->doda,'Doda '.$cont);
+                if(sizeof($doda) > 0) array_push($documentList,$doda);
+            }
+
+            if(!is_null($documentos->boleta_liberacion)){
+                $boleta_liberacion = self::fileProperties($folderId,$documentos->boleta_liberacion,'Boleta de liberación '.$cont);
+                if(sizeof($boleta_liberacion) > 0) array_push($documentList,$boleta_liberacion);
+            }
 
 
-        if(!is_null($documentos->doc_ccp)){
-            $doc_ccp = self::fileProperties($folderId,$documentos->doc_ccp,'Formato para Carta porte');
-            if(sizeof($doc_ccp) > 0) array_push($documentList,$doc_ccp);
-        }
+            if(!is_null($documentos->doc_ccp)){
+                $doc_ccp = self::fileProperties($folderId,$documentos->doc_ccp,'Formato para Carta porte '.$cont);
+                if(sizeof($doc_ccp) > 0) array_push($documentList,$doc_ccp);
+            }
 
-       
+            if(!is_null($documentos->doc_eir)){
+                $doc_eir = self::fileProperties($folderId,$documentos->doc_eir,'eir '.$cont);
+                if(sizeof($doc_eir) > 0) array_push($documentList,$doc_eir);
+            }
+            if(!is_null($documentos->foto_patio)){
+            
+                $doc_foto_patio = self::fileProperties($folderId, $documentos->foto_patio, 'Foto patio '.$cont);
+                if(sizeof($doc_foto_patio) > 0) array_push($documentList, $doc_foto_patio);
+            }
+            $cotizacion = Cotizaciones::where('id',$documentos->id_cotizacion)->first();
 
-        if(!is_null($documentos->doc_eir)){
-            $doc_eir = self::fileProperties($folderId,$documentos->doc_eir,'eir');
-            if(sizeof($doc_eir) > 0) array_push($documentList,$doc_eir);
-        }
-        if(!is_null($documentos->foto_patio)){
-           
-            $doc_foto_patio = self::fileProperties($folderId, $documentos->foto_patio, 'Foto patio');
-            if(sizeof($doc_foto_patio) > 0) array_push($documentList, $doc_foto_patio);
-        }
-        $cotizacion = Cotizaciones::where('id',$documentos->id_cotizacion)->first();
+            if(!is_null($cotizacion->img_boleta)){
+                $preAlta = self::fileProperties($folderId,$cotizacion->img_boleta,'Pre-Alta '.$cont);
+                if(sizeof($preAlta) > 0) array_push($documentList,$preAlta);
+            }
 
-        if(!is_null($cotizacion->img_boleta)){
-            $preAlta = self::fileProperties($folderId,$cotizacion->img_boleta,'Pre-Alta');
-            if(sizeof($preAlta) > 0) array_push($documentList,$preAlta);
-        }
+            if(!is_null($cotizacion->carta_porte)){
+                $cpPDF = self::fileProperties($folderId,$cotizacion->carta_porte,'Carta Porte '.$cont);
+                if(sizeof($cpPDF) > 0) array_push($documentList,$cpPDF);
+            }
 
-        if(!is_null($cotizacion->carta_porte)){
-            $cpPDF = self::fileProperties($folderId,$cotizacion->carta_porte,'Carta Porte');
-            if(sizeof($cpPDF) > 0) array_push($documentList,$cpPDF);
+            if(!is_null($cotizacion->carta_porte_xml)){
+                $cpXML = self::fileProperties($folderId,$cotizacion->carta_porte_xml,'Carta Porte XML '.$cont);
+                if(sizeof($cpXML) > 0) array_push($documentList,$cpXML);
+            }
         }
-
-        if(!is_null($cotizacion->carta_porte_xml)){
-            $cpXML = self::fileProperties($folderId,$cotizacion->carta_porte_xml,'Carta Porte XML');
-            if(sizeof($cpXML) > 0) array_push($documentList,$cpXML);
-        }
-        
 
         return ["data"=>$documentList,"numContenedor" => $numContenedor,"documentos" =>$documentos];
                 
