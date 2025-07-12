@@ -13,6 +13,9 @@
         <div class="mw-lg-600px mx-auto">
           <div class="mb-13 text-center">
             <div class="text-muted fw-semibold fs-5"> Documentos del contenedor:
+            <select class="form-select mb-2" data-control="select2" data-hide-search="true"  id="selectContenedores">
+                
+            </select>
               <h1 class="mb-3" id="titleFileUploader"></h1>
               <div class="mb-10 fv-row">
                 <label class="d-flex align-items-center form-label mb-3"> Tipo Documento <span class="ms-1" data-bs-toggle="tooltip" title="Seleccione el documento que desea cargar">

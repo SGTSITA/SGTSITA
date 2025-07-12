@@ -205,14 +205,17 @@ const subject = document.querySelector('#compose_subject')
 const messageMail = document.querySelector('#kt_inbox_form_editor')
 
 function goToUploadDocuments() {
-    //let contenedor = apiGrid.getSelectedRows();
-    /*
-            let numContenedor = null;
-            contenedor.forEach(c => numContenedor = c.NumContenedor)*/
-
     let titleFileUploader = document.querySelector("#titleFileUploader");
-    titleFileUploader.textContent = numContenedor.toUpperCase();
-    localStorage.setItem('numContenedor', numContenedor);
+    let contenedores = numContenedor.split(' ')
+    let selectContenedores = document.querySelector("#selectContenedores")
+    contenedores.forEach(c => {
+        let option = document.createElement('option');
+        option.value = c;
+        option.text = c;
+        selectContenedores.appendChild(option);
+    })
+    titleFileUploader.textContent = contenedores[0].toUpperCase();
+    localStorage.setItem('numContenedor', contenedores[0]);
     const modalElement = document.getElementById('kt_modal_fileuploader');
     const bootstrapModal = new bootstrap.Modal(modalElement);
     bootstrapModal.show();
