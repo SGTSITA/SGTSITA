@@ -76,6 +76,12 @@
       });
     });
 
+    document.getElementById('num_contenedor').addEventListener('keydown', function(e) {
+    if (e.key === '/') {
+        e.preventDefault();
+    }
+});
+
     $(".fechas").daterangepicker({
       singleDatePicker: true,
       locale: {
