@@ -39,7 +39,7 @@ let dt = $("#kt_datatable_example_1").DataTable({
     },
     columns: [
         { data: null },
-        { data: 'fileName' },
+        { data: 'secondaryFileName' },
         { data: 'fileType' },
         { data: 'fileSize' },
         { data: 'fileDate' },
@@ -203,17 +203,28 @@ const ccEmail = document.querySelector('#compose_cc');
 const emailCC = document.querySelector('[data-kt-inbox-form="cc"]');
 const subject = document.querySelector('#compose_subject')
 const messageMail = document.querySelector('#kt_inbox_form_editor')
+let selectContenedores = document.querySelector("#selectContenedores")
+
+selectContenedores.addEventListener('change',(e)=>{
+ localStorage.setItem('numContenedor', e.target.value);
+})
 
 function goToUploadDocuments() {
     let titleFileUploader = document.querySelector("#titleFileUploader");
-    let contenedores = numContenedor.split(' ')
-    let selectContenedores = document.querySelector("#selectContenedores")
+    let contenedores = numContenedor.replace(/\s+/g, '*');
+    contenedores = contenedores.split('*')
+    
+    while (selectContenedores.options.length > 0) {
+        selectContenedores.remove(0);
+    }
+
     contenedores.forEach(c => {
         let option = document.createElement('option');
         option.value = c;
         option.text = c;
         selectContenedores.appendChild(option);
     })
+
     titleFileUploader.textContent = contenedores[0].toUpperCase();
     localStorage.setItem('numContenedor', contenedores[0]);
     const modalElement = document.getElementById('kt_modal_fileuploader');
