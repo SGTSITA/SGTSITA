@@ -473,7 +473,7 @@ public function getCotizacionesCanceladas()
     public function store(Request $request){
 
         if($request->get('num_contenedor') != NULL){
-            $numContenedor = $request->input('num_contenedor');
+            $numContenedor = str_replace(' ','',$request->input('num_contenedor'));
             $idEmpresa = auth()->user()->id_empresa;
 
             $contenedorExistente = DocumCotizacion::where('num_contenedor', $numContenedor)
@@ -552,9 +552,9 @@ public function getCotizacionesCanceladas()
             $cotizaciones->direccion_recinto = $request->direccion_recinto;
             $cotizaciones->uso_recinto = ($request->text_recinto == 'recinto-si') ? 1 : 0;
         }
-   $cotizaciones->latitud=  $request->latitud;
-            $cotizaciones->longitud = $request->longitud;
-             $cotizaciones->direccion_mapa = $request->direccion_mapa;
+        $cotizaciones->latitud=  $request->latitud;
+        $cotizaciones->longitud = $request->longitud;
+        $cotizaciones->direccion_mapa = $request->direccion_mapa;
         $cotizaciones->save();
 
         $doc_cotizaciones = Cotizaciones::where('id', '=', $cotizaciones->id)->first();
@@ -569,7 +569,7 @@ public function getCotizacionesCanceladas()
 
         $docucotizaciones = new DocumCotizacion;
         $docucotizaciones->id_cotizacion = $cotizaciones->id;
-        $docucotizaciones->num_contenedor = $request->get('num_contenedor');
+        $docucotizaciones->num_contenedor = str_replace(' ','',$request->get('num_contenedor'));
         $docucotizaciones->save();
 
         return response()->json(["Titulo" => "Proceso satisfactorio", "Mensaje" => "Cotización creada con exito", "TMensaje" => "success"]);
@@ -584,7 +584,7 @@ public function getCotizacionesCanceladas()
 
             foreach($contenedores as $cont){
                 //validaremos que los contenedores no existan
-                $numContenedor = $cont[1];
+                $numContenedor = str_replace(' ','',$cont[1]);
                 $idEmpresa = auth()->user()->id_empresa;
 
                 $contenedorExistente = DocumCotizacion::where('num_contenedor', $numContenedor)
@@ -609,7 +609,7 @@ public function getCotizacionesCanceladas()
 
                 $numSubCliente = substr($contenedor[0],0,5);
                 $pesoReglamentario = 22;
-                $numContenedor = $contenedor[1];
+                $numContenedor = str_replace(' ','',$contenedor[1]);
 
                 $cotizaciones = new Cotizaciones;
                 $cotizaciones->id_cliente = \Auth::User()->id_cliente;
@@ -777,7 +777,7 @@ public function getCotizacionesCanceladas()
       
             foreach($Contenedores as $contenedor){
 
-                $numContenedor = $contenedor['num_contenedor'];
+                $numContenedor = str_replace(' ','',$contenedor['num_contenedor']);
 
                 if($request->TipoCotizacion == "Full"){
                     $cotizacion = Cotizaciones::where('referencia_full',$referencia_full)->where('jerarquia',$contenedor['jerarquia'])->first();

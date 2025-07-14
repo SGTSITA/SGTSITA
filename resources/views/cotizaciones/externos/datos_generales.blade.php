@@ -40,7 +40,7 @@
       
        <div class="border border-gray-300 border-dashed rounded min-w-450px py-3 px-4 me-6 mb-3">
        <div class="d-flex align-items-center">
-           <div class="fs-4 fw-bold" id="proveedorName">Cliente:</div>
+           <div class="fs-4 fw-bold" id="proveedorName">Sub Cliente:</div>
          </div>
         <select class="form-select subcliente d-inline-block" id="id_subcliente" name="id_subcliente">
             <option value="">Seleccionar subcliente</option>
