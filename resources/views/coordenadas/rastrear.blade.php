@@ -75,16 +75,38 @@ input:not(:checked) + .slider #ubicacion-texto {
 <div class="container-fluid py-4 px-3 bg-gray-100 min-h-screen">
     <div class="row justify-content-center">
         <div class="col-sm-12">
+       
             <div class="card shadow-lg border-0 bg-white rounded-4 p-4">
             <div class="mb-4 d-flex align-items-center justify-content-between">
-                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalFiltros" id="btnEditarFiltros">
-                    Editar Filtros
-                </button>
-             <button id="btnDetener2" class="btn btn-danger mt-2" style="display: none;">
-  <i class="bi bi-pause-circle"></i> Detener actualización
-</button>
-                <h3 class="text-xl font-semibold text-center mb-0" id="tituloSeguimiento">Seguimiento Convoys</h3>
-            </div>
+
+  <!-- Buscador + botón (ambos dentro de un flex para agrupar) -->
+  <div class="d-flex align-items-center gap-3" style="flex: 1; min-width: 600px;">
+<!-- Botón detener -->
+    <div style="min-width: 50px;">
+      <button id="btnDetener" class="btn btn-danger mt-4" style="display: none;">
+        <i class="bi bi-pause-circle"></i> 
+      </button>
+    </div>
+    <!-- Buscador -->
+    <div style="flex: 1;">
+      <label for="buscadorGeneral" class="form-label mb-1">Buscar</label>
+      <div class="position-relative">
+        <input type="text" id="buscadorGeneral" placeholder="Buscar convoy, contenedor o equipo..." class="form-control" style="width: 100%; min-width: 350px;">
+        <div id="chipsBusqueda" class="d-flex flex-wrap gap-2 mt-2"></div>
+        <div id="resultadosBusqueda" class="dropdown-menu show mt-1" style="max-height: 200px; overflow-y: auto; width: 100%; min-width: 350px;"></div>
+      </div>
+    </div>
+
+    
+
+  </div>
+
+  <!-- Título Seguimiento -->
+  <h3 class="text-xl font-semibold text-center mb-0 ms-3" id="tituloSeguimiento" style="min-width: 150px; white-space: nowrap;">
+    Seguimiento
+  </h3>
+
+</div>
             <div id="map" 
                     style="height: 800px; width: 100%;" 
                     class="rounded-4 border-4 border-blue-500 shadow-md">
@@ -93,7 +115,7 @@ input:not(:checked) + .slider #ubicacion-texto {
     </div>
 </div>
 
-<div class="modal fade" id="filtroModal" tabindex="-1" aria-hidden="true">
+{{-- <div class="modal fade" id="filtroModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
       <form id="filtroForm">
@@ -162,7 +184,7 @@ input:not(:checked) + .slider #ubicacion-texto {
         <option value="Global" selected>Global</option>
         <option value="skyGps">skyGps</option>
       </select>
-    </div> --}}
+    </div> 
 
     <!-- Botones -->
     <div class="modal-footer">
@@ -173,7 +195,7 @@ input:not(:checked) + .slider #ubicacion-texto {
       </form>
     </div>
   </div>
-</div>
+</div> --}}
 
 <div class="modal fade" id="modalInfoViaje" tabindex="-1" aria-labelledby="modalInfoViajeLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-lg">

@@ -118,11 +118,11 @@ class CoordenadasController extends Controller
     //end externos
 
     public function indexMapa(){
-             return view('coordendas.vercoor');
+             return view('coordenadas.vercoor');
 
     }
     public function indexSeach(){
-        return view('coordendas.search');
+        return view('coordenadas.search');
     }
 
     public function  getcoorcontenedor(Request  $request) 
@@ -422,7 +422,7 @@ class CoordenadasController extends Controller
         }
 $id_cotizacion = $id;
 $idCordenada= $coordenadas->id_coordenadas;
-        return view('coordendas.index',compact('coordenadas','tipoCuestionario','id_cotizacion','idCordenada'));
+        return view('coordenadas.index',compact('coordenadas','tipoCuestionario','id_cotizacion','idCordenada'));
 
     }
 
@@ -636,7 +636,7 @@ $idCordenada= $coordenadas->id_coordenadas;
         //rastreo de gps camiones 
         public function rastrearIndex(){
 
-             return view('coordendas.rastrear');
+             return view('coordenadas.rastrear');
         }
 
 
@@ -677,7 +677,7 @@ $idCordenada= $coordenadas->id_coordenadas;
         'eq_chasis.imei as imei_chasis',
         DB::raw("CASE WHEN asignaciones.id_proveedor IS NULL THEN asignaciones.id_operador ELSE asignaciones.id_proveedor END as beneficiario_id"),
         DB::raw("CASE WHEN asignaciones.id_proveedor IS NULL THEN 'Propio' ELSE 'Subcontratado' END as tipo_contrato")
-    )->where('docum_cotizacion.id_empresa','=',$idEmpresa);
+    );
 
         $beneficiarios = DB::table(function ($query) {
             $query->select('id', 'nombre', 'telefono', DB::raw("'Propio' as tipo_contrato"), 'id_empresa')
@@ -732,6 +732,7 @@ $idCordenada= $coordenadas->id_coordenadas;
     return $query->where('cotizaciones.id_cliente', $idCliente);
     })   
     ->where('cotizaciones.estatus', '=', 'Aprobada')
+    ->where('cotizaciones.id_empresa', '=', $idEmpresa)
     ->get();
 
  
@@ -757,6 +758,7 @@ $idCordenada= $coordenadas->id_coordenadas;
 
 
      $conboysdetalle =  DB::table('conboys_contenedores')
+        ->join('conboys', 'conboys.id', '=', 'conboys_contenedores.conboy_id')
         ->join('docum_cotizacion', 'docum_cotizacion.id', '=', 'conboys_contenedores.id_contenedor')
         ->leftjoin('asignaciones', 'asignaciones.id_contenedor', '=', 'conboys_contenedores.id_contenedor')
         ->join('cotizaciones', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
@@ -764,6 +766,7 @@ $idCordenada= $coordenadas->id_coordenadas;
          ->join('gps_company','gps_company.id','=','equipos.gps_company_id')
         ->select(
             'conboys_contenedores.conboy_id',
+            'conboys.no_conboy',
             'conboys_contenedores.id_contenedor',
             'docum_cotizacion.num_contenedor',
             'equipos.imei',
