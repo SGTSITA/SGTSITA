@@ -366,12 +366,14 @@
                             <a class="nav-link {{ Request::is('coordenadas/mapas') ? 'show' : '' }}"
                                 href="{{  route('ver.coordenadamapa')  }}">
                                 <span class="sidenav-mini-icon"> S</span>
-                                <span class="sidenav-normal">Ver Mapas</span>
+                                <span class="sidenav-normal">Punto de verificación</span> 
+                                {{-- <span class="sidenav-normal">Coordenadas por Pregunta</span> --}}
                             </a>
                             <a class="nav-link {{ Request::is('coordenadas/busqueda') ? 'show' : '' }}"
                                 href="{{ route('seach.coordenadas') }}">
                                 <span class="sidenav-mini-icon"> B</span>
-                                <span class="sidenav-normal">Busqueda Coordenadas</span>
+                                <span class="sidenav-normal">Bitácora de Verificación</span>
+                                {{-- <span class="sidenav-normal">Estatus Respuestas</span> --}}
                             </a> 
                             <a class="nav-link {{ Request::is('coordenadas/rastrear') ? 'show' : '' }}"
                                 href="{{ route('rastrearContenedor') }}">
@@ -383,16 +385,19 @@
                                 <span class="sidenav-mini-icon"> C </span>
                                 <span class="sidenav-normal">Convoys Virtuales</span>
                             </a>  
-                             <a class="nav-link {{ Request::is('coordenadas/conboys') ? 'show' : '' }}"
+                             {{-- <a class="nav-link {{ Request::is('coordenadas/conboys') ? 'show' : '' }}"
                                 href="{{ route('find-convoy') }}">
                                 <span class="sidenav-mini-icon"> E </span>
                                 <span class="sidenav-normal">Encontrar Convoys</span>
-                            </a>  
+
+                            </a>   --}}
+
                             <a class="nav-link {{ Request::is('coordenadas/conboys') ? 'show' : '' }}"
                                 href="{{ route('HistorialUbicaciones') }}">
                                 <span class="sidenav-mini-icon"> H </span>
                                 <span class="sidenav-normal">Historial Ubicaciones</span>
                             </a>
+
                         </li>
                     </ul>
                 </div>

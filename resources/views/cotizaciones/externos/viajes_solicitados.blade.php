@@ -80,6 +80,12 @@
                   <button class="btn btn-primary  btn-sm px-4" name="btnDocs" id="btnDocs" disabled="true" > Agregar documentos </button>
                 </div>
               </div>
+               <div class="menu-item px-3">
+                            <div class="menu-content px-3 py-3">
+                             <button type="button" class="btn btn-sm btn-success"  title="Rastrear contenedor" id="btnRastreo"><i class="fa fa-shipping-fast"></i> Rastreo</button>
+                            </div>
+                          </div>
+
               <!--end::Menu item-->
             </div>
             <!--end::Menu 2-->

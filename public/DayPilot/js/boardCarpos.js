@@ -271,6 +271,12 @@ return `${dia}/${mes}/${anio}`;
    getInfoViaje(args.e.data.start.value,args.e.data.end.value, args.e.data.text, args.e.data.id);
  };
 
+ function abrirMapaEnNuevaPestana( contenedor,tipoS) {
+  
+    const url = `/coordenadas/mapa_rastreo?contenedor=${contenedor}&tipoS=${encodeURIComponent(tipoS)}`;
+    window.open(url, '_blank');
+}
+
  function getInfoViaje(startDate, endDate, numContenedor_, idContendor){
     let fechaSalida = document.querySelector('#fechaSalida')
    fechaSalida.textContent = formatFecha(startDate);
@@ -326,10 +332,11 @@ return `${dia}/${mes}/${anio}`;
             }else{
                 $('#tipoViajeSpan').addClass('bg-gradient-info')
             }
-
-            //Once en true para que se ejecute una sola vez y se elimine el listener
+            let tipoS="Planeacion-> Contenedor:"
+            //Once en true para que se ejecute una sola vez y se elimine el listener    onclick="('${params.data.contenedor}')
             btnFinalizar.addEventListener('click', () => finalizarViaje(idContendor,numContenedor_), { once: true });
             btnDeshacer.addEventListener('click', () => anularPlaneacion(idContendor,numContenedor_), { once: true });
+            btnRastreo.addEventListener('click', () => abrirMapaEnNuevaPestana(numContenedor_,tipoS), { once: true });
 
             let documentos = response.documents
             let docs = Object.keys(documentos)
