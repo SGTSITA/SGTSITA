@@ -49,21 +49,77 @@
 
                         <div class="mb-4">
                             <label class="form-label fw-semibold mb-2">Permisos:</label>
-                            <div class="row">
-                                @foreach ($permission as $value)
-                                    <div class="col-md-4 mb-2">
-                                        <div class="form-check form-switch">
-                                            {!! Form::checkbox('permission[]', $value->id, false, [
-                                                'class' => 'form-check-input',
-                                                'id' => 'perm_' . $value->id,
-                                            ]) !!}
-                                            <label class="form-check-label" for="perm_{{ $value->id }}">
-                                                {{ ucfirst($value->name) }}
-                                            </label>
-                                        </div>
+
+                            @php
+                                $agrupados = $permission->groupBy('modulo');
+
+                                $traducciones = [
+                                    'list' => 'Ver lista',
+                                    'create' => 'Crear',
+                                    'edit' => 'Editar',
+                                    'delete' => 'Eliminar',
+                                    'estatus' => 'Cambiar estatus',
+                                    'cordeenadas' => 'Coordenadas',
+                                    'cambio-tipo' => 'Cambiar tipo',
+                                    'pdf' => 'Descargar PDF',
+                                    'cambio-empresa' => 'Cambiar empresa',
+                                    'cotizacion' => 'Cotización',
+                                    'finalizar' => 'Finalizar',
+                                    'entrar' => 'Entrar',
+                                    'entrar-cotizacion' => 'Entrar cotización',
+                                    'permisos-users' => 'Gestionar permisos y usuarios',
+                                    'generales' => 'Gastos generales',
+                                    'crear' => 'Crear',
+                                    'catalogo' => 'Catálogo',
+                                    'reportes' => 'Reportes',
+                                    'viajes' => 'Viajes',
+                                    'cxp' => 'Cuentas por pagar',
+                                    'cxc' => 'Cuentas por cobrar',
+                                    'utilidad' => 'Reporte de utilidad',
+                                    'documentos' => 'Documentos',
+                                    'liquidados-cxc' => 'CXC Liquidados',
+                                    'liquidados-cxp' => 'CXP Liquidados',
+                                    'pagos-p' => 'Pagos Primarios',
+                                    'pagos-s' => 'Pagos Secundarios',
+                                    'cuentas' => 'Cuentas',
+                                    'cuentas-create' => 'Crear cuenta',
+                                    'liquidaciones' => 'Liquidaciones',
+                                    'coordenadasv' => 'Coordenadas',
+                                ];
+                            @endphp
+
+                            @foreach ($agrupados as $modulo => $permisos)
+                                <div class="mb-4 border rounded p-3 bg-light-subtle">
+                                    <h5 class="text-primary fw-bold mb-1">
+                                        <i class="fas fa-folder me-2"></i>{{ ucfirst($modulo) }}
+                                    </h5>
+                                    <p class="text-muted mb-3" style="font-size: 0.9rem;">
+                                        {{ $permisos->first()->descripcion ?? 'Permisos del módulo ' . ucfirst($modulo) }}
+                                    </p>
+
+                                    <div class="row">
+                                        @foreach ($permisos as $permiso)
+                                            @php
+                                                $accion = \Illuminate\Support\Str::after($permiso->name, '-');
+                                                $texto =
+                                                    $traducciones[$accion] ?? ucfirst(str_replace('-', ' ', $accion));
+                                            @endphp
+                                            <div class="col-md-4 mb-2">
+                                                <div class="form-check form-switch">
+                                                    {!! Form::checkbox('permission[]', $permiso->id, false, [
+                                                        'class' => 'form-check-input',
+                                                        'id' => 'perm_' . $permiso->id,
+                                                    ]) !!}
+                                                    <label class="form-check-label" for="perm_{{ $permiso->id }}">
+                                                        {{ $texto }}
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        @endforeach
                                     </div>
-                                @endforeach
-                            </div>
+                                </div>
+                            @endforeach
+
                         </div>
 
                         <div class="text-center mt-4">

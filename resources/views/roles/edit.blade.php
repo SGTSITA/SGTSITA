@@ -32,6 +32,7 @@
                         @endif
 
                         {!! Form::model($role, ['method' => 'PATCH', 'route' => ['roles.update', $role->id]]) !!}
+
                         <div class="mb-4">
                             <label class="form-label fw-semibold">Nombre del Rol</label>
                             {!! Form::text('name', null, ['class' => 'form-control rounded-3', 'placeholder' => 'Ej. Administrador']) !!}
@@ -39,29 +40,86 @@
 
                         <div class="mb-4">
                             <label class="form-label fw-semibold mb-2">Permisos Disponibles</label>
-                            <div class="row">
-                                @foreach ($permission as $value)
-                                    <div class="col-md-4 mb-2">
-                                        <div class="form-check form-switch">
-                                            {!! Form::checkbox('permission[]', $value->id, in_array($value->id, $rolePermissions), [
-                                                'class' => 'form-check-input',
-                                                'id' => 'perm_' . $value->id,
-                                            ]) !!}
-                                            <label class="form-check-label" for="perm_{{ $value->id }}">
-                                                {{ ucfirst($value->name) }}
-                                            </label>
-                                        </div>
+
+                            @php
+                                $agrupados = $permission->groupBy('modulo');
+
+                                $traducciones = [
+                                    'list' => 'Ver lista',
+                                    'create' => 'Crear',
+                                    'edit' => 'Editar',
+                                    'delete' => 'Eliminar',
+                                    'estatus' => 'Cambiar estatus',
+                                    'cordeenadas' => 'Coordenadas',
+                                    'cambio-tipo' => 'Cambiar tipo',
+                                    'pdf' => 'Descargar PDF',
+                                    'cambio-empresa' => 'Cambiar empresa',
+                                    'cotizacion' => 'Cotización',
+                                    'finalizar' => 'Finalizar',
+                                    'entrar' => 'Entrar',
+                                    'entrar-cotizacion' => 'Entrar cotización',
+                                    'permisos-users' => 'Gestionar permisos y usuarios',
+                                    'generales' => 'Gastos generales',
+                                    'crear' => 'Crear',
+                                    'catalogo' => 'Catálogo',
+                                    'reportes' => 'Reportes',
+                                    'viajes' => 'Viajes',
+                                    'cxp' => 'Cuentas por pagar',
+                                    'cxc' => 'Cuentas por cobrar',
+                                    'utilidad' => 'Reporte de utilidad',
+                                    'documentos' => 'Documentos',
+                                    'liquidados-cxc' => 'CXC Liquidados',
+                                    'liquidados-cxp' => 'CXP Liquidados',
+                                    'pagos-p' => 'Pagos Primarios',
+                                    'pagos-s' => 'Pagos Secundarios',
+                                    'cuentas' => 'Cuentas',
+                                    'cuentas-create' => 'Crear cuenta',
+                                    'liquidaciones' => 'Liquidaciones',
+                                    'coordenadasv' => 'Coordenadas',
+                                ];
+                            @endphp
+
+                            @foreach ($agrupados as $modulo => $permisos)
+                                <div class="mb-4 border rounded p-3 bg-light-subtle">
+                                    <h5 class="text-primary fw-bold mb-1">
+                                        <i class="fas fa-folder me-2"></i>{{ ucfirst($modulo) }}
+                                    </h5>
+                                    <p class="text-muted mb-3" style="font-size: 0.9rem;">
+                                        {{ $permisos->first()->descripcion ?? 'Permisos del módulo ' . ucfirst($modulo) }}
+                                    </p>
+
+                                    <div class="row">
+                                        @foreach ($permisos as $permiso)
+                                            @php
+                                                $accion = \Illuminate\Support\Str::after($permiso->name, '-');
+                                                $texto =
+                                                    $traducciones[$accion] ?? ucfirst(str_replace('-', ' ', $accion));
+                                            @endphp
+                                            <div class="col-md-4 mb-2">
+                                                <div class="form-check form-switch">
+                                                    {!! Form::checkbox('permission[]', $permiso->id, in_array($permiso->id, $rolePermissions), [
+                                                        'class' => 'form-check-input',
+                                                        'id' => 'perm_' . $permiso->id,
+                                                    ]) !!}
+                                                    <label class="form-check-label" for="perm_{{ $permiso->id }}">
+                                                        {{ $texto }}
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        @endforeach
                                     </div>
-                                @endforeach
-                            </div>
+                                </div>
+                            @endforeach
+
                         </div>
 
                         <div class="text-center mt-4">
                             <button type="submit" class="btn rounded-pill px-4"
                                 style="background: {{ $configuracion->color_boton_save }}; color: #fff;">
-                                <i class="fas fa-save me-2"></i>Guardar Cambios
+                                <i class="fas fa-save me-2"></i> Guardar Cambios
                             </button>
                         </div>
+
                         {!! Form::close() !!}
                     </div>
                 </div>
