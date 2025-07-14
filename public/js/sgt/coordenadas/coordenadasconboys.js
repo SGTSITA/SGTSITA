@@ -1,7 +1,9 @@
 
     let contenedoresGuardados ;  
 let contenedoresDisponibles = [];
-
+let userBloqueo = false;
+const seleccionados = [];
+const ItemsSelects = [];
 
 function cargarinicial()
 {
@@ -17,13 +19,35 @@ function cargarinicial()
           console.error('Error al traer coordenadas:', error);
     });
 }
+function BloquearHabilitarEdicion(block){
+    document.getElementById('id_convoy').readOnly = block;
+    document.getElementById('nombre').readOnly = block;
+    document.getElementById('fecha_inicio').readOnly = block;
+    document.getElementById('fecha_fin').readOnly = block;
 
+
+
+
+}
+
+function abrirMapaEnNuevaPestana( contenedor,tipoS) {
+        const url = `/coordenadas/mapa_rastreo?contenedor=${contenedor}&tipoS=${encodeURIComponent(tipoS)}`;
+    window.open(url, '_blank');
+}
 document.addEventListener('DOMContentLoaded', function () {
      let gridApi;
      cargarinicial();
     definirTable();
 
+  const modal = new bootstrap.Modal(document.getElementById('modalBuscarConvoy'), {
+        backdrop: 'static',
+        keyboard: false
+    });
 
+
+document.getElementById('btnBuscarconboy').addEventListener('click', function () {
+        modal.show();
+    });
 
 document.getElementById("btnNuevoconboy").addEventListener("click", () => {
     limpiarFormulario();
@@ -31,6 +55,48 @@ document.getElementById("btnNuevoconboy").addEventListener("click", () => {
     const modal = new bootstrap.Modal(document.getElementById('CreateModal'));
     modal.show();
 });
+
+document.getElementById('formBuscarConvoy').addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        const numero = document.getElementById('numero_convoy').value;
+
+        fetch(`/coordenadas/conboys/getconvoy/${numero}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                   let  tablalimpiar = document.getElementById("tablaContenedoresBodyBuscar"); 
+    tablalimpiar.innerHTML = "";
+    seleccionados.length = 0;
+    ItemsSelects.length = 0;
+
+
+                    const fechaInicio = new Date(data.data.fecha_inicio);
+                    const fechaFin = new Date(data.data.fecha_fin);
+
+                    let blockUser = data.data.BockUser 
+                    const formatoFecha = (fecha) => {
+                        return `${fecha.getDate().toString().padStart(2, '0')}/${(fecha.getMonth() + 1).toString().padStart(2, '0')}/${fecha.getFullYear()}`;
+                    };
+                    document.getElementById('descripcionConvoy').textContent = data.data.nombre;
+                    document.getElementById('fechaInicioConvoy').textContent = formatoFecha(fechaInicio);
+                    document.getElementById('fechaFinConvoy').textContent = formatoFecha(fechaFin);
+                    document.getElementById('id_convoy').value = data.data.idconvoy;
+                    contenedoresDisponibles = data.data.contenedoresPropios;
+                    contenedoresAsignadosAntes = data.data.contenedoresPropiosAsignados;
+                    contenedoresAsignadosAntes.forEach((contenedor, index) => {
+                         seleccionarContenedor2(contenedor.num_contenedor)
+                         
+                        });
+                  
+                   
+
+                    document.getElementById('resultadoConvoy').style.display = 'block';
+                } else {
+                    alert("Convoy no encontrado.");
+                }
+            });
+    });
 
 function limpiarFormulario() {
         const form = document.getElementById("formFiltros");
@@ -49,20 +115,85 @@ function limpiarFormulario() {
     }
 });
 
+  document.getElementById('btnGuardarContenedores').addEventListener('click', function () {
+        const numeroConvoy = document.getElementById('numero_convoy').value;
+        let idconvoy = document.getElementById('id_convoy').value;
+    document.getElementById('ItemsSelects').value = ItemsSelects.join(';');
+    
+if (!ItemsSelects || ItemsSelects.length === 0) {
+    alert('Por favor, seleccione al menos un contenedor.');
+    return;
+  }
+let datap = {
+    items_selects: ItemsSelects,
+    idconvoy:idconvoy,
+    numero_convoy:numeroConvoy,
+};
+
+        fetch(`/coordenadas/conboys/agregar`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify(datap)
+        })
+        .then(async res => {
+            if (!res.ok) {
+                // Intentamos extraer el mensaje del error (por si Laravel lo devuelve)
+                const errorText = await res.text();
+                throw new Error(errorText || 'Error desconocido del servidor');
+            }
+            return res.json();
+        })
+        .then(data => {
+            if (data.success) {
+                document.getElementById('modalBuscarConvoy').style.display = 'none';
+              
+
+                Swal.fire({
+                    title: 'Guardado correctamente',
+                    text: data.message + ' ' + data.no_conboy,
+                    icon: 'success',
+                    confirmButtonText: 'Aceptar'
+                });
+
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('modalBuscarConvoy'));
+                    modal.hide();
+
+            } else {
+                Swal.fire({
+                    title: 'Error',
+                    text: data.message || 'No se pudo guardar.',
+                    icon: 'error',
+                    confirmButtonText: 'Cerrar'
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error en la petición:', error);
+
+            Swal.fire({
+                title: 'Error inesperado',
+                text: error.message,
+                icon: 'error',
+                confirmButtonText: 'Cerrar'
+            });
+        });
+    });
+
 function definirTable(){
   const columnDefs = [
         {
         headerCheckboxSelection: true,
         checkboxSelection: true,
-        width: 40, 
+        width: 50, 
         pinned: "left", 
         suppressSizeToFit: true,
         resizable: false
         },
-        // { headerName: "No Coti", field: "id_cotizacion", sortable: true, filter: true },
-        // { headerName: "No Asig", field: "id_asignacion", sortable: true, filter: true },
-        // { headerName: "No Coor", field: "id_coordenada", sortable: true, filter: true },
-        { headerName: "Id", field: "no_conboy", sortable: true, filter: true },
+       
+        { headerName: "Convoy", field: "no_conboy", sortable: true, filter: true },
         { headerName: "Descripcion", field: "nombre", sortable: true, filter: true },
         { headerName: "Fecha Inicio", field: "fecha_inicio", sortable: true, filter: true },
         { headerName: "Fecha Fin", field: "fecha_fin", sortable: true, filter: true },
@@ -71,14 +202,18 @@ function definirTable(){
 
        {
     headerName: "Acciones",
-    field: "acciones",
+   
+   
     cellRenderer: function (params) {
         const container = document.createElement("div");
+      //  container.classList.add("d-flex", "flex-wrap", "gap-1", "justify-content-start");
         const data = params.data;
 
         // Botón Editar
         const btnEditar = document.createElement("button");
-        btnEditar.innerText = "✏️ Editar";
+        btnEditar.innerHTML = `<i class="fas fa-edit text-white"></i>`;
+       
+        btnEditar.title ="Editar";
         btnEditar.classList.add("btn", "btn-sm", "btn-warning", "me-1");
         btnEditar.onclick = function () {
           document.getElementById("filtroModalLabel") .textContent ="Editar Conboy";
@@ -91,19 +226,21 @@ function definirTable(){
             document.getElementById("fecha_fin").value = formatDateForInput(data.fecha_fin )|| "";
             document.getElementById("nombre").value = data.nombre || "";
             document.getElementById("formFiltros").dataset.editId = data.id;
- 
+
+            BloquearHabilitarEdicion(data.BlockUser);
  
             const contenedoresFiltrados = contenedoresGuardados.filter(item => item.conboy_id == data.id);
 
         // Llenas la tabla con los contenedoresFiltrados
-        llenarTablaContenedores(contenedoresFiltrados);
+        llenarTablaContenedores(contenedoresFiltrados,data.BlockUser);
             const modal = new bootstrap.Modal(document.getElementById("CreateModal"));
             modal.show();
         };
 
         // Botón Compartir
         const btnCompartir = document.createElement("button");
-        btnCompartir.innerText = "🔗 Compartir";
+        btnCompartir.innerText = "🔗";
+        btnCompartir.title ="Compartir"
         btnCompartir.classList.add("btn", "btn-sm", "btn-info");
         btnCompartir.onclick = function () {
             // const link = `${window.location.origin}/coordenadas/conboys/compartir/${data.no_conboy}/${data.id}`;
@@ -126,41 +263,34 @@ function definirTable(){
             // Mostrar modal
             document.getElementById("modalCoordenadas").style.display = "block";
         };
+    //boton rastreo contenedores de los convoys
+    const btnRastreo = document.createElement("button");
+    btnRastreo.type = "button";
+    btnRastreo.classList.add("btn", "btn-sm", "btn-success");
+    btnRastreo.title = "Rastrear contenedor";
+    btnRastreo.id = "btnRastreo";
 
-        container.appendChild(btnEditar);
-        container.appendChild(btnCompartir);
+    // Añadir ícono + texto como HTML
+    btnRastreo.innerHTML = `<i class="fa fa-shipping-fast me-1"></i>`;
 
-        return container;
+    // Evento onclick personalizado (usa el contenedor que necesitas)
+    btnRastreo.onclick = function () {
+        const contenedoresDelConvoy = contenedoresGuardados
+    .filter(c => c.conboy_id === data.id)
+    .map(c => c.num_contenedor);
+    const listaStr = contenedoresDelConvoy.join(' / ');
+let tipos= "Convoy: " + data.no_conboy;
+        abrirMapaEnNuevaPestana(listaStr,tipos); 
+    };
+
+            container.appendChild(btnEditar);
+            container.appendChild(btnCompartir);
+            container.appendChild(btnRastreo);
+
+            return container;
+        }
     }
-}
-           //  headerName: "E Burrero",
-            //field: "Estatus_Burrero",
-        //     minWidth: 180,
-        //     cellRenderer: function (params) {
-        //         let color = "secondary";
-        //         let clasIcon ="fa fa-hourglass-half me-1"
-        //         if (String(params.data.tipo_b_estado) === "2"){
-        //         color = "success";
-        //         clasIcon="fa fa-check-circle me-1 text-success";
-        //         } 
-        //         else if (String(params.data.tipo_b_estado) === "1"){
-        //         color = "primary";
-        //          clasIcon=" fa fa-play-circle me-1";
-        //         } 
-        //         else if (String(params.data.tipo_b_estado) === "0") {
-        //             color = "warning";
-        //              clasIcon="fa fa-hourglass-half me-1";
-        //         }
-        //        return `
-        //                 <button class="btn btn-sm btn-outline-${color} ver-mapa-btn" 
-        //                     data-tipo="b"
-        //                     data-info='${JSON.stringify(params.data).replace(/'/g, "&#39;")}' 
-        //                     title="Ver progreso...">
-        //                     <i class="${clasIcon}"></i> ${params.data.Estatus_Burrero}
-        //                 </button>
-        //         `;
-        //     }
-        //},        
+          
              
        
     ];
@@ -172,19 +302,31 @@ function definirTable(){
     return `${year}-${month}-${day}`;
 }
 
-function llenarTablaContenedores(contenedores) {
+
+function llenarTablaContenedores(contenedores,val) {
     const tabla = document.getElementById("tablaContenedoresBody"); // tbody
     tabla.innerHTML = "";
 
 seleccionados.length = 0;
     ItemsSelects.length = 0;
 
-    contenedores.forEach(item => {
+     
+
+    contenedores.forEach((item, i) => {
         const row = document.createElement("tr");
+         let botonEliminar = '';
+        if (!val) {
+            botonEliminar = `
+                    <button type="button" class="btn btn-sm btn-danger" onclick="confirmarEliminacion('${item.id_contenedor}', '${item.conboy_id}', this,${i})">
+                        <i class="bi bi-trash"></i> 
+                    </button>
+                `;
+           
+        }
 
         row.innerHTML = `
             <td>${item.num_contenedor}</td>
-            <td></td>
+            <td>${botonEliminar}</td>
         `;
 
         tabla.appendChild(row);
@@ -224,6 +366,7 @@ seleccionados.length = 0;
                    const rowData = data.data;
                     gridApi.setGridOption("rowData", rowData);
                     contenedoresGuardados = data.dataConten;
+                    
                 })
                 .catch(error => {
                     console.error("❌ Error al obtener la lista de convoys:", error);
@@ -321,8 +464,7 @@ function saveconvoys(datap,urlSave) {
 }
 
 
-const seleccionados = [];
-const ItemsSelects = [];
+
 
     function mostrarSugerencias() {
         const input = document.getElementById('contenedor-input');
@@ -364,6 +506,7 @@ const ItemsSelects = [];
         document.getElementById('sugerencias').style.display = 'none';
         actualizarVista();
     }
+   
 
     function agregarContenedor() {
         const input = document.getElementById('contenedor-input');
@@ -384,7 +527,7 @@ const ItemsSelects = [];
 
     function actualizarVista() {
         const tbody = document.querySelector('#tablaContenedores tbody');
-     tbody.innerHTML = '';
+         tbody.innerHTML = '';
          seleccionados.forEach((cont, i) => {
         const row = document.createElement('tr');
         row.innerHTML = `
@@ -406,6 +549,86 @@ const ItemsSelects = [];
         document.getElementById('ItemsSelects').value = ItemsSelects.join(';');
     }
 
+    function mostrarSugerencias2() {
+        const input = document.getElementById('contenedor-input2');
+        const filtro = input.value.trim().toUpperCase();
+        const sugerenciasDiv = document.getElementById('sugerencias2');
+        sugerenciasDiv.innerHTML = '';
+
+        if (filtro.length === 0) {
+            sugerenciasDiv.style.display = 'none';
+            return;
+        }
+
+        const filtrados = contenedoresDisponibles.filter(c =>
+            
+            (c.num_contenedor || '').toUpperCase().includes(filtro) &&
+    !seleccionados.includes(c.num_contenedor)
+
+
+        );
+
+        filtrados.forEach(c => {
+            const item = document.createElement('div');
+            item.textContent = c.num_contenedor;
+            item.style.padding = '5px';
+            item.style.cursor = 'pointer';
+            item.onclick = () => seleccionarContenedor2(c.num_contenedor);
+            sugerenciasDiv.appendChild(item);
+        });
+
+        sugerenciasDiv.style.display = filtrados.length ? 'block' : 'none';
+    }
+ function seleccionarContenedor2(valor) {
+        seleccionados.push(valor);
+         const contenedorData = contenedoresDisponibles.find(c => c.num_contenedor === valor);
+
+         ItemsSelects.push(valor +"-" + contenedorData.id_contenedor);
+        document.getElementById('contenedor-input2').value = '';
+        document.getElementById('sugerencias2').style.display = 'none';
+        actualizarVista2();
+    }
+
+    function agregarContenedor2() {
+        const input = document.getElementById('contenedor-input2');
+        const valor = input.value.trim().toUpperCase();
+        if (valor && contenedoresDisponibles.includes(valor) && !seleccionados.includes(valor)) {
+            seleccionados.push(valor);
+           
+            input.value = '';
+            actualizarVista2();
+        }
+    }
+
+       function actualizarVista2() {
+        const tbody = document.querySelector('#tablaContenedoresBuscar tbody');
+     tbody.innerHTML = '';
+         seleccionados.forEach((cont, i) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          
+            <td>${cont}</td>
+            <td>
+                <button type="button" 
+                        class="btn btn-sm btn-danger"
+                        onclick="eliminarContenedor2(${i})">
+                     <i class="bi bi-trash"></i>
+                </button>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+    
+
+        document.getElementById('contenedores').value = seleccionados.join(';');
+        document.getElementById('ItemsSelects').value = ItemsSelects.join(';');
+    }
+
+     function eliminarContenedor2(idx) {
+        seleccionados.splice(idx, 1);
+          ItemsSelects.splice(idx, 1);
+        actualizarVista2();
+    }
     function cambiarTab(tabId) {
     // Ocultamos todos los divs con clase 'tab-content'
     const tabs = document.querySelectorAll('.tab-content');
@@ -512,4 +735,63 @@ function guardarYAbrirWhatsApp(event) {
    
     window.open(document.getElementById('whatsappLink').href, '_blank');
        
+}
+
+
+    function limpiarFormularioConvoy2() {
+    // Limpiar tabla de contenedores
+    const tbody = document.getElementById('tablaContenedoresBuscar');
+    tbody.innerHTML = '';
+
+    // Limpiar inputs
+    document.getElementById('numero_convoy').value = '';
+    document.getElementById('id_convoy').value = '';
+
+    // Limpiar selects ocultos o arrays usados
+    ItemsSelects.length = 0; // Si es global, la reinicias
+    document.getElementById('ItemsSelects').value = '';
+
+    // Ocultar modal si es necesario
+    document.getElementById('modalBuscarConvoy').style.display = 'none';
+
+    // Limpiar también posibles mensajes o alertas
+   // document.getElementById('resultadoBusquedaConvoy')?.innerHTML = '';
+}
+
+function confirmarEliminacion(idContenedor, idConvoy, boton,idx) {
+    Swal.fire({
+        title: '¿Eliminar contenedor?',
+        text: 'Esta acción no se puede deshacer.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#6c757d'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/coordenadas/conboys/eliminar-contenedor/${idContenedor}/${idConvoy}`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => {
+                if (!response.ok) throw new Error("Error al eliminar");
+                return response.json();
+            })
+            .then(data => {
+                Swal.fire('¡Eliminado!', 'El contenedor ha sido eliminado.', 'success');
+
+               eliminarContenedor(idx);
+                const fila = boton.closest('tr');
+                fila.remove();
+            })
+            .catch(error => {
+                console.error(error);
+                Swal.fire('Error', 'No se pudo eliminar el contenedor.', 'error');
+            });
+        }
+    });
 }

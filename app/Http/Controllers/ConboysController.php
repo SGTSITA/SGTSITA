@@ -42,14 +42,14 @@ class ConboysController extends Controller
     {
         $idEmpresa = Auth::User()->id_empresa;
 
-        $conboys = DB::table('conboys')
+       $conboys = DB::table('conboys')
         ->select(
             'conboys.id',
             'conboys.no_conboy',
             'conboys.nombre',
             'conboys.fecha_inicio',
             'conboys.fecha_fin',
-            'conboys.user_id'
+            'conboys.user_id',
         )
         ->whereIn('conboys.id', function ($query) use ($idEmpresa) {
             $query->select('conboys_contenedores.conboy_id')
@@ -57,7 +57,11 @@ class ConboysController extends Controller
                 ->join('docum_cotizacion', 'docum_cotizacion.id', '=', 'conboys_contenedores.id_contenedor')
                 ->where('docum_cotizacion.id_empresa', '=', $idEmpresa);
         })
-        ->get();
+        ->get()
+        ->map(function ($conboy) {
+            $conboy->BlockUser = $conboy->user_id !== optional(Auth::user())->id;
+            return $conboy;
+        });
  
 
         $conboysdetalle =  DB::table('conboys_contenedores')
@@ -76,7 +80,7 @@ class ConboysController extends Controller
                     'success' => true,
                     'message' => 'lista devuelta.'  ,
                     'data'=>  $conboys,
-                    'dataConten'=>  $conboysdetalle,
+                    'dataConten'=>  $conboysdetalle
                 ]); 
     }
 
@@ -239,7 +243,15 @@ class ConboysController extends Controller
 
         return redirect()->route('conboys.index')->with('success', 'Conboy eliminado.');
     }
+    public function eliminarContenedor($contenedor, $convoy)
+    {
+        DB::table('conboys_contenedores')
+            ->where('id_contenedor', $contenedor)
+            ->where('conboy_id', $convoy)
+            ->delete();
 
+        return response()->json(['success' => true]);
+    }
 
 
     //guardar historial de ubicaciones seguimiento traks
@@ -325,6 +337,8 @@ class ConboysController extends Controller
                     'fecha_fin' => $convoy->fecha_fin,
                     'no_conboy'=> $convoy->no_conboy,
                     'idconvoy'=> $convoy->id,
+                    'BockUser '=> $convoy->user_id !==  optional(Auth::user())->id,
+                    
                     'contenedoresPropios'=>$contenedoresPropios,
                     'contenedoresPropiosAsignados'=>$contenedoresPropiosAsignados,
                         ]
