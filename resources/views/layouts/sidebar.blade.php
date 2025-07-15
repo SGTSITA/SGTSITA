@@ -98,8 +98,8 @@
 
             @can('proveedores-viajes')
                 <li class="nav-item">
-                    <a class="nav-link {{ Request::is('viajes*') ? 'active' : '' }}"
-                        href="{{ route('mep.index') }}" target="">
+                    <a class="nav-link {{ Request::is('viajes*') ? 'active' : '' }}" href="{{ route('mep.index') }}"
+                        target="">
                         <div
                             class="icon icon-shape icon-sm text-center  me-2 d-flex align-items-center justify-content-center">
                             <img src="{{ asset('img/icon/contenedor.png') }}" alt="" width="20px">
@@ -299,11 +299,23 @@
                                     <span class="sidenav-normal">Liquidados cxp</span>
                                 </a>
                             @endcan
+                            @if (auth()->user()->hasRole('Proveedor'))
+                        <li class="nav-item">
+                            <a class="nav-link {{ Request::is('reporteria/viajes-por-cobrar*') ? 'show' : '' }}"
+                                href="{{ route('index_vxc.reporteria') }}">
+                                <span class="sidenav-mini-icon"> V </span>
+                                <span class="sidenav-normal">VXC - Viajes por cobrar</span>
+                            </a>
+                        </li>
+                        @endif
+
+                        @if (!auth()->user()->hasRole('Proveedor'))
                             <a class="nav-link {{ Request::is('reporteria/gastos-pagar*') ? 'show' : '' }}"
                                 href="{{ route('index_gxp.reporteria') }}">
-                                <span class="sidenav-mini-icon"> P </span>
                                 <span class="sidenav-normal">Gastos por pagar</span>
                             </a>
+                        @endif
+
                         </li>
                     </ul>
                 </div>
@@ -339,15 +351,15 @@
                     </ul>
                 </div>
                 <!--li class="nav-item">
-                                                        <a class="nav-link {{ Request::is('liquidaciones*') ? 'active' : '' }}"
-                                                            href="{{ route('index.liquidacion') }}" target="">
-                                                            <div
-                                                                class="icon icon-shape icon-sm text-center  me-2 d-flex align-items-center justify-content-center">
-                                                                <img src="{{ asset('img/icon/pago-en-efectivo.png') }}" alt="" width="20px">
-                                                            </div>
-                                                           
-                                                        </a>
-                                                    </li-->
+                                                                                <a class="nav-link {{ Request::is('liquidaciones*') ? 'active' : '' }}"
+                                                                                    href="{{ route('index.liquidacion') }}" target="">
+                                                                                    <div
+                                                                                        class="icon icon-shape icon-sm text-center  me-2 d-flex align-items-center justify-content-center">
+                                                                                        <img src="{{ asset('img/icon/pago-en-efectivo.png') }}" alt="" width="20px">
+                                                                                    </div>
+                                                                                   
+                                                                                </a>
+                                                                            </li-->
             @endcan
             @can('coordenadasv')
                 <a data-bs-toggle="collapse" href="#pagesExamplesCoordenadas"
@@ -364,7 +376,7 @@
                     <ul class="nav ms-4">
                         <li class="nav-item ">
                             <a class="nav-link {{ Request::is('coordenadas/mapas') ? 'show' : '' }}"
-                                href="{{  route('ver.coordenadamapa')  }}">
+                                href="{{ route('ver.coordenadamapa') }}">
                                 <span class="sidenav-mini-icon"> S</span>
                                 <span class="sidenav-normal">Ver Mapas</span>
                             </a>
@@ -372,22 +384,22 @@
                                 href="{{ route('seach.coordenadas') }}">
                                 <span class="sidenav-mini-icon"> B</span>
                                 <span class="sidenav-normal">Busqueda Coordenadas</span>
-                            </a> 
+                            </a>
                             <a class="nav-link {{ Request::is('coordenadas/rastrear') ? 'show' : '' }}"
                                 href="{{ route('rastrearContenedor') }}">
                                 <span class="sidenav-mini-icon"> R </span>
                                 <span class="sidenav-normal">Rastrear Viajes</span>
-                            </a>    
+                            </a>
                             <a class="nav-link {{ Request::is('coordenadas/conboys') ? 'show' : '' }}"
                                 href="{{ route('index.conboys') }}">
                                 <span class="sidenav-mini-icon"> C </span>
                                 <span class="sidenav-normal">Convoys Virtuales</span>
-                            </a>  
-                             <a class="nav-link {{ Request::is('coordenadas/conboys') ? 'show' : '' }}"
+                            </a>
+                            <a class="nav-link {{ Request::is('coordenadas/conboys') ? 'show' : '' }}"
                                 href="{{ route('find-convoy') }}">
                                 <span class="sidenav-mini-icon"> E </span>
                                 <span class="sidenav-normal">Encontrar Convoys</span>
-                            </a>  
+                            </a>
                             <a class="nav-link {{ Request::is('coordenadas/conboys') ? 'show' : '' }}"
                                 href="{{ route('HistorialUbicaciones') }}">
                                 <span class="sidenav-mini-icon"> H </span>
@@ -453,17 +465,17 @@
                     @endcan
 
                     <!-- @can('usuarios-empresas')
-                        <li class="nav-item ">
-                            <a class="nav-link {{ Request::is('usuarios-empresas*') ? 'show' : '' }}"
-                                href="{{ route('Usuarios-empresas.index') }}">
-                                <span class="sidenav-mini-icon"> P </span>
-                                <span class="sidenav-normal">Usuarios Empresas </span>
-                            </a>
-                        </li>
-                    @endcan -->
+    <li class="nav-item ">
+                                                    <a class="nav-link {{ Request::is('usuarios-empresas*') ? 'show' : '' }}"
+                                                        href="{{ route('Usuarios-empresas.index') }}">
+                                                        <span class="sidenav-mini-icon"> P </span>
+                                                        <span class="sidenav-normal">Usuarios Empresas </span>
+                                                    </a>
+                                                </li>
+@endcan -->
 
 
-                    
+
 
                     <!-- Nueva opción de Correo -->
                     <li class="nav-item ">
