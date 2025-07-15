@@ -15,6 +15,7 @@ use App\Http\Controllers\GoogleLinkResolverController;
 use App\Http\Controllers\WhatsAppController;
 
 use App\Http\Controllers\GpsController;
+use App\Http\Controllers\GpsCompanyController;
 use App\Http\Controllers\ContactoController;
 use App\Http\Controllers\ReporteriaController;
 use App\Http\Controllers\MepController;
@@ -24,6 +25,7 @@ use App\Models\User;
 Route::group(["prefix" => "gps"],function(){
  Route::get('globalgps/ubicacion/by-imei/{imei}',[GpsController::class,'obtenerUbicacionByImei'])->name('ubicacion.byimei');
  Route::get('skyangel/ubicacion/',[GpsController::class,'getLocationSkyAngel'])->name('ubicacion.byimei');
+ Route::get('setup',[GpsCompanyController::class,'setupGps'])->name('gps.setup');
 });
 
 
