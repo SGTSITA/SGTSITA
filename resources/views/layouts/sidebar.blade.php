@@ -395,6 +395,11 @@
                                 <span class="sidenav-mini-icon"> H </span>
                                 <span class="sidenav-normal">Historial Ubicaciones</span>
                             </a>
+                             <a class="nav-link {{ Request::is('coordenadas/conboys') ? 'show' : '' }}"
+                                href="{{ route('scheduler.index') }}">
+                                <span class="sidenav-mini-icon"> C </span>
+                                <span class="sidenav-normal">Config. Interval</span>
+                            </a>
                                
                         </li>
                     </ul>
