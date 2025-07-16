@@ -72,6 +72,18 @@
     </div>
 </div>
 
+
+
+<div class="card mb-4">
+    <div class="card-header bg-info text-white">
+        <strong>Bitácora de Rastreo GPS</strong>
+    </div>
+    <div class="card-body" style="max-height: 300px; overflow-y: auto; font-family: monospace;">
+        <ul class="list-group list-group-flush">
+            
+        </ul>
+    </div>
+</div>
         </div>
       </div>
   </div>
