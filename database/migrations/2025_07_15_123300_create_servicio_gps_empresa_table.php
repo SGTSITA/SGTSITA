@@ -14,9 +14,10 @@ return new class extends Migration
     public function up()
     {
         Schema::create('servicio_gps_empresa', function (Blueprint $table) {
+            $table->id();
             $table->unsignedBigInteger('id_gps_company');
             $table->unsignedBigInteger('id_empresa');
-            $table->string('account_info');
+            $table->longText('account_info');
 
             $table->foreign('id_empresa')->references('id')->on('empresas');
             $table->foreign('id_gps_company')->references('id')->on('gps_company');

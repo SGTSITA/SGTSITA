@@ -9,4 +9,9 @@ class ServicioGps extends Model
 {
     use HasFactory;
     protected $table = 'servicio_gps_empresa';
+
+    protected $fillable = [
+        'id_empresa',
+        'id_gps_company'
+    ];
 }
