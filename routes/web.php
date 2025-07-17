@@ -21,6 +21,7 @@ use App\Http\Controllers\ReporteriaController;
 Route::group(["prefix" => "gps"],function(){
  Route::get('globalgps/ubicacion/by-imei/{imei}',[GpsController::class,'obtenerUbicacionByImei'])->name('ubicacion.byimei');
  Route::get('skyangel/ubicacion/',[GpsController::class,'getLocationSkyAngel'])->name('ubicacion.byimei');
+ Route::get('jimi/token',[GpsController::class,'tokenJimi']);
 });
 
 

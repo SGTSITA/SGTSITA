@@ -27,15 +27,20 @@ trait JimiGpsTrait
         $timestamp = gmdate('Y-m-d H:i:s');
 
         $params = [
-            'app_key'     => $this->getGpsAppKey(),
+            'app_key'     => '',
             'method'      => $method,
+            'user_id' => '',
+            'user_pwd_md5' => '',
             'timestamp'   => $timestamp,
+            'expires_in' => 7200,
             'sign_method' => 'md5',
+            'format' => 'json',
+            'v' => '1.0'
         ];
 
         $params['sign'] = $this->generateGpsSign($params);
 
-        $response = Http::asForm()->post($this->getGpsBaseUrl(), $params);
+        $response = Http::asForm()->post('aqui va el endpoint o url', $params);
         $data = $response->json();
   \Log::info('Respuesta completa del token JIMI:', $data);
 
@@ -70,11 +75,11 @@ trait JimiGpsTrait
     private function generateGpsSign(array $params)
     {
         ksort($params);
-        $signString = $this->getGpsAppSecret();
+        $signString = 'aqui va el app secret';
         foreach ($params as $key => $value) {
             $signString .= $key . $value;
         }
-        $signString .= $this->getGpsAppSecret();
+        $signString .= 'aqui va el app secret';
     \Log::debug('Cadena para firmar GPS:', ['cadena' => $signString]);
         return strtoupper(md5($signString));
     }
