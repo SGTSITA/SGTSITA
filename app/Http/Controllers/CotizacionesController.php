@@ -764,6 +764,80 @@ public function getCotizacionesCanceladas()
         return $pdf->download('cotizacion'.$cotizacion->Cliente->nombre.'_#'.$cotizacion->id.'.pdf');
     }
 
+    public function singleUpdate(Request $request, $id){
+        try{
+
+            DB::beginTransaction();
+            $idEmpresa = auth()->user()->id_empresa;
+            $numContenedor = str_replace(' ','',$request['num_contenedor']);
+
+            $contenedorExistente = DocumCotizacion::where('num_contenedor', $numContenedor)
+                                                ->where('id_empresa', $idEmpresa)
+                                                ->where('id_cotizacion', '!=', $id)
+                                                ->first();
+
+            if ($contenedorExistente) {
+                return response()->json(["Titulo" => "Contenedor $numContenedor creado previamente", "Mensaje" => "El contenedor ya existe en la empresa", "TMensaje" => "warning"]);
+            }
+            
+            $doc_cotizaciones = DocumCotizacion::where('id_cotizacion', '=', $id)->first();
+            $doc_cotizaciones->num_contenedor = $numContenedor;
+            //$doc_cotizaciones->terminal = $contenedor['terminal'];
+            //$doc_cotizaciones->num_autorizacion = $contenedor['num_autorizacion'];
+            //$doc_cotizaciones->num_boleta_liberacion = $contenedor['num_boleta_liberacion'] || '';
+            //$doc_cotizaciones->num_doda = $contenedor['num_doda'];
+            //$doc_cotizaciones->num_carta_porte = $contenedor['num_carta_porte'];
+            //$doc_cotizaciones->fecha_boleta_vacio = $contenedor['fecha_boleta_vacio'];
+            //$doc_cotizaciones->ccp = $contenedor['ccp'];
+            //$doc_cotizaciones->cima = $contenedor['cima'];
+            $doc_cotizaciones->update();
+
+            $cotizaciones = Cotizaciones::where('id', '=', $id)->first();
+            $cotizaciones->id_cliente = $request->id_cliente;
+            $cotizaciones->id_subcliente = $request->id_subcliente;
+            $cotizaciones->origen = $request->origen;
+            $cotizaciones->destino = $request->destino;
+            $cotizaciones->direccion_entrega = $request['direccion_entrega'];
+            $cotizaciones->uso_recinto = ($request->text_recinto == 'recinto-si') ? 1 : 0;
+            $cotizaciones->direccion_recinto = $request->direccion_recinto ;
+            
+            $cotizaciones->fecha_modulacion = $request['fecha_modulacion'];
+            $cotizaciones->fecha_entrega = $request['fecha_entrega'];
+            
+            $cotizaciones->tamano = $request['tamano'];
+            $cotizaciones->peso_contenedor = $request['peso_contenedor'];
+           
+            $cotizaciones->bloque = $request['bloque'];
+            $cotizaciones->bloque_hora_i = $request['bloque_hora_i'];
+            $cotizaciones->bloque_hora_f = $request['bloque_hora_f'];
+           
+            $cotizaciones->sobrepeso = $request['sobrepeso'];
+           
+            //coordenadas para comparar
+            $cotizaciones->latitud=  $request->latitud;
+            $cotizaciones->longitud = $request->longitud;
+            $cotizaciones->direccion_mapa = $request->direccion_mapa;
+
+            $cotizaciones->save();
+
+            DB::commit();
+
+            return response()->json([
+                "Titulo" => "Datos actualizados correctamente",
+                "Mensaje" => "Los datos del viaje se han actualizado correctamente",
+                "TMensaje" => "success",
+            ]);
+
+        }catch(\Throwable $t){
+            DB::rollback();
+            return response()->json([
+                "Titulo" => "Error al actualizar",
+                "Mensaje" => $t->getMessage(),
+                "TMensaje" => "error",
+            ]);
+        }
+    }
+
     public function update(Request $request, $id){
             $idEmpresa = auth()->user()->id_empresa;
             $Contenedores = $request->Contenedores;

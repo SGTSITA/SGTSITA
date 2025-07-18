@@ -302,6 +302,8 @@ Route::post('operadores/{id}/restaurar', [App\Http\Controllers\OperadorControlle
     Route::any('cotizaciones/store/v2', [App\Http\Controllers\CotizacionesController::class, 'storeV2'])->name('v2store.cotizaciones');
     Route::get('cotizaciones/edit/{id}', [App\Http\Controllers\CotizacionesController::class, 'edit'])->name('edit.cotizaciones');
     Route::post('cotizaciones/update/{id}', [App\Http\Controllers\CotizacionesController::class, 'update'])->name('update.cotizaciones');
+    Route::post('cotizaciones/single/update/{id}', [App\Http\Controllers\CotizacionesController::class, 'singleUpdate'])->name('update.single');
+
 
     Route::get('cotizaciones/pdf/{id}', [App\Http\Controllers\CotizacionesController::class, 'pdf'])->name('pdf.cotizaciones');
 

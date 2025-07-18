@@ -13,6 +13,8 @@ Route::get('gps',function(){
 
 Route::group(["prefix" => "viajes"], function(){
     Route::post('selector', [ExternosController::class,'selector'])->name('viajes.selector');
+    Route::post('editar',[ExternosController::class,'editForm'])->name('viajes.edit-form');
+
     Route::get('solicitud/simple',[ExternosController::class,'solicitudSimple'])->name('viajes.simple');
 
     Route::get('solicitud/multiple',[ExternosController::class,'solicitudMultiple'])->name('viajes.multiple');
