@@ -29,7 +29,10 @@ class NotificaNuevoDocumentoListener
      */
     public function handle(NotificaNuevoDocumentoEvent $event)
     {
-        $emailList1 = Correo::where('nuevo_documento',1)->get()->pluck('correo')->toArray();
+        $emailList1 = Correo::where('nuevo_documento',1)->where('referencia',Auth::User()->id_cliente)
+                              ->get()
+                              ->pluck('correo')
+                              ->toArray();
        
         $emailList = [env('MAIL_NOTIFICATIONS'),Auth::User()->email];
         foreach($emailList1 as $m){
