@@ -22,7 +22,20 @@ class ExternosController extends Controller
         $formasPago = SatFormaPago::get();
         $metodosPago = SatMetodoPago::get();
         $usoCfdi = SatUsoCfdi::get();
-        return view('cotizaciones.externos.solicitud_simple',["formasPago" => $formasPago, "metodosPago" => $metodosPago, "usoCfdi" => $usoCfdi]);
+        return view('cotizaciones.externos.solicitud_simple',["action" => "crear","formasPago" => $formasPago, "metodosPago" => $metodosPago, "usoCfdi" => $usoCfdi]);
+    }
+
+    public function editForm(Request $request){
+        $formasPago = SatFormaPago::get();
+        $metodosPago = SatMetodoPago::get();
+        $usoCfdi = SatUsoCfdi::get();
+        $cotizacion = Cotizaciones::with(['cliente', 'DocCotizacion'])
+        ->whereHas('DocCotizacion', function ($query) use ($request) {
+            $query->where('num_contenedor', $request->numContenedor);
+        })
+        ->first();
+ 
+        return view('cotizaciones.externos.solicitud_simple',["action" => "editar","formasPago" => $formasPago, "metodosPago" => $metodosPago, "usoCfdi" => $usoCfdi, "cotizacion" => $cotizacion]);
     }
 
     public function solicitudMultiple(){

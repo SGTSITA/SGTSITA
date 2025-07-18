@@ -48,7 +48,7 @@
         <select class="form-select id_uso_cfdi d-inline-block" id="id_uso_cfdi" name="id_uso_cfdi">
             <option value="">Seleccionar Uso del CFDI</option>
             @foreach($usoCfdi as $u)
-            <option value="{{$u->id}}">{{$u->sat_code}} - {{$u->uso_cfdi}}</option>
+            <option value="{{$u->id}}" @if($action == "editar") @if($u->id == $cotizacion->sat_uso_cfdi_id) selected @endif @endif>{{$u->sat_code}} - {{$u->uso_cfdi}}</option>
             @endforeach
         </select>
       </div>
@@ -59,7 +59,7 @@
         <select class="form-select subcliente d-inline-block" id="id_forma_pago" name="id_forma_pago">
             <option value="">Seleccionar forma de pago</option>
             @foreach($formasPago as $f)
-            <option value="{{$f->id}}">{{$f->sat_code}} - {{$f->forma_pago}}</option>
+            <option value="{{$f->id}}" @if($action == "editar") @if($f->id == $cotizacion->sat_forma_pago_id) selected @endif @endif>{{$f->sat_code}} - {{$f->forma_pago}}</option>
             @endforeach
         </select>
       </div>
@@ -73,7 +73,7 @@
         <select class="form-select subcliente d-inline-block" id="id_metodo_pago" name="id_metodo_pago">
             <option value="">Seleccionar metodo de pago</option>
             @foreach($metodosPago as $m)
-            <option value="{{$m->id}}">{{$m->sat_code}} - {{$m->metodo_pago}}</option>
+            <option value="{{$m->id}}" @if($action == "editar") @if($m->id == $cotizacion->sat_metodo_pago_id) selected @endif @endif>{{$m->sat_code}} - {{$m->metodo_pago}}</option>
             @endforeach
         </select>
       </div>

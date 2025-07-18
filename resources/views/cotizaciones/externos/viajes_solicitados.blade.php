@@ -35,6 +35,11 @@
               <div class="menu-item px-3">
                 <a class="menu-link px-3 " onclick="fileManager()"> Ver Documentos </a>
               </div>
+              @can('cotizaciones-edit')
+              <div class="menu-item px-3">
+                <a class="menu-link px-3 " onclick="editarViaje()"> Editar Viaje </a>
+              </div>
+              @endcan
               <!--end::Menu item-->
      
               
