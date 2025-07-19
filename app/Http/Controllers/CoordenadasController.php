@@ -689,25 +689,25 @@ $idCordenada= $coordenadas->id_coordenadas;
         }, 'beneficiarios');
 
   
-        $datos = DB::table('cotizaciones')
-    ->select(
-        'cotizaciones.id as id_cotizacion',
-        'asig.id as id_asignacion',
-        'coordenadas.id as id_coordenada',
-        'clients.nombre as cliente',
-        'cotizaciones.origen',
-        'cotizaciones.destino',
-        'asig.num_contenedor as contenedor', 
-        'cotizaciones.estatus',
-        'asig.imei',
-       'asig.id_contenedor',
-       'asig.tipo_contrato',
-       'asig.fecha_inicio',
-       'asig.fecha_fin',
-       'asig.tipoGps',
-       'asig.imei_chasis'
-       
-    )
+        $datosAll = DB::table('cotizaciones')
+         ->select(
+            'cotizaciones.id as id_cotizacion',
+            'asig.id as id_asignacion',
+            'coordenadas.id as id_coordenada',
+            'clients.nombre as cliente',
+            'cotizaciones.origen',
+            'cotizaciones.destino',
+            'asig.num_contenedor as contenedor', 
+            'cotizaciones.estatus',
+            'asig.imei',
+            'asig.id_contenedor',
+            'asig.tipo_contrato',
+            'asig.fecha_inicio',
+            'asig.fecha_fin',
+            'asig.tipoGps',
+            'asig.imei_chasis',
+            'cotizaciones.id_empresa'
+        )
     ->join('clients', 'cotizaciones.id_cliente', '=', 'clients.id')
     
    ->joinSub($asignaciones, 'asig', function ($join) {
@@ -732,9 +732,9 @@ $idCordenada= $coordenadas->id_coordenadas;
     return $query->where('cotizaciones.id_cliente', $idCliente);
     })   
     ->where('cotizaciones.estatus', '=', 'Aprobada')
-    ->where('cotizaciones.id_empresa', '=', $idEmpresa)
+    
     ->get();
-
+$datos = $datosAll ->where('id_empresa', $idEmpresa)->values();
  
 
     $conboys = DB::table('conboys')
@@ -803,6 +803,7 @@ $idCordenada= $coordenadas->id_coordenadas;
                 'conboys'=> $conboys,
                 'dataConten'=> $conboysdetalle,
                 'equipos'=> $equipos,
+                'datosAll'=> $datosAll,
             ]);
         } else {
             return response()->json(['success' => false]);

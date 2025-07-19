@@ -1,5 +1,6 @@
 
     let contenedoresGuardados ;  
+    let contenedoresGuardadosTodos ;  
 let contenedoresDisponibles = [];
 let userBloqueo = false;
 const seleccionados = [];
@@ -275,7 +276,7 @@ function definirTable(){
 
     // Evento onclick personalizado (usa el contenedor que necesitas)
     btnRastreo.onclick = function () {
-        const contenedoresDelConvoy = contenedoresGuardados
+        const contenedoresDelConvoy = contenedoresGuardadosTodos
     .filter(c => c.conboy_id === data.id)
     .map(c => c.num_contenedor);
     const listaStr = contenedoresDelConvoy.join(' / ');
@@ -366,6 +367,7 @@ seleccionados.length = 0;
                    const rowData = data.data;
                     gridApi.setGridOption("rowData", rowData);
                     contenedoresGuardados = data.dataConten;
+                    contenedoresGuardadosTodos = data.dataConten2;
                     
                 })
                 .catch(error => {

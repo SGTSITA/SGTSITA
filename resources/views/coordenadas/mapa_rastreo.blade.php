@@ -161,6 +161,7 @@ let marker = null;
        const params = new URLSearchParams(window.location.search);
       let detalleConvoys;
 let contenedoresDisponibles = [];
+let contenedoresDisponiblesAll =[];
 let intervalId = null;
 let ItemsSelects = [];
 let idConvoyOContenedor=0;
@@ -213,9 +214,11 @@ responseOk = true;
                      newMarker.on('click', () => {
             const contenedor = item.contenedor;
              const info = contenedoresDisponibles.find(d => d.contenedor === contenedor);
-                if (!info) {
-                  if(t='#filtro-Equipo'){
-                      if(t='#filtro-Equipo'){
+                if (!info) { 
+                  if (tipoSpans.toLowerCase().includes('convoy')) {
+                     info = contenedoresDisponiblesAll.find(d => d.contenedor === contenedor);
+                  }else if(t==='#filtro-Equipo'){
+                      if(t==='#filtro-Equipo'){
                     const ahora = new Date();
                        info = contenedoresDisponibles.find(d => {
                             const inicio = new Date(d.fecha_inicio);
@@ -229,10 +232,7 @@ responseOk = true;
                           return;
                          }
                   }
-                }else {
-                    alert("Información del viaje no disponible.");
-                  return;
-                  }
+                }
 
                   
                 }
@@ -267,14 +267,16 @@ responseOk = true;
          idConvoyOContenedor=  item.id_contenendor;
         if (latlocal && lnglocal) {
     
-          const newMarker = L.marker([latlocal, lnglocal]).addTo(map).bindPopup(item.contenedor).openPopup();
+          const newMarker = L.marker([latlocal, lnglocal]).addTo(map).bindPopup(tipoSpans + ' '+ item.contenedor).openPopup();
             window.markers.push(newMarker);
           tipo= tipo + ' '+ item.contenedor;
           newMarker.on('click', () => {
             const contenedor = item.contenedor;
              let info = contenedoresDisponibles.find(d => d.contenedor === contenedor);
                 if (!info) {
-                   if(t='#filtro-Equipo'){
+                  if (tipoSpans.toLowerCase().includes('convoy')) {
+                     info = contenedoresDisponiblesAll.find(d => d.contenedor === contenedor);
+                  }else if(t==='#filtro-Equipo'){
                    
                     const ahora = new Date();
                        info = contenedoresDisponibles.find(d => {
@@ -288,9 +290,6 @@ responseOk = true;
                           alert("Información del viaje no encontrada.");
                           return;
                          }
-                  }else {
-                    alert("Información del viaje no encontrada.");
-                  return;
                   }
                 }
                 let extraInfo = '';
@@ -371,6 +370,7 @@ function cargarinicial() {
         .then(data => {
             contenedoresDisponibles = data.datos;
             detalleConvoys = data.dataConten;
+contenedoresDisponiblesAll=     data.       datosAll;
 
             if (!contenedoresDisponibles) {
                 alert('No se encontró información del contenedor.');
@@ -384,8 +384,26 @@ function cargarinicial() {
                     let conponerStrin = cod + '|' + infoc.imei + '|' + infoc.id_contenedor + '|' + infoc.tipoGps;
                     ItemsSelects.push(conponerStrin);
                 } else {
-                    console.warn(`Contenedor ${cod} no encontrado en contenedoresDisponibles.`);
+
+
+
+                  //buscamos en todos pero se valida si es convoy para saber si tenemos que buscar aunq no le pertenece el contenedor al user
+                  if (tipoSpans.toLowerCase().includes('convoy')) {
+                const infoc2 = contenedoresDisponiblesAll.find(d => d.contenedor === cod);
+                                  if (infoc2) {
+                                    let conponerStrin = cod + '|' + infoc2.imei + '|' + infoc2.id_contenedor + '|' + infoc2.tipoGps;
+                                    ItemsSelects.push(conponerStrin);
+                                } else {
+                                  console.warn(`Contenedor ${cod} no encontrado en contenedoresDisponibles.`);
+                                }
+
+                  } else {
+                  console.warn(`Contenedor ${cod} no encontrado en contenedoresDisponibles.`);
                 }
+                  
+                  
+                }                     
+                
             });
 
             if (ItemsSelects.length > 0) {

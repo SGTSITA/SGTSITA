@@ -64,7 +64,7 @@ class ConboysController extends Controller
         });
  
 
-        $conboysdetalle =  DB::table('conboys_contenedores')
+        $conboysdetalleC =  DB::table('conboys_contenedores')
         ->join('docum_cotizacion', 'docum_cotizacion.id', '=', 'conboys_contenedores.id_contenedor')
         ->join('asignaciones', 'asignaciones.id_contenedor', '=', 'conboys_contenedores.id_contenedor')
         ->join('equipos', 'equipos.id', '=', 'asignaciones.id_camion')
@@ -73,14 +73,17 @@ class ConboysController extends Controller
             'conboys_contenedores.id_contenedor',
             'docum_cotizacion.num_contenedor',
             'equipos.imei',
-            
-        )->where('docum_cotizacion.id_empresa','=',$idEmpresa)
+            'docum_cotizacion.id_empresa' // 👈 debes incluirlo
+        )
         ->get();
+
+        $conboysdetalle = $conboysdetalleC->where('id_empresa', $idEmpresa);
             return response()->json([
                     'success' => true,
                     'message' => 'lista devuelta.'  ,
                     'data'=>  $conboys,
-                    'dataConten'=>  $conboysdetalle
+                    'dataConten'=>  $conboysdetalle,
+                   'dataConten2'=>  $conboysdetalleC 
                 ]); 
     }
 

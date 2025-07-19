@@ -187,6 +187,10 @@ Route::get('/coordenadas/mapa_rastreo', function () {
     return view('coordenadas.mapa_rastreo');
 });
 
+
+Route::get('/scheduler/index', [App\Http\Controllers\RastreoIntervalController::class, 'index'])->name('scheduler.index');
+Route::put('/scheduler/edit', [App\Http\Controllers\RastreoIntervalController::class, 'update'])->name('scheduler.update');
+
 //NUEVO SERVICIO DE GPS 
 Route::get('/gps/{imei}/detalle', [GpsController::class, 'detalleDispositivo']);
 //R
