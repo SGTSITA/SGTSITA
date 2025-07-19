@@ -259,60 +259,63 @@ class ExternosController extends Controller
             $attachment = [];
 
             if($r->channel == "WhatsApp"){
+                if(sizeof($r->wa_phone) == 0) return response()->json(["Titulo" => "Seleccione contactos","TMensaje" => "warning" , "Mensaje" => "Para enviar la documentación seleccionada debe seleccionar un contacto"]);
 
-                //WhatsAppController::sendWhatsAppMessage($r->wa_phone, $r->message);
-                foreach($files as $file){
-                    $urlFile = "https://sgt.gologipro.com/".public_path($file['file']);
-                    $urlFile = str_replace('/var/www/html/SGTSITA/public/','',$urlFile);
-                    $fileLabel = $file['documentSubject']." del contenedor ".$r->numContenedor;
+                foreach($r->wa_phone as $phone){
+                    //WhatsAppController::sendWhatsAppMessage($r->wa_phone, $r->message);
+                    foreach($files as $file){
+                        $urlFile = "https://sgt.gologipro.com/".public_path($file['file']);
+                        $urlFile = str_replace('/var/www/html/SGTSITA/public/','',$urlFile);
+                        $fileLabel = $file['documentSubject']." del contenedor ".$r->numContenedor;
 
-                    $data = [
-                        "messaging_product" => "whatsapp",
-                        "to" => "52$r->wa_phone",
-                        "type" => "template",
-                        "template" => [
-                            "name" => "purchase_receipt_1",
-                            "language" => [
-                                "code" => "es_MX"
-                            ],
-                            "components" => [
-                                [
-                                    "type" => "header",
-                                    "parameters" => [
-                                        [
-                                            "type" => "document",
-                                            "document" => [
-                                                "link" => $urlFile,
-                                                "filename" => $file['documentSubject']
+                        $data = [
+                            "messaging_product" => "whatsapp",
+                            "to" => "52$phone",
+                            "type" => "template",
+                            "template" => [
+                                "name" => "purchase_receipt_1",
+                                "language" => [
+                                    "code" => "es_MX"
+                                ],
+                                "components" => [
+                                    [
+                                        "type" => "header",
+                                        "parameters" => [
+                                            [
+                                                "type" => "document",
+                                                "document" => [
+                                                    "link" => $urlFile,
+                                                    "filename" => $file['documentSubject']
+                                                ]
                                             ]
                                         ]
-                                    ]
-                                ],
-                                [
-                                    "type" => "body",
-                                    "parameters" => [
-                                        [
-                                            "type" => "text",
-                                            "text" => "Buen día 👋"
-                                        ],
-                                        [
-                                            "type" => "text",
-                                            "text" => $file['documentSubject']
-                                        ],
-                                        [
-                                            "type" => "text",
-                                            "text" => $r->numContenedor
+                                    ],
+                                    [
+                                        "type" => "body",
+                                        "parameters" => [
+                                            [
+                                                "type" => "text",
+                                                "text" => "Buen día 👋"
+                                            ],
+                                            [
+                                                "type" => "text",
+                                                "text" => $file['documentSubject']
+                                            ],
+                                            [
+                                                "type" => "text",
+                                                "text" => $r->numContenedor
+                                            ]
                                         ]
                                     ]
                                 ]
                             ]
-                        ]
-                    ];
+                        ];
 
-                    $enviar = WhatsAppController::sendWhatsAppMessage($data);
+                        $enviar = WhatsAppController::sendWhatsAppMessage($data);
 
+                    }
                 }
-                return response()->json(["TMensaje" => "success", "Titulo" => "Mensaje WhatsApp enviado correctamente","Mensaje" => "Se ha enviado mensaje con los archivos seleccionados"]);
+                    return response()->json(["TMensaje" => "success", "Titulo" => "Mensaje WhatsApp enviado correctamente","Mensaje" => "Se ha enviado mensaje con los archivos seleccionados"]);
 
             }
             
@@ -331,12 +334,13 @@ class ExternosController extends Controller
         }
     }
 
-    public function fileProperties($id,$file,$title,){
+    public function fileProperties($id,$file,$title,$contenedor){
         $path = public_path('cotizaciones/cotizacion'.$id.'/'.$file);
         if(\File::exists($path)){
             return [
                 "filePath" => $file,
                 'fileName'=> $title,
+                'secondaryFileName'=> $title.' '.$contenedor,
                 "fileDate" => CommonTrait::obtenerFechaEnLetra(date("Y-m-d", filemtime($path))),
                 "fileSize" => CommonTrait::calculateFileSize(filesize($path)),
                 "fileType" => pathinfo($path, PATHINFO_EXTENSION),
@@ -351,54 +355,56 @@ class ExternosController extends Controller
 
     public function getFilesProperties($numContenedor){
 
-        $documentos = DocumCotizacion::where('num_contenedor',$numContenedor)->first();
-        $folderId = $documentos->id;
+        $numContenedor = preg_replace('/\s+/', '*', $numContenedor);
+        $contenedores = explode('*',$numContenedor);
         $documentList = array();
 
-        if(!is_null($documentos->doda)){
-            $doda = self::fileProperties($folderId,$documentos->doda,'Doda');
-            if(sizeof($doda) > 0) array_push($documentList,$doda);
-        }
+        foreach($contenedores as $cont){
+            $documentos = DocumCotizacion::where('num_contenedor',$cont)->first();
+            $folderId = $documentos->id;
 
-        if(!is_null($documentos->boleta_liberacion)){
-            $boleta_liberacion = self::fileProperties($folderId,$documentos->boleta_liberacion,'Boleta de liberación');
-            if(sizeof($boleta_liberacion) > 0) array_push($documentList,$boleta_liberacion);
-        }
+            if(!is_null($documentos->doda)){
+                $doda = self::fileProperties($folderId,$documentos->doda,'Doda',$cont);
+                if(sizeof($doda) > 0) array_push($documentList,$doda);
+            }
+
+            if(!is_null($documentos->boleta_liberacion)){
+                $boleta_liberacion = self::fileProperties($folderId,$documentos->boleta_liberacion,'Boleta de liberación',$cont);
+                if(sizeof($boleta_liberacion) > 0) array_push($documentList,$boleta_liberacion);
+            }
 
 
-        if(!is_null($documentos->doc_ccp)){
-            $doc_ccp = self::fileProperties($folderId,$documentos->doc_ccp,'Formato para Carta porte');
-            if(sizeof($doc_ccp) > 0) array_push($documentList,$doc_ccp);
-        }
+            if(!is_null($documentos->doc_ccp)){
+                $doc_ccp = self::fileProperties($folderId,$documentos->doc_ccp,'Formato para Carta porte',$cont);
+                if(sizeof($doc_ccp) > 0) array_push($documentList,$doc_ccp);
+            }
 
-       
+            if(!is_null($documentos->doc_eir)){
+                $doc_eir = self::fileProperties($folderId,$documentos->doc_eir,'eir',$cont);
+                if(sizeof($doc_eir) > 0) array_push($documentList,$doc_eir);
+            }
+            if(!is_null($documentos->foto_patio)){
+            
+                $doc_foto_patio = self::fileProperties($folderId, $documentos->foto_patio, 'Foto patio',$cont);
+                if(sizeof($doc_foto_patio) > 0) array_push($documentList, $doc_foto_patio);
+            }
+            $cotizacion = Cotizaciones::where('id',$documentos->id_cotizacion)->first();
 
-        if(!is_null($documentos->doc_eir)){
-            $doc_eir = self::fileProperties($folderId,$documentos->doc_eir,'eir');
-            if(sizeof($doc_eir) > 0) array_push($documentList,$doc_eir);
-        }
-        if(!is_null($documentos->foto_patio)){
-           
-            $doc_foto_patio = self::fileProperties($folderId, $documentos->foto_patio, 'Foto patio');
-            if(sizeof($doc_foto_patio) > 0) array_push($documentList, $doc_foto_patio);
-        }
-        $cotizacion = Cotizaciones::where('id',$documentos->id_cotizacion)->first();
+            if(!is_null($cotizacion->img_boleta)){
+                $preAlta = self::fileProperties($folderId,$cotizacion->img_boleta,'Pre-Alta',$cont);
+                if(sizeof($preAlta) > 0) array_push($documentList,$preAlta);
+            }
 
-        if(!is_null($cotizacion->img_boleta)){
-            $preAlta = self::fileProperties($folderId,$cotizacion->img_boleta,'Pre-Alta');
-            if(sizeof($preAlta) > 0) array_push($documentList,$preAlta);
-        }
+            if(!is_null($cotizacion->carta_porte)){
+                $cpPDF = self::fileProperties($folderId,$cotizacion->carta_porte,'Carta Porte',$cont);
+                if(sizeof($cpPDF) > 0) array_push($documentList,$cpPDF);
+            }
 
-        if(!is_null($cotizacion->carta_porte)){
-            $cpPDF = self::fileProperties($folderId,$cotizacion->carta_porte,'Carta Porte');
-            if(sizeof($cpPDF) > 0) array_push($documentList,$cpPDF);
+            if(!is_null($cotizacion->carta_porte_xml)){
+                $cpXML = self::fileProperties($folderId,$cotizacion->carta_porte_xml,'Carta Porte XML',$cont);
+                if(sizeof($cpXML) > 0) array_push($documentList,$cpXML);
+            }
         }
-
-        if(!is_null($cotizacion->carta_porte_xml)){
-            $cpXML = self::fileProperties($folderId,$cotizacion->carta_porte_xml,'Carta Porte XML');
-            if(sizeof($cpXML) > 0) array_push($documentList,$cpXML);
-        }
-        
 
         return ["data"=>$documentList,"numContenedor" => $numContenedor,"documentos" =>$documentos];
                 

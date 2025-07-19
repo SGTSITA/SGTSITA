@@ -42,7 +42,7 @@ class GpsController extends Controller
                             $tipoGpsresponse="skyGps";
                             break;
 
-                        case 'http://open.10000track.com/route/rest'://jimi -Concox
+                        case 'https://us-open.tracksolidpro.com/route/rest'://jimi -Concox
                            $ubicacion = $this->detalleDispositivo($imei);
                            $tipoGpsresponse="jimi";
                             break;
@@ -110,6 +110,9 @@ class GpsController extends Controller
         return $location;
     }
 
+    public function tokenJimi(){
+        return $this->getGpsAccessToken();
+    }
 
     public function detalleDispositivo($imei)
     {
