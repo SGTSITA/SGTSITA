@@ -130,7 +130,7 @@ document.addEventListener('DOMContentLoaded', () => {
     $('#daterange').daterangepicker({
         startDate,
         endDate,
-        maxDate: moment(),
+        maxDate: moment().endOf('month'),
         opens: 'right',
         locale: {
             format: 'YYYY-MM-DD',
