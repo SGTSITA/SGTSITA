@@ -183,6 +183,7 @@ class ExternosController extends Controller
         $contenedoresPendientes->map(function($c){
 
         $numContenedor = $c->num_contenedor;
+        $tipo = "Sencillo";
         $docCCP = ($c->doc_ccp == null) ? false : true;
         $doda = ($c->doda == null) ? false : true;
         $boletaLiberacion = ($c->boleta_liberacion == null) ? false : true;
