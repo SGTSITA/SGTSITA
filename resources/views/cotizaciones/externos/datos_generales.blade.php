@@ -40,7 +40,7 @@
       
        <div class="border border-gray-300 border-dashed rounded min-w-450px py-3 px-4 me-6 mb-3">
        <div class="d-flex align-items-center">
-           <div class="fs-4 fw-bold" id="proveedorName">Cliente:</div>
+           <div class="fs-4 fw-bold" id="proveedorName">Sub Cliente:</div>
          </div>
         <select class="form-select subcliente d-inline-block" id="id_subcliente" name="id_subcliente">
             <option value="">Seleccionar subcliente</option>
@@ -64,7 +64,7 @@
             </i>
             </span>
             <div class="form-floating">
-            <input type="text" class="form-control" id="origen" autocomplete="off" placeholder=""/>
+            <input @if($action == "editar") value="{{$cotizacion->origen}}" @endif type="text" class="form-control" id="origen" autocomplete="off" placeholder=""/>
             <label for="origen" class="text-gray-700">Origen</label>
             </div>
         </div>
@@ -80,7 +80,7 @@
             </i>
             </span>
             <div class="form-floating">
-            <input type="text" class="form-control" id="destino" autocomplete="off" placeholder=""/>
+            <input @if($action == "editar") value="{{$cotizacion->destino}}" @endif type="text" class="form-control" id="destino" autocomplete="off" placeholder=""/>
             <label for="destino" class="text-gray-700">Destino</label>
             </div>
         </div>
@@ -102,7 +102,15 @@
             </i>
             </span>
             <div class="form-floating">
-            <input type="text" class="form-control" autocomplete="off" id="num_contenedor" placeholder="" oninput="changeTag('tagContenedor',this.value)"/>
+            <input 
+              type="text" 
+              class="form-control" 
+              autocomplete="off" 
+              id="num_contenedor" 
+              placeholder="" 
+              @if($action == "editar") value="{{$cotizacion->DocCotizacion->num_contenedor}}" @endif
+              oninput="changeTag('tagContenedor',this.value)"
+            />
             <label for="num_contenedor" class="text-gray-700">Número de Contenedor</label>
             </div>
         </div>
@@ -117,7 +125,7 @@
             </i>
             </span>
             <div class="form-floating">
-            <input type="text" class="form-control" autocomplete="off" id="tamano" placeholder="" oninput="allowOnlyDecimals(event)"/>
+            <input @if($action == "editar") value="{{$cotizacion->tamano}}" @endif type="text" class="form-control" autocomplete="off" id="tamano" placeholder="" oninput="allowOnlyDecimals(event)"/>
             <label for="tamano" class="text-gray-700">Tamaño de Contenedor</label>
             </div>
         </div>
@@ -162,7 +170,7 @@
               </i>
               </span>
               <div class="form-floating">
-                <input type="text" class="form-control" autocomplete="off" id="peso_contenedor" placeholder="" oninput="allowOnlyDecimals(event)"/>
+                <input type="text" @if($action == "editar") value="{{$cotizacion->peso_contenedor}}" @endif class="form-control" autocomplete="off" id="peso_contenedor" placeholder="" oninput="allowOnlyDecimals(event)"/>
                 <label for="peso_contenedor" class="text-gray-700">Peso de Contenedor</label>
               </div>
         </div>
@@ -181,7 +189,7 @@
               </i>
               </span>
               <div class="form-floating">
-                <input type="text" class="form-control fechas" autocomplete="off" id="fecha_modulacion" name="fecha_modulacion" placeholder="" oninput="allowOnlyDecimals(event)"/>
+                <input @if($action == "editar") value="{{$cotizacion->fecha_modulacion}}" @endif type="text" class="form-control fechas" autocomplete="off" id="fecha_modulacion" name="fecha_modulacion" placeholder="" oninput="allowOnlyDecimals(event)"/>
                 <label for="fecha_modulacion" class="text-gray-700">Fecha Modulación</label>
               </div>
         </div>
@@ -199,7 +207,7 @@
               </i>
               </span>
               <div class="form-floating">
-                <input type="text" class="form-control fechas" autocomplete="off" id="fecha_entrega" name="fecha_entrega" placeholder="" oninput="allowOnlyDecimals(event)"/>
+                <input @if($action == "editar") value="{{$cotizacion->fecha_entrega}}" @endif type="text" class="form-control fechas" autocomplete="off" id="fecha_entrega" name="fecha_entrega" placeholder="" oninput="allowOnlyDecimals(event)"/>
                 <label for="fecha_entrega" class="text-gray-700">Fecha Entrega</label>
               </div>
         </div>
@@ -208,23 +216,27 @@
       <h4 class="fw-bold mb-4">Dirección entrega</h4>
         <div class="input-group" >
             <span class="input-group-text">Dirección Entrega</span>
-            <textarea class="form-control" name="direccion_entrega" id="direccion_entrega" aria-label="Dirección Entrega"></textarea>
+            <textarea class="form-control" value ="d" name="direccion_entrega" id="direccion_entrega" aria-label="Dirección Entrega">
+            @if($action == "editar") {{$cotizacion->direccion_entrega}} @endif ssa
+            </textarea>
         </div>
       </div> --}}
       <div class="col-12">
                                                 <h5 class="fw-bold mb-2 mt-3">Dirección entrega</h5>
 
                                                 <!-- <label class="form-label" for="direccion_entrega">Dirección Entrega</label> -->
-                                                <textarea class="form-control" placeholder="Dirección entrega" name="direccion_entrega" id="direccion_entrega" aria-label="Dirección Entrega"></textarea>
+                                                <textarea class="form-control" placeholder="Dirección entrega" name="direccion_entrega" id="direccion_entrega" aria-label="Dirección Entrega">
+                                                @if($action == "editar") {{trim($cotizacion->direccion_entrega)}} @endif
+                                                </textarea>
 
                                                 <div class="mt-2">
                                                     <button type="button"  class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#mapModal">📍 Seleccionar en mapa</button>
                                                 </div>
 
-                                                <input class="form-control" type="hidden" name="latitud" id="latitud" value="0">
-                                                <input class="form-control" type="hidden" name="longitud" id="longitud" value="0">
-                                                <input class="form-control" type="hidden" name="direccion_mapa" id="direccion_mapa" value="NINGUNA SELECCIONADA">
-                                                <input class="form-control" type="hidden" name="fecha_seleccion" id="fecha_seleccion" value="">
+                                                <input @if($action == "editar") value="{{$cotizacion->latitud}}" @endif class="form-control" type="hidden" name="latitud" id="latitud" value="0">
+                                                <input @if($action == "editar") value="{{$cotizacion->longitud}}" @endif class="form-control" type="hidden" name="longitud" id="longitud" value="0">
+                                                <input @if($action == "editar") value="{{$cotizacion->direccion_mapa}}" @endif class="form-control" type="hidden" name="direccion_mapa" id="direccion_mapa" value="NINGUNA SELECCIONADA">
+                                                <input @if($action == "editar") value="{{$cotizacion->fecha_seleccion_ubicacion}}" @endif class="form-control" type="hidden" name="fecha_seleccion" id="fecha_seleccion" value="">
                                             </div>
       <div class="col-12">
       <br>
@@ -232,13 +244,13 @@
         <!--begin::Nav group-->                            
         <div class="nav bg-light rounded-pill px-3 py-2 ms-9 mb-5 w-225px" data-kt-buttons="true">
             <!--begin::Nav link-->
-            <div class="recinto nav-link active btn btn-active btn-active-primary fw-bold btn-color-gray-600 active py-3 px-5 m-1 rounded-pill" data-kt-plan="recinto-no">
+            <div class="recinto nav-link btn btn-active btn-active-primary fw-bold btn-color-gray-600 @if($action == 'editar') @if(intval($cotizacion->uso_recinto) == 0) active @endif @else active @endif py-3 px-5 m-1 rounded-pill" data-kt-plan="recinto-no">
                 No
             </div>
             <!--end::Nav link-->
 
             <!--begin::Nav link-->
-            <div class="recinto nav-link  btn btn-active btn-active-primary fw-bold btn-color-gray-600 py-3 px-5 m-1 rounded-pill" data-kt-plan="recinto-si">
+            <div class="recinto nav-link  btn btn-active btn-active-primary fw-bold btn-color-gray-600 @if($action == 'editar') @if(intval($cotizacion->uso_recinto) == 1) active @endif @endif py-3 px-5 m-1 rounded-pill" data-kt-plan="recinto-si">
                 Si va a recinto
             </div>
             <!--end::Nav link-->
@@ -246,9 +258,13 @@
 
         <input type="text" name="text_recinto" id="text_recinto" class="d-none">
 
-        <div class="input-group d-none" id="input-recinto">
+        <div class="input-group @if($action == 'editar') @if(intval($cotizacion->uso_recinto) == 0) d-none @endif @else d-none @endif" id="input-recinto">
             <span class="input-group-text">Dirección recinto</span>
-            <textarea class="form-control" name="direccion_recinto" id="direccion_recinto" aria-label="Dirección recinto"></textarea>
+            <textarea class="form-control" name="direccion_recinto" id="direccion_recinto" aria-label="Dirección recinto">
+              @if($action == "editar")
+              {{$cotizacion->direccion_recinto}}
+              @endif
+            </textarea>
         </div>
       </div>
    </div>

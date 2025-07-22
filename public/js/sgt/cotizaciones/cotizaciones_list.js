@@ -40,7 +40,11 @@ const localeText = {
   };
 
   const btnFull = document.querySelector('#btnFull')
-
+  function abrirMapaEnNuevaPestana( contenedor,tipoS) {
+    //const url = `/mapa-comparacion?latitud=${latitud}&longitud=${longitud}&latitud_seguimiento=${latitud_seguimiento}&longitud_seguimiento=${longitud_seguimiento}&contenedor=${contenedor}`;
+    const url = `/coordenadas/mapa_rastreo?contenedor=${contenedor}&tipoS=${encodeURIComponent(tipoS)}`;
+    window.open(url, '_blank');
+}
 document.addEventListener("DOMContentLoaded", function () {
     let gridApi;
     let currentTab = "planeadas";
@@ -115,6 +119,27 @@ document.addEventListener("DOMContentLoaded", function () {
                     onclick="abrirModalCoordenadas(${params.data.id},${params.data.id_asignacion})" 
                      title="Compartir coordenadas">
                      <i class="fa fa-map-marker-alt"></i> Compartir
+                     </button>
+                                               
+                    `;
+                
+               
+            }
+        },
+        {
+            headerName: "Rastrear",
+            field: "Rastrear",
+            minWidth: 180,
+            sortable: false,
+            filter: false,
+            cellRenderer: function (params) {
+                let tipos= "Seguimiento: ";
+                
+                    return `
+                    <button class="btn btn-sm btn-success" 
+                    onclick="abrirMapaEnNuevaPestana('${params.data.contenedor}','${tipos}')" 
+                     title="Rastrear contenedor">
+                     <i class="fa fa-shipping-fast"></i> Rastreo
                      </button>
                                                
                     `;
@@ -316,6 +341,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
+  
     // Abrir el modal
     window.abrirModalCoordenadas = function(id_cotizacion,idAsignacion) {
         const modal = document.getElementById('modalCoordenadas');

@@ -80,7 +80,7 @@ input:not(:checked) + .slider #ubicacion-texto {
                 <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalFiltros" id="btnEditarFiltros">
                     Editar Filtros
                 </button>
-                <h3 class="text-xl font-semibold text-center mb-0">Mapa de Coordenadas</h3>
+                <h3 class="text-xl font-semibold text-center mb-0">Coordenadas por Pregunta</h3>
             </div>
             <div id="map" 
                     style="height: 800px; width: 100%;" 

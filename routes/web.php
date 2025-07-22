@@ -1,5 +1,5 @@
 <?php
-
+//Ambiente: Calidad
 use Illuminate\Support\Facades\Route;
 use Laravel\Socialite\Facades\Socialite;
 use App\Http\Controllers\HomeController;
@@ -25,9 +25,13 @@ use App\Models\User;
 Route::group(["prefix" => "gps"],function(){
  Route::get('globalgps/ubicacion/by-imei/{imei}',[GpsController::class,'obtenerUbicacionByImei'])->name('ubicacion.byimei');
  Route::get('skyangel/ubicacion/',[GpsController::class,'getLocationSkyAngel'])->name('ubicacion.byimei');
+
+ Route::get('jimi/token',[GpsController::class,'tokenJimi']);
+
  Route::get('setup',[GpsCompanyController::class,'setupGps'])->name('gps.setup');
  Route::get('config',[GpsCompanyController::class,'getConfig'])->name('gps.config');
  Route::post('config/store',[GpsCompanyController::class,'setConfig'])->name('gps.store');
+
 
 });
 
@@ -176,6 +180,7 @@ Route::post('coordenadas/conboys/store', [App\Http\Controllers\ConboysController
 Route::get('coordenadas/conboys/edit/{id}', [App\Http\Controllers\ConboysController::class, 'edit'])->name('edit.conboys');
 Route::post('coordenadas/conboys/update', [App\Http\Controllers\ConboysController::class, 'update'])->name('update.conboys');
 Route::delete('coordenadas/conboys/delete', [App\Http\Controllers\ConboysController::class, 'destroy'])->name('destroy.conboys');
+Route::delete('coordenadas/conboys/eliminar-contenedor/{contenedor}/{convoy}', [App\Http\Controllers\ConboysController::class, 'eliminarContenedor']);
 
 Route::get('coordenadas/conboys/getconboys', [App\Http\Controllers\ConboysController::class, 'getConboys'])->name('getConboys.conboys');
 Route::get('/coordenadas/conboys/getHistorialUbicaciones', [App\Http\Controllers\ConboysController::class, 'getHistorialUbicaciones'])->name('getHistorialUbicaciones.conboys');
@@ -195,6 +200,9 @@ Route::get('/mapa-comparacion', function () {
     return view('conboys.mapa_comparacion');
 });
 
+Route::get('/coordenadas/mapa_rastreo', function () {
+    return view('coordenadas.mapa_rastreo');
+});
 
 //NUEVO SERVICIO DE GPS 
 Route::get('/gps/{imei}/detalle', [GpsController::class, 'detalleDispositivo']);
@@ -311,6 +319,8 @@ Route::post('operadores/{id}/restaurar', [App\Http\Controllers\OperadorControlle
     Route::any('cotizaciones/store/v2', [App\Http\Controllers\CotizacionesController::class, 'storeV2'])->name('v2store.cotizaciones');
     Route::get('cotizaciones/edit/{id}', [App\Http\Controllers\CotizacionesController::class, 'edit'])->name('edit.cotizaciones');
     Route::post('cotizaciones/update/{id}', [App\Http\Controllers\CotizacionesController::class, 'update'])->name('update.cotizaciones');
+    Route::post('cotizaciones/single/update/{id}', [App\Http\Controllers\CotizacionesController::class, 'singleUpdate'])->name('update.single');
+
 
     Route::get('cotizaciones/pdf/{id}', [App\Http\Controllers\CotizacionesController::class, 'pdf'])->name('pdf.cotizaciones');
 
