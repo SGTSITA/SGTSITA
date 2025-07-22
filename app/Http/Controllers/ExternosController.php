@@ -177,12 +177,14 @@ class ExternosController extends Controller
                                                 ->get();
 
         
-        $docCCP = ($c->doc_ccp == null) ? false : true;
-        $doda = ($c->doda == null) ? false : true;
-        $boletaLiberacion = ($c->boleta_liberacion == null) ? false : true;
+        
 
         $resultContenedores = 
         $contenedoresPendientes->map(function($c){
+
+        $docCCP = ($c->doc_ccp == null) ? false : true;
+        $doda = ($c->doda == null) ? false : true;
+        $boletaLiberacion = ($c->boleta_liberacion == null) ? false : true;
 
             if (!is_null($c->referencia_full)) {
                 $secundaria = Cotizaciones::where('referencia_full', $c->referencia_full)
