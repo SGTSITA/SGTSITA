@@ -176,22 +176,45 @@ class ExternosController extends Controller
                                                 ->selectRaw('cotizaciones.*, d.num_contenedor,d.doc_eir,doc_ccp ,d.boleta_liberacion,d.doda,cl.nombre as cliente,sc.nombre as subcliente')
                                                 ->get();
 
+        
+        $docCCP = ($c->doc_ccp == null) ? false : true;
+        $doda = ($c->doda == null) ? false : true;
+        $boletaLiberacion = ($c->boleta_liberacion == null) ? false : true;
+
         $resultContenedores = 
         $contenedoresPendientes->map(function($c){
+
+            if (!is_null($c->referencia_full)) {
+                $secundaria = Cotizaciones::where('referencia_full', $c->referencia_full)
+                    ->where('jerarquia', 'Secundario')
+                    ->with('DocCotizacion.Asignaciones')
+                    ->first();
+
+                if ($secundaria && $secundaria->DocCotizacion) {
+                    $docCCP = ($docCCP && $secundaria->DocCotizacion->doc_ccp) ? true : false;
+                    $doda = ($doda && $secundaria->DocCotizacion->doda) ? true : false;
+                    $boletaLiberacion = ($boletaLiberacion && $secundaria->DocCotizacion->boleta_liberacion) ? true : false;
+                    $numContenedor .= '  ' . $secundaria->DocCotizacion->num_contenedor;
+                }
+
+                $tipo = "Full";
+            }
+
+ 
             return [
                 "IdContenedor" => $c->id,
                 "Cliente" => $c->cliente,
                 "SubCliente" => $c->subcliente,
-                "NumContenedor" => $c->num_contenedor,
+                "NumContenedor" => $numContenedor,
                 "Estatus" => $c->estatus,
                 "Origen" => $c->origen, 
                 "Destino" => $c->destino, 
                 "Peso" => $c->peso_contenedor,
-                "BoletaLiberacion" => ($c->boleta_liberacion == null) ? false : true,
-                "DODA" => ($c->doda == null) ? false : true,
-                "FormatoCartaPorte" => ($c->doc_ccp == null) ? false : true,
+                "BoletaLiberacion" => $boletaLiberacion,
+                "DODA" => $doda,
+                "FormatoCartaPorte" => $docCCP,
                 "IdCliente" => $c->id_cliente,
-
+                "tipo" => $tipo,
             ];
         });
 
