@@ -172,6 +172,7 @@ class ExternosController extends Controller
                                                 ->join('clients as cl','cotizaciones.id_cliente','=','cl.id')
                                                 ->join('subclientes as sc','cotizaciones.id_subcliente','=','sc.id')
                                                 ->where('estatus','=','NO ASIGNADA')
+                                                ->where('jerarquia', "!=",'Secundario')
                                                 ->orderBy('created_at', 'desc')
                                                 ->selectRaw('cotizaciones.*, d.num_contenedor,d.doc_eir,doc_ccp ,d.boleta_liberacion,d.doda,cl.nombre as cliente,sc.nombre as subcliente')
                                                 ->get();
