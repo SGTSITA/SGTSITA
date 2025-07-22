@@ -86,6 +86,10 @@ class Cotizaciones extends Model
     {
         return $this->hasOne(Empresas::class, 'id_empresa');
     }
+    public function extra()
+{
+    return $this->hasOne(CostosViajesExtra::class, 'viaje_id');
+}
 
     protected static function boot()
     {

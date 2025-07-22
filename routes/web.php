@@ -512,3 +512,7 @@ Route::get('/contactos/editar/{id}', [App\Http\Controllers\ContactoController::c
 Route::get('reporteria/viajes-por-cobrar', [App\Http\Controllers\ReporteriaController::class, 'indexVXC'])->name('index_vxc.reporteria');
 Route::get('/reporteria/viajes-por-cobrar/data', [App\Http\Controllers\ReporteriaController::class, 'dataVXC'])->name('reporteria.vxc.data');
 Route::post('/reporteria/viajes-por-cobrar/exportar', [App\Http\Controllers\ReporteriaController::class, 'exportarVXC']);
+
+Route::get('/costos-viajes', [\App\Http\Controllers\CostosViajesController::class, 'index'])->name('costos.viajes.index');
+
+    Route::post('/costos-viajes/guardar', [CApp\Http\Controllers\CostosViajesController::class, 'guardar'])->name('costos-viajes.guardar');
