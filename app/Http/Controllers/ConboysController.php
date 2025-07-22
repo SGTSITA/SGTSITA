@@ -50,7 +50,7 @@ class ConboysController extends Controller
             'conboys.fecha_inicio',
             'conboys.fecha_fin',
             'conboys.user_id',
-        )
+        )->where('estatus','=','activo')
         ->whereIn('conboys.id', function ($query) use ($idEmpresa) {
             $query->select('conboys_contenedores.conboy_id')
                 ->from('conboys_contenedores')
@@ -64,7 +64,7 @@ class ConboysController extends Controller
         });
  
 
-        $conboysdetalle =  DB::table('conboys_contenedores')
+        $conboysdetalleC =  DB::table('conboys_contenedores')
         ->join('docum_cotizacion', 'docum_cotizacion.id', '=', 'conboys_contenedores.id_contenedor')
         ->join('asignaciones', 'asignaciones.id_contenedor', '=', 'conboys_contenedores.id_contenedor')
         ->join('equipos', 'equipos.id', '=', 'asignaciones.id_camion')
@@ -73,14 +73,17 @@ class ConboysController extends Controller
             'conboys_contenedores.id_contenedor',
             'docum_cotizacion.num_contenedor',
             'equipos.imei',
-            
-        )->where('docum_cotizacion.id_empresa','=',$idEmpresa)
+            'docum_cotizacion.id_empresa'
+        )
         ->get();
+
+        $conboysdetalle = $conboysdetalleC->where('id_empresa', $idEmpresa);
             return response()->json([
                     'success' => true,
                     'message' => 'lista devuelta.'  ,
                     'data'=>  $conboys,
-                    'dataConten'=>  $conboysdetalle
+                    'dataConten'=>  $conboysdetalle,
+                   'dataConten2'=>  $conboysdetalleC 
                 ]); 
     }
 
@@ -110,6 +113,11 @@ class ConboysController extends Controller
         $fin = $request->input('fecha_fin');
         $items = $request->input('items_selects');
         $nombre = $request->input('nombre');
+        $tipo_disolucion = $request->input('tipo_disolucion');
+        $fecha_disolucion = $request->input('fecha_disolucion');
+        $geocerca_lat = $request->input('geocerca_lat');
+        $geocerca_lng = $request->input('geocerca_lng');
+        $geocerca_radio = $request->input('geocerca_radio');
        
        //iniciales cliente + fecha creación formato ddMMyy + consecutivo personalizado(5)
         $userEmp =  Auth::User();
@@ -126,6 +134,7 @@ class ConboysController extends Controller
 
         $request->validate([
             'nombre' => 'required|string|max:255',
+            'tipo_disolucion' => 'required|string|max:50',
         ]);
 
         $conboy = Conboys::create([
@@ -133,7 +142,13 @@ class ConboysController extends Controller
             'fecha_inicio' => $inicio,
             'fecha_fin' => $fin,
             'user_id' => auth()->id(),
-            'no_conboy' => $no_conboy
+            'no_conboy' => $no_conboy,
+            'tipo_disolucion'  => $tipo_disolucion,
+            'estatus' =>'Activo',
+            'fecha_disolucion'  => $fecha_disolucion ?? null,
+            'geocerca_lat' => $geocerca_lat,
+            'geocerca_lng'  =>$geocerca_lng,
+            'geocerca_radio'  => $geocerca_radio
         ]);
 
         $mesageDic="antes de for";
@@ -142,10 +157,14 @@ class ConboysController extends Controller
            if (is_array($items)) {
             $mesageDic="si es array";
                 foreach ($items as $item) {
+                    $esPrimero = !conboysContenedores::where('conboy_id', $conboy->id)->exists();
                     [$contenedor, $id_contenedor] = explode('-', $item);
                     conboysContenedores::create([
                         'conboy_id' => $conboy->id,
-                        'id_contenedor' => $id_contenedor
+                        'id_contenedor' => $id_contenedor,
+                        'es_primero'=>  $esPrimero,
+                        'usuario'=> '',
+                        'imei'=> ''
                         ]);
                     }
                 }

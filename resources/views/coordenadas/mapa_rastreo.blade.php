@@ -160,15 +160,43 @@ let marker = null;
 
        const params = new URLSearchParams(window.location.search);
       let detalleConvoys;
+      let convoysAll;
 let contenedoresDisponibles = [];
+let contenedoresDisponiblesAll =[];
+
+let contador=0;
+let  detalleConvoysAll; 
 let intervalId = null;
 let ItemsSelects = [];
 let idConvoyOContenedor=0;
  const contenedor = params.get('contenedor')
  let tipoSpans = params.get('tipoS')
+
+
+ function textoTipo(){
+let extraertipo = tipoSpans.replace(/Convoy\s*:\s*/, '').trim();
+let tipoDisolucion = convoysAll.find(c => c.no_conboy === extraertipo)?.tipo_disolucion ?? null;
+let textoTipo = '';
+
+switch (tipoDisolucion) {
+    case 'geocerca':
+        textoTipo = 'Geocerca activada';
+        break;
+    case 'manual':
+        textoTipo = 'Finalización manual';
+        break;
+    case 'tiempo':
+        textoTipo = 'Tiempo programado';
+        break;
+    default:
+        textoTipo = 'Sin definir';
+}
+
+ document.getElementById('tipoSpan').textContent = tipoSpans + ' - ' + textoTipo;
+ }
  function actualizarUbicacion(imeis,t) {
- 
- document.getElementById('tipoSpan').textContent = tipoSpans;
+
+textoTipo();
  document.getElementById('contenedorSpan').textContent = contenedor;
 let tipo = "";
 
@@ -213,9 +241,11 @@ responseOk = true;
                      newMarker.on('click', () => {
             const contenedor = item.contenedor;
              const info = contenedoresDisponibles.find(d => d.contenedor === contenedor);
-                if (!info) {
-                  if(t='#filtro-Equipo'){
-                      if(t='#filtro-Equipo'){
+                if (!info) { 
+                  if (tipoSpans.toLowerCase().includes('convoy')) {
+                     info = contenedoresDisponiblesAll.find(d => d.contenedor === contenedor);
+                  }else if(t==='#filtro-Equipo'){
+                      if(t==='#filtro-Equipo'){
                     const ahora = new Date();
                        info = contenedoresDisponibles.find(d => {
                             const inicio = new Date(d.fecha_inicio);
@@ -229,10 +259,7 @@ responseOk = true;
                           return;
                          }
                   }
-                }else {
-                    alert("Información del viaje no disponible.");
-                  return;
-                  }
+                }
 
                   
                 }
@@ -266,15 +293,25 @@ responseOk = true;
          lnglocal = item.ubicacion.data.lng;
          idConvoyOContenedor=  item.id_contenendor;
         if (latlocal && lnglocal) {
-    
-          const newMarker = L.marker([latlocal, lnglocal]).addTo(map).bindPopup(item.contenedor).openPopup();
+          
+          // let esMostrarPrimero =  1
+          // if(esMostrarPrimero){
+                const newMarker = L.marker([latlocal, lnglocal]).addTo(map).bindPopup(tipoSpans + ' '+ item.contenedor).openPopup();
             window.markers.push(newMarker);
-          tipo= tipo + ' '+ item.contenedor;
+          let extraertipoC = tipoSpans.replace(/Convoy\s*:\s*/, '').trim();
+          let datosGeocerca = convoysAll.find(c => c.no_conboy === extraertipoC)
+          if(datosGeocerca.tipo_disolucion ==='geocerca') {
+
+          actualizarMapa(latlocal, lnglocal,datosGeocerca.geocerca_lat,datosGeocerca.geocerca_lng,datosGeocerca.geocerca_radio)
+          }
+        
           newMarker.on('click', () => {
             const contenedor = item.contenedor;
              let info = contenedoresDisponibles.find(d => d.contenedor === contenedor);
                 if (!info) {
-                   if(t='#filtro-Equipo'){
+                  if (tipoSpans.toLowerCase().includes('convoy')) {
+                     info = contenedoresDisponiblesAll.find(d => d.contenedor === contenedor);
+                  }else if(t==='#filtro-Equipo'){
                    
                     const ahora = new Date();
                        info = contenedoresDisponibles.find(d => {
@@ -288,9 +325,6 @@ responseOk = true;
                           alert("Información del viaje no encontrada.");
                           return;
                          }
-                  }else {
-                    alert("Información del viaje no encontrada.");
-                  return;
                   }
                 }
                 let extraInfo = '';
@@ -322,6 +356,9 @@ responseOk = true;
               const modal = new bootstrap.Modal(document.getElementById('modalInfoViaje'));
               modal.show();
             });
+          //} //end mostrar primero
+           tipo= tipo + ' '+ item.contenedor;
+        
         if (index === 0) map.setView([latlocal, lnglocal], 15);
 
         
@@ -371,6 +408,10 @@ function cargarinicial() {
         .then(data => {
             contenedoresDisponibles = data.datos;
             detalleConvoys = data.dataConten;
+contenedoresDisponiblesAll=     data.       datosAll;
+convoysAll = data.conboys;
+
+detalleConvoysAll =  data.dataContenAll;
 
             if (!contenedoresDisponibles) {
                 alert('No se encontró información del contenedor.');
@@ -384,8 +425,26 @@ function cargarinicial() {
                     let conponerStrin = cod + '|' + infoc.imei + '|' + infoc.id_contenedor + '|' + infoc.tipoGps;
                     ItemsSelects.push(conponerStrin);
                 } else {
-                    console.warn(`Contenedor ${cod} no encontrado en contenedoresDisponibles.`);
+
+
+
+                  //buscamos en todos pero se valida si es convoy para saber si tenemos que buscar aunq no le pertenece el contenedor al user
+                  if (tipoSpans.toLowerCase().includes('convoy')) {
+                const infoc2 = contenedoresDisponiblesAll.find(d => d.contenedor === cod);
+                                  if (infoc2) {
+                                    let conponerStrin = cod + '|' + infoc2.imei + '|' + infoc2.id_contenedor + '|' + infoc2.tipoGps;
+                                    ItemsSelects.push(conponerStrin);
+                                } else {
+                                  console.warn(`Contenedor ${cod} no encontrado en contenedoresDisponibles.`);
+                                }
+
+                  } else {
+                  console.warn(`Contenedor ${cod} no encontrado en contenedoresDisponibles.`);
                 }
+                  
+                  
+                }                     
+                
             });
 
             if (ItemsSelects.length > 0) {
@@ -404,7 +463,55 @@ function cargarinicial() {
 }
 
 
+let geocercaCircle = null;
+let marcadorActual = null;
 
+// Función que se llama cada vez que actualizas la posición (intervalo)
+function actualizarMapa(lat_actual, lng_actual, geocerca_lat, geocerca_lng, geocerca_radio) {
+    // Crear el círculo si no existe
+    if (!geocercaCircle) {
+        geocercaCircle = L.circle([geocerca_lat, geocerca_lng], {
+            color: 'red',
+            fillColor: '#f03',
+            fillOpacity: 0.2,
+            radius: geocerca_radio
+        }).addTo(map);
+    }
+
+    // Crear o mover marcador de la posición actual
+    if (!marcadorActual) {
+        marcadorActual = L.marker([lat_actual, lng_actual]).addTo(map)
+            .bindPopup("Posición actual");
+    } else {
+        marcadorActual.setLatLng([lat_actual, lng_actual]);
+    }
+
+    // Medir distancia y mostrar mensaje (o actualizar UI)
+    const centroGeocerca = L.latLng(geocerca_lat, geocerca_lng);
+    const ubicacionActual = L.latLng(lat_actual, lng_actual);
+    const distancia = ubicacionActual.distanceTo(centroGeocerca);
+let distanciaKm   = distancia/1000;
+contador++;
+ if (contador===9){
+  const tipoSpan = document.getElementById('tipoSpan');
+const textoExistente = tipoSpan.textContent;  // texto que ya tiene
+const kmFaltantes = distanciaKm; // Ejemplo, el cálculo que tengas
+
+// Pero para que el salto de línea se muestre en HTML, mejor usa innerHTML con <br>
+tipoSpan.innerHTML = textoExistente.replace(/\n/g, '<br>') + '<br>' + `Faltan ${kmFaltantes.toFixed(2)} km para la geocerca`;
+contador=0;
+ }
+
+
+
+    if (distancia <= geocerca_radio) {
+        console.log("Dentro de la geocerca");
+        // Aquí puedes cambiar el estilo, o actualizar algún texto en pantalla
+    } else {
+        console.log("Fuera de la geocerca");
+        // Otra acción cuando está fuera
+    }
+}
 
 document.getElementById('btnDetener').addEventListener('click', function() {
    const icon = this.querySelector('i');

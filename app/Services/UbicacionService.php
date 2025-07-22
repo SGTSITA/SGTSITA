@@ -1,16 +1,11 @@
 <?php
+namespace App\Services;
 
-namespace App\Http\Controllers;
+use Illuminate\Support\Facades\Http;
 
-use Illuminate\Http\Request;
-use App\Traits\GlobalGpsTrait as GlobalGps;
-use App\Traits\SkyAngelGpsTrait as SkyAngel;
-use App\Traits\JimiGpsTrait AS JimiGps;
-
-class GpsController extends Controller
+class UbicacionService
 {
-    USE JimiGps;
-    public function obtenerUbicacionByImei(Request $request){
+     public function obtenerUbicacionByImei(Request $request){
     
 
         $datos = $request->input('imeis');
@@ -42,7 +37,7 @@ class GpsController extends Controller
                             $tipoGpsresponse="skyGps";
                             break;
 
-                        case 'https://us-open.tracksolidpro.com/route/rest'://jimi -Concox
+                        case 'http://open.10000track.com/route/rest'://jimi -Concox
                            $ubicacion = $this->detalleDispositivo($imei);
                            $tipoGpsresponse="jimi";
                             break;
@@ -68,32 +63,7 @@ class GpsController extends Controller
 
 
         return response()->json($resultados);
-        // if ($tipor ==='Global'){
-          
-                   
-
-        // } else {
-           
-        //      $resultados2[] = [
-        //                 'contenedor' => 'Varios para filtrar ',
-        //                 'ubicacion' => $location,
-        //                   'id_contenendor' => '0',
-        //             ];
-
-        //             if (!$accessToken) {
-        //                  dd('Error obteniendo token');
-        //                 }
-
-        //                 $location = SkyAngel::getLocation($accessToken);
-
-        //                 if (!$location) {
-        //                     dd('No hay datos de ubicación');
-        //                 }
-
-                       
-        //   return response()->json($resultados2);
-
-       // }
+      
        
     }
 
@@ -110,9 +80,6 @@ class GpsController extends Controller
         return $location;
     }
 
-    public function tokenJimi(){
-        return $this->getGpsAccessToken();
-    }
 
     public function detalleDispositivo($imei)
     {
