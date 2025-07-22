@@ -747,17 +747,23 @@ $datos = $datosAll ->where('id_empresa', $idEmpresa)->values();
         'conboys.nombre',
         'conboys.fecha_inicio',
         'conboys.fecha_fin',
-        'conboys.user_id'
+        'conboys.user_id',
+        'conboys.tipo_disolucion',
+        'conboys.estatus',
+        'conboys.fecha_disolucion',
+        'conboys.geocerca_lat',
+        'conboys.geocerca_lng',
+        'conboys.geocerca_radio',
     )
-    ->where('docum_cotizacion.id_empresa', '=', $idEmpresa)
-    ->when($idCliente !== 0, function ($query) use ($idCliente) {
-    return $query->where('cotizaciones.id_cliente', $idCliente);
-})   
+//     ->where('docum_cotizacion.id_empresa', '=', $idEmpresa)
+//     ->when($idCliente !== 0, function ($query) use ($idCliente) {
+//     return $query->where('cotizaciones.id_cliente', $idCliente);
+// })   
     ->distinct()
     ->get();
 
 
-     $conboysdetalle =  DB::table('conboys_contenedores')
+     $conboysdetalleAll =  DB::table('conboys_contenedores')
         ->join('conboys', 'conboys.id', '=', 'conboys_contenedores.conboy_id')
         ->join('docum_cotizacion', 'docum_cotizacion.id', '=', 'conboys_contenedores.id_contenedor')
         ->leftjoin('asignaciones', 'asignaciones.id_contenedor', '=', 'conboys_contenedores.id_contenedor')
@@ -770,15 +776,16 @@ $datos = $datosAll ->where('id_empresa', $idEmpresa)->values();
             'conboys_contenedores.id_contenedor',
             'docum_cotizacion.num_contenedor',
             'equipos.imei',
-            'gps_company.url_conexion as tipoGps'
+            'gps_company.url_conexion as tipoGps',
+            'es_primero',
             
-        )->where('docum_cotizacion.id_empresa','=',$idEmpresa)
+        )
             ->when($idCliente !== 0, function ($query) use ($idCliente) {
     return $query->where('cotizaciones.id_cliente', $idCliente);
 })   
         ->get();
 
-
+$conboysdetalle=$conboysdetalleAll ->where('id_empresa', $idEmpresa)->values();
 
        $equipos = Equipo::select(
         'equipos.id',
@@ -804,6 +811,7 @@ $datos = $datosAll ->where('id_empresa', $idEmpresa)->values();
                 'dataConten'=> $conboysdetalle,
                 'equipos'=> $equipos,
                 'datosAll'=> $datosAll,
+                'dataContenAll'=> $conboysdetalleAll
             ]);
         } else {
             return response()->json(['success' => false]);

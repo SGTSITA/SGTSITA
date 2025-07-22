@@ -186,6 +186,9 @@ Route::get('/mapa-comparacion', function () {
 Route::get('/coordenadas/mapa_rastreo', function () {
     return view('coordenadas.mapa_rastreo');
 });
+Route::get('/configurar-geocerca', function () {
+    return view('conboys.geocerca');
+});
 
 
 Route::get('/scheduler/index', [App\Http\Controllers\RastreoIntervalController::class, 'index'])->name('scheduler.index');

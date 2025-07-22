@@ -53,6 +53,9 @@ return [
     'appKey'    => env('JIMI_GPS_APPKEY'),
     'appSecret' => env('JIMI_GPS_APPSECRET'),
 ],
+'GooMaps'=>[
+    'apikey'=> env('GOOLEAPIMAPS',)
+]
 
 ];
 
