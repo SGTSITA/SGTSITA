@@ -5,11 +5,12 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Traits\GlobalGpsTrait as GlobalGps;
 use App\Traits\SkyAngelGpsTrait as SkyAngel;
-use App\Traits\JimiGpsTrait AS JimiGps;
+use App\Traits\JimiGpsTrait as JimiGps;
+
 
 class GpsController extends Controller
 {
-    USE JimiGps;
+    
     public function obtenerUbicacionByImei(Request $request){
     
 

@@ -15,18 +15,35 @@ use App\Http\Controllers\GoogleLinkResolverController;
 use App\Http\Controllers\WhatsAppController;
 
 use App\Http\Controllers\GpsController;
+use App\Http\Controllers\GpsCompanyController;
 use App\Http\Controllers\ContactoController;
 use App\Http\Controllers\ReporteriaController;
+use App\Http\Controllers\MepController;
+
+use App\Models\User;
 
 Route::group(["prefix" => "gps"],function(){
  Route::get('globalgps/ubicacion/by-imei/{imei}',[GpsController::class,'obtenerUbicacionByImei'])->name('ubicacion.byimei');
  Route::get('skyangel/ubicacion/',[GpsController::class,'getLocationSkyAngel'])->name('ubicacion.byimei');
+
  Route::get('jimi/token',[GpsController::class,'tokenJimi']);
+
+ Route::get('setup',[GpsCompanyController::class,'setupGps'])->name('gps.setup');
+ Route::get('config',[GpsCompanyController::class,'getConfig'])->name('gps.config');
+ Route::post('config/store',[GpsCompanyController::class,'setConfig'])->name('gps.store');
+
+
 });
 
 
+Route::group(["prefix" => "mep"], function(){
+ Route::get('viajes',[MepController::class, 'index'])->name('mep.index');
+ Route::get('viajes/list',[MepController::class, 'getCotizacionesList'])->name('mep.viajes');
+ Route::get('viajes/finalizadas',[MepController::class, 'getCotizacionesFinalizadas'])->name('mep.viajes');
+ Route::post('viajes/operador/asignar',[MepController::class, 'asignarOperador'])->name('mep.asignaoperdor');
+ Route::post('catalogos/operador-unidad',[MepController::class, 'getCatalogosMep'])->name('mep.catalogos');
+});
 
-use App\Models\User;
 
 Route::group(["prefix" => "whatsapp"],function(){
     Route::get('sendtext/{phone}/{text}',[WhatsAppController::class,'sendText'])->name('whatsapp.text');
@@ -505,3 +522,8 @@ Route::put('/contactos/{id}/restore', [App\Http\Controllers\ContactoController::
 Route::get('/contactos/editar/{id}', [App\Http\Controllers\ContactoController::class, 'edit'])->name('contactos.edit');
 Route::put('/contactos/{id}', [App\Http\Controllers\ContactoController::class, 'update'])->name('contactos.update');
 Route::get('/contactos/editar/{id}', [App\Http\Controllers\ContactoController::class, 'edit'])->name('contactos.edit');
+
+
+Route::get('reporteria/viajes-por-cobrar', [App\Http\Controllers\ReporteriaController::class, 'indexVXC'])->name('index_vxc.reporteria');
+Route::get('/reporteria/viajes-por-cobrar/data', [App\Http\Controllers\ReporteriaController::class, 'dataVXC'])->name('reporteria.vxc.data');
+Route::post('/reporteria/viajes-por-cobrar/exportar', [App\Http\Controllers\ReporteriaController::class, 'exportarVXC']);

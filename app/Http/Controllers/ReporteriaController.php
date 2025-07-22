@@ -1475,6 +1475,122 @@ public function exportGastosPorPagar(Request $request)
     }
 }
 
+public function indexVXC()
+{
+    $user = auth()->user();
+
+    if (!$user->hasRole('Proveedor')) {
+        abort(403, 'No autorizado');
+    }
+
+    $rfc = $user->rfc;
+
+    $cotizaciones = Cotizaciones::whereHas('DocCotizacion.Asignaciones.Proveedor', function ($query) use ($rfc) {
+        $query->where('rfc', $rfc);
+    })
+    ->where('restante', '>', 0)
+    ->where('estatus', '!=', 'Cancelada') // ❌ Excluir cancelados
+    ->with([
+        'DocCotizacion.Asignaciones.Proveedor',
+        'DocCotizacion',
+        'Subcliente'
+    ])
+    ->get();
+
+    $totalGenerado = $cotizaciones->sum('restante');
+
+    $retenido = $cotizaciones->filter(function ($c) {
+        return !$c->carta_porte || !$c->carta_porte_xml;
+    })->sum('restante');
+
+    $pagoNeto = $cotizaciones->filter(function ($c) {
+        return $c->carta_porte && $c->carta_porte_xml;
+    })->sum('restante');
+
+    return view('reporteria.vxc.index', compact('cotizaciones', 'totalGenerado', 'retenido', 'pagoNeto'));
+}
+
+
+
+
+public function dataVXC()
+{
+    $user = auth()->user();
+
+    if (!$user->hasRole('Proveedor')) {
+        abort(403, 'No autorizado');
+    }
+
+    $rfc = $user->rfc;
+
+    $cotizaciones = Cotizaciones::whereHas('DocCotizacion.Asignaciones.Proveedor', function ($query) use ($rfc) {
+        $query->where('rfc', $rfc);
+    })
+    ->where('restante', '>', 0)
+    ->where('estatus', '!=', 'Cancelada') // ❌ Filtrar cancelados
+    ->with([
+        'DocCotizacion.Asignaciones.Proveedor',
+        'DocCotizacion',
+        'Subcliente'
+    ])
+    ->get()
+    ->map(function ($c) {
+        return [
+            'id' => $c->id,
+            'restante' => $c->restante,
+            'tipo_viaje' => $c->tipo_viaje ?? 'Subcontratado',
+            'estatus' => $c->estatus === 'Aprobada' ? 'En curso' : $c->estatus,
+            'subcliente' => $c->Subcliente->nombre ?? '-',
+            'num_contenedor' => $c->DocCotizacion->num_contenedor ?? '-',
+            'proveedor' => $c->DocCotizacion->Asignaciones->Proveedor->nombre ?? '-',
+            'carta_porte' => $c->carta_porte ?? false,
+            'carta_porte_xml' => $c->carta_porte_xml ?? false
+        ];
+    });
+
+    return response()->json($cotizaciones);
+}
+
+
+public function exportarVXC(Request $request)
+{
+    try {
+        $tipo = $request->input('tipo');
+
+        $cotizaciones = collect($request->input('cotizaciones', []));
+        $totalGenerado = $request->input('totales.totalGenerado', 0);
+        $retenido = $request->input('totales.retenido', 0);
+        $pagoNeto = $request->input('totales.pagoNeto', 0);
+
+        if ($tipo === 'pdf') {
+            $pdf = \PDF::loadView('reporteria.vxc.pdf', [
+                'cotizaciones' => $cotizaciones,
+                'totalGenerado' => $totalGenerado,
+                'retenido' => $retenido,
+                'pagoNeto' => $pagoNeto
+            ])->setPaper('A4', 'landscape');
+
+            return $pdf->download('viajes_por_cobrar.pdf');
+        }
+
+        if ($tipo === 'excel') {
+            return \Excel::download(
+                new \App\Exports\VXCExport($cotizaciones, $totalGenerado, $retenido, $pagoNeto),
+                'viajes_por_cobrar.xlsx'
+            );
+        }
+
+        return response()->json(['error' => 'Tipo de exportación no válido.'], 400);
+    } catch (\Throwable $e) {
+        return response()->json([
+            'error' => 'Error interno',
+            'message' => $e->getMessage(),
+            'line' => $e->getLine(),
+            'file' => $e->getFile(),
+        ], 500);
+    }
+}
+
 
 
 
