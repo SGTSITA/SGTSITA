@@ -23,8 +23,8 @@ trait JimiGpsTrait
     }
 
     public static function getGpsAccessToken($empresaId, $accessAccount)
-{
-    // Define la variable antes del try
+    {
+
     $cacheKey = 'api_jimi_token_' . $empresaId;
 
     try {
@@ -60,10 +60,7 @@ trait JimiGpsTrait
         });
     } catch (\Exception $e) {
         \Log::error('Error al obtener token GPS JIMI: ' . $e->getMessage());
-
-        // Aquí sí existe $cacheKey porque está definido arriba
         Cache::forget($cacheKey);
-
         return false;
     }
 }
