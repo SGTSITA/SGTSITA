@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
 
 use App\Models\ServicioGps;
+use App\Traits\JimiGpsTrait;
 
 class GpsCompanyController extends Controller
 {
@@ -32,13 +33,15 @@ class GpsCompanyController extends Controller
     //Obtiene la configuración GPS-Proveedor
     function getConfig(Request $r){
         $empresaId = auth()->user()->id_empresa;
-        $gpsConfig = GpsCompany::where('id',$r->gps)->with(['serviciosGps' => function($q) use ($empresaId) {
-            $q->where('id_empresa', $empresaId);
-        }])->first();
+       
+        $gpsConfig = GpsCompany::leftJoin('servicio_gps_empresa as ge','gps_company.id',"=",'ge.id_gps_company')
+                                ->where('gps_company.id',$r->gps)
+                                ->get();
 
-       // $account = ($gpsConfig->servicios_gps->first());
-
-        return response()->json(["data"=>$gpsConfig]);
+       $cuenta = $gpsConfig->where('id_empresa',$empresaId);
+       $account = (sizeof($cuenta) > 0) ? json_decode(Crypt::decryptString($gpsConfig[0]->account_info)) : [];
+       
+       return response()->json(["data"=>$gpsConfig,"account" => ($account)]);
     }
 
     public function setConfig(Request $r){
@@ -47,15 +50,29 @@ class GpsCompanyController extends Controller
             'id_gps_company' => $r->gps
         ]);
 
-        $secret = Crypt::encryptString($r->accessKey);
+        $empresaId = auth()->user()->id_empresa;
+        $detailAccount = $r->account;
+        $credenciales = [];
+        foreach($detailAccount as $a){
+            $credenciales[$a['field']] =  $a['valor'];
+        }
 
-        $account = ["appId" => $r->userName, "accessKey" => $secret];
+        $token = JimiGpsTrait::getGpsAccessToken($empresaId,$credenciales);
 
-        $servicio->account_info = json_encode($account);
+        if(!$token){
+        return response()->json([
+            "Titulo" => "Credenciales de acceso incorrectas", 
+            "Mensaje" => "No se puede guardar la configuración porque las credenciales de acceso no son correctas", 
+            "TMensaje" => "warning"
+        ]);
+
+        }
+
+        $servicio->account_info = Crypt::encryptString(json_encode($r->account));
 
         $servicio->save();
 
-        return response()->json(["Titulo" => "Correcto", "Mensaje" => "Se guardó la configuración para la compañia GPS", "TMensaje" => "success"]);
+        return response()->json(["Titulo" => "Correcto", "Mensaje" => "Se guardó la configuración para la compañia GPS", "TMensaje" => "success","token"=>$token]);
     }
 
     public function data()

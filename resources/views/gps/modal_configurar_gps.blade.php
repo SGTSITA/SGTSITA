@@ -9,14 +9,8 @@
             </div>
             <div class="card-body">
                
-                <label>App Id / Usuario</label>
-                <div class="input-group mb-3">
-                    <input type="text" class="form-control" id="txtUserName" placeholder="" aria-label="" />
-                </div>
-                <label>Access Key / Password</label>
-                <div class="input-group mb-3">
-                    <input type="text" class="form-control moneyformat" id="txtPassword" placeholder="" />
-                </div>
+              
+                <div id="form-account"></div>
                 <div class="text-center">
                     <button type="button" id="btnConfigurar" onclick ="guardarConfigGps()" class="btn btn-sm btn-round bg-gradient-info  w-100 mt-4 mb-0">Guardar</button>
                 </div>
