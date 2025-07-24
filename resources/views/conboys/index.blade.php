@@ -77,7 +77,7 @@
       </div>
   </div>
 </div>
-<div class="modal fade" id="modalCambiarEstatus" tabindex="-1" aria-labelledby="estatusModalLabel" aria-hidden="true">
+<div class="modal fade" id="modalCambiarEstatus" tabindex="-1" aria-labelledby="estatusModalLabel" aria-hidden="true" data-id="">
   <div class="modal-dialog">
     <form id="formCambiarEstatus">
       <div class="modal-content">
@@ -89,7 +89,7 @@
           <label for="nuevoEstatus" class="form-label">Selecciona nuevo estatus:</label>
           <select class="form-select" id="nuevoEstatus" name="nuevoEstatus" required>
             <option value="" selected>-- Selecciona --</option>
-            <option value="Activo">Activo</option>
+            <option value="Activo" selected>Activo</option>
             <option value="Disuelto">Disuelto</option>
            
           </select>
@@ -97,7 +97,7 @@
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-          <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+          <button type="button" class="btn btn-primary"  id="btnGuardarCambios">Guardar Cambios</button>
         </div>
       </div>
     </form>

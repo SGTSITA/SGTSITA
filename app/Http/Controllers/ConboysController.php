@@ -158,13 +158,13 @@ class ConboysController extends Controller
             $mesageDic="si es array";
                 foreach ($items as $item) {
                     $esPrimero = !conboysContenedores::where('conboy_id', $conboy->id)->exists();
-                    [$contenedor, $id_contenedor] = explode('-', $item);
+                    [$contenedor, $id_contenedor,$imei] = explode('-', $item);
                     conboysContenedores::create([
                         'conboy_id' => $conboy->id,
                         'id_contenedor' => $id_contenedor,
                         'es_primero'=>  $esPrimero,
-                        'usuario'=> '',
-                        'imei'=> ''
+                        'usuario'=> 'usergps',
+                        'imei'=> $imei
                         ]);
                     }
                 }
@@ -459,6 +459,31 @@ $cotizacion = DB::table('cotizaciones')
     return response()->json($cotizacion);
 
     }
+
+
+    public function updateEstatus(Request $request)
+{
+    $idConvoy = $request->input('idconvoy'); 
+
+    
+    $convoy = Conboys::find($idConvoy);
+
+    if (!$convoy) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Convoy no encontrado'
+        ]);
+    }
+
+    // Aquí aplicas los cambios que recibas
+    $convoy->estatus = $request->input('nuevoEstatus');
+    $convoy->save();
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Estatus actualizado con éxito'
+    ]);
+}
 
    
 }

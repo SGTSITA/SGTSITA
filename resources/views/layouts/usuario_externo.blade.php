@@ -162,7 +162,7 @@
                                             <span class="menu-bullet">
                                                 <span class="bullet bullet-dot"></span>
                                             </span>
-                                            <span class="menu-title">Compartir Coordenadas</span>
+                                            <span class="menu-title">Compartir Cuestionarios</span>
                                         </a>
                                     </div>
                                     <div class="menu-item">

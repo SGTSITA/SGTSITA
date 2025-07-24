@@ -124,7 +124,7 @@ function limpiarFormulario() {
                
                 document.getElementById('geocercaConfig').style.display = 'block';
             } else if (tipo === 'tiempo') {
-                document.getElementById('campo-tiempo').style.display = 'block';
+                //document.getElementById('campo-tiempo').style.display = 'block';
             } 
         });
 });
@@ -308,17 +308,25 @@ function definirTable(){
         abrirMapaEnNuevaPestana(listaStr,tipos); 
     };
  //boton cam cbiar estatus de los convoys
-    const btnEstatus = document.createElement("button");
-    btnEstatus.type = "button";
-    btnEstatus.classList.add("btn", "btn-sm", "btn-outline-primary");
-    btnEstatus.setAttribute("data-bs-target", "#modalCambiarEstatus");
-    btnEstatus.title = "Cambio estatus";
-    btnEstatus.id = "btnEstatus";
+   const btnEstatus = document.createElement("button");
+btnEstatus.type = "button";
+btnEstatus.classList.add("btn", "btn-sm", "btn-outline-primary");
+btnEstatus.title = "Cambio estatus";
+btnEstatus.id = "btnEstatus";
+btnEstatus.innerHTML = `<i class="fa fa-sync-alt me-1"></i>`;
+ btnEstatus.setAttribute("data-id", data.id);
 
-    // Añadir ícono + texto como HTML
-    btnEstatus.innerHTML = `<i class="fa fa fa-sync-alt me-1"></i>`;
+   btnEstatus.onclick = function () {
 
+    const modalElement = document.getElementById('modalCambiarEstatus');
+modalElement.setAttribute("data-id", this.dataset.id);
+
+
+    const modal = new bootstrap.Modal(document.getElementById('modalCambiarEstatus'));
    
+    
+    modal.show();
+};
 
             container.appendChild(btnEditar);
             container.appendChild(btnCompartir);
@@ -370,7 +378,7 @@ seleccionados.length = 0;
         tabla.appendChild(row);
 
         seleccionados.push(item.num_contenedor);
-        ItemsSelects.push(`${item.num_contenedor}-${item.id_contenedor}`);
+        ItemsSelects.push(`${item.num_contenedor}-${item.id_contenedor}-${item.imei}`);
     });
 }
 
@@ -457,7 +465,48 @@ if (idconvoy != ""){
   
  
 });
-  
+  document.getElementById("btnGuardarCambios").addEventListener("click", function () {
+
+    const form = document.getElementById("formCambiarEstatus");
+    const formData = new FormData(form);
+    const modal = document.getElementById("modalCambiarEstatus");
+const id = modal.getAttribute("data-id");
+    formData.append("idconvoy", id);
+
+    fetch("/coordenadas/conboys/estatus", {
+        method: "POST",
+        body: formData,
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+             Swal.fire({
+                        title: 'Cambio de Estatus realizado correctamente',
+                        text: data.message + ' ' + data.no_conboy,
+                        icon: 'success',
+                        confirmButtonText: 'Aceptar',
+                        timer: 1500
+                    }).then(() => {
+
+                    setTimeout(() => {
+                        window.location.reload(); 
+                    }, 300); 
+
+                    });
+            const modal = bootstrap.Modal.getInstance(document.getElementById("modalCambiarEstatus"));
+            modal.hide();
+        } else {
+            // Mostrar errores
+            alert("Ocurrió un error al guardar");
+        }
+    })
+    .catch(error => {
+        console.error("Error en el envío AJAX:", error);
+    });
+});
 
 function saveconvoys(datap,urlSave) {
  
@@ -550,7 +599,7 @@ function saveconvoys(datap,urlSave) {
         seleccionados.push(valor);
          const contenedorData = contenedoresDisponibles.find(c => c.contenedor === valor);
 
-         ItemsSelects.push(valor +"-" + contenedorData.id_contenedor);
+         ItemsSelects.push(valor +"-" + contenedorData.id_contenedor+'-'+ contenedorData.imei);
         document.getElementById('contenedor-input').value = '';
         document.getElementById('sugerencias').style.display = 'none';
         actualizarVista();
@@ -632,7 +681,7 @@ function saveconvoys(datap,urlSave) {
         seleccionados.push(valor);
          const contenedorData = contenedoresDisponibles.find(c => c.num_contenedor === valor);
 
-         ItemsSelects.push(valor +"-" + contenedorData.id_contenedor);
+         ItemsSelects.push(valor +"-" + contenedorData.id_contenedor+'-'+ contenedorData.imei);
         document.getElementById('contenedor-input2').value = '';
         document.getElementById('sugerencias2').style.display = 'none';
         actualizarVista2();
