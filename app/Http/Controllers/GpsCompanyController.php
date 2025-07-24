@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\Crypt;
 
 use App\Models\ServicioGps;
 use App\Traits\JimiGpsTrait;
+use App\Traits\LegoGpsTrait as LegoGps;
+use App\Traits\CommonGpsTrait;
 
 class GpsCompanyController extends Controller
 {
@@ -45,11 +47,11 @@ class GpsCompanyController extends Controller
     }
 
     public function setConfig(Request $r){
-        $servicio = ServicioGps::firstOrNew([
-            'id_empresa' => auth()->user()->id_empresa,
-            'id_gps_company' => $r->gps
-        ]);
 
+        /*
+            - Primero validaremos las credenciales del GPS Seleccionado. 
+            - Si la conexion al servicio Falla con las credenciales proporcionadas no se Guardaran cambios
+        */
         $empresaId = auth()->user()->id_empresa;
         $detailAccount = $r->account;
         $credenciales = [];
@@ -57,19 +59,42 @@ class GpsCompanyController extends Controller
             $credenciales[$a['field']] =  $a['valor'];
         }
 
-        $token = JimiGpsTrait::getGpsAccessToken($empresaId,$credenciales);
+        
 
-        if(!$token){
-        return response()->json([
-            "Titulo" => "Credenciales de acceso incorrectas", 
-            "Mensaje" => "No se puede guardar la configuración porque las credenciales de acceso no son correctas", 
-            "TMensaje" => "warning"
-        ]);
+        switch($r->gps){
+            case 1:
+                break;
+            case 2:
+                $token = JimiGpsTrait::getGpsAccessToken($empresaId,$credenciales);
 
+                if(!$token){
+                    return response()->json([
+                        "Titulo" => "Credenciales de acceso incorrectas", 
+                        "Mensaje" => "No se puede guardar la configuración porque las credenciales de acceso no son correctas", 
+                        "TMensaje" => "warning"
+                    ]);
+                }
+
+                break;
+            case 3:
+                $token =LegoGpsTrait::validateOwner($credenciales);
+                if(!$token){
+                    return response()->json([
+                        "Titulo" => "Credenciales incorrectas LegoGPS", 
+                        "Mensaje" => "Lo sentimos este servicio no corresponde a su empresa", 
+                        "TMensaje" => "warning",
+                        "Token"=>$token
+                    ]);
+                }
+                break;
         }
 
-        $servicio->account_info = Crypt::encryptString(json_encode($r->account));
+        $servicio = ServicioGps::firstOrNew([
+            'id_empresa' => $empresaId,
+            'id_gps_company' => $r->gps
+        ]);
 
+        $servicio->account_info = Crypt::encryptString(json_encode($r->account));
         $servicio->save();
 
         return response()->json(["Titulo" => "Correcto", "Mensaje" => "Se guardó la configuración para la compañia GPS", "TMensaje" => "success","token"=>$token]);
@@ -116,18 +141,25 @@ class GpsCompanyController extends Controller
 
     public function testGpsApi(){
         
+        $toTest = 'JimiGps';
 
-        //Obtener lista de unidades
-        //$adicionales['target'] = 'charritos01';
-        //$data = JimiGpsTrait::callGpsApi('jimi.user.device.list',$credenciales,$adicionales);
 
-        //Datos de dispositivo por IMEI
-        $adicionales['imeis'] = '869066062080354';
-        $credenciales = JimiGpsTrait::getAuthenticationCredentials('AECC890930E41');
+        switch($toTest){
+            case 'LegoGPS':
+                $credenciales = CommonGpsTrait::getAuthenticationCredentials('AECC890930E41',3);
+                $data = ($credenciales['success']) ? LegoGps::getLocation($credenciales['accessAccount']) : [];
+                break;
+            case 'JimiGps':
+                 //Datos de dispositivo por IMEI
+                $adicionales['imeis'] = '869066062080354';
+                $credenciales = JimiGpsTrait::getAuthenticationCredentials('AECC890930E41');
 
-        $data = JimiGpsTrait::callGpsApi('jimi.device.location.get',$credenciales['accessAccount'],$adicionales);
-
-        //jimi.track.device.detail
+                $data = JimiGpsTrait::callGpsApi('jimi.device.location.get',$credenciales['accessAccount'],$adicionales);
+                break;
+            default:
+            $data = "Bad GPS Config";
+        }
+        
         return $data;
     }
     

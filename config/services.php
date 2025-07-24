@@ -52,7 +52,12 @@ return [
     'password'  => env('JIMI_GPS_PASSWORD'),
     'appKey'    => env('JIMI_GPS_APPKEY'),
     'appSecret' => env('JIMI_GPS_APPSECRET'),
-],
+    ],
+
+    'LegoGps' => [
+        'url_base'  => env('LEGO_GPS_URL'),
+        'appKey'  => env('X_ACCESS_TOKEN')
+    ],    
 
 ];
 

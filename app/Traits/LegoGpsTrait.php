@@ -2,53 +2,48 @@
 
 namespace App\Traits;
 
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Crypt;
+use App\Models\Empresas;
+use App\Models\ServicioGps;
 use App\Dto\ApiResponse;
-use Carbon\Carbon;
 use Log;
 
-trait SkyAngelGpsTrait
+/**
+ * Lego GPS
+ * Este es un servicio "Custom" que desarrollaron para Transportes LEGO.
+ * El servicio no tiene metodos de seguridad, pero debemos garantizar el uso exclusivo del servicio API para el transportista mencionado
+ */
+trait LegoGpsTrait
 {
-    public static function getAccessToken($username, $password)
-    {
-		$tokenFor = 'api_sky_angel_token_for_'.$username;
-        return Cache::remember($tokenFor, 28 * 60, function () use ($username, $password){ //ApiToken será recordado por 28 minutos
-			
-            $endpoint = config('services.SkyAngelGps.url_base').'/token';
-
-            $response = Http::post($endpoint, [
-                'username' => $username,
-                'password' => $password,
-            ]);
-			
-			
-
-            if ($response->successful() && isset($response->json()['token'])) {
-             return $response->json()['token'];
-            }
-
-            throw new \Exception('No se pudo obtener el token Sky Angel.');
-			
-        });
+    /**
+     * Fn validateOwner
+     * Proposito: Agregar "capa" de seguridad con la finalidad que el unico que lo pueda configurar/usar sea Transportes LEGO
+     */
+    public static function validateOwner($legoApiKey){
+        return ($legoApiKey['lego_api_key']== config('services.LegoGps.appKey')) ? true : false;
     }
 
-    public static function getLocation($accessToken)
+    public static function getLocation($accessAccount)
     {
         try {
+            \Log::debug($accessAccount);
+            if ($accessAccount['lego_api_key'] != config('services.LegoGps.appKey')) 
+            return new ApiResponse(
+                success: false,
+                data: null,
+                message: 'No está autorizado para utilizar este servicio',
+                status: 401
+            );
 
-            $endpoint = config('services.SkyAngelGps.url_base').'/unidades';
-
-            $headers = [
-                'Authorization' => $accessToken,
-            ];
-
-            $response = Http::withHeaders($headers)->get($endpoint);
+            $endpoint = config('services.LegoGps.url_base');
+          
+            $response = Http::get($endpoint);
 
             // Puedes validar la respuesta aquí si tu API devuelve un código de error dentro del JSON
             if ($response->failed()) {
-                Log::error('API request failed SkyAngel', [
+                Log::error('API request failed Lego Gps', [
                     'endpoint' => $endpoint,
                     'status' => $response->status(),
                     'body' => $response->body(),
@@ -57,7 +52,7 @@ trait SkyAngelGpsTrait
                 return new ApiResponse(
                         success: false,
                         data: $response->json(),
-                        message: 'Error al consultar SkyAngel',
+                        message: 'Error al consultar Lego GPS',
                         status: $response->status()
                     );
 
@@ -79,7 +74,7 @@ trait SkyAngelGpsTrait
            return new ApiResponse(
                         success: false,
                         data: null,
-                        message: 'Excepción HTTP SkyAngel::getLocation => ' .$e->getMessage(),
+                        message: 'Excepción HTTP LegoGps::getLocation => ' .$e->getMessage(),
                         status: 500
                     );
 
@@ -92,7 +87,7 @@ trait SkyAngelGpsTrait
             return new ApiResponse(
                         success: false,
                         data: null,
-                        message: 'Error inesperado SkyAngel::getLocation => ' .$e->getMessage(),
+                        message: 'Error inesperado LegoGps::getLocation => ' .$e->getMessage(),
                         status: 500
                     );
 
