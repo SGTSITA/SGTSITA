@@ -1,5 +1,6 @@
 
     let contenedoresGuardados ;  
+    let contenedoresGuardadosTodos ;  
 let contenedoresDisponibles = [];
 let userBloqueo = false;
 const seleccionados = [];
@@ -113,8 +114,32 @@ function limpiarFormulario() {
         // Si usas dataset para editar, elimina también ese id para que no interfiera
         delete form.dataset.editId;
     }
-});
 
+
+    document.getElementById('tipo_disolucion').addEventListener('change', function () {
+            const tipo = this.value;
+            document.querySelectorAll('.tipo-campo').forEach(el => el.style.display = 'none');
+
+            if (tipo === 'geocerca') {
+               
+                document.getElementById('geocercaConfig').style.display = 'block';
+            } else if (tipo === 'tiempo') {
+                document.getElementById('campo-tiempo').style.display = 'block';
+            } 
+        });
+});
+function abrirGeocerca() {
+  const url = '/configurar-geocerca'; 
+  const win = window.open(url, 'ConfigurarGeocerca', 'width=800,height=600');
+}
+
+function setGeocercaData(lat, lng, radio) {
+    document.getElementById('geocerca_lat').value = lat;
+    document.getElementById('geocerca_lng').value = lng;
+    document.getElementById('geocerca_radio').value = radio;
+
+    alert('Geocerca guardada correctamente');
+}
   document.getElementById('btnGuardarContenedores').addEventListener('click', function () {
         const numeroConvoy = document.getElementById('numero_convoy').value;
         let idconvoy = document.getElementById('id_convoy').value;
@@ -231,8 +256,8 @@ function definirTable(){
  
             const contenedoresFiltrados = contenedoresGuardados.filter(item => item.conboy_id == data.id);
 
-        // Llenas la tabla con los contenedoresFiltrados
-        llenarTablaContenedores(contenedoresFiltrados,data.BlockUser);
+         // Llenas la tabla con los contenedoresFiltrados
+            llenarTablaContenedores(contenedoresFiltrados,data.BlockUser);
             const modal = new bootstrap.Modal(document.getElementById("CreateModal"));
             modal.show();
         };
@@ -275,17 +300,30 @@ function definirTable(){
 
     // Evento onclick personalizado (usa el contenedor que necesitas)
     btnRastreo.onclick = function () {
-        const contenedoresDelConvoy = contenedoresGuardados
+        const contenedoresDelConvoy = contenedoresGuardadosTodos
     .filter(c => c.conboy_id === data.id)
     .map(c => c.num_contenedor);
     const listaStr = contenedoresDelConvoy.join(' / ');
-let tipos= "Convoy: " + data.no_conboy;
+        let tipos= "Convoy: " + data.no_conboy;
         abrirMapaEnNuevaPestana(listaStr,tipos); 
     };
+ //boton cam cbiar estatus de los convoys
+    const btnEstatus = document.createElement("button");
+    btnEstatus.type = "button";
+    btnEstatus.classList.add("btn", "btn-sm", "btn-outline-primary");
+    btnEstatus.setAttribute("data-bs-target", "#modalCambiarEstatus");
+    btnEstatus.title = "Cambio estatus";
+    btnEstatus.id = "btnEstatus";
+
+    // Añadir ícono + texto como HTML
+    btnEstatus.innerHTML = `<i class="fa fa fa-sync-alt me-1"></i>`;
+
+   
 
             container.appendChild(btnEditar);
             container.appendChild(btnCompartir);
             container.appendChild(btnRastreo);
+            container.appendChild(btnEstatus);
 
             return container;
         }
@@ -366,6 +404,7 @@ seleccionados.length = 0;
                    const rowData = data.data;
                     gridApi.setGridOption("rowData", rowData);
                     contenedoresGuardados = data.dataConten;
+                    contenedoresGuardadosTodos = data.dataConten2;
                     
                 })
                 .catch(error => {
@@ -383,6 +422,11 @@ let idconvoy = document.getElementById('id_convoy').value;
 let finicio = document.getElementById('fecha_inicio').value ;
 let ffin = document.getElementById('fecha_fin').value ;
 let nombre = document.getElementById('nombre').value ;
+let tipo_disolucion = document.getElementById('tipo_disolucion').value ;
+let geocerca_lat = document.getElementById('geocerca_lat').value ;
+let geocerca_lng = document.getElementById('geocerca_lng').value ;
+let geocerca_radio = document.getElementById('geocerca_radio').value ;
+
     document.getElementById('ItemsSelects').value = ItemsSelects.join(';');
     
 if (!ItemsSelects || ItemsSelects.length === 0) {
@@ -395,6 +439,11 @@ let datap = {
     items_selects: ItemsSelects,
     nombre :nombre,
     idconvoy:idconvoy,
+  tipo_disolucion :tipo_disolucion,
+            geocerca_lat:geocerca_lat,
+            geocerca_lng :geocerca_lng,
+            geocerca_radio:geocerca_radio,
+
 };
 let urlSave ="/coordenadas/conboys/store";
 

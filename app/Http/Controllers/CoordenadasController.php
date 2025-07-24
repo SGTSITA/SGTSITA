@@ -689,25 +689,25 @@ $idCordenada= $coordenadas->id_coordenadas;
         }, 'beneficiarios');
 
   
-        $datos = DB::table('cotizaciones')
-    ->select(
-        'cotizaciones.id as id_cotizacion',
-        'asig.id as id_asignacion',
-        'coordenadas.id as id_coordenada',
-        'clients.nombre as cliente',
-        'cotizaciones.origen',
-        'cotizaciones.destino',
-        'asig.num_contenedor as contenedor', 
-        'cotizaciones.estatus',
-        'asig.imei',
-       'asig.id_contenedor',
-       'asig.tipo_contrato',
-       'asig.fecha_inicio',
-       'asig.fecha_fin',
-       'asig.tipoGps',
-       'asig.imei_chasis'
-       
-    )
+        $datosAll = DB::table('cotizaciones')
+         ->select(
+            'cotizaciones.id as id_cotizacion',
+            'asig.id as id_asignacion',
+            'coordenadas.id as id_coordenada',
+            'clients.nombre as cliente',
+            'cotizaciones.origen',
+            'cotizaciones.destino',
+            'asig.num_contenedor as contenedor', 
+            'cotizaciones.estatus',
+            'asig.imei',
+            'asig.id_contenedor',
+            'asig.tipo_contrato',
+            'asig.fecha_inicio',
+            'asig.fecha_fin',
+            'asig.tipoGps',
+            'asig.imei_chasis',
+            'cotizaciones.id_empresa'
+        )
     ->join('clients', 'cotizaciones.id_cliente', '=', 'clients.id')
     
    ->joinSub($asignaciones, 'asig', function ($join) {
@@ -732,9 +732,9 @@ $idCordenada= $coordenadas->id_coordenadas;
     return $query->where('cotizaciones.id_cliente', $idCliente);
     })   
     ->where('cotizaciones.estatus', '=', 'Aprobada')
-    ->where('cotizaciones.id_empresa', '=', $idEmpresa)
+    
     ->get();
-
+$datos = $datosAll ->where('id_empresa', $idEmpresa)->values();
  
 
     $conboys = DB::table('conboys')
@@ -747,17 +747,23 @@ $idCordenada= $coordenadas->id_coordenadas;
         'conboys.nombre',
         'conboys.fecha_inicio',
         'conboys.fecha_fin',
-        'conboys.user_id'
+        'conboys.user_id',
+        'conboys.tipo_disolucion',
+        'conboys.estatus',
+        'conboys.fecha_disolucion',
+        'conboys.geocerca_lat',
+        'conboys.geocerca_lng',
+        'conboys.geocerca_radio',
     )
-    ->where('docum_cotizacion.id_empresa', '=', $idEmpresa)
-    ->when($idCliente !== 0, function ($query) use ($idCliente) {
-    return $query->where('cotizaciones.id_cliente', $idCliente);
-})   
+//     ->where('docum_cotizacion.id_empresa', '=', $idEmpresa)
+//     ->when($idCliente !== 0, function ($query) use ($idCliente) {
+//     return $query->where('cotizaciones.id_cliente', $idCliente);
+// })   
     ->distinct()
     ->get();
 
 
-     $conboysdetalle =  DB::table('conboys_contenedores')
+     $conboysdetalleAll =  DB::table('conboys_contenedores')
         ->join('conboys', 'conboys.id', '=', 'conboys_contenedores.conboy_id')
         ->join('docum_cotizacion', 'docum_cotizacion.id', '=', 'conboys_contenedores.id_contenedor')
         ->leftjoin('asignaciones', 'asignaciones.id_contenedor', '=', 'conboys_contenedores.id_contenedor')
@@ -770,15 +776,16 @@ $idCordenada= $coordenadas->id_coordenadas;
             'conboys_contenedores.id_contenedor',
             'docum_cotizacion.num_contenedor',
             'equipos.imei',
-            'gps_company.url_conexion as tipoGps'
+            'gps_company.url_conexion as tipoGps',
+            'es_primero',
             
-        )->where('docum_cotizacion.id_empresa','=',$idEmpresa)
+        )
             ->when($idCliente !== 0, function ($query) use ($idCliente) {
     return $query->where('cotizaciones.id_cliente', $idCliente);
 })   
         ->get();
 
-
+$conboysdetalle=$conboysdetalleAll ->where('id_empresa', $idEmpresa)->values();
 
        $equipos = Equipo::select(
         'equipos.id',
@@ -803,6 +810,8 @@ $idCordenada= $coordenadas->id_coordenadas;
                 'conboys'=> $conboys,
                 'dataConten'=> $conboysdetalle,
                 'equipos'=> $equipos,
+                'datosAll'=> $datosAll,
+                'dataContenAll'=> $conboysdetalleAll
             ]);
         } else {
             return response()->json(['success' => false]);
