@@ -26,7 +26,7 @@ Route::group(["prefix" => "gps"],function(){
  Route::get('globalgps/ubicacion/by-imei/{imei}',[GpsController::class,'obtenerUbicacionByImei'])->name('ubicacion.byimei');
  Route::get('skyangel/ubicacion/',[GpsController::class,'getLocationSkyAngel'])->name('ubicacion.byimei');
 
- Route::get('jimi/token',[GpsController::class,'tokenJimi']);
+ Route::get('jimi/api/test',[GpsCompanyController::class,'testGpsApi']);
 
  Route::get('setup',[GpsCompanyController::class,'setupGps'])->name('gps.setup');
  Route::get('config',[GpsCompanyController::class,'getConfig'])->name('gps.config');

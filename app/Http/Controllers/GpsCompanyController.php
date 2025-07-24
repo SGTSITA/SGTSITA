@@ -113,5 +113,22 @@ class GpsCompanyController extends Controller
 
         return response()->json(['success' => true]);
     }
+
+    public function testGpsApi(){
+        
+
+        //Obtener lista de unidades
+        //$adicionales['target'] = 'charritos01';
+        //$data = JimiGpsTrait::callGpsApi('jimi.user.device.list',$credenciales,$adicionales);
+
+        //Datos de dispositivo por IMEI
+        $adicionales['imeis'] = '869066062080354';
+        $credenciales = JimiGpsTrait::getAuthenticationCredentials('AECC890930E41');
+
+        $data = JimiGpsTrait::callGpsApi('jimi.device.location.get',$credenciales['accessAccount'],$adicionales);
+
+        //jimi.track.device.detail
+        return $data;
+    }
     
 }
