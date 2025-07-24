@@ -29,7 +29,17 @@
       </div>
       <div class="card-body">
         <div class="timeline timeline-border-dashed">
-          <form method="POST" action="{{ route('store.cotizaciones') }}" sgt-cotizacion-action="crear" id="cotizacionCreate" enctype="multipart/form-data" role="form">
+          <form method="POST" 
+          @if($action == "editar")
+            action="{{ route('update.single', $cotizacion->id) }}"
+          @else
+            action="{{ route('store.cotizaciones') }}" 
+          @endif
+            sgt-cotizacion-action="{{$action}}" 
+            id="cotizacionCreate" 
+            enctype="multipart/form-data" 
+            role="form"
+          >
             @csrf
             <input type="hidden" value="{{Auth::User()->id_cliente}}" name="id_cliente" id="id_cliente"> 
             @include('cotizaciones.externos.datos_generales') 
@@ -39,7 +49,15 @@
         </div>
       </div>
       <div class="separator separator-dashed mb-8"></div>
-      <button type="submit" class="btn btn-primary">Solicitar servicio</button>
+      @if($action == "editar")
+      <button type="submit" class="btn btn-success">
+        Actualizar viaje
+      </button>
+      @else
+      <button type="submit" class="btn btn-primary">
+        Solicitar servicio
+      </button>
+      @endif
       </form>
     </div>
   </div>

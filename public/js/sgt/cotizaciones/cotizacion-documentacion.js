@@ -333,11 +333,59 @@ class MissionResultRenderer {
               console.log("El usuario canceló");
             }
           });
-   }
+        }
 
-   function fileManager(){
+        function fileManager(){
+          var _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+          var url = '/viajes/file-manager';
+    
+          let contenedor = apiGrid.getSelectedRows();
+    
+          if(contenedor.length != 1){
+            toastr.options = {
+              "closeButton": true,
+              "debug": false,
+              "newestOnTop": false,
+              "progressBar": true,
+              "positionClass": "toastr-top-center",
+              "preventDuplicates": false,
+              "onclick": null,
+              "showDuration": "1500",
+              "hideDuration": "1000",
+              "timeOut": "5000",
+              "extendedTimeOut": "1000",
+              "showEasing": "swing",
+              "hideEasing": "linear",
+              "showMethod": "fadeIn",
+              "hideMethod": "fadeOut"
+            };
+            
+            toastr.error( `Debe seleccionar unicamente un contenedor para esta opción`);
+            return false;
+          } 
+    
+          let numContenedor = null;
+          contenedor.forEach(c => numContenedor = c.NumContenedor)
+    
+          var form =
+          $('<form action="' + url + '" method="post" >' +
+              '<input type="hidden" name="numContenedor" value="'+numContenedor+'" />' +
+              '<input type="hidden" name="_token" value="' + _token + '" />' +
+          '</form>');
+    
+          $('body').append(form);
+          form.submit();
+    
+          setTimeout(()=>{
+            if (form) {
+                form.remove();
+            }
+        },1000)
+       }
+
+   function editarViaje(){
       var _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-      var url = '/viajes/file-manager';
+      var url = '/viajes/editar';
 
       let contenedor = apiGrid.getSelectedRows();
 
