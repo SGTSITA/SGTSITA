@@ -28,7 +28,7 @@ trait LegoGpsTrait
     public static function getLocation($accessAccount)
     {
         try {
-            \Log::debug($accessAccount);
+
             if ($accessAccount['lego_api_key'] != config('services.LegoGps.appKey')) 
             return new ApiResponse(
                 success: false,
