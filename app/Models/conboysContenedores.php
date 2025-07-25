@@ -12,7 +12,7 @@ class conboysContenedores extends Model
     use HasFactory;
     
 
-    protected $fillable = ['conboy_id', 'id_contenedor'];
+    protected $fillable = ['conboy_id', 'id_contenedor','es_primero', 'usuario','imei'];
 
     // Relación: Un contenedor pertenece a un conboy
     public function conboy()

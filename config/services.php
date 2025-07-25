@@ -59,6 +59,9 @@ return [
     ],
     'GpsTrackerMX' => [
         'url_base'  => env('GPS_TRACKER_URL'),
+    ],
+    'GooMaps'=>[
+        'apikey'=> env('GOOLEAPIMAPS',)
     ]
 
 ];

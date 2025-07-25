@@ -203,6 +203,13 @@ Route::get('/mapa-comparacion', function () {
 Route::get('/coordenadas/mapa_rastreo', function () {
     return view('coordenadas.mapa_rastreo');
 });
+Route::get('/configurar-geocerca', function () {
+    return view('conboys.geocerca');
+});
+
+
+Route::get('/scheduler/index', [App\Http\Controllers\RastreoIntervalController::class, 'index'])->name('scheduler.index');
+Route::put('/scheduler/edit', [App\Http\Controllers\RastreoIntervalController::class, 'update'])->name('scheduler.update');
 
 //NUEVO SERVICIO DE GPS 
 Route::get('/gps/{imei}/detalle', [GpsController::class, 'detalleDispositivo']);
