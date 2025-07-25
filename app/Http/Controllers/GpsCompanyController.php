@@ -154,7 +154,7 @@ class GpsCompanyController extends Controller
                 break;
             case 'TrackerGps':
                 $credenciales = CommonGpsTrait::getAuthenticationCredentials('AECC890930E41',4);
-                $data = GpsTrackerMXTrait::getMutiDevicePosition($credenciales);
+                $data = GpsTrackerMXTrait::getMutiDevicePosition($credenciales['accessAccount']);
                 break;
             default:
             $data = "Bad GPS Config";
