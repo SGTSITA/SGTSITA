@@ -79,6 +79,8 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" 
      
       crossorigin="anonymous">
+      
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body>
 
@@ -135,28 +137,28 @@
   </div>
 </div>
 
-    <!-- Leaflet JS -->
-        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
-      rel="stylesheet"
-      
-      crossorigin="anonymous">
+
+
   <script src="{{ asset('assets/js/core/bootstrap.min.js')}}"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
         
         crossorigin="anonymous"></script>
     <script>
+let map;
+  let markers = [];
 
-      window.markers = [];
-var map = L.map('mapaRastreo').setView([0, 0], 2);
+  window.initMap = function() {
+  map = new google.maps.Map(document.getElementById("mapaRastreo"), {
+    center: { lat: 0, lng: 0 },
+    zoom: 2,
+  });
 
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap contributors'
-}).addTo(map);
-
-
-let marker = null;
+  const marker = new google.maps.Marker({
+    position: { lat: 0, lng: 0 },
+    map: map,
+  });
+};
+  
 
        const params = new URLSearchParams(window.location.search);
       let detalleConvoys;
@@ -231,14 +233,27 @@ responseOk = true;
           }
           arrayData.forEach((item2, index) => {
               nEconomico =' No Economico:' +item2.economico +' imei:' + item2.imei ;
-              latlocal= item2.tracks[0].position.latitude;
-              lnglocal= item2.tracks[0].position.longitude;
+              latlocal= parseFloat(item2.tracks[0].position.latitude);
+              lnglocal=parseFloat(item2.tracks[0].position.longitude);
                  id_contenConvoy=  item2.id_contenendor;
               if (latlocal && lnglocal) {
 
-                 const newMarker = L.marker([latlocal, lnglocal]).addTo(map).bindPopup(nEconomico).openPopup();
-                window.markers.push(newMarker);
-                     newMarker.on('click', () => {
+                // const newMarker = L.marker([latlocal, lnglocal]).addTo(map).bindPopup(nEconomico).openPopup();
+
+                    const newMarker = new google.maps.Marker({
+              position: { lat: latlocal, lng: lnglocal },
+              map: map,
+            });
+const infoWindow = new google.maps.InfoWindow({
+  content: nEconomico
+});
+
+                 infoWindow.open(map, newMarker);
+          newMarker.addListener('click', () => {
+          infoWindow.open(map, newMarker);
+        });
+            markers.push(newMarker);
+                     newMarker.addListener('click', () => {
             const contenedor = item.contenedor;
              const info = contenedoresDisponibles.find(d => d.contenedor === contenedor);
                 if (!info) { 
@@ -289,23 +304,34 @@ responseOk = true;
 
 
         }else {
-             latlocal = item.ubicacion.data.lat;
-         lnglocal = item.ubicacion.data.lng;
+               latlocal =parseFloat( item.ubicacion.data.lat);
+         lnglocal =parseFloat( item.ubicacion.data.lng);
          idConvoyOContenedor=  item.id_contenendor;
         if (latlocal && lnglocal) {
           
           // let esMostrarPrimero =  1
           // if(esMostrarPrimero){
-                const newMarker = L.marker([latlocal, lnglocal]).addTo(map).bindPopup(tipoSpans + ' '+ item.contenedor).openPopup();
-            window.markers.push(newMarker);
+            const newMarker = new google.maps.Marker({
+              position: { lat: latlocal, lng: lnglocal },
+              map: map,
+            });
+               // const newMarker = L.marker([latlocal, lnglocal]).addTo(map).bindPopup(tipoSpans + ' '+ item.contenedor).openPopup();
+               const infoWindow = new google.maps.InfoWindow({
+            content: tipoSpans + ' '+ item.contenedor
+          });
+          infoWindow.open(map, newMarker);
+          newMarker.addListener('click', () => {
+          infoWindow.open(map, newMarker);
+        });
+            markers.push(newMarker);
           let extraertipoC = tipoSpans.replace(/Convoy\s*:\s*/, '').trim();
           let datosGeocerca = convoysAll.find(c => c.no_conboy === extraertipoC)
-          if(datosGeocerca.tipo_disolucion ==='geocerca') {
+          if(datosGeocerca &&  datosGeocerca.tipo_disolucion ==='geocerca') {
 
           actualizarMapa(latlocal, lnglocal,datosGeocerca.geocerca_lat,datosGeocerca.geocerca_lng,datosGeocerca.geocerca_radio)
           }
         
-          newMarker.on('click', () => {
+           newMarker.addListener('click', () => {
             const contenedor = item.contenedor;
              let info = contenedoresDisponibles.find(d => d.contenedor === contenedor);
                 if (!info) {
@@ -359,7 +385,10 @@ responseOk = true;
           //} //end mostrar primero
            tipo= tipo + ' '+ item.contenedor;
         
-        if (index === 0) map.setView([latlocal, lnglocal], 15);
+        if (index === 0) {
+          map.setCenter({ lat: latlocal, lng: lnglocal });
+        map.setZoom(15);
+        }
 
         
         }
@@ -390,15 +419,9 @@ responseOk = true;
 cargarinicial();
 
 function limpiarMarcadores() {
-   if (!window.markers) window.markers = [];
-
-    window.markers.forEach(marker => {
-        if (map.hasLayer(marker)) {
-            map.removeLayer(marker);
-        }
-    });
-
-    window.markers = [];
+     markers.forEach(marker => marker.setMap(null)); 
+    markers = [];
+    
 }
 
 
@@ -572,5 +595,6 @@ function actualizarUbicacionReal(coordenadaData){
 }
 
     </script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAtAO2AZBgzC7QaBxnMnPoa-DAq8vaEvUc&callback=initMap" async defer></script>
 </body>
 </html>

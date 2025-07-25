@@ -181,6 +181,7 @@ Route::get('coordenadas/conboys/edit/{id}', [App\Http\Controllers\ConboysControl
 Route::post('coordenadas/conboys/update', [App\Http\Controllers\ConboysController::class, 'update'])->name('update.conboys');
 Route::delete('coordenadas/conboys/delete', [App\Http\Controllers\ConboysController::class, 'destroy'])->name('destroy.conboys');
 Route::delete('coordenadas/conboys/eliminar-contenedor/{contenedor}/{convoy}', [App\Http\Controllers\ConboysController::class, 'eliminarContenedor']);
+Route::post('/coordenadas/conboys/estatus', [App\Http\Controllers\ConboysController::class, 'updateEstatus']);
 
 Route::get('coordenadas/conboys/getconboys', [App\Http\Controllers\ConboysController::class, 'getConboys'])->name('getConboys.conboys');
 Route::get('/coordenadas/conboys/getHistorialUbicaciones', [App\Http\Controllers\ConboysController::class, 'getHistorialUbicaciones'])->name('getHistorialUbicaciones.conboys');

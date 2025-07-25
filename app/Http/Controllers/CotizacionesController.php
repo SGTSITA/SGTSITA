@@ -32,8 +32,8 @@ class CotizacionesController extends Controller
 {
     public function index(){
 
-        $cotizaciones_planeadas = Cotizaciones::where('id_empresa' ,'=',auth()->user()->id_empresa)->where('estatus','=','Aprobada')->where('estatus_planeacion','=', 1)->orderBy('created_at', 'desc')
-        ->select('id_cliente', 'origen', 'destino', 'id', 'estatus')->get();
+        // $cotizaciones_planeadas = Cotizaciones::where('id_empresa' ,'=',auth()->user()->id_empresa)->where('estatus','=','Aprobada')->where('estatus_planeacion','=', 1)->orderBy('created_at', 'desc')
+        // ->select('id_cliente', 'origen', 'destino', 'id', 'estatus')->get();
 
         
         $empresas = Empresas::get();
