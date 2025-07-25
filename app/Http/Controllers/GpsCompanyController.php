@@ -10,6 +10,7 @@ use App\Models\ServicioGps;
 use App\Traits\JimiGpsTrait;
 use App\Traits\LegoGpsTrait as LegoGps;
 use App\Traits\CommonGpsTrait;
+use App\Traits\GpsTrackerMXTrait;
 
 class GpsCompanyController extends Controller
 {
@@ -66,27 +67,21 @@ class GpsCompanyController extends Controller
                 break;
             case 2:
                 $token = JimiGpsTrait::getGpsAccessToken($empresaId,$credenciales);
-
-                if(!$token){
-                    return response()->json([
-                        "Titulo" => "Credenciales de acceso incorrectas", 
-                        "Mensaje" => "No se puede guardar la configuración porque las credenciales de acceso no son correctas", 
-                        "TMensaje" => "warning"
-                    ]);
-                }
-
                 break;
             case 3:
-                $token =LegoGpsTrait::validateOwner($credenciales);
-                if(!$token){
-                    return response()->json([
-                        "Titulo" => "Credenciales incorrectas LegoGPS", 
-                        "Mensaje" => "Lo sentimos este servicio no corresponde a su empresa", 
-                        "TMensaje" => "warning",
-                        "Token"=>$token
-                    ]);
-                }
+                $token = LegoGpsTrait::validateOwner($credenciales);
                 break;
+            case 4:
+                $token = GpsTrackerMXTrait::getGpsAccessToken($empresaId,$credenciales);
+                break;
+        }
+
+        if(!$token){
+            return response()->json([
+                "Titulo" => "Credenciales de acceso incorrectas", 
+                "Mensaje" => "No se puede guardar la configuración porque las credenciales de acceso no son correctas", 
+                "TMensaje" => "warning"
+            ]);
         }
 
         $servicio = ServicioGps::firstOrNew([
@@ -141,8 +136,9 @@ class GpsCompanyController extends Controller
 
     public function testGpsApi(){
         
-        $toTest = 'JimiGps';
+        $toTest = 'TrackerGps';
 
+        $empresaId = auth()->user()->id_empresa;
 
         switch($toTest){
             case 'LegoGPS':
@@ -155,6 +151,10 @@ class GpsCompanyController extends Controller
                 $credenciales = JimiGpsTrait::getAuthenticationCredentials('AECC890930E41');
 
                 $data = JimiGpsTrait::callGpsApi('jimi.device.location.get',$credenciales['accessAccount'],$adicionales);
+                break;
+            case 'TrackerGps':
+                $credenciales = CommonGpsTrait::getAuthenticationCredentials('AECC890930E41',4);
+                $data = GpsTrackerMXTrait::getMutiDevicePosition($credenciales);
                 break;
             default:
             $data = "Bad GPS Config";

@@ -4,8 +4,8 @@
         <div class="modal-body p-0">
             <div class="card card-plain">
             <div class="card-header pb-0 text-left">
-                <h3 class="font-weight-bolder text-info text-gradient" data-gps-company="0" id="gpsCompany">...</h3>
-                <p class="mb-0">Configuración del servicio:</p>
+                <h3 class="font-weight-bolder text-info  text-gradient" data-gps-company="0" id="gpsCompany">...</h3>
+                <p class="text-sm mb-0">Para su tranquilidad, sus credenciales son cifradas y almacenadas de manera segura.</p>
             </div>
             <div class="card-body">
                
