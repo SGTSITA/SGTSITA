@@ -15,40 +15,139 @@
     </div>
   </div>
 </div>
-<div class="row gx-5 gx-xl-10">
-  <div class="col-sm-12 mb-5 mb-xl-10">
-    <div class="card card-flush h-lg-100">
-      <div class="card-header ">
+
+<div class="card mb-5 mb-xl-10">
+    <!--begin::Card header-->
+    <div class="card-header card-header-stretch pb-0">
+        <!--begin::Title-->
         <h3 class="card-title align-items-start flex-column">
-          <span class="card-label fw-bold text-gray-900">Servicio de transporte</span>
-          <span class="text-gray-500 mt-1 fw-semibold fs-6">Solicitud de servicio de gestion de transporte</span>
+          <span class="card-label fw-bold text-gray-900">Solicitar Transporte</span>
+          <span class="text-gray-500 mt-1 fw-semibold fs-6">Solicitud de servicio de Transporte</span>
         </h3>
-        <div class="card-toolbar">
-          
+        <!--end::Title-->
+
+        <!--begin::Toolbar-->
+        <div class="card-toolbar m-0">
+            <!--begin::Tab nav-->
+            <ul class="nav nav-stretch nav-line-tabs border-transparent" role="tablist">
+                <!--begin::Tab item-->
+                <li class="nav-item" role="presentation">
+                    <a id="kt_billing_creditcard_tab" class="nav-link fs-5 fw-bold me-5 active" data-bs-toggle="tab" role="tab" href="#kt_billing_creditcard" aria-selected="true">
+                        Datos Generales
+                    </a>
+                </li>
+                <!--end::Tab item-->
+                <!--begin::Tab item-->
+                <li class="nav-item" role="presentation">
+                    <a id="kt_billing_paypal_tab" class="nav-link fs-5 fw-bold" data-bs-toggle="tab" role="tab" href="#kt_billing_paypal" aria-selected="false" tabindex="-1">
+                        Ubicación GPS
+                    </a>
+                </li>
+                <!--end::Tab item-->
+                <!--begin::Tab item-->
+                <li class="nav-item" role="presentation">
+                    <a id="kt_bloque_tab" class="nav-link fs-5 fw-bold" data-bs-toggle="tab" role="tab" href="#kt_bloque" aria-selected="false" tabindex="-1">
+                        Bloque
+                    </a>
+                </li>
+                <!--end::Tab item-->
+                 <!--begin::Tab item-->
+                 <li class="nav-item" role="presentation">
+                    <a id="kt_facturacion_tab" class="nav-link fs-5 fw-bold" data-bs-toggle="tab" role="tab" href="#kt_facturacion" aria-selected="false" tabindex="-1">
+                        Facturación
+                    </a>
+                </li>
+                <!--end::Tab item-->
+                <!--begin::Tab item-->
+                <li class="nav-item" role="presentation">
+                    <a id="kt_documentos_tab" class="nav-link fs-5 fw-bold" data-bs-toggle="tab" role="tab" href="#kt_documentos" aria-selected="false" tabindex="-1">
+                        Documentos
+                    </a>
+                </li>
+                <!--end::Tab item-->
+            </ul>
+            <!--end::Tab nav-->
         </div>
-      </div>
-      <div class="card-body">
-        <div class="timeline timeline-border-dashed">
-          <form method="POST" 
+        <!--end::Toolbar-->
+    </div>
+    <!--end::Card header-->
+    <form method="POST" 
           @if($action == "editar")
             action="{{ route('update.single', $cotizacion->id) }}"
           @else
             action="{{ route('store.cotizaciones') }}" 
           @endif
-            sgt-cotizacion-action="{{$action}}" 
+            sgt-cotizacion-action="{{$action}}"
             id="cotizacionCreate" 
             enctype="multipart/form-data" 
             role="form"
           >
+    <!--begin::Tab content-->
+    <div id="kt_billing_payment_tab_content" class="card-body tab-content">
+        <!--begin::Tab panel-->
+        <div id="kt_billing_creditcard" class="tab-pane fade show active" role="tabpanel" "="" aria-labelledby="kt_billing_creditcard_tab">
+            <!--begin::Title-->
+            <h3 class="mb-5">Datos Generales</h3>
+            <!--end::Title-->
+
+            <!--begin::Row-->
+            <div class="row gx-9 gy-6">
             @csrf
             <input type="hidden" value="{{Auth::User()->id_cliente}}" name="id_cliente" id="id_cliente"> 
             @include('cotizaciones.externos.datos_generales') 
-            @include('cotizaciones.externos.datos_facturacion')
-            @include('cotizaciones.externos.datos_bloque')
-           
+            </div>
+            <!--end::Row-->
         </div>
-      </div>
-      <div class="separator separator-dashed mb-8"></div>
+        <!--end::Tab panel-->
+
+        <!--begin::Tab panel-->
+        <div id="kt_billing_paypal" class="tab-pane fade" role="tabpanel" aria-labelledby="kt_billing_paypal_tab">
+            <!--begin::Title-->
+            <h3 class="mb-5">Ubicacion GPS</h3>
+            <!--end::Title-->
+            <div class="row gx-9 gy-6">
+
+            @include('cotizaciones.externos.datos_ubicacion') 
+            </div>
+        </div>
+        <!--end::Tab panel-->
+        <!--begin::Tab panel-->
+        <div id="kt_bloque" class="tab-pane fade" role="tabpanel" aria-labelledby="kt_bloque_tab">
+            <!--begin::Title-->
+            <h3 class="mb-5">Bloque</h3>
+            <!--end::Title-->
+            <div class="row gx-9 gy-6">
+
+            @include('cotizaciones.externos.datos_bloque') 
+            </div>
+        </div>
+        <!--end::Tab panel-->
+         
+        <!--begin::Tab panel-->
+        <div id="kt_documentos" class="tab-pane fade" role="tabpanel" aria-labelledby="kt_documentos_tab">
+            <!--begin::Title-->
+            <h3 class="mb-5" id="labelDocsViaje">Documentos de viaje </h3>
+            <!--end::Title-->
+            <div class="row gx-9 gy-6">
+
+            @include('cotizaciones.externos.datos_fileuploader') 
+            </div>
+        </div>
+        <!--end::Tab panel-->
+        <!--begin::Tab panel-->
+        <div id="kt_facturacion" class="tab-pane fade" role="tabpanel" aria-labelledby="kt_facturacion_tab">
+            <!--begin::Title-->
+            <h3 class="mb-5">Datos para facturación</h3>
+            <!--end::Title-->
+            <div class="row gx-9 gy-6">
+
+            @include('cotizaciones.externos.datos_facturacion') 
+            </div>
+        </div>
+        <!--end::Tab panel-->
+    </div>
+    <!--end::Tab content-->
+    <div class="separator separator-dashed mb-8"></div>
       @if($action == "editar")
       <button type="submit" class="btn btn-success">
         Actualizar viaje
@@ -59,9 +158,9 @@
       </button>
       @endif
       </form>
-    </div>
-  </div>
 </div>
+
+
 </div>
 
 @endsection
@@ -69,8 +168,13 @@
 @push('javascript')
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="{{ asset('js/sgt/common.js') }}?v={{ filemtime(public_path('js/sgt/common.js')) }}"></script>
 <script src="{{ asset('js/sgt/cotizaciones/cotizaciones.js') }}?v={{ filemtime(public_path('js/sgt/cotizaciones/cotizaciones.js')) }}"></script>
+<script src="{{ asset('js/sgt/common.js') }}?v={{ filemtime(public_path('js/sgt/common.js')) }}"></script>
+<link href="/assets/metronic/fileuploader/font/font-fileuploader.css" rel="stylesheet">
+<link href="/assets/metronic/fileuploader/jquery.fileuploader.min.css" media="all" rel="stylesheet">
+<link href="/assets/metronic/fileuploader/jquery.fileuploader-theme-dragdrop.css" media="all" rel="stylesheet">
+<script src="/assets/metronic/fileuploader/jquery.fileuploader.min.js" type="text/javascript"></script>
+<script src="{{ asset('js/sgt/cotizaciones/cotizacion-fileuploader-preload.js') }}?v={{ filemtime(public_path('js/sgt/cotizaciones/cotizacion-fileuploader-preload.js')) }}"></script>
 <script src="{{ asset('assets/metronic/fileuploader/cotizacion-cliente-externo.js')}}?v={{ filemtime(public_path('js/sgt/cotizaciones/cotizaciones.js')) }}" type="text/javascript"></script>
 
 <script>
@@ -93,6 +197,16 @@
         textRecinto.value = (elemento.attributes['data-kt-plan'].value != 'recinto-si') ? '' : 'recinto-si';
       });
     });
+
+    @if($action=="editar")
+    localStorage.setItem('numContenedor','{{$cotizacion->DocCotizacion->num_contenedor}}'); 
+    initFileUploader()
+    
+    setTimeout(()=>{
+        document.getElementById('noticeFileUploader').classList.add('d-none')
+        document.getElementById('fileUploaderContainer').classList.remove('d-none')
+    },3000);
+    @endif
 
     document.getElementById('num_contenedor').addEventListener('keydown', function(e) {
     if (e.key === '/') {

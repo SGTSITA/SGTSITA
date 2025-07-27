@@ -208,7 +208,7 @@ function cargarmapas(){
                     .then(res => res.json())
                     .then(data => {
                         const direccion = data.display_name;
-                        document.getElementById('direccion_entrega').value = direccion;
+                       // document.getElementById('direccion_entrega').value = direccion;
                         document.getElementById('direccion_mapa').value = direccion;
 
                         
@@ -1065,9 +1065,23 @@ $("#cotizacionCreate").on("submit", function(e){
         success:function(data){
                 Swal.fire(data.Titulo,data.Mensaje,data.TMensaje).then(function() {
                     if(data.TMensaje == "success"){
+                        localStorage.setItem('numContenedor',formData['num_contenedor']); 
                         var uuid = localStorage.getItem('uuid');
                         if(uuid){
-                            window.location.replace("/viajes/documents");
+                            if(form.data('sgtCotizacionAction') != 'editar'){
+                                
+                                initFileUploader()
+    
+                                setTimeout(()=>{
+                                    document.getElementById('noticeFileUploader').classList.add('d-none')
+                                    document.getElementById('fileUploaderContainer').classList.remove('d-none')    
+                                },3000);
+                                
+                                form.attr('action', `/cotizaciones/single/update/${data.folio}`)
+                                form.data('sgtCotizacionAction','editar')
+                            }
+                            
+
                         }else{
                             location.reload();
                         }
