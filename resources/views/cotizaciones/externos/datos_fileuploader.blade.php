@@ -1,4 +1,4 @@
-<div class="row mt-10">
+<div class="row mt-10" id="noticeFileUploader">
   <div class="col-6 offset-3">
     <div class="notice d-flex bg-light-primary rounded border-primary border border-dashed mb-9 p-6">
       <!--begin::Icon-->
@@ -10,7 +10,7 @@
         <div class=" fw-semibold">
           <div class="fs-6 text-gray-700 ">Para adjuntar archivos, primero debe guardar la información de la solicitud de viaje. Esto garantiza que los documentos se asocien correctamente al registro y que el proceso continúe de forma segura y ordenada. <br>
             <br>
-            <a href="#" class="fw-bold">Aceptar y Continuar </a>
+            <button type="submit" class="btn btn-link text-primary fw-bold">Aceptar y Continuar </button>
           </div>
         </div>
         <!--end::Content-->
@@ -33,7 +33,8 @@
         <!--end::Card header-->
         <!--begin::Card body-->
         <div class="card-body pt-0">
-        <input type="file" name="files" id="CCP">
+        @if($action=="editar")  @endif
+        <input type="file" name="files" id="CCP" >
         </div>
         <!--end::Card body-->
     </div>

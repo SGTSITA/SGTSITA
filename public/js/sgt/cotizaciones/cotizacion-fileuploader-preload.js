@@ -4,13 +4,18 @@ let fileSettings = null;
 
 let frm = document.querySelector('#cotizacionCreate')
 
-function adjuntarDocumentos() {
+function adjuntarDocumentos(filesContenedor) {
    // document.getElementById('content-file-input').innerHTML = '<input type="file" name="files" id="fileuploader">';
    numContenedor = localStorage.getItem('numContenedor'); 
+   let labelDocsViaje = document.getElementById('labelDocsViaje')
+   labelDocsViaje.textContent = `Documentos de viaje ${numContenedor}`
+
     $('#'+fileSettings.opcion).fileuploader({
         captions: 'es',
         enableApi: true,
+        limit:1,
         start: true,
+        files: [filesContenedor],
         changeInput: '<div class="fileuploader-input">' +
             '<div class="fileuploader-input-inner">' +
             '<div class="fileuploader-icon-main"></div>' +
@@ -127,7 +132,8 @@ function adjuntarDocumentos() {
         onRemove: function(item) {
             $.post('remove', {
                 _token: _token,
-                _Folio: _Folio,
+                numContenedor: numContenedor,
+                urlRepo:fileSettings.opcion,
                 file: item.name
             });
         },
@@ -140,29 +146,62 @@ function adjuntarDocumentos() {
         }),
     });
 
+   var fileInputElement = document.getElementById(fileSettings.opcion);
+    // Obtener la instancia de Fileuploader asociada a este campo de carga
+   var api = $.fileuploader.getInstance(fileInputElement);
+   
    
    // api.uploadStart(); // Iniciar la carga manualmente
 
 }
 
-function initFileUploader(){
+async function consultarArchivos(numContenedor) {
+    try {
+      const response = await fetch(`/viajes/file-manager/get-file-list/${numContenedor}`, {
+        method: 'get',
+      
+      });
+  
+      const fileList = await response.json();
+      let containerFiles = fileList.data
+      let filter = containerFiles.find((f)=> fileSettings.agGrid == f.fileCode)
+      fileProperties = {
+        name:filter.fileName,
+        size:filter.fileSizeBytes ,
+        type:filter.mimeType,
+        file:`cotizaciones/cotizacion${filter.folder}/${filter.filePath}`,
+        data:{thumbnail: `cotizaciones/cotizacion${filter.folder}/${filter.filePath}`, // (optional)
+        readerForce: true}
+    }
+
+      return fileProperties;
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  }
+
+async function initFileUploader(){
     var elementos = [
-        {"opcion":"BoletaLib","titulo":"Boleta de Liberación","agGrid": "BoletaLiberacion", "mandatory": true},
-        {"opcion":"Doda","titulo":"DODA","agGrid": "DODA", "mandatory": true},
+        {"opcion":"BoletaLib","titulo":"Boleta de Liberación","agGrid": "Boleta-de-liberacion", "mandatory": true},
+        {"opcion":"Doda","titulo":"DODA","agGrid": "Doda", "mandatory": true},
         {"opcion":"PreAlta","titulo":"Pre Alta","agGrid": "PreAlta", "mandatory": false},
         {"opcion":"CartaPortePDF","titulo":"Carta Porte PDF","agGrid": "CartaPorte", "mandatory": false},
         {"opcion":"CartaPorteXML","titulo":"Carta Porte XML","agGrid": "CartaPorteXML", "mandatory": false},
-        {"opcion":"CCP","titulo":"CCP - Carta Porte","agGrid": "CCP", "mandatory": true},
+        {"opcion":"CCP","titulo":"CCP - Carta Porte","agGrid": "Formato-para-Carta-porte", "mandatory": true},
         {"opcion":"EIR","titulo":"EIR - Comprobante de vacío","agGrid": "EIR", "mandatory": false},
         
     ];
 
-    elementos.forEach((el) =>{
+   for(const el of elementos){
         if(el.mandatory){
             fileSettings = el;
-            adjuntarDocumentos();
+            numContenedor = localStorage.getItem('numContenedor'); 
+            filesContenedor = await consultarArchivos(numContenedor)
+            adjuntarDocumentos(filesContenedor);
         }
-    })
+   }
+
+   
     
     
 }

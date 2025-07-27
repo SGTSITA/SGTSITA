@@ -572,7 +572,7 @@ public function getCotizacionesCanceladas()
         $docucotizaciones->num_contenedor = str_replace(' ','',$request->get('num_contenedor'));
         $docucotizaciones->save();
 
-        return response()->json(["Titulo" => "Proceso satisfactorio", "Mensaje" => "Cotización creada con exito", "TMensaje" => "success"]);
+        return response()->json(["Titulo" => "Proceso satisfactorio", "Mensaje" => "Cotización creada con exito", "TMensaje" => "success","folio" => $cotizaciones->id]);
 
     }
 

@@ -1,5 +1,4 @@
 <?php
-//Ambiente: Calidad
 use Illuminate\Support\Facades\Route;
 use Laravel\Socialite\Facades\Socialite;
 use App\Http\Controllers\HomeController;
@@ -11,22 +10,18 @@ use App\Http\Controllers\EmpresasController;
 use App\Http\Controllers\ExternosController;
 use App\Http\Controllers\CuentaGlobalController;
 use App\Http\Controllers\GoogleLinkResolverController;
-
 use App\Http\Controllers\WhatsAppController;
-
 use App\Http\Controllers\GpsController;
 use App\Http\Controllers\ContactoController;
 use App\Http\Controllers\ReporteriaController;
+
+use App\Models\User;
 
 Route::group(["prefix" => "gps"],function(){
  Route::get('globalgps/ubicacion/by-imei/{imei}',[GpsController::class,'obtenerUbicacionByImei'])->name('ubicacion.byimei');
  Route::get('skyangel/ubicacion/',[GpsController::class,'getLocationSkyAngel'])->name('ubicacion.byimei');
  Route::get('jimi/token',[GpsController::class,'tokenJimi']);
 });
-
-
-
-use App\Models\User;
 
 Route::group(["prefix" => "whatsapp"],function(){
     Route::get('sendtext/{phone}/{text}',[WhatsAppController::class,'sendText'])->name('whatsapp.text');

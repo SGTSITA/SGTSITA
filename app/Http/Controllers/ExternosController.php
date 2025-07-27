@@ -378,13 +378,20 @@ class ExternosController extends Controller
     public function fileProperties($id,$file,$title,$contenedor){
         $path = public_path('cotizaciones/cotizacion'.$id.'/'.$file);
         if(\File::exists($path)){
+            $finfo = finfo_open(FILEINFO_MIME_TYPE); // Abrir la base de datos de tipos MIME
+            $mimeType = finfo_file($finfo, $path);
+            finfo_close($finfo);
+
             return [
                 "filePath" => $file,
                 'fileName'=> $title,
+                "folder" => $id,
                 'secondaryFileName'=> $title.' '.$contenedor,
                 "fileDate" => CommonTrait::obtenerFechaEnLetra(date("Y-m-d", filemtime($path))),
                 "fileSize" => CommonTrait::calculateFileSize(filesize($path)),
+                "fileSizeBytes" => (filesize($path)),
                 "fileType" => pathinfo($path, PATHINFO_EXTENSION),
+                "mimeType" => $mimeType,
                 "identifier" => $id,
                 "fileCode" => iconv('UTF-8', 'ASCII//TRANSLIT',str_replace(' ','-',$title))
                 ];
@@ -429,6 +436,7 @@ class ExternosController extends Controller
                 $doc_foto_patio = self::fileProperties($folderId, $documentos->foto_patio, 'Foto patio',$cont);
                 if(sizeof($doc_foto_patio) > 0) array_push($documentList, $doc_foto_patio);
             }
+
             $cotizacion = Cotizaciones::where('id',$documentos->id_cotizacion)->first();
 
             if(!is_null($cotizacion->img_boleta)){
@@ -456,6 +464,7 @@ class ExternosController extends Controller
         $path = public_path('coordenadas/'.$id.'/'.$file);
         if(\File::exists($path)){
             return [
+                "folder" => $id,
                 "filePath" => $file,
                 'fileName'=> $title,
                 "fileDate" => CommonTrait::obtenerFechaEnLetra(date("Y-m-d", filemtime($path))),

@@ -77,7 +77,7 @@
           @else
             action="{{ route('store.cotizaciones') }}" 
           @endif
-            sgt-cotizacion-action="{{$action}}" 
+            sgt-cotizacion-action="{{$action}}"
             id="cotizacionCreate" 
             enctype="multipart/form-data" 
             role="form"
@@ -126,7 +126,7 @@
         <!--begin::Tab panel-->
         <div id="kt_documentos" class="tab-pane fade" role="tabpanel" aria-labelledby="kt_documentos_tab">
             <!--begin::Title-->
-            <h3 class="mb-5">Documentos</h3>
+            <h3 class="mb-5" id="labelDocsViaje">Documentos de viaje </h3>
             <!--end::Title-->
             <div class="row gx-9 gy-6">
 
@@ -181,8 +181,6 @@
   $(document).ready(() =>{
      getClientes({{Auth::User()->id_cliente}})
 
-     initFileUploader()
-
      var genericUUID = localStorage.getItem('uuid');
      if(genericUUID == null){
       genericUUID = generateUUID();
@@ -199,6 +197,16 @@
         textRecinto.value = (elemento.attributes['data-kt-plan'].value != 'recinto-si') ? '' : 'recinto-si';
       });
     });
+
+    @if($action=="editar")
+    localStorage.setItem('numContenedor','{{$cotizacion->DocCotizacion->num_contenedor}}'); 
+    initFileUploader()
+    
+    setTimeout(()=>{
+        document.getElementById('noticeFileUploader').classList.add('d-none')
+        document.getElementById('fileUploaderContainer').classList.remove('d-none')
+    },3000);
+    @endif
 
     document.getElementById('num_contenedor').addEventListener('keydown', function(e) {
     if (e.key === '/') {
