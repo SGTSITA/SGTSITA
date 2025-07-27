@@ -1400,6 +1400,14 @@ public function getCotizacionesCanceladas()
         ->where('d.num_contenedor',$r->numContenedor);
 
         $cotizacion = $cotizacionQuery->first();
+        
+        if(is_null($cotizacion)){
+            $upload['hasWarnings'] = true;
+            $upload['warnings'] = ['Guarde los datos del viaje antes de cargar archivos'];
+            return response()->json($upload);
+            exit;
+        }
+
         $estatus = $cotizacion->estatus;
 
         $directorio =  public_path().'/cotizaciones/cotizacion'.$cotizacion->id_cotizacion;
