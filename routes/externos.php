@@ -38,6 +38,7 @@ Route::group(["prefix" => "viajes"], function(){
 
 Route::group(["prefix" => "contenedores"], function(){
     Route::post('files/upload',[CotizacionesController::class, 'adjuntarDocumentos']);
+    Route::get('files/get-file',[CotizacionesController::class, 'adjuntarDocumentos']);
 });
 
 Route::group(["prefix" => "clientes"], function(){
