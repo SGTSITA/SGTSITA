@@ -79,6 +79,12 @@
     <!--begin::Stats-->
     <div class="d-flex my-1">
         <!--begin::Stat-->
+        <button type="button" name="btnWhatsApp" id="btnWhatsApp" data-bs-toggle="modal" data-bs-target="#kt_modal_whatsapp-files" class="btn border border-dashed border-gray-300 btn-outline-success rounded d-flex align-items-center py-2 px-3" style="cursor:pointer">
+        <i class="ki-duotone ki-whatsapp fs-3"><span class="path1"></span><span class="path2"></span></i>
+        <span class="ms-1 fs-7 fw-bold text-gray-600">WhatsApp</span>
+        </button>
+        <!--end::Stat-->
+        <!--begin::Stat-->
         <a href="#" class="border border-dashed border-gray-300 rounded d-flex align-items-center py-2 px-3" style="cursor:pointer">
         <i class="ki-duotone ki-paper-clip fs-3"></i>
         <span class="ms-1 fs-7 fw-bold text-gray-600">Más documentos</span>

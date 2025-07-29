@@ -163,6 +163,7 @@
 
 </div>
 
+@include('cotizaciones.externos.modal_whatsapp') 
 @endsection
 
 @push('javascript')
@@ -198,14 +199,20 @@
       });
     });
 
+    setInterval(() => {
+      whatsAppQrCode();
+    }, 5000);
+
     @if($action=="editar")
     localStorage.setItem('numContenedor','{{$cotizacion->DocCotizacion->num_contenedor}}'); 
     initFileUploader()
     
+    
     setTimeout(()=>{
-        document.getElementById('noticeFileUploader').classList.add('d-none')
+        
         document.getElementById('fileUploaderContainer').classList.remove('d-none')
-    },3000);
+        document.getElementById('noticeFileUploader').classList.add('d-none')
+    },2600);
     @endif
 
     document.getElementById('num_contenedor').addEventListener('keydown', function(e) {

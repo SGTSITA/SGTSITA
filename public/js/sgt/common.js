@@ -20,6 +20,25 @@ setTimeout(() => {
 }, 2000);
 }
 
+function whatsAppQrCode(){
+    fetch('http://localhost:3000/whatsApp/qr-code/get')
+    .then(response => {
+        //if (!response) throw new Error('Error en la respuesta');
+        return response.json();
+    })
+    .then(data => {
+        console.log('Estatus:', data.status);
+        let WhatsAppQrPicture = document.querySelector('#WhatsAppQrPicture')
+        if(WhatsAppQrPicture && data.status == "qr"){
+            WhatsAppQrPicture.src = data.qr
+        }
+    })
+    .catch(error => {
+        console.error('Error al obtener datos:', error);
+    });
+
+}
+
 function allowOnlyDecimals(event) {
     const input = event.target;
     const regex = /^[0-9]*\.?[0-9]*$/;
