@@ -176,6 +176,7 @@
 <link href="/assets/metronic/fileuploader/jquery.fileuploader-theme-dragdrop.css" media="all" rel="stylesheet">
 <script src="/assets/metronic/fileuploader/jquery.fileuploader.min.js" type="text/javascript"></script>
 <script src="{{ asset('js/sgt/cotizaciones/cotizacion-fileuploader-preload.js') }}?v={{ filemtime(public_path('js/sgt/cotizaciones/cotizacion-fileuploader-preload.js')) }}"></script>
+<script src="{{ asset('js/sgt/common/tagify.js') }}?v={{ filemtime(public_path('js/sgt/common/tagify.js')) }}"></script>
 <script src="{{ asset('assets/metronic/fileuploader/cotizacion-cliente-externo.js')}}?v={{ filemtime(public_path('js/sgt/cotizaciones/cotizaciones.js')) }}" type="text/javascript"></script>
 
 <script>
@@ -199,20 +200,52 @@
       });
     });
 
-    setInterval(() => {
-      whatsAppQrCode();
+    let waStatus = null;
+    let waElements = document.querySelectorAll('.waElements')
+    let waContacts = []
+
+    const statusMap = {
+      'error': ()=> document.getElementById('waNotice').classList.remove('d-none'),
+      'qr': ()=> document.getElementById('whatsAppLogin').classList.remove('d-none'),
+      'loading': ()=> document.getElementById('whatsAppLoding').classList.remove('d-none'),
+      'ready': ()=> document.getElementById('whatsAppMessageCompose').classList.remove('d-none'),
+    }
+
+    setInterval(async () => {
+      var waStatusResponse = await whatsAppQrCode({{auth()->user()->id}}) || 'error';
+
+      if(waStatus != waStatusResponse){
+        waElements.forEach((el)=>{
+          el.classList.add('d-none')
+        });
+
+        waStatus = waStatusResponse
+        statusMap[waStatusResponse]()
+      }
+    }, 5000);
+
+    setInterval(async() => {
+      if(waStatus == "ready" && waContacts.length == 0){
+        var waConversations = await whatsAppConversations({{auth()->user()->id}})
+        waConversationsResult = waConversations.conversations
+        waConversationsResult.forEach((c)=>{
+          let participants = c.participants
+          waContacts = [...waContacts,{value: c.id, name: c.name, avatar: null, email: (!c.isGroup) ? c.id : `Grupo de WhatsApp: ${participants.length} miembros`}]
+        })
+       let waTagify = tagifyInit(waContacts)
+      }
     }, 5000);
 
     @if($action=="editar")
     localStorage.setItem('numContenedor','{{$cotizacion->DocCotizacion->num_contenedor}}'); 
+
     initFileUploader()
     
     
     setTimeout(()=>{
-        
         document.getElementById('fileUploaderContainer').classList.remove('d-none')
         document.getElementById('noticeFileUploader').classList.add('d-none')
-    },2600);
+    },3800);
     @endif
 
     document.getElementById('num_contenedor').addEventListener('keydown', function(e) {

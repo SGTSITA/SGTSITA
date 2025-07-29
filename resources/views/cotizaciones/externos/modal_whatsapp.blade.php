@@ -26,8 +26,35 @@
             <!--begin::Description-->
             <div class="text-muted fw-semibold fs-5"> Envía documentos por <a href="#" class="link-primary fw-bold">WhatsApp</a> con un solo clic, rápido y seguro. </div>
             <!--end::Description-->
+            <div class="notice d-flex bg-light-danger rounded border-danger border border-dashed mt-10 p-6 waElements" id="waNotice">
+              <!--begin::Wrapper-->
+              <div class="d-flex flex-stack flex-grow-1 ">
+                  <!--begin::Content-->
+                  <div class=" fw-semibold">
+                          <div class="fs-6 text-gray-700 ">
+                            Estimado usuario, <span class="fw-bold me-1">la conexión con WhatsApp</span>  
+                            no está disponible en este momento. Parece que estamos experimentando una <span class="fw-bold me-1">interrupción temporal</span>, así que le pedimos que intente nuevamente en unos minutos.
+                          </div>
+                  </div>
+                  <!--end::Content-->
+              </div>
+              <!--end::Wrapper-->  
+            </div>
             <!--end::Title-->
-            <div id="whatsAppLogin">
+            <div id="whatsAppLoding" class="overlay overlay-block waElements mt-15">
+            <div class="overlay-wrapper p-5">
+              <h3>
+              ¡Conectado! <span class="fw-bold me-1">Generando código QR.</span> Un momento, por favor..
+              </h3>
+             
+            </div>
+            <div class="overlay-layer card-rounded bg-dark bg-opacity-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Espere...</span>
+                </div>
+            </div>
+            </div>
+            <div id="whatsAppLogin" class="waElements">
               <div class="col-sm-12 mt-10">
                 <!--begin::WhatsApp-->
               <div class="timeline timeline-border-dashed">
@@ -162,33 +189,62 @@
           </div>
           <!--end::Heading-->
           <!--seccion select archivos. begin::Input group-->
-          <div class="d-flex align-items-center mt-10">
+          <div id="whatsAppMessageCompose" class="waElements">
+
+          <label class="form-label">Enviar a:</label>
+          <input class="form-control d-flex align-items-center" value="" placeholder="Escribe aquí para buscar contactos..." id="kt_tagify_users" />
+          <div class="overflow-auto mt-10 border border-dashed border-gray-300 rounded ">
+          
+          <div class="d-flex justify-content-between m-5">
+            <!--begin::Label-->
+            <div class="flex-grow-1">
+              <span class="fs-6 fw-semibold text-gray-800 d-block">CCP - Carta Porte</span>
+            </div>
+            <!--end::Label-->
+            <!--begin::Switch-->
+            <label class="form-check form-switch form-check-solid">
+              <input class="form-check-input" type="checkbox" value="1" checked="checked" />
+              <span class="form-check-label"> Adjuntar </span>
+            </label>
+            <!--end::Switch-->
+          </div>
+          
+          <div class="d-flex justify-content-between m-5">
             <!--begin::Label-->
             <div class="flex-grow-1">
               <span class="fs-6 fw-semibold text-gray-800 d-block">Boleta de liberación</span>
             </div>
             <!--end::Label-->
             <!--begin::Switch-->
-            <label class="form-check form-switch form-check-custom form-check-solid">
+            <label class="form-check form-switch form-check-solid">
               <input class="form-check-input" type="checkbox" value="1" checked="checked" />
-              <span class="form-check-label"> Enviar </span>
+              <span class="form-check-label"> Adjuntar </span>
             </label>
             <!--end::Switch-->
           </div>
+          </div>
+          
           <!--seccion select archivos. end::Input group-->
           <!--begin::Input group-->
-          <div class="mb-10">
+          <div class="mt-10 mb-10">
             <!--begin::Title-->
-            <h4 class="fs-5 fw-semibold text-gray-800">Share my referral link with friends</h4>
+            <label class="form-label">Mensaje:</label>
             <!--end::Title-->
             <!--begin::Title-->
             <div class="d-flex">
-              <input id="kt_whatsapp-files_link_input" type="text" class="form-control form-control-solid me-3 flex-grow-1" name="search" value="https://keenthemes.com/?ref=skitechnology" />
-              <button id="kt_whatsapp-files_link_copy_button" class="btn btn-light fw-bold flex-shrink-0" data-clipboard-target="#kt_whatsapp-files_link_input">Enviar mensaje</button>
+              <input id="kt_whatsapp-files_link_input" type="text" placeholder="Escriba un mensaje..." class="form-control form-control-solid me-3 flex-grow-1" name="waMessage" />
+              <button id="kt_whatsapp-" class="btn btn-primary flex-shrink-0">
+              <i class="ki-duotone ki-whatsapp following fs-3">
+                  <span class="path1"></span>
+                  <span class="path2"></span>
+              </i>
+                <span class="indicator-label"> Enviar mensaje</span>
+              </button>
             </div>
             <!--end::Title-->
           </div>
           <!--end::Input group-->
+          </div>
         </div>
         <!--end::Wrapper-->
       </div>

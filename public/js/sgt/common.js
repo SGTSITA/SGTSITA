@@ -20,23 +20,61 @@ setTimeout(() => {
 }, 2000);
 }
 
-function whatsAppQrCode(){
-    fetch('http://localhost:3000/whatsApp/qr-code/get')
-    .then(response => {
-        //if (!response) throw new Error('Error en la respuesta');
-        return response.json();
-    })
-    .then(data => {
-        console.log('Estatus:', data.status);
-        let WhatsAppQrPicture = document.querySelector('#WhatsAppQrPicture')
-        if(WhatsAppQrPicture && data.status == "qr"){
-            WhatsAppQrPicture.src = data.qr
+async function whatsAppQrCode(id){
+    try {
+        const response = await fetch(`http://localhost:3000/whatsApp/qr-code/${id}`);
+        
+        if (!response.ok) { // 'response.ok' es true para status 200-299
+            // Si el servidor envía un error HTTP (ej. 404, 500), lanza un error para que lo capture el 'catch'
+            throw new Error(`Error HTTP: ${response.status} ${response.statusText}`);
         }
-    })
-    .catch(error => {
-        console.error('Error al obtener datos:', error);
-    });
 
+        const data = await response.json();
+
+        let WhatsAppQrPicture = document.querySelector('#WhatsAppQrPicture');
+        if (WhatsAppQrPicture && data.status === "qr") {
+            WhatsAppQrPicture.src = data.qr;
+        }
+        return data.status; 
+    } catch (error) {
+        console.error('Error al obtener datos:', error);
+        return "error"; // Retorna "error" si algo falla
+    }
+
+}
+
+async function whatsAppConversations(id){
+    try {
+        const response = await fetch(`http://localhost:3000/whatsapp/${id}/conversations/list`);
+        
+        if (!response.ok) { // 'response.ok' es true para status 200-299
+            // Si el servidor envía un error HTTP (ej. 404, 500), lanza un error para que lo capture el 'catch'
+            throw new Error(`Error HTTP: ${response.status} ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        return data; 
+    } catch (error) {
+        console.error('Error al obtener datos:', error);
+        return {status:"error", conversations: null}; // Retorna "error" si algo falla
+    }
+}
+
+async function whatsAppSendMessage(id){
+    try {
+        const response = await fetch(`http://localhost:3000/whatsapp/${id}/messages/send`);
+        
+        if (!response.ok) { // 'response.ok' es true para status 200-299
+            // Si el servidor envía un error HTTP (ej. 404, 500), lanza un error para que lo capture el 'catch'
+            throw new Error(`Error HTTP: ${response.status} ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        return data; 
+    } catch (error) {
+        console.error('Error al obtener datos:', error);
+        return {status:"error", conversations: null}; // Retorna "error" si algo falla
+    }
 }
 
 function allowOnlyDecimals(event) {
