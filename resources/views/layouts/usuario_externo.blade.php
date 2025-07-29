@@ -146,7 +146,7 @@
                                             <span class="menu-bullet">
                                                 <span class="bullet bullet-dot"></span>
                                             </span>
-                                            <span class="menu-title">Mapas</span>
+                                            <span class="menu-title">Punto de verificación</span>
                                         </a>
                                     </div>
                                     <div class="menu-item">
@@ -154,7 +154,7 @@
                                             <span class="menu-bullet">
                                                 <span class="bullet bullet-dot"></span>
                                             </span>
-                                            <span class="menu-title">Busqueda</span>
+                                            <span class="menu-title">Bitácora de Verificación</span>
                                         </a>
                                     </div>
                                     <div class="menu-item">
@@ -162,7 +162,7 @@
                                             <span class="menu-bullet">
                                                 <span class="bullet bullet-dot"></span>
                                             </span>
-                                            <span class="menu-title">Compartir Coordenadas</span>
+                                            <span class="menu-title">Compartir Cuestionarios</span>
                                         </a>
                                     </div>
                                     <div class="menu-item">
@@ -181,14 +181,7 @@
                                             <span class="menu-title">Convoys Virtuales</span>
                                         </a>
                                         </div>
-                                        <div class="menu-item">
-                                        <a href="{{ route('exfind-convoy') }}" class="menu-link">
-                                            <span class="menu-bullet">
-                                            <span class="bullet bullet-dot"></span>
-                                            </span>
-                                            <span class="menu-title">Encontrar Convoys</span>
-                                        </a>
-                                    </div>
+                                      
                                 </div>
                             </div>
                                  <!--END coordenadas -->

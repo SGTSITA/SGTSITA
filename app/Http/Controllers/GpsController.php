@@ -5,11 +5,14 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Traits\GlobalGpsTrait as GlobalGps;
 use App\Traits\SkyAngelGpsTrait as SkyAngel;
-use App\Traits\JimiGpsTrait AS JimiGps;
+use App\Traits\JimiGpsTrait;
+use App\Traits\LegoGpsTrait as LegoGps;
+use App\Traits\CommonGpsTrait;
+
 
 class GpsController extends Controller
 {
-    USE JimiGps;
+    
     public function obtenerUbicacionByImei(Request $request){
     
 
@@ -43,9 +46,26 @@ class GpsController extends Controller
                             break;
 
                         case 'https://us-open.tracksolidpro.com/route/rest'://jimi -Concox
-                           $ubicacion = $this->detalleDispositivo($imei);
+                            //Datos de dispositivo por IMEI: El metodo soporta multiples IMEIS, Separe cada imei por coma (,). Maximo 100 IMEIS
+
+                            $adicionales['imeis'] = '869066062080354'; //El IMEI deberá corresponder a una unidad registrada
+
+                            //Pasar el RFC de la empresa previamente configurada
+                            $credenciales = JimiGpsTrait::getAuthenticationCredentials('AECC890930E41'); 
+                            
+                            $data = ($credenciales['success']) 
+                            ? JimiGpsTrait::callGpsApi('jimi.device.location.get',$credenciales['accessAccount'],$adicionales)
+                            : []
+                            ;
+                          // $ubicacion = $this->detalleDispositivo($imei);
                            $tipoGpsresponse="jimi";
                             break;
+
+                        case 'https://alxdevelopments.com':
+                            $credenciales = CommonGpsTrait::getAuthenticationCredentials('AECC890930E41',3);
+                            $data = ($credenciales['success']) ? LegoGps::getLocation($credenciales['accessAccount']) : [];
+
+                        break;
 
                          default:
                              $ubicacion =[
