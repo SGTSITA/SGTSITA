@@ -60,9 +60,16 @@ async function whatsAppConversations(id){
     }
 }
 
-async function whatsAppSendMessage(id){
+async function whatsAppSendMessage(id, contacts, message, files = []){
     try {
-        const response = await fetch(`http://localhost:3000/whatsapp/${id}/messages/send`);
+        let datamessage = {message: message, groupName: contacts, files: files};
+        const response = await fetch(`http://localhost:3000/whatsapp/${id}/messages/send`,{
+            method: 'POST', // Specify the HTTP method as POST
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(datamessage)
+        });
         
         if (!response.ok) { // 'response.ok' es true para status 200-299
             // Si el servidor envía un error HTTP (ej. 404, 500), lanza un error para que lo capture el 'catch'

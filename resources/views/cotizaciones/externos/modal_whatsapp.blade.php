@@ -232,8 +232,8 @@
             <!--end::Title-->
             <!--begin::Title-->
             <div class="d-flex">
-              <input id="kt_whatsapp-files_link_input" type="text" placeholder="Escriba un mensaje..." class="form-control form-control-solid me-3 flex-grow-1" name="waMessage" />
-              <button id="kt_whatsapp-" class="btn btn-primary flex-shrink-0">
+              <input id="kt_whatsapp_text_input" type="text" placeholder="Escriba un mensaje..." class="form-control form-control-solid me-3 flex-grow-1" name="waMessage" />
+              <button id="kt_whatsapp" class="btn btn-primary flex-shrink-0">
               <i class="ki-duotone ki-whatsapp following fs-3">
                   <span class="path1"></span>
                   <span class="path2"></span>

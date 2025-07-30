@@ -224,6 +224,9 @@
       }
     }, 5000);
 
+    let waTagify = null
+    let btnSendWhatsApp = document.querySelector('#kt_whatsapp')
+    let textMessageWhatsApp = document.querySelector("#kt_whatsapp_text_input")
     setInterval(async() => {
       if(waStatus == "ready" && waContacts.length == 0){
         var waConversations = await whatsAppConversations({{auth()->user()->id}})
@@ -232,9 +235,51 @@
           let participants = c.participants
           waContacts = [...waContacts,{value: c.id, name: c.name, avatar: null, email: (!c.isGroup) ? c.id : `Grupo de WhatsApp: ${participants.length} miembros`}]
         })
-       let waTagify = tagifyInit(waContacts)
+        waTagify = tagifyInit(waContacts)
       }
     }, 5000);
+
+    async function sendWhatsApp(){
+      let usersWhatsApp = waTagify.value
+      if(usersWhatsApp.length == 0){
+        Swal.fire('Seleccione contacto','Por favor selecciona al menos un contacto','warning');
+        return false;
+      }
+
+      if(textMessageWhatsApp.value.length == 0){
+        Swal.fire('Escribir mensaje','Por favor escribe un mensaje para el contacto','warning');
+        return false;
+      }
+
+      var sendingMessage = await whatsAppSendMessage(26,usersWhatsApp[0].name,textMessageWhatsApp.value)
+      if(sendingMessage.status === 'Mensaje enviado'){
+        waTagify.removeAllTags();
+        textMessageWhatsApp.value = ''
+        toastr.options = {
+                "closeButton": true,
+                "debug": false,
+                "newestOnTop": false,
+                "progressBar": true,
+                "positionClass": "toastr-bottom-center",
+                "preventDuplicates": false,
+                "onclick": null,
+                "showDuration": "1500",
+                "hideDuration": "1000",
+                "timeOut": "5000",
+                "extendedTimeOut": "1000",
+                "showEasing": "swing",
+                "hideEasing": "linear",
+                "showMethod": "fadeIn",
+                "hideMethod": "fadeOut"
+              };
+              
+              toastr.success( `El mensaje WhatsApp se envió correctamente a los contactos seleccionados `,`Mensaje Enviado`);
+      } 
+
+
+    }
+
+    btnSendWhatsApp.addEventListener('click',sendWhatsApp)
 
     @if($action=="editar")
     localStorage.setItem('numContenedor','{{$cotizacion->DocCotizacion->num_contenedor}}'); 
