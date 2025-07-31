@@ -90,17 +90,21 @@
       await getWaQr();
     }, 15000);
 
+    setInterval(() => {
+        if(waStatus != waStatusResponse){
+            waElements.forEach((el)=>{
+              el.classList.add('d-none')
+            });
+    
+            waStatus = waStatusResponse
+            statusMap[waStatusResponse]()
+          }
+    }, 4000);
+
     async function getWaQr(){
         var waStatusResponse = await whatsAppQrCode(waClient) || 'error';
 
-      if(waStatus != waStatusResponse){
-        waElements.forEach((el)=>{
-          el.classList.add('d-none')
-        });
-
-        waStatus = waStatusResponse
-        statusMap[waStatusResponse]()
-      }
+      
     }
 
     let waTagify = null
