@@ -163,6 +163,7 @@
 
 </div>
 
+@include('cotizaciones.externos.modal_whatsapp') 
 @endsection
 
 @push('javascript')
@@ -175,6 +176,7 @@
 <link href="/assets/metronic/fileuploader/jquery.fileuploader-theme-dragdrop.css" media="all" rel="stylesheet">
 <script src="/assets/metronic/fileuploader/jquery.fileuploader.min.js" type="text/javascript"></script>
 <script src="{{ asset('js/sgt/cotizaciones/cotizacion-fileuploader-preload.js') }}?v={{ filemtime(public_path('js/sgt/cotizaciones/cotizacion-fileuploader-preload.js')) }}"></script>
+<script src="{{ asset('js/sgt/common/tagify.js') }}?v={{ filemtime(public_path('js/sgt/common/tagify.js')) }}"></script>
 <script src="{{ asset('assets/metronic/fileuploader/cotizacion-cliente-externo.js')}}?v={{ filemtime(public_path('js/sgt/cotizaciones/cotizaciones.js')) }}" type="text/javascript"></script>
 
 <script>
@@ -200,12 +202,14 @@
 
     @if($action=="editar")
     localStorage.setItem('numContenedor','{{$cotizacion->DocCotizacion->num_contenedor}}'); 
+
     initFileUploader()
     
+    
     setTimeout(()=>{
-        document.getElementById('noticeFileUploader').classList.add('d-none')
         document.getElementById('fileUploaderContainer').classList.remove('d-none')
-    },3000);
+        document.getElementById('noticeFileUploader').classList.add('d-none')
+    },3800);
     @endif
 
     document.getElementById('num_contenedor').addEventListener('keydown', function(e) {

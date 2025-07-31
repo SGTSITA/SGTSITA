@@ -180,6 +180,18 @@ async function consultarArchivos(numContenedor) {
     }
   }
 
+function fileCheckTemplate(fileName, fileUrl){
+    return `<div class="d-flex justify-content-between m-5">
+    <div class="flex-grow-1">
+      <span class="fs-6 fw-semibold text-gray-800 d-block">${fileName}</span>
+    </div>
+    <label class="form-check form-switch form-check-solid">
+      <input class="form-check-input" type="checkbox" name="waFiles" data-wafile="${fileName}" value="${fileUrl}" checked="checked" />
+      <span class="form-check-label"> Adjuntar </span>
+    </label>
+  </div>`
+}
+
 async function initFileUploader(){
     var elementos = [
         {"opcion":"BoletaLib","titulo":"Boleta de Liberación","agGrid": "Boleta-de-liberacion", "mandatory": true},
@@ -192,16 +204,18 @@ async function initFileUploader(){
         
     ];
 
+    let waSendFiles = document.querySelector("#waSendFiles")
+    let itemTemplate = null
+
    for(const el of elementos){
         if(el.mandatory){
             fileSettings = el;
             numContenedor = localStorage.getItem('numContenedor'); 
             filesContenedor = await consultarArchivos(numContenedor)
+            //console.log(filesContenedor)
+            itemTemplate += fileCheckTemplate(filesContenedor.name,filesContenedor.file)
+            waSendFiles.innerHTML = itemTemplate
             adjuntarDocumentos(filesContenedor);
         }
    }
-
-   
-    
-    
 }
