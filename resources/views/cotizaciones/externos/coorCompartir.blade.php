@@ -3,7 +3,20 @@
 
 
 @section('WorkSpace')
-
+<style>
+     .loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 10; /* asegúrate que esté por encima del grid */
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.6); /* opcional para desenfoque */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+</style>
 <script>
     const idCliente = @json($idCliente);
 </script>
@@ -25,7 +38,8 @@
             <select id="optipoCuestionario" name="tipoCuestionario" class="form-control">
                 <option value="" disabled selected>Seleccione tipo</option>
                 <option value="b">Burrero</option>
-                
+                <option value="f">Foráneo</option>
+                <option value="c">Completo</option>
             </select>
         </div>
       <!-- Tabs -->

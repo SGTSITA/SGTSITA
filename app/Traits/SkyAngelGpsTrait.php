@@ -40,11 +40,6 @@ trait SkyAngelGpsTrait
 
             $endpoint = config('services.SkyAngelGps.url_base').'/unidades';
 
-           /* $accessToken = self::getAccessToken();
-
-            
-            */
-
             $headers = [
                 'Authorization' => $accessToken,
             ];

@@ -146,7 +146,7 @@
                                             <span class="menu-bullet">
                                                 <span class="bullet bullet-dot"></span>
                                             </span>
-                                            <span class="menu-title">Mapas</span>
+                                            <span class="menu-title">Punto de verificación</span>
                                         </a>
                                     </div>
                                     <div class="menu-item">
@@ -154,7 +154,7 @@
                                             <span class="menu-bullet">
                                                 <span class="bullet bullet-dot"></span>
                                             </span>
-                                            <span class="menu-title">Busqueda</span>
+                                            <span class="menu-title">Bitácora de Verificación</span>
                                         </a>
                                     </div>
                                     <div class="menu-item">
@@ -162,7 +162,7 @@
                                             <span class="menu-bullet">
                                                 <span class="bullet bullet-dot"></span>
                                             </span>
-                                            <span class="menu-title">Compartir Coordenadas</span>
+                                            <span class="menu-title">Compartir Cuestionarios</span>
                                         </a>
                                     </div>
                                     <div class="menu-item">
@@ -181,14 +181,7 @@
                                             <span class="menu-title">Convoys Virtuales</span>
                                         </a>
                                         </div>
-                                        <div class="menu-item">
-                                        <a href="{{ route('exfind-convoy') }}" class="menu-link">
-                                            <span class="menu-bullet">
-                                            <span class="bullet bullet-dot"></span>
-                                            </span>
-                                            <span class="menu-title">Encontrar Convoys</span>
-                                        </a>
-                                    </div>
+                                      
                                 </div>
                             </div>
                                  <!--END coordenadas -->
@@ -221,13 +214,6 @@
                                     </div>
                                 </div>
                             </div>
-
-
-
-
-
-
-
 
 
                         </div>
@@ -351,8 +337,9 @@
                                 </form>
                             </div>
                             <div class="d-flex align-items-center ms-3 ms-lg-4">
+                                
                                 <a href="#"
-                                    class="btn btn-icon btn-color-gray-700 btn-active-color-primary btn-outline w-40px h-40px"
+                                    class="btn btn-icon btn-color-gray-700 btn-active-color-primary btn-outline w-40px h-40px ml-3"
                                     data-kt-menu-trigger="{default:'click', lg: 'hover'}" data-kt-menu-attach="parent"
                                     data-kt-menu-placement="bottom-end">
                                     <i class="ki-duotone ki-night-day theme-light-show fs-1">
@@ -422,6 +409,15 @@
                                     </div>
                                 </div>
                             </div>
+                            <div class="d-flex align-items-center ms-3 ms-lg-4">
+                            <a href="#" id ="waIconStatus" class="btn  btn-color-gray-700 btn-active-color-primary btn-outline  h-40px" >
+                                    <i class="ki-duotone ki-whatsapp  fs-1">
+                                        <span class="path1"></span>
+                                        <span class="path2"></span> 
+                                    </i>
+                                    <span class="fs-8 text-dark" id="waTextStatus">...</span>
+                                </a>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -452,6 +448,9 @@
             </div>
         </div>
     </div>
+
+    @include('cotizaciones.externos.modal_whatsapp_login') 
+
     <div id="kt_scrolltop" class="scrolltop" data-kt-scrolltop="true">
         <i class="ki-duotone ki-arrow-up">
             <span class="path1"></span>
@@ -461,18 +460,26 @@
 
     <script>
         var hostUrl = "/assets/metronic/";
+        var waClient = {{auth()->user()->id}}
+        var waHost = "{{env('WHATSAPP_HOST')}}"
+        
     </script>
     <script src="/assets/metronic/plugins/global/plugins.bundle.js"></script>
     <script src="/assets/metronic/js/scripts.bundle.js"></script>
     <script src="/assets/metronic/plugins/custom/datatables/datatables.bundle.js"></script>
     <script src="/assets/metronic/js/widgets.bundle.js"></script>
     <script src="/assets/metronic/js/custom/widgets.js"></script>
+    <script src="/js/sgt/common/whatsAppClient.js"></script>
     <script>
         $(document).ready(() => {
             var genericUUID = localStorage.getItem('uuid');
             if (genericUUID == null) {
                 genericUUID = generateUUID();
                 localStorage.setItem('uuid', genericUUID);
+            }
+
+            if(waStatus === 'ready'){
+              waReadyComponents()
             }
         })
     </script>
