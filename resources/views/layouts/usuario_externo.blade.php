@@ -478,6 +478,8 @@
                 localStorage.setItem('uuid', genericUUID);
             }
 
+            await getWaQr();
+
             if(waStatus === 'ready'){
               waReadyComponents()
             }
