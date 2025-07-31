@@ -1,4 +1,4 @@
-<div class="modal fade" id="kt_modal_whatsapp-files" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="kt_modal_whatsapp_login" tabindex="-1" aria-hidden="true">
   <!--begin::Modal dialog-->
   <div class="modal-dialog modal-dialog-centered mw-800px">
     <!--begin::Modal content-->
@@ -22,7 +22,7 @@
           <!--begin::Heading-->
           <div class="mb-13 text-center">
             <!--begin::Title-->
-            <h1 class="mb-3">Compartir archivos</h1>
+            <h1 class="mb-3">Conectar WhatsApp</h1>
             <!--begin::Description-->
             <div class="text-muted fw-semibold fs-5"> Envía documentos por <a href="#" class="link-primary fw-bold">WhatsApp</a> con un solo clic, rápido y seguro. </div>
             <!--end::Description-->
@@ -189,25 +189,39 @@
           </div>
           <!--end::Heading-->
           <!--seccion select archivos. begin::Input group-->
-          <div id="whatsAppMessageCompose" class="waElements">
+          <div id="whatsAppMessageComposeGeneral" class="waElementsGeneral d-none">
 
           <label class="form-label">Enviar a:</label>
           <input class="form-control d-flex align-items-center" value="" placeholder="Escribe aquí para buscar contactos..." id="kt_tagify_users" />
-          <div class="overflow-auto mt-10 border border-dashed border-gray-300 rounded" id="waSendFiles">
-            <div class="notice d-flex bg-light-primary rounded border-primary border border-dashed mt-10 p-6 " id="filesNotice">
-                
-                <div class="d-flex flex-stack flex-grow-1 ">
-                    
-                    <div class=" fw-semibold">
-                            <div class="fs-6 text-gray-700 ">
-                              <span class="fw-bold me-1">No hay documentos</span>  
-                              Por el momento no se pueden enviar archivos porque aún<span class="fw-bold me-1"> no han sido cargados</span> al contenedor
-                            </div>
-                    </div>
-                    
-                </div>
-             
+          <div class="overflow-auto mt-10 border border-dashed border-gray-300 rounded ">
+          
+          <div class="d-flex justify-content-between m-5">
+            <!--begin::Label-->
+            <div class="flex-grow-1">
+              <span class="fs-6 fw-semibold text-gray-800 d-block">CCP - Carta Porte</span>
             </div>
+            <!--end::Label-->
+            <!--begin::Switch-->
+            <label class="form-check form-switch form-check-solid">
+              <input class="form-check-input" type="checkbox" value="1" checked="checked" />
+              <span class="form-check-label"> Adjuntar </span>
+            </label>
+            <!--end::Switch-->
+          </div>
+          
+          <div class="d-flex justify-content-between m-5">
+            <!--begin::Label-->
+            <div class="flex-grow-1">
+              <span class="fs-6 fw-semibold text-gray-800 d-block">Boleta de liberación</span>
+            </div>
+            <!--end::Label-->
+            <!--begin::Switch-->
+            <label class="form-check form-switch form-check-solid">
+              <input class="form-check-input" type="checkbox" value="1" checked="checked" />
+              <span class="form-check-label"> Adjuntar </span>
+            </label>
+            <!--end::Switch-->
+          </div>
           </div>
           
           <!--seccion select archivos. end::Input group-->

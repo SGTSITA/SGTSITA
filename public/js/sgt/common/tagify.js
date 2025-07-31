@@ -93,3 +93,4 @@ function tagifyInit(usersList){
 
     return tagify;
 }
+
