@@ -976,7 +976,7 @@
                                                         <span class="mb-2 text-md">
                                                             Operador: 
                                                             <span class="text-dark font-weight-bold ms-2">
-                                                            {{$documentacion->Asignaciones->Operador->nombre}}
+                                                            {{$documentacion->Asignaciones?->Operador?->nombre}}
                                                             </span>
                                                         </span>
 
