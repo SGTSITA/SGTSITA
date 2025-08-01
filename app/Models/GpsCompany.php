@@ -12,11 +12,16 @@ class GpsCompany extends Model
     protected $table = 'gps_company';
 
     protected $fillable = [
-    'nombre',
-    'url',
-    'url_conexion',
-    'telefono',
-    'correo',
-    'contacto'
-];
+        'nombre',
+        'url',
+        'url_conexion',
+        'telefono',
+        'correo',
+        'contacto'
+    ];
+
+    public function serviciosGps()
+    {
+        return $this->hasMany(ServicioGps::class, 'id_gps_company');
+    }
 }

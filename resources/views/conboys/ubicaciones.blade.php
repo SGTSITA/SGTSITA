@@ -20,6 +20,18 @@
     font-size: 1.1rem;
     color: #007bff;
 }
+.loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 10; /* asegúrate que esté por encima del grid */
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.6); /* opcional para desenfoque */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
 </style>
 
 
