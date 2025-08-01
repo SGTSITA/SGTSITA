@@ -944,13 +944,13 @@
                                 </div>
 
                                 @if ($cotizacion->estatus_planeacion == 1)
-                                    @if ($documentacion->Asignaciones->id_operador != NULL)
+                                    @if ($documentacion->Asignaciones->id_operador == NULL)
                                         <div class="tab-pane fade" id="nav-Proveedor" role="tabpanel" aria-labelledby="nav-Proveedor-tab" tabindex="0">
                                              
                                        <div class="row">
-                                       @if ($documentacion->num_contenedor != NULL)
-                                                <label style="font-size: 20px;">Num contenedor:  {{$documentacion->num_contenedor}} </label>
-                                            @endif
+                                       
+                                                <label style="font-size: 20px;">Num contenedor:  {{$documentacion?->num_contenedor}} </label>
+                                           
                                        </div>
                                             <div class="row">
                                                 <ul class="list-group">
