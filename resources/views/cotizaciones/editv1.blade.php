@@ -964,7 +964,9 @@
                                                                     <option value="">Seleccionar Proveedor</option>
                                                                     @if(!is_null($proveedores))
                                                                     @foreach($proveedores as $p)
-                                                                    <option value="{{$p->id}}" @if($p->id == $documentacion->Asignaciones->Proveedor->id) selected @endif>{{$p->nombre}}</option>
+                                                                    <option value="{{$p->id}}" 
+                                                                     @if($p->id == $documentacion->Asignaciones?->Proveedor?->id) selected @endif>
+                                                                    {{$p->nombre}}</option>
                                                                     @endforeach
                                                                     @endif
                                                                 </select>
