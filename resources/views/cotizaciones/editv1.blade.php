@@ -962,9 +962,11 @@
                                                             <span class="text-dark font-weight-bold ms-2">
                                                                 <select class="form-select bg-transparent cliente d-inline-block"  data-toggle="select" id="id_proveedor" name="id_proveedor">
                                                                     <option value="">Seleccionar Proveedor</option>
+                                                                    @if(!is_null($proveedores))
                                                                     @foreach($proveedores as $p)
                                                                     <option value="{{$p->id}}" @if($p->id == $documentacion->Asignaciones->Proveedor->id) selected @endif>{{$p->nombre}}</option>
                                                                     @endforeach
+                                                                    @endif
                                                                 </select>
                                                             </span>
                                                         </span>
