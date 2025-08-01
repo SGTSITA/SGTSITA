@@ -962,13 +962,13 @@
                                                             <span class="text-dark font-weight-bold ms-2">
                                                                 <select class="form-select bg-transparent cliente d-inline-block"  data-toggle="select" id="id_proveedor" name="id_proveedor">
                                                                     <option value="">Seleccionar Proveedor</option>
-                                                                    @if(!is_null($proveedores))
+                                                                   
                                                                     @foreach($proveedores as $p)
                                                                     <option value="{{$p->id}}" 
                                                                      @if($p->id == $documentacion->Asignaciones?->Proveedor?->id) selected @endif>
                                                                     {{$p->nombre}}</option>
                                                                     @endforeach
-                                                                    @endif
+                                                                
                                                                 </select>
                                                             </span>
                                                         </span>
@@ -995,7 +995,7 @@
                                                             </span>
                                                             GPS:
                                                             <span class="text-dark font-weight-bold ms-2">
-                                                            {{ optional(optional(optional($documentacion->Asignaciones)->Camion)->gps)->nombre }} / {{$documentacion->Asignaciones->Camion->imei}}
+                                                            {{ optional(optional(optional($documentacion->Asignaciones)->Camion)->gps)->nombre }} / {{$documentacion->Asignaciones?->Camion?->imei}}
                                                             </span>
                                                         </span>
 
@@ -1152,7 +1152,7 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        @elseif ($documentacion->Asignaciones->id_proveedor == NULL)
+                                        @elseif (is_null($documentacion->Asignaciones->id_proveedor ))
                                         <div class="tab-pane fade" id="nav-GastosOpe" role="tabpanel" aria-labelledby="nav-GastosOpe-tab" tabindex="0">
                                             <div class="col-sm-12">
                                                 <div class="card card-body" id="profile">
