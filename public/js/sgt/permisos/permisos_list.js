@@ -10,23 +10,20 @@ const gridOptions = {
             width: 40
         },
         { headerName: "ID", field: "id", width: 80 },
-        { headerName: "Nombre", field: "description", flex: 2 },
-        { headerName: "Nombre", field: "name", flex: 1 },
-        { headerName: "Módulo", field: "modulo", flex: 1 },
+        { headerName: "Nombre", field: "description", width: 300 },
+        { headerName: "Módulo", field: "modulo", width: 180 },
         {
             headerName: "Sistema",
             field: "sistema",
-            flex: 1,
+            width: 120,
             cellRenderer: (params) => `
         <span class="badge bg-secondary">${params.value || '-'}</span>
     `
         },
-        { headerName: "Permiso", field: "name", flex: 1 },
-
-        { headerName: "Descripción", field: "description", flex: 2 },
+        { headerName: "Permiso", field: "name", width: 180 },
         {
             headerName: "Acciones",
-            width: 140,
+            width: 240,
             cellRenderer: (params) => `
                 <div class="d-flex justify-content-center gap-2">
                     <button type="button" class="btn btn-sm btn-primary" onclick="event.stopPropagation(); abrirModalEditarPermiso(${params.data.id})">
