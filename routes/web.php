@@ -11,6 +11,7 @@ use App\Http\Controllers\EmpresasController;
 use App\Http\Controllers\ExternosController;
 use App\Http\Controllers\CuentaGlobalController;
 use App\Http\Controllers\GoogleLinkResolverController;
+use App\Http\Controllers\MEP\CostosViajeMEPController;
 
 use App\Http\Controllers\WhatsAppController;
 
@@ -509,3 +510,12 @@ Route::get('/contactos/editar/{id}', [App\Http\Controllers\ContactoController::c
 
 // Permisos
 Route::put('/permisos/{id}/editar-json', [App\Http\Controllers\PermisosController::class, 'updateAjax'])->name('permisos.update.ajax');
+
+
+
+
+Route::get('costos/mep/', [App\Http\Controllers\MEP\CostosViajeMEPController::class, 'index'])->name('index.costos_mep');
+Route::get('costos/mep/data', [App\Http\Controllers\MEP\CostosViajeMEPController::class, 'getCostosViajes'])->name('data.costos_mep');
+Route::post('costos/mep/guardar-cambio', [App\Http\Controllers\MEP\CostosViajeMEPController::class, 'guardarCambio'])->name('guardar_cambio.costos_mep');
+Route::get('costos/mep/pendientes',[App\Http\Controllers\MEP\CostosViajeMEPController::class, 'getPendientes'])->name('pendientes.costos_mep');
+Route::get('costos/mep/pendientes/vista', [App\Http\Controllers\MEP\CostosViajeMEPController::class, 'vistaPendientes'])->name('vista_pendientes.costos_mep');

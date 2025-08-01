@@ -159,6 +159,18 @@
                     </a>
                 </li>
             @endcan
+            @can('costos-viaje-mep')
+                <li class="nav-item">
+                    <a class="nav-link {{ Request::is('costos/mep*') ? 'active' : '' }}"
+                        href="{{ route('index.costos_mep') }}" target="">
+                        <div
+                            class="icon icon-shape icon-sm text-center me-2 d-flex align-items-center justify-content-center">
+                            <img src="{{ asset('img/icon/dinero-camion.webp') }}" alt="" width="20px">
+                        </div>
+                        <span class="nav-link-text ms-1"><b>MEP</b> Costos de viaje</span>
+                    </a>
+                </li>
+            @endcan
 
             @can('bancos-list')
                 <li class="nav-item">
@@ -339,15 +351,15 @@
                     </ul>
                 </div>
                 <!--li class="nav-item">
-                                                        <a class="nav-link {{ Request::is('liquidaciones*') ? 'active' : '' }}"
-                                                            href="{{ route('index.liquidacion') }}" target="">
-                                                            <div
-                                                                class="icon icon-shape icon-sm text-center  me-2 d-flex align-items-center justify-content-center">
-                                                                <img src="{{ asset('img/icon/pago-en-efectivo.png') }}" alt="" width="20px">
-                                                            </div>
-                                                           
-                                                        </a>
-                                                    </li-->
+                                                                <a class="nav-link {{ Request::is('liquidaciones*') ? 'active' : '' }}"
+                                                                    href="{{ route('index.liquidacion') }}" target="">
+                                                                    <div
+                                                                        class="icon icon-shape icon-sm text-center  me-2 d-flex align-items-center justify-content-center">
+                                                                        <img src="{{ asset('img/icon/pago-en-efectivo.png') }}" alt="" width="20px">
+                                                                    </div>
+                                                                   
+                                                                </a>
+                                                            </li-->
             @endcan
             @can('coordenadasv')
                 <a data-bs-toggle="collapse" href="#pagesExamplesCoordenadas"
@@ -364,9 +376,9 @@
                     <ul class="nav ms-4">
                         <li class="nav-item ">
                             <a class="nav-link {{ Request::is('coordenadas/mapas') ? 'show' : '' }}"
-                                href="{{  route('ver.coordenadamapa')  }}">
+                                href="{{ route('ver.coordenadamapa') }}">
                                 <span class="sidenav-mini-icon"> S</span>
-                                <span class="sidenav-normal">Punto de verificación</span> 
+                                <span class="sidenav-normal">Punto de verificación</span>
                                 {{-- <span class="sidenav-normal">Coordenadas por Pregunta</span> --}}
                             </a>
                             <a class="nav-link {{ Request::is('coordenadas/busqueda') ? 'show' : '' }}"
@@ -374,18 +386,18 @@
                                 <span class="sidenav-mini-icon"> B</span>
                                 <span class="sidenav-normal">Bitácora de Verificación</span>
                                 {{-- <span class="sidenav-normal">Estatus Respuestas</span> --}}
-                            </a> 
+                            </a>
                             <a class="nav-link {{ Request::is('coordenadas/rastrear') ? 'show' : '' }}"
                                 href="{{ route('rastrearContenedor') }}">
                                 <span class="sidenav-mini-icon"> R </span>
                                 <span class="sidenav-normal">Rastrear Viajes</span>
-                            </a>    
+                            </a>
                             <a class="nav-link {{ Request::is('coordenadas/conboys') ? 'show' : '' }}"
                                 href="{{ route('index.conboys') }}">
                                 <span class="sidenav-mini-icon"> C </span>
                                 <span class="sidenav-normal">Convoys Virtuales</span>
-                            </a>  
-                             {{-- <a class="nav-link {{ Request::is('coordenadas/conboys') ? 'show' : '' }}"
+                            </a>
+                            {{-- <a class="nav-link {{ Request::is('coordenadas/conboys') ? 'show' : '' }}"
                                 href="{{ route('find-convoy') }}">
                                 <span class="sidenav-mini-icon"> E </span>
                                 <span class="sidenav-normal">Encontrar Convoys</span>
@@ -458,17 +470,17 @@
                     @endcan
 
                     <!-- @can('usuarios-empresas')
-                        <li class="nav-item ">
-                            <a class="nav-link {{ Request::is('usuarios-empresas*') ? 'show' : '' }}"
-                                href="{{ route('Usuarios-empresas.index') }}">
-                                <span class="sidenav-mini-icon"> P </span>
-                                <span class="sidenav-normal">Usuarios Empresas </span>
-                            </a>
-                        </li>
-                    @endcan -->
+    <li class="nav-item ">
+                                    <a class="nav-link {{ Request::is('usuarios-empresas*') ? 'show' : '' }}"
+                                        href="{{ route('Usuarios-empresas.index') }}">
+                                        <span class="sidenav-mini-icon"> P </span>
+                                        <span class="sidenav-normal">Usuarios Empresas </span>
+                                    </a>
+                                </li>
+@endcan -->
 
 
-                    
+
 
                     <!-- Nueva opción de Correo -->
                     <li class="nav-item ">
