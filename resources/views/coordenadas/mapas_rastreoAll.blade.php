@@ -1,76 +1,13 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Rastreo</title>
+    <title>Rastreo Varios</title>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
 
-    <style>
-        html, body {
-    height: 100%;
-    margin: 0;
-    padding: 0;
-}
-
-#mapaRastreo {
-  height: 100vh; 
-  position: relative;
-}
-     #info table {
-    width: 100%;
-    border-collapse: collapse;
-    box-shadow: 0 0 10px rgba(0,0,0,0.05);
-    font-family: 'Segoe UI', sans-serif;
-    font-size: 14px; /* Más pequeña */
-}
-
-#info th, #info td {
-    border: 1px solid #dee2e6;
-    padding: 6px 8px; /* Menos padding = menos altura */
-    text-align: center;
-    line-height: 1.2; /* Más compacto verticalmente */
-}
-
-#info thead {
-    background-color: #0d6efd;
-    color: white;
-}
-
-#info tbody td span {
-    font-weight: 400;
-}
-
-#info tr:nth-child(even) {
-    background-color: #f8f9fa;
-}
-   .btn-toggle {
-      background-color: #f44366;
-      color: white;
-      font-weight: bold;
-      padding: 10px 20px;
-      border: none;
-      border-radius: 50px;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 14px;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-      transition: background-color 0.2s ease;
-    }
-
-    .btn-toggle:hover {
-      background-color: #d63455;
-    }
-
-    .btn-toggle i {
-      font-size: 16px;
-    }
-  
-    </style>
      <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" 
@@ -81,54 +18,62 @@
 </head>
 <body>
 
-    <div id="info" class="shadow" style="
-    position: absolute;
-    top: 5px;
-    left: 35%;
-    background: rgba(255, 255, 255, 0.95);
-    border-radius: 10px;
-    padding: 5px;
-    z-index: 999;
-    width: 750px;
-    max-width: 90%;
-">
-    <div class="table-responsive">
-        <table class="table table-bordered align-middle text-center shadow-sm mb-0">
-            <thead class="table-primary">
-                <tr>
-                   {{-- <th>Distancia</th> --}}
-                   <th>Tipo</th>
-                   <th>Contenedores</th>
-                   <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                  {{-- <td><span id="distanciaSpan" class="fw-semibold"></span></td> --}}
-                    <td><span id="tipoSpan" class="fw-semibold"></span></td>
-                    <td><span id="contenedorSpan" class="fw-semibold"></span></td>
-                    <td>
-                        <button id="btnDetener" class="btn btn-sm btn-secondary mb-1" style="display: none;">
-                            <i class="bi bi-pause-circle"></i>
-                        </button>
-                        <a href="{{ route('HistorialUbicaciones') }}" class="btn btn-sm btn-warning" target="_blank" rel="noopener noreferrer">
-                            <i class="bi bi-clock-history me-1"></i>
-                        </a>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
+<div class="container-fluid">
+    <div class="row">
+        @foreach ($conboys as $conboy)
+       
+            <div class="col-12 col-md-6 p-2">
+                <div class="card shadow-sm">
+                    <div id="info-{{ $conboy->id }}" class="shadow" style="
+                        position: absolute;
+                        top: 1px;left: 25%;
+                        background: rgba(255, 255, 255, 0.95);
+                        border-radius: 10px;
+                        padding: 5px;z-index: 999;
+                        width: 500px;max-width: 90%;">
+                        <div class="table-responsive">
+                            <table class="table table-bordered align-middle text-center shadow-sm mb-0">
+                                <thead class="table-primary">
+                                    <tr>
+                                      {{-- <th>Distancia</th> --}}
+                                      <th>Tipo</th>
+                                      <th>Contenedores</th>
+                                      <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                      {{-- <td><span id="distanciaSpan-{{ $conboy->id }}" class="fw-semibold"></span></td> --}}
+                                        <td><span id="tipoSpan-{{ $conboy->id }}" class="fw-semibold"></span></td>
+                                        <td><span id="contenedorSpan-{{ $conboy->id }}" class="fw-semibold"></span></td>
+                                        <td>
+                                            <button id="btnDetener-{{ $conboy->id }}" class="btn btn-sm btn-secondary mb-1" style="display: none;">
+                                                <i class="bi bi-pause-circle"></i>
+                                            </button>
+                                        
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div> 
+                    <div class="card-header">Convoy {{ $conboy->no_conboy }}</div>
+                    <div class="card-body p-0" style="height: 400px;">
+                        <div id="map-{{ $conboy->id }}" style="height: 100%;"></div>
+                    </div>
+                </div>
+            </div>
+
+                
+        @endforeach
     </div>
-</div>
 
-    <div id="mapaRastreo"></div>
-
-    <div class="modal fade" id="modalInfoViaje" tabindex="-1" aria-labelledby="modalInfoViajeLabel" aria-hidden="true">
+<div class="modal fade" id="modalInfoViaje" tabindex="-1" aria-labelledby="modalInfoViajeLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-lg">
     <div class="modal-content shadow-lg rounded-4">
       <div class="modal-header bg-primary text-white rounded-top-4">
         <h5 class="modal-title" id="modalInfoViajeLabel">
-          <i class="bi bi-truck-front-fill me-2"></i> Información del Viaje
+          <i class="bi bi-truck-front-fill me-2"></i> Información del Viaje 
         </h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
       </div>
@@ -143,48 +88,149 @@
     </div>
   </div>
 </div>
-
-
-
   <script src="{{ asset('assets/js/core/bootstrap.min.js')}}"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
         
         crossorigin="anonymous"></script>
+         <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAtAO2AZBgzC7QaBxnMnPoa-DAq8vaEvUc&libraries=geometry" async defer  onload="googleMapsReady()"></script>
     <script>
-let map;
-  let markers = [];
-let convoyDisuelto= false;
-  window.initMap = function() {
-  map = new google.maps.Map(document.getElementById("mapaRastreo"), {
-    center: { lat: 0, lng: 0 },
-    zoom: 2,
-  });
+      let ItemsSelectsPorConvoy = {};
+      let intervalIdsPorConvoy = {};
+      let markersConvoy = {};
+      let mapaAjustado = false;
+ let markers = [];
+      function googleMapsReady() {
+    
+            inicializarTodosLosMapas();
+        }
+ let convoysAll = @json($conboys);
+    let detalleConvoysAll = @json($conboysdetalleAll);
+    let datosALlContenedores = @json($datosAll);
 
-  const marker = new google.maps.Marker({
-    position: { lat: 0, lng: 0 },
-    map: map,
-  });
-};
+
+    let ItemsSelectsCompuesto = [];
+    let ItemsSelects =[];
+detalleConvoysAll.forEach(infoc => {
+    const convoyId = parseInt(infoc.conboy_id);
+    const idContenedor = parseInt(infoc.id_contenedor);
+
+   
+    const detalleContenedor = datosALlContenedores.find(dc => parseInt(dc.id_contenedor) === idContenedor);
+
   
+    if (detalleContenedor) {
+        const cod = infoc.no_conboy ?? '';
+        const nContenedor = infoc.num_contenedor ?? '';
+        const imei = infoc.imei ?? '';
+        const tipoGps = infoc.tipoGps ?? '';
 
-       const params = new URLSearchParams(window.location.search);
-      let detalleConvoys;
-      let convoysAll;
-let contenedoresDisponibles = [];
-let contenedoresDisponiblesAll =[];
-let mapaAjustado = false;
-let contador=0;
-let  detalleConvoysAll; 
-let intervalId = null;
-let ItemsSelects = [];
-let idConvoyOContenedor=0;
- const contenedor = params.get('contenedor')
- let tipoSpans = params.get('tipoS')
+        const cliente = detalleContenedor.cliente ?? '';
+        const origen = detalleContenedor.origen ?? '';
+        const destino = detalleContenedor.destino ?? '';
+
+        const conponerStrin = `${nContenedor}|${imei}|${idContenedor}|${tipoGps}`;
+
+        ItemsSelectsCompuesto.push({
+            convoy_id: convoyId,
+            imeisPeticion: conponerStrin,
+            cod,
+            imei,
+            idContenedor,
+            tipoGps,
+            cliente,
+            origen,
+            destino,
+            num_contenedor: infoc.num_contenedor ?? '',
+            tipo_contrato: detalleContenedor.tipo_contrato ?? '',
+            fecha_inicio: detalleContenedor.fecha_inicio ?? '',
+            fecha_fin: detalleContenedor.fecha_fin ?? ''
+        });
+    }
+});
+
+     function inicializarTodosLosMapas() {
+
+    @foreach ($conboys as $conboy)
+    ItemsSelectsPorConvoy[{{ $conboy->id }}] = [];
+    ItemsSelects.length  =0;
+    mapaAjustado = false;
+    convoyDisuelto = false; 
+    let mapDiv{{ $conboy->id }} = document.getElementById('map-{{ $conboy->id }}')
+        const map{{ $conboy->id }} = new google.maps.Map(mapDiv{{ $conboy->id }}, {
+            center: {
+                lat: {{ $conboy->latitud ?? 0 }},
+                lng: {{ $conboy->longitud ?? 0 }}
+            },
+            zoom: 12
+        });
 
 
- function textoTipo(){
-let extraertipo = tipoSpans.replace(/Convoy\s*:\s*/, '').trim();
-let tipoDisolucion = convoysAll.find(c => c.no_conboy === extraertipo)?.tipo_disolucion ?? null;
+   
+        let convoyLocal{{ $conboy->id }}  = ItemsSelectsCompuesto.filter(c=> c.convoy_id ==={{ $conboy->id }});
+
+        if(convoyLocal{{ $conboy->id }}){
+       let rawsStrings{{ $conboy->id }} = convoyLocal{{ $conboy->id }}.map(c => c.imeisPeticion);
+    ItemsSelectsPorConvoy[{{ $conboy->id }}].push(...rawsStrings{{ $conboy->id }});
+        //  ItemsSelects.push(...rawsStrings{{ $conboy->id }});
+          let convoySeleccionado{{ $conboy->id }} = convoysAll.find(c => c.id === {{ $conboy->id }});
+       let tipoDisolucion{{ $conboy->id }}=  convoySeleccionado{{ $conboy->id }}.tipo_disolucion;
+
+
+
+        actualizarUbicacion(ItemsSelectsPorConvoy[{{ $conboy->id }}],"",{{ $conboy->id }},tipoDisolucion{{ $conboy->id }},convoySeleccionado{{ $conboy->id }}.no_conboy,map{{ $conboy->id }} );
+        
+
+        document.getElementById('btnDetener-{{ $conboy->id }}').style.display = 'inline-block';
+
+
+
+
+        //evento detener/reanudar
+        if (document.getElementById('btnDetener-{{ $conboy->id }}')) {
+          document.getElementById('btnDetener-{{ $conboy->id }}').addEventListener('click', function() {
+              const icon = this.querySelector('i');
+
+              if (intervalIdsPorConvoy[{{ $conboy->id }}]) {
+                  clearInterval(intervalIdsPorConvoy[{{ $conboy->id }}]);
+                 intervalIdsPorConvoy[{{ $conboy->id }}] = null;
+
+                  this.innerHTML = '<i class="bi bi-play-circle"></i> Reanudar actualización';
+                  console.log('⛔ Actualización detenida.');
+              } else {
+                  actualizarUbicacion(ItemsSelectsPorConvoy[{{ $conboy->id }}],"",{{ $conboy->id }},tipoDisolucion{{ $conboy->id }},convoySeleccionado{{ $conboy->id }}.no_conboy,map{{ $conboy->id }} );
+
+                  intervalIdsPorConvoy[{{ $conboy->id }}] = setInterval(() => {
+                      actualizarUbicacion(ItemsSelectsPorConvoy[{{ $conboy->id }}],"",{{ $conboy->id }},tipoDisolucion{{ $conboy->id }},convoySeleccionado{{ $conboy->id }}.no_conboy,map{{ $conboy->id }} );
+                  }, 5000);
+
+                  this.innerHTML = '<i class="bi bi-pause-circle"></i> Detener actualización';
+                  console.log('✅ Reanudando actualización...');
+              }
+          });
+      }
+
+                if (intervalIdsPorConvoy[{{ $conboy->id }}]) {
+               clearInterval(intervalIdsPorConvoy[{{ $conboy->id }}]);
+             }
+
+        intervalIdsPorConvoy[{{ $conboy->id }}] = setInterval(() => {
+         actualizarUbicacion(ItemsSelectsPorConvoy[{{ $conboy->id }}],"",{{ $conboy->id }},tipoDisolucion{{ $conboy->id }},convoySeleccionado{{ $conboy->id }}.no_conboy,map{{ $conboy->id }} );
+          }, 5000);
+                
+        } // final validar convoy local
+
+
+
+
+
+        
+    @endforeach
+};
+
+function textoTipo(idConvoy,disolucion,num_convoy){
+
+
+let tipoDisolucion = disolucion
 let textoTipo = '';
 
 switch (tipoDisolucion) {
@@ -201,12 +247,17 @@ switch (tipoDisolucion) {
         textoTipo = '';
 }
 
- document.getElementById('tipoSpan').textContent = tipoSpans ;
+ document.getElementById('tipoSpan-'+idConvoy ).textContent = "Convoy :" + num_convoy ;
  }
- function actualizarUbicacion(imeis,t) {
-
-textoTipo();
- document.getElementById('contenedorSpan').textContent = contenedor;
+ function actualizarUbicacion(imeis,t,idConvoy,disolucion,num_convoy,map) {
+  console.log('obteniendo ubicacion convoy :', idConvoy);
+  let tipoSpans = document.getElementById('tipoSpan-'+idConvoy );
+let contenedorLocal  = ItemsSelectsCompuesto.filter(c=> c.convoy_id ===idConvoy );
+let contenedoresUnidos = contenedorLocal
+    .map(c => c.num_contenedor)
+    .join(' / ');
+textoTipo(idConvoy,disolucion,num_convoy);
+ document.getElementById('contenedorSpan-'+idConvoy ).textContent = contenedoresUnidos;
 let tipo = "";
 
     let responseOk = false;
@@ -222,9 +273,9 @@ let tipo = "";
   .then(data => {
     //console.log('Ubicaciones recibidas:', data);
     const dataUbi= data;
-
+  console.log('obteniendo unicacion convoy, sucess data :', idConvoy);
 //limpiarMarcadores();
-responseOk = true;
+  responseOk = true;
     if (Array.isArray(dataUbi)) {
       dataUbi.forEach((item, index) => {
         tipo= item.tipogps;
@@ -233,9 +284,9 @@ responseOk = true;
         let nEconomico='';
         let id_contenConvoy ='';
 
-
-           let extraertipoC = tipoSpans.replace(/Convoy\s*:\s*/, '').trim();
-          let datosGeocerca = convoysAll.find(c => c.no_conboy === extraertipoC)
+          console.log('For response ... :', idConvoy);
+ 
+          let datosGeocerca = convoysAll.find(c => c.no_conboy === num_convoy)
          
        
  latlocal =parseFloat( item.ubicacion.lat);
@@ -244,11 +295,11 @@ responseOk = true;
 
           if(datosGeocerca ) {
 
-          actualizarMapa(latlocal, lnglocal,datosGeocerca)
+          actualizarMapa(latlocal, lnglocal,datosGeocerca,idConvoy,map)
           }
-           if (markers[item.ubicacion.imei]) {
+           if (markers[item.ubicacion.imei+idConvoy]) {
     
-                markers[item.ubicacion.imei].setPosition({ lat: latlocal, lng: lnglocal });
+                markers[item.ubicacion.imei+idConvoy].setPosition({ lat: latlocal, lng: lnglocal });
         } else {
 if (latlocal && lnglocal) {
           
@@ -269,7 +320,7 @@ if (latlocal && lnglocal) {
                     max-width: 240px;
                   ">
               <div style="font-weight: bold; font-size: 17px; margin-bottom: 6px;">
-                ${tipoSpans}
+                <strong>Convoy:</strong> ${num_convoy}
               </div>
               <div style="font-size: 17px; line-height: 1.5;">
                 <strong>Equipo:</strong> ${item.EquipoBD}<br>
@@ -290,7 +341,7 @@ if (latlocal && lnglocal) {
         
            newMarker.addListener('click', () => {
             const contenedor = item.contenedor;
-             let info = contenedoresDisponibles.find(d => d.contenedor === contenedor);
+             let info = ItemsSelectsCompuesto.find(d => d.num_contenedor === contenedor);
                 if (!info) {
                   if (tipoSpans.toLowerCase().includes('convoy')) {
                      info = contenedoresDisponiblesAll.find(d => d.contenedor === contenedor);
@@ -346,7 +397,7 @@ if (latlocal && lnglocal) {
         //   map.setCenter({ lat: latlocal, lng: lnglocal });
         // map.setZoom(15);
         // }  
-        markers[item.ubicacion.imei] = newMarker;
+        markers[item.ubicacion.imei+idConvoy] = newMarker;
           if (!mapaAjustado) {
               const bounds = new google.maps.LatLngBounds();
                Object.values(markers).forEach(marker => bounds.extend(marker.getPosition()));
@@ -386,81 +437,11 @@ if (latlocal && lnglocal) {
     detener();
   });
 }
-cargarinicial();
-
-function limpiarMarcadores() {
-     markers.forEach(marker => marker.setMap(null)); 
-    markers = [];
-    
-}
-
-
-function cargarinicial() {
-    fetch(`/coordenadas/contenedor/searchEquGps?`)
-        .then(response => response.json())
-        .then(data => {
-            contenedoresDisponibles = data.datos;
-            detalleConvoys = data.dataConten;
-          contenedoresDisponiblesAll=     data.       datosAll;
-          convoysAll = data.conboys;
-
-          detalleConvoysAll =  data.dataContenAll;
-
-            if (!contenedoresDisponibles) {
-                alert('No se encontró información del contenedor.');
-            }
-
-            const contenedores = contenedor.trim().replace(/\s*\/\s*/g, ' ').split(/\s+/); 
-            contenedores.forEach(cod => {
-                const infoc = contenedoresDisponibles.find(d => d.contenedor === cod);
-
-                if (infoc) {
-                    let conponerStrin = cod + '|' + infoc.imei + '|' + infoc.id_contenedor + '|' + infoc.tipoGps;
-                    ItemsSelects.push(conponerStrin);
-                } else {
-
-
-
-                  //buscamos en todos pero se valida si es convoy para saber si tenemos que buscar aunq no le pertenece el contenedor al user
-                  if (tipoSpans.toLowerCase().includes('convoy')) {
-                const infoc2 = contenedoresDisponiblesAll.find(d => d.contenedor === cod);
-                                  if (infoc2) {
-                                    let conponerStrin = cod + '|' + infoc2.imei + '|' + infoc2.id_contenedor + '|' + infoc2.tipoGps;
-                                    ItemsSelects.push(conponerStrin);
-                                } else {
-                                  console.warn(`Contenedor ${cod} no encontrado en contenedoresDisponibles.`);
-                                }
-
-                  } else {
-                  console.warn(`Contenedor ${cod} no encontrado en contenedoresDisponibles.`);
-                }
-                  
-                  
-                }                     
-                
-            });
-
-            if (ItemsSelects.length > 0) {
-                actualizarUbicacion(ItemsSelects, '');
-                document.getElementById('btnDetener').style.display = 'inline-block';
-
-                if (intervalId) clearInterval(intervalId);
-
-                intervalId = setInterval(() => {
-                    actualizarUbicacion(ItemsSelects, '');
-                }, 5000);
-            } else {
-                Swal.fire('Atención', 'Ningún contenedor válido fue encontrado.', 'warning');
-            }
-        }); // <-- cierre del .then()
-}
-
-
 let geocercaCircle = null;
 let marcadorActual = null;
 
 // Función que se llama cada vez que actualizas la posición (intervalo)
-function actualizarMapa(lat_actual, lng_actual, datosConvoy) {
+function actualizarMapa(lat_actual, lng_actual, datosConvoy,idConvoy,map) {
     // Crear el círculo si no existe
      let   geocerca_lat = 0;
      let geocerca_lng = 0;
@@ -546,7 +527,7 @@ function actualizarMapa(lat_actual, lng_actual, datosConvoy) {
 
     }
     
-    //  const distanciaSpan = document.getElementById('distanciaSpan');
+    //  const distanciaSpan = document.getElementById('distanciaSpan-'+idConvoy);
    
       if(calcularDistancia ===1){ 
       
@@ -557,7 +538,7 @@ function actualizarMapa(lat_actual, lng_actual, datosConvoy) {
           mesaggeC = `Faltan ${distanciaKm.toFixed(2)} km para la geocerca`;
                     
       }
-//distanciaSpan.innerHTML =mesaggeC;
+ // distanciaSpan.innerHTML =mesaggeC;
 
     if(distancia <= geocerca_radio){
                 if (!convoyDisuelto) {
@@ -598,42 +579,6 @@ function actualizarMapa(lat_actual, lng_actual, datosConvoy) {
 
       
 }
-
-document.getElementById('btnDetener').addEventListener('click', function() {
-   const icon = this.querySelector('i');
-
-      if (intervalId) {
-        clearInterval(intervalId);
-        intervalId = null;
-
-        this.innerHTML = '<i class="bi bi-play-circle"></i> Reanudar actualización';
-        console.log('⛔ Actualización detenida.');
-      } else {
-          actualizarUbicacion(ItemsSelects,'');
-
-          if (intervalId) clearInterval(intervalId);
-          
-          intervalId = setInterval(() => {
-            actualizarUbicacion(ItemsSelects,'');
-          }, 5000);
-
-        this.innerHTML = '<i class="bi bi-pause-circle"></i> Detener actualización';
-        console.log('✅ Reanudando actualización...');
-      }
-});
-
-
-function detener(){
-    if(intervalId) {
-    clearInterval(intervalId);
-    intervalId = null;
-    document.getElementById('btnDetener').style.display = 'none';
-   
-  }
-}
-
-
-
 function actualizarUbicacionReal(coordenadaData){
     fetch('/coordenadas/rastrear/savehistori', {
         method: 'POST',
@@ -658,7 +603,7 @@ function actualizarUbicacionReal(coordenadaData){
 }
 
     </script>
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAtAO2AZBgzC7QaBxnMnPoa-DAq8vaEvUc&libraries=geometry&callback=initMap" async defer></script>
+   
     
 </body>
 </html>

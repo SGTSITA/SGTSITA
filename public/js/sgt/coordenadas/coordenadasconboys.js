@@ -210,10 +210,12 @@ let datap = {
 function definirTable(){
   const columnDefs = [
         {
+         headerName: '',
+        field: 'checkbox',
         headerCheckboxSelection: true,
         checkboxSelection: true,
-        width: 50, 
-        pinned: "left", 
+        width: 50,
+        pinned: 'left',
         suppressSizeToFit: true,
         resizable: false
         },
@@ -250,6 +252,13 @@ function definirTable(){
             document.getElementById("fecha_inicio").value = formatDateForInput(data.fecha_inicio) || "";
             document.getElementById("fecha_fin").value = formatDateForInput(data.fecha_fin )|| "";
             document.getElementById("nombre").value = data.nombre || "";
+            document.getElementById("tipo_disolucion").value = data.tipo_disolucion || "";
+            document.getElementById("geocerca_lat").value = data.geocerca_lat || "";
+            document.getElementById("geocerca_lng").value = data.geocerca_lng || "";
+            document.getElementById("geocerca_radio").value = data.geocerca_radio || "";
+
+
+              
             document.getElementById("formFiltros").dataset.editId = data.id;
 
             BloquearHabilitarEdicion(data.BlockUser);
@@ -269,10 +278,10 @@ function definirTable(){
         btnCompartir.classList.add("btn", "btn-sm", "btn-info");
         btnCompartir.onclick = function () {
             // const link = `${window.location.origin}/coordenadas/conboys/compartir/${data.no_conboy}/${data.id}`;
-            // Aquí puedes pasarle el ID o nombre del conboy al modal
+            // 
             document.getElementById("wmensajeText").innerText = `Se comparte el siguiente no. de Convoy:: ${data.no_conboy}`;
             
-            // Puedes construir el link de WhatsApp si lo deseas
+            // 
             const mensaje = (`Te comparto el convoy: ${data.no_conboy}`);
       
 //
@@ -341,13 +350,41 @@ modalElement.setAttribute("data-id", this.dataset.id);
        
     ];
     function formatDateForInput(dateString) {
+     if (!dateString) return "";
     const date = new Date(dateString);
+
+    if (isNaN(date.getTime())) return ""; 
+
     const year = date.getFullYear();
     const month = (`0${date.getMonth() + 1}`).slice(-2);
     const day = (`0${date.getDate()}`).slice(-2);
-    return `${year}-${month}-${day}`;
-}
+    const hours = (`0${date.getHours()}`).slice(-2);
+    const minutes = (`0${date.getMinutes()}`).slice(-2);
 
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+function onSelectionChanged() {
+    const selectedRows = gridApi.getSelectedRows();
+    const btn = document.getElementById('btnRastrearconboysSelec');
+    if (selectedRows.length > 1) {
+        btn.classList.remove('d-none');
+    } else {
+        btn.classList.add('d-none');
+    }
+}
+document.getElementById('btnRastrearconboysSelec').addEventListener('click', () => {
+    const selectedRows = gridApi.getSelectedRows();
+
+    
+    const ids = selectedRows.map(row => row.id); 
+
+    if (ids.length > 1) {
+      
+        const query = new URLSearchParams({ ids: ids.join(',') }).toString();
+        const url = `/coordenadas/mapa_rastreo_varios?${query}`;
+        window.open(url, '_blank');
+    }
+});
 
 function llenarTablaContenedores(contenedores,val) {
     const tabla = document.getElementById("tablaContenedoresBody"); // tbody
@@ -378,7 +415,7 @@ seleccionados.length = 0;
         tabla.appendChild(row);
 
         seleccionados.push(item.num_contenedor);
-        ItemsSelects.push(`${item.num_contenedor}-${item.id_contenedor}-${item.imei}`);
+        ItemsSelects.push(`${item.num_contenedor}|${item.id_contenedor}|${item.imei}`);
     });
 }
 
@@ -386,11 +423,12 @@ seleccionados.length = 0;
         columnDefs: columnDefs,
         pagination: true,
         paginationPageSize: 100,
-        // rowSelection: "multiple",
+        rowSelection: "multiple",
         defaultColDef: {
             resizable: true,
             flex: 1
         },
+         onSelectionChanged: onSelectionChanged
     };
 
     const myGridElement = document.querySelector("#myGrid");
@@ -409,10 +447,11 @@ seleccionados.length = 0;
             fetch("/coordenadas/conboys/getconboys")
                 .then(response => response.json())
                 .then(data => {
-                   const rowData = data.data;
-                    gridApi.setGridOption("rowData", rowData);
                     contenedoresGuardados = data.dataConten;
                     contenedoresGuardadosTodos = data.dataConten2;
+                   const rowData = data.data;
+                    gridApi.setGridOption("rowData", rowData);
+                    
                     
                 })
                 .catch(error => {
@@ -599,7 +638,7 @@ function saveconvoys(datap,urlSave) {
         seleccionados.push(valor);
          const contenedorData = contenedoresDisponibles.find(c => c.contenedor === valor);
 
-         ItemsSelects.push(valor +"-" + contenedorData.id_contenedor+'-'+ contenedorData.imei);
+         ItemsSelects.push(valor +"|" + contenedorData.id_contenedor+'|'+ contenedorData.imei);
         document.getElementById('contenedor-input').value = '';
         document.getElementById('sugerencias').style.display = 'none';
         actualizarVista();
@@ -681,7 +720,7 @@ function saveconvoys(datap,urlSave) {
         seleccionados.push(valor);
          const contenedorData = contenedoresDisponibles.find(c => c.num_contenedor === valor);
 
-         ItemsSelects.push(valor +"-" + contenedorData.id_contenedor+'-'+ contenedorData.imei);
+         ItemsSelects.push(valor +"|" + contenedorData.id_contenedor+'|'+ contenedorData.imei);
         document.getElementById('contenedor-input2').value = '';
         document.getElementById('sugerencias2').style.display = 'none';
         actualizarVista2();

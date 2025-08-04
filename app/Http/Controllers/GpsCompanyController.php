@@ -10,6 +10,7 @@ use App\Models\ServicioGps;
 use App\Traits\JimiGpsTrait;
 use App\Traits\LegoGpsTrait as LegoGps;
 use App\Traits\CommonGpsTrait;
+use App\Traits\GpsTrackerMXTrait;
 
 class GpsCompanyController extends Controller
 {
@@ -141,7 +142,7 @@ class GpsCompanyController extends Controller
 
     public function testGpsApi(){
         
-        $toTest = 'JimiGps';
+        $toTest = 'TrackerGps';
 
 
         switch($toTest){
@@ -156,6 +157,11 @@ class GpsCompanyController extends Controller
 
                 $data = JimiGpsTrait::callGpsApi('jimi.device.location.get',$credenciales['accessAccount'],$adicionales);
                 break;
+            case 'TrackerGps':
+                            $credenciales = CommonGpsTrait::getAuthenticationCredentials('AECC890930E41',4);
+                            $data = GpsTrackerMXTrait::getMutiDevicePosition($credenciales['accessAccount']);
+                            break;
+
             default:
             $data = "Bad GPS Config";
         }

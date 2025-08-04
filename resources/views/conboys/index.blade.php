@@ -52,7 +52,10 @@
                     </button>
                 </div>
 
-        
+                
+             <button type="button" class="btn btn-primary d-none" id="btnRastrearconboysSelec">
+            <i class="bi bi-map-fill me-1"></i> Rastrear seleccionados
+        </button>
              
                
                 <li class="nav-item">
