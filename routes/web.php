@@ -206,6 +206,9 @@ Route::get('/coordenadas/mapa_rastreo', function () {
 Route::get('/configurar-geocerca', function () {
     return view('conboys.geocerca');
 });
+Route::get('/coordenadas/mapa_rastreo_varios', [App\Http\Controllers\ConboysController::class, 'mapaRastreoVarios'])->name('rastreoVariosConvoys');
+
+
 
 
 Route::get('/scheduler/index', [App\Http\Controllers\RastreoIntervalController::class, 'index'])->name('scheduler.index');

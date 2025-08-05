@@ -661,7 +661,7 @@ $idCordenada= $coordenadas->id_coordenadas;
     ->join('docum_cotizacion', 'docum_cotizacion.id', '=', 'asignaciones.id_contenedor')
     ->join('equipos', 'equipos.id', '=', 'asignaciones.id_camion')
     ->join('gps_company','gps_company.id','=','equipos.gps_company_id')
-    ->join('equipos as eq_chasis', 'eq_chasis.id', '=', 'asignaciones.id_chasis')
+    ->leftjoin('equipos as eq_chasis', 'eq_chasis.id', '=', 'asignaciones.id_chasis')
 
     ->select(
         'docum_cotizacion.id as id_contenedor',
@@ -781,11 +781,11 @@ $datos = $datosAll ->where('id_empresa', $idEmpresa)->values();
             
         )
             ->when($idCliente !== 0, function ($query) use ($idCliente) {
-    return $query->where('cotizaciones.id_cliente', $idCliente);
-})   
+            return $query->where('cotizaciones.id_cliente', $idCliente);
+        })   
         ->get();
 
-$conboysdetalle=$conboysdetalleAll ->where('id_empresa', $idEmpresa)->values();
+        $conboysdetalle=$conboysdetalleAll;// ->where('id_empresa', $idEmpresa)->values();
 
        $equipos = Equipo::select(
         'equipos.id',
@@ -795,13 +795,13 @@ $conboysdetalle=$conboysdetalleAll ->where('id_empresa', $idEmpresa)->values();
         'equipos.id_equipo',
         'equipos.placas',
         'gps_company.url_conexion as tipoGps'
-    )
-    ->join('gps_company', 'gps_company.id', '=', 'equipos.gps_company_id')
-    ->where('equipos.id_empresa', $idEmpresa)
-    ->where('equipos.tipo','Tractos / Camiones')
-    ->whereNotNull('equipos.imei')
+        )
+        ->join('gps_company', 'gps_company.id', '=', 'equipos.gps_company_id')
+        ->where('equipos.id_empresa', $idEmpresa)
+        ->where('equipos.tipo','Tractos / Camiones')
+        ->whereNotNull('equipos.imei')
 
-    ->get();
+        ->get();
             
           if ($datos) {
             return response()->json([

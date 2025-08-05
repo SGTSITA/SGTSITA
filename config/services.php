@@ -56,12 +56,14 @@ return [
     'LegoGps' => [
         'url_base'  => env('LEGO_GPS_URL'),
         'appKey'  => env('X_ACCESS_TOKEN')
+
     ],
     'GpsTrackerMX' => [
         'url_base'  => env('GPS_TRACKER_URL'),
     ],
     'GooMaps'=>[
         'apikey'=> env('GOOLEAPIMAPS',)
+
     ]
 
 ];
