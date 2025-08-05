@@ -1,9 +1,18 @@
-window.markers = [];
-var map = L.map('map').setView([0, 0], 2);
+ let markers = [];
+let map;
+let filtroModalUI; 
+ window.initMap = function() {
+  map = new google.maps.Map(document.getElementById("map"), {
+    center: { lat: 0, lng: 0 },
+    zoom: 2,
+  });
 
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap contributors'
-}).addTo(map);
+  const marker = new google.maps.Marker({
+    position: { lat: 0, lng: 0 },
+    map: map,
+  });
+};
+
 
     const camposUbicacion = [
   { key: "toma_foto_patio", orden: 15 },
@@ -25,26 +34,49 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 
 // Mostrar el modal de Bootstrap al cargar la página
 window.onload = function() {
-  var filtroModal = new bootstrap.Modal(document.getElementById('filtroModal'));
-  filtroModal.show();
+    if(!map){
+        map = new google.maps.Map(document.getElementById("map"), {
+    center: { lat: 0, lng: 0 },
+    zoom: 2,
+  });
+    }
+
+   filtroModalUI = new bootstrap.Modal(document.getElementById('filtroModal'));
+  filtroModalUI.show();
 
   // Centrar mapa en ubicación actual
   if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(function (position) {
-          const lat = position.coords.latitude;
-          const lng = position.coords.longitude;
-          map.setView([lat, lng], 9);
+  navigator.geolocation.getCurrentPosition(function (position) {
+    const lat = position.coords.latitude;
+    const lng = position.coords.longitude;
 
-          const marker = L.marker([lat, lng]).addTo(map)
-              .bindPopup('Buscar Contenedores').openPopup();
+    // Centrar el mapa
+   map.setCenter({ lat: parseFloat(lat), lng: parseFloat(lng) });
+    map.setZoom(12);
 
-          window.markers.push(marker);
-      }, function (error) {
-          console.warn('No se pudo obtener la ubicación:', error.message);
-      });
-  } else {
-      console.warn('Geolocalización no soportada por este navegador.');
-  }
+    // Crear marcador
+    const marker = new google.maps.Marker({
+      position: { lat: lat, lng: lng },
+      map: map,
+    });
+
+    // Agregar popup (info window)
+    const infoWindow = new google.maps.InfoWindow({
+      content: 'Buscar Contenedores',
+    });
+
+    infoWindow.open(map, marker);
+
+    // Opcional: guardar en un arreglo global
+    window.markers = window.markers || [];
+    window.markers.push(marker);
+
+  }, function (error) {
+    console.warn('No se pudo obtener la ubicación:', error.message);
+  });
+} else {
+  console.warn('Geolocalización no soportada por este navegador.');
+}
 };
 let contenedoresDisponibles = [];
 
@@ -91,53 +123,92 @@ const mostrarUltimaUbicacion = document.getElementById("ubicacion-toggle").check
       .then(data => {
           const preguntas = data.preguntas;
           const datos = data.datos;
+          const infoWindow = new google.maps.InfoWindow();
+             let esPrimero = true;
               datos.forEach(contenedor => {
             if (mostrarUltimaUbicacion) {
                 for (let i = 0; i < camposUbicacion.length; i++) {
-            const campo = camposUbicacion[i].key;
-            const valor = contenedor[campo];
+          const campo = camposUbicacion[i].key;
+                const valor = contenedor[campo];
 
-            if (valor) {
-                const coords = valor.split(',');
-                if (coords.length === 2) {
-                    const lat = parseFloat(coords[0]);
-                    const lng = parseFloat(coords[1]);
+                if (valor) {
+                    const coords = valor.split(',');
+                    if (coords.length === 2) {
+                        const lat = parseFloat(coords[0]);
+                        const lng = parseFloat(coords[1]);
 
-                    const marker = L.marker([lat, lng])
-                        .addTo(map)
-                        .bindTooltip(`Última ubicación: ${campo.replace(/_/g, ' ')}<br>Contenedor: <strong>${contenedor.contenedor}</strong>`)
-                        .openTooltip();
+                        
+                        markers[contenedor[campo] + contenedor["contenedor"]] = new google.maps.Marker({
+                            position: { lat: lat, lng: lng },
+                            map: map,
+                        });
+                          if(esPrimero){
+                                     map.setCenter({ lat: lat, lng: lng });
+                                    map.setZoom(12);
+                                    esPrimero= false;
+                                }
 
-                    window.markers.push(marker);
-                    break;
+                          markers[contenedor[campo] + contenedor["contenedor"]].addListener('click', () => {
+                                                infoWindow.setContent( `Última ubicación: ${campo.replace(/_/g, ' ')}<br>Contenedor: <strong>${contenedor.contenedor}</strong>`);
+                                                infoWindow.open(map, markers[contenedor[campo] + contenedor["contenedor"]]);
+                                            });
+                       
+
+                    
+                       
+                        window.markers = window.markers || [];
+                       window.markers.push( markers[contenedor[campo] + contenedor["contenedor"]]);
+                        break;
+                    }
+                    else {
+                    console.log(`Formato incorrecto de coordenadas: ${valor}`);
+                }   
                 }
-                else {
-                console.log(`Formato incorrecto de coordenadas: ${valor}`);
-            }   
-            }
         }
             }
             else {
 
-                preguntas.forEach(pregunta => {
-                        const campo = pregunta.campo;
-                        const valor = contenedor[campo];
+                let offset = 0;
+             
 
-                        if (valor) {
-                            const coords = valor.split(',');
-                            if (coords.length === 2) {
-                                const lat = parseFloat(coords[0]);
-                                const lng = parseFloat(coords[1]);
+               preguntas.forEach(pregunta => {
+                    const campo = pregunta.campo;
+                    const valor = contenedor[campo];
 
-                                const marker = L.marker([lat, lng])
-                                    .addTo(map)
-                                    .bindTooltip(`${pregunta.tooltip}<br>Contenedor: <strong>${contenedor.contenedor}</strong>`)
-                                    .openTooltip();
+                    if (valor && typeof valor === "string") {
+                        const coords = valor.split(',');
 
-                                window.markers.push(marker);
+                        if (coords.length === 2) {
+                            let lat = parseFloat(coords[0].trim());
+                            let lng = parseFloat(coords[1].trim());
+
+                             const spread = 0.0005; 
+                                lat += spread * offset;
+                                lng += spread * offset;
+                                offset++;
+
+                            if (!isNaN(lat) && !isNaN(lng)) {
+                                markers[contenedor[campo] + contenedor["contenedor"]] = new google.maps.Marker({
+                                    position: { lat, lng },
+                                    map: map,
+                                });
+                                if(esPrimero){
+                                     map.setCenter({ lat: lat, lng: lng });
+                                    map.setZoom(12);
+                                    esPrimero= false;
+                                }
+
+                                 markers[contenedor[campo] + contenedor["contenedor"]].addListener('click', () => {
+                                    infoWindow.setContent(`${pregunta.tooltip}<br>Contenedor: <strong>${contenedor.contenedor}</strong>`);
+                                    infoWindow.open(map, markers[contenedor[campo] + contenedor["contenedor"]]);
+                                });
+
+                                window.markers = window.markers || [];
+                             window.markers.push(markers[contenedor[campo] + contenedor["contenedor"]]);
                             }
                         }
-                    });
+                    }
+                });
 
             }
 
@@ -145,8 +216,7 @@ const mostrarUltimaUbicacion = document.getElementById("ubicacion-toggle").check
         });
           
           // Cierra el modal después de aplicar los filtros
-          var modal = bootstrap.Modal.getInstance(document.getElementById('filtroModal'));
-          modal.hide();
+         limpiarMOdal();
       })
       .catch(error => {
           console.error('Error al traer coordenadas:', error);
@@ -157,7 +227,7 @@ const mostrarUltimaUbicacion = document.getElementById("ubicacion-toggle").check
 function limpiarMarcadores() {
     if (window.markers && window.markers.length > 0) {
         window.markers.forEach(marker => {
-            map.removeLayer(marker);
+            marker.setMap(null); 
         });
         window.markers = [];
     }
@@ -212,19 +282,19 @@ document.addEventListener('DOMContentLoaded', function () {
     const btnCerrarModal = document.getElementById('btnCerrarModal');
 
 
- var filtroModal = new bootstrap.Modal(document.getElementById('filtroModal'));
-    if (filtroModal && btnEditarFiltros && btnCerrarModal) {
+  filtroModalUI = new bootstrap.Modal(document.getElementById('filtroModal'));
+    if (filtroModalUI && btnEditarFiltros && btnCerrarModal) {
        
         btnEditarFiltros.addEventListener('click', function () {
            
-            filtroModal.show();
+            filtroModalUI.show();
         });
 
         setTimeout(function () {
             if (btnCerrarModal) {
                 // Cerrar modal
                 btnCerrarModal.addEventListener('click', function () {
-                    filtroModal.hide();
+                    filtroModalUI.hide();
                 });
             } else {
                 console.error("Botón de cierre no encontrado.");
@@ -273,7 +343,13 @@ document.addEventListener('DOMContentLoaded', function () {
             console.error("No se encontraron los elementos necesarios.");
         }
 });
+function limpiarMOdal(){
 
+if(filtroModalUI){
+    filtroModalUI.hide();
+}
+
+}
 function limpiarFiltros() {
   
     const modal = document.getElementById('filtroModal'); 
