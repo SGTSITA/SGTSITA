@@ -50,6 +50,12 @@ class ConboysController extends Controller
             'conboys.fecha_inicio',
             'conboys.fecha_fin',
             'conboys.user_id',
+             'tipo_disolucion' ,
+            'estatus' ,
+            'fecha_disolucion'  ,
+            'geocerca_lat' ,
+            'geocerca_lng',
+            'geocerca_radio' ,
         )->where('estatus','=','activo')
         ->whereIn('conboys.id', function ($query) use ($idEmpresa) {
             $query->select('conboys_contenedores.conboy_id')
@@ -77,7 +83,7 @@ class ConboysController extends Controller
         )
         ->get();
 
-        $conboysdetalle = $conboysdetalleC->where('id_empresa', $idEmpresa);
+        $conboysdetalle = $conboysdetalleC->where('id_empresa', $idEmpresa)->values();;
             return response()->json([
                     'success' => true,
                     'message' => 'lista devuelta.'  ,
@@ -158,12 +164,12 @@ class ConboysController extends Controller
             $mesageDic="si es array";
                 foreach ($items as $item) {
                     $esPrimero = !conboysContenedores::where('conboy_id', $conboy->id)->exists();
-                    [$contenedor, $id_contenedor,$imei] = explode('-', $item);
+                    [$contenedor, $id_contenedor,$imei] = explode('|', $item);
                     conboysContenedores::create([
                         'conboy_id' => $conboy->id,
                         'id_contenedor' => $id_contenedor,
                         'es_primero'=>  $esPrimero,
-                        'usuario'=> 'usergps',
+                        'usuario'=> auth()->id(),
                         'imei'=> $imei
                         ]);
                     }
@@ -189,11 +195,16 @@ class ConboysController extends Controller
 
     public function update(Request $request)
     {
-
+        
         $inicio = $request->input('fecha_inicio');
         $fin = $request->input('fecha_fin');
         $items = $request->input('items_selects');
         $nombre = $request->input('nombre');
+        $tipo_disolucion = $request->input('tipo_disolucion');
+       
+        $geocerca_lat = $request->input('geocerca_lat');
+        $geocerca_lng = $request->input('geocerca_lng');
+        $geocerca_radio = $request->input('geocerca_radio');
 
         $id_convoy=$request->idconvoy;
         $convoy= Conboys::find($id_convoy);
@@ -214,6 +225,10 @@ class ConboysController extends Controller
         $convoy->nombre = $request->nombre;
         $convoy->fecha_inicio = $request->fecha_inicio;
         $convoy->fecha_fin = $request->fecha_fin;
+        $convoy->tipo_disolucion = $tipo_disolucion;
+        $convoy->geocerca_lat = $geocerca_lat;
+        $convoy->geocerca_lng = $geocerca_lng;
+        $convoy->geocerca_radio = $geocerca_radio;
 
         $convoy->save();
 
@@ -225,7 +240,7 @@ class ConboysController extends Controller
          
          
                 foreach ($items as $item) {
-                    [$contenedor, $id_contenedor] = explode('-', $item);
+                      [$contenedor, $id_contenedor,$imei] = explode('|', $item);
 
                     $existe = ConboysContenedores::where('conboy_id', $id_convoy)
                                     ->where('id_contenedor', $id_contenedor)
@@ -235,7 +250,10 @@ class ConboysController extends Controller
                         if (!$existe) {
                             conboysContenedores::create([
                                                     'conboy_id' => $convoy->id,
-                                                    'id_contenedor' => $id_contenedor
+                                                    'id_contenedor' => $id_contenedor,
+                                                     'es_primero'=>  0,
+                                                        'usuario'=> auth()->id(),
+                                                        'imei'=> $imei
                                                     ]);
 
 
@@ -464,6 +482,7 @@ $cotizacion = DB::table('cotizaciones')
     public function updateEstatus(Request $request)
 {
     $idConvoy = $request->input('idconvoy'); 
+    $idConvoy = $request->input('idconvoy'); 
 
     
     $convoy = Conboys::find($idConvoy);
@@ -477,6 +496,7 @@ $cotizacion = DB::table('cotizaciones')
 
     // Aquí aplicas los cambios que recibas
     $convoy->estatus = $request->input('nuevoEstatus');
+    $convoy->fecha_disolucion = now();
     $convoy->save();
 
     return response()->json([
@@ -484,6 +504,131 @@ $cotizacion = DB::table('cotizaciones')
         'message' => 'Estatus actualizado con éxito'
     ]);
 }
+public function mapaRastreoVarios(Request $request)
+{
 
+
+    $idCliente =0;
+    $cliendID = auth()->user()->id_cliente;
+    if($cliendID !== 0)
+    {
+        $idCliente =$cliendID;
+    }
+         
+        
+    $idEmpresa = Auth::User()->id_empresa;
+    $asignaciones = DB::table('asignaciones')
+    ->join('docum_cotizacion', 'docum_cotizacion.id', '=', 'asignaciones.id_contenedor')
+    ->join('equipos', 'equipos.id', '=', 'asignaciones.id_camion')
+    ->join('gps_company','gps_company.id','=','equipos.gps_company_id')
+    ->leftjoin('equipos as eq_chasis', 'eq_chasis.id', '=', 'asignaciones.id_chasis')
+    ->select(
+        'docum_cotizacion.id as id_contenedor',
+        'asignaciones.id',
+        'asignaciones.id_camion',
+        'docum_cotizacion.num_contenedor',
+        'asignaciones.fecha_inicio',
+        'asignaciones.fecha_fin',      
+        'equipos.imei',      
+        'gps_company.url_conexion as tipoGps',
+        'eq_chasis.imei as imei_chasis',
+        DB::raw("CASE WHEN asignaciones.id_proveedor IS NULL THEN asignaciones.id_operador ELSE asignaciones.id_proveedor END as beneficiario_id"),
+        DB::raw("CASE WHEN asignaciones.id_proveedor IS NULL THEN 'Propio' ELSE 'Subcontratado' END as tipo_contrato")
+    );
+
+    $beneficiarios = DB::table(function ($query) {
+            $query->select('id', 'nombre', 'telefono', DB::raw("'Propio' as tipo_contrato"), 'id_empresa')
+                ->from('operadores')
+                ->union(
+                    DB::table('proveedores')
+                        ->select('id', 'nombre', 'telefono', DB::raw("'Subcontratado' as tipo_contrato"), 'id_empresa')
+                );
+    }, 'beneficiarios');
+
+  
+    $datosAll = DB::table('cotizaciones')
+        ->select(
+            'cotizaciones.id as id_cotizacion',
+            'asig.id as id_asignacion',
+            'coordenadas.id as id_coordenada',
+            'clients.nombre as cliente',
+            'cotizaciones.origen',
+            'cotizaciones.destino',
+            'asig.num_contenedor as contenedor', 
+            'cotizaciones.estatus',
+            'asig.imei',
+            'asig.id_contenedor',
+            'asig.tipo_contrato',
+            'asig.fecha_inicio',
+            'asig.fecha_fin',
+            'asig.tipoGps',
+            'asig.imei_chasis',
+            'cotizaciones.id_empresa'
+    )
+    ->join('clients', 'cotizaciones.id_cliente', '=', 'clients.id') 
+   ->joinSub($asignaciones, 'asig', function ($join) {
+      $join->on('asig.id_contenedor', '=', 'cotizaciones.id'); 
+    })
+    ->LeftJoin('coordenadas', 'coordenadas.id_asignacion', '=', 'asig.id') 
+    ->joinSub($beneficiarios, 'beneficiarios', function ($join) {
+        $join->on('asig.beneficiario_id', '=', 'beneficiarios.id')
+             ->on('asig.tipo_contrato', '=', 'beneficiarios.tipo_contrato');
+    })
+    ->whereNotNull('asig.imei')
+    ->when($idCliente !== 0, function ($query) use ($idCliente) {
+    return $query->where('cotizaciones.id_cliente', $idCliente);
+    })   
+    ->where('cotizaciones.estatus', '=', 'Aprobada')
+    ->get();
+
+    $ids = explode(',', $request->input('ids')); 
+  
+    $conboys = DB::table('conboys')
+    ->join('conboys_contenedores', 'conboys.id', '=', 'conboys_contenedores.conboy_id')
+    ->join('docum_cotizacion', 'docum_cotizacion.id', '=', 'conboys_contenedores.id_contenedor')
+    ->join('cotizaciones', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
+    ->select(
+        'conboys.id',
+        'conboys.no_conboy',
+        'conboys.nombre',
+        'conboys.fecha_inicio',
+        'conboys.fecha_fin',
+        'conboys.user_id',
+        'conboys.tipo_disolucion',
+        'conboys.estatus',
+        'conboys.fecha_disolucion',
+        'conboys.geocerca_lat',
+        'conboys.geocerca_lng',
+        'conboys.geocerca_radio',
+    )->wherein('conboys.id',$ids) 
+    ->distinct()
+    ->get();
+
+    $conboysdetalleAll =  DB::table('conboys_contenedores')
+        ->join('conboys', 'conboys.id', '=', 'conboys_contenedores.conboy_id')
+        ->join('docum_cotizacion', 'docum_cotizacion.id', '=', 'conboys_contenedores.id_contenedor')
+        ->leftjoin('asignaciones', 'asignaciones.id_contenedor', '=', 'conboys_contenedores.id_contenedor')
+        ->join('cotizaciones', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
+        ->join('equipos', 'equipos.id', '=', 'asignaciones.id_camion')
+         ->join('gps_company','gps_company.id','=','equipos.gps_company_id')
+        ->select(
+            'conboys_contenedores.conboy_id',
+            'conboys.no_conboy',
+            'conboys_contenedores.id_contenedor',
+            'docum_cotizacion.num_contenedor',
+            'equipos.imei',
+            'gps_company.url_conexion as tipoGps',
+            'es_primero',
+            
+        )
+        ->when($idCliente !== 0, function ($query) use ($idCliente) {
+                 return $query->where('cotizaciones.id_cliente', $idCliente);
+            })
+        ->where('conboys.estatus','=','activo')  
+        ->wherein('conboys.id',$ids) 
+        ->get();
+    
+    return view('coordenadas.mapas_rastreoAll', compact('conboys','conboysdetalleAll','datosAll'));
+}
    
 }

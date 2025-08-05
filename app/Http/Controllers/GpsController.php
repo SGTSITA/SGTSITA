@@ -8,14 +8,15 @@ use App\Traits\SkyAngelGpsTrait as SkyAngel;
 use App\Traits\JimiGpsTrait;
 use App\Traits\LegoGpsTrait as LegoGps;
 use App\Traits\CommonGpsTrait;
+use App\Models\Empresas;
 
+use Illuminate\Support\Facades\DB;
 
 class GpsController extends Controller
 {
     
     public function obtenerUbicacionByImei(Request $request){
     
-
         $datos = $request->input('imeis');
 
             if (!is_array($datos)) {
@@ -30,10 +31,28 @@ class GpsController extends Controller
                 if (!empty($dato)) {
                     [ $contenedor ,$imei,$id_contenendor,$tipoGps] = explode('|', $dato);
 
+                 $RfcyEquipo = $this->buscartipoProveedor($contenedor,$id_contenendor);
+               
+                 [$Rfc,$equipo]= explode('|', $RfcyEquipo);
+                  
                     switch ($tipoGps) {
                         case 'https://open.iopgps.com': //global
-                             $ubicacion = GlobalGps::getDeviceRealTimeLocation($imei);
-                             $tipoGpsresponse="Global";
+                            $data = GlobalGps::getDeviceRealTimeLocation($imei);
+                            $tipoGpsresponse="Global GPS";
+                            // $ubicacionApiResponse = $data['data']; 
+                            $ubicacionApiResponse = $data->data;
+                            
+                          
+                         $ubicacion = [
+                                'lat'         => $ubicacionApiResponse['lat'] ?? null,
+                                'lng'         => $ubicacionApiResponse['lng'] ?? null,
+                                'velocidad'   => 0,
+                                'imei'        => $imei ?? null,
+                                'deviceName'  => '',
+                                'mcType'      => '',
+                                'datac' =>  $data
+                            ];
+
                             break;
 
                         case 'http://sta.skyangel.com.mx:8085/api/tracks/v1': //skyangel
@@ -42,37 +61,77 @@ class GpsController extends Controller
 
                             $accessToken = SkyAngel::getAccessToken($username,$password);
                             $ubicacion = SkyAngel::getLocation($accessToken);
+                            $ubicacionApiResponse = $ubicacion->data;
+
                             $tipoGpsresponse="skyGps";
+                             $ubicacion = [
+                                'lat'         => $ubicacionApiResponse['latitude'] ?? null,
+                                'lng'         => $ubicacionApiResponse['longitude'] ?? null,
+                                'velocidad'   => 0,
+                                'imei'        => $imei ?? null,
+                                'deviceName'  => ubicacionApiResponse['economico'] ?? null,
+                                'mcType'      => '',
+                                'datac' =>  $ubicacion
+                            ];
                             break;
 
                         case 'https://us-open.tracksolidpro.com/route/rest'://jimi -Concox
                             //Datos de dispositivo por IMEI: El metodo soporta multiples IMEIS, Separe cada imei por coma (,). Maximo 100 IMEIS
 
-                            $adicionales['imeis'] = '869066062080354'; //El IMEI deberá corresponder a una unidad registrada
+                            $adicionales['imeis'] = $imei;//'869066062080354'; //El IMEI deberá corresponder a una unidad registrada
 
                             //Pasar el RFC de la empresa previamente configurada
-                            $credenciales = JimiGpsTrait::getAuthenticationCredentials('AECC890930E41'); 
-                            
+                            $credenciales = JimiGpsTrait::getAuthenticationCredentials($Rfc); 
+                          
                             $data = ($credenciales['success']) 
                             ? JimiGpsTrait::callGpsApi('jimi.device.location.get',$credenciales['accessAccount'],$adicionales)
                             : []
                             ;
                           // $ubicacion = $this->detalleDispositivo($imei);
+                          $ubicacionApi = collect($data['result'])->first();
+
+                            $ubicacion = [
+                                'lat'   => $ubicacionApi['lat'],
+                                'lng'  => $ubicacionApi['lng'],
+                                'velocidad' => $ubicacionApi['speed'] ?? null,
+                                'imei'      => $ubicacionApi['imei'] ?? null,
+                                'deviceName'      => $ubicacionApi['deviceName'] ?? null,
+                                'mcType'      => $ubicacionApi['mcType'] ?? null,
+                                'datac' =>  $data
+                                
+                            ];
+                           
                            $tipoGpsresponse="jimi";
                             break;
 
-                        case 'https://alxdevelopments.com':
-                            $credenciales = CommonGpsTrait::getAuthenticationCredentials('AECC890930E41',3);
+                        case 'wialon';// 'https://alxdevelopments.com': //LegoGps
+                            $credenciales = CommonGpsTrait::getAuthenticationCredentials($Rfc,3);
                             $data = ($credenciales['success']) ? LegoGps::getLocation($credenciales['accessAccount']) : [];
+                              $ubicacionApi = $data?->data[0] ?? null;
 
+                            $ubicacion = [
+                                'lat'   => $ubicacionApi['latitud'] ?? 0,
+                                'lng'  => $ubicacionApi['longitud'] ?? 0,
+                                'velocidad' => $ubicacionApi['velocidad'] ?? null,
+                                'imei'      => $ubicacionApi['imei'] ?? null,
+                                'deviceName'      => $ubicacionApi['unidad'] ?? null,
+                                'mcType'      => "",
+                                'datac' =>  $data
+                                
+                            ]; 
+                             $tipoGpsresponse="LegoGps";
                         break;
-
+                        case 'TrackerGps':
+                            $credenciales = CommonGpsTrait::getAuthenticationCredentials($Rfc,4);
+                            $data = GpsTrackerMXTrait::getMutiDevicePosition($credenciales['accessAccount']);
+                            break;
                          default:
                              $ubicacion =[
                                 'mesage'=>'No encontrado el servicio de GPS',
-                                    'latitud' => 0,
-                                    'longitud' => 0,
+                                    'lat' => 0,
+                                    'lng' => 0,
                                     'fecha' => null,
+                                     'datac' =>  null
                              ];
                              break;
                     }
@@ -81,39 +140,15 @@ class GpsController extends Controller
                         'contenedor' => $contenedor,
                         'ubicacion' => $ubicacion,
                         'id_contenendor' => $id_contenendor,
-                        'tipogps'=> $tipoGpsresponse
+                        'tipogps'=> $tipoGpsresponse,
+                        'EquipoBD'=>$equipo
                     ];
                 }
             }
 
 
         return response()->json($resultados);
-        // if ($tipor ==='Global'){
-          
-                   
-
-        // } else {
-           
-        //      $resultados2[] = [
-        //                 'contenedor' => 'Varios para filtrar ',
-        //                 'ubicacion' => $location,
-        //                   'id_contenendor' => '0',
-        //             ];
-
-        //             if (!$accessToken) {
-        //                  dd('Error obteniendo token');
-        //                 }
-
-        //                 $location = SkyAngel::getLocation($accessToken);
-
-        //                 if (!$location) {
-        //                     dd('No hay datos de ubicación');
-        //                 }
-
-                       
-        //   return response()->json($resultados2);
-
-       // }
+      
        
     }
 
@@ -141,5 +176,125 @@ class GpsController extends Controller
         ]);
 
         return response()->json($data);
+    }
+
+
+    function buscartipoProveedor($num_Contenendor,$idKey){
+        //TP-001|865468051839242|5|https://open.iopgps.com
+        $datosAll= null;
+
+         $existeContenedor = DB::table('docum_cotizacion')->where('docum_cotizacion.num_contenedor','=',$num_Contenendor)->exists();
+
+        if ($existeContenedor){
+            $asignaciones = DB::table('asignaciones')
+            ->join('docum_cotizacion', 'docum_cotizacion.id', '=', 'asignaciones.id_contenedor')
+            ->join('equipos', 'equipos.id', '=', 'asignaciones.id_camion')
+            ->join('gps_company','gps_company.id','=','equipos.gps_company_id')
+            ->leftjoin('equipos as eq_chasis', 'eq_chasis.id', '=', 'asignaciones.id_chasis')
+
+            ->select(
+                'docum_cotizacion.id as id_contenedor',
+                'asignaciones.id',
+                'asignaciones.id_camion',
+                'docum_cotizacion.num_contenedor',
+                'asignaciones.fecha_inicio',
+                'asignaciones.fecha_fin',
+                
+                'equipos.imei', 
+                'equipos.id_equipo',
+                'equipos.marca',
+                'equipos.modelo',
+                'equipos.placas',
+                
+                'gps_company.url_conexion as tipoGps',
+                'eq_chasis.imei as imei_chasis',
+                DB::raw("CASE WHEN asignaciones.id_proveedor IS NULL THEN asignaciones.id_operador ELSE asignaciones.id_proveedor END as beneficiario_id"),
+                DB::raw("CASE WHEN asignaciones.id_proveedor IS NULL THEN 'Propio' ELSE 'Subcontratado' END as tipo_contrato")
+            );
+
+            $beneficiarios = DB::table(function ($query) {
+                $query->select('id', 'nombre', 'telefono',DB::raw("'buscarEmpresaRFC' as RFC"), DB::raw("'Propio' as tipo_contrato"), 'id_empresa')
+                    ->from('operadores')
+                    ->union(
+                        DB::table('proveedores')
+                            ->select('id', 'nombre', 'telefono','RFC', DB::raw("'Subcontratado' as tipo_contrato"), 'id_empresa')
+                    );
+            }, 'beneficiarios');
+
+  
+            $datosAll = DB::table('cotizaciones')
+            ->select(
+                'cotizaciones.id as id_cotizacion',
+                'asig.id as id_asignacion',
+                
+                'clients.nombre as cliente',
+                'cotizaciones.origen',
+                'cotizaciones.destino',
+                'asig.num_contenedor as contenedor', 
+                'cotizaciones.estatus',
+                'asig.imei',
+                'asig.id_equipo',
+                'asig.id_contenedor',
+                'asig.tipo_contrato',
+                'asig.fecha_inicio',
+                'asig.fecha_fin',
+                'asig.tipoGps',
+                'asig.imei_chasis',
+                'cotizaciones.id_empresa',
+                'beneficiarios.RFC'
+            )
+            ->join('clients', 'cotizaciones.id_cliente', '=', 'clients.id')
+            
+            ->joinSub($asignaciones, 'asig', function ($join) {
+            $join->on('asig.id_contenedor', '=', 'cotizaciones.id'); 
+            })
+        
+            ->joinSub($beneficiarios, 'beneficiarios', function ($join) {
+                $join->on('asig.beneficiario_id', '=', 'beneficiarios.id')
+                    ->on('asig.tipo_contrato', '=', 'beneficiarios.tipo_contrato');
+            })
+            ->whereNotNull('asig.imei') ->where('cotizaciones.estatus', '=', 'Aprobada')
+            ->where('asig.num_contenedor', '=', $num_Contenendor)
+            ->first();
+    } else {
+
+        $datosAll = DB::table('equipos')
+        ->join('gps_company','gps_company.id','=','equipos.gps_company_id')
+        ->join('empresas','empresas.id','=','equipos.id_empresa')
+       
+          ->select(             
+                'equipos.imei',
+                'equipos.id_equipo',
+               
+                'gps_company.url_conexion as tipoGps',
+                
+                'equipos.id_empresa',
+                'empresas.RFC'
+            )
+        ->where('equipos.id','=',$idKey)->first();
+    }
+   
+
+
+         if( $datosAll ){
+            $RFCContenedor = $datosAll?->RFC;
+            $Equipo = $datosAll?->id_equipo;
+            if( $RFCContenedor==='buscarEmpresaRFC'){
+                //buscamos el rfc de la empresa pues no tiene asignado un proveedor....
+                $empresas = Empresas::where('id','=',auth()->user()->Empresa->id)->orderBy('created_at', 'desc')->first();
+                $RFCContenedor =   $empresas ->RFC;
+
+            }
+
+
+                return   $RFCContenedor . '|'. $Equipo ;
+
+            
+         }
+         else {
+
+            
+         }
+
     }
 }

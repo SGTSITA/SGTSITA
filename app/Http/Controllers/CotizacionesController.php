@@ -711,7 +711,7 @@ public function getCotizacionesCanceladas()
 
         $gastos_ope = GastosOperadores::where('id_cotizacion', '=', $cotizacion->id)->get();
         $proveedores = Proveedor::where('id_empresa', '=', auth()->user()->id_empresa)->get();
-
+       // dd( $proveedores );
         $bancos = Bancos::where('id_empresa',Auth::User()->id_empresa)->get();
 
         return view('cotizaciones.editv1', compact('bancos','cotizacion', 'documentacion', 'clientes','gastos_extras', 'gastos_ope','proveedores'));
