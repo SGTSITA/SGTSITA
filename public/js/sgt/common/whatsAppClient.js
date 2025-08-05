@@ -4,6 +4,7 @@
     var waStatus = null;
     let waTextStatus = document.getElementById('waTextStatus')
     let waIconStatus = document.getElementById('waIconStatus')
+    let waStatusResponse = null
 
     async function whatsAppQrCode(id){
         try {
@@ -87,17 +88,27 @@
     }
 
     setInterval(async () => {
-      var waStatusResponse = await whatsAppQrCode(waClient) || 'error';
+      await getWaQr();
+    }, 15000);
 
-      if(waStatus != waStatusResponse){
-        waElements.forEach((el)=>{
-          el.classList.add('d-none')
-        });
+    
 
-        waStatus = waStatusResponse
-        statusMap[waStatusResponse]()
-      }
-    }, 4500);
+    async function getWaQr(){
+        waStatusResponse = await whatsAppQrCode(waClient) || 'error';
+
+      
+    }
+
+    setInterval(() => {
+        if(waStatus != waStatusResponse){
+            waElements.forEach((el)=>{
+              el.classList.add('d-none')
+            });
+    
+            waStatus = waStatusResponse
+            statusMap[waStatusResponse]()
+          }
+    }, 4000);
 
     let waTagify = null
     let btnSendWhatsApp = document.querySelector('#kt_whatsapp')
