@@ -121,7 +121,26 @@ class MissionResultRenderer {
      { field: "BoletaLiberacion",width: 110,cellRenderer: MissionResultRenderer },
      { field: "DODA",width: 110,cellRenderer: MissionResultRenderer },
      { field: "FormatoCartaPorte",width: 110,cellRenderer: MissionResultRenderer },
-     { field: "NumContenedor",filter: true, floatingFilter: true},
+     { 
+      field: "NumContenedor",
+      filter: true, 
+      floatingFilter: true,
+      minWidth: 150 ,
+            autoHeight: true, // Permite que la fila se ajuste en altura
+            cellStyle:params => {
+                const styles = {
+                  'white-space': 'normal',
+                  'line-height': '1.5',
+                };
+            
+                // Si la cotización es tipo "Full", aplicar fondo 
+                if (params.data.tipo === 'Full') {
+                  styles['background-color'] = '#ffe5b4'; 
+                }
+            
+                return styles;
+              }
+     },
      { field: "Cliente",filter: true, floatingFilter: true},
      { field: "SubCliente",filter: true, floatingFilter: true},    
      { field: "Origen",filter: true, floatingFilter: true},

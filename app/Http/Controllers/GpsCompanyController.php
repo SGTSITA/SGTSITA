@@ -67,27 +67,21 @@ class GpsCompanyController extends Controller
                 break;
             case 2:
                 $token = JimiGpsTrait::getGpsAccessToken($empresaId,$credenciales);
-
-                if(!$token){
-                    return response()->json([
-                        "Titulo" => "Credenciales de acceso incorrectas", 
-                        "Mensaje" => "No se puede guardar la configuración porque las credenciales de acceso no son correctas", 
-                        "TMensaje" => "warning"
-                    ]);
-                }
-
                 break;
             case 3:
-                $token =LegoGpsTrait::validateOwner($credenciales);
-                if(!$token){
-                    return response()->json([
-                        "Titulo" => "Credenciales incorrectas LegoGPS", 
-                        "Mensaje" => "Lo sentimos este servicio no corresponde a su empresa", 
-                        "TMensaje" => "warning",
-                        "Token"=>$token
-                    ]);
-                }
+                $token = LegoGpsTrait::validateOwner($credenciales);
                 break;
+            case 4:
+                $token = GpsTrackerMXTrait::getGpsAccessToken($empresaId,$credenciales);
+                break;
+        }
+
+        if(!$token){
+            return response()->json([
+                "Titulo" => "Credenciales de acceso incorrectas", 
+                "Mensaje" => "No se puede guardar la configuración porque las credenciales de acceso no son correctas", 
+                "TMensaje" => "warning"
+            ]);
         }
 
         $servicio = ServicioGps::firstOrNew([
@@ -144,6 +138,7 @@ class GpsCompanyController extends Controller
         
         $toTest = 'TrackerGps';
 
+        $empresaId = auth()->user()->id_empresa;
 
         switch($toTest){
             case 'LegoGPS':
@@ -158,10 +153,9 @@ class GpsCompanyController extends Controller
                 $data = JimiGpsTrait::callGpsApi('jimi.device.location.get',$credenciales['accessAccount'],$adicionales);
                 break;
             case 'TrackerGps':
-                            $credenciales = CommonGpsTrait::getAuthenticationCredentials('AECC890930E41',4);
-                            $data = GpsTrackerMXTrait::getMutiDevicePosition($credenciales['accessAccount']);
-                            break;
-
+                $credenciales = CommonGpsTrait::getAuthenticationCredentials('AECC890930E41',4);
+                $data = GpsTrackerMXTrait::getMutiDevicePosition($credenciales['accessAccount']);
+                break;
             default:
             $data = "Bad GPS Config";
         }

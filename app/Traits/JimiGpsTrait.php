@@ -36,11 +36,10 @@ trait JimiGpsTrait
 
                 $params['sign'] = self::generateGpsSign($params, $accessAccount['appsecret']);
 
-                $response = Http::asForm()->post('https://us-open.tracksolidpro.com/route/rest', $params);
+                $response = Http::asForm()->post(config('services.JimiGps.url_base'), $params);
                 $data = $response->json();
 
                 \Log::info('Respuesta completa del token JIMI:', $data);
-                \Log::info('Params:', $params);
 
                 if (isset($data['result']['accessToken'])) {
                     return $data['result']['accessToken'];
@@ -104,7 +103,7 @@ trait JimiGpsTrait
 
         $params['sign'] = self::generateGpsSign($params,$accessAccount['appsecret']);
 
-        $response = Http::asForm()->post('https://us-open.tracksolidpro.com/route/rest', $params);
+        $response = Http::asForm()->post(config('services.JimiGps.url_base'), $params);
         return $response->json();
     }
 

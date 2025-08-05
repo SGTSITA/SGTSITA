@@ -31,29 +31,18 @@
                             </div>
                         @endif
 
-                        {!! Form::model($role, ['method' => 'PATCH', 'route' => ['roles.update', $role->id]]) !!}
+                        {!! Form::model($role, ['method' => 'PATCH', 'route' => ['roles.update', $role->id], 'id' => 'formEditarRol']) !!}
                         <div class="mb-4">
                             <label class="form-label fw-semibold">Nombre del Rol</label>
                             {!! Form::text('name', null, ['class' => 'form-control rounded-3', 'placeholder' => 'Ej. Administrador']) !!}
                         </div>
 
+                        {{-- ✅ Tabla AG Grid de permisos --}}
                         <div class="mb-4">
-                            <label class="form-label fw-semibold mb-2">Permisos Disponibles</label>
-                            <div class="row">
-                                @foreach ($permission as $value)
-                                    <div class="col-md-4 mb-2">
-                                        <div class="form-check form-switch">
-                                            {!! Form::checkbox('permission[]', $value->id, in_array($value->id, $rolePermissions), [
-                                                'class' => 'form-check-input',
-                                                'id' => 'perm_' . $value->id,
-                                            ]) !!}
-                                            <label class="form-check-label" for="perm_{{ $value->id }}">
-                                                {{ ucfirst($value->name) }}
-                                            </label>
-                                        </div>
-                                    </div>
-                                @endforeach
+                            <label class="form-label fw-semibold mb-2">Permisos Personalizados:</label>
+                            <div id="tablaPermisosAGGrid" class="ag-theme-alpine" style="height: 400px; overflow: auto;">
                             </div>
+                            <input type="hidden" name="custom_permissions_json" id="custom_permissions_json" />
                         </div>
 
                         <div class="text-center mt-4">
@@ -68,4 +57,50 @@
             </div>
         </div>
     </div>
+    @include('roles.permisos_modal')
+    {{-- Carga los permisos y los permisos asignados --}}
+    <script>
+        window.PERMISOS_EXISTENTES = @json($permission);
+        window.PERMISOS_SELECCIONADOS = @json($rolePermissions);
+    </script>
 @endsection
+
+@push('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.js"></script>
+    <script src="{{ asset('js/sgt/permisos/permisos_list.js') }}"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('formEditarRol');
+
+            form.addEventListener('submit', function(e) {
+                const permisosInput = document.getElementById('custom_permissions_json');
+                if (!permisosInput) return;
+
+                try {
+                    const permisosSeleccionados = JSON.parse(permisosInput.value || '[]');
+
+                    if (permisosSeleccionados.length === 0) {
+                        e.preventDefault();
+                        Swal.fire("Advertencia", "Debes seleccionar al menos un permiso.", "warning");
+                        return;
+                    }
+
+                    // Elimina inputs previos
+                    document.querySelectorAll('input[name="permission[]"]').forEach(i => i.remove());
+
+                    permisosSeleccionados.forEach(p => {
+                        const input = document.createElement('input');
+                        input.type = 'hidden';
+                        input.name = 'permission[]';
+                        input.value = p.id; // o p.permiso_id según sea tu estructura
+                        form.appendChild(input);
+                    });
+
+                } catch (error) {
+                    console.error("Error al parsear permisos", error);
+                }
+            });
+        });
+    </script>
+@endpush

@@ -1,5 +1,4 @@
 <?php
-//Ambiente: Calidad
 use Illuminate\Support\Facades\Route;
 use Laravel\Socialite\Facades\Socialite;
 use App\Http\Controllers\HomeController;
@@ -11,9 +10,7 @@ use App\Http\Controllers\EmpresasController;
 use App\Http\Controllers\ExternosController;
 use App\Http\Controllers\CuentaGlobalController;
 use App\Http\Controllers\GoogleLinkResolverController;
-
 use App\Http\Controllers\WhatsAppController;
-
 use App\Http\Controllers\GpsController;
 use App\Http\Controllers\GpsCompanyController;
 use App\Http\Controllers\ContactoController;
@@ -21,6 +18,7 @@ use App\Http\Controllers\ReporteriaController;
 use App\Http\Controllers\MepController;
 
 use App\Models\User;
+
 
 Route::group(["prefix" => "gps"],function(){
  Route::get('globalgps/ubicacion/by-imei/{imei}',[GpsController::class,'obtenerUbicacionByImei'])->name('ubicacion.byimei');
@@ -34,6 +32,7 @@ Route::group(["prefix" => "gps"],function(){
 
 
 });
+
 
 
 Route::group(["prefix" => "mep"], function(){
@@ -535,6 +534,10 @@ Route::put('/contactos/{id}', [App\Http\Controllers\ContactoController::class, '
 Route::get('/contactos/editar/{id}', [App\Http\Controllers\ContactoController::class, 'edit'])->name('contactos.edit');
 
 
+
+Route::put('/permisos/{id}/editar-json', [App\Http\Controllers\PermisosController::class, 'updateAjax'])->name('permisos.update.ajax');
+
 Route::get('reporteria/viajes-por-cobrar', [App\Http\Controllers\ReporteriaController::class, 'indexVXC'])->name('index_vxc.reporteria');
 Route::get('/reporteria/viajes-por-cobrar/data', [App\Http\Controllers\ReporteriaController::class, 'dataVXC'])->name('reporteria.vxc.data');
 Route::post('/reporteria/viajes-por-cobrar/exportar', [App\Http\Controllers\ReporteriaController::class, 'exportarVXC']);
+

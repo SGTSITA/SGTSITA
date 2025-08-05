@@ -172,26 +172,54 @@ class ExternosController extends Controller
                                                 ->join('clients as cl','cotizaciones.id_cliente','=','cl.id')
                                                 ->join('subclientes as sc','cotizaciones.id_subcliente','=','sc.id')
                                                 ->where('estatus','=','NO ASIGNADA')
+                                                ->where('jerarquia', "!=",'Secundario')
                                                 ->orderBy('created_at', 'desc')
                                                 ->selectRaw('cotizaciones.*, d.num_contenedor,d.doc_eir,doc_ccp ,d.boleta_liberacion,d.doda,cl.nombre as cliente,sc.nombre as subcliente')
                                                 ->get();
 
+        
+        
+
         $resultContenedores = 
         $contenedoresPendientes->map(function($c){
+
+        $numContenedor = $c->num_contenedor;
+        $tipo = "Sencillo";
+        $docCCP = ($c->doc_ccp == null) ? false : true;
+        $doda = ($c->doda == null) ? false : true;
+        $boletaLiberacion = ($c->boleta_liberacion == null) ? false : true;
+
+            if (!is_null($c->referencia_full)) {
+                $secundaria = Cotizaciones::where('referencia_full', $c->referencia_full)
+                    ->where('jerarquia', 'Secundario')
+                    ->with('DocCotizacion.Asignaciones')
+                    ->first();
+
+                if ($secundaria && $secundaria->DocCotizacion) {
+                    $docCCP = ($docCCP && $secundaria->DocCotizacion->doc_ccp) ? true : false;
+                    $doda = ($doda && $secundaria->DocCotizacion->doda) ? true : false;
+                    $boletaLiberacion = ($boletaLiberacion && $secundaria->DocCotizacion->boleta_liberacion) ? true : false;
+                    $numContenedor .= '  ' . $secundaria->DocCotizacion->num_contenedor;
+                }
+
+                $tipo = "Full";
+            }
+
+ 
             return [
                 "IdContenedor" => $c->id,
                 "Cliente" => $c->cliente,
                 "SubCliente" => $c->subcliente,
-                "NumContenedor" => $c->num_contenedor,
+                "NumContenedor" => $numContenedor,
                 "Estatus" => $c->estatus,
                 "Origen" => $c->origen, 
                 "Destino" => $c->destino, 
                 "Peso" => $c->peso_contenedor,
-                "BoletaLiberacion" => ($c->boleta_liberacion == null) ? false : true,
-                "DODA" => ($c->doda == null) ? false : true,
-                "FormatoCartaPorte" => ($c->doc_ccp == null) ? false : true,
+                "BoletaLiberacion" => $boletaLiberacion,
+                "DODA" => $doda,
+                "FormatoCartaPorte" => $docCCP,
                 "IdCliente" => $c->id_cliente,
-
+                "tipo" => $tipo,
             ];
         });
 
@@ -350,13 +378,20 @@ class ExternosController extends Controller
     public function fileProperties($id,$file,$title,$contenedor){
         $path = public_path('cotizaciones/cotizacion'.$id.'/'.$file);
         if(\File::exists($path)){
+            $finfo = finfo_open(FILEINFO_MIME_TYPE); // Abrir la base de datos de tipos MIME
+            $mimeType = finfo_file($finfo, $path);
+            finfo_close($finfo);
+
             return [
                 "filePath" => $file,
                 'fileName'=> $title,
+                "folder" => $id,
                 'secondaryFileName'=> $title.' '.$contenedor,
                 "fileDate" => CommonTrait::obtenerFechaEnLetra(date("Y-m-d", filemtime($path))),
                 "fileSize" => CommonTrait::calculateFileSize(filesize($path)),
+                "fileSizeBytes" => (filesize($path)),
                 "fileType" => pathinfo($path, PATHINFO_EXTENSION),
+                "mimeType" => $mimeType,
                 "identifier" => $id,
                 "fileCode" => iconv('UTF-8', 'ASCII//TRANSLIT',str_replace(' ','-',$title))
                 ];
@@ -401,6 +436,7 @@ class ExternosController extends Controller
                 $doc_foto_patio = self::fileProperties($folderId, $documentos->foto_patio, 'Foto patio',$cont);
                 if(sizeof($doc_foto_patio) > 0) array_push($documentList, $doc_foto_patio);
             }
+
             $cotizacion = Cotizaciones::where('id',$documentos->id_cotizacion)->first();
 
             if(!is_null($cotizacion->img_boleta)){
@@ -428,6 +464,7 @@ class ExternosController extends Controller
         $path = public_path('coordenadas/'.$id.'/'.$file);
         if(\File::exists($path)){
             return [
+                "folder" => $id,
                 "filePath" => $file,
                 'fileName'=> $title,
                 "fileDate" => CommonTrait::obtenerFechaEnLetra(date("Y-m-d", filemtime($path))),
