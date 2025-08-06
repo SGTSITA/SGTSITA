@@ -12,6 +12,59 @@
             </select>
           </div>
         </div>
+        <div class="col-12 min-w-450px">
+          <div class="border border-gray-300 border-dashed rounded min-w-450px py-3 px-4 me-6 mb-3">
+            <div class="row">
+              <div class="col-12 mb-5">
+                <div class="d-flex align-items-center">
+                  <div class="fs-4 fw-bold" id="proveedorName">Proveedor:</div>
+                </div>
+                <select class="form-select subcliente d-inline-block" id="id_proveedor" name="id_proveedor">
+                  <option value="">Seleccionar proveedor</option>
+                  @foreach($proveedores as $p)
+                  <option value="{{$p->id}}">{{$p->nombre}}</option>
+                  @endforeach
+                </select>
+              </div>
+              <div class="col-6">
+                <div class="input-group mb-5">
+                  <span class="input-group-text" id="basic-addon1">
+                    <i class="ki-duotone ki-calendar-8 fs-1">
+                      <span class="path1"></span>
+                      <span class="path2"></span>
+                      <span class="path3"></span>
+                      <span class="path4"></span>
+                      <span class="path5"></span>
+                      <span class="path6"></span>
+                    </i>
+                  </span>
+                  <div class="form-floating">
+                    <input @if($action=="editar" ) value="{{$cotizacion->fecha_entrega}}" @endif type="text" class="form-control fechas" autocomplete="off" id="fecha_entrega" name="fecha_entrega" placeholder="" oninput="allowOnlyDecimals(event)" />
+                    <label for="fecha_entrega" class="text-gray-700">Fecha Salida</label>
+                  </div>
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="input-group mb-5">
+                    <span class="input-group-text" id="basic-addon1">
+                      <i class="ki-duotone ki-calendar-8 fs-1">
+                        <span class="path1"></span>
+                        <span class="path2"></span>
+                        <span class="path3"></span>
+                        <span class="path4"></span>
+                        <span class="path5"></span>
+                        <span class="path6"></span>
+                      </i>
+                    </span>
+                    <div class="form-floating">
+                      <input @if($action=="editar" ) value="{{$cotizacion->fecha_entrega}}" @endif type="text" class="form-control fechas" autocomplete="off" id="fecha_entrega" name="fecha_entrega" placeholder="" oninput="allowOnlyDecimals(event)" />
+                      <label for="fecha_entrega" class="text-gray-700">Fecha Salida</label>
+                    </div>
+                  </div>
+                </div>
+            </div>
+          </div>
+        </div>
       </div>
       <div class="mb-2"></div>
       <div class="text-muted fs-7">Ingrese los datos del contenedor que se solicitan a continuación</div>

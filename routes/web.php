@@ -29,11 +29,7 @@ Route::group(["prefix" => "gps"],function(){
  Route::get('setup',[GpsCompanyController::class,'setupGps'])->name('gps.setup');
  Route::get('config',[GpsCompanyController::class,'getConfig'])->name('gps.config');
  Route::post('config/store',[GpsCompanyController::class,'setConfig'])->name('gps.store');
-
-
 });
-
-
 
 Route::group(["prefix" => "mep"], function(){
  Route::get('viajes',[MepController::class, 'index'])->name('mep.index');
@@ -467,6 +463,10 @@ Route::post('operadores/{id}/restaurar', [App\Http\Controllers\OperadorControlle
 
     // ==================== G A S T O S  ====================
     Route::get('gastos/generales',[App\Http\Controllers\GastosGeneralesController::class, 'index'])->name('index.gastos_generales');
+    Route::get('gastos/viajes',[App\Http\Controllers\GastosContenedoresController::class, 'indexGastosViaje'])->name('index.gastos_viajes');
+    Route::post('gastos/viajes/list',[App\Http\Controllers\GastosContenedoresController::class, 'gastosViajesList'])->name('index.gastos_viajes_list');
+    
+
     Route::post('gastos/generales/get',[App\Http\Controllers\GastosGeneralesController::class, 'getGastos'])->name('get.gastos_generales');
     Route::post('gastos/generales/create', [App\Http\Controllers\GastosGeneralesController::class, 'store'])->name('store.gastos_generales');
     Route::post('gastos/generales/delete', [App\Http\Controllers\GastosGeneralesController::class, 'eliminarGasto'])->name('delete.gastos_generales');

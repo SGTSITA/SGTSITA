@@ -9,6 +9,8 @@ use App\Models\SatFormaPago;
 use App\Models\SatMetodoPago;
 use App\Models\SatUsoCfdi;
 use App\Models\DocumCotizacion;
+use App\Models\Empresas;
+use App\Models\ClientEmpresa;
 use App\Models\Correo;
 use Illuminate\Support\Facades\Mail;
 use App\Traits\CommonTrait;
@@ -22,7 +24,17 @@ class ExternosController extends Controller
         $formasPago = SatFormaPago::get();
         $metodosPago = SatMetodoPago::get();
         $usoCfdi = SatUsoCfdi::get();
-        return view('cotizaciones.externos.solicitud_simple',["action" => "crear","formasPago" => $formasPago, "metodosPago" => $metodosPago, "usoCfdi" => $usoCfdi]);
+        $clienteEmpresa = ClientEmpresa::where('id_client',auth()->user()->id_cliente)->get()->pluck('id_empresa');
+        //return $clienteEmpresa;
+        $empresas = Empresas::whereIn('id',$clienteEmpresa)->get();
+        
+        return view('cotizaciones.externos.solicitud_simple',[
+                    "action" => "crear",
+                    "formasPago" => $formasPago, 
+                    "metodosPago" => $metodosPago, 
+                    "usoCfdi" => $usoCfdi, 
+                    "proveedores" => $empresas
+                ]);
     }
 
     public function editForm(Request $request){
