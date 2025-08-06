@@ -18,10 +18,6 @@
                                 style="background: {{ $configuracion->color_boton_close }}; color: #fff;">
                                 <i class="fas fa-arrow-left me-1"></i> Volver
                             </a>
-                            <button type="button" class="btn btn-sm btn-primary rounded-pill" data-bs-toggle="modal"
-                                data-bs-target="#exampleModal">
-                                <i class="fas fa-info-circle me-1"></i> Roles
-                            </button>
                         </div>
                     </div>
 
@@ -37,7 +33,7 @@
                             </div>
                         @endif
 
-                        {!! Form::open(['route' => 'roles.store', 'method' => 'POST']) !!}
+                        {!! Form::open(['route' => 'roles.store', 'method' => 'POST', 'id' => 'formCrearRol']) !!}
                         <div class="row mb-4">
                             <div class="col-md-6">
                                 <div class="form-group">
@@ -47,23 +43,12 @@
                             </div>
                         </div>
 
+                        {{-- ✅ Tabla AG Grid de permisos personalizados --}}
                         <div class="mb-4">
-                            <label class="form-label fw-semibold mb-2">Permisos:</label>
-                            <div class="row">
-                                @foreach ($permission as $value)
-                                    <div class="col-md-4 mb-2">
-                                        <div class="form-check form-switch">
-                                            {!! Form::checkbox('permission[]', $value->id, false, [
-                                                'class' => 'form-check-input',
-                                                'id' => 'perm_' . $value->id,
-                                            ]) !!}
-                                            <label class="form-check-label" for="perm_{{ $value->id }}">
-                                                {{ ucfirst($value->name) }}
-                                            </label>
-                                        </div>
-                                    </div>
-                                @endforeach
+                            <label class="form-label fw-semibold mb-2">Permisos Personalizados:</label>
+                            <div id="tablaPermisosAGGrid" class="ag-theme-alpine" style="height: 400px; overflow: auto;">
                             </div>
+                            <input type="hidden" name="custom_permissions_json" id="custom_permissions_json" />
                         </div>
 
                         <div class="text-center mt-4">
@@ -79,5 +64,50 @@
         </div>
     </div>
 
-    @include('roles.modal')
+    {{-- Carga los permisos desde backend --}}
+    <script>
+        window.PERMISOS_EXISTENTES = @json($permission);
+    </script>
 @endsection
+
+@push('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.js"></script>
+    <script src="{{ asset('js/sgt/permisos/permisos_list.js') }}"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('formCrearRol');
+
+            form.addEventListener('submit', function(e) {
+                const permisosInput = document.getElementById('custom_permissions_json');
+                if (!permisosInput) return;
+
+                try {
+                    const permisosSeleccionados = JSON.parse(permisosInput.value || '[]');
+
+                    // Validación: no permitir guardar sin permisos
+                    if (permisosSeleccionados.length === 0) {
+                        e.preventDefault();
+                        Swal.fire("Advertencia", "Debes seleccionar al menos un permiso.", "warning");
+                        return;
+                    }
+
+                    // Elimina inputs anteriores
+                    document.querySelectorAll('input[name="permission[]"]').forEach(i => i.remove());
+
+                    // Crea campos ocultos tipo permission[]
+                    permisosSeleccionados.forEach(p => {
+                        const input = document.createElement('input');
+                        input.type = 'hidden';
+                        input.name = 'permission[]';
+                        input.value = p.id; // o p.permiso_id según estructura
+                        form.appendChild(input);
+                    });
+
+                } catch (error) {
+                    console.error("Error al parsear permisos", error);
+                }
+            });
+        });
+    </script>
+@endpush
