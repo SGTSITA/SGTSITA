@@ -37,13 +37,7 @@ return `${dia}/${mes}/${anio}`;
            
              
              dp.resources = resp.boardCentros;
-             
-             //Horizonte
-             /*dp.separators = [
-                 {color: "red", location: info.Horizonte}
-             ];*/
-             //Mostrar los eventos planificados previamente
-            
+
              allEvents = resp.extractor;
              //TarifasHilos = resp.TarifasHilo;
              //festivos = resp.festivos;
@@ -108,7 +102,7 @@ return `${dia}/${mes}/${anio}`;
 
  dp.startDate = $('#daterange').attr('data-start');
  dp.days = 365;
- dp.cellWidth = 110;
+ dp.cellWidth = 135;
  dp.rowMarginBottom = 10;
  dp.rowMarginTop = 10;
  dp.scale = "Day";
