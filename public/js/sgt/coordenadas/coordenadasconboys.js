@@ -83,6 +83,19 @@ document.getElementById('formBuscarConvoy').addEventListener('submit', function 
                     document.getElementById('fechaInicioConvoy').textContent = formatoFecha(fechaInicio);
                     document.getElementById('fechaFinConvoy').textContent = formatoFecha(fechaFin);
                     document.getElementById('id_convoy').value = data.data.idconvoy;
+                    
+                
+                    document.getElementById("no_convoy").value = data.data.no_conboy || "";
+                    document.getElementById("fecha_inicio").value = formatDateForInput(data.data.fecha_inicio) || "";
+                    document.getElementById("fecha_fin").value = formatDateForInput(data.data.fecha_fin )|| "";
+                    document.getElementById("nombre").value = data.data.nombre || "";
+                    document.getElementById("tipo_disolucion").value = data.data.tipo_disolucion || "";
+                    document.getElementById("geocerca_lat").value = data.data.geocerca_lat || "";
+                    document.getElementById("geocerca_lng").value = data.data.geocerca_lng || "";
+                    document.getElementById("geocerca_radio").value = data.data.geocerca_radio || "";
+
+
+
                     contenedoresDisponibles = data.data.contenedoresPropios;
                     contenedoresAsignadosAntes = data.data.contenedoresPropiosAsignados;
                     contenedoresAsignadosAntes.forEach((contenedor, index) => {
@@ -132,7 +145,20 @@ function abrirGeocerca() {
   const url = '/configurar-geocerca'; 
   const win = window.open(url, 'ConfigurarGeocerca', 'width=800,height=600');
 }
+function formatDateForInput(dateString) {
+     if (!dateString) return "";
+    const date = new Date(dateString);
 
+    if (isNaN(date.getTime())) return ""; 
+
+    const year = date.getFullYear();
+    const month = (`0${date.getMonth() + 1}`).slice(-2);
+    const day = (`0${date.getDate()}`).slice(-2);
+    const hours = (`0${date.getHours()}`).slice(-2);
+    const minutes = (`0${date.getMinutes()}`).slice(-2);
+
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
 function setGeocercaData(lat, lng, radio) {
     document.getElementById('geocerca_lat').value = lat;
     document.getElementById('geocerca_lng').value = lng;
@@ -141,8 +167,24 @@ function setGeocercaData(lat, lng, radio) {
     alert('Geocerca guardada correctamente');
 }
   document.getElementById('btnGuardarContenedores').addEventListener('click', function () {
+    let idconvoy = document.getElementById('id_convoy').value;
+let finicio = document.getElementById('fecha_inicio').value ;
+let ffin = document.getElementById('fecha_fin').value ;
+let nombre = document.getElementById('nombre').value ;
+let tipo_disolucion = document.getElementById('tipo_disolucion').value ;
+let geocerca_lat = document.getElementById('geocerca_lat').value ;
+let geocerca_lng = document.getElementById('geocerca_lng').value ;
+let geocerca_radio = document.getElementById('geocerca_radio').value ;
+
+    document.getElementById('ItemsSelects').value = ItemsSelects.join(';');
+    
+if (!ItemsSelects || ItemsSelects.length === 0) {
+    alert('Por favor, seleccione al menos un contenedor.');
+    return;
+  }
+
         const numeroConvoy = document.getElementById('numero_convoy').value;
-        let idconvoy = document.getElementById('id_convoy').value;
+      //  let idconvoy = document.getElementById('id_convoy').value;
     document.getElementById('ItemsSelects').value = ItemsSelects.join(';');
     
 if (!ItemsSelects || ItemsSelects.length === 0) {
@@ -150,9 +192,17 @@ if (!ItemsSelects || ItemsSelects.length === 0) {
     return;
   }
 let datap = {
+    fecha_inicio: finicio,
+    fecha_fin: ffin,
     items_selects: ItemsSelects,
+    nombre :nombre,
     idconvoy:idconvoy,
     numero_convoy:numeroConvoy,
+  tipo_disolucion :tipo_disolucion,
+            geocerca_lat:geocerca_lat,
+            geocerca_lng :geocerca_lng,
+            geocerca_radio:geocerca_radio,
+
 };
 
         fetch(`/coordenadas/conboys/agregar`, {
@@ -349,20 +399,7 @@ modalElement.setAttribute("data-id", this.dataset.id);
              
        
     ];
-    function formatDateForInput(dateString) {
-     if (!dateString) return "";
-    const date = new Date(dateString);
-
-    if (isNaN(date.getTime())) return ""; 
-
-    const year = date.getFullYear();
-    const month = (`0${date.getMonth() + 1}`).slice(-2);
-    const day = (`0${date.getDate()}`).slice(-2);
-    const hours = (`0${date.getHours()}`).slice(-2);
-    const minutes = (`0${date.getMinutes()}`).slice(-2);
-
-    return `${year}-${month}-${day}T${hours}:${minutes}`;
-}
+   
 function onSelectionChanged() {
     const selectedRows = gridApi.getSelectedRows();
     const btn = document.getElementById('btnRastrearconboysSelec');
@@ -462,7 +499,7 @@ seleccionados.length = 0;
                 });
     }
 }
-
+ 
 document.getElementById('formFiltros').addEventListener('submit', function(event) {
   event.preventDefault();
 let idconvoy = document.getElementById('id_convoy').value;
@@ -719,11 +756,14 @@ function saveconvoys(datap,urlSave) {
  function seleccionarContenedor2(valor) {
         seleccionados.push(valor);
          const contenedorData = contenedoresDisponibles.find(c => c.num_contenedor === valor);
+        if (typeof contenedorData !== 'undefined') {
 
-         ItemsSelects.push(valor +"|" + contenedorData.id_contenedor+'|'+ contenedorData.imei);
+            ItemsSelects.push(valor +"|" + contenedorData.id_contenedor+'|'+ contenedorData.imei);
         document.getElementById('contenedor-input2').value = '';
         document.getElementById('sugerencias2').style.display = 'none';
         actualizarVista2();
+        }
+         
     }
 
     function agregarContenedor2() {

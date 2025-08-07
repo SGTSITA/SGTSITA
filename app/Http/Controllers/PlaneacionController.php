@@ -189,7 +189,7 @@ class PlaneacionController extends Controller
 
         if($asignaciones->Proveedor == NULL){
             return [
-                        "nombre"=>$asignaciones->Operador->nombre, 
+                        "nombre"=>$asignaciones->Operador->nombre ?? '', 
                         "tipo" => "Viaje Propio", 
                         "cotizacion" => $cotizacion, 
                         "cliente" => $cotizacion->Cliente, 
