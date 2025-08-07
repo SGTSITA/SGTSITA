@@ -100,22 +100,7 @@
  <script>
 
 
-    let waElements = document.querySelectorAll('.waElements')
-
-    if(waStatus != 'ready'){
-      waElements.forEach((el)=>{
-          el.classList.add('d-none')
-      });
-
-      setTimeout(() => {
-        const modalElement = document.getElementById('kt_modal_whatsapp_login');
-        const whastAppModal = new bootstrap.Modal(modalElement);
-        whastAppModal.show();
-      }, 500);
-
-    }else{
-      waReadyComponents()
-    }
+    
 
  </script>
 @endpush

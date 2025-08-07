@@ -440,7 +440,7 @@
                   <a href="#" target="_blank" class="menu-link px-2">Soporte</a>
                 </li-->
                             <li class="menu-item">
-                                <a href="#" target="_blank" class="menu-link px-2">800 000 0000</a>
+                                <a href="#" target="_blank" class="menu-link px-2">+52 561 068 5796</a>
                             </li>
                         </ul>
                     </div>
@@ -471,7 +471,7 @@
     <script src="/assets/metronic/js/custom/widgets.js"></script>
     <script src="/js/sgt/common/whatsAppClient.js"></script>
     <script>
-        $(document).ready(() => {
+        $(document).ready(async () => {
             var genericUUID = localStorage.getItem('uuid');
             if (genericUUID == null) {
                 genericUUID = generateUUID();
@@ -480,8 +480,21 @@
 
             await getWaQr();
 
-            if(waStatus === 'ready'){
-              waReadyComponents()
+            let waElements = document.querySelectorAll('.waElements')
+
+            if(waStatus != 'ready'){
+            waElements.forEach((el)=>{
+                el.classList.add('d-none')
+            });
+
+            setTimeout(() => {
+                const modalElement = document.getElementById('kt_modal_whatsapp_login');
+                const whastAppModal = new bootstrap.Modal(modalElement);
+                whastAppModal.show();
+            }, 500);
+
+            }else{
+            waReadyComponents()
             }
         })
     </script>

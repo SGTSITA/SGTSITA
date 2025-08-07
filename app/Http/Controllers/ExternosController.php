@@ -11,6 +11,7 @@ use App\Models\SatUsoCfdi;
 use App\Models\DocumCotizacion;
 use App\Models\Empresas;
 use App\Models\ClientEmpresa;
+use App\Models\Asignaciones;
 use App\Models\Correo;
 use Illuminate\Support\Facades\Mail;
 use App\Traits\CommonTrait;
@@ -20,6 +21,43 @@ use Auth;
 
 class ExternosController extends Controller
 {
+    public function initBoard(Request $request){
+        $planeaciones = Asignaciones::join('docum_cotizacion', 'asignaciones.id_contenedor', '=', 'docum_cotizacion.id')
+                        ->join('cotizaciones', 'docum_cotizacion.id_cotizacion', '=', 'cotizaciones.id')
+                        ->where('asignaciones.fecha_inicio', '>=', $request->fromDate)
+                        ->where('cotizaciones.id_cliente', auth()->user()->id_cliente)
+                        ->where('cotizaciones.estatus', 'Aprobada')
+                        ->where('estatus_planeacion','=', 1)
+                        ->select('asignaciones.*', 'docum_cotizacion.num_contenedor','cotizaciones.id_cliente','cotizaciones.referencia_full','cotizaciones.tipo_viaje')
+                        ->orderBy('fecha_inicio')
+                        ->get();
+
+        $extractor = $planeaciones->map(function($p){
+            $itemNumContenedor = $p->num_contenedor;
+            if(!is_null($p->referencia_full)){
+                $cotizacionFull = Cotizaciones::where('referencia_full',$p->referencia_full)->where('jerarquia','Secundario')->first();
+                $contenedorSecundario = DocumCotizacion::where("id_cotizacion",$cotizacionFull->id)->first();
+                $itemNumContenedor .= " / ".$contenedorSecundario->num_contenedor;
+            }
+            return [
+                    "fecha_inicio" => $p->fecha_inicio,
+                    "fecha_fin" => $p->fecha_fin,
+                    "id_contenedor" => $p->id_contenedor,
+                    "id_cliente" => $p->id_empresa,
+                    "num_contenedor" => $itemNumContenedor
+                   ];
+        });
+
+        $clientes = $planeaciones->unique('id_empresa')->pluck('id_empresa');
+        $clientesData = Empresas::whereIn('id' ,$clientes)->selectRaw('id, nombre as name, '."'true'".' as expanded')->get();
+
+        $board = [];
+        $board[] = ["name" => "Proveedores", "id" => "S", "expanded" => true, "children" => $clientesData];
+      
+        $fecha = Carbon::now()->subdays(10)->format('Y-m-d');
+        return response()->json(["boardCentros"=> $board,"extractor"=>$extractor,"scrollDate"=> $fecha]);  
+    }
+
     public function solicitudSimple(){
         $formasPago = SatFormaPago::get();
         $metodosPago = SatMetodoPago::get();

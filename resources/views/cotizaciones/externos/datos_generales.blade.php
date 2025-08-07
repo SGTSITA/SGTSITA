@@ -26,43 +26,7 @@
                   @endforeach
                 </select>
               </div>
-              <div class="col-6">
-                <div class="input-group mb-5">
-                  <span class="input-group-text" id="basic-addon1">
-                    <i class="ki-duotone ki-calendar-8 fs-1">
-                      <span class="path1"></span>
-                      <span class="path2"></span>
-                      <span class="path3"></span>
-                      <span class="path4"></span>
-                      <span class="path5"></span>
-                      <span class="path6"></span>
-                    </i>
-                  </span>
-                  <div class="form-floating">
-                    <input @if($action=="editar" ) value="{{$cotizacion->fecha_entrega}}" @endif type="text" class="form-control fechas" autocomplete="off" id="fecha_entrega" name="fecha_entrega" placeholder="" oninput="allowOnlyDecimals(event)" />
-                    <label for="fecha_entrega" class="text-gray-700">Fecha Salida</label>
-                  </div>
-                </div>
-              </div>
-              <div class="col-6">
-                <div class="input-group mb-5">
-                    <span class="input-group-text" id="basic-addon1">
-                      <i class="ki-duotone ki-calendar-8 fs-1">
-                        <span class="path1"></span>
-                        <span class="path2"></span>
-                        <span class="path3"></span>
-                        <span class="path4"></span>
-                        <span class="path5"></span>
-                        <span class="path6"></span>
-                      </i>
-                    </span>
-                    <div class="form-floating">
-                      <input @if($action=="editar" ) value="{{$cotizacion->fecha_entrega}}" @endif type="text" class="form-control fechas" autocomplete="off" id="fecha_entrega" name="fecha_entrega" placeholder="" oninput="allowOnlyDecimals(event)" />
-                      <label for="fecha_entrega" class="text-gray-700">Fecha Salida</label>
-                    </div>
-                  </div>
-                </div>
-            </div>
+      
           </div>
         </div>
       </div>

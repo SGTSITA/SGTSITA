@@ -9,7 +9,9 @@ Route::get('gps',function(){
  return view('gps.magnitracking');
 });
 
-
+Route::group(['prefix' => 'mec'], function(){
+ Route::post('planeaciones/monitor/board',[ExternosController::class,'initBoard']);
+});
 
 Route::group(["prefix" => "viajes"], function(){
     Route::post('selector', [ExternosController::class,'selector'])->name('viajes.selector');
