@@ -734,7 +734,7 @@ $idCordenada= $coordenadas->id_coordenadas;
     ->where('cotizaciones.estatus', '=', 'Aprobada')
     
     ->get();
-$datos = $datosAll ->where('id_empresa', $idEmpresa)->values();
+    $datos = $datosAll ->where('id_empresa', $idEmpresa)->values();
  
 
     $conboys = DB::table('conboys')
@@ -755,10 +755,10 @@ $datos = $datosAll ->where('id_empresa', $idEmpresa)->values();
         'conboys.geocerca_lng',
         'conboys.geocerca_radio',
     )
-//     ->where('docum_cotizacion.id_empresa', '=', $idEmpresa)
-//     ->when($idCliente !== 0, function ($query) use ($idCliente) {
-//     return $query->where('cotizaciones.id_cliente', $idCliente);
-// })   
+  ->where('conboys.estatus', '=', 'Activo')
+    ->when($idCliente !== 0, function ($query) use ($idCliente) {
+    return $query->where('cotizaciones.id_cliente', $idCliente);
+})   
     ->distinct()
     ->get();
 
@@ -782,7 +782,7 @@ $datos = $datosAll ->where('id_empresa', $idEmpresa)->values();
         )
             ->when($idCliente !== 0, function ($query) use ($idCliente) {
             return $query->where('cotizaciones.id_cliente', $idCliente);
-        })   
+        })   ->where('conboys.estatus', '=', 'Activo')  
         ->get();
 
         $conboysdetalle=$conboysdetalleAll;// ->where('id_empresa', $idEmpresa)->values();

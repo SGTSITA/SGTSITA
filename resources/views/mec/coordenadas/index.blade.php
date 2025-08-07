@@ -48,6 +48,11 @@
                         <i class="bi bi-search me-1"></i> Buscar Convoy
                     </button>
                 </div>
+
+                 <button type="button" class="btn btn-primary d-none" id="btnRastrearconboysSelec">
+            <i class="bi bi-map-fill me-1"></i> Rastrear seleccionados
+        </button>
+
                 <li class="nav-item">
    
                 <i class="fas fa-route fa-3x me-2 text-primary"></i>
@@ -90,7 +95,7 @@
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-          <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+          <button type="submit" class="btn btn-primary" id="btnGuardarCambios">Guardar Cambios</button>
         </div>
       </div>
     </form>
@@ -284,8 +289,7 @@
 @push('javascript')
     <!-- AG Grid -->
     <script src="https://unpkg.com/ag-grid-community/dist/ag-grid-community.min.js"></script>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAtAO2AZBgzC7QaBxnMnPoa-DAq8vaEvUc" async defer onload="googleMapsReady()"></script>
 
 
     <script

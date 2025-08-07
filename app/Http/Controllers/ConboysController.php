@@ -152,9 +152,9 @@ class ConboysController extends Controller
             'tipo_disolucion'  => $tipo_disolucion,
             'estatus' =>'Activo',
             'fecha_disolucion'  => $fecha_disolucion ?? null,
-            'geocerca_lat' => $geocerca_lat,
-            'geocerca_lng'  =>$geocerca_lng,
-            'geocerca_radio'  => $geocerca_radio
+            'geocerca_lat' => $geocerca_lat ?? null,
+            'geocerca_lng'  =>$geocerca_lng ?? null,
+            'geocerca_radio'  => $geocerca_radio ?? null
         ]);
 
         $mesageDic="antes de for";
@@ -406,7 +406,7 @@ class ConboysController extends Controller
             }
 
             foreach ($items as $item) {
-                [$contenedor, $id_contenedor] = explode('-', $item);
+                [$contenedor, $id_contenedor,$imei] = explode('|', $item);
 
                  $existe = conboysContenedores::where('conboy_id', $convoy->id)
                 ->where('id_contenedor', $id_contenedor)

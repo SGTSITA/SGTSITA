@@ -100,7 +100,7 @@ contenedoresDisponiblesAll = data.dataContenAll;
           catalogoBusqueda.push({
             tipo: 'Equipo',
             
-            label: `${eq.id_equipo } - ${eq.marca}- ${eq.tipo}- ${textoPlaca}`,
+            label: `${eq.id_equipo } - ${eq.marca} - ${eq.tipo} - ${textoPlaca}`,
             value: `${eq.id_equipo}|${eq.imei}|${eq.id}|${eq.tipoGps}`,
             idConvoy: null
           });
@@ -135,6 +135,7 @@ let filtroActivo = null;
 function validarTipo(items)
 {
     let tabx = items.tipo;
+    let labelMuestra = items.label;
     if(items.length =0) {return}
     ItemsSelects.length =0;
     ItemsSelects= items.value;
@@ -143,13 +144,13 @@ function validarTipo(items)
     }
     mapaAjustado= false;
 
-    actualizarUbicacion(ItemsSelects,tabx);
+    actualizarUbicacion(ItemsSelects,tabx,labelMuestra);
     document.getElementById('btnDetener').style.display = 'inline-block';
     
     if (intervalId) clearInterval(intervalId);
     
     intervalId = setInterval(() => {
-      actualizarUbicacion(ItemsSelects,tabx);
+      actualizarUbicacion(ItemsSelects,tabx,labelMuestra);
     }, 5000);
 }
 let intervalId = null;
@@ -252,10 +253,7 @@ function actualizarUbicacionReal(coordenadaData){
     });
 
 }
- function actualizarUbicacion(imeis,t) {
-
-
-
+ function actualizarUbicacion(imeis,t,labelMuestra) {
 let tipo = "";
 
     let responseOk = false;
@@ -299,7 +297,7 @@ responseOk = true;
     
                 markers[item.ubicacion.imei].setPosition({ lat: latlocal, lng: lnglocal });
         } else {
-if (latlocal && lnglocal) {
+          if (latlocal && lnglocal) {
           
           // let esMostrarPrimero =  1
           // if(esMostrarPrimero){
@@ -307,8 +305,36 @@ if (latlocal && lnglocal) {
               position: { lat: latlocal, lng: lnglocal },
               map: map,
             });
-
-            const contentC = `
+              let  contentC ='';
+              if(t === 'Equipo'){
+               // `${eq.id_equipo } - ${eq.marca}- ${eq.tipo}- ${textoPlaca}`,
+               const equipo = labelMuestra.split(' - ').map(part => part.trim());
+               
+                let marcaLocal = equipo[1];
+                let placaLocal = equipo[3];
+contentC = `
+            <div style="
+                    background-color: #e3f2fd;
+                    padding: 5px;
+                    border-radius: 8px;
+                    font-family: Arial, sans-serif;
+                    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+                    max-width: 240px;
+                  ">
+              <div style="font-weight: bold; font-size: 17px; margin-bottom: 6px;">
+               
+              </div>
+              <div style="font-size: 17px; line-height: 1.5;">
+                <strong>Equipo:</strong> ${item.EquipoBD}<br>
+                <strong>Marca:</strong> ${marcaLocal}<br>
+                <strong>Placas:</strong> ${placaLocal}<br>
+             
+              </div>
+            </div>
+          `;
+              }
+              else {
+contentC = `
             <div style="
                     background-color: #e3f2fd;
                     padding: 5px;
@@ -326,6 +352,9 @@ if (latlocal && lnglocal) {
               </div>
             </div>
           `;
+
+              }
+             
                // const newMarker = L.marker([latlocal, lnglocal]).addTo(map).bindPopup(tipoSpans + ' '+ item.contenedor).openPopup();
                const infoWindow = new google.maps.InfoWindow({
             content: contentC 
@@ -344,7 +373,7 @@ if (latlocal && lnglocal) {
                   if (t.includes('convoy')) {
                      info = contenedoresDisponiblesAll.find(d => d.contenedor === contenedor);
                   }else 
-                    if(t==='#filtro-Equipo'){
+                    if(t==='Equipo'){
                    
                     const ahora = new Date();
                        info = contenedoresDisponibles.find(d => {
