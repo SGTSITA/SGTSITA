@@ -8,6 +8,7 @@ use App\Models\Coordenadas;
 use App\Models\Client;
 use App\Models\Subclientes;
 use App\Models\Proveedor;
+use App\Models\Cotizaciones;
 use App\Models\Equipo;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -482,19 +483,34 @@ $idCordenada= $coordenadas->id_coordenadas;
     public function guardarRespuesta(Request $request)
         {
                 $coordenada = Coordenadas::find($request->id_coordenada);
-
+            $message='';
                 if ($coordenada) {
                     $fecha = Carbon::now();
-                   
+                   $idCotizacion = $coordenada->id_cotizacion;
+
                     $coordenada->update([
                         $request->columna => $request->coordenadas,  
                         $request->columna_datetime =>  $fecha  
                        
                     ]);
-            
+                      $message='Coordenada guardada.';
+                    if($request->columna === 'recepcion_doc_firmados'){
+                            //finalizar viaje 
+                         $cotizacion=    Cotizaciones::find($idCotizacion);
+                         if ($cotizacion){
+                                   $cotizacion->update([
+                                            'estatus' => 'Finalizado'
+                                             
+                                        
+                                        ]);
+
+                             $message='Coordenada guardada. Viaje finalizado';
+                         }
+
+                    }
                    
                     
-                    return response()->json(['success' => true]);
+                    return response()->json(['success' => true,'message'=> $message]);
                 }
             
                 
