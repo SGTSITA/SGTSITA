@@ -63,7 +63,7 @@ function cargarinicial()
      // cargarEquiposEnSelect( data.equipos);
     detalleConvoys =   data.dataConten;
 
-contenedoresDisponiblesAll = data.dataContenAll;
+    contenedoresDisponiblesAll = data.dataContenAll;
           
         // Convoys detalle
         data.conboys.forEach(c => {
@@ -406,6 +406,7 @@ contentC = `
                     <p><strong>Destino:</strong> ${info.destino}</p>
                     <p><strong>Contrato:</strong> ${info.tipo_contrato}</p>
                     <p><strong>Fecha Inicio:</strong> ${info.fecha_inicio}</p>
+                    <p><strong>Fecha Fin:</strong> ${info.fecha_fin}</p>
                     <p><strong>IMEI:</strong> ${info.imei}</p>
                    
                                    ${extraInfo}

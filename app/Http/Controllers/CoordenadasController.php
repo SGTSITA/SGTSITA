@@ -735,6 +735,7 @@ $idCordenada= $coordenadas->id_coordenadas;
              ->on('asig.tipo_contrato', '=', 'beneficiarios.tipo_contrato');
     })
     ->whereNotNull('asig.imei')
+    ->whereDate('asig.fecha_fin', '>=',  Carbon::now()->toDateString())
    
     ->when($contenedoresVarios, function ($query) use ($contenedoresVarios) {
         $contenedores = array_filter(array_map('trim', explode(';', $contenedoresVarios)));
@@ -771,6 +772,8 @@ $idCordenada= $coordenadas->id_coordenadas;
         'conboys.geocerca_lng',
         'conboys.geocerca_radio',
     )
+    ->whereDate('conboys.fecha_fin', '>=', Carbon::now()->toDateString())
+    ->whereDate('conboys.fecha_inicio', '<=', Carbon::now()->toDateString())
   ->where('conboys.estatus', '=', 'Activo')
     ->when($idCliente !== 0, function ($query) use ($idCliente) {
     return $query->where('cotizaciones.id_cliente', $idCliente);
