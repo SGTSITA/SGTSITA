@@ -214,12 +214,10 @@ class ConboysController extends Controller
             return response()->json(['success' => false, 'message' => 'Conboy no encontrado'], 404);
         }
 
-        // Validar que las fechas y el nombre estén presentes si así lo deseas
+       
         $request->validate([
-            'nombre' => 'required|string|max:255',
-            'fecha_inicio' => 'required|date',
-            'fecha_fin' => 'required|date',
-        ]);
+            'nombre' => 'required|string|max:255'
+                   ]);
 
      
         $convoy->nombre = $request->nombre;
@@ -242,7 +240,7 @@ class ConboysController extends Controller
                 foreach ($items as $item) {
                       [$contenedor, $id_contenedor,$imei] = explode('|', $item);
 
-                    $existe = ConboysContenedores::where('conboy_id', $id_convoy)
+                    $existe = conboysContenedores::where('conboy_id', $id_convoy)
                                     ->where('id_contenedor', $id_contenedor)
                                     ->exists();
 
