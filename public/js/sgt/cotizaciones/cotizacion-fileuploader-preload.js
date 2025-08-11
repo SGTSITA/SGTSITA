@@ -15,7 +15,7 @@ function adjuntarDocumentos(filesContenedor) {
         enableApi: true,
         limit:1,
         start: true,
-        files: [filesContenedor],
+        files: (filesContenedor != null ) ? [filesContenedor] : null,
         changeInput: '<div class="fileuploader-input">' +
             '<div class="fileuploader-input-inner">' +
             '<div class="fileuploader-icon-main"></div>' +
@@ -164,6 +164,7 @@ async function consultarArchivos(numContenedor) {
   
       const fileList = await response.json();
       let containerFiles = fileList.data
+      if(containerFiles.length == 0) return null;
       let filter = containerFiles.find((f)=> fileSettings.agGrid == f.fileCode)
       fileProperties = {
         name:filter.fileName,
@@ -212,10 +213,15 @@ async function initFileUploader(){
             fileSettings = el;
             numContenedor = localStorage.getItem('numContenedor'); 
             filesContenedor = await consultarArchivos(numContenedor)
-            //console.log(filesContenedor)
-            itemTemplate += fileCheckTemplate(filesContenedor.name,filesContenedor.file)
-            waSendFiles.innerHTML = itemTemplate
+
+            if(filesContenedor != null){
+                itemTemplate += fileCheckTemplate(filesContenedor.name,filesContenedor.file)
+                waSendFiles.innerHTML = itemTemplate
+            }
+            
             adjuntarDocumentos(filesContenedor);
+            //console.log(filesContenedor)
+            
         }
    }
 }

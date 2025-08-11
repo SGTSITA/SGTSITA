@@ -9,7 +9,7 @@
             <span class="text-gray-500 mt-1 fw-semibold fs-6">Visualice fácilmente los viajes programados y mantenga el control de las rutas.</span>
         </h3>
         <div class="card-toolbar">
-            <button type="button" class="btn btn-sm btn-light-primary">
+            <a href="{{route('viajes.solicitar')}}" type="button" class="btn btn-sm btn-light-primary">
             <i class="ki-duotone ki-delivery">
                 <span class="path1"></span>
                 <span class="path2"></span>
@@ -18,7 +18,7 @@
                 <span class="path5"></span>
             </i>
                 Solicitar viaje
-            </button>
+            </a>
         </div>
         
   </div>

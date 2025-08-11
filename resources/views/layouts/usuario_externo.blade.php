@@ -95,7 +95,7 @@
                                 </span>
                                 <div class="menu-sub menu-sub-accordion">
                                     <div class="menu-item">
-                                        <a href="{{ route('dashboard') }}" class="menu-link">
+                                        <a href="{{ route('viajes.solicitar') }}" class="menu-link">
                                             <span class="menu-bullet">
                                                 <span class="bullet bullet-dot"></span>
                                             </span>

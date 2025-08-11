@@ -58,6 +58,10 @@ class ExternosController extends Controller
         return response()->json(["boardCentros"=> $board,"extractor"=>$extractor,"scrollDate"=> $fecha]);  
     }
 
+    public function solicitarIndex(){
+        return view('cotizaciones.externos.step_one');
+    }
+
     public function solicitudSimple(){
         $formasPago = SatFormaPago::get();
         $metodosPago = SatMetodoPago::get();
@@ -79,13 +83,23 @@ class ExternosController extends Controller
         $formasPago = SatFormaPago::get();
         $metodosPago = SatMetodoPago::get();
         $usoCfdi = SatUsoCfdi::get();
+        $clienteEmpresa = ClientEmpresa::where('id_client',auth()->user()->id_cliente)->get()->pluck('id_empresa');
+        $empresas = Empresas::whereIn('id',$clienteEmpresa)->get();
+
         $cotizacion = Cotizaciones::with(['cliente', 'DocCotizacion'])
         ->whereHas('DocCotizacion', function ($query) use ($request) {
             $query->where('num_contenedor', $request->numContenedor);
         })
         ->first();
  
-        return view('cotizaciones.externos.solicitud_simple',["action" => "editar","formasPago" => $formasPago, "metodosPago" => $metodosPago, "usoCfdi" => $usoCfdi, "cotizacion" => $cotizacion]);
+        return view('cotizaciones.externos.solicitud_simple',
+                                                            ["action" => "editar",
+                                                            "formasPago" => $formasPago, 
+                                                            "metodosPago" => $metodosPago, 
+                                                            "usoCfdi" => $usoCfdi, 
+                                                            "cotizacion" => $cotizacion,
+                                                            "proveedores" => $empresas
+                                                        ]);
     }
 
     public function solicitudMultiple(){
@@ -287,13 +301,13 @@ class ExternosController extends Controller
 
             if($contenedor->doda != null && $contenedor->boleta_liberacion != null){
                 $cotizacion = Cotizaciones::where('id',$cotizacion)->first();
-                $cotizacion->estatus = 'NO ASIGNADA';
+                $cotizacion->estatus = 'Pendiente';
                 $cliente = Client::where('id',$cotizacion->id_cliente)->first();
                 $cotizacion->save();
 
                 $cuentasCorreo = [env('MAIL_NOTIFICATIONS'),Auth::User()->email];
                 $cuentasCorreo2 = Correo::where('cotizacion_nueva',1)->get()->pluck('correo')->toArray();
-                \Log::debug($cuentasCorreo);
+                
                 Mail::to($cuentasCorreo)->send(new \App\Mail\NotificaCotizacionMail($contenedor,$cliente));
 
             }
