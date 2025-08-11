@@ -70,7 +70,9 @@ const formFieldsBloque = [
 const formFieldsMec = [
     {'field':'text_recinto','id':'text_recinto','label':'recinto','required': false, "type":"text", "trigger":"none"},
     {'field':'direccion_entrega','id':'direccion_entrega','label':'Dirección Entrega','required': true, "type":"text", "trigger":"none"},
-    {'field':'direccion_recinto','id':'direccion_recinto','label':'Dirección recinto','required': false, "type":"text", "trigger":"text_recinto"}
+    {'field':'direccion_recinto','id':'direccion_recinto','label':'Dirección recinto','required': false, "type":"text", "trigger":"text_recinto"},
+    {'field':'id_proveedor','id':'id_proveedor','label':'Proveedor','required': true, "type":"text", "trigger":"text_recinto"}
+
 ]
 
 const formFieldsFacturacion = [
@@ -142,7 +144,9 @@ function calcularTotal(modulo = 'crear') {
 
     // Obtener el valor de Precio Tonelada
     //const field_precio_tonelada = fields.find( i => i.field == "precio_tonelada");
-    const precioTonelada = parseFloat(reverseMoneyFormat(document.getElementById('total_sobrepeso_viaje').value)) || 0;
+    const precioTonelada = (modulo != "proveedores") 
+    ? parseFloat(reverseMoneyFormat(document.getElementById('total_sobrepeso_viaje').value)) ||0 
+    : parseFloat(reverseMoneyFormat(document.getElementById('total_tonelada').value));
 
     // Sumar el valor de Precio Tonelada al total
     const totalFinal = totalConRetencion + precioTonelada;
@@ -156,11 +160,15 @@ function calcularTotal(modulo = 'crear') {
     
 
     let totalCotizacion  = (modulo == "proveedores") ? document.querySelectorAll(".total-cotizacion-proveedor") : document.querySelectorAll(".total-cotizacion");
-    totalCotizacion.forEach((r) => r.value = moneyFormat(totalFinal))
+    totalCotizacion.forEach((r) =>{
+         r.value = moneyFormat(totalFinal)
+        
+    })
     //baseTaref Corresponde a Base 2
     const baseTaref = (totalFinal - baseFactura - iva) + retencion;
     // Mostrar el resultado en el input de base_taref
     const field_base_taref = fields.find( i => i.field == "base_taref");
+    console.log(field_base_taref.id)
     document.getElementById(field_base_taref.id).value = moneyFormat(baseTaref);
 
     // Formatear el total con comas
@@ -1068,15 +1076,14 @@ $("#cotizacionCreate").on("submit", function(e){
                         localStorage.setItem('numContenedor',formData['num_contenedor']); 
                         var uuid = localStorage.getItem('uuid');
                         if(uuid){
+                            initFileUploader()
+                            setTimeout(()=>{
+                                document.getElementById('noticeFileUploader').classList.add('d-none')
+                                document.getElementById('fileUploaderContainer').classList.remove('d-none')    
+                            },3000);
+                            
                             if(form.data('sgtCotizacionAction') != 'editar'){
-                                
-                                initFileUploader()
-    
-                                setTimeout(()=>{
-                                    document.getElementById('noticeFileUploader').classList.add('d-none')
-                                    document.getElementById('fileUploaderContainer').classList.remove('d-none')    
-                                },3000);
-                                
+
                                 form.attr('action', `/cotizaciones/single/update/${data.folio}`)
                                 form.data('sgtCotizacionAction','editar')
                             }
