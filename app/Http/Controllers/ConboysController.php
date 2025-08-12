@@ -152,9 +152,9 @@ class ConboysController extends Controller
             'tipo_disolucion'  => $tipo_disolucion,
             'estatus' =>'Activo',
             'fecha_disolucion'  => $fecha_disolucion ?? null,
-            'geocerca_lat' => $geocerca_lat,
-            'geocerca_lng'  =>$geocerca_lng,
-            'geocerca_radio'  => $geocerca_radio
+            'geocerca_lat' => $geocerca_lat ?? null,
+            'geocerca_lng'  =>$geocerca_lng ?? null,
+            'geocerca_radio'  => $geocerca_radio ?? null
         ]);
 
         $mesageDic="antes de for";
@@ -214,12 +214,10 @@ class ConboysController extends Controller
             return response()->json(['success' => false, 'message' => 'Conboy no encontrado'], 404);
         }
 
-        // Validar que las fechas y el nombre estén presentes si así lo deseas
+       
         $request->validate([
-            'nombre' => 'required|string|max:255',
-            'fecha_inicio' => 'required|date',
-            'fecha_fin' => 'required|date',
-        ]);
+            'nombre' => 'required|string|max:255'
+                   ]);
 
      
         $convoy->nombre = $request->nombre;
@@ -242,7 +240,7 @@ class ConboysController extends Controller
                 foreach ($items as $item) {
                       [$contenedor, $id_contenedor,$imei] = explode('|', $item);
 
-                    $existe = ConboysContenedores::where('conboy_id', $id_convoy)
+                    $existe = conboysContenedores::where('conboy_id', $id_convoy)
                                     ->where('id_contenedor', $id_contenedor)
                                     ->exists();
 
@@ -406,7 +404,7 @@ class ConboysController extends Controller
             }
 
             foreach ($items as $item) {
-                [$contenedor, $id_contenedor] = explode('-', $item);
+                [$contenedor, $id_contenedor,$imei] = explode('|', $item);
 
                  $existe = conboysContenedores::where('conboy_id', $convoy->id)
                 ->where('id_contenedor', $id_contenedor)

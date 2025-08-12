@@ -55,11 +55,11 @@
                         <div class="mb-3">
                             <label for="interval" class="form-label">Intervalo</label>
                             <select name="interval" id="interval" class="form-select">
-                                <option value="everyMinute" {{ $interval->interval == 'everyMinute' ? 'selected' : '' }}>Cada minuto</option>
-                                <option value="everyFiveMinutes" {{ $interval->interval == 'everyFiveMinutes' ? 'selected' : '' }}>Cada 5 minutos</option>
-                                <option value="hourly" {{ $interval->interval == 'hourly' ? 'selected' : '' }}>Cada hora</option>
-                                <option value="daily" {{ $interval->interval == 'daily' ? 'selected' : '' }}>Diario</option>
-                                <option value="weekly" {{ $interval->interval == 'weekly' ? 'selected' : '' }}>Semanal</option>
+                                <option value="everyMinute" {{ $intervals->interval == 'everyMinute' ? 'selected' : '' }}>Cada minuto</option>
+                                <option value="everyFiveMinutes" {{ $intervals->interval == 'everyFiveMinutes' ? 'selected' : '' }}>Cada 5 minutos</option>
+                                <option value="hourly" {{ $intervals->interval == 'hourly' ? 'selected' : '' }}>Cada hora</option>
+                                <option value="daily" {{ $intervals->interval == 'daily' ? 'selected' : '' }}>Diario</option>
+                                <option value="weekly" {{ $intervals->interval == 'weekly' ? 'selected' : '' }}>Semanal</option>
                             </select>
                         </div>
 

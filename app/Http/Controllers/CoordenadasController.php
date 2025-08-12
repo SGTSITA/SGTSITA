@@ -8,6 +8,7 @@ use App\Models\Coordenadas;
 use App\Models\Client;
 use App\Models\Subclientes;
 use App\Models\Proveedor;
+use App\Models\Cotizaciones;
 use App\Models\Equipo;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -482,19 +483,34 @@ $idCordenada= $coordenadas->id_coordenadas;
     public function guardarRespuesta(Request $request)
         {
                 $coordenada = Coordenadas::find($request->id_coordenada);
-
+            $message='';
                 if ($coordenada) {
                     $fecha = Carbon::now();
-                   
+                   $idCotizacion = $coordenada->id_cotizacion;
+
                     $coordenada->update([
                         $request->columna => $request->coordenadas,  
                         $request->columna_datetime =>  $fecha  
                        
                     ]);
-            
+                      $message='Coordenada guardada.';
+                    if($request->columna === 'recepcion_doc_firmados'){
+                            //finalizar viaje 
+                         $cotizacion=    Cotizaciones::find($idCotizacion);
+                         if ($cotizacion){
+                                   $cotizacion->update([
+                                            'estatus' => 'Finalizado'
+                                             
+                                        
+                                        ]);
+
+                             $message='Coordenada guardada. Viaje finalizado';
+                         }
+
+                    }
                    
                     
-                    return response()->json(['success' => true]);
+                    return response()->json(['success' => true,'message'=> $message]);
                 }
             
                 
@@ -719,6 +735,7 @@ $idCordenada= $coordenadas->id_coordenadas;
              ->on('asig.tipo_contrato', '=', 'beneficiarios.tipo_contrato');
     })
     ->whereNotNull('asig.imei')
+    ->whereDate('asig.fecha_fin', '>=',  Carbon::now()->toDateString())
    
     ->when($contenedoresVarios, function ($query) use ($contenedoresVarios) {
         $contenedores = array_filter(array_map('trim', explode(';', $contenedoresVarios)));
@@ -734,7 +751,7 @@ $idCordenada= $coordenadas->id_coordenadas;
     ->where('cotizaciones.estatus', '=', 'Aprobada')
     
     ->get();
-$datos = $datosAll ->where('id_empresa', $idEmpresa)->values();
+    $datos = $datosAll ->where('id_empresa', $idEmpresa)->values();
  
 
     $conboys = DB::table('conboys')
@@ -755,10 +772,12 @@ $datos = $datosAll ->where('id_empresa', $idEmpresa)->values();
         'conboys.geocerca_lng',
         'conboys.geocerca_radio',
     )
-//     ->where('docum_cotizacion.id_empresa', '=', $idEmpresa)
-//     ->when($idCliente !== 0, function ($query) use ($idCliente) {
-//     return $query->where('cotizaciones.id_cliente', $idCliente);
-// })   
+    ->whereDate('conboys.fecha_fin', '>=', Carbon::now()->toDateString())
+    ->whereDate('conboys.fecha_inicio', '<=', Carbon::now()->toDateString())
+  ->where('conboys.estatus', '=', 'Activo')
+    ->when($idCliente !== 0, function ($query) use ($idCliente) {
+    return $query->where('cotizaciones.id_cliente', $idCliente);
+})   
     ->distinct()
     ->get();
 
@@ -782,7 +801,7 @@ $datos = $datosAll ->where('id_empresa', $idEmpresa)->values();
         )
             ->when($idCliente !== 0, function ($query) use ($idCliente) {
             return $query->where('cotizaciones.id_cliente', $idCliente);
-        })   
+        })   ->where('conboys.estatus', '=', 'Activo')  
         ->get();
 
         $conboysdetalle=$conboysdetalleAll;// ->where('id_empresa', $idEmpresa)->values();

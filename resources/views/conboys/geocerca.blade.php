@@ -246,8 +246,8 @@ function esShortUrlGoogleMaps(url) {
           alert("Debes seleccionar una ubicación en el mapa.");
           return;
         }
-        const lat = geofenceLatLng.lat;
-        const lng = geofenceLatLng.lng;
+        const lat = geofenceLatLng.lat();
+        const lng = geofenceLatLng.lng();
         const radius = parseInt(document.getElementById("radioInput").value) || 100;
 
         if (window.opener && typeof window.opener.setGeocercaData === "function") {

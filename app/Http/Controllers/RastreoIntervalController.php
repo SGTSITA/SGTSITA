@@ -9,9 +9,9 @@ class RastreoIntervalController extends Controller
 {
     public function index()
     {
-        $interval = RastreoIntervals::where('task_name', 'rastreo_gps_interval')->first();
+        $intervals = RastreoIntervals::where('task_name', 'rastreo_gps_interval')->first();
 
-        return view('scheduler.index', compact('interval'));
+        return view('scheduler.index', compact('intervals'));
     }
 
     public function update(Request $request)
