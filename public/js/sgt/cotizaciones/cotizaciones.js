@@ -1025,9 +1025,11 @@ $("#cotizacionCreate").on("submit", function(e){
                 Swal.fire("El campo "+item.label+" es obligatorio","Parece que no ha proporcionado información en el campo "+item.label,"warning");
                 return false;
             }
+
+            formData[item.field] = field.value;
         }
 
-        formData[item.field] = field.value;
+        
         return true;
 
     });
