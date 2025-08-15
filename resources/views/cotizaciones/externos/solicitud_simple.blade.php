@@ -178,6 +178,7 @@
 <script src="{{ asset('js/sgt/cotizaciones/cotizacion-fileuploader-preload.js') }}?v={{ filemtime(public_path('js/sgt/cotizaciones/cotizacion-fileuploader-preload.js')) }}"></script>
 <script src="{{ asset('js/sgt/common/tagify.js') }}?v={{ filemtime(public_path('js/sgt/common/tagify.js')) }}"></script>
 <script src="{{ asset('assets/metronic/fileuploader/cotizacion-cliente-externo.js')}}?v={{ filemtime(public_path('js/sgt/cotizaciones/cotizaciones.js')) }}" type="text/javascript"></script>
+<script src="{{ asset('js/sgt/cotizaciones/externos.js') }}?v={{ filemtime(public_path('js/sgt/cotizaciones/externos.js')) }}"></script>
 
 <script>
   $(document).ready(() =>{

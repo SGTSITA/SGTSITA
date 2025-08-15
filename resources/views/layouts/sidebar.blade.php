@@ -232,6 +232,11 @@
                                 <span class="sidenav-normal">Gastos Generales</span>
                             </a>
                             <a class="nav-link {{ Request::is('gastos/generales*') ? 'show' : '' }}"
+                                href="{{ route('index.gastos_viajes') }}">
+                                <span class="sidenav-mini-icon"> P </span>
+                                <span class="sidenav-normal">Gastos Viajes</span>
+                            </a>
+                            <a class="nav-link {{ Request::is('gastos/generales*') ? 'show' : '' }}"
                                 href="{{ route('index.gastos_por_pagar') }}">
                                 <span class="sidenav-mini-icon"> P </span>
                                 <span class="sidenav-normal">Gastos por Pagar</span>

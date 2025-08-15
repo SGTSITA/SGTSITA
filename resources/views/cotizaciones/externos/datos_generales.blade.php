@@ -12,6 +12,41 @@
             </select>
           </div>
         </div>
+        @can('mec-elegir-proveedor')
+        <div class="col-12 min-w-450px">
+          <div class="border border-gray-300 border-dashed rounded min-w-450px py-3 px-4 me-6 mb-3">
+            <div class="row">
+              <div class="col-12 mb-5">
+                <div class="d-flex align-items-center">
+                  <div class="fs-4 fw-bold" id="proveedorName">Proveedor:</div>
+                </div>
+                <select class="form-select subcliente d-inline-block" id="id_proveedor" name="id_proveedor">
+                  <option value="">Seleccionar proveedor</option>
+                  @foreach($proveedores as $p)
+                  <option value="{{$p->id}}">{{$p->nombre}}</option>
+                  @endforeach
+                </select>
+              </div>
+      
+              </div>
+
+            <div class="row">
+              <div class="col-12 mb-5">
+                <div class="d-flex align-items-center">
+                  <div class="fs-4 fw-bold" id="proveedorName">Transportista:</div>
+                </div>
+                <select class="form-select subcliente d-inline-block" id="id_transportista" name="id_transportista">
+                  <option value="">Seleccionar transportista</option>
+                  @foreach($proveedores as $p)
+                  <option value="{{$p->id}}">{{$p->nombre}}</option>
+                  @endforeach
+                </select>
+              </div>
+      
+              </div>
+          </div>
+        </div>
+        @endcan
       </div>
       <div class="mb-2"></div>
       <div class="text-muted fs-7">Ingrese los datos del contenedor que se solicitan a continuación</div>

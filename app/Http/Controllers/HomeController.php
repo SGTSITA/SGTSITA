@@ -52,7 +52,7 @@ class HomeController extends Controller
         }
         else {
             if(\Auth::user()->id_cliente != 0){
-                        return view('cotizaciones.externos.step_one',compact('empresasAsignadas','empActual','userActual'));
+                        return view('cotizaciones.externos.board-viajes',compact('empresasAsignadas','empActual','userActual'));
                     }else{
                         return view('dashboard',compact('empresasAsignadas','empActual','userActual'));
                     }

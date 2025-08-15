@@ -95,8 +95,6 @@ class Cotizaciones extends Model
             $empresa->id_empresa = Auth::user()->id_empresa;
         });
 
-        static::updating(function ($empresa) {
-            $empresa->id_empresa = Auth::user()->id_empresa;
-        });
+        
     }
 }

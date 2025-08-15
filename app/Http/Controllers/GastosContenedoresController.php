@@ -135,28 +135,70 @@ class GastosContenedoresController extends Controller
     }
 
     public function exportarSeleccionados(Request $request)
-{
-    $ids = $request->input('selected_ids', []);
-    $tipo = $request->input('fileType');
+    {
+        $ids = $request->input('selected_ids', []);
+        $tipo = $request->input('fileType');
 
-    if (empty($ids)) {
-        return response()->json(['error' => 'No hay registros seleccionados.'], 422);
+        if (empty($ids)) {
+            return response()->json(['error' => 'No hay registros seleccionados.'], 422);
+        }
+
+        $exportador = new GastosPorPagarExport($ids); // ✅ Ya recibe los IDs
+
+        if ($tipo === 'xlsx') {
+            return Excel::download($exportador, 'gastos_seleccionados.xlsx');
+        }
+
+        if ($tipo === 'pdf') {
+            $pdf = PDF::loadView('reporteria.gxp.excel', [
+                'gastos' => $exportador->getGastosData($ids), // Usa tu lógica existente
+                'isExcel' => false
+            ]);
+            return $pdf->download('gastos_seleccionados.pdf');
+        }
+
+        return response()->json(['error' => 'Tipo no válido'], 400);
     }
 
-    $exportador = new GastosPorPagarExport($ids); // ✅ Ya recibe los IDs
-
-    if ($tipo === 'xlsx') {
-        return Excel::download($exportador, 'gastos_seleccionados.xlsx');
+    public function indexGastosViaje(){
+        return view('gastos_contenedor.index-gastos-v2');
     }
 
-    if ($tipo === 'pdf') {
-        $pdf = PDF::loadView('reporteria.gxp.excel', [
-            'gastos' => $exportador->getGastosData($ids), // Usa tu lógica existente
-            'isExcel' => false
-        ]);
-        return $pdf->download('gastos_seleccionados.pdf');
-    }
+    public function gastosViajesList(Request $r){
+        $cotizaciones = Cotizaciones::where('id_empresa', auth()->user()->id_empresa)
+            ->where('estatus', '=', 'Aprobada')
+            ->where('estatus_planeacion', '=', 1)
+            ->where('jerarquia', "!=",'Secundario')
+            ->orderBy('created_at', 'desc')
+            ->with(['cliente', 'DocCotizacion.Asignaciones'])
+            ->get()
+            ->map(function ($cotizacion) {
+                $contenedor = $cotizacion->DocCotizacion ? $cotizacion->DocCotizacion->num_contenedor : 'N/A';
 
-    return response()->json(['error' => 'Tipo no válido'], 400);
-}
+                // Si es tipo 'Full', buscamos la secundaria para obtener su contenedor
+                if (!is_null($cotizacion->referencia_full)) {
+                    $secundaria = Cotizaciones::where('referencia_full', $cotizacion->referencia_full)
+                        ->where('jerarquia', 'Secundario')
+                        ->with('DocCotizacion.Asignaciones')
+                        ->first();
+
+                    if ($secundaria && $secundaria->DocCotizacion) {
+                        $contenedor .= ' ' . $secundaria->DocCotizacion->num_contenedor;
+                    }
+                }
+
+                return [
+                    $contenedor,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    'id' => $cotizacion->id,
+                ];
+            });
+
+        return response()->json(['handsOnTableData' => $cotizaciones]);
+    }
 }
