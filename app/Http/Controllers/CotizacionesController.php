@@ -472,7 +472,7 @@ public function getCotizacionesCanceladas()
 
     public function store(Request $request){
 
-        $idEmpresa = ($request->has('uuid')) ? $request->id_proveedor : auth()->user()->id_empresa;
+        $idEmpresa = ($request->has('id_proveedor')) ? $request->id_proveedor : auth()->user()->id_empresa;
         if($request->get('num_contenedor') != NULL){
             $numContenedor = str_replace(' ','',$request->input('num_contenedor'));
 
@@ -485,7 +485,7 @@ public function getCotizacionesCanceladas()
             }
         }
 
-        if($request->get('id_cliente_clientes') !== NULL){
+    /*if($request->get('id_cliente_clientes') !== NULL){
             $cliente = $request->get('id_cliente_clientes');
         }else if($request->get('nombre_cliente') == NULL){
             $cliente = $request->get('id_cliente');
@@ -498,7 +498,9 @@ public function getCotizacionesCanceladas()
             $cliente->save();
 
             $cliente = $cliente->id;
-        }
+        }*/
+
+        $cliente = $request->get('id_cliente');
 
         $cotizaciones = new Cotizaciones;
         $cotizaciones->id_cliente = $cliente;
@@ -552,6 +554,9 @@ public function getCotizacionesCanceladas()
             $cotizaciones->direccion_entrega = $request->direccion_entrega;
             $cotizaciones->direccion_recinto = $request->direccion_recinto;
             $cotizaciones->uso_recinto = ($request->text_recinto == 'recinto-si') ? 1 : 0;
+            if($request->has('id_proveedor')){
+                $cotizaciones->id_proveedor = $request->id_transportista;
+            }
         }
 
         $cotizaciones->latitud=  $request->latitud;

@@ -71,7 +71,8 @@ const formFieldsMec = [
     {'field':'text_recinto','id':'text_recinto','label':'recinto','required': false, "type":"text", "trigger":"none"},
     {'field':'direccion_entrega','id':'direccion_entrega','label':'Dirección Entrega','required': true, "type":"text", "trigger":"none"},
     {'field':'direccion_recinto','id':'direccion_recinto','label':'Dirección recinto','required': false, "type":"text", "trigger":"text_recinto"},
-    {'field':'id_proveedor','id':'id_proveedor','label':'Proveedor','required': true, "type":"text", "trigger":"text_recinto"}
+    {'field':'id_proveedor','id':'id_proveedor','label':'Proveedor','required': true, "type":"text", "trigger":"none"},
+    {'field':'id_transportista','id':'id_transportista','label':'Transportista','required': true, "type":"text", "trigger":"none"}
 
 ]
 
@@ -992,9 +993,10 @@ $("#cotizacionCreate").on("submit", function(e){
                 Swal.fire("El campo "+item.label+" es obligatorio","Parece que no ha proporcionado información en el campo "+item.label,"warning");
                 return false;
             }
+            formData[item.field] = field.value;
         }
         
-        formData[item.field] = field.value;
+        
         return true;
 
     });
@@ -1019,9 +1021,10 @@ $("#cotizacionCreate").on("submit", function(e){
                 Swal.fire("El campo "+item.label+" es obligatorio","Parece que no ha proporcionado información en el campo "+item.label,"warning");
                 return false;
             }
+            formData[item.field] = field.value;
         }
 
-        formData[item.field] = field.value;
+        
         return true;
 
     });

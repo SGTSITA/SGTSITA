@@ -11,6 +11,7 @@ Route::get('gps',function(){
 
 Route::group(['prefix' => 'mec'], function(){
  Route::post('planeaciones/monitor/board',[ExternosController::class,'initBoard']);
+ Route::post('transportistas/list',[ExternosController::class,'transportistasList']);
 });
 
 Route::group(["prefix" => "viajes"], function(){

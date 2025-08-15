@@ -13,6 +13,7 @@ use App\Models\Empresas;
 use App\Models\ClientEmpresa;
 use App\Models\Asignaciones;
 use App\Models\Correo;
+use App\Models\Proveedor;
 use Illuminate\Support\Facades\Mail;
 use App\Traits\CommonTrait;
 use Carbon\Carbon;
@@ -56,6 +57,10 @@ class ExternosController extends Controller
       
         $fecha = Carbon::now()->subdays(10)->format('Y-m-d');
         return response()->json(["boardCentros"=> $board,"extractor"=>$extractor,"scrollDate"=> $fecha]);  
+    }
+
+    public function transportistasList(Request $r){
+        return Proveedor::where('id_empresa',$r->proveedor)->get();
     }
 
     public function solicitarIndex(){
@@ -301,7 +306,7 @@ class ExternosController extends Controller
 
             if($contenedor->doda != null && $contenedor->boleta_liberacion != null){
                 $cotizacion = Cotizaciones::where('id',$cotizacion)->first();
-                $cotizacion->estatus = 'Pendiente';
+                $cotizacion->estatus = (is_null($cotizacion->id_proveedor)) ? 'NO ASIGNADA' :'Pendiente';
                 $cliente = Client::where('id',$cotizacion->id_cliente)->first();
                 $cotizacion->save();
 
