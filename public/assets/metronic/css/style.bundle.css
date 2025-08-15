@@ -43805,7 +43805,7 @@ body{
     }
     .wrapper{
         padding-top:50px;
-        padding-left:350px
+        padding-left:250px
     }
     .header-fixed[data-kt-sticky-header=on] .wrapper{
         padding-top:130px
@@ -43873,6 +43873,7 @@ body{
 .aside{
     display:flex;
     flex-direction:column;
+    left:10px;
     background-color:var(--bs-aside-bg-color);
     padding:0
 }
@@ -43975,10 +43976,10 @@ body{
         position:fixed;
         top:50px;
         bottom:50px;
-        left:50px;
+      
         z-index:100;
         overflow:hidden;
-        width:300px;
+       
         border-radius:2rem
     }
     .aside .hover-scroll-overlay-y,.aside .scroll-y{
@@ -44124,11 +44125,11 @@ body{
 }
 @media (min-width:992px){
     .content{
-        padding:25px 0 0 0
+        padding:0 0 0 0
     }
 }
 @media (max-width:991.98px){
     .content{
-        padding:20px 0 0 0
+        padding:0 0 0 0
     }
 }

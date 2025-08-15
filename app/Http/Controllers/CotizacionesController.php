@@ -32,8 +32,8 @@ class CotizacionesController extends Controller
 {
     public function index(){
 
-        $cotizaciones_planeadas = Cotizaciones::where('id_empresa' ,'=',auth()->user()->id_empresa)->where('estatus','=','Aprobada')->where('estatus_planeacion','=', 1)->orderBy('created_at', 'desc')
-        ->select('id_cliente', 'origen', 'destino', 'id', 'estatus')->get();
+        // $cotizaciones_planeadas = Cotizaciones::where('id_empresa' ,'=',auth()->user()->id_empresa)->where('estatus','=','Aprobada')->where('estatus_planeacion','=', 1)->orderBy('created_at', 'desc')
+        // ->select('id_cliente', 'origen', 'destino', 'id', 'estatus')->get();
 
         
         $empresas = Empresas::get();
@@ -472,9 +472,9 @@ public function getCotizacionesCanceladas()
 
     public function store(Request $request){
 
+        $idEmpresa = ($request->has('id_proveedor')) ? $request->id_proveedor : auth()->user()->id_empresa;
         if($request->get('num_contenedor') != NULL){
             $numContenedor = str_replace(' ','',$request->input('num_contenedor'));
-            $idEmpresa = auth()->user()->id_empresa;
 
             $contenedorExistente = DocumCotizacion::where('num_contenedor', $numContenedor)
                                                 ->where('id_empresa', $idEmpresa)
@@ -485,7 +485,7 @@ public function getCotizacionesCanceladas()
             }
         }
 
-        if($request->get('id_cliente_clientes') !== NULL){
+    /*if($request->get('id_cliente_clientes') !== NULL){
             $cliente = $request->get('id_cliente_clientes');
         }else if($request->get('nombre_cliente') == NULL){
             $cliente = $request->get('id_cliente');
@@ -494,11 +494,13 @@ public function getCotizacionesCanceladas()
             $cliente->nombre = $request->get('nombre_cliente');
             $cliente->correo = $request->get('correo_cliente');
             $cliente->telefono = $request->get('telefono_cliente');
-            $cliente->id_empresa = auth()->user()->id_empresa;
+            $cliente->id_empresa =  6;
             $cliente->save();
 
             $cliente = $cliente->id;
-        }
+        }*/
+
+        $cliente = $request->get('id_cliente');
 
         $cotizaciones = new Cotizaciones;
         $cotizaciones->id_cliente = $cliente;
@@ -545,13 +547,18 @@ public function getCotizacionesCanceladas()
         $cotizaciones->estatus_pago = '0';
 
         if($request->has('uuid')){
+            
             $cotizaciones->sat_uso_cfdi_id = $request->id_uso_cfdi;
             $cotizaciones->sat_forma_pago_id = $request->id_forma_pago;
             $cotizaciones->sat_metodo_pago_id = $request->id_metodo_pago;
             $cotizaciones->direccion_entrega = $request->direccion_entrega;
             $cotizaciones->direccion_recinto = $request->direccion_recinto;
             $cotizaciones->uso_recinto = ($request->text_recinto == 'recinto-si') ? 1 : 0;
+            if($request->has('id_proveedor')){
+                $cotizaciones->id_proveedor = $request->id_transportista;
+            }
         }
+
         $cotizaciones->latitud=  $request->latitud;
         $cotizaciones->longitud = $request->longitud;
         $cotizaciones->direccion_mapa = $request->direccion_mapa;
@@ -565,6 +572,7 @@ public function getCotizacionesCanceladas()
             $file->move($path, $fileName);
             $doc_cotizaciones->excel_clientes = $fileName;
         }
+
         $doc_cotizaciones->update();
 
         $docucotizaciones = new DocumCotizacion;
@@ -572,7 +580,17 @@ public function getCotizacionesCanceladas()
         $docucotizaciones->num_contenedor = str_replace(' ','',$request->get('num_contenedor'));
         $docucotizaciones->save();
 
-        return response()->json(["Titulo" => "Proceso satisfactorio", "Mensaje" => "Cotización creada con exito", "TMensaje" => "success"]);
+        if($idEmpresa != auth()->user()->id_empresa){
+            DB::table('cotizaciones')->where('id',$cotizaciones->id)->update([
+                'id_empresa' => $idEmpresa
+            ]);
+
+            DB::table('docum_cotizacion')->where('id_cotizacion')->update([
+                'id_empresa' => $idEmpresa
+            ]);
+        }
+
+        return response()->json(["Titulo" => "Proceso satisfactorio", "Mensaje" => "Cotización creada con exito", "TMensaje" => "success","folio" => $cotizaciones->id,"proveedor" =>$cotizaciones->id_empresa]);
 
     }
 
@@ -1400,6 +1418,14 @@ public function getCotizacionesCanceladas()
         ->where('d.num_contenedor',$r->numContenedor);
 
         $cotizacion = $cotizacionQuery->first();
+        
+        if(is_null($cotizacion)){
+            $upload['hasWarnings'] = true;
+            $upload['warnings'] = ['Guarde los datos del viaje antes de cargar archivos'];
+            return response()->json($upload);
+            exit;
+        }
+
         $estatus = $cotizacion->estatus;
 
         $directorio =  public_path().'/cotizaciones/cotizacion'.$cotizacion->id_cotizacion;

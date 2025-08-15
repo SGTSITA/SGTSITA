@@ -95,3 +95,12 @@
   </div>
 </div>
 @endsection
+
+@push('javascript')
+ <script>
+
+
+    
+
+ </script>
+@endpush

@@ -1,5 +1,4 @@
 <?php
-//Ambiente: Calidad
 use Illuminate\Support\Facades\Route;
 use Laravel\Socialite\Facades\Socialite;
 use App\Http\Controllers\HomeController;
@@ -12,22 +11,35 @@ use App\Http\Controllers\ExternosController;
 use App\Http\Controllers\CuentaGlobalController;
 use App\Http\Controllers\GoogleLinkResolverController;
 use App\Http\Controllers\MEP\CostosViajeMEPController;
-
 use App\Http\Controllers\WhatsAppController;
-
 use App\Http\Controllers\GpsController;
+use App\Http\Controllers\GpsCompanyController;
 use App\Http\Controllers\ContactoController;
 use App\Http\Controllers\ReporteriaController;
+use App\Http\Controllers\MepController;
+
+use App\Models\User;
+
 
 Route::group(["prefix" => "gps"],function(){
  Route::get('globalgps/ubicacion/by-imei/{imei}',[GpsController::class,'obtenerUbicacionByImei'])->name('ubicacion.byimei');
  Route::get('skyangel/ubicacion/',[GpsController::class,'getLocationSkyAngel'])->name('ubicacion.byimei');
- Route::get('jimi/token',[GpsController::class,'tokenJimi']);
+
+ Route::get('jimi/api/test',[GpsCompanyController::class,'testGpsApi']);
+
+ Route::get('setup',[GpsCompanyController::class,'setupGps'])->name('gps.setup');
+ Route::get('config',[GpsCompanyController::class,'getConfig'])->name('gps.config');
+ Route::post('config/store',[GpsCompanyController::class,'setConfig'])->name('gps.store');
 });
 
+Route::group(["prefix" => "mep"], function(){
+ Route::get('viajes',[MepController::class, 'index'])->name('mep.index');
+ Route::get('viajes/list',[MepController::class, 'getCotizacionesList'])->name('mep.viajes');
+ Route::get('viajes/finalizadas',[MepController::class, 'getCotizacionesFinalizadas'])->name('mep.viajes');
+ Route::post('viajes/operador/asignar',[MepController::class, 'asignarOperador'])->name('mep.asignaoperdor');
+ Route::post('catalogos/operador-unidad',[MepController::class, 'getCatalogosMep'])->name('mep.catalogos');
+});
 
-
-use App\Models\User;
 
 Route::group(["prefix" => "whatsapp"],function(){
     Route::get('sendtext/{phone}/{text}',[WhatsAppController::class,'sendText'])->name('whatsapp.text');
@@ -165,6 +177,7 @@ Route::get('coordenadas/conboys/edit/{id}', [App\Http\Controllers\ConboysControl
 Route::post('coordenadas/conboys/update', [App\Http\Controllers\ConboysController::class, 'update'])->name('update.conboys');
 Route::delete('coordenadas/conboys/delete', [App\Http\Controllers\ConboysController::class, 'destroy'])->name('destroy.conboys');
 Route::delete('coordenadas/conboys/eliminar-contenedor/{contenedor}/{convoy}', [App\Http\Controllers\ConboysController::class, 'eliminarContenedor']);
+Route::post('/coordenadas/conboys/estatus', [App\Http\Controllers\ConboysController::class, 'updateEstatus']);
 
 Route::get('coordenadas/conboys/getconboys', [App\Http\Controllers\ConboysController::class, 'getConboys'])->name('getConboys.conboys');
 Route::get('/coordenadas/conboys/getHistorialUbicaciones', [App\Http\Controllers\ConboysController::class, 'getHistorialUbicaciones'])->name('getHistorialUbicaciones.conboys');
@@ -187,6 +200,13 @@ Route::get('/mapa-comparacion', function () {
 Route::get('/coordenadas/mapa_rastreo', function () {
     return view('coordenadas.mapa_rastreo');
 });
+Route::get('/configurar-geocerca', function () {
+    return view('conboys.geocerca');
+});
+
+
+Route::get('/scheduler/index', [App\Http\Controllers\RastreoIntervalController::class, 'index'])->name('scheduler.index');
+Route::put('/scheduler/edit', [App\Http\Controllers\RastreoIntervalController::class, 'update'])->name('scheduler.update');
 
 //NUEVO SERVICIO DE GPS 
 Route::get('/gps/{imei}/detalle', [GpsController::class, 'detalleDispositivo']);
@@ -444,6 +464,10 @@ Route::post('operadores/{id}/restaurar', [App\Http\Controllers\OperadorControlle
 
     // ==================== G A S T O S  ====================
     Route::get('gastos/generales',[App\Http\Controllers\GastosGeneralesController::class, 'index'])->name('index.gastos_generales');
+    Route::get('gastos/viajes',[App\Http\Controllers\GastosContenedoresController::class, 'indexGastosViaje'])->name('index.gastos_viajes');
+    Route::post('gastos/viajes/list',[App\Http\Controllers\GastosContenedoresController::class, 'gastosViajesList'])->name('index.gastos_viajes_list');
+    
+
     Route::post('gastos/generales/get',[App\Http\Controllers\GastosGeneralesController::class, 'getGastos'])->name('get.gastos_generales');
     Route::post('gastos/generales/create', [App\Http\Controllers\GastosGeneralesController::class, 'store'])->name('store.gastos_generales');
     Route::post('gastos/generales/delete', [App\Http\Controllers\GastosGeneralesController::class, 'eliminarGasto'])->name('delete.gastos_generales');
@@ -508,7 +532,7 @@ Route::put('/contactos/{id}', [App\Http\Controllers\ContactoController::class, '
 Route::get('/contactos/editar/{id}', [App\Http\Controllers\ContactoController::class, 'edit'])->name('contactos.edit');
 
 
-// Permisos
+
 Route::put('/permisos/{id}/editar-json', [App\Http\Controllers\PermisosController::class, 'updateAjax'])->name('permisos.update.ajax');
 
 
@@ -529,3 +553,9 @@ Route::get('costos/mep/viajes', [App\Http\Controllers\MEP\CostosViajeMEPControll
 Route::get('costos/mep/cambios/data', [App\Http\Controllers\MEP\CostosViajeMEPController::class, 'getCambios'])->name('cambios.costos_mep');
 Route::get('/costos/mep/cambios/{id}/detalle', [\App\Http\Controllers\MEP\CostosViajeMEPController::class, 'detalleCambio']);
 Route::post('/costos/mep/cambios/{id}/reenviar', [App\Http\Controllers\MEP\CostosViajeMEPController::class, 'reenviarCambio'])->name('costos_mep.reenviar');
+
+
+Route::get('reporteria/viajes-por-cobrar', [App\Http\Controllers\ReporteriaController::class, 'indexVXC'])->name('index_vxc.reporteria');
+Route::get('/reporteria/viajes-por-cobrar/data', [App\Http\Controllers\ReporteriaController::class, 'dataVXC'])->name('reporteria.vxc.data');
+Route::post('/reporteria/viajes-por-cobrar/exportar', [App\Http\Controllers\ReporteriaController::class, 'exportarVXC']);
+

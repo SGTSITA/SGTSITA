@@ -70,7 +70,11 @@ const formFieldsBloque = [
 const formFieldsMec = [
     {'field':'text_recinto','id':'text_recinto','label':'recinto','required': false, "type":"text", "trigger":"none"},
     {'field':'direccion_entrega','id':'direccion_entrega','label':'Dirección Entrega','required': true, "type":"text", "trigger":"none"},
-    {'field':'direccion_recinto','id':'direccion_recinto','label':'Dirección recinto','required': false, "type":"text", "trigger":"text_recinto"}
+    {'field':'direccion_recinto','id':'direccion_recinto','label':'Dirección recinto','required': false, "type":"text", "trigger":"text_recinto"},
+    {'field':'id_proveedor','id':'id_proveedor','label':'Proveedor','required': true, "type":"text", "trigger":"none"},
+    {'field':'id_transportista','id':'id_transportista','label':'Transportista','required': true, "type":"text", "trigger":"none"}
+
+
 ]
 
 const formFieldsFacturacion = [
@@ -142,7 +146,9 @@ function calcularTotal(modulo = 'crear') {
 
     // Obtener el valor de Precio Tonelada
     //const field_precio_tonelada = fields.find( i => i.field == "precio_tonelada");
-    const precioTonelada = parseFloat(reverseMoneyFormat(document.getElementById('total_sobrepeso_viaje').value)) || 0;
+    const precioTonelada = (modulo != "proveedores") 
+    ? parseFloat(reverseMoneyFormat(document.getElementById('total_sobrepeso_viaje').value)) ||0 
+    : parseFloat(reverseMoneyFormat(document.getElementById('total_tonelada').value));
 
     // Sumar el valor de Precio Tonelada al total
     const totalFinal = totalConRetencion + precioTonelada;
@@ -156,11 +162,15 @@ function calcularTotal(modulo = 'crear') {
     
 
     let totalCotizacion  = (modulo == "proveedores") ? document.querySelectorAll(".total-cotizacion-proveedor") : document.querySelectorAll(".total-cotizacion");
-    totalCotizacion.forEach((r) => r.value = moneyFormat(totalFinal))
+    totalCotizacion.forEach((r) =>{
+         r.value = moneyFormat(totalFinal)
+        
+    })
     //baseTaref Corresponde a Base 2
     const baseTaref = (totalFinal - baseFactura - iva) + retencion;
     // Mostrar el resultado en el input de base_taref
     const field_base_taref = fields.find( i => i.field == "base_taref");
+    console.log(field_base_taref.id)
     document.getElementById(field_base_taref.id).value = moneyFormat(baseTaref);
 
     // Formatear el total con comas
@@ -208,7 +218,7 @@ function cargarmapas(){
                     .then(res => res.json())
                     .then(data => {
                         const direccion = data.display_name;
-                        document.getElementById('direccion_entrega').value = direccion;
+                       // document.getElementById('direccion_entrega').value = direccion;
                         document.getElementById('direccion_mapa').value = direccion;
 
                         
@@ -990,9 +1000,10 @@ $("#cotizacionCreate").on("submit", function(e){
                 Swal.fire("El campo "+item.label+" es obligatorio","Parece que no ha proporcionado información en el campo "+item.label,"warning");
                 return false;
             }
+            formData[item.field] = field.value;
         }
         
-        formData[item.field] = field.value;
+        
         return true;
 
     });
@@ -1017,9 +1028,11 @@ $("#cotizacionCreate").on("submit", function(e){
                 Swal.fire("El campo "+item.label+" es obligatorio","Parece que no ha proporcionado información en el campo "+item.label,"warning");
                 return false;
             }
+
+            formData[item.field] = field.value;
         }
 
-        formData[item.field] = field.value;
+        
         return true;
 
     });
@@ -1065,9 +1078,22 @@ $("#cotizacionCreate").on("submit", function(e){
         success:function(data){
                 Swal.fire(data.Titulo,data.Mensaje,data.TMensaje).then(function() {
                     if(data.TMensaje == "success"){
+                        localStorage.setItem('numContenedor',formData['num_contenedor']); 
                         var uuid = localStorage.getItem('uuid');
                         if(uuid){
-                            window.location.replace("/viajes/documents");
+                            initFileUploader()
+                            setTimeout(()=>{
+                                document.getElementById('noticeFileUploader').classList.add('d-none')
+                                document.getElementById('fileUploaderContainer').classList.remove('d-none')    
+                            },3000);
+                            
+                            if(form.data('sgtCotizacionAction') != 'editar'){
+
+                                form.attr('action', `/cotizaciones/single/update/${data.folio}`)
+                                form.data('sgtCotizacionAction','editar')
+                            }
+                            
+
                         }else{
                             location.reload();
                         }

@@ -10,7 +10,20 @@
 
             <div class="modal-body">
                 <div class="row">
+                    <div class="col-12 form-group">
+                            <label for="name">Tipo Empresa*</label>
+                            <div class="input-group mb-3">
+                                <span class="input-group-text" id="basic-addon1">
+                                    <img src="{{ asset('img/icon/gear.webp') }}" alt="" width="25px">
+                                </span>
+                                <select class="form-select" name="id_tipo_empresa" id="">
+                                    @foreach ($tipoEmpresa as $te)
+                                        <option value="{{ $te->id }}" >{{ $te->tipo_empresa }}</option>
+                                    @endforeach
 
+                                </select>
+                            </div>
+                    </div>
                     <div class="col-12 form-group">
                         <label for="name">Nombre Empresa*</label>
                         <div class="input-group mb-3">
@@ -51,14 +64,29 @@
                         </div>
                     </div>
 
-                    <div class="col-12 form-group">
+                    <div class="col-12 form-group d-none">
                         <label for="name">Regimen Fiscal*</label>
                         <div class="input-group mb-3">
                             <span class="input-group-text" id="basic-addon1">
                                 <img src="{{ asset('img/icon/gear.webp') }}" alt="" width="25px">
                             </span>
-                            <input name="regimen_fiscal" id="regimen_fiscal" type="text" class="form-control">
+                            <input name="regimen_fiscal" id="regimen_fiscal" type="text" value ="---" class="form-control">
                         </div>
+                    </div>
+
+                    <div class="col-12 form-group">
+                            <label for="name">Regimen Fiscal*</label>
+                            <div class="input-group mb-3">
+                                <span class="input-group-text" id="basic-addon1">
+                                    <img src="{{ asset('img/icon/gear.webp') }}" alt="" width="25px">
+                                </span>
+                                <select class="form-select" name="id_regimen_fiscal" id="id_regimen_fiscal">
+                                    @foreach ($satRegimen as $sat)
+                                        <option value="{{ $sat->id }}" >{{ $sat->sat_code }} - {{ $sat->regimen_fiscal }}</option>
+                                    @endforeach
+
+                                </select>
+                            </div>
                     </div>
 
                     <div class="col-12 form-group">

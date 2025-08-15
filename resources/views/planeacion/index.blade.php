@@ -51,7 +51,7 @@
 
 @push('custom-javascript')
 <style>
-    #dp {
+#dp {
   flex: 1;
   min-height: 0;
 }

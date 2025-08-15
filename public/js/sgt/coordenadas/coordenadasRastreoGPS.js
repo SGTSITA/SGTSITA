@@ -1,13 +1,20 @@
-window.markers = [];
-var map = L.map('map').setView([0, 0], 2);
+let map;
+  let markers = [];
 
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap contributors'
-}).addTo(map);
+  function initMap() {
+   
+    map = new google.maps.Map(document.getElementById("map"), {
+      center: { lat: 0, lng: 0 },
+      zoom: 2,
+    });
 
+    
 
-let marker = null;
-
+     const marker = new google.maps.Marker({
+    position: { lat: 0, lng: 0 },
+    map: map,
+  });
+  }
   
 const catalogoBusqueda = [];
 
@@ -243,7 +250,11 @@ function actualizarUbicacionReal(coordenadaData){
 
 }
 function actualizarUbicacion(imeis,t) {
- 
+ if (Array.isArray(imeis) && imeis.length === 0) {
+  alert('No se encontro informacion de IMEI para rastreo...')
+   detener();
+ return
+ }
 
 let tipo = "";
 
@@ -278,14 +289,28 @@ responseOk = true;
           }
           arrayData.forEach((item2, index) => {
               nEconomico =' No Economico:' +item2.economico +' imei:' + item2.imei ;
-              latlocal= item2.tracks[0].position.latitude;
-              lnglocal= item2.tracks[0].position.longitude;
+              latlocal= parseFloat(item2.tracks[0].position.latitude);
+              lnglocal= parseFloat(item2.tracks[0].position.longitude);
                  id_contenConvoy=  item2.id_contenendor;
               if (latlocal && lnglocal) {
 
-                 const newMarker = L.marker([latlocal, lnglocal]).addTo(map).bindPopup(nEconomico).openPopup();
-                window.markers.push(newMarker);
-                     newMarker.on('click', () => {
+                // const newMarker = new google.maps.Marker([latlocal, lnglocal]).addTo(map).bindPopup(nEconomico).openPopup();
+                 const newMarker = new google.maps.Marker({
+  position: { lat: latlocal, lng: lnglocal },
+  map: map,
+});
+
+const infoWindow = new google.maps.InfoWindow({
+  content: nEconomico
+});
+infoWindow.open(map, newMarker);
+
+// Para que se abra el popup al hacer clic en el marcador
+newMarker.addListener('click', () => {
+  infoWindow.open(map, newMarker);
+});
+                markers.push(newMarker);
+                 newMarker.addListener('click', () => {
             const contenedor = item.contenedor;
              const info = contenedoresDisponibles.find(d => d.contenedor === contenedor);
                 if (!info) {
@@ -337,15 +362,31 @@ responseOk = true;
 
 
         }else {
-             latlocal = item.ubicacion.data.lat;
-         lnglocal = item.ubicacion.data.lng;
+             latlocal =parseFloat( item.ubicacion.data.lat);
+         lnglocal =parseFloat( item.ubicacion.data.lng);
          idConvoyOContenedor=  item.id_contenendor;
         if (latlocal && lnglocal) {
     
-          const newMarker = L.marker([latlocal, lnglocal]).addTo(map).bindPopup(item.contenedor).openPopup();
-            window.markers.push(newMarker);
+          const newMarker = new google.maps.Marker({
+  position: { lat: latlocal, lng: lnglocal },
+  map: map,
+});
+
+// Crear InfoWindow para el popup
+const infoWindow = new google.maps.InfoWindow({
+  content: item.contenedor
+});
+
+// Mostrar el popup cuando se crea el marcador (opcional)
+infoWindow.open(map, newMarker);
+
+// Para que se abra el popup al hacer clic en el marcador
+newMarker.addListener('click', () => {
+  infoWindow.open(map, newMarker);
+});
+            markers.push(newMarker);
           tipo= tipo + ' '+ item.contenedor;
-          newMarker.on('click', () => {
+          newMarker.addListener('click', () => {
             const contenedor = item.contenedor;
              let info = contenedoresDisponibles.find(d => d.contenedor === contenedor);
                 if (!info) {
@@ -397,7 +438,10 @@ responseOk = true;
               const modal = new bootstrap.Modal(document.getElementById('modalInfoViaje'));
               modal.show();
             });
-        if (index === 0) map.setView([latlocal, lnglocal], 15);
+        if (index === 0) {
+          map.setCenter({ lat: latlocal, lng: lnglocal });
+        map.setZoom(15);
+        }
 
         
         }
@@ -449,15 +493,9 @@ function detener(){
 
 // Función para limpiar marcadores
 function limpiarMarcadores() {
-   if (!window.markers) window.markers = [];
-
-    window.markers.forEach(marker => {
-        if (map.hasLayer(marker)) {
-            map.removeLayer(marker);
-        }
-    });
-
-    window.markers = [];
+     markers.forEach(marker => marker.setMap(null)); 
+    markers = [];
+    
 }
 
 

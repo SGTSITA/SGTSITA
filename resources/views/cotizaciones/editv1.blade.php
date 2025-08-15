@@ -85,7 +85,7 @@
                               </button>
 
                               @if ($cotizacion->estatus_planeacion == 1)
-                                @if ($documentacion->Asignaciones->id_operador == NULL)
+                                @if ($documentacion->Asignaciones->id_proveedor != NULL)
                                     <button class="nav-link custom-tab" id="nav-Proveedor-tab" data-bs-toggle="tab" data-bs-target="#nav-Proveedor" type="button" role="tab" aria-controls="nav-Proveedor" aria-selected="false">
                                         <img src="{{ asset('img/icon/efectivo.webp') }}" alt="" width="40px"> Proveedor
                                     </button>
@@ -948,9 +948,9 @@
                                         <div class="tab-pane fade" id="nav-Proveedor" role="tabpanel" aria-labelledby="nav-Proveedor-tab" tabindex="0">
                                              
                                        <div class="row">
-                                       @if ($documentacion->num_contenedor != NULL)
-                                                <label style="font-size: 20px;">Num contenedor:  {{$documentacion->num_contenedor}} </label>
-                                            @endif
+                                       
+                                                <label style="font-size: 20px;">Num contenedor:  {{$documentacion?->num_contenedor}} </label>
+                                           
                                        </div>
                                             <div class="row">
                                                 <ul class="list-group">
@@ -958,13 +958,45 @@
                                                     <div class="d-flex flex-column">
                                                         <h5 class="mb-2 text-md">Proveedor</h5>
                                                         <span class="mb-2 text-md">
-                                                            Nombre: <span class="text-dark font-weight-bold ms-2">
-                                                            <select class="form-select bg-transparent cliente d-inline-block"  data-toggle="select" id="id_proveedor" name="id_proveedor">
-                                                                <option value="">Seleccionar Proveedor</option>
-                                                                @foreach($proveedores as $p)
-                                                                  <option value="{{$p->id}}" @if($p->id == $documentacion->Asignaciones->Proveedor->id) selected @endif>{{$p->nombre}}</option>
-                                                                @endforeach
-                                                            </select></span>
+                                                            Nombre: 
+                                                            <span class="text-dark font-weight-bold ms-2">
+                                                                <select class="form-select bg-transparent cliente d-inline-block"  data-toggle="select" id="id_proveedor" name="id_proveedor">
+                                                                    <option value="">Seleccionar Proveedor</option>
+                                                                   
+                                                                    @foreach($proveedores as $p)
+                                                                    <option value="{{$p->id}}" 
+                                                                     @if($p->id == $documentacion->Asignaciones?->Proveedor?->id) selected @endif>
+                                                                    {{$p->nombre}}</option>
+                                                                    @endforeach
+                                                                
+                                                                </select>
+                                                            </span>
+                                                        </span>
+
+                                                        <span class="mb-2 text-md">
+                                                            Operador: 
+                                                            <span class="text-dark font-weight-bold ms-2">
+                                                            {{$documentacion->Asignaciones?->Operador?->nombre}}
+                                                            </span>
+                                                        </span>
+
+                                                        <span class="mb-2 text-md">
+                                                            Unidad: 
+                                                            <span class="text-dark font-weight-bold ms-2">
+                                                            {{optional(optional($documentacion->Asignaciones)->Camion)->id_equipo}}
+                                                            </span>
+                                                            Placas:
+                                                            <span class="text-dark font-weight-bold ms-2">
+                                                            {{$documentacion->Asignaciones?->Camion?->placas ?? '--'}}
+                                                            </span>
+                                                            Serie / VIN:
+                                                            <span class="text-dark font-weight-bold ms-2">
+                                                            {{$documentacion->Asignaciones?->Camion?->num_serie ?? '--'}}
+                                                            </span>
+                                                            GPS:
+                                                            <span class="text-dark font-weight-bold ms-2">
+                                                            {{ optional(optional(optional($documentacion->Asignaciones)->Camion)->gps)->nombre }} / {{$documentacion->Asignaciones?->Camion?->imei}}
+                                                            </span>
                                                         </span>
 
                                                     </div>
@@ -1120,7 +1152,7 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        @elseif ($documentacion->Asignaciones->id_proveedor == NULL)
+                                        @elseif (is_null($documentacion->Asignaciones->id_proveedor ))
                                         <div class="tab-pane fade" id="nav-GastosOpe" role="tabpanel" aria-labelledby="nav-GastosOpe-tab" tabindex="0">
                                             <div class="col-sm-12">
                                                 <div class="card card-body" id="profile">
