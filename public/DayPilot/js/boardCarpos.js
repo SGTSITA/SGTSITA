@@ -108,7 +108,9 @@ return `${dia}/${mes}/${anio}`;
 
  dp.startDate = $('#daterange').attr('data-start');
  dp.days = 365;
- dp.cellWidth = 140;
+
+ dp.cellWidth = 160;
+
  dp.rowMarginBottom = 10;
  dp.rowMarginTop = 10;
  dp.scale = "Day";

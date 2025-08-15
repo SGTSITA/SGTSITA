@@ -531,6 +531,10 @@ Route::put('/contactos/{id}', [App\Http\Controllers\ContactoController::class, '
 Route::get('/contactos/editar/{id}', [App\Http\Controllers\ContactoController::class, 'edit'])->name('contactos.edit');
 
 
+
+Route::put('/permisos/{id}/editar-json', [App\Http\Controllers\PermisosController::class, 'updateAjax'])->name('permisos.update.ajax');
+
 Route::get('reporteria/viajes-por-cobrar', [App\Http\Controllers\ReporteriaController::class, 'indexVXC'])->name('index_vxc.reporteria');
 Route::get('/reporteria/viajes-por-cobrar/data', [App\Http\Controllers\ReporteriaController::class, 'dataVXC'])->name('reporteria.vxc.data');
 Route::post('/reporteria/viajes-por-cobrar/exportar', [App\Http\Controllers\ReporteriaController::class, 'exportarVXC']);
+

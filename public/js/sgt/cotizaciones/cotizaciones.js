@@ -74,6 +74,7 @@ const formFieldsMec = [
     {'field':'id_proveedor','id':'id_proveedor','label':'Proveedor','required': true, "type":"text", "trigger":"none"},
     {'field':'id_transportista','id':'id_transportista','label':'Transportista','required': true, "type":"text", "trigger":"none"}
 
+
 ]
 
 const formFieldsFacturacion = [
@@ -145,7 +146,9 @@ function calcularTotal(modulo = 'crear') {
 
     // Obtener el valor de Precio Tonelada
     //const field_precio_tonelada = fields.find( i => i.field == "precio_tonelada");
-    const precioTonelada = parseFloat(reverseMoneyFormat(document.getElementById('total_sobrepeso_viaje').value)) || 0;
+    const precioTonelada = (modulo != "proveedores") 
+    ? parseFloat(reverseMoneyFormat(document.getElementById('total_sobrepeso_viaje').value)) ||0 
+    : parseFloat(reverseMoneyFormat(document.getElementById('total_tonelada').value));
 
     // Sumar el valor de Precio Tonelada al total
     const totalFinal = totalConRetencion + precioTonelada;
@@ -159,11 +162,15 @@ function calcularTotal(modulo = 'crear') {
     
 
     let totalCotizacion  = (modulo == "proveedores") ? document.querySelectorAll(".total-cotizacion-proveedor") : document.querySelectorAll(".total-cotizacion");
-    totalCotizacion.forEach((r) => r.value = moneyFormat(totalFinal))
+    totalCotizacion.forEach((r) =>{
+         r.value = moneyFormat(totalFinal)
+        
+    })
     //baseTaref Corresponde a Base 2
     const baseTaref = (totalFinal - baseFactura - iva) + retencion;
     // Mostrar el resultado en el input de base_taref
     const field_base_taref = fields.find( i => i.field == "base_taref");
+    console.log(field_base_taref.id)
     document.getElementById(field_base_taref.id).value = moneyFormat(baseTaref);
 
     // Formatear el total con comas
@@ -1021,6 +1028,7 @@ $("#cotizacionCreate").on("submit", function(e){
                 Swal.fire("El campo "+item.label+" es obligatorio","Parece que no ha proporcionado información en el campo "+item.label,"warning");
                 return false;
             }
+
             formData[item.field] = field.value;
         }
 
