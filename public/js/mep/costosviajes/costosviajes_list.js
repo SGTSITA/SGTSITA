@@ -1,163 +1,207 @@
-let gridApi = null;
-let filaSeleccionada = null;
+let hot = null;
+let rowData = [];
+const tasa_iva = 0.16;
+const tasa_retencion = 0.04;
 
-const columnDefs = [
-    { headerName: "Contenedor", field: "contenedor", flex: 1 },
-    { headerName: "Destino", field: "destino", flex: 1 },
-    { headerName: "Estatus", field: "estatus", flex: 1 },
-    { headerName: "Costo del viaje", field: "precio_viaje", valueFormatter: money, flex: 1 },
-    { headerName: "Burreo", field: "burreo", valueFormatter: money, flex: 1 },
-    { headerName: "Maniobra", field: "maniobra", valueFormatter: money, flex: 1 },
-    { headerName: "Estadía", field: "estadia", valueFormatter: money, flex: 1 },
-    { headerName: "Otros", field: "otro", valueFormatter: money, flex: 1 },
-    { headerName: "IVA", field: "iva", valueFormatter: money, flex: 1 },
-    { headerName: "Retención", field: "retencion", valueFormatter: money, flex: 1 },
-    { headerName: "Base 1", field: "base1", valueFormatter: money, flex: 1 },
-    { headerName: "Base 2", field: "base2", valueFormatter: money, flex: 1 },
-    { headerName: "Total", field: "total", valueFormatter: money, flex: 1 },
-    { headerName: "Sobrepeso", field: "sobrepeso", valueFormatter: money, flex: 1 },
-    { headerName: "Precio sobrepeso", field: "precio_sobrepeso", valueFormatter: money, flex: 1 },
-    {
-        headerName: "Acciones", field: "acciones", flex: 0.6,
-        cellRenderer: (params) => {
-            const row = JSON.stringify(params.data).replace(/"/g, '&quot;');
-            return `<button class="btn btn-sm btn-warning" onclick="abrirModal('${row}')">
-                <i class="fas fa-edit"></i>
-            </button>`;
-        }
-    }
-];
+function recalcularTotales(row) {
+    const precio = parseFloat(row.precio_viaje) || 0;
+    const burreo = parseFloat(row.burreo) || 0;
+    const maniobra = parseFloat(row.maniobra) || 0;
+    const estadia = parseFloat(row.estadia) || 0;
+    const otro = parseFloat(row.otro) || 0;
+    const sobrepeso = parseFloat(row.sobrepeso) || 0;
+    const precio_sobrepeso = parseFloat(row.precio_sobrepeso) || 0;
+    const base1 = parseFloat(row.base1) || 0;
 
+    const subtotal = precio + burreo + maniobra + estadia + otro;
+    const sobre = sobrepeso * precio_sobrepeso;
+    const iva = base1 * tasa_iva;
+    const retencion = base1 * tasa_retencion;
+    const total = subtotal + sobre + iva - retencion;
+    const base2 = (total - base1 - iva) + retencion;
 
-function money(params) {
-    return `$${parseFloat(params.value || 0).toFixed(4)}`;
-}
-function reverseMoneyFormat(value) {
-    return parseFloat(value.replace(/[$,]/g, '')) || 0;
+    row.iva = parseFloat(iva.toFixed(4));
+    row.retencion = parseFloat(retencion.toFixed(4));
+    row.total = parseFloat(total.toFixed(4));
+    row.base2 = parseFloat(base2.toFixed(4));
 }
 
-function moneyFormat(value) {
-    return `$${parseFloat(value).toFixed(2)}`;
-}
 
 document.addEventListener('DOMContentLoaded', function () {
-    document.querySelectorAll('#precio_viaje, #burreo, #maniobra, #estadia, #otro, #sobrepeso, #precio_sobrepeso, #base1')
-        .forEach(input => input.addEventListener('input', calcularTotales));
-
-    const gridDiv = document.querySelector('#tablaCostosMEP');
-
-    gridApi = agGrid.createGrid(gridDiv, {
-        columnDefs: columnDefs,
-        rowData: [],
-        pagination: true,
-        defaultColDef: {
-            resizable: true,
-            sortable: true,
-            filter: true
-        }
+    $('#daterange').daterangepicker({
+        opens: 'right',
+        locale: {
+            format: 'YYYY-MM-DD',
+            separator: ' - ',
+            applyLabel: 'Aplicar',
+            cancelLabel: 'Cancelar',
+            fromLabel: 'Desde',
+            toLabel: 'Hasta',
+            customRangeLabel: 'Personalizado',
+            weekLabel: 'S',
+            daysOfWeek: ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa'],
+            monthNames: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+                'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
+        },
+        startDate: moment().subtract(7, 'days'),
+        endDate: moment()
+    }, function (start, end) {
+        cargarDatos(start.format('YYYY-MM-DD'), end.format('YYYY-MM-DD'));
     });
 
-    cargarDatos();
+    const container = document.getElementById('tablaCostosMEP');
+    hot = new Handsontable(container, {
+        columns: [
+            { data: 'contenedor', title: 'Contenedor' },
+            { data: 'destino', title: 'Destino' },
+            { data: 'estatus', title: 'Estatus' },
+            { data: 'precio_viaje', title: 'Costo del viaje', type: 'numeric', numericFormat: { pattern: '$0,0.00' } },
+            { data: 'burreo', title: 'Burreo', type: 'numeric', numericFormat: { pattern: '$0,0.00' } },
+            { data: 'maniobra', title: 'Maniobra', type: 'numeric', numericFormat: { pattern: '$0,0.00' } },
+            { data: 'estadia', title: 'Estadía', type: 'numeric', numericFormat: { pattern: '$0,0.00' } },
+            { data: 'otro', title: 'Otros', type: 'numeric', numericFormat: { pattern: '$0,0.00' } },
+            { data: 'peso_contenedor', title: 'Peso Contenedor', type: 'numeric', readOnly: true },
+            { data: 'sobrepeso', title: 'Sobrepeso', type: 'numeric', readOnly: true },
+            { data: 'precio_sobrepeso', title: 'Precio sobrepeso', type: 'numeric', numericFormat: { pattern: '$0,0.00' } },
+            { data: 'base1', title: 'Base 1', type: 'numeric', numericFormat: { pattern: '$0,0.00' } },
+            { data: 'base2', title: 'Base 2', readOnly: true, type: 'numeric', numericFormat: { pattern: '$0,0.00' } },
+            { data: 'iva', title: 'IVA', readOnly: true, type: 'numeric', numericFormat: { pattern: '$0,0.00' } },
+            { data: 'retencion', title: 'Retención', readOnly: true, type: 'numeric', numericFormat: { pattern: '$0,0.00' } },
+            { data: 'total', title: 'Total', readOnly: true, type: 'numeric', numericFormat: { pattern: '$0,0.00' } },
+        ],
+        data: rowData,
+        stretchH: 'all',
+        height: 600,
+        licenseKey: 'non-commercial-and-evaluation',
+        afterChange: function (changes, source) {
+            if (source !== 'edit' || !changes) return;
 
-    document.getElementById('formEditarCostos').addEventListener('submit', enviarFormulario);
+            changes.forEach(([rowIndex, prop, oldValue, newValue]) => {
+                const camposTrigger = [
+                    'precio_viaje', 'burreo', 'maniobra', 'estadia',
+                    'otro', 'base1', 'sobrepeso', 'precio_sobrepeso'
+                ];
+
+                if (camposTrigger.includes(prop)) {
+                    const row = hot.getSourceDataAtRow(rowIndex);
+                    recalcularTotales(row);
+                    hot.setDataAtRowProp(rowIndex, 'iva', row.iva);
+                    hot.setDataAtRowProp(rowIndex, 'retencion', row.retencion);
+                    hot.setDataAtRowProp(rowIndex, 'total', row.total);
+                    hot.setDataAtRowProp(rowIndex, 'base2', row.base2);
+                }
+            });
+        }
+
+
+
+
+
+    });
+
+    const range = $('#daterange').data('daterangepicker');
+    cargarDatos(range.startDate.format('YYYY-MM-DD'), range.endDate.format('YYYY-MM-DD'));
 });
 
-function cargarDatos() {
-    fetch('/costos/mep/data')
+function cargarDatos(start, end) {
+    fetch(`/costos/mep/data?fecha_inicio=${start}&fecha_fin=${end}`)
         .then(res => res.json())
-        .then(data => gridApi.setGridOption('rowData', data));
+        .then(data => {
+            rowData = data;
+            hot.loadData(rowData);
+
+            if (rowData.length === 0) {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Sin resultados',
+                    text: 'No se encontraron viajes pendientes de registro en este periodo.',
+                    confirmButtonText: 'Aceptar'
+                });
+            }
+        });
 }
 
-function abrirModal(rowJson) {
-    const row = JSON.parse(rowJson.replace(/&quot;/g, '"')); // Revertir comillas escapadas
+function abrirModal(index) {
+    const row = rowData[index];
+    if (!row) return;
+
     filaSeleccionada = row;
 
-    document.getElementById('id_asignacion').value = row.id;
-
     [
-        'precio_viaje', 'burreo', 'maniobra', 'estadia',
-        'otro', 'iva', 'retencion', 'base1', 'base2',
-        'sobrepeso', 'precio_sobrepeso', 'total'
+        'id_asignacion', 'precio_viaje', 'burreo', 'maniobra', 'estadia',
+        'otro', 'iva', 'retencion', 'base1', 'base2', 'sobrepeso',
+        'precio_sobrepeso', 'total'
     ].forEach(campo => {
-        document.getElementById(campo).value = row[campo] ?? 0;
+        $(`#${campo}`).val(row[campo] ?? 0);
     });
-    document.getElementById('total').value = row.total ?? 0;
-    document.getElementById('motivo_cambio').value = '';
-    document.getElementById('contenedor').value = row.contenedor ?? '-';
-    document.getElementById('destino').value = row.destino ?? '-';
-    document.getElementById('estatus').value = row.estatus ?? '-';
+
+    $('#contenedor').val(row.contenedor);
+    $('#destino').val(row.destino);
+    $('#estatus').val(row.estatus);
+    $('#motivo_cambio').val('');
 
     new bootstrap.Modal(document.getElementById('modalEditarCostos')).show();
 }
 
+function mostrarPendientes() {
+    window.location.href = '/costos/mep/pendientes';
+}
 
-function enviarFormulario(e) {
-    e.preventDefault();
-    const form = e.target;
-    const datos = new FormData(form);
+document.getElementById('guardarCambios').addEventListener('click', async () => {
+    const datos = hot.getSourceData(); // Obtener todos los datos de la tabla
 
-    Swal.fire({
-        title: '¿Enviar cambios para revisión?',
-        text: 'Este cambio se enviará como pendiente para verificar.',
-        icon: 'warning',
+    // Validamos si hay cambios y generamos las peticiones
+    const formularios = datos.map(row => {
+        return {
+            id_asignacion: row.id,
+            precio_viaje: parseFloat(row.precio_viaje || 0),
+            burreo: parseFloat(row.burreo || 0),
+            maniobra: parseFloat(row.maniobra || 0),
+            estadia: parseFloat(row.estadia || 0),
+            otro: parseFloat(row.otro || 0),
+            iva: parseFloat(row.iva || 0),
+            retencion: parseFloat(row.retencion || 0),
+            base1: parseFloat(row.base1 || 0),
+            base2: parseFloat(row.base2 || 0),
+            sobrepeso: parseFloat(row.sobrepeso || 0),
+            precio_sobrepeso: parseFloat(row.precio_sobrepeso || 0),
+            total: parseFloat(row.total || 0),
+            motivo_cambio: 'Modificación por revisión masiva'
+        };
+    });
+
+    // Confirmación con SweetAlert
+    const confirmacion = await Swal.fire({
+        title: '¿Guardar todos los cambios?',
+        text: 'Se enviarán los datos modificados para revisión.',
+        icon: 'question',
         showCancelButton: true,
-        confirmButtonText: 'Sí, enviar',
+        confirmButtonText: 'Sí, guardar',
         cancelButtonText: 'Cancelar'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            fetch('/costos/mep/guardar-cambio', {
+    });
+
+    if (!confirmacion.isConfirmed) return;
+
+    // Enviar cada cambio
+    for (const form of formularios) {
+        try {
+            const res = await fetch('/costos/mep/guardar-cambio', {
                 method: 'POST',
                 headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Content-Type': 'application/json'
                 },
-                body: datos
-            })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success) {
-                        Swal.fire('Éxito', data.message, 'success');
-                        bootstrap.Modal.getInstance(document.getElementById('modalEditarCostos')).hide();
-                    } else {
-                        Swal.fire('Error', data.message, 'error');
-                    }
-                })
-                .catch(err => {
-                    console.error(err);
-                    Swal.fire('Error', 'No se pudo guardar el cambio', 'error');
-                });
+                body: JSON.stringify(form)
+            });
+
+            const data = await res.json();
+            if (!data.success) throw new Error(data.message);
+        } catch (error) {
+            console.error(error);
+            Swal.fire('Error', `No se pudo guardar el cambio para ID ${form.id_asignacion}`, 'error');
         }
-    });
-}
+    }
 
-function mostrarPendientes() {
-    window.location.href = '/costos/mep/pendientes'; // o mostrar en modal otra tabla si lo deseas
-}
-
-
-const tasa_iva = 0.16;
-const tasa_retencion = 0.04;
-
-function calcularTotales() {
-    const precio = parseFloat(reverseMoneyFormat($('#precio_viaje').val())) || 0;
-    const burreo = parseFloat(reverseMoneyFormat($('#burreo').val())) || 0;
-    const maniobra = parseFloat(reverseMoneyFormat($('#maniobra').val())) || 0;
-    const estadia = parseFloat(reverseMoneyFormat($('#estadia').val())) || 0;
-    const otro = parseFloat(reverseMoneyFormat($('#otro').val())) || 0;
-    const sobrepeso = parseFloat(reverseMoneyFormat($('#sobrepeso').val())) || 0;
-    const precio_sobrepeso = parseFloat(reverseMoneyFormat($('#precio_sobrepeso').val())) || 0;
-
-    const baseFactura = parseFloat(reverseMoneyFormat($('#base1').val())) || 0;
-
-    const subtotal = precio + burreo + maniobra + estadia + otro;
-    const sobre = sobrepeso * precio_sobrepeso;
-    const iva = baseFactura * tasa_iva;
-    const retencion = baseFactura * tasa_retencion;
-    const total = subtotal + sobre + iva - retencion;
-    const baseTaref = (total - baseFactura - iva) + retencion;
-
-    $('#iva').val(total > 0 ? iva.toFixed(4) : '');
-    $('#retencion').val(total > 0 ? retencion.toFixed(4) : '');
-    $('#base2').val(total > 0 ? baseTaref.toFixed(4) : '');
-    $('#total').val(total > 0 ? total.toFixed(4) : '');
-
-}
+    Swal.fire('Éxito', 'Todos los cambios han sido enviados correctamente.', 'success');
+    window.location.href = '/costos/mep/dashboard';
+});

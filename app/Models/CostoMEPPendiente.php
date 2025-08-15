@@ -24,6 +24,10 @@ class CostoMEPPendiente extends Model
         'estatus',
         'total',
         'motivo_cambio', 
+        'campo_observado',
+    ];
+    protected $casts = [
+        'campo_observado' => 'array' 
     ];
 
     public function asignacion()
