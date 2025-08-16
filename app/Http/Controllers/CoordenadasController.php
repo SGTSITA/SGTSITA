@@ -8,9 +8,11 @@ use App\Models\Coordenadas;
 use App\Models\Client;
 use App\Models\Subclientes;
 use App\Models\Proveedor;
+use App\Models\Cotizaciones;
 use App\Models\Equipo;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use App\Models\RastreoIntervals;
 
 
 use Auth;
@@ -482,19 +484,34 @@ $idCordenada= $coordenadas->id_coordenadas;
     public function guardarRespuesta(Request $request)
         {
                 $coordenada = Coordenadas::find($request->id_coordenada);
-
+            $message='';
                 if ($coordenada) {
                     $fecha = Carbon::now();
-                   
+                   $idCotizacion = $coordenada->id_cotizacion;
+
                     $coordenada->update([
                         $request->columna => $request->coordenadas,  
                         $request->columna_datetime =>  $fecha  
                        
                     ]);
-            
+                      $message='Coordenada guardada.';
+                    if($request->columna === 'recepcion_doc_firmados'){
+                            //finalizar viaje 
+                         $cotizacion=    Cotizaciones::find($idCotizacion);
+                         if ($cotizacion){
+                                   $cotizacion->update([
+                                            'estatus' => 'Finalizado'
+                                             
+                                        
+                                        ]);
+
+                             $message='Coordenada guardada. Viaje finalizado';
+                         }
+
+                    }
                    
                     
-                    return response()->json(['success' => true]);
+                    return response()->json(['success' => true,'message'=> $message]);
                 }
             
                 
@@ -661,7 +678,7 @@ $idCordenada= $coordenadas->id_coordenadas;
     ->join('docum_cotizacion', 'docum_cotizacion.id', '=', 'asignaciones.id_contenedor')
     ->join('equipos', 'equipos.id', '=', 'asignaciones.id_camion')
     ->join('gps_company','gps_company.id','=','equipos.gps_company_id')
-    ->join('equipos as eq_chasis', 'eq_chasis.id', '=', 'asignaciones.id_chasis')
+    ->leftjoin('equipos as eq_chasis', 'eq_chasis.id', '=', 'asignaciones.id_chasis')
 
     ->select(
         'docum_cotizacion.id as id_contenedor',
@@ -719,6 +736,7 @@ $idCordenada= $coordenadas->id_coordenadas;
              ->on('asig.tipo_contrato', '=', 'beneficiarios.tipo_contrato');
     })
     ->whereNotNull('asig.imei')
+    ->whereDate('asig.fecha_fin', '>=',  Carbon::now()->toDateString())
    
     ->when($contenedoresVarios, function ($query) use ($contenedoresVarios) {
         $contenedores = array_filter(array_map('trim', explode(';', $contenedoresVarios)));
@@ -734,7 +752,7 @@ $idCordenada= $coordenadas->id_coordenadas;
     ->where('cotizaciones.estatus', '=', 'Aprobada')
     
     ->get();
-$datos = $datosAll ->where('id_empresa', $idEmpresa)->values();
+    $datos = $datosAll ->where('id_empresa', $idEmpresa)->values();
  
 
     $conboys = DB::table('conboys')
@@ -755,10 +773,12 @@ $datos = $datosAll ->where('id_empresa', $idEmpresa)->values();
         'conboys.geocerca_lng',
         'conboys.geocerca_radio',
     )
-//     ->where('docum_cotizacion.id_empresa', '=', $idEmpresa)
-//     ->when($idCliente !== 0, function ($query) use ($idCliente) {
-//     return $query->where('cotizaciones.id_cliente', $idCliente);
-// })   
+    ->whereDate('conboys.fecha_fin', '>=', Carbon::now()->toDateString())
+    ->whereDate('conboys.fecha_inicio', '<=', Carbon::now()->toDateString())
+  ->where('conboys.estatus', '=', 'Activo')
+    ->when($idCliente !== 0, function ($query) use ($idCliente) {
+    return $query->where('cotizaciones.id_cliente', $idCliente);
+})   
     ->distinct()
     ->get();
 
@@ -781,11 +801,11 @@ $datos = $datosAll ->where('id_empresa', $idEmpresa)->values();
             
         )
             ->when($idCliente !== 0, function ($query) use ($idCliente) {
-    return $query->where('cotizaciones.id_cliente', $idCliente);
-})   
+            return $query->where('cotizaciones.id_cliente', $idCliente);
+        })   ->where('conboys.estatus', '=', 'Activo')  
         ->get();
 
-$conboysdetalle=$conboysdetalleAll ->where('id_empresa', $idEmpresa)->values();
+        $conboysdetalle=$conboysdetalleAll;// ->where('id_empresa', $idEmpresa)->values();
 
        $equipos = Equipo::select(
         'equipos.id',
@@ -795,13 +815,13 @@ $conboysdetalle=$conboysdetalleAll ->where('id_empresa', $idEmpresa)->values();
         'equipos.id_equipo',
         'equipos.placas',
         'gps_company.url_conexion as tipoGps'
-    )
-    ->join('gps_company', 'gps_company.id', '=', 'equipos.gps_company_id')
-    ->where('equipos.id_empresa', $idEmpresa)
-    ->where('equipos.tipo','Tractos / Camiones')
-    ->whereNotNull('equipos.imei')
+        )
+        ->join('gps_company', 'gps_company.id', '=', 'equipos.gps_company_id')
+        ->where('equipos.id_empresa', $idEmpresa)
+        ->where('equipos.tipo','Tractos / Camiones')
+        ->whereNotNull('equipos.imei')
 
-    ->get();
+        ->get();
             
           if ($datos) {
             return response()->json([
@@ -816,6 +836,16 @@ $conboysdetalle=$conboysdetalleAll ->where('id_empresa', $idEmpresa)->values();
         } else {
             return response()->json(['success' => false]);
         }
+        
+    }
+
+
+    public function RastreoTabs()  {
+
+  $intervals = RastreoIntervals::where('task_name', 'rastreo_gps_interval')->first();
+
+    
+        return view('coordenadas.rastreoTab',compact('intervals'));
         
     }
 }

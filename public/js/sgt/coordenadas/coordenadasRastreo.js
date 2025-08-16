@@ -1,11 +1,63 @@
+let map;
+  let markers = [];
+  let elementoPanelRastro =[];
+  let catalogoBusqueda = [];
+let contenedoresDisponiblesAll =[];
+let mapaAjustado = false;
 
-    let contenedoresGuardados ;  
-    let contenedoresGuardadosTodos ;  
+let detalleConvoys;
 let contenedoresDisponibles = [];
-let userBloqueo = false;
-const seleccionados = [];
-const ItemsSelects = [];
 
+    let ItemsSelectsID = {};
+      let intervalIdsID = {};
+  
+ function googleMapsReady() {
+    
+            initMap();
+        }
+  function initMap() {
+   
+    map = new google.maps.Map(document.getElementById("map"), {
+      center: { lat: 0, lng: 0 },
+      zoom: 2,
+    });
+
+    
+
+     const marker = new google.maps.Marker({
+    position: { lat: 0, lng: 0 },
+    map: map,
+  });
+  }
+  
+
+function cargarConvoysEnSelect(convoys) {
+  const select = document.getElementById('convoys');
+
+  // Limpiar opciones actuales excepto la primera
+  select.innerHTML = '<option value="">Seleccione un convoy</option>';
+
+  convoys.forEach(convoy => {
+    const option = document.createElement('option');
+    option.value = convoy.id; 
+    option.textContent = `${convoy.no_conboy} - ${convoy.nombre}`;
+    select.appendChild(option);
+  });
+}
+function cargarEquiposEnSelect(dataequipos) {
+  const select = document.getElementById('Equipo');
+
+  // Limpiar opciones actuales excepto la primera
+  select.innerHTML = '<option value="">Seleccione un equipo</option>';
+
+  dataequipos.forEach(equipo => {
+    const option = document.createElement('option');
+    option.value = `${equipo.id_equipo}|${equipo.imei}|${equipo.id}|${equipo.tipoGps}`;
+    const textoPlaca = equipo.placas?.trim() ? equipo.placas : 'SIN PLACA';
+    option.textContent = `${equipo.id_equipo } - ${equipo.marca}- ${equipo.tipo}- ${textoPlaca}`;
+    select.appendChild(option);
+  });
+}
 function cargarinicial()
 {
        fetch(`/coordenadas/contenedor/searchEquGps?`)
@@ -13,13 +65,592 @@ function cargarinicial()
     .then(data => {
         
          contenedoresDisponibles   = data.datos;
-        
+
+    detalleConvoys =   data.dataConten;
+
+    contenedoresDisponiblesAll = data.dataContenAll;
+          
+        // Convoys detalle
+        data.conboys.forEach(c => {
+          catalogoBusqueda.push({
+            tipo: 'Convoy',
+            label: c.no_conboy +" " + c.nombre, 
+            value: c.no_conboy,
+            id: c.id,
+          });
+        });
+        // Contenedores (desde convoysDetalle)
+        contenedoresDisponibles.forEach(cd => {
+          catalogoBusqueda.push({
+            tipo: 'Contenedor',
+            label: cd.contenedor,
+            value: cd.contenedor +"|" +cd.imei+"|"+ cd.id_contenedor+"|"+ cd.tipoGps,
+            id: cd.id_contenedor
+          });
+        });
+
+        // Equipos (si tienes un array separado)
+         data.equipos.forEach(eq => {
+           const textoPlaca = eq.placas?.trim() ? eq.placas : ''
+          catalogoBusqueda.push({
+            tipo: 'Equipo',
+            
+            label: `${eq.id_equipo } - ${eq.marca} - ${eq.tipo} - ${textoPlaca}`,
+            value: `${eq.id_equipo}|${eq.imei}|${eq.id}|${eq.tipoGps}`,
+            id: eq.id
+          });
+        });
           
       })
   .catch(error => {
           console.error('Error al traer coordenadas:', error);
     });
 }
+
+
+function obtenerImeisPorConvoyId(convoyId) {
+    return detalleConvoys
+    .filter(item => item.conboy_id == convoyId && item.imei && item.id_contenedor)
+    .map(item => item.num_contenedor + "|" + item.imei + "|" + item.id_contenedor+"|"+item.tipoGps);
+}
+
+function obtenerTabActivo() {
+    const tabActivo = document.querySelector('#filtroTabs .nav-link.active');
+    return tabActivo ? tabActivo.getAttribute('data-bs-target') : null;
+}
+
+
+
+const input = document.getElementById("buscadorGeneral");
+const resultados = document.getElementById("resultadosBusqueda");
+const chipContainer = document.getElementById("chipsBusqueda");
+
+let filtroActivo = null;
+
+function validarTipo(items)
+{
+    let tabx = items.tipo;
+    let labelMuestra = items.label;
+    let value = items.value;
+  
+    if (Array.isArray(ItemsSelectsID[items.id + "|"+  items.value])) 
+      {
+          ItemsSelectsID[items.id + "|"+  items.value].length = 0;
+      } else {
+          ItemsSelectsID[items.id + "|"+  items.value] = []; 
+      }
+   ItemsSelectsID[items.id + "|"+  items.value] = items.value;
+    
+    if ( tabx==='Convoy'){
+      ItemsSelectsID[items.id + "|"+  items.value] = obtenerImeisPorConvoyId(items.id);
+    }
+    mapaAjustado= false;
+
+    elementoPanelRastro.push({
+      id:items.id,
+    tipo: tabx,
+    value: items.value,
+    label: labelMuestra
+});
+
+catalogoBusqueda = catalogoBusqueda.filter(itemFilter => itemFilter.id !== items.id &&  itemFilter.value !== items.value);
+
+
+
+
+const listaPanel = document.getElementById("ElementosRastreoPanel");
+
+elementoPanelRastro.forEach(item => {
+    const existe = Array.from(listaPanel.children).some(li =>
+        li.dataset.valor === item.id + "|"+  item.tipo
+    );
+
+    if (!existe) {
+        const li = document.createElement("li");
+        li.classList.add("list-group-item", "d-flex", "justify-content-between", "align-items-center", "p-2");
+        li.dataset.valor = item.id + "|"+  item.tipo;
+      
+        // Texto a la izquierda
+        const spanTexto = document.createElement("span");
+        spanTexto.textContent = `${item.tipo} #${item.label}`;
+        li.appendChild(spanTexto);
+
+
+        // Botón pausar/reanudar
+        const btnPausar = document.createElement("button");
+        btnPausar.classList.add("btn", "btn-sm", "btn-warning", "p-1");
+        btnPausar.style.width = "35px";
+        btnPausar.style.height = "35px";
+        btnPausar.style.display = "flex";
+        btnPausar.style.alignItems = "center";
+        btnPausar.style.justifyContent = "center";
+        btnPausar.innerHTML = '<i class="bi bi-pause-fill"></i>';
+        btnPausar.id = `${item.tipo.toLowerCase()}-${item.value}`;
+
+        // Evento click pausar/reanudar
+        btnPausar.addEventListener("click", () => {
+            const icon = btnPausar.querySelector("i");
+            if (btnPausar.classList.contains("btn-warning")) {
+                btnPausar.classList.replace("btn-warning", "btn-success");
+                icon.classList.replace("bi-pause-fill", "bi-play-fill");
+                console.log(`${item.tipo} #${item.label} pausado`);
+            } else {
+                btnPausar.classList.replace("btn-success", "btn-warning");
+                icon.classList.replace("bi-play-fill", "bi-pause-fill");
+                console.log(`${item.tipo} #${item.label} reanudado`);
+            }
+        });
+
+        // Botón eliminar
+        const btnEliminar = document.createElement("button");
+        btnEliminar.classList.add("btn", "btn-sm", "btn-danger", "p-1");
+        btnEliminar.style.width = "35px";
+        btnEliminar.style.height = "35px";
+        btnEliminar.style.display = "flex";
+        btnEliminar.style.alignItems = "center";
+        btnEliminar.style.justifyContent = "center";
+        btnEliminar.innerHTML = '<i class="bi bi-x"></i>'; // ícono X
+// Agregar botones al contenedor
+        li.appendChild(btnPausar);
+        li.appendChild(btnEliminar);
+
+         
+          listaPanel.appendChild(li);
+
+
+  btnEliminar.addEventListener("click", () => {
+    let valorLi = li.dataset.valor;
+   
+    let [idStr, tipoStr] = valorLi.split("|");
+
+ 
+    let elementoEliminado = elementoPanelRastro.find(
+        item => String(item.id) === idStr && String(item.tipo) === tipoStr
+    );
+
+    if (elementoEliminado) {
+       
+        elementoPanelRastro = elementoPanelRastro.filter(
+            item => String(item.id) !== idStr || String(item.tipo) !== tipoStr
+        );
+
+      
+        if (!catalogoBusqueda.some(
+            el => el.id === elementoEliminado.id && el.value === elementoEliminado.value
+        )) {
+            catalogoBusqueda.push(elementoEliminado);
+        }
+
+      
+        li.remove();
+
+        let index = markers.findIndex(m => m.keyItem === items.id + "|"+  items.value+"|"+  item.tipo);
+        if (index !== -1) {
+            markers[index].setMap(null);  // Quita del mapa
+            markers.splice(index, 1);     // Lo elimina del array
+        }
+
+        console.log(`${elementoEliminado.tipo} #${elementoEliminado.label} eliminado`);
+    }
+});
+//alert('pasa siempre');
+
+
+actualizarUbicacion(ItemsSelectsID[items.id + "|"+  items.value],tabx,items.id + "|"+  items.value + "|"+  item.tipo,labelMuestra,value,map)
+        
+        }
+});
+
+   
+
+    
+}
+
+input.addEventListener('input', function () {
+   
+const query = this.value.trim().toLowerCase();
+    resultados.innerHTML = '';
+    chipContainer.innerHTML = '';
+    filtroActivo = null;
+
+    if (query.length < 2) {
+     //detener();
+     // limpiarMarcadores();
+      return;
+    }
+
+    const coincidencias = catalogoBusqueda.filter(item =>
+        item.label.toLowerCase().includes(query)
+    );
+
+    if (coincidencias.length === 0) {
+        const div = document.createElement('div');
+        div.classList.add('dropdown-item', 'text-muted');
+        div.textContent = 'Sin resultados';
+        resultados.appendChild(div);
+        return;
+    }
+
+    // Mostrar chips por tipo
+ const tiposUnicos = [...new Set(coincidencias.map(item => item.tipo))];
+    tiposUnicos.forEach(tipo => {
+        const chip = document.createElement('button');
+        chip.className = 'btn btn-outline-secondary btn-sm rounded-pill me-2 mb-1';
+        chip.textContent = tipo;
+        chip.onclick = () => {
+            filtroActivo = tipo;
+            //document.getElementById('tituloSeguimiento').textContent = 'Seguimiento '+  tipo;
+            document.querySelectorAll('#chipsBusqueda .btn').forEach(btn => btn.classList.remove('active'));
+            chip.classList.add('active');
+            mostrarResultadosFiltrados(query);
+        };
+        chipContainer.appendChild(chip);
+    });
+
+    mostrarResultadosFiltrados(query);
+});
+
+
+function mostrarResultadosFiltrados(query) {
+    resultados.innerHTML = '';
+    const sugerencias = catalogoBusqueda
+        .filter(item =>
+            item.label.toLowerCase().includes(query) &&
+            (!filtroActivo || item.tipo === filtroActivo)
+        )
+        .slice(0, 10);
+
+    sugerencias.forEach(item => {
+        const div = document.createElement('div');
+        div.classList.add('dropdown-item');
+        div.textContent = `${item.label}`;
+        div.onclick = () => {
+          //document.getElementById('tituloSeguimiento').textContent = 'Seguimiento '+  item.tipo;
+          // document.querySelectorAll('#chipsBusqueda .btn').forEach(btn => {
+          //       if (btn.textContent.trim() === item.tipo) {
+          //         btn.classList.add('active');
+          //       } else {
+          //         btn.classList.remove('active');
+          //       }
+          //     });
+
+//input.value =item.label;
+input.value='';
+document.getElementById('resultadosBusqueda').innerHTML = '';
+chipContainer.innerHTML = '';
+//input.dispatchEvent(new Event('input'));
+          validarTipo(item)
+        
+        };
+        resultados.appendChild(div);
+    });
+}
+  
+function actualizarUbicacionReal(coordenadaData){
+    fetch('/coordenadas/rastrear/savehistori', {
+        method: 'POST',
+         headers: {
+      'Content-Type': 'application/json',
+      'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+    },
+    body: JSON.stringify(coordenadaData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            console.log('Coordenada guardada:', data.data);
+        } else {
+            console.warn('Error al guardar coordenada', data);
+        }
+    })
+    .catch(error => {
+        console.error('Error en la solicitud:', error);
+    });
+
+}
+
+ function actualizarUbicacion(imeis,t,KEYITEM,labelMuestra,num_convoy,map) {
+  console.log('obteniendo ubicacion convoy :', KEYITEM);
+
+let tipo = "";
+
+    let responseOk = false;
+  fetch("/coordenadas/ubicacion-vehiculo", {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+    },
+    body: JSON.stringify({ imeis: imeis})
+  })
+  .then(res => res.json())
+  .then(data => {
+    //console.log('Ubicaciones recibidas:', data);
+    const dataUbi= data;
+  console.log('obteniendo unicacion convoy, sucess data :', KEYITEM);
+//limpiarMarcadores();
+  responseOk = true;
+    if (Array.isArray(dataUbi)) {
+      dataUbi.forEach((item, index) => {
+        tipo= item.tipogps;
+         let latlocal ='';
+        let lnglocal='';
+        let nEconomico='';
+        let id_contenConvoy ='';
+
+          console.log('For response ... :', KEYITEM);
+ 
+       //   let datosGeocerca = convoysAll.find(c => c.no_conboy === num_convoy)
+         
+       
+ latlocal =parseFloat( item.ubicacion.lat);
+         lnglocal =parseFloat( item.ubicacion.lng);
+         idConvoyOContenedor=  item.id_contenendor;
+
+          // if(datosGeocerca ) {
+
+          // actualizarMapa(latlocal, lnglocal,datosGeocerca,idConvoy,map)
+          // }
+           if (markers[KEYITEM]) {
+    
+                markers[KEYITEM].setPosition({ lat: latlocal, lng: lnglocal });
+        } else {
+if (latlocal && lnglocal) {
+          
+          // let esMostrarPrimero =  1
+          // if(esMostrarPrimero){
+            const newMarker = new google.maps.Marker({
+              position: { lat: latlocal, lng: lnglocal },
+              map: map,
+               icon: {
+        url: '/img/location.gif',
+        scaledSize: new google.maps.Size(40, 40) 
+    }
+            });
+
+            newMarker.keyItem = KEYITEM;
+
+             let  contentC ='';
+              if(t === 'Equipo'){
+               // `${eq.id_equipo } - ${eq.marca}- ${eq.tipo}- ${textoPlaca}`,
+               const equipo = labelMuestra.split(' - ').map(part => part.trim());
+               
+                let marcaLocal = equipo[1];
+                let placaLocal = equipo[3];
+contentC = `
+            <div style="
+                    background-color: #e3f2fd;
+                    padding: 5px;
+                    border-radius: 8px;
+                    font-family: Arial, sans-serif;
+                    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+                    max-width: 240px;
+                  ">
+              <div style="font-weight: bold; font-size: 17px; margin-bottom: 6px;">
+               
+              </div>
+              <div style="font-size: 17px; line-height: 1.5;">
+                <strong>Equipo:</strong> ${item.EquipoBD}<br>
+                <strong>Marca:</strong> ${marcaLocal}<br>
+                <strong>Placas:</strong> ${placaLocal}<br>
+             
+              </div>
+            </div>
+          `;
+              }
+              else  if(t==='Contenedor') {
+contentC = `
+            <div style="
+                    background-color: #e3f2fd;
+                    padding: 5px;
+                    border-radius: 8px;
+                    font-family: Arial, sans-serif;
+                    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+                    max-width: 240px;
+                  ">
+              <div style="font-weight: bold; font-size: 17px; margin-bottom: 6px;">
+               
+              </div>
+              <div style="font-size: 17px; line-height: 1.5;">
+                <strong>Equipo:</strong> ${item.EquipoBD}<br>
+                <strong>Contenedor:</strong> ${item.contenedor}
+              </div>
+            </div>
+          `;
+
+              }
+              else{
+                contentC = `
+            <div style="
+                    background-color: #e3f2fd;
+                    padding: 5px;
+                    border-radius: 8px;
+                    font-family: Arial, sans-serif;
+                    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+                    max-width: 240px;
+                  "> 
+              <div style="font-weight: bold; font-size: 17px; margin-bottom: 6px;">
+               
+              </div>
+              <div style="font-size: 17px; line-height: 1.5;">
+              <strong>Convoy:${num_convoy} </strong>
+                <strong>Equipo:</strong> ${item.EquipoBD}<br>
+                <strong>Contenedor:</strong> ${item.contenedor}
+              </div>
+            </div>
+          `;
+              }
+               // const newMarker = L.marker([latlocal, lnglocal]).addTo(map).bindPopup(tipoSpans + ' '+ item.contenedor).openPopup();
+               const infoWindow = new google.maps.InfoWindow({
+            content: contentC 
+          });
+          //infoWindow.open(map, newMarker);
+          newMarker.addListener('click', () => {
+          infoWindow.open(map, newMarker);
+        });
+            markers.push(newMarker);
+          
+        
+           newMarker.addListener('click', () => {
+            const contenedor = item.contenedor;
+             let info = contenedoresDisponibles.find(d => d.num_contenedor === contenedor);
+                if (!info) {
+                  if (t.toLowerCase().includes('convoy')) {
+                     info = contenedoresDisponiblesAll.find(d => d.contenedor === contenedor);
+                  }else if(t==='Equipo'){
+                   
+                    const ahora = new Date();
+                       info = contenedoresDisponibles.find(d => {
+                            const inicio = new Date(d.fecha_inicio);
+                            const fin = new Date(d.fecha_fin);
+
+                            return ahora >= inicio && ahora <= fin;
+                        });
+                         console.log(info);
+                         if (!info) {
+                          alert("Información del viaje no encontrada.");
+                          return;
+                         }
+                  }
+                }
+                let extraInfo = '';
+
+                if (t === 'Equipo') {
+                  extraInfo = `
+                    <p><strong>IMEI CHASIS:</strong> ${info.imei_chasis}</p>
+                           `;
+                }
+
+                const contenido = `
+                  <div class="p-3">
+                    <h5 class="mb-2">🚚 Información del Viaje</h5>
+                    <p><strong>Cliente:</strong> ${info.cliente}</p>
+                    <p><strong>Contenedor:</strong> ${info.contenedor}</p>
+                    <p><strong>Origen:</strong> ${info.origen}</p>
+                    <p><strong>Destino:</strong> ${info.destino}</p>
+                    <p><strong>Contrato:</strong> ${info.tipo_contrato}</p>
+                    <p><strong>Fecha Inicio:</strong> ${info.fecha_inicio}</p>
+                    <p><strong>IMEI:</strong> ${info.imei}</p>
+                   
+                                   ${extraInfo}
+                  </div>
+                `;
+
+              document.getElementById('contenidoModalViaje').innerHTML = contenido;
+
+              // Mostrar el modal con Bootstrap 5
+              const modal = new bootstrap.Modal(document.getElementById('modalInfoViaje'));
+              modal.show();
+            });
+          //} //end mostrar primero
+           tipo= tipo + ' '+ item.contenedor;
+        
+        // if (index === 0) {
+        //   map.setCenter({ lat: latlocal, lng: lnglocal });
+        // map.setZoom(15);
+        // }  
+        markers[KEYITEM] = newMarker;
+          if (!mapaAjustado) {
+              const bounds = new google.maps.LatLngBounds();
+               Object.values(markers).forEach(marker => bounds.extend(marker.getPosition()));
+              map.fitBounds(bounds);
+              mapaAjustado= true;
+
+          }
+        }
+
+        }// fin de else de validacion imei existe en el array markers
+
+
+          
+              
+        
+        
+      const datasave = {
+          latitud: latlocal,
+          longitud: lnglocal,
+          ubicacionable_id: idConvoyOContenedor,
+          tipo: tipo
+      };
+        if (idConvoyOContenedor!= ""){
+      actualizarUbicacionReal(datasave)
+        }
+        
+      
+      });
+    } else {
+      console.warn('La respuesta no es un array de ubicaciones:', data);
+    }
+    
+  
+  })
+  .catch(error => {
+    console.error('Error al obtener ubicaciones:', error);
+    detener();
+  });
+}
+// Para detener la actualización con un botón
+//document.getElementById('btnDetener').addEventListener('click', function() {
+//  detener();
+//});
+
+
+function detener(){
+    if(intervalId) {
+    clearInterval(intervalId);
+    intervalId = null;
+    document.getElementById('btnDetener').style.display = 'none';
+    
+  }
+}
+
+
+
+// Función para limpiar marcadores
+function limpiarMarcadores() {
+     markers.forEach(marker => marker.setMap(null)); 
+    markers = [];
+    
+}
+
+
+document.addEventListener('DOMContentLoaded', function () {
+     cargarinicial();
+     cargaConvoysTab();
+               
+});
+
+
+
+let contenedoresGuardados ;  
+let contenedoresGuardadosTodos ;  
+//let contenedoresDisponibles = [];
+let userBloqueo = false;
+const seleccionados = [];
+const ItemsSelects = [];
+
+
+
 function BloquearHabilitarEdicion(block){
     document.getElementById('id_convoy').readOnly = block;
     document.getElementById('nombre').readOnly = block;
@@ -35,10 +666,13 @@ function abrirMapaEnNuevaPestana( contenedor,tipoS) {
         const url = `/coordenadas/mapa_rastreo?contenedor=${contenedor}&tipoS=${encodeURIComponent(tipoS)}`;
     window.open(url, '_blank');
 }
-document.addEventListener('DOMContentLoaded', function () {
-     let gridApi;
+
+function cargaConvoysTab(){
+    let gridApi;
+    let gridApi2;
      cargarinicial();
     definirTable();
+    definirTable2();
 
   const modal = new bootstrap.Modal(document.getElementById('modalBuscarConvoy'), {
         backdrop: 'static',
@@ -140,7 +774,10 @@ function limpiarFormulario() {
                 //document.getElementById('campo-tiempo').style.display = 'block';
             } 
         });
-});
+
+}
+
+  
 function abrirGeocerca() {
   const url = '/configurar-geocerca'; 
   const win = window.open(url, 'ConfigurarGeocerca', 'width=800,height=600');
@@ -471,6 +1108,8 @@ seleccionados.length = 0;
     const myGridElement = document.querySelector("#myGrid");
     gridApi = agGrid.createGrid(myGridElement, gridOptions);
 
+
+
     cargaConboys();
 
     function cargaConboys()
@@ -493,6 +1132,134 @@ seleccionados.length = 0;
                 })
                 .catch(error => {
                     console.error("❌ Error al obtener la lista de convoys:", error);
+                })
+                .finally(() => {
+                    overlay.style.display = "none"; 
+                });
+    }
+}
+
+function definirTable2(){
+  const columnDefs2 = [
+        {
+         headerName: '',
+        field: 'checkbox',
+        headerCheckboxSelection: true,
+        checkboxSelection: true,
+        width: 50,
+        pinned: 'left',
+        suppressSizeToFit: true,
+        resizable: false
+        },
+       
+        { headerName: "Convoy", field: "no_conboy", sortable: true, filter: true },
+        { headerName: "Descripcion", field: "nombre", sortable: true, filter: true },
+        { headerName: "Fecha Inicio", field: "fecha_inicio", sortable: true, filter: true },
+        { headerName: "Fecha Fin", field: "fecha_fin", sortable: true, filter: true },
+       
+        
+
+       {
+    headerName: "Acciones",
+   
+   
+    cellRenderer: function (params) {
+        const container = document.createElement("div");
+      //  container.classList.add("d-flex", "flex-wrap", "gap-1", "justify-content-start");
+        const data = params.data;
+
+        // Botón Editar
+        const btnHistorial = document.createElement("button");
+        btnHistorial.innerHTML = `<i class="fas fa-history text-white"></i>`;
+       
+        btnHistorial.title ="Historial";
+        btnHistorial.classList.add("btn", "btn-sm", "btn-warning", "me-1");
+        btnHistorial.onclick = function () {
+
+
+const ubicaciones = [
+  { lat: 17.956659, lng: -102.193207 }, // Lázaro Cárdenas
+  { lat: 18.06143,  lng: -102.34291  }, // Petacalco
+  { lat: 18.50000,  lng: -101.50000  }, // Uruapan aprox.
+  { lat: 19.07000,  lng: -102.35000  }, // Apatzingán aprox.
+  { lat: 19.41667,  lng: -101.20000  }, // Morelia
+  { lat: 19.70000,  lng: -100.50000  }, // Atlacomulco aprox.
+  { lat: 19.58000,  lng: -99.85000   }, // Toluca aprox.
+  { lat: 19.60000,  lng: -99.30000   }, // Lerma aprox.
+  { lat: 19.45000,  lng: -99.15000   }, // Entrada CDMX
+  { lat: 19.432608, lng: -99.133209 }  // Zócalo CDMX
+];
+// Construir la URL
+const url = "https://www.google.com/maps/dir/" +
+  ubicaciones.map(u => `${u.lat},${u.lng}`).join("/");
+
+// Abrir
+window.open(url, "_blank");
+         
+ 
+        };
+
+        // Botón Compartir
+        const btnCompartir = document.createElement("button");
+        btnCompartir.innerText = "🔗";
+        btnCompartir.title ="Compartir"
+        btnCompartir.classList.add("btn", "btn-sm", "btn-info");
+        btnCompartir.onclick = function () {
+          
+        };
+   
+
+
+            container.appendChild(btnHistorial);
+            container.appendChild(btnCompartir);
+         
+
+            return container;
+        }
+    }
+          
+             
+       
+    ];
+   
+
+
+    
+   const gridOptions2 = {
+        columnDefs: columnDefs2,
+        pagination: true,
+        paginationPageSize: 100,
+        rowSelection: "multiple",
+        defaultColDef: {
+            resizable: true,
+            flex: 1
+        }
+    };
+   
+
+    const myGridElement2 = document.querySelector("#myGridConvoyFinalizados");
+    gridApi2 = agGrid.createGrid(myGridElement2, gridOptions2);
+
+    cargaConboys2();
+
+    function cargaConboys2()
+    { 
+        const overlay = document.getElementById("gridLoadingOverlay");
+        overlay.style.display = "flex";
+    
+                
+            gridApi2.setGridOption("rowData", []); 
+        
+            fetch("/coordenadas/conboys/getconboysFinalizados")
+                .then(response => response.json())
+                .then(data => {
+                                      const rowData = data.data;
+                    gridApi2.setGridOption("rowData", rowData);
+                    
+                    
+                })
+                .catch(error => {
+                    console.error("❌ Error al obtener la lista de convoys grid 2:", error);
                 })
                 .finally(() => {
                     overlay.style.display = "none"; 
@@ -972,3 +1739,5 @@ function confirmarEliminacion(idContenedor, idConvoy, boton,idx) {
         }
     });
 }
+   
+

@@ -1,6 +1,9 @@
 let map;
   let markers = [];
-
+ function googleMapsReady() {
+    
+            initMap();
+        }
   function initMap() {
    
     map = new google.maps.Map(document.getElementById("map"), {
@@ -17,8 +20,8 @@ let map;
   }
   
 const catalogoBusqueda = [];
-
-
+let contenedoresDisponiblesAll =[];
+let mapaAjustado = false;
 
 let detalleConvoys;
 let contenedoresDisponibles = [];
@@ -60,7 +63,7 @@ function cargarinicial()
      // cargarEquiposEnSelect( data.equipos);
     detalleConvoys =   data.dataConten;
 
-
+    contenedoresDisponiblesAll = data.dataContenAll;
           
         // Convoys detalle
         data.conboys.forEach(c => {
@@ -97,7 +100,7 @@ function cargarinicial()
           catalogoBusqueda.push({
             tipo: 'Equipo',
             
-            label: `${eq.id_equipo } - ${eq.marca}- ${eq.tipo}- ${textoPlaca}`,
+            label: `${eq.id_equipo } - ${eq.marca} - ${eq.tipo} - ${textoPlaca}`,
             value: `${eq.id_equipo}|${eq.imei}|${eq.id}|${eq.tipoGps}`,
             idConvoy: null
           });
@@ -132,21 +135,22 @@ let filtroActivo = null;
 function validarTipo(items)
 {
     let tabx = items.tipo;
+    let labelMuestra = items.label;
     if(items.length =0) {return}
     ItemsSelects.length =0;
     ItemsSelects= items.value;
-  if ( tabx==='Convoy'){
-    ItemsSelects = obtenerImeisPorConvoyId(items.id);
-  }
+    if ( tabx==='Convoy'){
+      ItemsSelects = obtenerImeisPorConvoyId(items.id);
+    }
+    mapaAjustado= false;
 
-
-    actualizarUbicacion(ItemsSelects,tabx);
+    actualizarUbicacion(ItemsSelects,tabx,labelMuestra);
     document.getElementById('btnDetener').style.display = 'inline-block';
     
     if (intervalId) clearInterval(intervalId);
     
     intervalId = setInterval(() => {
-      actualizarUbicacion(ItemsSelects,tabx);
+      actualizarUbicacion(ItemsSelects,tabx,labelMuestra);
     }, 5000);
 }
 let intervalId = null;
@@ -249,13 +253,7 @@ function actualizarUbicacionReal(coordenadaData){
     });
 
 }
-function actualizarUbicacion(imeis,t) {
- if (Array.isArray(imeis) && imeis.length === 0) {
-  alert('No se encontro informacion de IMEI para rastreo...')
-   detener();
- return
- }
-
+ function actualizarUbicacion(imeis,t,labelMuestra) {
 let tipo = "";
 
     let responseOk = false;
@@ -272,7 +270,7 @@ let tipo = "";
     //console.log('Ubicaciones recibidas:', data);
     const dataUbi= data;
 
-limpiarMarcadores();
+//limpiarMarcadores();
 responseOk = true;
     if (Array.isArray(dataUbi)) {
       dataUbi.forEach((item, index) => {
@@ -281,116 +279,101 @@ responseOk = true;
         let lnglocal='';
         let nEconomico='';
         let id_contenConvoy ='';
-        if(tipo ==='skyGps'){
-        let arrayData = item.ubicacion.data;
-        if (Array.isArray(arrayData) && arrayData.length === 0) {
-            console.warn('La respuesta fue exitosa pero `data` está vacío.');
-            return
-          }
-          arrayData.forEach((item2, index) => {
-              nEconomico =' No Economico:' +item2.economico +' imei:' + item2.imei ;
-              latlocal= parseFloat(item2.tracks[0].position.latitude);
-              lnglocal= parseFloat(item2.tracks[0].position.longitude);
-                 id_contenConvoy=  item2.id_contenendor;
-              if (latlocal && lnglocal) {
-
-                // const newMarker = new google.maps.Marker([latlocal, lnglocal]).addTo(map).bindPopup(nEconomico).openPopup();
-                 const newMarker = new google.maps.Marker({
-  position: { lat: latlocal, lng: lnglocal },
-  map: map,
-});
-
-const infoWindow = new google.maps.InfoWindow({
-  content: nEconomico
-});
-infoWindow.open(map, newMarker);
-
-// Para que se abra el popup al hacer clic en el marcador
-newMarker.addListener('click', () => {
-  infoWindow.open(map, newMarker);
-});
-                markers.push(newMarker);
-                 newMarker.addListener('click', () => {
-            const contenedor = item.contenedor;
-             const info = contenedoresDisponibles.find(d => d.contenedor === contenedor);
-                if (!info) {
-                  if(t='Equipo'){
-                      if(t='Equipo'){
-                    const ahora = new Date();
-                       info = contenedoresDisponibles.find(d => {
-                            const inicio = new Date(d.fecha_inicio);
-                            const fin = new Date(d.fecha_fin);
-
-                            return ahora >= inicio && ahora <= fin;
-                        });
-                         console.log(info);
-                         if (!info) {
-                          alert("Información del viaje no encontrada.");
-                          return;
-                         }
-                  }
-                }else {
-                    alert("Información del viaje no disponible.");
-                  return;
-                  }
-
-                  
-                }
-
-                const contenido = `
-                  <div class="p-3">
-                    <h5 class="mb-2">🚚 Información del Viaje</h5>
-                    <p><strong>Cliente:</strong> ${info.cliente}</p>
-                    <p><strong>Contenedor:</strong> ${info.contenedor}</p>
-                    <p><strong>Origen:</strong> ${info.origen}</p>
-                    <p><strong>Destino:</strong> ${info.destino}</p>
-                    <p><strong>Contrato:</strong> ${info.tipo_contrato}</p>
-                    <p><strong>IMEI:</strong> ${info.imei}</p>
-                    <p><strong>Fecha Inicio:</strong> ${info.fecha_inicio}</p>
-                  </div>
-                `;
-
-              document.getElementById('contenidoModalViaje').innerHTML = contenido;
-
-              // Mostrar el modal con Bootstrap 5
-              const modal = new bootstrap.Modal(document.getElementById('modalInfoViaje'));
-              modal.show();
-            });
-                
-              }
-          })
 
 
-        }else {
-             latlocal =parseFloat( item.ubicacion.data.lat);
-         lnglocal =parseFloat( item.ubicacion.data.lng);
+           
+       //   let datosGeocerca = convoysAll.find(c => c.no_conboy === extraertipoC)
+         
+       
+ latlocal =parseFloat( item.ubicacion.lat);
+         lnglocal =parseFloat( item.ubicacion.lng);
          idConvoyOContenedor=  item.id_contenendor;
-        if (latlocal && lnglocal) {
+
+          // if(datosGeocerca ) {
+
+          // actualizarMapa(latlocal, lnglocal,datosGeocerca)
+          // }
+           if (markers[item.ubicacion.imei]) {
     
-          const newMarker = new google.maps.Marker({
-  position: { lat: latlocal, lng: lnglocal },
-  map: map,
-});
+                markers[item.ubicacion.imei].setPosition({ lat: latlocal, lng: lnglocal });
+        } else {
+          if (latlocal && lnglocal) {
+          
+          // let esMostrarPrimero =  1
+          // if(esMostrarPrimero){
+            const newMarker = new google.maps.Marker({
+              position: { lat: latlocal, lng: lnglocal },
+              map: map,
+            });
+              let  contentC ='';
+              if(t === 'Equipo'){
+               // `${eq.id_equipo } - ${eq.marca}- ${eq.tipo}- ${textoPlaca}`,
+               const equipo = labelMuestra.split(' - ').map(part => part.trim());
+               
+                let marcaLocal = equipo[1];
+                let placaLocal = equipo[3];
+contentC = `
+            <div style="
+                    background-color: #e3f2fd;
+                    padding: 5px;
+                    border-radius: 8px;
+                    font-family: Arial, sans-serif;
+                    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+                    max-width: 240px;
+                  ">
+              <div style="font-weight: bold; font-size: 17px; margin-bottom: 6px;">
+               
+              </div>
+              <div style="font-size: 17px; line-height: 1.5;">
+                <strong>Equipo:</strong> ${item.EquipoBD}<br>
+                <strong>Marca:</strong> ${marcaLocal}<br>
+                <strong>Placas:</strong> ${placaLocal}<br>
+             
+              </div>
+            </div>
+          `;
+              }
+              else {
+contentC = `
+            <div style="
+                    background-color: #e3f2fd;
+                    padding: 5px;
+                    border-radius: 8px;
+                    font-family: Arial, sans-serif;
+                    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+                    max-width: 240px;
+                  ">
+              <div style="font-weight: bold; font-size: 17px; margin-bottom: 6px;">
+               
+              </div>
+              <div style="font-size: 17px; line-height: 1.5;">
+                <strong>Equipo:</strong> ${item.EquipoBD}<br>
+                <strong>Contenedor:</strong> ${item.contenedor}
+              </div>
+            </div>
+          `;
 
-// Crear InfoWindow para el popup
-const infoWindow = new google.maps.InfoWindow({
-  content: item.contenedor
-});
-
-// Mostrar el popup cuando se crea el marcador (opcional)
-infoWindow.open(map, newMarker);
-
-// Para que se abra el popup al hacer clic en el marcador
-newMarker.addListener('click', () => {
-  infoWindow.open(map, newMarker);
-});
-            markers.push(newMarker);
-          tipo= tipo + ' '+ item.contenedor;
+              }
+             
+               // const newMarker = L.marker([latlocal, lnglocal]).addTo(map).bindPopup(tipoSpans + ' '+ item.contenedor).openPopup();
+               const infoWindow = new google.maps.InfoWindow({
+            content: contentC 
+          });
+          infoWindow.open(map, newMarker);
           newMarker.addListener('click', () => {
+          infoWindow.open(map, newMarker);
+        });
+            markers.push(newMarker);
+          
+        
+           newMarker.addListener('click', () => {
             const contenedor = item.contenedor;
              let info = contenedoresDisponibles.find(d => d.contenedor === contenedor);
                 if (!info) {
-                   if(t='Equipo'){
+                  if (t.includes('convoy')) {
+                     info = contenedoresDisponiblesAll.find(d => d.contenedor === contenedor);
+                  }else 
+                    if(t==='Equipo'){
                    
                     const ahora = new Date();
                        info = contenedoresDisponibles.find(d => {
@@ -404,14 +387,11 @@ newMarker.addListener('click', () => {
                           alert("Información del viaje no encontrada.");
                           return;
                          }
-                  }else {
-                    alert("Información del viaje no encontrada.");
-                  return;
                   }
                 }
                 let extraInfo = '';
 
-                if (t === 'Equipo') {
+                if (t === '#filtro-Equipo') {
                   extraInfo = `
                     <p><strong>IMEI CHASIS:</strong> ${info.imei_chasis}</p>
                            `;
@@ -426,6 +406,7 @@ newMarker.addListener('click', () => {
                     <p><strong>Destino:</strong> ${info.destino}</p>
                     <p><strong>Contrato:</strong> ${info.tipo_contrato}</p>
                     <p><strong>Fecha Inicio:</strong> ${info.fecha_inicio}</p>
+                    <p><strong>Fecha Fin:</strong> ${info.fecha_fin}</p>
                     <p><strong>IMEI:</strong> ${info.imei}</p>
                    
                                    ${extraInfo}
@@ -438,14 +419,30 @@ newMarker.addListener('click', () => {
               const modal = new bootstrap.Modal(document.getElementById('modalInfoViaje'));
               modal.show();
             });
-        if (index === 0) {
-          map.setCenter({ lat: latlocal, lng: lnglocal });
-        map.setZoom(15);
+          //} //end mostrar primero
+           tipo= tipo + ' '+ item.contenedor;
+        
+        // if (index === 0) {
+        //   map.setCenter({ lat: latlocal, lng: lnglocal });
+        // map.setZoom(15);
+        // }  
+        markers[item.ubicacion.imei] = newMarker;
+          if (!mapaAjustado) {
+              const bounds = new google.maps.LatLngBounds();
+               Object.values(markers).forEach(marker => bounds.extend(marker.getPosition()));
+              map.fitBounds(bounds);
+              mapaAjustado= true;
+
+          }
         }
 
+        }// fin de else de validacion imei existe en el array markers
+
+
+          
+              
         
-        }
-        }
+        
       const datasave = {
           latitud: latlocal,
           longitud: lnglocal,
@@ -461,11 +458,7 @@ newMarker.addListener('click', () => {
     } else {
       console.warn('La respuesta no es un array de ubicaciones:', data);
     }
-    // if (responseOk){
-    //      const modalElement = document.getElementById('filtroModal'); 
-    //   const filtroModal = bootstrap.Modal.getInstance(modalElement) || new bootstrap.Modal(modalElement);
-    //   filtroModal.hide();
-    // }
+    
   
   })
   .catch(error => {

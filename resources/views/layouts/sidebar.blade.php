@@ -417,15 +417,23 @@
                                 href="{{ route('seach.coordenadas') }}">
                                 <span class="sidenav-mini-icon"> B</span>
 
-                                <span class="sidenav-normal">Busqueda Coordenadas</span>
+                                <span class="sidenav-normal">Busqueda Cuestionarios</span>
                             </a>
 
-                            <a class="nav-link {{ Request::is('coordenadas/rastrear') ? 'show' : '' }}"
+                            {{-- <a class="nav-link {{ Request::is('coordenadas/rastrear') ? 'show' : '' }}"
                                 href="{{ route('rastrearContenedor') }}">
                                 <span class="sidenav-mini-icon"> R </span>
-                                <span class="sidenav-normal">Rastrear Viajes</span>
+                                <span class="sidenav-normal">Rastrear </span>
+                            </a> --}}
+
+                             <a class="nav-link {{ Request::is('coordenadas/rastrear') ? 'show' : '' }}"
+                                href="{{ route('rastrearTabs') }}">
+                                <span class="sidenav-mini-icon"> R </span>
+                                <span class="sidenav-normal">Rastrear </span>
                             </a>
-                            <a class="nav-link {{ Request::is('coordenadas/conboys') ? 'show' : '' }}"
+
+                            
+                            {{-- <a class="nav-link {{ Request::is('coordenadas/conboys') ? 'show' : '' }}"
                                 href="{{ route('index.conboys') }}">
                                 <span class="sidenav-mini-icon"> C </span>
                                 <span class="sidenav-normal">Convoys Virtuales</span>
@@ -433,12 +441,7 @@
                             </a>
 
                             </a>
-                            <a class="nav-link {{ Request::is('coordenadas/conboys') ? 'show' : '' }}"
-                                href="{{ route('find-convoy') }}">
-                                <span class="sidenav-mini-icon"> E </span>
-                                <span class="sidenav-normal">Encontrar Convoys</span>
-                            </a>
-
+                            
                             <a class="nav-link {{ Request::is('coordenadas/conboys') ? 'show' : '' }}"
                                 href="{{ route('HistorialUbicaciones') }}">
                                 <span class="sidenav-mini-icon"> H </span>
@@ -449,7 +452,7 @@
                                 href="{{ route('scheduler.index') }}">
                                 <span class="sidenav-mini-icon"> C </span>
                                 <span class="sidenav-normal">Config. Interval</span>
-                            </a>
+                            </a> --}}
 
                         </li>
                     </ul>

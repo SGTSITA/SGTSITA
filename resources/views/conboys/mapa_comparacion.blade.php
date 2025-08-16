@@ -83,9 +83,29 @@
     <div id="mapaComparacion"></div>
 
     <!-- Leaflet JS -->
-    <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+ 
 
     <script>
+        let map;
+  let markers = [];
+ function googleMapsReady() {
+    
+            initMap();
+        }
+  function initMap() {
+   
+    map = new google.maps.Map(document.getElementById("mapaComparacion"), {
+      center: { lat: 0, lng: 0 },
+      zoom: 2,
+    });
+
+    
+
+     const marker = new google.maps.Marker({
+    position: { lat: 0, lng: 0 },
+    map: map,
+  });
+
         // Obtener parámetros desde la URL
         const params = new URLSearchParams(window.location.search);
         const lat1 = parseFloat(params.get('latitud'));
@@ -115,21 +135,158 @@
         const distancia = calcularDistancia(lat1, lon1, lat2, lon2);
         document.getElementById('distanciaSpan').textContent = distancia;
 
-        // Mostrar mapa
-        const mapa = L.map('mapaComparacion').setView([lat1, lon1], 13);
+        async function compararDirecciones() {
+   let direcccionEsperada = await getAddressFromLatLng(lat1, lon1);
+    procesarDireccion(direcccionEsperada);
+    
+}
+compararDirecciones();
+function procesarDireccion(direccion) {
+    console.log("Procesando:", direccion);
+     const contentC = `
+  <div style="
+    background-color: #e3f2fd;
+    padding: 5px;
+    border-radius: 8px;
+    font-family: Arial, sans-serif;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    max-width: 240px;
+  ">
+    <div style="font-weight: bold; font-size: 17px; margin-bottom: 6px;">
+      Ubicación esperada
+    </div>
+    <div style="font-size: 17px; line-height: 1.5;">
+      <strong>Direccion:</strong> ${direccion}<br>
+     
+    </div>
+  </div>
+`;
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; OpenStreetMap contributors'
-        }).addTo(mapa);
+const infoWindowUbiEsperada = new google.maps.InfoWindow({
+  content: contentC,
+});
 
-        L.marker([lat1, lon1]).addTo(mapa).bindPopup("Ubicación esperada").openPopup();
-        L.marker([lat2, lon2]).addTo(mapa).bindPopup("Ubicación GPS final");
+const markerUbiEsperada = new google.maps.Marker({
+  position: { lat: lat1, lng: lon1 },
+  map: map,
+  icon: {
+    path: google.maps.SymbolPath.CIRCLE,
+    scale: 8,
+    fillColor: "#00ff00",
+    fillOpacity: 0.8,
+    strokeWeight: 1,
+    strokeColor: "#3366CC",
+  },
+  title: "Ubicación esperada",
+});
 
-        L.polyline([[lat1, lon1], [lat2, lon2]], { color: 'red' }).addTo(mapa);
+markerUbiEsperada.addListener("click", () => {
+  infoWindowUbiEsperada.open(map, markerUbiEsperada);
+});
 
-        setTimeout(() => {
-    mapa.invalidateSize();
-}, 300);
+ infoWindowUbiEsperada.open(map, markerUbiEsperada);
+}
+   
+    
+
+      
+
+   
+    async function compararDirecciones2() {
+  let direcccionGps  = await getAddressFromLatLng(lat2,lon2);
+     procesarDireccion2(direcccionGps);
+}
+compararDirecciones2();
+function procesarDireccion2(direccion) {
+
+const contentC2 = `
+  <div style="
+    background-color: #e3f2fd;
+    padding: 5px;
+    border-radius: 8px;
+    font-family: Arial, sans-serif;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    max-width: 240px;
+  ">
+    <div style="font-weight: bold; font-size: 17px; margin-bottom: 6px;">
+      Ubicación GPS
+    </div>
+    <div style="font-size: 17px; line-height: 1.5;">
+      <strong>Direccion:</strong> ${direccion}<br>
+     
+    </div>
+  </div>
+`;
+ 
+
+    const infoWindowgps = new google.maps.InfoWindow({
+  content: contentC2,
+});
+   const markergps = new google.maps.Marker({
+  position: { lat: lat2, lng: lon2 },
+  map: map,
+  icon: {
+    path: google.maps.SymbolPath.CIRCLE,
+    scale: 8,
+    fillColor: "#4A90E2",
+    fillOpacity: 0.8,
+    strokeWeight: 1,
+    strokeColor: "#3366CC",
+  },
+  title: "Ubicación GPS",
+});
+
+markergps.addListener("click", () => {
+  infoWindowgps.open(map, markergps);
+});
+    
+
+  
+
+    infoWindowgps.open(map, markergps);
+}
+     
+
+    // Línea entre ambos puntos
+    const flightPath = new google.maps.Polyline({
+      path: [
+        { lat: lat1, lng: lon1 },
+        { lat: lat2, lng: lon2 },
+      ],
+      geodesic: true,
+      strokeColor: "#FF0000",
+      strokeOpacity: 1.0,
+      strokeWeight: 2,
+    });
+
+    flightPath.setMap(map);
+
+
+  // Espera que cargue la API con callback
+  window.initMap = initMap;
+  }
+
+
+  function getAddressFromLatLng(lat, lng) {
+  const geocoder = new google.maps.Geocoder();
+
+  return new Promise((resolve, reject) => {
+    geocoder.geocode({ location: { lat, lng } }, (results, status) => {
+      if (status === "OK") {
+        if (results[0]) {
+          resolve(results[0].formatted_address);
+        } else {
+          reject("No se encontró dirección para estas coordenadas");
+        }
+      } else {
+        reject("Error de geocodificación: " + status);
+      }
+    });
+  });
+}
+       
     </script>
+
+      <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAtAO2AZBgzC7QaBxnMnPoa-DAq8vaEvUc" async defer onload="googleMapsReady()"></script>
 </body>
 </html>
