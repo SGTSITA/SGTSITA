@@ -12,6 +12,7 @@ use App\Models\Cotizaciones;
 use App\Models\Equipo;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use App\Models\RastreoIntervals;
 
 
 use Auth;
@@ -835,6 +836,16 @@ $idCordenada= $coordenadas->id_coordenadas;
         } else {
             return response()->json(['success' => false]);
         }
+        
+    }
+
+
+    public function RastreoTabs()  {
+
+  $intervals = RastreoIntervals::where('task_name', 'rastreo_gps_interval')->first();
+
+    
+        return view('coordenadas.rastreoTab',compact('intervals'));
         
     }
 }

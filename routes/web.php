@@ -183,6 +183,8 @@ Route::delete('coordenadas/conboys/eliminar-contenedor/{contenedor}/{convoy}', [
 Route::post('/coordenadas/conboys/estatus', [App\Http\Controllers\ConboysController::class, 'updateEstatus']);
 
 Route::get('coordenadas/conboys/getconboys', [App\Http\Controllers\ConboysController::class, 'getConboys'])->name('getConboys.conboys');
+Route::get('coordenadas/conboys/getconboysFinalizados', [App\Http\Controllers\ConboysController::class, 'getconboysFinalizados'])->name('getconboysFinalizados.conboys');
+
 Route::get('/coordenadas/conboys/getHistorialUbicaciones', [App\Http\Controllers\ConboysController::class, 'getHistorialUbicaciones'])->name('getHistorialUbicaciones.conboys');
 
 
@@ -216,9 +218,12 @@ Route::put('/scheduler/edit', [App\Http\Controllers\RastreoIntervalController::c
 
 //NUEVO SERVICIO DE GPS 
 Route::get('/gps/{imei}/detalle', [GpsController::class, 'detalleDispositivo']);
+
 //R
 
+//prueba refactorizacion de coordenadas
 
+Route::get('/coordenadas/rastrearTabs', [App\Http\Controllers\CoordenadasController::class, 'RastreoTabs'])->name('rastrearTabs');
 
 
 Route::group(['middleware' => ['auth']], function() {
