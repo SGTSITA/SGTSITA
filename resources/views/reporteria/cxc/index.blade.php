@@ -338,7 +338,7 @@
                                     new Date().toLocaleTimeString('es-ES', {
                                         hour12: false
                                     })
-                                    .replaceAll(':', '.') + '.pdf';
+                                    .replaceAll(':', '_') + '.pdf';
 
                                 document.body.appendChild(a);
                                 a.click();
@@ -355,7 +355,7 @@
                                 new Date().toLocaleTimeString('es-ES', {
                                     hour12: false
                                 })
-                                .replaceAll(':', '.') + '.xlsx';
+                                .replaceAll(':', '_') + '.xlsx';
 
                             document.body.appendChild(a);
                             a.click();

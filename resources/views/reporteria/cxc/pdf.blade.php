@@ -288,9 +288,17 @@
             </h3>
             <table class="table text-white"
                 style="color: #000; width: 100%; padding: 2px; font-size: 6px; border-collapse: collapse;">
-                @if ($empresaActual == 6 || $empresaActual == 2)
+                @if ($empresaActual == 6 || $empresaActual == 2 || $empresaActual == 8)
                     @php
-                        $bancoId = $empresaActual == 6 ? 4 : 6;
+                        $bancoId = null;
+                        if ($empresaActual == 6) {
+                            $bancoId = 4;
+                        } elseif ($empresaActual == 2) {
+                            $bancoId = 6;
+                        } elseif ($empresaActual == 8) {
+                            $bancoId = 11;
+                        }
+
                         $cuentaCLABE = Bancos::withTrashed()->find($bancoId);
                         $beneficiarioCuenta1 = $cuentaCLABE->nombre_beneficiario ?? 'No disponible';
                         $totalFacturaProveedor = 0;
