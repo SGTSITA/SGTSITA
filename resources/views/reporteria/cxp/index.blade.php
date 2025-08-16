@@ -309,8 +309,13 @@
                         var a = document.createElement('a');
                         a.style.display = 'none';
                         a.href = url;
-                        a.download = 'Cuentas_por_pagar_{{ date('d-m-Y') }}.' + fileType;
-                        document.body.appendChild(a);
+                        a.download = 'cxp_' +
+                            new Date().toLocaleDateString('es-ES').replaceAll('/', '-') + '_' +
+                            new Date().toLocaleTimeString('es-ES', {
+                                hour12: false
+                            }).replaceAll(':', '.') +
+                            '.' + fileType;
+
 
                         // Inicia la descarga
                         a.click();
