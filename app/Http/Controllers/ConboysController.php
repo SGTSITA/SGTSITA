@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\Conboys;
+use App\Models\conboys;
 use App\Models\conboysContenedores;
 use Illuminate\Support\Facades\DB;
 use App\Models\User;
@@ -38,6 +38,60 @@ class ConboysController extends Controller
         return view('conboys.index');
     }
 
+ public function getconboysFinalizados()
+    {
+        $idEmpresa = Auth::User()->id_empresa;
+
+       $conboys = DB::table('conboys')
+        ->select(
+            'conboys.id',
+            'conboys.no_conboy',
+            'conboys.nombre',
+            'conboys.fecha_inicio',
+            'conboys.fecha_fin',
+            'conboys.user_id',
+             'tipo_disolucion' ,
+            'estatus' ,
+            'fecha_disolucion'  ,
+            'geocerca_lat' ,
+            'geocerca_lng',
+            'geocerca_radio' ,
+        )->where('estatus','=','disuelto')
+        ->whereIn('conboys.id', function ($query) use ($idEmpresa) {
+            $query->select('conboys_contenedores.conboy_id')
+                ->from('conboys_contenedores')
+                ->join('docum_cotizacion', 'docum_cotizacion.id', '=', 'conboys_contenedores.id_contenedor')
+                ->where('docum_cotizacion.id_empresa', '=', $idEmpresa);
+        })
+        ->get()
+        ->map(function ($conboy) {
+            $conboy->BlockUser = $conboy->user_id !== optional(Auth::user())->id;
+            return $conboy;
+        });
+ 
+
+        $conboysdetalleC =  DB::table('conboys_contenedores')
+        ->join('docum_cotizacion', 'docum_cotizacion.id', '=', 'conboys_contenedores.id_contenedor')
+        ->join('asignaciones', 'asignaciones.id_contenedor', '=', 'conboys_contenedores.id_contenedor')
+        ->join('equipos', 'equipos.id', '=', 'asignaciones.id_camion')
+        ->select(
+            'conboys_contenedores.conboy_id',
+            'conboys_contenedores.id_contenedor',
+            'docum_cotizacion.num_contenedor',
+            'equipos.imei',
+            'docum_cotizacion.id_empresa'
+        )
+        ->get();
+
+        $conboysdetalle = $conboysdetalleC->where('id_empresa', $idEmpresa)->values();;
+            return response()->json([
+                    'success' => true,
+                    'message' => 'lista devuelta.'  ,
+                    'data'=>  $conboys,
+                    'dataConten'=>  $conboysdetalle,
+                   'dataConten2'=>  $conboysdetalleC 
+                ]); 
+    }
     public function getConboys()
     {
         $idEmpresa = Auth::User()->id_empresa;

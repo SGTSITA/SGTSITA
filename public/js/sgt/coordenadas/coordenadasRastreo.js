@@ -1,0 +1,1743 @@
+let map;
+  let markers = [];
+  let elementoPanelRastro =[];
+  let catalogoBusqueda = [];
+let contenedoresDisponiblesAll =[];
+let mapaAjustado = false;
+
+let detalleConvoys;
+let contenedoresDisponibles = [];
+
+    let ItemsSelectsID = {};
+      let intervalIdsID = {};
+  
+ function googleMapsReady() {
+    
+            initMap();
+        }
+  function initMap() {
+   
+    map = new google.maps.Map(document.getElementById("map"), {
+      center: { lat: 0, lng: 0 },
+      zoom: 2,
+    });
+
+    
+
+     const marker = new google.maps.Marker({
+    position: { lat: 0, lng: 0 },
+    map: map,
+  });
+  }
+  
+
+function cargarConvoysEnSelect(convoys) {
+  const select = document.getElementById('convoys');
+
+  // Limpiar opciones actuales excepto la primera
+  select.innerHTML = '<option value="">Seleccione un convoy</option>';
+
+  convoys.forEach(convoy => {
+    const option = document.createElement('option');
+    option.value = convoy.id; 
+    option.textContent = `${convoy.no_conboy} - ${convoy.nombre}`;
+    select.appendChild(option);
+  });
+}
+function cargarEquiposEnSelect(dataequipos) {
+  const select = document.getElementById('Equipo');
+
+  // Limpiar opciones actuales excepto la primera
+  select.innerHTML = '<option value="">Seleccione un equipo</option>';
+
+  dataequipos.forEach(equipo => {
+    const option = document.createElement('option');
+    option.value = `${equipo.id_equipo}|${equipo.imei}|${equipo.id}|${equipo.tipoGps}`;
+    const textoPlaca = equipo.placas?.trim() ? equipo.placas : 'SIN PLACA';
+    option.textContent = `${equipo.id_equipo } - ${equipo.marca}- ${equipo.tipo}- ${textoPlaca}`;
+    select.appendChild(option);
+  });
+}
+function cargarinicial()
+{
+       fetch(`/coordenadas/contenedor/searchEquGps?`)
+      .then(response => response.json())
+    .then(data => {
+        
+         contenedoresDisponibles   = data.datos;
+
+    detalleConvoys =   data.dataConten;
+
+    contenedoresDisponiblesAll = data.dataContenAll;
+          
+        // Convoys detalle
+        data.conboys.forEach(c => {
+          catalogoBusqueda.push({
+            tipo: 'Convoy',
+            label: c.no_conboy +" " + c.nombre, 
+            value: c.no_conboy,
+            id: c.id,
+          });
+        });
+        // Contenedores (desde convoysDetalle)
+        contenedoresDisponibles.forEach(cd => {
+          catalogoBusqueda.push({
+            tipo: 'Contenedor',
+            label: cd.contenedor,
+            value: cd.contenedor +"|" +cd.imei+"|"+ cd.id_contenedor+"|"+ cd.tipoGps,
+            id: cd.id_contenedor
+          });
+        });
+
+        // Equipos (si tienes un array separado)
+         data.equipos.forEach(eq => {
+           const textoPlaca = eq.placas?.trim() ? eq.placas : ''
+          catalogoBusqueda.push({
+            tipo: 'Equipo',
+            
+            label: `${eq.id_equipo } - ${eq.marca} - ${eq.tipo} - ${textoPlaca}`,
+            value: `${eq.id_equipo}|${eq.imei}|${eq.id}|${eq.tipoGps}`,
+            id: eq.id
+          });
+        });
+          
+      })
+  .catch(error => {
+          console.error('Error al traer coordenadas:', error);
+    });
+}
+
+
+function obtenerImeisPorConvoyId(convoyId) {
+    return detalleConvoys
+    .filter(item => item.conboy_id == convoyId && item.imei && item.id_contenedor)
+    .map(item => item.num_contenedor + "|" + item.imei + "|" + item.id_contenedor+"|"+item.tipoGps);
+}
+
+function obtenerTabActivo() {
+    const tabActivo = document.querySelector('#filtroTabs .nav-link.active');
+    return tabActivo ? tabActivo.getAttribute('data-bs-target') : null;
+}
+
+
+
+const input = document.getElementById("buscadorGeneral");
+const resultados = document.getElementById("resultadosBusqueda");
+const chipContainer = document.getElementById("chipsBusqueda");
+
+let filtroActivo = null;
+
+function validarTipo(items)
+{
+    let tabx = items.tipo;
+    let labelMuestra = items.label;
+    let value = items.value;
+  
+    if (Array.isArray(ItemsSelectsID[items.id + "|"+  items.value])) 
+      {
+          ItemsSelectsID[items.id + "|"+  items.value].length = 0;
+      } else {
+          ItemsSelectsID[items.id + "|"+  items.value] = []; 
+      }
+   ItemsSelectsID[items.id + "|"+  items.value] = items.value;
+    
+    if ( tabx==='Convoy'){
+      ItemsSelectsID[items.id + "|"+  items.value] = obtenerImeisPorConvoyId(items.id);
+    }
+    mapaAjustado= false;
+
+    elementoPanelRastro.push({
+      id:items.id,
+    tipo: tabx,
+    value: items.value,
+    label: labelMuestra
+});
+
+catalogoBusqueda = catalogoBusqueda.filter(itemFilter => itemFilter.id !== items.id &&  itemFilter.value !== items.value);
+
+
+
+
+const listaPanel = document.getElementById("ElementosRastreoPanel");
+
+elementoPanelRastro.forEach(item => {
+    const existe = Array.from(listaPanel.children).some(li =>
+        li.dataset.valor === item.id + "|"+  item.tipo
+    );
+
+    if (!existe) {
+        const li = document.createElement("li");
+        li.classList.add("list-group-item", "d-flex", "justify-content-between", "align-items-center", "p-2");
+        li.dataset.valor = item.id + "|"+  item.tipo;
+      
+        // Texto a la izquierda
+        const spanTexto = document.createElement("span");
+        spanTexto.textContent = `${item.tipo} #${item.label}`;
+        li.appendChild(spanTexto);
+
+
+        // Botón pausar/reanudar
+        const btnPausar = document.createElement("button");
+        btnPausar.classList.add("btn", "btn-sm", "btn-warning", "p-1");
+        btnPausar.style.width = "35px";
+        btnPausar.style.height = "35px";
+        btnPausar.style.display = "flex";
+        btnPausar.style.alignItems = "center";
+        btnPausar.style.justifyContent = "center";
+        btnPausar.innerHTML = '<i class="bi bi-pause-fill"></i>';
+        btnPausar.id = `${item.tipo.toLowerCase()}-${item.value}`;
+
+        // Evento click pausar/reanudar
+        btnPausar.addEventListener("click", () => {
+            const icon = btnPausar.querySelector("i");
+            if (btnPausar.classList.contains("btn-warning")) {
+                btnPausar.classList.replace("btn-warning", "btn-success");
+                icon.classList.replace("bi-pause-fill", "bi-play-fill");
+                console.log(`${item.tipo} #${item.label} pausado`);
+            } else {
+                btnPausar.classList.replace("btn-success", "btn-warning");
+                icon.classList.replace("bi-play-fill", "bi-pause-fill");
+                console.log(`${item.tipo} #${item.label} reanudado`);
+            }
+        });
+
+        // Botón eliminar
+        const btnEliminar = document.createElement("button");
+        btnEliminar.classList.add("btn", "btn-sm", "btn-danger", "p-1");
+        btnEliminar.style.width = "35px";
+        btnEliminar.style.height = "35px";
+        btnEliminar.style.display = "flex";
+        btnEliminar.style.alignItems = "center";
+        btnEliminar.style.justifyContent = "center";
+        btnEliminar.innerHTML = '<i class="bi bi-x"></i>'; // ícono X
+// Agregar botones al contenedor
+        li.appendChild(btnPausar);
+        li.appendChild(btnEliminar);
+
+         
+          listaPanel.appendChild(li);
+
+
+  btnEliminar.addEventListener("click", () => {
+    let valorLi = li.dataset.valor;
+   
+    let [idStr, tipoStr] = valorLi.split("|");
+
+ 
+    let elementoEliminado = elementoPanelRastro.find(
+        item => String(item.id) === idStr && String(item.tipo) === tipoStr
+    );
+
+    if (elementoEliminado) {
+       
+        elementoPanelRastro = elementoPanelRastro.filter(
+            item => String(item.id) !== idStr || String(item.tipo) !== tipoStr
+        );
+
+      
+        if (!catalogoBusqueda.some(
+            el => el.id === elementoEliminado.id && el.value === elementoEliminado.value
+        )) {
+            catalogoBusqueda.push(elementoEliminado);
+        }
+
+      
+        li.remove();
+
+        let index = markers.findIndex(m => m.keyItem === items.id + "|"+  items.value+"|"+  item.tipo);
+        if (index !== -1) {
+            markers[index].setMap(null);  // Quita del mapa
+            markers.splice(index, 1);     // Lo elimina del array
+        }
+
+        console.log(`${elementoEliminado.tipo} #${elementoEliminado.label} eliminado`);
+    }
+});
+//alert('pasa siempre');
+
+
+actualizarUbicacion(ItemsSelectsID[items.id + "|"+  items.value],tabx,items.id + "|"+  items.value + "|"+  item.tipo,labelMuestra,value,map)
+        
+        }
+});
+
+   
+
+    
+}
+
+input.addEventListener('input', function () {
+   
+const query = this.value.trim().toLowerCase();
+    resultados.innerHTML = '';
+    chipContainer.innerHTML = '';
+    filtroActivo = null;
+
+    if (query.length < 2) {
+     //detener();
+     // limpiarMarcadores();
+      return;
+    }
+
+    const coincidencias = catalogoBusqueda.filter(item =>
+        item.label.toLowerCase().includes(query)
+    );
+
+    if (coincidencias.length === 0) {
+        const div = document.createElement('div');
+        div.classList.add('dropdown-item', 'text-muted');
+        div.textContent = 'Sin resultados';
+        resultados.appendChild(div);
+        return;
+    }
+
+    // Mostrar chips por tipo
+ const tiposUnicos = [...new Set(coincidencias.map(item => item.tipo))];
+    tiposUnicos.forEach(tipo => {
+        const chip = document.createElement('button');
+        chip.className = 'btn btn-outline-secondary btn-sm rounded-pill me-2 mb-1';
+        chip.textContent = tipo;
+        chip.onclick = () => {
+            filtroActivo = tipo;
+            //document.getElementById('tituloSeguimiento').textContent = 'Seguimiento '+  tipo;
+            document.querySelectorAll('#chipsBusqueda .btn').forEach(btn => btn.classList.remove('active'));
+            chip.classList.add('active');
+            mostrarResultadosFiltrados(query);
+        };
+        chipContainer.appendChild(chip);
+    });
+
+    mostrarResultadosFiltrados(query);
+});
+
+
+function mostrarResultadosFiltrados(query) {
+    resultados.innerHTML = '';
+    const sugerencias = catalogoBusqueda
+        .filter(item =>
+            item.label.toLowerCase().includes(query) &&
+            (!filtroActivo || item.tipo === filtroActivo)
+        )
+        .slice(0, 10);
+
+    sugerencias.forEach(item => {
+        const div = document.createElement('div');
+        div.classList.add('dropdown-item');
+        div.textContent = `${item.label}`;
+        div.onclick = () => {
+          //document.getElementById('tituloSeguimiento').textContent = 'Seguimiento '+  item.tipo;
+          // document.querySelectorAll('#chipsBusqueda .btn').forEach(btn => {
+          //       if (btn.textContent.trim() === item.tipo) {
+          //         btn.classList.add('active');
+          //       } else {
+          //         btn.classList.remove('active');
+          //       }
+          //     });
+
+//input.value =item.label;
+input.value='';
+document.getElementById('resultadosBusqueda').innerHTML = '';
+chipContainer.innerHTML = '';
+//input.dispatchEvent(new Event('input'));
+          validarTipo(item)
+        
+        };
+        resultados.appendChild(div);
+    });
+}
+  
+function actualizarUbicacionReal(coordenadaData){
+    fetch('/coordenadas/rastrear/savehistori', {
+        method: 'POST',
+         headers: {
+      'Content-Type': 'application/json',
+      'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+    },
+    body: JSON.stringify(coordenadaData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            console.log('Coordenada guardada:', data.data);
+        } else {
+            console.warn('Error al guardar coordenada', data);
+        }
+    })
+    .catch(error => {
+        console.error('Error en la solicitud:', error);
+    });
+
+}
+
+ function actualizarUbicacion(imeis,t,KEYITEM,labelMuestra,num_convoy,map) {
+  console.log('obteniendo ubicacion convoy :', KEYITEM);
+
+let tipo = "";
+
+    let responseOk = false;
+  fetch("/coordenadas/ubicacion-vehiculo", {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+    },
+    body: JSON.stringify({ imeis: imeis})
+  })
+  .then(res => res.json())
+  .then(data => {
+    //console.log('Ubicaciones recibidas:', data);
+    const dataUbi= data;
+  console.log('obteniendo unicacion convoy, sucess data :', KEYITEM);
+//limpiarMarcadores();
+  responseOk = true;
+    if (Array.isArray(dataUbi)) {
+      dataUbi.forEach((item, index) => {
+        tipo= item.tipogps;
+         let latlocal ='';
+        let lnglocal='';
+        let nEconomico='';
+        let id_contenConvoy ='';
+
+          console.log('For response ... :', KEYITEM);
+ 
+       //   let datosGeocerca = convoysAll.find(c => c.no_conboy === num_convoy)
+         
+       
+ latlocal =parseFloat( item.ubicacion.lat);
+         lnglocal =parseFloat( item.ubicacion.lng);
+         idConvoyOContenedor=  item.id_contenendor;
+
+          // if(datosGeocerca ) {
+
+          // actualizarMapa(latlocal, lnglocal,datosGeocerca,idConvoy,map)
+          // }
+           if (markers[KEYITEM]) {
+    
+                markers[KEYITEM].setPosition({ lat: latlocal, lng: lnglocal });
+        } else {
+if (latlocal && lnglocal) {
+          
+          // let esMostrarPrimero =  1
+          // if(esMostrarPrimero){
+            const newMarker = new google.maps.Marker({
+              position: { lat: latlocal, lng: lnglocal },
+              map: map,
+               icon: {
+        url: '/img/location.gif',
+        scaledSize: new google.maps.Size(40, 40) 
+    }
+            });
+
+            newMarker.keyItem = KEYITEM;
+
+             let  contentC ='';
+              if(t === 'Equipo'){
+               // `${eq.id_equipo } - ${eq.marca}- ${eq.tipo}- ${textoPlaca}`,
+               const equipo = labelMuestra.split(' - ').map(part => part.trim());
+               
+                let marcaLocal = equipo[1];
+                let placaLocal = equipo[3];
+contentC = `
+            <div style="
+                    background-color: #e3f2fd;
+                    padding: 5px;
+                    border-radius: 8px;
+                    font-family: Arial, sans-serif;
+                    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+                    max-width: 240px;
+                  ">
+              <div style="font-weight: bold; font-size: 17px; margin-bottom: 6px;">
+               
+              </div>
+              <div style="font-size: 17px; line-height: 1.5;">
+                <strong>Equipo:</strong> ${item.EquipoBD}<br>
+                <strong>Marca:</strong> ${marcaLocal}<br>
+                <strong>Placas:</strong> ${placaLocal}<br>
+             
+              </div>
+            </div>
+          `;
+              }
+              else  if(t==='Contenedor') {
+contentC = `
+            <div style="
+                    background-color: #e3f2fd;
+                    padding: 5px;
+                    border-radius: 8px;
+                    font-family: Arial, sans-serif;
+                    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+                    max-width: 240px;
+                  ">
+              <div style="font-weight: bold; font-size: 17px; margin-bottom: 6px;">
+               
+              </div>
+              <div style="font-size: 17px; line-height: 1.5;">
+                <strong>Equipo:</strong> ${item.EquipoBD}<br>
+                <strong>Contenedor:</strong> ${item.contenedor}
+              </div>
+            </div>
+          `;
+
+              }
+              else{
+                contentC = `
+            <div style="
+                    background-color: #e3f2fd;
+                    padding: 5px;
+                    border-radius: 8px;
+                    font-family: Arial, sans-serif;
+                    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+                    max-width: 240px;
+                  "> 
+              <div style="font-weight: bold; font-size: 17px; margin-bottom: 6px;">
+               
+              </div>
+              <div style="font-size: 17px; line-height: 1.5;">
+              <strong>Convoy:${num_convoy} </strong>
+                <strong>Equipo:</strong> ${item.EquipoBD}<br>
+                <strong>Contenedor:</strong> ${item.contenedor}
+              </div>
+            </div>
+          `;
+              }
+               // const newMarker = L.marker([latlocal, lnglocal]).addTo(map).bindPopup(tipoSpans + ' '+ item.contenedor).openPopup();
+               const infoWindow = new google.maps.InfoWindow({
+            content: contentC 
+          });
+          //infoWindow.open(map, newMarker);
+          newMarker.addListener('click', () => {
+          infoWindow.open(map, newMarker);
+        });
+            markers.push(newMarker);
+          
+        
+           newMarker.addListener('click', () => {
+            const contenedor = item.contenedor;
+             let info = contenedoresDisponibles.find(d => d.num_contenedor === contenedor);
+                if (!info) {
+                  if (t.toLowerCase().includes('convoy')) {
+                     info = contenedoresDisponiblesAll.find(d => d.contenedor === contenedor);
+                  }else if(t==='Equipo'){
+                   
+                    const ahora = new Date();
+                       info = contenedoresDisponibles.find(d => {
+                            const inicio = new Date(d.fecha_inicio);
+                            const fin = new Date(d.fecha_fin);
+
+                            return ahora >= inicio && ahora <= fin;
+                        });
+                         console.log(info);
+                         if (!info) {
+                          alert("Información del viaje no encontrada.");
+                          return;
+                         }
+                  }
+                }
+                let extraInfo = '';
+
+                if (t === 'Equipo') {
+                  extraInfo = `
+                    <p><strong>IMEI CHASIS:</strong> ${info.imei_chasis}</p>
+                           `;
+                }
+
+                const contenido = `
+                  <div class="p-3">
+                    <h5 class="mb-2">🚚 Información del Viaje</h5>
+                    <p><strong>Cliente:</strong> ${info.cliente}</p>
+                    <p><strong>Contenedor:</strong> ${info.contenedor}</p>
+                    <p><strong>Origen:</strong> ${info.origen}</p>
+                    <p><strong>Destino:</strong> ${info.destino}</p>
+                    <p><strong>Contrato:</strong> ${info.tipo_contrato}</p>
+                    <p><strong>Fecha Inicio:</strong> ${info.fecha_inicio}</p>
+                    <p><strong>IMEI:</strong> ${info.imei}</p>
+                   
+                                   ${extraInfo}
+                  </div>
+                `;
+
+              document.getElementById('contenidoModalViaje').innerHTML = contenido;
+
+              // Mostrar el modal con Bootstrap 5
+              const modal = new bootstrap.Modal(document.getElementById('modalInfoViaje'));
+              modal.show();
+            });
+          //} //end mostrar primero
+           tipo= tipo + ' '+ item.contenedor;
+        
+        // if (index === 0) {
+        //   map.setCenter({ lat: latlocal, lng: lnglocal });
+        // map.setZoom(15);
+        // }  
+        markers[KEYITEM] = newMarker;
+          if (!mapaAjustado) {
+              const bounds = new google.maps.LatLngBounds();
+               Object.values(markers).forEach(marker => bounds.extend(marker.getPosition()));
+              map.fitBounds(bounds);
+              mapaAjustado= true;
+
+          }
+        }
+
+        }// fin de else de validacion imei existe en el array markers
+
+
+          
+              
+        
+        
+      const datasave = {
+          latitud: latlocal,
+          longitud: lnglocal,
+          ubicacionable_id: idConvoyOContenedor,
+          tipo: tipo
+      };
+        if (idConvoyOContenedor!= ""){
+      actualizarUbicacionReal(datasave)
+        }
+        
+      
+      });
+    } else {
+      console.warn('La respuesta no es un array de ubicaciones:', data);
+    }
+    
+  
+  })
+  .catch(error => {
+    console.error('Error al obtener ubicaciones:', error);
+    detener();
+  });
+}
+// Para detener la actualización con un botón
+//document.getElementById('btnDetener').addEventListener('click', function() {
+//  detener();
+//});
+
+
+function detener(){
+    if(intervalId) {
+    clearInterval(intervalId);
+    intervalId = null;
+    document.getElementById('btnDetener').style.display = 'none';
+    
+  }
+}
+
+
+
+// Función para limpiar marcadores
+function limpiarMarcadores() {
+     markers.forEach(marker => marker.setMap(null)); 
+    markers = [];
+    
+}
+
+
+document.addEventListener('DOMContentLoaded', function () {
+     cargarinicial();
+     cargaConvoysTab();
+               
+});
+
+
+
+let contenedoresGuardados ;  
+let contenedoresGuardadosTodos ;  
+//let contenedoresDisponibles = [];
+let userBloqueo = false;
+const seleccionados = [];
+const ItemsSelects = [];
+
+
+
+function BloquearHabilitarEdicion(block){
+    document.getElementById('id_convoy').readOnly = block;
+    document.getElementById('nombre').readOnly = block;
+    document.getElementById('fecha_inicio').readOnly = block;
+    document.getElementById('fecha_fin').readOnly = block;
+
+
+
+
+}
+
+function abrirMapaEnNuevaPestana( contenedor,tipoS) {
+        const url = `/coordenadas/mapa_rastreo?contenedor=${contenedor}&tipoS=${encodeURIComponent(tipoS)}`;
+    window.open(url, '_blank');
+}
+
+function cargaConvoysTab(){
+    let gridApi;
+    let gridApi2;
+     cargarinicial();
+    definirTable();
+    definirTable2();
+
+  const modal = new bootstrap.Modal(document.getElementById('modalBuscarConvoy'), {
+        backdrop: 'static',
+        keyboard: false
+    });
+
+
+document.getElementById('btnBuscarconboy').addEventListener('click', function () {
+        modal.show();
+    });
+
+document.getElementById("btnNuevoconboy").addEventListener("click", () => {
+    limpiarFormulario();
+    // Aquí abres el modal, por ejemplo con Bootstrap 5:
+    const modal = new bootstrap.Modal(document.getElementById('CreateModal'));
+    modal.show();
+});
+
+document.getElementById('formBuscarConvoy').addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        const numero = document.getElementById('numero_convoy').value;
+
+        fetch(`/coordenadas/conboys/getconvoy/${numero}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                   let  tablalimpiar = document.getElementById("tablaContenedoresBodyBuscar"); 
+    tablalimpiar.innerHTML = "";
+    seleccionados.length = 0;
+    ItemsSelects.length = 0;
+
+
+                    const fechaInicio = new Date(data.data.fecha_inicio);
+                    const fechaFin = new Date(data.data.fecha_fin);
+
+                    let blockUser = data.data.BockUser 
+                    const formatoFecha = (fecha) => {
+                        return `${fecha.getDate().toString().padStart(2, '0')}/${(fecha.getMonth() + 1).toString().padStart(2, '0')}/${fecha.getFullYear()}`;
+                    };
+                    document.getElementById('descripcionConvoy').textContent = data.data.nombre;
+                    document.getElementById('fechaInicioConvoy').textContent = formatoFecha(fechaInicio);
+                    document.getElementById('fechaFinConvoy').textContent = formatoFecha(fechaFin);
+                    document.getElementById('id_convoy').value = data.data.idconvoy;
+                    
+                
+                    document.getElementById("no_convoy").value = data.data.no_conboy || "";
+                    document.getElementById("fecha_inicio").value = formatDateForInput(data.data.fecha_inicio) || "";
+                    document.getElementById("fecha_fin").value = formatDateForInput(data.data.fecha_fin )|| "";
+                    document.getElementById("nombre").value = data.data.nombre || "";
+                    document.getElementById("tipo_disolucion").value = data.data.tipo_disolucion || "";
+                    document.getElementById("geocerca_lat").value = data.data.geocerca_lat || "";
+                    document.getElementById("geocerca_lng").value = data.data.geocerca_lng || "";
+                    document.getElementById("geocerca_radio").value = data.data.geocerca_radio || "";
+
+
+
+                    contenedoresDisponibles = data.data.contenedoresPropios;
+                    contenedoresAsignadosAntes = data.data.contenedoresPropiosAsignados;
+                    contenedoresAsignadosAntes.forEach((contenedor, index) => {
+                         seleccionarContenedor2(contenedor.num_contenedor)
+                         
+                        });
+                  
+                   
+
+                    document.getElementById('resultadoConvoy').style.display = 'block';
+                } else {
+                    alert("Convoy no encontrado.");
+                }
+            });
+    });
+
+function limpiarFormulario() {
+        const form = document.getElementById("formFiltros");
+        form.reset(); // Limpia todos los inputs
+
+        // Además limpia inputs ocultos, o elementos dinámicos si tienes
+        document.getElementById("contenedores-seleccionados").innerHTML = "";
+        document.getElementById("contenedores").value = "";
+        document.getElementById("ItemsSelects").value = "";
+        const tablaBody = document.getElementById("tablaContenedoresBody");
+        if (tablaBody) {
+        tablaBody.innerHTML = "";
+        }
+        // Si usas dataset para editar, elimina también ese id para que no interfiera
+        delete form.dataset.editId;
+    }
+
+
+    document.getElementById('tipo_disolucion').addEventListener('change', function () {
+            const tipo = this.value;
+            document.querySelectorAll('.tipo-campo').forEach(el => el.style.display = 'none');
+
+            if (tipo === 'geocerca') {
+               
+                document.getElementById('geocercaConfig').style.display = 'block';
+            } else if (tipo === 'tiempo') {
+                //document.getElementById('campo-tiempo').style.display = 'block';
+            } 
+        });
+
+}
+
+  
+function abrirGeocerca() {
+  const url = '/configurar-geocerca'; 
+  const win = window.open(url, 'ConfigurarGeocerca', 'width=800,height=600');
+}
+function formatDateForInput(dateString) {
+     if (!dateString) return "";
+    const date = new Date(dateString);
+
+    if (isNaN(date.getTime())) return ""; 
+
+    const year = date.getFullYear();
+    const month = (`0${date.getMonth() + 1}`).slice(-2);
+    const day = (`0${date.getDate()}`).slice(-2);
+    const hours = (`0${date.getHours()}`).slice(-2);
+    const minutes = (`0${date.getMinutes()}`).slice(-2);
+
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+function setGeocercaData(lat, lng, radio) {
+    document.getElementById('geocerca_lat').value = lat;
+    document.getElementById('geocerca_lng').value = lng;
+    document.getElementById('geocerca_radio').value = radio;
+
+    alert('Geocerca guardada correctamente');
+}
+  document.getElementById('btnGuardarContenedores').addEventListener('click', function () {
+    let idconvoy = document.getElementById('id_convoy').value;
+let finicio = document.getElementById('fecha_inicio').value ;
+let ffin = document.getElementById('fecha_fin').value ;
+let nombre = document.getElementById('nombre').value ;
+let tipo_disolucion = document.getElementById('tipo_disolucion').value ;
+let geocerca_lat = document.getElementById('geocerca_lat').value ;
+let geocerca_lng = document.getElementById('geocerca_lng').value ;
+let geocerca_radio = document.getElementById('geocerca_radio').value ;
+
+    document.getElementById('ItemsSelects').value = ItemsSelects.join(';');
+    
+if (!ItemsSelects || ItemsSelects.length === 0) {
+    alert('Por favor, seleccione al menos un contenedor.');
+    return;
+  }
+
+        const numeroConvoy = document.getElementById('numero_convoy').value;
+      //  let idconvoy = document.getElementById('id_convoy').value;
+    document.getElementById('ItemsSelects').value = ItemsSelects.join(';');
+    
+if (!ItemsSelects || ItemsSelects.length === 0) {
+    alert('Por favor, seleccione al menos un contenedor.');
+    return;
+  }
+let datap = {
+    fecha_inicio: finicio,
+    fecha_fin: ffin,
+    items_selects: ItemsSelects,
+    nombre :nombre,
+    idconvoy:idconvoy,
+    numero_convoy:numeroConvoy,
+  tipo_disolucion :tipo_disolucion,
+            geocerca_lat:geocerca_lat,
+            geocerca_lng :geocerca_lng,
+            geocerca_radio:geocerca_radio,
+
+};
+
+        fetch(`/coordenadas/conboys/agregar`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify(datap)
+        })
+        .then(async res => {
+            if (!res.ok) {
+                // Intentamos extraer el mensaje del error (por si Laravel lo devuelve)
+                const errorText = await res.text();
+                throw new Error(errorText || 'Error desconocido del servidor');
+            }
+            return res.json();
+        })
+        .then(data => {
+            if (data.success) {
+                document.getElementById('modalBuscarConvoy').style.display = 'none';
+              
+
+                Swal.fire({
+                    title: 'Guardado correctamente',
+                    text: data.message + ' ' + data.no_conboy,
+                    icon: 'success',
+                    confirmButtonText: 'Aceptar'
+                });
+
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('modalBuscarConvoy'));
+                    modal.hide();
+
+            } else {
+                Swal.fire({
+                    title: 'Error',
+                    text: data.message || 'No se pudo guardar.',
+                    icon: 'error',
+                    confirmButtonText: 'Cerrar'
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error en la petición:', error);
+
+            Swal.fire({
+                title: 'Error inesperado',
+                text: error.message,
+                icon: 'error',
+                confirmButtonText: 'Cerrar'
+            });
+        });
+    });
+
+function definirTable(){
+  const columnDefs = [
+        {
+         headerName: '',
+        field: 'checkbox',
+        headerCheckboxSelection: true,
+        checkboxSelection: true,
+        width: 50,
+        pinned: 'left',
+        suppressSizeToFit: true,
+        resizable: false
+        },
+       
+        { headerName: "Convoy", field: "no_conboy", sortable: true, filter: true },
+        { headerName: "Descripcion", field: "nombre", sortable: true, filter: true },
+        { headerName: "Fecha Inicio", field: "fecha_inicio", sortable: true, filter: true },
+        { headerName: "Fecha Fin", field: "fecha_fin", sortable: true, filter: true },
+       
+        
+
+       {
+    headerName: "Acciones",
+   
+   
+    cellRenderer: function (params) {
+        const container = document.createElement("div");
+      //  container.classList.add("d-flex", "flex-wrap", "gap-1", "justify-content-start");
+        const data = params.data;
+
+        // Botón Editar
+        const btnEditar = document.createElement("button");
+        btnEditar.innerHTML = `<i class="fas fa-edit text-white"></i>`;
+       
+        btnEditar.title ="Editar";
+        btnEditar.classList.add("btn", "btn-sm", "btn-warning", "me-1");
+        btnEditar.onclick = function () {
+          document.getElementById("filtroModalLabel") .textContent ="Editar Conboy";
+            limpCampos();
+             //document.getElementById("contenedoresTablaSection").style.display = "block";
+             
+            document.getElementById("id_convoy").value = data.id;
+            document.getElementById("no_convoy").value = data.no_conboy || "";
+            document.getElementById("fecha_inicio").value = formatDateForInput(data.fecha_inicio) || "";
+            document.getElementById("fecha_fin").value = formatDateForInput(data.fecha_fin )|| "";
+            document.getElementById("nombre").value = data.nombre || "";
+            document.getElementById("tipo_disolucion").value = data.tipo_disolucion || "";
+            document.getElementById("geocerca_lat").value = data.geocerca_lat || "";
+            document.getElementById("geocerca_lng").value = data.geocerca_lng || "";
+            document.getElementById("geocerca_radio").value = data.geocerca_radio || "";
+
+
+              
+            document.getElementById("formFiltros").dataset.editId = data.id;
+
+            BloquearHabilitarEdicion(data.BlockUser);
+ 
+            const contenedoresFiltrados = contenedoresGuardados.filter(item => item.conboy_id == data.id);
+
+         // Llenas la tabla con los contenedoresFiltrados
+            llenarTablaContenedores(contenedoresFiltrados,data.BlockUser);
+            const modal = new bootstrap.Modal(document.getElementById("CreateModal"));
+            modal.show();
+        };
+
+        // Botón Compartir
+        const btnCompartir = document.createElement("button");
+        btnCompartir.innerText = "🔗";
+        btnCompartir.title ="Compartir"
+        btnCompartir.classList.add("btn", "btn-sm", "btn-info");
+        btnCompartir.onclick = function () {
+            // const link = `${window.location.origin}/coordenadas/conboys/compartir/${data.no_conboy}/${data.id}`;
+            // 
+            document.getElementById("wmensajeText").innerText = `Se comparte el siguiente no. de Convoy:: ${data.no_conboy}`;
+            
+            // 
+            const mensaje = (`Te comparto el convoy: ${data.no_conboy}`);
+      
+//
+ // mail
+                   // document.getElementById('linkMail').innerText = link;
+                    document.getElementById('mensajeText').innerText = mensaje;
+                    // whatsapp
+                   // document.getElementById("wmensajeText").innerText = mensaje;
+                   // document.getElementById("linkWhatsapp").value = link;
+                    // 🟢 Armamos el link para WhatsApp
+                    const textoWhatsapp = ` ${mensaje}`;
+                    document.getElementById("whatsappLink").href = `https://wa.me/?text=${encodeURIComponent(textoWhatsapp)}`;
+            // Mostrar modal
+            document.getElementById("modalCoordenadas").style.display = "block";
+        };
+    //boton rastreo contenedores de los convoys
+    const btnRastreo = document.createElement("button");
+    btnRastreo.type = "button";
+    btnRastreo.classList.add("btn", "btn-sm", "btn-success");
+    btnRastreo.title = "Rastrear contenedor";
+    btnRastreo.id = "btnRastreo";
+
+    // Añadir ícono + texto como HTML
+    btnRastreo.innerHTML = `<i class="fa fa-shipping-fast me-1"></i>`;
+
+    // Evento onclick personalizado (usa el contenedor que necesitas)
+    btnRastreo.onclick = function () {
+        const contenedoresDelConvoy = contenedoresGuardadosTodos
+    .filter(c => c.conboy_id === data.id)
+    .map(c => c.num_contenedor);
+    const listaStr = contenedoresDelConvoy.join(' / ');
+        let tipos= "Convoy: " + data.no_conboy;
+        abrirMapaEnNuevaPestana(listaStr,tipos); 
+    };
+ //boton cam cbiar estatus de los convoys
+   const btnEstatus = document.createElement("button");
+btnEstatus.type = "button";
+btnEstatus.classList.add("btn", "btn-sm", "btn-outline-primary");
+btnEstatus.title = "Cambio estatus";
+btnEstatus.id = "btnEstatus";
+btnEstatus.innerHTML = `<i class="fa fa-sync-alt me-1"></i>`;
+ btnEstatus.setAttribute("data-id", data.id);
+
+   btnEstatus.onclick = function () {
+
+    const modalElement = document.getElementById('modalCambiarEstatus');
+modalElement.setAttribute("data-id", this.dataset.id);
+
+
+    const modal = new bootstrap.Modal(document.getElementById('modalCambiarEstatus'));
+   
+    
+    modal.show();
+};
+
+            container.appendChild(btnEditar);
+            container.appendChild(btnCompartir);
+            container.appendChild(btnRastreo);
+            container.appendChild(btnEstatus);
+
+            return container;
+        }
+    }
+          
+             
+       
+    ];
+   
+function onSelectionChanged() {
+    const selectedRows = gridApi.getSelectedRows();
+    const btn = document.getElementById('btnRastrearconboysSelec');
+    if (selectedRows.length > 1) {
+        btn.classList.remove('d-none');
+    } else {
+        btn.classList.add('d-none');
+    }
+}
+document.getElementById('btnRastrearconboysSelec').addEventListener('click', () => {
+    const selectedRows = gridApi.getSelectedRows();
+
+    
+    const ids = selectedRows.map(row => row.id); 
+
+    if (ids.length > 1) {
+      
+        const query = new URLSearchParams({ ids: ids.join(',') }).toString();
+        const url = `/coordenadas/mapa_rastreo_varios?${query}`;
+        window.open(url, '_blank');
+    }
+});
+
+function llenarTablaContenedores(contenedores,val) {
+    const tabla = document.getElementById("tablaContenedoresBody"); // tbody
+    tabla.innerHTML = "";
+
+seleccionados.length = 0;
+    ItemsSelects.length = 0;
+
+     
+
+    contenedores.forEach((item, i) => {
+        const row = document.createElement("tr");
+         let botonEliminar = '';
+        if (!val) {
+            botonEliminar = `
+                    <button type="button" class="btn btn-sm btn-danger" onclick="confirmarEliminacion('${item.id_contenedor}', '${item.conboy_id}', this,${i})">
+                        <i class="bi bi-trash"></i> 
+                    </button>
+                `;
+           
+        }
+
+        row.innerHTML = `
+            <td>${item.num_contenedor}</td>
+            <td>${botonEliminar}</td>
+        `;
+
+        tabla.appendChild(row);
+
+        seleccionados.push(item.num_contenedor);
+        ItemsSelects.push(`${item.num_contenedor}|${item.id_contenedor}|${item.imei}`);
+    });
+}
+
+    const gridOptions = {
+        columnDefs: columnDefs,
+        pagination: true,
+        paginationPageSize: 100,
+        rowSelection: "multiple",
+        defaultColDef: {
+            resizable: true,
+            flex: 1
+        },
+         onSelectionChanged: onSelectionChanged
+    };
+
+    const myGridElement = document.querySelector("#myGrid");
+    gridApi = agGrid.createGrid(myGridElement, gridOptions);
+
+
+
+    cargaConboys();
+
+    function cargaConboys()
+    { 
+        const overlay = document.getElementById("gridLoadingOverlay");
+        overlay.style.display = "flex";
+    
+                
+            gridApi.setGridOption("rowData", []); 
+        
+            fetch("/coordenadas/conboys/getconboys")
+                .then(response => response.json())
+                .then(data => {
+                    contenedoresGuardados = data.dataConten;
+                    contenedoresGuardadosTodos = data.dataConten2;
+                   const rowData = data.data;
+                    gridApi.setGridOption("rowData", rowData);
+                    
+                    
+                })
+                .catch(error => {
+                    console.error("❌ Error al obtener la lista de convoys:", error);
+                })
+                .finally(() => {
+                    overlay.style.display = "none"; 
+                });
+    }
+}
+
+function definirTable2(){
+  const columnDefs2 = [
+        {
+         headerName: '',
+        field: 'checkbox',
+        headerCheckboxSelection: true,
+        checkboxSelection: true,
+        width: 50,
+        pinned: 'left',
+        suppressSizeToFit: true,
+        resizable: false
+        },
+       
+        { headerName: "Convoy", field: "no_conboy", sortable: true, filter: true },
+        { headerName: "Descripcion", field: "nombre", sortable: true, filter: true },
+        { headerName: "Fecha Inicio", field: "fecha_inicio", sortable: true, filter: true },
+        { headerName: "Fecha Fin", field: "fecha_fin", sortable: true, filter: true },
+       
+        
+
+       {
+    headerName: "Acciones",
+   
+   
+    cellRenderer: function (params) {
+        const container = document.createElement("div");
+      //  container.classList.add("d-flex", "flex-wrap", "gap-1", "justify-content-start");
+        const data = params.data;
+
+        // Botón Editar
+        const btnHistorial = document.createElement("button");
+        btnHistorial.innerHTML = `<i class="fas fa-history text-white"></i>`;
+       
+        btnHistorial.title ="Historial";
+        btnHistorial.classList.add("btn", "btn-sm", "btn-warning", "me-1");
+        btnHistorial.onclick = function () {
+
+
+const ubicaciones = [
+  { lat: 17.956659, lng: -102.193207 }, // Lázaro Cárdenas
+  { lat: 18.06143,  lng: -102.34291  }, // Petacalco
+  { lat: 18.50000,  lng: -101.50000  }, // Uruapan aprox.
+  { lat: 19.07000,  lng: -102.35000  }, // Apatzingán aprox.
+  { lat: 19.41667,  lng: -101.20000  }, // Morelia
+  { lat: 19.70000,  lng: -100.50000  }, // Atlacomulco aprox.
+  { lat: 19.58000,  lng: -99.85000   }, // Toluca aprox.
+  { lat: 19.60000,  lng: -99.30000   }, // Lerma aprox.
+  { lat: 19.45000,  lng: -99.15000   }, // Entrada CDMX
+  { lat: 19.432608, lng: -99.133209 }  // Zócalo CDMX
+];
+// Construir la URL
+const url = "https://www.google.com/maps/dir/" +
+  ubicaciones.map(u => `${u.lat},${u.lng}`).join("/");
+
+// Abrir
+window.open(url, "_blank");
+         
+ 
+        };
+
+        // Botón Compartir
+        const btnCompartir = document.createElement("button");
+        btnCompartir.innerText = "🔗";
+        btnCompartir.title ="Compartir"
+        btnCompartir.classList.add("btn", "btn-sm", "btn-info");
+        btnCompartir.onclick = function () {
+          
+        };
+   
+
+
+            container.appendChild(btnHistorial);
+            container.appendChild(btnCompartir);
+         
+
+            return container;
+        }
+    }
+          
+             
+       
+    ];
+   
+
+
+    
+   const gridOptions2 = {
+        columnDefs: columnDefs2,
+        pagination: true,
+        paginationPageSize: 100,
+        rowSelection: "multiple",
+        defaultColDef: {
+            resizable: true,
+            flex: 1
+        }
+    };
+   
+
+    const myGridElement2 = document.querySelector("#myGridConvoyFinalizados");
+    gridApi2 = agGrid.createGrid(myGridElement2, gridOptions2);
+
+    cargaConboys2();
+
+    function cargaConboys2()
+    { 
+        const overlay = document.getElementById("gridLoadingOverlay");
+        overlay.style.display = "flex";
+    
+                
+            gridApi2.setGridOption("rowData", []); 
+        
+            fetch("/coordenadas/conboys/getconboysFinalizados")
+                .then(response => response.json())
+                .then(data => {
+                                      const rowData = data.data;
+                    gridApi2.setGridOption("rowData", rowData);
+                    
+                    
+                })
+                .catch(error => {
+                    console.error("❌ Error al obtener la lista de convoys grid 2:", error);
+                })
+                .finally(() => {
+                    overlay.style.display = "none"; 
+                });
+    }
+}
+ 
+document.getElementById('formFiltros').addEventListener('submit', function(event) {
+  event.preventDefault();
+let idconvoy = document.getElementById('id_convoy').value;
+let finicio = document.getElementById('fecha_inicio').value ;
+let ffin = document.getElementById('fecha_fin').value ;
+let nombre = document.getElementById('nombre').value ;
+let tipo_disolucion = document.getElementById('tipo_disolucion').value ;
+let geocerca_lat = document.getElementById('geocerca_lat').value ;
+let geocerca_lng = document.getElementById('geocerca_lng').value ;
+let geocerca_radio = document.getElementById('geocerca_radio').value ;
+
+    document.getElementById('ItemsSelects').value = ItemsSelects.join(';');
+    
+if (!ItemsSelects || ItemsSelects.length === 0) {
+    alert('Por favor, seleccione al menos un contenedor.');
+    return;
+  }
+let datap = {
+    fecha_inicio: finicio,
+    fecha_fin: ffin,
+    items_selects: ItemsSelects,
+    nombre :nombre,
+    idconvoy:idconvoy,
+  tipo_disolucion :tipo_disolucion,
+            geocerca_lat:geocerca_lat,
+            geocerca_lng :geocerca_lng,
+            geocerca_radio:geocerca_radio,
+
+};
+let urlSave ="/coordenadas/conboys/store";
+
+if (idconvoy != ""){
+    urlSave ="/coordenadas/conboys/update";
+}
+
+  saveconvoys(datap,urlSave);
+
+
+  
+ 
+});
+  document.getElementById("btnGuardarCambios").addEventListener("click", function () {
+
+    const form = document.getElementById("formCambiarEstatus");
+    const formData = new FormData(form);
+    const modal = document.getElementById("modalCambiarEstatus");
+const id = modal.getAttribute("data-id");
+    formData.append("idconvoy", id);
+
+    fetch("/coordenadas/conboys/estatus", {
+        method: "POST",
+        body: formData,
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+             Swal.fire({
+                        title: 'Cambio de Estatus realizado correctamente',
+                        text: data.message + ' ' + data.no_conboy,
+                        icon: 'success',
+                        confirmButtonText: 'Aceptar',
+                        timer: 1500
+                    }).then(() => {
+
+                    setTimeout(() => {
+                        window.location.reload(); 
+                    }, 300); 
+
+                    });
+            const modal = bootstrap.Modal.getInstance(document.getElementById("modalCambiarEstatus"));
+            modal.hide();
+        } else {
+            // Mostrar errores
+            alert("Ocurrió un error al guardar");
+        }
+    })
+    .catch(error => {
+        console.error("Error en el envío AJAX:", error);
+    });
+});
+
+function saveconvoys(datap,urlSave) {
+ 
+
+    let responseOk = false;
+  fetch(urlSave, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+    },
+    body: JSON.stringify(datap)
+  })
+  .then(res => {
+    if (!res.ok) throw new Error('Error en la respuesta de red');
+    return res.json();
+  })
+  .then(data => {
+    console.log('convoy creado :', data);
+    
+
+    document.getElementById('no_convoy').value= data.no_convoy;
+    
+
+ 
+    
+    const modalElement = document.getElementById('CreateModal'); 
+    const filtroModal = bootstrap.Modal.getInstance(modalElement) || new bootstrap.Modal(modalElement);
+    filtroModal.hide();
+   
+    Swal.fire({
+        title: 'Guardado correctamente',
+        text: data.message + ' ' + data.no_conboy,
+        icon: 'success',
+        confirmButtonText: 'Aceptar',
+        timer: 1500
+    }).then(() => {
+
+      setTimeout(() => {
+        window.location.reload(); 
+    }, 300); 
+
+    });
+
+
+     
+    
+  })
+  .catch(error => {
+    console.error('Error al guardar un conboy:', error);
+    
+  });
+}
+
+
+
+
+    function mostrarSugerencias() {
+        const input = document.getElementById('contenedor-input');
+        const filtro = input.value.trim().toUpperCase();
+        const sugerenciasDiv = document.getElementById('sugerencias');
+        sugerenciasDiv.innerHTML = '';
+
+        if (filtro.length === 0) {
+            sugerenciasDiv.style.display = 'none';
+            return;
+        }
+
+        const filtrados = contenedoresDisponibles.filter(c =>
+            
+            (c.contenedor || '').toUpperCase().includes(filtro) &&
+    !seleccionados.includes(c.contenedor)
+
+
+        );
+
+        filtrados.forEach(c => {
+            const item = document.createElement('div');
+            item.textContent = c.contenedor;
+            item.style.padding = '5px';
+            item.style.cursor = 'pointer';
+            item.onclick = () => seleccionarContenedor(c.contenedor);
+            sugerenciasDiv.appendChild(item);
+        });
+
+        sugerenciasDiv.style.display = filtrados.length ? 'block' : 'none';
+    }
+
+    function seleccionarContenedor(valor) {
+        seleccionados.push(valor);
+         const contenedorData = contenedoresDisponibles.find(c => c.contenedor === valor);
+
+         ItemsSelects.push(valor +"|" + contenedorData.id_contenedor+'|'+ contenedorData.imei);
+        document.getElementById('contenedor-input').value = '';
+        document.getElementById('sugerencias').style.display = 'none';
+        actualizarVista();
+    }
+   
+
+    function agregarContenedor() {
+        const input = document.getElementById('contenedor-input');
+        const valor = input.value.trim().toUpperCase();
+        if (valor && contenedoresDisponibles.includes(valor) && !seleccionados.includes(valor)) {
+            seleccionados.push(valor);
+           
+            input.value = '';
+            actualizarVista();
+        }
+    }
+
+    function eliminarContenedor(idx) {
+        seleccionados.splice(idx, 1);
+          ItemsSelects.splice(idx, 1);
+        actualizarVista();
+    }
+
+    function actualizarVista() {
+        const tbody = document.querySelector('#tablaContenedores tbody');
+         tbody.innerHTML = '';
+         seleccionados.forEach((cont, i) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          
+            <td>${cont}</td>
+            <td>
+                <button type="button" 
+                        class="btn btn-sm btn-danger"
+                        onclick="eliminarContenedor(${i})">
+                     <i class="bi bi-trash"></i>
+                </button>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+        
+
+        document.getElementById('contenedores').value = seleccionados.join(';');
+        document.getElementById('ItemsSelects').value = ItemsSelects.join(';');
+    }
+
+    function mostrarSugerencias2() {
+        const input = document.getElementById('contenedor-input2');
+        const filtro = input.value.trim().toUpperCase();
+        const sugerenciasDiv = document.getElementById('sugerencias2');
+        sugerenciasDiv.innerHTML = '';
+
+        if (filtro.length === 0) {
+            sugerenciasDiv.style.display = 'none';
+            return;
+        }
+
+        const filtrados = contenedoresDisponibles.filter(c =>
+            
+            (c.num_contenedor || '').toUpperCase().includes(filtro) &&
+    !seleccionados.includes(c.num_contenedor)
+
+
+        );
+
+        filtrados.forEach(c => {
+            const item = document.createElement('div');
+            item.textContent = c.num_contenedor;
+            item.style.padding = '5px';
+            item.style.cursor = 'pointer';
+            item.onclick = () => seleccionarContenedor2(c.num_contenedor);
+            sugerenciasDiv.appendChild(item);
+        });
+
+        sugerenciasDiv.style.display = filtrados.length ? 'block' : 'none';
+    }
+ function seleccionarContenedor2(valor) {
+        seleccionados.push(valor);
+         const contenedorData = contenedoresDisponibles.find(c => c.num_contenedor === valor);
+        if (typeof contenedorData !== 'undefined') {
+
+            ItemsSelects.push(valor +"|" + contenedorData.id_contenedor+'|'+ contenedorData.imei);
+        document.getElementById('contenedor-input2').value = '';
+        document.getElementById('sugerencias2').style.display = 'none';
+        actualizarVista2();
+        }
+         
+    }
+
+    function agregarContenedor2() {
+        const input = document.getElementById('contenedor-input2');
+        const valor = input.value.trim().toUpperCase();
+        if (valor && contenedoresDisponibles.includes(valor) && !seleccionados.includes(valor)) {
+            seleccionados.push(valor);
+           
+            input.value = '';
+            actualizarVista2();
+        }
+    }
+
+       function actualizarVista2() {
+        const tbody = document.querySelector('#tablaContenedoresBuscar tbody');
+     tbody.innerHTML = '';
+         seleccionados.forEach((cont, i) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          
+            <td>${cont}</td>
+            <td>
+                <button type="button" 
+                        class="btn btn-sm btn-danger"
+                        onclick="eliminarContenedor2(${i})">
+                     <i class="bi bi-trash"></i>
+                </button>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+    
+
+        document.getElementById('contenedores').value = seleccionados.join(';');
+        document.getElementById('ItemsSelects').value = ItemsSelects.join(';');
+    }
+
+     function eliminarContenedor2(idx) {
+        seleccionados.splice(idx, 1);
+          ItemsSelects.splice(idx, 1);
+        actualizarVista2();
+    }
+    function cambiarTab(tabId) {
+    // Ocultamos todos los divs con clase 'tab-content'
+    const tabs = document.querySelectorAll('.tab-content');
+    tabs.forEach(tab => {
+        tab.style.display = 'none';
+    });
+
+    // Mostramos solo el que corresponde
+    const tabToShow = document.getElementById('tab-' + tabId);
+    if (tabToShow) {
+        tabToShow.style.display = 'block';
+    } else {
+        console.error(`No se encontró el tab: tab-${tabId}`);
+    }
+}
+
+function mostrarTab(tab, event) {
+    event.preventDefault();
+
+    // Ocultar ambos
+    document.getElementById('tab-mail').style.display = 'none';
+    document.getElementById('tab-whatsapp').style.display = 'none';
+
+    // Quitar clase activa
+    const tabs = document.querySelectorAll('.nav-link');
+    tabs.forEach(el => el.classList.remove('active'));
+
+    // Mostrar el tab seleccionado
+    document.getElementById(`tab-${tab}`).style.display = 'block';
+
+    // Activar tab
+    event.currentTarget.classList.add('active');
+}
+
+function cerrarModal() {
+    const modal = document.getElementById('modalCoordenadas');
+    limpCampos();
+    if (modal) {
+        modal.style.display = 'none';
+    }
+
+    // Eliminar el fondo oscuro si existe
+    const backdrop = document.querySelector('.modal-backdrop');
+    if (backdrop) {
+        backdrop.remove();
+    }
+    
+    // Quitar la clase modal-open del body
+    document.body.classList.remove('modal-open');
+    document.body.style.overflow = ''; // restaurar scroll
+}
+
+function limpCampos(){
+   // document.getElementById('linkMail').innerText = "";
+       
+    document.getElementById('mensajeText').innerText = "";
+    document.getElementById('correoDestino').value="";
+    document.getElementById("wmensajeText").innerText = "";
+   // document.getElementById("linkWhatsapp").value = "";
+    document.getElementById("whatsappLink").href = "#";
+    document.getElementById("idAsignacionCompartir").value = "";
+  
+    document.getElementById('idCotizacionCompartir').value ="";
+    document.getElementById('idAsignacionCompartir').value ="";
+}
+function copiarDesdeInput(inputId) {
+    const input = document.getElementById(inputId);
+    input.select();
+    input.setSelectionRange(0, 99999);
+    document.execCommand("copy");
+    alert("¡Enlace copiado!");
+}
+
+
+function enviarMailCoordenadas() {
+
+    const mensaje = document.getElementById('mensajeText').innerText;
+    const asunto = mensaje;
+
+    const link = "";
+    const correo = document.getElementById('correoDestino').value;
+ 
+    fetch('/coordenadas/cotizaciones/mail-coordenadas', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+        },
+        body: JSON.stringify({
+            correo: correo,
+            asunto: asunto,
+            mensaje: mensaje,
+            link:  link
+        })
+    })
+    .then(res => res.json())
+    .then(data => alert('Correo enviado ✅'))
+    .catch(err => console.error('Error:', err));
+   
+    
+}
+function guardarYAbrirWhatsApp(event) {
+    event.preventDefault(); // Evita que el enlace se abra inmediatamente
+   
+    window.open(document.getElementById('whatsappLink').href, '_blank');
+       
+}
+
+
+    function limpiarFormularioConvoy2() {
+    // Limpiar tabla de contenedores
+    const tbody = document.getElementById('tablaContenedoresBuscar');
+    tbody.innerHTML = '';
+
+    // Limpiar inputs
+    document.getElementById('numero_convoy').value = '';
+    document.getElementById('id_convoy').value = '';
+
+    // Limpiar selects ocultos o arrays usados
+    ItemsSelects.length = 0; // Si es global, la reinicias
+    document.getElementById('ItemsSelects').value = '';
+
+    // Ocultar modal si es necesario
+    document.getElementById('modalBuscarConvoy').style.display = 'none';
+
+    // Limpiar también posibles mensajes o alertas
+   // document.getElementById('resultadoBusquedaConvoy')?.innerHTML = '';
+}
+
+function confirmarEliminacion(idContenedor, idConvoy, boton,idx) {
+    Swal.fire({
+        title: '¿Eliminar contenedor?',
+        text: 'Esta acción no se puede deshacer.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#6c757d'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/coordenadas/conboys/eliminar-contenedor/${idContenedor}/${idConvoy}`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => {
+                if (!response.ok) throw new Error("Error al eliminar");
+                return response.json();
+            })
+            .then(data => {
+                Swal.fire('¡Eliminado!', 'El contenedor ha sido eliminado.', 'success');
+
+               eliminarContenedor(idx);
+                const fila = boton.closest('tr');
+                fila.remove();
+            })
+            .catch(error => {
+                console.error(error);
+                Swal.fire('Error', 'No se pudo eliminar el contenedor.', 'error');
+            });
+        }
+    });
+}
+   
+

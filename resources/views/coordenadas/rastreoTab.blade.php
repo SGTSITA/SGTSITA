@@ -1,10 +1,74 @@
+{{-- resources/views/coordenadas/dashboard.blade.php --}}
 @extends('layouts.app')
-
-@section('template_title', 'Convoys')
-
 
 @section('content')
 <style>
+    .switch {
+  position: relative;
+  display: inline-block;
+  width: 200px; /* Ancho mayor para incluir el texto */
+  height: 30px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: 0.4s;
+  border-radius: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: bold;
+}
+
+.slider span {
+  position: absolute;
+  transition: 0.4s;
+  font-size: 14px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 22px;
+  width: 22px;
+  border-radius: 50%;
+  background-color: white;
+  transition: 0.4s;
+  left: 4px;
+}
+
+input:checked + .slider {
+  background-color: #4CAF50;
+}
+
+input:checked + .slider:before {
+  transform: translateX(170px); 
+}
+
+input:checked + .slider #ubicacion-texto {
+  transform: translateX(80px); 
+}
+
+input:not(:checked) + .slider #ubicacion-texto {
+  transform: translateX(-80px); 
+}
+.btn-close {
+    filter: invert(1); 
+}
+
     #contenedoreseditar {
         font-size: 0.85rem;
     }
@@ -35,9 +99,68 @@
     align-items: center;
 }
 </style>
+<div class="container-fluid bg-white">
+    <h3 class="mb-3 text-center">📍 Módulo de Rastreo y Gestión</h3>
 
+    {{-- Tabs --}}
+    <ul class="nav nav-tabs" id="rastreoTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="tab-rastreo" data-bs-toggle="tab" data-bs-target="#rastreo" type="button" role="tab">Rastreo en Vivo</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="tab-convoys" data-bs-toggle="tab" data-bs-target="#convoys" type="button" role="tab">Gestión de Convoys</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="tab-historial" data-bs-toggle="tab" data-bs-target="#historial" type="button" role="tab">Historial / Reportes</button>
+        </li>
+         <li class="nav-item" role="presentation">
+            <button class="nav-link" id="tab-config" data-bs-toggle="tab" data-bs-target="#config" type="button" role="tab">Configuraciones</button>
+        </li>
+    </ul>
 
-<div class="container-fluid py-4 px-3 bg-gray-100 min-h-screen">
+    <div class="tab-content p-3 border border-top-0" id="rastreoTabsContent">
+
+        {{-- Pestaña Rastreo --}}
+        <div class="tab-pane fade show active" id="rastreo" role="tabpanel">
+            <div class="row">
+                <div class="col-md-9">
+                   <div id="map" style="width: 100%; height: 700px;"></div>
+                </div>
+               <div class="col-md-3 bg-white p-3 rounded shadow-sm">
+
+    <!-- Bloque de buscador y botón -->
+    <div class="d-flex align-items-start gap-2 mb-3">
+        
+        <!-- Buscador -->
+        <div class="flex-grow-1">
+            <div class="position-relative">
+                <input type="text" id="buscadorGeneral" 
+                       placeholder="Buscar convoy, contenedor o equipo..." 
+                        class="form-control bg-light shadow-sm"
+                       style="min-width: 250px;">
+                <div id="chipsBusqueda" class="d-flex flex-wrap gap-2 mt-2"></div>
+                <div id="resultadosBusqueda" class="dropdown-menu show mt-1" 
+                     style="max-height: 200px; overflow-y: auto; width: 100%;">
+                </div>
+            </div>
+        </div>
+
+       </div>
+
+        <div class="border rounded p-2" style="height: 100%; overflow-y: auto;">
+            <h5 class="mb-2 text-center bg-light py-2 rounded shadow-sm">Elementos en Rastreo</h5>
+            <ul class="list-group" id="ElementosRastreoPanel">
+                
+            </ul>
+        </div>
+
+    </div>
+            </div>
+        </div>
+
+        {{-- Pestaña Convoys --}}
+        <div class="tab-pane fade" id="convoys" role="tabpanel">
+           <div class="container-fluid py-4 px-3 bg-gray-100 min-h-screen">
   <div class="row justify-content-center">
       <div class="col-sm-12">
         <div class="card shadow-lg border-0 bg-white rounded-4 p-4">
@@ -289,20 +412,58 @@
     </div>
   </div>
 </div>
-@endsection
+        </div>
 
+        {{-- Pestaña Historial --}}
+        <div class="tab-pane fade" id="historial" role="tabpanel">
+            <h5>Convoys Finalizados</h5>
+            <div id="myGridConvoyFinalizados" class="ag-theme-alpine position-relative" style="height: 500px;">
+                        <div id="gridLoadingOverlay" class="loading-overlay" style="display: none;">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Cargando...</span>
+                            </div>
+                        </div>
+                    </div>
+        </div>
+
+          <div class="tab-pane fade" id="config" role="tabpanel">
+             <div class="text-center mb-4">
+    <h3 class="fw-bold text-primary">Configurar Intervalo de Rastreo Automático</h3>
+</div>
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <form action="{{ route('scheduler.update') }}" method="POST">
+                        @csrf
+                        @method('PUT')
+
+                        <div class="mb-3">
+                            <label for="interval" class="form-label">Intervalo</label>
+                            <select name="interval" id="interval" class="form-select">
+                                <option value="everyMinute" {{ $intervals->interval == 'everyMinute' ? 'selected' : '' }}>Cada minuto</option>
+                                <option value="everyFiveMinutes" {{ $intervals->interval == 'everyFiveMinutes' ? 'selected' : '' }}>Cada 5 minutos</option>
+                                <option value="hourly" {{ $intervals->interval == 'hourly' ? 'selected' : '' }}>Cada hora</option>
+                                <option value="daily" {{ $intervals->interval == 'daily' ? 'selected' : '' }}>Diario</option>
+                                <option value="weekly" {{ $intervals->interval == 'weekly' ? 'selected' : '' }}>Semanal</option>
+                            </select>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100">Guardar cambios</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+@endsection
 @push('custom-javascript')
     <!-- AG Grid -->
     <script src="https://unpkg.com/ag-grid-community/dist/ag-grid-community.min.js"></script>
-
-<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAtAO2AZBgzC7QaBxnMnPoa-DAq8vaEvUc" async defer onload="googleMapsReady()"></script>
-
-<!-- JS de Select2 -->
-
-
-    <!-- Nuestro JavaScript unificado -->
-    <script
-        src="{{ asset('js/sgt/coordenadas/coordenadasconboys.js') }}?v={{ filemtime(public_path('js/sgt/coordenadas/coordenadasconboys.js')) }}">
+  <script
+        src="{{ asset('js/sgt/coordenadas/coordenadasRastreo.js') }}?v={{ filemtime(public_path('js/sgt/coordenadas/coordenadasRastreo.js')) }}">
     </script>
+    
+
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAtAO2AZBgzC7QaBxnMnPoa-DAq8vaEvUc" async defer onload="googleMapsReady()"></script>
 
 @endpush
