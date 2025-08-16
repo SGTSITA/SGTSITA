@@ -313,7 +313,7 @@
                             new Date().toLocaleDateString('es-ES').replaceAll('/', '-') + '_' +
                             new Date().toLocaleTimeString('es-ES', {
                                 hour12: false
-                            }).replaceAll(':', '.') +
+                            }).replaceAll(':', '_') +
                             '.' + fileType;
 
 
