@@ -18,6 +18,7 @@ class coordenadashistorial extends Model
         'ubicacionable_id',
         'ubicacionable_type',
         'tipo',
+        'id_convoy',
         
     ];
 

@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('template_title', 'Encontrar Convoys')
+@section('template_title', 'Historial de Ubicaciones')
 
 
 @section('content')
