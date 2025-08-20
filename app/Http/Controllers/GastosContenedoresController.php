@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\GastosOperadores;
 use App\Models\Cotizaciones;
+use App\Models\DocumCotizacion;
+use App\Models\Asignaciones;
 use App\Models\Bancos;
 use App\Models\BancoDinero;
 use Auth;
@@ -165,14 +167,23 @@ class GastosContenedoresController extends Controller
     }
 
     public function gastosViajesList(Request $r){
+        $fechaInicio = $r->from;
+        $fechaFin = $r->to;
         $cotizaciones = Cotizaciones::where('id_empresa', auth()->user()->id_empresa)
-            ->where('estatus', '=', 'Aprobada')
+            ->whereIn('estatus',['Finalizado', 'Aprobada'])
             ->where('estatus_planeacion', '=', 1)
             ->where('jerarquia', "!=",'Secundario')
+            ->whereHas('DocCotizacion.Asignaciones', function($query) use ($fechaInicio, $fechaFin) {
+                $query->whereBetween('fecha_inicio', [$fechaInicio, $fechaFin]); 
+            })
+            ->with(['cliente', 'DocCotizacion.Asignaciones' => function($query) use ($fechaInicio, $fechaFin) {
+                $query->whereBetween('fecha_inicio', [$fechaInicio, $fechaFin]);
+            }])
             ->orderBy('created_at', 'desc')
-            ->with(['cliente', 'DocCotizacion.Asignaciones'])
-            ->get()
-            ->map(function ($cotizacion) {
+            
+            ->get();
+
+            $handsOnTableData = $cotizaciones->map(function ($cotizacion) {
                 $contenedor = $cotizacion->DocCotizacion ? $cotizacion->DocCotizacion->num_contenedor : 'N/A';
 
                 // Si es tipo 'Full', buscamos la secundaria para obtener su contenedor
@@ -187,18 +198,97 @@ class GastosContenedoresController extends Controller
                     }
                 }
 
+                $Gastos = GastosOperadores::where('id_cotizacion',$cotizacion->id)->get();
+
                 return [
                     $contenedor,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    'id' => $cotizacion->id,
+                    $Gastos->filter(function($gasto) {return str_contains($gasto->tipo, 'GCM01');})->sum('cantidad'),
+                    $Gastos->filter(function($gasto) {return str_contains($gasto->tipo, 'GDI02');})->sum('cantidad'),
+                    $Gastos->filter(function($gasto) {return str_contains($gasto->tipo, 'GCP03');})->sum('cantidad'),
+                    ($Gastos->filter(function($gasto) {return str_contains($gasto->tipo, 'GCM01');})->first()?->estatus == 'Pagado') ? 1 : 0,
+                    ($Gastos->filter(function($gasto) {return str_contains($gasto->tipo, 'GDI02');})->first()?->estatus == 'Pagado') ? 1 : 0,
+                    ($Gastos->filter(function($gasto) {return str_contains($gasto->tipo, 'GCP03');})->first()?->estatus == 'Pagado') ? 1 : 0,
+                    '',
+                    $cotizacion->id,
                 ];
             });
 
-        return response()->json(['handsOnTableData' => $cotizaciones]);
+        
+
+        return response()->json(['handsOnTableData' => $handsOnTableData]);
+    }
+
+    public function confirmarGastos(Request $r){
+        try{
+            $gastosContenedores = json_decode($r->datahandsOnTableGastos);
+            foreach($gastosContenedores as $gasto){
+            DB::beginTransaction();
+
+             $numContenedor = $gasto[0];
+             $camposGastos = [1,2,3];
+             $camposGastoInmediato = [4,5,6];
+             $descripcionGastos = ['GCM01 - Comisión','GDI02 - Diesel','GCP03 - Casetas / Peaje'];
+             $idEmpresa = auth()->user()->id_empresa;
+
+             $contenedor = DocumCotizacion::where('num_contenedor', $numContenedor)
+                                                ->where('id_empresa', $idEmpresa)
+                                                ->first();
+                                                
+             $asignacion = Asignaciones::where('id_contenedor', $contenedor->id)->first();
+             
+             for($e = 0; $e <= 2; $e++){
+                if($gasto[$camposGastos[$e]] > 0){
+                     $gastoViaje = GastosOperadores::where('id_cotizacion',$contenedor->id_cotizacion)->where('tipo',$descripcionGastos[$e]);
+                     if(!$gastoViaje->exists()){
+                        $esPagoInmediato = $gasto[$camposGastoInmediato[$e]];
+                        $bank = substr($gasto[7],0,5);
+   
+                        $datosGasto = [
+                           "id_cotizacion" => $contenedor->id_cotizacion,
+                           "id_banco" => $r->pagoInmediato != "false" ? intval($bank) : null,
+                           "id_asignacion" => $asignacion->id,
+                           "id_operador" => $asignacion->id_operador,
+                           "cantidad" => $gasto[$camposGastos[$e]],
+                           "tipo" => $descripcionGastos[$e],
+                           "estatus" => $r->pagoInmediato != "false" ? 'Pagado' : 'Pago Pendiente',
+                           "fecha_pago" => $r->pagoInmediato != "false" ? Carbon::now() : null,
+                           "pago_inmediato" => $r->pagoInmediato != "false" ? 1 : 0,
+                           "created_at" => Carbon::now()
+                          ];
+   
+                         GastosOperadores::insert($datosGasto);
+                     }else{
+                        $detalleGasto = $gastoViaje->first();
+                        if($detalleGasto->cantidad != $gasto[$camposGastos[$e]]){
+                            $detalleGasto->update([
+                                "cantidad" => $gasto[$camposGastos[$e]]
+                            ]);
+
+                        }
+                     }
+                     
+                    //  DB::commit();
+                      
+                }
+             }
+             DB::commit();
+
+            }
+
+            
+             return response()->json(["Titulo" => "Gasto agregado","Mensaje" => "Se agregó el gasto","TMensaje" => "success"]);
+
+        }catch(\Throwable $t){
+            DB::rollback();
+            $idError = uniqid();
+            \Log::channel('daily')->info("$idError : ".$t->getMessage());
+            return response()->json([
+                "Titulo" => "Ha ocurrido un error",
+                "Mensaje" => "Ocurrio un error mientras procesabamos su solicitud. Cod Error $idError",
+                "TMensaje" => "warning"
+            ]);
+        }
+
+        
     }
 }
