@@ -167,12 +167,20 @@ class GastosContenedoresController extends Controller
     }
 
     public function gastosViajesList(Request $r){
+        $fechaInicio = $r->from;
+        $fechaFin = $r->to;
         $cotizaciones = Cotizaciones::where('id_empresa', auth()->user()->id_empresa)
-            ->where('estatus', '=', 'Aprobada')
+            ->whereIn('estatus',['Finalizado', 'Aprobada'])
             ->where('estatus_planeacion', '=', 1)
             ->where('jerarquia', "!=",'Secundario')
+            ->whereHas('DocCotizacion.Asignaciones', function($query) use ($fechaInicio, $fechaFin) {
+                $query->whereBetween('fecha_inicio', [$fechaInicio, $fechaFin]); 
+            })
+            ->with(['cliente', 'DocCotizacion.Asignaciones' => function($query) use ($fechaInicio, $fechaFin) {
+                $query->whereBetween('fecha_inicio', [$fechaInicio, $fechaFin]);
+            }])
             ->orderBy('created_at', 'desc')
-            ->with(['cliente', 'DocCotizacion.Asignaciones'])
+            
             ->get();
 
             $handsOnTableData = $cotizaciones->map(function ($cotizacion) {

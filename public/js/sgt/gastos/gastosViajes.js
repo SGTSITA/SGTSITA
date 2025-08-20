@@ -41,7 +41,7 @@ var config = {
 ],
   fixedColumnsLeft: 1,
   columns:[
-    {readOnly:true},
+    {readOnly:true, width:350},
     {
       
       type: 'numeric',
@@ -67,7 +67,7 @@ var config = {
     {className: "htCenter",type: 'checkbox', checkedTemplate: '1', uncheckedTemplate: '0'},
     {className: "htCenter",type: 'checkbox', checkedTemplate: '1', uncheckedTemplate: '0'},
     {className: "htCenter",type: 'checkbox', checkedTemplate: '1', uncheckedTemplate: '0'},
-    {type: 'dropdown',source: bancosList, strict: true},
+    {type: 'dropdown',source: bancosList, strict: true, width:375},
     {
       readOnly:true,
     }
@@ -104,14 +104,12 @@ handsOnTableGastos.updateSettings({
 
   /*================================================================ */
 
-  function getViajes(){
+  function getViajes(from, to){
     var _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-    
-
     $.ajax({
       url:'/gastos/viajes/list',
       type:'post',
-      data: {_token:_token},
+      data: {_token:_token, from, to},
       beforeSend:function(){
         
       },
