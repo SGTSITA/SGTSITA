@@ -373,7 +373,7 @@ Route::post('operadores/{id}/restaurar', [App\Http\Controllers\OperadorControlle
     Route::group(['prefix'=>'bancos','middleware' => 'finanzas:3'],function(){
         Route::get('/', [App\Http\Controllers\BancosController::class, 'index'])->name('index.bancos')->middleware('finanzas:3');
         Route::post('/create', [App\Http\Controllers\BancosController::class, 'store'])->name('store.bancos');
-       // Route::get('bancos/edit/{id}', [App\Http\Controllers\BancosController::class, 'edit'])->name('edit.bancos');
+        Route::get('list', [App\Http\Controllers\BancosController::class, 'list'])->name('list.bancos');
         Route::patch('/update/{id}', [App\Http\Controllers\BancosController::class, 'update'])->name('update.bancos');
 
         Route::post('/movimientos/registrar', [App\Http\Controllers\BancosController::class, 'registrar_movimiento'])->name('movimientos.bancos');
@@ -464,7 +464,8 @@ Route::post('operadores/{id}/restaurar', [App\Http\Controllers\OperadorControlle
     // ==================== G A S T O S  ====================
     Route::get('gastos/generales',[App\Http\Controllers\GastosGeneralesController::class, 'index'])->name('index.gastos_generales');
     Route::get('gastos/viajes',[App\Http\Controllers\GastosContenedoresController::class, 'indexGastosViaje'])->name('index.gastos_viajes');
-    Route::post('gastos/viajes/list',[App\Http\Controllers\GastosContenedoresController::class, 'gastosViajesList'])->name('index.gastos_viajes_list');
+    Route::post('gastos/viajes/list',[App\Http\Controllers\GastosContenedoresController::class, 'gastosViajesList']);
+    Route::post('gastos/viajes/confirmar-gastos',[App\Http\Controllers\GastosContenedoresController::class, 'confirmarGastos']);
     
 
     Route::post('gastos/generales/get',[App\Http\Controllers\GastosGeneralesController::class, 'getGastos'])->name('get.gastos_generales');
