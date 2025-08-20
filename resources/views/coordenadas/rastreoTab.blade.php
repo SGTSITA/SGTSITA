@@ -2,6 +2,7 @@
 @extends('layouts.app')
 
 @section('content')
+
 <style>
     .switch {
   position: relative;
@@ -98,6 +99,18 @@ input:not(:checked) + .slider #ubicacion-texto {
     justify-content: center;
     align-items: center;
 }
+    .nav-tabs .nav-link.active {
+        background-color: #0d6efd; /* Azul Bootstrap */
+        color: #fff !important;
+        font-weight: bold;
+        border-radius: 0.5rem 0.5rem 0 0; /* esquinas redondeadas arriba */
+    }
+
+    /* Hover */
+    .nav-tabs .nav-link:hover {
+        background-color: #e9ecef;
+        border-radius: 0.5rem 0.5rem 0 0;
+    }
 </style>
 <div class="container-fluid bg-white">
     <h3 class="mb-3 text-center">📍 Módulo de Rastreo y Gestión</h3>
@@ -416,7 +429,11 @@ input:not(:checked) + .slider #ubicacion-texto {
 
         {{-- Pestaña Historial --}}
         <div class="tab-pane fade" id="historial" role="tabpanel">
-            <h5>Convoys Finalizados</h5>
+           <h5> <div class="d-flex align-items-center gap-2 px-4 pt-3">
+                        <label class="mb-0 fw-semibold text-sm">Periodo:</label>
+                        <input type="text" id="daterange" readonly class="form-control form-control-sm"
+                            style="width: auto; min-width: 200px; box-shadow: none;" />
+                    </div></h5>
             <div id="myGridConvoyFinalizados" class="ag-theme-alpine position-relative" style="height: 500px;">
                         <div id="gridLoadingOverlay" class="loading-overlay" style="display: none;">
                             <div class="spinner-border text-primary" role="status">
@@ -455,6 +472,26 @@ input:not(:checked) + .slider #ubicacion-texto {
 
     </div>
 </div>
+<div class="modal fade" id="modalInfoViaje" tabindex="-1" aria-labelledby="modalInfoViajeLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content shadow-lg rounded-4">
+      <div class="modal-header bg-primary text-white rounded-top-4">
+        <h5 class="modal-title" id="modalInfoViajeLabel">
+          <i class="bi bi-truck-front-fill me-2"></i> Información del Viaje 
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body" id="contenidoModalViaje">
+        <!-- Aquí se insertará el contenido dinámico -->
+      </div>
+      <div class="modal-footer bg-light rounded-bottom-4">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          <i class="bi bi-x-circle"></i> Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
 @endsection
 @push('custom-javascript')
     <!-- AG Grid -->
@@ -465,5 +502,11 @@ input:not(:checked) + .slider #ubicacion-texto {
     
 
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAtAO2AZBgzC7QaBxnMnPoa-DAq8vaEvUc" async defer onload="googleMapsReady()"></script>
+     <!-- jQuery -->
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
 
+<!-- Moment.js -->
+<script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
+    <script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
 @endpush

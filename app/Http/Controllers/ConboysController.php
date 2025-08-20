@@ -38,58 +38,124 @@ class ConboysController extends Controller
         return view('conboys.index');
     }
 
- public function getconboysFinalizados()
+ public function getconboysFinalizados(Request $request)
     {
         $idEmpresa = Auth::User()->id_empresa;
 
-       $conboys = DB::table('conboys')
-        ->select(
-            'conboys.id',
-            'conboys.no_conboy',
-            'conboys.nombre',
-            'conboys.fecha_inicio',
-            'conboys.fecha_fin',
-            'conboys.user_id',
-             'tipo_disolucion' ,
-            'estatus' ,
-            'fecha_disolucion'  ,
-            'geocerca_lat' ,
-            'geocerca_lng',
-            'geocerca_radio' ,
-        )->where('estatus','=','disuelto')
-        ->whereIn('conboys.id', function ($query) use ($idEmpresa) {
-            $query->select('conboys_contenedores.conboy_id')
-                ->from('conboys_contenedores')
-                ->join('docum_cotizacion', 'docum_cotizacion.id', '=', 'conboys_contenedores.id_contenedor')
-                ->where('docum_cotizacion.id_empresa', '=', $idEmpresa);
-        })
-        ->get()
-        ->map(function ($conboy) {
-            $conboy->BlockUser = $conboy->user_id !== optional(Auth::user())->id;
-            return $conboy;
-        });
- 
+        $fechaInicio = $request->query('inicio');
+        $fechaFin = $request->query('fin');
 
-        $conboysdetalleC =  DB::table('conboys_contenedores')
-        ->join('docum_cotizacion', 'docum_cotizacion.id', '=', 'conboys_contenedores.id_contenedor')
-        ->join('asignaciones', 'asignaciones.id_contenedor', '=', 'conboys_contenedores.id_contenedor')
-        ->join('equipos', 'equipos.id', '=', 'asignaciones.id_camion')
-        ->select(
-            'conboys_contenedores.conboy_id',
-            'conboys_contenedores.id_contenedor',
-            'docum_cotizacion.num_contenedor',
-            'equipos.imei',
-            'docum_cotizacion.id_empresa'
-        )
-        ->get();
+     $infoSubquery = "
+(
+    select cotizaciones.id as id_union,
+           asig.id as id_asignacion,
+           clients.nombre as cliente,
+           cotizaciones.origen,
+           cotizaciones.destino,
+           asig.num_contenedor as contenedor,
+           cotizaciones.estatus,
+           asig.tipo_contrato,
+           asig.fecha_inicio,
+           asig.fecha_fin,
+           id_equipo,
+           marca,
+           placas,
+           cotizaciones.id_empresa,
+           'Cotizaciones' as tipoConsulta
+    from cotizaciones
+    inner join clients on cotizaciones.id_cliente = clients.id
+    inner join (
+        select docum_cotizacion.id as id_contenedor,
+               asignaciones.id,
+               asignaciones.id_camion,
+               docum_cotizacion.num_contenedor,
+               asignaciones.fecha_inicio,
+               asignaciones.fecha_fin,
+               equipos.id_equipo,
+               equipos.marca,
+               equipos.placas,
+               CASE WHEN asignaciones.id_proveedor IS NULL
+                    THEN asignaciones.id_operador
+                    ELSE asignaciones.id_proveedor END as beneficiario_id,
+               CASE WHEN asignaciones.id_proveedor IS NULL
+                    THEN 'Propio'
+                    ELSE 'Subcontratado' END as tipo_contrato
+        from asignaciones
+        inner join docum_cotizacion on docum_cotizacion.id = asignaciones.id_contenedor
+        inner join equipos on equipos.id = asignaciones.id_camion
+        inner join gps_company on gps_company.id = equipos.gps_company_id
+        left join equipos as eq_chasis on eq_chasis.id = asignaciones.id_chasis
+       
+    ) as asig on asig.id_contenedor = cotizaciones.id
+    inner join (
+        select * from (
+            (select id, nombre, telefono, 'Propio' as tipo_contrato, id_empresa from operadores)
+            union
+            (select id, nombre, telefono, 'Subcontratado' as tipo_contrato, id_empresa from proveedores)
+        ) as beneficiarios
+    ) as beneficiarios
+    on asig.beneficiario_id = beneficiarios.id
+       and asig.tipo_contrato = beneficiarios.tipo_contrato
+  where cotizaciones.id_empresa = ?
+    union
 
-        $conboysdetalle = $conboysdetalleC->where('id_empresa', $idEmpresa)->values();;
+    select equipos.id as id_union,
+           0 as id_asignacion,
+           CONCAT(equipos.id_equipo, ' ', COALESCE(equipos.marca,''), ' ', COALESCE(placas, 'SIN PLACA')) as cliente,
+           'NA' as origen,
+           'NA' as destino,
+           equipos.id_equipo as contenedor,
+           case when equipos.activo = 1 then 'Activo' else 'Inactivo' end as estatus,
+           '' as tipo_contrato,
+           NOW() as fecha_inicio,
+           NOW() as fecha_fin,
+           equipos.id_equipo,
+           equipos.marca,
+           equipos.placas,
+           equipos.id_empresa,
+           'Equipos' as tipoConsulta
+    from equipos
+    where  equipos.id_empresa = ?
+) as info
+";
+
+$data = DB::table('coordenadas_historial')
+    ->distinct()
+    ->select([
+        'coordenadas_historial.id_convoy',
+        'coordenadas_historial.ubicacionable_type',
+        'coordenadas_historial.ubicacionable_id',
+        'coordenadas_historial.tipo',
+        'coordenadas_historial.user_id',
+        DB::raw("COALESCE(conboys.id,0) as id"),
+        DB::raw("COALESCE(conboys.nombre,'NA') as nombre_convoy"),
+        DB::raw("COALESCE(conboys.no_conboy,'NA') as no_conboy"),
+        DB::raw("COALESCE(conboys.tipo_disolucion,'NA') as tipo_disolucion"),
+        DB::raw("COALESCE(conboys.geocerca_lat,'NA') as geocerca_lat"),
+        DB::raw("COALESCE(conboys.geocerca_lng,'NA') as geocerca_lng"),
+        DB::raw("COALESCE(conboys.geocerca_radio,'NA') as geocerca_radio"),
+        DB::raw("COALESCE(conboys.fecha_disolucion,'NA') as fecha_disolucion"),
+        'info.id_union',
+        'info.cliente',
+        'info.origen',
+        'info.destino',
+        'info.contenedor',
+        'info.fecha_inicio as fecha_inicio_viaje',
+        'info.fecha_fin as fecha_fin_viaje',
+    ])
+    ->leftJoin('conboys', 'conboys.id', '=', 'coordenadas_historial.id_convoy')
+    ->join(DB::raw($infoSubquery), function($join) use ($idEmpresa) {
+        $join->on('info.id_union', '=', 'coordenadas_historial.ubicacionable_id');
+    })
+    ->setBindings([$idEmpresa, $idEmpresa]) 
+    ->whereBetween('coordenadas_historial.registrado_en', [$fechaInicio, $fechaFin])
+    ->get();
+
+      
             return response()->json([
                     'success' => true,
                     'message' => 'lista devuelta.'  ,
-                    'data'=>  $conboys,
-                    'dataConten'=>  $conboysdetalle,
-                   'dataConten2'=>  $conboysdetalleC 
+                    'data'=>  $data                    
                 ]); 
     }
     public function getConboys()
@@ -360,8 +426,9 @@ class ConboysController extends Controller
             'registrado_en' => now(),
             'user_id' => auth()->id(), 
             'ubicacionable_id' => $request->ubicacionable_id,
-            'ubicacionable_type'=>'rastreo SGT',
+            'ubicacionable_type'=>$request-> tipoRastreo,
             'tipo' => $request->tipo,
+            'id_convoy' => $request->idProceso,
         ]);
 
         return response()->json([
@@ -371,7 +438,31 @@ class ConboysController extends Controller
         ]);
 
     }
+    function rastreohistorialUbicaciones(Request $request)  {
+         $idSearch = $request->query('idSearch'); 
+        $type = $request->query('type'); 
+          $contenedor = $request->query('contenedor');
 
+            $ubicaciones = CoordenadasHistorial::where('ubicacionable_id', $idSearch)
+            ->where('ubicacionable_type', $type)
+                ->orderBy('registrado_en', 'asc')
+                ->get();
+
+
+                $inicio = $ubicaciones->first();
+$fin    = $ubicaciones->last();
+
+
+$intermedios = $ubicaciones->slice(1, -1)
+    ->take(23 - 2); // máximo 21 waypoints intermedios
+
+
+$waypoints = collect([$inicio])
+    ->merge($intermedios)
+    ->merge([$fin]);
+        //dd($ubicaciones);
+            return view('conboys.mapa_comparacion', compact('waypoints', 'contenedor'));
+        }
 
     public function indexconvoy()
     {
