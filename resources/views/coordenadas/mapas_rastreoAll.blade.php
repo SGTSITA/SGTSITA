@@ -207,7 +207,7 @@ detalleConvoysAll.forEach(infoc => {
                   console.log('✅ Reanudando actualización...');
               }
           });
-      }
+        }
 
                 if (intervalIdsPorConvoy[{{ $conboy->id }}]) {
                clearInterval(intervalIdsPorConvoy[{{ $conboy->id }}]);

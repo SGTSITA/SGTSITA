@@ -651,13 +651,13 @@ $idCordenada= $coordenadas->id_coordenadas;
 
 
         //rastreo de gps camiones 
-        public function rastrearIndex(){
+    public function rastrearIndex(){
 
-             return view('coordenadas.rastrear');
-        }
+        return view('coordenadas.rastrear');
+    }
 
 
-        public function  getEquiposGps(Request  $request) 
+    public function  getEquiposGps(Request  $request) 
     {
 
          $idCliente =0;
@@ -675,12 +675,12 @@ $idCordenada= $coordenadas->id_coordenadas;
         
         $idEmpresa = Auth::User()->id_empresa;
         $asignaciones = DB::table('asignaciones')
-    ->join('docum_cotizacion', 'docum_cotizacion.id', '=', 'asignaciones.id_contenedor')
-    ->join('equipos', 'equipos.id', '=', 'asignaciones.id_camion')
-    ->join('gps_company','gps_company.id','=','equipos.gps_company_id')
-    ->leftjoin('equipos as eq_chasis', 'eq_chasis.id', '=', 'asignaciones.id_chasis')
+        ->join('docum_cotizacion', 'docum_cotizacion.id', '=', 'asignaciones.id_contenedor')
+        ->join('equipos', 'equipos.id', '=', 'asignaciones.id_camion')
+        ->join('gps_company','gps_company.id','=','equipos.gps_company_id')
+        ->leftjoin('equipos as eq_chasis', 'eq_chasis.id', '=', 'asignaciones.id_chasis')
 
-    ->select(
+        ->select(
         'docum_cotizacion.id as id_contenedor',
         'asignaciones.id',
         'asignaciones.id_camion',
@@ -694,7 +694,7 @@ $idCordenada= $coordenadas->id_coordenadas;
         'eq_chasis.imei as imei_chasis',
         DB::raw("CASE WHEN asignaciones.id_proveedor IS NULL THEN asignaciones.id_operador ELSE asignaciones.id_proveedor END as beneficiario_id"),
         DB::raw("CASE WHEN asignaciones.id_proveedor IS NULL THEN 'Propio' ELSE 'Subcontratado' END as tipo_contrato")
-    );
+        );
 
         $beneficiarios = DB::table(function ($query) {
             $query->select('id', 'nombre', 'telefono', DB::raw("'Propio' as tipo_contrato"), 'id_empresa')
@@ -842,7 +842,7 @@ $idCordenada= $coordenadas->id_coordenadas;
 
     public function RastreoTabs()  {
 
-  $intervals = RastreoIntervals::where('task_name', 'rastreo_gps_interval')->first();
+        $intervals = RastreoIntervals::where('task_name', 'rastreo_gps_interval')->first();
 
     
         return view('coordenadas.rastreoTab',compact('intervals'));

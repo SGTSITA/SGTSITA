@@ -195,9 +195,8 @@ Route::get('/coordenadas/conboys/historialUbi', [App\Http\Controllers\ConboysCon
 
 Route::post('/coordenadas/resolver-link-google', [App\Http\Controllers\GoogleLinkResolverController::class, 'resolver']);
 
-Route::get('/mapa-comparacion', function () {
-    return view('conboys.mapa_comparacion');
-});
+Route::get('/mapa-comparacion', [App\Http\Controllers\ConboysController::class, 'rastreohistorialUbicaciones'])->name('rastreohistorialUbicaciones');
+
 
 Route::get('/coordenadas/mapa_rastreo', function () {
     return view('coordenadas.mapa_rastreo');
