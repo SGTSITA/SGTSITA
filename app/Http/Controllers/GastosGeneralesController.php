@@ -179,11 +179,15 @@ class GastosGeneralesController extends Controller
             }
           
             DB::commit();
+
+            $aplicarGasto = self::aplicarGastos($gasto_general->id, $request->formasAplicar, $request->viajes,$request->unidades);
+
             $bancos = Bancos::where('id_empresa',auth()->user()->id_empresa)->get();
+
             return response()->json([
                                         "Titulo" => "Gasto registrado",
-                                        "Mensaje" => "Se registró el gasto en la cuenta seleccionada",
-                                        "TMensaje" => "success",
+                                        "Mensaje" => ($aplicarGasto["TMensaje"] != "success") ? "Se ha registrado el gasto, pero no pudo ser aplicado a su selección" : "Se registró el gasto en la cuenta seleccionada y aplicado correctamente",
+                                        "TMensaje" => ($aplicarGasto["TMensaje"] != "success") ? "info" : "success",
                                         "Bancos" => $bancos
                                     ]);
             
@@ -196,66 +200,16 @@ class GastosGeneralesController extends Controller
 
     }
 
-    public function eliminarGasto(Request $r){
-        try{
-            DB::beginTransaction();
-            $gastosGenerales = GastosGenerales::where('id',$r->IdGasto)->first();
-
-            GastosOperadores::where('id_gasto_origen',$r->IdGasto)->delete();
-            //Devolver el dinero al banco, siempre y cuando el estatus sea "Pagado"
-            if($gastosGenerales->pago_realizado === 1){
-                Bancos::where('id' ,'=',$gastosGenerales->id_banco1)->update(["saldo" => DB::raw("saldo + ". $gastosGenerales->monto1)]);
-
-               /* $asignacion = Asignaciones::where('id_contenedor', $g['IdContenedor'])->first();
-
-                $banco = new BancoDineroOpe;
-                $banco->id_operador = $asignacion->id_operador;
-
-                $banco->monto1 = $gasto->cantidad;
-                $banco->metodo_pago1 = 'Transferencia';
-                $banco->descripcion_gasto = "Gasto Anulado: ".$g['Gasto'];
-                $banco->id_banco1 = $gasto->id_banco;
-
-                $contenedoresAbonos[] = [
-                    'num_contenedor' => $r->numContenedor,
-                    'abono' => $gasto->cantidad
-                ];
-                $contenedoresAbonosJson = json_encode($contenedoresAbonos);
-
-                $banco->contenedores = $contenedoresAbonosJson;
-
-                $banco->tipo = 'Entrada';
-                $banco->fecha_pago = date('Y-m-d');
-                $banco->save();*/
-
-            }
-            $gastosGenerales->delete();
-            DB::commit();
-
-            return response()->json([
-                                    "Titulo" => "Exito!", 
-                                    "Mensaje" => "Se ha eliminado el gasto exitosamente", 
-                                    "TMensaje" => "success",                                    
-                            ]);
-        }catch(\Throwable $t){
-
-            DB::rollback();
-            \Log::channel('daily')->info("Error: GastosGeneralesController->eliminarGasto->".$t->getMessage());
-            return response()->json(["Titulo" => "Gasto no aplicado","Mensaje" => "Ha ocurrido un error, no se puede aplicar el gasto", "TMensaje" => "error"]);
-
-        }
-    }
-
-    public function aplicarGastos(Request $r){
+    public function aplicarGastos($gastoId, $formaAplicacion, $viajes,$unidades){
         try{
 
             DB::beginTransaction();
             
-            $gastosGenerales = GastosGenerales::where('id',$r->_IdGasto)->first();
+            $gastosGenerales = GastosGenerales::where('id',$gastoId)->first();
 
-            switch($r->formasAplicar){
+            switch($formaAplicacion){
                 case  "Viaje":
-                    $listaViajes = $r->viajes;
+                    $listaViajes = $viajes;
                     $numViajes = sizeof($listaViajes);
                     $montoGasto = $gastosGenerales->monto1;
                     $montoViaje = $montoGasto / $numViajes;
@@ -286,7 +240,7 @@ class GastosGeneralesController extends Controller
                             "estatus" => 'Pago Pendiente',
                             "fecha_pago" => null,
                             "pago_inmediato" => $gastosGenerales->diferir_gasto  ,
-                            "id_gasto_origen" => $r->_IdGasto,
+                            "id_gasto_origen" => $gastoId,
                             "created_at" => Carbon::now()
                         ];
                         
@@ -297,7 +251,7 @@ class GastosGeneralesController extends Controller
                     
                 break;
                 case "Equipo":
-                    $listaEquipos = $r->unidades;
+                    $listaEquipos = $unidades;
                     $equipos = [];
 
                     foreach ($listaEquipos as $le){
@@ -320,22 +274,51 @@ class GastosGeneralesController extends Controller
             
             DB::commit();
 
-         
-
-            return response()->json([
+            return [
+                "Titulo" => "Exito!", 
+                "Mensaje" => "Se ha diferido el gasto exitosamente", 
+                "TMensaje" => "success"
+                ];
+            /*return response()->json([
                                     "Titulo" => "Exito!", 
                                     "Mensaje" => "Se ha diferido el gasto exitosamente", 
                                     "TMensaje" => "success",
-                           
-                                    
-                            ]);
+                            ]);*/
         }catch(\Throwable $t){
 
             DB::rollback();
             \Log::channel('daily')->info("Error: GastosGeneralesController->diferir->".$t->getMessage());
-            return response()->json(["Titulo" => "Gasto no aplicado","Mensaje" => "Ha ocurrido un error, no se puede aplicar el gasto", "TMensaje" => "error"]);
+            return ["Titulo" => "Gasto no aplicado","Mensaje" => "Ha ocurrido un error, no se puede aplicar el gasto", "TMensaje" => "error"];
 
         }
         
+    }
+
+    public function eliminarGasto(Request $r){
+        try{
+            DB::beginTransaction();
+            $gastosGenerales = GastosGenerales::where('id',$r->IdGasto)->first();
+
+            GastosOperadores::where('id_gasto_origen',$r->IdGasto)->delete();
+            //Devolver el dinero al banco, siempre y cuando el estatus sea "Pagado"
+            if($gastosGenerales->pago_realizado === 1){
+                Bancos::where('id' ,'=',$gastosGenerales->id_banco1)->update(["saldo" => DB::raw("saldo + ". $gastosGenerales->monto1)]);
+
+            }
+            $gastosGenerales->delete();
+            DB::commit();
+
+            return response()->json([
+                                    "Titulo" => "Exito!", 
+                                    "Mensaje" => "Se ha eliminado el gasto exitosamente", 
+                                    "TMensaje" => "success",                                    
+                            ]);
+        }catch(\Throwable $t){
+
+            DB::rollback();
+            \Log::channel('daily')->info("Error: GastosGeneralesController->eliminarGasto->".$t->getMessage());
+            return response()->json(["Titulo" => "Gasto no aplicado","Mensaje" => "Ha ocurrido un error, no se puede aplicar el gasto", "TMensaje" => "error"]);
+
+        }
     }
 }

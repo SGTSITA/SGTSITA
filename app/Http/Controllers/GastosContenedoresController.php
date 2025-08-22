@@ -3,12 +3,16 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\GastosOperadores;
-use App\Models\Cotizaciones;
-use App\Models\DocumCotizacion;
+
 use App\Models\Asignaciones;
 use App\Models\Bancos;
 use App\Models\BancoDinero;
+use App\Models\CategoriasGastos;
+use App\Models\Cotizaciones;
+use App\Models\DocumCotizacion;
+use App\Models\Equipo;
+use App\Models\GastosOperadores;
+
 use Auth;
 use DB;
 use Carbon\Carbon;
@@ -163,7 +167,13 @@ class GastosContenedoresController extends Controller
     }
 
     public function indexGastosViaje(){
-        return view('gastos_contenedor.index-gastos-v2');
+       
+        $bancos = Bancos::where('id_empresa',auth()->user()->id_empresa)->get();
+        $categorias = CategoriasGastos::orderBy('categoria')->get();
+        $empresa = Auth::User()->id_empresa;
+        $equipos = Equipo::where('id_empresa',$empresa)->get();
+
+        return view('gastos_contenedor.index-gastos-v2',compact('bancos','categorias','equipos'));
     }
 
     public function gastosViajesList(Request $r){
@@ -205,6 +215,8 @@ class GastosContenedoresController extends Controller
                     $Gastos->filter(function($gasto) {return str_contains($gasto->tipo, 'GCM01');})->sum('cantidad'),
                     $Gastos->filter(function($gasto) {return str_contains($gasto->tipo, 'GDI02');})->sum('cantidad'),
                     $Gastos->filter(function($gasto) {return str_contains($gasto->tipo, 'GCP03');})->sum('cantidad'),
+                    0,
+                    0,
                     ($Gastos->filter(function($gasto) {return str_contains($gasto->tipo, 'GCM01');})->first()?->estatus == 'Pagado') ? 1 : 0,
                     ($Gastos->filter(function($gasto) {return str_contains($gasto->tipo, 'GDI02');})->first()?->estatus == 'Pagado') ? 1 : 0,
                     ($Gastos->filter(function($gasto) {return str_contains($gasto->tipo, 'GCP03');})->first()?->estatus == 'Pagado') ? 1 : 0,
@@ -226,7 +238,7 @@ class GastosContenedoresController extends Controller
 
              $numContenedor = $gasto[0];
              $camposGastos = [1,2,3];
-             $camposGastoInmediato = [4,5,6];
+             $camposGastoInmediato = [6,7,8];
              $descripcionGastos = ['GCM01 - Comisión','GDI02 - Diesel','GCP03 - Casetas / Peaje'];
              $idEmpresa = auth()->user()->id_empresa;
 
