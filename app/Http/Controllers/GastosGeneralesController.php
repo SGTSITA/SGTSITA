@@ -182,8 +182,11 @@ class GastosGeneralesController extends Controller
 
             $aplicarGasto = self::aplicarGastos($gasto_general->id, $request->formasAplicar, $request->viajes,$request->unidades);
 
+            if($aplicarGasto["TMensaje"] == "success"){
+                GastosGenerales::where('gasto_origen_id',$gasto_general->id)->update(["aplicacion_gasto" => $aplicarGasto["Aplicacion"]]);
+            }
             $bancos = Bancos::where('id_empresa',auth()->user()->id_empresa)->get();
-
+            
             return response()->json([
                                         "Titulo" => "Gasto registrado",
                                         "Mensaje" => ($aplicarGasto["TMensaje"] != "success") ? "Se ha registrado el gasto, pero no pudo ser aplicado a su selección" : "Se registró el gasto en la cuenta seleccionada y aplicado correctamente",
@@ -277,7 +280,8 @@ class GastosGeneralesController extends Controller
             return [
                 "Titulo" => "Exito!", 
                 "Mensaje" => "Se ha diferido el gasto exitosamente", 
-                "TMensaje" => "success"
+                "TMensaje" => "success",
+                "Aplicacion" => $aplicacion
                 ];
             /*return response()->json([
                                     "Titulo" => "Exito!", 
