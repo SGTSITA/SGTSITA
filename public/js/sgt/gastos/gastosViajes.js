@@ -36,12 +36,28 @@ var config = {
   autoWrapRow: true,
  // colHeaders: ['CONTENEDOR', 'COMISION', 'DIESEL','CASETAS', 'G. DIFERIDOS','VARIOS',"TOTAL GASTOS","ID"],
  nestedHeaders: [
-  ['',{ label: 'Gastos por viaje', colspan: 3 },{ label: 'Pago Inmediato', colspan: 4 }],
-  ['Contenedor', 'Comision', 'Diesel','Casetas','Pago Comision','Pago Diesel','Pago Casetas','Banco']
+  ['',{ label: 'Gastos por viaje', colspan: 3 },{label: "Otros Gastos", colspan:2},{ label: 'Pago Inmediato', colspan: 4 }],
+  ['Contenedor', 'Comision', 'Diesel','Casetas','Varios','Diferidos','Pago Comision','Pago Diesel','Pago Casetas','Banco']
 ],
   fixedColumnsLeft: 1,
   columns:[
     {readOnly:true, width:350},
+    {
+      
+      type: 'numeric',
+      numericFormat: {
+        pattern: '$ 0,0.00',
+        culture: 'en-US'
+      }
+    },
+    {
+      
+      type: 'numeric',
+      numericFormat: {
+        pattern: '$ 0,0.00',
+        culture: 'en-US'
+      }
+    },
     {
       
       type: 'numeric',
@@ -72,7 +88,7 @@ var config = {
       readOnly:true,
     }
 ],
-  hiddenColumns: {columns: [8], indicators: false },
+  hiddenColumns: {columns: [10], indicators: false },
   filters: true,
   dropdownMenu: ['filter_by_value','filter_action_bar'],
   licenseKey: 'non-commercial-and-evaluation',
@@ -114,8 +130,23 @@ handsOnTableGastos.updateSettings({
         
       },
       success:function(data){
-        
-        handsOnTableGastos.loadData(data.handsOnTableData);
+        let datos = data.handsOnTableData
+        handsOnTableGastos.loadData(datos);
+
+        document.getElementById('aplicacion-viaje').innerHTML = `<label class="mt-4 form-label">Seleccione viajes</label><select class="form-control" name="selectViajes" id="selectViajes" multiple></select>`
+
+        let selectViajes = document.querySelector('#selectViajes')
+
+        for(let item in datos){
+         let option = document.createElement('option')
+         option.value = datos[item][10]
+         option.text = datos[item][0]
+         selectViajes.appendChild(option) 
+        }
+
+        const example = new Choices(selectViajes, {
+            removeItemButton: true
+        });
 
       },
       error:function(data){

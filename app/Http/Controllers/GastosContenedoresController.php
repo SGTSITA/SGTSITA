@@ -3,12 +3,16 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\GastosOperadores;
-use App\Models\Cotizaciones;
-use App\Models\DocumCotizacion;
+
 use App\Models\Asignaciones;
 use App\Models\Bancos;
 use App\Models\BancoDinero;
+use App\Models\CategoriasGastos;
+use App\Models\Cotizaciones;
+use App\Models\DocumCotizacion;
+use App\Models\Equipo;
+use App\Models\GastosOperadores;
+
 use Auth;
 use DB;
 use Carbon\Carbon;
@@ -163,12 +167,43 @@ class GastosContenedoresController extends Controller
     }
 
     public function indexGastosViaje(){
-        return view('gastos_contenedor.index-gastos-v2');
+       
+        $bancos = Bancos::where('id_empresa',auth()->user()->id_empresa)->get();
+        $categorias = CategoriasGastos::orderBy('categoria')->get();
+        $empresa = Auth::User()->id_empresa;
+        $equipos = Equipo::where('id_empresa',$empresa)->get();
+
+        return view('gastos_contenedor.index-gastos-v2',compact('bancos','categorias','equipos'));
     }
 
     public function gastosViajesList(Request $r){
         $fechaInicio = $r->from;
         $fechaFin = $r->to;
+
+        //Obtener los gastos de las unidades (vehiculos)
+        $gastosUnidadQuery = "SELECT 
+        a.id_camion,
+        gg.motivo,
+        COUNT(DISTINCT a.id) AS total_asignaciones,
+        COALESCE(SUM(DISTINCT gg.monto1 / JSON_LENGTH(JSON_EXTRACT(gg.aplicacion_gasto, '$.elementos'))), 0) AS total_gastos_periodo,
+        COALESCE(SUM(DISTINCT gg.monto1 / JSON_LENGTH(JSON_EXTRACT(gg.aplicacion_gasto, '$.elementos'))), 0) / COUNT(DISTINCT a.id) AS gasto_por_viaje
+        FROM asignaciones a
+        LEFT JOIN gastos_generales gg 
+            ON gg.aplicacion_gasto IS NOT NULL
+            AND JSON_VALID(gg.aplicacion_gasto) = 1
+            AND JSON_UNQUOTE(JSON_EXTRACT(gg.aplicacion_gasto, '$.aplicacion')) = 'equipos'
+            AND JSON_CONTAINS(
+                JSON_EXTRACT(gg.aplicacion_gasto, '$.elementos'),
+                JSON_OBJECT('equipo', CAST(a.id_camion AS CHAR)),
+                '$'
+            )
+            AND gg.fecha BETWEEN '$fechaInicio' AND '$fechaFin'
+        WHERE a.fecha_inicio BETWEEN '$fechaInicio' AND '$fechaFin'
+        AND a.id_camion IS NOT NULL AND gg.is_active = 1
+        GROUP BY a.id_camion, gg.motivo;";
+
+        $gastosUnidad = Collect(DB::select($gastosUnidadQuery));
+
         $cotizaciones = Cotizaciones::where('id_empresa', auth()->user()->id_empresa)
             ->whereIn('estatus',['Finalizado', 'Aprobada'])
             ->where('estatus_planeacion', '=', 1)
@@ -180,12 +215,11 @@ class GastosContenedoresController extends Controller
                 $query->whereBetween('fecha_inicio', [$fechaInicio, $fechaFin]);
             }])
             ->orderBy('created_at', 'desc')
-            
             ->get();
 
-            $handsOnTableData = $cotizaciones->map(function ($cotizacion) {
+            $handsOnTableData = $cotizaciones->map(function ($cotizacion) use ($gastosUnidad){
                 $contenedor = $cotizacion->DocCotizacion ? $cotizacion->DocCotizacion->num_contenedor : 'N/A';
-
+                $gastosDiferidos = (sizeof($gastosUnidad)>0) ? $gastosUnidad->where('id_camion', $cotizacion->DocCotizacion->Asignaciones->id_camion)->sum('gasto_por_viaje') : 0;
                 // Si es tipo 'Full', buscamos la secundaria para obtener su contenedor
                 if (!is_null($cotizacion->referencia_full)) {
                     $secundaria = Cotizaciones::where('referencia_full', $cotizacion->referencia_full)
@@ -205,6 +239,8 @@ class GastosContenedoresController extends Controller
                     $Gastos->filter(function($gasto) {return str_contains($gasto->tipo, 'GCM01');})->sum('cantidad'),
                     $Gastos->filter(function($gasto) {return str_contains($gasto->tipo, 'GDI02');})->sum('cantidad'),
                     $Gastos->filter(function($gasto) {return str_contains($gasto->tipo, 'GCP03');})->sum('cantidad'),
+                    $Gastos->filter(function($gasto) {return !str_contains($gasto->tipo, 'GCM01') && !str_contains($gasto->tipo, 'GDI02') && !str_contains($gasto->tipo, 'GCP03');})->sum('cantidad'),
+                    $gastosDiferidos,
                     ($Gastos->filter(function($gasto) {return str_contains($gasto->tipo, 'GCM01');})->first()?->estatus == 'Pagado') ? 1 : 0,
                     ($Gastos->filter(function($gasto) {return str_contains($gasto->tipo, 'GDI02');})->first()?->estatus == 'Pagado') ? 1 : 0,
                     ($Gastos->filter(function($gasto) {return str_contains($gasto->tipo, 'GCP03');})->first()?->estatus == 'Pagado') ? 1 : 0,
@@ -226,7 +262,7 @@ class GastosContenedoresController extends Controller
 
              $numContenedor = $gasto[0];
              $camposGastos = [1,2,3];
-             $camposGastoInmediato = [4,5,6];
+             $camposGastoInmediato = [6,7,8];
              $descripcionGastos = ['GCM01 - Comisión','GDI02 - Diesel','GCP03 - Casetas / Peaje'];
              $idEmpresa = auth()->user()->id_empresa;
 
@@ -241,18 +277,18 @@ class GastosContenedoresController extends Controller
                      $gastoViaje = GastosOperadores::where('id_cotizacion',$contenedor->id_cotizacion)->where('tipo',$descripcionGastos[$e]);
                      if(!$gastoViaje->exists()){
                         $esPagoInmediato = $gasto[$camposGastoInmediato[$e]];
-                        $bank = substr($gasto[7],0,5);
+                        $bank = substr($gasto[9],0,5);
    
                         $datosGasto = [
                            "id_cotizacion" => $contenedor->id_cotizacion,
-                           "id_banco" => $r->pagoInmediato != "false" ? intval($bank) : null,
+                           "id_banco" => $esPagoInmediato != 0 ? intval($bank) : null,
                            "id_asignacion" => $asignacion->id,
                            "id_operador" => $asignacion->id_operador,
                            "cantidad" => $gasto[$camposGastos[$e]],
                            "tipo" => $descripcionGastos[$e],
-                           "estatus" => $r->pagoInmediato != "false" ? 'Pagado' : 'Pago Pendiente',
-                           "fecha_pago" => $r->pagoInmediato != "false" ? Carbon::now() : null,
-                           "pago_inmediato" => $r->pagoInmediato != "false" ? 1 : 0,
+                           "estatus" => $esPagoInmediato != 0 ? 'Pagado' : 'Pago Pendiente',
+                           "fecha_pago" => $esPagoInmediato != 0 ? Carbon::now() : null,
+                           "pago_inmediato" => $esPagoInmediato,
                            "created_at" => Carbon::now()
                           ];
    
