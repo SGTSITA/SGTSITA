@@ -10,6 +10,7 @@ use App\Http\Controllers\EmpresasController;
 use App\Http\Controllers\ExternosController;
 use App\Http\Controllers\CuentaGlobalController;
 use App\Http\Controllers\GoogleLinkResolverController;
+use App\Http\Controllers\MEP\CostosViajeMEPController;
 use App\Http\Controllers\WhatsAppController;
 use App\Http\Controllers\GpsController;
 use App\Http\Controllers\GpsCompanyController;
@@ -29,11 +30,7 @@ Route::group(["prefix" => "gps"],function(){
  Route::get('setup',[GpsCompanyController::class,'setupGps'])->name('gps.setup');
  Route::get('config',[GpsCompanyController::class,'getConfig'])->name('gps.config');
  Route::post('config/store',[GpsCompanyController::class,'setConfig'])->name('gps.store');
-
-
 });
-
-
 
 Route::group(["prefix" => "mep"], function(){
  Route::get('viajes',[MepController::class, 'index'])->name('mep.index');
@@ -384,7 +381,7 @@ Route::post('operadores/{id}/restaurar', [App\Http\Controllers\OperadorControlle
     Route::group(['prefix'=>'bancos','middleware' => 'finanzas:3'],function(){
         Route::get('/', [App\Http\Controllers\BancosController::class, 'index'])->name('index.bancos')->middleware('finanzas:3');
         Route::post('/create', [App\Http\Controllers\BancosController::class, 'store'])->name('store.bancos');
-       // Route::get('bancos/edit/{id}', [App\Http\Controllers\BancosController::class, 'edit'])->name('edit.bancos');
+        Route::get('list', [App\Http\Controllers\BancosController::class, 'list'])->name('list.bancos');
         Route::patch('/update/{id}', [App\Http\Controllers\BancosController::class, 'update'])->name('update.bancos');
 
         Route::post('/movimientos/registrar', [App\Http\Controllers\BancosController::class, 'registrar_movimiento'])->name('movimientos.bancos');
@@ -474,6 +471,11 @@ Route::post('operadores/{id}/restaurar', [App\Http\Controllers\OperadorControlle
 
     // ==================== G A S T O S  ====================
     Route::get('gastos/generales',[App\Http\Controllers\GastosGeneralesController::class, 'index'])->name('index.gastos_generales');
+    Route::get('gastos/viajes',[App\Http\Controllers\GastosContenedoresController::class, 'indexGastosViaje'])->name('index.gastos_viajes');
+    Route::post('gastos/viajes/list',[App\Http\Controllers\GastosContenedoresController::class, 'gastosViajesList']);
+    Route::post('gastos/viajes/confirmar-gastos',[App\Http\Controllers\GastosContenedoresController::class, 'confirmarGastos']);
+    
+
     Route::post('gastos/generales/get',[App\Http\Controllers\GastosGeneralesController::class, 'getGastos'])->name('get.gastos_generales');
     Route::post('gastos/generales/create', [App\Http\Controllers\GastosGeneralesController::class, 'store'])->name('store.gastos_generales');
     Route::post('gastos/generales/delete', [App\Http\Controllers\GastosGeneralesController::class, 'eliminarGasto'])->name('delete.gastos_generales');
@@ -540,6 +542,26 @@ Route::get('/contactos/editar/{id}', [App\Http\Controllers\ContactoController::c
 
 
 Route::put('/permisos/{id}/editar-json', [App\Http\Controllers\PermisosController::class, 'updateAjax'])->name('permisos.update.ajax');
+
+
+
+
+Route::get('costos/mep/', [App\Http\Controllers\MEP\CostosViajeMEPController::class, 'index'])->name('index.costos_mep');
+Route::get('costos/mep/data', [App\Http\Controllers\MEP\CostosViajeMEPController::class, 'getCostosViajes'])->name('data.costos_mep');
+Route::post('costos/mep/guardar-cambio', [App\Http\Controllers\MEP\CostosViajeMEPController::class, 'guardarCambio'])->name('guardar_cambio.costos_mep');
+Route::get('costos/mep/pendientes',[App\Http\Controllers\MEP\CostosViajeMEPController::class, 'getPendientes'])->name('pendientes.costos_mep');
+Route::get('costos/mep/pendientes/vista', [App\Http\Controllers\MEP\CostosViajeMEPController::class, 'vistaPendientes'])->name('vista_pendientes.costos_mep');
+Route::get('costos/mep/pendientes/{id}/comparacion', [App\Http\Controllers\MEP\CostosViajeMEPController::class, 'compararCostos']);
+Route::get('mep/pendientes/count', [App\Http\Controllers\MEP\CostosViajeMEPController::class, 'contarPendientes'])->name('mep.pendientes.count');
+Route::get('costos/mep/dashboard', [App\Http\Controllers\MEP\CostosViajeMEPController::class, 'dashboard'])->name('dashboard.costos_mep');
+Route::get('costos/mep/conteos', [App\Http\Controllers\MEP\CostosViajeMEPController::class, 'contarPorEstatus']) ->name('conteos.costos_mep');
+Route::post('costos/mep/pendientes/{id}/aceptar', [App\Http\Controllers\MEP\CostosViajeMEPController::class, 'aceptarCambio']);
+Route::post('costos/mep/pendientes/{id}/rechazar', [App\Http\Controllers\MEP\CostosViajeMEPController::class, 'rechazarCambio']);
+Route::get('costos/mep/viajes', [App\Http\Controllers\MEP\CostosViajeMEPController::class, 'vistaViajesCambios'])->name('viajes.costos_mep');
+Route::get('costos/mep/cambios/data', [App\Http\Controllers\MEP\CostosViajeMEPController::class, 'getCambios'])->name('cambios.costos_mep');
+Route::get('/costos/mep/cambios/{id}/detalle', [\App\Http\Controllers\MEP\CostosViajeMEPController::class, 'detalleCambio']);
+Route::post('/costos/mep/cambios/{id}/reenviar', [App\Http\Controllers\MEP\CostosViajeMEPController::class, 'reenviarCambio'])->name('costos_mep.reenviar');
+
 
 Route::get('reporteria/viajes-por-cobrar', [App\Http\Controllers\ReporteriaController::class, 'indexVXC'])->name('index_vxc.reporteria');
 Route::get('/reporteria/viajes-por-cobrar/data', [App\Http\Controllers\ReporteriaController::class, 'dataVXC'])->name('reporteria.vxc.data');

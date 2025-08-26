@@ -707,15 +707,6 @@ public function export_cxp(Request $request)
             $fechaFinPeriodo = $finalMes->toDateString();
             $fechaInialGastos = Carbon::parse($fechaIniciaPeriodo)->startOfMonth();
 
-            /*$diferido = 
-            GastosGenerales::whereBetween('fecha',[$fechaInialGastos->toDateString(),$fechaFinPeriodo])
-            ->whereNotNull('aplicacion_gasto')
-          //  ->where('fecha_gasto_final','<=',$fechaFinPeriodo)
-           // ->where('gastos_diferidos_detalle.id_equipo',$d->id_camion)
-            ->where('id_empresa',Auth::User()->id_empresa)
-            ->get();
-
-            $Diferidos[] = $diferido;*/
             $fechaI = $fechaIniciaPeriodo.' 00:00:00';
             $fechaF = $fechaFinPeriodo.' 00:00:00';
 
@@ -726,27 +717,22 @@ public function export_cxp(Request $request)
             COUNT(DISTINCT a.id) AS total_asignaciones,
             COALESCE(SUM(DISTINCT gg.monto1 / JSON_LENGTH(JSON_EXTRACT(gg.aplicacion_gasto, '$.elementos'))), 0) AS total_gastos_periodo,
             COALESCE(SUM(DISTINCT gg.monto1 / JSON_LENGTH(JSON_EXTRACT(gg.aplicacion_gasto, '$.elementos'))), 0) / COUNT(DISTINCT a.id) AS gasto_por_viaje
-        FROM asignaciones a
-        LEFT JOIN gastos_generales gg 
-            ON gg.aplicacion_gasto IS NOT NULL
-            AND JSON_VALID(gg.aplicacion_gasto) = 1
-            AND JSON_UNQUOTE(JSON_EXTRACT(gg.aplicacion_gasto, '$.aplicacion')) = 'equipos'
-            AND JSON_CONTAINS(
-                JSON_EXTRACT(gg.aplicacion_gasto, '$.elementos'),
-                JSON_OBJECT('equipo', CAST(a.id_camion AS CHAR)),
-                '$'
-            )
-            AND gg.fecha BETWEEN '$fechaI' AND '$fechaF'
-        WHERE a.fecha_inicio BETWEEN '$fechaI' AND '$fechaF'
-          AND a.id_camion IS NOT NULL
-        GROUP BY a.id_camion, gg.motivo;
-        ";
-
-          
+            FROM asignaciones a
+            LEFT JOIN gastos_generales gg 
+                ON gg.aplicacion_gasto IS NOT NULL
+                AND JSON_VALID(gg.aplicacion_gasto) = 1
+                AND JSON_UNQUOTE(JSON_EXTRACT(gg.aplicacion_gasto, '$.aplicacion')) = 'equipos'
+                AND JSON_CONTAINS(
+                    JSON_EXTRACT(gg.aplicacion_gasto, '$.elementos'),
+                    JSON_OBJECT('equipo', CAST(a.id_camion AS CHAR)),
+                    '$'
+                )
+                AND gg.fecha BETWEEN '$fechaI' AND '$fechaF'
+            WHERE a.fecha_inicio BETWEEN '$fechaI' AND '$fechaF'
+            AND a.id_camion IS NOT NULL
+            GROUP BY a.id_camion, gg.motivo;";
 
             $gastosUnidad = Collect(DB::select($gastosUnidadQuery));
-
-            
 
             $consultar = 'select c.id as id_cotizacion,a.id_camion,dc.num_contenedor,cl.nombre as cliente, op.nombre Operador, a.sueldo_viaje,dinero_viaje, pr.nombre as Proveedor,total_proveedor,
             c.total, c.estatus,estatus_pago,c.fecha_pago,a.fecha_inicio,a.fecha_fin,DATEDIFF(a.fecha_fin,a.fecha_inicio) as tiempo_viaje,c.referencia_full
@@ -759,20 +745,12 @@ public function export_cxp(Request $request)
             left join equipos eq on a.id_camion = eq.id
             where a.fecha_inicio between '."'".$fechaI."'".' and '."'".$fechaF."' and c.estatus != 'Cancelada' and c.id_empresa = ".Auth::User()->id_empresa;
 
-            $datos = DB::select($consultar);
+            $viajes = DB::select($consultar);
 
-            $viajesPeriodo = sizeof($datos);
+            $viajesPeriodo = sizeof($viajes);
 
-            foreach($datos as $d){
+            foreach($viajes as $d){
                 $detalleGastos = null;
-    
-                /*foreach($diferido as $d1){
-                    $detalleGastos [] = ["fecha_gasto" => $d1->fecha_gasto_inicial, 
-                                        "monto_gasto" => round($d1->gasto_dia / $viajesPeriodo ,2), 
-                                        "tipo_gasto" => "DIFERIDO", 
-                                        "motivo_gasto" => $d1->motivo
-                                    ];
-                }*/
 
                 $camion = $gastosUnidad->where('id_camion', $d->id_camion);
 
@@ -785,8 +763,6 @@ public function export_cxp(Request $request)
                                     ];
                 }
 
-                
-    
                 $gastosExtra = GastosExtras::where('id_cotizacion',$d->id_cotizacion)->get();
                 $gastosOperador = GastosOperadores::where('id_cotizacion',$d->id_cotizacion)->get();
     
@@ -847,8 +823,6 @@ public function export_cxp(Request $request)
             
         }
 
-      //  $iniciaPeriodo = Carbon::parse($r->startDate)->startOfMonth();
-       // $terminaPeriodo = Carbon::parse($r->endDate)->endOfMonth()     
         return json_encode(["Info" => $Info,"contadorPeriodos"=> $contadorPeriodos, "Diferidos" => $Diferidos]);
         return $Info;
 

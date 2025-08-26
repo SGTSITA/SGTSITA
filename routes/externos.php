@@ -9,10 +9,15 @@ Route::get('gps',function(){
  return view('gps.magnitracking');
 });
 
-
+Route::group(['prefix' => 'mec'], function(){
+ Route::post('planeaciones/monitor/board',[ExternosController::class,'initBoard']);
+ Route::post('transportistas/list',[ExternosController::class,'transportistasList']);
+});
 
 Route::group(["prefix" => "viajes"], function(){
     Route::post('selector', [ExternosController::class,'selector'])->name('viajes.selector');
+    Route::get('solicitar', [ExternosController::class,'solicitarIndex'])->name('viajes.solicitar');
+
     Route::post('editar',[ExternosController::class,'editForm'])->name('viajes.edit-form');
 
     Route::get('solicitud/simple',[ExternosController::class,'solicitudSimple'])->name('viajes.simple');
@@ -28,7 +33,6 @@ Route::group(["prefix" => "viajes"], function(){
     Route::get('mis-viajes',[ExternosController::class,'misViajes'])->name('mis.viajes');
     Route::post('file-manager',[ExternosController::class,'fileManager'])->name('mis.file-manager');
    
-
     Route::post('file-manager/cfdi-files',[ExternosController::class,'CfdiToZip'])->name('cfdi.file-manager');
     Route::get('file-manager/cfdi-files/{zipFile}',[ExternosController::class,'ZipDownload'])->name('cfdi.file-manager');
     Route::get('file-manager/get-file-list/{numContenedor}',[ExternosController::class,'getFilesProperties'])->name('viajes.files');

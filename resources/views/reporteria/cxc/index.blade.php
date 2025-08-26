@@ -333,8 +333,13 @@
                             $('#downloadPdfButton').on('click', function() {
                                 var a = document.createElement('a');
                                 a.href = url;
-                                a.download =
-                                    'Cuentas_por_coborar_{{ date('d-m-Y') }}.pdf';
+                                a.download = 'cxc_' + new Date().toLocaleDateString(
+                                        'es-ES').replaceAll('/', '-') + '_' +
+                                    new Date().toLocaleTimeString('es-ES', {
+                                        hour12: false
+                                    })
+                                    .replaceAll(':', '_') + '.pdf';
+
                                 document.body.appendChild(a);
                                 a.click();
                                 document.body.removeChild(a);
@@ -345,7 +350,13 @@
                             // Lógica para descargar el archivo Excel (si es necesario)
                             var a = document.createElement('a');
                             a.href = url;
-                            a.download = 'Cuentas_por_coborar_{{ date('d-m-Y') }}.xlsx';
+                            a.download = 'cxc_' + new Date().toLocaleDateString('es-ES')
+                                .replaceAll('/', '-') + '_' +
+                                new Date().toLocaleTimeString('es-ES', {
+                                    hour12: false
+                                })
+                                .replaceAll(':', '_') + '.xlsx';
+
                             document.body.appendChild(a);
                             a.click();
                             document.body.removeChild(a);

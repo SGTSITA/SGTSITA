@@ -147,8 +147,6 @@ Reporte de Utilidades
 
 <script>
 $(document).ready(function() {
-
-  
     $('#daterange').daterangepicker({
         opens: 'right',
         locale: {
