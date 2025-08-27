@@ -660,12 +660,12 @@ $idCordenada= $coordenadas->id_coordenadas;
     public function  getEquiposGps(Request  $request) 
     {
 
-         $idCliente =0;
+        $idCliente =0;
         $cliendID = auth()->user()->id_cliente;
-       if($cliendID !== 0)
-       {
-        $idCliente =$cliendID;
-       }
+        if($cliendID !== 0)
+        {
+            $idCliente =$cliendID;
+        }
          
 
         $params = $request->query();
@@ -679,6 +679,7 @@ $idCordenada= $coordenadas->id_coordenadas;
         ->join('equipos', 'equipos.id', '=', 'asignaciones.id_camion')
         ->join('gps_company','gps_company.id','=','equipos.gps_company_id')
         ->leftjoin('equipos as eq_chasis', 'eq_chasis.id', '=', 'asignaciones.id_chasis')
+        ->leftjoin('gps_company as gps_companyChasis', 'gps_companyChasis.id', '=', 'eq_chasis.gps_company_id')
 
         ->select(
         'docum_cotizacion.id as id_contenedor',
@@ -687,11 +688,13 @@ $idCordenada= $coordenadas->id_coordenadas;
         'docum_cotizacion.num_contenedor',
         'asignaciones.fecha_inicio',
         'asignaciones.fecha_fin',
-        
+        'equipos.id_equipo',
         'equipos.imei', 
         
         'gps_company.url_conexion as tipoGps',
         'eq_chasis.imei as imei_chasis',
+         'eq_chasis.id_equipo as id_equipo_chasis',
+        'gps_companyChasis.url_conexion as tipoGpsChasis',
         DB::raw("CASE WHEN asignaciones.id_proveedor IS NULL THEN asignaciones.id_operador ELSE asignaciones.id_proveedor END as beneficiario_id"),
         DB::raw("CASE WHEN asignaciones.id_proveedor IS NULL THEN 'Propio' ELSE 'Subcontratado' END as tipo_contrato")
         );
@@ -717,12 +720,15 @@ $idCordenada= $coordenadas->id_coordenadas;
             'asig.num_contenedor as contenedor', 
             'cotizaciones.estatus',
             'asig.imei',
+            'asig.id_equipo',
             'asig.id_contenedor',
             'asig.tipo_contrato',
             'asig.fecha_inicio',
             'asig.fecha_fin',
             'asig.tipoGps',
             'asig.imei_chasis',
+            'asig.id_equipo_chasis',
+            'asig.tipoGpsChasis',
             'cotizaciones.id_empresa'
         )
     ->join('clients', 'cotizaciones.id_cliente', '=', 'clients.id')
@@ -790,15 +796,21 @@ $idCordenada= $coordenadas->id_coordenadas;
         ->join('cotizaciones', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
         ->join('equipos', 'equipos.id', '=', 'asignaciones.id_camion')
          ->join('gps_company','gps_company.id','=','equipos.gps_company_id')
+          ->leftjoin('equipos as eq_chasis', 'eq_chasis.id', '=', 'asignaciones.id_chasis')
+        ->leftjoin('gps_company as gps_companyChasis', 'gps_companyChasis.id', '=', 'eq_chasis.gps_company_id')
         ->select(
             'conboys_contenedores.conboy_id',
             'conboys.no_conboy',
             'conboys_contenedores.id_contenedor',
             'docum_cotizacion.num_contenedor',
             'equipos.imei',
+                'equipos.id_equipo',
             'gps_company.url_conexion as tipoGps',
             'es_primero',
-            
+            'eq_chasis.imei as imei_chasis',
+            'gps_companyChasis.url_conexion as tipoGpsChasis',
+                'eq_chasis.id_equipo as id_equipo_chasis',
+
         )
             ->when($idCliente !== 0, function ($query) use ($idCliente) {
             return $query->where('cotizaciones.id_cliente', $idCliente);
