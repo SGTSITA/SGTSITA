@@ -481,8 +481,18 @@ input:not(:checked) + .slider #ubicacion-texto {
         </h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
       </div>
-      <div class="modal-body" id="contenidoModalViaje">
-        <!-- Aquí se insertará el contenido dinámico -->
+      <div class="modal-body">
+        
+        <!-- Nav tabs (se generan dinámicamente con los contenedores) -->
+        <ul class="nav nav-tabs" id="contenedorTabs" role="tablist">
+          <!-- Aquí se insertan las pestañas por contenedor -->
+        </ul>
+
+        <!-- Contenido de cada tab -->
+        <div class="tab-content mt-3" id="contenedorTabsContent">
+          <!-- Aquí se insertan los divs de cada contenedor -->
+        </div>
+
       </div>
       <div class="modal-footer bg-light rounded-bottom-4">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">

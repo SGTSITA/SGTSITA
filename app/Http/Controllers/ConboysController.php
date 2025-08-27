@@ -38,7 +38,7 @@ class ConboysController extends Controller
         return view('conboys.index');
     }
 
- public function getconboysFinalizados(Request $request)
+    public function getconboysFinalizados(Request $request)
     {
         $idEmpresa = Auth::User()->id_empresa;
 
@@ -46,8 +46,8 @@ class ConboysController extends Controller
         $fechaFin = $request->query('fin');
 
      $infoSubquery = "
-(
-    select cotizaciones.id as id_union,
+        (
+      select cotizaciones.id as id_union,
            asig.id as id_asignacion,
            clients.nombre as cliente,
            cotizaciones.origen,
@@ -62,9 +62,9 @@ class ConboysController extends Controller
            placas,
            cotizaciones.id_empresa,
            'Cotizaciones' as tipoConsulta
-    from cotizaciones
-    inner join clients on cotizaciones.id_cliente = clients.id
-    inner join (
+        from cotizaciones
+        inner join clients on cotizaciones.id_cliente = clients.id
+        inner join (
         select docum_cotizacion.id as id_contenedor,
                asignaciones.id,
                asignaciones.id_camion,
@@ -86,17 +86,17 @@ class ConboysController extends Controller
         inner join gps_company on gps_company.id = equipos.gps_company_id
         left join equipos as eq_chasis on eq_chasis.id = asignaciones.id_chasis
        
-    ) as asig on asig.id_contenedor = cotizaciones.id
-    inner join (
+        ) as asig on asig.id_contenedor = cotizaciones.id
+        inner join (
         select * from (
             (select id, nombre, telefono, 'Propio' as tipo_contrato, id_empresa from operadores)
             union
             (select id, nombre, telefono, 'Subcontratado' as tipo_contrato, id_empresa from proveedores)
         ) as beneficiarios
-    ) as beneficiarios
-    on asig.beneficiario_id = beneficiarios.id
-       and asig.tipo_contrato = beneficiarios.tipo_contrato
-  where cotizaciones.id_empresa = ?
+        ) as beneficiarios
+        on asig.beneficiario_id = beneficiarios.id
+        and asig.tipo_contrato = beneficiarios.tipo_contrato
+    where cotizaciones.id_empresa = ?
     union
 
     select equipos.id as id_union,
@@ -115,11 +115,11 @@ class ConboysController extends Controller
            equipos.id_empresa,
            'Equipos' as tipoConsulta
     from equipos
-    where  equipos.id_empresa = ?
-) as info
-";
+        where  equipos.id_empresa = ?
+    ) as info
+    ";
 
-$data = DB::table('coordenadas_historial')
+    $data = DB::table('coordenadas_historial')
     ->distinct()
     ->select([
         'coordenadas_historial.id_convoy',
@@ -557,9 +557,12 @@ $waypoints = collect([$inicio])
 
                 if (!$existe) {
                     conboysContenedores::create([
-                        'conboy_id' => $convoy->id,
-                        'id_contenedor' => $id_contenedor
-                    ]);
+                                                    'conboy_id' => $convoy->id,
+                                                    'id_contenedor' => $id_contenedor,
+                                                     'es_primero'=>  0,
+                                                        'usuario'=> auth()->id(),
+                                                        'imei'=> $imei
+                                                    ]);
                 }
             }
 
