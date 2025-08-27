@@ -11,6 +11,8 @@ use App\Traits\JimiGpsTrait;
 use App\Traits\LegoGpsTrait as LegoGps;
 use App\Traits\CommonGpsTrait;
 use App\Traits\GpsTrackerMXTrait;
+use App\Traits\BeyondGPSTrait;
+use App\Traits\WialonGpsTrait;
 
 class GpsCompanyController extends Controller
 {
@@ -74,6 +76,12 @@ class GpsCompanyController extends Controller
             case 4:
                 $token = GpsTrackerMXTrait::getGpsAccessToken($empresaId,$credenciales);
                 break;
+            case 5:
+                $token = BeyondGPSTrait::validateOwner($credenciales);
+                break;
+            case 6:
+                $token = true;
+                break;
         }
 
         if(!$token){
@@ -136,7 +144,7 @@ class GpsCompanyController extends Controller
 
     public function testGpsApi(){
         
-        $toTest = 'TrackerGps';
+        $toTest = 'WialonGps';
 
         $empresaId = auth()->user()->id_empresa;
 
@@ -156,6 +164,15 @@ class GpsCompanyController extends Controller
                 $credenciales = CommonGpsTrait::getAuthenticationCredentials('AECC890930E41',4);
                 $data = GpsTrackerMXTrait::getMutiDevicePosition($credenciales['accessAccount']);
                 break;
+            case 'BeyondGps':
+                $credenciales = CommonGpsTrait::getAuthenticationCredentials('AECC890930E41',5);
+                $data = BeyondGPSTrait::getLocation($credenciales['accessAccount']['user'],$credenciales['accessAccount']['password']);
+                break;
+            case 'WialonGps':
+                $credenciales = CommonGpsTrait::getAuthenticationCredentials('AECC890930E41',6);
+             //    return $credenciales;
+                $data = WialonGpsTrait::getLocation($credenciales['accessAccount']['token']);
+                break;                
             default:
             $data = "Bad GPS Config";
         }
