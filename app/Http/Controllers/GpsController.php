@@ -9,7 +9,7 @@ use App\Traits\JimiGpsTrait;
 use App\Traits\LegoGpsTrait as LegoGps;
 use App\Traits\CommonGpsTrait;
 use App\Models\Empresas;
-
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class GpsController extends Controller
@@ -26,15 +26,27 @@ class GpsController extends Controller
 
             $ubicacion = null;
             $tipoGpsresponse="";
+         
             
             foreach ($datos as $dato) {
                 if (!empty($dato)) {
+                       $esDatoEmp="NO";
                     [ $contenedor ,$imei,$id_contenendor,$tipoGps] = explode('|', $dato);
 
-                 $RfcyEquipo = $this->buscartipoProveedor($contenedor,$id_contenendor);
+                 $RfcyEquipo = $this->buscartipoProveedor($contenedor,$id_contenendor,$imei);
                
-                 [$Rfc,$equipo]= explode('|', $RfcyEquipo);
-                  
+                 [$Rfc,$equipo,$empresaIdRastro]= explode('|', $RfcyEquipo);
+
+                // dd($RfcyEquipo);
+
+             $empresaIdRastro = (int) $empresaIdRastro;
+
+
+                 if($empresaIdRastro === Auth::User()->id_empresa){
+
+                    $esDatoEmp="SI";
+                 }
+
                     switch ($tipoGps) {
                         case 'https://open.iopgps.com': //global
                             $data = GlobalGps::getDeviceRealTimeLocation($imei);
@@ -50,7 +62,8 @@ class GpsController extends Controller
                                 'imei'        => $imei ?? null,
                                 'deviceName'  => '',
                                 'mcType'      => '',
-                                'datac' =>  $data
+                                'datac' =>  $data,
+                                'esDatoEmp' => $esDatoEmp
                             ];
 
                             break;
@@ -71,7 +84,8 @@ class GpsController extends Controller
                                 'imei'        => $imei ?? null,
                                 'deviceName'  => ubicacionApiResponse['economico'] ?? null,
                                 'mcType'      => '',
-                                'datac' =>  $ubicacion
+                                'datac' =>  $ubicacion,
+                                'esDatoEmp' => $esDatoEmp
                             ];
                             break;
 
@@ -97,7 +111,8 @@ class GpsController extends Controller
                                 'imei'      => $ubicacionApi['imei'] ?? null,
                                 'deviceName'      => $ubicacionApi['deviceName'] ?? null,
                                 'mcType'      => $ubicacionApi['mcType'] ?? null,
-                                'datac' =>  $data
+                                'datac' =>  $data,
+                                'esDatoEmp' => $esDatoEmp
                                 
                             ];
                            
@@ -116,7 +131,8 @@ class GpsController extends Controller
                                 'imei'      => $ubicacionApi['imei'] ?? null,
                                 'deviceName'      => $ubicacionApi['unidad'] ?? null,
                                 'mcType'      => "",
-                                'datac' =>  $data
+                                'datac' =>  $data,
+                                'esDatoEmp' => $esDatoEmp
                                 
                             ]; 
                              $tipoGpsresponse="LegoGps";
@@ -179,13 +195,14 @@ class GpsController extends Controller
     }
 
 
-    function buscartipoProveedor($num_Contenendor,$idKey){
+    function buscartipoProveedor($num_Contenendor,$idKey,$imei){
         //TP-001|865468051839242|5|https://open.iopgps.com
         $datosAll= null;
 
          $existeContenedor = DB::table('docum_cotizacion')->where('docum_cotizacion.num_contenedor','=',$num_Contenendor)->exists();
-
+        $Equipo = "";
         if ($existeContenedor){
+            //dd($existeContenedor);
             $asignaciones = DB::table('asignaciones')
             ->join('docum_cotizacion', 'docum_cotizacion.id', '=', 'asignaciones.id_contenedor')
             ->join('equipos', 'equipos.id', '=', 'asignaciones.id_camion')
@@ -208,6 +225,7 @@ class GpsController extends Controller
                 
                 'gps_company.url_conexion as tipoGps',
                 'eq_chasis.imei as imei_chasis',
+                'eq_chasis.id_equipo as id_equipo_chasis',
                 DB::raw("CASE WHEN asignaciones.id_proveedor IS NULL THEN asignaciones.id_operador ELSE asignaciones.id_proveedor END as beneficiario_id"),
                 DB::raw("CASE WHEN asignaciones.id_proveedor IS NULL THEN 'Propio' ELSE 'Subcontratado' END as tipo_contrato")
             );
@@ -240,6 +258,7 @@ class GpsController extends Controller
                 'asig.fecha_fin',
                 'asig.tipoGps',
                 'asig.imei_chasis',
+                'asig.id_equipo_chasis',
                 'cotizaciones.id_empresa',
                 'beneficiarios.RFC'
             )
@@ -256,6 +275,19 @@ class GpsController extends Controller
             ->whereNotNull('asig.imei') ->where('cotizaciones.estatus', '=', 'Aprobada')
             ->where('asig.num_contenedor', '=', $num_Contenendor)
             ->first();
+
+
+            if($imei=== $datosAll->imei){
+                //corresponde al equipo del contendor
+                $Equipo = $datosAll?->id_equipo;
+            }
+            else if($imei === $datosAll->imei_chasis){
+                //corresponde al equipo del chasis
+                $Equipo = $datosAll?->id_equipo_chasis;
+            }
+            
+
+           // dd($datosAll);
     } else {
 
         $datosAll = DB::table('equipos')
@@ -278,16 +310,18 @@ class GpsController extends Controller
 
          if( $datosAll ){
             $RFCContenedor = $datosAll?->RFC;
-            $Equipo = $datosAll?->id_equipo;
+          //  $Equipo = $datosAll?->id_equipo;
+            $empresaIdRastreo = $datosAll?->id_empresa;
             if( $RFCContenedor==='buscarEmpresaRFC'){
                 //buscamos el rfc de la empresa pues no tiene asignado un proveedor....
                 $empresas = Empresas::where('id','=',auth()->user()->Empresa->id)->orderBy('created_at', 'desc')->first();
-                $RFCContenedor =   $empresas ->RFC;
-
+               // dd($empresas);
+                $RFCContenedor =   $empresas->rfc; //minusculas 
+                //dd($RFCContenedor);
             }
 
 
-                return   $RFCContenedor . '|'. $Equipo ;
+                return   $RFCContenedor . '|'. $Equipo . '|'.  $empresaIdRastreo ;
 
             
          }
