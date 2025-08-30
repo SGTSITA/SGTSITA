@@ -729,7 +729,10 @@ $idCordenada= $coordenadas->id_coordenadas;
             'asig.imei_chasis',
             'asig.id_equipo_chasis',
             'asig.tipoGpsChasis',
-            'cotizaciones.id_empresa'
+            'cotizaciones.id_empresa',
+            'cotizaciones.latitud',
+            'cotizaciones.longitud',
+          
         )
     ->join('clients', 'cotizaciones.id_cliente', '=', 'clients.id')
     
