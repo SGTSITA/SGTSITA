@@ -202,7 +202,7 @@ function getClientes(clienteId){
 
 let geocoder;
 
-function cargarmapas() {
+/* function cargarmapas() {
     const modal = document.getElementById('mapModal');
 
     modal.addEventListener('shown.bs.modal', function () {
@@ -288,9 +288,9 @@ function cargarmapas() {
             });
         }
     });
-}
+} */
 document.addEventListener('DOMContentLoaded', function () {
-    cargarmapas();
+   // cargarmapas();
 
     const catalogo_clientes = document.querySelector("#txtClientes");
         const formCotizacion = document.querySelector('#cotizacionCreateMultiple');
@@ -492,6 +492,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             const lng = parseFloat(results[0].lon);
                             map.setCenter({ lat, lng });
                             map.setZoom(16);
+                            geocodificardireccion(lat, lng);
                         }
                     });
             }
@@ -508,7 +509,7 @@ function resolverUrlMapa(url) {
             'X-CSRF-TOKEN': _token,
             'Accept': 'application/json',
         },
-        body: JSON.stringify({ shortUrl: url })
+        body: JSON.stringify({ shortUrl: url.trim() })
     })
         .then(res => res.json())
         .then(data => {
@@ -522,10 +523,11 @@ function resolverUrlMapa(url) {
                     map: map
                 });
 
-                document.getElementById('latitud').value = data.lat.toFixed(6);
-                document.getElementById('longitud').value = data.lng.toFixed(6);
-                document.getElementById('direccion_entrega').value = data.formatted_address || 'Ubicación desde Google Maps';
-                document.getElementById('direccion_mapa').value = data.formatted_address || 'Ubicación desde Google Maps';
+                geocodificardireccion(data.lat, data.lng);
+              //  document.getElementById('latitud').value = data.lat.toFixed(6);
+                //document.getElementById('longitud').value = data.lng.toFixed(6);
+              //  document.getElementById('direccion_entrega').value = data.formatted_address || 'Ubicación desde Google Maps';
+               // document.getElementById('direccion_mapa').value = data.formatted_address || 'Ubicación desde Google Maps';
             } else {
                 alert('No se pudo obtener la ubicación desde el enlace.');
             }
@@ -536,6 +538,26 @@ function resolverUrlMapa(url) {
         });
 }
 
+function geocodificardireccion(lat, long){
+    const geocoder = new google.maps.Geocoder();
+    geocoder.geocode({ location: { lat: parseInt(lat), lng: parseInt(long) } }, (results, status) => {
+        if (status === "OK") {
+            if (results[0]) {
+                // results[0].formatted_address tiene la dirección
+            let direccion = results[0].formatted_address;
+            document.getElementById('latitud').value = lat.toFixed(6);
+            document.getElementById('longitud').value = long.toFixed(6);
+            // O si quieres mostrarla en un div aparte:
+          // document.getElementById('direccion_mapa').value= direccion;
+            document.getElementById('direccion_entrega').value = direccion;
+        } else {
+            console.log("No se encontró dirección");
+        }
+    } else {
+        console.error("Error en Geocoder:", status);
+    }
+});
+}
 
 function esShortUrlGoogleMaps(url) {
     const regex = /^https?:\/\/maps\.app\.goo\.gl\/.+$/i;
