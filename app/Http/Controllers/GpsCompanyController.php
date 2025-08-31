@@ -144,7 +144,7 @@ class GpsCompanyController extends Controller
 
     public function testGpsApi(){
         
-        $toTest = 'WialonGps';
+        $toTest = 'JimiGps';
 
         $empresaId = auth()->user()->id_empresa;
 
@@ -155,8 +155,8 @@ class GpsCompanyController extends Controller
                 break;
             case 'JimiGps':
                  //Datos de dispositivo por IMEI
-                $adicionales['imeis'] = '869066062080354';
-                $credenciales = JimiGpsTrait::getAuthenticationCredentials('AECC890930E41');
+                $adicionales['imeis'] = '356153592336785'; //869066061506169 y  356153592336785
+                $credenciales = JimiGpsTrait::getAuthenticationCredentials('XAXA890930E41');
 
                 $data = JimiGpsTrait::callGpsApi('jimi.device.location.get',$credenciales['accessAccount'],$adicionales);
                 break;

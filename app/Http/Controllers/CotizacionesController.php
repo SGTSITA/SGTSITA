@@ -18,6 +18,8 @@ use App\Models\Operador;
 use App\Models\Proveedor;
 use App\Models\Subclientes;
 use App\Models\ClientEmpresa;
+use App\Models\EmpresaGps;
+use App\Models\GpsCompany;
 use App\Models\BancoDineroOpe;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -31,15 +33,11 @@ use App\Traits\CommonTrait as Common;
 class CotizacionesController extends Controller
 {
     public function index(){
-
-        // $cotizaciones_planeadas = Cotizaciones::where('id_empresa' ,'=',auth()->user()->id_empresa)->where('estatus','=','Aprobada')->where('estatus_planeacion','=', 1)->orderBy('created_at', 'desc')
-        // ->select('id_cliente', 'origen', 'destino', 'id', 'estatus')->get();
-
-        
         $empresas = Empresas::get();
+        $EmpresasGPS = EmpresaGps::where('id_empresa',auth()->user()->id_empresa)->with('serviciosGps')->get()->pluck('id_gps_company');
+        $gpsCompanies = GpsCompany::whereIn('id',$EmpresasGPS)->get();
 
-      //  return view('cotizaciones.index');
-        return view('cotizaciones.index', compact('empresas'));
+        return view('cotizaciones.index', compact('empresas','gpsCompanies'));
     }
 
     public function getCotizacionesList()
