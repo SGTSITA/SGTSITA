@@ -186,11 +186,12 @@ function getClientes(clienteId){
     });
 }
 
-
- 
-
-
-let geocoder;
+function googleMapsReady() {
+     map = new google.maps.Map(document.getElementById('map'), {
+                center: { lat: 19.4326, lng: -99.1332 }, // CDMX por defecto
+                zoom: 12,
+            });
+}
 
 /* function cargarmapas() {
     const modal = document.getElementById('mapModal');
@@ -397,6 +398,10 @@ document.addEventListener('DOMContentLoaded', function () {
     inputMoneyFormatProveedores.on('input',()=>{calcularTotal('proveedores')})
 
 
+
+});
+
+
  var modal = document.getElementById('mapModal');
     modal.addEventListener('shown.bs.modal', function () {
         if (!map) {
@@ -405,7 +410,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 center: { lat: 19.4326, lng: -99.1332 }, // CDMX por defecto
                 zoom: 12,
             });
-
+            }
             // Click en el mapa
             map.addListener('click', function (e) {
                 const lat = e.latLng.lat().toFixed(6);
@@ -428,7 +433,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         document.getElementById('direccion_mapa').value = direccion;
                     });
             });
-        }
+        
 
         const lat = parseFloat(document.getElementById('latitud').value);
         const lng = parseFloat(document.getElementById('longitud').value);
@@ -488,8 +493,6 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
     });
-});
-
 function resolverUrlMapa(url) {
     const _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     fetch('/coordenadas/resolver-link-google', {
@@ -586,6 +589,7 @@ pesoContenedorInput.addEventListener('input', calcularSobrepeso);
 
 function sobrePesoViaje(){
     let tabSelected = document.querySelector('input[name="contenedorTabs"]:checked');
+    
     initContenedores(tabSelected.value)
 
     let tipoViajeSelected = document.querySelector('input[name="plan"]:checked');
