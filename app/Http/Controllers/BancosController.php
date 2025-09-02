@@ -17,6 +17,7 @@ use DB;
 
 class BancosController extends Controller
 {
+
     public function index(){
         $bancos = Bancos::where('id_empresa' ,'=',auth()->user()->id_empresa)->get();
         foreach ($bancos as $banco) {
@@ -120,6 +121,10 @@ class BancosController extends Controller
            // $banco->save();
         }
         return view('bancos.index', compact('bancos'));
+    }
+
+    public function list(){
+        return $bancos = Bancos::where('id_empresa' ,'=',auth()->user()->id_empresa)->get();
     }
 
     public function cambiarEstado(Request $request, $id)
