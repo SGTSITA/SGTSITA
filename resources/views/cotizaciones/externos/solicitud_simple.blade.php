@@ -193,8 +193,7 @@
 @endsection
 
 @push('javascript')
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAtAO2AZBgzC7QaBxnMnPoa-DAq8vaEvUc" async defer onload="googleMapsReady()"></script>
     <script
         src="{{ asset('js/sgt/cotizaciones/cotizaciones.js') }}?v={{ filemtime(public_path('js/sgt/cotizaciones/cotizaciones.js')) }}">
     </script>
@@ -214,8 +213,11 @@
     <script
         src="{{ asset('js/sgt/cotizaciones/externos.js') }}?v={{ filemtime(public_path('js/sgt/cotizaciones/externos.js')) }}">
     </script>
+    
 
-    <script>
+    <script>																																													 
+																																				   
+		
         $(document).ready(() => {
             getClientes({{ Auth::User()->id_cliente }})
 
@@ -231,10 +233,8 @@
 
             condicionRecinto.forEach(function(elemento) {
                 elemento.addEventListener('click', function() {
-                    inputRecinto.classList.toggle('d-none', elemento.attributes['data-kt-plan']
-                        .value != 'recinto-si')
-                    textRecinto.value = (elemento.attributes['data-kt-plan'].value !=
-                        'recinto-si') ? '' : 'recinto-si';
+                    inputRecinto.classList.toggle('d-none', elemento.attributes['data-kt-plan'].value != 'recinto-si')
+                    textRecinto.value = (elemento.attributes['data-kt-plan'].value != 'recinto-si') ? '' : 'recinto-si';
                 });
             });
 
@@ -242,7 +242,8 @@
                 localStorage.setItem('numContenedor', '{{ $cotizacion->DocCotizacion->num_contenedor }}');
 
                 initFileUploader()
-
+	
+			
 
                 setTimeout(() => {
                     document.getElementById('fileUploaderContainer').classList.remove('d-none')
@@ -302,4 +303,4 @@
             });
         @endif
     </script>
-@endpush
+@endpush		
