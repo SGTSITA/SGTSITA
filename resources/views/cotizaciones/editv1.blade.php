@@ -1223,7 +1223,7 @@
                             </div>
 
                             <div class="modal-footer">
-                                @can('cotizacio-valores')
+                                @can('cotizacion-valores')
                                 <button type="submit" class="btn btn-primary">Guardar</button>
                                 @endif
                             </div>
