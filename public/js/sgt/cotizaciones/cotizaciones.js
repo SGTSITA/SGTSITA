@@ -196,103 +196,102 @@ function getClientes(clienteId){
     });
 }
 
-
- 
-
-
-let geocoder;
-
-function cargarmapas(){
-    var modal = document.getElementById('mapModal');
- modal.addEventListener('shown.bs.modal', function () {
-     if (!map) {
-         map = L.map('map').setView([19.4326, -99.1332], 12); // CDMX por defecto
-         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-             attribution: '&copy; OpenStreetMap contributors'
-         }).addTo(map);
-
-         map.on('click', function (e) {
-             const lat = e.latlng.lat.toFixed(6);
-             const lng = e.latlng.lng.toFixed(6);
-             if (marker) marker.remove();
-             marker = L.marker([lat, lng]).addTo(map);
-             document.getElementById('latitud').value = lat;
-             document.getElementById('longitud').value = lng;
-
-          
-             fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
-                 .then(res => res.json())
-                 .then(data => {
-                     const direccion = data.display_name;
-                    // document.getElementById('direccion_entrega').value = direccion;
-                     document.getElementById('direccion_mapa').value = direccion;
-
-                     
-                 });
-         });
-     } else {
-         setTimeout(() => map.invalidateSize(), 200);
-     }
-
-     const lat = document.getElementById('latitud').value;
- const lng = document.getElementById('longitud').value;
- const direccion = document.getElementById('direccion_entrega').value;
-
- if ((!lat || !lng) && direccion) {
-     // Buscar la dirección automáticamente (geocoding)
-     fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(direccion)}`)
-         .then(res => res.json())
-         .then(results => {
-             if (results.length > 0) {
-                 const latitud = parseFloat(results[0].lat);
-                 const longitud = parseFloat(results[0].lon);
-
-                 map.setView([latitud, longitud], 16);
-
-                 if (marker) marker.remove();
-                 marker = L.marker([latitud, longitud]).addTo(map);
-
-                 document.getElementById('latitud').value = latitud.toFixed(6);
-                 document.getElementById('longitud').value = longitud.toFixed(6);
-                 document.getElementById('direccion_mapa').value = direccion;
-             } else {
-                 // Mostrar mensaje si no se encuentra
-                 alert("No se pudo localizar la dirección. Verifica el formato o selecciona manualmente.");
-             }
-         })
-         .catch(err => {
-             console.error("Error al buscar dirección:", err);
-             alert("Error al contactar el servicio de mapas.");
-         });
- }
-
- });
-
-
- document.getElementById('searchInput').addEventListener('keypress', function (e) {
-     if (e.key === 'Enter') {
-         e.preventDefault();
-          let query ="";
-         if (esShortUrlGoogleMaps(this.value)) {
-            resolverUrlMapa(this.value);
-         } else {
-           query  = formatearDireccion(this.value);
-         }
-       
-         fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`)
-             .then(res => res.json())
-             .then(results => {
-                 if (results.length > 0) {
-                     const lat = parseFloat(results[0].lat);
-                     const lon = parseFloat(results[0].lon);
-                     map.setView([lat, lon], 16);
-                 }
-             });
-     }
- });
+function googleMapsReady() {
+     map = new google.maps.Map(document.getElementById('map'), {
+                center: { lat: 19.4326, lng: -99.1332 }, // CDMX por defecto
+                zoom: 12,
+            });
 }
+
+/* function cargarmapas() {
+    const modal = document.getElementById('mapModal');
+
+    modal.addEventListener('shown.bs.modal', function () {
+        if (!map) {
+            // Inicializa el mapa
+            map = new google.maps.Map(document.getElementById('map'), {
+                center: { lat: 19.4326, lng: -99.1332 }, // CDMX por defecto
+                zoom: 12,
+            });
+
+            geocoder = new google.maps.Geocoder();
+
+            // Click para agregar marcador
+            map.addListener('click', function (e) {
+                const lat = e.latLng.lat();
+                const lng = e.latLng.lng();
+
+                if (marker) marker.setMap(null);
+
+                marker = new google.maps.Marker({
+                    position: { lat, lng },
+                    map: map,
+                });
+
+                document.getElementById('latitud').value = lat.toFixed(6);
+                document.getElementById('longitud').value = lng.toFixed(6);
+
+                // Geocodificación inversa
+                geocoder.geocode({ location: { lat, lng } }, (results, status) => {
+                    if (status === "OK" && results[0]) {
+                        document.getElementById('direccion_mapa').value = results[0].formatted_address;
+                    } else {
+                        console.error("No se pudo obtener la dirección:", status);
+                    }
+                });
+            });
+        } else {
+           
+        }
+
+        // Si hay dirección inicial pero no lat/lng, geocodificar
+        const latVal = document.getElementById('latitud').value;
+        const lngVal = document.getElementById('longitud').value;
+        const direccion = document.getElementById('direccion_entrega').value;
+
+        if ((!latVal || !lngVal) && direccion) {
+            geocoder.geocode({ address: direccion }, (results, status) => {
+                if (status === "OK" && results[0]) {
+                    const location = results[0].geometry.location;
+                    map.setCenter(location);
+                    map.setZoom(16);
+
+                    if (marker) marker.setMap(null);
+                    marker = new google.maps.Marker({
+                        position: location,
+                        map: map,
+                    });
+
+                    document.getElementById('latitud').value = location.lat().toFixed(6);
+                    document.getElementById('longitud').value = location.lng().toFixed(6);
+                    document.getElementById('direccion_mapa').value = direccion;
+                } else {
+                    alert("No se pudo localizar la dirección. Verifica el formato o selecciona manualmente.");
+                }
+            });
+        }
+    });
+
+    // Buscar por input
+    document.getElementById('searchInput').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            let query = this.value;
+
+            geocoder.geocode({ address: query }, (results, status) => {
+                if (status === "OK" && results[0]) {
+                    const location = results[0].geometry.location;
+                    map.setCenter(location);
+                    map.setZoom(16);
+                } else {
+                    console.error("No se encontró la dirección:", status);
+                }
+            });
+        }
+    });
+} */
 document.addEventListener('DOMContentLoaded', function () {
-    cargarmapas();
+   // cargarmapas();
 
     const catalogo_clientes = document.querySelector("#txtClientes");
         const formCotizacion = document.querySelector('#cotizacionCreateMultiple');
@@ -409,6 +408,10 @@ document.addEventListener('DOMContentLoaded', function () {
     inputMoneyFormatProveedores.on('input',()=>{calcularTotal('proveedores')})
 
 
+
+});
+
+
  var modal = document.getElementById('mapModal');
     modal.addEventListener('shown.bs.modal', function () {
         if (!map) {
@@ -417,7 +420,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 center: { lat: 19.4326, lng: -99.1332 }, // CDMX por defecto
                 zoom: 12,
             });
-
+            }
             // Click en el mapa
             map.addListener('click', function (e) {
                 const lat = e.latLng.lat().toFixed(6);
@@ -440,7 +443,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         document.getElementById('direccion_mapa').value = direccion;
                     });
             });
-        }
+        
 
         const lat = parseFloat(document.getElementById('latitud').value);
         const lng = parseFloat(document.getElementById('longitud').value);
@@ -494,13 +497,12 @@ document.addEventListener('DOMContentLoaded', function () {
                             const lng = parseFloat(results[0].lon);
                             map.setCenter({ lat, lng });
                             map.setZoom(16);
+                            geocodificardireccion(lat, lng);
                         }
                     });
             }
         }
     });
-});
-
 function resolverUrlMapa(url) {
     const _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     fetch('/coordenadas/resolver-link-google', {
@@ -510,7 +512,7 @@ function resolverUrlMapa(url) {
             'X-CSRF-TOKEN': _token,
             'Accept': 'application/json',
         },
-        body: JSON.stringify({ shortUrl: url })
+        body: JSON.stringify({ shortUrl: url.trim() })
     })
         .then(res => res.json())
         .then(data => {
@@ -524,10 +526,11 @@ function resolverUrlMapa(url) {
                     map: map
                 });
 
-                document.getElementById('latitud').value = data.lat.toFixed(6);
-                document.getElementById('longitud').value = data.lng.toFixed(6);
-                document.getElementById('direccion_entrega').value = data.formatted_address || 'Ubicación desde Google Maps';
-                document.getElementById('direccion_mapa').value = data.formatted_address || 'Ubicación desde Google Maps';
+                geocodificardireccion(data.lat, data.lng);
+              //  document.getElementById('latitud').value = data.lat.toFixed(6);
+                //document.getElementById('longitud').value = data.lng.toFixed(6);
+              //  document.getElementById('direccion_entrega').value = data.formatted_address || 'Ubicación desde Google Maps';
+               // document.getElementById('direccion_mapa').value = data.formatted_address || 'Ubicación desde Google Maps';
             } else {
                 alert('No se pudo obtener la ubicación desde el enlace.');
             }
@@ -538,6 +541,26 @@ function resolverUrlMapa(url) {
         });
 }
 
+function geocodificardireccion(lat, long){
+    const geocoder = new google.maps.Geocoder();
+    geocoder.geocode({ location: { lat: parseInt(lat), lng: parseInt(long) } }, (results, status) => {
+        if (status === "OK") {
+            if (results[0]) {
+                // results[0].formatted_address tiene la dirección
+            let direccion = results[0].formatted_address;
+            document.getElementById('latitud').value = lat.toFixed(6);
+            document.getElementById('longitud').value = long.toFixed(6);
+            // O si quieres mostrarla en un div aparte:
+          // document.getElementById('direccion_mapa').value= direccion;
+            document.getElementById('direccion_entrega').value = direccion;
+        } else {
+            console.log("No se encontró dirección");
+        }
+    } else {
+        console.error("Error en Geocoder:", status);
+    }
+});
+}
 
 function esShortUrlGoogleMaps(url) {
     const regex = /^https?:\/\/maps\.app\.goo\.gl\/.+$/i;
@@ -576,6 +599,7 @@ pesoContenedorInput.addEventListener('input', calcularSobrepeso);
 
 function sobrePesoViaje(){
     let tabSelected = document.querySelector('input[name="contenedorTabs"]:checked');
+    
     initContenedores(tabSelected.value)
 
     let tipoViajeSelected = document.querySelector('input[name="plan"]:checked');
