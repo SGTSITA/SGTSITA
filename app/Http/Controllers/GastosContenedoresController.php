@@ -378,6 +378,15 @@ class GastosContenedoresController extends Controller
 
             GastosOperadores::insert($datosGasto);
             BancoDinero::insert($bancoDinero);
+
+            //Descontar la suma de los bancos correspondientes
+
+            foreach($gastosBancos as $idBanco => $totalGasto){
+                Bancos::where('id' ,'=',$idBanco)->update(
+                    ["saldo" => DB::raw("saldo - ". $totalGasto)
+                ]);
+            }
+
             DB::commit();
 
             
