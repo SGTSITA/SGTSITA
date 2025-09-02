@@ -45,6 +45,14 @@
                                 </button>
                             </div>
                         @endcan
+                        @can('mep-asignacion-unidad')
+                            <div>
+                                <button type="button" class="btn bg-gradient-info btn-xs mb-2" id="abrirModalBtn">
+                                    +&nbsp; Planear viaje
+                                </button>
+                               
+                            </div>
+                        @endcan
                     </div>
 
                     <!-- Pestañas sin recargar página -->
@@ -267,21 +275,32 @@
         </div>
     </div>
 
+    @can('mep-asignacion-unidad')
+     @include('mep.viajes.modal-asignar')
+     @include('mep.viajes.modal-alert')
+    @endcan
 
 @endsection
 
 @push('custom-javascript')
     <!-- AG Grid -->
     <script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.js"></script>
-
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
     <!-- Nuestro JavaScript unificado -->
     <script
         src="{{ asset('js/sgt/cotizaciones/cotizaciones_list.js') }}?v={{ filemtime(public_path('js/sgt/cotizaciones/cotizaciones_list.js')) }}">
     </script>
-
+    <script
+    src="{{ asset('js/mep/viajes/viajes_list.js') }}?v={{ filemtime(public_path('js/mep/viajes/viajes_list.js')) }}">
+    </script>
     <!-- SweetAlert para mostrar mensajes -->
     <script>
         document.addEventListener("DOMContentLoaded", function() {
+            @can('mep-asignacion-unidad')
+             getCatalogoOperadorUnidad()
+            @endcan
+            getCatalogoOperadorUnidad()
             @if (session('success'))
                 Swal.fire({
                     icon: 'success',

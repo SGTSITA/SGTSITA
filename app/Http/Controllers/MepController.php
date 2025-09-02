@@ -121,11 +121,30 @@ class MepController extends Controller
         return response()->json(['list' => $cotizaciones]);
     }
 
-    public function asignarOperador(Request $r){
-        
-        $contenedor = $r->input('contenenedor');
-        $idAsignacion = $contenedor['id_asignacion'];
+    public function validarEquiposEmpresa($numUnidad, $imei, $placas, $serie, $provGps, $tipoEquipo){
+        $unidad = Equipo::where('id_empresa',auth()->user()->id_empresa)->where('id_equipo',$numUnidad);
+        if(!$unidad->exists()){
+            $unidad = new Equipo;
+            $unidad->id_equipo = $numUnidad;
+            $unidad->imei = $imei;
+            $unidad->placas = $placas;
+            $unidad->num_serie = $serie;
+            $unidad->gps_company_id = $provGps;
+            $unidad->tipo = $tipoEquipo;
+            $unidad->save();
+        }else{
+            $unidad = $unidad->first();
+            $unidad->imei = $imei;
+            $unidad->placas = $placas;
+            $unidad->num_serie = $serie;
+            $unidad->gps_company_id = $provGps;
+            $unidad->update();
+        }
 
+        return $unidad->id;
+    }
+
+    public function asignarOperador(Request $r){
         $formData = $r->formData;
 
         //Verificar operador
@@ -143,6 +162,8 @@ class MepController extends Controller
 
         $idOperador = $operador->id;
 
+        //TractoCamion
+       // $idUnidad = self::validarEquiposEmpresa($formData['txtNumUnidad'], $formData['txtImei'],$formData['txtPlacas'],$formData['txtSerie'],$formData['selectGPS'],'Tractos / Camiones');
         $unidad = Equipo::where('id_empresa',auth()->user()->id_empresa)->where('id_equipo',$formData['txtNumUnidad']);
         if(!$unidad->exists()){
             $unidad = new Equipo;
@@ -150,6 +171,7 @@ class MepController extends Controller
             $unidad->imei = $formData['txtImei'];
             $unidad->placas = $formData['txtPlacas'];
             $unidad->num_serie = $formData['txtSerie'];
+            $unidad->gps_company_id = $formData['selectGPS'];
             $unidad->tipo = 'Tractos / Camiones';
             $unidad->save();
         }else{
@@ -157,12 +179,47 @@ class MepController extends Controller
             $unidad->imei = $formData['txtImei'];
             $unidad->placas = $formData['txtPlacas'];
             $unidad->num_serie = $formData['txtSerie'];
+            $unidad->gps_company_id = $formData['selectGPS'];
             $unidad->update();
         }
 
         $idunidad = $unidad->id;
+        //Chasis / Plataforma
+        $idChasisA = self::validarEquiposEmpresa($formData['txtNumChasisA'], $formData['txtImeiChasisA'],$formData['txtPlacasA'],'',$formData['selectChasisAGPS'],'Chasis / Plataforma');
+        $idChasisB = self::validarEquiposEmpresa($formData['txtNumChasisB'], $formData['txtImeiChasisB'],$formData['txtPlacasB'],'',$formData['selectChasisBGPS'],'Chasis / Plataforma');
 
-        Asignaciones::where('id',$idAsignacion)->update(["id_operador"=>$idOperador,"id_camion" => $idunidad]);
+
+        $idContenedor = $r->input('idContenedor');
+        $asignacion = Asignaciones::where('id_contenedor',$idContenedor);
+
+        if($asignacion->exists()){
+            $asignacion = $asignacion->first();
+            $asignacion->update([
+                "id_operador"=>$idOperador,
+                "id_camion" => $idunidad, 
+                "id_chasis" => $idChasisA, 
+                "id_chasis2" => $idChasisB
+            ]);
+        }else{
+            $fecha = date('Y-m-d');
+            $asignacion = new Asignaciones;
+            $asignacion->id_empresa = auth()->user()->id_empresa;
+            $asignacion->id_contenedor = $idContenedor;
+            $asignacion->id_camion = $idunidad;
+            $asignacion->id_chasis = $idChasisA;
+            $asignacion->id_chasis2 = $idChasisB;
+            $asignacion->id_operador = $idOperador;
+            $asignacion->fecha_inicio  = $fecha;
+            $asignacion->fecha_fin = $fecha;
+            $asignacion->fehca_inicio_guard = $fecha;
+            $asignacion->fehca_fin_guard = $fecha;
+            $asignacion->save();
+
+            Cotizaciones::where('id',$idContenedor)->update(['estatus_planeacion' => 1]);
+        }
+        //$idAsignacion = $contenedor['id_asignacion'];
+
+        //Asignaciones::where('id',$idAsignacion)->update(["id_operador"=>$idOperador,"id_camion" => $idunidad]);
         return response()->json(["TMensaje" => "success", "Titulo" => "Se ha realizado la asignacion correctamente","Mensaje" => ""]);
     }
 }
