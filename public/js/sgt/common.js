@@ -1,5 +1,4 @@
 function mostrarLoading(text = "Espere un momento...") {
-    
     let label = document.querySelector('#loading-text')
     label.textContent = text
 
@@ -7,7 +6,7 @@ function mostrarLoading(text = "Espere un momento...") {
 }
 
 function ocultarLoading() {
-document.getElementById('loading-overlay').style.display = 'none';
+  document.getElementById('loading-overlay').style.display = 'none';
 }
 
 function simularEvento() {

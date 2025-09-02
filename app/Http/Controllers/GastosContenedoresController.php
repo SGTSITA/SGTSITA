@@ -3,10 +3,16 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\GastosOperadores;
-use App\Models\Cotizaciones;
+
+use App\Models\Asignaciones;
 use App\Models\Bancos;
 use App\Models\BancoDinero;
+use App\Models\CategoriasGastos;
+use App\Models\Cotizaciones;
+use App\Models\DocumCotizacion;
+use App\Models\Equipo;
+use App\Models\GastosOperadores;
+
 use Auth;
 use DB;
 use Carbon\Carbon;
@@ -135,28 +141,190 @@ class GastosContenedoresController extends Controller
     }
 
     public function exportarSeleccionados(Request $request)
-{
-    $ids = $request->input('selected_ids', []);
-    $tipo = $request->input('fileType');
+    {
+        $ids = $request->input('selected_ids', []);
+        $tipo = $request->input('fileType');
 
-    if (empty($ids)) {
-        return response()->json(['error' => 'No hay registros seleccionados.'], 422);
+        if (empty($ids)) {
+            return response()->json(['error' => 'No hay registros seleccionados.'], 422);
+        }
+
+        $exportador = new GastosPorPagarExport($ids); // ✅ Ya recibe los IDs
+
+        if ($tipo === 'xlsx') {
+            return Excel::download($exportador, 'gastos_seleccionados.xlsx');
+        }
+
+        if ($tipo === 'pdf') {
+            $pdf = PDF::loadView('reporteria.gxp.excel', [
+                'gastos' => $exportador->getGastosData($ids), // Usa tu lógica existente
+                'isExcel' => false
+            ]);
+            return $pdf->download('gastos_seleccionados.pdf');
+        }
+
+        return response()->json(['error' => 'Tipo no válido'], 400);
     }
 
-    $exportador = new GastosPorPagarExport($ids); // ✅ Ya recibe los IDs
+    public function indexGastosViaje(){
+       
+        $bancos = Bancos::where('id_empresa',auth()->user()->id_empresa)->get();
+        $categorias = CategoriasGastos::orderBy('categoria')->get();
+        $empresa = Auth::User()->id_empresa;
+        $equipos = Equipo::where('id_empresa',$empresa)->get();
 
-    if ($tipo === 'xlsx') {
-        return Excel::download($exportador, 'gastos_seleccionados.xlsx');
+        return view('gastos_contenedor.index-gastos-v2',compact('bancos','categorias','equipos'));
     }
 
-    if ($tipo === 'pdf') {
-        $pdf = PDF::loadView('reporteria.gxp.excel', [
-            'gastos' => $exportador->getGastosData($ids), // Usa tu lógica existente
-            'isExcel' => false
-        ]);
-        return $pdf->download('gastos_seleccionados.pdf');
+    public function gastosViajesList(Request $r){
+        $fechaInicio = $r->from;
+        $fechaFin = $r->to;
+
+        //Obtener los gastos de las unidades (vehiculos)
+        $gastosUnidadQuery = "SELECT 
+        a.id_camion,
+        gg.motivo,
+        COUNT(DISTINCT a.id) AS total_asignaciones,
+        COALESCE(SUM(DISTINCT gg.monto1 / JSON_LENGTH(JSON_EXTRACT(gg.aplicacion_gasto, '$.elementos'))), 0) AS total_gastos_periodo,
+        COALESCE(SUM(DISTINCT gg.monto1 / JSON_LENGTH(JSON_EXTRACT(gg.aplicacion_gasto, '$.elementos'))), 0) / COUNT(DISTINCT a.id) AS gasto_por_viaje
+        FROM asignaciones a
+        LEFT JOIN gastos_generales gg 
+            ON gg.aplicacion_gasto IS NOT NULL
+            AND JSON_VALID(gg.aplicacion_gasto) = 1
+            AND JSON_UNQUOTE(JSON_EXTRACT(gg.aplicacion_gasto, '$.aplicacion')) = 'equipos'
+            AND JSON_CONTAINS(
+                JSON_EXTRACT(gg.aplicacion_gasto, '$.elementos'),
+                JSON_OBJECT('equipo', CAST(a.id_camion AS CHAR)),
+                '$'
+            )
+            AND gg.fecha BETWEEN '$fechaInicio' AND '$fechaFin'
+        WHERE a.fecha_inicio BETWEEN '$fechaInicio' AND '$fechaFin'
+        AND a.id_camion IS NOT NULL AND gg.is_active = 1
+        GROUP BY a.id_camion, gg.motivo;";
+
+        $gastosUnidad = Collect(DB::select($gastosUnidadQuery));
+
+        $cotizaciones = Cotizaciones::where('id_empresa', auth()->user()->id_empresa)
+            ->whereIn('estatus',['Finalizado', 'Aprobada'])
+            ->where('estatus_planeacion', '=', 1)
+            ->where('jerarquia', "!=",'Secundario')
+            ->whereHas('DocCotizacion.Asignaciones', function($query) use ($fechaInicio, $fechaFin) {
+                $query->whereBetween('fecha_inicio', [$fechaInicio, $fechaFin]); 
+            })
+            ->with(['cliente', 'DocCotizacion.Asignaciones' => function($query) use ($fechaInicio, $fechaFin) {
+                $query->whereBetween('fecha_inicio', [$fechaInicio, $fechaFin]);
+            }])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+            $handsOnTableData = $cotizaciones->map(function ($cotizacion) use ($gastosUnidad){
+                $contenedor = $cotizacion->DocCotizacion ? $cotizacion->DocCotizacion->num_contenedor : 'N/A';
+                $gastosDiferidos = (sizeof($gastosUnidad)>0) ? $gastosUnidad->where('id_camion', $cotizacion->DocCotizacion->Asignaciones->id_camion)->sum('gasto_por_viaje') : 0;
+                // Si es tipo 'Full', buscamos la secundaria para obtener su contenedor
+                if (!is_null($cotizacion->referencia_full)) {
+                    $secundaria = Cotizaciones::where('referencia_full', $cotizacion->referencia_full)
+                        ->where('jerarquia', 'Secundario')
+                        ->with('DocCotizacion.Asignaciones')
+                        ->first();
+
+                    if ($secundaria && $secundaria->DocCotizacion) {
+                        $contenedor .= ' ' . $secundaria->DocCotizacion->num_contenedor;
+                    }
+                }
+
+                $Gastos = GastosOperadores::where('id_cotizacion',$cotizacion->id)->get();
+
+                return [
+                    $contenedor,
+                    $Gastos->filter(function($gasto) {return str_contains($gasto->tipo, 'GCM01');})->sum('cantidad'),
+                    $Gastos->filter(function($gasto) {return str_contains($gasto->tipo, 'GDI02');})->sum('cantidad'),
+                    $Gastos->filter(function($gasto) {return str_contains($gasto->tipo, 'GCP03');})->sum('cantidad'),
+                    $Gastos->filter(function($gasto) {return !str_contains($gasto->tipo, 'GCM01') && !str_contains($gasto->tipo, 'GDI02') && !str_contains($gasto->tipo, 'GCP03');})->sum('cantidad'),
+                    $gastosDiferidos,
+                    ($Gastos->filter(function($gasto) {return str_contains($gasto->tipo, 'GCM01');})->first()?->estatus == 'Pagado') ? 1 : 0,
+                    ($Gastos->filter(function($gasto) {return str_contains($gasto->tipo, 'GDI02');})->first()?->estatus == 'Pagado') ? 1 : 0,
+                    ($Gastos->filter(function($gasto) {return str_contains($gasto->tipo, 'GCP03');})->first()?->estatus == 'Pagado') ? 1 : 0,
+                    '',
+                    $cotizacion->id,
+                ];
+            });
+
+        
+
+        return response()->json(['handsOnTableData' => $handsOnTableData]);
     }
 
-    return response()->json(['error' => 'Tipo no válido'], 400);
-}
+    public function confirmarGastos(Request $r){
+        try{
+            $gastosContenedores = json_decode($r->datahandsOnTableGastos);
+            foreach($gastosContenedores as $gasto){
+            DB::beginTransaction();
+
+             $numContenedor = $gasto[0];
+             $camposGastos = [1,2,3];
+             $camposGastoInmediato = [6,7,8];
+             $descripcionGastos = ['GCM01 - Comisión','GDI02 - Diesel','GCP03 - Casetas / Peaje'];
+             $idEmpresa = auth()->user()->id_empresa;
+
+             $contenedor = DocumCotizacion::where('num_contenedor', $numContenedor)
+                                                ->where('id_empresa', $idEmpresa)
+                                                ->first();
+                                                
+             $asignacion = Asignaciones::where('id_contenedor', $contenedor->id)->first();
+             
+             for($e = 0; $e <= 2; $e++){
+                if($gasto[$camposGastos[$e]] > 0){
+                     $gastoViaje = GastosOperadores::where('id_cotizacion',$contenedor->id_cotizacion)->where('tipo',$descripcionGastos[$e]);
+                     if(!$gastoViaje->exists()){
+                        $esPagoInmediato = $gasto[$camposGastoInmediato[$e]];
+                        $bank = substr($gasto[9],0,5);
+   
+                        $datosGasto = [
+                           "id_cotizacion" => $contenedor->id_cotizacion,
+                           "id_banco" => $esPagoInmediato != 0 ? intval($bank) : null,
+                           "id_asignacion" => $asignacion->id,
+                           "id_operador" => $asignacion->id_operador,
+                           "cantidad" => $gasto[$camposGastos[$e]],
+                           "tipo" => $descripcionGastos[$e],
+                           "estatus" => $esPagoInmediato != 0 ? 'Pagado' : 'Pago Pendiente',
+                           "fecha_pago" => $esPagoInmediato != 0 ? Carbon::now() : null,
+                           "pago_inmediato" => $esPagoInmediato,
+                           "created_at" => Carbon::now()
+                          ];
+   
+                         GastosOperadores::insert($datosGasto);
+                     }else{
+                        $detalleGasto = $gastoViaje->first();
+                        if($detalleGasto->cantidad != $gasto[$camposGastos[$e]]){
+                            $detalleGasto->update([
+                                "cantidad" => $gasto[$camposGastos[$e]]
+                            ]);
+
+                        }
+                     }
+                     
+                    //  DB::commit();
+                      
+                }
+             }
+             DB::commit();
+
+            }
+
+            
+             return response()->json(["Titulo" => "Gasto agregado","Mensaje" => "Se agregó el gasto","TMensaje" => "success"]);
+
+        }catch(\Throwable $t){
+            DB::rollback();
+            $idError = uniqid();
+            \Log::channel('daily')->info("$idError : ".$t->getMessage());
+            return response()->json([
+                "Titulo" => "Ha ocurrido un error",
+                "Mensaje" => "Ocurrio un error mientras procesabamos su solicitud. Cod Error $idError",
+                "TMensaje" => "warning"
+            ]);
+        }
+
+        
+    }
 }
