@@ -80,9 +80,11 @@
                                 <img src="{{ asset('img/icon/contenedores.png') }}" alt="" width="40px"> Bloque
                               </button>
 
+                              @can('cotizacion-valores')
                               <button class="nav-link custom-tab" id="nav-Gastos-tab" data-bs-toggle="tab" data-bs-target="#nav-Gastos" type="button" role="tab" aria-controls="nav-Gastos" aria-selected="false">
                                 <img src="{{ asset('img/icon/bolsa-de-dinero.webp') }}" alt="" width="40px"> Gastos
                               </button>
+                              @endcan
 
                               @if ($cotizacion->estatus_planeacion == 1)
                                 @if ($documentacion->Asignaciones->id_proveedor != NULL)
@@ -90,9 +92,11 @@
                                         <img src="{{ asset('img/icon/efectivo.webp') }}" alt="" width="40px"> Proveedor
                                     </button>
                                 @elseif ($documentacion->Asignaciones->id_proveedor == NULL)
+                                @can('cotizacion-valores')
                                     <button class="nav-link custom-tab" id="nav-GastosOpe-tab" data-bs-toggle="tab" data-bs-target="#nav-GastosOpe" type="button" role="tab" aria-controls="nav-GastosOpe" aria-selected="false">
                                         <img src="{{ asset('img/icon/efectivo.webp') }}" alt="" width="40px"> Gastos Viaje
                                     </button>
+                                @endcan
                                 @endif
                               @endif
 
@@ -302,6 +306,7 @@
                                                     <input name="sobrepeso" id="sobrepeso" type="text" class="form-control calculo-cotizacion" autocomplete="off" readonly value="{{$cotizacion->sobrepeso}}">
                                                 </div>
                                             </div>
+                                            @can('cotizacion-valores')
                                             <div class="col-3 form-group">
                                                 <label for="name">Precio Sobre Peso</label>
                                                 <div class="input-group mb-3">
@@ -311,6 +316,7 @@
                                                     <input name="precio_sobre_peso" id="precio_sobre_peso" type="text" autocomplete="off" oninput="allowOnlyDecimals(event)" class="form-control moneyformat calculo-cotizacion" value="{{ number_format($cotizacion->precio_sobre_peso, 2, '.', ',') }}">
                                                 </div>
                                             </div>
+                                         
 
                                     <div class="col-3 form-group">
                                         <label for="name">Sobre Peso Viaje</label>
@@ -462,6 +468,7 @@
                                                 <input type="text" class="form-control txtResultGastos" id="total" value="{{ $cotizacion->total }}" readonly>
                                             </div>
                                         </div>
+                                        @endcan
 
                                     </div>
                                 </div>
@@ -1005,7 +1012,7 @@
                                             </div>
                                             
                                            
-                                            
+                                            @can('cotizacion-valores')
                                             <div class="row">
                                                 <div class="col-3 form-group">
                                                     <label for="name">Costo viaje</label>
@@ -1151,8 +1158,10 @@
                                                     </div>
                                                 </div>
                                             </div>
+                                            @endcan
                                         </div>
                                         @elseif (is_null($documentacion->Asignaciones->id_proveedor ))
+                                        @can('cotizacion-valores')
                                         <div class="tab-pane fade" id="nav-GastosOpe" role="tabpanel" aria-labelledby="nav-GastosOpe-tab" tabindex="0">
                                             <div class="col-sm-12">
                                                 <div class="card card-body" id="profile">
@@ -1191,8 +1200,8 @@
                                 
                                             <div class="row">
                                               <div id="gridGastosOperador" class="col-12 ag-theme-quartz" style="height: 500px"></div>
-                                           
                                             </div>
+                                           
                                             <div class="row">
                                             <div class="card card-body" id="profile">
                                                 <div class="row justify-content-between align-items-center">
@@ -1208,12 +1217,15 @@
                                                 </div>
                                             </div>
                                         </div>
+                                        @endcan
                                     @endif
                                 @endif
                             </div>
 
                             <div class="modal-footer">
+                                @can('cotizacio-valores')
                                 <button type="submit" class="btn btn-primary">Guardar</button>
+                                @endif
                             </div>
                         </form>
 
