@@ -688,6 +688,7 @@ $idCordenada= $coordenadas->id_coordenadas;
         'docum_cotizacion.num_contenedor',
         'asignaciones.fecha_inicio',
         'asignaciones.fecha_fin',
+        'equipos.id as id_equipo_unico',
         'equipos.id_equipo',
         'equipos.imei', 
         
@@ -719,6 +720,7 @@ $idCordenada= $coordenadas->id_coordenadas;
             'cotizaciones.destino',
             'asig.num_contenedor as contenedor', 
             'cotizaciones.estatus',
+            'asig.id_equipo_unico',
             'asig.imei',
             'asig.id_equipo',
             'asig.id_contenedor',
@@ -732,7 +734,8 @@ $idCordenada= $coordenadas->id_coordenadas;
             'cotizaciones.id_empresa',
             'cotizaciones.latitud',
             'cotizaciones.longitud',
-          
+            'beneficiarios.nombre as beneficiario',
+            'beneficiarios.telefono as telefono_beneficiario'
         )
     ->join('clients', 'cotizaciones.id_cliente', '=', 'clients.id')
     
@@ -822,22 +825,25 @@ $idCordenada= $coordenadas->id_coordenadas;
 
         $conboysdetalle=$conboysdetalleAll;// ->where('id_empresa', $idEmpresa)->values();
 
-       $equipos = Equipo::select(
+       $equiposAll = Equipo::select(
         'equipos.id',
         'equipos.imei',
         'equipos.tipo',
         'equipos.marca',
         'equipos.id_equipo',
         'equipos.placas',
-        'gps_company.url_conexion as tipoGps'
+        'gps_company.url_conexion as tipoGps',
+        'equipos.id_empresa'
         )
         ->join('gps_company', 'gps_company.id', '=', 'equipos.gps_company_id')
-        ->where('equipos.id_empresa', $idEmpresa)
-        ->where('equipos.tipo','Tractos / Camiones')
+        //->where('equipos.id_empresa', $idEmpresa)
+       // ->where('equipos.tipo','Tractos / Camiones')
         ->whereNotNull('equipos.imei')
 
         ->get();
-            
+
+        $equipos=$equiposAll->where('id_empresa', $idEmpresa)->values();
+
           if ($datos) {
             return response()->json([
                 'success' => true,
@@ -845,6 +851,7 @@ $idCordenada= $coordenadas->id_coordenadas;
                 'conboys'=> $conboys,
                 'dataConten'=> $conboysdetalle,
                 'equipos'=> $equipos,
+                'equiposAll'=> $equiposAll,
                 'datosAll'=> $datosAll,
                 'dataContenAll'=> $conboysdetalleAll
             ]);
