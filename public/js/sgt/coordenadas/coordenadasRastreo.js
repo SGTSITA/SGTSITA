@@ -699,6 +699,8 @@ let tipo = "";
               if(t === 'Equipo'){
                // `${eq.id_equipo } - ${eq.marca}- ${eq.tipo}- ${textoPlaca}`,
                const equipo = labelMuestra.split(' - ').map(part => part.trim());
+               let idEq= parseInt(item.id_contenendor);
+               let filtroEqu= equiposSearch.find(equipo => equipo.id === idEq);
                
                 let marcaLocal = equipo[1];
                 let placaLocal = equipo[3];
@@ -715,9 +717,9 @@ contentC = `
                
               </div>
               <div class="text-white fs-6 lh-base" style="font-size: 17px; line-height: 1.5;">
-                <div><strong >Equipo:</strong> ${item.EquipoBD}</div>
-                <div><strong >Marca:</strong> ${marcaLocal}</div>
-                <div><strong >Placas:</strong> ${placaLocal}</div>
+                <div><strong >Equipo:</strong> ${filtroEqu.id_equipo}</div>
+                <div><strong >Marca:</strong> ${filtroEqu.marca}</div>
+                <div><strong >Placas:</strong> ${filtroEqu.placas}</div>
 
               </div>
            
