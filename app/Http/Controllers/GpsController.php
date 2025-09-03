@@ -31,8 +31,9 @@ class GpsController extends Controller
             foreach ($datos as $dato) {
                 if (!empty($dato)) {
                        $esDatoEmp="NO";
+                      
                     [ $contenedor ,$imei,$id_contenendor,$tipoGps] = explode('|', $dato);
-
+// dd($imei);
                  $RfcyEquipo = $this->buscartipoProveedor($contenedor,$id_contenendor,$imei);
                
                  [$Rfc,$equipo,$empresaIdRastro,$TipoEquipo]= explode('|', $RfcyEquipo);
@@ -282,12 +283,12 @@ class GpsController extends Controller
             ->first();
 
 
-            if($imei=== $datosAll->imei){
+            if($imei=== $datosAll?->imei){
                 //corresponde al equipo del contendor
                 $Equipo = $datosAll?->id_equipo;
                 $TipoEquipo = 'Camion';
             }
-            else if($imei === $datosAll->imei_chasis){
+            else if($imei === $datosAll?->imei_chasis){
                 //corresponde al equipo del chasis
                 $Equipo = $datosAll?->id_equipo_chasis;
                 $TipoEquipo = 'Chasis';

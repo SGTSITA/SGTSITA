@@ -1,5 +1,6 @@
 
-
+let equiposSearch = [];
+let rastreosActivos = {};
 let map;
 const estadosLi = {};
   let markers = [];
@@ -98,6 +99,7 @@ function cargarinicial()
 
     contenedoresDisponiblesAll = data.datosAll;
           
+    equiposSearch = data.equiposAll;
         // Convoys detalle
         data.conboys.forEach(c => {
           catalogoBusqueda.push({
@@ -175,7 +177,27 @@ function getRandomColor() {
     const b = Math.floor(Math.random() * (max - min + 1)) + min;
     return `rgb(${r}, ${g}, ${b})`;
 }
+function getStrongColor() {
+  // Hue (0-360): distinto tono
+  const hue = Math.floor(Math.random() * 365);
+  // Saturation alto (70–100%)
+  const saturation = 90;
+  // Lightness medio (40–50%) → ni muy claro ni muy oscuro
+  const lightness = 65;
+  
+  return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+}
 
+function strengthenColor(rgb) {
+  const [r, g, b] = rgb.match(/\d+/g).map(Number);
+  // Escalar los valores hacia un rango de 100–220
+  const scale = (val) => {
+    if (val < 100) return 100;
+    if (val > 220) return 220;
+    return val;
+  };
+  return `rgb(${scale(r)},${scale(g)},${scale(b)})`;
+}
 function lightenColor(rgb, amount = 40) {
   const [r, g, b] = rgb.match(/\d+/g).map(Number);
   const nr = Math.min(255, r + amount);
@@ -238,7 +260,7 @@ function validarTipo(items)
     tipo: tabx,
     value: items.value,
     label: labelMuestra
-});
+    });
 
 catalogoBusqueda = catalogoBusqueda.filter(itemFilter => itemFilter.id !== items.id &&  itemFilter.value !== items.value);
 
@@ -307,7 +329,7 @@ content.appendChild(spanTexto);
 
                 } else {
                     label.textContent = "Rastreo Individual";
-                    estadosLi[`${item.id}|${item.tipo}`] = this.checked ;
+                    estadosLi[`${item.id}|${item.tipo}`] = this.checked;
                 }
 
                  actualizarUbicacion(ItemsSelectsID[items.id + "|"+  items.value],tabx,items.id + "|"+  items.value + "|"+  item.tipo,labelMuestra,value,map,items.id,randomColor,estadosLi[`${item.id}|${item.tipo}`])
@@ -315,7 +337,7 @@ content.appendChild(spanTexto);
 
                   intervalIdsID[`${item.id}|${item.value}`] = setInterval(() => {
                      actualizarUbicacion(ItemsSelectsID[items.id + "|"+  items.value],tabx,items.id + "|"+  items.value + "|"+  item.tipo,labelMuestra,value,map,items.id,randomColor,estadosLi[`${item.id}|${item.tipo}`])
-
+                     rastreosActivos[`${item.id}|${item.value}|${item.tipo}`] = true;
                   }, 5000);
             });
 
@@ -356,14 +378,14 @@ content.appendChild(spanTexto);
                   clearInterval(intervalIdsID[`${item.id}|${item.value}`]);
                  intervalIdsID[`${item.id}|${item.value}`] = null;
                     estadosLi[`${item.id}|${item.tipo}`] = false
-                 
+                 rastreosActivos[`${item.id}|${item.value}|${item.tipo}`] = false;
               } else {
                  actualizarUbicacion(ItemsSelectsID[items.id + "|"+  items.value],tabx,items.id + "|"+  items.value + "|"+  item.tipo,labelMuestra,value,map,items.id,randomColor,estadosLi[`${item.id}|${item.tipo}`])
 
 
                   intervalIdsID[`${item.id}|${item.value}`] = setInterval(() => {
                      actualizarUbicacion(ItemsSelectsID[items.id + "|"+  items.value],tabx,items.id + "|"+  items.value + "|"+  item.tipo,labelMuestra,value,map,items.id,randomColor,estadosLi[`${item.id}|${item.tipo}`])
-
+                     rastreosActivos[`${item.id}|${item.value}|${item.tipo}`] = true;
                   }, 5000);
 
                  
@@ -401,7 +423,7 @@ content.appendChild(spanTexto);
    
     let [idStr, tipoStr] = valorLi.split("|");
 
- 
+    rastreosActivos[`${item.id}|${item.value}|${item.tipo}`] = false;
     let elementoEliminado = elementoPanelRastro.find(
         item => String(item.id) === idStr && String(item.tipo) === tipoStr
     );
@@ -419,16 +441,28 @@ content.appendChild(spanTexto);
             catalogoBusqueda.push(elementoEliminado);
         }
 
-      
-      
+        const claveBase = items.id + "|" + items.value+"|"+  item.tipo;
+let borro = false;
+ 
+   clearInterval(intervalIdsID[`${item.id}|${item.value}`]);
+                 intervalIdsID[`${item.id}|${item.value}`] = null;
+                    estadosLi[`${item.id}|${item.tipo}`] = false;
 
-        let index = markers.findIndex(m => m.keyItem === items.id + "|"+  items.value+"|"+  item.tipo);
-        if (index !== -1) {
-            markers[index].setMap(null);  // Quita del mapa
-            markers.splice(index, 1);     // Lo elimina del array
-           delete ItemsSelectsID[items.id + "|" + items.value];
-             li.remove();
+        Object.keys(markers).forEach(key => {
+
+            if (key.startsWith(claveBase + "|")) {
+                markers[key].setMap(null);
+                               delete ItemsSelectsID[markers[key].keyItem];
+                                delete markers[key];
+                borro = true;
+            }
+        });
+
+        if (borro) {
+            li.remove();
         }
+
+           
 //ItemsSelectsID[items.id + "|"+  items.value]
         console.log(`${elementoEliminado.tipo} #${elementoEliminado.label} eliminado`);
     }
@@ -440,7 +474,7 @@ actualizarUbicacion(ItemsSelectsID[items.id + "|"+  items.value],tabx,items.id +
 
  intervalIdsID[`${item.id}|${item.value}`] = setInterval(() => {
                      actualizarUbicacion(ItemsSelectsID[items.id + "|"+  items.value],tabx,items.id + "|"+  items.value + "|"+  item.tipo,labelMuestra,value,map,items.id,randomColor,estadosLi[`${item.id}|${item.tipo}`])
-
+rastreosActivos[`${item.id}|${item.value}|${item.tipo}`] = true;
                   }, 5000);
         
         }
@@ -598,6 +632,13 @@ let tipo = "";
   .then(res => res.json())
   .then(data => {
     //console.log('Ubicaciones recibidas:', data);
+
+
+    if(rastreosActivos[`${KEYITEM}`]===false){
+        console.log('Rastreo eliminado', KEYITEM);
+        return;
+
+        }
     const dataUbi= data;
   console.log('obteniendo unicacion convoy, sucess data :', KEYITEM);
 //limpiarMarcadores();
@@ -637,9 +678,9 @@ let tipo = "";
           let  colorMarker =colorBG;
 
           if(item.ubicacion.tipoEquipo==='Camion'){
-            colorMarker = lightenColor(colorMarker, 30);
+            colorMarker = getStrongColor();
           }else{
-            colorMarker = darkenColor(colorMarker, 30);
+            colorMarker = getStrongColor();
           }
 
        //   console.log('Agregando marcador:', item.ubicacion.tipoEquipo);
@@ -875,7 +916,7 @@ contentC = `
 
 
               const listener = google.maps.event.addListenerOnce(map, "bounds_changed", function() {
-                        if (map.getZoom() > 14) map.setZoom(14); 
+                        if (map.getZoom() > 10) map.setZoom(10); 
                     });
 
           }
@@ -1015,6 +1056,8 @@ function mostrarInfoConvoy(contenedores,equipo,chasis) {
       }
        // <p><strong>Contenedor:</strong> ${info.contenedor}</p>
 if(info){
+let filtroEqu= equiposSearch.find(equipo => equipo.id === info.id_equipo_unico);
+    
      let infoContenido = `  
                   <div class="tab-pane fade ${index === 0 ? "show active" : ""}" 
            id="${tabId}" 
@@ -1028,11 +1071,14 @@ if(info){
                     <p><strong>Contrato:</strong> ${info.tipo_contrato}</p>
                     <p><strong>Fecha Inicio:</strong> ${info.fecha_inicio}</p>
                     <p><strong>Fecha Fin:</strong> ${info.fecha_fin}</p>
+                    <p><strong>Operador:</strong> ${info.beneficiario}</p>
+                    <p><strong>Telefono:</strong> ${info.telefono_beneficiario}</p>
                     <p>
                         <span style="margin-right: 15px;">
                             <strong>IMEI:</strong> ${info.imei}
                         </span>
                         <strong>Equipo:</strong> ${info.id_equipo}
+                        <strong>Placas:</strong> ${filtroEqu.placas}
                     </p>
                     <p>
                         <span style="margin-right: 15px;">
