@@ -297,6 +297,9 @@
                             $bancoId = 6;
                         } elseif ($empresaActual == 8) {
                             $bancoId = 11;
+                        } elseif ($empresaActual == 9) {
+                            $bancoId = 13;
+                            # code...
                         }
 
                         $cuentaCLABE = Bancos::withTrashed()->find($bancoId);
