@@ -288,7 +288,7 @@
             </h3>
             <table class="table text-white"
                 style="color: #000; width: 100%; padding: 2px; font-size: 6px; border-collapse: collapse;">
-                @if ($empresaActual == 6 || $empresaActual == 2 || $empresaActual == 8)
+                @if ($empresaActual == 6 || $empresaActual == 2 || $empresaActual == 8 || $empresaActual == 9)
                     @php
                         $bancoId = null;
                         if ($empresaActual == 6) {
@@ -299,7 +299,6 @@
                             $bancoId = 11;
                         } elseif ($empresaActual == 9) {
                             $bancoId = 13;
-                            # code...
                         }
 
                         $cuentaCLABE = Bancos::withTrashed()->find($bancoId);
