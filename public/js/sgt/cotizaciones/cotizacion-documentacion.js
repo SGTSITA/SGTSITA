@@ -416,17 +416,19 @@ function editarViaje() {
   const viaje = seleccionados[0];
 
   // Si es FULL y tiene más de un viaje asociado, mostrar modal
-  if (viaje.tipo === "Full" && Array.isArray(viaje.viajesFull) && viaje.viajesFull.length > 1) {
+  const contenedores = viaje.NumContenedor?.split(' ').map(c => c.trim()).filter(Boolean);
+
+  if (contenedores.length > 1) {
     const contenedorOpciones = document.getElementById('contenedorOpciones');
     contenedorOpciones.innerHTML = ''; // Limpia opciones anteriores
 
-    viaje.viajesFull.forEach(v => {
+    contenedores.forEach(numContenedor => {
       const btn = document.createElement('button');
       btn.classList.add('btn', 'btn-outline-primary', 'mb-2', 'w-100');
-      btn.textContent = `Editar contenedor: ${v.NumContenedor}`;
+      btn.textContent = `Editar contenedor: ${numContenedor}`;
       btn.onclick = () => {
         const form = $('<form action="' + url + '" method="post">' +
-          '<input type="hidden" name="numContenedor" value="' + v.NumContenedor + '" />' +
+          '<input type="hidden" name="numContenedor" value="' + numContenedor + '" />' +
           '<input type="hidden" name="_token" value="' + _token + '" />' +
           '</form>');
         $('body').append(form);
@@ -443,6 +445,7 @@ function editarViaje() {
     modal.show();
     return;
   }
+
 
   //  Comportamiento original si NO es FULL o solo hay un contenedor
   let numContenedor = null;
