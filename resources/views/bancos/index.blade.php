@@ -46,6 +46,12 @@
                                                         Cuenta Global
                                                     </span>
                                                 @endif
+                                                @if ($item->banco_1)
+                                                    <span class="badge bg-danger  position-absolute"
+                                                        style="top: 10px; left: 10px; z-index: 10;">
+                                                        Banco 1
+                                                    </span>
+                                                @endif
 
                                                 <span class="mask bg-gradient-dark"></span>
 
@@ -53,6 +59,9 @@
 
                                                     {{-- 🔥 Agregar un pequeño espacio si es Cuenta Global --}}
                                                     @if ($item->cuenta_global)
+                                                        <div style="height: 20px;"></div> {{-- pequeño salto --}}
+                                                    @endif
+                                                    @if ($item->banco_1)
                                                         <div style="height: 20px;"></div> {{-- pequeño salto --}}
                                                     @endif
 
