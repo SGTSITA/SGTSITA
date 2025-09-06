@@ -23,6 +23,7 @@ class Bancos extends Model
         'tipo',
         'id_empresa',
         'estado', // Nuevo campo agregado para activar/desactivar
+        'banco_1',
     ];
 
     protected static function boot()

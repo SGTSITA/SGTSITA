@@ -278,7 +278,19 @@
 
         <!-- Contenedor de la Tabla de Totales Oficiales -->
         @php
+            use App\Models\Empresas;
+
             $empresaActual = auth()->user()->id_empresa;
+            $empresa = Empresas::find($empresaActual);
+            $esEmpresaPropia = $empresa?->empresa_propia ?? false;
+
+            $bancoBase1 = null;
+            if ($esEmpresaPropia) {
+                $bancoBase1 = Bancos::withTrashed()
+                    ->where('banco_1', true)
+                    ->where('id_empresa', $empresaActual)
+                    ->first();
+            }
         @endphp
 
         <div style="width: 48%; padding: 0; box-sizing: border-box;">
@@ -288,21 +300,9 @@
             </h3>
             <table class="table text-white"
                 style="color: #000; width: 100%; padding: 2px; font-size: 6px; border-collapse: collapse;">
-                @if ($empresaActual == 6 || $empresaActual == 2 || $empresaActual == 8 || $empresaActual == 9)
+                @if ($esEmpresaPropia && $bancoBase1)
                     @php
-                        $bancoId = null;
-                        if ($empresaActual == 6) {
-                            $bancoId = 4;
-                        } elseif ($empresaActual == 2) {
-                            $bancoId = 6;
-                        } elseif ($empresaActual == 8) {
-                            $bancoId = 11;
-                        } elseif ($empresaActual == 9) {
-                            $bancoId = 13;
-                        }
-
-                        $cuentaCLABE = Bancos::withTrashed()->find($bancoId);
-                        $beneficiarioCuenta1 = $cuentaCLABE->nombre_beneficiario ?? 'No disponible';
+                        $beneficiarioCuenta1 = $bancoBase1->nombre_beneficiario ?? 'No disponible';
                         $totalFacturaProveedor = 0;
                         $facturadosPorProveedor = [];
 
@@ -320,8 +320,7 @@
 
                     <thead>
                         <tr style="font-size: 7px; border: 1px solid #000; background-color: #2c3e50; color: white;">
-                            <th style="padding: 2px; border: 1px solid #000;">Cuenta Oficial Empresa
-                                {{ $empresaActual }}</th>
+                            <th style="padding: 2px; border: 1px solid #000;">Cuenta Oficial Empresa</th>
                             <th style="padding: 2px; border: 1px solid #000;">Total</th>
                             @foreach ($facturadosPorProveedor as $facturadoA => $total)
                                 <th style="padding: 2px; border: 1px solid #000;">{{ $facturadoA }}</th>
@@ -332,8 +331,8 @@
                         <tr style="background-color: #f1f1f1;">
                             <td style="padding: 2px; border: 1px solid #ccc;">
                                 {{ $beneficiarioCuenta1 }}<br>
-                                {{ $cuentaCLABE->nombre_banco ?? '-' }}<br>
-                                No. {{ $cuentaCLABE->clabe ?? '-' }}<br>
+                                {{ $bancoBase1->nombre_banco ?? '-' }}<br>
+                                No. {{ $bancoBase1->clabe ?? '-' }}<br>
                             </td>
                             <td style="padding: 2px; border: 1px solid #ccc;">
                                 ${{ number_format($totalFacturaProveedor, 2, '.', ',') }}
@@ -416,6 +415,7 @@
                 @endif
             </table>
         </div>
+
 
 
 
