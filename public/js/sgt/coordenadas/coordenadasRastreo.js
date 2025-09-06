@@ -1,5 +1,6 @@
 
-
+let equiposSearch = [];
+let rastreosActivos = {};
 let map;
 const estadosLi = {};
   let markers = [];
@@ -10,8 +11,10 @@ let mapaAjustado = false;
 
 let detalleConvoys;
 let contenedoresDisponibles = [];
+ let directionsService = null;
+let directionsRenderer = [];
 
-    let ItemsSelectsID = {};
+ let ItemsSelectsID = {};
       let intervalIdsID = {};
   
  function googleMapsReady() {
@@ -19,7 +22,8 @@ let contenedoresDisponibles = [];
             initMap();
         }
   function initMap() {
-   
+    directionsService = new google.maps.DirectionsService();
+
     map = new google.maps.Map(document.getElementById("map"), {
       center: { lat: 0, lng: 0 },
       zoom: 2,
@@ -95,6 +99,7 @@ function cargarinicial()
 
     contenedoresDisponiblesAll = data.datosAll;
           
+    equiposSearch = data.equiposAll;
         // Convoys detalle
         data.conboys.forEach(c => {
           catalogoBusqueda.push({
@@ -102,7 +107,8 @@ function cargarinicial()
             label: c.no_conboy +" " + c.nombre, 
             value: c.no_conboy,
             id: c.id,
-            value_chasis: `NO DISPONIBLE|`
+            value_chasis: `NO DISPONIBLE|`,
+            llegada:c.geocerca_lat+"|"+c.geocerca_long+"|"+c.geocerca_radio
           });
         });
         // Contenedores (desde convoysDetalle)
@@ -112,7 +118,8 @@ function cargarinicial()
             label: cd.contenedor,
             value: cd.contenedor +"|" +cd.imei+"|"+ cd.id_contenedor+"|"+ cd.tipoGps,
             id: cd.id_contenedor,
-            value_chasis:cd.contenedor +"|" +cd.imei_chasis+"|"+ cd.id_contenedor+"|"+ cd.tipoGpsChasis
+            value_chasis:cd.contenedor +"|" +cd.imei_chasis+"|"+ cd.id_contenedor+"|"+ cd.tipoGpsChasis,
+            llegada: cd.latitud +"|"+ cd.longitud+"|0"
           });
         });
 
@@ -125,7 +132,8 @@ function cargarinicial()
             label: `${eq.id_equipo } - ${eq.marca} - ${eq.tipo} - ${textoPlaca}`,
             value: `${eq.id_equipo}|${eq.imei}|${eq.id}|${eq.tipoGps}`,
             id: eq.id,
-            value_chasis: `NO DISPONIBLE|`
+            value_chasis: `NO DISPONIBLE|`,
+            llegada: `0|0|0`
           });
         });
           
@@ -162,10 +170,66 @@ const chipContainer = document.getElementById("chipsBusqueda");
 let filtroActivo = null;
 
 function getRandomColor() {
-    const r = Math.floor((Math.random() * 127) + 127); // 127–255
-    const g = Math.floor((Math.random() * 127) + 127);
-    const b = Math.floor((Math.random() * 127) + 127);
+    const min = 127;
+    const max = 200; 
+    const r = Math.floor(Math.random() * (max - min + 1)) + min;
+    const g = Math.floor(Math.random() * (max - min + 1)) + min;
+    const b = Math.floor(Math.random() * (max - min + 1)) + min;
     return `rgb(${r}, ${g}, ${b})`;
+}
+function getStrongColor() {
+  // Hue (0-360): distinto tono
+  const hue = Math.floor(Math.random() * 365);
+  // Saturation alto (70–100%)
+  const saturation = 90;
+  // Lightness medio (40–50%) → ni muy claro ni muy oscuro
+  const lightness = 65;
+  
+  return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+}
+
+function strengthenColor(rgb) {
+  const [r, g, b] = rgb.match(/\d+/g).map(Number);
+  // Escalar los valores hacia un rango de 100–220
+  const scale = (val) => {
+    if (val < 100) return 100;
+    if (val > 220) return 220;
+    return val;
+  };
+  return `rgb(${scale(r)},${scale(g)},${scale(b)})`;
+}
+function lightenColor(rgb, amount = 40) {
+  const [r, g, b] = rgb.match(/\d+/g).map(Number);
+  const nr = Math.min(255, r + amount);
+  const ng = Math.min(255, g + amount);
+  const nb = Math.min(255, b + amount);
+  return `rgb(${nr},${ng},${nb})`;
+}
+
+function darkenColor(rgb, amount = 40) {
+  const [r, g, b] = rgb.match(/\d+/g).map(Number);
+  const nr = Math.max(0, r - amount);
+  const ng = Math.max(0, g - amount);
+  const nb = Math.max(0, b - amount);
+  return `rgb(${nr},${ng},${nb})`;
+}
+
+function createMarkerIcon(color = "#FF0000", size = 40) {
+const svg = `
+    <svg width="${size}" height="${size}" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <!-- Pin principal -->
+      <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"
+            fill="${color}" stroke="white" stroke-width="2"/>
+      <!-- Círculo animado central -->
+      <circle cx="12" cy="9" r="3" fill="white">
+        <animate attributeName="r" values="3;6;3" dur="1s" repeatCount="indefinite" />
+      </circle>
+    </svg>
+  `;
+  return {
+    url: "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(svg),
+    scaledSize: new google.maps.Size(size, size)
+  };
 }
 
 function validarTipo(items)
@@ -196,7 +260,7 @@ function validarTipo(items)
     tipo: tabx,
     value: items.value,
     label: labelMuestra
-});
+    });
 
 catalogoBusqueda = catalogoBusqueda.filter(itemFilter => itemFilter.id !== items.id &&  itemFilter.value !== items.value);
 
@@ -265,7 +329,7 @@ content.appendChild(spanTexto);
 
                 } else {
                     label.textContent = "Rastreo Individual";
-                    estadosLi[`${item.id}|${item.tipo}`] = this.checked ;
+                    estadosLi[`${item.id}|${item.tipo}`] = this.checked;
                 }
 
                  actualizarUbicacion(ItemsSelectsID[items.id + "|"+  items.value],tabx,items.id + "|"+  items.value + "|"+  item.tipo,labelMuestra,value,map,items.id,randomColor,estadosLi[`${item.id}|${item.tipo}`])
@@ -273,7 +337,7 @@ content.appendChild(spanTexto);
 
                   intervalIdsID[`${item.id}|${item.value}`] = setInterval(() => {
                      actualizarUbicacion(ItemsSelectsID[items.id + "|"+  items.value],tabx,items.id + "|"+  items.value + "|"+  item.tipo,labelMuestra,value,map,items.id,randomColor,estadosLi[`${item.id}|${item.tipo}`])
-
+                     rastreosActivos[`${item.id}|${item.value}|${item.tipo}`] = true;
                   }, 5000);
             });
 
@@ -314,14 +378,14 @@ content.appendChild(spanTexto);
                   clearInterval(intervalIdsID[`${item.id}|${item.value}`]);
                  intervalIdsID[`${item.id}|${item.value}`] = null;
                     estadosLi[`${item.id}|${item.tipo}`] = false
-                 
+                 rastreosActivos[`${item.id}|${item.value}|${item.tipo}`] = false;
               } else {
                  actualizarUbicacion(ItemsSelectsID[items.id + "|"+  items.value],tabx,items.id + "|"+  items.value + "|"+  item.tipo,labelMuestra,value,map,items.id,randomColor,estadosLi[`${item.id}|${item.tipo}`])
 
 
                   intervalIdsID[`${item.id}|${item.value}`] = setInterval(() => {
                      actualizarUbicacion(ItemsSelectsID[items.id + "|"+  items.value],tabx,items.id + "|"+  items.value + "|"+  item.tipo,labelMuestra,value,map,items.id,randomColor,estadosLi[`${item.id}|${item.tipo}`])
-
+                     rastreosActivos[`${item.id}|${item.value}|${item.tipo}`] = true;
                   }, 5000);
 
                  
@@ -359,7 +423,7 @@ content.appendChild(spanTexto);
    
     let [idStr, tipoStr] = valorLi.split("|");
 
- 
+    rastreosActivos[`${item.id}|${item.value}|${item.tipo}`] = false;
     let elementoEliminado = elementoPanelRastro.find(
         item => String(item.id) === idStr && String(item.tipo) === tipoStr
     );
@@ -377,16 +441,28 @@ content.appendChild(spanTexto);
             catalogoBusqueda.push(elementoEliminado);
         }
 
-      
-      
+        const claveBase = items.id + "|" + items.value+"|"+  item.tipo;
+let borro = false;
+ 
+   clearInterval(intervalIdsID[`${item.id}|${item.value}`]);
+                 intervalIdsID[`${item.id}|${item.value}`] = null;
+                    estadosLi[`${item.id}|${item.tipo}`] = false;
 
-        let index = markers.findIndex(m => m.keyItem === items.id + "|"+  items.value+"|"+  item.tipo);
-        if (index !== -1) {
-            markers[index].setMap(null);  // Quita del mapa
-            markers.splice(index, 1);     // Lo elimina del array
-           delete ItemsSelectsID[items.id + "|" + items.value];
-             li.remove();
+        Object.keys(markers).forEach(key => {
+
+            if (key.startsWith(claveBase + "|")) {
+                markers[key].setMap(null);
+                               delete ItemsSelectsID[markers[key].keyItem];
+                                delete markers[key];
+                borro = true;
+            }
+        });
+
+        if (borro) {
+            li.remove();
         }
+
+           
 //ItemsSelectsID[items.id + "|"+  items.value]
         console.log(`${elementoEliminado.tipo} #${elementoEliminado.label} eliminado`);
     }
@@ -398,7 +474,7 @@ actualizarUbicacion(ItemsSelectsID[items.id + "|"+  items.value],tabx,items.id +
 
  intervalIdsID[`${item.id}|${item.value}`] = setInterval(() => {
                      actualizarUbicacion(ItemsSelectsID[items.id + "|"+  items.value],tabx,items.id + "|"+  items.value + "|"+  item.tipo,labelMuestra,value,map,items.id,randomColor,estadosLi[`${item.id}|${item.tipo}`])
-
+rastreosActivos[`${item.id}|${item.value}|${item.tipo}`] = true;
                   }, 5000);
         
         }
@@ -503,6 +579,8 @@ chipContainer.innerHTML = '';
         resultados.appendChild(div);
     });
 }
+
+
   
 function actualizarUbicacionReal(coordenadaData){
     fetch('/coordenadas/rastrear/savehistori', {
@@ -554,6 +632,13 @@ let tipo = "";
   .then(res => res.json())
   .then(data => {
     //console.log('Ubicaciones recibidas:', data);
+
+
+    if(rastreosActivos[`${KEYITEM}`]===false){
+        console.log('Rastreo eliminado', KEYITEM);
+        return;
+
+        }
     const dataUbi= data;
   console.log('obteniendo unicacion convoy, sucess data :', KEYITEM);
 //limpiarMarcadores();
@@ -567,7 +652,7 @@ let tipo = "";
         let id_contenConvoy ='';
        
 
-          console.log('For response ... :', KEYITEM);
+          //console.log('For response ... :', KEYITEM);
  
        //   let datosGeocerca = convoysAll.find(c => c.no_conboy === num_convoy)
          
@@ -583,30 +668,39 @@ let tipo = "";
             let continueShowing = true;
 
         if (continueShowing){
-             console.log('continuar agregando marcador:', KEYITEM+"|"+item.contenedor);
-                 if (markers[KEYITEM+"|"+item.contenedor]) {
+          //console.log('continuar agregando marcador:', KEYITEM+"|"+item.contenedor+"|"+item.ubicacion.tipoEquipo);
+        if (markers[KEYITEM+"|"+item.contenedor+"|"+item.ubicacion.tipoEquipo]) {
 
-                markers[KEYITEM+"|"+item.contenedor].setPosition({ lat: latlocal, lng: lnglocal });
+                markers[KEYITEM+"|"+item.contenedor+"|"+item.ubicacion.tipoEquipo].setPosition({ lat: latlocal, lng: lnglocal });
         } else {
         if (latlocal && lnglocal) {
-          
+
+          let  colorMarker =colorBG;
+
+          if(item.ubicacion.tipoEquipo==='Camion'){
+            colorMarker = getStrongColor();
+          }else{
+            colorMarker = getStrongColor();
+          }
+
+       //   console.log('Agregando marcador:', item.ubicacion.tipoEquipo);
+
           // let esMostrarPrimero =  1
           // if(esMostrarPrimero){
             const newMarker = new google.maps.Marker({
               position: { lat: latlocal, lng: lnglocal },
               map: map,
-               icon: {
-        url: '/img/location.gif',
-        scaledSize: new google.maps.Size(40, 40) 
-    }
+               icon: createMarkerIcon(colorMarker, 40),
             });
 
-            newMarker.keyItem = KEYITEM+"|"+item.contenedor;
+            newMarker.keyItem = KEYITEM+"|"+item.contenedor+"|"+item.ubicacion.tipoEquipo;
 
              let  contentC ='';
               if(t === 'Equipo'){
                // `${eq.id_equipo } - ${eq.marca}- ${eq.tipo}- ${textoPlaca}`,
                const equipo = labelMuestra.split(' - ').map(part => part.trim());
+               let idEq= parseInt(item.id_contenendor);
+               let filtroEqu= equiposSearch.find(equipo => equipo.id === idEq);
                
                 let marcaLocal = equipo[1];
                 let placaLocal = equipo[3];
@@ -616,18 +710,19 @@ contentC = `
                     padding: 5px;
                     border-radius: 8px;
                     font-family: Arial, sans-serif;
-                    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+                    box-shadow: 0 2px 6px rgba(255, 255, 255, 1);
                     max-width: 240px;
                   ">
               <div style="font-weight: bold; font-size: 17px; margin-bottom: 6px;">
                
               </div>
-              <div style="font-size: 17px; line-height: 1.5;">
-                <strong>Equipo:</strong> ${item.EquipoBD}<br>
-                <strong>Marca:</strong> ${marcaLocal}<br>
-                <strong>Placas:</strong> ${placaLocal}<br>
-             
+              <div class="text-white fs-6 lh-base" style="font-size: 17px; line-height: 1.5;">
+                <div><strong >Equipo:</strong> ${filtroEqu.id_equipo}</div>
+                <div><strong >Marca:</strong> ${filtroEqu.marca}</div>
+                <div><strong >Placas:</strong> ${filtroEqu.placas}</div>
+
               </div>
+           
             </div>
           `;
               }
@@ -638,17 +733,18 @@ contentC = `
                         padding: 5px;
                         border-radius: 8px;
                         font-family: Arial, sans-serif;
-                        box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-                        max-width: 240px;
+                        box-shadow: 0 2px 6px  rgba(255, 255, 255, 1);
+                        max-width: 270px;
                     ">
                 <div style="font-weight: bold; font-size: 17px; margin-bottom: 6px;">
                 
                 </div>
-                <div style="font-size: 17px; line-height: 1.5;">
-                    <strong>Equipo:</strong> ${item.EquipoBD}<br>
-                    <strong>Contenedor:</strong> ${item.contenedor}
+                <div class="text-white fs-6 lh-base" style="font-size: 17px; line-height: 1.5;">
+                    <div><strong >Equipo:</strong> ${item.EquipoBD}</div>
+                    <div><strong >Contenedor:</strong> ${item.contenedor}</div>
                 </div>
-                </div>
+                <button id="btnRuta_${KEYITEM+"|"+item.contenedor+"|"+item.ubicacion.tipoEquipo}" style="margin-top:5px;" class="btn btn-primary mt-2">Mostrar ruta</button><br>
+            <span class="text-white fs-6 lh-base" id="infoRuta_${KEYITEM+"|"+item.contenedor+"|"+item.ubicacion.tipoEquipo}" style="font-size:14px; color:#333;"></span>
           `;
 
               }
@@ -659,17 +755,19 @@ contentC = `
                     padding: 5px;
                     border-radius: 8px;
                     font-family: Arial, sans-serif;
-                    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-                    max-width: 240px;
+                    box-shadow: 0 2px 6px  rgba(255, 255, 255, 1);
+                    max-width: 270px;
                   "> 
               <div style="font-weight: bold; font-size: 17px; margin-bottom: 6px;">
                
               </div>
-              <div style="font-size: 17px; line-height: 1.5;">
-              <strong>Convoy:${num_convoy} </strong>
-                <strong>Equipo:</strong> ${item.EquipoBD}<br>
-                <strong>Contenedor:</strong> ${item.contenedor}
+              <div class="text-white fs-6 lh-base" style="font-size: 17px; line-height: 1.5;">
+              <div><strong >Convoy:</strong> ${num_convoy} </div>
+                <div><strong >Equipo:</strong> ${item.EquipoBD}</div>
+                <div><strong >Contenedor:</strong> ${item.contenedor}</div>
               </div>
+              <button id="btnRuta_${KEYITEM+"|"+item.contenedor+"|"+item.ubicacion.tipoEquipo}" style="margin-top:5px;" class="btn btn-primary mt-2">Mostrar ruta</button><br>
+            <span class="text-white fs-6 lh-base" id="infoRuta_${KEYITEM+"|"+item.contenedor+"|"+item.ubicacion.tipoEquipo}" style="font-size:14px; color:#333;"></span>
             </div>
           `;
               }
@@ -677,14 +775,15 @@ contentC = `
                const infoWindow = new google.maps.InfoWindow({
             content: contentC 
           });
-          //infoWindow.open(map, newMarker);
-          newMarker.addListener('click', () => {
-          infoWindow.open(map, newMarker);
-        });
+          
            // markers.push(newMarker);
           
         
            newMarker.addListener('click', () => {
+ infoWindow.open(map, newMarker);
+
+
+
             const contenedorRes = item.contenedor;
              let info = contenedoresDisponibles.find(d => d.contenedor === contenedorRes);
                 if (!info) {
@@ -731,15 +830,75 @@ contentC = `
 
             //  document.getElementById('contenidoModalViaje').innerHTML = contenido;
 
-              // Mostrar el modal con Bootstrap 5
+              
+              let infoCMaps=[]; 
               if(t==='Convoy'){
 
                 let contenedoresConvoy = detalleConvoys.filter(d => d.conboy_id === parseInt(id));
+                infoCMaps=contenedoresConvoy;
                    mostrarInfoConvoy(contenedoresConvoy,item.EquipoBD,"");
               }else{
                 let resultadoComoArray = info ? [info] : [];
+                infoCMaps=resultadoComoArray;
                mostrarInfoConvoy(resultadoComoArray,item.EquipoBD,"");
               }
+              
+//rutas para ver 
+   
+
+          google.maps.event.addListenerOnce(infoWindow, 'domready', () => {
+        const btn = document.getElementById(`btnRuta_${KEYITEM+"|"+item.contenedor+"|"+item.ubicacion.tipoEquipo}`);
+            const infoSpan = document.getElementById(`infoRuta_${KEYITEM+"|"+item.contenedor+"|"+item.ubicacion.tipoEquipo}`);
+        btn.addEventListener('click', () => {
+
+            directionsRenderer.forEach(renderer => {
+                renderer.setMap(renderer.getMap() ? null : map);
+            });
+
+            const position = newMarker.getPosition(); 
+                const origin = {
+                    lat: position.lat(), 
+                    lng: position.lng()
+                };
+
+
+            let latLlegada = parseInt(info.latitud);
+            let lngLlegada = parseInt(info.longitud);
+            // Si ya existe la ruta, la ocultamos
+            if (directionsRenderer[`${KEYITEM+"|"+item.contenedor+"|"+item.ubicacion.tipoEquipo}`]) {
+                directionsRenderer[`${KEYITEM+"|"+item.contenedor+"|"+item.ubicacion.tipoEquipo}`].setMap(directionsRenderer[`${KEYITEM+"|"+item.contenedor+"|"+item.ubicacion.tipoEquipo}`].getMap() ? null : map);
+                btn.textContent = directionsRenderer[`${KEYITEM+"|"+item.contenedor+"|"+item.ubicacion.tipoEquipo}`].getMap() ? 'Ocultar ruta' : 'Mostrar ruta';
+                return;
+            }
+
+            // Creamos el DirectionsRenderer
+            directionsRenderer[`${KEYITEM+"|"+item.contenedor+"|"+item.ubicacion.tipoEquipo}`] = new google.maps.DirectionsRenderer({ map: map });
+            
+            const request = {
+                origin: origin,
+                destination: { lat: latLlegada, lng: lngLlegada },
+                travelMode: google.maps.TravelMode.DRIVING
+            };
+            
+            directionsService.route(request, (result, status) => {
+                if (status === 'OK') {
+                    directionsRenderer[`${KEYITEM+"|"+item.contenedor+"|"+item.ubicacion.tipoEquipo}`].setDirections(result);
+                    btn.textContent = 'Ocultar ruta';
+
+                     const leg = result.routes[0].legs[0];
+                        infoSpan.textContent = `Distancia: ${leg.distance.text}, Tiempo estimado: ${leg.duration.text}`;
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'No se ha configurado direccion del mapa en cotizaciones'
+                    });
+                }
+            });
+        });
+    });
+
+//final de rutas en el mapa
 
              
             });
@@ -750,12 +909,17 @@ contentC = `
         //   map.setCenter({ lat: latlocal, lng: lnglocal });
         // map.setZoom(15);
         // }  
-        markers[KEYITEM+"|"+item.contenedor] = newMarker;
+        markers[KEYITEM+"|"+item.contenedor+"|"+item.ubicacion.tipoEquipo] = newMarker;
           if (!mapaAjustado) {
               const bounds = new google.maps.LatLngBounds();
                Object.values(markers).forEach(marker => bounds.extend(marker.getPosition()));
               map.fitBounds(bounds);
               mapaAjustado= true;
+
+
+              const listener = google.maps.event.addListenerOnce(map, "bounds_changed", function() {
+                        if (map.getZoom() > 10) map.setZoom(10); 
+                    });
 
           }
         }
@@ -894,6 +1058,8 @@ function mostrarInfoConvoy(contenedores,equipo,chasis) {
       }
        // <p><strong>Contenedor:</strong> ${info.contenedor}</p>
 if(info){
+let filtroEqu= equiposSearch.find(equipo => equipo.id === info.id_equipo_unico);
+    
      let infoContenido = `  
                   <div class="tab-pane fade ${index === 0 ? "show active" : ""}" 
            id="${tabId}" 
@@ -907,11 +1073,14 @@ if(info){
                     <p><strong>Contrato:</strong> ${info.tipo_contrato}</p>
                     <p><strong>Fecha Inicio:</strong> ${info.fecha_inicio}</p>
                     <p><strong>Fecha Fin:</strong> ${info.fecha_fin}</p>
+                    <p><strong>Operador:</strong> ${info.beneficiario}</p>
+                    <p><strong>Telefono:</strong> ${info.telefono_beneficiario}</p>
                     <p>
                         <span style="margin-right: 15px;">
                             <strong>IMEI:</strong> ${info.imei}
                         </span>
                         <strong>Equipo:</strong> ${info.id_equipo}
+                        <strong>Placas:</strong> ${filtroEqu.placas}
                     </p>
                     <p>
                         <span style="margin-right: 15px;">
@@ -1195,7 +1364,7 @@ let datap = {
         })
         .then(async res => {
             if (!res.ok) {
-                // Intentamos extraer el mensaje del error (por si Laravel lo devuelve)
+                
                 const errorText = await res.text();
                 throw new Error(errorText || 'Error desconocido del servidor');
             }

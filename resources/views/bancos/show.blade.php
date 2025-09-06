@@ -30,9 +30,9 @@
     <div class="container-fluid my-5 py-2">
 
         <!--div class="row">
-                            <div class="col-12">
-                                
-                            </div-->
+                                            <div class="col-12">
+                                                
+                                            </div-->
 
         <div class="col-12 card">
             <div class=" card-header m-2 ">
@@ -133,16 +133,34 @@
                             @endcan
 
                             <div class="col-md-4 text-end">
-                                <div class="d-flex align-items-center justify-content-end">
-                                    <label class="form-check-label text-primary me-2 mb-0"
-                                        for="switch-cuenta-global-central" style="font-weight: bold;">Cuenta Global</label>
-                                    <div class="form-check form-switch m-0">
-                                        <input class="form-check-input switch-cuenta-global" type="checkbox"
-                                            id="switch-cuenta-global-central" data-id="{{ $banco->id }}"
-                                            @if ($banco->cuenta_global) checked @endif>
+                                <div class="d-flex align-items-center justify-content-end gap-4">
+                                    {{-- Switch: Cuenta Global --}}
+                                    <div class="d-flex align-items-center">
+                                        <label class="form-check-label text-primary me-2 mb-0"
+                                            for="switch-cuenta-global-central" style="font-weight: bold;">Cuenta
+                                            Global</label>
+                                        <div class="form-check form-switch m-0">
+                                            <input class="form-check-input switch-cuenta-global" type="checkbox"
+                                                id="switch-cuenta-global-central" data-id="{{ $banco->id }}"
+                                                @if ($banco->cuenta_global) checked @endif>
+                                        </div>
                                     </div>
+
+                                    {{-- Switch: Banco 1 (solo si es empresa propia) --}}
+                                    @if (!empty($empresaPropiaUsuario) && $empresaPropiaUsuario === true)
+                                        <div class="d-flex align-items-center">
+                                            <label class="form-check-label text-primary me-2 mb-0"
+                                                for="switch-banco-1-central" style="font-weight: bold;">Banco 1</label>
+                                            <div class="form-check form-switch m-0">
+                                                <input class="form-check-input switch-banco-1" type="checkbox"
+                                                    id="switch-banco-1-central" data-id="{{ $banco->id }}"
+                                                    @if ($banco->banco_1) checked @endif>
+                                            </div>
+                                        </div>
+                                    @endif
                                 </div>
                             </div>
+
                         </div>
 
                         <div class="col-md-12 row">
@@ -177,13 +195,13 @@
                             </div>
                         </div>
                         <!--div class="col-lg-3 col-md-7 text-md-end text-start mt-5">
-                                            <h6 class="d-block mt-2 mb-0">Saldo inicial:</h6>
-                                            <h6 class="text-secondary" id="saldo-inicial">${{ number_format($saldoInicial, 2, '.', ',') }} </h6>
-                                        </div>
-                                        <div class="col-lg-3 col-md-7 text-md-end text-start mt-5">
-                                            <h6 class="d-block mt-2 mb-0">Total en Banco:</h6>
-                                            <h6 class="text-secondary">${{ number_format($saldoFinal, 2, '.', ',') }} </h6>
-                                        </div-->
+                                                            <h6 class="d-block mt-2 mb-0">Saldo inicial:</h6>
+                                                            <h6 class="text-secondary" id="saldo-inicial">${{ number_format($saldoInicial, 2, '.', ',') }} </h6>
+                                                        </div>
+                                                        <div class="col-lg-3 col-md-7 text-md-end text-start mt-5">
+                                                            <h6 class="d-block mt-2 mb-0">Total en Banco:</h6>
+                                                            <h6 class="text-secondary">${{ number_format($saldoFinal, 2, '.', ',') }} </h6>
+                                                        </div-->
                     </div>
                     <br>
                     <div class="row justify-content-md-between">
@@ -191,23 +209,23 @@
 
                         </div>
                         <!--iv class="col-lg-5 col-md-7 mt-auto">
-                                      <div class="row mt-md-5 mt-4 text-md-end text-start">
-                                        <div class="col-md-6">
-                                          <h6 class="text-secondary mb-0">Inicio de Semana:</h6>
-                                        </div>
-                                        <div class="col-md-6">
-                                          <h6 class="text-dark mb-0">{{ \Carbon\Carbon::parse($startOfWeek)->translatedFormat('j \d\e F') }}</h6>
-                                        </div>
-                                      </div>
-                                      <div class="row text-md-end text-start">
-                                        <div class="col-md-6">
-                                          <h6 class="text-secondary mb-0">Dia actual:</h6>
-                                        </div>
-                                        <div class="col-md-6">
-                                          <h6 class="text-dark mb-0">{{ \Carbon\Carbon::parse($startOfWeek)->format('Y-m-d') }} AL {{ \Carbon\Carbon::parse($fecha)->format('Y-m-d') }}</h6>
-                                        </div>
-                                      </div>
-                                    </div-->
+                                                      <div class="row mt-md-5 mt-4 text-md-end text-start">
+                                                        <div class="col-md-6">
+                                                          <h6 class="text-secondary mb-0">Inicio de Semana:</h6>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                          <h6 class="text-dark mb-0">{{ \Carbon\Carbon::parse($startOfWeek)->translatedFormat('j \d\e F') }}</h6>
+                                                        </div>
+                                                      </div>
+                                                      <div class="row text-md-end text-start">
+                                                        <div class="col-md-6">
+                                                          <h6 class="text-secondary mb-0">Dia actual:</h6>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                          <h6 class="text-dark mb-0">{{ \Carbon\Carbon::parse($startOfWeek)->format('Y-m-d') }} AL {{ \Carbon\Carbon::parse($fecha)->format('Y-m-d') }}</h6>
+                                                        </div>
+                                                      </div>
+                                                    </div-->
                     </div>
                 </div>
                 <div class="card-body">
@@ -238,15 +256,14 @@
                                                                     <b
                                                                         style="color: #c22237">{{ $item->Cliente->nombre }}</b>
                                                                 </a>
-                                                            @elseif(isset($item->Cliente) || isset( $item->descripcion))
+                                                            @elseif(isset($item->Cliente) || isset($item->descripcion))
                                                                 {{-- Provisional --}}
                                                                 @if ($item->tipo == 'Salida')
                                                                     <a data-bs-toggle="collapse"
                                                                         href="#pagesEntrada{{ $item->id }}"
                                                                         aria-controls="pagesEntrada" role="button"
                                                                         aria-expanded="false">
-                                                                        Varios <br> <b
-                                                                            style="color: #22c2ba">
+                                                                        Varios <br> <b style="color: #22c2ba">
                                                                             {{ optional($item->Cliente2)->nombre }}
                                                                             {{ optional($item)->descripcion }}
                                                                         </b>
@@ -299,7 +316,7 @@
                                                                         </div>
                                                                     @endif
                                                                 @endif
-                                                            @elseif(isset($item->Proveedor) )
+                                                            @elseif(isset($item->Proveedor))
                                                                 <a data-bs-toggle="collapse"
                                                                     href="#pagesEntrada{{ $item->id }}"
                                                                     aria-controls="pagesEntrada" role="button"
@@ -637,6 +654,66 @@
                         } else {
                             // Si el usuario cancela, revertimos el estado del switch
                             this.checked = !checked;
+                        }
+                    });
+                });
+            }
+        });
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const switchBanco1 = document.getElementById('switch-banco-1-central');
+            if (switchBanco1) {
+                switchBanco1.addEventListener('change', function(e) {
+                    e.preventDefault();
+
+                    const bancoId = this.dataset.id;
+                    const checked = this.checked;
+
+                    Swal.fire({
+                        title: checked ? '¿Activar como Banco 1?' : '¿Desactivar Banco 1?',
+                        text: checked ?
+                            'Este banco será marcado como Banco 1. Solo puede haber uno por empresa.' :
+                            'Este banco dejará de ser Banco 1.',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#3085d6',
+                        cancelButtonColor: '#d33',
+                        confirmButtonText: 'Sí, confirmar',
+                        cancelButtonText: 'Cancelar'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            fetch(`/bancos/cambiar-banco1/${bancoId}`, {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'X-CSRF-TOKEN': document.querySelector(
+                                            'meta[name="csrf-token"]').getAttribute(
+                                            'content')
+                                    },
+                                    body: JSON.stringify({
+                                        value: checked
+                                    })
+                                })
+                                .then(response => response.json())
+                                .then(data => {
+                                    if (data.success) {
+                                        Swal.fire('Éxito', data.message, 'success').then(() => {
+                                            location.reload();
+                                        });
+                                    } else {
+                                        Swal.fire('Error', data.message ||
+                                            'No se pudo actualizar Banco 1.', 'error');
+                                        switchBanco1.checked = !checked; // revertir
+                                    }
+                                })
+                                .catch(() => {
+                                    Swal.fire('Error', 'Error de red o servidor.', 'error');
+                                    switchBanco1.checked = !checked; // revertir
+                                });
+                        } else {
+                            switchBanco1.checked = !checked; // revertir si cancela
                         }
                     });
                 });

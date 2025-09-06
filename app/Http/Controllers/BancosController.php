@@ -14,6 +14,7 @@ use Session;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use DB;
+use App\Models\Empresas;
 
 class BancosController extends Controller
 {
@@ -221,7 +222,8 @@ class BancosController extends Controller
         })
         ->whereBetween('fecha_pago', [$startOfWeek, $endOfWeek])
         ->get();
-
+$empresaPropiaUsuario = Empresas::where('id', auth()->user()->id_empresa)
+    ->value('empresa_propia') == 1;
         $banco_dinero_salida_ope_varios = BancoDineroOpe::whereIn('tipo', ['Entrada','Salida'])
         ->where('id_cotizacion', '=', NULL)
         ->where(function($query) use ($id) {
@@ -291,7 +293,7 @@ class BancosController extends Controller
         });
         
 
-        return view('bancos.show', compact('combined', 'startOfWeek', 'fecha', 'banco', 'cotizaciones', 'proveedores', 'banco_dinero_entrada', 'banco_dinero_salida', 'banco_dinero_salida_ope', 'banco_dinero_salida_ope_varios', 'gastos_generales', 'saldoInicial','saldoFinal'));
+        return view('bancos.show', compact('combined','empresaPropiaUsuario' , 'startOfWeek', 'fecha', 'banco', 'cotizaciones', 'proveedores', 'banco_dinero_entrada', 'banco_dinero_salida', 'banco_dinero_salida_ope', 'banco_dinero_salida_ope_varios', 'gastos_generales', 'saldoInicial','saldoFinal'));
     }
 
     public function advance_bancos(Request $request, $id){
@@ -397,7 +399,8 @@ class BancosController extends Controller
         })->sum()+ $movimientosBancarios->where('tipo_movimiento',1)->sum('monto');;
 
         $saldoFinal = $saldoInicial + $totalEntradas - $totalSalidas;
-
+$empresaPropiaUsuario = Empresas::where('id', auth()->user()->id_empresa)
+    ->value('empresa_propia') == 1;
         $combined = collect()
         ->merge($cotizaciones)
         ->merge($banco_dinero_entrada)
@@ -418,7 +421,7 @@ class BancosController extends Controller
             return null;
         });
 
-        return view('bancos.show', compact('combined', 'startOfWeek', 'endOfWeek', 'fecha', 'banco', 'cotizaciones', 'proveedores', 'banco_dinero_entrada', 'banco_dinero_salida', 'banco_dinero_salida_ope', 'banco_dinero_salida_ope_varios', 'gastos_generales', 'saldoInicial','saldoFinal'));
+        return view('bancos.show', compact('combined','empresaPropiaUsuario' , 'startOfWeek', 'endOfWeek', 'fecha', 'banco', 'cotizaciones', 'proveedores', 'banco_dinero_entrada', 'banco_dinero_salida', 'banco_dinero_salida_ope', 'banco_dinero_salida_ope_varios', 'gastos_generales', 'saldoInicial','saldoFinal'));
     }
 
     public function update(Request $request, Bancos $id)
@@ -612,5 +615,59 @@ class BancosController extends Controller
         return response()->json(['success' => true, 'message' => 'Cuenta global activada correctamente.']);
     }
 }
+
+
+public function cambiarBanco1(Request $request, $id)
+{
+    $banco = Bancos::findOrFail($id);
+
+    // Seguridad: solo bancos de la empresa del usuario
+    if ((int)$banco->id_empresa !== (int)auth()->user()->id_empresa) {
+        return response()->json([
+            'success' => false,
+            'message' => 'No tienes permisos sobre este banco.'
+        ], 403);
+    }
+
+    // Verificar si la empresa del usuario es propia
+    $empresaPropia = (bool) \App\Models\Empresas::where('id', auth()->user()->id_empresa)
+                        ->value('empresa_propia');
+
+    if (!$empresaPropia) {
+        return response()->json([
+            'success' => false,
+            'message' => 'La empresa no está marcada como propia.'
+        ], 422);
+    }
+
+    // Valor enviado (true o false)
+    $activar = (bool) $request->input('value', false);
+
+    if ($activar) {
+        // Desactivar todos los demás bancos de esta empresa
+        Bancos::where('id_empresa', $banco->id_empresa)
+              ->where('id', '!=', $banco->id)
+              ->update(['banco_1' => false]);
+
+        // Activar este banco
+        $banco->banco_1 = true;
+        $banco->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Banco activado como Banco 1.'
+        ]);
+    } else {
+        // Solo desactivar este banco
+        $banco->banco_1 = false;
+        $banco->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Banco desactivado como Banco 1.'
+        ]);
+    }
+}
+
 
 }

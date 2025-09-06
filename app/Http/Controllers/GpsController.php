@@ -31,11 +31,12 @@ class GpsController extends Controller
             foreach ($datos as $dato) {
                 if (!empty($dato)) {
                        $esDatoEmp="NO";
+                      
                     [ $contenedor ,$imei,$id_contenendor,$tipoGps] = explode('|', $dato);
-
+// dd($imei);
                  $RfcyEquipo = $this->buscartipoProveedor($contenedor,$id_contenendor,$imei);
                
-                 [$Rfc,$equipo,$empresaIdRastro]= explode('|', $RfcyEquipo);
+                 [$Rfc,$equipo,$empresaIdRastro,$TipoEquipo]= explode('|', $RfcyEquipo);
 
                 // dd($RfcyEquipo);
 
@@ -63,7 +64,8 @@ class GpsController extends Controller
                                 'deviceName'  => '',
                                 'mcType'      => '',
                                 'datac' =>  $data,
-                                'esDatoEmp' => $esDatoEmp
+                                'esDatoEmp' => $esDatoEmp,
+                                'tipoEquipo' => $TipoEquipo
                             ];
 
                             break;
@@ -85,7 +87,8 @@ class GpsController extends Controller
                                 'deviceName'  => ubicacionApiResponse['economico'] ?? null,
                                 'mcType'      => '',
                                 'datac' =>  $ubicacion,
-                                'esDatoEmp' => $esDatoEmp
+                                'esDatoEmp' => $esDatoEmp,
+                                'tipoEquipo' => $TipoEquipo 
                             ];
                             break;
 
@@ -112,8 +115,8 @@ class GpsController extends Controller
                                 'deviceName'      => $ubicacionApi['deviceName'] ?? null,
                                 'mcType'      => $ubicacionApi['mcType'] ?? null,
                                 'datac' =>  $data,
-                                'esDatoEmp' => $esDatoEmp
-                                
+                                'esDatoEmp' => $esDatoEmp,
+                                'tipoEquipo' => $TipoEquipo
                             ];
                            
                            $tipoGpsresponse="jimi";
@@ -132,8 +135,8 @@ class GpsController extends Controller
                                 'deviceName'      => $ubicacionApi['unidad'] ?? null,
                                 'mcType'      => "",
                                 'datac' =>  $data,
-                                'esDatoEmp' => $esDatoEmp
-                                
+                                'esDatoEmp' => $esDatoEmp,
+                                'tipoEquipo' => $TipoEquipo
                             ]; 
                              $tipoGpsresponse="LegoGps";
                         break;
@@ -147,7 +150,9 @@ class GpsController extends Controller
                                     'lat' => 0,
                                     'lng' => 0,
                                     'fecha' => null,
-                                     'datac' =>  null
+                                     'datac' =>  null,
+                                     'tipoEquipo' => null,
+                                     'esDatoEmp' => null
                              ];
                              break;
                     }
@@ -201,6 +206,7 @@ class GpsController extends Controller
 
          $existeContenedor = DB::table('docum_cotizacion')->where('docum_cotizacion.num_contenedor','=',$num_Contenendor)->exists();
         $Equipo = "";
+        $TipoEquipo = "";
         if ($existeContenedor){
             //dd($existeContenedor);
             $asignaciones = DB::table('asignaciones')
@@ -277,13 +283,15 @@ class GpsController extends Controller
             ->first();
 
 
-            if($imei=== $datosAll->imei){
+            if($imei=== $datosAll?->imei){
                 //corresponde al equipo del contendor
                 $Equipo = $datosAll?->id_equipo;
+                $TipoEquipo = 'Camion';
             }
-            else if($imei === $datosAll->imei_chasis){
+            else if($imei === $datosAll?->imei_chasis){
                 //corresponde al equipo del chasis
                 $Equipo = $datosAll?->id_equipo_chasis;
+                $TipoEquipo = 'Chasis';
             }
             
 
@@ -321,14 +329,10 @@ class GpsController extends Controller
             }
 
 
-                return   $RFCContenedor . '|'. $Equipo . '|'.  $empresaIdRastreo ;
+                return   $RFCContenedor . '|'. $Equipo . '|'.  $empresaIdRastreo .'|'. $TipoEquipo;
 
             
          }
-         else {
-
-            
-         }
-
+         
     }
 }

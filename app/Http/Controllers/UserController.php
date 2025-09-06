@@ -21,13 +21,34 @@ class UserController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function index(Request $request)
-    {
+{
+    // Si viene la petición con ?json=1 (desde AG Grid)
+    if ($request->has('json')) {
+        $users = User::with(['Empresa'])
+            ->where('id_empresa', auth()->user()->Empresa->id)
+            ->orderBy('id', 'DESC')
+            ->get();
 
-        $data = User::where('id_empresa','=',auth()->user()->Empresa->id)->orderBy('id','DESC')->paginate(10);
-
-        return view('users.index',compact('data',))
-            ->with('i', ($request->input('page', 1) - 1) * 10);
+        return response()->json($users->map(function ($user) {
+            return [
+                'id'      => $user->id,
+                'name'    => $user->name,
+                'email'   => $user->email,
+                'empresa' => ['nombre' => optional($user->Empresa)->nombre],
+                'roles'   => $user->getRoleNames()
+            ];
+        }));
     }
+
+    // Si NO viene ?json, entonces renderiza la vista como siempre
+    $data = User::where('id_empresa', auth()->user()->Empresa->id)
+        ->orderBy('id', 'DESC')
+        ->paginate(10);
+
+    return view('users.index', compact('data'))
+        ->with('i', ($request->input('page', 1) - 1) * 10);
+}
+
 
     public function index_externos(){
         $clientes = Client::where('id_empresa' ,'=',auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
@@ -40,18 +61,19 @@ class UserController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function create()
-    {
-        $roles = Role::pluck('name','name')->all();
+   public function create()
+{
+    $roles = Role::pluck('name', 'name')->all();
 
+    // Lista de todas las empresas para el selector manual
+    $listaEmpresas = Empresas::orderBy('nombre')->get();
 
-        $empresas = Empresas::where('id','=',auth()->user()->Empresa->id)->orderBy('id','DESC')->get();
+    $clientes = Client::where('id_empresa', auth()->user()->id_empresa)
+                    ->orderBy('created_at', 'desc')
+                    ->get();
 
-        $empresas_base = Empresas::orderBy('id','DESC')->get();
-        $clientes = Client::where('id_empresa' ,'=',auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
-
-        return view('users.create',compact('roles','empresas','empresas_base','clientes'));
-    }
+    return view('users.create', compact('roles', 'listaEmpresas', 'clientes'));
+}
 
     /**
      * Store a newly created resource in storage.
@@ -60,28 +82,37 @@ class UserController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function store(Request $request)
-    {
-        $this->validate($request, [
-            'name' => 'required',
-            'email' => 'required|email|unique:users,email',
-            'password' => 'required|same:confirm-password',
-            'roles' => 'required'
-        ]);
+{
+    $this->validate($request, [
+        'name' => 'required',
+        'email' => 'required|email|unique:users,email',
+        'password' => 'required|same:confirm-password',
+        'roles' => 'required|array',
+        'id_empresa' => 'required|exists:empresas,id',
+        'id_cliente' => 'nullable|integer|min:0',
+    ]);
 
-        $input = $request->all();
-        $input['password'] = Hash::make($input['password']);
+    $input = $request->only(['name', 'email', 'password', 'id_empresa', 'id_cliente']);
+    $input['password'] = Hash::make($input['password']);
 
-        $user = User::create($input);
-        $user->assignRole($request->input('roles'));
+    $roles = $request->input('roles');
 
-        if($request->has('uuid')){
-            return response()->json(["TMensaje" => "success", "Mensaje" => "Usuario creado correctamente"]);
-        }
-
-        Session::flash('success', 'Se ha guardado sus datos con exito');
-        return redirect()->route('users.index')
-                        ->with('success','User created successfully');
+    // Si no es cliente, se borra el id_cliente
+    if (!in_array('CLIENTE', $roles)) {
+        $input['id_cliente'] = 0;
     }
+
+    $user = User::create($input);
+    $user->assignRole($roles);
+
+    if ($request->has('uuid')) {
+        return response()->json(["TMensaje" => "success", "Mensaje" => "Usuario creado correctamente"]);
+    }
+
+    Session::flash('success', 'Se ha guardado sus datos con éxito');
+    return redirect()->route('users.index')
+                    ->with('success', 'Usuario creado con éxito');
+}
 
     /**
      * Display the specified resource.
