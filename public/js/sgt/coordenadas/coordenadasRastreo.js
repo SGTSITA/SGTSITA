@@ -719,7 +719,7 @@ contentC = `
               <div class="text-white fs-6 lh-base" style="font-size: 17px; line-height: 1.5;">
                 <div><strong >Equipo:</strong> ${filtroEqu.id_equipo}</div>
                 <div><strong >Marca:</strong> ${filtroEqu.marca}</div>
-                <div><strong >Placas:</strong> ${filtroEqu.placas}</div>
+                <div><strong >Placas:</strong> ${filtroEqu.placas || 'sin placas'}</div>
 
               </div>
            

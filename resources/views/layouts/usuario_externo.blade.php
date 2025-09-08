@@ -131,6 +131,8 @@
                                     </div>
                                 </div>
                             </div>
+
+                            @can('Coordenadas MEC')
                             <!--coordenadas -->
                             <div data-kt-menu-trigger="click" class="menu-item menu-accordion">
                                 <span class="menu-link">
@@ -141,6 +143,7 @@
                                     <span class="menu-arrow"></span>
                                 </span>
                                 <div class="menu-sub menu-sub-accordion">
+                                    @can('Coordenadas MEC-P-verificacion')
                                     <div class="menu-item">
                                         <a href="{{ route('ver.extcoordenadamapa') }}" class="menu-link">
                                             <span class="menu-bullet">
@@ -149,6 +152,8 @@
                                             <span class="menu-title">Punto de verificación</span>
                                         </a>
                                     </div>
+                                    @endcan
+                                    @can('Coordenadas MEC-Bitacora-verificacion')
                                     <div class="menu-item">
                                         <a href="{{ route('seach.extcoordenadas') }}" class="menu-link">
                                             <span class="menu-bullet">
@@ -157,6 +162,8 @@
                                             <span class="menu-title">Bitácora de Verificación</span>
                                         </a>
                                     </div>
+                                    @endcan
+                                    @can('Coordenadas MEC-B-busqueda Cuestionarios')
                                     <div class="menu-item">
                                         <a href="{{ route('extcompartircoor') }}" class="menu-link">
                                             <span class="menu-bullet">
@@ -165,27 +172,30 @@
                                             <span class="menu-title">Compartir Cuestionarios</span>
                                         </a>
                                     </div>
+                                    @endcan
+                                    @can('Coordenadas MEC-Rastrear')
                                     <div class="menu-item">
                                         <a href="{{ route('exrastrearContenedor') }}" class="menu-link">
                                             <span class="menu-bullet">
                                             <span class="bullet bullet-dot"></span>
                                             </span>
-                                            <span class="menu-title">Rastrear Viajes</span>
+                                            <span class="menu-title">Rastrear</span>
                                         </a>
                                         </div>
-                                        <div class="menu-item">
+                                    @endcan
+                                  {{--       <div class="menu-item">
                                         <a href="{{ route('exindex.conboys') }}" class="menu-link">
                                             <span class="menu-bullet">
                                             <span class="bullet bullet-dot"></span>
                                             </span>
                                             <span class="menu-title">Convoys Virtuales</span>
                                         </a>
-                                        </div>
+                                        </div> --}}
                                       
                                 </div>
                             </div>
                                  <!--END coordenadas -->
-                           
+                           @endcan
                             <!-- contactos -->
                             <div data-kt-menu-trigger="click" class="menu-item menu-accordion">
                                 <span class="menu-link">

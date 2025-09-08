@@ -715,6 +715,7 @@ $idCordenada= $coordenadas->id_coordenadas;
             'cotizaciones.id as id_cotizacion',
             'asig.id as id_asignacion',
             'coordenadas.id as id_coordenada',
+            'clients.id as id_cliente',
             'clients.nombre as cliente',
             'cotizaciones.origen',
             'cotizaciones.destino',
@@ -758,14 +759,21 @@ $idCordenada= $coordenadas->id_coordenadas;
         } else {
             return $query->where('asig.num_contenedor', $contenedores[0]);
         }
-    })->when($idCliente !== 0, function ($query) use ($idCliente) {
-    return $query->where('cotizaciones.id_cliente', $idCliente);
-    })   
-    ->where('cotizaciones.estatus', '=', 'Aprobada')
+    })->where('cotizaciones.estatus', '=', 'Aprobada')
     
     ->get();
-    $datos = $datosAll ->where('id_empresa', $idEmpresa)->values();
- 
+    //dd($datosAll);
+    $datos= null;
+    if (!is_null($idEmpresa)) {
+        $datos = $datosAll->where('id_empresa', $idEmpresa);
+    }
+
+    if (!is_null($idCliente) && $idCliente !== 0) {
+        $datos = $datos->where('id_cliente', $idCliente);
+    }
+
+    $datos = $datos->values();
+   // dd($datos);
 
     $conboys = DB::table('conboys')
     ->join('conboys_contenedores', 'conboys.id', '=', 'conboys_contenedores.conboy_id')
@@ -822,6 +830,7 @@ $idCordenada= $coordenadas->id_coordenadas;
             return $query->where('cotizaciones.id_cliente', $idCliente);
         })   ->where('conboys.estatus', '=', 'Activo')  
         ->get();
+
 
         $conboysdetalle=$conboysdetalleAll;// ->where('id_empresa', $idEmpresa)->values();
 
