@@ -117,18 +117,37 @@ input:not(:checked) + .slider #ubicacion-texto {
 
     {{-- Tabs --}}
     <ul class="nav nav-tabs" id="rastreoTabs" role="tablist">
-        <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="tab-rastreo" data-bs-toggle="tab" data-bs-target="#rastreo" type="button" role="tab">Rastreo en Vivo</button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="tab-convoys" data-bs-toggle="tab" data-bs-target="#convoys" type="button" role="tab">Gestión de Convoys</button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="tab-historial" data-bs-toggle="tab" data-bs-target="#historial" type="button" role="tab">Historial / Reportes</button>
-        </li>
-         <li class="nav-item" role="presentation">
-            <button class="nav-link" id="tab-config" data-bs-toggle="tab" data-bs-target="#config" type="button" role="tab">Configuraciones</button>
-        </li>
+       @can('Coordenadas-Rastreo-vivo')
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="tab-rastreo" data-bs-toggle="tab" data-bs-target="#rastreo" type="button" role="tab">
+            Rastreo en Vivo
+        </button>
+    </li>
+    @endcan
+
+    @can('Coordenadas-Gest-Convoys')
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tab-convoys" data-bs-toggle="tab" data-bs-target="#convoys" type="button" role="tab">
+            Gestión de Convoys
+        </button>
+    </li>
+    @endcan
+
+    @can('Coordenadas-Historial-Reportes')
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tab-historial" data-bs-toggle="tab" data-bs-target="#historial" type="button" role="tab">
+            Historial / Reportes
+        </button>
+    </li>
+    @endcan
+
+    @can('Coordenadas-Configurar-interval')
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tab-config" data-bs-toggle="tab" data-bs-target="#config" type="button" role="tab">
+            Configuraciones
+        </button>
+    </li>
+    @endcan
     </ul>
 
     <div class="tab-content p-3 border border-top-0" id="rastreoTabsContent">
