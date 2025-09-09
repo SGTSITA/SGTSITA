@@ -174,29 +174,33 @@
 
     <script>
         function toggleClienteField() {
-            const selectedRole = document.querySelector('input[name="roles[]"]:checked')?.value;
+            const selected = document.querySelector('input[name="roles[]"]:checked');
             const clienteGroup = document.getElementById('clienteGroup');
             const clienteSelect = document.getElementById('id_cliente');
 
-            if (selectedRole === 'CLIENTE') {
+            //  si el rol seleccionado tiene texto "CLIENTE"
+            const selectedValue = selected?.value;
+
+            if (selectedValue === "CLIENTE") {
                 clienteGroup.style.display = 'block';
             } else {
                 clienteGroup.style.display = 'none';
-                clienteSelect.value = '0';
+                if (clienteSelect) clienteSelect.value = '0';
             }
         }
 
-
         document.addEventListener('DOMContentLoaded', function() {
+            //  definir radios correctamente
+            const radios = document.querySelectorAll('input[name="roles[]"]');
+
             toggleClienteField();
-            const selectedRole = document.querySelector('input[name="roles[]"]:checked')?.value;
 
             radios.forEach(radio => {
                 radio.addEventListener('change', toggleClienteField);
             });
 
             document.getElementById('formCrearUsuario').addEventListener('submit', function(e) {
-                const selectedRole = document.querySelector('input[name="roles"]:checked')?.value;
+                const selectedRole = document.querySelector('input[name="roles[]"]:checked')?.value;
                 const clienteSelect = document.getElementById('id_cliente');
 
                 if (!selectedRole) {
@@ -210,7 +214,9 @@
                     return;
                 }
 
-                if (selectedRole === 'CLIENTE' && clienteSelect.value === '0') {
+                const selectedLabel = document.querySelector('input[name="roles[]"]:checked')?.parentElement
+                    ?.innerText?.trim().toUpperCase();
+                if (selectedLabel?.includes("CLIENTE") && clienteSelect?.value === "0") {
                     e.preventDefault();
                     Swal.fire({
                         icon: 'warning',
