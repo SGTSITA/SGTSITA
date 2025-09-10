@@ -47,11 +47,10 @@ class GastosContenedoresController extends Controller
             'Descripcion' => $g->tipo,
             'NumContenedor' => $contenedor.$contenedorB ?? '-',
             'Monto' => $g->cantidad ?? 0,
-          
             'FechaGasto' => Carbon::parse($g->created_at)->format('Y-m-d'),
             'FechaPago' => $g->fecha_pago,
-             'fecha_inicio' => optional($asignacion)->fecha_inicio,
-'fecha_fin' => optional($asignacion)->fecha_fin,
+            'fecha_inicio' => optional($asignacion)->fecha_inicio,
+            'fecha_fin' => optional($asignacion)->fecha_fin,
         ];
     });
 
@@ -69,9 +68,7 @@ class GastosContenedoresController extends Controller
                 $numContenedor = ' / ' . $secundaria->DocCotizacion->num_contenedor;
                 return $numContenedor;
             }
-
         }
-                    
     }
 
     public function PagarGastosMultiple(Request $r){

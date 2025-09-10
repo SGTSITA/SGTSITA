@@ -31,7 +31,7 @@ class LiquidacionesController extends Controller
         ->where('asignaciones.id_empresa', '=',auth()->user()->id_empresa)
         ->where('asignaciones.id_proveedor', '=', NULL)
         ->where('asignaciones.estatus_pagado', '=', 'Pendiente Pago')
-        ->where('asignaciones.restante_pago_operador', '>', '0')
+        
         ->select('asignaciones.id_operador', DB::raw('COUNT(*) as total_cotizaciones'), DB::raw('SUM(sueldo_viaje) as sueldo_viaje'),DB::raw('SUM(dinero_viaje) as dinero_viaje'),DB::raw('SUM(restante_pago_operador) as total_pago'))
         ->groupBy('asignaciones.id_operador')
         ->get();
