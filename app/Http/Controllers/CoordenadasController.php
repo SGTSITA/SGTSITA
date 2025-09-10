@@ -735,6 +735,7 @@ $idCordenada= $coordenadas->id_coordenadas;
             'cotizaciones.id_empresa',
             'cotizaciones.latitud',
             'cotizaciones.longitud',
+            'cotizaciones.cp_contacto_entrega',
             'beneficiarios.nombre as beneficiario',
             'beneficiarios.telefono as telefono_beneficiario'
         )

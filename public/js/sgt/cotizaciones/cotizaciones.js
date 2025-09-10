@@ -410,6 +410,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
 });
+function crearurlmapalatitudlongitud(lat, lng) {
+    let url = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+    console.log(url);
+    return url;
+}
 
 
  var modal = document.getElementById('mapModal');
@@ -431,7 +436,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     position: { lat: parseFloat(lat), lng: parseFloat(lng) },
                     map: map
                 });
-
+                    crearurlmapalatitudlongitud(lat, lng);
                 document.getElementById('latitud').value = lat;
                 document.getElementById('longitud').value = lng;
 
