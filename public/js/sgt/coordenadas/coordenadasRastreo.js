@@ -1073,6 +1073,7 @@ let filtroEqu= equiposSearch.find(equipo => equipo.id === info.id_equipo_unico);
                     <p><strong>Contrato:</strong> ${info.tipo_contrato}</p>
                     <p><strong>Fecha Inicio:</strong> ${info.fecha_inicio}</p>
                     <p><strong>Fecha Fin:</strong> ${info.fecha_fin}</p>
+                    <p><strong>Contacto Entrega:</strong> ${info.cp_contacto_entrega}</p>
                     <p><strong>Operador:</strong> ${info.beneficiario}</p>
                     <p><strong>Telefono:</strong> ${info.telefono_beneficiario}</p>
                     <p>
@@ -1107,6 +1108,9 @@ let filtroEqu= equiposSearch.find(equipo => equipo.id === info.id_equipo_unico);
 
   const modal = new bootstrap.Modal(document.getElementById('modalInfoViaje'));
   modal.show();
+}
+function crearurlmapalatitudlongitud(lat, lng) {
+    return `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
 }
 
 // Función para limpiar marcadores
