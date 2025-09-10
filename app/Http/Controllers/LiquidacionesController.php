@@ -64,7 +64,7 @@ class LiquidacionesController extends Controller
     public function getViajesOperador(Request $r){
         $asignacion_operador = Asignaciones::where('id_empresa', '=',auth()->user()->id_empresa)
         ->where('estatus_pagado', '=', 'Pendiente Pago')
-        ->where('restante_pago_operador', '>', '0')
+        
         ->where('id_proveedor', '=', NULL)
         ->where('id_operador', '=', $r->operador)
         ->get();
