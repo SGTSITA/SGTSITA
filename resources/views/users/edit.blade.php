@@ -201,13 +201,14 @@
             const clienteSelect = document.getElementById('id_cliente');
 
             const selectedLabel = selected?.parentElement?.innerText?.trim().toUpperCase() || "";
-            if (selectedLabel === "CLIENTE") {
+            if (selectedLabel.includes("CLIENTE")) {
                 clienteGroup.style.display = 'block';
             } else {
                 clienteGroup.style.display = 'none';
                 if (clienteSelect) clienteSelect.value = '0';
             }
         }
+
 
         document.addEventListener('DOMContentLoaded', function() {
             const radios = document.querySelectorAll('input[name="roles[]"]');
