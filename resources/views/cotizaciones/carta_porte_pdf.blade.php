@@ -220,7 +220,7 @@
         <dt>Domicilio de entrega</dt>
         <dd>
           {{$cotizaciones->direccion_entrega}}.<br />
-          <span class="small">Mapa: <a href="https://maps.app.goo.gl/zEJYEAYbcV9fVGqy7">https://maps.app.goo.gl/zEJYEAYbcV9fVGqy7</a></span>
+          <span class="small">Mapa: <a href="#"></a></span>
         </dd>
         <dt>Contacto (entrega)</dt><dd>{{$cotizaciones->cp_contacto_entrega}}</dd>
         <dt>Fecha tentativa de entrega</dt><dd>{{$cotizaciones->cp_fecha_tentativa_entrega}}</dd>
