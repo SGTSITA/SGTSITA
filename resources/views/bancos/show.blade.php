@@ -367,18 +367,18 @@
                                                     <td class="ps-4 penultima-columna" colspan="2">
                                                         @if ($item->tipo == 'Entrada')
                                                             @if (isset($item->id_banco1) && $item->id_banco1 == $banco->id)
-                                                                $ {{ number_format($item->monto1, 0, '.', ',') }}
+                                                                $ {{ number_format($item->monto1, 2, '.', ',') }}
                                                             @else
-                                                                $ {{ number_format($item->monto2, 0, '.', ',') }}
+                                                                $ {{ number_format($item->monto2, 2, '.', ',') }}
                                                             @endif
                                                         @endif
                                                     </td>
                                                     <td class="ps-4 ultima-columna">
                                                         @if ($item->tipo == 'Salida')
                                                             @if (isset($item->id_banco1) && $item->id_banco1 == $banco->id)
-                                                                $ {{ number_format($item->monto1, 0, '.', ',') }}
+                                                                $ {{ number_format($item->monto1, 2, '.', ',') }}
                                                             @else
-                                                                $ {{ number_format($item->monto2, 0, '.', ',') }}
+                                                                $ {{ number_format($item->monto2, 2, '.', ',') }}
                                                             @endif
                                                         @endif
                                                     </td>
@@ -398,9 +398,9 @@
                                                     <td class="ps-4" colspan="2"></td>
                                                     <td class="ps-4 ultima-columna">
                                                         @if (isset($item->id_prove_banco1) && $item->id_prove_banco1 == $banco->id)
-                                                            $ {{ number_format($item->prove_monto1, 0, '.', ',') }}
+                                                            $ {{ number_format($item->prove_monto1, 2, '.', ',') }}
                                                         @else
-                                                            $ {{ number_format($item->prove_monto2, 0, '.', ',') }}
+                                                            $ {{ number_format($item->prove_monto2, 2, '.', ',') }}
                                                         @endif
                                                     </td>
                                                 </tr>
@@ -413,7 +413,7 @@
                                                             style="color: #c24f22">{{ $item->motivo }}</b></td>
                                                     <td class="ps-4" colspan="2"></td>
                                                     <td class="ps-4 ultima-columna"> $
-                                                        {{ number_format($item->monto1, 0, '.', ',') }}</td>
+                                                        {{ number_format($item->monto1, 2, '.', ',') }}</td>
                                                 </tr>
                                             @elseif(isset($item->fecha_movimiento))
                                                 <tr>
@@ -425,12 +425,12 @@
                                                     </td>
                                                     @if ($item->tipo_movimiento == 1)
                                                         <td class="ps-4 penultima-columna" colspan="2">$
-                                                            {{ number_format($item->monto, 0, '.', ',') }}</td>
+                                                            {{ number_format($item->monto, 2, '.', ',') }}</td>
                                                         <td class="ps-4 ultima-columna"> </td>
                                                     @else
                                                         <td class="ps-4" colspan="2"></td>
                                                         <td class="ps-4 ultima-columna">$
-                                                            {{ number_format($item->monto, 0, '.', ',') }} </td>
+                                                            {{ number_format($item->monto, 2, '.', ',') }} </td>
                                                     @endif
                                                 </tr>
                                             @endif
