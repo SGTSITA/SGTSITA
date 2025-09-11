@@ -422,6 +422,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
  var modal = document.getElementById('mapModal');
+ if(modal){
     modal.addEventListener('shown.bs.modal', function () {
         if (!map) {
             // Inicializar Google Maps
@@ -489,8 +490,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 });
         }
     });
-
-   document.getElementById('searchInput').addEventListener('keypress', function (e) {
+}
+if(document.getElementById('searchInput')){
+    document.getElementById('searchInput').addEventListener('keypress', function (e) {
         if (e.key === 'Enter') {
             e.preventDefault();
             let query = this.value;
@@ -512,6 +514,9 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
     });
+}
+   
+
 function resolverUrlMapa(url) {
     const _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     fetch('/coordenadas/resolver-link-google', {

@@ -218,6 +218,9 @@ if(!passValidation) return passValidation;
    let input = document.querySelector('input[name="formasAplicar"]:checked');
    formData["formasAplicar"] = input.value
 
+   formData['fechaInicioSeleccionado'] = $('#daterange').attr('data-start');
+   formData['fechaFinalSeleccionado'] = $('#daterange').attr('data-end');
+
    $.ajax({
         url: '/gastos/generales/create',
         type: "post",
