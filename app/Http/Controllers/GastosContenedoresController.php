@@ -278,9 +278,7 @@ class GastosContenedoresController extends Controller
                      $bank = trim(substr($gasto[9],0,5));
 
                      $gastoViaje = GastosOperadores::where('id_cotizacion',$contenedor->id_cotizacion)->where('tipo',$descripcionGastos[$e]);
-                     $existeGasto = $gastoViaje->exists();
-                     
-                                     
+                     $existeGasto = $gastoViaje->exists(); 
 
                      //Una vez superada la validacion proceder a guardar
                      if(!$existeGasto){
@@ -311,8 +309,6 @@ class GastosContenedoresController extends Controller
                            "created_at" => Carbon::now()
                           ];
    
-                         
-
                          if($esPagoInmediato){
                             
                             $contenedoresAbonos[] = [
@@ -363,7 +359,8 @@ class GastosContenedoresController extends Controller
 
             foreach($gastosBancos as $idBanco => $totalGasto){
                 $banco = $bancos->get($idBanco);
-                if($banco->saldo < $totalGasto){
+
+                if(!is_null($banco) && $banco->saldo < $totalGasto){
                     return response()->json([
                         "Titulo" => "Saldo insuficiente en Banco",
                         "Mensaje" => "La cuenta bancaria seleccionada no cuenta con saldo suficiente para registrar esta transacción",
