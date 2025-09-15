@@ -15,9 +15,9 @@ class RevisaRegistrosRastreo extends Command
 
    
 
-        public function __construct(UbiService $ubiService)
+        public function __construct()
         {
-            parent::__construct();
+    
            
         }
 
