@@ -7,7 +7,7 @@ use Illuminate\Console\Command;
  //use App\Services\UbiService;
 //use App\Models\coordenadashistorial;
 
-class RevisaRegistros extends Command
+class RevisaRegistrosRastreo extends Command
 {
     protected $signature = 'rastreo:intervalConfig';
 
