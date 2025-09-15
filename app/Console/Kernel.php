@@ -27,33 +27,6 @@ class Kernel extends ConsoleKernel
     {
         $schedule->command('command:saldosBancarios')->daily();
         
-
-        $intervalRecord = RastreoIntervals::where('task_name', 'rastreo_gps_interval')->first();
-       
-         $interval = $intervalRecord ? $intervalRecord->interval : 'hourly';
-
-        $command = $schedule->command('rastreo:intervalConfig');
-
-        switch ($interval) {
-            case 'everyMinute':
-                $command->everyMinute();
-                break;
-            case 'everyFiveMinutes':
-                $command->everyFiveMinutes();
-                break;
-            case 'hourly':
-                $command->hourly();
-                break;
-            case 'daily':
-                $command->daily();
-                break;
-            case 'weekly':
-                $command->weekly();
-                break;
-            default:
-                $command->everyFiveMinutes();
-                break;
-        }
     }
 
     /**
