@@ -4,7 +4,7 @@ namespace App\Console;
 
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
-use App\Models\SchedulerInterval;
+//use App\Models\SchedulerInterval;
 use App\Models\RastreoIntervals;
 
 class Kernel extends ConsoleKernel
@@ -16,6 +16,7 @@ class Kernel extends ConsoleKernel
      */
     protected $commands = [
         Commands\SaldosBancariosCommand::class,
+        Commands\cmdRastreoInterval::class,
     ];
 
     /**
