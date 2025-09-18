@@ -97,7 +97,81 @@ class GastosGeneralesController extends Controller
                    ];
         });
 
-        return $gastosInformacion;
+
+         $fechaInicio = $fechaInicial;
+        $fechaFin = $fechaFinal;
+
+        //Obtener los gastos de las unidades (vehiculos)
+        $gastosUnidadQuery = "SELECT 
+        a.id_camion,
+        gg.motivo,
+        COUNT(DISTINCT a.id) AS total_asignaciones,
+        COALESCE(SUM(DISTINCT gg.monto1 / JSON_LENGTH(JSON_EXTRACT(gg.aplicacion_gasto, '$.elementos'))), 0) AS total_gastos_periodo,
+        COALESCE(SUM(DISTINCT gg.monto1 / JSON_LENGTH(JSON_EXTRACT(gg.aplicacion_gasto, '$.elementos'))), 0) / COUNT(DISTINCT a.id) AS gasto_por_viaje
+        FROM asignaciones a
+        LEFT JOIN gastos_generales gg 
+            ON gg.aplicacion_gasto IS NOT NULL
+            AND JSON_VALID(gg.aplicacion_gasto) = 1
+            AND JSON_UNQUOTE(JSON_EXTRACT(gg.aplicacion_gasto, '$.aplicacion')) = 'equipos'
+            AND JSON_CONTAINS(
+                JSON_EXTRACT(gg.aplicacion_gasto, '$.elementos'),
+                JSON_OBJECT('equipo', CAST(a.id_camion AS CHAR)),
+                '$'
+            )
+            AND gg.fecha BETWEEN '$fechaInicio' AND '$fechaFin'
+        WHERE a.fecha_inicio BETWEEN '$fechaInicio' AND '$fechaFin'
+        AND a.id_camion IS NOT NULL AND gg.is_active = 1
+        GROUP BY a.id_camion, gg.motivo;";
+
+        $gastosUnidad = Collect(DB::select($gastosUnidadQuery));
+
+        $cotizaciones = Cotizaciones::where('id_empresa', auth()->user()->id_empresa)
+            ->whereIn('estatus',['Finalizado', 'Aprobada'])
+            ->where('estatus_planeacion', '=', 1)
+            ->where('jerarquia', "!=",'Secundario')
+            ->whereHas('DocCotizacion.Asignaciones', function($query) use ($fechaInicio, $fechaFin) {
+                $query->whereBetween('fecha_inicio', [$fechaInicio, $fechaFin]); 
+            })
+            ->with(['cliente', 'DocCotizacion.Asignaciones' => function($query) use ($fechaInicio, $fechaFin) {
+                $query->whereBetween('fecha_inicio', [$fechaInicio, $fechaFin]);
+            }])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+            $handsOnTableData = $cotizaciones->map(function ($cotizacion) use ($gastosUnidad){
+                $contenedor = $cotizacion->DocCotizacion ? $cotizacion->DocCotizacion->num_contenedor : 'N/A';
+                $gastosDiferidos = (sizeof($gastosUnidad)>0) ? $gastosUnidad->where('id_camion', $cotizacion->DocCotizacion->Asignaciones->id_camion)->sum('gasto_por_viaje') : 0;
+                // Si es tipo 'Full', buscamos la secundaria para obtener su contenedor
+                if (!is_null($cotizacion->referencia_full)) {
+                    $secundaria = Cotizaciones::where('referencia_full', $cotizacion->referencia_full)
+                        ->where('jerarquia', 'Secundario')
+                        ->with('DocCotizacion.Asignaciones')
+                        ->first();
+
+                    if ($secundaria && $secundaria->DocCotizacion) {
+                        $contenedor .= ' ' . $secundaria->DocCotizacion->num_contenedor;
+                    }
+                }
+
+                $Gastos = GastosOperadores::where('id_cotizacion',$cotizacion->id)->get();
+
+                return [
+                    $contenedor,
+                    $Gastos->filter(function($gasto) {return str_contains($gasto->tipo, 'GCM01');})->sum('cantidad'),
+                    $Gastos->filter(function($gasto) {return str_contains($gasto->tipo, 'GDI02');})->sum('cantidad'),
+                    $Gastos->filter(function($gasto) {return str_contains($gasto->tipo, 'GCP03');})->sum('cantidad'),
+                    $Gastos->filter(function($gasto) {return !str_contains($gasto->tipo, 'GCM01') && !str_contains($gasto->tipo, 'GDI02') && !str_contains($gasto->tipo, 'GCP03');})->sum('cantidad'),
+                    $gastosDiferidos,
+                    ($Gastos->filter(function($gasto) {return str_contains($gasto->tipo, 'GCM01');})->first()?->estatus == 'Pagado') ? 1 : 0,
+                    ($Gastos->filter(function($gasto) {return str_contains($gasto->tipo, 'GDI02');})->first()?->estatus == 'Pagado') ? 1 : 0,
+                    ($Gastos->filter(function($gasto) {return str_contains($gasto->tipo, 'GCP03');})->first()?->estatus == 'Pagado') ? 1 : 0,
+                    '',
+                    $cotizacion->id,
+                ];
+            });
+
+             return response()->json(['handsOnTableData' => $handsOnTableData,'gastosInformacion' => $gastosInformacion]);
+   
 
     }
 
