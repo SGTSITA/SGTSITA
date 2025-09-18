@@ -296,12 +296,15 @@ class ExternosController extends Controller
     }
     public static function confirmarDocumentos($cotizacion){
         try{
+          \Log::channel('daily')->info('Maniobra  '.$cotizacion);
+
             $contenedor = Cotizaciones::join('docum_cotizacion as d', 'cotizaciones.id', '=', 'd.id_cotizacion')
             ->where('cotizaciones.id' ,'=',$cotizacion)
             ->where('estatus','=','En espera')
             ->orderBy('created_at', 'desc')
             ->selectRaw('cotizaciones.*, d.num_contenedor,d.doc_eir,doc_ccp ,d.boleta_liberacion,d.doda')
             ->first();
+            \Log::channel('daily')->info('Doda: '.$contenedor->doda.' / liberacion:'.$contenedor->boleta_liberacion);
 
             if($contenedor->doda != null && $contenedor->boleta_liberacion != null){
                 $cotizacion = Cotizaciones::where('id',$cotizacion)->first();
@@ -445,6 +448,7 @@ class ExternosController extends Controller
 
     public function fileProperties($id,$file,$title,$contenedor){
         $path = public_path('cotizaciones/cotizacion'.$id.'/'.$file);
+        
         if(\File::exists($path)){
             $finfo = finfo_open(FILEINFO_MIME_TYPE); // Abrir la base de datos de tipos MIME
             $mimeType = finfo_file($finfo, $path);

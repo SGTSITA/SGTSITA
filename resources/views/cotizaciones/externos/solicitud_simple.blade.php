@@ -59,7 +59,7 @@
                     <li class="nav-item" role="presentation">
                         <a id="kt_facturacion_tab" class="nav-link fs-5 fw-bold" data-bs-toggle="tab" role="tab"
                             href="#kt_facturacion" aria-selected="false" tabindex="-1">
-                            Facturación
+                            Formato Carta Porte
                         </a>
                     </li>
                     <!--end::Tab item-->
@@ -163,7 +163,7 @@
                         <!--begin::Tab panel-->
                         <div id="kt_facturacion" class="tab-pane fade" role="tabpanel" aria-labelledby="kt_facturacion_tab">
                             <!--begin::Title-->
-                            <h3 class="mb-5">Datos para facturación</h3>
+                            <h3 class="mb-5">Datos para Carta Porte</h3>
                             <!--end::Title-->
                             <div class="row gx-9 gy-6">
 

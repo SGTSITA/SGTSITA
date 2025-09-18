@@ -121,7 +121,7 @@
                 </li>
             @endcan
 
-            @can('cotizaciones-list')
+            @can('cotizacion-menu')
                 <a data-bs-toggle="collapse" href="#pagesExamplesCotizaciones"
                     class="nav-link {{ Request::is('cotizaciones*') ? 'active' : '' }}"
                     aria-controls="pagesExamplesCotizaciones" role="button" aria-expanded="false">
@@ -135,27 +135,37 @@
                 <div class="collapse " id="pagesExamplesCotizaciones">
                     <ul class="nav ms-4">
                         <li class="nav-item ">
-                            <a class="nav-link {{ Request::is('cotizaciones/busqueda') ? 'show' : '' }}"
-                                href="{{ route('busqueda.cotizaciones') }}">
-                                <span class="sidenav-mini-icon"> P </span>
-                                <span class="sidenav-normal">Busqueda</span>
-                            </a>
-                            <a class="nav-link {{ Request::is('cotizaciones*') ? 'show' : '' }}"
-                                href="{{ route('create.cotizaciones') }}">
-                                <span class="sidenav-mini-icon"> P </span>
-                                <span class="sidenav-normal">Crear Cotización</span>
-                            </a>
-                            <a class="nav-link {{ Request::is('cotizaciones*') ? 'show' : '' }}"
-                                href="{{ route('index.cotizaciones') }}">
-                                <span class="sidenav-mini-icon"> P </span>
-                                <span class="sidenav-normal">Seguimiento</span>
-                            </a>
+                            @can('cotizacion-buscador')
+                                <a class="nav-link {{ Request::is('cotizaciones/busqueda') ? 'show' : '' }}"
+                                    href="{{ route('busqueda.cotizaciones') }}">
+                                    <span class="sidenav-mini-icon"> P </span>
+                                    <span class="sidenav-normal">Busqueda</span>
+                                </a>
+                            @endcan
 
-                            <a class="nav-link {{ Request::is('cotizaciones/busqueda') ? 'show' : '' }}"
-                                href="{{ route('cotizaciones.entrantes') }}">
-                                <span class="sidenav-mini-icon"> P </span>
-                                <span class="sidenav-normal">Solicitudes entrantes</span>
-                            </a>
+                            @can('cotizacion-crear')
+                                <a class="nav-link {{ Request::is('cotizaciones*') ? 'show' : '' }}"
+                                    href="{{ route('create.cotizaciones') }}">
+                                    <span class="sidenav-mini-icon"> P </span>
+                                    <span class="sidenav-normal">Crear Cotización</span>
+                                </a>
+                            @endcan
+
+                            @can('cotizacion-segumiento')
+                                <a class="nav-link {{ Request::is('cotizaciones*') ? 'show' : '' }}"
+                                    href="{{ route('index.cotizaciones') }}">
+                                    <span class="sidenav-mini-icon"> P </span>
+                                    <span class="sidenav-normal">Seguimiento</span>
+                                </a>
+                            @endcan
+
+                            @can('cotizacion-solicitudes-entrantes')
+                                <a class="nav-link {{ Request::is('cotizaciones/busqueda') ? 'show' : '' }}"
+                                    href="{{ route('cotizaciones.entrantes') }}">
+                                    <span class="sidenav-mini-icon"> P </span>
+                                    <span class="sidenav-normal">Solicitudes entrantes</span>
+                                </a>
+                            @endcan
                         </li>
                     </ul>
                 </div>
@@ -305,7 +315,7 @@
                                 <a class="nav-link {{ Request::is('reporteria/utilidad*') ? 'show' : '' }}"
                                     href="{{ route('index_utilidad.reporteria') }}">
                                     <span class="sidenav-mini-icon"> P </span>
-                                    <span class="sidenav-normal">Reporte de utilidad</span>
+                                    <span class="sidenav-normal">Reporte de Resultados</span>
                                 </a>
                             @endcan
 
@@ -383,15 +393,15 @@
                     </ul>
                 </div>
                 <!--li class="nav-item">
-                                                                                        <a class="nav-link {{ Request::is('liquidaciones*') ? 'active' : '' }}"
-                                                                                            href="{{ route('index.liquidacion') }}" target="">
-                                                                                            <div
-                                                                                                class="icon icon-shape icon-sm text-center  me-2 d-flex align-items-center justify-content-center">
-                                                                                                <img src="{{ asset('img/icon/pago-en-efectivo.png') }}" alt="" width="20px">
-                                                                                            </div>
-                                                                                           
-                                                                                        </a>
-                                                                                    </li-->
+                                                                                                <a class="nav-link {{ Request::is('liquidaciones*') ? 'active' : '' }}"
+                                                                                                    href="{{ route('index.liquidacion') }}" target="">
+                                                                                                    <div
+                                                                                                        class="icon icon-shape icon-sm text-center  me-2 d-flex align-items-center justify-content-center">
+                                                                                                        <img src="{{ asset('img/icon/pago-en-efectivo.png') }}" alt="" width="20px">
+                                                                                                    </div>
+                                                                                                   
+                                                                                                </a>
+                                                                                            </li-->
             @endcan
             @can('Coordenadas SGT')
                 <a data-bs-toggle="collapse" href="#pagesExamplesCoordenadas"
@@ -435,7 +445,7 @@
                                     <span class="sidenav-normal">Rastrear </span>
                                 </a>
                             @endcan
-                            
+
                             {{-- <a class="nav-link {{ Request::is('coordenadas/conboys') ? 'show' : '' }}"
                                 href="{{ route('index.conboys') }}">
                                 <span class="sidenav-mini-icon"> C </span>
@@ -518,12 +528,12 @@
 
                     <!-- @can('usuarios-empresas')
     <li class="nav-item ">
-                                                            <a class="nav-link {{ Request::is('usuarios-empresas*') ? 'show' : '' }}"
-                                                                href="{{ route('Usuarios-empresas.index') }}">
-                                                                <span class="sidenav-mini-icon"> P </span>
-                                                                <span class="sidenav-normal">Usuarios Empresas </span>
-                                                            </a>
-                                                        </li>
+                                                                    <a class="nav-link {{ Request::is('usuarios-empresas*') ? 'show' : '' }}"
+                                                                        href="{{ route('Usuarios-empresas.index') }}">
+                                                                        <span class="sidenav-mini-icon"> P </span>
+                                                                        <span class="sidenav-normal">Usuarios Empresas </span>
+                                                                    </a>
+                                                                </li>
 @endcan -->
 
 

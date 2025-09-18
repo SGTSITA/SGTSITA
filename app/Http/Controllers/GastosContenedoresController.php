@@ -47,11 +47,10 @@ class GastosContenedoresController extends Controller
             'Descripcion' => $g->tipo,
             'NumContenedor' => $contenedor.$contenedorB ?? '-',
             'Monto' => $g->cantidad ?? 0,
-          
             'FechaGasto' => Carbon::parse($g->created_at)->format('Y-m-d'),
             'FechaPago' => $g->fecha_pago,
-             'fecha_inicio' => optional($asignacion)->fecha_inicio,
-'fecha_fin' => optional($asignacion)->fecha_fin,
+            'fecha_inicio' => optional($asignacion)->fecha_inicio,
+            'fecha_fin' => optional($asignacion)->fecha_fin,
         ];
     });
 
@@ -69,9 +68,7 @@ class GastosContenedoresController extends Controller
                 $numContenedor = ' / ' . $secundaria->DocCotizacion->num_contenedor;
                 return $numContenedor;
             }
-
         }
-                    
     }
 
     public function PagarGastosMultiple(Request $r){
@@ -281,9 +278,7 @@ class GastosContenedoresController extends Controller
                      $bank = trim(substr($gasto[9],0,5));
 
                      $gastoViaje = GastosOperadores::where('id_cotizacion',$contenedor->id_cotizacion)->where('tipo',$descripcionGastos[$e]);
-                     $existeGasto = $gastoViaje->exists();
-                     
-                                     
+                     $existeGasto = $gastoViaje->exists(); 
 
                      //Una vez superada la validacion proceder a guardar
                      if(!$existeGasto){
@@ -314,8 +309,6 @@ class GastosContenedoresController extends Controller
                            "created_at" => Carbon::now()
                           ];
    
-                         
-
                          if($esPagoInmediato){
                             
                             $contenedoresAbonos[] = [
@@ -366,7 +359,8 @@ class GastosContenedoresController extends Controller
 
             foreach($gastosBancos as $idBanco => $totalGasto){
                 $banco = $bancos->get($idBanco);
-                if($banco->saldo < $totalGasto){
+
+                if(!is_null($banco) && $banco->saldo < $totalGasto){
                     return response()->json([
                         "Titulo" => "Saldo insuficiente en Banco",
                         "Mensaje" => "La cuenta bancaria seleccionada no cuenta con saldo suficiente para registrar esta transacción",

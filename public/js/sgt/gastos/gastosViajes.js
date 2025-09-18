@@ -158,6 +158,7 @@ handsOnTableGastos.updateSettings({
   function guardarGastos(){
     var _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     var datahandsOnTableGastos = JSON.stringify(handsOnTableGastos.getData());
+
     $.ajax({
       url:'/gastos/viajes/confirmar-gastos',
       type:'post',
