@@ -140,8 +140,10 @@
 @endif
 
 <head>
-    <title>Utilidades</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Resultados</title>
 </head>
+
 
 <body>
 
@@ -206,6 +208,34 @@
             @endforeach
         </tbody>
     </table>
+    <h4 style="margin-top: 20px;">Desglose de Otros Gastos</h4>
+    <table style="width:100%; font-size: 10px; border-collapse: collapse;" border="1">
+        <thead style="background-color: #f0f0f0;">
+            <tr>
+                <th style="padding: 5px;">Fecha</th>
+                <th style="padding: 5px;">Motivo</th>
+                <th style="padding: 5px;">Categoría</th>
+                <th style="padding: 5px;">Método de Pago</th>
+                <th style="padding: 5px;">Monto</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach ($gastosGenerales as $gasto)
+                <tr>
+                    <td style="padding: 5px;">{{ \Carbon\Carbon::parse($gasto->fecha)->format('d-m-Y') }}</td>
+                    <td style="padding: 5px;">{{ $gasto->motivo }}</td>
+                    <td style="padding: 5px;">{{ $gasto->Categoria->categoria ?? 'N/A' }}</td>
+                    <td style="padding: 5px;">{{ $gasto->metodo_pago1 }}</td>
+                    <td style="padding: 5px;">$ {{ number_format($gasto->monto1, 2) }}</td>
+                </tr>
+            @endforeach
+            <tr style="font-weight: bold;">
+                <td colspan="4" style="text-align: right; padding: 5px;">Total:</td>
+                <td style="padding: 5px;">$ {{ number_format($gastos, 2) }}</td>
+            </tr>
+        </tbody>
+    </table>
+
 
 
 

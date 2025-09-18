@@ -838,9 +838,14 @@ public function export_cxp(Request $request)
         $cotizacion = [];//Asignaciones::where('id', $cotizacionIds)->first();
         $user = User::where('id', '=', auth()->user()->id)->first();
 
-        $gastos = GastosGenerales::where('id_empresa', auth()->user()->id_empresa)
-                                ->where('aplicacion_gasto','like',"%periodo%")
-                                ->whereBetween('fecha',[$fechaInicio,$fechaFin])->sum('monto1');
+       $gastosGenerales = GastosGenerales::with('Categoria')
+    ->where('id_empresa', auth()->user()->id_empresa)
+    ->where('aplicacion_gasto','like',"%periodo%")
+    ->whereBetween('fecha',[$fechaInicio,$fechaFin])
+    ->get();
+
+$gastos = $gastosGenerales->sum('monto1');
+
        // $gastos = [];
 
         $utilidad = $cotizaciones->sum('utilidad');
@@ -849,15 +854,34 @@ public function export_cxp(Request $request)
         $selectedRows = $cotizaciones->count();
   
 
-        if($request->fileType == "xlsx"){
-            Excel::store(new \App\Exports\UtilidadExport($cotizaciones, $fechaCarbon, $cotizacion, $user, []), 'utilidad.xlsx','public');
-            return Response::download(storage_path('app/public/utilidad.xlsx'), "utilidad.xlsx")->deleteFileAfterSend(true);
-        }else{
-        $pdf = PDF::loadView('reporteria.utilidad.pdf', 
-                compact('cotizaciones','utilidad', 'fechaInicio','fechaFin', 'cotizacion', 'user', 'gastos','totalRows','selectedRows'))
-                ->setPaper('a4', 'landscape');
-            return $pdf->stream('utilidades_rpt.pdf');
-        }
+   if ($request->fileType == "xlsx") {
+    return Excel::download(
+        new \App\Exports\UtilidadExport(
+            $cotizaciones, 
+            $fechaCarbon, 
+            $cotizacion, 
+            $user, 
+            $gastos, 
+            $gastosGenerales, 
+            $utilidad,
+            $fechaInicio,
+            $fechaFin,
+            $totalRows,
+            $selectedRows
+        ),
+        'Resultados_' . now()->format('d-m-Y') . '.xlsx'
+    );
+
+
+} else {
+    $pdf = PDF::loadView('reporteria.utilidad.pdf', compact(
+        'cotizaciones','utilidad','fechaInicio','fechaFin',
+        'cotizacion','user','gastos','gastosGenerales','totalRows','selectedRows'
+    ))->setPaper('a4', 'landscape');
+
+    return $pdf->stream('Resultados_rpt.pdf');
+}
+
     }
 
     // ==================== D O C U M E N T O S ====================

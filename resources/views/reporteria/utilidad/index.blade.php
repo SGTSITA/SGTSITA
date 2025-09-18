@@ -49,7 +49,7 @@
                     <div class="card-header">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                             <h5 id="card_title">
-                                Reporte de utilidades
+                                Reporte de Resultados
                                 <p class="text-sm mb-0">
 
                                 <div class="font-weight-bolder text-sm"><span class="small">Periodo</span></div>
