@@ -15,7 +15,7 @@
                 <p><strong>Empresa:</strong> {{ $user->Empresa->nombre }}</p>
                 <p><strong>Periodo:</strong> {{ date('d-m-Y', strtotime($fechaInicio)) }} al
                     {{ date('d-m-Y', strtotime($fechaFin)) }}</p>
-                <p><strong>Contenedores mostrados:</strong> {{ $selectedRows }} de {{ $totalRows }}</p>
+                <p><strong>Contenedores seleecionados:</strong> {{ $selectedRows }} de {{ $totalRows }}</p>
             </td>
             <td>
                 <p><strong>Utilidad Bruta:</strong> ${{ number_format($utilidad, 2) }}</p>
