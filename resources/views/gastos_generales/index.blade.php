@@ -181,6 +181,10 @@ Gastos Generales
         maxDate: moment()
     }, 
         function(start, end, label) {
+
+let spanPeriodoc = document.getElementById('periodo');
+spanPeriodoc.textContent = ` ${start.format('DD-MM-YYYY')} AL ${end.format('DD-MM-YYYY')}`;
+
       //  getUtilidadesViajes();
       getGastos(start.format('YYYY-MM-DD'),end.format('YYYY-MM-DD'))
         $('#daterange').attr('data-start', start.format('YYYY-MM-DD'));
@@ -197,9 +201,12 @@ Gastos Generales
     document.getElementById('daterange').value=`${formatDate(firstDayOfMonth)} AL ${formatDate(today)}`
 
     getGastos(formatDate(firstDayOfMonth),formatDate(today))
+   
 
     $('#daterange').attr('data-start', formatDate(firstDayOfMonth));
     $('#daterange').attr('data-end', formatDate(today));
+     let spanPeriodo = document.getElementById('periodo');
+    spanPeriodo.textContent =  `${moment(firstDayOfMonth).format('DD-MM-YYYY')} AL ${moment(today).format('DD-MM-YYYY')}`;
 
         if (document.getElementById('selectUnidadesGeneral')) {
             var element = document.getElementById('selectUnidadesGeneral');
