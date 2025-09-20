@@ -61,6 +61,12 @@ return [
     'GpsTrackerMX' => [
         'url_base'  => env('GPS_TRACKER_URL'),
     ],
+    'BeyondGpsCustomized' => [
+        'url_base'  => env('GPS_BEYOND_URL')
+    ],
+    'WialonGpsCustomized' => [
+        'url_base'  => env('GPS_WIALON_URL')
+    ],    
     'GooMaps'=>[
         'apikey'=> env('GOOLEAPIMAPS',)
 

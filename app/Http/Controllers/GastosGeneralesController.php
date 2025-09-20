@@ -194,7 +194,7 @@ class GastosGeneralesController extends Controller
             $gasto_general->id_categoria = $request->get('categoria_movimiento');
             $gasto_general->metodo_pago1 = 'Transferencia';
             $gasto_general->id_banco1 = $request->get('id_banco1');
-            $gasto_general->fecha = $fechaActual;
+            $gasto_general->fecha = $request->fechaInicioSeleccionado;
             $gasto_general->fecha_operacion = $request->fecha_movimiento;
             $gasto_general->id_empresa = auth()->user()->id_empresa;
             $gasto_general->is_active = ($request->get('tipoPago') == 1) ? 0 : 1;

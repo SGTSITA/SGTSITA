@@ -183,57 +183,55 @@ class ExternosController extends Controller
                                                 ->get();
                                                 
 
-        $resultContenedores = $contenedoresPendientes->map(function ($c) {
-    $numContenedor = $c->num_contenedor;
-    $docCCP = ($c->doc_ccp == null) ? false : true;
-    $doda = ($c->doda == null) ? false : true;
-    $boletaLiberacion = ($c->boleta_liberacion == null) ? false : true;
-    $cartaPorte = $c->carta_porte;
-    $boletaVacio = ($c->img_boleta == null) ? false : true;
-    $docEir = $c->doc_eir;
-    $fotoPatio = ($c->foto_patio == null) ? false : true;
-    $tipo = "Sencillo";
-    $viajesFull = [];
+        $resultContenedores = 
+        $contenedoresPendientes->map(function($c){
 
-    // Si es FULL
-    if (!is_null($c->referencia_full)) {
-        $fullCotizaciones = Cotizaciones::where('referencia_full', $c->referencia_full)
-            ->with('DocCotizacion')
-            ->get();
+            $numContenedor = $c->num_contenedor;
+            $docCCP = ($c->doc_ccp == null) ? false : true;
+            $doda = ($c->doda == null) ? false : true;
+            $boletaLiberacion = ($c->boleta_liberacion == null) ? false : true;
+            $cartaPorte = $c->carta_porte;
+            $boletaVacio = ($c->img_boleta == null) ? false : true;
+            $docEir = $c->doc_eir;
+            $fotoPatio = ($c->foto_patio == null) ? false : true;
+            $tipo = "Sencillo";
 
-        foreach ($fullCotizaciones as $cot) {
-            if ($cot->DocCotizacion) {
-                $viajesFull[] = [
-                    "NumContenedor" => $cot->DocCotizacion->num_contenedor ?? '',
-                    "id" => $cot->id
-                ];
+            if (!is_null($c->referencia_full)) {
+                $secundaria = Cotizaciones::where('referencia_full', $c->referencia_full)
+                    ->where('jerarquia', 'Secundario')
+                    ->with('DocCotizacion.Asignaciones')
+                    ->first();
+
+                if ($secundaria && $secundaria->DocCotizacion) {
+                    $docCCP = ($docCCP && $secundaria->DocCotizacion->doc_ccp) ? true : false;
+                    $doda = ($doda && $secundaria->DocCotizacion->doda) ? true : false;
+                    $docEir = ($docEir && $secundaria->DocCotizacion->doc_eir) ? true : false;
+                    $boletaLiberacion = ($boletaLiberacion && $secundaria->DocCotizacion->boleta_liberacion) ? true : false;
+                    $cartaPorte = ($cartaPorte && $secundaria->carta_porte) ? true : false;
+                    $boletaVacio = ($boletaVacio && $secundaria->img_boleta) ? true : false;
+                    $fotoPatio = ($fotoPatio && $secundaria->foto_patio) ? true : false;
+                    $numContenedor .= '  ' . $secundaria->DocCotizacion->num_contenedor;
+                }
+
+                $tipo = "Full";
             }
-        }
 
-        // Mostrar los dos contenedores concatenados en la tabla
-        $numContenedor = implode(' / ', collect($viajesFull)->pluck('NumContenedor')->toArray());
-
-        $tipo = "Full";
-    }
-
-    return [
-        "NumContenedor" => $numContenedor,
-        "viajesFull" => $viajesFull, // ✅ Esto se usará en el modal del JS
-        "Estatus" => ($c->estatus == "NO ASIGNADA") ? "Viaje solicitado" : $c->estatus,
-        "Origen" => $c->origen,
-        "Destino" => $c->destino,
-        "Peso" => $c->peso_contenedor,
-        "BoletaLiberacion" => $boletaLiberacion,
-        "DODA" => $doda,
-        "foto_patio" => $fotoPatio,
-        "FormatoCartaPorte" => $docCCP,
-        "PreAlta" => $boletaVacio,
-        "FechaSolicitud" => Carbon::parse($c->created_at)->format('Y-m-d'),
-        "tipo" => $tipo,
-        "id" => $c->id
-    ];
-});
-
+            return [
+                "NumContenedor" => $numContenedor,
+                "Estatus" => ($c->estatus == "NO ASIGNADA") ? "Viaje solicitado" : $c->estatus,
+                "Origen" => $c->origen, 
+                "Destino" => $c->destino, 
+                "Peso" => $c->peso_contenedor,
+                "BoletaLiberacion" => $boletaLiberacion,
+                "DODA" => $doda,
+                "foto_patio" => $fotoPatio,
+                "FormatoCartaPorte" => $docCCP,
+                "PreAlta" => $boletaVacio,
+                "FechaSolicitud" => Carbon::parse($c->created_at)->format('Y-m-d'),
+                "tipo" => $tipo,
+                "id" => $c->id
+            ];
+        });
 
         return $resultContenedores;
     }
@@ -296,15 +294,17 @@ class ExternosController extends Controller
 
         return $resultContenedores;
     }
-
     public static function confirmarDocumentos($cotizacion){
         try{
+          \Log::channel('daily')->info('Maniobra  '.$cotizacion);
+
             $contenedor = Cotizaciones::join('docum_cotizacion as d', 'cotizaciones.id', '=', 'd.id_cotizacion')
             ->where('cotizaciones.id' ,'=',$cotizacion)
             ->where('estatus','=','En espera')
             ->orderBy('created_at', 'desc')
             ->selectRaw('cotizaciones.*, d.num_contenedor,d.doc_eir,doc_ccp ,d.boleta_liberacion,d.doda')
             ->first();
+            \Log::channel('daily')->info('Doda: '.$contenedor->doda.' / liberacion:'.$contenedor->boleta_liberacion);
 
             if($contenedor->doda != null && $contenedor->boleta_liberacion != null){
                 $cotizacion = Cotizaciones::where('id',$cotizacion)->first();
@@ -448,6 +448,7 @@ class ExternosController extends Controller
 
     public function fileProperties($id,$file,$title,$contenedor){
         $path = public_path('cotizaciones/cotizacion'.$id.'/'.$file);
+        
         if(\File::exists($path)){
             $finfo = finfo_open(FILEINFO_MIME_TYPE); // Abrir la base de datos de tipos MIME
             $mimeType = finfo_file($finfo, $path);

@@ -56,7 +56,7 @@ document.addEventListener("DOMContentLoaded", function () {
             tabs.forEach(t => t.classList.remove("active"));
             this.classList.add("active");
             currentTab = this.getAttribute("data-status");
-            btnFull.disabled = (currentTab == 'en_espera' || currentTab == 'aprobadas') ? false : true
+            if(btnFull) btnFull.disabled = (currentTab == 'en_espera' || currentTab == 'aprobadas') ? false : true
             getCotizacionesList();
         });
     });
@@ -270,58 +270,89 @@ document.addEventListener("DOMContentLoaded", function () {
             });
     }
 
-    btnFull.addEventListener('click',()=>{
-        let seleccion = gridApi.getSelectedRows();
-        let validarCliente = seleccion.every(element => 
-            element.cliente === seleccion[0].cliente
-        );
+    const botonAbrirModal = document.getElementById('abrirModalBtn');
 
-        if(seleccion.length > 2){
-            Swal.fire('Maximo 2 contenedores','Lo sentimos, solo puede seleccionar maximo 2 contenedores, estos deben ser de un mismo cliente','warning')
-            return false
-        }
+    if(botonAbrirModal){
+       
 
-        if(!validarCliente){
-            Swal.fire('Cliente distinto','Lo sentimos, los contenedores deben ser de un mismo cliente','warning')
-            return false
-        }
-
-        Swal.fire({
-            title: '¿Estás seguro?',
-            text: "Quiere unir los contenedores seleccionados en un viaje Full.",
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonText: 'Sí, continuar',
-            cancelButtonText: 'No, cancelar',
-            reverseButtons: true // Opcional: invierte el orden de los botones
-          }).then((result) => {
-            if (result.isConfirmed) {
-                let _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-              $.ajax({
-                url:'/cotizaciones/transformar/full',
-                type:'post',
-                data:{_token, seleccion},
-                beforeSend:()=>{
-                    mostrarLoading('Fusionando contenedores... espere un momento')
-                },
-                success:(response)=>{
-                    Swal.fire(response.Titulo, response.Mensaje, response.TMensaje)
-                    if(response.TMensaje == "success"){
-                        getCotizacionesList();
-                    }
-                    ocultarLoading();
-                },
-                error:()=>{
-                    ocultarLoading();
-                }
-              })
-            } else if (result.dismiss === Swal.DismissReason.cancel) {
-              // Acción si el usuario canceló
-              console.log("El usuario canceló");
+        botonAbrirModal.addEventListener('click', () => {
+            let seleccion = gridApi.getSelectedRows();
+    
+            if(seleccion.length == 1){
+            document.getElementById('numeroContenedor').textContent = seleccion[0].contenedor;
+            //document.getElementById('fechaViaje').textContent = seleccion[0].;
+            document.getElementById('origenViaje').textContent = seleccion[0].origen;
+            document.getElementById('destinoViaje').textContent = seleccion[0].destino;
+            document.getElementById('estatusViaje').textContent = seleccion[0].estatus;
             }
-          });
-          
-    })
+            
+    
+            let modalElement = (seleccion.length != 1) ? 'noSeleccionModal' : 'viajeModal'
+            const modal1 = new bootstrap.Modal(document.getElementById(modalElement));
+            modal1.show();
+        });
+
+        
+        
+             
+    }
+
+    
+
+    if(btnFull){
+        btnFull.addEventListener('click',()=>{
+            let seleccion = gridApi.getSelectedRows();
+            let validarCliente = seleccion.every(element => 
+                element.cliente === seleccion[0].cliente
+            );
+
+            if(seleccion.length > 2){
+                Swal.fire('Maximo 2 contenedores','Lo sentimos, solo puede seleccionar maximo 2 contenedores, estos deben ser de un mismo cliente','warning')
+                return false
+            }
+
+            if(!validarCliente){
+                Swal.fire('Cliente distinto','Lo sentimos, los contenedores deben ser de un mismo cliente','warning')
+                return false
+            }
+
+            Swal.fire({
+                title: '¿Estás seguro?',
+                text: "Quiere unir los contenedores seleccionados en un viaje Full.",
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, continuar',
+                cancelButtonText: 'No, cancelar',
+                reverseButtons: true // Opcional: invierte el orden de los botones
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    let _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                $.ajax({
+                    url:'/cotizaciones/transformar/full',
+                    type:'post',
+                    data:{_token, seleccion},
+                    beforeSend:()=>{
+                        mostrarLoading('Fusionando contenedores... espere un momento')
+                    },
+                    success:(response)=>{
+                        Swal.fire(response.Titulo, response.Mensaje, response.TMensaje)
+                        if(response.TMensaje == "success"){
+                            getCotizacionesList();
+                        }
+                        ocultarLoading();
+                    },
+                    error:()=>{
+                        ocultarLoading();
+                    }
+                })
+                } else if (result.dismiss === Swal.DismissReason.cancel) {
+                // Acción si el usuario canceló
+                console.log("El usuario canceló");
+                }
+            });
+            
+        })
+    }
 
     function seleccionarContenedor(){
         if (currentTab != 'en_espera' && currentTab != 'aprobadas') return false
@@ -339,6 +370,10 @@ document.addEventListener("DOMContentLoaded", function () {
             Swal.fire('Cliente distinto','Lo sentimos, los contenedores deben ser de un mismo cliente','warning')
             return false
         }
+
+        localStorage.setItem('numContenedor',seleccion[0].contenedor); 
+        localStorage.setItem('idContenedor',seleccion[0].id); 
+
     }
 
   
