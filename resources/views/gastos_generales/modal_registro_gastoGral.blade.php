@@ -18,15 +18,18 @@
                   <label class="custom-option selected">
                     <input type="radio" checked name="formasAplicar" value="Periodo" onchange="handleSelection(this)">
                     <i class="fas fa-clock icon"></i>
-                    <span class="text">Periodo</span>
+                      <div class="text-group">
+                        <div class="text">Periodo</div>
+                        <div class="text" id="periodo" style="font-size: 12px;">01-09-2025 AL 18-09-2025</div>
+                      </div>
                     <i class="fas fa-check check-icon"></i>
                   </label>
-                  <label class="custom-option">
+                  {{-- <label class="custom-option">
                     <input type="radio" name="formasAplicar" value="Viaje" onchange="handleSelection(this)">
                     <i class="fas fa-compass icon"></i>
                     <span class="text">Viaje</span>
                     <i class="fas fa-check check-icon"></i>
-                  </label>
+                  </label> --}}
                   <label class="custom-option">
                     <input type="radio" name="formasAplicar" value="Equipo" onchange="handleSelection(this)">
                     <i class="fas fa-truck-moving icon"></i>
@@ -57,10 +60,10 @@
               </div>
             </div>
           </div>
-          <div class="col-12 d-none aplicacion-gastos" id="aplicacion-viajeGeneral">
+         {{--  <div class="col-12 d-none aplicacion-gastos" id="aplicacion-viajeGeneral">
             <label class="mt-4 form-label">Seleccione viajes</label>
             <select class="form-control" name="selectViajesGeneral" id="selectViajesGeneral" multiple> </select>
-          </div>
+          </div> --}}
           <div class="col-12 d-none aplicacion-gastos" id="aplicacion-equipoGeneral">
             <label class="mt-4 form-label">Seleccione equipos</label>
             <select class="form-control" name="selectUnidadesGeneral" id="selectUnidadesGeneral" multiple> @foreach($equipos as $e) <option value="{{$e->id}}">{{$e->marca}} - {{$e->id_equipo}}</option> @endforeach </select>

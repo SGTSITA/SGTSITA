@@ -322,8 +322,8 @@ function getGxp() {
     success: (response) => {
       gridDataOriginal = (response.contenedores || []).map(row => ({
         ...row,
-        fecha_inicio: row.fecha_inicio ? new Date(row.fecha_inicio) : null,
-        fecha_fin: row.fecha_fin ? new Date(row.fecha_fin) : null,
+        fecha_inicio: row.fecha_inicio ? new Date(row.fecha_inicio) : new Date(row.fecha),
+        fecha_fin: row.fecha_fin ? new Date(row.fecha_fin) : new Date(row.fecha),
         FechaGasto: row.FechaGasto ? new Date(row.FechaGasto) : null,
       }));
 
@@ -353,7 +353,7 @@ function filtrarPorFechas(inicio, fin) {
     if (!fi || !ff || !fi.isValid() || !ff.isValid()) return false;
 
     // ✅ Solo incluir si ambos están dentro del rango
-    return fi.isSameOrAfter(fechaInicio) && ff.isSameOrBefore(fechaFin);
+    return fi.isSameOrBefore(fechaFin) && ff.isSameOrAfter(fechaInicio);
   });
 
   apiGrid.setGridOption("rowData", filtrados);

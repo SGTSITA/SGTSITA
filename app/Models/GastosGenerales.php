@@ -20,7 +20,8 @@ class GastosGenerales extends Model
         'id_banco1',
         'id_banco2',
         'id_empresa',
-        'id_categoria'
+        'id_categoria',
+        'pago_realizado',
     ];
 
     public function Banco1()

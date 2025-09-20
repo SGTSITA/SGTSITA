@@ -12,6 +12,7 @@ use App\Models\Cotizaciones;
 use App\Models\DocumCotizacion;
 use App\Models\Equipo;
 use App\Models\GastosOperadores;
+use App\Models\GastosGenerales;
 
 use Auth;
 use DB;
@@ -30,30 +31,54 @@ class GastosContenedoresController extends Controller
 
     public function getGxp(){
       //Gastos por pagar
-      $gastos = GastosOperadores::with([
+      $gastosOperadores = GastosOperadores::with([
         'Asignaciones.Proveedor',
         'Asignaciones.Contenedor.Cotizacion.Cliente',
         'Asignaciones.Contenedor.Cotizacion.Subcliente'
     ])
     ->whereHas('Asignaciones', fn ($q) => $q->where('id_empresa', auth()->user()->id_empresa))
-    ->where('estatus', '!=', 'Pagado');
-
-    $data = $gastos->get()->map(function ($g) {
+    ->where('estatus', '!=', 'Pagado')
+    ->get()
+    ->map(function ($g) {
         $asignacion = $g->Asignaciones;
-        $contenedor =  optional($asignacion->Contenedor)->num_contenedor;
-        $contenedorB = self::getContenedorSecundario(optional($asignacion->Contenedor->Cotizacion)->referencia_full);
+        $contenedor = optional($asignacion->Contenedor)->num_contenedor;
+        $contenedorB = self::getContenedorSecundario(optional(optional($asignacion->Contenedor)->Cotizacion)->referencia_full);
+
         return [
-            'IdGasto' => $g->id,
-            'Descripcion' => $g->tipo,
-            'NumContenedor' => $contenedor.$contenedorB ?? '-',
-            'Monto' => $g->cantidad ?? 0,
-          
-            'FechaGasto' => Carbon::parse($g->created_at)->format('Y-m-d'),
-            'FechaPago' => $g->fecha_pago,
-             'fecha_inicio' => optional($asignacion)->fecha_inicio,
-'fecha_fin' => optional($asignacion)->fecha_fin,
+            'IdGasto'       => $g->id,
+            'Descripcion'   => $g->tipo,
+            'NumContenedor' => $contenedor . ($contenedorB ?? ''),
+            'Monto'         => $g->cantidad ?? 0,
+            'FechaGasto'    => Carbon::parse($g->created_at)->format('Y-m-d'),
+            'FechaPago'     => $g->fecha_pago,
+            'fecha_inicio'  => optional($asignacion)->fecha_inicio,
+            'fecha_fin'     => optional($asignacion)->fecha_fin,
+                        'Origen'        => 'Operador'
         ];
     });
+
+    $gastosGenerales = DB::table('gastos_generales')
+    ->join('categorias_gastos', 'categorias_gastos.id', '=', 'gastos_generales.id_categoria')
+    ->select(
+        'gastos_generales.id as IdGasto',
+        'motivo as  NumContenedor',
+        'categorias_gastos.categoria as Descripcion',
+        'monto1 as Monto',
+        DB::raw("DATE(gastos_generales.fecha) as FechaGasto"),
+        'fecha as FechaPago',
+        DB::raw('fecha_diferido_inicial as fecha_inicio'),
+        DB::raw('fecha_diferido_final as fecha_fin'),
+     
+        DB::raw("'General' as Origen")
+    )
+    ->where('gastos_generales.is_active', 1)
+    ->where('id_empresa', auth()->user()->id_empresa)
+    ->where('pago_realizado', 0)
+    //->whereNotNull('gasto_origen_id')
+    ->get();
+
+
+    $data = $gastosOperadores->merge($gastosGenerales);
 
     return response()->json(["TMensaje" => "success", "contenedores" => $data]);
     }
@@ -115,6 +140,11 @@ class GastosContenedoresController extends Controller
             $IdGastos = $Gastos->pluck('IdGasto');
             $contenedoresAbonosJson = json_encode($contenedoresAbonos);
             GastosOperadores::whereIn('id',$IdGastos)->update(["estatus" => "Pagado","id_banco" => $r->bank, "fecha_pago" => Carbon::now()->format('Y-m-d')]);
+            //gastos generales
+            $gastogral=  GastosGenerales::whereIn('id',$IdGastos)->update(["pago_realizado" => 1,"id_banco2" => $r->bank, "fecha_operacion" => Carbon::now()->format('Y-m-d'),"is_active"=>0]);
+            if($gastogral){
+                 $banco->descripcion = "Pago Gastos Generales";
+            }
 
             $banco->contenedores = $contenedoresAbonosJson;
 
@@ -134,7 +164,7 @@ class GastosContenedoresController extends Controller
             return response()->json([
                 "Titulo" => "Ha ocurrido un error",
                 "Mensaje" => "Ocurrio un error mientras procesabamos su solicitud. Cod Error $idError",
-                "TMensaje" => "error"
+                "TMensaje" => "error" . $t->getMessage()
             ]);
 
         }

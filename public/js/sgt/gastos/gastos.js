@@ -340,7 +340,7 @@ class MissionResultRenderer {
 
 
             //llenar select de viajes
-
+/* 
             document.getElementById('aplicacion-viajeGeneral').innerHTML = `<label class="mt-4 form-label">Seleccione viajes</label><select class="form-control" name="selectViajesGeneral" id="selectViajesGeneral" multiple></select>`
 
         let selectViajes = document.querySelector('#selectViajesGeneral')
@@ -354,7 +354,7 @@ class MissionResultRenderer {
 
         const example = new Choices(selectViajes, {
             removeItemButton: true
-        });
+        }); */
         },
         error:()=>{
 
@@ -481,9 +481,9 @@ if(!passValidation) return passValidation;
 
   
   // mostrar solo la que corresponde
-  if (input.value === "Viaje") {
+/*   if (input.value === "Viaje") {
     document.querySelector("#aplicacion-viajeGeneral").classList.remove('d-none');
-  }
+  } */
   if (input.value === "Equipo") {
     document.querySelector("#aplicacion-equipoGeneral").classList.remove('d-none');
   } 

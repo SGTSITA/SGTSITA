@@ -90,7 +90,7 @@ class GastosGeneralesController extends Controller
                      "Categoria" => $g->categoria->categoria,
                      "CuentaOrigen" => $g->banco1->nombre_banco,
                      "FechaGasto" => $g->fecha,
-                     "FechaContabilizado" => $g->fecha,
+                     "FechaContabilizado" => $g->fecha_operacion ? $g->fecha_operacion : $g->fecha,
                      "Estatus" => true,
                      "Diferido" => ($g->diferir_gasto == 1) ? 'Diferido' : '',
                      "GastoAplicado" => (!is_null($g->aplicacion_gasto)) ? true : false
