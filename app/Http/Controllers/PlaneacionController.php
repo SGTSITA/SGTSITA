@@ -260,7 +260,6 @@ class PlaneacionController extends Controller
         $contenedor = DocumCotizacion::where('num_contenedor',$numContenedor)->first();
         $cotizacion = Cotizaciones::where('id', '=',  $contenedor->id_cotizacion)->first();
         
-      
         try{
 
             DB::beginTransaction();
@@ -285,11 +284,11 @@ class PlaneacionController extends Controller
                 $asignaciones->id_banco1_dinero_viaje = $request->get('cmbBanco');
                 $asignaciones->cantidad_banco1_dinero_viaje = $request->get('txtDineroViaje');
 
-                if($request->get('txtSueldoOperador') > $request->get('txtDineroViaje')){
-                    $resta = $request->get('txtSueldoOperador') - $request->get('txtDineroViaje');
-                    $asignaciones->pago_operador = $resta;
-                    $asignaciones->restante_pago_operador = $resta;
-                }
+                
+                $resta = $request->get('txtSueldoOperador') - $request->get('txtDineroViaje');
+                $asignaciones->pago_operador = $resta;
+                $asignaciones->restante_pago_operador = $resta;
+               
 
                 if($request->get('cmbProveedor') == NULL){
                 
