@@ -271,7 +271,7 @@ class GastosGeneralesController extends Controller
         }catch(\Throwable $t){
             DB::rollback();
             \Log::info($t);
-            return response()->json(["Titulo" => "Gasto no aplicado","Mensaje" => "Ha ocurrido un error, no se puede aplicar el gasto", "TMensaje" => "danger"]);
+            return response()->json(["Titulo" => "Gasto no aplicado","Mensaje" => "Ha ocurrido un error, no se puede aplicar el gasto", "TMensaje" => "danger", "Error" => $t->getMessage() ]);
 
         }
 
