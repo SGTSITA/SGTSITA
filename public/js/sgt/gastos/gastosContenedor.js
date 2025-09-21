@@ -323,8 +323,8 @@ function getGxp() {
       gridDataOriginal = (response.contenedores || []).map(row => ({
         ...row,
             fecha_inicio: row.fecha_inicio ? moment(row.fecha_inicio, 'YYYY-MM-DD HH:mm:ss') : moment(row.fecha, 'YYYY-MM-DD'),
-            fecha_fin: row.fecha_fin ? moment(row.fecha_fin, 'YYYY-MM-DD HH:mm:ss') : moment(row.fecha, 'YYYY-MM-DD'),
-            FechaGasto: row.FechaGasto ? moment(row.FechaGasto, 'YYYY-MM-DD') : moment(row.fecha, 'YYYY-MM-DD'),
+          fecha_fin: row.fecha_fin ? moment(row.fecha_fin, 'YYYY-MM-DD HH:mm:ss') : moment(row.fecha, 'YYYY-MM-DD'),
+          FechaGasto: row.FechaGasto ? moment(row.FechaGasto, 'YYYY-MM-DD') : moment(row.fecha, 'YYYY-MM-DD'),
         }));
 
 
@@ -347,12 +347,12 @@ function filtrarPorFechas(inicio, fin) {
   const fechaFin = moment(fin, 'YYYY-MM-DD').endOf('day');
 
   const filtrados = gridDataOriginal.filter(row => {
-    const fi = row.fecha_inicio instanceof Date ? moment(row.fecha_inicio) : null;
-    const ff = row.fecha_fin instanceof Date ? moment(row.fecha_fin) : null;
+    const fi = row.fecha_inicio;
+    const ff = row.fecha_fin;
 
     if (!fi || !ff || !fi.isValid() || !ff.isValid()) return false;
 
-    // ✅ Solo incluir si ambos están dentro del rango
+    // ✅ Registros totalmente dentro del rango
     return fi.isSameOrAfter(fechaInicio) && ff.isSameOrBefore(fechaFin);
   });
 
