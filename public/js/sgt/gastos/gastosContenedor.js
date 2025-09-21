@@ -326,7 +326,14 @@ function getGxp() {
           fecha_fin: row.fecha_fin ? moment(row.fecha_fin, 'YYYY-MM-DD HH:mm:ss') : moment(row.fecha, 'YYYY-MM-DD'),
           FechaGasto: row.FechaGasto ? moment(row.FechaGasto, 'YYYY-MM-DD') : moment(row.fecha, 'YYYY-MM-DD'),
         }));
-
+gridDataOriginal.forEach((row, i) => {
+    ['fecha_inicio','fecha_fin','FechaGasto'].forEach(field => {
+        const value = row[field];
+        if (!value || !value.isValid()) {
+            console.warn(`Fila ${i} tiene ${field} inválido:`, value, row);
+        }
+    });
+});
 
       // 🔽 Aplica filtro de últimos 7 días después de cargar
       const hoy = moment().endOf('day');
