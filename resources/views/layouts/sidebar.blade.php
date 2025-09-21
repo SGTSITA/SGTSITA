@@ -389,6 +389,11 @@
                                 <span class="sidenav-mini-icon"> P </span>
                                 <span class="sidenav-normal">Historial Liquidaciones</span>
                             </a>
+                            <a class="nav-link {{ Request::is('reporteria/cotizaciones/cxp*') ? 'show' : '' }}"
+                                href="{{ route('operadores.prestamo') }}">
+                                <span class="sidenav-mini-icon"> P </span>
+                                <span class="sidenav-normal">Registrar prestamo</span>
+                            </a>
                         </li>
                     </ul>
                 </div>

@@ -17,6 +17,7 @@ use App\Http\Controllers\GpsCompanyController;
 use App\Http\Controllers\ContactoController;
 use App\Http\Controllers\ReporteriaController;
 use App\Http\Controllers\MepController;
+use App\Http\Controllers\PrestamosController;
 
 use App\Models\User;
 
@@ -45,6 +46,12 @@ Route::group(["prefix" => "whatsapp"],function(){
     Route::get('sendtext/{phone}/{text}',[WhatsAppController::class,'sendText'])->name('whatsapp.text');
     Route::get('webhook',[WhatsAppController::class,'webHook'])->name('whatsapp.webhook');
     Route::post('webhook',[WhatsAppController::class,'verifyWebHook'])->name('whatsapp.verify.webhook');
+
+});
+
+Route::group(["prefix" => "prestamos"], function(){
+    Route::get("registro",[PrestamosController::class,'index'])->name('operadores.prestamo');
+    Route::post("store",[PrestamosController::class,'store'])->name('prestamo.store');
 
 });
 
