@@ -322,10 +322,10 @@ function getGxp() {
     success: (response) => {
       gridDataOriginal = (response.contenedores || []).map(row => ({
         ...row,
-        fecha_inicio: row.fecha_inicio ? new Date(row.fecha_inicio) : new Date(row.fecha),
-        fecha_fin: row.fecha_fin ? new Date(row.fecha_fin) : new Date(row.fecha),
-        FechaGasto: row.FechaGasto ? new Date(row.FechaGasto) : null,
-      }));
+            fecha_inicio: row.fecha_inicio ? moment(row.fecha_inicio, 'YYYY-MM-DD HH:mm:ss') : moment(row.fecha, 'YYYY-MM-DD'),
+            fecha_fin: row.fecha_fin ? moment(row.fecha_fin, 'YYYY-MM-DD HH:mm:ss') : moment(row.fecha, 'YYYY-MM-DD'),
+            FechaGasto: row.FechaGasto ? moment(row.FechaGasto, 'YYYY-MM-DD') : moment(row.fecha, 'YYYY-MM-DD'),
+        }));
 
 
       // 🔽 Aplica filtro de últimos 7 días después de cargar
