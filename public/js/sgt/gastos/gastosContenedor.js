@@ -282,7 +282,14 @@ function applyPaymentGastos() {
   let gastosPagar = [];
   apiGrid.forEachNodeAfterFilterAndSort((node) => {
     if (node.isSelected()) {
-      gastosPagar.push(node.data);
+          const row = node.data;
+    gastosPagar.push({
+      ...row,
+      fecha_inicio: row.fecha_inicio ? row.fecha_inicio.format('YYYY-MM-DD HH:mm:ss') : null,
+      fecha_fin: row.fecha_fin ? row.fecha_fin.format('YYYY-MM-DD HH:mm:ss') : null,
+      FechaGasto: row.FechaGasto ? row.FechaGasto.format('YYYY-MM-DD') : null,
+    });
+     // gastosPagar.push(node.data);
     }
   });
 
