@@ -424,6 +424,17 @@ if(!passValidation) return passValidation;
    formData["gastoDiario"] = labelGastoDiario.textContent
    formData["numPeriodos"] = labelDiasPeriodo.textContent
 
+   const select = document.getElementById("selectUnidadesgeneral");
+   const unidades = Array.from(select.selectedOptions).map(option => option.value);
+   formData["unidades"] = unidades
+
+
+   let input = document.querySelector('input[name="formasAplicar"]:checked');
+   formData["formasAplicar"] = input.value
+
+   formData['fechaInicioSeleccionado'] = $('#daterange').attr('data-start');
+   formData['fechaFinalSeleccionado'] = $('#daterange').attr('data-end');
+
    $.ajax({
         url: '/gastos/generales/create',
         type: "post",
