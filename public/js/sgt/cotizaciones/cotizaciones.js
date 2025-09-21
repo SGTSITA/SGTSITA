@@ -72,9 +72,18 @@ const formFieldsMec = [
     {'field':'direccion_entrega','id':'direccion_entrega','label':'Dirección Entrega','required': true, "type":"text", "trigger":"none"},
     {'field':'direccion_recinto','id':'direccion_recinto','label':'Dirección recinto','required': false, "type":"text", "trigger":"text_recinto"},
     {'field':'id_proveedor','id':'id_proveedor','label':'Proveedor','required': true, "type":"text", "trigger":"none"},
-    {'field':'id_transportista','id':'id_transportista','label':'Transportista','required': true, "type":"text", "trigger":"none"}
-
-
+    {'field':'id_transportista','id':'id_transportista','label':'Transportista','required': true, "type":"text", "trigger":"none"},
+    {'field':'cp_fraccion','id':'cp_fraccion','label':'Fracción','required': true, "type":"text", "trigger":"none"},
+    {'field':'cp_pedimento','id':'cp_pedimento','label':'Pedimento','required': true, "type":"text", "trigger":"none"},
+    {'field':'cp_clave_sat','id':'cp_clave_sat','label':'Clave Sat','required': true, "type":"text", "trigger":"none"},
+    {'field':'cp_clase_pedimento','id':'cp_clase_pedimento','label':'Clase pedimento','required': true, "type":"text", "trigger":"none"},
+    {'field':'cp_cantidad','id':'cp_cantidad','label':'Cantidad','required': true, "type":"text", "trigger":"none"},
+    {'field':'cp_valor','id':'cp_valor','label':'Valor','required': true, "type":"text", "trigger":"none"},
+    {'field':'cp_moneda_valor','id':'cp_moneda_valor','label':'Moneda','required': true, "type":"text", "trigger":"none"},
+    {'field':'cp_contacto_entrega','id':'cp_contacto_entrega','label':'Teléfono Contacto Entrega','required': true, "type":"text", "trigger":"none"},
+    {'field':'cp_fecha_tentativa_entrega','id':'cp_fecha_tentativa_entrega','label':'Fecha tentativa Entregra','required': true, "type":"text", "trigger":"none"},
+    {'field':'cp_hora_tentativa_entrega','id':'cp_hora_tentativa_entrega','label':'Hora tentativa entrega','required': true, "type":"text", "trigger":"none"},
+    {'field':'cp_comentarios','id':'cp_comentarios','label':'Comentarios Carta Porte','required': true, "type":"text", "trigger":"none"}
 ]
 
 const formFieldsFacturacion = [
@@ -418,6 +427,7 @@ function crearurlmapalatitudlongitud(lat, lng) {
 
 
  var modal = document.getElementById('mapModal');
+ if(modal){
     modal.addEventListener('shown.bs.modal', function () {
         if (!map) {
             // Inicializar Google Maps
@@ -485,8 +495,9 @@ function crearurlmapalatitudlongitud(lat, lng) {
                 });
         }
     });
-
-   document.getElementById('searchInput').addEventListener('keypress', function (e) {
+}
+if(document.getElementById('searchInput')){
+    document.getElementById('searchInput').addEventListener('keypress', function (e) {
         if (e.key === 'Enter') {
             e.preventDefault();
             let query = this.value;
@@ -508,6 +519,9 @@ function crearurlmapalatitudlongitud(lat, lng) {
             }
         }
     });
+}
+   
+
 function resolverUrlMapa(url) {
     const _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     fetch('/coordenadas/resolver-link-google', {

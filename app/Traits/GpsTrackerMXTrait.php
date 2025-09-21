@@ -46,8 +46,6 @@ trait GpsTrackerMXTrait
         $empresaId = auth()->user()->id_empresa;
         $jsessionid = self::getGpsAccessToken($empresaId, $accessAccount);
 
-        Log::debug("JSESSIONID: ".$jsessionid);
-
         if (!$jsessionid) {
             return new ApiResponse(
                 success: false,

@@ -18,6 +18,8 @@ use App\Models\Operador;
 use App\Models\Proveedor;
 use App\Models\Subclientes;
 use App\Models\ClientEmpresa;
+use App\Models\EmpresaGps;
+use App\Models\GpsCompany;
 use App\Models\BancoDineroOpe;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -25,21 +27,18 @@ use Carbon\Carbon;
 use Session;
 use DB;
 use Auth;
+USE File;
 use App\Events\EnvioCorreoCoordenadasEvent;
 use App\Traits\CommonTrait as Common;
 
 class CotizacionesController extends Controller
 {
     public function index(){
-
-        // $cotizaciones_planeadas = Cotizaciones::where('id_empresa' ,'=',auth()->user()->id_empresa)->where('estatus','=','Aprobada')->where('estatus_planeacion','=', 1)->orderBy('created_at', 'desc')
-        // ->select('id_cliente', 'origen', 'destino', 'id', 'estatus')->get();
-
-        
         $empresas = Empresas::get();
+        $EmpresasGPS = EmpresaGps::where('id_empresa',auth()->user()->id_empresa)->with('serviciosGps')->get()->pluck('id_gps_company');
+        $gpsCompanies = GpsCompany::whereIn('id',$EmpresasGPS)->get();
 
-      //  return view('cotizaciones.index');
-        return view('cotizaciones.index', compact('empresas'));
+        return view('cotizaciones.index', compact('empresas','gpsCompanies'));
     }
 
     public function getCotizacionesList()
@@ -528,6 +527,8 @@ public function getCotizacionesCanceladas()
         $cotizaciones->recinto_clientes = $request->get('recinto_clientes');
         $cotizaciones->precio_tonelada = 0;
 
+        //
+
         if($request->get('id_cliente_clientes') == NULL){
             $precio_tonelada = 0;
             $cotizaciones->precio_tonelada = $precio_tonelada;
@@ -545,6 +546,14 @@ public function getCotizacionesCanceladas()
         $cotizaciones->total = $total;
         $cotizaciones->restante = $cotizaciones->total;
         $cotizaciones->estatus_pago = '0';
+        $cotizaciones->save();
+
+        $docucotizaciones = new DocumCotizacion;
+        $docucotizaciones->id_cotizacion = $cotizaciones->id;
+        $docucotizaciones->num_contenedor = str_replace(' ','',$request->get('num_contenedor'));
+        $docucotizaciones->save();
+        // Definir ruta dentro de public
+        $path = public_path('cotizaciones/cotizacion'.$docucotizaciones->id.'/formato_carta_porte_' . $numContenedor . '.pdf');
 
         if($request->has('uuid')){
             
@@ -554,6 +563,33 @@ public function getCotizacionesCanceladas()
             $cotizaciones->direccion_entrega = $request->direccion_entrega;
             $cotizaciones->direccion_recinto = $request->direccion_recinto;
             $cotizaciones->uso_recinto = ($request->text_recinto == 'recinto-si') ? 1 : 0;
+
+            //Nuevos campos para datos de CartaPorte 09/2025
+            
+            $cotizaciones->cp_fraccion = $request->cp_fraccion;
+            $cotizaciones->cp_clave_sat = $request->cp_clave_sat; 
+            $cotizaciones->cp_pedimento = $request->cp_pedimento;
+            $cotizaciones->cp_clase_ped = $request->cp_clase_pedimento;
+            $cotizaciones->cp_cantidad = $request->cp_cantidad;
+            $cotizaciones->cp_valor = $request->cp_valor;
+            $cotizaciones->cp_moneda = $request->cp_moneda_valor; 
+            $cotizaciones->cp_contacto_entrega = $request->cp_contacto_entrega;
+            $cotizaciones->cp_fecha_tentativa_entrega = $request->cp_fecha_tentativa_entrega;
+            $cotizaciones->cp_hora_tentativa_entrega = $request->cp_hora_tentativa_entrega;
+            $cotizaciones->cp_comentarios = $request->cp_comentarios;
+
+            $subCliente = Subclientes::where('id',$cotizaciones->id_subcliente)->first();
+            
+            $pdf = \PDF::loadView('cotizaciones.carta_porte_pdf', compact('cotizaciones','numContenedor','subCliente'));
+
+            // Crear la carpeta si no existe
+            if (!File::exists(public_path('cotizaciones/cotizacion'.$docucotizaciones->id.''))) {
+                File::makeDirectory(public_path('cotizaciones/cotizacion'.$docucotizaciones->id.''), 0755, true);
+            }
+
+            // Guardar PDF
+            $pdf->save($path);
+
             if($request->has('id_proveedor')){
                 $cotizaciones->id_proveedor = $request->id_transportista;
             }
@@ -562,7 +598,7 @@ public function getCotizacionesCanceladas()
         $cotizaciones->latitud=  $request->latitud;
         $cotizaciones->longitud = $request->longitud;
         $cotizaciones->direccion_mapa = $request->direccion_mapa;
-        $cotizaciones->save();
+        $cotizaciones->update();
 
         $doc_cotizaciones = Cotizaciones::where('id', '=', $cotizaciones->id)->first();
         if ($request->hasFile("excel_clientes")) {
@@ -575,10 +611,14 @@ public function getCotizacionesCanceladas()
 
         $doc_cotizaciones->update();
 
-        $docucotizaciones = new DocumCotizacion;
-        $docucotizaciones->id_cotizacion = $cotizaciones->id;
-        $docucotizaciones->num_contenedor = str_replace(' ','',$request->get('num_contenedor'));
-        $docucotizaciones->save();
+       
+
+        if(File::exists($path)){
+            $docucotizaciones->ccp = 'si';
+            $docucotizaciones->doc_ccp = 'formato_carta_porte_' . $numContenedor . '.pdf';
+        }
+
+        $docucotizaciones->update();
 
         if($idEmpresa != auth()->user()->id_empresa){
             DB::table('cotizaciones')->where('id',$cotizaciones->id)->update([
@@ -1428,12 +1468,12 @@ public function getCotizacionesCanceladas()
 
         $estatus = $cotizacion->estatus;
 
-        $directorio =  public_path().'/cotizaciones/cotizacion'.$cotizacion->id_cotizacion;
+        $directorio =  public_path().'/cotizaciones/cotizacion'.$cotizacion->id;
         if (!is_dir($directorio)) {
             mkdir($directorio);
         }
 		$FileUploader = new FileUploader('files', array(
-        'uploadDir' => public_path()."/cotizaciones/cotizacion$cotizacion->id_cotizacion/",
+        'uploadDir' => public_path()."/cotizaciones/cotizacion$cotizacion->id/",
         ));
 
 	// call to upload the files
@@ -1443,7 +1483,7 @@ public function getCotizacionesCanceladas()
 				$upload['files'][$key] = array(
 					'extension' => $item['extension'],
 					'format' => $item['format'],
-					'file' =>   public_path()."/cotizaciones/cotizacion$cotizacion->id_cotizacion/".$item['name'],
+					'file' =>   public_path()."/cotizaciones/cotizacion$cotizacion->id/".$item['name'],
 					'name' => $item['name'],
 					'old_name' => $item['old_name'],
 					'size' => $item['size'],
@@ -1469,17 +1509,16 @@ public function getCotizacionesCanceladas()
                 case 'CCP': $update = ["doc_ccp" => $item['name'], 'ccp' => "si"]; break;
 
             }
-
-
+          
             ($r->urlRepo != 'PreAlta' && $r->urlRepo != 'CartaPortePDF' && $r->urlRepo != 'CartaPorteXML')
-            ? DocumCotizacion::where('id',$cotizacion->id_cotizacion)->update($update)
-            : Cotizaciones::where('id',$cotizacion->id_cotizacion)->update($update);
+            ? DocumCotizacion::where('id',$cotizacion->id)->update($update)
+            : Cotizaciones::where('id',$cotizacion->id)->update($update);
 
-            if ($r->urlRepo == 'PreAlta')  DocumCotizacion::where('id',$cotizacion->id_cotizacion)->update(['boleta_vacio'=>'si']);
+            if ($r->urlRepo == 'PreAlta')  DocumCotizacion::where('id',$cotizacion->id)->update(['boleta_vacio'=>'si']);
 
             if(Auth::User()->id_cliente != 0){
-                event(new \App\Events\GenericNotificationEvent([$cotizacion->cliente->correo],'Se cargó '.$r->urlRepo.': '.$cotizacion->DocCotizacion->num_contenedor,'Hola, tu transportista cargó el documento "'.$r->urlRepo.'" del contenedor '.$cotizacion->DocCotizacion->num_contenedor));
-                event(new \App\Events\ConfirmarDocumentosEvent($cotizacion->id_cotizacion));
+                event(new \App\Events\GenericNotificationEvent([$cotizacion->cliente->correo],'Se cargó '.$r->urlRepo.': '.$r->numContenedor,'Hola, tu transportista cargó el documento "'.$r->urlRepo.'" del contenedor '.$r->numContenedor));
+                event(new \App\Events\ConfirmarDocumentosEvent($cotizacion->id));
             }
 
             if($estatus != 'En espera' && Auth::User()->id_cliente != 0){
