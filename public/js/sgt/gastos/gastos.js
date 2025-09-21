@@ -424,7 +424,7 @@ if(!passValidation) return passValidation;
    formData["gastoDiario"] = labelGastoDiario.textContent
    formData["numPeriodos"] = labelDiasPeriodo.textContent
 
-   const select = document.getElementById("selectUnidadesgeneral");
+   const select = document.getElementById("selectUnidadesGeneral");
    const unidades = Array.from(select.selectedOptions).map(option => option.value);
    formData["unidades"] = unidades
 
