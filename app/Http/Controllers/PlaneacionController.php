@@ -290,7 +290,7 @@ class PlaneacionController extends Controller
                 $asignaciones->restante_pago_operador = $resta;
                
 
-                if($request->get('cmbProveedor') == NULL){
+                if(is_null($request->get('cmbProveedor'))){
                 
                     $contenedoresAbonos = [];
                     $contenedorAbono = [
