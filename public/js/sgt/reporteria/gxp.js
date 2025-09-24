@@ -209,7 +209,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return (
                 fi instanceof Date && ff instanceof Date &&
                 !isNaN(fi) && !isNaN(ff) &&
-                moment(fi).isBetween(start,end, 'day') 
+                moment(fi).isBetween(start,end, 'day','[]') 
               //  && moment(ff).isSameOrBefore(end, 'day')
             );
         });
