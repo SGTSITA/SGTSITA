@@ -121,7 +121,7 @@
                 </li>
             @endcan
 
-            @can('cotizaciones-list')
+            @can('cotizacion-menu')
                 <a data-bs-toggle="collapse" href="#pagesExamplesCotizaciones"
                     class="nav-link {{ Request::is('cotizaciones*') ? 'active' : '' }}"
                     aria-controls="pagesExamplesCotizaciones" role="button" aria-expanded="false">
@@ -135,27 +135,37 @@
                 <div class="collapse " id="pagesExamplesCotizaciones">
                     <ul class="nav ms-4">
                         <li class="nav-item ">
+                            @can('cotizacion-buscador')
                             <a class="nav-link {{ Request::is('cotizaciones/busqueda') ? 'show' : '' }}"
                                 href="{{ route('busqueda.cotizaciones') }}">
                                 <span class="sidenav-mini-icon"> P </span>
                                 <span class="sidenav-normal">Busqueda</span>
                             </a>
+                            @endcan
+
+                            @can('cotizacion-crear')
                             <a class="nav-link {{ Request::is('cotizaciones*') ? 'show' : '' }}"
                                 href="{{ route('create.cotizaciones') }}">
                                 <span class="sidenav-mini-icon"> P </span>
                                 <span class="sidenav-normal">Crear Cotización</span>
                             </a>
+                            @endcan
+
+                            @can('cotizacion-segumiento')
                             <a class="nav-link {{ Request::is('cotizaciones*') ? 'show' : '' }}"
                                 href="{{ route('index.cotizaciones') }}">
                                 <span class="sidenav-mini-icon"> P </span>
                                 <span class="sidenav-normal">Seguimiento</span>
                             </a>
+                            @endcan
 
+                            @can('cotizacion-solicitudes-entrantes')
                             <a class="nav-link {{ Request::is('cotizaciones/busqueda') ? 'show' : '' }}"
                                 href="{{ route('cotizaciones.entrantes') }}">
                                 <span class="sidenav-mini-icon"> P </span>
                                 <span class="sidenav-normal">Solicitudes entrantes</span>
                             </a>
+                            @endcan
                         </li>
                     </ul>
                 </div>

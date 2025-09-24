@@ -47,11 +47,10 @@ class GastosContenedoresController extends Controller
             'Descripcion' => $g->tipo,
             'NumContenedor' => $contenedor.$contenedorB ?? '-',
             'Monto' => $g->cantidad ?? 0,
-          
             'FechaGasto' => Carbon::parse($g->created_at)->format('Y-m-d'),
             'FechaPago' => $g->fecha_pago,
-             'fecha_inicio' => optional($asignacion)->fecha_inicio,
-'fecha_fin' => optional($asignacion)->fecha_fin,
+            'fecha_inicio' => optional($asignacion)->fecha_inicio,
+            'fecha_fin' => optional($asignacion)->fecha_fin,
         ];
     });
 
@@ -69,9 +68,7 @@ class GastosContenedoresController extends Controller
                 $numContenedor = ' / ' . $secundaria->DocCotizacion->num_contenedor;
                 return $numContenedor;
             }
-
         }
-                    
     }
 
     public function PagarGastosMultiple(Request $r){
@@ -257,9 +254,11 @@ class GastosContenedoresController extends Controller
     public function confirmarGastos(Request $r){
         try{
             $gastosContenedores = json_decode($r->datahandsOnTableGastos);
-            foreach($gastosContenedores as $gasto){
             DB::beginTransaction();
-
+            $nuevosGastos = [];  
+            $datosGasto = [];
+            $bancoDinero = []; 
+            foreach($gastosContenedores as $gasto){
              $numContenedor = $gasto[0];
              $camposGastos = [1,2,3];
              $camposGastoInmediato = [6,7,8];
@@ -274,12 +273,30 @@ class GastosContenedoresController extends Controller
              
              for($e = 0; $e <= 2; $e++){
                 if($gasto[$camposGastos[$e]] > 0){
+
+                     $esPagoInmediato = $gasto[$camposGastoInmediato[$e]];
+                     $bank = trim(substr($gasto[9],0,5));
+
                      $gastoViaje = GastosOperadores::where('id_cotizacion',$contenedor->id_cotizacion)->where('tipo',$descripcionGastos[$e]);
-                     if(!$gastoViaje->exists()){
-                        $esPagoInmediato = $gasto[$camposGastoInmediato[$e]];
-                        $bank = substr($gasto[9],0,5);
+                     $existeGasto = $gastoViaje->exists(); 
+
+                     //Una vez superada la validacion proceder a guardar
+                     if(!$existeGasto){
+
+                        if($esPagoInmediato && empty($bank)){
+                                return response()->json([
+                                    "Titulo" => "Debe seleccionar banco", 
+                                    "Mensaje" => "Ha seleccionado la opción de pago inmediato. Por favor, indique el banco desde el cual se realizará el retiro.", 
+                                    "TMensaje" => "warning"
+                                ]);   
+                        }
+
+                        $nuevosGastos[] = [
+                            "banco" => intval($bank),
+                            "gasto" => $gasto[$camposGastos[$e]]
+                        ];
    
-                        $datosGasto = [
+                        $datosGasto[] = [
                            "id_cotizacion" => $contenedor->id_cotizacion,
                            "id_banco" => $esPagoInmediato != 0 ? intval($bank) : null,
                            "id_asignacion" => $asignacion->id,
@@ -292,7 +309,26 @@ class GastosContenedoresController extends Controller
                            "created_at" => Carbon::now()
                           ];
    
-                         GastosOperadores::insert($datosGasto);
+                         if($esPagoInmediato){
+                            
+                            $contenedoresAbonos[] = [
+                                'num_contenedor' => $numContenedor,
+                                'abono' => $gasto[$camposGastos[$e]]
+                            ];
+
+                            $contenedoresAbonosJson = json_encode($contenedoresAbonos);
+                            $bancoDinero[] = [
+                                "monto1" => $gasto[$camposGastos[$e]],
+                                "metodo_pago1" => 'Transferencia',
+                                "descripcion" => $descripcionGastos[$e]. " ".$numContenedor,
+                                "id_banco1" => $bank,
+                                "contenedores" => $contenedoresAbonosJson,
+                                "tipo" => 'Salida',
+                                "fecha_pago" =>  date('Y-m-d'),
+                            ];
+                
+                         }
+
                      }else{
                         $detalleGasto = $gastoViaje->first();
                         if($detalleGasto->cantidad != $gasto[$camposGastos[$e]]){
@@ -302,14 +338,50 @@ class GastosContenedoresController extends Controller
 
                         }
                      }
-                     
-                    //  DB::commit();
-                      
+                                           
                 }
              }
-             DB::commit();
 
             }
+
+            //Validemos que el banco tenga saldo suficiente para pagar el total de los gastos segun la seleccion del usuario
+            $gastosBancos = collect($nuevosGastos) 
+            ->groupBy('banco') 
+            ->map(fn($items) => $items->sum('gasto'));
+
+
+            $idsBancos = $gastosBancos->keys(); //Obtener los id de banco de la suma anterior
+
+            $bancos = Bancos::where('id_empresa', Auth::user()->id_empresa)
+                            ->whereIn('id', $idsBancos)
+                            ->get()
+                            ->keyBy('id');
+
+            foreach($gastosBancos as $idBanco => $totalGasto){
+                $banco = $bancos->get($idBanco);
+
+                if(!is_null($banco) && $banco->saldo < $totalGasto){
+                    return response()->json([
+                        "Titulo" => "Saldo insuficiente en Banco",
+                        "Mensaje" => "La cuenta bancaria seleccionada no cuenta con saldo suficiente para registrar esta transacción",
+                        "TMensaje" => "warning"
+                    ]);
+
+                }
+            }
+
+            GastosOperadores::insert($datosGasto);
+            BancoDinero::insert($bancoDinero);
+
+            //Descontar la suma de los bancos correspondientes
+
+            foreach($gastosBancos as $idBanco => $totalGasto){
+                Bancos::where('id' ,'=',$idBanco)->update(
+                    ["saldo" => DB::raw("saldo - ". $totalGasto)
+                ]);
+            }
+
+            DB::commit();
 
             
              return response()->json(["Titulo" => "Gasto agregado","Mensaje" => "Se agregó el gasto","TMensaje" => "success"]);

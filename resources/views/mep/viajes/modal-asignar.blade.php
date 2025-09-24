@@ -125,6 +125,139 @@
             </div>
           </div>
           <hr class="horizontal dark mt-4 mb-4">
+          
+          <!--Chasis A-->
+          <div class="row mt-3">
+          <h6>Datos de Chasis A
+            <span class="form-text text-muted text-xs d-block ms-1">
+                La información de la unidad asignada se almacenará para que puedas seleccionarlo fácilmente en futuros viajes.
+            </span>
+          </h6>
+              
+            <div class="col-md-4">
+              <label for="operadorSelect" class="form-label">Núm Eco/ Núm Chasis / Identificador</label>
+              <div class="position-relative w-100">
+                <input type="text" 
+                class="form-control form-control-sm ps-3 pe-5 rounded-pill text-uppercase" 
+                placeholder="Ej. CH001..."
+                id="txtNumChasisA"
+                data-mep-unidad="0"
+                >
+                <!-- Icono convertido en botón -->
+                <button type="button" class="btn btn-sm position-absolute end-0 top-50 translate-middle-y me-2 p-1 rounded-circle " onclick="buscarUnidad(txtNumChasisA.value)">
+                  <i class="fas fa-search "></i>
+                </button>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <label for="operadorSelect" class="form-label">Placas</label>
+              <div class="position-relative w-100" style="max-width: 300px;">
+                <input type="text" class="form-control form-control-sm ps-3 pe-5 rounded-pill text-uppercase" 
+                id="txtPlacasA" placeholder="Placas...">
+                <span class="position-absolute end-0 top-50 translate-middle-y pe-3 text-muted">
+                  <i class="fas fa-barcode"></i>
+                </span>
+              </div>
+            </div>
+
+           
+            
+          </div>
+
+          <div class="row">
+          <div class="col-md-4">
+            <label for="selectChasisAGPS" class="form-label">Compañia GPS</label>
+            <div class="position-relative w-100" style="max-width: 300px;">
+              <select id="selectChasisAGPS" class="form-select form-select-sm ps-3 pe-5 rounded-pill text-uppercase">
+                <option value="" disabled selected>Selecciona compañia GPS...</option>
+                @foreach($gpsCompanies as $gps)
+                <option value="{{$gps->id}}">{{$gps->nombre}}</option>
+                @endforeach
+             
+              </select>
+              <span class="position-absolute end-0 top-50 translate-middle-y pe-3 text-muted">
+                <i class="fas fa-satellite-dish"></i>
+              </span>
+            </div>
+           
+
+            </div>
+            <div class="col-md-3">
+              <label for="operadorSelect" class="form-label">IMEI</label>
+              <div class="position-relative w-100" style="max-width: 300px;">
+                <input type="text" class="form-control form-control-sm ps-3 pe-5 rounded-pill text-uppercase" id="txtImeiChasisA" placeholder="Imei GPS...">
+                <span class="position-absolute end-0 top-50 translate-middle-y pe-3 text-muted">
+                  <i class="fas fa-microchip"></i>
+                </span>
+              </div>
+            </div>
+          </div>
+          <hr class="horizontal dark mt-4 mb-4">
+          <!--Chasis B-->
+          <div class="row mt-3">
+          <h6>Datos de Chasis B
+            <span class="form-text text-muted text-xs d-block ms-1">
+                La información de la unidad asignada se almacenará para que puedas seleccionarlo fácilmente en futuros viajes.
+            </span>
+          </h6>
+              
+            <div class="col-md-4">
+              <label for="operadorSelect" class="form-label">Núm Eco/ Núm Chasis B/ Identificador</label>
+              <div class="position-relative w-100">
+                <input type="text" 
+                class="form-control form-control-sm ps-3 pe-5 rounded-pill text-uppercase" 
+                placeholder="Ej. CH002..."
+                id="txtNumChasisB"
+                data-mep-unidad="0"
+                >
+                <!-- Icono convertido en botón -->
+                <button type="button" class="btn btn-sm position-absolute end-0 top-50 translate-middle-y me-2 p-1 rounded-circle " onclick="buscarUnidad(txtNumChasisB.value)">
+                  <i class="fas fa-search "></i>
+                </button>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <label for="operadorSelect" class="form-label">Placas</label>
+              <div class="position-relative w-100" style="max-width: 300px;">
+                <input type="text" class="form-control form-control-sm ps-3 pe-5 rounded-pill text-uppercase" 
+                id="txtPlacasB" placeholder="Placas...">
+                <span class="position-absolute end-0 top-50 translate-middle-y pe-3 text-muted">
+                  <i class="fas fa-barcode"></i>
+                </span>
+              </div>
+            </div>
+            
+          </div>
+
+          <div class="row">
+          <div class="col-md-4">
+            <label for="selectChasisBGPS" class="form-label">Compañia GPS</label>
+            <div class="position-relative w-100" style="max-width: 300px;">
+              <select id="selectChasisBGPS" class="form-select form-select-sm ps-3 pe-5 rounded-pill text-uppercase">
+                <option value="" disabled selected>Selecciona compañia GPS...</option>
+                @foreach($gpsCompanies as $gps)
+                <option value="{{$gps->id}}">{{$gps->nombre}}</option>
+                @endforeach
+             
+              </select>
+              <span class="position-absolute end-0 top-50 translate-middle-y pe-3 text-muted">
+                <i class="fas fa-satellite-dish"></i>
+              </span>
+            </div>
+           
+
+            </div>
+            <div class="col-md-3">
+              <label for="operadorSelect" class="form-label">IMEI</label>
+              <div class="position-relative w-100" style="max-width: 300px;">
+                <input type="text" class="form-control form-control-sm ps-3 pe-5 rounded-pill text-uppercase" id="txtImeiChasisB" placeholder="Imei GPS...">
+                <span class="position-absolute end-0 top-50 translate-middle-y pe-3 text-muted">
+                  <i class="fas fa-microchip"></i>
+                </span>
+              </div>
+            </div>
+          </div>
+          <hr class="horizontal dark mt-4 mb-4">
 
           <div class="row mt-3">
           <h6>Datos del viaje

@@ -58,5 +58,7 @@
     <script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.js"></script>
 
     {{-- Tu script principal --}}
-    <script src="{{ asset('js/sgt/reporteria/gxp.js') }}"></script>
+    <script 
+    src="{{ asset('js/sgt/reporteria/gxp.js') }}?v={{ filemtime(public_path('js/sgt/reporteria/gxp.js')) }}">
+    ></script>
 @endsection

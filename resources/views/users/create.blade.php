@@ -1,198 +1,241 @@
 @extends('layouts.app')
 
 @section('template_title')
-    Create Usuarios
+    Crear Usuario
 @endsection
+
+@push('custom-css')
+    <style>
+        .card {
+            border: none;
+            border-radius: 18px;
+            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.06);
+        }
+
+        .card-header {
+            background: #f8f9fb;
+            border-top-left-radius: 18px;
+            border-top-right-radius: 18px;
+            padding: 16px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .form-label {
+            font-weight: 500;
+        }
+
+        .radio-group-ios {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .radio-ios {
+            appearance: none;
+            -webkit-appearance: none;
+            background-color: #f0f0f5;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 999px;
+            font-weight: 600;
+            color: #333;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .radio-ios:checked {
+            background-color: #007aff;
+            color: #fff;
+        }
+
+        .radio-ios:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.4);
+        }
+
+        .input-password-group {
+            position: relative;
+        }
+
+        .input-password-group input.form-control {
+            padding-right: 2.75rem;
+            /* deja espacio para el ícono */
+            height: 45px;
+            border-radius: 12px;
+            box-sizing: border-box;
+        }
+
+        .input-password-group i.toggle-password {
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.2rem;
+            color: #888;
+            cursor: pointer;
+            z-index: 10;
+        }
+    </style>
+@endpush
 
 @section('content')
+    <div class="container-fluid mt-3">
+        <div class="row">
+            <div class="col-lg-10 mx-auto">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Crear nuevo usuario</h3>
+                        <a class="btn btn-ios" href="{{ route('users.index') }}">Regresar</a>
+                    </div>
 
-<div class="container-fluid mt-3">
-      <div class="row">
-        <div class="col">
-          <div class="card">
-            <!-- Card header -->
-            <div class="card-header">
-              <h3 class="mb-3">Crear nuevo usuario</h3>
-               <a class="btn" href="{{ route('users.index') }}" style="background: {{$configuracion->color_boton_close}}; color: #ffff"> Regresar</a>
-                    @if (count($errors) > 0)
-                      <div class="alert alert-danger">
-                        <strong>Whoops!</strong> There were some problems with your input.<br><br>
-                        <ul>
-                           @foreach ($errors->all() as $error)
-                             <li>{{ $error }}</li>
-                           @endforeach
-                        </ul>
-                      </div>
-                    @endif
+                    <div class="card-body">
+                        {!! Form::open(['route' => 'users.store', 'method' => 'POST', 'id' => 'formCrearUsuario']) !!}
+                        <div class="row g-3">
+                            <div class="col-md-12 ">
+                                <label class="form-label">Nombre</label>
+                                {!! Form::text('name', null, ['class' => 'form-control', 'placeholder' => 'Nombre', 'required']) !!}
+                            </div>
+
+                            <div class="col-md-12">
+                                <label class="form-label">Email</label>
+                                {!! Form::email('email', null, ['class' => 'form-control', 'placeholder' => 'Email', 'required']) !!}
+                            </div>
+
+                            <div class="col-md-12">
+                                <label class="form-label">Empresa</label>
+                                <select name="id_empresa" class="form-select" required>
+                                    <option value="">Selecciona una empresa</option>
+                                    @foreach ($listaEmpresas as $empresa)
+                                        <option value="{{ $empresa->id }}">{{ $empresa->nombre }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div class="col-md-12">
+                                <label class="form-label">Contraseña</label>
+                                <div class="input-password-group">
+                                    <input type="password" id="password" name="password" class="form-control"
+                                        placeholder="Password" required>
+                                </div>
+                            </div>
+
+                            <div class="col-md-12">
+                                <label class="form-label">Confirmar Contraseña</label>
+                                <div class="input-password-group">
+                                    <input type="password" name="confirm-password" id="confirm-password"
+                                        class="form-control" placeholder="Confirm Password" required>
+                                </div>
+                            </div>
+
+
+                            <div class="col-md-12">
+                                <label class="form-label d-block">Roles</label>
+                                <div class="radio-group-ios">
+                                    @foreach ($roles as $key => $rol)
+                                        <label>
+                                            <input type="radio" name="roles[]" value="{{ $key }}"
+                                                class="radio-ios" required>
+                                            {{ $rol }}
+                                        </label>
+                                    @endforeach
+                                </div>
+                            </div>
+
+
+                            <div class="col-md-6" id="clienteGroup" style="display: none;">
+                                <label class="form-label">Seleeciona el Cliente </label>
+                                <select name="id_cliente" id="id_cliente" class="form-select">
+                                    <option value="0">Sin cliente</option>
+                                    @foreach ($clientes as $cliente)
+                                        <option value="{{ $cliente->id }}">{{ $cliente->nombre }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+
+                            <div class="col-12 text-center mt-3">
+                                <button type="submit" class="btn btn-ios">Guardar</button>
+                            </div>
+                        </div>
+                        {!! Form::close() !!}
+                    </div>
+                </div>
             </div>
-
-            <div class="card-body mb-5">
-
-                {!! Form::open(array('route' => 'users.store','method'=>'POST')) !!}
-                <div class="row">
-                    <div class="col-xs-12 col-sm-12 col-md-6">
-                        <div class="form-group">
-                            <label class="form-control-label">Nombre:</label>
-                            {!! Form::text('name', null, array('placeholder' => 'Name','class' => 'form-control')) !!}
-                        </div>
-
-                    </div>
-                    <div class="col-xs-12 col-sm-12 col-md-6">
-                        <div class="form-group">
-                            <label class="form-control-label">Email:</label>
-                            {!! Form::text('email', null, array('placeholder' => 'Email','class' => 'form-control')) !!}
-                        </div>
-                    </div>
-
-              @if(auth()->user()->Empresa->id == 1)
-                @php $listaEmpresas = $empresas_base; @endphp
-                @else
-                    @php $listaEmpresas = $empresas; @endphp
-                @endif
-
-                <div class="mb-2">
-                <label for="empresa_select" class="form-label">Agregar Empresa</label>
-                <div class="d-flex gap-2">
-                    <select id="empresa_select" class="form-select form-select-sm w-50">
-                    <option value="">Selecciona una empresa</option>
-                    @foreach($empresas_base as $empresa)
-                        <option value="{{ $empresa->id }}" data-nombre="{{ $empresa->nombre }}">
-                        {{ $empresa->nombre }}
-                        </option>
-                    @endforeach
-                    </select>
-
-                    <div class="form-check align-self-center">
-                    <input type="checkbox" class="form-check-input" id="es_predeterminada">
-                    <label class="form-check-label" for="es_predeterminada">Predet.</label>
-                    </div>
-
-                    <button type="button" id="agregar_empresa" class="btn btn-sm btn-success">+</button>
-                </div>
-                </div>
-
-                <div class="table-responsive">
-                    <table class="table table-sm table-borderless align-middle mb-2" id="tabla_empresas" style="font-size: 0.85rem;">
-                        <thead class="table-light">
-                        <tr>
-                            <th style="width: 60%;">Empresa</th>
-                            <th style="width: 20%;" class="text-center">Predet.</th>
-                            <th style="width: 20%;" class="text-center">Quitar</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        {{-- Aquí se agregan dinámicamente las filas --}}
-                        </tbody>
-                    </table>
-                </div>
-
-                <div id="empresas_inputs"></div>
-
-                    <div class="col-xs-12 col-sm-12 col-md-6">
-                        <div class="form-group">
-                            <label for="">Clientes</label>
-                            <select name="id_cliente" id="" class="form-select">
-                                <option value="">Seleciona Cliente</option>
-                                @foreach ($clientes as  $item)
-                                    <option value="{{ $item->id }}">{{ $item->nombre }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="col-xs-12 col-sm-12 col-md-6">
-                        <div class="form-group">
-                            <label class="form-control-label">Password:</label>
-                            {!! Form::password('password', array('placeholder' => 'Password','class' => 'form-control')) !!}
-                        </div>
-                    </div>
-                    <div class="col-xs-12 col-sm-12 col-md-6">
-                        <div class="form-group">
-                            <label class="form-control-label">Confirm Password:</label>
-                            {!! Form::password('confirm-password', array('placeholder' => 'Confirm Password','class' => 'form-control')) !!}
-                        </div>
-                    </div>
-                    <div class="col-xs-12 col-sm-12 col-md-12">
-                        <div class="form-group">
-                            <label class="form-control-label">Role:</label>
-                            {!! Form::select('roles[]', $roles,[], array('class' => 'form-control','multiple')) !!}
-                        </div>
-                    </div>
-                    <div class="col-xs-12 col-sm-12 col-md-12 text-center">
-                        <button type="submit" class="btn" style="background: {{$configuracion->color_boton_save}}; color: #ffff">Guardar</button>
-                    </div>
-                </div>
-                {!! Form::close() !!}
-
-            </div>
-
-          </div>
         </div>
-      </div>
-</div>
-
-
+    </div>
 @endsection
 
-
-
 @push('custom-javascript')
-<script>
-document.getElementById('agregar_empresa').addEventListener('click', function () {
-    const select = document.getElementById('empresa_select');
-    const empresaId = select.value;
-    const empresaNombre = select.options[select.selectedIndex]?.dataset.nombre;
-    const esPredeterminada = document.getElementById('es_predeterminada').checked;
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
-    if (!empresaId) {
-        alert('Selecciona una empresa primero');
-        return;
-    }
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-    if (document.querySelector(`#empresas_inputs input[name="empresas[]"][value="${empresaId}"]`)) {
-        alert('La empresa ya fue agregada');
-        return;
-    }
+    <script>
+        function toggleClienteField() {
+            const selected = document.querySelector('input[name="roles[]"]:checked');
+            const clienteGroup = document.getElementById('clienteGroup');
+            const clienteSelect = document.getElementById('id_cliente');
 
-    if (esPredeterminada) {
-        document.querySelectorAll('.predeterminada').forEach(el => el.innerText = '');
-        document.querySelectorAll('input[name="empresa_predeterminada"]').forEach(el => el.remove());
-    }
+            //  si el rol seleccionado tiene texto "CLIENTE"
+            const selectedValue = selected?.value;
 
-    const tbody = document.querySelector('#tabla_empresas tbody');
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-        <td>${empresaNombre}</td>
-        <td class="text-center predeterminada">${esPredeterminada ? '✅' : ''}</td>
-        <td>
-            <button type="button" class="btn btn-danger btn-sm eliminar">Eliminar</button>
-        </td>
-    `;
-    tbody.appendChild(tr);
+            if (selectedValue === "CLIENTE") {
+                clienteGroup.style.display = 'block';
+            } else {
+                clienteGroup.style.display = 'none';
+                if (clienteSelect) clienteSelect.value = '0';
+            }
+        }
 
-    const wrapper = document.getElementById('empresas_inputs');
-    wrapper.innerHTML += `
-        <input type="hidden" name="empresas[]" value="${empresaId}">
-        ${esPredeterminada ? `<input type="hidden" name="empresa_predeterminada" value="${empresaId}">` : ''}
-    `;
+        document.addEventListener('DOMContentLoaded', function() {
+            //  definir radios correctamente
+            const radios = document.querySelectorAll('input[name="roles[]"]');
 
-    select.selectedIndex = 0;
-    document.getElementById('es_predeterminada').checked = false;
-});
+            toggleClienteField();
 
-document.querySelector('#tabla_empresas tbody').addEventListener('click', function (e) {
-    if (e.target.classList.contains('eliminar')) {
-        const fila = e.target.closest('tr');
-        const empresaNombre = fila.children[0].textContent;
-        const empresaId = [...document.querySelectorAll('#empresa_select option')]
-            .find(opt => opt.textContent.trim() === empresaNombre.trim())?.value;
+            radios.forEach(radio => {
+                radio.addEventListener('change', toggleClienteField);
+            });
 
-        document.querySelectorAll(`#empresas_inputs input[value="${empresaId}"]`).forEach(el => el.remove());
-        const predInput = document.querySelector(`input[name="empresa_predeterminada"][value="${empresaId}"]`);
-        if (predInput) predInput.remove();
+            document.getElementById('formCrearUsuario').addEventListener('submit', function(e) {
+                const selectedRole = document.querySelector('input[name="roles[]"]:checked')?.value;
+                const clienteSelect = document.getElementById('id_cliente');
 
-        fila.remove();
-    }
-});
-</script>
+                if (!selectedRole) {
+                    e.preventDefault();
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'Campo obligatorio',
+                        text: 'Debes seleccionar un rol.',
+                        confirmButtonColor: '#007aff'
+                    });
+                    return;
+                }
+
+                const selectedLabel = document.querySelector('input[name="roles[]"]:checked')?.parentElement
+                    ?.innerText?.trim().toUpperCase();
+                if (selectedLabel?.includes("CLIENTE") && clienteSelect?.value === "0") {
+                    e.preventDefault();
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Cliente requerido',
+                        text: 'Debes seleccionar un cliente si el rol es CLIENTE.',
+                        confirmButtonText: 'Entendido',
+                        confirmButtonColor: '#007aff'
+                    });
+                }
+            });
+
+            @if ($errors->any())
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error al crear usuario',
+                    html: `{!! implode('<br>', $errors->all()) !!}`,
+                    confirmButtonColor: '#007aff'
+                });
+            @endif
+        });
+    </script>
 @endpush

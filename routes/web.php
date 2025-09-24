@@ -391,6 +391,7 @@ Route::post('operadores/{id}/restaurar', [App\Http\Controllers\OperadorControlle
         Route::get('/buscador/{id}', [App\Http\Controllers\BancosController::class, 'advance_bancos'])->name('advance_bancos.buscador');
         Route::put('/bancos/{id}/estado', [App\Http\Controllers\BancosController::class, 'cambiarEstado'])->name('bancos.estado');
         Route::post('/cambiar-cuenta-global/{id}', [App\Http\Controllers\BancosController::class, 'cambiarCuentaGlobal'])->name('bancos.cambiarCuentaGlobal');
+        Route::post('/cambiar-banco1/{id}', [App\Http\Controllers\BancosController::class, 'cambiarBanco1'])->name('bancos.cambiarBanco1');
     });
    
 
