@@ -209,8 +209,8 @@ document.addEventListener('DOMContentLoaded', () => {
             return (
                 fi instanceof Date && ff instanceof Date &&
                 !isNaN(fi) && !isNaN(ff) &&
-                moment(fi).isSameOrAfter(start, 'day') &&
-                moment(ff).isSameOrBefore(end, 'day')
+                moment(fi).isSameOrAfter(start, 'day') 
+               //&& moment(ff).isSameOrBefore(end, 'day')
             );
         });
 
