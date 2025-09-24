@@ -132,22 +132,23 @@ class UserController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function edit($id)
-    {
-        $user = User::find($id);
+   public function edit($id)
+{
+    $user = User::find($id);
+    $roles = Role::pluck('name','name')->all();
+    $userRole = $user->roles->pluck('name','name')->all();
 
-        $roles = Role::pluck('name','name')->all();
+    // 🔁 Aquí unificamos en una sola variable como en create()
+    $listaEmpresas = auth()->user()->Empresa->id == 1
+        ? Empresas::orderBy('id', 'DESC')->get()   // Si es administrador, muestra todas
+        : Empresas::where('id', auth()->user()->Empresa->id)->get(); // Si no, solo su empresa
 
-        $userRole = $user->roles->pluck('name','name')->all();
+    $clientes = Client::where('id_empresa', auth()->user()->id_empresa)
+                    ->orderBy('created_at', 'desc')
+                    ->get();
 
-        $empresas = Empresas::where('id','=',auth()->user()->Empresa->id)->orderBy('id','DESC')->get();
-
-        $empresas_base = Empresas::orderBy('id','DESC')->get();
-
-        $clientes = Client::where('id_empresa' ,'=',auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
-
-        return view('users.edit',compact('user','roles','userRole','empresas','empresas_base','clientes'));
-    }
+    return view('users.edit', compact('user', 'roles', 'userRole', 'listaEmpresas', 'clientes'));
+}
 
     /**
      * Update the specified resource in storage.
@@ -180,9 +181,9 @@ class UserController extends Controller
 
         $user->assignRole($request->input('roles'));
 
-        Session::flash('edit', 'Se ha editado sus datos con exito');
+
         return redirect()->route('users.index')
-                        ->with('success','User updated successfully');
+                        ->with('success','Usuario actualizado con exito');
     }
 
     /**

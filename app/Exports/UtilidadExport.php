@@ -6,36 +6,52 @@ use Maatwebsite\Excel\Concerns\Exportable;
 use Maatwebsite\Excel\Concerns\FromView;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Illuminate\Contracts\View\View;
-use App\Models\User;
 
-class UtilidadExport implements FromView,ShouldAutoSize
+class UtilidadExport implements FromView, ShouldAutoSize
 {
     use Exportable;
-    public $vCotizaciones; 
-    public $vFechaCarbon;
-    public $vCotizacion;
-    public $vUser;
 
-    public function __construct($cotizaciones, $fechaCarbon, $cotizacion, $user, $gastos){
-        $this->vCotizaciones = $cotizaciones;
-        $this->vFechaCarbon = $fechaCarbon;
-        $this->vCotizacion = $cotizacion;
-        $this->vUser = $user;
-        $this->vGastos = $gastos;
-        
+    protected $vCotizaciones; 
+    protected $vFechaCarbon;
+    protected $vCotizacion;
+    protected $vUser;
+    protected $vGastos;
+    protected $vGastosGenerales;
+    protected $vUtilidad;
+    protected $vFechaInicio;
+    protected $vFechaFin;
+    protected $vTotalRows;
+    protected $vSelectedRows;
+
+    public function __construct($cotizaciones, $fechaCarbon, $cotizacion, $user, $gastos, $gastosGenerales, $utilidad, $fechaInicio, $fechaFin, $totalRows, $selectedRows)
+    {
+        $this->vCotizaciones     = $cotizaciones;
+        $this->vFechaCarbon      = $fechaCarbon;
+        $this->vCotizacion       = $cotizacion;
+        $this->vUser             = $user;
+        $this->vGastos           = $gastos;
+        $this->vGastosGenerales  = $gastosGenerales;
+        $this->vUtilidad         = $utilidad;
+        $this->vFechaInicio      = $fechaInicio;
+        $this->vFechaFin         = $fechaFin;
+        $this->vTotalRows        = $totalRows;
+        $this->vSelectedRows     = $selectedRows;
     }
 
     public function view() : View
     {
-        $cotizaciones = $this->vCotizaciones;
-        $fechaCarbon = $this->vFechaCarbon;
-        $cotizacion = $this->vCotizacion;
-        $user = $this->vUser;
-        $gastos = $this->vGastos;
-        $isExcel = true;
-       
-        return view('reporteria.utilidad.pdf',compact('cotizaciones', 'fechaCarbon', 'cotizacion', 'user','gastos','isExcel'));
-
-
+        return view('reporteria.utilidad.excel', [
+            'cotizaciones'    => $this->vCotizaciones,
+            'fechaCarbon'     => $this->vFechaCarbon,
+            'cotizacion'      => $this->vCotizacion,
+            'user'            => $this->vUser,
+            'gastos'          => $this->vGastos,
+            'gastosGenerales' => $this->vGastosGenerales,
+            'utilidad'        => $this->vUtilidad,
+            'fechaInicio'     => $this->vFechaInicio,
+            'fechaFin'        => $this->vFechaFin,
+            'totalRows'       => $this->vTotalRows,
+            'selectedRows'    => $this->vSelectedRows,
+        ]);
     }
 }
