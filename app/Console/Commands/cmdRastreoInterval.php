@@ -4,10 +4,11 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use App\Models\RastreoIntervals; 
- use App\Services\UbiService;
+use App\Services\UbicacionService;
 use App\Models\coordenadashistorial;
+use Illuminate\Support\Facades\DB;
 
-class RevisaRegistros extends Command
+class cmdRastreoInterval extends Command
 {
     protected $signature = 'rastreo:intervalConfig';
 
@@ -15,7 +16,7 @@ class RevisaRegistros extends Command
 
    
 
-        public function __construct(UbiService $ubiService)
+        public function __construct(UbicacionService $ubiService)
         {
             parent::__construct();
             $this->ubiService = $ubiService;
@@ -23,16 +24,16 @@ class RevisaRegistros extends Command
 
     public function handle()
     {
-             $idCliente =0;
-        $cliendID = auth()->user()->id_cliente;
-       if($cliendID !== 0)
-       {
-        $idCliente =$cliendID;
-       }
+       // $idCliente = 0;
+        //$cliendID = auth()->user()->id_cliente;
+       //if($cliendID !== 0)
+       //{
+       // $idCliente =$cliendID;
+       //}
          
 
                
-        $idEmpresa = Auth::User()->id_empresa;
+        //$idEmpresa = Auth::User()->id_empresa;
         $asignaciones = DB::table('asignaciones')
         ->join('docum_cotizacion', 'docum_cotizacion.id', '=', 'asignaciones.id_contenedor')
         ->join('equipos', 'equipos.id', '=', 'asignaciones.id_camion')
@@ -94,11 +95,11 @@ class RevisaRegistros extends Command
         })
         ->whereNotNull('asig.imei')
    
-        ->when($idCliente !== 0, function ($query) use ($idCliente) {
-        return $query->where('cotizaciones.id_cliente', $idCliente);
-        })   
+       // ->when($idCliente !== 0, function ($query) use ($idCliente) {
+       // return $query->where('cotizaciones.id_cliente', $idCliente);
+       // })   
         ->where('cotizaciones.estatus', '=', 'Aprobada')
-        ->where('cotizaciones.id_empresa', '=', $idEmpresa)
+       // ->where('cotizaciones.id_empresa', '=', $idEmpresa)
         ->get();
     
         if($datos){
@@ -106,23 +107,21 @@ class RevisaRegistros extends Command
 
                 $imei = $dato->contenedor .'|'.$dato->imei.'|'. $dato->id_contenedor.'|'. $dato->tipoGps; 
 
-                $ubicacion = $this->ubiService->obtenerUbicacionByImei($imei);
-                if ($ubicacion) {
+                $ubicacion = $this->ubiService->obtenerUbicacionByImeiString($imei);
+                if ($ubicacion && isset($ubicacion['lat']) && $ubicacion['lat'] !== null) {
                         $this->info("Ubicación encontrada: " . json_encode($ubicacion));
                         
-
-                        // guardamos el historial 
-
-                          $coordenada = CoordenadasHistorial::create([
-                                'latitud' => $ubicacion['latitud'],
-                                'longitud' => $ubicacion['longitud'],
-                                'registrado_en' => now(),
-                                'user_id' => auth()->id(), 
-                                'ubicacionable_id' => $dato->id_contenedor,
-                                'ubicacionable_type'=>'rastreo comand',
-                                'tipo' => $dato->tipoGps,
-                            ]);
-
+                              CoordenadasHistorial::create([
+                            'latitud' => $ubicacion['lat'],
+                            'longitud' => $ubicacion['lng'],
+                            'registrado_en' => now(),
+                            'user_id' => 1, //siempre sera 1 es admin del sistema
+                            'ubicacionable_id' => $dato->id_contenedor,
+                            'ubicacionable_type' => 'rastreo service',
+                            'tipo' => $ubicacion['tipoGPS'] ?? 'desconocido',
+                        ]);
+                   
+                     
                     } else {
                         $this->warn("No se encontró ubicación para IMEI: $imei");
                     }
@@ -134,3 +133,4 @@ class RevisaRegistros extends Command
 
     }
 }
+

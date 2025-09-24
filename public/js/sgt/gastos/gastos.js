@@ -13,6 +13,21 @@ const formFieldsDiferir = [
   {'field':'txtDiferirFechaTermina','id':'txtDiferirFechaTermina','label':'Fecha Finalización Pago Diferido','required': false, "type":"text", "trigger":"tipoPago"},
   
 ]
+var bancosList = null;
+var data = [];
+
+async function getBancos() {
+    const response = await fetch('/bancos/list');
+    const data = await response.json();
+
+    let dataBancos = [];
+    data.forEach(banco => {
+        dataBancos.push(formatoConsecutivo(banco.id) + ' - ' + banco.nombre_beneficiario + ' - ' + banco.nombre_banco);
+    });
+
+    bancosList = dataBancos;
+    return dataBancos;
+}
 
 document.getElementById("tipoPago").addEventListener("change", function () {
   const seccion = document.getElementById("seccionDiferido");
@@ -266,7 +281,7 @@ class MissionResultRenderer {
           type:'post',
           data:{IdGasto, _token},
           beforeSend:()=>{},
-          success:()=>{
+          success:(data)=>{
             Swal.fire(data.Titulo, data.Mensaje, data.TMensaje)
             if(data.TMensaje == "success"){
               getGastos(fromDate,toDate);
@@ -285,7 +300,7 @@ class MissionResultRenderer {
 
   })
 
-  btnDiferir.addEventListener('click',()=>{
+/*   btnDiferir.addEventListener('click',()=>{
     let gasto = apiGrid.getSelectedRows();
 
     if(gasto.length <= 0 || gasto.length > 1){
@@ -306,7 +321,7 @@ class MissionResultRenderer {
     const bootstrapModal = new bootstrap.Modal(modalElement);
     bootstrapModal.show();
 
-  })
+  }) */
    
    function getGastos(from,to){
     fromDate = from
@@ -318,7 +333,28 @@ class MissionResultRenderer {
         data: {_token,from,to},
         beforeSend:()=>{},
         success:(response)=>{
-            apiGrid.setGridOption("rowData", response)
+          let gastosData = response.handsOnTableData;
+          let gastosInfo = response.gastosInformacion;
+            apiGrid.setGridOption("rowData", gastosInfo)
+
+
+
+            //llenar select de viajes
+/* 
+            document.getElementById('aplicacion-viajeGeneral').innerHTML = `<label class="mt-4 form-label">Seleccione viajes</label><select class="form-control" name="selectViajesGeneral" id="selectViajesGeneral" multiple></select>`
+
+        let selectViajes = document.querySelector('#selectViajesGeneral')
+
+        gastosData.forEach((fila) => {
+    let option = document.createElement('option');
+    option.value = fila[10];  
+    option.text  = fila[0];   
+    selectViajes.appendChild(option);
+});
+
+        const example = new Choices(selectViajes, {
+            removeItemButton: true
+        }); */
         },
         error:()=>{
 
@@ -388,6 +424,17 @@ if(!passValidation) return passValidation;
    formData["gastoDiario"] = labelGastoDiario.textContent
    formData["numPeriodos"] = labelDiasPeriodo.textContent
 
+   const select = document.getElementById("selectUnidadesGeneral");
+   const unidades = Array.from(select.selectedOptions).map(option => option.value);
+   formData["unidades"] = unidades
+
+
+   let input = document.querySelector('input[name="formasAplicar"]:checked');
+   formData["formasAplicar"] = input.value
+
+   formData['fechaInicioSeleccionado'] = $('#daterange').attr('data-start');
+   formData['fechaFinalSeleccionado'] = $('#daterange').attr('data-end');
+
    $.ajax({
         url: '/gastos/generales/create',
         type: "post",
@@ -426,6 +473,33 @@ if(!passValidation) return passValidation;
     })
   })
 
+  function handleSelection(input) {
+
+
+  // quitar clase selected de todos los labels
+  document.querySelectorAll('.custom-option').forEach(opt => {
+    opt.classList.remove('selected');
+  });
+
+  // marcar el label seleccionado
+  input.parentElement.classList.add('selected');
+
+  // ocultar todas las secciones
+  document.querySelectorAll(".aplicacion-gastos").forEach(opt => {
+    opt.classList.add('d-none');
+  });
+
+
+  
+  // mostrar solo la que corresponde
+/*   if (input.value === "Viaje") {
+    document.querySelector("#aplicacion-viajeGeneral").classList.remove('d-none');
+  } */
+  if (input.value === "Equipo") {
+    document.querySelector("#aplicacion-equipoGeneral").classList.remove('d-none');
+  } 
+}
+
   function diferirGasto(){
     /*let fechaDesde = document.getElementById('txtDiferirFechaInicia')
     let fechaHasta = document.getElementById('txtDiferirFechaTermina')
@@ -443,8 +517,8 @@ if(!passValidation) return passValidation;
     const select = document.getElementById("selectUnidades");
     const unidades = Array.from(select.selectedOptions).map(option => option.value);
 
-    const selectViaje = document.getElementById("selectViajes");
-    const viajes = Array.from(selectViaje.selectedOptions).map(option => option.value);
+/*     const selectViaje = document.getElementById("selectViajes");
+    const viajes = Array.from(selectViaje.selectedOptions).map(option => option.value); */
 
 
     let input = document.querySelector('input[name="formasAplicar"]:checked');
@@ -485,3 +559,6 @@ if(!passValidation) return passValidation;
     var val = e.target.value;
     e.target.value =  moneyFormat(val);
     })
+
+
+     

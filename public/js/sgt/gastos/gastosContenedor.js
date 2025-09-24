@@ -282,7 +282,14 @@ function applyPaymentGastos() {
   let gastosPagar = [];
   apiGrid.forEachNodeAfterFilterAndSort((node) => {
     if (node.isSelected()) {
-      gastosPagar.push(node.data);
+          const row = node.data;
+    gastosPagar.push({
+      ...row,
+      fecha_inicio: row.fecha_inicio ? row.fecha_inicio.format('YYYY-MM-DD HH:mm:ss') : null,
+      fecha_fin: row.fecha_fin ? row.fecha_fin.format('YYYY-MM-DD HH:mm:ss') : null,
+      FechaGasto: row.FechaGasto ? row.FechaGasto.format('YYYY-MM-DD') : null,
+    });
+     // gastosPagar.push(node.data);
     }
   });
 
@@ -322,11 +329,18 @@ function getGxp() {
     success: (response) => {
       gridDataOriginal = (response.contenedores || []).map(row => ({
         ...row,
-        fecha_inicio: row.fecha_inicio ? new Date(row.fecha_inicio) : null,
-        fecha_fin: row.fecha_fin ? new Date(row.fecha_fin) : null,
-        FechaGasto: row.FechaGasto ? new Date(row.FechaGasto) : null,
-      }));
-
+            fecha_inicio: row.fecha_inicio ? moment(row.fecha_inicio, 'YYYY-MM-DD HH:mm:ss') : moment(row.fecha, 'YYYY-MM-DD'),
+          fecha_fin: row.fecha_fin ? moment(row.fecha_fin, 'YYYY-MM-DD HH:mm:ss') : moment(row.fecha, 'YYYY-MM-DD'),
+          FechaGasto: row.FechaGasto ? moment(row.FechaGasto, 'YYYY-MM-DD') : moment(row.fecha, 'YYYY-MM-DD'),
+        }));
+gridDataOriginal.forEach((row, i) => {
+    ['fecha_inicio','fecha_fin','FechaGasto'].forEach(field => {
+        const value = row[field];
+        if (!value || !value.isValid()) {
+            console.warn(`Fila ${i} tiene ${field} inválido:`, value, row);
+        }
+    });
+});
 
       // 🔽 Aplica filtro de últimos 7 días después de cargar
       const hoy = moment().endOf('day');
@@ -347,13 +361,16 @@ function filtrarPorFechas(inicio, fin) {
   const fechaFin = moment(fin, 'YYYY-MM-DD').endOf('day');
 
   const filtrados = gridDataOriginal.filter(row => {
-    const fi = row.fecha_inicio instanceof Date ? moment(row.fecha_inicio) : null;
-    const ff = row.fecha_fin instanceof Date ? moment(row.fecha_fin) : null;
+    const fi = row.fecha_inicio;
+    const ff = row.fecha_fin;
 
     if (!fi || !ff || !fi.isValid() || !ff.isValid()) return false;
 
+
     // ✅ Solo incluir si ambos están dentro del rango
-    return fi.isSameOrAfter(fechaInicio) && ff.isSameOrBefore(fechaFin);
+   // return fi.isSameOrAfter(fechaInicio) && ff.isSameOrBefore(fechaFin);
+    return fi.isBetween(fechaInicio,fechaFin, 'day','[]') 
+
   });
 
   apiGrid.setGridOption("rowData", filtrados);

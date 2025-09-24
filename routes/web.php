@@ -476,6 +476,7 @@ Route::post('operadores/{id}/restaurar', [App\Http\Controllers\OperadorControlle
     Route::get('gastos/generales',[App\Http\Controllers\GastosGeneralesController::class, 'index'])->name('index.gastos_generales');
     Route::get('gastos/viajes',[App\Http\Controllers\GastosContenedoresController::class, 'indexGastosViaje'])->name('index.gastos_viajes');
     Route::post('gastos/viajes/list',[App\Http\Controllers\GastosContenedoresController::class, 'gastosViajesList']);
+   
     Route::post('gastos/viajes/confirmar-gastos',[App\Http\Controllers\GastosContenedoresController::class, 'confirmarGastos']);
     
 
