@@ -159,7 +159,7 @@
                     <h5>Periodo: {{ date('d-m-Y', strtotime($fechaInicio)) }} al
                         {{ date('d-m-Y', strtotime($fechaFin)) }}
                     </h5>
-                    <h5>Contenedores mostrados: {{ $selectedRows }} de {{ $totalRows }}</h5>
+                    <h5>Contenedores seleccionados: {{ $selectedRows }} de {{ $totalRows }}</h5>
 
                 </div>
             </td>

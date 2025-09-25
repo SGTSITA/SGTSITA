@@ -366,8 +366,11 @@ function filtrarPorFechas(inicio, fin) {
 
     if (!fi || !ff || !fi.isValid() || !ff.isValid()) return false;
 
-    // ✅ Registros totalmente dentro del rango
-    return fi.isSameOrAfter(fechaInicio) && ff.isSameOrBefore(fechaFin);
+
+    // ✅ Solo incluir si ambos están dentro del rango
+   // return fi.isSameOrAfter(fechaInicio) && ff.isSameOrBefore(fechaFin);
+    return fi.isBetween(fechaInicio,fechaFin, 'day','[]') 
+
   });
 
   apiGrid.setGridOption("rowData", filtrados);

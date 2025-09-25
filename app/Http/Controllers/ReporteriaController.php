@@ -21,6 +21,7 @@ use App\Exports\CxcExport;
 use App\Exports\CxpExport;
 use App\Models\GastosDiferidosDetalle;
 use App\Models\CuentaGlobal;
+use App\Exports\GastosDetalleExport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Storage;
@@ -883,6 +884,39 @@ $gastos = $gastosGenerales->sum('monto1');
 }
 
     }
+
+    
+    public function descargarGastos(Request $request)
+{
+    $datos = json_decode($request->datos, true);
+    $tipo = $request->tipo;
+
+    $coleccion = collect();
+
+    foreach ($datos as $contenedor) {
+        foreach ($contenedor['detalleGastos'] ?? [] as $gasto) {
+            $coleccion->push([
+                'Contenedor' => $contenedor['numContenedor'],
+                'Motivo' => $gasto['motivo_gasto'] ?? '—',
+                'Fecha' => \Carbon\Carbon::parse($gasto['fecha_gasto'])->translatedFormat('l, j \\de F \\del Y'),
+                'Tipo' => $gasto['tipo_gasto'] ?? '—',
+                'Monto' => $gasto['monto_gasto'] ?? 0,
+            ]);
+        }
+    }
+
+    if ($tipo === 'excel') {
+        return Excel::download(new GastosDetalleExport($coleccion), 'GastosDetalle.xlsx');
+    } elseif ($tipo === 'pdf') {
+        $pdf = PDF::loadView('reporteria.utilidad.gastos_pdf', [
+    'datos' => $coleccion
+]);
+return $pdf->download('GastosDetalle.pdf');
+    }
+
+    return response()->json(['error' => 'Tipo no soportado'], 400);
+}
+
 
     // ==================== D O C U M E N T O S ====================
 
