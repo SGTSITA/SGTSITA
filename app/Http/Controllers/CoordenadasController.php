@@ -763,18 +763,12 @@ $idCordenada= $coordenadas->id_coordenadas;
     })->where('cotizaciones.estatus', '=', 'Aprobada')
     
     ->get();
-    //dd($datosAll);
-    $datos= null;
-    if (!is_null($idEmpresa)) {
-        $datos = $datosAll->where('id_empresa', $idEmpresa);
-    }
 
-    if (!is_null($idCliente) && $idCliente !== 0) {
-        $datos = $datos->where('id_cliente', $idCliente);
+    if($idCliente === 0){
+         $datos = $datosAll ->where('id_empresa', $idEmpresa)->values();
     }
+   
 
-    $datos = $datos->values();
-   // dd($datos);
 
     $conboys = DB::table('conboys')
     ->join('conboys_contenedores', 'conboys.id', '=', 'conboys_contenedores.conboy_id')
