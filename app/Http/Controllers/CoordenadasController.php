@@ -764,7 +764,10 @@ $idCordenada= $coordenadas->id_coordenadas;
     ->where('cotizaciones.estatus', '=', 'Aprobada')
     
     ->get();
-    $datos = $datosAll ->where('id_empresa', $idEmpresa)->values();
+    if($idCliente === 0){
+         $datos = $datosAll ->where('id_empresa', $idEmpresa)->values();
+    }
+   
  
 
     $conboys = DB::table('conboys')
