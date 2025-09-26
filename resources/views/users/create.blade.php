@@ -5,6 +5,8 @@
 @endsection
 
 @push('custom-css')
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
     <style>
         .card {
             border: none;
@@ -24,6 +26,26 @@
 
         .form-label {
             font-weight: 500;
+        }
+
+        .form-group-ios {
+            position: relative;
+        }
+
+        .form-group-ios i {
+            position: absolute;
+            top: 50%;
+            left: 1rem;
+            transform: translateY(-50%);
+            color: #aaa;
+            z-index: 1;
+        }
+
+        .form-group-ios input,
+        .form-group-ios select {
+            padding-left: 2.5rem !important;
+            border-radius: 12px;
+            height: 45px;
         }
 
         .radio-group-ios {
@@ -54,29 +76,6 @@
             outline: none;
             box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.4);
         }
-
-        .input-password-group {
-            position: relative;
-        }
-
-        .input-password-group input.form-control {
-            padding-right: 2.75rem;
-            /* deja espacio para el ícono */
-            height: 45px;
-            border-radius: 12px;
-            box-sizing: border-box;
-        }
-
-        .input-password-group i.toggle-password {
-            position: absolute;
-            right: 1rem;
-            top: 50%;
-            transform: translateY(-50%);
-            font-size: 1.2rem;
-            color: #888;
-            cursor: pointer;
-            z-index: 10;
-        }
     </style>
 @endpush
 
@@ -93,18 +92,21 @@
                     <div class="card-body">
                         {!! Form::open(['route' => 'users.store', 'method' => 'POST', 'id' => 'formCrearUsuario']) !!}
                         <div class="row g-3">
-                            <div class="col-md-12 ">
+                            <div class="col-md-12 form-group-ios">
                                 <label class="form-label">Nombre</label>
+                                <i class="fas fa-user"></i>
                                 {!! Form::text('name', null, ['class' => 'form-control', 'placeholder' => 'Nombre', 'required']) !!}
                             </div>
 
-                            <div class="col-md-12">
+                            <div class="col-md-12 form-group-ios">
                                 <label class="form-label">Email</label>
+                                <i class="fas fa-envelope"></i>
                                 {!! Form::email('email', null, ['class' => 'form-control', 'placeholder' => 'Email', 'required']) !!}
                             </div>
 
-                            <div class="col-md-12">
+                            <div class="col-md-12 form-group-ios">
                                 <label class="form-label">Empresa</label>
+                                <i class="fas fa-building"></i>
                                 <select name="id_empresa" class="form-select" required>
                                     <option value="">Selecciona una empresa</option>
                                     @foreach ($listaEmpresas as $empresa)
@@ -113,22 +115,19 @@
                                 </select>
                             </div>
 
-                            <div class="col-md-12">
+                            <div class="col-md-12 form-group-ios">
                                 <label class="form-label">Contraseña</label>
-                                <div class="input-password-group">
-                                    <input type="password" id="password" name="password" class="form-control"
-                                        placeholder="Password" required>
-                                </div>
+                                <i class="fas fa-lock"></i>
+                                <input type="password" id="password" name="password" class="form-control"
+                                    placeholder="Password" required>
                             </div>
 
-                            <div class="col-md-12">
+                            <div class="col-md-12 form-group-ios">
                                 <label class="form-label">Confirmar Contraseña</label>
-                                <div class="input-password-group">
-                                    <input type="password" name="confirm-password" id="confirm-password"
-                                        class="form-control" placeholder="Confirm Password" required>
-                                </div>
+                                <i class="fas fa-lock"></i>
+                                <input type="password" name="confirm-password" id="confirm-password" class="form-control"
+                                    placeholder="Confirm Password" required>
                             </div>
-
 
                             <div class="col-md-12">
                                 <label class="form-label d-block">Roles</label>
@@ -143,9 +142,8 @@
                                 </div>
                             </div>
 
-
                             <div class="col-md-6" id="clienteGroup" style="display: none;">
-                                <label class="form-label">Seleeciona el Cliente </label>
+                                <label class="form-label">Selecciona el Cliente</label>
                                 <select name="id_cliente" id="id_cliente" class="form-select">
                                     <option value="0">Sin cliente</option>
                                     @foreach ($clientes as $cliente)
@@ -153,7 +151,6 @@
                                     @endforeach
                                 </select>
                             </div>
-
 
                             <div class="col-12 text-center mt-3">
                                 <button type="submit" class="btn btn-ios">Guardar</button>
@@ -168,8 +165,6 @@
 @endsection
 
 @push('custom-javascript')
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script>
@@ -178,9 +173,7 @@
             const clienteGroup = document.getElementById('clienteGroup');
             const clienteSelect = document.getElementById('id_cliente');
 
-            //  si el rol seleccionado tiene texto "CLIENTE"
             const selectedValue = selected?.value;
-
             if (selectedValue === "CLIENTE") {
                 clienteGroup.style.display = 'block';
             } else {
@@ -190,9 +183,7 @@
         }
 
         document.addEventListener('DOMContentLoaded', function() {
-            //  definir radios correctamente
             const radios = document.querySelectorAll('input[name="roles[]"]');
-
             toggleClienteField();
 
             radios.forEach(radio => {
@@ -216,7 +207,7 @@
 
                 const selectedLabel = document.querySelector('input[name="roles[]"]:checked')?.parentElement
                     ?.innerText?.trim().toUpperCase();
-                if (selectedLabel?.includes("CLIENTE") && clienteSelect?.value === "0") {
+                if (selectedLabel === "CLIENTE" && clienteSelect?.value === "0") {
                     e.preventDefault();
                     Swal.fire({
                         icon: 'warning',

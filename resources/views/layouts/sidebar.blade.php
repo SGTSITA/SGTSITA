@@ -136,35 +136,35 @@
                     <ul class="nav ms-4">
                         <li class="nav-item ">
                             @can('cotizacion-buscador')
-                            <a class="nav-link {{ Request::is('cotizaciones/busqueda') ? 'show' : '' }}"
-                                href="{{ route('busqueda.cotizaciones') }}">
-                                <span class="sidenav-mini-icon"> P </span>
-                                <span class="sidenav-normal">Busqueda</span>
-                            </a>
+                                <a class="nav-link {{ Request::is('cotizaciones/busqueda') ? 'show' : '' }}"
+                                    href="{{ route('busqueda.cotizaciones') }}">
+                                    <span class="sidenav-mini-icon"> P </span>
+                                    <span class="sidenav-normal">Busqueda</span>
+                                </a>
                             @endcan
 
                             @can('cotizacion-crear')
-                            <a class="nav-link {{ Request::is('cotizaciones*') ? 'show' : '' }}"
-                                href="{{ route('create.cotizaciones') }}">
-                                <span class="sidenav-mini-icon"> P </span>
-                                <span class="sidenav-normal">Crear Cotización</span>
-                            </a>
+                                <a class="nav-link {{ Request::is('cotizaciones*') ? 'show' : '' }}"
+                                    href="{{ route('create.cotizaciones') }}">
+                                    <span class="sidenav-mini-icon"> P </span>
+                                    <span class="sidenav-normal">Crear Cotización</span>
+                                </a>
                             @endcan
 
                             @can('cotizacion-segumiento')
-                            <a class="nav-link {{ Request::is('cotizaciones*') ? 'show' : '' }}"
-                                href="{{ route('index.cotizaciones') }}">
-                                <span class="sidenav-mini-icon"> P </span>
-                                <span class="sidenav-normal">Seguimiento</span>
-                            </a>
+                                <a class="nav-link {{ Request::is('cotizaciones*') ? 'show' : '' }}"
+                                    href="{{ route('index.cotizaciones') }}">
+                                    <span class="sidenav-mini-icon"> P </span>
+                                    <span class="sidenav-normal">Seguimiento</span>
+                                </a>
                             @endcan
 
                             @can('cotizacion-solicitudes-entrantes')
-                            <a class="nav-link {{ Request::is('cotizaciones/busqueda') ? 'show' : '' }}"
-                                href="{{ route('cotizaciones.entrantes') }}">
-                                <span class="sidenav-mini-icon"> P </span>
-                                <span class="sidenav-normal">Solicitudes entrantes</span>
-                            </a>
+                                <a class="nav-link {{ Request::is('cotizaciones/busqueda') ? 'show' : '' }}"
+                                    href="{{ route('cotizaciones.entrantes') }}">
+                                    <span class="sidenav-mini-icon"> P </span>
+                                    <span class="sidenav-normal">Solicitudes entrantes</span>
+                                </a>
                             @endcan
                         </li>
                     </ul>
@@ -315,7 +315,7 @@
                                 <a class="nav-link {{ Request::is('reporteria/utilidad*') ? 'show' : '' }}"
                                     href="{{ route('index_utilidad.reporteria') }}">
                                     <span class="sidenav-mini-icon"> P </span>
-                                    <span class="sidenav-normal">Reporte de utilidad</span>
+                                    <span class="sidenav-normal">Reporte de Resultados</span>
                                 </a>
                             @endcan
 
@@ -393,17 +393,17 @@
                     </ul>
                 </div>
                 <!--li class="nav-item">
-                                                                                        <a class="nav-link {{ Request::is('liquidaciones*') ? 'active' : '' }}"
-                                                                                            href="{{ route('index.liquidacion') }}" target="">
-                                                                                            <div
-                                                                                                class="icon icon-shape icon-sm text-center  me-2 d-flex align-items-center justify-content-center">
-                                                                                                <img src="{{ asset('img/icon/pago-en-efectivo.png') }}" alt="" width="20px">
-                                                                                            </div>
-                                                                                           
-                                                                                        </a>
-                                                                                    </li-->
+                                                                                                <a class="nav-link {{ Request::is('liquidaciones*') ? 'active' : '' }}"
+                                                                                                    href="{{ route('index.liquidacion') }}" target="">
+                                                                                                    <div
+                                                                                                        class="icon icon-shape icon-sm text-center  me-2 d-flex align-items-center justify-content-center">
+                                                                                                        <img src="{{ asset('img/icon/pago-en-efectivo.png') }}" alt="" width="20px">
+                                                                                                    </div>
+                                                                                                   
+                                                                                                </a>
+                                                                                            </li-->
             @endcan
-            @can('coordenadasv')
+            @can('Coordenadas SGT')
                 <a data-bs-toggle="collapse" href="#pagesExamplesCoordenadas"
                     class="nav-link {{ Request::is('coordenadas*') ? 'active' : '' }}"
                     aria-controls="pagesExamplesCoordenadas" role="button" aria-expanded="false">
@@ -417,32 +417,35 @@
                 <div class="collapse " id="pagesExamplesCoordenadas">
                     <ul class="nav ms-4">
                         <li class="nav-item ">
-                            <a class="nav-link {{ Request::is('coordenadas/mapas') ? 'show' : '' }}"
-                                href="{{ route('ver.coordenadamapa') }}">
-                                <span class="sidenav-mini-icon"> S</span>
-                                <span class="sidenav-normal">Punto de verificación</span>
-                                {{-- <span class="sidenav-normal">Coordenadas por Pregunta</span> --}}
-                            </a>
-                            <a class="nav-link {{ Request::is('coordenadas/busqueda') ? 'show' : '' }}"
-                                href="{{ route('seach.coordenadas') }}">
-                                <span class="sidenav-mini-icon"> B</span>
+                            @can('Coordenadas SGT-P-verificacion')
+                                <a class="nav-link {{ Request::is('coordenadas/mapas') ? 'show' : '' }}"
+                                    href="{{ route('ver.coordenadamapa') }}">
+                                    <span class="sidenav-mini-icon"> S</span>
+                                    <span class="sidenav-normal">Punto de verificación</span>
+                                    {{-- <span class="sidenav-normal">Coordenadas por Pregunta</span> --}}
+                                </a>
+                            @endcan
+                            @can('Coordenadas SGT-B-busqueda Cuestionarios')
+                                <a class="nav-link {{ Request::is('coordenadas/busqueda') ? 'show' : '' }}"
+                                    href="{{ route('seach.coordenadas') }}">
+                                    <span class="sidenav-mini-icon"> B</span>
 
-                                <span class="sidenav-normal">Busqueda Cuestionarios</span>
-                            </a>
-
+                                    <span class="sidenav-normal">Busqueda Cuestionarios</span>
+                                </a>
+                            @endcan
                             {{-- <a class="nav-link {{ Request::is('coordenadas/rastrear') ? 'show' : '' }}"
                                 href="{{ route('rastrearContenedor') }}">
                                 <span class="sidenav-mini-icon"> R </span>
                                 <span class="sidenav-normal">Rastrear </span>
                             </a> --}}
+                            @can('Coordenadas SGT-Rastrear')
+                                <a class="nav-link {{ Request::is('coordenadas/rastrear') ? 'show' : '' }}"
+                                    href="{{ route('rastrearTabs') }}">
+                                    <span class="sidenav-mini-icon"> R </span>
+                                    <span class="sidenav-normal">Rastrear </span>
+                                </a>
+                            @endcan
 
-                             <a class="nav-link {{ Request::is('coordenadas/rastrear') ? 'show' : '' }}"
-                                href="{{ route('rastrearTabs') }}">
-                                <span class="sidenav-mini-icon"> R </span>
-                                <span class="sidenav-normal">Rastrear </span>
-                            </a>
-
-                            
                             {{-- <a class="nav-link {{ Request::is('coordenadas/conboys') ? 'show' : '' }}"
                                 href="{{ route('index.conboys') }}">
                                 <span class="sidenav-mini-icon"> C </span>
@@ -525,12 +528,12 @@
 
                     <!-- @can('usuarios-empresas')
     <li class="nav-item ">
-                                                            <a class="nav-link {{ Request::is('usuarios-empresas*') ? 'show' : '' }}"
-                                                                href="{{ route('Usuarios-empresas.index') }}">
-                                                                <span class="sidenav-mini-icon"> P </span>
-                                                                <span class="sidenav-normal">Usuarios Empresas </span>
-                                                            </a>
-                                                        </li>
+                                                                    <a class="nav-link {{ Request::is('usuarios-empresas*') ? 'show' : '' }}"
+                                                                        href="{{ route('Usuarios-empresas.index') }}">
+                                                                        <span class="sidenav-mini-icon"> P </span>
+                                                                        <span class="sidenav-normal">Usuarios Empresas </span>
+                                                                    </a>
+                                                                </li>
 @endcan -->
 
 
