@@ -162,8 +162,8 @@ let btnVerDetalle = document.querySelector('#btnVerDetalle')
 
 function exportUtilidades() {
   Swal.fire({
-    title: 'Exportar Reporte',
-    text: '¿Cómo deseas exportar el reporte?',
+    title: 'Exportar Reporte de Resultados',
+    text: '¿Cómo deseas exportar elreporte?',
     icon: 'question',
     showDenyButton: true,
     showCancelButton: true,
@@ -269,38 +269,65 @@ function getUtilidadesViajes(startDate, endDate) {
 }
 
 function verDetalleGastos() {
+  const seleccionados = apiGrid.getSelectedRows();
+  const tbody = document.getElementById('infoGastos');
+  tbody.innerHTML = '';
 
-  let contenedor = apiGrid.getSelectedRows();
-  if (contenedor.length <= 0) {
-    Swal.fire('Seleccione un contenedor', 'Debe seleccionar un contenedor de la lista', 'warning');
+  if (seleccionados.length === 0) {
+    Swal.fire('Seleccione al menos un contenedor', '', 'warning');
     return;
   }
-  document.getElementById('labelContenedor').textContent = contenedor[0].numContenedor
-  let elementos = contenedor[0].detalleGastos;
-  const ul = document.getElementById('infoGastos');
-  while (ul.firstChild) {
-    ul.removeChild(ul.firstChild);
-  }
 
-  elementos.forEach(item => {
+  // Mostrar lista de contenedores arriba del modal
+  document.getElementById('labelContenedor').textContent = 'Contenedor(es): ' + seleccionados.map(c => c.numContenedor).join(', ');
 
-    let liTemplate = `<li class="list-group-item border-0 d-flex justify-content-between ps-0 mb-2 border-radius-lg">
-      <div class="d-flex flex-column">
-        <h6 class="mb-1 text-dark font-weight-bold text-sm" style="color:#333335 !important">${item.motivo_gasto}</h6>
-        <span class="text-xs">${obtenerFechaEnLetra(item.fecha_gasto)}</span>
-        <span class="badge bg-purple-transparent">${item.tipo_gasto}</span>
-      </div>
-      <div class="d-flex fw-semibold align-items-right" style="color:#333335; font-size:16px;">
-       ${moneyFormat(item.monto_gasto)}
-      </div>
-    </li>`
+  seleccionados.forEach(contenedor => {
+    const gastos = contenedor.detalleGastos || [];
 
-    ul.innerHTML += liTemplate;
+    // Encabezado del grupo (contenedor)
+    const headerRow = `
+      <tr class="table-secondary">
+        <td colspan="4" class="fw-bold text-start">Contenedor: ${contenedor.numContenedor}</td>
+      </tr>
+    `;
+    tbody.innerHTML += headerRow;
 
+    if (gastos.length === 0) {
+      tbody.innerHTML += `
+        <tr>
+          <td colspan="4" class="text-muted text-center">Sin gastos registrados</td>
+        </tr>`;
+    } else {
+      let totalContenedor = 0;
+
+      gastos.forEach(item => {
+        const monto = parseFloat(item.monto_gasto) || 0;
+        totalContenedor += monto;
+
+        tbody.innerHTML += `
+          <tr>
+            <td>${item.motivo_gasto || '—'}</td>
+            <td>${obtenerFechaEnLetra(item.fecha_gasto)}</td>
+            <td><span class="badge bg-purple-transparent">${item.tipo_gasto || '—'}</span></td>
+            <td>${moneyFormat(monto)}</td>
+          </tr>
+        `;
+      });
+
+      // Total por contenedor
+      tbody.innerHTML += `
+        <tr class="fw-bold table-light">
+          <td colspan="3" class="text-end">Total del contenedor:</td>
+          <td>${moneyFormat(totalContenedor)}</td>
+        </tr>
+      `;
+    }
   });
 
-  mostrarModal()
+  mostrarModal();
 }
+
+
 
 btnVerDetalle.addEventListener('click', () => {
   verDetalleGastos()
