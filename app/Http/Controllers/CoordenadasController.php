@@ -763,7 +763,7 @@ $idCordenada= $coordenadas->id_coordenadas;
     })->where('cotizaciones.estatus', '=', 'Aprobada')
     
     ->get();
-     $datos = [];
+     $datos = $datosAll;
     if($idCliente === 0){
         $datos = $datosAll ->where('id_empresa', $idEmpresa)->values();
     }
