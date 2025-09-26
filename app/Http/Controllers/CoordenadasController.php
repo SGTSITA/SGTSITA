@@ -764,7 +764,7 @@ $idCordenada= $coordenadas->id_coordenadas;
     
     ->get();
      $datos = [];
-    if($idCliente !== 0){
+    if($idCliente === 0){
         $datos = $datosAll ->where('id_empresa', $idEmpresa)->values();
     }
    
