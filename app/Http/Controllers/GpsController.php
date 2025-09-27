@@ -240,7 +240,7 @@ class GpsController extends Controller
     function buscartipoProveedor($num_Contenendor,$idKey,$imei){
         //TP-001|865468051839242|5|https://open.iopgps.com
         $datosAll= null;
-
+        \DB::enableQueryLog();
          $existeContenedor = DB::table('docum_cotizacion')->where('docum_cotizacion.num_contenedor','=',$num_Contenendor)->exists();
         $Equipo = "";
         $TipoEquipo = "";
@@ -320,7 +320,10 @@ class GpsController extends Controller
             ->where('asig.num_contenedor', '=', $num_Contenendor)
             ->first();
 
-           // dd($datosAll);
+         /*   dd([
+    'sql' => \DB::getQueryLog(),
+    'resultado' => (array) $datosAll
+]);  */
             if($imei=== $datosAll?->imei){
                 //corresponde al equipo del contendor
                 $Equipo = $datosAll?->id_equipo;

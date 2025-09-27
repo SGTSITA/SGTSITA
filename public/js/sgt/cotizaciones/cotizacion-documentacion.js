@@ -529,18 +529,19 @@ function abrirRastreoSeleccionado() {
    
    const selectedRows = apiGrid.getSelectedRows();
 
-    
-    const ids = selectedRows.map(row => row.id); 
-
-    if (ids.length > 0) {
-      
-        const query = new URLSearchParams({ ids: ids.join(',') }).toString();
-        const url = `/coordenadas/mapa_rastreo_varios?${query}`;
-        window.open(url, '_blank');
-    }else {
-
+   if (selectedRows.length === 1) {
+     
+      const contenedor = selectedRows[0].NumContenedor;
+      const tipoS = selectedRows[0].tipo; 
+      abrirMapaEnNuevaPestana(contenedor,tipoS);
+      return;
+   }
+   else   {
       Swal.fire('No hay contenedores seleccionados', 'Por favor, seleccione al menos un contenedor para ver el rastreo.', 'warning');
-    }
+      return;
+   }
+    
+    
 }
 
 document.querySelector('#btnDocs').addEventListener('click', goToUploadDocuments)
