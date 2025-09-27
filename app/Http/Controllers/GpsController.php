@@ -84,7 +84,7 @@ class GpsController extends Controller
                                 'lng'         => $ubicacionApiResponse['longitude'] ?? null,
                                 'velocidad'   => 0,
                                 'imei'        => $imei ?? null,
-                                'deviceName'  => ubicacionApiResponse['economico'] ?? null,
+                                'deviceName'  => $ubicacionApiResponse['economico'] ?? null,
                                 'mcType'      => '',
                                 'datac' =>  $ubicacion,
                                 'esDatoEmp' => $esDatoEmp,
@@ -96,15 +96,27 @@ class GpsController extends Controller
                             //Datos de dispositivo por IMEI: El metodo soporta multiples IMEIS, Separe cada imei por coma (,). Maximo 100 IMEIS
 
                             $adicionales['imeis'] = $imei;//'869066062080354'; //El IMEI deberá corresponder a una unidad registrada
-
+//dd($Rfc);
                             //Pasar el RFC de la empresa previamente configurada
                             $credenciales = JimiGpsTrait::getAuthenticationCredentials($Rfc); 
-                          
+                         if(!$credenciales['success']){
+                            $ubicacion =[
+                                'mesage'=>'No se encontraron credenciales para la empresa con RFC: '.$Rfc,
+                                    'lat' => 0,
+                                    'lng' => 0,
+                                    'fecha' => null,
+                                     'datac' =>  null,
+                                     'tipoEquipo' => null,
+                                     'esDatoEmp' => null
+                             ];
+                             break;
+                            }
                             $data = ($credenciales['success']) 
                             ? JimiGpsTrait::callGpsApi('jimi.device.location.get',$credenciales['accessAccount'],$adicionales)
                             : []
                             ;
                           // $ubicacion = $this->detalleDispositivo($imei);
+                        
                           $ubicacionApi = collect($data['result'])->first();
 
                             $ubicacion = [
@@ -125,6 +137,18 @@ class GpsController extends Controller
                         case 'wialon';// 'https://alxdevelopments.com': //LegoGps
                             $credenciales = CommonGpsTrait::getAuthenticationCredentials($Rfc,3);
                             $data = ($credenciales['success']) ? LegoGps::getLocation($credenciales['accessAccount']) : [];
+                            if(!$credenciales['success']){
+                                $ubicacion =[
+                                    'mesage'=>'No se encontraron credenciales para la empresa con RFC: '.$Rfc,
+                                        'lat' => 0,
+                                        'lng' => 0,
+                                        'fecha' => null,
+                                         'datac' =>  null,
+                                         'tipoEquipo' => null,
+                                         'esDatoEmp' => null
+                                 ];
+                                 break;
+                                }
                               $ubicacionApi = $data?->data[0] ?? null;
 
                             $ubicacion = [
@@ -142,6 +166,19 @@ class GpsController extends Controller
                         break;
                         case 'TrackerGps':
                             $credenciales = CommonGpsTrait::getAuthenticationCredentials($Rfc,4);
+                            if(!$credenciales['success']){
+                                $ubicacion =[
+                                    'mesage'=>'No se encontraron credenciales para la empresa con RFC: '.$Rfc,
+                                        'lat' => 0,
+                                        'lng' => 0,
+                                        'fecha' => null,
+                                         'datac' =>  null,
+                                         'tipoEquipo' => null,
+                                         'esDatoEmp' => null
+                                 ];
+                                 break;
+                                }
+                             $tipoGpsresponse="TrackerGps";
                             $data = GpsTrackerMXTrait::getMutiDevicePosition($credenciales['accessAccount']);
                             break;
                          default:
@@ -220,6 +257,7 @@ class GpsController extends Controller
                 'asignaciones.id',
                 'asignaciones.id_camion',
                 'docum_cotizacion.num_contenedor',
+                'asignaciones.id_empresa',
                 'asignaciones.fecha_inicio',
                 'asignaciones.fecha_fin',
                 
@@ -265,7 +303,7 @@ class GpsController extends Controller
                 'asig.tipoGps',
                 'asig.imei_chasis',
                 'asig.id_equipo_chasis',
-                'cotizaciones.id_empresa',
+                'asig.id_empresa',
                 'beneficiarios.RFC'
             )
             ->join('clients', 'cotizaciones.id_cliente', '=', 'clients.id')
@@ -282,7 +320,7 @@ class GpsController extends Controller
             ->where('asig.num_contenedor', '=', $num_Contenendor)
             ->first();
 
-
+           // dd($datosAll);
             if($imei=== $datosAll?->imei){
                 //corresponde al equipo del contendor
                 $Equipo = $datosAll?->id_equipo;
@@ -322,7 +360,7 @@ class GpsController extends Controller
             $empresaIdRastreo = $datosAll?->id_empresa;
             if( $RFCContenedor==='buscarEmpresaRFC'){
                 //buscamos el rfc de la empresa pues no tiene asignado un proveedor....
-                $empresas = Empresas::where('id','=',auth()->user()->Empresa->id)->orderBy('created_at', 'desc')->first();
+                $empresas = Empresas::where('id','=',$empresaIdRastreo)->orderBy('created_at', 'desc')->first();
                // dd($empresas);
                 $RFCContenedor =   $empresas->rfc; //minusculas 
                 //dd($RFCContenedor);

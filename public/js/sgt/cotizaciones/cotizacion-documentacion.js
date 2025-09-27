@@ -336,6 +336,12 @@ function viajeFull() {
   });
 }
 
+  function abrirMapaEnNuevaPestana( contenedor,tipoS) {
+    //const url = `/mapa-comparacion?latitud=${latitud}&longitud=${longitud}&latitud_seguimiento=${latitud_seguimiento}&longitud_seguimiento=${longitud_seguimiento}&contenedor=${contenedor}`;
+    const url = `/coordenadas/mapa_rastreo?contenedor=${contenedor}&tipoS=${encodeURIComponent(tipoS)}`;
+    window.open(url, '_blank');
+}
+
 function fileManager() {
   var _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
   var url = '/viajes/file-manager';
@@ -516,4 +522,27 @@ function getFilesCFDI() {
   })
 }
 
+
+//abrir mapa que no estaba
+
+function abrirRastreoSeleccionado() {
+   
+   const selectedRows = apiGrid.getSelectedRows();
+
+    
+    const ids = selectedRows.map(row => row.id); 
+
+    if (ids.length > 0) {
+      
+        const query = new URLSearchParams({ ids: ids.join(',') }).toString();
+        const url = `/coordenadas/mapa_rastreo_varios?${query}`;
+        window.open(url, '_blank');
+    }else {
+
+      Swal.fire('No hay contenedores seleccionados', 'Por favor, seleccione al menos un contenedor para ver el rastreo.', 'warning');
+    }
+}
+
 document.querySelector('#btnDocs').addEventListener('click', goToUploadDocuments)
+
+document.getElementById("btnRastreo").addEventListener("click", abrirRastreoSeleccionado);
