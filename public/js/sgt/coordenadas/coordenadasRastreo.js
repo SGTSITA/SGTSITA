@@ -673,7 +673,7 @@ let tipo = "";
 
                 markers[KEYITEM+"|"+item.contenedor+"|"+item.ubicacion.tipoEquipo].setPosition({ lat: latlocal, lng: lnglocal });
         } else {
-        if (latlocal && lnglocal) {
+        if (latlocal !==0 && lnglocal !==0) {
 
           let  colorMarker =colorBG;
 
@@ -988,7 +988,7 @@ contentC = `
           tipoRastreo: t,
           idProceso:idProceso
       };
-        if (idConvoyOContenedor!= ""){
+        if (idConvoyOContenedor!= "" && latlocal !==0 && lnglocal !==0) {
       actualizarUbicacionReal(datasave)
         }
         
