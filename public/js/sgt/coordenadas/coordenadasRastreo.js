@@ -244,11 +244,13 @@ function validarTipo(items)
       } else {
           ItemsSelectsID[items.id + "|"+  items.value] = []; 
       }
-   ItemsSelectsID[items.id + "|"+  items.value] = items.value;
-   if(items.value_chasis && items.value_chasis !== 'NO DISPONIBLE|'){   
-       ItemsSelectsID[items.id + "|"+  items.value] = items.value_chasis;   
-   }
-   ItemsSelectsID[items.id + "|"+  items.value] = items.value;
+
+    ItemsSelectsID[items.id + "|"+  items.value].push(items.value);
+    if(items.value_chasis && items.value_chasis !== 'NO DISPONIBLE|'){   
+        ItemsSelectsID[items.id + "|"+  items.value].push(items.value_chasis);   
+    }
+
+   //ItemsSelectsID[items.id + "|"+  items.value] = items.value;
     
     if ( tabx==='Convoy'){
       ItemsSelectsID[items.id + "|"+  items.value] = obtenerImeisPorConvoyId(items.id);
@@ -1002,6 +1004,7 @@ contentC = `
   })
   .catch(error => {
     console.error('Error al obtener ubicaciones:', error);
+    
     detener(keyInterval);
   });
 }
