@@ -535,6 +535,9 @@ function abrirRastreoSeleccionado() {
       const tipoS = selectedRows[0].tipo; 
       abrirMapaEnNuevaPestana(contenedor,tipoS);
       return;
+   }else if (selectedRows.length > 1) {
+      Swal.fire('Contenedores seleccionados', 'Por favor, seleccione solamente uno para ver el rastreo.', 'warning');
+      return;
    }
    else   {
       Swal.fire('No hay contenedores seleccionados', 'Por favor, seleccione al menos un contenedor para ver el rastreo.', 'warning');

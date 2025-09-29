@@ -752,7 +752,7 @@ $idCordenada= $coordenadas->id_coordenadas;
              ->on('asig.tipo_contrato', '=', 'beneficiarios.tipo_contrato');
     })
     ->whereNotNull('asig.imei')
-   // ->whereDate('asig.fecha_fin', '>=',  Carbon::now()->toDateString())
+   ->whereDate('asig.fecha_fin', '>=',  Carbon::now()->toDateString())
    
     ->when($contenedoresVarios, function ($query) use ($contenedoresVarios) {
         $contenedores = array_filter(array_map('trim', explode(';', $contenedoresVarios)));

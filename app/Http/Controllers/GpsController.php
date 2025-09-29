@@ -41,9 +41,11 @@ class GpsController extends Controller
                 // dd($RfcyEquipo);
 
              $empresaIdRastro = (int) $empresaIdRastro;
-
-
-                 if($empresaIdRastro === Auth::User()->id_empresa){
+                if(Auth::User()->id_cliente !== 0 && $empresaIdRastro === Auth::User()->id_cliente)
+                    { //es cliente y se validara por este
+                    $esDatoEmp="SI";
+                }
+                elseif($empresaIdRastro === Auth::User()->id_empresa){
 
                     $esDatoEmp="SI";
                  }
@@ -65,7 +67,8 @@ class GpsController extends Controller
                                 'mcType'      => '',
                                 'datac' =>  $data,
                                 'esDatoEmp' => $esDatoEmp,
-                                'tipoEquipo' => $TipoEquipo
+                                'tipoEquipo' => $TipoEquipo,
+                                'mesage'=>''
                             ];
 
                             break;
@@ -88,7 +91,8 @@ class GpsController extends Controller
                                 'mcType'      => '',
                                 'datac' =>  $ubicacion,
                                 'esDatoEmp' => $esDatoEmp,
-                                'tipoEquipo' => $TipoEquipo 
+                                'tipoEquipo' => $TipoEquipo,
+                                'mesage'=>'' 
                             ];
                             break;
 
@@ -116,7 +120,19 @@ class GpsController extends Controller
                             : []
                             ;
                           // $ubicacion = $this->detalleDispositivo($imei);
-                        
+                        if(empty($data) || (isset($data['code']) && $data['code'] != 0) ){
+                            $ubicacion =[
+                                'mesage'=>'No se encontraron datos de ubicacion para el equipo con IMEI: '.$imei,
+                                    'lat' => 0,
+                                    'lng' => 0,
+                                    'fecha' => null,
+                                     'datac' =>  null,
+                                     'tipoEquipo' => null,
+                                     'esDatoEmp' => null
+                             ];
+                             break;
+                            }
+                           // dd($data);
                           $ubicacionApi = collect($data['result'])->first();
 
                             $ubicacion = [
@@ -128,7 +144,8 @@ class GpsController extends Controller
                                 'mcType'      => $ubicacionApi['mcType'] ?? null,
                                 'datac' =>  $data,
                                 'esDatoEmp' => $esDatoEmp,
-                                'tipoEquipo' => $TipoEquipo
+                                'tipoEquipo' => $TipoEquipo,
+                                'mesage'=>''
                             ];
                            
                            $tipoGpsresponse="jimi";
@@ -160,7 +177,8 @@ class GpsController extends Controller
                                 'mcType'      => "",
                                 'datac' =>  $data,
                                 'esDatoEmp' => $esDatoEmp,
-                                'tipoEquipo' => $TipoEquipo
+                                'tipoEquipo' => $TipoEquipo,
+                                'mesage'=>''
                             ]; 
                              $tipoGpsresponse="LegoGps";
                         break;
@@ -275,12 +293,31 @@ class GpsController extends Controller
             );
 
             $beneficiarios = DB::table(function ($query) {
-                $query->select('id', 'nombre', 'telefono',DB::raw("'buscarEmpresaRFC' as RFC"), DB::raw("'Propio' as tipo_contrato"), 'id_empresa')
-                    ->from('operadores')
-                    ->union(
-                        DB::table('proveedores')
-                            ->select('id', 'nombre', 'telefono','RFC', DB::raw("'Subcontratado' as tipo_contrato"), 'id_empresa')
-                    );
+                $query->select(
+            'operadores.id',
+            'operadores.nombre',
+            'operadores.telefono',
+            'empresas.rfc as RFC',
+            DB::raw("'Propio' as tipo_contrato"),
+            'operadores.id_empresa',
+            'empresas.nombre as nombreempresa'
+        )
+        ->from('operadores')
+        ->join('empresas', 'empresas.id', '=', 'operadores.id_empresa')
+
+        ->union(
+            DB::table('proveedores')
+                ->select(
+                    'proveedores.id',
+                    'proveedores.nombre',
+                    'proveedores.telefono',
+                    'proveedores.RFC',
+                    DB::raw("'Subcontratado' as tipo_contrato"),
+                    'proveedores.id_empresa',
+                    'empresas.nombre as nombreempresa'
+                )
+                ->join('empresas', 'empresas.id', '=', 'proveedores.id_empresa')
+        );
             }, 'beneficiarios');
 
   
@@ -288,7 +325,7 @@ class GpsController extends Controller
             ->select(
                 'cotizaciones.id as id_cotizacion',
                 'asig.id as id_asignacion',
-                
+                'clients.id as id_cliente',
                 'clients.nombre as cliente',
                 'cotizaciones.origen',
                 'cotizaciones.destino',
@@ -361,6 +398,8 @@ class GpsController extends Controller
             $RFCContenedor = $datosAll?->RFC;
           //  $Equipo = $datosAll?->id_equipo;
             $empresaIdRastreo = $datosAll?->id_empresa;
+            $id_clienteBusqueda =$datosAll?->id_cliente ?? 0;
+            $empresas = Empresas::where('id','=',$empresaIdRastreo)->orderBy('created_at', 'desc')->first();
             if( $RFCContenedor==='buscarEmpresaRFC'){
                 //buscamos el rfc de la empresa pues no tiene asignado un proveedor....
                 $empresas = Empresas::where('id','=',$empresaIdRastreo)->orderBy('created_at', 'desc')->first();
@@ -368,7 +407,11 @@ class GpsController extends Controller
                 $RFCContenedor =   $empresas->rfc; //minusculas 
                 //dd($RFCContenedor);
             }
+                $RFCContenedor =   $empresas->rfc;
 
+                if(auth()->user()->id_cliente !== 0){ //es cliente y se validara por este
+                    $empresaIdRastreo = $id_clienteBusqueda;
+                }
 
                 return   $RFCContenedor . '|'. $Equipo . '|'.  $empresaIdRastreo .'|'. $TipoEquipo;
 

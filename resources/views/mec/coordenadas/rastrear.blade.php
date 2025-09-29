@@ -148,6 +148,9 @@ input:not(:checked) + .slider #ubicacion-texto {
         <!-- Buscador -->
         <div class="flex-grow-1">
             <div class="position-relative">
+              <span class="badge bg-info text-dark shadow-sm mb-2 d-inline-block">
+        Mostrando contenedores/convoys con fecha final igual o después de {{ \Carbon\Carbon::now()->format('d/m/Y') }}
+    </span>
                 <input type="text" id="buscadorGeneral" 
                        placeholder="Buscar convoy, contenedor o equipo..." 
                         class="form-control bg-light shadow-sm"
