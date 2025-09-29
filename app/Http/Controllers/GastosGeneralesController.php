@@ -250,6 +250,18 @@ class GastosGeneralesController extends Controller
                 GastosGenerales::insert($Daily);
             }else{
                 Bancos::where('id' ,'=',$request->get('id_banco1'))->update(["saldo" => DB::raw("saldo - ". $montoGasto)]);
+
+                $banco = new BancoDinero();
+
+                $banco->contenedores = $contenedoresAbonosJson;
+                $banco->id_proveedor = $request->get('id_cliente');
+                $banco->monto1 = $montoGasto;
+                $banco->metodo_pago1 = 'Transferencia';
+                $banco->id_banco1 = $request->get('id_banco1');
+
+                $banco->fecha_pago = date('Y-m-d');
+                $banco->tipo = 'Salida';
+                $banco->save();
             }
           
             DB::commit();
