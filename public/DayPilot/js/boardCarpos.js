@@ -1,13 +1,16 @@
  const fecha = new Date();
  //const APP_URL = document.querySelector('meta[name="APP_URL"]').getAttribute('content');
+ let ajustes = [];
 
  var allEvents = null;
  var festivos = [];
  let dpReady = false;
  let buscarContenedor  = document.querySelector('#txtBuscarContenedor')
-
+ 
 function formatFecha(fechaISO){
 const fecha = new Date(fechaISO);
+const btnGuardarBoard = document.querySelector('#btnGuardarBoard')
+const labelNotice = document.querySelector('#labelNotice')
 
 // Obtener día, mes y año
 const dia = String(fecha.getDate()).padStart(2, '0');
@@ -19,7 +22,7 @@ return `${dia}/${mes}/${anio}`;
 }
  
 
- async function initBoard(fromDate,toDate){
+async function initBoard(fromDate,toDate){
 
      var _token = $('input[name="_token"]').val();
     
@@ -95,7 +98,7 @@ return `${dia}/${mes}/${anio}`;
      })
 
      return result;
- }
+}
 
  
 
@@ -223,24 +226,52 @@ return `${dia}/${mes}/${anio}`;
 
  // event moving
  dp.onEventMoved = function (args) {
-     //console.log(args.e);
-     dp.message("Nuevo calculo: " + args.e.text());
+     let inforAjustes = ajustes.filter((item) => {return item.text != args.e.data.text});
+     ajustes = (inforAjustes) ? [...inforAjustes,args.e.data] : [...ajustes,args.e.data]
+
+     dp.message("Se cambió fecha del viaje: " + args.e.text());
+
+     if(ajustes.length > 0){
+        btnGuardarBoard.classList.remove('d-none')
+        labelNotice.textContent = `Viajes con cambios sin confirmar: ${ajustes.length}`
+        labelNotice.classList.remove('d-none')
+        btnGuardarBoard.classList.add("parpadeando");
+        labelNotice.classList.add("parpadeando");
+        setTimeout(() => {
+            btnGuardarBoard.classList.remove("parpadeando");
+            labelNotice.classList.remove('parpadeando')
+        }, 2500); // 2.5 segundos
+    }
      
  };
 
  dp.onEventMoving = function (args) {
     
-    
  };
 
  // event resizing
  dp.onEventResized = function (args) {
-    var MS_PER_MINUTE = 60000; 
-    var EndDateTime =  Date.parse(args.newEnd);
-    var myEndDate = new Date(EndDateTime - 1 * MS_PER_MINUTE);
+    let endDate = args.newEnd.addDays(-1);
 
-    args.end =(myEndDate.getFullYear()+'-'+(myEndDate.getMonth()+1)+'-'+myEndDate.getDate()); ;
-    dp.message("Programa Modificado: " + args.e.text());
+    endDate = endDate.addHours(23).addMinutes(0);
+
+    args.e.data.end = endDate;
+
+    let inforAjustes = ajustes.filter((item) => {return item.text != args.e.data.text});
+     ajustes = (inforAjustes) ? [...inforAjustes,args.e.data] : [...ajustes,args.e.data]
+
+    dp.message("Periodo de viaje modificado: " + args.e.text());
+    if(ajustes.length > 0){
+        btnGuardarBoard.classList.remove('d-none')
+        labelNotice.textContent = `Viajes con cambios sin confirmar: ${ajustes.length}`
+        labelNotice.classList.remove('d-none')
+        btnGuardarBoard.classList.add("parpadeando");
+        labelNotice.classList.add("parpadeando");
+        setTimeout(() => {
+            btnGuardarBoard.classList.remove("parpadeando");
+            labelNotice.classList.remove('parpadeando')
+        }, 2500); // 2.5 segundos
+    }
  };
 
  // event creating
@@ -367,6 +398,43 @@ return `${dia}/${mes}/${anio}`;
     const modalElement = document.getElementById('viajeModal');
     const bootstrapModal = new bootstrap.Modal(modalElement);
     bootstrapModal.show();
+ }
+
+ function confirmarCambiosPlaneacion(){
+    var _token = $('input[name="_token"]').val();
+    let payload = {_token,ajustes: JSON.stringify( ajustes)}
+    Swal.fire({
+        title: `Guardar cambios para ${ajustes.length} ${(ajustes.length > 1) ? 'Viajes' : 'Viaje'}`,
+        text: `¿Desea guardar la programación de ${ajustes.length} viajes pendientes por confirmar?`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, continuar',
+        cancelButtonText: 'Cancelar',
+      }).then((result) => {
+        if (result.isConfirmed) {
+            $.ajax({
+                url: '/planeaciones/viajes/reprogramar',
+                type:'post',
+                data: payload,
+                beforeSend:()=>{
+                    mostrarLoading('Espere un momento, guardando cambios...')
+                },
+                success:(response)=>{
+                    ocultarLoading()
+                    Swal.fire(response.Titulo,response.Mensaje, response.TMensaje)
+                },
+                error:(e)=>{
+                    ocultarLoading()
+                    Swal.fire('Ha ocurrido un error','error','error')
+
+                }
+            })
+        } 
+      });
+ }
+
+ if(btnGuardarBoard){
+    //btnGuardarBoard.addEventListener('click',confirmarCambiosPlaneacion)
  }
 
 function anularPlaneacion(idCotizacion, numContenedor){
