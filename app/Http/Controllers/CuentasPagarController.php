@@ -217,7 +217,7 @@ class CuentasPagarController extends Controller
                     'abono' => $c[6]
                 ];
 
-                \Log::debug($contenedorAbono);
+               
 
                 array_push($contenedoresAbonos, $contenedorAbono);
             }

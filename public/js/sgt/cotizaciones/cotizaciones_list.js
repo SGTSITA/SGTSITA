@@ -273,14 +273,12 @@ document.addEventListener("DOMContentLoaded", function () {
     const botonAbrirModal = document.getElementById('abrirModalBtn');
 
     if(botonAbrirModal){
-       
-
         botonAbrirModal.addEventListener('click', () => {
             let seleccion = gridApi.getSelectedRows();
     
             if(seleccion.length == 1){
             document.getElementById('numeroContenedor').textContent = seleccion[0].contenedor;
-            //document.getElementById('fechaViaje').textContent = seleccion[0].;
+            document.getElementById('txtTipoViaje').value = seleccion[0].tipo;
             document.getElementById('origenViaje').textContent = seleccion[0].origen;
             document.getElementById('destinoViaje').textContent = seleccion[0].destino;
             document.getElementById('estatusViaje').textContent = seleccion[0].estatus;
@@ -290,11 +288,7 @@ document.addEventListener("DOMContentLoaded", function () {
             let modalElement = (seleccion.length != 1) ? 'noSeleccionModal' : 'viajeModal'
             const modal1 = new bootstrap.Modal(document.getElementById(modalElement));
             modal1.show();
-        });
-
-        
-        
-             
+        });    
     }
 
     

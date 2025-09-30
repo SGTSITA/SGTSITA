@@ -15,7 +15,7 @@
                     <img src="/img/icon-user.jpg" alt="bruce" class="w-100 border-radius-lg shadow-sm">
                     </div>
                 </div>
-                <div class="col-sm-auto col-8 my-auto">
+                <div class="col-sm-auto col-6 my-auto">
                     <div class="h-100">
                     <h5 class="mb-1 font-weight-bolder">
                         {{$operador->nombre}}
@@ -26,10 +26,12 @@
                     </p>
                     </div>
                 </div>
-                <div class="col-2 offset-3 text-center">
+                <div class="col-2 offset-2 text-center">
                             <div class="border-dashed border-1 border-secondary border-radius-md py-3">
-                            <h6 class="text-primary mb-0">Viajes realizados</h6>
-                            <h4 class="font-weight-bolder"><span class="small" id="numViajes">0.00</span></h4>
+                                <h6 class="text-primary mb-0">Viajes realizados</h6>
+                                <h4 class="font-weight-bolder">
+                                    <span class="small" id="numViajes">0.00</span>
+                                </h4>
                             </div>
                         </div>
                         <div class="col-3 text-center">
@@ -58,6 +60,10 @@
                         </h5>
 
                         <div class="float-right">
+                         <button type="button" id="btnDineroViaje" class="btn btn-sm bg-gradient-success">
+                            <i class="fa fa-dollar"></i>
+                            Registrar dinero viaje
+                         </button>
                          <button type="button" id="btnJustificar" class="btn btn-sm bg-gradient-info">
                             <i class="fa fa-coins"></i>
                             Justificar Gastos

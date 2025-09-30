@@ -245,7 +245,7 @@
               </span>
             </div>
            
-
+            <input type="hidden" name="txtTipoViaje" id="txtTipoViaje">
             </div>
             <div class="col-md-3">
               <label for="operadorSelect" class="form-label">IMEI</label>

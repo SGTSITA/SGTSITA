@@ -12,6 +12,7 @@ use App\Models\Operador;
 use App\Models\Liquidaciones;
 use App\Models\LiquidacionContenedor;
 use App\Models\ViaticosOperador;
+use App\Models\DineroContenedor;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use DB;
@@ -62,12 +63,31 @@ class LiquidacionesController extends Controller
     }
 
     public function getViajesOperador(Request $r){
+
+        $suma_por_asignacion = DB::table('dinero_contenedor')
+        ->join('asignaciones', 'dinero_contenedor.id_contenedor', '=', 'asignaciones.id_contenedor')
+        ->where('asignaciones.id_empresa', auth()->user()->id_empresa)
+        ->where('asignaciones.estatus_pagado', 'Pendiente Pago')
+        ->whereNull('asignaciones.id_proveedor')
+        ->where('asignaciones.id_operador', $r->operador)
+        ->select(
+            'dinero_contenedor.id_contenedor',
+            DB::raw('SUM(dinero_contenedor.monto) as total_monto')
+        )
+        ->groupBy('dinero_contenedor.id_contenedor')
+        ->get();
+
+        $montos = $suma_por_asignacion->keyBy('id_contenedor');
+
         $asignacion_operador = Asignaciones::where('id_empresa', '=',auth()->user()->id_empresa)
         ->where('estatus_pagado', '=', 'Pendiente Pago')
-        
         ->where('id_proveedor', '=', NULL)
         ->where('id_operador', '=', $r->operador)
         ->get();
+
+        $asignacion_operador->each(function ($asignacion) use ($montos) {
+            $asignacion->total_monto = $montos[$asignacion->id_contenedor]->total_monto ?? 0;
+        });
 
         $contenedores = $asignacion_operador->map(function($c){
             
@@ -84,6 +104,8 @@ class LiquidacionesController extends Controller
                     }
             }
 
+            $justificaciones = (!is_null($c->justificacion)) ? $c->justificacion->sum('monto') : 0;
+
             return [
                 "IdAsignacion" => $c->id,
                 "IdOperador" => $c->id_operador,
@@ -91,9 +113,9 @@ class LiquidacionesController extends Controller
                 "Contenedores" => $numContenedor,
                 "ContenedorPrincipal" => $c->contenedor->num_contenedor,
                 "SueldoViaje" => $c->sueldo_viaje,
-                "DineroViaje" => $c->dinero_viaje,
-                "GastosJustificados" => (!is_null($c->justificacion)) ? $c->justificacion->sum('monto') : 0,
-                "MontoPago" => $c->restante_pago_operador,
+                "DineroViaje" => $c->total_monto,
+                "GastosJustificados" => $justificaciones,
+                "MontoPago" => $c->sueldo_viaje - $c->total_monto + $justificaciones,
                 "FechaInicia" => $c->fecha_inicio,
                 "FechaTermina" => $c->fecha_fin
             ];
@@ -128,38 +150,6 @@ class LiquidacionesController extends Controller
             //Los gastos que sean justificados por el operador, deberan reflejarse en el viaje correspondiente
                                                 
              $asignacion = Asignaciones::where('id_contenedor', $documCotizacion->id)->first();
-
-            /*if($r->pagoInmediato != "false" ){
-                //validar que el banco tenga saldo suficiente para efectuar el pago del gasto
-                $bancos = Bancos::where('id_empresa',Auth::User()->id_empresa)->where('id',$r->bancoPago)->first();
-                $saldoActual = $bancos->saldo;
-
-                if($saldoActual < $r->montoGasto){
-                    return response()->json(["Titulo" => "Saldo insuficiente en Banco","Mensaje" => "La cuenta bancaria seleccionada no cuenta con saldo suficiente para registrar esta transacción","TMensaje" => "warning"]);
-                }
-
-                Bancos::where('id' ,'=',$r->bancoPago)->update(["saldo" => DB::raw("saldo - ". $r->montoGasto)]);
-
-                $banco = new BancoDineroOpe;
-                $banco->id_operador = $asignacion->id_operador;
-
-                $banco->monto1 = $r->montoGasto;
-                $banco->metodo_pago1 = 'Transferencia';
-                $banco->descripcion_gasto = "Gasto ope: ".$r->descripcion;
-                $banco->id_banco1 = $r->bancoPago;
-
-                $contenedoresAbonos[] = [
-                    'num_contenedor' => $r->numContenedor,
-                    'abono' => $r->montoGasto
-                ];
-                $contenedoresAbonosJson = json_encode($contenedoresAbonos);
-
-                $banco->contenedores = $contenedoresAbonosJson;
-
-                $banco->tipo = 'Salida';
-                $banco->fecha_pago = date('Y-m-d');
-                $banco->save();
-             }*/
 
              $datosGasto = [
                             "id_cotizacion" => $documCotizacion->id_cotizacion,
@@ -204,6 +194,60 @@ class LiquidacionesController extends Controller
             Log::channel('daily')->info("Codigo: $uniqid, Error: LiquidacionesController/justificarGastos ".$t->getMessage());
             return response()->json(["Titulo" =>"Ha ocurrido un problema", "Mensaje" => "Codigo error: $uniqid. Mensaje: ".$t->getMessage(), "TMensaje" => "error"]);
 
+        }
+    }
+
+    public function agregarDineroViaje(Request $request){
+        try{
+            DB::beginTransaction();
+            $idEmpresa = auth()->user()->id_empresa;
+            $documCotizacion = DocumCotizacion::where('num_contenedor',$request->numContenedor)
+                                              ->where('id_empresa', $idEmpresa)
+                                              ->first();
+
+
+            $asignacion = Asignaciones::where('id_contenedor',$documCotizacion->id)->update([
+                "restante_pago_operador" => DB::raw('restante_pago_operador - '.$request->montoJustificacion)
+            ]);
+
+             $asignacion = Asignaciones::where('id_contenedor', $documCotizacion->id)->first();
+
+            $dineroViaje = new DineroContenedor;
+            $dineroViaje->id_contenedor = $asignacion->id_contenedor;
+            $dineroViaje->id_banco = $request->get('bank');
+            $dineroViaje->motivo = $request->txtDescripcion;
+            $dineroViaje->monto = $request->montoJustificacion;
+            $dineroViaje->fecha_entrega_monto = date('Y-m-d');
+            $dineroViaje->save();
+
+             $contenedoresAbonos = [];
+            $contenedorAbono = [
+                'num_contenedor' => $request->numContenedor,
+                'abono' => $request->get('montoJustificacion')
+            ];
+
+            array_push($contenedoresAbonos, $contenedorAbono);
+
+            Bancos::where('id' ,'=',$request->get('bank'))->update(["saldo" => DB::raw("saldo - ". $request->get('montoJustificacion'))]);
+            BancoDineroOpe::insert([[
+                                    'id_operador' => $asignacion->id_operador, 
+                                    'id_banco1' => $request->get('bank'),
+                                    'monto1' => $request->get('montoJustificacion'),
+                                    'fecha_pago' => date('Y-m-d'),
+                                    'tipo' => 'Salida',
+                                    'id_empresa' => auth()->user()->id_empresa,
+                                    'contenedores' => json_encode($contenedoresAbonos),
+                                    'descripcion_gasto' => 'Dinero para viaje: '.$request->txtDescripcion
+                                ]]);
+
+            DB::commit();
+            return response()->json(["Titulo" => "Correcto", "Mensaje" => "Datos guardados con exito", "TMensaje" => "success"]);
+
+        }catch(\Throwable $t){
+            DB::rollback();
+            $uniqid = uniqid();
+            Log::channel('daily')->info("Codigo: $uniqid, Error: LiquidacionesController/agregarDineroViaje ".$t->getMessage());
+            return response()->json(["Titulo" =>"Ha ocurrido un problema", "Mensaje" => "Codigo error: $uniqid. Mensaje: ".$t->getMessage(), "TMensaje" => "error"]);
         }
     }
 
@@ -296,7 +340,9 @@ class LiquidacionesController extends Controller
         $idViajes = $liquidacion->viajes->pluck('id_contenedor');
         $viaticos = ViaticosOperador::whereIn('id_cotizacion',$idViajes)->get();
 
-        $pdf = PDF::loadView('liquidaciones.pdf', compact('liquidacion','user','viaticos'));
+        $dineroViaje = DineroContenedor::whereIn('id_contenedor',$idViajes)->orderBy('id_contenedor')->get();
+
+        $pdf = PDF::loadView('liquidaciones.pdf', compact('liquidacion','user','viaticos','dineroViaje'));
         return $pdf->stream('utilidades_rpt.pdf');
     }
 

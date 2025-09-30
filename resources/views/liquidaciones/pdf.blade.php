@@ -195,7 +195,30 @@
              
             </table>
 
-            <h3>DETALLE DE USO DINERO VIAJE (JUSTIFICANTES)</h3>
+            <h3>DINERO PARA VIAJE</h3>
+            <table class="table text-white tabla-completa" style="color: #000; width: 100%; padding: 5px; margin: 0px; border-collapse: collapse; border: 1px solid #000;">
+                <thead>
+                    <tr>
+                        <th>Contenedor</th>
+                        <th>Descripción Gasto</th>
+                        <th>Monto</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($dineroViaje as $v)
+                    <tr>
+                        <td>{{$v->DocCotizacion->num_contenedor ?? 0}}</td>
+                        <td>{{$v->motivo}}</td>
+                        <td align="right">$ {{number_format($v->monto,2)}}</td>
+
+                        
+                    </tr>
+                    @endforeach
+                </tbody>
+             
+            </table>
+
+            <h3>DINERO VIAJE JUSTIFICADO</h3>
             <table class="table text-white tabla-completa" style="color: #000; width: 100%; padding: 5px; margin: 0px; border-collapse: collapse; border: 1px solid #000;">
                 <thead>
                     <tr>

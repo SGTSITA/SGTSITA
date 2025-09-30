@@ -17,6 +17,7 @@ use App\Http\Controllers\GpsCompanyController;
 use App\Http\Controllers\ContactoController;
 use App\Http\Controllers\ReporteriaController;
 use App\Http\Controllers\MepController;
+use App\Http\Controllers\PrestamosController;
 
 use App\Models\User;
 
@@ -45,6 +46,12 @@ Route::group(["prefix" => "whatsapp"],function(){
     Route::get('sendtext/{phone}/{text}',[WhatsAppController::class,'sendText'])->name('whatsapp.text');
     Route::get('webhook',[WhatsAppController::class,'webHook'])->name('whatsapp.webhook');
     Route::post('webhook',[WhatsAppController::class,'verifyWebHook'])->name('whatsapp.verify.webhook');
+
+});
+
+Route::group(["prefix" => "prestamos"], function(){
+    Route::get("registro",[PrestamosController::class,'index'])->name('operadores.prestamo');
+    Route::post("store",[PrestamosController::class,'store'])->name('prestamo.store');
 
 });
 
@@ -465,6 +472,8 @@ Route::post('operadores/{id}/restaurar', [App\Http\Controllers\OperadorControlle
     Route::post('liquidaciones/historial/pagos/comprobante',[App\Http\Controllers\LiquidacionesController::class, 'comprobantePago'])->name('comprobante.liquidacion');
     Route::post('liquidaciones/viajes/pagos-operadores', [App\Http\Controllers\LiquidacionesController::class, 'getPagosOperadores'])->name('operadores.liquidacion');
     Route::post('liquidaciones/viajes/operador', [App\Http\Controllers\LiquidacionesController::class, 'getViajesOperador'])->name('operador.viajes');
+    Route::post('liquidaciones/viajes/dinero_para_viaje', [App\Http\Controllers\LiquidacionesController::class, 'agregarDineroViaje'])->name('dinero.viaje');
+
     Route::post('liquidaciones/viajes/aplicar-pago', [App\Http\Controllers\LiquidacionesController::class, 'aplicarPago'])->name('pagar.viajes');
     Route::post('liquidaciones/viajes/gastos/justificar', [App\Http\Controllers\LiquidacionesController::class, 'justificarGastos'])->name('justifica.gastos');
 
