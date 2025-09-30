@@ -11,16 +11,19 @@
     {'field':'txtSerie','id':'txtSerie','label':'Núm Serie / VIN','required': true, "type":"text", "trigger":"none"},
     {'field':'selectGPS','id':'selectGPS','label':'Compañia GPS','required': true, "type":"text", "trigger":"none"},
     {'field':'txtImei','id':'txtImei','label':'IMEI','required': true, "type":"text", "trigger":"none"},
+    {'field':'txtTipoViaje','id':'txtTipoViaje','label':'Tipo Viaje','required': false, "type":"text", "trigger":"none"},
+
 
     {'field':'txtNumChasisA','id':'txtNumChasisA','label':'Núm Eco/ Núm Chasis / Identificador','required': true, "type":"text", "trigger":"none"},
     {'field':'txtPlacasA','id':'txtPlacasA','label':'Placas Chasis A','required': true, "type":"text", "trigger":"none"},
     {'field':'selectChasisAGPS','id':'selectChasisAGPS','label':'Compañia GPS Chasis A','required': true, "type":"text", "trigger":"none"},
     {'field':'txtImeiChasisA','id':'txtImeiChasisA','label':'IMEI Chasis A','required': true, "type":"text", "trigger":"none"},
+    
 
-    {'field':'txtNumChasisB','id':'txtNumChasisB','label':'Núm Eco/ Núm Chasis B / Identificador','required': true, "type":"text", "trigger":"none"},
-    {'field':'txtPlacasB','id':'txtPlacasB','label':'Placas Chasis B','required': true, "type":"text", "trigger":"none"},
-    {'field':'selectChasisBGPS','id':'selectChasisBGPS','label':'Compañia GPS Chasis B','required': true, "type":"text", "trigger":"none"},
-    {'field':'txtImeiChasisB','id':'txtImeiChasisB','label':'IMEI Chasis B','required': true, "type":"text", "trigger":"none"},
+    {'field':'txtNumChasisB','id':'txtNumChasisB','label':'Núm Eco/ Núm Chasis B / Identificador','required': false, "type":"text", "trigger":"txtTipoViaje",'expectedValue':'Full', labelTrigger: "Tipo Viaje"},
+    {'field':'txtPlacasB','id':'txtPlacasB','label':'Placas Chasis B','required': false, "type":"text", "trigger":"txtNumChasisB"},
+    {'field':'selectChasisBGPS','id':'selectChasisBGPS','label':'Compañia GPS Chasis B','required': false, "type":"text", "trigger":"txtNumChasisB"},
+    {'field':'txtImeiChasisB','id':'txtImeiChasisB','label':'IMEI Chasis B','required': false, "type":"text", "trigger":"txtNumChasisB"},
 ]
 
 
@@ -36,6 +39,20 @@
     let passValidation = formFieldsMep.every((item) => {
 
         let field = document.getElementById(item.field);
+        let trigger = item.trigger;
+
+        if(trigger != "none"){
+            let primaryField = document.getElementById(trigger);
+            
+
+            if(field.value.length <= 0 && primaryField.value == item.expectedValue){
+                if(field.value.length === 0 ){
+                    Swal.fire(`El campo "${item.label}" es condicional y está vacío`,`El campo "${item.label}" es obligatorio cuando el valor de ${item.labelTrigger} es ${item.expectedValue}. Por favor proporcione está información.`,"warning");
+                    return false;
+                }
+            }
+        }
+
         if(field){
             if(item.required === true && field.value.length == 0){
                 Swal.fire("El campo "+item.label+" es obligatorio","Parece que no ha proporcionado información en el campo "+item.label,"warning");
@@ -55,6 +72,8 @@
         return true;
 
     });
+
+    
 
     if(!passValidation) return passValidation;
 

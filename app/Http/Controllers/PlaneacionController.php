@@ -15,6 +15,7 @@ use App\Models\Coordenadas;
 use App\Models\GastosOperadores;
 use App\Models\BancoDineroOpe;
 use App\Models\DocumCotizacion;
+use App\Models\DineroAsignacion;
 use App\Traits\CommonTrait as common;
 use Illuminate\Http\Request;
 use DB;
@@ -271,6 +272,8 @@ class PlaneacionController extends Controller
             $asignaciones->fehca_inicio_guard = $fechaInicio;
             $asignaciones->fehca_fin_guard = $fechaFinal . ' 23:00:00';
 
+            $asignaciones->save();
+
             if($request->tipoViaje == "propio"){
                 $asignaciones->id_chasis = $request->get('cmbChasis');
                 $asignaciones->id_chasis2 = $request->get('cmbChasis2');
@@ -311,8 +314,14 @@ class PlaneacionController extends Controller
                                             'contenedores' => json_encode($contenedoresAbonos),
                                             'descripcion_gasto' => 'Dinero para viaje'
                                         ]]);
-                  
-                
+
+                    $dineroViaje = new DineroAsignacion;
+                    $dineroViaje->id_asignacion = $asignaciones->id;
+                    $dineroViaje->id_banco = $request->get('cmbBanco');
+                    $dineroViaje->motivo = 'Dinero para viaje';
+                    $dineroViaje->monto = $request->get('txtDineroViaje');
+                    $dineroViaje->fecha_entrega_monto = date('Y-m-d');
+                    $dineroViaje->save();
                 
                 }
 
@@ -343,7 +352,7 @@ class PlaneacionController extends Controller
             */
             
            
-            $asignaciones->save();
+            $asignaciones->update();
 
             $cotizacion->estatus_planeacion = 1;
             $cotizacion->tipo_viaje = $request->get('cmbTipoUnidad');
@@ -372,7 +381,13 @@ class PlaneacionController extends Controller
 
             DB::commit();
     
-            return response()->json(["TMensaje"=>"success","Titulo" => "Planeado correctamente", "Mensaje" => "Se ha programado correctamente el viaje del contenedor",'success' => true, 'cotizacion_data' => $cotizacion_data]);
+            return response()->json([
+                "TMensaje"=>"success",
+                "Titulo" => "Planeado correctamente", 
+                "Mensaje" => "Se ha programado correctamente el viaje del contenedor",
+                'success' => true, 
+                'cotizacion_data' => $cotizacion_data
+            ]);
 
             }catch(\Trowable $t){
                 DB::rollback();
