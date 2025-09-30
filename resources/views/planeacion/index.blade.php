@@ -31,12 +31,20 @@
                                     <input type="text" id="txtBuscarContenedor" class="input-apple-style" placeholder="Buscar...">
                                 </div>
 
-                                <a href="{{route('planeacion.programar')}}" class="btn btn-sm bg-gradient-info" >
-                                    <i class="fa fa-fw fa-plus"></i>  Planear
-                                </a>
-                             
-                           
+                                <div class="">
+                                    <button onclick="confirmarCambiosPlaneacion()" type="button" class="btn btn-sm bg-gradient-success d-none" id="btnGuardarBoard">
+                                        <i class="fa fa-fw fa-save"></i>  Confirmar cambios en Board
+                                    </button>
+                                    <a href="{{route('planeacion.programar')}}" class="btn btn-sm bg-gradient-info" >
+                                        <i class="fa fa-fw fa-plus"></i>  Planear
+                                    </a>
+                                </div>
 
+                        </div>
+                        <div  class="d-flex justify-content-end ">
+                            <div class="p-2 parpadeando d-none"id="labelNotice"  style="color: #444;border: 1px dashed #ccc;border-radius: 8px;background-color: #f8f9fa;font-weight: 500;">
+                             Viajes con cambios sin confirmar: 3
+                            </div>
                         </div>
                     </div>
                 <div class="card-body" style="padding-left: 1.5rem; padding-top: 1rem;">
@@ -93,6 +101,29 @@
 .input-apple-style:focus {
   background-color: #fff;
   box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.2), inset 0 0 0 1px rgba(0,0,0,0.05);
+}
+
+@keyframes parpadeo {
+  0% {
+    opacity: 1;
+    background-color: #ff5722; /* Coral */
+    box-shadow: 0 0 10px 4px rgba(255, 111, 97, 0.6);
+  }
+  50% {
+    opacity: 0.5;
+    box-shadow: 0 0 20px 10px rgba(255, 255, 100, 0.9);
+  }
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 10px 4px rgba(255, 255, 100, 0.7);
+  }
+}
+
+.parpadeando {
+  animation: parpadeo 1.2s ease-in-out infinite;
+  border: 2px solid gold;
+  background-color: #fff8dc;
+  color: #333;
 }
 </style>
 <script src="{{asset('DayPilot/js/daypilot-all.min.js?v=2022.3.5384')}}"></script>    

@@ -400,6 +400,33 @@ class PlaneacionController extends Controller
        
     }
 
+    public function reprogramarViajes(Request $request){
+        try{
+            DB::beginTransaction();
+            $viajes = json_decode($request->ajustes);
+            foreach($viajes as $v){
+                $asignaciones = Asignaciones::where('id_contenedor',$v->id)->first();
+                //$asignaciones->id_contenedor = $contenedor->id_cotizacion;
+                $fechaInicio = str_replace('T',' ',$v->start);
+                $fechaFinal = str_replace('T',' ',$v->end);
+                $asignaciones->fecha_inicio = $fechaInicio;
+                $asignaciones->fecha_fin = $fechaFinal ;
+                $asignaciones->fehca_inicio_guard = $fechaInicio;
+                $asignaciones->fehca_fin_guard = $fechaFinal ;
+                $asignaciones->save();
+            }
+            
+            DB::commit();
+
+            return response()->json(["TMensaje"=>"success","Titulo" => "Reprogramación exitosa", "Mensaje" => "Se ha realizado la reprogramación de fechas exitosamente",'success' => true]);
+
+        }catch(\Throwable $t){
+            DB::rollback();
+            \Log::channel('daily')->info('No se guardó Reprogramacion viajes: '.$t->getMessage());
+            return response()->json(["TMensaje"=>"warning","Titulo" => "No se pudo reprogramar", "Mensaje" => "Ocurrio un error mientras procesabamos su solicitud",'success' => true]);
+        }
+    }
+
     public function equipos(Request $request){
         $fechaInicio = $request->fecha_inicio;
         $fechaFin = $request->fecha_fin;
