@@ -13,15 +13,18 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('prestamos', function (Blueprint $table) {
+        Schema::create('dinero_contenedor', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('id_operador'); // Relación con operador
-            $table->unsignedBigInteger('id_banco'); // Relación con bancos
-            $table->decimal('cantidad', 12, 2);
+            $table->unsignedBigInteger('id_contenedor');
+            $table->unsignedBigInteger('id_banco');
+            $table->string('motivo');
+            $table->decimal('monto');
+            $table->date('fecha_entrega_monto');
             $table->timestamps();
 
-            $table->foreign('id_operador')->references('id')->on('operadores')->onDelete('cascade');
+            $table->foreign('id_contenedor')->references('id')->on('docum_cotizacion');
             $table->foreign('id_banco')->references('id')->on('bancos');
+
 
         });
     }
@@ -33,6 +36,6 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('prestamos');
+        Schema::dropIfExists('dinero_asignacion');
     }
 };

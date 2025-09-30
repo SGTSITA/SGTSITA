@@ -171,6 +171,8 @@ class MissionResultRenderer {
   let contadorContenedores = document.querySelector("#contadorContenedores")
   let btnConfirmaPago = document.querySelector("#btnConfirmaPago")
   let btnJustificar = document.querySelector("#btnJustificar")
+  let btnDineroViaje = document.querySelector("#btnDineroViaje")
+
   let totalMontoPago = 0;
    
    function mostrarViajesOperador(operador){
@@ -273,12 +275,25 @@ class MissionResultRenderer {
     openModalJustificar()
    });
 
-  function openModalJustificar(){
+   btnDineroViaje.addEventListener('click',()=>{
+    openModalJustificar('dinero_viaje')
+   });
+
+  function openModalJustificar(accion = 'justificar'){
     let justificaContenedores = apiGrid.getSelectedRows();
-      if(justificaContenedores.length != 1){
+    if(justificaContenedores.length != 1){
           Swal.fire('Seleccione un contenedor','Debe seleccionar solo un contenedor de la lista','warning');
           return false;
-      } 
+    } 
+
+    let actionTitle = document.querySelector('#actionTitle');
+    let bancoRetiro = document.querySelector('#bancoRetiro')
+    actionTitle.textContent = (accion == 'justificar') ? 'Justificar gastos' : 'Registro dinero viaje';
+
+    (accion == 'justificar') ? bancoRetiro.classList.add('d-none') :
+    bancoRetiro.classList.remove('d-none')
+
+    document.getElementById('btnJustificar').setAttribute('data-sgt-action', accion);
 
     const modalElement = document.getElementById('modal-justificar');
       const bootstrapModal = new bootstrap.Modal(modalElement);
@@ -315,11 +330,6 @@ class MissionResultRenderer {
     let sinJustificar = DineroViaje - GastosJustificados;
     let montoJustificacion = reverseMoneyFormat( document.getElementById("txtMonto").value);
     
-    /*if(montoJustificacion > 0 && montoJustificacion > sinJustificar){
-      Swal.fire("Monto a justificar incorrecto",`El monto a justificar debe ser mayor a cero y no debe superar el monto pendiente de Dinero de Viaje. Monto pendiente por justificar ${moneyFormat(sinJustificar)}`,"warning");
-      return false;
-    }*/
-
     let _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
     if(txtDescripcion.length == 0){
@@ -327,10 +337,23 @@ class MissionResultRenderer {
       return false
     }
 
+    let payload ={_token, montoJustificacion,numContenedor, txtDescripcion, sinJustificar}
+
+    let accion = document.getElementById('btnJustificar').dataset.sgtAction;
+    let url = null
+    if (accion == 'dinero_viaje') {
+      let cmbBancoRetiro = document.querySelector('#cmbBancoRetiro')
+      if(cmbBancoRetiro.value == "null") return Swal.fire('Seleccione cuenta retiro','Por favor seleccione banco de donde se retira el recurso','warning')
+      payload = {...payload,bank: cmbBancoRetiro.value }
+      url = '/liquidaciones/viajes/dinero_para_viaje'
+    }else{
+      url = '/liquidaciones/viajes/gastos/justificar'
+    }
+
     $.ajax({
-      url:'/liquidaciones/viajes/gastos/justificar',
+      url: url,
       type:'post',
-      data:{_token, montoJustificacion,numContenedor, txtDescripcion, sinJustificar},
+      data: payload,
       beforeSend:()=>{
 
       },
