@@ -340,7 +340,7 @@ class LiquidacionesController extends Controller
         $idViajes = $liquidacion->viajes->pluck('id_contenedor');
         $viaticos = ViaticosOperador::whereIn('id_cotizacion',$idViajes)->get();
 
-        $asignaciones = Asignacion::whereIn('id_contenedor',)
+        //$asignaciones = Asignacion::whereIn('id_contenedor',)
 
         $pdf = PDF::loadView('liquidaciones.pdf', compact('liquidacion','user','viaticos'));
         return $pdf->stream('utilidades_rpt.pdf');
