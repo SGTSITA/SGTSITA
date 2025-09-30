@@ -213,7 +213,7 @@ class LiquidacionesController extends Controller
              $asignacion = Asignaciones::where('id_contenedor', $documCotizacion->id)->first();
 
             $dineroViaje = new DineroContenedor;
-            $dineroViaje->id_asignacion = $asignacion->id_contenedor;
+            $dineroViaje->id_contenedor = $asignacion->id_contenedor;
             $dineroViaje->id_banco = $request->get('bank');
             $dineroViaje->motivo = $request->txtDescripcion;
             $dineroViaje->monto = $request->montoJustificacion;
@@ -340,9 +340,9 @@ class LiquidacionesController extends Controller
         $idViajes = $liquidacion->viajes->pluck('id_contenedor');
         $viaticos = ViaticosOperador::whereIn('id_cotizacion',$idViajes)->get();
 
-        //$asignaciones = Asignacion::whereIn('id_contenedor',)
+        $dineroViaje = DineroContenedor::whereIn('id_contenedor',$idViajes)->orderBy('id_contenedor')->get();
 
-        $pdf = PDF::loadView('liquidaciones.pdf', compact('liquidacion','user','viaticos'));
+        $pdf = PDF::loadView('liquidaciones.pdf', compact('liquidacion','user','viaticos','dineroViaje'));
         return $pdf->stream('utilidades_rpt.pdf');
     }
 
