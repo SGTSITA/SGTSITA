@@ -123,17 +123,27 @@
 
     <div id="mapaRastreo"></div>
 
-    <div class="modal fade" id="modalInfoViaje" tabindex="-1" aria-labelledby="modalInfoViajeLabel" aria-hidden="true">
+  <div class="modal fade" id="modalInfoViaje" tabindex="-1" aria-labelledby="modalInfoViajeLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-lg">
     <div class="modal-content shadow-lg rounded-4">
       <div class="modal-header bg-primary text-white rounded-top-4">
         <h5 class="modal-title" id="modalInfoViajeLabel">
-          <i class="bi bi-truck-front-fill me-2"></i> Información del Viaje
+          <i class="bi bi-truck-front-fill me-2"></i> Información del Viaje 
         </h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
       </div>
-      <div class="modal-body" id="contenidoModalViaje">
-        <!-- Aquí se insertará el contenido dinámico -->
+      <div class="modal-body">
+        
+        <!-- Nav tabs (se generan dinámicamente con los contenedores) -->
+        <ul class="nav nav-tabs" id="contenedorTabs" role="tablist">
+          <!-- Aquí se insertan las pestañas por contenedor -->
+        </ul>
+
+        <!-- Contenido de cada tab -->
+        <div class="tab-content mt-3" id="contenedorTabsContent">
+          <!-- Aquí se insertan los divs de cada contenedor -->
+        </div>
+
       </div>
       <div class="modal-footer bg-light rounded-bottom-4">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
@@ -151,6 +161,7 @@
         
         crossorigin="anonymous"></script>
     <script>
+      let equiposSearch = [];
 let map;
   let markers = [];
 let convoyDisuelto= false;
@@ -222,7 +233,7 @@ let tipo = "";
   .then(data => {
     //console.log('Ubicaciones recibidas:', data);
     const dataUbi= data;
-
+ 
 //limpiarMarcadores();
 responseOk = true;
     if (Array.isArray(dataUbi)) {
@@ -289,12 +300,12 @@ if (latlocal && lnglocal) {
           
         
            newMarker.addListener('click', () => {
-            const contenedor = item.contenedor;
-             let info = contenedoresDisponibles.find(d => d.contenedor === contenedor);
+          const contenedorRes = item.contenedor;
+             let info = contenedoresDisponibles.find(d => d.contenedor === contenedorRes);
                 if (!info) {
-                  if (tipoSpans.toLowerCase().includes('convoy')) {
-                     info = contenedoresDisponiblesAll.find(d => d.contenedor === contenedor);
-                  }else if(t==='#filtro-Equipo'){
+                  if (t.toLowerCase().includes('convoy')) {
+                     info = contenedoresDisponiblesAll.find(d => d.contenedor === contenedorRes);
+                  }else if(t==='Equipo'){
                    
                     const ahora = new Date();
                        info = contenedoresDisponibles.find(d => {
@@ -312,7 +323,8 @@ if (latlocal && lnglocal) {
                 }
                 let extraInfo = '';
 
-                if (t === '#filtro-Equipo') {
+               if (info) {
+                if (t === 'Equipo') {
                   extraInfo = `
                     <p><strong>IMEI CHASIS:</strong> ${info.imei_chasis}</p>
                            `;
@@ -332,12 +344,21 @@ if (latlocal && lnglocal) {
                                    ${extraInfo}
                   </div>
                 `;
+            }
+            //  document.getElementById('contenidoModalViaje').innerHTML = contenido;
 
-              document.getElementById('contenidoModalViaje').innerHTML = contenido;
+              
+              let infoCMaps=[]; 
+              if(t==='Convoy'){
 
-              // Mostrar el modal con Bootstrap 5
-              const modal = new bootstrap.Modal(document.getElementById('modalInfoViaje'));
-              modal.show();
+                let contenedoresConvoy = detalleConvoys.filter(d => d.conboy_id === parseInt(id));
+                infoCMaps=contenedoresConvoy;
+                   mostrarInfoContenedor(contenedoresConvoy,item.EquipoBD,"");
+              }else{
+                let resultadoComoArray = info ? [info] : [];
+                infoCMaps=resultadoComoArray;
+               mostrarInfoContenedor(resultadoComoArray,item.EquipoBD,"");
+              }
             });
           //} //end mostrar primero
            tipo= tipo + ' '+ item.contenedor;
@@ -394,6 +415,95 @@ function limpiarMarcadores() {
     
 }
 
+function mostrarInfoContenedor(contenedores,equipo,chasis) {
+  const tabs = document.getElementById("contenedorTabs");
+  const content = document.getElementById("contenedorTabsContent");
+
+  tabs.innerHTML = "";
+  content.innerHTML = "";
+  let info = "";
+
+  contenedores.forEach((contenedor, index) => {
+    let tabId =  contenedor.num_contenedor;
+    if(!tabId){
+        tabId =  contenedor.contenedor;
+    }
+   
+
+    // Crear pestaña
+    tabs.innerHTML += `
+      <li class="nav-item" role="presentation">
+        <button class="nav-link ${index === 0 ? "active" : ""}" 
+                id="${tabId}-tab" 
+                data-bs-toggle="tab" 
+                data-bs-target="#${tabId}" 
+                type="button" 
+                role="tab" 
+                aria-controls="${tabId}" 
+                aria-selected="${index === 0 ? "true" : "false"}">
+           ${tabId}
+        </button>
+      </li>
+    `;
+
+      info = contenedoresDisponiblesAll.find(d => d.contenedor === contenedor.num_contenedor);
+      if(!info){
+        info = contenedoresDisponiblesAll.find(d => d.contenedor === contenedor.contenedor);
+
+      }
+       // <p><strong>Contenedor:</strong> ${info.contenedor}</p>
+if(info){
+let filtroEqu= equiposSearch.find(equipo => equipo.id === info.id_equipo_unico);
+    
+     let infoContenido = `  
+                  <div class="tab-pane fade ${index === 0 ? "show active" : ""}" 
+           id="${tabId}" 
+           role="tabpanel" 
+           aria-labelledby="${tabId}-tab">
+                   
+                    <p><strong>Cliente:</strong> ${info.cliente}</p>
+                  
+                    <p><strong>Origen:</strong> ${info.origen}</p>
+                    <p><strong>Destino:</strong> ${info.destino}</p>
+                    <p><strong>Contrato:</strong> ${info.tipo_contrato}</p>
+                    <p><strong>Fecha Inicio:</strong> ${info.fecha_inicio}</p>
+                    <p><strong>Fecha Fin:</strong> ${info.fecha_fin}</p>
+                    <p><strong>Contacto Entrega:</strong> ${info.cp_contacto_entrega}</p>
+                    <p><strong>Operador:</strong> ${info.beneficiario}</p>
+                    <p><strong>Telefono:</strong> ${info.telefono_beneficiario}</p>
+                    <p>
+                        <span style="margin-right: 15px;">
+                            <strong>IMEI:</strong> ${info.imei}
+                        </span>
+                        <strong>Equipo:</strong> ${info.id_equipo}
+                        <strong>Placas:</strong> ${filtroEqu.placas}
+                    </p>
+                    <p>
+                        <span style="margin-right: 15px;">
+                            <strong>IMEI CHASIS:</strong> ${info.imei_chasis}
+                        </span>
+                        <strong>Chasis:</strong> ${info.id_equipo_chasis}
+                    </p>
+                  </div>
+                `;
+
+
+    // Crear contenido
+      content.innerHTML += infoContenido;
+}else{
+    Swal.fire({
+        title: 'Información de viaje no disponible',
+        text: 'No se encontró información para el contenedor seleccionado.',
+        icon: 'warning'
+    });
+}
+
+  
+  });
+
+  const modal = new bootstrap.Modal(document.getElementById('modalInfoViaje'));
+  modal.show();
+}
 
 function cargarinicial() {
     fetch(`/coordenadas/contenedor/searchEquGps?`)
@@ -403,7 +513,7 @@ function cargarinicial() {
             detalleConvoys = data.dataConten;
           contenedoresDisponiblesAll=     data.       datosAll;
           convoysAll = data.conboys;
-
+    equiposSearch = data.equiposAll;
           detalleConvoysAll =  data.dataContenAll;
 
             if (!contenedoresDisponibles) {
