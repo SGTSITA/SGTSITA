@@ -64,20 +64,20 @@ class LiquidacionesController extends Controller
 
     public function getViajesOperador(Request $r){
 
-        $suma_por_asignacion = DB::table('dinero_asignacion')
-        ->join('asignaciones', 'dinero_asignacion.id_asignacion', '=', 'asignaciones.id')
+        $suma_por_asignacion = DB::table('dinero_contenedor')
+        ->join('asignaciones', 'dinero_contenedor.id_contenedor', '=', 'asignaciones.id_contenedor')
         ->where('asignaciones.id_empresa', auth()->user()->id_empresa)
         ->where('asignaciones.estatus_pagado', 'Pendiente Pago')
         ->whereNull('asignaciones.id_proveedor')
         ->where('asignaciones.id_operador', $r->operador)
         ->select(
-            'dinero_asignacion.id_asignacion',
-            DB::raw('SUM(dinero_asignacion.monto) as total_monto')
+            'dinero_contenedor.id_contenedor',
+            DB::raw('SUM(dinero_contenedor.monto) as total_monto')
         )
-        ->groupBy('dinero_asignacion.id_asignacion')
+        ->groupBy('dinero_contenedor.id_contenedor')
         ->get();
 
-        $montos = $suma_por_asignacion->keyBy('id_asignacion');
+        $montos = $suma_por_asignacion->keyBy('id_contenedor');
 
         $asignacion_operador = Asignaciones::where('id_empresa', '=',auth()->user()->id_empresa)
         ->where('estatus_pagado', '=', 'Pendiente Pago')
@@ -86,7 +86,7 @@ class LiquidacionesController extends Controller
         ->get();
 
         $asignacion_operador->each(function ($asignacion) use ($montos) {
-            $asignacion->total_monto = $montos[$asignacion->id]->total_monto ?? 0;
+            $asignacion->total_monto = $montos[$asignacion->id_contenedor]->total_monto ?? 0;
         });
 
         $contenedores = $asignacion_operador->map(function($c){
