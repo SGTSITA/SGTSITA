@@ -204,9 +204,15 @@
                                     $numContenedor .= ' / ' . $contenedorSec;
                                 }
                             }
+
+                            // 🔹 aquí cortamos cada contenedor a 12 caracteres
+                            $arr = explode(' / ', $numContenedor);
+                            $arr = array_map(fn($c) => mb_substr($c, 0, 11), $arr);
+                            $numContenedor = implode(' / ', $arr);
                         @endphp
 
                     <td style="padding: 2px; border: 1px solid #000;">{{ $numContenedor }}</td>
+
 
 
                     <td style="padding: 2px; border: 1px solid #000; color: #020202; background: yellow;">
@@ -496,8 +502,6 @@
                             $cuenta2 = $proveedorModel?->CuentasBancarias->where('cuenta_2', true)->first();
                         @endphp
                         <tr style="background-color: {{ $loop->odd ? '#f1f1f1' : '#e0e0e0' }};">
-                            {{-- Celda de la cuenta: si hay cuenta global se muestra una sola vez con rowspan,
-          si no hay global, se pinta cada proveedor su cuenta 2 --}}
                             @if ($loop->first && $bancoGlobal)
                                 <td rowspan="{{ count($totalesPorProveedor) }}"
                                     style="padding:2px; border:1px solid #ccc; text-align:center; vertical-align:middle;">
@@ -513,10 +517,10 @@
                                 </td>
                             @endif
 
-                            <td>{{ $prov['nombre'] }}</td>
-                            <td>${{ number_format($prov['total'], 2, '.', ',') }}</td>
+                            <td style="border:1px solid #ccc;">{{ $prov['nombre'] }}</td>
+                            <td style="border:1px solid #ccc;">${{ number_format($prov['total'], 2, '.', ',') }}</td>
                             @foreach ($subclientesLista as $subcliente)
-                                <td>
+                                <td style="border:1px solid #ccc;">
                                     @php $monto = $prov['subclientes'][$subcliente] ?? 0; @endphp
                                     {{ $monto > 0 ? '$' . number_format($monto, 2, '.', ',') : '-' }}
                                 </td>
