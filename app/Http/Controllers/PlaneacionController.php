@@ -15,7 +15,7 @@ use App\Models\Coordenadas;
 use App\Models\GastosOperadores;
 use App\Models\BancoDineroOpe;
 use App\Models\DocumCotizacion;
-use App\Models\DineroAsignacion;
+use App\Models\DineroContenedor;
 use App\Traits\CommonTrait as common;
 use Illuminate\Http\Request;
 use DB;
@@ -316,8 +316,8 @@ class PlaneacionController extends Controller
                                             'descripcion_gasto' => 'Dinero para viaje'
                                         ]]);
 
-                    $dineroViaje = new DineroAsignacion;
-                    $dineroViaje->id_asignacion = $asignaciones->id;
+                    $dineroViaje = new DineroContenedor;
+                    $dineroViaje->id_contenedor = $asignaciones->id_contenedor;
                     $dineroViaje->id_banco = $request->get('cmbBanco');
                     $dineroViaje->motivo = 'Dinero para viaje';
                     $dineroViaje->monto = $request->get('txtDineroViaje');
