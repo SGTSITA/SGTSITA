@@ -204,9 +204,15 @@
                                     $numContenedor .= ' / ' . $contenedorSec;
                                 }
                             }
+
+                            // 🔹 aquí cortamos cada contenedor a 12 caracteres
+                            $arr = explode(' / ', $numContenedor);
+                            $arr = array_map(fn($c) => mb_substr($c, 0, 11), $arr);
+                            $numContenedor = implode(' / ', $arr);
                         @endphp
 
                     <td style="padding: 2px; border: 1px solid #000;">{{ $numContenedor }}</td>
+
 
 
                     <td style="padding: 2px; border: 1px solid #000; color: #020202; background: yellow;">
@@ -267,6 +273,7 @@
         $proveedoresConCuentas = App\Models\Proveedor::whereIn('id', $proveedoresIds)->with('CuentasBancarias')->get();
 
         $cotizacionesPorProveedor = $cotizaciones->groupBy('DocCotizacion.Asignaciones.id_proveedor');
+
     @endphp
 
     <h3 class="sin_margem"
@@ -418,7 +425,6 @@
 
 
 
-
         <!-- Contenedor de la Tabla de Totales No Oficiales -->
         <div style="width: 48%; padding: 0; box-sizing: border-box;">
             <h3
@@ -428,7 +434,7 @@
 
             @php
                 $empresaActual = auth()->user()->id_empresa;
-                $bancoGlobal = Bancos::where('cuenta_global', 1)->first();
+                $bancoGlobal = Bancos::where('cuenta_global', 1)->where('id_empresa', $empresaActual)->first();
 
                 $cuentaGlobal = $bancoGlobal
                     ? [
@@ -477,7 +483,10 @@
                 style="color: #000; width: 100%; padding: 0; font-size: 7px; border-collapse: collapse;">
                 <thead>
                     <tr style="font-size: 7px; background-color: #2c3e50; color: white;">
-                        <th style="padding: 2px; border: 1px solid #000;">Cuenta Global</th>
+                        <th style="padding: 2px; border: 1px solid #000;">
+                            {{-- si hay cuenta global mostramos ese título, si no ponemos "Cuenta Bancaria Proveedor" o el nombre que quieras --}}
+                            {{ $bancoGlobal ? 'Cuenta Global' : 'Cuenta Bancaria Proveedor' }}
+                        </th>
                         <th style="padding: 2px; border: 1px solid #000;">Proveedor</th>
                         <th style="padding: 2px; border: 1px solid #000;">Total</th>
                         @foreach ($subclientesLista as $subcliente)
@@ -485,39 +494,42 @@
                         @endforeach
                     </tr>
                 </thead>
+
                 <tbody>
-                    @foreach ($totalesPorProveedor as $index => $prov)
+                    @foreach ($totalesPorProveedor as $proveedorId => $prov)
+                        @php
+                            $proveedorModel = $proveedoresConCuentas->firstWhere('id', $proveedorId);
+                            $cuenta2 = $proveedorModel?->CuentasBancarias->where('cuenta_2', true)->first();
+                        @endphp
                         <tr style="background-color: {{ $loop->odd ? '#f1f1f1' : '#e0e0e0' }};">
-                            @if (isset($isExcel))
-                                <td style="padding: 2px; border: 1px solid #ccc; text-align: center;">
+                            @if ($loop->first && $bancoGlobal)
+                                <td rowspan="{{ count($totalesPorProveedor) }}"
+                                    style="padding:2px; border:1px solid #ccc; text-align:center; vertical-align:middle;">
                                     {{ $cuentaGlobal['beneficiario'] }}<br>
                                     {{ $cuentaGlobal['banco'] }}<br>
                                     No. {{ $cuentaGlobal['clabe'] }}
                                 </td>
-                            @elseif ($loop->first)
-                                <td rowspan="{{ count($totalesPorProveedor) }}"
-                                    style="padding: 2px; border: 1px solid #ccc; text-align: center; vertical-align: middle;">
-                                    {{ $cuentaGlobal['beneficiario'] }}<br>
-                                    {{ $cuentaGlobal['banco'] }}<br>
-                                    No. {{ $cuentaGlobal['clabe'] }}
+                            @elseif (!$bancoGlobal)
+                                <td style="padding:2px; border:1px solid #ccc; text-align:center;">
+                                    {{ $cuenta2?->nombre_beneficiario ?? 'No disponible' }}<br>
+                                    {{ $cuenta2?->nombre_banco ?? '-' }}<br>
+                                    No. {{ $cuenta2?->cuenta_clabe ?? '-' }}
                                 </td>
                             @endif
 
-                            <td style="padding: 2px; border: 1px solid #ccc;">{{ $prov['nombre'] }}</td>
-                            <td style="padding: 2px; border: 1px solid #ccc;">
-                                ${{ number_format($prov['total'], 2, '.', ',') }}
-                            </td>
+                            <td style="border:1px solid #ccc;">{{ $prov['nombre'] }}</td>
+                            <td style="border:1px solid #ccc;">${{ number_format($prov['total'], 2, '.', ',') }}</td>
                             @foreach ($subclientesLista as $subcliente)
-                                <td style="padding: 2px; border: 1px solid #ccc;">
-                                    @php
-                                        $monto = $prov['subclientes'][$subcliente] ?? 0;
-                                    @endphp
+                                <td style="border:1px solid #ccc;">
+                                    @php $monto = $prov['subclientes'][$subcliente] ?? 0; @endphp
                                     {{ $monto > 0 ? '$' . number_format($monto, 2, '.', ',') : '-' }}
                                 </td>
                             @endforeach
                         </tr>
                     @endforeach
                 </tbody>
+
+
             </table>
         </div>
 

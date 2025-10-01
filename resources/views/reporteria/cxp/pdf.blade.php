@@ -183,6 +183,7 @@
                     <td>{{ optional($item->Contenedor->Cotizacion->Subcliente)->nombre ?? 'N/A' }}
                     </td>
                     @php
+
                         $numContenedor = optional($item->Contenedor)->num_contenedor ?? '';
                         $cot = optional($item->Contenedor)->Cotizacion;
 
@@ -199,6 +200,10 @@
                                 $numContenedor .= ' / ' . $numContSec;
                             }
                         }
+
+                        $arr = explode(' / ', $numContenedor);
+                        $arr = array_map(fn($c) => mb_substr($c, 0, 11), $arr);
+                        $numContenedor = implode(' / ', $arr);
                     @endphp
 
                     <td>{{ $numContenedor }}</td>
