@@ -254,7 +254,7 @@ class GastosGeneralesController extends Controller
 
                 $banco = new BancoDinero();
 
-                $banco->contenedores = '';//Gasto: '.$request->get('formasAplicar');
+                //$banco->contenedores = '';//Gasto: '.$request->get('formasAplicar');
                 $banco->id_proveedor = $request->get('id_cliente');
                 $banco->monto1 = $montoGasto;
                 $banco->metodo_pago1 = 'Transferencia';
