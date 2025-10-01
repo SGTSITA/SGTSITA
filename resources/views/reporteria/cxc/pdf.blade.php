@@ -352,17 +352,6 @@
                         </tr>
                     </tbody>
                 @else
-                    @php
-                        $proveedoresIds = $cotizaciones
-                            ->pluck('DocCotizacion.Asignaciones.id_proveedor')
-                            ->filter()
-                            ->unique();
-                        $proveedoresConCuentas = App\Models\Proveedor::whereIn('id', $proveedoresIds)
-                            ->with('CuentasBancarias')
-                            ->get();
-                        $cotizacionesPorProveedor = $cotizaciones->groupBy('DocCotizacion.Asignaciones.id_proveedor');
-                    @endphp
-
                     @foreach ($proveedoresConCuentas as $index => $proveedor)
                         @php
                             $totalFacturaProveedor = 0;
@@ -384,8 +373,14 @@
                                 }
                             }
 
+                            // 🔹 Buscar cuenta 1 activa del proveedor
                             if (!$proveedor->CuentasBancarias->isEmpty()) {
-                                $cuentaCLABE = $proveedor->CuentasBancarias->first();
+                                $cuentaCLABE = $proveedor->CuentasBancarias->where('cuenta_1', true)->first();
+
+                                if (!$cuentaCLABE) {
+                                    $cuentaCLABE = $proveedor->CuentasBancarias->first();
+                                }
+
                                 $beneficiarioCuenta1 = $cuentaCLABE->nombre_beneficiario ?? 'No disponible';
                             }
                         @endphp
@@ -422,6 +417,7 @@
                 @endif
             </table>
         </div>
+
 
 
 
