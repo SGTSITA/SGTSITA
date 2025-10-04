@@ -160,12 +160,12 @@ input:not(:checked) + .slider #ubicacion-texto {
             <input type="text" id="buscadorGeneral" 
                    placeholder="Buscar convoy, contenedor o equipo..." 
                    class="form-control bg-light shadow-sm"
-                   style="min-width: 250px;">
+                   style="min-width: 200px;">
             
             <div id="chipsBusqueda" class="d-flex flex-wrap gap-2 mt-2"></div>
             
             <div id="resultadosBusqueda" class="dropdown-menu show mt-1" 
-                 style="max-height: 200px; overflow-y: auto; width: 100%;">
+                 style="max-height: 200px; overflow-y: auto; width: 15%;">
             </div>
         </div>
     </div>
