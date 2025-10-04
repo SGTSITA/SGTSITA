@@ -160,7 +160,10 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
         
         crossorigin="anonymous"></script>
+       <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.7.6/lottie.min.js"></script>
     <script>
+      let GlatLlegada = 0;
+let GlngLlegada = 0;
       let equiposSearch = [];
 let map;
   let markers = [];
@@ -176,7 +179,9 @@ let convoyDisuelto= false;
     map: map,
   });
 };
-  
+let directionsServices = {};
+let directionsRenderers = {};
+let imeiColorsRoutes = {};
 
        const params = new URLSearchParams(window.location.search);
       let detalleConvoys;
@@ -192,7 +197,34 @@ let idConvoyOContenedor=0;
  const contenedor = params.get('contenedor')
  let tipoSpans = params.get('tipoS')
 
+function getStrongColor() {
+  
+  const hue = Math.floor(Math.random() * 365);
+ 
+  const saturation = 90;
+  
+  const lightness = 65;
+  
+  return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+}
 
+function createMarkerIcon(color = "#FF0000", size = 40) {
+const svg = `
+    <svg width="${size}" height="${size}" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <!-- Pin principal -->
+      <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"
+            fill="${color}" stroke="white" stroke-width="2"/>
+      <!-- Círculo animado central -->
+      <circle cx="12" cy="9" r="3" fill="white">
+        <animate attributeName="r" values="3;6;3" dur="1s" repeatCount="indefinite" />
+      </circle>
+    </svg>
+  `;
+  return {
+    url: "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(svg),
+    scaledSize: new google.maps.Size(size, size)
+  };
+}
  function textoTipo(){
 let extraertipo = tipoSpans.replace(/Convoy\s*:\s*/, '').trim();
 let tipoDisolucion = convoysAll.find(c => c.no_conboy === extraertipo)?.tipo_disolucion ?? null;
@@ -244,6 +276,15 @@ responseOk = true;
         let nEconomico='';
         let id_contenConvoy ='';
 
+              if ( item.ubicacion.mesage !=="" ) {
+            let message = item.ubicacion.mesage ? item.ubicacion.mesage : 'Datos de ubicación no disponibles';
+      console.warn('No se recibieron ubicaciones válidas:', data);
+         detener()
+                
+       Swal.fire('Atención', message, 'warning');
+      return;
+    }
+
 
            let extraertipoC = tipoSpans.replace(/Convoy\s*:\s*/, '').trim();
           let datosGeocerca = convoysAll.find(c => c.no_conboy === extraertipoC)
@@ -260,16 +301,42 @@ responseOk = true;
            if (markers[item.ubicacion.imei]) {
     
                 markers[item.ubicacion.imei].setPosition({ lat: latlocal, lng: lnglocal });
+
+//calcularRutaPorImei(item.ubicacion.imei, { lat: GlatLlegada, lng: GlngLlegada });
         } else {
 if (latlocal && lnglocal) {
+          let colorMarker = '';
+   if(item.ubicacion.tipoEquipo==='Camion'){
+            colorMarker = getStrongColor();
+          }else{
+            colorMarker = getStrongColor();
+          }
           
           // let esMostrarPrimero =  1
           // if(esMostrarPrimero){
-            const newMarker = new google.maps.Marker({
+           let newMarker =null;
+           let velocidad = parseFloat( item.ubicacion.velocidad);
+          if(velocidad >0){
+             newMarker = new google.maps.Marker({
+              position: { lat: latlocal, lng: lnglocal },
+              map: map,
+               icon: createMarkerIcon(colorMarker, 40),
+            });
+              
+          
+          }else{
+
+          newMarker = new google.maps.Marker({
               position: { lat: latlocal, lng: lnglocal },
               map: map,
             });
 
+          }
+            
+           
+            let infoEqu=item.ubicacion.tipoEquipo;
+
+           
             const contentC = `
             <div style="
                     background-color: #e3f2fd;
@@ -283,25 +350,58 @@ if (latlocal && lnglocal) {
                 ${tipoSpans}
               </div>
               <div style="font-size: 17px; line-height: 1.5;">
-                <strong>Equipo:</strong> ${item.EquipoBD}<br>
+                <strong>${infoEqu ? infoEqu : 'Equipo'}:</strong> ${item.EquipoBD} <span class="ms-1" style="font-size:14px; color:#333;">${velocidad?`(${velocidad} km/h)`:''}</span><br>
                 <strong>Contenedor:</strong> ${item.contenedor}
               </div>
+             <div class="d-flex align-items-center mt-2">
+  <button id="btnRuta_${item.ubicacion.imei}" class="btn btn-primary me-2">
+    Mostrar ruta
+  </button>
+
+   
+
+
+  <!-- Contenedor de info + icono -->
+  <div class="d-flex align-items-center">
+    <span id="infoRuta_${item.ubicacion.imei}" 
+          class="text-blue-900 fs-6 lh-base me-2" 
+          style="font-size:14px; color:#333;">
+    </span>
+
+  
+  </div>
+</div>
+
             </div>
           `;
                // const newMarker = L.marker([latlocal, lnglocal]).addTo(map).bindPopup(tipoSpans + ' '+ item.contenedor).openPopup();
                const infoWindow = new google.maps.InfoWindow({
             content: contentC 
           });
-          infoWindow.open(map, newMarker);
+         // infoWindow.open(map, newMarker);
           newMarker.addListener('click', () => {
           infoWindow.open(map, newMarker);
+
+
+
+          //end click marker window 
         });
             markers.push(newMarker);
-          
-        
-           newMarker.addListener('click', () => {
-          const contenedorRes = item.contenedor;
+           const contenedorRes = item.contenedor;
              let info = contenedoresDisponibles.find(d => d.contenedor === contenedorRes);
+             
+              if(info) {
+let latLlegada = parseInt(info.latitud??0);
+            let lngLlegada = parseInt(info.longitud??0);
+ GlatLlegada = latLlegada;
+            GlngLlegada = lngLlegada;
+             }
+                  
+           
+
+
+           newMarker.addListener('click', () => {
+         
                 if (!info) {
                   if (t.toLowerCase().includes('convoy')) {
                      info = contenedoresDisponiblesAll.find(d => d.contenedor === contenedorRes);
@@ -359,6 +459,25 @@ if (latlocal && lnglocal) {
                 infoCMaps=resultadoComoArray;
                mostrarInfoContenedor(resultadoComoArray,item.EquipoBD,"");
               }
+
+       
+
+
+
+
+               google.maps.event.addListenerOnce(infoWindow, 'domready', () => {
+        const btn = document.getElementById(`btnRuta_${item.ubicacion.imei}`);
+            const infoSpan = document.getElementById(`infoRuta_${item.ubicacion.imei}`);
+        btn.addEventListener('click', () => {
+    
+          calcularRutaPorImei(item.ubicacion.imei, { lat: parseFloat(info.latitud), lng: parseFloat(info.longitud) });
+      
+     
+        
+        });
+    });
+
+//final de rutas en el mapa
             });
           //} //end mostrar primero
            tipo= tipo + ' '+ item.contenedor;
@@ -388,7 +507,9 @@ if (latlocal && lnglocal) {
           latitud: latlocal,
           longitud: lnglocal,
           ubicacionable_id: idConvoyOContenedor,
-          tipo: tipo
+          tipo: tipo,
+          tipoRastreo: t,
+          idProceso: 0
       };
         if (idConvoyOContenedor!= ""){
       actualizarUbicacionReal(datasave)
@@ -414,6 +535,22 @@ function limpiarMarcadores() {
     markers = [];
     
 }
+
+
+/*  fetch('{{ asset("js/sgt/coordenadas/animation.json") }}') // Aquí usamos la ruta correcta desde public
+        .then(response => response.json())
+        .then(animationData => {
+            lottie.loadAnimation({
+                container: document.getElementById('lottieContainer'),
+                renderer: 'svg',
+                loop: true,
+                autoplay: true,
+                animationData: animationData
+            });
+        })
+        .catch(err => console.error("Error cargando animación Lottie:", err)); */
+
+
 
 function mostrarInfoContenedor(contenedores,equipo,chasis) {
   const tabs = document.getElementById("contenedorTabs");
@@ -527,6 +664,8 @@ function cargarinicial() {
                 if (infoc) {
                     let conponerStrin = cod + '|' + infoc.imei + '|' + infoc.id_contenedor + '|' + infoc.tipoGps;
                     ItemsSelects.push(conponerStrin);
+                    let stringChasis = cod+ '|' + infoc.imei_chasis + '|' + infoc.id_equipo_chasis + '|' + infoc.tipoGpsChasis;
+                    ItemsSelects.push(stringChasis);
                 } else {
 
 
@@ -551,18 +690,96 @@ function cargarinicial() {
             });
 
             if (ItemsSelects.length > 0) {
-                actualizarUbicacion(ItemsSelects, '');
+                actualizarUbicacion(ItemsSelects, tipoSpans);
                 document.getElementById('btnDetener').style.display = 'inline-block';
 
                 if (intervalId) clearInterval(intervalId);
 
                 intervalId = setInterval(() => {
-                    actualizarUbicacion(ItemsSelects, '');
+                    actualizarUbicacion(ItemsSelects, tipoSpans);
                 }, 5000);
             } else {
                 Swal.fire('Atención', 'Ningún contenedor válido fue encontrado.', 'warning');
             }
         }); // <-- cierre del .then()
+}
+
+
+function recalcularRuta(latlocal, lnglocal, GlatLlegada, GlngLlegada) {
+
+    const origin = { lat: latlocal, lng: lnglocal };
+
+    const request = {
+        origin: origin,
+        destination: { lat: GlatLlegada, lng: GlngLlegada },
+        travelMode: google.maps.TravelMode.DRIVING
+    };
+
+    directionsService.route(request, (result, status) => {
+        if (status === 'OK') {
+            directionsRenderer.setDirections(result);
+        }
+    });
+}
+
+function calcularRutaPorImei(imei, destino) {
+const btnc = document.getElementById(`btnRuta_${imei}`);
+            const infoSpan = document.getElementById(`infoRuta_${imei}`);
+   if (directionsRenderers[imei]) {
+                directionsRenderers[imei].setMap(directionsRenderers[imei].getMap() ? null : map);
+                btnc.textContent = directionsRenderers[imei].getMap() ? 'Ocultar ruta' : 'Mostrar ruta';
+                return;
+            }
+    // si no existen, los creamos
+    if (!directionsServices[imei]) {
+        directionsServices[imei] = new google.maps.DirectionsService();
+    }
+    if (!directionsRenderers[imei]) {
+        directionsRenderers[imei] = new google.maps.DirectionsRenderer({
+            map: map,
+            polylineOptions: {
+                strokeColor: getColorByImei(imei), // opcional: color distinto por imei
+                strokeWeight: 4
+            }
+        });
+    }
+
+    // origen = posición actual del marcador
+    const pos = markers[imei].getPosition();
+    const origin = { lat: pos.lat(), lng: pos.lng() };
+
+    const request = {
+        origin: origin,
+        destination: destino,
+        travelMode: google.maps.TravelMode.DRIVING
+    };
+
+    directionsServices[imei].route(request, (result, status) => {
+        if (status === "OK") {
+            directionsRenderers[imei].setDirections(result);
+
+                btnc.textContent = 'Ocultar ruta';
+
+                      const leg = result.routes[0].legs[0];
+                      infoSpan.textContent = `Distancia: ${leg.distance.text}, Tiempo estimado: ${leg.duration.text}`;
+        } else {
+            Swal.fire("Error calculando ruta para IMEI " + imei + ": " + status);
+        }
+    });
+}
+
+function getColorByImei(imei) {
+    const colors = ["blue", "red", "green", "orange", "purple"];
+    
+    // si ya tiene color asignado, lo regresamos
+    if (imeiColorsRoutes[imei]) {
+        return imeiColorsRoutes[imei];
+    }
+
+    // si no, asignamos uno random y lo guardamos
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    imeiColorsRoutes[imei] = color;
+    return color;
 }
 
 
@@ -719,12 +936,12 @@ document.getElementById('btnDetener').addEventListener('click', function() {
         this.innerHTML = '<i class="bi bi-play-circle"></i> Reanudar actualización';
         console.log('⛔ Actualización detenida.');
       } else {
-          actualizarUbicacion(ItemsSelects,'');
+          actualizarUbicacion(ItemsSelects,tipoSpans);
 
           if (intervalId) clearInterval(intervalId);
           
           intervalId = setInterval(() => {
-            actualizarUbicacion(ItemsSelects,'');
+            actualizarUbicacion(ItemsSelects,tipoSpans);
           }, 5000);
 
         this.innerHTML = '<i class="bi bi-pause-circle"></i> Detener actualización';
