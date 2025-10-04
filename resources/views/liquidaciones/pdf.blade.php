@@ -159,6 +159,11 @@
                             </tr>
                             <tr>
                             
+                                <td align="right"> Prestamos</td>
+                                <td align="right">- $ {{number_format($liquidacion->pago_prestamos,2)}}</td>
+                            </tr>
+                            <tr>
+                            
                                 <td align="right"><h2>Total a Pagar</h2> </td>
                                 <td align="right"><h2>$ {{number_format($liquidacion->total_pago,2)}}</h2></td>
                             </tr>
