@@ -167,13 +167,22 @@ class MissionResultRenderer {
   let sumaSalario = document.querySelector('#sumaSalario')
   let sumaDineroViaje = document.querySelector('#sumaDineroViaje')
   let sumaJustificados = document.querySelector('#sumaJustificados')
+  let totalPrestamo = document.querySelector('#totalPrestamo')
   let sumaPago = document.querySelector('#sumaPago')
+  const sumaPrestamos = document.querySelector('#sumaPrestamos')
   let contadorContenedores = document.querySelector("#contadorContenedores")
   let btnConfirmaPago = document.querySelector("#btnConfirmaPago")
   let btnJustificar = document.querySelector("#btnJustificar")
   let btnDineroViaje = document.querySelector("#btnDineroViaje")
+  let montoPagoPrestamo = document.querySelector("#montoPagoPrestamo")
 
   let totalMontoPago = 0;
+  let saldoActual = 0;
+  let totalPagoPrestamo = 0;
+
+  const validFeedBack = document.querySelector('#valid-feedback')
+  const invalidFeedBack = document.querySelector('#invalid-feedback')
+  
    
    function mostrarViajesOperador(operador){
     var _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
@@ -188,6 +197,16 @@ class MissionResultRenderer {
             apiGrid.setGridOption("rowData", response.viajes)
             dTotalPago.textContent = moneyFormat(response.totalPago)
             dNumViajes.textContent = response.numViajes
+            saldoActual = response.prestamos.reduce((suma,p) => suma + parseFloat( p.saldo_actual) ,0)
+            totalPrestamo.textContent = moneyFormat(saldoActual)
+            if(saldoActual <= 0) {
+              montoPagoPrestamo.disabled = true; 
+              montoPagoPrestamo.classList.add('is-invalid'); 
+              montoPagoPrestamo.value = 0;
+            }else{
+              
+            }
+            
             ocultarLoading()
         },
         error:()=>{
@@ -195,6 +214,27 @@ class MissionResultRenderer {
         }
     });
    }
+
+   montoPagoPrestamo.addEventListener('input',(e)=>{
+
+    let montoPago = parseFloat( e.target.value) || 0
+    if(montoPago > 0 && montoPago <= saldoActual ) {
+      montoPagoPrestamo.classList.add('is-valid')
+      montoPagoPrestamo.classList.remove('is-invalid'); 
+      validFeedBack.textContent = `${moneyFormat(saldoActual - montoPago)} pendiente despues de la operación.` 
+    }else if(montoPago > saldoActual){
+      montoPagoPrestamo.classList.add('is-invalid'); 
+      montoPagoPrestamo.classList.remove('is-valid')
+      invalidFeedBack.textContent = `El monto de pago es mayor al saldo actual del prestamo` 
+    }else if(montoPago == 0){
+      montoPagoPrestamo.classList.remove('is-invalid'); 
+      montoPagoPrestamo.classList.remove('is-valid')
+    }
+    totalPagoPrestamo = montoPago
+    sumaPago.textContent = moneyFormat(totalMontoPago - montoPago)
+    sumaPrestamos.textContent = `- ${moneyFormat(montoPago)}`
+    
+   })
 
    function summaryPay(){
 
@@ -219,7 +259,7 @@ class MissionResultRenderer {
 
     totalMontoPago = suma;
 
-    sumaPago.textContent = moneyFormat(suma)
+    sumaPago.textContent = moneyFormat(suma - totalPagoPrestamo)
     sumaSalario.textContent = moneyFormat(sumSalario)
     sumaDineroViaje.textContent = `- ${moneyFormat(sumDineroViaje)}`
     sumaJustificados.textContent = `+ ${moneyFormat(sumJustificado)}`
@@ -246,7 +286,7 @@ class MissionResultRenderer {
     $.ajax({
         url:'/liquidaciones/viajes/aplicar-pago',
         type:'post',
-        data:{_token,_IdOperador,pagoContenedores,bancoId,totalMontoPago},
+        data:{_token,_IdOperador,pagoContenedores,bancoId,totalMontoPago, totalPagoPrestamo},
         beforeSend:()=>{
 
         },

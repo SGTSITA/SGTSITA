@@ -21,9 +21,19 @@
                           @endforeach
                         </select>
                       </div>
+
+                      <div class="col-md-9">
+                        <label for="cantidad" class="form-label">Pago de préstamo</label>
+                        <input type="number" name="montoPagoPrestamo" id="montoPagoPrestamo" class="form-control" placeholder="Ingrese la cantidad" required min="0.01" step="0.01">
+                        <div class="invalid-feedback" id="invalid-feedback">No hay prestamos pendientes.</div>
+                        <div class="valid-feedback text-sm" style="color:#6c757d !important" id="valid-feedback">
+                          $0.00 pendiente despues de esta operación.
+                        </div>
+
+                      </div>
                     
                     </div>
-                <div class="col-lg-4 col-12 ms-auto">
+                <div class="col-lg-6 col-12 ms-auto">
                   <h6 class="mb-3">Resumen</h6>
                   <div class="d-flex justify-content-between">
                     <span class="mb-2 text-sm">
@@ -49,6 +59,12 @@
                       Total Justificado:
                     </span>
                     <span class="text-dark ms-2 font-weight-bold" id ="sumaJustificados">$0</span>
+                  </div>
+                  <div class="d-flex justify-content-between">
+                    <span class="mb-2 text-sm">
+                      Pago Prestamos:
+                    </span>
+                    <span class="text-dark ms-2 font-weight-bold" id ="sumaPrestamos">$0</span>
                   </div>
      
                   <div class="d-flex justify-content-between mt-4">

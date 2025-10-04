@@ -25,10 +25,6 @@ class PrestamosController extends Controller
             'id_operador' => 'required|exists:operadores,id',
             'id_banco' => 'required|exists:bancos,id',
             'cantidad' => 'required|numeric|min:0.01',
-            'tipo_descuento' => 'required|in:exhibicion,parcialidades',
-            'fecha_pago' => 'required|date',
-            'num_parcialidades' => 'required_if:tipo_descuento,parcialidades|integer|min:1',
-            'frecuencia' => 'required_if:tipo_descuento,parcialidades|in:semanal,quincenal,mensual',
         ];
 
         $validator = Validator::make($request->all(), $rules);
@@ -36,11 +32,15 @@ class PrestamosController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
+                'TMensaje' => "warning",
+                "Mensaje" => 'Faltan datos',
                 'errors' => $validator->errors()
             ], 422);
         }
 
-        $data = $validator->validated();
+        $data = $request->only(['id_operador', 'id_banco', 'cantidad']);
+        $data['pagos'] = 0;
+        $data['saldo_actual'] = $data['cantidad'];
 
         $bancoAfectado = Bancos::where('id' ,'=',$request->get('id_banco'));
         $saldoActualBanco = $bancoAfectado->first()->saldo || 0;
@@ -48,11 +48,6 @@ class PrestamosController extends Controller
 
         if($saldoActualBanco < $montoPrestamo){
             return response()->json(["Titulo" => "Prestamo no aplicado","Mensaje" => "No se puede aplicar el prestamo desde la cuenta seleccionada ya que el saldo es insuficiente", "TMensaje" => "warning"]);
-        }
-
-        if ($data['tipo_descuento'] !== 'parcialidades') {
-            $data['num_parcialidades'] = null;
-            $data['frecuencia'] = null;
         }
 
         $prestamo = Prestamo::create($data);

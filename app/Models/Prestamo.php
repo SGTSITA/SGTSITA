@@ -15,10 +15,8 @@ class Prestamo extends Model
         'id_operador',
         'id_banco',
         'cantidad',
-        'tipo_descuento',
-        'fecha_pago',
-        'num_parcialidades',
-        'frecuencia',
+        'pagos',
+        'saldo_actual'
     ];
 
     // Relación: un préstamo pertenece a un operador
