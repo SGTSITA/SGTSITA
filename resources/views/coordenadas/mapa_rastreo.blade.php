@@ -728,6 +728,7 @@ const btnc = document.getElementById(`btnRuta_${imei}`);
    if (directionsRenderers[imei]) {
                 directionsRenderers[imei].setMap(directionsRenderers[imei].getMap() ? null : map);
                 btnc.textContent = directionsRenderers[imei].getMap() ? 'Ocultar ruta' : 'Mostrar ruta';
+                infoSpan.textContent = '';
                 return;
             }
     // si no existen, los creamos
