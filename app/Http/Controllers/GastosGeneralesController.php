@@ -12,7 +12,7 @@ use App\Models\Asignaciones;
 use App\Models\Planeacion;
 use App\Models\Cotizaciones;
 use App\Models\DocumCotizacion;
-
+use App\Models\BancoDinero;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Auth;
