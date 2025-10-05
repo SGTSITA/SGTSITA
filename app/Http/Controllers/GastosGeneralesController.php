@@ -253,7 +253,7 @@ class GastosGeneralesController extends Controller
 
                 $banco = new BancoDinero();
 
-                $banco->contenedores = $contenedoresAbonosJson;
+                $banco->contenedores = "[]";
                 $banco->id_proveedor = $request->get('id_cliente');
                 $banco->monto1 = $montoGasto;
                 $banco->metodo_pago1 = 'Transferencia';
