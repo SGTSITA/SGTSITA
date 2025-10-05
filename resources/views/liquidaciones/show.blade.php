@@ -10,11 +10,7 @@
         <div class="col-sm-12">
             <div class="card card-body" id="profile">
                 <div class="row justify-content-center align-items-center">
-                <div class="col-sm-auto col-4">
-                    <div class="avatar avatar-xl position-relative">
-                    <img src="/img/icon-user.jpg" alt="bruce" class="w-100 border-radius-lg shadow-sm">
-                    </div>
-                </div>
+              
                 <div class="col-sm-auto col-6 my-auto">
                     <div class="h-100">
                     <h5 class="mb-1 font-weight-bolder">
@@ -26,12 +22,18 @@
                     </p>
                     </div>
                 </div>
-                <div class="col-2 offset-2 text-center">
+                <div class="col-2 text-center">
                             <div class="border-dashed border-1 border-secondary border-radius-md py-3">
                                 <h6 class="text-primary mb-0">Viajes realizados</h6>
                                 <h4 class="font-weight-bolder">
                                     <span class="small" id="numViajes">0.00</span>
                                 </h4>
+                            </div>
+                        </div>
+                        <div class="col-3 text-center">
+                            <div class="border-dashed border-1 border-secondary border-radius-md py-3">
+                            <h6 class="text-primary mb-0">Prestamos</h6>
+                            <h4 class="font-weight-bolder"><span class="small" id="totalPrestamo">$ 0.00</span></h4>
                             </div>
                         </div>
                         <div class="col-3 text-center">

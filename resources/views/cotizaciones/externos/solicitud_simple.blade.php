@@ -219,7 +219,8 @@
 																																				   
 		
         $(document).ready(() => {
-            getClientes({{ Auth::User()->id_cliente }})
+            let subclienteid = {{ $cotizacion ? $cotizacion->id_subcliente : 'null' }};
+            getClientes({{ Auth::User()->id_cliente }}, subclienteid)
 
             var genericUUID = localStorage.getItem('uuid');
             if (genericUUID == null) {

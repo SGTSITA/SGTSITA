@@ -13,7 +13,7 @@ use App\Models\Asignaciones;
 use App\Models\Planeacion;
 use App\Models\Cotizaciones;
 use App\Models\DocumCotizacion;
-
+use App\Models\BancoDinero;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Auth;
@@ -253,7 +253,7 @@ class GastosGeneralesController extends Controller
                 Bancos::where('id' ,'=',$request->get('id_banco1'))->update(["saldo" => DB::raw("saldo - ". $montoGasto)]);
 
                 $banco = new BancoDinero();
-
+              
                 //$banco->contenedores = '';//Gasto: '.$request->get('formasAplicar');
                 $banco->id_proveedor = $request->get('id_cliente');
                 $banco->monto1 = $montoGasto;

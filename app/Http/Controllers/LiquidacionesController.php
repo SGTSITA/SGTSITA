@@ -12,6 +12,8 @@ use App\Models\Operador;
 use App\Models\Liquidaciones;
 use App\Models\LiquidacionContenedor;
 use App\Models\ViaticosOperador;
+use App\Models\Prestamo;
+use App\Models\PagoPrestamo;
 use App\Models\DineroContenedor;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
@@ -127,7 +129,15 @@ class LiquidacionesController extends Controller
         $bancos = Bancos::where('id_empresa' ,'=',auth()->user()->id_empresa)->get();
         $gastos_ope = GastosOperadores::where('id_operador', '=', $r->operador)->get();
 
-        return response()->json(["viajes" => $contenedores, "totalPago" => $totalPago, "numViajes" => $numeroViajes, "data" => $asignacion_operador]);
+        $prestamos = Prestamo::where('id_operador', $r->operador)->where('saldo_actual','>',0)->get();
+
+        return response()->json([
+            "viajes" => $contenedores, 
+            "totalPago" => $totalPago, 
+            "prestamos" => $prestamos,
+            "numViajes" => $numeroViajes, 
+            "data" => $asignacion_operador
+        ]);
     }
 
     public function justificarGastos(Request $r){
@@ -254,9 +264,17 @@ class LiquidacionesController extends Controller
     public function aplicarPago(Request $request){
         try{
             DB::beginTransaction();
+
+            $prestamosVigentes = Prestamo::where('id_operador', $request->_IdOperador)->where('saldo_actual','>',0)->get();
+            if($request->totalPagoPrestamo > $prestamosVigentes->sum('saldo_actual') ){
+                return response()->json(["Titulo" => "Acción rechazada","Mensaje" => "No se puede aplicar porque el saldo del operador es menor a la cantidad que intenta cobrar","TMensaje" => "warning"]);
+            }
+
             $bancos = Bancos::where('id' ,'=',$request->bancoId)->first();
             $saldoActual = $bancos->saldo;
-            if($request->totalMontoPago > $saldoActual){
+            $totalPagar = $request->totalMontoPago - $request->totalPagoPrestamo;
+
+            if($totalPagar> $saldoActual){
                 return response()->json(["Titulo" => "Saldo insuficiente","Mensaje" => "No se puede aplicar el pago en la cuenta seleccionada","TMensaje" => "warning"]);
             }
 
@@ -270,8 +288,30 @@ class LiquidacionesController extends Controller
             $liquidacion->sueldo_operador = $contenedores->sum('SueldoViaje');
             $liquidacion->dinero_viaje = $contenedores->sum('DineroViaje');
             $liquidacion->dinero_justificado = $contenedores->sum('GastosJustificados');
-            $liquidacion->total_pago = $contenedores->sum('MontoPago');
+            $liquidacion->pago_prestamos = $request->totalPagoPrestamo;
+            $liquidacion->total_pago = ($request->totalPagoPrestamo > 0 ) ? $contenedores->sum('MontoPago') - $request->totalPagoPrestamo : $contenedores->sum('MontoPago');
             $liquidacion->save();
+
+            //Registrar abonos por orden de prestamo. Se abona la mayor cantidad posible al prestamo
+            $pagoPrestamos = $request->totalPagoPrestamo;
+            foreach($prestamosVigentes as $p){
+                if($pagoPrestamos > 0){
+                    $prestamo = Prestamo::where('id',$p->id)->first();
+                    $prestamo->saldo_actual = ($pagoPrestamos > $p->saldo_actual) ? 0 : $p->saldo_actual - $pagoPrestamos;
+                    $prestamo->save();
+
+                    $detalle = [
+                        'id_liquidacion' => $liquidacion->id,
+                        'id_prestamo' => $p->id,
+                        'saldo_anterior' => $p->saldo_actual,
+                        'monto_pago' => ($pagoPrestamos > $p->saldo_actual) ? $p->saldo_actual : $pagoPrestamos
+                    ];
+
+                    PagoPrestamo::create($detalle);
+
+                    $pagoPrestamos = ($pagoPrestamos > $p->saldo_actual) ? $pagoPrestamos - $p->saldo_actual : 0;
+                }
+            }
 
             $contenedores->map(function($contenedor) use ($liquidacion){
                 $cont = [
