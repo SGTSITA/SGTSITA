@@ -185,6 +185,7 @@
             /* Cambia el estilo visual */
             cursor: default;
         }
+        
     </style>
     <link href="{{ asset('assets/metronic/fileuploader/font/font-fileuploader.css') }}" rel="stylesheet">
     <link href="{{ asset('assets/metronic/fileuploader/jquery.fileuploader.min.css') }}" media="all" rel="stylesheet">
