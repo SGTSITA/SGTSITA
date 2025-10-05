@@ -190,7 +190,7 @@ function calcularTotal(modulo = 'crear') {
 
 }
 
-function getClientes(clienteId){
+function getClientes(clienteId,subclienteid) {
     $.ajax({
         type: 'GET',
         url: '/subclientes/' + clienteId,
@@ -198,7 +198,12 @@ function getClientes(clienteId){
             $('#id_subcliente').empty();
             $('#id_subcliente').append('<option value="">Seleccionar subcliente</option>');
             $.each(data, function(key, subcliente) {
-                $('#id_subcliente').append('<option value="' + subcliente.id + '">' + subcliente.nombre + '</option>');
+                if(subclienteid && subclienteid == subcliente.id) { 
+                    $('#id_subcliente').append('<option value="' + subcliente.id + '" selected>' + subcliente.nombre + '</option>');
+                }else{
+                    $('#id_subcliente').append('<option value="' + subcliente.id + '">' + subcliente.nombre + '</option>');
+                }
+                
             });
             $('#id_subcliente').select2();
         }
@@ -671,7 +676,7 @@ $('#id_cliente').change(function() {
 
             }
         })
-        getClientes(clienteId);
+        getClientes(clienteId,null);
     } else {
         $('#id_subcliente').empty();
         $('#id_subcliente').append('<option value="">Seleccionar subcliente</option>');
