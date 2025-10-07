@@ -1,8 +1,7 @@
 <div class="timeline-item">
 
 
-    <!--begin::Timeline content-->
-    <div class="timeline-content mb-10 mt-n1">
+    
     <!--begin::Timeline content-->
     <div class="timeline-content mb-10 mt-n1">
 
@@ -90,90 +89,7 @@
                                 </div>
                             </div>
                         </div>
-        <!--begin::Timeline details-->
-        <div class="overflow-auto pb-5">
-            <!--begin::Record-->
-            <div
-                class="d-flex align-items-center border border-dashed border-gray-300 rounded min-w-750px px-7 py-3 mb-5">
-                <div class="flex-grow-1">
-                    <div class="mb-2"></div>
-                    <div class="text-muted fs-7">Agregue la información para elaborar Carta Porte</div>
-                    <div class="mb-2"></div>
-                    <div class="fv-row row mb-3">
-                        <div class="col-6 d-none">
-                            <div class="input-group  mb-5">
-                                <span class="input-group-text" id="basic-addon1">
-                                    <i class="ki-duotone ki-route fs-1">
-                                        <span class="path1"></span>
-                                        <span class="path2"></span>
-                                        <span class="path3"></span>
-                                        <span class="path4"></span>
-                                    </i>
-                                </span>
-                                <div class="form-floating">
-                                    <input @if ($action == 'editar') value="." @endif type="text"
-                                        class="form-control" id="destino" autocomplete="off" placeholder="" />
-                                    <label for="destino" class="text-gray-700">Razón Social</label>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-3 d-none">
-                            <div class="input-group  mb-5">
-                                <span class="input-group-text" id="basic-addon1">
-                                    <i class="ki-duotone ki-route fs-1">
-                                        <span class="path1"></span>
-                                        <span class="path2"></span>
-                                        <span class="path3"></span>
-                                        <span class="path4"></span>
-                                    </i>
-                                </span>
-                                <div class="form-floating">
-                                    <input @if ($action == 'editar') value="." @endif type="text"
-                                        class="form-control" id="destino" autocomplete="off" placeholder="" />
-                                    <label for="destino" class="text-gray-700">RFC</label>
-                                </div>
-                            </div>
-                        </div>
-
-                    </div>
-                    <div class="fv-row row mb-3">
-                        <div class="col-12 d-none">
-                            <div class="input-group  mb-5">
-                                <span class="input-group-text" id="basic-addon1">
-                                    <i class="ki-duotone ki-route fs-1">
-                                        <span class="path1"></span>
-                                        <span class="path2"></span>
-                                        <span class="path3"></span>
-                                        <span class="path4"></span>
-                                    </i>
-                                </span>
-                                <div class="form-floating">
-                                    <input @if ($action == 'editar') value="." @endif type="text"
-                                        class="form-control" id="destino" autocomplete="off" placeholder="" />
-                                    <label for="destino" class="text-gray-700">Domicilio Fiscal</label>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="col-3">
-                            <div class="input-group  mb-5">
-                                <span class="input-group-text" id="basic-addon1">
-                                    <i class="ki-duotone ki-route fs-1">
-                                        <span class="path1"></span>
-                                        <span class="path2"></span>
-                                        <span class="path3"></span>
-                                        <span class="path4"></span>
-                                    </i>
-                                </span>
-                                <div class="form-floating">
-                                    <input
-                                        @if ($action == 'editar') value="{{ $cotizacion->cp_fraccion ?? '' }}" @endif
-                                        type="text" class="form-control" id="cp_fraccion" name="cp_fraccion" />
-
-                                    <label for="cp_fraccion" class="text-gray-700">Fracción</label>
-                                </div>
-                            </div>
-                        </div>
+        
 
                         <div class="col-3">
                             <div class="input-group  mb-5">
@@ -194,25 +110,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-3">
-                            <div class="input-group  mb-5">
-                                <span class="input-group-text" id="basic-addon1">
-                                    <i class="ki-duotone ki-route fs-1">
-                                        <span class="path1"></span>
-                                        <span class="path2"></span>
-                                        <span class="path3"></span>
-                                        <span class="path4"></span>
-                                    </i>
-                                </span>
-                                <div class="form-floating">
-                                    <input
-                                        @if ($action == 'editar') value="{{ $cotizacion->cp_pedimento ?? '' }}" @endif
-                                        type="text" class="form-control" id="cp_pedimento" autocomplete="off"
-                                        placeholder="" />
-                                    <label for="cp_pedimento" class="text-gray-700">Pedimento</label>
-                                </div>
-                            </div>
-                        </div>
+                        
 
                         <div class="col-3">
                             <div class="input-group  mb-5">
@@ -233,25 +131,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-3">
-                            <div class="input-group  mb-5">
-                                <span class="input-group-text" id="basic-addon1">
-                                    <i class="ki-duotone ki-route fs-1">
-                                        <span class="path1"></span>
-                                        <span class="path2"></span>
-                                        <span class="path3"></span>
-                                        <span class="path4"></span>
-                                    </i>
-                                </span>
-                                <div class="form-floating">
-                                    <input
-                                        @if ($action == 'editar') value="{{ $cotizacion->cp_clase_ped ?? '' }}" @endif
-                                        type="text" class="form-control" id="cp_clase_pedimento"
-                                        name="cp_clase_pedimento" />
-                                    <label for="cp_clase_pedimento" class="text-gray-700">Clase Pedimento</label>
-                                </div>
-                            </div>
-                        </div>
+                       
 
                         <div class="col-3">
                             <div class="input-group  mb-5">
@@ -271,24 +151,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-3">
-                            <div class="input-group  mb-5">
-                                <span class="input-group-text" id="basic-addon1">
-                                    <i class="ki-duotone ki-route fs-1">
-                                        <span class="path1"></span>
-                                        <span class="path2"></span>
-                                        <span class="path3"></span>
-                                        <span class="path4"></span>
-                                    </i>
-                                </span>
-                                <div class="form-floating">
-                                    <input
-                                        @if ($action == 'editar') value="{{ $cotizacion->cp_clave_sat ?? '' }}" @endif
-                                        type="text" class="form-control" id="cp_clave_sat" name="cp_clave_sat" />
-                                    <label for="cp_clave_sat" class="text-gray-700">Clave SAT</label>
-                                </div>
-                            </div>
-                        </div>
+                       
 
                         <div class="col-3">
                             <div class="input-group  mb-5">
@@ -308,24 +171,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-3">
-                            <div class="input-group  mb-5">
-                                <span class="input-group-text" id="basic-addon1">
-                                    <i class="ki-duotone ki-route fs-1">
-                                        <span class="path1"></span>
-                                        <span class="path2"></span>
-                                        <span class="path3"></span>
-                                        <span class="path4"></span>
-                                    </i>
-                                </span>
-                                <div class="form-floating">
-                                    <input
-                                        @if ($action == 'editar') value="{{ $cotizacion->cp_cantidad ?? '' }}" @endif
-                                        type="text" class="form-control" id="cp_cantidad" name="cp_cantidad" />
-                                    <label for="cp_cantidad" class="text-gray-700">Cantidad</label>
-                                </div>
-                            </div>
-                        </div>
+                        
 
                         <div class="col-3">
                             <div class="input-group  mb-5">
@@ -347,26 +193,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-3">
-                            <div class="input-group  mb-5">
-                                <span class="input-group-text" id="basic-addon1">
-                                    <i class="ki-duotone ki-route fs-1">
-                                        <span class="path1"></span>
-                                        <span class="path2"></span>
-                                        <span class="path3"></span>
-                                        <span class="path4"></span>
-                                    </i>
-                                </span>
-                                <div class="form-floating">
-                                    <input
-                                        @if ($action == 'editar') value="{{ $cotizacion->cp_valor ?? '' }}" @endif
-                                        type="text" class="form-control" id="cp_valor" name="cp_valor"
-                                        oninput="allowOnlyDecimals(event)" />
-
-                                    <label for="cp_valor" class="text-gray-700">Valor</label>
-                                </div>
-                            </div>
-                        </div>
+                        
 
                         <div class="col-3">
                             <div class="input-group  mb-5">
@@ -387,25 +214,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-3">
-                            <div class="input-group  mb-5">
-                                <span class="input-group-text" id="basic-addon1">
-                                    <i class="ki-duotone ki-route fs-1">
-                                        <span class="path1"></span>
-                                        <span class="path2"></span>
-                                        <span class="path3"></span>
-                                        <span class="path4"></span>
-                                    </i>
-                                </span>
-                                <div class="form-floating">
-                                    <input
-                                        @if ($action == 'editar') value="{{ $cotizacion->cp_moneda ?? '' }}" @endif
-                                        type="text" class="form-control" id="cp_moneda_valor"
-                                        name="cp_moneda_valor" />
-                                    <label for="cp_moneda_valor" class="text-gray-700">Moneda</label>
-                                </div>
-                            </div>
-                        </div>
+                       
 
                         <div class="col-3">
                             <div class="input-group  mb-5">
@@ -427,26 +236,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-3">
-                            <div class="input-group  mb-5">
-                                <span class="input-group-text" id="basic-addon1">
-                                    <i class="ki-duotone ki-route fs-1">
-                                        <span class="path1"></span>
-                                        <span class="path2"></span>
-                                        <span class="path3"></span>
-                                        <span class="path4"></span>
-                                    </i>
-                                </span>
-                                <div class="form-floating">
-                                    <input
-                                        @if ($action == 'editar') value="{{ $cotizacion->cp_contacto_entrega ?? '' }}" @endif
-                                        type="text" class="form-control" id="cp_contacto_entrega"
-                                        name="cp_contacto_entrega" />
-                                    <label for="cp_contacto_entrega" class="text-gray-700">Tel. Contacto
-                                        entrega</label>
-                                </div>
-                            </div>
-                        </div>
+                        
 
                         <div class="col-3">
                             <div class="input-group  mb-5">
@@ -468,26 +258,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-3">
-                            <div class="input-group  mb-5">
-                                <span class="input-group-text" id="basic-addon1">
-                                    <i class="ki-duotone ki-route fs-1">
-                                        <span class="path1"></span>
-                                        <span class="path2"></span>
-                                        <span class="path3"></span>
-                                        <span class="path4"></span>
-                                    </i>
-                                </span>
-                                <div class="form-floating">
-                                    <input
-                                        @if ($action == 'editar') value="{{ $cotizacion->cp_fecha_tentativa_entrega ?? '' }}" @endif
-                                        type="text" class="form-control fechas" id="cp_fecha_tentativa_entrega"
-                                        name="cp_fecha_tentativa_entrega" />
-                                    <label for="cp_fecha_tentativa_entrega" class="text-gray-700">Fecha tentativa
-                                        entrega</label>
-                                </div>
-                            </div>
-                        </div>
+                       
 
                         <div class="col-3">
                             <div class="input-group  mb-5">
@@ -509,46 +280,8 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-3">
-                            <div class="input-group  mb-5">
-                                <span class="input-group-text" id="basic-addon1">
-                                    <i class="ki-duotone ki-route fs-1">
-                                        <span class="path1"></span>
-                                        <span class="path2"></span>
-                                        <span class="path3"></span>
-                                        <span class="path4"></span>
-                                    </i>
-                                </span>
-                                <div class="form-floating">
-                                    <input
-                                        @if ($action == 'editar') value="{{ $cotizacion->cp_hora_tentativa_entrega ?? '' }}" @endif
-                                        type="time" class="form-control" id="cp_hora_tentativa_entrega"
-                                        name="cp_hora_tentativa_entrega" />
-                                    <label for="cp_hora_tentativa_entrega" class="text-gray-700">Hora tentativa
-                                        entrega</label>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="col-12">
-                            <div class="input-group  mb-5">
-                                <span class="input-group-text" id="basic-addon1">
-                                    <i class="ki-duotone ki-route fs-1">
-                                        <span class="path1"></span>
-                                        <span class="path2"></span>
-                                        <span class="path3"></span>
-                                        <span class="path4"></span>
-                                    </i>
-                                </span>
-                                <div class="form-floating">
-                                    <input
-                                        @if ($action == 'editar') value="{{ $cotizacion->cp_comentarios ?? '' }}" @endif
-                                        type="text" class="form-control" id="cp_comentarios"
-                                        name="cp_comentarios" />
-                                    <label for="cp_comentarios" class="text-gray-700">Comentarios Carta Porte</label>
-                                </div>
-                            </div>
-                        </div>
+                        
+                      
                         <div class="col-12">
                             <div class="input-group  mb-5">
                                 <span class="input-group-text" id="basic-addon1">
@@ -576,14 +309,9 @@
         </div>
         <!--end::Timeline details-->
     </div>
-                    </div>
-                </div>
-            </div>
-            <!--end::Record-->
-        </div>
-        <!--end::Timeline details-->
-    </div>
-    <!--begin::Timeline content-->
+               
+               
+       <!--begin::Timeline content-->
     <div class="timeline-content mb-10 mt-n1">
 
         <!--begin::Timeline details-->
