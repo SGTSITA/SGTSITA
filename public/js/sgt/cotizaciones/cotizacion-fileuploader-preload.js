@@ -163,7 +163,7 @@ function adjuntarDocumentos(filesContenedor) {
    var fileInputElement = document.getElementById(fileSettings.opcion);
     // Obtener la instancia de Fileuploader asociada a este campo de carga
    //var api = $.fileuploader.getInstance(fileInputElement);
-   
+   //ejemplo cambio de configuracion en tiempo real
    
    // api.uploadStart(); // Iniciar la carga manualmente
 
