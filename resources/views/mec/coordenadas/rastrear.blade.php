@@ -134,7 +134,7 @@ input:not(:checked) + .slider #ubicacion-texto {
 
     <div class="tab-content p-3 border border-top-0" id="rastreoTabsContent">
 
-        {{-- Pestaña Rastreo --}}
+       
         <div class="tab-pane fade show active" id="rastreo" role="tabpanel">
             <div class="row">
                 <div class="col-md-9">
@@ -142,24 +142,34 @@ input:not(:checked) + .slider #ubicacion-texto {
                 </div>
                <div class="col-md-3 bg-white p-3 rounded shadow-sm">
 
-    <!-- Bloque de buscador y botón -->
-    <div class="d-flex align-items-start gap-2 mb-3">
-        
-        <!-- Buscador -->
-        <div class="flex-grow-1">
-            <div class="position-relative">
-                <input type="text" id="buscadorGeneral" 
-                       placeholder="Buscar convoy, contenedor o equipo..." 
-                        class="form-control bg-light shadow-sm"
-                       style="min-width: 250px;">
-                <div id="chipsBusqueda" class="d-flex flex-wrap gap-2 mt-2"></div>
-                <div id="resultadosBusqueda" class="dropdown-menu show mt-1" 
-                     style="max-height: 200px; overflow-y: auto; width: 100%;">
+    
+  <div class="d-flex align-items-start gap-2 mb-3">
+    <div class="flex-grow-1">
+        <div class="p-2 border rounded shadow-sm bg-white">
+            
+           
+            <div class="mb-2">
+                <div class="fw-semibold px-3 py-2 rounded text-center shadow-sm" 
+                     style="background-color: #d1ecf1; color: #0c5460; font-size: 1rem;">
+                    Mostrando contenedores/convoys con fecha final igual o después de 
+                    <strong>{{ \Carbon\Carbon::now()->format('d/m/Y') }}</strong>
                 </div>
             </div>
+            
+           
+            <input type="text" id="buscadorGeneral" 
+                   placeholder="Buscar convoy, contenedor o equipo..." 
+                   class="form-control bg-light shadow-sm"
+                   style="min-width: 200px;">
+            
+            <div id="chipsBusqueda" class="d-flex flex-wrap gap-2 mt-2"></div>
+            
+            <div id="resultadosBusqueda" class="dropdown-menu show mt-1" 
+                 style="max-height: 200px; overflow-y: auto; width: 15%;">
+            </div>
         </div>
-
-       </div>
+    </div>
+</div>
 
         <div class="border rounded p-2" style="height: 100%; overflow-y: auto;">
             <h5 class="mb-2 text-center bg-light py-2 rounded shadow-sm">Elementos en Rastreo</h5>

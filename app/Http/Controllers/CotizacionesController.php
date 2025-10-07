@@ -878,6 +878,64 @@ public function getCotizacionesCanceladas()
 
             $cotizaciones->save();
 
+
+
+            //cambiar archivo pdf solo si hay cambios en la informacion
+        if($request->get('modifico_informacion') == '1'){
+
+        $docucotizaciones =  DocumCotizacion::where('id_cotizacion', '=', $cotizaciones->id)->first();
+     
+        $docucotizaciones->num_contenedor = str_replace(' ','',$request->get('num_contenedor'));
+        $docucotizaciones->save();
+        // Definir ruta dentro de public
+        $path = public_path('cotizaciones/cotizacion'.$docucotizaciones->id.'/formato_carta_porte_' . $numContenedor . '.pdf');
+
+        if($request->has('uuid')){
+            
+            $cotizaciones->sat_uso_cfdi_id = $request->id_uso_cfdi;
+            $cotizaciones->sat_forma_pago_id = $request->id_forma_pago;
+            $cotizaciones->sat_metodo_pago_id = $request->id_metodo_pago;
+            $cotizaciones->direccion_entrega = $request->direccion_entrega;
+            $cotizaciones->direccion_recinto = $request->direccion_recinto;
+            $cotizaciones->uso_recinto = ($request->text_recinto == 'recinto-si') ? 1 : 0;
+
+           
+            
+            $cotizaciones->cp_fraccion = $request->cp_fraccion;
+            $cotizaciones->cp_clave_sat = $request->cp_clave_sat; 
+            $cotizaciones->cp_pedimento = $request->cp_pedimento;
+            $cotizaciones->cp_clase_ped = $request->cp_clase_pedimento;
+            $cotizaciones->cp_cantidad = $request->cp_cantidad;
+            $cotizaciones->cp_valor = $request->cp_valor;
+            $cotizaciones->cp_moneda = $request->cp_moneda_valor; 
+            $cotizaciones->cp_contacto_entrega = $request->cp_contacto_entrega;
+            $cotizaciones->cp_fecha_tentativa_entrega = $request->cp_fecha_tentativa_entrega;
+            $cotizaciones->cp_hora_tentativa_entrega = $request->cp_hora_tentativa_entrega;
+            $cotizaciones->cp_comentarios = $request->cp_comentarios;
+
+            $subCliente = Subclientes::where('id',$cotizaciones->id_subcliente)->first();
+            
+            $pdf = \PDF::loadView('cotizaciones.carta_porte_pdf', compact('cotizaciones','numContenedor','subCliente'));
+
+            $folderPath = public_path('cotizaciones/cotizacion' . $docucotizaciones->id);
+            // Crear la carpeta si no existe
+            if (!File::exists($folderPath)) {
+                 File::makeDirectory($folderPath, 0755, true);
+            } else {
+                //  Si el archivo anterior existe, lo eliminamos
+                if (File::exists($path)) {
+                    File::delete($path);
+                }
+            }
+
+            // Guardar PDF
+            $pdf->save($path);
+
+            $cotizaciones->update();
+        }
+}
+           
+
             DB::commit();
 
             return response()->json([

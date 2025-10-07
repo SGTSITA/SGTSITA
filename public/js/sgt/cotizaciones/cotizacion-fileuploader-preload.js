@@ -11,10 +11,20 @@ function adjuntarDocumentos(filesContenedor) {
    labelDocsViaje.textContent = `Documentos de viaje ${numContenedor}`
 
 
-   let inputfile = $('#'+fileSettings.opcion)
-  
+    const input = $('#' + fileSettings.opcion);
 
-    $('#'+fileSettings.opcion).fileuploader({
+     const fileUploaderInstance = $.fileuploader.getInstance(input);
+ 
+    if (fileUploaderInstance && fileUploaderInstance.destroy) {
+        fileUploaderInstance.destroy();
+        console.log(`Instancia de fileuploader en #${fileSettings.opcion} destruida correctamente.`);
+    }
+
+
+
+
+    input.fileuploader({
+
         captions: 'es',
         enableApi: true,
         limit:1,
@@ -150,16 +160,18 @@ function adjuntarDocumentos(filesContenedor) {
         }),
     });
 
+
+
    var fileInputElement = document.getElementById(fileSettings.opcion);
     // Obtener la instancia de Fileuploader asociada a este campo de carga
-   var api = $.fileuploader.getInstance(fileInputElement);
-   
+   //var api = $.fileuploader.getInstance(fileInputElement);
+   //ejemplo cambio de configuracion en tiempo real
    
    // api.uploadStart(); // Iniciar la carga manualmente
 
 }
 
-async function consultarArchivos(numContenedor) {
+/* async function consultarArchivos(numContenedor) {
     try {
       const response = await fetch(`/viajes/file-manager/get-file-list/${numContenedor}`, {
         method: 'get',
@@ -183,7 +195,48 @@ async function consultarArchivos(numContenedor) {
     } catch (error) {
       console.error('Error:', error);
     }
+  } */
+
+
+    async function consultarArchivos(numContenedor) {
+  try {
+    const response = await fetch(`/viajes/file-manager/get-file-list/${numContenedor}`, {
+      method: 'GET',
+    });
+
+    const fileList = await response.json();
+    const containerFiles = fileList.data || [];
+
+    // Si no hay archivos, salimos
+    if (containerFiles.length === 0) return null;
+
+    // Buscar por el código del archivo
+    const filter = containerFiles.find((f) => f.fileCode === fileSettings.agGrid);
+
+    // Si no se encuentra coincidencia, no sigas
+    if (!filter) {
+      console.warn(`No se encontró archivo con fileCode: ${fileSettings.agGrid} para el contenedor ${numContenedor}`);
+      return null;
+    }
+
+    // Crear objeto seguro
+    const fileProperties = {
+      name: filter.fileName || "SinNombre",
+      size: filter.fileSizeBytes || 0,
+      type: filter.mimeType || "application/octet-stream",
+      file: `cotizaciones/cotizacion${filter.folder}/${filter.filePath}`,
+      data: {
+        thumbnail: `cotizaciones/cotizacion${filter.folder}/${filter.filePath}`,
+        readerForce: true,
+      },
+    };
+
+    return fileProperties;
+  } catch (error) {
+    console.error("Error en consultarArchivos:", error);
+    return null;
   }
+}
 
 function fileCheckTemplate(fileName, fileUrl){
     return `<div class="d-flex justify-content-between m-5">
