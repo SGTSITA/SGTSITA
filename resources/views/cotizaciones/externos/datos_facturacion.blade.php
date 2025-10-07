@@ -1,7 +1,7 @@
 <div class="timeline-item">
 
 
-    
+   
     <!--begin::Timeline content-->
     <div class="timeline-content mb-10 mt-n1">
 
@@ -89,8 +89,7 @@
                                 </div>
                             </div>
                         </div>
-        
-
+       
                         <div class="col-3">
                             <div class="input-group  mb-5">
                                 <span class="input-group-text" id="basic-addon1">
@@ -131,7 +130,7 @@
                                 </div>
                             </div>
                         </div>
-                       
+                      
 
                         <div class="col-3">
                             <div class="input-group  mb-5">
@@ -171,8 +170,7 @@
                                 </div>
                             </div>
                         </div>
-                        
-
+                       
                         <div class="col-3">
                             <div class="input-group  mb-5">
                                 <span class="input-group-text" id="basic-addon1">
@@ -193,7 +191,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+                       
 
                         <div class="col-3">
                             <div class="input-group  mb-5">
@@ -236,8 +234,7 @@
                                 </div>
                             </div>
                         </div>
-                        
-
+                       
                         <div class="col-3">
                             <div class="input-group  mb-5">
                                 <span class="input-group-text" id="basic-addon1">
@@ -280,8 +277,8 @@
                                 </div>
                             </div>
                         </div>
-                        
-                      
+                       
+                       
                         <div class="col-12">
                             <div class="input-group  mb-5">
                                 <span class="input-group-text" id="basic-addon1">
@@ -309,9 +306,9 @@
         </div>
         <!--end::Timeline details-->
     </div>
-               
-               
-       <!--begin::Timeline content-->
+                   
+    
+    <!--begin::Timeline content-->
     <div class="timeline-content mb-10 mt-n1">
 
         <!--begin::Timeline details-->
