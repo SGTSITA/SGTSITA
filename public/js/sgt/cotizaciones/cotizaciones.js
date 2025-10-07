@@ -422,8 +422,10 @@ document.addEventListener('DOMContentLoaded', function () {
     inputMoneyFormatProveedores.on('input',()=>{calcularTotal('proveedores')})
 
 
+  
 
 });
+
 function crearurlmapalatitudlongitud(lat, lng) {
     let url = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
     console.log(url);
@@ -1063,7 +1065,9 @@ $("#cotizacionCreate").on("submit", function(e){
     formData["longitud"] = document.getElementById("longitud")?.value ?? null;
     formData["direccion_mapa"] = document.getElementById("direccion_mapa")?.value ?? null;
     formData["fecha_seleccion"] = document.getElementById("fecha_seleccion")?.value ?? null;
+    formData["modifico_informacion"] = document.getElementById("modifico_informacion")?.value ?? 0;
 
+   //Obtenemos el UUID si es que ya se habia iniciado una cotizacion
    var uuid = localStorage.getItem('uuid');
    //Validaciones MEC
    if(uuid != null){
