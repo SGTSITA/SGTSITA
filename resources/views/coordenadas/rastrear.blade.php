@@ -89,6 +89,7 @@ input:not(:checked) + .slider #ubicacion-texto {
     </div>
     <!-- Buscador -->
     <div style="flex: 1;">
+      <span>Se muestran Contenedores y Convoys con fecha final mayor a {{ \Carbon\Carbon::now()->toDateString() }}</span>
       <label for="buscadorGeneral" class="form-label mb-1">Buscar</label>
       <div class="position-relative">
         <input type="text" id="buscadorGeneral" placeholder="Buscar convoy, contenedor o equipo..." class="form-control" style="width: 100%; min-width: 350px;">
