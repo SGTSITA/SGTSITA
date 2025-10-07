@@ -13,12 +13,12 @@ function adjuntarDocumentos(filesContenedor) {
     const input = $('#' + fileSettings.opcion);
 
      const fileUploaderInstance = $.fileuploader.getInstance(input);
- 
+ /* 
     if (fileUploaderInstance && fileUploaderInstance.destroy) {
         fileUploaderInstance.destroy();
         console.log(`Instancia de fileuploader en #${fileSettings.opcion} destruida correctamente.`);
     }
-
+ */
 
 
 
