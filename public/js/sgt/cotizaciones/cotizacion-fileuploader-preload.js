@@ -22,7 +22,6 @@ function adjuntarDocumentos(filesContenedor) {
     }
 
 
-   parent.html('<input type="file" name="files" id="'+fileSettings.opcion+'">');
 
 
     input.fileuploader({
