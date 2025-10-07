@@ -244,11 +244,13 @@ function validarTipo(items)
       } else {
           ItemsSelectsID[items.id + "|"+  items.value] = []; 
       }
-   ItemsSelectsID[items.id + "|"+  items.value] = items.value;
-   if(items.value_chasis && items.value_chasis !== 'NO DISPONIBLE|'){   
-       ItemsSelectsID[items.id + "|"+  items.value] = items.value_chasis;   
-   }
-   ItemsSelectsID[items.id + "|"+  items.value] = items.value;
+
+    ItemsSelectsID[items.id + "|"+  items.value].push(items.value);
+    if(items.value_chasis && items.value_chasis !== 'NO DISPONIBLE|'){   
+        ItemsSelectsID[items.id + "|"+  items.value].push(items.value_chasis);   
+    }
+
+   //ItemsSelectsID[items.id + "|"+  items.value] = items.value;
     
     if ( tabx==='Convoy'){
       ItemsSelectsID[items.id + "|"+  items.value] = obtenerImeisPorConvoyId(items.id);
@@ -640,6 +642,7 @@ let tipo = "";
 
         }
     const dataUbi= data;
+  
   console.log('obteniendo unicacion convoy, sucess data :', KEYITEM);
 //limpiarMarcadores();
   responseOk = true;
@@ -650,7 +653,15 @@ let tipo = "";
         let lnglocal='';
         let nEconomico='';
         let id_contenConvoy ='';
-       
+         if ( item.ubicacion.mesage !=="" ) {
+            let message = item.ubicacion.mesage ? item.ubicacion.mesage : 'Datos de ubicación no disponibles';
+      console.warn('No se recibieron ubicaciones válidas:', data);
+         clearInterval(intervalIdsID[`${keyInterval}`]);
+                 intervalIdsID[`${keyInterval}`] = null;
+                    estado = false;
+       Swal.fire('Atención', message, 'warning');
+      return;
+    }
 
           //console.log('For response ... :', KEYITEM);
  
@@ -673,7 +684,7 @@ let tipo = "";
 
                 markers[KEYITEM+"|"+item.contenedor+"|"+item.ubicacion.tipoEquipo].setPosition({ lat: latlocal, lng: lnglocal });
         } else {
-        if (latlocal && lnglocal) {
+        if (latlocal !==0 && lnglocal !==0) {
 
           let  colorMarker =colorBG;
 
@@ -806,7 +817,7 @@ contentC = `
                   }
                 }
                 let extraInfo = '';
-
+ if (info) {
                 if (t === 'Equipo') {
                   extraInfo = `
                     <p><strong>IMEI CHASIS:</strong> ${info.imei_chasis}</p>
@@ -827,7 +838,7 @@ contentC = `
                                    ${extraInfo}
                   </div>
                 `;
-
+            }
             //  document.getElementById('contenidoModalViaje').innerHTML = contenido;
 
               
@@ -903,7 +914,12 @@ contentC = `
              
             });
           //} //end mostrar primero
-           
+           newMarker.addListener("mouseover", () => {
+                map.panTo(newMarker.getPosition());
+
+                
+                map.panBy(0, -10);
+                });
         
         // if (index === 0) {
         //   map.setCenter({ lat: latlocal, lng: lnglocal });
@@ -988,7 +1004,7 @@ contentC = `
           tipoRastreo: t,
           idProceso:idProceso
       };
-        if (idConvoyOContenedor!= ""){
+        if (idConvoyOContenedor!= "" && latlocal !==0 && lnglocal !==0) {
       actualizarUbicacionReal(datasave)
         }
         
@@ -1002,6 +1018,7 @@ contentC = `
   })
   .catch(error => {
     console.error('Error al obtener ubicaciones:', error);
+
     detener(keyInterval);
   });
 }
@@ -1138,7 +1155,7 @@ document.addEventListener('DOMContentLoaded', function () {
         minDate: inicio,
         maxDate: fin,
         locale: { format: 'YYYY-MM-DD' },
-        opens: 'left'
+        opens: 'right'
     });
     
      cargarinicial();
