@@ -10,6 +10,10 @@ function adjuntarDocumentos(filesContenedor) {
    let labelDocsViaje = document.getElementById('labelDocsViaje')
    labelDocsViaje.textContent = `Documentos de viaje ${numContenedor}`
 
+
+   let inputfile = $('#'+fileSettings.opcion)
+  
+
     $('#'+fileSettings.opcion).fileuploader({
         captions: 'es',
         enableApi: true,
