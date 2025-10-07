@@ -12,8 +12,6 @@ function adjuntarDocumentos(filesContenedor) {
 
     const input = $('#' + fileSettings.opcion);
 
- let parent= input.parent();
-
      const fileUploaderInstance = $.fileuploader.getInstance(input);
  
     if (fileUploaderInstance && fileUploaderInstance.destroy) {
