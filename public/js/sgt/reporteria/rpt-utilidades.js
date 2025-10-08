@@ -137,6 +137,7 @@ const gridOptions = {
     { field: "precioViaje", width: 150, valueFormatter: params => currencyFormatter(params.value), cellStyle: { textAlign: "right" } },
     { field: "pagoOperacion", width: 150, valueFormatter: params => currencyFormatter(params.value), cellStyle: { textAlign: "right" } },
     { field: "gastosExtra", valueFormatter: params => currencyFormatter(params.value), cellStyle: { textAlign: "right" } },
+    { field: "dineroViajeSinJustificar", valueFormatter: params => currencyFormatter(params.value), cellStyle: { textAlign: "right" } },
     { field: "gastosViaje", valueFormatter: params => currencyFormatter(params.value), cellStyle: { textAlign: "right" } },
     { field: "gastosDiferidos", valueFormatter: params => currencyFormatter(params.value), cellStyle: { textAlign: "right" } },
     { field: "utilidad", valueFormatter: params => currencyFormatter(params.value), cellStyle: { textAlign: "right" } },

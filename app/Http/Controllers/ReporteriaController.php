@@ -20,6 +20,8 @@ use App\Exports\GenericExport;
 use App\Exports\CxcExport;
 use App\Exports\CxpExport;
 use App\Models\GastosDiferidosDetalle;
+use App\Models\DineroContenedor;
+use App\Models\ViaticosOperador;
 use App\Models\CuentaGlobal;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Response;
@@ -765,6 +767,11 @@ public function export_cxp(Request $request)
 
                 $gastosExtra = GastosExtras::where('id_cotizacion',$d->id_cotizacion)->get();
                 $gastosOperador = GastosOperadores::where('id_cotizacion',$d->id_cotizacion)->get();
+
+                $dineroViaje = DineroContenedor::where('id_contenedor',$d->id_cotizacion)->get()->sum('monto');
+                $dineroViajeJustificado = ViaticosOperador::where('id_cotizacion',$d->id_cotizacion)->get()->sum('monto');
+
+                $sinJustificar = $dineroViaje - $dineroViajeJustificado;
     
                 foreach($gastosExtra as $ge){
                     $detalleGastos [] = ["fecha_gasto" => $ge->created_at, 
@@ -806,6 +813,7 @@ public function export_cxp(Request $request)
                             "operadorOrProveedor" => (is_null($d->Proveedor)) ? $d->Operador : $d->Proveedor,
                             "pagoOperacion" => $pagoOperacion,
                             "gastosExtra" => $gastosExtra->sum('monto'),
+                            "dineroViajeSinJustificar" => abs($sinJustificar),
                             "gastosViaje" => $gastosOperador->sum('cantidad'),
                             "viajeInicia"=> $d->fecha_inicio,
                             "viajeTermina"=> $d->fecha_fin, 
@@ -813,7 +821,7 @@ public function export_cxp(Request $request)
                             "estatusPago" => ($d->estatus_pago == 1) ? 'Pagado' : 'Por Cobrar',
                             "gastosDiferidos" =>  $gastosDiferidos,
                             "detalleGastos" => $detalleGastos,
-                            "utilidad" => $d->total  - $pagoOperacion - $gastosDiferidos - $gastosExtra->sum('monto') - $gastosOperador->sum('cantidad'),
+                            "utilidad" => $d->total  - $pagoOperacion - $gastosDiferidos - $gastosExtra->sum('monto') - $gastosOperador->sum('cantidad') - abs($sinJustificar),
 
                             ];
                 $Info[] = $Columns;
@@ -844,7 +852,7 @@ public function export_cxp(Request $request)
     ->whereBetween('fecha',[$fechaInicio,$fechaFin])
     ->get();
 
-$gastos = $gastosGenerales->sum('monto1');
+       $gastos = $gastosGenerales->sum('monto1');
 
        // $gastos = [];
 
