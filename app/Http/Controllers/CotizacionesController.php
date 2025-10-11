@@ -876,8 +876,33 @@ public function getCotizacionesCanceladas()
             $cotizaciones->longitud = $request->longitud;
             $cotizaciones->direccion_mapa = $request->direccion_mapa;
 
-            $cotizaciones->save();
+         
 
+
+             if($request->has('id_transportista') && $request->id_transportista !== $cotizaciones->id_proveedor){ //checar si se cambio de proveedor
+                //validamos planeacion
+                $asignacion = Asignaciones::where('id_contenedor',$doc_cotizaciones->id)->
+               // where('estatus_planeacion','<>','Finalizado')->
+                first();
+                $statusPlaneacion= $cotizaciones->estatus_planeacion??0;
+                    if($statusPlaneacion ===1){ //quitaremos la planeacion
+
+                        $cotizaciones->estatus_planeacion = null;
+                        $cotizaciones->estatus = 'Aprobada';
+                        if($asignacion){
+                           /*  $asignacion->fecha_inicio = null;
+                            $asignacion->fecha_fin = null;
+                            $asignacion->estatus_planeacion = null; */
+                            $asignacion->delete();
+                        }
+
+                    }
+               
+                
+                
+                $cotizaciones->id_proveedor = $request->id_transportista;
+            }
+               $cotizaciones->save();
 
 
             //cambiar archivo pdf solo si hay cambios en la informacion

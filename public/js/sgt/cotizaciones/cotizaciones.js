@@ -464,6 +464,10 @@ function crearurlmapalatitudlongitud(lat, lng) {
                         document.getElementById('direccion_entrega').value = direccion;
                         document.getElementById('direccion_mapa').value = direccion;
                     });
+            let urlCrearMapa = crearurlmapalatitudlongitud(lat, lng);
+            document.getElementById('linkMapa').href = urlCrearMapa;
+            document.getElementById('linkMapa').textContent = urlCrearMapa;
+
             });
         
 

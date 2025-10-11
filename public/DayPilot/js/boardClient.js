@@ -131,7 +131,7 @@ dp.contextMenu = new DayPilot.Menu({
         {
             text: "... ", onClick: function (args) {
                Swal.fire({
-                   title: '¿Desea ver las corrdenadas del viaje?',
+                   title: '¿Desea ver las coordenadas del viaje?',
                    showDenyButton: false,
                    showCancelButton: true,
                    confirmButtonText: 'Si, Actualizar!',
@@ -276,6 +276,11 @@ function getInfoViaje(startDate, endDate, numContenedor_, idContendor){
   let destino = document.querySelector('#destino')
   let nombreCliente = document.querySelector('#nombreCliente')
   let nombreSubcliente = document.querySelector('#nombreSubcliente')
+
+let placas_camion = document.querySelector('#placas_camion')
+let id_equipo_camion = document.querySelector('#id_equipo_camion')
+let marca_camion = document.querySelector('#marca_camion')
+
   
 
    var _token = $('input[name="_token"]').val();
@@ -298,6 +303,9 @@ function getInfoViaje(startDate, endDate, numContenedor_, idContendor){
            destino.textContent = "--"
            nombreCliente.textContent = "--"
            nombreSubcliente.textContent = "--"
+              placas_camion.textContent = "--"
+                id_equipo_camion.textContent = "--"
+                marca_camion.textContent = "--"
        },
        success:(response)=>{
            ocultarLoading()
@@ -309,6 +317,10 @@ function getInfoViaje(startDate, endDate, numContenedor_, idContendor){
            nombreCliente.textContent = response.cliente.nombre
            nombreSubcliente.textContent = response.subcliente.nombre
 
+                placas_camion.textContent = response.documentos.placas_camion ?? "NA"
+                id_equipo_camion.textContent = response.documentos.id_equipo_camion ?? "NA"
+                marca_camion.textContent = response.documentos.marca_camion ?? "NA"
+
            if(response.tipo == "Viaje Propio"){
                $('#tipoViajeSpan').addClass('bg-gradient-success')
            }else{
@@ -316,8 +328,8 @@ function getInfoViaje(startDate, endDate, numContenedor_, idContendor){
            }
            let tipoS="Planeacion-> Contenedor:"
            //Once en true para que se ejecute una sola vez y se elimine el listener    onclick="('${params.data.contenedor}')
-           btnFinalizar.addEventListener('click', () => finalizarViaje(idContendor,numContenedor_), { once: true });
-           btnDeshacer.addEventListener('click', () => anularPlaneacion(idContendor,numContenedor_), { once: true });
+           //btnFinalizar.addEventListener('click', () => finalizarViaje(idContendor,numContenedor_), { once: true });
+         //  btnDeshacer.addEventListener('click', () => anularPlaneacion(idContendor,numContenedor_), { once: true });
            btnRastreo.addEventListener('click', () => abrirMapaEnNuevaPestana(numContenedor_,tipoS), { once: true });
 
            let documentos = response.documents
@@ -348,7 +360,27 @@ function getInfoViaje(startDate, endDate, numContenedor_, idContendor){
    const bootstrapModal = new bootstrap.Modal(modalElement);
    bootstrapModal.show();
 }
+function mostrarLoading(text = "Espere un momento...") {
+    let label = document.querySelector('#loading-text')
+    label.textContent = text
 
+    document.getElementById('loading-overlay').style.display = 'flex'
+}
+
+function ocultarLoading() {
+  document.getElementById('loading-overlay').style.display = 'none';
+}
+  function abrirMapaEnNuevaPestana( numContenedor,tipoS) {
+    //const url = `/mapa-comparacion?latitud=${latitud}&longitud=${longitud}&latitud_seguimiento=${latitud_seguimiento}&longitud_seguimiento=${longitud_seguimiento}&contenedor=${contenedor}`;
+     if (numContenedor) {
+         const url = `/coordenadas/mapa_rastreo?contenedor=${numContenedor}&tipoS=${encodeURIComponent(tipoS)}`;
+    window.open(url, '_blank');
+     }else{
+         Swal.fire('Validación', 'No se encontró información del contenedor.', 'warning');
+         return;
+     }
+   
+}
 
 function encontrarContenedor(contenedor){
    let busqueda = allEvents

@@ -30,3 +30,29 @@ function getTranspotistas(){
     }
  })
 }
+
+
+document.getElementById('btnCopiarMapa').addEventListener('click', function() {
+  const link = document.getElementById('linkMapa').href;
+  
+  if (link === '#' || !link.trim()) {
+    alert('No hay enlace disponible para copiar.');
+    return;
+  }
+
+  navigator.clipboard.writeText(link)
+    .then(() => {
+      this.innerHTML = '<i class="fas fa-check"></i> Copiado';
+      this.classList.remove('btn-outline-primary');
+      this.classList.add('btn-success');
+      setTimeout(() => {
+        this.innerHTML = '<i class="fas fa-copy"></i> Copiar';
+        this.classList.remove('btn-success');
+        this.classList.add('btn-outline-primary');
+      }, 2000);
+    })
+    .catch(() => alert('Error al copiar el enlace.'));
+});
+
+
+

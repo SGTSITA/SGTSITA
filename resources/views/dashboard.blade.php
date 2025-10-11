@@ -278,7 +278,7 @@
             </div>
         @endcan
 
-        @can('coordenadasv')
+        @can('Coordenadas SGT')
             <div class="col-4">
                 <div class="card p-3 mb-4">
                     <div class="row">
