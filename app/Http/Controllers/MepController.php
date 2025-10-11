@@ -165,6 +165,7 @@ class MepController extends Controller
         //TractoCamion
        // $idUnidad = self::validarEquiposEmpresa($formData['txtNumUnidad'], $formData['txtImei'],$formData['txtPlacas'],$formData['txtSerie'],$formData['selectGPS'],'Tractos / Camiones');
         $unidad = Equipo::where('id_empresa',auth()->user()->id_empresa)->where('id_equipo',$formData['txtNumUnidad']);
+        
         if(!$unidad->exists()){
             $unidad = new Equipo;
             $unidad->id_equipo = $formData['txtNumUnidad'];
@@ -174,6 +175,7 @@ class MepController extends Controller
             $unidad->gps_company_id = $formData['selectGPS'];
             $unidad->tipo = 'Tractos / Camiones';
             $unidad->save();
+
         }else{
             $unidad = $unidad->first();
             $unidad->imei = $formData['txtImei'];
@@ -193,13 +195,16 @@ class MepController extends Controller
         $asignacion = Asignaciones::where('id_contenedor',$idContenedor);
 
         if($asignacion->exists()){
-            $asignacion = $asignacion->first();
+           // $asignacion1 = $asignacion->first();
             $asignacion->update([
                 "id_operador"=>$idOperador,
                 "id_camion" => $idunidad, 
                 "id_chasis" => $idChasisA, 
                 "id_chasis2" => $idChasisB
             ]);
+
+            return response()->json(["TMensaje" => "success", "Titulo" => "Actualizado correctamente","Mensaje" => "Los datos fueron modificados con exito"]);
+
         }else{
             $fecha = date('Y-m-d');
             $asignacion = new Asignaciones;
@@ -221,5 +226,11 @@ class MepController extends Controller
 
         //Asignaciones::where('id',$idAsignacion)->update(["id_operador"=>$idOperador,"id_camion" => $idunidad]);
         return response()->json(["TMensaje" => "success", "Titulo" => "Se ha realizado la asignacion correctamente","Mensaje" => ""]);
+    }
+
+    public function verAsignacion(Request $request){
+        $asignacion = Asignaciones::with(['Camion', 'Chasis', 'Chasis2','Operador'])->where('id_contenedor',$request->idContenedor)->get();
+        return $asignacion;
+        
     }
 }

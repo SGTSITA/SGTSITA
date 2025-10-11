@@ -35,6 +35,8 @@ Route::group(["prefix" => "gps"],function(){
 
 Route::group(["prefix" => "mep"], function(){
  Route::get('viajes',[MepController::class, 'index'])->name('mep.index');
+ Route::post('viajes/consulta-asignacion',[MepController::class, 'verAsignacion'])->name('mep.asignacion');
+
  Route::get('viajes/list',[MepController::class, 'getCotizacionesList'])->name('mep.viajes');
  Route::get('viajes/finalizadas',[MepController::class, 'getCotizacionesFinalizadas'])->name('mep.viajes');
  Route::post('viajes/operador/asignar',[MepController::class, 'asignarOperador'])->name('mep.asignaoperdor');
