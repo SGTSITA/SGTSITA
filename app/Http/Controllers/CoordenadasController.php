@@ -702,14 +702,33 @@ $idCordenada= $coordenadas->id_coordenadas;
         DB::raw("CASE WHEN asignaciones.id_proveedor IS NULL THEN 'Propio' ELSE 'Subcontratado' END as tipo_contrato")
         );
 
-        $beneficiarios = DB::table(function ($query) {
-            $query->select('id', 'nombre', 'telefono', DB::raw("'Propio' as tipo_contrato"), 'id_empresa')
-                ->from('operadores')
-                ->union(
-                    DB::table('proveedores')
-                        ->select('id', 'nombre', 'telefono', DB::raw("'Subcontratado' as tipo_contrato"), 'id_empresa')
-                );
-        }, 'beneficiarios');
+       $beneficiarios = DB::table(function ($query) {
+                $query->select(
+            'operadores.id',
+            'operadores.nombre',
+            'operadores.telefono',
+            'empresas.rfc as RFC',
+            DB::raw("'Propio' as tipo_contrato"),
+            'operadores.id_empresa',
+            'empresas.nombre as nombreempresa'
+        )
+        ->from('operadores')
+        ->join('empresas', 'empresas.id', '=', 'operadores.id_empresa')
+
+        ->union(
+            DB::table('proveedores')
+                ->select(
+                    'proveedores.id',
+                    'proveedores.nombre',
+                    'proveedores.telefono',
+                    'proveedores.RFC',
+                    DB::raw("'Subcontratado' as tipo_contrato"),
+                    'proveedores.id_empresa',
+                    'proveedores.nombre as nombreempresa'
+                )
+                ->join('empresas', 'empresas.id', '=', 'proveedores.id_empresa')
+        );
+            }, 'beneficiarios');
 
   
         $datosAll = DB::table('cotizaciones')
@@ -739,7 +758,8 @@ $idCordenada= $coordenadas->id_coordenadas;
             'cotizaciones.longitud',
             'cotizaciones.cp_contacto_entrega',
             'beneficiarios.nombre as beneficiario',
-            'beneficiarios.telefono as telefono_beneficiario'
+            'beneficiarios.telefono as telefono_beneficiario',
+            'beneficiarios.nombreempresa as nombreempresa',
         )
     ->join('clients', 'cotizaciones.id_cliente', '=', 'clients.id')
     

@@ -1077,37 +1077,73 @@ function mostrarInfoConvoy(contenedores,equipo,chasis) {
 if(info){
 let filtroEqu= equiposSearch.find(equipo => equipo.id === info.id_equipo_unico);
     
-     let infoContenido = `  
-                  <div class="tab-pane fade ${index === 0 ? "show active" : ""}" 
-           id="${tabId}" 
-           role="tabpanel" 
-           aria-labelledby="${tabId}-tab">
-                   
-                    <p><strong>Cliente:</strong> ${info.cliente}</p>
-                  
-                    <p><strong>Origen:</strong> ${info.origen}</p>
-                    <p><strong>Destino:</strong> ${info.destino}</p>
-                    <p><strong>Contrato:</strong> ${info.tipo_contrato}</p>
-                    <p><strong>Fecha Inicio:</strong> ${info.fecha_inicio}</p>
-                    <p><strong>Fecha Fin:</strong> ${info.fecha_fin}</p>
-                    <p><strong>Contacto Entrega:</strong> ${info.cp_contacto_entrega}</p>
-                    <p><strong>Operador:</strong> ${info.beneficiario}</p>
-                    <p><strong>Telefono:</strong> ${info.telefono_beneficiario}</p>
-                    <p>
-                        <span style="margin-right: 15px;">
-                            <strong>IMEI:</strong> ${info.imei}
-                        </span>
-                        <strong>Equipo:</strong> ${info.id_equipo}
-                        <strong>Placas:</strong> ${filtroEqu.placas}
-                    </p>
-                    <p>
-                        <span style="margin-right: 15px;">
-                            <strong>IMEI CHASIS:</strong> ${info.imei_chasis}
-                        </span>
-                        <strong>Chasis:</strong> ${info.id_equipo_chasis}
-                    </p>
-                  </div>
-                `;
+ let infoContenido = `
+  <div class="tab-pane fade ${index === 0 ? "show active" : ""}" 
+       id="${tabId}" 
+       role="tabpanel" 
+       aria-labelledby="${tabId}-tab">
+
+    <div class="card border-0 shadow-lg rounded-4 p-4 bg-light" style="font-size: 1.05rem;">
+
+      <!-- DATOS GENERALES -->
+      <div class="mb-4">
+        <div class="d-flex align-items-center mb-2">
+          <i class="fas fa-file-alt text-primary me-2 fa-lg"></i>
+          <h6 class="text-primary fw-bold mb-0" style="font-size: 1.1rem;">Datos Generales</h6>
+        </div>
+        <div class="ps-4">
+         <p><strong>Proveedor:</strong> ${info.nombreempresa}</p>
+          <p><strong>Cliente:</strong> ${info.cliente}</p>
+         
+          <p><strong>Tipo de Contrato:</strong> ${info.tipo_contrato}</p>
+          <p><strong>Origen:</strong> ${info.origen}</p>
+          <p><strong>Destino:</strong> ${info.destino}</p>
+          <p><strong>Fecha Inicio:</strong> ${info.fecha_inicio}</p>
+          <p><strong>Fecha Fin:</strong> ${info.fecha_fin}</p>
+        </div>
+      </div>
+
+      <hr class="my-3 opacity-50">
+
+      <!-- CONTACTO Y OPERADOR -->
+      <div class="mb-4">
+        <div class="d-flex align-items-center mb-2">
+          <i class="fas fa-user-tie text-success me-2 fa-lg"></i>
+          <h6 class="text-success fw-bold mb-0" style="font-size: 1.1rem;">Contacto y Operador</h6>
+        </div>
+        <div class="ps-4">
+          <p><strong>Contacto Entrega:</strong> ${info.cp_contacto_entrega}</p>
+          <p><strong>Operador:</strong> ${info.beneficiario}</p>
+          <p><strong>Teléfono:</strong> ${info.telefono_beneficiario}</p>
+        </div>
+      </div>
+
+      <hr class="my-3 opacity-50">
+
+      <!-- DATOS DEL EQUIPO -->
+      <div class="mb-2">
+        <div class="d-flex align-items-center mb-2">
+          <i class="fas fa-truck text-warning me-2 fa-lg"></i>
+          <h6 class="text-warning fw-bold mb-0" style="font-size: 1.1rem;">Datos del Equipo</h6>
+        </div>
+        <div class="ps-4">
+          <div class="row">
+            <div class="col-md-6 mb-2">
+              <p class="mb-1"><strong>IMEI:</strong> ${info.imei}</p>
+              <p class="mb-1"><strong>Equipo:</strong> ${info.id_equipo}</p>
+              <p class="mb-1"><strong>Placas:</strong> ${filtroEqu.placas}</p>
+            </div>
+            <div class="col-md-6 mb-2">
+              <p class="mb-1"><strong>IMEI Chasis:</strong> ${info.imei_chasis}</p>
+              <p class="mb-1"><strong>Chasis:</strong> ${info.id_equipo_chasis}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+`;
 
 
     // Crear contenido

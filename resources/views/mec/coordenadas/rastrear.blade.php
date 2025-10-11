@@ -109,6 +109,26 @@ input:not(:checked) + .slider #ubicacion-texto {
         background-color: #e9ecef;
         border-radius: 0.5rem 0.5rem 0 0;
     }
+    .card p {
+  margin-bottom: 0.4rem;
+}
+
+.card strong {
+  color: #212529;
+}
+
+.card hr {
+  border-top: 1px solid rgba(0,0,0,0.1);
+}
+
+.tab-pane .card {
+  transition: all 0.3s ease-in-out;
+}
+
+.tab-pane .card:hover {
+  box-shadow: 0 0 18px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+}
 </style>
 <div class="container-fluid bg-white">
     <h3 class="mb-3 text-center">📍 Módulo de Rastreo y Gestión</h3>

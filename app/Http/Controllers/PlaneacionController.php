@@ -115,6 +115,7 @@ class PlaneacionController extends Controller
         ->leftJoin('docum_cotizacion', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
         ->leftJoin('asignaciones', 'docum_cotizacion.id', '=', 'asignaciones.id_contenedor')
         ->leftJoin('clients', 'cotizaciones.id_cliente', '=', 'clients.id')
+        ->leftjoin('equipos', 'asignaciones.id_camion', '=', 'equipos.id')
         ->select(
             'cotizaciones.id',
             'clients.nombre as cliente',
@@ -130,7 +131,10 @@ class PlaneacionController extends Controller
             'docum_cotizacion.doc_eir',
             'asignaciones.id_proveedor',
             'asignaciones.fecha_inicio',
-            'asignaciones.fecha_fin'
+            'asignaciones.fecha_fin',
+            'equipos.placas as placas_camion',
+            'equipos.id_equipo as id_equipo_camion',
+            'equipos.marca as marca_camion'
         )
         ->get();
 
