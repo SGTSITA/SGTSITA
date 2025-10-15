@@ -168,7 +168,6 @@
                             <div class="row gx-9 gy-6">
 
                             @include('cotizaciones.externos.datos_facturacion')
-                            <input type="hidden" name="modifico_informacion" id="modifico_informacion" value="0">
                             </div>
                         </div>
                         <!--end::Tab panel-->
@@ -220,8 +219,7 @@
 																																				   
 		
         $(document).ready(() => {
-            let subclienteid = {{ $cotizacion ? $cotizacion->id_subcliente : 'null' }};
-            getClientes({{ Auth::User()->id_cliente }}, subclienteid)
+            getClientes({{ Auth::User()->id_cliente }})
 
             var genericUUID = localStorage.getItem('uuid');
             if (genericUUID == null) {
@@ -304,13 +302,5 @@
                 form.submit();
             });
         @endif
-
-        $(document).ready(function () {
-    // Detectar si algún campo cambia en cualquier formulario de la página
-    $('form').on('change input', 'input, select, textarea', function() {
-        console.log('Campo modificado:', $(this).attr('name')); // <-- Para probar
-        $('#modifico_informacion').val('1');
-    });
-});
     </script>
 @endpush		

@@ -96,12 +96,6 @@ class ExternosController extends Controller
             $query->where('num_contenedor', $request->numContenedor);
         })
         ->first();
-
-        $transportista = Proveedor::whereIn('id_empresa', $clienteEmpresa)->get();
-       // dd($transportista, $clienteEmpresa);
-       // $transportista = Proveedor::get();
-       // where('id_empresa',$cotizacion->id_proveedor)->
-      // where('id_empresa',$cotizacion->id_proveedor)->first();
  
         return view('cotizaciones.externos.solicitud_simple',
                                                             ["action" => "editar",
@@ -109,8 +103,7 @@ class ExternosController extends Controller
                                                             "metodosPago" => $metodosPago, 
                                                             "usoCfdi" => $usoCfdi, 
                                                             "cotizacion" => $cotizacion,
-                                                            "proveedores" => $empresas,
-                                                            "transportista" => $transportista
+                                                            "proveedores" => $empresas
                                                         ]);
     }
 

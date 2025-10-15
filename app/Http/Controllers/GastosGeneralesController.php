@@ -8,7 +8,6 @@ use App\Models\GastosGenerales;
 use App\Models\GastosOperadores;
 use App\Models\CategoriasGastos;
 use App\Models\GastosDiferidosDetalle;
-use App\Models\BancoDinero;
 use App\Models\Asignaciones;
 use App\Models\Planeacion;
 use App\Models\Cotizaciones;
@@ -253,8 +252,8 @@ class GastosGeneralesController extends Controller
                 Bancos::where('id' ,'=',$request->get('id_banco1'))->update(["saldo" => DB::raw("saldo - ". $montoGasto)]);
 
                 $banco = new BancoDinero();
-              
-                //$banco->contenedores = '';//Gasto: '.$request->get('formasAplicar');
+
+                $banco->contenedores = "[]";
                 $banco->id_proveedor = $request->get('id_cliente');
                 $banco->monto1 = $montoGasto;
                 $banco->metodo_pago1 = 'Transferencia';
