@@ -336,9 +336,9 @@ function viajeFull() {
   });
 }
 
-  function abrirMapaEnNuevaPestana( contenedor,tipoS) {
+  function abrirMapaEnNuevaPestana( contenedor,tipoS,origenRastreo) {
     //const url = `/mapa-comparacion?latitud=${latitud}&longitud=${longitud}&latitud_seguimiento=${latitud_seguimiento}&longitud_seguimiento=${longitud_seguimiento}&contenedor=${contenedor}`;
-    const url = `/coordenadas/mapa_rastreo?contenedor=${contenedor}&tipoS=${encodeURIComponent(tipoS)}`;
+    const url = `/coordenadas/mapa_rastreo?contenedor=${contenedor}&tipoS=${encodeURIComponent(tipoS)}&origenRastreo=${encodeURIComponent(origenRastreo)}`;
     window.open(url, '_blank');
 }
 
@@ -533,14 +533,15 @@ function abrirRastreoSeleccionado() {
      
       const contenedor = selectedRows[0].NumContenedor;
       const tipoS = selectedRows[0].tipo; 
-      abrirMapaEnNuevaPestana(contenedor,tipoS);
+      abrirMapaEnNuevaPestana(contenedor,tipoS,'MEC-Viajes');
       return;
    }else if (selectedRows.length > 1) {
       Swal.fire('Contenedores seleccionados', 'Por favor, seleccione solamente uno para ver el rastreo.', 'warning');
+      toastr.info(`Varios contenedores seleccionados, por favor seleccione solo uno para ver el rastreo.`);
       return;
    }
    else   {
-      Swal.fire('No hay contenedores seleccionados', 'Por favor, seleccione al menos un contenedor para ver el rastreo.', 'warning');
+      Swal.fire('No hay contenedores seleccionados', 'Por favor, seleccione un contenedor para ver el rastreo.', 'warning');
       return;
    }
     

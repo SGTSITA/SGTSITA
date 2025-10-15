@@ -29,7 +29,9 @@ let directionsRenderer = [];
       zoom: 2,
     });
 
-    
+    if(!origenRastreo){
+let origenRastreo = 'SGT'; // Identificador único para este módulo default sgt para mostrar la info, los demas ya vienen desde la vista segun el modulo
+    }
 
      const marker = new google.maps.Marker({
     position: { lat: 0, lng: 0 },
@@ -698,6 +700,7 @@ let tipo = "";
 
           // let esMostrarPrimero =  1
           // if(esMostrarPrimero){
+               let velocidad = parseFloat( item.ubicacion.velocidad);
             const newMarker = new google.maps.Marker({
               position: { lat: latlocal, lng: lnglocal },
               map: map,
@@ -728,7 +731,7 @@ contentC = `
                
               </div>
               <div class="text-white fs-6 lh-base" style="font-size: 17px; line-height: 1.5;">
-                <div><strong >Equipo:</strong> ${filtroEqu.id_equipo}</div>
+                <div><strong >Equipo:</strong> ${filtroEqu.id_equipo}</div><span class="ms-1" style="font-size:14px; color:#333;">${velocidad?`(${velocidad} km/h)`:''}</span>
                 <div><strong >Marca:</strong> ${filtroEqu.marca}</div>
                 <div><strong >Placas:</strong> ${filtroEqu.placas || 'sin placas'}</div>
 
@@ -751,7 +754,7 @@ contentC = `
                 
                 </div>
                 <div class="text-white fs-6 lh-base" style="font-size: 17px; line-height: 1.5;">
-                    <div><strong >Equipo:</strong> ${item.EquipoBD}</div>
+                    <div><strong >Equipo:</strong> ${item.EquipoBD}</div><span class="ms-1" style="font-size:14px; color:#333;">${velocidad?`(${velocidad} km/h)`:''}</span>
                     <div><strong >Contenedor:</strong> ${item.contenedor}</div>
                 </div>
                 <button id="btnRuta_${KEYITEM+"|"+item.contenedor+"|"+item.ubicacion.tipoEquipo}" style="margin-top:5px;" class="btn btn-primary mt-2">Mostrar ruta</button><br>
@@ -774,7 +777,7 @@ contentC = `
               </div>
               <div class="text-white fs-6 lh-base" style="font-size: 17px; line-height: 1.5;">
               <div><strong >Convoy:</strong> ${num_convoy} </div>
-                <div><strong >Equipo:</strong> ${item.EquipoBD}</div>
+                <div><strong >Equipo:</strong> ${item.EquipoBD}</div><span class="ms-1" style="font-size:14px; color:#333;">${velocidad?`(${velocidad} km/h)`:''}</span>
                 <div><strong >Contenedor:</strong> ${item.contenedor}</div>
               </div>
               <button id="btnRuta_${KEYITEM+"|"+item.contenedor+"|"+item.ubicacion.tipoEquipo}" style="margin-top:5px;" class="btn btn-primary mt-2">Mostrar ruta</button><br>
@@ -1094,8 +1097,8 @@ let filtroEqu= equiposSearch.find(equipo => equipo.id === info.id_equipo_unico);
         <div class="ps-4">
          <p><strong>Proveedor:</strong> ${info.nombreempresa}</p>
           <p><strong>Cliente:</strong> ${info.cliente}</p>
-         
-          <p><strong>Tipo de Contrato:</strong> ${info.tipo_contrato}</p>
+
+        ${origenRastreo === 'SGT'      ? `<p><strong>Tipo de Contrato:</strong> ${info.tipo_contrato}</p>`  : ''}
           <p><strong>Origen:</strong> ${info.origen}</p>
           <p><strong>Destino:</strong> ${info.destino}</p>
           <p><strong>Fecha Inicio:</strong> ${info.fecha_inicio}</p>
@@ -1231,8 +1234,8 @@ function BloquearHabilitarEdicion(block){
 
 }
 
-function abrirMapaEnNuevaPestana( contenedor,tipoS) {
-        const url = `/coordenadas/mapa_rastreo?contenedor=${contenedor}&tipoS=${encodeURIComponent(tipoS)}`;
+function abrirMapaEnNuevaPestana( contenedor,tipoS,origenRastreo) {
+        const url = `/coordenadas/mapa_rastreo?contenedor=${contenedor}&tipoS=${encodeURIComponent(tipoS)}&origenRastreo=${encodeURIComponent(origenRastreo)}`;
     window.open(url, '_blank');
 }
 
@@ -1570,7 +1573,7 @@ function definirTable(){
     .map(c => c.num_contenedor);
     const listaStr = contenedoresDelConvoy.join(' / ');
         let tipos= "Convoy: " + data.no_conboy;
-        abrirMapaEnNuevaPestana(listaStr,tipos); 
+        abrirMapaEnNuevaPestana(listaStr,tipos,origenRastreo); 
     };
  //boton cam cbiar estatus de los convoys
    const btnEstatus = document.createElement("button");

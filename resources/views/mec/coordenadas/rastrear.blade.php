@@ -511,6 +511,9 @@ input:not(:checked) + .slider #ubicacion-texto {
 @endsection
 
 @push('javascript')
+<script>
+  let origenRastreo = 'mecRastreo'; // Identificador único para este módulo
+</script>
    <script src="https://unpkg.com/ag-grid-community/dist/ag-grid-community.min.js"></script>
   <script
         src="{{ asset('js/sgt/coordenadas/coordenadasRastreo.js') }}?v={{ filemtime(public_path('js/sgt/coordenadas/coordenadasRastreo.js')) }}">

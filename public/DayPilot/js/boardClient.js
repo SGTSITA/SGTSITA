@@ -253,9 +253,9 @@ dp.onEventClick = function (args) {
   getInfoViaje(args.e.data.start.value,args.e.data.end.value, args.e.data.text, args.e.data.id);
 };
 
-function abrirMapaEnNuevaPestana( contenedor,tipoS) {
- 
-   const url = `/coordenadas/mapa_rastreo?contenedor=${contenedor}&tipoS=${encodeURIComponent(tipoS)}`;
+function abrirMapaEnNuevaPestana( contenedor,tipoS,origenRastreo) {
+
+   const url = `/coordenadas/mapa_rastreo?contenedor=${contenedor}&tipoS=${encodeURIComponent(tipoS)}&origenRastreo=${encodeURIComponent(origenRastreo)}`;
    window.open(url, '_blank');
 }
 
@@ -269,19 +269,29 @@ function getInfoViaje(startDate, endDate, numContenedor_, idContendor){
   let numContenedor = document.querySelector('#numContenedorSpan')
   numContenedor.textContent = numContenedor_
 
-  let nombreTransportista = document.querySelector('#nombreTransportista')
-  let tipoViajeSpan = document.querySelector('#tipoViajeSpan')
+  let nombreProveedor = document.querySelector('#nombreProveedor')
+ // let nombreTransportista = document.querySelector('#nombreTransportista')
+  let contactoEntrega = document.querySelector('#ContactoEntrega')
+  let nombreOperador = document.querySelector('#nombreOperador')
+  let telefonoOperador = document.querySelector('#telefonoOperador')
+
+   
+  //let tipoViajeSpan = document.querySelector('#tipoViajeSpan')
 
   let origen = document.querySelector('#origen')
   let destino = document.querySelector('#destino')
   let nombreCliente = document.querySelector('#nombreCliente')
   let nombreSubcliente = document.querySelector('#nombreSubcliente')
 
-let placas_camion = document.querySelector('#placas_camion')
-let id_equipo_camion = document.querySelector('#id_equipo_camion')
-let marca_camion = document.querySelector('#marca_camion')
+  let id_equipo_camion = document.querySelector('#id_equipo_camion')
+  let placas_camion = document.querySelector('#placas_camion')
 
-  
+  let marca_camion = document.querySelector('#marca_camion')
+  let imei_camion = document.querySelector('#imei_camion')
+
+  let id_equipo_chasis = document.querySelector('#id_equipo_chasis')
+  let imei_chasis = document.querySelector('#imei_chasis')
+
 
    var _token = $('input[name="_token"]').val();
    $.ajax({
@@ -296,8 +306,14 @@ let marca_camion = document.querySelector('#marca_camion')
                d.innerHTML = `--`
            })
 
-           nombreTransportista.textContent = "--"
-           tipoViajeSpan.textContent = "--"
+           nombreProveedor.textContent = "--"
+   //nombreTransportista.textContent = "--"
+   contactoEntrega.textContent = "--"
+   nombreOperador.textContent = "--"
+   telefonoOperador.textContent = "--"
+
+
+           tipoViajeSpan.textContent = ""
 
            origen.textContent = "--"
            destino.textContent = "--"
@@ -306,11 +322,24 @@ let marca_camion = document.querySelector('#marca_camion')
               placas_camion.textContent = "--"
                 id_equipo_camion.textContent = "--"
                 marca_camion.textContent = "--"
+                imei_camion.textContent = "--"
+                id_equipo_chasis.textContent = "--"
+                imei_chasis.textContent = "--"
        },
        success:(response)=>{
            ocultarLoading()
-           nombreTransportista.textContent = response.nombre;
-           tipoViajeSpan.textContent = response.tipo
+
+
+             nombreProveedor.textContent = response.datosExtraviaje.empresa_beneficiario
+   contactoEntrega.textContent =  response.datosExtraviaje.cp_contacto_entrega ?? "--"
+   // nombreTransportista.textContent = response.datosExtraviaje.transportista_nombre ?? "--"
+   nombreOperador.textContent =    response.datosExtraviaje.beneficiario_nombre
+
+   telefonoOperador.textContent = response.datosExtraviaje.beneficiario_telefono ?? "--"
+
+
+    
+          // tipoViajeSpan.textContent = response.tipo
 
            origen.textContent = response.cotizacion.origen
            destino.textContent = response.cotizacion.destino
@@ -320,6 +349,9 @@ let marca_camion = document.querySelector('#marca_camion')
                 placas_camion.textContent = response.documentos.placas_camion ?? "NA"
                 id_equipo_camion.textContent = response.documentos.id_equipo_camion ?? "NA"
                 marca_camion.textContent = response.documentos.marca_camion ?? "NA"
+                imei_camion.textContent = response.documentos.imei_camion ?? "NA"
+                id_equipo_chasis.textContent = response.documentos.id_equipo_chasis ?? "NA"
+                imei_chasis.textContent = response.documentos.imei_chasis ?? "NA"
 
            if(response.tipo == "Viaje Propio"){
                $('#tipoViajeSpan').addClass('bg-gradient-success')
@@ -330,7 +362,7 @@ let marca_camion = document.querySelector('#marca_camion')
            //Once en true para que se ejecute una sola vez y se elimine el listener    onclick="('${params.data.contenedor}')
            //btnFinalizar.addEventListener('click', () => finalizarViaje(idContendor,numContenedor_), { once: true });
          //  btnDeshacer.addEventListener('click', () => anularPlaneacion(idContendor,numContenedor_), { once: true });
-           btnRastreo.addEventListener('click', () => abrirMapaEnNuevaPestana(numContenedor_,tipoS), { once: true });
+           btnRastreo.addEventListener('click', () => abrirMapaEnNuevaPestana(numContenedor_,tipoS,'MECBoard'), { once: true });
 
            let documentos = response.documents
            let docs = Object.keys(documentos)
@@ -370,10 +402,10 @@ function mostrarLoading(text = "Espere un momento...") {
 function ocultarLoading() {
   document.getElementById('loading-overlay').style.display = 'none';
 }
-  function abrirMapaEnNuevaPestana( numContenedor,tipoS) {
+  function abrirMapaEnNuevaPestana( numContenedor,tipoS,origenRastreo) {
     //const url = `/mapa-comparacion?latitud=${latitud}&longitud=${longitud}&latitud_seguimiento=${latitud_seguimiento}&longitud_seguimiento=${longitud_seguimiento}&contenedor=${contenedor}`;
      if (numContenedor) {
-         const url = `/coordenadas/mapa_rastreo?contenedor=${numContenedor}&tipoS=${encodeURIComponent(tipoS)}`;
+         const url = `/coordenadas/mapa_rastreo?contenedor=${numContenedor}&tipoS=${encodeURIComponent(tipoS)}&origenRastreo=${encodeURIComponent(origenRastreo)}`;
     window.open(url, '_blank');
      }else{
          Swal.fire('Validación', 'No se encontró información del contenedor.', 'warning');
