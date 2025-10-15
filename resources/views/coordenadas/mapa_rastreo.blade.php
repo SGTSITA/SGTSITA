@@ -196,6 +196,7 @@ let ItemsSelects = [];
 let idConvoyOContenedor=0;
  const contenedor = params.get('contenedor')
  let tipoSpans = params.get('tipoS')
+ let origenRastreo = params.get('origenRastreo');
 
 function getStrongColor() {
   
@@ -609,8 +610,8 @@ let filtroEqu= equiposSearch.find(equipo => equipo.id === info.id_equipo_unico);
         <div class="ps-4">
          <p><strong>Proveedor:</strong> ${info.nombreempresa}</p>
           <p><strong>Cliente:</strong> ${info.cliente}</p>
-         
-          <p><strong>Tipo de Contrato:</strong> ${info.tipo_contrato}</p>
+
+          ${origenRastreo === 'SGT'      ? `<p><strong>Tipo de Contrato:</strong> ${info.tipo_contrato}</p>`  : ''}
           <p><strong>Origen:</strong> ${info.origen}</p>
           <p><strong>Destino:</strong> ${info.destino}</p>
           <p><strong>Fecha Inicio:</strong> ${info.fecha_inicio}</p>

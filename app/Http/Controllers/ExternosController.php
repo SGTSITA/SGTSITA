@@ -97,9 +97,11 @@ class ExternosController extends Controller
         })
         ->first();
 
-        $transportista = Proveedor::get();
+        $transportista = Proveedor::whereIn('id_empresa', $clienteEmpresa)->get();
+       // dd($transportista, $clienteEmpresa);
+       // $transportista = Proveedor::get();
        // where('id_empresa',$cotizacion->id_proveedor)->
-       // where('id_empresa',$cotizacion->id_proveedor)->first();
+      // where('id_empresa',$cotizacion->id_proveedor)->first();
  
         return view('cotizaciones.externos.solicitud_simple',
                                                             ["action" => "editar",

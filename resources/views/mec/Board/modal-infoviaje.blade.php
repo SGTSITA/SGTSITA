@@ -50,17 +50,33 @@
            
         </div>
         <div class="">
-           <h6 class="mt-3">Información del transportista</h6>
+           <h6 class="mt-3">Información del Proveedor y Operador</h6>
            <div>
                
                 <p class="text-sm">
-                Nombre: <b id="nombreTransportista"></b>
+                Proveedor: <b id="nombreProveedor"></b>
+                </p>
+
+                {{-- <p class="text-sm">
+                Transportista: <b id="nombreTransportista"></b>
+                </p> --}}
+
+                 <p class="text-sm">
+                Contacto Entrega: <b id="ContactoEntrega"></b>
+                </p>
+
+                <p class="text-sm">
+                Operador: <b id="nombreOperador"></b>
+                </p>
+
+                <p class="text-sm">
+                Telefono: <b id="telefonoOperador"></b>
                 </p>
             </div>
            
         </div>
         <div class="">
-           <h6 class="mt-3">Información Unidad(camion)</h6>
+           <h6 class="mt-3">Información Unidad (camion y chasis)</h6>
            <div>
                
                 <p class="text-sm">
@@ -73,6 +89,20 @@
                 </p>
                  <p class="text-sm">
                 Marca: <b id="marca_camion"></b>
+
+                </p>
+                     <p class="text-sm">
+                IMEI: <b id="imei_camion"></b>
+
+                </p>
+
+                <p class="text-sm">
+                Chasis: <b id="id_equipo_chasis"></b>
+
+                </p>
+
+                <p class="text-sm">
+                IMEI Chasis: <b id="imei_chasis"></b>
 
                 </p>
             </div>
