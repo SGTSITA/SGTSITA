@@ -41,9 +41,11 @@ class GpsController extends Controller
                 // dd($RfcyEquipo);
 
              $empresaIdRastro = (int) $empresaIdRastro;
-
-
-                 if($empresaIdRastro === Auth::User()->id_empresa){
+                if(Auth::User()->id_cliente !== 0 && $empresaIdRastro === Auth::User()->id_cliente)
+                    { //es cliente y se validara por este
+                    $esDatoEmp="SI";
+                }
+                elseif($empresaIdRastro === Auth::User()->id_empresa){
 
                     $esDatoEmp="SI";
                  }
@@ -65,7 +67,8 @@ class GpsController extends Controller
                                 'mcType'      => '',
                                 'datac' =>  $data,
                                 'esDatoEmp' => $esDatoEmp,
-                                'tipoEquipo' => $TipoEquipo
+                                'tipoEquipo' => $TipoEquipo,
+                                'mesage'=>''
                             ];
 
                             break;
@@ -84,11 +87,12 @@ class GpsController extends Controller
                                 'lng'         => $ubicacionApiResponse['longitude'] ?? null,
                                 'velocidad'   => 0,
                                 'imei'        => $imei ?? null,
-                                'deviceName'  => ubicacionApiResponse['economico'] ?? null,
+                                'deviceName'  => $ubicacionApiResponse['economico'] ?? null,
                                 'mcType'      => '',
                                 'datac' =>  $ubicacion,
                                 'esDatoEmp' => $esDatoEmp,
-                                'tipoEquipo' => $TipoEquipo 
+                                'tipoEquipo' => $TipoEquipo,
+                                'mesage'=>'' 
                             ];
                             break;
 
@@ -96,15 +100,39 @@ class GpsController extends Controller
                             //Datos de dispositivo por IMEI: El metodo soporta multiples IMEIS, Separe cada imei por coma (,). Maximo 100 IMEIS
 
                             $adicionales['imeis'] = $imei;//'869066062080354'; //El IMEI deberá corresponder a una unidad registrada
-
+//dd($Rfc);
                             //Pasar el RFC de la empresa previamente configurada
                             $credenciales = JimiGpsTrait::getAuthenticationCredentials($Rfc); 
-                          
+                         if(!$credenciales['success']){
+                            $ubicacion =[
+                                'mesage'=>'No se encontraron credenciales para la empresa con RFC: '.$Rfc,
+                                    'lat' => 0,
+                                    'lng' => 0,
+                                    'fecha' => null,
+                                     'datac' =>  null,
+                                     'tipoEquipo' => null,
+                                     'esDatoEmp' => null
+                             ];
+                             break;
+                            }
                             $data = ($credenciales['success']) 
                             ? JimiGpsTrait::callGpsApi('jimi.device.location.get',$credenciales['accessAccount'],$adicionales)
                             : []
                             ;
                           // $ubicacion = $this->detalleDispositivo($imei);
+                        if(empty($data) || (isset($data['code']) && $data['code'] != 0) ){
+                            $ubicacion =[
+                                'mesage'=>'No se encontraron datos de ubicacion para el equipo con IMEI: '.$imei,
+                                    'lat' => 0,
+                                    'lng' => 0,
+                                    'fecha' => null,
+                                     'datac' =>  null,
+                                     'tipoEquipo' => null,
+                                     'esDatoEmp' => null
+                             ];
+                             break;
+                            }
+                           // dd($data);
                           $ubicacionApi = collect($data['result'])->first();
 
                             $ubicacion = [
@@ -116,7 +144,8 @@ class GpsController extends Controller
                                 'mcType'      => $ubicacionApi['mcType'] ?? null,
                                 'datac' =>  $data,
                                 'esDatoEmp' => $esDatoEmp,
-                                'tipoEquipo' => $TipoEquipo
+                                'tipoEquipo' => $TipoEquipo,
+                                'mesage'=>''
                             ];
                            
                            $tipoGpsresponse="jimi";
@@ -125,6 +154,18 @@ class GpsController extends Controller
                         case 'wialon';// 'https://alxdevelopments.com': //LegoGps
                             $credenciales = CommonGpsTrait::getAuthenticationCredentials($Rfc,3);
                             $data = ($credenciales['success']) ? LegoGps::getLocation($credenciales['accessAccount']) : [];
+                            if(!$credenciales['success']){
+                                $ubicacion =[
+                                    'mesage'=>'No se encontraron credenciales para la empresa con RFC: '.$Rfc,
+                                        'lat' => 0,
+                                        'lng' => 0,
+                                        'fecha' => null,
+                                         'datac' =>  null,
+                                         'tipoEquipo' => null,
+                                         'esDatoEmp' => null
+                                 ];
+                                 break;
+                                }
                               $ubicacionApi = $data?->data[0] ?? null;
 
                             $ubicacion = [
@@ -136,12 +177,26 @@ class GpsController extends Controller
                                 'mcType'      => "",
                                 'datac' =>  $data,
                                 'esDatoEmp' => $esDatoEmp,
-                                'tipoEquipo' => $TipoEquipo
+                                'tipoEquipo' => $TipoEquipo,
+                                'mesage'=>''
                             ]; 
                              $tipoGpsresponse="LegoGps";
                         break;
                         case 'TrackerGps':
                             $credenciales = CommonGpsTrait::getAuthenticationCredentials($Rfc,4);
+                            if(!$credenciales['success']){
+                                $ubicacion =[
+                                    'mesage'=>'No se encontraron credenciales para la empresa con RFC: '.$Rfc,
+                                        'lat' => 0,
+                                        'lng' => 0,
+                                        'fecha' => null,
+                                         'datac' =>  null,
+                                         'tipoEquipo' => null,
+                                         'esDatoEmp' => null
+                                 ];
+                                 break;
+                                }
+                             $tipoGpsresponse="TrackerGps";
                             $data = GpsTrackerMXTrait::getMutiDevicePosition($credenciales['accessAccount']);
                             break;
                          default:
@@ -203,7 +258,7 @@ class GpsController extends Controller
     function buscartipoProveedor($num_Contenendor,$idKey,$imei){
         //TP-001|865468051839242|5|https://open.iopgps.com
         $datosAll= null;
-
+        \DB::enableQueryLog();
          $existeContenedor = DB::table('docum_cotizacion')->where('docum_cotizacion.num_contenedor','=',$num_Contenendor)->exists();
         $Equipo = "";
         $TipoEquipo = "";
@@ -220,6 +275,7 @@ class GpsController extends Controller
                 'asignaciones.id',
                 'asignaciones.id_camion',
                 'docum_cotizacion.num_contenedor',
+                'asignaciones.id_empresa',
                 'asignaciones.fecha_inicio',
                 'asignaciones.fecha_fin',
                 
@@ -237,12 +293,31 @@ class GpsController extends Controller
             );
 
             $beneficiarios = DB::table(function ($query) {
-                $query->select('id', 'nombre', 'telefono',DB::raw("'buscarEmpresaRFC' as RFC"), DB::raw("'Propio' as tipo_contrato"), 'id_empresa')
-                    ->from('operadores')
-                    ->union(
-                        DB::table('proveedores')
-                            ->select('id', 'nombre', 'telefono','RFC', DB::raw("'Subcontratado' as tipo_contrato"), 'id_empresa')
-                    );
+                $query->select(
+            'operadores.id',
+            'operadores.nombre',
+            'operadores.telefono',
+            'empresas.rfc as RFC',
+            DB::raw("'Propio' as tipo_contrato"),
+            'operadores.id_empresa',
+            'empresas.nombre as nombreempresa'
+        )
+        ->from('operadores')
+        ->join('empresas', 'empresas.id', '=', 'operadores.id_empresa')
+
+        ->union(
+            DB::table('proveedores')
+                ->select(
+                    'proveedores.id',
+                    'proveedores.nombre',
+                    'proveedores.telefono',
+                    'proveedores.RFC',
+                    DB::raw("'Subcontratado' as tipo_contrato"),
+                    'proveedores.id_empresa',
+                    'empresas.nombre as nombreempresa'
+                )
+                ->join('empresas', 'empresas.id', '=', 'proveedores.id_empresa')
+        );
             }, 'beneficiarios');
 
   
@@ -250,7 +325,7 @@ class GpsController extends Controller
             ->select(
                 'cotizaciones.id as id_cotizacion',
                 'asig.id as id_asignacion',
-                
+                'clients.id as id_cliente',
                 'clients.nombre as cliente',
                 'cotizaciones.origen',
                 'cotizaciones.destino',
@@ -265,7 +340,7 @@ class GpsController extends Controller
                 'asig.tipoGps',
                 'asig.imei_chasis',
                 'asig.id_equipo_chasis',
-                'cotizaciones.id_empresa',
+                'asig.id_empresa',
                 'beneficiarios.RFC'
             )
             ->join('clients', 'cotizaciones.id_cliente', '=', 'clients.id')
@@ -282,7 +357,10 @@ class GpsController extends Controller
             ->where('asig.num_contenedor', '=', $num_Contenendor)
             ->first();
 
-
+         /*   dd([
+    'sql' => \DB::getQueryLog(),
+    'resultado' => (array) $datosAll
+]);  */
             if($imei=== $datosAll?->imei){
                 //corresponde al equipo del contendor
                 $Equipo = $datosAll?->id_equipo;
@@ -320,14 +398,20 @@ class GpsController extends Controller
             $RFCContenedor = $datosAll?->RFC;
           //  $Equipo = $datosAll?->id_equipo;
             $empresaIdRastreo = $datosAll?->id_empresa;
+            $id_clienteBusqueda =$datosAll?->id_cliente ?? 0;
+            $empresas = Empresas::where('id','=',$empresaIdRastreo)->orderBy('created_at', 'desc')->first();
             if( $RFCContenedor==='buscarEmpresaRFC'){
                 //buscamos el rfc de la empresa pues no tiene asignado un proveedor....
-                $empresas = Empresas::where('id','=',auth()->user()->Empresa->id)->orderBy('created_at', 'desc')->first();
+                $empresas = Empresas::where('id','=',$empresaIdRastreo)->orderBy('created_at', 'desc')->first();
                // dd($empresas);
                 $RFCContenedor =   $empresas->rfc; //minusculas 
                 //dd($RFCContenedor);
             }
+                $RFCContenedor =   $empresas->rfc;
 
+                if(auth()->user()->id_cliente !== 0){ //es cliente y se validara por este
+                    $empresaIdRastreo = $id_clienteBusqueda;
+                }
 
                 return   $RFCContenedor . '|'. $Equipo . '|'.  $empresaIdRastreo .'|'. $TipoEquipo;
 

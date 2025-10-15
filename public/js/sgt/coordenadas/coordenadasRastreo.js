@@ -29,7 +29,9 @@ let directionsRenderer = [];
       zoom: 2,
     });
 
-    
+    if(!origenRastreo){
+let origenRastreo = 'SGT'; // Identificador único para este módulo default sgt para mostrar la info, los demas ya vienen desde la vista segun el modulo
+    }
 
      const marker = new google.maps.Marker({
     position: { lat: 0, lng: 0 },
@@ -244,11 +246,13 @@ function validarTipo(items)
       } else {
           ItemsSelectsID[items.id + "|"+  items.value] = []; 
       }
-   ItemsSelectsID[items.id + "|"+  items.value] = items.value;
-   if(items.value_chasis && items.value_chasis !== 'NO DISPONIBLE|'){   
-       ItemsSelectsID[items.id + "|"+  items.value] = items.value_chasis;   
-   }
-   ItemsSelectsID[items.id + "|"+  items.value] = items.value;
+
+    ItemsSelectsID[items.id + "|"+  items.value].push(items.value);
+    if(items.value_chasis && items.value_chasis !== 'NO DISPONIBLE|'){   
+        ItemsSelectsID[items.id + "|"+  items.value].push(items.value_chasis);   
+    }
+
+   //ItemsSelectsID[items.id + "|"+  items.value] = items.value;
     
     if ( tabx==='Convoy'){
       ItemsSelectsID[items.id + "|"+  items.value] = obtenerImeisPorConvoyId(items.id);
@@ -640,6 +644,7 @@ let tipo = "";
 
         }
     const dataUbi= data;
+  
   console.log('obteniendo unicacion convoy, sucess data :', KEYITEM);
 //limpiarMarcadores();
   responseOk = true;
@@ -650,7 +655,15 @@ let tipo = "";
         let lnglocal='';
         let nEconomico='';
         let id_contenConvoy ='';
-       
+         if ( item.ubicacion.mesage !=="" ) {
+            let message = item.ubicacion.mesage ? item.ubicacion.mesage : 'Datos de ubicación no disponibles';
+      console.warn('No se recibieron ubicaciones válidas:', data);
+         clearInterval(intervalIdsID[`${keyInterval}`]);
+                 intervalIdsID[`${keyInterval}`] = null;
+                    estado = false;
+       Swal.fire('Atención', message, 'warning');
+      return;
+    }
 
           //console.log('For response ... :', KEYITEM);
  
@@ -673,7 +686,7 @@ let tipo = "";
 
                 markers[KEYITEM+"|"+item.contenedor+"|"+item.ubicacion.tipoEquipo].setPosition({ lat: latlocal, lng: lnglocal });
         } else {
-        if (latlocal && lnglocal) {
+        if (latlocal !==0 && lnglocal !==0) {
 
           let  colorMarker =colorBG;
 
@@ -687,6 +700,7 @@ let tipo = "";
 
           // let esMostrarPrimero =  1
           // if(esMostrarPrimero){
+               let velocidad = parseFloat( item.ubicacion.velocidad);
             const newMarker = new google.maps.Marker({
               position: { lat: latlocal, lng: lnglocal },
               map: map,
@@ -717,7 +731,7 @@ contentC = `
                
               </div>
               <div class="text-white fs-6 lh-base" style="font-size: 17px; line-height: 1.5;">
-                <div><strong >Equipo:</strong> ${filtroEqu.id_equipo}</div>
+                <div><strong >Equipo:</strong> ${filtroEqu.id_equipo}</div><span class="ms-1" style="font-size:14px; color:#333;">${velocidad?`(${velocidad} km/h)`:''}</span>
                 <div><strong >Marca:</strong> ${filtroEqu.marca}</div>
                 <div><strong >Placas:</strong> ${filtroEqu.placas || 'sin placas'}</div>
 
@@ -740,7 +754,7 @@ contentC = `
                 
                 </div>
                 <div class="text-white fs-6 lh-base" style="font-size: 17px; line-height: 1.5;">
-                    <div><strong >Equipo:</strong> ${item.EquipoBD}</div>
+                    <div><strong >Equipo:</strong> ${item.EquipoBD}</div><span class="ms-1" style="font-size:14px; color:#333;">${velocidad?`(${velocidad} km/h)`:''}</span>
                     <div><strong >Contenedor:</strong> ${item.contenedor}</div>
                 </div>
                 <button id="btnRuta_${KEYITEM+"|"+item.contenedor+"|"+item.ubicacion.tipoEquipo}" style="margin-top:5px;" class="btn btn-primary mt-2">Mostrar ruta</button><br>
@@ -763,7 +777,7 @@ contentC = `
               </div>
               <div class="text-white fs-6 lh-base" style="font-size: 17px; line-height: 1.5;">
               <div><strong >Convoy:</strong> ${num_convoy} </div>
-                <div><strong >Equipo:</strong> ${item.EquipoBD}</div>
+                <div><strong >Equipo:</strong> ${item.EquipoBD}</div><span class="ms-1" style="font-size:14px; color:#333;">${velocidad?`(${velocidad} km/h)`:''}</span>
                 <div><strong >Contenedor:</strong> ${item.contenedor}</div>
               </div>
               <button id="btnRuta_${KEYITEM+"|"+item.contenedor+"|"+item.ubicacion.tipoEquipo}" style="margin-top:5px;" class="btn btn-primary mt-2">Mostrar ruta</button><br>
@@ -806,7 +820,7 @@ contentC = `
                   }
                 }
                 let extraInfo = '';
-
+ if (info) {
                 if (t === 'Equipo') {
                   extraInfo = `
                     <p><strong>IMEI CHASIS:</strong> ${info.imei_chasis}</p>
@@ -827,7 +841,7 @@ contentC = `
                                    ${extraInfo}
                   </div>
                 `;
-
+            }
             //  document.getElementById('contenidoModalViaje').innerHTML = contenido;
 
               
@@ -903,7 +917,12 @@ contentC = `
              
             });
           //} //end mostrar primero
-           
+           newMarker.addListener("mouseover", () => {
+                map.panTo(newMarker.getPosition());
+
+                
+                map.panBy(0, -10);
+                });
         
         // if (index === 0) {
         //   map.setCenter({ lat: latlocal, lng: lnglocal });
@@ -988,7 +1007,7 @@ contentC = `
           tipoRastreo: t,
           idProceso:idProceso
       };
-        if (idConvoyOContenedor!= ""){
+        if (idConvoyOContenedor!= "" && latlocal !==0 && lnglocal !==0) {
       actualizarUbicacionReal(datasave)
         }
         
@@ -1002,6 +1021,7 @@ contentC = `
   })
   .catch(error => {
     console.error('Error al obtener ubicaciones:', error);
+
     detener(keyInterval);
   });
 }
@@ -1060,37 +1080,73 @@ function mostrarInfoConvoy(contenedores,equipo,chasis) {
 if(info){
 let filtroEqu= equiposSearch.find(equipo => equipo.id === info.id_equipo_unico);
     
-     let infoContenido = `  
-                  <div class="tab-pane fade ${index === 0 ? "show active" : ""}" 
-           id="${tabId}" 
-           role="tabpanel" 
-           aria-labelledby="${tabId}-tab">
-                   
-                    <p><strong>Cliente:</strong> ${info.cliente}</p>
-                  
-                    <p><strong>Origen:</strong> ${info.origen}</p>
-                    <p><strong>Destino:</strong> ${info.destino}</p>
-                    <p><strong>Contrato:</strong> ${info.tipo_contrato}</p>
-                    <p><strong>Fecha Inicio:</strong> ${info.fecha_inicio}</p>
-                    <p><strong>Fecha Fin:</strong> ${info.fecha_fin}</p>
-                    <p><strong>Contacto Entrega:</strong> ${info.cp_contacto_entrega}</p>
-                    <p><strong>Operador:</strong> ${info.beneficiario}</p>
-                    <p><strong>Telefono:</strong> ${info.telefono_beneficiario}</p>
-                    <p>
-                        <span style="margin-right: 15px;">
-                            <strong>IMEI:</strong> ${info.imei}
-                        </span>
-                        <strong>Equipo:</strong> ${info.id_equipo}
-                        <strong>Placas:</strong> ${filtroEqu.placas}
-                    </p>
-                    <p>
-                        <span style="margin-right: 15px;">
-                            <strong>IMEI CHASIS:</strong> ${info.imei_chasis}
-                        </span>
-                        <strong>Chasis:</strong> ${info.id_equipo_chasis}
-                    </p>
-                  </div>
-                `;
+ let infoContenido = `
+  <div class="tab-pane fade ${index === 0 ? "show active" : ""}" 
+       id="${tabId}" 
+       role="tabpanel" 
+       aria-labelledby="${tabId}-tab">
+
+    <div class="card border-0 shadow-lg rounded-4 p-4 bg-light" style="font-size: 1.05rem;">
+
+      <!-- DATOS GENERALES -->
+      <div class="mb-4">
+        <div class="d-flex align-items-center mb-2">
+          <i class="fas fa-file-alt text-primary me-2 fa-lg"></i>
+          <h6 class="text-primary fw-bold mb-0" style="font-size: 1.1rem;">Datos Generales</h6>
+        </div>
+        <div class="ps-4">
+         <p><strong>Proveedor:</strong> ${info.nombreempresa}</p>
+          <p><strong>Cliente:</strong> ${info.cliente}</p>
+
+        ${origenRastreo === 'SGT'      ? `<p><strong>Tipo de Contrato:</strong> ${info.tipo_contrato}</p>`  : ''}
+          <p><strong>Origen:</strong> ${info.origen}</p>
+          <p><strong>Destino:</strong> ${info.destino}</p>
+          <p><strong>Fecha Inicio:</strong> ${info.fecha_inicio}</p>
+          <p><strong>Fecha Fin:</strong> ${info.fecha_fin}</p>
+        </div>
+      </div>
+
+      <hr class="my-3 opacity-50">
+
+      <!-- CONTACTO Y OPERADOR -->
+      <div class="mb-4">
+        <div class="d-flex align-items-center mb-2">
+          <i class="fas fa-user-tie text-success me-2 fa-lg"></i>
+          <h6 class="text-success fw-bold mb-0" style="font-size: 1.1rem;">Contacto y Operador</h6>
+        </div>
+        <div class="ps-4">
+          <p><strong>Contacto Entrega:</strong> ${info.cp_contacto_entrega}</p>
+          <p><strong>Operador:</strong> ${info.beneficiario}</p>
+          <p><strong>Teléfono:</strong> ${info.telefono_beneficiario}</p>
+        </div>
+      </div>
+
+      <hr class="my-3 opacity-50">
+
+      <!-- DATOS DEL EQUIPO -->
+      <div class="mb-2">
+        <div class="d-flex align-items-center mb-2">
+          <i class="fas fa-truck text-warning me-2 fa-lg"></i>
+          <h6 class="text-warning fw-bold mb-0" style="font-size: 1.1rem;">Datos del Equipo</h6>
+        </div>
+        <div class="ps-4">
+          <div class="row">
+            <div class="col-md-6 mb-2">
+              <p class="mb-1"><strong>IMEI:</strong> ${info.imei}</p>
+              <p class="mb-1"><strong>Equipo:</strong> ${info.id_equipo}</p>
+              <p class="mb-1"><strong>Placas:</strong> ${filtroEqu.placas}</p>
+            </div>
+            <div class="col-md-6 mb-2">
+              <p class="mb-1"><strong>IMEI Chasis:</strong> ${info.imei_chasis}</p>
+              <p class="mb-1"><strong>Chasis:</strong> ${info.id_equipo_chasis}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+`;
 
 
     // Crear contenido
@@ -1138,7 +1194,7 @@ document.addEventListener('DOMContentLoaded', function () {
         minDate: inicio,
         maxDate: fin,
         locale: { format: 'YYYY-MM-DD' },
-        opens: 'left'
+        opens: 'right'
     });
     
      cargarinicial();
@@ -1178,8 +1234,8 @@ function BloquearHabilitarEdicion(block){
 
 }
 
-function abrirMapaEnNuevaPestana( contenedor,tipoS) {
-        const url = `/coordenadas/mapa_rastreo?contenedor=${contenedor}&tipoS=${encodeURIComponent(tipoS)}`;
+function abrirMapaEnNuevaPestana( contenedor,tipoS,origenRastreo) {
+        const url = `/coordenadas/mapa_rastreo?contenedor=${contenedor}&tipoS=${encodeURIComponent(tipoS)}&origenRastreo=${encodeURIComponent(origenRastreo)}`;
     window.open(url, '_blank');
 }
 
@@ -1517,7 +1573,7 @@ function definirTable(){
     .map(c => c.num_contenedor);
     const listaStr = contenedoresDelConvoy.join(' / ');
         let tipos= "Convoy: " + data.no_conboy;
-        abrirMapaEnNuevaPestana(listaStr,tipos); 
+        abrirMapaEnNuevaPestana(listaStr,tipos,origenRastreo); 
     };
  //boton cam cbiar estatus de los convoys
    const btnEstatus = document.createElement("button");

@@ -21,10 +21,14 @@
                             <select class="form-select subcliente d-inline-block" id="id_proveedor" name="id_proveedor">
                                 <option value="">Seleccionar proveedor</option>
                                 @foreach ($proveedores as $p)
-                                    <option value="{{ $p->id }}">{{ $p->nombre }}</option>
+                             
+                                    <option value="{{ $p->id }}" 
+                                        {{ $cotizacion && $cotizacion->id_empresa == $p->id ? 'selected' : '' }}>
+                                        {{ $p->nombre }}
+                                    </option>
                                 @endforeach
                             </select>
-                        </div>
+                           </div>
 
                     </div>
 
@@ -36,8 +40,9 @@
                             <select class="form-select subcliente d-inline-block" id="id_transportista"
                                 name="id_transportista">
                                 <option value="">Seleccionar transportista</option>
-                                @foreach ($proveedores as $p)
-                                    <option value="{{ $p->id }}">{{ $p->nombre }}</option>
+                                @foreach ($transportista as $tr)
+                                    <option value="{{ $tr->id }}" {{ $cotizacion && $cotizacion->id_proveedor == $tr->id ? 'selected' : '' }}>
+                                        {{ $tr->nombre }}</option>
                                 @endforeach
                             </select>
                         </div>

@@ -123,17 +123,27 @@
 
     <div id="mapaRastreo"></div>
 
-    <div class="modal fade" id="modalInfoViaje" tabindex="-1" aria-labelledby="modalInfoViajeLabel" aria-hidden="true">
+  <div class="modal fade" id="modalInfoViaje" tabindex="-1" aria-labelledby="modalInfoViajeLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-lg">
     <div class="modal-content shadow-lg rounded-4">
       <div class="modal-header bg-primary text-white rounded-top-4">
         <h5 class="modal-title" id="modalInfoViajeLabel">
-          <i class="bi bi-truck-front-fill me-2"></i> Información del Viaje
+          <i class="bi bi-truck-front-fill me-2"></i> Información del Viaje 
         </h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
       </div>
-      <div class="modal-body" id="contenidoModalViaje">
-        <!-- Aquí se insertará el contenido dinámico -->
+      <div class="modal-body">
+        
+        <!-- Nav tabs (se generan dinámicamente con los contenedores) -->
+        <ul class="nav nav-tabs" id="contenedorTabs" role="tablist">
+          <!-- Aquí se insertan las pestañas por contenedor -->
+        </ul>
+
+        <!-- Contenido de cada tab -->
+        <div class="tab-content mt-3" id="contenedorTabsContent">
+          <!-- Aquí se insertan los divs de cada contenedor -->
+        </div>
+
       </div>
       <div class="modal-footer bg-light rounded-bottom-4">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
@@ -150,7 +160,11 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
         
         crossorigin="anonymous"></script>
+       <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.7.6/lottie.min.js"></script>
     <script>
+      let GlatLlegada = 0;
+let GlngLlegada = 0;
+      let equiposSearch = [];
 let map;
   let markers = [];
 let convoyDisuelto= false;
@@ -165,7 +179,9 @@ let convoyDisuelto= false;
     map: map,
   });
 };
-  
+let directionsServices = {};
+let directionsRenderers = {};
+let imeiColorsRoutes = {};
 
        const params = new URLSearchParams(window.location.search);
       let detalleConvoys;
@@ -180,8 +196,36 @@ let ItemsSelects = [];
 let idConvoyOContenedor=0;
  const contenedor = params.get('contenedor')
  let tipoSpans = params.get('tipoS')
+ let origenRastreo = params.get('origenRastreo');
 
+function getStrongColor() {
+  
+  const hue = Math.floor(Math.random() * 365);
+ 
+  const saturation = 90;
+  
+  const lightness = 65;
+  
+  return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+}
 
+function createMarkerIcon(color = "#FF0000", size = 40) {
+const svg = `
+    <svg width="${size}" height="${size}" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <!-- Pin principal -->
+      <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"
+            fill="${color}" stroke="white" stroke-width="2"/>
+      <!-- Círculo animado central -->
+      <circle cx="12" cy="9" r="3" fill="white">
+        <animate attributeName="r" values="3;6;3" dur="1s" repeatCount="indefinite" />
+      </circle>
+    </svg>
+  `;
+  return {
+    url: "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(svg),
+    scaledSize: new google.maps.Size(size, size)
+  };
+}
  function textoTipo(){
 let extraertipo = tipoSpans.replace(/Convoy\s*:\s*/, '').trim();
 let tipoDisolucion = convoysAll.find(c => c.no_conboy === extraertipo)?.tipo_disolucion ?? null;
@@ -222,7 +266,7 @@ let tipo = "";
   .then(data => {
     //console.log('Ubicaciones recibidas:', data);
     const dataUbi= data;
-
+ 
 //limpiarMarcadores();
 responseOk = true;
     if (Array.isArray(dataUbi)) {
@@ -232,6 +276,15 @@ responseOk = true;
         let lnglocal='';
         let nEconomico='';
         let id_contenConvoy ='';
+
+              if ( item.ubicacion.mesage !=="" ) {
+            let message = item.ubicacion.mesage ? item.ubicacion.mesage : 'Datos de ubicación no disponibles';
+      console.warn('No se recibieron ubicaciones válidas:', data);
+         detener()
+                
+       Swal.fire('Atención', message, 'warning');
+      return;
+    }
 
 
            let extraertipoC = tipoSpans.replace(/Convoy\s*:\s*/, '').trim();
@@ -249,16 +302,42 @@ responseOk = true;
            if (markers[item.ubicacion.imei]) {
     
                 markers[item.ubicacion.imei].setPosition({ lat: latlocal, lng: lnglocal });
+
+//calcularRutaPorImei(item.ubicacion.imei, { lat: GlatLlegada, lng: GlngLlegada });
         } else {
 if (latlocal && lnglocal) {
+          let colorMarker = '';
+   if(item.ubicacion.tipoEquipo==='Camion'){
+            colorMarker = getStrongColor();
+          }else{
+            colorMarker = getStrongColor();
+          }
           
           // let esMostrarPrimero =  1
           // if(esMostrarPrimero){
-            const newMarker = new google.maps.Marker({
+           let newMarker =null;
+           let velocidad = parseFloat( item.ubicacion.velocidad);
+          if(velocidad >0){
+             newMarker = new google.maps.Marker({
+              position: { lat: latlocal, lng: lnglocal },
+              map: map,
+               icon: createMarkerIcon(colorMarker, 40),
+            });
+              
+          
+          }else{
+
+          newMarker = new google.maps.Marker({
               position: { lat: latlocal, lng: lnglocal },
               map: map,
             });
 
+          }
+            
+           
+            let infoEqu=item.ubicacion.tipoEquipo;
+
+           
             const contentC = `
             <div style="
                     background-color: #e3f2fd;
@@ -272,29 +351,62 @@ if (latlocal && lnglocal) {
                 ${tipoSpans}
               </div>
               <div style="font-size: 17px; line-height: 1.5;">
-                <strong>Equipo:</strong> ${item.EquipoBD}<br>
+                <strong>${infoEqu ? infoEqu : 'Equipo'}:</strong> ${item.EquipoBD} <span class="ms-1" style="font-size:14px; color:#333;">${velocidad?`(${velocidad} km/h)`:''}</span><br>
                 <strong>Contenedor:</strong> ${item.contenedor}
               </div>
+             <div class="d-flex align-items-center mt-2">
+  <button id="btnRuta_${item.ubicacion.imei}" class="btn btn-primary me-2">
+    Mostrar ruta
+  </button>
+
+   
+
+
+  <!-- Contenedor de info + icono -->
+  <div class="d-flex align-items-center">
+    <span id="infoRuta_${item.ubicacion.imei}" 
+          class="text-blue-900 fs-6 lh-base me-2" 
+          style="font-size:14px; color:#333;">
+    </span>
+
+  
+  </div>
+</div>
+
             </div>
           `;
                // const newMarker = L.marker([latlocal, lnglocal]).addTo(map).bindPopup(tipoSpans + ' '+ item.contenedor).openPopup();
                const infoWindow = new google.maps.InfoWindow({
             content: contentC 
           });
-          infoWindow.open(map, newMarker);
+         // infoWindow.open(map, newMarker);
           newMarker.addListener('click', () => {
           infoWindow.open(map, newMarker);
+
+
+
+          //end click marker window 
         });
             markers.push(newMarker);
-          
-        
+           const contenedorRes = item.contenedor;
+             let info = contenedoresDisponibles.find(d => d.contenedor === contenedorRes);
+             
+              if(info) {
+let latLlegada = parseInt(info.latitud??0);
+            let lngLlegada = parseInt(info.longitud??0);
+ GlatLlegada = latLlegada;
+            GlngLlegada = lngLlegada;
+             }
+                  
+           
+
+
            newMarker.addListener('click', () => {
-            const contenedor = item.contenedor;
-             let info = contenedoresDisponibles.find(d => d.contenedor === contenedor);
+         
                 if (!info) {
-                  if (tipoSpans.toLowerCase().includes('convoy')) {
-                     info = contenedoresDisponiblesAll.find(d => d.contenedor === contenedor);
-                  }else if(t==='#filtro-Equipo'){
+                  if (t.toLowerCase().includes('convoy')) {
+                     info = contenedoresDisponiblesAll.find(d => d.contenedor === contenedorRes);
+                  }else if(t==='Equipo'){
                    
                     const ahora = new Date();
                        info = contenedoresDisponibles.find(d => {
@@ -312,7 +424,8 @@ if (latlocal && lnglocal) {
                 }
                 let extraInfo = '';
 
-                if (t === '#filtro-Equipo') {
+               if (info) {
+                if (t === 'Equipo') {
                   extraInfo = `
                     <p><strong>IMEI CHASIS:</strong> ${info.imei_chasis}</p>
                            `;
@@ -332,12 +445,40 @@ if (latlocal && lnglocal) {
                                    ${extraInfo}
                   </div>
                 `;
+            }
+            //  document.getElementById('contenidoModalViaje').innerHTML = contenido;
 
-              document.getElementById('contenidoModalViaje').innerHTML = contenido;
+              
+              let infoCMaps=[]; 
+              if(t==='Convoy'){
 
-              // Mostrar el modal con Bootstrap 5
-              const modal = new bootstrap.Modal(document.getElementById('modalInfoViaje'));
-              modal.show();
+                let contenedoresConvoy = detalleConvoys.filter(d => d.conboy_id === parseInt(id));
+                infoCMaps=contenedoresConvoy;
+                   mostrarInfoContenedor(contenedoresConvoy,item.EquipoBD,"");
+              }else{
+                let resultadoComoArray = info ? [info] : [];
+                infoCMaps=resultadoComoArray;
+               mostrarInfoContenedor(resultadoComoArray,item.EquipoBD,"");
+              }
+
+       
+
+
+
+
+               google.maps.event.addListenerOnce(infoWindow, 'domready', () => {
+        const btn = document.getElementById(`btnRuta_${item.ubicacion.imei}`);
+            const infoSpan = document.getElementById(`infoRuta_${item.ubicacion.imei}`);
+        btn.addEventListener('click', () => {
+    
+          calcularRutaPorImei(item.ubicacion.imei, { lat: parseFloat(info.latitud), lng: parseFloat(info.longitud) });
+      
+     
+        
+        });
+    });
+
+//final de rutas en el mapa
             });
           //} //end mostrar primero
            tipo= tipo + ' '+ item.contenedor;
@@ -367,7 +508,9 @@ if (latlocal && lnglocal) {
           latitud: latlocal,
           longitud: lnglocal,
           ubicacionable_id: idConvoyOContenedor,
-          tipo: tipo
+          tipo: tipo,
+          tipoRastreo: t,
+          idProceso: 0
       };
         if (idConvoyOContenedor!= ""){
       actualizarUbicacionReal(datasave)
@@ -395,6 +538,147 @@ function limpiarMarcadores() {
 }
 
 
+/*  fetch('{{ asset("js/sgt/coordenadas/animation.json") }}') // Aquí usamos la ruta correcta desde public
+        .then(response => response.json())
+        .then(animationData => {
+            lottie.loadAnimation({
+                container: document.getElementById('lottieContainer'),
+                renderer: 'svg',
+                loop: true,
+                autoplay: true,
+                animationData: animationData
+            });
+        })
+        .catch(err => console.error("Error cargando animación Lottie:", err)); */
+
+
+
+function mostrarInfoContenedor(contenedores,equipo,chasis) {
+  const tabs = document.getElementById("contenedorTabs");
+  const content = document.getElementById("contenedorTabsContent");
+
+  tabs.innerHTML = "";
+  content.innerHTML = "";
+  let info = "";
+
+  contenedores.forEach((contenedor, index) => {
+    let tabId =  contenedor.num_contenedor;
+    if(!tabId){
+        tabId =  contenedor.contenedor;
+    }
+   
+
+    // Crear pestaña
+    tabs.innerHTML += `
+      <li class="nav-item" role="presentation">
+        <button class="nav-link ${index === 0 ? "active" : ""}" 
+                id="${tabId}-tab" 
+                data-bs-toggle="tab" 
+                data-bs-target="#${tabId}" 
+                type="button" 
+                role="tab" 
+                aria-controls="${tabId}" 
+                aria-selected="${index === 0 ? "true" : "false"}">
+           ${tabId}
+        </button>
+      </li>
+    `;
+
+      info = contenedoresDisponiblesAll.find(d => d.contenedor === contenedor.num_contenedor);
+      if(!info){
+        info = contenedoresDisponiblesAll.find(d => d.contenedor === contenedor.contenedor);
+
+      }
+       // <p><strong>Contenedor:</strong> ${info.contenedor}</p>
+if(info){
+let filtroEqu= equiposSearch.find(equipo => equipo.id === info.id_equipo_unico);
+    
+   let infoContenido = `
+  <div class="tab-pane fade ${index === 0 ? "show active" : ""}" 
+       id="${tabId}" 
+       role="tabpanel" 
+       aria-labelledby="${tabId}-tab">
+
+    <div class="card border-0 shadow-lg rounded-4 p-4 bg-light" style="font-size: 1.05rem;">
+
+      <!-- DATOS GENERALES -->
+      <div class="mb-4">
+        <div class="d-flex align-items-center mb-2">
+          <i class="fas fa-file-alt text-primary me-2 fa-lg"></i>
+          <h6 class="text-primary fw-bold mb-0" style="font-size: 1.1rem;">Datos Generales</h6>
+        </div>
+        <div class="ps-4">
+         <p><strong>Proveedor:</strong> ${info.nombreempresa}</p>
+          <p><strong>Cliente:</strong> ${info.cliente}</p>
+
+          ${origenRastreo === 'SGT'      ? `<p><strong>Tipo de Contrato:</strong> ${info.tipo_contrato}</p>`  : ''}
+          <p><strong>Origen:</strong> ${info.origen}</p>
+          <p><strong>Destino:</strong> ${info.destino}</p>
+          <p><strong>Fecha Inicio:</strong> ${info.fecha_inicio}</p>
+          <p><strong>Fecha Fin:</strong> ${info.fecha_fin}</p>
+        </div>
+      </div>
+
+      <hr class="my-3 opacity-50">
+
+      <!-- CONTACTO Y OPERADOR -->
+      <div class="mb-4">
+        <div class="d-flex align-items-center mb-2">
+          <i class="fas fa-user-tie text-success me-2 fa-lg"></i>
+          <h6 class="text-success fw-bold mb-0" style="font-size: 1.1rem;">Contacto y Operador</h6>
+        </div>
+        <div class="ps-4">
+          <p><strong>Contacto Entrega:</strong> ${info.cp_contacto_entrega}</p>
+          <p><strong>Operador:</strong> ${info.beneficiario}</p>
+          <p><strong>Teléfono:</strong> ${info.telefono_beneficiario}</p>
+        </div>
+      </div>
+
+      <hr class="my-3 opacity-50">
+
+      <!-- DATOS DEL EQUIPO -->
+      <div class="mb-2">
+        <div class="d-flex align-items-center mb-2">
+          <i class="fas fa-truck text-warning me-2 fa-lg"></i>
+          <h6 class="text-warning fw-bold mb-0" style="font-size: 1.1rem;">Datos del Equipo</h6>
+        </div>
+        <div class="ps-4">
+          <div class="row">
+            <div class="col-md-6 mb-2">
+              <p class="mb-1"><strong>IMEI:</strong> ${info.imei}</p>
+              <p class="mb-1"><strong>Equipo:</strong> ${info.id_equipo}</p>
+              <p class="mb-1"><strong>Placas:</strong> ${filtroEqu.placas}</p>
+            </div>
+            <div class="col-md-6 mb-2">
+              <p class="mb-1"><strong>IMEI Chasis:</strong> ${info.imei_chasis}</p>
+              <p class="mb-1"><strong>Chasis:</strong> ${info.id_equipo_chasis}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+`;
+
+
+    // Crear contenido
+      content.innerHTML += infoContenido;
+}else{
+    Swal.fire({
+        title: 'Información de viaje no disponible',
+        text: 'No se encontró información para el contenedor seleccionado.',
+        icon: 'warning'
+    });
+}
+
+  
+  });
+
+  const modal = new bootstrap.Modal(document.getElementById('modalInfoViaje'));
+  modal.show();
+}
+
 function cargarinicial() {
     fetch(`/coordenadas/contenedor/searchEquGps?`)
         .then(response => response.json())
@@ -403,7 +687,7 @@ function cargarinicial() {
             detalleConvoys = data.dataConten;
           contenedoresDisponiblesAll=     data.       datosAll;
           convoysAll = data.conboys;
-
+    equiposSearch = data.equiposAll;
           detalleConvoysAll =  data.dataContenAll;
 
             if (!contenedoresDisponibles) {
@@ -417,6 +701,8 @@ function cargarinicial() {
                 if (infoc) {
                     let conponerStrin = cod + '|' + infoc.imei + '|' + infoc.id_contenedor + '|' + infoc.tipoGps;
                     ItemsSelects.push(conponerStrin);
+                    let stringChasis = cod+ '|' + infoc.imei_chasis + '|' + infoc.id_equipo_chasis + '|' + infoc.tipoGpsChasis;
+                    ItemsSelects.push(stringChasis);
                 } else {
 
 
@@ -441,18 +727,97 @@ function cargarinicial() {
             });
 
             if (ItemsSelects.length > 0) {
-                actualizarUbicacion(ItemsSelects, '');
+                actualizarUbicacion(ItemsSelects, tipoSpans);
                 document.getElementById('btnDetener').style.display = 'inline-block';
 
                 if (intervalId) clearInterval(intervalId);
 
                 intervalId = setInterval(() => {
-                    actualizarUbicacion(ItemsSelects, '');
+                    actualizarUbicacion(ItemsSelects, tipoSpans);
                 }, 5000);
             } else {
                 Swal.fire('Atención', 'Ningún contenedor válido fue encontrado.', 'warning');
             }
         }); // <-- cierre del .then()
+}
+
+
+function recalcularRuta(latlocal, lnglocal, GlatLlegada, GlngLlegada) {
+
+    const origin = { lat: latlocal, lng: lnglocal };
+
+    const request = {
+        origin: origin,
+        destination: { lat: GlatLlegada, lng: GlngLlegada },
+        travelMode: google.maps.TravelMode.DRIVING
+    };
+
+    directionsService.route(request, (result, status) => {
+        if (status === 'OK') {
+            directionsRenderer.setDirections(result);
+        }
+    });
+}
+
+function calcularRutaPorImei(imei, destino) {
+const btnc = document.getElementById(`btnRuta_${imei}`);
+            const infoSpan = document.getElementById(`infoRuta_${imei}`);
+   if (directionsRenderers[imei]) {
+                directionsRenderers[imei].setMap(directionsRenderers[imei].getMap() ? null : map);
+                btnc.textContent = directionsRenderers[imei].getMap() ? 'Ocultar ruta' : 'Mostrar ruta';
+                infoSpan.textContent = '';
+                return;
+            }
+    // si no existen, los creamos
+    if (!directionsServices[imei]) {
+        directionsServices[imei] = new google.maps.DirectionsService();
+    }
+    if (!directionsRenderers[imei]) {
+        directionsRenderers[imei] = new google.maps.DirectionsRenderer({
+            map: map,
+            polylineOptions: {
+                strokeColor: getColorByImei(imei), // opcional: color distinto por imei
+                strokeWeight: 4
+            }
+        });
+    }
+
+    // origen = posición actual del marcador
+    const pos = markers[imei].getPosition();
+    const origin = { lat: pos.lat(), lng: pos.lng() };
+
+    const request = {
+        origin: origin,
+        destination: destino,
+        travelMode: google.maps.TravelMode.DRIVING
+    };
+
+    directionsServices[imei].route(request, (result, status) => {
+        if (status === "OK") {
+            directionsRenderers[imei].setDirections(result);
+
+                btnc.textContent = 'Ocultar ruta';
+
+                      const leg = result.routes[0].legs[0];
+                      infoSpan.textContent = `Distancia: ${leg.distance.text}, Tiempo estimado: ${leg.duration.text}`;
+        } else {
+            Swal.fire("Error calculando ruta para IMEI " + imei + ": " + status);
+        }
+    });
+}
+
+function getColorByImei(imei) {
+    const colors = ["blue", "red", "green", "orange", "purple"];
+    
+    // si ya tiene color asignado, lo regresamos
+    if (imeiColorsRoutes[imei]) {
+        return imeiColorsRoutes[imei];
+    }
+
+    // si no, asignamos uno random y lo guardamos
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    imeiColorsRoutes[imei] = color;
+    return color;
 }
 
 
@@ -609,12 +974,12 @@ document.getElementById('btnDetener').addEventListener('click', function() {
         this.innerHTML = '<i class="bi bi-play-circle"></i> Reanudar actualización';
         console.log('⛔ Actualización detenida.');
       } else {
-          actualizarUbicacion(ItemsSelects,'');
+          actualizarUbicacion(ItemsSelects,tipoSpans);
 
           if (intervalId) clearInterval(intervalId);
           
           intervalId = setInterval(() => {
-            actualizarUbicacion(ItemsSelects,'');
+            actualizarUbicacion(ItemsSelects,tipoSpans);
           }, 5000);
 
         this.innerHTML = '<i class="bi bi-pause-circle"></i> Detener actualización';
