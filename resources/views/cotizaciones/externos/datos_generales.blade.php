@@ -23,7 +23,7 @@
                                 @foreach ($proveedores as $p)
                              
                                     <option value="{{ $p->id }}" 
-                                        {{ $cotizacion && $cotizacion->id_empresa == $p->id ? 'selected' : '' }}>
+                                       @if ($action == 'editar' && $cotizacion?->id_empresa == $p->id) selected @endif>
                                         {{ $p->nombre }}
                                     </option>
                                 @endforeach
@@ -41,7 +41,8 @@
                                 name="id_transportista">
                                 <option value="">Seleccionar transportista</option>
                                 @foreach ($transportista as $tr)
-                                    <option value="{{ $tr->id }}" {{ $cotizacion && $cotizacion->id_proveedor == $tr->id ? 'selected' : '' }}>
+                                    <option value="{{ $tr->id }}" 
+                                        @if ($action == 'editar' && $cotizacion?->id_transportista == $tr->id) selected @endif>
                                         {{ $tr->nombre }}</option>
                                 @endforeach
                             </select>
