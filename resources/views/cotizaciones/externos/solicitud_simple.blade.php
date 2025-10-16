@@ -220,7 +220,7 @@
 																																				   
 		
         $(document).ready(() => {
-            let subclienteid = {{ $cotizacion ? $cotizacion->id_subcliente : 'null' }};
+            let subclienteid = {{ $cotizacion?->id_subcliente ?? 'null' }};
             getClientes({{ Auth::User()->id_cliente }}, subclienteid)
 
             var genericUUID = localStorage.getItem('uuid');
@@ -306,7 +306,7 @@
         @endif
 
         $(document).ready(function () {
-    // Detectar si algún campo cambia en cualquier formulario de la página
+    // Detectar si algún campo cambia en cualquier formulario de la página para carta porte
     $('form').on('change input', 'input, select, textarea', function() {
         console.log('Campo modificado:', $(this).attr('name')); // <-- Para probar
         $('#modifico_informacion').val('1');
