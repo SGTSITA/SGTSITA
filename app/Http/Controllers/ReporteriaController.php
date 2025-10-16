@@ -811,7 +811,7 @@ public function export_cxp(Request $request)
                             "precioViaje" => $d->total + $gastosExtra->sum('monto'),
                             "transportadoPor" => (is_null($d->Proveedor)) ? 'Operador' : 'Proveedor',
                             "operadorOrProveedor" => (is_null($d->Proveedor)) ? $d->Operador : $d->Proveedor,
-                            "pagoOperacion" => $pagoOperacion,
+                            "pagoOperacion" => $pagoOperacion - abs($sinJustificar),
                             "gastosExtra" => $gastosExtra->sum('monto'),
                             "dineroViajeSinJustificar" => abs($sinJustificar),
                             "gastosViaje" => $gastosOperador->sum('cantidad'),
@@ -821,7 +821,7 @@ public function export_cxp(Request $request)
                             "estatusPago" => ($d->estatus_pago == 1) ? 'Pagado' : 'Por Cobrar',
                             "gastosDiferidos" =>  $gastosDiferidos,
                             "detalleGastos" => $detalleGastos,
-                            "utilidad" => $d->total  - $pagoOperacion - $gastosDiferidos - $gastosExtra->sum('monto') - $gastosOperador->sum('cantidad') - abs($sinJustificar),
+                            "utilidad" => $d->total  - $pagoOperacion - $gastosDiferidos - $gastosExtra->sum('monto') - $gastosOperador->sum('cantidad') ,
 
                             ];
                 $Info[] = $Columns;
