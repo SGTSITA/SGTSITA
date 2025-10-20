@@ -35,6 +35,7 @@
 
     <!-- CSS Files -->
     <link id="pagestyle" href="{{ asset('assets/css/argon-dashboard.css?v=2.0.4') }}" rel="stylesheet" />
+   
     <link rel="stylesheet" href="{{ asset('css/sgt/loading.css') }}">
 
     <style>

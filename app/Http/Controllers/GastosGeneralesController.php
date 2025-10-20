@@ -258,6 +258,7 @@ class GastosGeneralesController extends Controller
                 $banco->monto1 = $montoGasto;
                 $banco->metodo_pago1 = 'Transferencia';
                 $banco->id_banco1 = $request->get('id_banco1');
+                $banco->descripcion = $request->get('motivo');
 
                 $banco->fecha_pago = date('Y-m-d');
                 $banco->tipo = 'Salida';
@@ -393,7 +394,18 @@ class GastosGeneralesController extends Controller
             //Devolver el dinero al banco, siempre y cuando el estatus sea "Pagado"
             if($gastosGenerales->pago_realizado === 1){
                 Bancos::where('id' ,'=',$gastosGenerales->id_banco1)->update(["saldo" => DB::raw("saldo + ". $gastosGenerales->monto1)]);
+                $banco = new BancoDinero();
 
+                $banco->contenedores = "[]";
+                #$banco->id_proveedor = $request->get('id_cliente');
+                $banco->monto1 = $gastosGenerales->monto1;
+                $banco->metodo_pago1 = 'Transferencia';
+                $banco->id_banco1 = $gastosGenerales->id_banco1;
+                $banco->descripcion = 'Devolución: '.$gastosGenerales->motivo;
+
+                $banco->fecha_pago = date('Y-m-d');
+                $banco->tipo = 'Entrada';
+                $banco->save();
             }
             $gastosGenerales->delete();
             DB::commit();
