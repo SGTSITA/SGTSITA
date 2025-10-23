@@ -1,162 +1,134 @@
 @extends('layout.main')
 
 @section('title-window')
-
+ @include('layout.title-window')
 @endsection
 
 @section('content')
-<div class="kt-card rounded-xl mb-4">
-        <div class="flex items-center flex-wrap py-3 sm:flex-wrap justify-between grow gap-2 p-5 rtl:[background-position:-30%_41%] [background-position:121%_41%] bg-no-repeat bg-[length:660px_310px] upgrade-bg">
-         <div class="flex items-center gap-4">
-          <div class="relative size-[50px] shrink-0">
-  
-           <div class="absolute leading-none ">
-            <img src="{{asset('/asset/media/bancos/azteca.jpg')}}" alt="">
-           </div>
+<div class="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 p-6">
+  <div class="max-w-5xl mx-auto">
+
+
+    <!-- Grid de tarjetas -->
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+
+      <!-- Tarjeta BBVA -->
+      <div class="kt-card rounded-2xl shadow-sm hover:shadow-md transition">
+        <!-- Header: logo + banco -->
+        <div class="kt-card-header flex items-center justify-between p-5">
+          <div class="flex items-center gap-3">
+            <img src="{{asset('/asset/media/bancos/bbva.png')}}" alt="BBVA" class="w-10 h-10 object-contain" />
+            <div class="text-lg font-semibold text-mono">BBVA</div>
           </div>
-          <div class="flex flex-col gap-1.5">
-           <div class="flex items-center flex-wrap gap-2.5">
-            <a class="text-base font-medium text-mono hover:text-primary" href="#">
-             Catalina Castañeda
-            </a>
-            <span class="kt-badge kt-badge-sm kt-badge-outline">
-             Banco Azteca
-            </span>
-           </div>
-           <div class="text-sm text-foreground">
-           Núm Cuenta: 1238469344
-            <br>
-            Clabe: 072180012384693448
-           </div>
+          <span class="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">Secundaria</span>
+        </div>
+
+        <!-- Contenido -->
+        <div class="kt-card-content p-5 flex flex-col gap-2.5 ">
+          <div class="flex justify-between">
+            <span class="text-sm text-secondary-foreground">Titular:</span>
+            <span class="text-sm font-medium text-mono">Empresa XYZ</span>
           </div>
-         </div>
-         <div class="flex items-center gap-1.5">
-          <button class="kt-btn kt-btn-mono">
-           Configuración
+          <div class="flex justify-between">
+            <span class="text-sm text-secondary-foreground">Cuenta:</span>
+            <span class="text-sm font-medium text-mono">9876543210</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-sm text-secondary-foreground">CLABE:</span>
+            <span class="text-sm font-medium text-mono">012345678901234567</span>
+          </div>
+        </div>
+
+        <!-- Footer: botón + switch -->
+        <div class="kt-card-footer flex justify-between items-center py-3.5 px-5 border-t border-border">
+          <button class="kt-btn kt-btn-outline text-sm font-medium">
+            Ver detalles
           </button>
-          <a class="kt-btn kt-btn-ghost" href="#">
-           Movimiento bancario
-          </a>
-         </div>
+          <label class="flex items-center gap-2">
+            <input checked class="kt-switch" type="checkbox" value="1" name="cuenta_principal">
+            <span class="text-sm font-medium text-mono">Principal</span>
+          </label>
         </div>
-       </div>
+      </div>
 
-
-        <div class="kt-card mb-4">
-         <div class="kt-card-content">
-          <div class="flex lg:px-10 py-1.5 gap-2">
-           <div class="grid grid-cols-1 place-content-center flex-1 gap-1 text-center">
-            <span class="text-mono text-2xl lg:text-2xl leading-none font-semibold">
-            $927,986.06
-            </span>
-            <span class="">
-                 <span class="kt-badge rounded-full kt-badge-outline kt-badge-primary gap-1 items-center">
-                    <span class="kt-badge-dot size-2.0">
-                    </span>
-                    Saldo Inicial
-                 </span>
-            </span>
-           </div>
-           <span class="not-last:border-e border-e-input my-1">
-           </span>
-           <div class="grid grid-cols-1 place-content-center flex-1 gap-1 text-center">
-            <span class="text-mono text-2xl lg:text-2xl leading-none font-semibold">
-             $0.00
-            </span>
-            <span class="">
-                 <span class="kt-badge rounded-full kt-badge-outline kt-badge-danger gap-1 items-center">
-                    <span class="kt-badge-dot size-2.0">
-                    </span>
-                    Ingresos
-                 </span>
-            </span>
-           </div>
-           <span class="not-last:border-e border-e-input my-1">
-           </span>
-           <div class="grid grid-cols-1 place-content-center flex-1 gap-1 text-center">
-            <span class="text-mono text-2xl lg:text-2xl sm:text-sm leading-none font-semibold">
-             $1,000.00
-            </span>
-            <span class="">
-                 <span class="kt-badge rounded-full kt-badge-outline kt-badge-warning gap-1 items-center">
-                    <span class="kt-badge-dot size-2.0">
-                    </span>
-                    Egresos
-                 </span>
-            </span>
-           </div>
-           <span class="not-last:border-e border-e-input my-1">
-           </span>
-           <div class="grid grid-cols-1 place-content-center flex-1 gap-1 text-center">
-            <span class="text-mono text-2xl lg:text-2xl leading-none font-semibold">
-            $927,985.06
-            </span>
-            <span class="">
-                 <span class="kt-badge rounded-full kt-badge-outline kt-badge-success gap-1 items-center">
-                    <span class="kt-badge-dot size-2.0">
-                    </span>
-                    Saldo Final
-                 </span>
-            </span>
-           </div>
-           <span class="not-last:border-e border-e-input my-1">
-           </span>
+      <!-- Tarjeta Banamex -->
+      <div class="kt-card rounded-2xl shadow-sm hover:shadow-md transition">
+        <div class="kt-card-header flex items-center justify-between p-5">
+          <div class="flex items-center gap-3">
+            <img src="{{asset('/asset/media/bancos/banamex.jpg')}}" alt="Banamex" class="w-10 h-10 object-contain" />
+            <div class="text-lg font-semibold text-mono">Banamex</div>
           </div>
-         </div>
+          <span class="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded-full">Principal</span>
         </div>
+        <div class="kt-card-content p-5 flex flex-col gap-2.5 ">
+          <div class="flex justify-between">
+            <span class="text-sm text-secondary-foreground">Titular:</span>
+            <span class="text-sm font-medium text-mono">Juan Pérez</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-sm text-secondary-foreground">Cuenta:</span>
+            <span class="text-sm font-medium text-mono">1234567890</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-sm text-secondary-foreground">CLABE:</span>
+            <span class="text-sm font-medium text-mono">002910123456789012</span>
+          </div>
+        </div>
+        <div class="kt-card-footer flex justify-between items-center py-3.5 px-5 border-t border-border">
+          <button class="kt-btn kt-btn-outline text-sm font-medium">
+            Ver detalles
+          </button>
+          <label class="flex items-center gap-2">
+            <input checked class="kt-switch" type="checkbox" value="1" name="cuenta_principal">
+            <span class="text-sm font-medium text-mono">Principal</span>
+          </label>
+        </div>
+      </div>
 
-        <div class="mb-4" id="example"></div>
+      <!-- Tarjeta Banorte -->
+      <div class="kt-card rounded-2xl shadow-sm hover:shadow-md transition">
+        <div class="kt-card-header flex items-center justify-between p-5">
+          <div class="flex items-center gap-3">
+            <img src="{{asset('/asset/media/bancos/banorte.jpg')}}" alt="Banorte" class="w-10 h-10 object-contain" />
+            <div class="text-lg font-semibold text-mono">Banorte</div>
+          </div>
+          <span class="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">Empresa</span>
+        </div>
+        <div class="kt-card-content p-5 flex flex-col gap-2.5 ">
+          <div class="flex justify-between">
+            <span class="text-sm text-secondary-foreground">Titular:</span>
+            <span class="text-sm font-medium text-mono">Compañía ABC</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-sm text-secondary-foreground">Cuenta:</span>
+            <span class="text-sm font-medium text-mono">4567890123</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-sm text-secondary-foreground">CLABE:</span>
+            <span class="text-sm font-medium text-mono">014123456789012345</span>
+          </div>
+        </div>
+        <div class="kt-card-footer flex justify-between items-center py-3.5 px-5 border-t border-border">
+          <button class="kt-btn kt-btn-outline text-sm font-medium">
+            Ver detalles
+          </button>
+          <label class="flex items-center gap-2">
+            <input class="kt-switch" type="checkbox" value="1" name="cuenta_principal">
+            <span class="text-sm font-medium text-mono">Principal</span>
+          </label>
+        </div>
+      </div>
 
+    </div>
 
+  
+  </div>
+</div>
+<style>
+    .kt-card-content {
+  background-image: url('/asset/media/images/2600x1200/bg-4.png');
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+</style>
 @endsection
-
-@push('custom')
-
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/handsontable/styles/handsontable.min.css" />
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/handsontable/styles/ht-theme-main.min.css" />
-<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/handsontable/dist/handsontable.full.min.js"></script>
-<script>
-    document.addEventListener('DOMContentLoaded',()=>{
-        const alto = window.innerHeight;
-        const container = document.querySelector('#example');
-
-const hot = new Handsontable(container, {
-  // theme name with obligatory ht-theme-* prefix
-  themeName: 'ht-theme-main-dark-auto',
-  colHeaders: ['FECHA','DESCRIPCIÓN','REFERENCIA',  'INGRESOS', 'EGRESOS'],
-  data: [
-    
-    ['25 AGO 2025', 'LIQUIDACIÓN OPERADOR - RIGOBERTO', 'NOMINA 0200', 0, 250],
-    ['30 SEPT 2025', 'DINERO PARA VIAJE - ALIMENTOS', '#MGBU3122560', 0, 250],
-    ['10 OCT 2025', 'GASTO DE VIAJE - DIESEL', '#MEDU4532895', 0, 500]
-  ],
-  rowHeaders: true,
-  columns:[{readOnly:false},{readOnly:false },{readOnly:false},
-    {
-      readOnly:false,
-      type: 'numeric',
-      numericFormat: {
-        pattern: '$ 0,0.00',
-        culture: 'en-US'
-      }
-    },
-    {
-      readOnly:false,
-      type: 'numeric',
-      numericFormat: {
-        pattern: '$ 0,0.00',
-        culture: 'en-US'
-      }
-    }
-],
-  height: 'auto',
-  stretchH: 'all',
-  autoWrapRow: true,
-  autoWrapCol: true,
-  licenseKey: 'non-commercial-and-evaluation' // for non-commercial use only
-});
-    })
-   
-
-</script>
-@endpush

@@ -92,7 +92,7 @@
      <div class="!w-screen m-5">
       <div class="animate-pulse bg-accent rounded-lg grow h-screen" data-slot="skeleton">
         @yield('content')
-       
+        
       </div>
      </div>
      <!-- End of Container -->
