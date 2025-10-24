@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes; // Importar SoftDeletes
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 
 class Bancos extends Model
 {
@@ -32,10 +33,13 @@ class Bancos extends Model
 
         static::creating(function ($banco) {
             $banco->id_empresa = Auth::user()->id_empresa;
+            $banco->uuid = Str::uuid();
         });
 
         static::updating(function ($banco) {
-            $banco->id_empresa = Auth::user()->id_empresa;
+            if(Auth::user()){
+                $banco->id_empresa = Auth::user()->id_empresa;
+            }
         });
     }
 

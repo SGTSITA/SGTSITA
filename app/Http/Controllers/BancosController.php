@@ -21,7 +21,20 @@ class BancosController extends Controller
 
     public function index(){
         $bancos = Bancos::where('id_empresa' ,'=',auth()->user()->id_empresa)->get();
-        return view('bancos.index', compact('bancos'));
+        $logos = [
+            'bbva' => asset('asset/media/bancos/bbva.png'),
+            'santander' => asset('asset/media/bancos/santander.png'),
+            'banamex' => asset('asset/media/bancos/banamex.jpg'),
+            'azteca' => asset('asset/media/bancos/azteca.jpg'),
+            'banco azteca' => asset('asset/media/bancos/azteca.jpg'),
+            'hsbc' => asset('asset/media/bancos/hsbc.jpg'),
+            'banorte' => asset('asset/media/bancos/banorte.jpg'),
+            'inbursa' => asset('asset/media/bancos/inbursa.png'),
+            'scotiabank' => asset('asset/media/bancos/scotiabank.png'),
+            'default' => asset('asset/media/bancos/default-bank.png'),
+        ];
+
+        return view('bancos.index', compact('bancos','logos'));
     }
 
     public function list(){

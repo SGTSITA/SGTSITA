@@ -13,11 +13,11 @@
         </i>
         <input placeholder="Buscar cuenta" type="text" value="">
         <span class="kt-badge kt-badge-sm kt-badge-outline -me-1.5">
-         ⌘ K
+         ⌘ Enter
         </span>
        </div>
-            <a class="kt-btn kt-btn-primary kt-btn-outline" href="#">
+            <button class="kt-btn kt-btn-primary kt-btn-outline" data-kt-drawer-toggle="#drawers_shop_cart" type="button">
                 Agregar cuenta
-            </a>
+            </button>
     </div>
 </div>
