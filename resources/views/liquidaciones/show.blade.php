@@ -5,6 +5,20 @@
 @endsection
 
 @section('content')
+<style>
+#modal-justificar-multiple .modal-dialog {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: auto;
+  max-width: none; /* JS controla ancho */
+  margin: auto;
+}
+
+#gridJustificar {
+  overflow: hidden; /* evita scroll interno */
+}
+</style>
 <div class="container-fluid">
     <div class="row">
         <div class="col-sm-12">
@@ -91,11 +105,15 @@
 </div>
 @include('liquidaciones.modal-pagar')
 @include('liquidaciones.modal-justificar-gasto')
+@include('liquidaciones.modal-justificar-hotable')
 @endsection
 
 @push('custom-javascript')
 <script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.js"></script>
 <script src="{{ asset('js/sgt/common.js') }}?v={{ filemtime(public_path('js/sgt/common.js')) }}"></script>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/handsontable@12.0.1/dist/handsontable.full.min.css">
+<script src="https://cdn.jsdelivr.net/npm/handsontable@12.0.1/dist/handsontable.full.min.js"></script>
 <script src="{{ asset('js/sgt/liquidaciones/liquidar-viajes.js') }}?v={{ filemtime(public_path('js/sgt/liquidaciones/liquidar-viajes.js')) }}"></script>
 
 <script>
