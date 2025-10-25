@@ -219,7 +219,8 @@
 																																				   
 		
         $(document).ready(() => {
-            getClientes({{ Auth::User()->id_cliente }})
+            let subclienteid = {{ $cotizacion?->id_subcliente ?? 'null' }};
+            getClientes({{ Auth::User()->id_cliente }}, subclienteid)
 
             var genericUUID = localStorage.getItem('uuid');
             if (genericUUID == null) {
@@ -302,5 +303,13 @@
                 form.submit();
             });
         @endif
+
+        $(document).ready(function () {
+    // Detectar si algún campo cambia en cualquier formulario de la página para carta porte
+    $('form').on('change input', 'input, select, textarea', function() {
+        console.log('Campo modificado:', $(this).attr('name')); // <-- Para probar
+        $('#modifico_informacion').val('1');
+    });
+});
     </script>
 @endpush		
