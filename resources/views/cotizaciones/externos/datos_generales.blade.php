@@ -42,8 +42,8 @@
                                 <option value="">Seleccionar transportista</option>
                                 @foreach ($transportista as $tr)
                                     <option value="{{ $tr->id }}" 
-                                        @if ($action == 'editar' && $cotizacion?->id_transportista == $tr->id) selected @endif>
-                                        {{ $tr->nombre }}</option>
+                                        @if ($action == 'editar' && $cotizacion?->id_proveedor == $tr->id) selected @endif>
+                                        {{  $tr->id . ' - ' . $tr->nombre }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -178,7 +178,7 @@
                         @if ($action == 'editar') value="{{ $cotizacion->peso_contenedor }}" @endif
                         class="form-control" autocomplete="off" id="peso_contenedor" placeholder=""
                         oninput="allowOnlyDecimals(event)" />
-                    <label for="peso_contenedor" class="text-gray-700">Peso de Contenedor</label>
+                    <label for="peso_contenedor" class="text-gray-700">Peso de Contenedor</label> 
                 </div>
             </div>
         </div>

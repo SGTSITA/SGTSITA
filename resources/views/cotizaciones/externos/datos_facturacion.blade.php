@@ -104,23 +104,31 @@
               </div>
             </div>
 
-            <div class="col-3">
-              <div class="input-group  mb-5">
-                  <span class="input-group-text" id="basic-addon1">
-                      <i class="ki-duotone ki-route fs-1">
-                          <span class="path1"></span>
-                          <span class="path2"></span>
-                          <span class="path3"></span>
-                          <span class="path4"></span>
-                      </i>
-                  </span>
-                  <div class="form-floating">
-                      <input @if ($action == 'editar') value="" @endif type="text"
-                          class="form-control" id="cp_clase_pedimento" autocomplete="off" placeholder="" />
-                      <label for="cp_clase_pedimento" class="text-gray-700">Clase Pedimento</label>
-                  </div>
-              </div>
-            </div>
+                                    <label for="cp_fraccion" class="text-gray-700">Fracción</label>
+                                </div>
+                            </div>
+                        </div>
+       
+                        <div class="col-3">
+                            <div class="input-group  mb-5">
+                                <span class="input-group-text" id="basic-addon1">
+                                    <i class="ki-duotone ki-route fs-1">
+                                        <span class="path1"></span>
+                                        <span class="path2"></span>
+                                        <span class="path3"></span>
+                                        <span class="path4"></span>
+                                    </i>
+                                </span>
+                                <div class="form-floating">
+                                    <input
+                                        @if ($action == 'editar') value="{{ $cotizacion->cp_pedimento ?? '' }}" @endif
+                                        type="text" class="form-control" id="cp_pedimento" name="cp_pedimento" autocomplete="off"
+                                        placeholder="" />
+                                    <label for="cp_pedimento" class="text-gray-700">Pedimento</label>
+                                </div>
+                            </div>
+                        </div>
+                        
 
             <div class="col-3">
               <div class="input-group  mb-5">

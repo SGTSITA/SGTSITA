@@ -10,7 +10,120 @@ function adjuntarDocumentos(filesContenedor) {
    let labelDocsViaje = document.getElementById('labelDocsViaje')
    labelDocsViaje.textContent = `Documentos de viaje ${numContenedor}`
 
-    $('#'+fileSettings.opcion).fileuploader({
+    const input = $('#' + fileSettings.opcion);
+
+     const fileUploaderInstance = $.fileuploader.getInstance(input);
+ 
+    if (fileUploaderInstance) {
+
+             fileUploaderInstance.setOption('upload', {
+        url: '/contenedores/files/upload',
+        data: {
+            urlRepo:fileSettings.opcion,
+            numContenedor: numContenedor,
+            _token: _token
+        },
+        type: 'POST',
+        enctype: 'multipart/form-data',
+        start: true,
+        synchron: true,
+        onBeforeSend: (xhr, settings) => {
+
+        },
+        onSuccess: function(result, item) {
+
+            var data = {};
+
+            // get data
+            if (result && result.files)
+                data = result;
+            else
+                data.hasWarnings = true;
+
+            // if success
+            if (data.isSuccess && data.files[0]) {
+                item.name = data.files[0].name;
+                item.html.find('.column-title > div:first-child').text(data.files[0].old_name).attr('title', data.files[0].old_name);
+            }
+
+            // if warnings
+            if (data.hasWarnings) {
+                for (var warning in data.warnings) {
+                    alert(data.warnings[warning]);
+                }
+
+                item.html.removeClass('upload-successful').addClass('upload-failed');
+                // go out from success function by calling onError function
+                // in this case we have a animation there
+                // you can also response in PHP with 404
+                return this.onError ? this.onError(item) : null;
+            }
+
+            item.html.find('.fileuploader-action-remove').addClass('fileuploader-action-success');
+            setTimeout(function() {
+                item.html.find('.progress-bar2').fadeOut(400);
+            }, 400);
+
+          //  const gridApi = gridOptions.api;
+            if(apiGrid){
+                let dataGrid = apiGrid.getGridOption('rowData');
+                var rowIndex = dataGrid.findIndex(d => d.NumContenedor == numContenedor)
+                
+                const colId = fileSettings.agGrid;
+
+                // Obtener el nodo de la fila
+                const rowNode = apiGrid.getDisplayedRowAtIndex(rowIndex);
+
+                // Establecer un nuevo valor en la celda
+                if (rowNode) {
+                    rowNode.setDataValue(colId, true);
+                }
+            }
+            
+
+          
+        },
+        onError: function(item) {
+            var progressBar = item.html.find('.progress-bar2');
+
+            if (progressBar.length) {
+                progressBar.find('span').html(0 + "%");
+                progressBar.find('.fileuploader-progressbar .bar').width(0 + "%");
+                item.html.find('.progress-bar2').fadeOut(400);
+            }
+
+            item.upload.status != 'cancelled' && item.html.find('.fileuploader-action-retry').length == 0 ? item.html.find('.column-actions').prepend(
+                '<button type="button" class="fileuploader-action fileuploader-action-retry" title="Retry"><i class="fileuploader-icon-retry"></i></button>'
+            ) : null;
+        },
+        onProgress: function(data, item) {
+            var progressBar = item.html.find('.progress-bar2');
+
+            if (progressBar.length > 0) {
+                progressBar.show();
+                progressBar.find('span').html(data.percentage + "%");
+                progressBar.find('.fileuploader-progressbar .bar').width(data.percentage + "%");
+            }
+        },
+        onComplete: ()=>{
+            getFilesContenedor()
+           
+            setTimeout(()=> {
+               
+               adjuntarDocumentos()
+            },2500)
+            
+        },
+    });
+
+
+
+       // console.log(`Instancia de fileuploader en #${fileSettings.opcion} destruida correctamente.`);
+    }else {
+
+
+
+    input.fileuploader({
         captions: 'es',
         enableApi: true,
         limit:1,
