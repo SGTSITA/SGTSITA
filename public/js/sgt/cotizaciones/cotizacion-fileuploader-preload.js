@@ -118,7 +118,7 @@ function adjuntarDocumentos(filesContenedor) {
 
 
 
-        console.log(`Instancia de fileuploader en #${fileSettings.opcion} destruida correctamente.`);
+       // console.log(`Instancia de fileuploader en #${fileSettings.opcion} destruida correctamente.`);
     }else {
 
 

@@ -984,6 +984,7 @@ public function getCotizacionesCanceladas()
             $docucotizaciones =  DocumCotizacion::where('id_cotizacion', '=', $cotizaciones->id)->first();
         
             $docucotizaciones->num_contenedor = str_replace(' ','',$request->get('num_contenedor'));
+          //  $docucotizaciones->num_carta_porte = 'formato_carta_porte_' . $numContenedor . '.pdf';
             $docucotizaciones->save();
             // Definir ruta dentro de public
             $path = public_path('cotizaciones/cotizacion'.$docucotizaciones->id.'/formato_carta_porte_' . $numContenedor . '.pdf');

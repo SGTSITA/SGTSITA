@@ -103,7 +103,7 @@
                                 <div class="form-floating">
                                     <input
                                         @if ($action == 'editar') value="{{ $cotizacion->cp_pedimento ?? '' }}" @endif
-                                        type="text" class="form-control" id="cp_pedimento" autocomplete="off"
+                                        type="text" class="form-control" id="cp_pedimento" name="cp_pedimento" autocomplete="off"
                                         placeholder="" />
                                     <label for="cp_pedimento" class="text-gray-700">Pedimento</label>
                                 </div>
