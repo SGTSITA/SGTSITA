@@ -253,11 +253,12 @@ dp.onEventClick = function (args) {
   getInfoViaje(args.e.data.start.value,args.e.data.end.value, args.e.data.text, args.e.data.id);
 };
 
-function abrirMapaEnNuevaPestana( contenedor,tipoS) {
- 
-   const url = `/coordenadas/mapa_rastreo?contenedor=${contenedor}&tipoS=${encodeURIComponent(tipoS)}`;
+function abrirMapaEnNuevaPestana( contenedor,tipoS,origenRastreo) {
+
+   const url = `/coordenadas/mapa_rastreo?contenedor=${contenedor}&tipoS=${encodeURIComponent(tipoS)}&origenRastreo=${encodeURIComponent(origenRastreo)}`;
    window.open(url, '_blank');
 }
+
 
 function getInfoViaje(startDate, endDate, numContenedor_, idContendor){
    let fechaSalida = document.querySelector('#fechaSalida')
@@ -348,8 +349,27 @@ function getInfoViaje(startDate, endDate, numContenedor_, idContendor){
    const bootstrapModal = new bootstrap.Modal(modalElement);
    bootstrapModal.show();
 }
+function mostrarLoading(text = "Espere un momento...") {
+    let label = document.querySelector('#loading-text')
+    label.textContent = text
 
+    document.getElementById('loading-overlay').style.display = 'flex'
+}
 
+function ocultarLoading() {
+  document.getElementById('loading-overlay').style.display = 'none';
+}
+function abrirMapaEnNuevaPestana( numContenedor,tipoS,origenRastreo) {
+    //const url = `/mapa-comparacion?latitud=${latitud}&longitud=${longitud}&latitud_seguimiento=${latitud_seguimiento}&longitud_seguimiento=${longitud_seguimiento}&contenedor=${contenedor}`;
+     if (numContenedor) {
+         const url = `/coordenadas/mapa_rastreo?contenedor=${numContenedor}&tipoS=${encodeURIComponent(tipoS)}&origenRastreo=${encodeURIComponent(origenRastreo)}`;
+    window.open(url, '_blank');
+     }else{
+         Swal.fire('Validación', 'No se encontró información del contenedor.', 'warning');
+         return;
+     }
+   
+}
 function encontrarContenedor(contenedor){
    let busqueda = allEvents
    const resultados = busqueda.filter(f => f.num_contenedor?.includes(contenedor))
