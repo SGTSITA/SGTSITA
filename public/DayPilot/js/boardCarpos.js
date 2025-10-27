@@ -320,7 +320,13 @@ async function initBoard(fromDate,toDate){
    let numContenedor = document.querySelector('#numContenedorSpan')
    numContenedor.textContent = numContenedor_
 
-   let nombreTransportista = document.querySelector('#nombreTransportista')
+  
+     let nombreProveedor = document.querySelector('#nombreProveedor')
+ // let nombreTransportista = document.querySelector('#nombreTransportista')
+  let contactoEntrega = document.querySelector('#ContactoEntrega')
+  let nombreOperador = document.querySelector('#nombreOperador')
+  let telefonoOperador = document.querySelector('#telefonoOperador')
+
    let tipoViajeSpan = document.querySelector('#tipoViajeSpan')
 
    let origen = document.querySelector('#origen')
@@ -328,6 +334,14 @@ async function initBoard(fromDate,toDate){
    let nombreCliente = document.querySelector('#nombreCliente')
    let nombreSubcliente = document.querySelector('#nombreSubcliente')
    
+    let id_equipo_camion = document.querySelector('#id_equipo_camion')
+  let placas_camion = document.querySelector('#placas_camion')
+
+  let marca_camion = document.querySelector('#marca_camion')
+  let imei_camion = document.querySelector('#imei_camion')
+
+  let id_equipo_chasis = document.querySelector('#id_equipo_chasis')
+  let imei_chasis = document.querySelector('#imei_chasis')
 
     var _token = $('input[name="_token"]').val();
     $.ajax({
@@ -342,23 +356,53 @@ async function initBoard(fromDate,toDate){
                 d.innerHTML = `--`
             })
 
-            nombreTransportista.textContent = "--"
+                nombreProveedor.textContent = "--"
+   //nombreTransportista.textContent = "--"
+   contactoEntrega.textContent = "--"
+   nombreOperador.textContent = "--"
+   telefonoOperador.textContent = "--"
+
+
+
+
             tipoViajeSpan.textContent = "--"
 
             origen.textContent = "--"
             destino.textContent = "--"
             nombreCliente.textContent = "--"
             nombreSubcliente.textContent = "--"
+
+              placas_camion.textContent = "--"
+                id_equipo_camion.textContent = "--"
+                marca_camion.textContent = "--"
+                imei_camion.textContent = "--"
+                id_equipo_chasis.textContent = "--"
+                imei_chasis.textContent = "--"
         },
         success:(response)=>{
             ocultarLoading()
-            nombreTransportista.textContent = response.nombre;
+            
+              nombreProveedor.textContent = response.datosExtraviaje.empresa_beneficiario
+   contactoEntrega.textContent =  response.datosExtraviaje.cp_contacto_entrega ?? "--"
+   // nombreTransportista.textContent = response.datosExtraviaje.transportista_nombre ?? "--"
+   nombreOperador.textContent =    response.datosExtraviaje.beneficiario_nombre
+
+   telefonoOperador.textContent = response.datosExtraviaje.beneficiario_telefono ?? "--"
+
             tipoViajeSpan.textContent = response.tipo
 
             origen.textContent = response.cotizacion.origen
             destino.textContent = response.cotizacion.destino
             nombreCliente.textContent = response.cliente.nombre
             nombreSubcliente.textContent = response.subcliente.nombre
+
+
+                placas_camion.textContent = response.documentos.placas_camion ?? "NA"
+                id_equipo_camion.textContent = response.documentos.id_equipo_camion ?? "NA"
+                marca_camion.textContent = response.documentos.marca_camion ?? "NA"
+                imei_camion.textContent = response.documentos.imei_camion ?? "NA"
+                id_equipo_chasis.textContent = response.documentos.id_equipo_chasis ?? "NA"
+                imei_chasis.textContent = response.documentos.imei_chasis ?? "NA"
 
             if(response.tipo == "Viaje Propio"){
                 $('#tipoViajeSpan').addClass('bg-gradient-success')
