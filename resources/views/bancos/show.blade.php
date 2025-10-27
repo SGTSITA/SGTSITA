@@ -263,8 +263,8 @@
                                                                         href="#pagesEntrada{{ $item->id }}"
                                                                         aria-controls="pagesEntrada" role="button"
                                                                         aria-expanded="false">
-                                                                        Varios <br> <b style="color: #22c2ba">
-                                                                            {{ optional($item->Cliente2)->nombre }}
+                                                                       <b style="color: #22c2ba">
+                                                                           
                                                                             {{ optional($item)->descripcion }}
                                                                         </b>
                                                                     </a>
@@ -293,7 +293,7 @@
                                                                         href="#pagesEntrada{{ $item->id }}"
                                                                         aria-controls="pagesEntrada" role="button"
                                                                         aria-expanded="false">
-                                                                        Varios <br> <b>{{ $item->Cliente->nombre }}</b>
+                                                                        <b>  {{ optional($item)->descripcion }}</b>
                                                                     </a>
                                                                     @if ($item->contenedores != null)
                                                                         <div class="collapse "

@@ -168,7 +168,6 @@
                             <div class="row gx-9 gy-6">
 
                             @include('cotizaciones.externos.datos_facturacion')
-                            <input type="hidden" name="modifico_informacion" id="modifico_informacion" value="0">
                             </div>
                         </div>
                         <!--end::Tab panel-->

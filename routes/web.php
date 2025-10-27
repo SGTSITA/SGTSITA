@@ -35,6 +35,8 @@ Route::group(["prefix" => "gps"],function(){
 
 Route::group(["prefix" => "mep"], function(){
  Route::get('viajes',[MepController::class, 'index'])->name('mep.index');
+ Route::post('viajes/consulta-asignacion',[MepController::class, 'verAsignacion'])->name('mep.asignacion');
+
  Route::get('viajes/list',[MepController::class, 'getCotizacionesList'])->name('mep.viajes');
  Route::get('viajes/finalizadas',[MepController::class, 'getCotizacionesFinalizadas'])->name('mep.viajes');
  Route::post('viajes/operador/asignar',[MepController::class, 'asignarOperador'])->name('mep.asignaoperdor');
@@ -444,8 +446,6 @@ Route::post('operadores/{id}/restaurar', [App\Http\Controllers\OperadorControlle
     Route::post('reporteria/utilidad/ver-utilidad' ,[App\Http\Controllers\ReporteriaController::class, 'getContenedorUtilidad']);
     Route::get('reporteria/utilidad/buscador', [App\Http\Controllers\ReporteriaController::class, 'advance_utilidad'])->name('advance_utilidad.buscador')->middleware('finanzas:3');
     Route::post('reporteria/utilidad/export', [App\Http\Controllers\ReporteriaController::class, 'export_utilidad'])->name('export_utilidad.export')->middleware('finanzas:3');
-    Route::post('/reporteria/utilidad/descargar-gastos', [App\Http\Controllers\ReporteriaController::class, 'descargarGastos']);
-
 
     Route::get('reporteria/documentos', [App\Http\Controllers\ReporteriaController::class, 'index_documentos'])->name('index_documentos.reporteria');
     Route::get('reporteria/documentos/buscador', [App\Http\Controllers\ReporteriaController::class, 'advance_documentos'])->name('advance_documentos.buscador');

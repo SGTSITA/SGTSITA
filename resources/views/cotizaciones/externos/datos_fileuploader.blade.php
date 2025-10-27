@@ -7,7 +7,7 @@
       <!--begin::Wrapper-->
       <div class="d-flex flex-stack flex-grow-1 ">
         <!--begin::Content-->
-        <div class="fw-semibold">
+        <div class=" fw-semibold">
           <div class="fs-6 text-gray-700 ">Para adjuntar archivos, primero debe guardar la información de la solicitud de viaje. Esto garantiza que los documentos se asocien correctamente al registro y que el proceso continúe de forma segura y ordenada. <br>
             <br>
             <button type="submit" class="btn btn-link text-primary fw-bold">Aceptar y Continuar </button>

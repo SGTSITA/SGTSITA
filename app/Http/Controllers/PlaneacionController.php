@@ -115,8 +115,6 @@ class PlaneacionController extends Controller
         ->leftJoin('docum_cotizacion', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
         ->leftJoin('asignaciones', 'docum_cotizacion.id', '=', 'asignaciones.id_contenedor')
         ->leftJoin('clients', 'cotizaciones.id_cliente', '=', 'clients.id')
-        ->leftjoin('equipos', 'asignaciones.id_camion', '=', 'equipos.id')
-        ->leftjoin('equipos as chasis', 'asignaciones.id_chasis', '=', 'chasis.id')
         ->select(
             'cotizaciones.id',
             'clients.nombre as cliente',
@@ -132,134 +130,9 @@ class PlaneacionController extends Controller
             'docum_cotizacion.doc_eir',
             'asignaciones.id_proveedor',
             'asignaciones.fecha_inicio',
-            'asignaciones.fecha_fin',
-            'equipos.placas as placas_camion',
-            'equipos.id_equipo as id_equipo_camion',
-            'equipos.marca as marca_camion',
-            'equipos.imei as imei_camion',
-            'chasis.id_equipo as id_equipo_chasis',
-            'chasis.imei as imei_chasis',
-            DB::raw("CASE WHEN asignaciones.id_proveedor IS NULL THEN asignaciones.id_operador ELSE asignaciones.id_proveedor END as beneficiario_id"),
-            DB::raw("CASE WHEN asignaciones.id_proveedor IS NULL THEN 'Propio' ELSE 'Subcontratado' END as tipo_contrato")
-            )
+            'asignaciones.fecha_fin'
+        )
         ->get();
-
-
-
-        $documentos = Cotizaciones::query()
-        ->where('cotizaciones.id', $request->id)
-        ->leftJoin('docum_cotizacion', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
-        ->leftJoin('asignaciones', 'docum_cotizacion.id', '=', 'asignaciones.id_contenedor')
-        ->leftJoin('clients', 'cotizaciones.id_cliente', '=', 'clients.id')
-        ->leftjoin('equipos', 'asignaciones.id_camion', '=', 'equipos.id')
-        ->leftjoin('equipos as chasis', 'asignaciones.id_chasis', '=', 'chasis.id')
-        ->select(
-            'cotizaciones.id',
-            'clients.nombre as cliente',
-            'docum_cotizacion.num_contenedor',
-            'docum_cotizacion.doc_ccp',
-            'docum_cotizacion.cima',
-            'docum_cotizacion.boleta_liberacion',
-            'docum_cotizacion.doda',
-            'cotizaciones.referencia_full',
-            'cotizaciones.carta_porte',
-            'cotizaciones.carta_porte_xml',
-            'cotizaciones.img_boleta AS boleta_vacio',
-            'docum_cotizacion.doc_eir',
-            'asignaciones.id_proveedor',
-            'asignaciones.fecha_inicio',
-            'asignaciones.fecha_fin',
-            'equipos.placas as placas_camion',
-            'equipos.id_equipo as id_equipo_camion',
-            'equipos.marca as marca_camion',
-            'equipos.imei as imei_camion',
-            'chasis.id_equipo as id_equipo_chasis',
-            'chasis.imei as imei_chasis',
-             DB::raw("CASE WHEN asignaciones.id_proveedor IS NULL THEN asignaciones.id_operador ELSE asignaciones.id_proveedor END as beneficiario_id"),
-        DB::raw("CASE WHEN asignaciones.id_proveedor IS NULL THEN 'Propio' ELSE 'Subcontratado' END as tipo_contrato")
-            )
-        ->get();
-
-
-
-      $beneficiariosSubquery = DB::table(function ($query) {
-    $query->select(
-        'operadores.id',
-        'operadores.nombre',
-        'operadores.telefono',
-        'empresas.rfc as RFC',
-        DB::raw("'Propio' as tipo_contrato"),
-        'operadores.id_empresa',
-        'empresas.nombre as nombreempresa'
-    )
-    ->from('operadores')
-    ->join('empresas', 'empresas.id', '=', 'operadores.id_empresa')
-
-    ->union(
-        DB::table('proveedores')
-            ->select(
-                'proveedores.id',
-                'proveedores.nombre',
-                'proveedores.telefono',
-                'proveedores.RFC',
-                DB::raw("'Subcontratado' as tipo_contrato"),
-                'proveedores.id_empresa',
-                'empresas.nombre as nombreempresa'
-            )
-            ->join('empresas', 'empresas.id', '=', 'proveedores.id_empresa')
-    );
-});
-
-$InfoViajeExtra = Cotizaciones::query()
-    ->where('cotizaciones.id', $request->id)
-    ->leftJoin('docum_cotizacion', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
-    ->leftJoin('asignaciones', 'docum_cotizacion.id', '=', 'asignaciones.id_contenedor')
-    ->leftJoin('clients', 'cotizaciones.id_cliente', '=', 'clients.id')
-    ->leftJoin('equipos', 'asignaciones.id_camion', '=', 'equipos.id')
-    ->leftJoin('equipos as chasis', 'asignaciones.id_chasis', '=', 'chasis.id')
-
-    // ✅ join correcto con 3 parámetros (sin closure)
-    ->leftJoinSub(
-        $beneficiariosSubquery,
-        'beneficiarios',
-        function ($join) {
-            $join->on(
-                DB::raw("beneficiarios.id"),
-                '=',
-                DB::raw("(CASE WHEN asignaciones.id_proveedor IS NULL THEN asignaciones.id_operador ELSE asignaciones.id_proveedor END)")
-            )
-            ->whereRaw("beneficiarios.tipo_contrato = CASE WHEN asignaciones.id_proveedor IS NULL THEN 'Propio' ELSE 'Subcontratado' END");
-        }
-    )
-
-    ->select(
-        'cotizaciones.id',
-        'clients.nombre as cliente',
-        'docum_cotizacion.num_contenedor',
-      
-        'cotizaciones.referencia_full',
-    'cotizaciones.cp_contacto_entrega',
-     
-        'asignaciones.id_proveedor',
-        'asignaciones.fecha_inicio',
-        'asignaciones.fecha_fin',
-        'equipos.placas as placas_camion',
-        'equipos.id_equipo as id_equipo_camion',
-        'equipos.marca as marca_camion',
-        'equipos.imei as imei_camion',
-        'chasis.id_equipo as id_equipo_chasis',
-        'chasis.imei as imei_chasis',
-        DB::raw("CASE WHEN asignaciones.id_proveedor IS NULL THEN asignaciones.id_operador ELSE asignaciones.id_proveedor END as beneficiario_id"),
-        DB::raw("CASE WHEN asignaciones.id_proveedor IS NULL THEN 'Propio' ELSE 'Subcontratado' END as tipo_contrato"),
-
-        'beneficiarios.nombre as beneficiario_nombre',
-        'beneficiarios.telefono as beneficiario_telefono',
-        'beneficiarios.RFC as beneficiario_rfc',
-        'beneficiarios.nombreempresa as empresa_beneficiario'
-    )
-    ->get();
-
-
 
         $misDocumentos = 
         $documentos->map(function($cot){
@@ -323,8 +196,7 @@ $InfoViajeExtra = Cotizaciones::query()
                         "cliente" => $cotizacion->Cliente, 
                         "subcliente" => $cotizacion->Subcliente, 
                         "documentos" => $documentos->first(),
-                        "documents" => $misDocumentos->first(),
-                        "datosExtraviaje" => $InfoViajeExtra->first()
+                        "documents" => $misDocumentos->first()
                     ];
         }
 
@@ -335,8 +207,7 @@ $InfoViajeExtra = Cotizaciones::query()
                     "cliente" => $cotizacion->Cliente, 
                     "subcliente" => $cotizacion->Subcliente, 
                     "documentos" => $documentos->first(),
-                    "documents" => $misDocumentos->first(),
-                    "datosExtraviaje" => $InfoViajeExtra->first()
+                    "documents" => $misDocumentos->first()
                 ];
         
     }

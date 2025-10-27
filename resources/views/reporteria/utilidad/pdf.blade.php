@@ -184,6 +184,7 @@
                 <th>Precio Viaje</th>
                 <th>Pago Operación</th>
                 <th>Gastos Extra</th>
+                <th>Dinero Viaje S/Justificar</th>
                 <th>Gastos Viaje</th>
                 <th>Gastos Diferidos</th>
                 <th>Utilidad</th>
@@ -198,6 +199,7 @@
                     <td>$ {{ number_format($cotizacion['precioViaje'], 2) }}</td>
                     <td>$ {{ number_format($cotizacion['pagoOperacion'], 2) }}</td>
                     <td>$ {{ number_format($cotizacion['gastosExtra'], 2) }}</td>
+                    <td>$ {{ number_format($cotizacion['dineroViajeSinJustificar'], 2) }}</td>
                     <td>$ {{ number_format($cotizacion['gastosViaje'], 2) }}</td>
                     <td>$ {{ number_format($cotizacion['gastosDiferidos'], 2) }}</td>
                     <td @if ($cotizacion['utilidad'] < 0) class="bg-warning" @endif>$
@@ -207,7 +209,23 @@
                 </tr>
             @endforeach
         </tbody>
+        <tfoot style="text-align: center;font-size: 14px; font-weight:bold">
+        <tr style="text-align: center;font-size: 14px; font-weight:bold">
+                    <td colspan="2">TOTAL</td>
+                    
+                    <td>$ {{ number_format($cotizaciones->sum('precioViaje'), 2) }}</td>
+                    <td>$ {{ number_format($cotizaciones->sum('pagoOperacion'), 2) }}</td>
+                    <td>$ {{ number_format($cotizaciones->sum('gastosExtra'), 2) }}</td>
+                    <td>$ {{ number_format($cotizaciones->sum('dineroViajeSinJustificar'), 2) }}</td>
+                    <td>$ {{ number_format($cotizaciones->sum('gastosViaje'), 2) }}</td>
+                    <td>$ {{ number_format($cotizaciones->sum('gastosDiferidos'), 2) }}</td>
+                    <td >${{ number_format($cotizaciones->sum('utilidad'), 2) }}</td>
+                    <td></td>
+
+                </tr>
+        </tfoot>
     </table>
+
     <h4 style="margin-top: 20px;">Desglose de Otros Gastos</h4>
     <table style="width:100%; font-size: 10px; border-collapse: collapse;" border="1">
         <thead style="background-color: #f0f0f0;">
