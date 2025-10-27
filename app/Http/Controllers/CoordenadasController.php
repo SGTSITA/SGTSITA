@@ -659,7 +659,6 @@ $idCordenada= $coordenadas->id_coordenadas;
 
     public function  getEquiposGps(Request  $request) 
     {
-        \DB::enableQueryLog();
 
         $idCliente =0;
         $cliendID = auth()->user()->id_cliente;
@@ -685,7 +684,6 @@ $idCordenada= $coordenadas->id_coordenadas;
         ->select(
         'docum_cotizacion.id as id_contenedor',
         'asignaciones.id',
-        'asignaciones.id_empresa',
         'asignaciones.id_camion',
         'docum_cotizacion.num_contenedor',
         'asignaciones.fecha_inicio',
@@ -702,33 +700,14 @@ $idCordenada= $coordenadas->id_coordenadas;
         DB::raw("CASE WHEN asignaciones.id_proveedor IS NULL THEN 'Propio' ELSE 'Subcontratado' END as tipo_contrato")
         );
 
-       $beneficiarios = DB::table(function ($query) {
-                $query->select(
-            'operadores.id',
-            'operadores.nombre',
-            'operadores.telefono',
-            'empresas.rfc as RFC',
-            DB::raw("'Propio' as tipo_contrato"),
-            'operadores.id_empresa',
-            'empresas.nombre as nombreempresa'
-        )
-        ->from('operadores')
-        ->join('empresas', 'empresas.id', '=', 'operadores.id_empresa')
-
-        ->union(
-            DB::table('proveedores')
-                ->select(
-                    'proveedores.id',
-                    'proveedores.nombre',
-                    'proveedores.telefono',
-                    'proveedores.RFC',
-                    DB::raw("'Subcontratado' as tipo_contrato"),
-                    'proveedores.id_empresa',
-                    'proveedores.nombre as nombreempresa'
-                )
-                ->join('empresas', 'empresas.id', '=', 'proveedores.id_empresa')
-        );
-            }, 'beneficiarios');
+        $beneficiarios = DB::table(function ($query) {
+            $query->select('id', 'nombre', 'telefono', DB::raw("'Propio' as tipo_contrato"), 'id_empresa')
+                ->from('operadores')
+                ->union(
+                    DB::table('proveedores')
+                        ->select('id', 'nombre', 'telefono', DB::raw("'Subcontratado' as tipo_contrato"), 'id_empresa')
+                );
+        }, 'beneficiarios');
 
   
         $datosAll = DB::table('cotizaciones')
@@ -753,13 +732,12 @@ $idCordenada= $coordenadas->id_coordenadas;
             'asig.imei_chasis',
             'asig.id_equipo_chasis',
             'asig.tipoGpsChasis',
-            'asig.id_empresa',
+            'cotizaciones.id_empresa',
             'cotizaciones.latitud',
             'cotizaciones.longitud',
             'cotizaciones.cp_contacto_entrega',
             'beneficiarios.nombre as beneficiario',
-            'beneficiarios.telefono as telefono_beneficiario',
-            'beneficiarios.nombreempresa as nombreempresa',
+            'beneficiarios.telefono as telefono_beneficiario'
         )
     ->join('clients', 'cotizaciones.id_cliente', '=', 'clients.id')
     
@@ -772,7 +750,7 @@ $idCordenada= $coordenadas->id_coordenadas;
              ->on('asig.tipo_contrato', '=', 'beneficiarios.tipo_contrato');
     })
     ->whereNotNull('asig.imei')
-   ->whereDate('asig.fecha_fin', '>=',  Carbon::now()->toDateString())
+    ->whereDate('asig.fecha_fin', '>=',  Carbon::now()->toDateString())
    
     ->when($contenedoresVarios, function ($query) use ($contenedoresVarios) {
         $contenedores = array_filter(array_map('trim', explode(';', $contenedoresVarios)));
@@ -785,25 +763,18 @@ $idCordenada= $coordenadas->id_coordenadas;
     })->where('cotizaciones.estatus', '=', 'Aprobada')
     
     ->get();
-/* dd([
-    'sql' => \DB::getQueryLog(),
-    'resultado' => $datosAll->toArray()
-]); */
-
-     $datos= null;
-
-    if ($idCliente !== 0) {
-        $datos = $datosAll->where('id_cliente', $idCliente);
-    }else{
- $datos = $datosAll->where('id_empresa', $idEmpresa);
-    
-       
+    //dd($datosAll);
+    $datos= null;
+    if (!is_null($idEmpresa)) {
+        $datos = $datosAll->where('id_empresa', $idEmpresa);
     }
 
+    if (!is_null($idCliente) && $idCliente !== 0) {
+        $datos = $datos->where('id_cliente', $idCliente);
+    }
 
     $datos = $datos->values();
-   
-
+   // dd($datos);
 
     $conboys = DB::table('conboys')
     ->join('conboys_contenedores', 'conboys.id', '=', 'conboys_contenedores.conboy_id')

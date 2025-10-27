@@ -5,7 +5,7 @@
 @endsection
 
 @section('content')
-    {{-- <div id="miModal" class="modal">
+    <div id="miModal" class="modal">
         <div class="modal-content">
 
             <div class="card h-100" style="box-shadow: none !important;">
@@ -22,22 +22,9 @@
                     </div>
                 </div>
                 <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-bordered table-hover align-middle text-center mb-0" id="tablaGastos">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Motivo</th>
-                                    <th>Fecha</th>
-                                    <th>Tipo</th>
-                                    <th>Monto</th>
-                                </tr>
-                            </thead>
-                            <tbody id="infoGastos">
-                                <!-- Aquí se agregan filas con JS -->
-                            </tbody>
-                        </table>
-                    </div>
+                    <ul class="list-group" id="infoGastos">
 
+                    </ul>
                 </div>
                 <div class="card-footer">
                     <div class="row">
@@ -52,7 +39,7 @@
                 </div>
             </div>
         </div>
-    </div> --}}
+    </div>
     <div class="container-fluid">
         <div class="row">
 
@@ -219,77 +206,6 @@
             if (event.target === modal) {
                 modal.style.display = 'none';
             }
-        }
-    </script>
-    <script>
-        document.getElementById('btnVerDetalle').addEventListener('click', () => {
-            const seleccionados = apiGrid.getSelectedRows();
-
-            if (seleccionados.length === 0) {
-                Swal.fire('Selecciona al menos un contenedor para exportar gastos.', '', 'warning');
-                return;
-            }
-
-            Swal.fire({
-                title: 'Exportar Detalle de Gastos',
-                text: '¿En qué formato deseas descargar el reporte?',
-                icon: 'question',
-                showDenyButton: true,
-                showCancelButton: true,
-                confirmButtonText: 'Excel',
-                denyButtonText: 'PDF',
-                cancelButtonText: 'Cancelar',
-                reverseButtons: true
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    exportarDetalleGastos('excel');
-                } else if (result.isDenied) {
-                    exportarDetalleGastos('pdf');
-                }
-            });
-        });
-
-        function exportarDetalleGastos(formato) {
-            const seleccionados = apiGrid.getSelectedRows();
-            const _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-
-            $.ajax({
-                url: '/reporteria/utilidad/descargar-gastos', // Asegúrate que exista este endpoint en tu backend
-                type: 'POST',
-                data: {
-                    _token,
-                    datos: JSON.stringify(seleccionados),
-                    tipo: formato
-                },
-                xhrFields: {
-                    responseType: 'blob'
-                },
-                beforeSend: () => {
-                    mostrarLoading('Generando reporte...');
-                },
-                success: function(response) {
-                    ocultarLoading();
-
-                    const blob = new Blob([response], {
-                        type: formato === 'pdf' ? 'application/pdf' :
-                            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-                    });
-
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    const fecha = moment().format('YYYY-MM-DD_HH-mm-ss');
-                    a.download = `GastosDetalle_${fecha}.${formato === 'pdf' ? 'pdf' : 'xlsx'}`;
-                    document.body.appendChild(a);
-                    a.click();
-                    window.URL.revokeObjectURL(url);
-                    document.body.removeChild(a);
-                },
-                error: function() {
-                    ocultarLoading();
-                    Swal.fire('Error', 'Ocurrió un error al generar el archivo.', 'error');
-                }
-            });
         }
     </script>
 @endpush

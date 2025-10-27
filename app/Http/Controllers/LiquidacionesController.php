@@ -331,7 +331,7 @@ class LiquidacionesController extends Controller
                 $asignacion->restante_pago_operador = $saldoContenedor - $c['MontoPago'];
                 $asignacion->fecha_pago_operador = date('Y-m-d');
 
-                if(($saldoContenedor - $c['MontoPago']) == 0){
+                if(($saldoContenedor - $c['MontoPago']) <= 0){
                     $asignacion->estatus_pagado = 'Pagado';
                 }
                 $asignacion->update();

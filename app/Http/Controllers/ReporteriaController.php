@@ -20,8 +20,9 @@ use App\Exports\GenericExport;
 use App\Exports\CxcExport;
 use App\Exports\CxpExport;
 use App\Models\GastosDiferidosDetalle;
+use App\Models\DineroContenedor;
+use App\Models\ViaticosOperador;
 use App\Models\CuentaGlobal;
-use App\Exports\GastosDetalleExport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Storage;
@@ -766,6 +767,11 @@ public function export_cxp(Request $request)
 
                 $gastosExtra = GastosExtras::where('id_cotizacion',$d->id_cotizacion)->get();
                 $gastosOperador = GastosOperadores::where('id_cotizacion',$d->id_cotizacion)->get();
+
+                $dineroViaje = DineroContenedor::where('id_contenedor',$d->id_cotizacion)->get()->sum('monto');
+                $dineroViajeJustificado = ViaticosOperador::where('id_cotizacion',$d->id_cotizacion)->get()->sum('monto');
+
+                $sinJustificar = $dineroViaje - $dineroViajeJustificado;
     
                 foreach($gastosExtra as $ge){
                     $detalleGastos [] = ["fecha_gasto" => $ge->created_at, 
@@ -805,8 +811,9 @@ public function export_cxp(Request $request)
                             "precioViaje" => $d->total + $gastosExtra->sum('monto'),
                             "transportadoPor" => (is_null($d->Proveedor)) ? 'Operador' : 'Proveedor',
                             "operadorOrProveedor" => (is_null($d->Proveedor)) ? $d->Operador : $d->Proveedor,
-                            "pagoOperacion" => $pagoOperacion,
+                            "pagoOperacion" => $pagoOperacion - abs($sinJustificar),
                             "gastosExtra" => $gastosExtra->sum('monto'),
+                            "dineroViajeSinJustificar" => abs($sinJustificar),
                             "gastosViaje" => $gastosOperador->sum('cantidad'),
                             "viajeInicia"=> $d->fecha_inicio,
                             "viajeTermina"=> $d->fecha_fin, 
@@ -814,7 +821,7 @@ public function export_cxp(Request $request)
                             "estatusPago" => ($d->estatus_pago == 1) ? 'Pagado' : 'Por Cobrar',
                             "gastosDiferidos" =>  $gastosDiferidos,
                             "detalleGastos" => $detalleGastos,
-                            "utilidad" => $d->total  - $pagoOperacion - $gastosDiferidos - $gastosExtra->sum('monto') - $gastosOperador->sum('cantidad'),
+                            "utilidad" => $d->total  - $pagoOperacion - $gastosDiferidos - $gastosExtra->sum('monto') - $gastosOperador->sum('cantidad') ,
 
                             ];
                 $Info[] = $Columns;
@@ -845,7 +852,7 @@ public function export_cxp(Request $request)
     ->whereBetween('fecha',[$fechaInicio,$fechaFin])
     ->get();
 
-$gastos = $gastosGenerales->sum('monto1');
+       $gastos = $gastosGenerales->sum('monto1');
 
        // $gastos = [];
 
@@ -884,39 +891,6 @@ $gastos = $gastosGenerales->sum('monto1');
 }
 
     }
-
-    
-    public function descargarGastos(Request $request)
-{
-    $datos = json_decode($request->datos, true);
-    $tipo = $request->tipo;
-
-    $coleccion = collect();
-
-    foreach ($datos as $contenedor) {
-        foreach ($contenedor['detalleGastos'] ?? [] as $gasto) {
-            $coleccion->push([
-                'Contenedor' => $contenedor['numContenedor'],
-                'Motivo' => $gasto['motivo_gasto'] ?? '—',
-                'Fecha' => \Carbon\Carbon::parse($gasto['fecha_gasto'])->translatedFormat('l, j \\de F \\del Y'),
-                'Tipo' => $gasto['tipo_gasto'] ?? '—',
-                'Monto' => $gasto['monto_gasto'] ?? 0,
-            ]);
-        }
-    }
-
-    if ($tipo === 'excel') {
-        return Excel::download(new GastosDetalleExport($coleccion), 'GastosDetalle.xlsx');
-    } elseif ($tipo === 'pdf') {
-        $pdf = PDF::loadView('reporteria.utilidad.gastos_pdf', [
-    'datos' => $coleccion
-]);
-return $pdf->download('GastosDetalle.pdf');
-    }
-
-    return response()->json(['error' => 'Tipo no soportado'], 400);
-}
-
 
     // ==================== D O C U M E N T O S ====================
 

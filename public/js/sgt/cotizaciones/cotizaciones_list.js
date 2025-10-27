@@ -272,6 +272,20 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const botonAbrirModal = document.getElementById('abrirModalBtn');
 
+    const txtOperador = document.querySelector('#txtOperador')
+    const txtTelefono = document.querySelector('#txtTelefono')
+    const txtNumUnidad = document.querySelector('#txtNumUnidad')
+    const txtPlacas = document.querySelector('#txtPlacas')
+    const txtSerie = document.querySelector('#txtSerie')
+    const txtImei = document.querySelector('#txtImei')
+    const txtNumChasisA = document.querySelector('#txtNumChasisA')
+    const txtPlacasA = document.querySelector('#txtPlacasA')
+    const txtImeiChasisA = document.querySelector('#txtImeiChasisA')
+
+    const txtNumChasisB = document.querySelector('#txtNumChasisB')
+    const txtPlacasB = document.querySelector('#txtPlacasB')
+    const txtImeiChasisB = document.querySelector('#txtImeiChasisB')
+
     if(botonAbrirModal){
         botonAbrirModal.addEventListener('click', () => {
             let seleccion = gridApi.getSelectedRows();
@@ -283,7 +297,45 @@ document.addEventListener("DOMContentLoaded", function () {
             document.getElementById('destinoViaje').textContent = seleccion[0].destino;
             document.getElementById('estatusViaje').textContent = seleccion[0].estatus;
             }
+
+            let _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            let idContenedor = seleccion[0].id
+           
+            let payload = {_token, idContenedor}
             
+            $.ajax({
+                url:'/mep/viajes/consulta-asignacion',
+                type:'post',
+                data: payload,
+                beforeSend:()=>{},
+                success:(response)=>{
+                    
+                    txtOperador.value = response[0].operador.nombre
+                    txtTelefono.value = response[0].operador.telefono
+
+                    txtNumUnidad.value = response[0].camion.id_equipo
+                    txtPlacas.value = response[0].camion.placas
+                    txtSerie.value = response[0].camion.num_serie
+                    txtImei.value = response[0].camion.imei
+
+                    document.getElementById('selectGPS').value = response[0].camion.gps_company_id;
+
+                    txtNumChasisA.value = response[0].chasis.id_equipo
+                    txtPlacasA.value = response[0].chasis.placas
+                    txtImeiChasisA.value = response[0].chasis.imei
+
+                    document.getElementById('selectChasisAGPS').value = response[0].chasis.gps_company_id;
+
+                    txtNumChasisB.value = response[0].chasis2.id_equipo
+                    txtPlacasB.value = response[0].chasis2.placas
+                    txtImeiChasisB.value = response[0].chasis2.imei
+                    document.getElementById('selectChasisBGPS').value = response[0].chasis2.gps_company_id;
+
+                },
+                error:(err)=>{
+
+                }
+            });
     
             let modalElement = (seleccion.length != 1) ? 'noSeleccionModal' : 'viajeModal'
             const modal1 = new bootstrap.Modal(document.getElementById(modalElement));
@@ -349,8 +401,13 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function seleccionarContenedor(){
-        if (currentTab != 'en_espera' && currentTab != 'aprobadas') return false
+
         let seleccion = gridApi.getSelectedRows();
+        localStorage.setItem('numContenedor',seleccion[0].contenedor); 
+        localStorage.setItem('idContenedor',seleccion[0].id); 
+        
+        if (currentTab != 'en_espera' && currentTab != 'aprobadas') return false
+        
         if(seleccion.length > 2){
             Swal.fire('Maximo 2 contenedores','Lo sentimos, solo puede seleccionar maximo 2 contenedores, estos deben ser de un mismo cliente','warning')
             return false
@@ -365,8 +422,7 @@ document.addEventListener("DOMContentLoaded", function () {
             return false
         }
 
-        localStorage.setItem('numContenedor',seleccion[0].contenedor); 
-        localStorage.setItem('idContenedor',seleccion[0].id); 
+        
 
     }
 
