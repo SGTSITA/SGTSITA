@@ -74,13 +74,18 @@ class ExternosController extends Controller
         $clienteEmpresa = ClientEmpresa::where('id_client',auth()->user()->id_cliente)->get()->pluck('id_empresa');
         //return $clienteEmpresa;
         $empresas = Empresas::whereIn('id',$clienteEmpresa)->get();
+
         
+        $transportista = Proveedor::whereIn('id_empresa', $clienteEmpresa)->get();
+        
+       
         return view('cotizaciones.externos.solicitud_simple',[
                     "action" => "crear",
                     "formasPago" => $formasPago, 
                     "metodosPago" => $metodosPago, 
                     "usoCfdi" => $usoCfdi, 
-                    "proveedores" => $empresas
+                    "proveedores" => $empresas,
+                    "transportista" => $transportista,
                 ]);
     }
 
@@ -96,6 +101,8 @@ class ExternosController extends Controller
             $query->where('num_contenedor', $request->numContenedor);
         })
         ->first();
+
+         $transportista = Proveedor::whereIn('id_empresa', $clienteEmpresa)->get();
  
         return view('cotizaciones.externos.solicitud_simple',
                                                             ["action" => "editar",
@@ -103,7 +110,8 @@ class ExternosController extends Controller
                                                             "metodosPago" => $metodosPago, 
                                                             "usoCfdi" => $usoCfdi, 
                                                             "cotizacion" => $cotizacion,
-                                                            "proveedores" => $empresas
+                                                            "proveedores" => $empresas,
+                                                            "transportista" => $transportista,
                                                         ]);
     }
 
