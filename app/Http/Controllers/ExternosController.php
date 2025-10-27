@@ -67,7 +67,7 @@ class ExternosController extends Controller
         return view('cotizaciones.externos.step_one');
     }
 
-    public function solicitudSimple(){
+   public function solicitudSimple(){
         $formasPago = SatFormaPago::get();
         $metodosPago = SatMetodoPago::get();
         $usoCfdi = SatUsoCfdi::get();
@@ -75,17 +75,15 @@ class ExternosController extends Controller
         //return $clienteEmpresa;
         $empresas = Empresas::whereIn('id',$clienteEmpresa)->get();
 
+         $transportista = Proveedor::whereIn('id_empresa', $clienteEmpresa)->get();
         
-        $transportista = Proveedor::whereIn('id_empresa', $clienteEmpresa)->get();
-        
-       
         return view('cotizaciones.externos.solicitud_simple',[
                     "action" => "crear",
                     "formasPago" => $formasPago, 
                     "metodosPago" => $metodosPago, 
                     "usoCfdi" => $usoCfdi, 
                     "proveedores" => $empresas,
-                    "transportista" => $transportista,
+                      "transportista" => $transportista
                 ]);
     }
 
@@ -102,7 +100,11 @@ class ExternosController extends Controller
         })
         ->first();
 
-         $transportista = Proveedor::whereIn('id_empresa', $clienteEmpresa)->get();
+        $transportista = Proveedor::whereIn('id_empresa', $clienteEmpresa)->get();
+       // dd($transportista, $clienteEmpresa);
+       // $transportista = Proveedor::get();
+       // where('id_empresa',$cotizacion->id_proveedor)->
+      // where('id_empresa',$cotizacion->id_proveedor)->first();
  
         return view('cotizaciones.externos.solicitud_simple',
                                                             ["action" => "editar",
@@ -111,7 +113,7 @@ class ExternosController extends Controller
                                                             "usoCfdi" => $usoCfdi, 
                                                             "cotizacion" => $cotizacion,
                                                             "proveedores" => $empresas,
-                                                            "transportista" => $transportista,
+                                                            "transportista" => $transportista
                                                         ]);
     }
 
