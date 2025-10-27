@@ -13,39 +13,10 @@
   </div>
   <h5 class="fw-bold mb-2 mt-3">Dirección entrega</h5>
   <textarea name="direccion_entrega" id="direccion_entrega" class="form-control" placeholder="Dirección entrega">@if($action == "editar") {{trim($cotizacion->direccion_entrega)}} @endif</textarea>
-  <input @if($action=="editar" ) value="{{$cotizacion->latitud}}" @endif class="form-control" type="hidden" name="latitud" id="latitud" >
-  <input @if($action=="editar" ) value="{{$cotizacion->longitud}}" @endif class="form-control" type="hidden" name="longitud" id="longitud" >
+  <input @if($action=="editar" ) value="{{$cotizacion->latitud}}" @endif class="form-control" type="hidden" name="latitud" id="latitud" value="0">
+  <input @if($action=="editar" ) value="{{$cotizacion->longitud}}" @endif class="form-control" type="hidden" name="longitud" id="longitud" value="0">
   <input @if($action=="editar" ) value="{{$cotizacion->direccion_mapa}}" @endif class="form-control" type="hidden" name="direccion_mapa" id="direccion_mapa" value="NINGUNA SELECCIONADA">
   <input @if($action=="editar" ) value="{{$cotizacion->fecha_seleccion_ubicacion}}" @endif class="form-control" type="hidden" name="fecha_seleccion" id="fecha_seleccion" value="">
-
-<h5 class="fw-bold mb-2 mt-3">🌍 Ubicación en mapa</h5>
-
-<div class="d-flex align-items-center gap-2 mb-3">
-  <a 
-    href="@if($action === 'editar' && isset($cotizacion->latitud, $cotizacion->longitud)){{ 'https://www.google.com/maps/search/?api=1&query=' . $cotizacion->latitud . ',' . $cotizacion->longitud }}@else#@endif" 
-    id="linkMapa"
-    target="_blank"
-    class="link-mapa text-decoration-none"
-  >
-    <i class="fas fa-map-marker-alt me-1 text-danger"></i>
-    <span id="textoMapa">
-      @if($action === 'editar' && isset($cotizacion->latitud, $cotizacion->longitud))
-       {{ 'https://www.google.com/maps/search/?api=1&query=' . $cotizacion->latitud . ',' . $cotizacion->longitud }}
-      @else
-        Sin ubicación asignada
-      @endif
-    </span>
-  </a>
-
-  <button 
-    type="button" 
-    id="btnCopiarMapa" 
-    class="btn btn-outline-primary btn-sm"
-    title="Copiar enlace al portapapeles"
-  >
-    <i class="fas fa-copy"></i> Copiar
-  </button>
-</div>
 </div>
 <div class="col-12">
   <br>

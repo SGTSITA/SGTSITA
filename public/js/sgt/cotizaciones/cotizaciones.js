@@ -190,7 +190,7 @@ function calcularTotal(modulo = 'crear') {
 
 }
 
-function getClientes(clienteId,subclienteid) {
+function getClientes(clienteId){
     $.ajax({
         type: 'GET',
         url: '/subclientes/' + clienteId,
@@ -198,12 +198,7 @@ function getClientes(clienteId,subclienteid) {
             $('#id_subcliente').empty();
             $('#id_subcliente').append('<option value="">Seleccionar subcliente</option>');
             $.each(data, function(key, subcliente) {
-                if(subclienteid && subclienteid == subcliente.id) { 
-                    $('#id_subcliente').append('<option value="' + subcliente.id + '" selected>' + subcliente.nombre + '</option>');
-                }else{
-                    $('#id_subcliente').append('<option value="' + subcliente.id + '">' + subcliente.nombre + '</option>');
-                }
-                
+                $('#id_subcliente').append('<option value="' + subcliente.id + '">' + subcliente.nombre + '</option>');
             });
             $('#id_subcliente').select2();
         }
@@ -422,10 +417,8 @@ document.addEventListener('DOMContentLoaded', function () {
     inputMoneyFormatProveedores.on('input',()=>{calcularTotal('proveedores')})
 
 
-  
 
 });
-
 function crearurlmapalatitudlongitud(lat, lng) {
     let url = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
     console.log(url);
@@ -464,10 +457,6 @@ function crearurlmapalatitudlongitud(lat, lng) {
                         document.getElementById('direccion_entrega').value = direccion;
                         document.getElementById('direccion_mapa').value = direccion;
                     });
-            let urlCrearMapa = crearurlmapalatitudlongitud(lat, lng);
-            document.getElementById('linkMapa').href = urlCrearMapa;
-            document.getElementById('linkMapa').textContent = urlCrearMapa;
-
             });
         
 
@@ -682,7 +671,7 @@ $('#id_cliente').change(function() {
 
             }
         })
-        getClientes(clienteId,null);
+        getClientes(clienteId);
     } else {
         $('#id_subcliente').empty();
         $('#id_subcliente').append('<option value="">Seleccionar subcliente</option>');
@@ -1069,9 +1058,7 @@ $("#cotizacionCreate").on("submit", function(e){
     formData["longitud"] = document.getElementById("longitud")?.value ?? null;
     formData["direccion_mapa"] = document.getElementById("direccion_mapa")?.value ?? null;
     formData["fecha_seleccion"] = document.getElementById("fecha_seleccion")?.value ?? null;
-    formData["modifico_informacion"] = document.getElementById("modifico_informacion")?.value ?? 0;
 
-   //Obtenemos el UUID si es que ya se habia iniciado una cotizacion
    var uuid = localStorage.getItem('uuid');
    //Validaciones MEC
    if(uuid != null){

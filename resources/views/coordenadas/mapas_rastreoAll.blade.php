@@ -274,13 +274,6 @@ let tipo = "";
     //console.log('Ubicaciones recibidas:', data);
     const dataUbi= data;
   console.log('obteniendo unicacion convoy, sucess data :', idConvoy);
-
-  if (!dataUbi || dataUbi["message"]  || dataUbi.length === 0) {
-      console.warn('No se recibieron ubicaciones válidas:', data);
-       clearInterval(intervalIdsPorConvoy[{{ idConvoy }}]);
-       Swal.fire('Atención', 'No se recibieron ubicaciones válidas. La actualización se ha detenido.', 'warning');
-      return;
-    }
 //limpiarMarcadores();
   responseOk = true;
     if (Array.isArray(dataUbi)) {
@@ -370,8 +363,7 @@ if (latlocal && lnglocal) {
                 }
                 let extraInfo = '';
 
-                 if (info) {
-                if (t === 'Equipo') {
+                if (t === '#filtro-Equipo') {
                   extraInfo = `
                     <p><strong>IMEI CHASIS:</strong> ${info.imei_chasis}</p>
                            `;
@@ -391,21 +383,12 @@ if (latlocal && lnglocal) {
                                    ${extraInfo}
                   </div>
                 `;
-            }
-            //  document.getElementById('contenidoModalViaje').innerHTML = contenido;
 
-              
-              let infoCMaps=[]; 
-              if(t==='Convoy'){
+              document.getElementById('contenidoModalViaje').innerHTML = contenido;
 
-                let contenedoresConvoy = detalleConvoys.filter(d => d.conboy_id === parseInt(id));
-                infoCMaps=contenedoresConvoy;
-                   mostrarInfoContenedor(contenedoresConvoy,item.EquipoBD,"");
-              }else{
-                let resultadoComoArray = info ? [info] : [];
-                infoCMaps=resultadoComoArray;
-               mostrarInfoContenedor(resultadoComoArray,item.EquipoBD,"");
-              }
+              // Mostrar el modal con Bootstrap 5
+              const modal = new bootstrap.Modal(document.getElementById('modalInfoViaje'));
+              modal.show();
             });
           //} //end mostrar primero
            tipo= tipo + ' '+ item.contenedor;
@@ -453,96 +436,6 @@ if (latlocal && lnglocal) {
     console.error('Error al obtener ubicaciones:', error);
     detener();
   });
-}
-
-function mostrarInfoContenedor(contenedores,equipo,chasis) {
-  const tabs = document.getElementById("contenedorTabs");
-  const content = document.getElementById("contenedorTabsContent");
-
-  tabs.innerHTML = "";
-  content.innerHTML = "";
-  let info = "";
-
-  contenedores.forEach((contenedor, index) => {
-    let tabId =  contenedor.num_contenedor;
-    if(!tabId){
-        tabId =  contenedor.contenedor;
-    }
-   
-
-    // Crear pestaña
-    tabs.innerHTML += `
-      <li class="nav-item" role="presentation">
-        <button class="nav-link ${index === 0 ? "active" : ""}" 
-                id="${tabId}-tab" 
-                data-bs-toggle="tab" 
-                data-bs-target="#${tabId}" 
-                type="button" 
-                role="tab" 
-                aria-controls="${tabId}" 
-                aria-selected="${index === 0 ? "true" : "false"}">
-           ${tabId}
-        </button>
-      </li>
-    `;
-
-      info = contenedoresDisponiblesAll.find(d => d.contenedor === contenedor.num_contenedor);
-      if(!info){
-        info = contenedoresDisponiblesAll.find(d => d.contenedor === contenedor.contenedor);
-
-      }
-       // <p><strong>Contenedor:</strong> ${info.contenedor}</p>
-if(info){
-let filtroEqu= equiposSearch.find(equipo => equipo.id === info.id_equipo_unico);
-    
-     let infoContenido = `  
-                  <div class="tab-pane fade ${index === 0 ? "show active" : ""}" 
-           id="${tabId}" 
-           role="tabpanel" 
-           aria-labelledby="${tabId}-tab">
-                   
-                    <p><strong>Cliente:</strong> ${info.cliente}</p>
-                  
-                    <p><strong>Origen:</strong> ${info.origen}</p>
-                    <p><strong>Destino:</strong> ${info.destino}</p>
-                    <p><strong>Contrato:</strong> ${info.tipo_contrato}</p>
-                    <p><strong>Fecha Inicio:</strong> ${info.fecha_inicio}</p>
-                    <p><strong>Fecha Fin:</strong> ${info.fecha_fin}</p>
-                    <p><strong>Contacto Entrega:</strong> ${info.cp_contacto_entrega}</p>
-                    <p><strong>Operador:</strong> ${info.beneficiario}</p>
-                    <p><strong>Telefono:</strong> ${info.telefono_beneficiario}</p>
-                    <p>
-                        <span style="margin-right: 15px;">
-                            <strong>IMEI:</strong> ${info.imei}
-                        </span>
-                        <strong>Equipo:</strong> ${info.id_equipo}
-                        <strong>Placas:</strong> ${filtroEqu.placas}
-                    </p>
-                    <p>
-                        <span style="margin-right: 15px;">
-                            <strong>IMEI CHASIS:</strong> ${info.imei_chasis}
-                        </span>
-                        <strong>Chasis:</strong> ${info.id_equipo_chasis}
-                    </p>
-                  </div>
-                `;
-
-
-    // Crear contenido
-      content.innerHTML += infoContenido;
-}else{
-    Swal.fire({
-        title: 'Información de viaje no disponible',
-        text: 'No se encontró información para el contenedor seleccionado.',
-        icon: 'warning'
-    });
-}
-
-  
-  });
-
-  const modal = new bootstrap.Modal(document.getElementById('modalInfoViaje'));
-  modal.show();
 }
 let geocercaCircle = null;
 let marcadorActual = null;
