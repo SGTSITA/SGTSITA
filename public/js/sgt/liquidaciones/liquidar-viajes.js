@@ -505,7 +505,7 @@ function crearPivotTable(gridselectedrows) {
     [ 
       ...gridselectedrows.map(c => ({
         label: `${c.Contenedores}<br><span style="font-size: 14px; color: #008000;">${totales[c.IdContenedor].toLocaleString("es-MX", {style:"currency", currency:"MXN", minimumFractionDigits:2})}</span>`,
-        colspan: 3 
+        colspan: 2 
       }))
     ],
     nestedHeadersLevel2
