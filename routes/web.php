@@ -479,6 +479,10 @@ Route::post('operadores/{id}/restaurar', [App\Http\Controllers\OperadorControlle
 
     Route::post('liquidaciones/viajes/aplicar-pago', [App\Http\Controllers\LiquidacionesController::class, 'aplicarPago'])->name('pagar.viajes');
     Route::post('liquidaciones/viajes/gastos/justificar', [App\Http\Controllers\LiquidacionesController::class, 'justificarGastos'])->name('justifica.gastos');
+    Route::post('liquidaciones/viajes/gastos/justificar-multiple', [App\Http\Controllers\LiquidacionesController::class, 'justificarGastosMultiples'])->name('justifica.gastos.multiple');
+
+
+    
 
     Route::get('liquidaciones/show/{id}', [App\Http\Controllers\LiquidacionesController::class, 'show'])->name('show.liquidacion');
     Route::patch('liquidaciones/update/{id}', [App\Http\Controllers\LiquidacionesController::class, 'update'])->name('update.liquidacion');

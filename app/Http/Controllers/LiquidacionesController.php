@@ -91,6 +91,7 @@ class LiquidacionesController extends Controller
             $asignacion->total_monto = $montos[$asignacion->id_contenedor]->total_monto ?? 0;
         });
 
+      
         $contenedores = $asignacion_operador->map(function($c){
             
             $numContenedor = $c->contenedor->num_contenedor;
@@ -206,6 +207,96 @@ class LiquidacionesController extends Controller
 
         }
     }
+
+
+
+    public function justificarGastosMultiples(Request $r)
+{
+    try {
+        DB::beginTransaction();
+        $idEmpresa = auth()->user()->id_empresa;
+
+       $filas = $r->input('filas');
+
+         if (!is_array($filas) || empty($filas)) {
+            throw new \Exception("No hay datos válidos para procesar");
+        }
+
+        foreach ($filas as $item) {
+            $documCotizacion = DocumCotizacion::where('id', $item['IdContenedor'])
+                ->where('id_empresa', $idEmpresa)
+                ->first();
+
+            if (!$documCotizacion) continue;
+
+            ViaticosOperador::insert([
+                "id_cotizacion" => $documCotizacion->id_cotizacion,
+                "descripcion_gasto" => $item['motivo'],
+                "monto" => $item['monto'],
+            ]);
+
+            Asignaciones::where('id_contenedor', $documCotizacion->id)
+                ->update([
+                    "restante_pago_operador" => DB::raw('restante_pago_operador + '.$item['monto'])
+                ]);
+
+            $asignacion = Asignaciones::where('id_contenedor', $documCotizacion->id)->first();
+
+            $montoJustificacion = $item['monto'];
+            $sinJustificar = $asignacion->restante_pago_operador ?? 0;
+
+            $datosGasto = [
+                "id_cotizacion" => $documCotizacion->id_cotizacion,
+                "id_banco" => null,
+                "id_asignacion" => $asignacion->id,
+                "id_operador" => $asignacion->id_operador,
+                "cantidad" => ($montoJustificacion > $sinJustificar) ? $sinJustificar : $montoJustificacion,
+                "tipo" => $item['motivo'],
+                "estatus" => 'Pagado',
+                "fecha_pago" => null,
+                "pago_inmediato" => 1,
+                "created_at" => Carbon::now(),
+            ];
+
+            GastosOperadores::insert($datosGasto);
+
+            // Si excede
+            if ($montoJustificacion > $sinJustificar) {
+                $excedente = [
+                    "id_cotizacion" => $documCotizacion->id_cotizacion,
+                    "id_banco" => null,
+                    "id_asignacion" => $asignacion->id,
+                    "id_operador" => $asignacion->id_operador,
+                    "cantidad" => $montoJustificacion - $sinJustificar,
+                    "tipo" => $item['motivo'] . " **Excedente",
+                    "estatus" => 'Pago Pendiente',
+                    "fecha_pago" => null,
+                    "pago_inmediato" => 0,
+                    "created_at" => Carbon::now(),
+                ];
+
+                GastosOperadores::insert($excedente);
+            }
+        }
+
+        DB::commit();
+
+        return response()->json([
+            "Titulo" => "Correcto",
+            "Mensaje" => "Justificaciones guardadas correctamente",
+            "TMensaje" => "success"
+        ]);
+    } catch (\Throwable $t) {
+        DB::rollback();
+        $uniqid = uniqid();
+        Log::channel('daily')->error("Codigo: $uniqid, Error: justificarGastosMultiples ".$t->getMessage());
+        return response()->json([
+            "Titulo" => "Error",
+            "Mensaje" => "Codigo error: $uniqid. Mensaje: ".$t->getMessage(),
+            "TMensaje" => "error"
+        ]);
+    }
+}
 
     public function agregarDineroViaje(Request $request){
         try{

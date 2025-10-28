@@ -199,6 +199,41 @@ class MissionResultRenderer {
             dNumViajes.textContent = response.numViajes
             saldoActual = response.prestamos.reduce((suma,p) => suma + parseFloat( p.saldo_actual) ,0)
             totalPrestamo.textContent = moneyFormat(saldoActual)
+
+            let dataCContenedores = response.data;
+
+          if (dataCContenedores.length > 0) {
+  
+    let saved = JSON.parse(localStorage.getItem("justificaciones")) || {};
+
+    saved = [];
+
+    // Recorremos los contenedores que vienen del backend
+    dataCContenedores.forEach((contenedor) => {
+
+      // Si tiene justificaciones en la BD
+      if (contenedor.justificacion && contenedor.justificacion.length > 0) {
+
+        contenedor.justificacion.forEach((c) => {
+          // Creamos un registro por cada fila de justificación
+          saved.push({
+            [`motivo|${contenedor.id_contenedor}`]: c.descripcion_gasto,
+            [`monto|${contenedor.id_contenedor}`]: c.monto
+          });
+        });
+
+      } else {
+        // Si no tiene, inicializamos una fila vacía para ese contenedor
+        saved.push({
+          [`motivo|${contenedor.id_contenedor}`]: '',
+          [`monto|${contenedor.id_contenedor}`]: ''
+        });
+      }
+    });
+    console.log("Justificaciones cargadas desde backend:", saved);
+    localStorage.setItem("justificaciones", JSON.stringify(saved));
+}
+
             if(saldoActual <= 0) {
               montoPagoPrestamo.disabled = true; 
               montoPagoPrestamo.classList.add('is-invalid'); 
@@ -312,33 +347,260 @@ class MissionResultRenderer {
    });
 
    btnJustificar.addEventListener('click',()=>{
-    openModalJustificar()
+    openModalJustificar('justificar-multiple')
    });
 
    btnDineroViaje.addEventListener('click',()=>{
     openModalJustificar('dinero_viaje')
    });
+   
 
   function openModalJustificar(accion = 'justificar'){
+
     let justificaContenedores = apiGrid.getSelectedRows();
-    if(justificaContenedores.length != 1){
-          Swal.fire('Seleccione un contenedor','Debe seleccionar solo un contenedor de la lista','warning');
-          return false;
+    let modalElement = null;
+
+
+    if(justificaContenedores.length != 1 && accion != 'justificar-multiple'){
+        Swal.fire('Seleccione un contenedor','Debe seleccionar solo un contenedor de la lista','warning');
+        return false;
+    }
+    else if(justificaContenedores.length < 1 && accion == 'justificar-multiple'){
+        Swal.fire('Seleccione contenedores','Debe seleccionar al menos un contenedor de la lista','warning');
+        return false;
     } 
 
-    let actionTitle = document.querySelector('#actionTitle');
-    let bancoRetiro = document.querySelector('#bancoRetiro')
-    actionTitle.textContent = (accion == 'justificar') ? 'Justificar gastos' : 'Registro dinero viaje';
+    if(accion == 'justificar-multiple'){
+        modalElement = document.getElementById('modal-justificar-multiple');
 
-    (accion == 'justificar') ? bancoRetiro.classList.add('d-none') :
-    bancoRetiro.classList.remove('d-none')
+        // Ajuste del ancho del modal-dialog, no del grid
+        const modalDialog = modalElement.querySelector('.modal-dialog');
+        modalDialog.style.maxWidth = `${Math.min(200 + justificaContenedores.length * 250, 1200) + 20}px`;
 
+        // Crear el grid, solo ajusta altura, no ancho
+        crearPivotTable(justificaContenedores);
+
+    } else {
+        modalElement = document.getElementById('modal-justificar');
+    }
+
+    // Ajuste de títulos y campos
+    document.querySelector('#actionTitle').textContent = (accion == 'justificar') ? 'Justificar gastos' : 'Registro dinero viaje';
+    const bancoRetiro = document.querySelector('#bancoRetiro');
+    (accion == 'justificar') ? bancoRetiro.classList.add('d-none') : bancoRetiro.classList.remove('d-none');
     document.getElementById('btnJustificar').setAttribute('data-sgt-action', accion);
 
-    const modalElement = document.getElementById('modal-justificar');
-      const bootstrapModal = new bootstrap.Modal(modalElement);
-      bootstrapModal.show();
+    const bootstrapModal = new bootstrap.Modal(modalElement);
+    bootstrapModal.show();
+    
   }
+
+function crearPivotTable(gridselectedrows) {
+  const container = document.getElementById("gridJustificar");
+
+  // Leer justificaciones guardadas
+  let justificaciones = [];
+  const saved = localStorage.getItem("justificaciones");
+  if (saved) {
+    try {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed)) justificaciones = parsed;
+    } catch (e) {
+      console.error("Error al leer localStorage:", e);
+    }
+  }
+
+  const contenedoresSeleccionados = gridselectedrows.map(c => c.IdContenedor);
+  let dataParaJustificar = [];
+
+  // Agrupar justificaciones por contenedor
+  const agrupadoPorContenedor = {};
+  contenedoresSeleccionados.forEach(id => {
+    agrupadoPorContenedor[id] = justificaciones.filter(item =>
+      Object.keys(item).some(k => k.includes(`|${id}`))
+    );
+  });
+
+  // Calcular el número máximo de filas necesarias
+  const maxFilas = Math.max(
+    ...contenedoresSeleccionados.map(id => agrupadoPorContenedor[id].length),
+    10
+  );
+
+  // Crear estructura inicial de datos
+  for (let i = 0; i < maxFilas; i++) {
+    let fila = {};
+    contenedoresSeleccionados.forEach(id => {
+      const registro = agrupadoPorContenedor[id][i];
+      fila[`motivo|${id}`] = registro?.[`motivo|${id}`] || "";
+      fila[`monto|${id}`] = registro?.[`monto|${id}`] || "";
+    });
+    dataParaJustificar.push(fila);
+  }
+
+  // Calcular totales iniciales
+  const totales = {};
+  contenedoresSeleccionados.forEach(id => {
+    let total = 0;
+    dataParaJustificar.forEach(fila => {
+      const monto = parseFloat(fila[`monto|${id}`]);
+      if (!isNaN(monto)) total += monto;
+    });
+    totales[id] = total;
+  });
+
+  // Construir columnas y encabezados
+  const columns = [];
+  const nestedHeadersLevel1 = [];
+  const nestedHeadersLevel2 = [];
+
+  gridselectedrows.forEach(c => {
+    const totalFormateado = new Intl.NumberFormat("es-MX", {
+      style: "currency",
+      currency: "MXN",
+      minimumFractionDigits: 2,
+    }).format(totales[c.IdContenedor] || 0);
+
+    // 🟩 Primera fila: Nombre del contenedor y total debajo
+    nestedHeadersLevel1.push({
+      label: `${c.Contenedores}<br><span style="font-size: 12px; color: #008000;">${totalFormateado}</span>`,
+      colspan: 2,
+    });
+
+    nestedHeadersLevel2.push("Motivo", "Monto");
+
+    columns.push(
+      { data: `motivo|${c.IdContenedor}`, editor: "text", className: "htCenter htMiddle", width: 150 },
+      {
+        data: `monto|${c.IdContenedor}`,
+        type: "numeric",
+        className: "htRight htMiddle",
+        width: 100,
+        numericFormat: { pattern: "0,0.00", culture: "es-MX" },
+      }
+    );
+  });
+
+  // Ajustar ancho y altura del grid
+  let anchoGrid = columns.reduce((sum, col) => sum + (col.width || 100), 0) + 50;
+  if (gridselectedrows.length === 1) anchoGrid += 100;
+
+  container.style.width = `${anchoGrid}px`;
+  const alturaTabla = Math.min(260 + gridselectedrows.length * 30, 800);
+  container.style.height = `${alturaTabla + 60}px`;
+
+  // Función para recalcular totales y refrescar encabezados
+  function recalcularTotales() {
+    contenedoresSeleccionados.forEach(id => {
+      let total = 0;
+      dataParaJustificar.forEach(fila => {
+        const monto = parseFloat(fila[`monto|${id}`]);
+        if (!isNaN(monto)) total += monto;
+      });
+      totales[id] = total;
+    });
+
+    // 🔄 Actualizar encabezados dinámicamente
+    window.hotInstance.updateSettings({
+      nestedHeaders: [
+        gridselectedrows.map(c => ({
+          label: `${c.Contenedores}<br><span style="font-size: 12px; color: #008000;">${new Intl.NumberFormat("es-MX", {
+            style: "currency",
+            currency: "MXN",
+            minimumFractionDigits: 2,
+          }).format(totales[c.IdContenedor] || 0)}</span>`,
+          colspan: 2,
+        })),
+        nestedHeadersLevel2,
+      ],
+    });
+  }
+
+  // Crear o actualizar Handsontable
+  if (window.hotInstance) {
+    window.hotInstance.updateSettings({
+      data: dataParaJustificar,
+      columns,
+      nestedHeaders: [nestedHeadersLevel1, nestedHeadersLevel2],
+      stretchH: "none",
+      height: alturaTabla,
+    });
+    window.hotInstance.render();
+  } else {
+    window.hotInstance = new Handsontable(container, {
+      data: dataParaJustificar,
+      columns,
+      nestedHeaders: [nestedHeadersLevel1, nestedHeadersLevel2],
+      rowHeaders: true,
+      stretchH: "none",
+      manualColumnResize: true,
+      manualRowResize: true,
+      contextMenu: true,
+      height: alturaTabla,
+      viewportRowRenderingOffset: 0,
+      licenseKey: "non-commercial-and-evaluation",
+      afterChange: function (changes, source) {
+        if (source === "loadData") return;
+        guardarJustificacionesEnLocalStorage();
+        recalcularTotales(); // 🧮 recalcular al cambiar montos
+      },
+    });
+  }
+
+  // Recalcular totales iniciales
+  recalcularTotales();
+
+  const modal = document.getElementById("modal-justificar-multiple");
+  const modalDialog = modal.querySelector(".modal-dialog");
+  modalDialog.style.maxWidth = `${anchoGrid + 60}px`;
+
+  modal.addEventListener("shown.bs.modal", () => {
+    window.hotInstance.render();
+    window.hotInstance.refreshDimensions();
+  }, { once: true });
+}
+function guardarJustificacionesEnLocalStorage() {
+  const data = window.hotInstance.getSourceData();
+  localStorage.setItem("justificaciones", JSON.stringify(data));
+  console.log("Datos guardados en localStorage");
+}
+document.getElementById("btnLimpiarTabla").addEventListener("click", function() {
+  Swal.fire({
+    title: "¿Estás seguro?",
+    text: "Se eliminarán todos los datos capturados en la tabla.",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonColor: "#d33",
+    cancelButtonColor: "#3085d6",
+    confirmButtonText: "Sí, limpiar",
+    cancelButtonText: "Cancelar"
+  }).then((result) => {
+    if (result.isConfirmed) {
+
+      let dataParaJustificar = window.hotInstance.getSourceData();
+      dataParaJustificar = dataParaJustificar.map(fila => {
+        const nuevaFila = {};
+        Object.keys(fila).forEach(k => nuevaFila[k] = "");
+        return nuevaFila;
+      });
+
+      window.hotInstance.loadData(dataParaJustificar);
+      limpiarJustificacionesLocalStorage();
+    }
+  });
+});
+
+function limpiarJustificacionesLocalStorage() {
+  localStorage.removeItem("justificaciones");
+}
+  document.getElementById('btnAddRow').addEventListener('click', () => {
+      if(window.hotInstance){
+        hotInstance.alter('insert_row', hotInstance.countRows());
+      }    else{
+        console.log('La tabla no está inicializada','error');
+      }
+    
+  });
 
   function justificarGasto(){
 
@@ -412,6 +674,103 @@ class MissionResultRenderer {
       }
     })
   }
+
+
+  function justificarGastoMultiple(){
+ const allData = window.hotInstance.getSourceData(); // todas las filas
+  const gridselectedrows = apiGrid.getSelectedRows(); // contenedores seleccionados actualmente
+
+  const payload = []; // lo que se enviará al backend
+  const errores = []; // para capturar validaciones
+
+  allData.forEach((fila, rowIndex) => {
+    gridselectedrows.forEach(c => {
+      const motivoKey = `motivo|${c.IdContenedor}`;
+      const montoKey = `monto|${c.IdContenedor}`;
+
+      const motivo = fila[motivoKey]?.trim() || "";
+      const monto = fila[montoKey];
+
+      // Validación: si hay motivo, debe haber monto válido
+      if (motivo && (!monto || isNaN(monto) || monto <= 0)) {
+        errores.push(`Contenedor: ${c.Contenedores}, Fila: ${rowIndex + 1}`);
+
+
+         const colIndex = window.hotInstance.propToCol(montoKey);
+  resaltarCelda(rowIndex, colIndex,8);
+      }
+
+      // Solo agregar al payload si hay algún dato
+      if (motivo && monto) {
+        payload.push({
+          IdContenedor: c.IdContenedor,
+          motivo,
+          monto: monto || 0
+        });
+      }
+    });
+  });
+
+  // Mostrar errores si los hay
+  if (errores.length > 0) {
+    Swal.fire({
+      icon: "warning",
+      title: "Faltan montos válidos",
+      html: "Revisa las siguientes filas:<br>" + errores.join("<br>"),
+    });
+    return; // no enviar al backend
+  }
+let token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+  // 🔹 Enviar al backend
+  fetch("/liquidaciones/viajes/gastos/justificar-multiple", {
+    method: "POST",
+  headers: {
+    'Content-Type': 'application/json',
+    'X-CSRF-TOKEN': token
+  },
+    body: JSON.stringify({ filas: payload })
+  })
+  .then(res => res.json())
+  .then(res => {
+    Swal.fire({
+      icon: "success",
+      title: "Guardado exitoso",
+      text: "Las justificaciones se enviaron correctamente."
+    });
+    limpiarJustificacionesLocalStorage();
+    $('#modal-justificar-multiple').modal('hide');
+    const IdOperador = gridselectedrows.length > 0 ? gridselectedrows[0].IdOperador : null;
+    if (IdOperador) {
+      mostrarViajesOperador(IdOperador);
+    }
+  })
+  .catch(err => {
+    console.error(err);
+    Swal.fire({
+      icon: "error",
+      title: "Error al guardar",
+      text: "Ocurrió un problema al enviar los datos al servidor."
+    });
+  });
+  }
+
+  function resaltarCelda(row, col, veces = 3, intervalo = 300) {
+  let count = 0;
+  const celda = window.hotInstance.getCell(row, col);
+
+  if (!celda) return;
+
+  const originalBg = celda.style.backgroundColor;
+
+  const blink = setInterval(() => {
+    celda.style.backgroundColor = (count % 2 === 0) ? "#ffcccc" : originalBg;
+    count++;
+    if (count > veces * 2) {
+      celda.style.backgroundColor = originalBg;
+      clearInterval(blink);
+    }
+  }, intervalo);
+}
 
    $(".moneyformat").on("focus",(e)=>{
     var val = e.target.value;
