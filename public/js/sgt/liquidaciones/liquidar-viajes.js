@@ -462,7 +462,7 @@ function crearPivotTable(gridselectedrows) {
 
     nestedHeadersLevel1.push({
       label: `${c.Contenedores}<br><span style="font-size: 14px; color: #008000;">${totalFormateado}</span>`,
-      colspan: 3,
+      colspan: 2,
     });
 
     nestedHeadersLevel2.push( "Concepto", "Monto");
