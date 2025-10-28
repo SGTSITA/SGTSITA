@@ -208,28 +208,27 @@ class MissionResultRenderer {
 
     saved = [];
 
-    // Recorremos los contenedores que vienen del backend
-    dataCContenedores.forEach((contenedor) => {
-
-      // Si tiene justificaciones en la BD
-      if (contenedor.justificacion && contenedor.justificacion.length > 0) {
-
-        contenedor.justificacion.forEach((c) => {
-          // Creamos un registro por cada fila de justificación
-          saved.push({
-            [`motivo|${contenedor.id_contenedor}`]: c.descripcion_gasto,
-            [`monto|${contenedor.id_contenedor}`]: c.monto
-          });
-        });
-
-      } else {
-        // Si no tiene, inicializamos una fila vacía para ese contenedor
+     dataCContenedores.forEach((contenedor) => {
+   
+    if (contenedor.justificacion && contenedor.justificacion.length > 0) {
+      contenedor.justificacion.forEach((c) => {
         saved.push({
-          [`motivo|${contenedor.id_contenedor}`]: '',
-          [`monto|${contenedor.id_contenedor}`]: ''
+        
+          [`id_registro|${contenedor.id_contenedor}`]: c.id, 
+          [`motivo|${contenedor.id_contenedor}`]: c.descripcion_gasto,
+          [`monto|${contenedor.id_contenedor}`]: parseFloat(c.monto).toFixed(2)
         });
-      }
-    });
+      });
+    } else {
+      
+      saved.push({
+        [`id_registro|${contenedor.id_contenedor}`]: null,
+        [`motivo|${contenedor.id_contenedor}`]: '',
+        [`monto|${contenedor.id_contenedor}`]: ''
+      });
+    }
+  });
+
     console.log("Justificaciones cargadas desde backend:", saved);
     localStorage.setItem("justificaciones", JSON.stringify(saved));
 }
@@ -431,9 +430,10 @@ function crearPivotTable(gridselectedrows) {
   for (let i = 0; i < maxFilas; i++) {
     let fila = {};
     contenedoresSeleccionados.forEach(id => {
-      const registro = agrupadoPorContenedor[id][i];
-      fila[`motivo|${id}`] = registro?.[`motivo|${id}`] || "";
-      fila[`monto|${id}`] = registro?.[`monto|${id}`] || "";
+      const registro = agrupadoPorContenedor[id][i] || {};
+      fila[`id_registro|${id}`] = registro[`id_registro|${id}`] ?? "";
+      fila[`motivo|${id}`] = registro[`motivo|${id}`] ?? "";
+      fila[`monto|${id}`] = registro[`monto|${id}`] ?? "";
     });
     dataParaJustificar.push(fila);
   }
@@ -449,7 +449,6 @@ function crearPivotTable(gridselectedrows) {
     totales[id] = total;
   });
 
-  // Construir columnas y encabezados
   const columns = [];
   const nestedHeadersLevel1 = [];
   const nestedHeadersLevel2 = [];
@@ -461,15 +460,15 @@ function crearPivotTable(gridselectedrows) {
       minimumFractionDigits: 2,
     }).format(totales[c.IdContenedor] || 0);
 
-    // 🟩 Primera fila: Nombre del contenedor y total debajo
     nestedHeadersLevel1.push({
-      label: `${c.Contenedores}<br><span style="font-size: 12px; color: #008000;">${totalFormateado}</span>`,
-      colspan: 2,
+      label: `${c.Contenedores}<br><span style="font-size: 14px; color: #008000;">${totalFormateado}</span>`,
+      colspan: 3,
     });
 
-    nestedHeadersLevel2.push("Motivo", "Monto");
+    nestedHeadersLevel2.push( "Concepto", "Monto");
 
     columns.push(
+          // Solo cambio visual, sigue apuntando a motivo|id internamente
       { data: `motivo|${c.IdContenedor}`, editor: "text", className: "htCenter htMiddle", width: 150 },
       {
         data: `monto|${c.IdContenedor}`,
@@ -500,23 +499,22 @@ function crearPivotTable(gridselectedrows) {
       totales[id] = total;
     });
 
-    // 🔄 Actualizar encabezados dinámicamente
-    window.hotInstance.updateSettings({
-      nestedHeaders: [
-        gridselectedrows.map(c => ({
-          label: `${c.Contenedores}<br><span style="font-size: 12px; color: #008000;">${new Intl.NumberFormat("es-MX", {
-            style: "currency",
-            currency: "MXN",
-            minimumFractionDigits: 2,
-          }).format(totales[c.IdContenedor] || 0)}</span>`,
-          colspan: 2,
-        })),
-        nestedHeadersLevel2,
-      ],
-    });
+    // Actualizar encabezados dinámicamente
+ window.hotInstance.updateSettings({
+  nestedHeaders: [
+    [ 
+      ...gridselectedrows.map(c => ({
+        label: `${c.Contenedores}<br><span style="font-size: 14px; color: #008000;">${totales[c.IdContenedor].toLocaleString("es-MX", {style:"currency", currency:"MXN", minimumFractionDigits:2})}</span>`,
+        colspan: 3 
+      }))
+    ],
+    nestedHeadersLevel2
+  ],
+
+});
   }
 
-  // Crear o actualizar Handsontable
+  
   if (window.hotInstance) {
     window.hotInstance.updateSettings({
       data: dataParaJustificar,
@@ -524,15 +522,17 @@ function crearPivotTable(gridselectedrows) {
       nestedHeaders: [nestedHeadersLevel1, nestedHeadersLevel2],
       stretchH: "none",
       height: alturaTabla,
+      viewportRowRenderingOffset: 0,
     });
     window.hotInstance.render();
+window.hotInstance.refreshDimensions();
   } else {
     window.hotInstance = new Handsontable(container, {
       data: dataParaJustificar,
       columns,
       nestedHeaders: [nestedHeadersLevel1, nestedHeadersLevel2],
       rowHeaders: true,
-      stretchH: "none",
+         stretchH: "none",
       manualColumnResize: true,
       manualRowResize: true,
       contextMenu: true,
@@ -541,13 +541,12 @@ function crearPivotTable(gridselectedrows) {
       licenseKey: "non-commercial-and-evaluation",
       afterChange: function (changes, source) {
         if (source === "loadData") return;
-        guardarJustificacionesEnLocalStorage();
-        recalcularTotales(); // 🧮 recalcular al cambiar montos
+        guardarJustificacionesEnLocalStorage(); // sigue usando motivo|id internamente
+        recalcularTotales();
       },
     });
   }
 
-  // Recalcular totales iniciales
   recalcularTotales();
 
   const modal = document.getElementById("modal-justificar-multiple");
@@ -703,6 +702,7 @@ function limpiarJustificacionesLocalStorage() {
       // Solo agregar al payload si hay algún dato
       if (motivo && monto) {
         payload.push({
+          idviatico: fila[`id_registro|${c.IdContenedor}`] || null,
           IdContenedor: c.IdContenedor,
           motivo,
           monto: monto || 0
