@@ -28,7 +28,7 @@
                                     </option>
                                 @endforeach
                             </select>
-                        </div>
+                           </div>
 
                     </div>
 
@@ -42,7 +42,7 @@
                                 <option value="">Seleccionar transportista</option>
                                 @foreach ($transportista as $tr)
                                     <option value="{{ $tr->id }}" 
-                                        @if ($action == 'editar' && $cotizacion?->id_transportista == $tr->id) selected @endif>
+                                        @if ($action == 'editar' && $cotizacion?->id_proveedor == $tr->id) selected @endif>
                                         {{ $tr->nombre }}</option>
                                 @endforeach
                             </select>
