@@ -118,7 +118,10 @@ class ExternosController extends Controller
     }
 
     public function solicitudMultiple(){
-        return view('cotizaciones.externos.solicitud_multiple');
+
+        return view('cotizaciones.externos.solicitud_multiple',[
+            "action" => "crear"
+        ]);
     }
 
     public function viajesDocuments(){
