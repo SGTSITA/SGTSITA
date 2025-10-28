@@ -199,6 +199,41 @@ class MissionResultRenderer {
             dNumViajes.textContent = response.numViajes
             saldoActual = response.prestamos.reduce((suma,p) => suma + parseFloat( p.saldo_actual) ,0)
             totalPrestamo.textContent = moneyFormat(saldoActual)
+
+            let dataCContenedores = response.data;
+
+          if (dataCContenedores.length > 0) {
+  
+    let saved = JSON.parse(localStorage.getItem("justificaciones")) || {};
+
+    saved = [];
+
+    // Recorremos los contenedores que vienen del backend
+    dataCContenedores.forEach((contenedor) => {
+
+      // Si tiene justificaciones en la BD
+      if (contenedor.justificacion && contenedor.justificacion.length > 0) {
+
+        contenedor.justificacion.forEach((c) => {
+          // Creamos un registro por cada fila de justificación
+          saved.push({
+            [`motivo|${contenedor.id_contenedor}`]: c.descripcion_gasto,
+            [`monto|${contenedor.id_contenedor}`]: c.monto
+          });
+        });
+
+      } else {
+        // Si no tiene, inicializamos una fila vacía para ese contenedor
+        saved.push({
+          [`motivo|${contenedor.id_contenedor}`]: '',
+          [`monto|${contenedor.id_contenedor}`]: ''
+        });
+      }
+    });
+    console.log("Justificaciones cargadas desde backend:", saved);
+    localStorage.setItem("justificaciones", JSON.stringify(saved));
+}
+
             if(saldoActual <= 0) {
               montoPagoPrestamo.disabled = true; 
               montoPagoPrestamo.classList.add('is-invalid'); 
@@ -325,6 +360,7 @@ class MissionResultRenderer {
     let justificaContenedores = apiGrid.getSelectedRows();
     let modalElement = null;
 
+
     if(justificaContenedores.length != 1 && accion != 'justificar-multiple'){
         Swal.fire('Seleccione un contenedor','Debe seleccionar solo un contenedor de la lista','warning');
         return false;
@@ -359,115 +395,170 @@ class MissionResultRenderer {
     
   }
 
- function crearPivotTable(gridselectedrows){
-    const container = document.getElementById("gridJustificar");
-let dataParaJustificar = [];
-const saved = localStorage.getItem("justificaciones");
-if (saved) {
-  try {
-    const parsed = JSON.parse(saved);
-    if (Array.isArray(parsed)) dataParaJustificar = parsed;
-  } catch (e) {
-    console.error("Error al leer localStorage:", e);
+function crearPivotTable(gridselectedrows) {
+  const container = document.getElementById("gridJustificar");
+
+  // Leer justificaciones guardadas
+  let justificaciones = [];
+  const saved = localStorage.getItem("justificaciones");
+  if (saved) {
+    try {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed)) justificaciones = parsed;
+    } catch (e) {
+      console.error("Error al leer localStorage:", e);
+    }
   }
-}
 
-// Crear las columnas para los contenedores seleccionados actualmente
-gridselectedrows.forEach(c => {
-  const motivoKey = `motivo|${c.IdContenedor}`;
-  const montoKey = `monto|${c.IdContenedor}`;
+  const contenedoresSeleccionados = gridselectedrows.map(c => c.IdContenedor);
+  let dataParaJustificar = [];
 
-  // Revisar si las columnas ya existen, si no, agregarlas a cada fila
-  dataParaJustificar.forEach(fila => {
-    if (!(motivoKey in fila)) fila[motivoKey] = "";
-    if (!(montoKey in fila)) fila[montoKey] = "";
+  // Agrupar justificaciones por contenedor
+  const agrupadoPorContenedor = {};
+  contenedoresSeleccionados.forEach(id => {
+    agrupadoPorContenedor[id] = justificaciones.filter(item =>
+      Object.keys(item).some(k => k.includes(`|${id}`))
+    );
   });
-});
 
-// Si no había nada en localStorage, inicializamos filas vacías
-if (dataParaJustificar.length === 0) {
-  for (let i = 0; i < 10; i++) {
-    const fila = {};
-    gridselectedrows.forEach(c => {
-      fila[`motivo|${c.IdContenedor}`] = "";
-      fila[`monto|${c.IdContenedor}`] = "";
+  // Calcular el número máximo de filas necesarias
+  const maxFilas = Math.max(
+    ...contenedoresSeleccionados.map(id => agrupadoPorContenedor[id].length),
+    10
+  );
+
+  // Crear estructura inicial de datos
+  for (let i = 0; i < maxFilas; i++) {
+    let fila = {};
+    contenedoresSeleccionados.forEach(id => {
+      const registro = agrupadoPorContenedor[id][i];
+      fila[`motivo|${id}`] = registro?.[`motivo|${id}`] || "";
+      fila[`monto|${id}`] = registro?.[`monto|${id}`] || "";
     });
     dataParaJustificar.push(fila);
   }
-}
 
-    const columns = [];
-    const nestedHeadersLevel1 = [];
-    const nestedHeadersLevel2 = [];
+  // Calcular totales iniciales
+  const totales = {};
+  contenedoresSeleccionados.forEach(id => {
+    let total = 0;
+    dataParaJustificar.forEach(fila => {
+      const monto = parseFloat(fila[`monto|${id}`]);
+      if (!isNaN(monto)) total += monto;
+    });
+    totales[id] = total;
+  });
 
-    gridselectedrows.forEach(c => {
-        nestedHeadersLevel1.push({ label: c.Contenedores, colspan: 2 });
-        nestedHeadersLevel2.push("Motivo", "Monto");
+  // Construir columnas y encabezados
+  const columns = [];
+  const nestedHeadersLevel1 = [];
+  const nestedHeadersLevel2 = [];
 
-        columns.push(
-            { data: `motivo|${c.IdContenedor}`, editor: "text", className: "htCenter htMiddle", width: 150 },
-            { data: `monto|${c.IdContenedor}`, type: "numeric", className: "htRight htMiddle", width: 100 ,
-    numericFormat: {
-      pattern: '0,0.00', // ✅ dos decimales con separador de miles
-      culture: 'en-US'   // puedes usar 'es-MX' o similar si prefieres coma decimal
-    }}
-        );
+  gridselectedrows.forEach(c => {
+    const totalFormateado = new Intl.NumberFormat("es-MX", {
+      style: "currency",
+      currency: "MXN",
+      minimumFractionDigits: 2,
+    }).format(totales[c.IdContenedor] || 0);
+
+    // 🟩 Primera fila: Nombre del contenedor y total debajo
+    nestedHeadersLevel1.push({
+      label: `${c.Contenedores}<br><span style="font-size: 12px; color: #008000;">${totalFormateado}</span>`,
+      colspan: 2,
     });
 
-    
-    let anchoGrid = columns.reduce((sum, col) => sum + (col.width || 100), 0)+50;
-    if(gridselectedrows.length ==1){
+    nestedHeadersLevel2.push("Motivo", "Monto");
 
-        anchoGrid += 100;
-    }
-    container.style.width = `${anchoGrid}px`;
+    columns.push(
+      { data: `motivo|${c.IdContenedor}`, editor: "text", className: "htCenter htMiddle", width: 150 },
+      {
+        data: `monto|${c.IdContenedor}`,
+        type: "numeric",
+        className: "htRight htMiddle",
+        width: 100,
+        numericFormat: { pattern: "0,0.00", culture: "es-MX" },
+      }
+    );
+  });
 
-   
-    const alturaTabla = Math.min(260 + gridselectedrows.length * 30, 800);
-    container.style.height = `${alturaTabla+60}px`;
+  // Ajustar ancho y altura del grid
+  let anchoGrid = columns.reduce((sum, col) => sum + (col.width || 100), 0) + 50;
+  if (gridselectedrows.length === 1) anchoGrid += 100;
 
-    if(window.hotInstance){
-        window.hotInstance.updateSettings({
-            data: dataParaJustificar,
-            columns,
-            nestedHeaders: [nestedHeadersLevel1, nestedHeadersLevel2],
-            stretchH: "none",
-            height: alturaTabla
-        });
-        window.hotInstance.render();
-    } else {
-        window.hotInstance = new Handsontable(container, {
-            data: dataParaJustificar,
-            columns,
-            nestedHeaders: [nestedHeadersLevel1, nestedHeadersLevel2],
-            rowHeaders: true,
-            stretchH: "none",
-            manualColumnResize: true,
-            manualRowResize: true,
-            contextMenu: true,
-            height: alturaTabla,
-            viewportRowRenderingOffset: 0,
-            licenseKey: "non-commercial-and-evaluation",
-            afterChange: function(changes, source) {
-              if (source === 'loadData') return; 
-              guardarJustificacionesEnLocalStorage();
-            }
-        });
-    }
+  container.style.width = `${anchoGrid}px`;
+  const alturaTabla = Math.min(260 + gridselectedrows.length * 30, 800);
+  container.style.height = `${alturaTabla + 60}px`;
 
-  
-    const modal = document.getElementById('modal-justificar-multiple');
-    const modalDialog = modal.querySelector('.modal-dialog');
-    modalDialog.style.maxWidth = `${anchoGrid + 60}px`;
+  // Función para recalcular totales y refrescar encabezados
+  function recalcularTotales() {
+    contenedoresSeleccionados.forEach(id => {
+      let total = 0;
+      dataParaJustificar.forEach(fila => {
+        const monto = parseFloat(fila[`monto|${id}`]);
+        if (!isNaN(monto)) total += monto;
+      });
+      totales[id] = total;
+    });
 
-
-    
-modal.addEventListener('shown.bs.modal', () => {
-    window.hotInstance.render();
-    window.hotInstance.refreshDimensions();
-}, { once: true }); 
+    // 🔄 Actualizar encabezados dinámicamente
+    window.hotInstance.updateSettings({
+      nestedHeaders: [
+        gridselectedrows.map(c => ({
+          label: `${c.Contenedores}<br><span style="font-size: 12px; color: #008000;">${new Intl.NumberFormat("es-MX", {
+            style: "currency",
+            currency: "MXN",
+            minimumFractionDigits: 2,
+          }).format(totales[c.IdContenedor] || 0)}</span>`,
+          colspan: 2,
+        })),
+        nestedHeadersLevel2,
+      ],
+    });
   }
 
+  // Crear o actualizar Handsontable
+  if (window.hotInstance) {
+    window.hotInstance.updateSettings({
+      data: dataParaJustificar,
+      columns,
+      nestedHeaders: [nestedHeadersLevel1, nestedHeadersLevel2],
+      stretchH: "none",
+      height: alturaTabla,
+    });
+    window.hotInstance.render();
+  } else {
+    window.hotInstance = new Handsontable(container, {
+      data: dataParaJustificar,
+      columns,
+      nestedHeaders: [nestedHeadersLevel1, nestedHeadersLevel2],
+      rowHeaders: true,
+      stretchH: "none",
+      manualColumnResize: true,
+      manualRowResize: true,
+      contextMenu: true,
+      height: alturaTabla,
+      viewportRowRenderingOffset: 0,
+      licenseKey: "non-commercial-and-evaluation",
+      afterChange: function (changes, source) {
+        if (source === "loadData") return;
+        guardarJustificacionesEnLocalStorage();
+        recalcularTotales(); // 🧮 recalcular al cambiar montos
+      },
+    });
+  }
+
+  // Recalcular totales iniciales
+  recalcularTotales();
+
+  const modal = document.getElementById("modal-justificar-multiple");
+  const modalDialog = modal.querySelector(".modal-dialog");
+  modalDialog.style.maxWidth = `${anchoGrid + 60}px`;
+
+  modal.addEventListener("shown.bs.modal", () => {
+    window.hotInstance.render();
+    window.hotInstance.refreshDimensions();
+  }, { once: true });
+}
 function guardarJustificacionesEnLocalStorage() {
   const data = window.hotInstance.getSourceData();
   localStorage.setItem("justificaciones", JSON.stringify(data));
@@ -485,6 +576,8 @@ document.getElementById("btnLimpiarTabla").addEventListener("click", function() 
     cancelButtonText: "Cancelar"
   }).then((result) => {
     if (result.isConfirmed) {
+
+      let dataParaJustificar = window.hotInstance.getSourceData();
       dataParaJustificar = dataParaJustificar.map(fila => {
         const nuevaFila = {};
         Object.keys(fila).forEach(k => nuevaFila[k] = "");

@@ -91,6 +91,7 @@ class LiquidacionesController extends Controller
             $asignacion->total_monto = $montos[$asignacion->id_contenedor]->total_monto ?? 0;
         });
 
+      
         $contenedores = $asignacion_operador->map(function($c){
             
             $numContenedor = $c->contenedor->num_contenedor;
