@@ -228,17 +228,36 @@ class LiquidacionesController extends Controller
                 ->first();
 
             if (!$documCotizacion) continue;
+            if ($item['idviatico'] != null) { // Actualizar registro existente
+                $viaticoAntes = ViaticosOperador::where('id', $item['idviatico'])->first();
+                $montoAntes = $viaticoAntes->monto;
+                ViaticosOperador::where('id', $item['idviatico'])
+                    ->update([
+                        "descripcion_gasto" => $item['motivo'],
+                        "monto" => $item['monto'],
+                    ]);
 
-            ViaticosOperador::insert([
+              $diferencia = $item['monto'] - $montoAntes;
+Asignaciones::where('id_contenedor', $documCotizacion->id)
+    ->update([
+        "restante_pago_operador" => DB::raw('restante_pago_operador + ' . $diferencia)
+    ]);
+
+            } else{
+                // Nuevo registro
+                 ViaticosOperador::insert([
                 "id_cotizacion" => $documCotizacion->id_cotizacion,
                 "descripcion_gasto" => $item['motivo'],
                 "monto" => $item['monto'],
             ]);
-
-            Asignaciones::where('id_contenedor', $documCotizacion->id)
+               Asignaciones::where('id_contenedor', $documCotizacion->id)
                 ->update([
                     "restante_pago_operador" => DB::raw('restante_pago_operador + '.$item['monto'])
                 ]);
+
+            }
+           
+         
 
             $asignacion = Asignaciones::where('id_contenedor', $documCotizacion->id)->first();
 
