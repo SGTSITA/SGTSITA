@@ -67,7 +67,7 @@ class ExternosController extends Controller
         return view('cotizaciones.externos.step_one');
     }
 
-    public function solicitudSimple(){
+   public function solicitudSimple(){
         $formasPago = SatFormaPago::get();
         $metodosPago = SatMetodoPago::get();
         $usoCfdi = SatUsoCfdi::get();
@@ -99,6 +99,12 @@ class ExternosController extends Controller
             $query->where('num_contenedor', $request->numContenedor);
         })
         ->first();
+
+        $transportista = Proveedor::whereIn('id_empresa', $clienteEmpresa)->get();
+       // dd($transportista, $clienteEmpresa);
+       // $transportista = Proveedor::get();
+       // where('id_empresa',$cotizacion->id_proveedor)->
+      // where('id_empresa',$cotizacion->id_proveedor)->first();
  
         return view('cotizaciones.externos.solicitud_simple',
                                                             ["action" => "editar",
@@ -106,7 +112,8 @@ class ExternosController extends Controller
                                                             "metodosPago" => $metodosPago, 
                                                             "usoCfdi" => $usoCfdi, 
                                                             "cotizacion" => $cotizacion,
-                                                            "proveedores" => $empresas
+                                                            "proveedores" => $empresas,
+                                                            "transportista" => $transportista
                                                         ]);
     }
 

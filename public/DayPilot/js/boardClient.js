@@ -253,11 +253,12 @@ dp.onEventClick = function (args) {
   getInfoViaje(args.e.data.start.value,args.e.data.end.value, args.e.data.text, args.e.data.id);
 };
 
-function abrirMapaEnNuevaPestana( contenedor,tipoS) {
- 
-   const url = `/coordenadas/mapa_rastreo?contenedor=${contenedor}&tipoS=${encodeURIComponent(tipoS)}`;
+function abrirMapaEnNuevaPestana( contenedor,tipoS,origenRastreo) {
+
+   const url = `/coordenadas/mapa_rastreo?contenedor=${contenedor}&tipoS=${encodeURIComponent(tipoS)}&origenRastreo=${encodeURIComponent(origenRastreo)}`;
    window.open(url, '_blank');
 }
+
 
 function getInfoViaje(startDate, endDate, numContenedor_, idContendor){
    let fechaSalida = document.querySelector('#fechaSalida')
@@ -269,14 +270,29 @@ function getInfoViaje(startDate, endDate, numContenedor_, idContendor){
   let numContenedor = document.querySelector('#numContenedorSpan')
   numContenedor.textContent = numContenedor_
 
-  let nombreTransportista = document.querySelector('#nombreTransportista')
-  let tipoViajeSpan = document.querySelector('#tipoViajeSpan')
+  let nombreProveedor = document.querySelector('#nombreProveedor')
+ // let nombreTransportista = document.querySelector('#nombreTransportista')
+  let contactoEntrega = document.querySelector('#ContactoEntrega')
+  let nombreOperador = document.querySelector('#nombreOperador')
+  let telefonoOperador = document.querySelector('#telefonoOperador')
+
+   
+  //let tipoViajeSpan = document.querySelector('#tipoViajeSpan')
 
   let origen = document.querySelector('#origen')
   let destino = document.querySelector('#destino')
   let nombreCliente = document.querySelector('#nombreCliente')
   let nombreSubcliente = document.querySelector('#nombreSubcliente')
-  
+
+  let id_equipo_camion = document.querySelector('#id_equipo_camion')
+  let placas_camion = document.querySelector('#placas_camion')
+
+  let marca_camion = document.querySelector('#marca_camion')
+  let imei_camion = document.querySelector('#imei_camion')
+
+  let id_equipo_chasis = document.querySelector('#id_equipo_chasis')
+  let imei_chasis = document.querySelector('#imei_chasis')
+
 
    var _token = $('input[name="_token"]').val();
    $.ajax({
@@ -291,23 +307,52 @@ function getInfoViaje(startDate, endDate, numContenedor_, idContendor){
                d.innerHTML = `--`
            })
 
-           nombreTransportista.textContent = "--"
-           tipoViajeSpan.textContent = "--"
+           nombreProveedor.textContent = "--"
+   //nombreTransportista.textContent = "--"
+   contactoEntrega.textContent = "--"
+   nombreOperador.textContent = "--"
+   telefonoOperador.textContent = "--"
+
+
+           tipoViajeSpan.textContent = ""
 
            origen.textContent = "--"
            destino.textContent = "--"
            nombreCliente.textContent = "--"
            nombreSubcliente.textContent = "--"
+              placas_camion.textContent = "--"
+                id_equipo_camion.textContent = "--"
+                marca_camion.textContent = "--"
+                imei_camion.textContent = "--"
+                id_equipo_chasis.textContent = "--"
+                imei_chasis.textContent = "--"
        },
        success:(response)=>{
            ocultarLoading()
-           nombreTransportista.textContent = response.nombre;
-           tipoViajeSpan.textContent = response.tipo
+
+
+             nombreProveedor.textContent = response.datosExtraviaje.empresa_beneficiario
+   contactoEntrega.textContent =  response.datosExtraviaje.cp_contacto_entrega ?? "--"
+   // nombreTransportista.textContent = response.datosExtraviaje.transportista_nombre ?? "--"
+   nombreOperador.textContent =    response.datosExtraviaje.beneficiario_nombre
+
+   telefonoOperador.textContent = response.datosExtraviaje.beneficiario_telefono ?? "--"
+
+
+    
+          // tipoViajeSpan.textContent = response.tipo
 
            origen.textContent = response.cotizacion.origen
            destino.textContent = response.cotizacion.destino
            nombreCliente.textContent = response.cliente.nombre
            nombreSubcliente.textContent = response.subcliente.nombre
+
+                placas_camion.textContent = response.documentos.placas_camion ?? "NA"
+                id_equipo_camion.textContent = response.documentos.id_equipo_camion ?? "NA"
+                marca_camion.textContent = response.documentos.marca_camion ?? "NA"
+                imei_camion.textContent = response.documentos.imei_camion ?? "NA"
+                id_equipo_chasis.textContent = response.documentos.id_equipo_chasis ?? "NA"
+                imei_chasis.textContent = response.documentos.imei_chasis ?? "NA"
 
            if(response.tipo == "Viaje Propio"){
                $('#tipoViajeSpan').addClass('bg-gradient-success')
@@ -316,9 +361,9 @@ function getInfoViaje(startDate, endDate, numContenedor_, idContendor){
            }
            let tipoS="Planeacion-> Contenedor:"
            //Once en true para que se ejecute una sola vez y se elimine el listener    onclick="('${params.data.contenedor}')
-           btnFinalizar.addEventListener('click', () => finalizarViaje(idContendor,numContenedor_), { once: true });
-           btnDeshacer.addEventListener('click', () => anularPlaneacion(idContendor,numContenedor_), { once: true });
-           btnRastreo.addEventListener('click', () => abrirMapaEnNuevaPestana(numContenedor_,tipoS), { once: true });
+           //btnFinalizar.addEventListener('click', () => finalizarViaje(idContendor,numContenedor_), { once: true });
+         //  btnDeshacer.addEventListener('click', () => anularPlaneacion(idContendor,numContenedor_), { once: true });
+           btnRastreo.addEventListener('click', () => abrirMapaEnNuevaPestana(numContenedor_,tipoS,'MECBoard'), { once: true });
 
            let documentos = response.documents
            let docs = Object.keys(documentos)
@@ -348,8 +393,27 @@ function getInfoViaje(startDate, endDate, numContenedor_, idContendor){
    const bootstrapModal = new bootstrap.Modal(modalElement);
    bootstrapModal.show();
 }
+function mostrarLoading(text = "Espere un momento...") {
+    let label = document.querySelector('#loading-text')
+    label.textContent = text
 
+    document.getElementById('loading-overlay').style.display = 'flex'
+}
 
+function ocultarLoading() {
+  document.getElementById('loading-overlay').style.display = 'none';
+}
+function abrirMapaEnNuevaPestana( numContenedor,tipoS,origenRastreo) {
+    //const url = `/mapa-comparacion?latitud=${latitud}&longitud=${longitud}&latitud_seguimiento=${latitud_seguimiento}&longitud_seguimiento=${longitud_seguimiento}&contenedor=${contenedor}`;
+     if (numContenedor) {
+         const url = `/coordenadas/mapa_rastreo?contenedor=${numContenedor}&tipoS=${encodeURIComponent(tipoS)}&origenRastreo=${encodeURIComponent(origenRastreo)}`;
+    window.open(url, '_blank');
+     }else{
+         Swal.fire('Validación', 'No se encontró información del contenedor.', 'warning');
+         return;
+     }
+   
+}
 function encontrarContenedor(contenedor){
    let busqueda = allEvents
    const resultados = busqueda.filter(f => f.num_contenedor?.includes(contenedor))
