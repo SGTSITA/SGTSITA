@@ -40,98 +40,19 @@
 <script src="{{ asset('js/sgt/common.js') }}?v={{ filemtime(public_path('js/sgt/common.js')) }}"></script>
 <script src="{{ asset('js/sgt/cotizaciones/cotizacion-multiple.js') }}?v={{ filemtime(public_path('js/sgt/cotizaciones/cotizacion-multiple.js')) }}"></script>
 <script>
-      $(document).ready(() => {
-            let subclienteid = {{ $cotizacion?->id_subcliente ?? 'null' }};
-        let clientes=    getClientes({{ Auth::User()->id_cliente }}, subclienteid)
+       $(document).ready(async () =>{
+																		   
+    let clientes = await getClientes({{Auth::User()->id_cliente}});
+    const handsontable = buildHandsOntable();
+    var btn = document.querySelector('#btnSolicitar');
+    btn.addEventListener('click',i=> handsontable.validarSolicitud())
 
-            var genericUUID = localStorage.getItem('uuid');
-            if (genericUUID == null) {
-                genericUUID = generateUUID();
-                localStorage.setItem('uuid', genericUUID);
-            }
+    var genericUUID = localStorage.getItem('uuid');
+     if(genericUUID == null){
+      genericUUID = generateUUID();
+      localStorage.setItem('uuid',genericUUID);
+     }
 
-            let condicionRecinto = document.querySelectorAll('.recinto');
-            let inputRecinto = document.querySelector('#input-recinto');
-            let textRecinto = document.querySelector('#text_recinto');
-
-            condicionRecinto.forEach(function(elemento) {
-                elemento.addEventListener('click', function() {
-                    inputRecinto.classList.toggle('d-none', elemento.attributes['data-kt-plan'].value != 'recinto-si')
-                    textRecinto.value = (elemento.attributes['data-kt-plan'].value != 'recinto-si') ? '' : 'recinto-si';
-                });
-            });
-
-            @if ($action == 'editar')
-                localStorage.setItem('numContenedor', '{{ $cotizacion->DocCotizacion->num_contenedor }}');
-
-                initFileUploader()
-	
-			
-
-                setTimeout(() => {
-                    document.getElementById('fileUploaderContainer').classList.remove('d-none')
-                    document.getElementById('noticeFileUploader').classList.add('d-none')
-                }, 3800);
-            @endif
-
-            document.getElementById('num_contenedor').addEventListener('keydown', function(e) {
-                if (e.key === '/') {
-                    e.preventDefault();
-                }
-            });
-
-            $(".fechas").daterangepicker({
-                singleDatePicker: true,
-                locale: {
-                    format: 'YYYY-MM-DD', // Formato día/mes/año
-                    applyLabel: "Aplicar",
-                    cancelLabel: "Cancelar",
-                    fromLabel: "Desde",
-                    toLabel: "Hasta",
-                    customRangeLabel: "Rango personalizado",
-                    weekLabel: "S",
-                    daysOfWeek: ["Do", "Lu", "Ma", "Mi", "Ju", "Vi", "Sa"],
-                    monthNames: [
-                        "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-                        "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
-                    ],
-                    firstDay: 1
-                }
-            });
-        })
-        @if ($action == 'editar' && $cotizacion->tipo_viaje == 'Full')
-            document.getElementById('selectContenedorFull').addEventListener('change', function() {
-                const contenedor = this.value;
-                const _token = '{{ csrf_token() }}';
-
-                const form = document.createElement('form');
-                form.method = 'POST';
-                form.action = '/viajes/editar';
-
-                const inputCont = document.createElement('input');
-                inputCont.type = 'hidden';
-                inputCont.name = 'numContenedor';
-                inputCont.value = contenedor;
-
-                const inputToken = document.createElement('input');
-                inputToken.type = 'hidden';
-                inputToken.name = '_token';
-                inputToken.value = _token;
-
-                form.appendChild(inputCont);
-                form.appendChild(inputToken);
-
-                document.body.appendChild(form);
-                form.submit();
-            });
-        @endif
-
-        $(document).ready(function () {
-    // Detectar si algún campo cambia en cualquier formulario de la página para carta porte
-    $('form').on('change input', 'input, select, textarea', function() {
-        console.log('Campo modificado:', $(this).attr('name')); // <-- Para probar
-        $('#modifico_informacion').val('1');
-    });
-});
+   })
 </script>
 @endpush
