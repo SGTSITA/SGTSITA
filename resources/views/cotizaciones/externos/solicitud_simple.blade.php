@@ -18,7 +18,7 @@
     </div>
 
     <!--Indica si se ha modificado alguna información en el formulario-->
-    <input type="hidden" id="modifico_informacion" value="0">
+    <input type="hidden" id="modifico_informacion" name="modifico_informacion" value="0">
 
     <div class="card mb-5 mb-xl-10">
         <!--begin::Card header-->
