@@ -13,108 +13,106 @@ function adjuntarDocumentos(filesContenedor) {
     const input = $('#' + fileSettings.opcion);
 
      const fileUploaderInstance = $.fileuploader.getInstance(input);
- 
+ console.log('fileUploaderInstance:', fileUploaderInstance);
     if (fileUploaderInstance) {
 
-             fileUploaderInstance.setOption('upload', {
-        url: '/contenedores/files/upload',
-        data: {
-            urlRepo:fileSettings.opcion,
-            numContenedor: numContenedor,
-            _token: _token
-        },
-        type: 'POST',
-        enctype: 'multipart/form-data',
-        start: true,
-        synchron: true,
-        onBeforeSend: (xhr, settings) => {
+      fileUploaderInstance.setOption('upload', {
 
-        },
-        onSuccess: function(result, item) {
+         files: (filesContenedor != null ) ? [filesContenedor] : null,
+    url: '/contenedores/files/upload', // <-- asegúrate que exista en Laravel
+    data: (item) => ({
+        urlRepo: fileSettings.opcion,
+        numContenedor: numContenedor,
+        _token: _token
+    }),
+    type: 'POST',
+    enctype: 'multipart/form-data',
+    start: true,
+    synchron: true,
 
-            var data = {};
+    // ✅ Evita enviar archivos vacíos o sin extensión
+    onBeforeSend: (xhr, settings) => {
+        const file = settings.files ? settings.files[0] : null;
+        if (!file || !file.name) {
+            alert('Archivo inválido o vacío.');
+            return false;
+        }
+    },
 
-            // get data
-            if (result && result.files)
-                data = result;
-            else
-                data.hasWarnings = true;
+    onSuccess: function (result, item) {
+        let data = {};
 
-            // if success
-            if (data.isSuccess && data.files[0]) {
-                item.name = data.files[0].name;
-                item.html.find('.column-title > div:first-child').text(data.files[0].old_name).attr('title', data.files[0].old_name);
-            }
+        // ✅ Verifica respuesta del backend
+        if (result && typeof result === 'object') data = result;
+        else data.hasWarnings = true;
 
-            // if warnings
-            if (data.hasWarnings) {
-                for (var warning in data.warnings) {
+        // ✅ Actualiza UI si fue exitoso
+        if (data.isSuccess && data.files && data.files[0]) {
+            const fileData = data.files[0];
+            item.name = fileData.name;
+            item.html
+                .find('.column-title > div:first-child')
+                .text(fileData.old_name)
+                .attr('title', fileData.old_name);
+        }
+
+        // ⚠️ Muestra advertencias si las hay
+        if (data.hasWarnings) {
+            if (data.warnings) {
+                for (const warning in data.warnings) {
                     alert(data.warnings[warning]);
                 }
-
-                item.html.removeClass('upload-successful').addClass('upload-failed');
-                // go out from success function by calling onError function
-                // in this case we have a animation there
-                // you can also response in PHP with 404
-                return this.onError ? this.onError(item) : null;
             }
+            item.html.removeClass('upload-successful').addClass('upload-failed');
+            return this.onError ? this.onError(item) : null;
+        }
 
-            item.html.find('.fileuploader-action-remove').addClass('fileuploader-action-success');
-            setTimeout(function() {
-                item.html.find('.progress-bar2').fadeOut(400);
-            }, 400);
+        // ✅ Marca como éxito visual
+        item.html.find('.fileuploader-action-remove').addClass('fileuploader-action-success');
+        setTimeout(() => item.html.find('.progress-bar2').fadeOut(400), 400);
 
-          //  const gridApi = gridOptions.api;
-            if(apiGrid){
-                let dataGrid = apiGrid.getGridOption('rowData');
-                var rowIndex = dataGrid.findIndex(d => d.NumContenedor == numContenedor)
-                
-                const colId = fileSettings.agGrid;
+        // ✅ Si tienes ag-Grid, actualiza la celda correspondiente
+        if (apiGrid) {
+            const dataGrid = apiGrid.getGridOption('rowData') || [];
+            const rowIndex = dataGrid.findIndex((d) => d.NumContenedor === numContenedor);
+            const colId = fileSettings.agGrid;
+            const rowNode = apiGrid.getDisplayedRowAtIndex(rowIndex);
+            if (rowNode) rowNode.setDataValue(colId, true);
+        }
+    },
 
-                // Obtener el nodo de la fila
-                const rowNode = apiGrid.getDisplayedRowAtIndex(rowIndex);
+    onError: function (item) {
+        const progressBar = item.html.find('.progress-bar2');
+        if (progressBar.length) {
+            progressBar.find('span').html('0%');
+            progressBar.find('.fileuploader-progressbar .bar').width('0%');
+            item.html.find('.progress-bar2').fadeOut(400);
+        }
+        if (item.upload.status !== 'cancelled' && !item.html.find('.fileuploader-action-retry').length) {
+            item.html.find('.column-actions').prepend(
+                '<button type="button" class="fileuploader-action fileuploader-action-retry" title="Reintentar"><i class="fileuploader-icon-retry"></i></button>'
+            );
+        }
+    },
 
-                // Establecer un nuevo valor en la celda
-                if (rowNode) {
-                    rowNode.setDataValue(colId, true);
-                }
-            }
-            
+    onProgress: function (data, item) {
+        const progressBar = item.html.find('.progress-bar2');
+        if (progressBar.length > 0) {
+            progressBar.show();
+            progressBar.find('span').html(`${data.percentage}%`);
+            progressBar.find('.fileuploader-progressbar .bar').width(`${data.percentage}%`);
+        }
+    },
 
-          
-        },
-        onError: function(item) {
-            var progressBar = item.html.find('.progress-bar2');
+    onComplete: () => {
+        // ✅ Espera que el servidor haya guardado todo
+        getFilesContenedor();
 
-            if (progressBar.length) {
-                progressBar.find('span').html(0 + "%");
-                progressBar.find('.fileuploader-progressbar .bar').width(0 + "%");
-                item.html.find('.progress-bar2').fadeOut(400);
-            }
-
-            item.upload.status != 'cancelled' && item.html.find('.fileuploader-action-retry').length == 0 ? item.html.find('.column-actions').prepend(
-                '<button type="button" class="fileuploader-action fileuploader-action-retry" title="Retry"><i class="fileuploader-icon-retry"></i></button>'
-            ) : null;
-        },
-        onProgress: function(data, item) {
-            var progressBar = item.html.find('.progress-bar2');
-
-            if (progressBar.length > 0) {
-                progressBar.show();
-                progressBar.find('span').html(data.percentage + "%");
-                progressBar.find('.fileuploader-progressbar .bar').width(data.percentage + "%");
-            }
-        },
-        onComplete: ()=>{
-            getFilesContenedor()
-           
-            setTimeout(()=> {
-               
-               adjuntarDocumentos()
-            },2500)
-            
-        },
-    });
+        setTimeout(() => {
+            adjuntarDocumentos();
+        }, 2500);
+    },
+});
 
 
 
