@@ -182,6 +182,7 @@
     </div>
   </section>
 
+
   <!-- DATOS ADUANALES / MERCANCÍA -->
   <section class="tarjeta avoid-break">
     <div class="titulo">Datos Aduanales y de Mercancía</div>
@@ -211,6 +212,7 @@
     </div>
   </section>
 
+
   <!-- LOGÍSTICA -->
   <section class="tarjeta avoid-break">
     <div class="titulo">Información Logística</div>
@@ -220,7 +222,7 @@
         <dt>Domicilio de entrega</dt>
         <dd>
           {{$cotizaciones->direccion_entrega}}.<br />
-          <span class="small">Mapa: <a href="#"></a></span>
+          <span class="small">Mapa: <a href="https://www.google.com/maps/search/?api=1&query={{$cotizaciones->latitud}},{{$cotizaciones->longitud}}" target="_blank">https://www.google.com/maps/search/?api=1&query={{$cotizaciones->latitud}},{{$cotizaciones->longitud}}</a></span>
         </dd>
         <dt>Contacto (entrega)</dt><dd>{{$cotizaciones->cp_contacto_entrega}}</dd>
         <dt>Fecha tentativa de entrega</dt><dd>{{$cotizaciones->cp_fecha_tentativa_entrega}}</dd>
@@ -233,6 +235,7 @@
       </div>
     </div>
   </section>
+  
 
   <!-- PIE -->
   <p class="small" style="margin-top:8px;">
