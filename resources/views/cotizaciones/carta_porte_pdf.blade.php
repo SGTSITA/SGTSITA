@@ -182,6 +182,7 @@
     </div>
   </section>
 
+
   <!-- DATOS ADUANALES / MERCANCÍA -->
   <section class="tarjeta avoid-break">
     <div class="titulo">Datos Aduanales y de Mercancía</div>
@@ -211,6 +212,7 @@
     </div>
   </section>
 
+
   <!-- LOGÍSTICA -->
   <section class="tarjeta avoid-break">
     <div class="titulo">Información Logística</div>
@@ -233,6 +235,7 @@
       </div>
     </div>
   </section>
+  
 
   <!-- PIE -->
   <p class="small" style="margin-top:8px;">
