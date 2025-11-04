@@ -28,7 +28,7 @@ class ProveedorController extends Controller
             $proveedores = Proveedor::where('id_empresa', $user->id_empresa)
                 ->orderBy('created_at', 'desc')
                 ->get();
-            $empresas = Empresas::where('id_empresa', $user->id_empresa)->orderBy('nombre')->get();
+            $empresas = Empresas::where('id', $user->id_empresa)->orderBy('nombre')->get();
         }
 
         if (request()->ajax()) {
