@@ -10,6 +10,7 @@ class Proveedor extends Model
 {
     use HasFactory;
     protected $table = 'proveedores';
+   public static $forceEmpresaFromAuth = true;
 
     protected $fillable = [
         'nombre',
@@ -28,12 +29,19 @@ class Proveedor extends Model
         return $this->hasMany(CuentasBancarias::class, 'id_proveedores');
     }
 
+    public function empresa()
+    {
+        return $this->belongsTo(Empresas::class, 'id_empresa');
+    }
+
     protected static function boot()
     {
         parent::boot();
 
         static::creating(function ($empresa) {
-            $empresa->id_empresa = Auth::user()->id_empresa;
+            if (static::$forceEmpresaFromAuth) {
+                $empresa->id_empresa = Auth::user()->id_empresa;
+            }
         });
 
         static::updating(function ($empresa) {

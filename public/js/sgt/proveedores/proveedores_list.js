@@ -202,8 +202,8 @@ const localeText = {
 // 🔹 Definición de Columnas para Proveedores
 const gridOptions = {
     pagination: true,
-    paginationPageSize: 100,
-    paginationPageSizeSelector: [100, 200, 500],
+    paginationPageSize: 15,
+    paginationPageSizeSelector: [15, 20, 50, 100],
     rowSelection: "multiple",
     localeText: localeText,
     defaultColDef: {
@@ -225,6 +225,7 @@ const gridOptions = {
         { field: "telefono", headerName: "Teléfono", filter: true, floatingFilter: true, minWidth: 160 },
         { field: "correo", headerName: "Correo Electrónico", filter: true, floatingFilter: true, minWidth: 220 },
         { field: "direccion", headerName: "Dirección", minWidth: 200 },
+        { field: "empresa", headerName: "Empresa", minWidth: 200, valueGetter: (params) => params.data.empresa?.nombre || '' },
         {
             
                 field: "acciones",

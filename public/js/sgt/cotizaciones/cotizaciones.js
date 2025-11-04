@@ -55,6 +55,7 @@ const editFormFields = [
     {'field':'total', 'id':'total','label':'Total + Gastos','required': false, "type":"money", "master": false}, 
     {'field':'direccion_entrega', 'id':'direccion_entrega','label':'Dirección de entrega','required': false, "type":"text", "master": false}, 
     
+    
 ]
 
 let Contenedores = [];
