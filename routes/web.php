@@ -61,6 +61,9 @@ Route::group(["prefix" => "prestamos"], function(){
 Route::post('/exportar-cxc', [ReporteriaController::class, 'export'])->name('exportar.cxc');
 Route::post('sendfiles',[ExternosController::class,'sendFiles1'])->name('file-manager.sendfiles');
 
+Route::post('/users/{id}/reset-password', [UserController::class, 'resetPassword'])
+    ->middleware('auth')
+    ->name('users.reset-password');
 
 
 // Ruta para mostrar el formulario de búsqueda

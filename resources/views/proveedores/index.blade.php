@@ -22,7 +22,7 @@
                     <div class="card-body mt-3">
                         <div class="row">
                             <div id="proveedoresGrid" class="col-12 ag-theme-alpine"
-                                style="height: 500px; width: 100%; max-width: 100%;">
+                                style="height: 770px; width: 100%; max-width: 100%;">
                             </div>
                         </div>
                     </div>
@@ -33,7 +33,7 @@
 
 
     <!-- MODALES COMENTADOS -->
-    {{-- @include('proveedores.modal_create') --}}
+     @include('proveedores.modal_create')
     @include('proveedores.modal_edit')
     @include('proveedores.modal_crear_cuenta')
     @include('proveedores.modal_cuentas')
@@ -52,6 +52,10 @@
         $(document).ready(() => {
             getProveedoresList();
         });
+        function togglePassword() {
+  const passwordField = document.getElementById('password');
+  passwordField.type = passwordField.type === 'password' ? 'text' : 'password';
+}
     </script>
 @endpush
 

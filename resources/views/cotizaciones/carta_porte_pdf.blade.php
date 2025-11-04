@@ -211,7 +211,7 @@
       </table>
     </div>
   </section>
-
+  
 
   <!-- LOGÍSTICA -->
   <section class="tarjeta avoid-break">
@@ -235,7 +235,6 @@
       </div>
     </div>
   </section>
-  
 
   <!-- PIE -->
   <p class="small" style="margin-top:8px;">

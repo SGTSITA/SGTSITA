@@ -690,17 +690,20 @@ function limpiarJustificacionesLocalStorage() {
       const motivo = fila[motivoKey]?.trim() || "";
       const monto = fila[montoKey];
 
-      // Validación: si hay motivo, debe haber monto válido
-      if (motivo && (!monto || isNaN(monto) || monto <= 0)) {
-        errores.push(`Contenedor: ${c.Contenedores}, Fila: ${rowIndex + 1}`);
+      if(!c.id_contenedor){
+        // Validación: si hay motivo, debe haber monto válido
+            if (motivo && (!monto || isNaN(monto) || monto <= 0)) {
+              errores.push(`Contenedor: ${c.Contenedores}, Fila: ${rowIndex + 1}`);
 
 
-         const colIndex = window.hotInstance.propToCol(montoKey);
-  resaltarCelda(rowIndex, colIndex,8);
+              const colIndex = window.hotInstance.propToCol(montoKey);
+        resaltarCelda(rowIndex, colIndex,8);
+            }
       }
+    
 
       // Solo agregar al payload si hay algún dato
-      if (motivo && monto) {
+      if (c.IdContenedor || (motivo && monto)) {
         payload.push({
           idviatico: fila[`id_registro|${c.IdContenedor}`] || null,
           IdContenedor: c.IdContenedor,
