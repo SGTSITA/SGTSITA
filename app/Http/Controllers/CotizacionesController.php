@@ -829,14 +829,28 @@ public function getCotizacionesCanceladas()
             $idEmpresa = auth()->user()->id_empresa;
             $numContenedor = str_replace(' ','',$request['num_contenedor']);
 
-            $contenedorExistente = DocumCotizacion::where('num_contenedor', $numContenedor)
-                                                ->where('id_empresa', $idEmpresa)
-                                                ->where('id_cotizacion', '!=', $id)
-                                                ->first();
+            $contenedorSave = DocumCotizacion::where('id_cotizacion', $id)
+                                          ->first();
+            if($contenedorSave->num_contenedor != $numContenedor){
+                //validar que no exista el contenedor
+                $contenedorExistente = DocumCotizacion::where('num_contenedor', $numContenedor)
+                                              ->where('id_empresa', $idEmpresa)
+                                             ->where('id_cotizacion', '!=', $id)
+                                             ->first();
 
-            if ($contenedorExistente) {
-                return response()->json(["Titulo" => "Contenedor $numContenedor creado previamente", "Mensaje" => "El contenedor ya existe en la empresa", "TMensaje" => "warning"]);
+                if ($contenedorExistente) {
+                    return response()->json(["Titulo" => "Contenedor $numContenedor creado previamente", "Mensaje" => "El contenedor ya existe en la empresa", "TMensaje" => "warning"]);
+                }
             }
+
+            // $contenedorExistente = DocumCotizacion::where('num_contenedor', $numContenedor)
+            //                                     ->where('id_empresa', $idEmpresa)
+            //                                     ->where('id_cotizacion', '!=', $id)
+            //                                     ->first();
+
+            // if ($contenedorExistente) {
+            //     return response()->json(["Titulo" => "Contenedor $numContenedor creado previamente", "Mensaje" => "El contenedor ya existe en la empresa", "TMensaje" => "warning"]);
+            // }
             
             $doc_cotizaciones = DocumCotizacion::where('id_cotizacion', '=', $id)->first();
             $doc_cotizaciones->num_contenedor = $numContenedor;
