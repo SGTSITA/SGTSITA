@@ -1055,6 +1055,7 @@ public function getCotizacionesCanceladas()
                 "Titulo" => "Datos actualizados correctamente",
                 "Mensaje" => "Los datos del viaje se han actualizado correctamente",
                 "TMensaje" => "success",
+                "folio" => $id,
             ]);
 
         }catch(\Throwable $t){

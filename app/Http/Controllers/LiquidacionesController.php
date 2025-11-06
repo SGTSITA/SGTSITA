@@ -221,6 +221,7 @@ class LiquidacionesController extends Controller
          if (!is_array($filas) || empty($filas)) {
             throw new \Exception("No hay datos válidos para procesar");
         }
+        //dd($filas);
 
         foreach ($filas as $item) {
             $documCotizacion = DocumCotizacion::where('id', $item['IdContenedor'])
@@ -228,7 +229,8 @@ class LiquidacionesController extends Controller
                 ->first();
 
             if (!$documCotizacion) continue;
-            if ($item['idviatico'] != null) { // Actualizar registro existente
+          
+            if (!empty($item['idviatico'])) { // Actualizar registro existente
                 $viaticoAntes = ViaticosOperador::where('id', $item['idviatico'])->first();
                 $montoAntes = $viaticoAntes->monto;
                 ViaticosOperador::where('id', $item['idviatico'])
