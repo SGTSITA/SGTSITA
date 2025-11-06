@@ -703,7 +703,7 @@ function limpiarJustificacionesLocalStorage() {
     
 
       // Solo agregar al payload si hay algún dato
-      if (c.IdContenedor || (motivo && monto)) {
+      if (c.IdContenedor && motivo && monto > 0) {
         payload.push({
           idviatico: fila[`id_registro|${c.IdContenedor}`] || null,
           IdContenedor: c.IdContenedor,
