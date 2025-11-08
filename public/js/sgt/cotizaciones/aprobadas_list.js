@@ -325,6 +325,15 @@ function programarViaje(){
         const pagoInmediato = fila.querySelector('[name="gasto_pago_inmediato[]"]').checked;
         const banco = fila.querySelector('[name="gasto_banco_id[]"]').value || null;
 
+        if(motivo !== '' && monto <= 0){
+            Swal.fire("Monto inválido","El monto del gasto '"+motivo+"' debe ser mayor a cero.","warning");
+            return false;
+        }
+        if(pagoInmediato && (!banco || banco === '')){
+            Swal.fire("Banco inválido","Debe seleccionar un banco para el gasto '"+motivo+"' que se pagará de inmediato.","warning");
+            return false;
+        }
+
         // Solo agrega si hay al menos motivo o monto (no son obligatorios)
         if (motivo !== '' || monto > 0) {
             gastosValidos.push({
