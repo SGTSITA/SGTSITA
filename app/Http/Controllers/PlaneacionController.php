@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Asignaciones;
 use App\Models\Bancos;
+use App\Models\BancoDinero;
 use App\Models\Cotizaciones;
 use App\Models\Equipo;
 use App\Models\Operador;
@@ -74,6 +75,9 @@ class PlaneacionController extends Controller
                 $banco->tipo = 'Entrada';
                 $banco->fecha_pago = date('Y-m-d');
                 $banco->save();
+
+
+
             }
 
             if(!is_null($cotizaciones->referencia_full)){
@@ -83,6 +87,48 @@ class PlaneacionController extends Controller
             $cotizaciones->estatus = 'Aprobada';
             $cotizaciones->estatus_planeacion = 0;
             $cotizaciones->update();
+
+            //validar si ay gastos operador y eliminarlos y si hay pagados hacer devolucion de banco
+
+            $gastosOperador = GastosOperadores::where('id_asignacion',$asignaciones->id)
+            ->where('estatus', 'Pagado')
+            ->where('id_banco', '!=', null)
+            
+            ->get();
+
+            //recorrer los gastos pagados para hacer devolucion
+            foreach($gastosOperador as $gasto){
+                Bancos::where('id' ,'=',$gasto->id_banco)->update(["saldo" => DB::raw("saldo + ". $gasto->cantidad)]);
+   
+                $banco = new BancoDineroOpe;
+                $banco->id_operador = $asignaciones->id_operador;
+                
+                $banco->monto1 = $gasto->cantidad;
+                $banco->metodo_pago1 = 'Transferencia';
+                $banco->descripcion_gasto = "Gasto Anulado:  ".$gasto->concepto;
+                $banco->id_banco1 = $gasto->id_banco;
+    
+                $contenedoresAbonos2[] = [
+                    'num_contenedor' => $request->numContenedor,
+                    'abono' => $gasto->cantidad
+                ];
+                $contenedoresAbonosJson2 = json_encode($contenedoresAbonos2);
+    
+                $banco->contenedores = $contenedoresAbonosJson2;
+            
+                $banco->tipo = 'Entrada';
+                $banco->fecha_pago = date('Y-m-d');
+                $banco->save();
+  
+                   
+            }
+
+
+
+
+            GastosOperadores::where('id_asignacion',$asignaciones->id)->delete();
+
+
 
             Coordenadas::where('id_asignacion',$asignaciones->id)->delete();
             $asignaciones->delete();
@@ -403,6 +449,8 @@ $InfoViajeExtra = Cotizaciones::query()
 
             $asignaciones->save();
 
+            $viajePropio=0;
+
             if($request->tipoViaje == "propio"){
                 $asignaciones->id_chasis = $request->get('cmbChasis');
                 $asignaciones->id_chasis2 = $request->get('cmbChasis2');
@@ -451,8 +499,14 @@ $InfoViajeExtra = Cotizaciones::query()
                     $dineroViaje->monto = $request->get('txtDineroViaje');
                     $dineroViaje->fecha_entrega_monto = date('Y-m-d');
                     $dineroViaje->save();
+
+                    
+                    
                 
                 }
+
+
+                $viajePropio=1;
 
             }else{
                 $asignaciones->id_proveedor = $request->get('cmbProveedor');
@@ -509,7 +563,19 @@ $InfoViajeExtra = Cotizaciones::query()
             }
 
             DB::commit();
-    
+
+
+            //se envia aki los nuevos parametros los gastos despues de actualizar los datos de asignacion
+            if ($viajePropio) {
+               //nuevos cambios en form planeacion propio
+                    if ($request->filled('filasOtrosGastos')) {
+                        log::info('Guardando otros gastos de planeacion propio...');
+
+                             $resultado = self::guardarOtrosGastosPlaneacion($request,$contenedor->num_contenedor,$request->get('cmbOperador'));
+                          
+                    }
+            }
+
             return response()->json([
                 "TMensaje"=>"success",
                 "Titulo" => "Planeado correctamente", 
@@ -630,6 +696,178 @@ $InfoViajeExtra = Cotizaciones::query()
 
         }
     }
+
+public static function guardarOtrosGastosPlaneacion($r,$num_Contenedor,$idOperadorViaje)
+{
+    DB::beginTransaction();
+    try {
+      
+        $otrosGastos = json_decode($r->filasOtrosGastos, true);
+  \Log::info('Otros gastos recibidos:', $otrosGastos);
+        if (empty($otrosGastos) || !is_array($otrosGastos)) {
+            return [
+                "Titulo" => "Sin datos",
+                "Mensaje" => "No se recibieron gastos válidos.",
+                "TMensaje" => "warning"
+            ];
+        }
+
+        $nuevosGastos = [];
+        $datosGasto = [];
+        $bancoDinero = [];
+
+        $idEmpresa = auth()->user()->id_empresa;
+
+        //  Solo se permiten estos tipos peticion don  jose
+        $descripcionGastosPermitidos = [
+            'GCM01' => 'GCM01 - Comisión',
+            'GDI02' => 'GDI02 - Diesel'
+        ];
+
+        foreach ($otrosGastos as $gasto) {
+             $contenedoresAbonos = [];
+             \Log::info('Procesando gasto:', $gasto);
+            $motivo = $gasto['motivo'] ?? null;
+            $monto = floatval($gasto['monto'] ?? 0);
+            $esPagoInmediato = !empty($gasto['pagoInmediato']);
+            $idBanco = !empty($gasto['banco']) ? intval($gasto['banco']) : null;
+            $numContenedor = $num_Contenedor;
+
+            if (!$motivo || !isset($descripcionGastosPermitidos[$motivo])) {
+                continue;
+            }
+
+            if ($monto <= 0) {
+                continue;
+            }
+
+            if ($esPagoInmediato && empty($idBanco)) {
+                return [
+                    "Titulo" => "Debe seleccionar banco",
+                    "Mensaje" => "Ha seleccionado pago inmediato. Por favor, indique el banco desde el cual se realizará el retiro.",
+                    "TMensaje" => "warning"
+                ];
+            }
+
+            $contenedor = DocumCotizacion::where('num_contenedor', $numContenedor)
+                ->where('id_empresa', $idEmpresa)
+                ->first();
+
+            if (!$contenedor) continue;
+
+            $asignacion = Asignaciones::where('id_contenedor', $contenedor->id)->first();
+            if (!$asignacion) continue;
+
+            $tipoGasto = $descripcionGastosPermitidos[$motivo];
+
+            $gastoExistente = GastosOperadores::where('id_cotizacion', $contenedor->id_cotizacion)
+                ->where('tipo', $tipoGasto)
+                ->first();
+
+            if ($gastoExistente) {
+                if ($gastoExistente->cantidad != $monto) {
+                    $gastoExistente->update(["cantidad" => $monto]);
+                }
+                continue;
+            }
+
+            $nuevosGastos[] = [
+                "banco" => $idBanco,
+                "gasto" => $monto
+            ];
+
+            $datosGasto[] = [
+                "id_cotizacion" => $contenedor->id_cotizacion,
+                "id_banco" => $esPagoInmediato ? $idBanco : null,
+                "id_asignacion" => $asignacion->id,
+                "id_operador" => $asignacion->id_operador,
+                "cantidad" => $monto,
+                "tipo" => $tipoGasto,
+                "estatus" => $esPagoInmediato ? 'Pagado' : 'Pago Pendiente',
+                "fecha_pago" => $esPagoInmediato ? Carbon::now() : null,
+                "pago_inmediato" => $esPagoInmediato,
+                "created_at" => Carbon::now()
+            ];
+
+            if ($esPagoInmediato) {
+                $contenedoresAbonos[] = [
+                    'num_contenedor' => $numContenedor,
+                    'abono' => $monto
+                ];
+
+                $contenedoresAbonosJson = json_encode($contenedoresAbonos);
+                $bancoDinero[] = [
+                    "monto1" => $monto,
+                    "metodo_pago1" => 'Transferencia',
+                    "descripcion" => $tipoGasto . " " . $numContenedor,
+                    "id_banco1" => $idBanco,
+                    "contenedores" => $contenedoresAbonosJson,
+                    "tipo" => 'Salida',
+                    "fecha_pago" => date('Y-m-d'),
+                ];
+            }
+        }
+
+        // 🔹 Validar saldos bancarios
+        $gastosBancos = collect($nuevosGastos)
+            ->groupBy('banco')
+            ->map(fn($items) => $items->sum('gasto'));
+
+        $idsBancos = $gastosBancos->keys();
+
+        $bancos = Bancos::where('id_empresa', $idEmpresa)
+            ->whereIn('id', $idsBancos)
+            ->get()
+            ->keyBy('id');
+
+        foreach ($gastosBancos as $idBanco => $totalGasto) {
+            $banco = $bancos->get($idBanco);
+            if (!is_null($banco) && $banco->saldo < $totalGasto) {
+                return [
+                    "Titulo" => "Saldo insuficiente en Banco",
+                    "Mensaje" => "La cuenta bancaria seleccionada no cuenta con saldo suficiente para registrar esta transacción",
+                    "TMensaje" => "warning"
+                ];
+            }
+        }
+
+            \Log::info('Procesando gasto op:', $datosGasto);
+        // 🔹 Guardar registros
+        if (!empty($datosGasto)) {
+            GastosOperadores::insert($datosGasto);
+        }
+         \Log::info('Procesando gasto banco:', $bancoDinero);
+        if (!empty($bancoDinero)) {
+            BancoDinero::insert($bancoDinero);
+        }
+
+        // 🔹 Descontar saldo en bancos
+        foreach ($gastosBancos as $idBanco => $totalGasto) {
+            Bancos::where('id', $idBanco)->update([
+                "saldo" => DB::raw("saldo - " . $totalGasto)
+            ]);
+        }
+
+        DB::commit();
+
+        return [
+            "Titulo" => "Gasto agregado",
+            "Mensaje" => "Se agregaron los gastos correctamente.",
+            "TMensaje" => "success"
+        ];
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+        \Log::error('Error en guardarOtrosGastos: ' . $e->getMessage());
+
+        return [
+            "Titulo" => "Error interno",
+            "Mensaje" => "Ocurrió un error al guardar los gastos.",
+            "TMensaje" => "error"
+        ];
+    }
+}
+
 
     public function edit_fecha(Request $request)
     {

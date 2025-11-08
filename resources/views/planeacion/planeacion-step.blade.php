@@ -249,6 +249,48 @@ input.flatpickr-input[readonly] {
   border-color: #28a745 !important; 
   color: #fff; /* texto blanco */
 }
+.gasto-item .form-control {
+  height: calc(2.5rem + 2px);
+}
+
+/* Toggle personalizado */
+.toggle-switch {
+  position: relative;
+  width: 45px;
+  height: 24px;
+  display: inline-block;
+}
+.toggle-switch input {
+  display: none;
+}
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #d1d5db;
+  transition: .3s;
+  border-radius: 34px;
+}
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: .3s;
+  border-radius: 50%;
+}
+.toggle-switch input:checked + .toggle-slider {
+  background-color: #2dce89;
+}
+.toggle-switch input:checked + .toggle-slider:before {
+  transform: translateX(21px);
+}
 </style>
    <!-- AG Grid -->
    <script src="https://unpkg.com/ag-grid-community/dist/ag-grid-community.min.js"></script>
@@ -271,6 +313,133 @@ document.addEventListener('DOMContentLoaded', function() {
     let moneyformatInput = document.querySelectorAll('.moneyformat');
 
     moneyformatInput.forEach((r) => r.value = moneyFormat(r.value))
+
+
+
+
+
+
+
+    
 });
+
+const botonGastos = document.getElementById('btnAddGasto');
+const container = document.getElementById('otrosGastosContainer');
+
+const opcionesGasto = [
+  { value: 'GCM01', text: 'GCM01 - Comisión' },
+  { value: 'GDI02', text: 'GDI02 - Diesel' }
+];
+
+if (botonGastos) {
+  botonGastos.addEventListener('click', function() {
+    const total = container.querySelectorAll('.gasto-item').length;
+
+    if (total >= 2) {
+      alert('Solo puedes agregar un máximo de 2 gastos.');
+      return;
+    }
+
+    const gastoHTML = `
+      <div class="row gasto-item align-items-center mb-3 border-bottom pb-3">
+        <div class="col-md-4">
+          <label class="form-label mb-1">Motivo del gasto</label>
+          <select class="form-control gasto-select" name="gasto_nombre[]" required>
+            <option value="">Seleccione un motivo</option>
+            ${opcionesGasto.map(op => `<option value="${op.value}">${op.text}</option>`).join('')}
+          </select>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label mb-1">Monto</label>
+          <div class="input-group">
+            <span class="input-group-text bg-gradient-success text-white">
+              <i class="ni ni-money-coins"></i>
+            </span>
+            <input type="number" step="0.01" min="0" class="form-control" name="gasto_monto[]" placeholder="0.00" required>
+          </div>
+        </div>
+
+        <div class="col-md-2">
+          <label class="form-label mb-1 d-block">Pago inmediato</label>
+          <label class="toggle-switch">
+            <input type="checkbox" class="pagoInmediatoCheck" name="gasto_pago_inmediato[]">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+
+        <div class="col-md-2 banco-col" style="display:none;">
+          <label class="form-label mb-1">Banco</label>
+          <select class="form-control" name="gasto_banco_id[]">
+            <option value="">Seleccione banco</option>
+            @foreach ($bancos as $item)
+              <option value="{{$item->id}}">{{$item->nombre_banco}} / {{$item->nombre_beneficiario}}</option>
+            @endforeach
+          </select>
+        </div>
+
+        <div class="col-md-1 text-end">
+          <label class="form-label mb-1 d-block">&nbsp;</label>
+          <button type="button" class="btn btn-danger btn-sm removeGastoBtn">
+            <i class="ni ni-fat-remove"></i>
+          </button>
+        </div>
+      </div>`;
+
+    container.insertAdjacentHTML('beforeend', gastoHTML);
+    actualizarDisponibles();
+  });
+}
+
+// Mostrar/ocultar banco según pago inmediato
+document.addEventListener('change', function(e) {
+  if (e.target.classList.contains('pagoInmediatoCheck')) {
+    const row = e.target.closest('.gasto-item');
+    const bancoCol = row.querySelector('.banco-col');
+    bancoCol.style.display = e.target.checked ? 'block' : 'none';
+    if (!e.target.checked) bancoCol.querySelector('select').value = '';
+  }
+
+  if (e.target.name === 'gasto_nombre[]') {
+    actualizarDisponibles();
+  }
+});
+
+// Eliminar gasto
+document.addEventListener('click', function(e) {
+  if (e.target.closest('.removeGastoBtn')) {
+    e.target.closest('.gasto-item').remove();
+    actualizarDisponibles();
+  }
+});
+
+// Función principal: sincroniza selects
+function actualizarDisponibles() {
+  const selects = Array.from(container.querySelectorAll('select[name="gasto_nombre[]"]'));
+  const seleccionados = selects.map(s => s.value).filter(v => v !== '');
+
+  selects.forEach((select) => {
+    const valorActual = select.value;
+
+    // reconstruimos las opciones
+    const opciones = ['<option value="">Seleccione un motivo</option>'];
+    opcionesGasto.forEach(op => {
+      const ocupadoPorOtro = seleccionados.includes(op.value) && op.value !== valorActual;
+      opciones.push(`<option value="${op.value}" ${ocupadoPorOtro ? 'disabled' : ''}>${op.text}</option>`);
+    });
+
+    // reemplazamos el contenido del select
+    select.innerHTML = opciones.join('');
+
+    // mantenemos su valor si sigue siendo válido
+    if (valorActual && [...select.options].some(o => o.value === valorActual && !o.disabled)) {
+      select.value = valorActual;
+    } else {
+      select.value = '';
+    }
+  });
+}
+
+
     </script>
 @endpush

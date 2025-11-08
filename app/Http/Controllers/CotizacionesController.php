@@ -239,7 +239,12 @@ class CotizacionesController extends Controller
                     'coordenadas' => optional($cotizacion->DocCotizacion)->Asignaciones ? 'Ver' : '',
                     'edit_url' => route('edit.cotizaciones', $cotizacion->id),
                     'tipo' => (!is_null($cotizacion->referencia_full)) ? 'Full' : 'Sencillo',
-                    'referencia_full' => $cotizacion->referencia_full
+                    'referencia_full' => $cotizacion->referencia_full,
+                    'peso_contenedor' => $cotizacion->peso_contenedor,
+                    'tamano' => $cotizacion->tamano,
+                    'precio_viaje' => $cotizacion->precio_viaje,
+                    'direccion_entrega' => $cotizacion->direccion_entrega,
+                    'total' => $cotizacion->total,
                 ];
             });
 

@@ -151,6 +151,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
             let numContenedorLabel = document.querySelectorAll('.numContenedorLabel');
             let nombreClienteLabel = document.querySelectorAll('.nombreClienteLabel');
+            let pesoContenedorSpan = document.querySelector('#pesoContenedor');
+           // let tamanoContenedorSpan = document.querySelector('#tamanoContenedor');
+            let precioViajeSpan = document.querySelector('#precioViaje');
+            let direccionEntregaSpan = document.querySelector('#direccionEntrega');
+            
+          
+
             let contenedoresLabel = '';
             let isFull = false;
             contenedores = []
@@ -160,6 +167,18 @@ document.addEventListener("DOMContentLoaded", function () {
                 contenedores = [...contenedores,contenedor.labelContenedor]
                 isFull = (!isFull && contenedor.referencia_full?.length > 0) ? true : isFull ;
                 localStorage.setItem('numContenedor',JSON.stringify(contenedores))
+                if(pesoContenedorSpan){
+                    pesoContenedorSpan.textContent = contenedor.peso_contenedor 
+                }
+                // if(tamanoContenedorSpan){
+                //     tamanoContenedorSpan.textContent = contenedor.tamano 
+                // }
+                if(direccionEntregaSpan){
+                    direccionEntregaSpan.textContent = contenedor.direccion_entrega 
+                }
+                if(precioViajeSpan){
+                    precioViajeSpan.textContent =  moneyFormat(contenedor.total)
+                }
             })
 
             if(isFull && seleccion.length >= 2){
@@ -277,6 +296,8 @@ function programarViaje(){
         return true;
     })
 
+
+
    if(!passValidation) return passValidation;
 
    const formData = {};
@@ -292,6 +313,35 @@ function programarViaje(){
         }
     }
    });
+
+   if(tipoViaje == "propio"){ // validar q los inputs de otros gastos esten correctos
+    
+        let filas = document.querySelectorAll('.gasto-item');
+        let gastosValidos = [];
+
+        filas.forEach(fila => {
+        const motivo = fila.querySelector('[name="gasto_nombre[]"]').value.trim();
+        const monto = parseFloat(fila.querySelector('[name="gasto_monto[]"]').value) || 0;
+        const pagoInmediato = fila.querySelector('[name="gasto_pago_inmediato[]"]').checked;
+        const banco = fila.querySelector('[name="gasto_banco_id[]"]').value || null;
+
+        // Solo agrega si hay al menos motivo o monto (no son obligatorios)
+        if (motivo !== '' || monto > 0) {
+            gastosValidos.push({
+            motivo,
+            monto,
+            pagoInmediato,
+            banco: pagoInmediato ? banco : null
+            });
+        }
+        });
+7
+        if(gastosValidos.length > 0 ){ // solo si hay gastos validos
+            formData["filasOtrosGastos"] = JSON.stringify(gastosValidos);
+          //  formData.append("otrosgastoscontenedor", JSON.stringify(gastosValidos));
+        }
+
+   }
 
    formData["_token"] = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
    formData["num_contenedor"] =  localStorage.getItem('numContenedor') 
