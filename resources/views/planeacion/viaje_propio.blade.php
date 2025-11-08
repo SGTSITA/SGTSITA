@@ -112,15 +112,95 @@
                     </div>
                   </div>
                 </div>
-                <div class="col-12 col-md-12 text-start">
-                  <label>Banco</label>
-                  <select class="form-control" name="cmbBanco" id="cmbBanco">
-                  <option value="">Seleccione banco</option>
-                  @foreach ($bancos as $item)
-                        <option value="{{$item->id}}">{{$item->nombre_banco}} / {{$item->nombre_beneficiario}}</option>
-                  @endforeach
-                  </select>
+                
+              </div>
+
+              
+            </div>
+
+
+
+<!--Cotizacion + Gastos, Peso contenedor, Direccion entrega texto-->
+          <div class="row mt-4">
+            <div class="col-lg-5 col-12">
+                                     <div class="row mt-3 text-center">
+
+                                       <!-- Cotizacion + Gastos -->
+  <div class="col-md-3 col-12 mb-3">
+    
+    <div class="border rounded-3 p-3 shadow-sm bg-light">
+      <label class="fw-bold d-block mb-1 text-dark">Peso</label>
+      <span id="pesoContenedor" class="fs-5 text-success">--</span>
+
+      <label class="fw-bold d-block mb-1 text-dark">Total</label>
+      <span id="precioViaje" class="fs-5 text-success">--</span>
+    </div>
+  </div>
+
+  <!-- Peso Contenedor -->
+
+
+  {{-- <!-- Tamaño -->
+  <div class="col-md-4 col-12 mb-3">
+    <div class="border rounded-3 p-3 shadow-sm bg-light">
+      <label class="fw-bold d-block mb-1 text-dark">Tamaño</label>
+      <span id="tamanoContenedor" class="fs-5 text-success">--</span>
+    </div>
+  </div> --}}
+
+<!--  Direccion entrega -->
+ <div class="col-md-9 col-12 mb-3">
+  <div class="border rounded-3 p-3 shadow-sm bg-light">
+    <label class="fw-bold d-flex align-items-center mb-1 text-dark">
+      <i class="ni ni-pin-3 text-danger me-2"></i> Dirección de entrega
+    </label>
+    <span id="direccionEntrega" class="fs-6 text-success d-block">--</span>
+  </div>
+</div>
+
+ 
+</div>
+            
+             
+            {{--   <div class="border-dashed border-1 border-secondary border-radius-md p-3">
+                <p class="text-xs mb-2">
+                  <span class="font-weight-bolder">Operador</span>
+                </p>
+                
+                <div class="d-flex align-items-center">
+                
+                 
+                </div>
+                
+              </div> --}}
+            </div>
+
+            <div class="col-lg-7 col-12 mt-4 mt-lg-0">
+                            <div class="row">
+                                
+                <div class="row">
+                  <div class="col-12 col-md-12 text-start">
+                    <label for="cmbBanco">Banco</label>
+                    <select class="form-control" name="cmbBanco" id="cmbBanco">
+                      <option value="">Seleccione banco</option>
+                      @foreach ($bancos as $item)
+                        <option value="{{ $item->id }}">{{ $item->nombre_banco }} / {{ $item->nombre_beneficiario }}</option>
+                      @endforeach
+                    </select>
+                  </div>
                 </div>
               </div>
+
+             
             </div>
-          </div>
+             <div class="col-12 mt-4">
+                <button type="button" class="btn btn-success btn-sm mt-2" id="btnAddGasto">
+                  <i class="ni ni-fat-add"></i> Agregar  gastos al viaje
+                </button>
+                
+
+                <div id="otrosGastosContainer" class="mt-2"></div>
+
+               
+              </div>
+           
