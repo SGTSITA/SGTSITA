@@ -697,13 +697,15 @@ $InfoViajeExtra = Cotizaciones::query()
         }
     }
 
-public static function guardarOtrosGastosPlaneacion($r,$num_Contenedor,$idOperadorViaje)
+public static function guardarOtrosGastosPlaneacion($r, $num_Contenedor, $idOperadorViaje)
 {
     DB::beginTransaction();
+    $respuesta = null;
+
     try {
-      
         $otrosGastos = json_decode($r->filasOtrosGastos, true);
-  \Log::info('Otros gastos recibidos:', $otrosGastos);
+        \Log::info('Otros gastos recibidos:', $otrosGastos);
+
         if (empty($otrosGastos) || !is_array($otrosGastos)) {
             return [
                 "Titulo" => "Sin datos",
@@ -712,10 +714,9 @@ public static function guardarOtrosGastosPlaneacion($r,$num_Contenedor,$idOperad
             ];
         }
 
-        $nuevosGastos = [];
         $datosGasto = [];
         $bancoDinero = [];
-
+        $nuevosGastos = [];
         $idEmpresa = auth()->user()->id_empresa;
 
         //  Solo se permiten estos tipos peticion don  jose
@@ -725,28 +726,25 @@ public static function guardarOtrosGastosPlaneacion($r,$num_Contenedor,$idOperad
         ];
 
         foreach ($otrosGastos as $gasto) {
-             $contenedoresAbonos = [];
-             \Log::info('Procesando gasto:', $gasto);
+            \Log::info('Procesando gasto:', $gasto);
+
             $motivo = $gasto['motivo'] ?? null;
             $monto = floatval($gasto['monto'] ?? 0);
             $esPagoInmediato = !empty($gasto['pagoInmediato']);
             $idBanco = !empty($gasto['banco']) ? intval($gasto['banco']) : null;
             $numContenedor = $num_Contenedor;
 
-            if (!$motivo || !isset($descripcionGastosPermitidos[$motivo])) {
-                continue;
-            }
-
-            if ($monto <= 0) {
-                continue;
-            }
+            // Validaciones básicas
+            if (!$motivo || !isset($descripcionGastosPermitidos[$motivo])) continue;
+            if ($monto <= 0) continue;
 
             if ($esPagoInmediato && empty($idBanco)) {
-                return [
+                $respuesta = [
                     "Titulo" => "Debe seleccionar banco",
                     "Mensaje" => "Ha seleccionado pago inmediato. Por favor, indique el banco desde el cual se realizará el retiro.",
                     "TMensaje" => "warning"
                 ];
+                continue;
             }
 
             $contenedor = DocumCotizacion::where('num_contenedor', $numContenedor)
@@ -760,6 +758,7 @@ public static function guardarOtrosGastosPlaneacion($r,$num_Contenedor,$idOperad
 
             $tipoGasto = $descripcionGastosPermitidos[$motivo];
 
+            // 🔹 Evitar duplicados
             $gastoExistente = GastosOperadores::where('id_cotizacion', $contenedor->id_cotizacion)
                 ->where('tipo', $tipoGasto)
                 ->first();
@@ -771,11 +770,7 @@ public static function guardarOtrosGastosPlaneacion($r,$num_Contenedor,$idOperad
                 continue;
             }
 
-            $nuevosGastos[] = [
-                "banco" => $idBanco,
-                "gasto" => $monto
-            ];
-
+            // 🔹 Registrar gasto operador
             $datosGasto[] = [
                 "id_cotizacion" => $contenedor->id_cotizacion,
                 "id_banco" => $esPagoInmediato ? $idBanco : null,
@@ -789,68 +784,64 @@ public static function guardarOtrosGastosPlaneacion($r,$num_Contenedor,$idOperad
                 "created_at" => Carbon::now()
             ];
 
-            if ($esPagoInmediato) {
-                $contenedoresAbonos[] = [
-                    'num_contenedor' => $numContenedor,
-                    'abono' => $monto
-                ];
+            // 🔹 Si es pago inmediato, validar y descontar saldo
+            if ($esPagoInmediato && $idBanco) {
+                $banco = Bancos::where('id_empresa', $idEmpresa)->where('id', $idBanco)->first();
 
-                $contenedoresAbonosJson = json_encode($contenedoresAbonos);
+                if (!$banco) {
+                    $respuesta = [
+                        "Titulo" => "Banco no encontrado",
+                        "Mensaje" => "El banco seleccionado no existe o no pertenece a la empresa.",
+                        "TMensaje" => "warning"
+                    ];
+                    continue;
+                }
+
+                if ($banco->saldo < $monto) {
+                    $respuesta = [
+                        "Titulo" => "Saldo insuficiente",
+                        "Mensaje" => "El banco {$banco->nombre} no cuenta con saldo suficiente.",
+                        "TMensaje" => "warning"
+                    ];
+                    continue;
+                }
+
+                // 🔹 Registrar movimiento bancario
+                $contenedoresAbonosJson = json_encode([
+                    ['num_contenedor' => $numContenedor, 'abono' => $monto]
+                ]);
+
                 $bancoDinero[] = [
                     "monto1" => $monto,
                     "metodo_pago1" => 'Transferencia',
-                    "descripcion" => $tipoGasto . " " . $numContenedor,
+                    "descripcion" => "{$tipoGasto} {$numContenedor}",
                     "id_banco1" => $idBanco,
                     "contenedores" => $contenedoresAbonosJson,
                     "tipo" => 'Salida',
                     "fecha_pago" => date('Y-m-d'),
                 ];
+
+                // 🔹 Descontar saldo de inmediato
+                Bancos::where('id', $idBanco)->update([
+                    "saldo" => DB::raw("saldo - {$monto}")
+                ]);
             }
         }
 
-        // 🔹 Validar saldos bancarios
-        $gastosBancos = collect($nuevosGastos)
-            ->groupBy('banco')
-            ->map(fn($items) => $items->sum('gasto'));
-
-        $idsBancos = $gastosBancos->keys();
-
-        $bancos = Bancos::where('id_empresa', $idEmpresa)
-            ->whereIn('id', $idsBancos)
-            ->get()
-            ->keyBy('id');
-
-        foreach ($gastosBancos as $idBanco => $totalGasto) {
-            $banco = $bancos->get($idBanco);
-            if (!is_null($banco) && $banco->saldo < $totalGasto) {
-                return [
-                    "Titulo" => "Saldo insuficiente en Banco",
-                    "Mensaje" => "La cuenta bancaria seleccionada no cuenta con saldo suficiente para registrar esta transacción",
-                    "TMensaje" => "warning"
-                ];
-            }
-        }
-
-            \Log::info('Procesando gasto op:', $datosGasto);
         // 🔹 Guardar registros
         if (!empty($datosGasto)) {
+            \Log::info('Insertando gastos operadores:', $datosGasto);
             GastosOperadores::insert($datosGasto);
         }
-         \Log::info('Procesando gasto banco:', $bancoDinero);
-        if (!empty($bancoDinero)) {
-            BancoDinero::insert($bancoDinero);
-        }
 
-        // 🔹 Descontar saldo en bancos
-        foreach ($gastosBancos as $idBanco => $totalGasto) {
-            Bancos::where('id', $idBanco)->update([
-                "saldo" => DB::raw("saldo - " . $totalGasto)
-            ]);
+        if (!empty($bancoDinero)) {
+            \Log::info('Insertando movimientos bancarios:', $bancoDinero);
+            BancoDinero::insert($bancoDinero);
         }
 
         DB::commit();
 
-        return [
+        return $respuesta ?? [
             "Titulo" => "Gasto agregado",
             "Mensaje" => "Se agregaron los gastos correctamente.",
             "TMensaje" => "success"
