@@ -193,14 +193,16 @@
 
              
             </div>
-             <div class="col-12 mt-4">
+
+               </div> <!-- Cierra col-lg-7 col-12 mt-4 mt-lg-0 -->
+          </div> <!-- Cierra row mt-4 (Cotización + Gastos, Peso contenedor, Dirección entrega) -->
+
+            <div class="row mt-4"> <!-- Nueva fila para los botones y gastos -->
+              <div class="col-12 mt-4">
                 <button type="button" class="btn btn-success btn-sm mt-2" id="btnAddGasto">
-                  <i class="ni ni-fat-add"></i> Agregar  gastos al viaje
+                  <i class="ni ni-fat-add"></i> Agregar gastos al viaje
                 </button>
-                
-
                 <div id="otrosGastosContainer" class="mt-2"></div>
-
-               
               </div>
-           
+            </div>
+                      
