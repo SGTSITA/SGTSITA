@@ -345,7 +345,7 @@ function getInfoViaje(startDate, endDate, numContenedor_, idContendor){
            origen.textContent = response.cotizacion.origen
            destino.textContent = response.cotizacion.destino
            nombreCliente.textContent = response.cliente.nombre
-           nombreSubcliente.textContent = response.subcliente.nombre
+           nombreSubcliente.textContent =  response.subcliente?.nombre ?? ""
 
                 placas_camion.textContent = response.documentos.placas_camion ?? "NA"
                 id_equipo_camion.textContent = response.documentos.id_equipo_camion ?? "NA"
