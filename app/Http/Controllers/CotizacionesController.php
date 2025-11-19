@@ -895,6 +895,11 @@ public function getCotizacionesCanceladas()
             $cotizaciones->longitud = $request->longitud;
             $cotizaciones->direccion_mapa = $request->direccion_mapa;
 
+
+            if($request->has('id_proveedor') && $request->id_proveedor !== $cotizaciones->id_empresa){ //checar si se cambio de empresa
+                $cotizaciones->id_empresa = $request->id_proveedor;
+            }
+
          
 
 
@@ -1635,6 +1640,8 @@ public function getCotizacionesCanceladas()
         ->where('d.num_contenedor',$r->numContenedor);
 
         $cotizacion = $cotizacionQuery->first();
+
+        $tipoViajecontenedor = $cotizacion->tipo_viaje_seleccion;
         
         if(is_null($cotizacion)){
             $upload['hasWarnings'] = true;
@@ -1684,23 +1691,27 @@ public function getCotizacionesCanceladas()
                 case 'CartaPorteXML': $update = ["carta_porte_xml" => $item['name']]; break;
                 case 'EIR': $update = ["doc_eir" => $item['name'], 'eir' => "si"]; break;
                 case 'CCP': $update = ["doc_ccp" => $item['name'], 'ccp' => "si"]; break;
+                case 'BoletaPatio': $update = ["boleta_patio" => $item['name']]; break;
 
             }
           
             ($r->urlRepo != 'PreAlta' && $r->urlRepo != 'CartaPortePDF' && $r->urlRepo != 'CartaPorteXML')
-            ? DocumCotizacion::where('id',$cotizacion->id)->update($update)
+            ? DocumCotizacion::where('id',$cotizacion->id)->update($update) // id de cotizacion?? no deberia ser de documentos?
             : Cotizaciones::where('id',$cotizacion->id)->update($update);
 
             if ($r->urlRepo == 'PreAlta')  DocumCotizacion::where('id',$cotizacion->id)->update(['boleta_vacio'=>'si']);
+            if($tipoViajecontenedor !== 'local'){
+                if(Auth::User()->id_cliente != 0){
+                    event(new \App\Events\GenericNotificationEvent([$cotizacion->cliente->correo],'Se cargó '.$r->urlRepo.': '.$r->numContenedor,'Hola, tu transportista cargó el documento "'.$r->urlRepo.'" del contenedor '.$r->numContenedor));
+                    event(new \App\Events\ConfirmarDocumentosEvent($cotizacion->id));
+                }
 
-            if(Auth::User()->id_cliente != 0){
-                event(new \App\Events\GenericNotificationEvent([$cotizacion->cliente->correo],'Se cargó '.$r->urlRepo.': '.$r->numContenedor,'Hola, tu transportista cargó el documento "'.$r->urlRepo.'" del contenedor '.$r->numContenedor));
-                event(new \App\Events\ConfirmarDocumentosEvent($cotizacion->id));
-            }
+                if($estatus != 'En espera' && Auth::User()->id_cliente != 0){
+                    event(new \App\Events\NotificaNuevoDocumentoEvent($cotizacion,$r->urlRepo));
+                }
 
-            if($estatus != 'En espera' && Auth::User()->id_cliente != 0){
-                event(new \App\Events\NotificaNuevoDocumentoEvent($cotizacion,$r->urlRepo));
             }
+            
 
 		}
 		return response()->json($upload);
@@ -1951,6 +1962,216 @@ public function getCotizacionesCanceladas()
         return response()->json(['success' => true]);
     }
 
+
+
+    //locales burrero
+
+public function storelocal(Request $request)
+{
+    DB::beginTransaction();
+
+    try {
+
+        $idempresa = auth()->user()->id_empresa;
+        if ($request->id_proveedor) {
+            $idempresa = $request->id_proveedor;
+        }
+
+          $idempresa = auth()->user()->id_empresa;
+
+        // ================================
+        // REGLAS PARA EMPRESA, PROVEEDOR Y TRANSPORTISTA
+        // ================================
+
+        $idEmpresaFinal = $idempresa; // valor por defecto
+
+        if ($request->has('id_proveedor') && $request->id_proveedor != $idempresa) {
+            // si cambia el proveedor, entonces la empresa será ese proveedor
+            $idEmpresaFinal = $request->id_proveedor;
+        }
+
+        $idProveedorFinal = null;
+
+        if ($request->has('id_transportista') && 
+            $request->id_transportista != $request->id_proveedor) {
+
+            $idProveedorFinal = $request->id_transportista;
+        }
+       
+       
+        $cotizacion = Cotizaciones::create([
+            'id_cliente'            => $request->id_cliente,
+            'id_empresa'         => $idEmpresaFinal,
+            'id_subcliente'      => $request->id_subcliente ?? null,
+            'id_proveedor'       => $idProveedorFinal,
+            'cp_pedimento'        => $request->num_pedimento ?? null,    
+            'cp_clase_ped'       => $request->cp_clase_ped ?? null,
+            'bloque'              => $request->bloque ?? null,
+            'bloque_hora_i'        => $request->bloque_hora_i ?? null,
+            'bloque_hora_f'        => $request->bloque_hora_f ?? null,
+
+            
+            'origen'             => $request->origen,
+            'tamano'             => $request->tamano,
+            'peso_contenedor'    => $request->peso_contenedor,
+            'fecha_modulacion'   => $request->fecha_modulacion,
+            'estatus' => 'Local',
+      
+            'tipo_viaje_seleccion' => 'local', 
+            'puerto'               => 'Lazaro',
+            'fecha_ingreso_puerto' => $request->fecha_ingreso_puerto ?? null,
+            'fecha_salida_puerto'  => $request->fecha_salida_puerto ?? null,
+            'dias_estadia'         => $request->dias_estadia ?? 0,
+            'tarifa_estadia'       => $request->tarifa_estadia ?? 0,
+            'total_estadia'        => $request->total_estadia ?? 0,
+            'dias_pernocta'        => $request->dias_pernocta ?? 0,
+            'tarifa_pernocta'      => $request->tarifa_pernocta ?? 0,
+            'total_pernocta'       => $request->total_pernocta ?? 0,
+            'total_general'        => $request->total_general ?? 0,
+            'motivo_demora'        => $request->motivo_demora ?? null,
+            'liberado'             => $request->liberado ?? 0,
+            'fecha_liberacion'     => $request->fecha_liberacion ?? null,
+            'responsable'          => 'Viaje local', //solo para saber de donde nace el viaje
+            'observaciones'        => $request->observaciones ?? null,
+
+        ]);
+
+
+        $doc = DocumCotizacion::create([
+            'id_cotizacion'          => $cotizacion->id,
+            'id_empresa'             => $idempresa,
+            'num_contenedor'         => $request->num_contenedor,
+            'terminal'               => $request->terminal,
+            'num_autorizacion'       => $request->num_autorizacion,
+            'boleta_liberacion'      => $request->boleta_liberacion,
+            'doda'                   => $request->doda,
+            'num_boleta_liberacion'  => $request->num_boleta_liberacion,
+            'num_doda'               => $request->num_doda,
+            'num_carta_porte'        => $request->num_carta_porte,
+            'boleta_vacio'           => $request->boleta_vacio,
+            'fecha_boleta_vacio'     => $request->fecha_boleta_vacio,
+            'eir'                    => $request->eir,
+            'doc_eir'                => $request->doc_eir,
+            'ccp'                    => $request->ccp,
+            'doc_ccp'                => $request->doc_ccp,
+            'foto_patio'             => $request->foto_patio,
+            'boleta_patio'           => $request->boleta_patio,
+            'fecha_boleta_patio'     => $request->fecha_boleta_patio,
+            'cima'                   => $request->cima ?? 0,
+        ]);
+
+      
+
+        DB::commit();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Cotización local guardada correctamente',
+            'cotizacion_id' => $cotizacion->id,
+            'docum_cotizacion_id' => $doc->id,
+            'num_contenedor' => $request->num_contenedor,
+      
+        ]);
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+        \Log::error("Error en cotización local: " . $e->getMessage());
+        return response()->json([
+            'success' => false,
+            'message' => 'Error al guardar la cotización local',
+            'error'   => $e->getMessage(),
+        ], 500);
+    }
+}
+
+public function singleUpdatelocal(Request $request, $id)
+{
+    DB::beginTransaction();
+
+    try {
+
+        // ==========================================
+        // 1. OBTENER REGISTROS BASE
+        // ==========================================
+        $cot = Cotizaciones::findOrFail($id);
+        $doc = DocumCotizacion::where('id_cotizacion', $id)->firstOrFail();
+
+        $contenedorOriginal = $doc->num_contenedor;
+
+
+        // ==========================================
+        // 2. ACTUALIZAR COTIZACIÓN
+        // ==========================================
+        $cot->id_subcliente        = $request->id_subcliente ?? null;
+        if($request->has('id_proveedor') && $request->id_proveedor !== $cotizaciones->id_empresa){ //checar si se cambio de empresa
+            $cotizaciones->id_empresa = $request->id_proveedor;
+        }
+         if($request->has('id_transportista') && $request->id_transportista !== $cotizaciones->id_proveedor){ 
+              $cot->id_proveedor      = $request->id_transportista;
+         }
+          
+       //$cot->id_transportista     = $request->id_transportista ?? null;
+
+        $cot->origen               = $request->origen;
+        $cot->tamano               = $request->tamano;
+        $cot->peso_contenedor      = $request->peso_contenedor;
+        $cot->fecha_modulacion     = $request->fecha_modulacion;
+        $cot->cp_pedimento         = $request->num_pedimento;
+        $cot->cp_clase_ped         = $request->cp_clase_ped;
+        $cot->bloque               = $request->bloque ?? null;
+        $cot->bloque_hora_i        = $request->bloque_hora_i ?? null;
+        $cot->bloque_hora_f        = $request->bloque_hora_f ?? null;
+
+        // Campos nuevos que migramos desde local
+        $cot->puerto               = $request->puerto ?? null;
+        $cot->fecha_ingreso_puerto = $request->fecha_ingreso_puerto ?? null;
+        $cot->fecha_salida_puerto  = $request->fecha_salida_puerto ?? null;
+        $cot->dias_estadia         = $request->dias_estadia ?? 0;
+        $cot->tarifa_estadia       = $request->tarifa_estadia ?? 0;
+        $cot->total_estadia        = $request->total_estadia ?? 0;
+        $cot->dias_pernocta        = $request->dias_pernocta ?? 0;
+        $cot->tarifa_pernocta      = $request->tarifa_pernocta ?? 0;
+        $cot->total_pernocta       = $request->total_pernocta ?? 0;
+        $cot->total_general        = $request->total_general ?? 0;
+        $cot->motivo_demora        = $request->motivo_demora ?? null;
+        $cot->liberado             = $request->liberado ?? 0;
+        $cot->fecha_liberacion     = $request->fecha_liberacion ?? null;
+        $cot->responsable          = $request->responsable ?? null;
+        $cot->observaciones        = $request->observaciones ?? null;
+
+        $cot->save();
+
+
+        // ==========================================
+        // 3. SI CAMBIÓ EL NÚMERO DE CONTENEDOR
+        // ==========================================
+        if ($request->num_contenedor != $contenedorOriginal) {
+            $doc->num_contenedor = $request->num_contenedor;
+        }
+
+        $doc->save();
+
+        DB::commit();
+
+        return response()->json([
+            'status'  => 'success',
+            'message' => 'Cotización actualizada correctamente.',
+            'cotizacion_id' => $cot->id,
+            'docum_cotizacion_id' => $doc->id,
+            'num_contenedor' => $request->num_contenedor,
+        ]);
+
+    } catch (\Throwable $e) {
+
+        DB::rollBack();
+
+        return response()->json([
+            'status'  => 'error',
+            'message' => 'Error al actualizar.',
+            'error'   => $e->getMessage()
+        ], 500);
+    }
+}
 
 
 }

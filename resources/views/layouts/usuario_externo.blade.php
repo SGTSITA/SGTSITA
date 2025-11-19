@@ -57,7 +57,21 @@
                         data-kt-scroll-offset="100">
                         <div class="menu menu-column menu-rounded menu-sub-indention menu-active-bg fw-semibold my-auto"
                             id="#kt_aside_menu" data-kt-menu="true">
+
+                            <div class="menu-item">
+                                <a class="menu-link" href="{{ route('dashboard') }}">
+                                    <span class="menu-icon">
+                                        <i class="ki-duotone ki-black-right fs-2"></i>
+                                    </span>
+                                    <span class="menu-title">Inicio</span>
+                                </a>
+                            </div>
                             <div data-kt-menu-trigger="click" class="menu-item menu-accordion">
+                               
+                                       
+
+
+                                
                                 <span class="menu-link">
                                     <span class="menu-icon">
                                         <i class="ki-duotone ki-black-right fs-2"></i>
@@ -102,12 +116,29 @@
                                             <span class="menu-title">Solicitar Viaje</span>
                                         </a>
                                     </div>
+                                    
                                     <div class="menu-item">
                                         <a href="{{ route('mis.viajes') }}" class="menu-link">
                                             <span class="menu-bullet">
                                                 <span class="bullet bullet-dot"></span>
                                             </span>
                                             <span class="menu-title">Mis Viajes</span>
+                                        </a>
+                                    </div>
+                                    <div class="menu-item">
+                                        <a href="{{ route('viajes.local') }}" class="menu-link">
+                                            <span class="menu-bullet">
+                                                <span class="bullet bullet-dot"></span>
+                                            </span>
+                                            <span class="menu-title">Solicitar Local</span>
+                                        </a>
+                                    </div>
+                                    <div class="menu-item">
+                                        <a href="{{ route('mis.viajeslocal') }}" class="menu-link">
+                                            <span class="menu-bullet">
+                                                <span class="bullet bullet-dot"></span>
+                                            </span>
+                                            <span class="menu-title">viajes Locales</span>
                                         </a>
                                     </div>
                                 </div>

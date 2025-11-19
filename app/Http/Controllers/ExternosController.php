@@ -67,6 +67,8 @@ class ExternosController extends Controller
         return view('cotizaciones.externos.step_one');
     }
 
+
+
    public function solicitudSimple(){
         $formasPago = SatFormaPago::get();
         $metodosPago = SatMetodoPago::get();
@@ -119,8 +121,16 @@ class ExternosController extends Controller
 
     public function solicitudMultiple(){
 
+         $clienteEmpresa = ClientEmpresa::where('id_client',auth()->user()->id_cliente)->get()->pluck('id_empresa');
+        //return $clienteEmpresa;
+        $empresas = Empresas::whereIn('id',$clienteEmpresa)->get();
+
+         $transportista = Proveedor::whereIn('id_empresa', $clienteEmpresa)->get();
+
         return view('cotizaciones.externos.solicitud_multiple',[
-            "action" => "crear"
+            "action" => "crear",
+            "proveedores" => $empresas,
+            "transportista" => $transportista
         ]);
     }
 
@@ -185,11 +195,13 @@ class ExternosController extends Controller
         }
     }
 
+    
     public function getContenedoresPendientes(Request $request){
         $condicion = ($request->estatus == 'En espera') ? '=' : '!=';
         $contenedoresPendientes = Cotizaciones::join('docum_cotizacion as d', 'cotizaciones.id', '=', 'd.id_cotizacion')
                                                 ->where('cotizaciones.id_cliente' ,'=',Auth::User()->id_cliente)
                                                 ->where('estatus',$condicion,'En espera')
+                                                ->whereIn('tipo_viaje_seleccion', ['foraneo', 'local_to_foraneo'])
                                                 ->where('jerarquia', "!=",'Secundario')
                                                 ->orderBy('created_at', 'desc')
                                                 ->selectRaw('cotizaciones.*, d.num_contenedor,d.doc_eir,doc_ccp ,d.boleta_liberacion,d.doda,d.foto_patio')
@@ -207,6 +219,7 @@ class ExternosController extends Controller
             $boletaVacio = ($c->img_boleta == null) ? false : true;
             $docEir = $c->doc_eir;
             $fotoPatio = ($c->foto_patio == null) ? false : true;
+            $boletaPatio = ($c->boleta_patio == null) ? false : true;
             $tipo = "Sencillo";
 
             if (!is_null($c->referencia_full)) {
@@ -240,6 +253,7 @@ class ExternosController extends Controller
                 "foto_patio" => $fotoPatio,
                 "FormatoCartaPorte" => $docCCP,
                 "PreAlta" => $boletaVacio,
+                "BoletaPatio" => $boletaPatio,
                 "FechaSolicitud" => Carbon::parse($c->created_at)->format('Y-m-d'),
                 "tipo" => $tipo,
                 "id" => $c->id
@@ -373,8 +387,14 @@ class ExternosController extends Controller
         return redirect()->route($path);
     }
 
+
+
     public function fileManager(Request $r){
         return view('cotizaciones.externos.file-manager',["numContenedor" => $r->numContenedor]);
+    }
+
+    public function fileManagerlocal(Request $r){
+        return view('cotizaciones.externos.file-manager-local',["numContenedor" => $r->numContenedor]);
     }
 
     public function sendFiles1(Request $r){
@@ -521,6 +541,11 @@ class ExternosController extends Controller
                 $doc_foto_patio = self::fileProperties($folderId, $documentos->foto_patio, 'Foto patio',$cont);
                 if(sizeof($doc_foto_patio) > 0) array_push($documentList, $doc_foto_patio);
             }
+             if(!is_null($documentos->boleta_patio)){
+            
+                $doc_boleta_patio = self::fileProperties($folderId, $documentos->boleta_patio, 'Boleta de patio',$cont);
+                if(sizeof($doc_boleta_patio) > 0) array_push($documentList, $doc_boleta_patio);
+            }
 
             $cotizacion = Cotizaciones::where('id',$documentos->id_cotizacion)->first();
 
@@ -563,4 +588,175 @@ class ExternosController extends Controller
             return [];
         }
     }
+
+
+
+    //viajes locales desde mec
+    function solicitarIndexlocal(){
+        return view('cotizaciones.externos.step_one_local');
+    }
+    
+    public function selectorlocal(Request $request){
+        // return $request->transac;
+            switch($request->transac){
+                case "simple":
+                    $path = 'viajes.simplelocal';
+                    break;
+                case "multiple":
+                    $path = 'viajes.multiplelocal';
+                    break;
+                case "documents":
+                    $path = 'viajes.documentslocal';
+                    break;
+                default:
+                    $path = 'viajes.index';
+            }
+
+            return redirect()->route($path);
+    }
+    public function solicitudSimplelocal(){
+        $formasPago = SatFormaPago::get();
+        $metodosPago = SatMetodoPago::get();
+        $usoCfdi = SatUsoCfdi::get();
+        $clienteEmpresa = ClientEmpresa::where('id_client',auth()->user()->id_cliente)->get()->pluck('id_empresa');
+        //return $clienteEmpresa;
+        $empresas = Empresas::whereIn('id',$clienteEmpresa)->get();
+
+       
+  $opciones = ['A1', 'M3', 'R1', 'A4', 'IN'];
+
+
+         $transportista = Proveedor::whereIn('id_empresa', $clienteEmpresa)->get();
+        
+        return view('cotizaciones.externos.solicitud_simple_local',[
+                    "action" => "crear",
+                    "formasPago" => $formasPago, 
+                    "metodosPago" => $metodosPago, 
+                    "usoCfdi" => $usoCfdi, 
+                    "proveedores" => $empresas,
+                      "transportista" => $transportista,
+                        "opciones" => $opciones
+                ]);
+    }
+     public function editFormlocal(Request $request){
+        $formasPago = SatFormaPago::get();
+        $metodosPago = SatMetodoPago::get();
+        $usoCfdi = SatUsoCfdi::get();
+        $clienteEmpresa = ClientEmpresa::where('id_client',auth()->user()->id_cliente)->get()->pluck('id_empresa');
+        $empresas = Empresas::whereIn('id',$clienteEmpresa)->get();
+
+        $opciones = ['A1', 'M3', 'R1', 'A4', 'IN'];
+
+        $cotizacion = Cotizaciones::with(['cliente', 'DocCotizacion'])
+        ->whereHas('DocCotizacion', function ($query) use ($request) {
+            $query->where('num_contenedor', $request->numContenedor);
+        })
+        ->first();
+
+        $transportista = Proveedor::whereIn('id_empresa', $clienteEmpresa)->get();
+       // dd($transportista, $clienteEmpresa);
+       // $transportista = Proveedor::get();
+       // where('id_empresa',$cotizacion->id_proveedor)->
+      // where('id_empresa',$cotizacion->id_proveedor)->first();
+ //dd($cotizacion);
+        return view('cotizaciones.externos.solicitud_simple_local',
+                                                            ["action" => "editar",
+                                                            "formasPago" => $formasPago, 
+                                                            "metodosPago" => $metodosPago, 
+                                                            "usoCfdi" => $usoCfdi, 
+                                                            "cotizacion" => $cotizacion,
+                                                            "proveedores" => $empresas,
+                                                            "transportista" => $transportista,
+                                                            "opciones" => $opciones
+                                                        ]);
+    }
+
+    public function solicitudMultiplelocal(){
+
+        return view('cotizaciones.externos.solicitud_multiple_local',[
+            "action" => "crear"
+        ]);
+    }
+
+    public function viajesDocumentslocal(){
+        return view('cotizaciones.externos.viajes_documentacion_local');
+
+    }
+
+    public function misViajeslocal(){
+        return view('cotizaciones.externos.viajes_solicitados-local');
+    }
+
+      public function getContenedoreslocalesPendientes(Request $request){
+        $condicion = ($request->estatus == 'Local') ? '=' : '!=';
+        $contenedoresPendientes = Cotizaciones::join('docum_cotizacion as d', 'cotizaciones.id', '=', 'd.id_cotizacion')
+                                                ->where('cotizaciones.id_cliente' ,'=',Auth::User()->id_cliente)
+                                                ->where('estatus',$condicion,$request->estatus)
+                                                ->whereIn('tipo_viaje_seleccion', ['local', 'local_to_foraneo'])
+                                                ->where('jerarquia', "!=",'Secundario')
+                                                ->orderBy('created_at', 'desc')
+                                                ->selectRaw('cotizaciones.*, d.num_contenedor,d.doc_eir,doc_ccp ,d.boleta_liberacion,d.doda,d.foto_patio,d.boleta_patio')
+                                                ->get();
+
+
+
+                                                
+
+        $resultContenedores = 
+        $contenedoresPendientes->map(function($c){
+
+            $numContenedor = $c->num_contenedor;
+            $docCCP = ($c->doc_ccp == null) ? false : true;
+            $doda = ($c->doda == null) ? false : true;
+            $boletaLiberacion = ($c->boleta_liberacion == null) ? false : true;
+            $cartaPorte = $c->carta_porte;
+            $boletaVacio = ($c->img_boleta == null) ? false : true;
+            $docEir = $c->doc_eir;
+            $fotoPatio = ($c->foto_patio == null) ? false : true;
+            $boleta_patio = ($c->boleta_patio == null) ? false : true;
+            $tipo = "Sencillo";
+
+            if (!is_null($c->referencia_full)) {
+                $secundaria = Cotizaciones::where('referencia_full', $c->referencia_full)
+                    ->where('jerarquia', 'Secundario')
+                    ->with('DocCotizacion.Asignaciones')
+                    ->first();
+
+                if ($secundaria && $secundaria->DocCotizacion) {
+                    $docCCP = ($docCCP && $secundaria->DocCotizacion->doc_ccp) ? true : false;
+                    $doda = ($doda && $secundaria->DocCotizacion->doda) ? true : false;
+                    $docEir = ($docEir && $secundaria->DocCotizacion->doc_eir) ? true : false;
+                    $boletaLiberacion = ($boletaLiberacion && $secundaria->DocCotizacion->boleta_liberacion) ? true : false;
+                    $cartaPorte = ($cartaPorte && $secundaria->carta_porte) ? true : false;
+                    $boletaVacio = ($boletaVacio && $secundaria->img_boleta) ? true : false;
+                    $fotoPatio = ($fotoPatio && $secundaria->foto_patio) ? true : false;
+                    $numContenedor .= '  ' . $secundaria->DocCotizacion->num_contenedor;
+                }
+
+                $tipo = "Full";
+            }
+         
+
+            return [
+                "NumContenedor" => $numContenedor,
+                "Estatus" => ($c->estatus == "Local") ? "Local Viaje solicitado" : $c->estatus,
+                "Origen" => $c->origen, 
+                "Destino" => $c->destino, 
+                "Peso" => $c->peso_contenedor,
+                "BoletaLiberacion" => $boletaLiberacion,
+                "DODA" => $doda,
+                "foto_patio" => $fotoPatio,
+                "FormatoCartaPorte" => $docCCP,
+                "PreAlta" => $boletaVacio,
+                "BoletaPatio" => $boleta_patio,
+                "FechaSolicitud" => Carbon::parse($c->created_at)->format('Y-m-d'),
+                "tipo" => $tipo,
+                "id" => $c->id
+            ];
+        });
+
+        return $resultContenedores;
+    }
+
+    
 }
