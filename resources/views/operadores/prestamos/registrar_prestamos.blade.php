@@ -5,69 +5,116 @@
 @endsection
 
 @section('content')
+<style>
+    .btn-abonar {
+      background-color: #28a745;
+      color: white;
+      border: none;
+      padding: 4px 8px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.2s;
+  }
+  .btn-abonar:hover {
+      background-color: #218838;
+  }
+</style>
 <div class="container-fluid">
-        <div class="row">
-            <div class="col-sm-12">
-<!-- Asegúrate de tener en tu <head> -->
-<!-- <meta name="csrf-token" content="{{ csrf_token() }}"> -->
-
-<div class="card shadow-sm">
-  <div class="card-header bg-light text-dark">
-    <h5 class="mb-0">Registro de Préstamo</h5>
-  </div>
-  <div class="card-body">
-    <form id="formPrestamo" novalidate>
-      <div class="row g-3">
-        <!-- Nombre de operador -->
-        <div class="col-md-6">
-          <label for="id_operador" class="form-label">Nombre de operador</label>
-          <select id="id_operador" name="id_operador" class="form-select" required>
-            <option value="">Seleccione un operador</option>
-            @foreach($operadores as $o)
-            <option value="{{$o->id}}">{{$o->nombre}}</option>
-            @endforeach
-
-          </select>
-          <div class="invalid-feedback">Debe seleccionar un operador.</div>
+  <div class="row">
+    <div class="col-sm-12">
+      <div class="card shadow-sm">
+        <div class="card-header bg-light text-dark">
+          <h5 class="mb-0">Registro de Préstamo</h5>
         </div>
 
-        <!-- Cantidad de préstamo -->
-        <div class="col-md-6">
-          <label for="cantidad" class="form-label">Cantidad de préstamo</label>
-          <input type="number" name="cantidad" id="cantidad" class="form-control" placeholder="Ingrese la cantidad" required min="0.01" step="0.01">
-          <div class="invalid-feedback">Ingrese una cantidad válida mayor a 0.</div>
-        </div>
+        <div class="card-body">
+          <form id="formPrestamo" novalidate>
+            <div class="row align-items-end g-3">
+              <!-- Nombre de operador -->
+              <div class="col-md-4">
+                <label for="id_operador" class="form-label fw-semibold">Nombre de operador</label>
+                <select id="id_operador" name="id_operador" class="form-select" required>
+                  <option value="">Seleccione un operador</option>
+                  @foreach($operadores as $o)
+                    <option value="{{ $o->id }}">{{ $o->nombre }}</option>
+                  @endforeach
+                </select>
+                <div class="invalid-feedback">Debe seleccionar un operador.</div>
+              </div>
 
-    
+              <!-- Cantidad -->
+              <div class="col-md-2">
+                <label for="cantidad" class="form-label fw-semibold">Cantidad de préstamo</label>
+                <div class="input-group">
+                  <span class="input-group-text bg-light border-end-0">$</span>
+                  <input type="number" name="cantidad" id="cantidad"
+                         class="form-control border-start-0" 
+                         placeholder="Ingrese la cantidad" required min="0.01" step="0.01">
+                </div>
+                <div class="invalid-feedback">Ingrese una cantidad válida mayor a 0.</div>
+              </div>
 
-        <div class="col-md-6">
-          <label for="id_banco" class="form-label">Banco de retiro</label>
-          <select id="id_banco" name="id_banco" class="form-select" required>
-            <option value="">Seleccione un banco</option>
-            @foreach($bancos as $b)
-            <option value="{{$b->id}}">{{$b->nombre_banco}}</option>
-            @endforeach
-          </select>
-          <div class="invalid-feedback">Seleccione banco de retiro.</div>
-        </div>
+              <!-- Banco -->
+              <div class="col-md-4">
+                <label for="id_banco" class="form-label fw-semibold">Banco de retiro</label>
+                <select id="id_banco" name="id_banco" class="form-select" required>
+                  <option value="">Seleccione un banco</option>
+                  @foreach($bancos as $b)
+                    <option value="{{ $b->id }}">{{ $b->nombre_banco }}</option>
+                  @endforeach
+                </select>
+                <div class="invalid-feedback">Seleccione banco de retiro.</div>
+              </div>
 
-   
-
-      <div class="d-flex justify-content-end mt-4">
-        <button type="submit" class="btn btn-success px-4">Guardar</button>
-      </div>
-    </form>
-  </div>
-</div>
-
-
-
+              <!-- Botón -->
+              <div class="col-md-2 text-end">
+                <button type="submit" class="btn btn-success w-100">
+                  <i class="bi bi-save me-1"></i> Guardar
+                </button>
+              </div>
             </div>
+          </form>
         </div>
+      </div>
+    </div>
+  </div>
 </div>
+
+<div class="container-fluid mt-4">
+  <div class="row">
+    <div class="col-sm-12">
+      <div class="card shadow-sm">
+        <div class="card-header bg-light text-dark d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">Lista de Préstamos</h5>
+          <button class="btn btn-outline-secondary btn-sm" id="btnRecargarGrid">
+            <i class="bi bi-arrow-repeat me-1"></i> Recargar
+          </button>
+        </div>
+        <div class="card-body">
+          <!-- Aquí irá tu AG Grid -->
+          <div id="gridPrestamosActivos" class="ag-theme-alpine" style="height: 400px; width: 100%;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+@include('operadores.prestamos.modal-abono-prestamo')
+@include('operadores.prestamos.modal-detalle-abonos')
 @endsection
 
+<script>
+
+  window.prestamos = @json($prestamos);
+</script>
+
 @push('custom-javascript')
+
+
+<script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.js"></script>
+<script src="{{ asset('js/sgt/operadores/prestamos.js') }}?v={{ filemtime(public_path('js/sgt/operadores/prestamos.js')) }}"></script>  
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+
 <script>
 $(function () {
   const $form = $("#formPrestamo");

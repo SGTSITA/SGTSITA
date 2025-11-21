@@ -55,6 +55,11 @@ Route::group(["prefix" => "prestamos"], function(){
     Route::get("registro",[PrestamosController::class,'index'])->name('operadores.prestamo');
     Route::post("store",[PrestamosController::class,'store'])->name('prestamo.store');
 
+    Route::post("{id}/abonar",[PrestamosController::class,'abonar'])->name('prestamo.abonar');
+    Route::get("lista",[PrestamosController::class,'getListaPrestamos'])->name('prestamo.lista');
+    Route::get("lista-detalle/{idprestamo}",[PrestamosController::class,'getPrestamosPagos'])->name('prestamo.listadetalle');
+    
+
 });
 
 
@@ -344,6 +349,10 @@ Route::post('operadores/{id}/restaurar', [App\Http\Controllers\OperadorControlle
     Route::post('cotizaciones/update/{id}', [App\Http\Controllers\CotizacionesController::class, 'update'])->name('update.cotizaciones');
     Route::post('cotizaciones/single/update/{id}', [App\Http\Controllers\CotizacionesController::class, 'singleUpdate'])->name('update.single');
 
+    //burrero local editar
+    Route::any('cotizaciones/store-local', [App\Http\Controllers\CotizacionesController::class, 'storelocal'])->name('store.cotizacioneslocal');
+    Route::post('cotizaciones/single/update-local/{id}', [App\Http\Controllers\CotizacionesController::class, 'singleUpdatelocal'])->name('update.singlelocal');
+    //fin burrero local editar
 
     Route::get('cotizaciones/pdf/{id}', [App\Http\Controllers\CotizacionesController::class, 'pdf'])->name('pdf.cotizaciones');
 

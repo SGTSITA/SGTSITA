@@ -73,7 +73,11 @@ async function initBoard(fromDate,toDate){
             });
             }
 
-            dp.startDate = scrollToDate.addDays(-2)
+          if (scrollToDate) {
+              dp.startDate = scrollToDate.addDays(-2);
+            } else {
+                dp.startDate = new DayPilot.Date(fromDate); 
+            }
 
             if ( dpReady) {
              

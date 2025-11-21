@@ -44,6 +44,22 @@ class Cotizaciones extends Model
         'direccion_mapa',
         'fecha_seleccion_ubicacion',
         'fecha_seleccion',
+         'puerto',
+        'fecha_ingreso_puerto',
+         'fecha_salida_puerto',
+        'dias_estadia',
+        'dias_pernocta',
+            'tarifa_estadia',
+            'tarifa_pernocta',
+            'total_estadia',
+            'total_pernocta',
+            'total_general',
+            'motivo_demora',
+            'liberado',
+            'fecha_liberacion',
+            'responsable',
+            'observaciones',
+            'tipo_viaje_seleccion'
 
     ];
 

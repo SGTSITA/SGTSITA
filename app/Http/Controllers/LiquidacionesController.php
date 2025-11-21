@@ -416,12 +416,20 @@ Asignaciones::where('id_contenedor', $documCotizacion->id)
                         'id_liquidacion' => $liquidacion->id,
                         'id_prestamo' => $p->id,
                         'saldo_anterior' => $p->saldo_actual,
-                        'monto_pago' => ($pagoPrestamos > $p->saldo_actual) ? $p->saldo_actual : $pagoPrestamos
+                        'monto_pago' => ($pagoPrestamos > $p->saldo_actual) ? $p->saldo_actual : $pagoPrestamos,
+                         // NUEVOS CAMPOS para tener los abonos por pago directo
+                        'tipo_origen'     => 'liquidacion',
+                        'id_banco'        => null,     // no aplica en liquidación
+                        'referencia'      => null,     // no aplica en liquidación
+                        'fecha_pago'      => now(),
                     ];
 
                     PagoPrestamo::create($detalle);
 
                     $pagoPrestamos = ($pagoPrestamos > $p->saldo_actual) ? $pagoPrestamos - $p->saldo_actual : 0;
+
+
+                 
                 }
             }
 

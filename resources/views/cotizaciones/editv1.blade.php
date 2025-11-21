@@ -1168,9 +1168,9 @@
                                                     <div class="row justify-content-between align-items-center">
                                                           <div class="row">
                                        
-                                                <label style="font-size: 20px;">Num contenedor:  {{$documentacion?->num_contenedor}} </label>
-                                           
-                                       </div>
+                                                                        <label style="font-size: 20px;">Num contenedor:  {{$documentacion?->num_contenedor}} </label>
+                                                                
+                                                            </div>
                                                             <div class="col-sm-auto col-8 my-auto">
                                                                 <div class="h-100">
                                                                 <h5 class="mb-1 font-weight-bolder">

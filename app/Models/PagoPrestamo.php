@@ -14,6 +14,10 @@ class PagoPrestamo extends Model
         'id_liquidacion',
         'id_prestamo',
         'saldo_anterior',
-        'monto_pago'
+        'monto_pago',
+        'tipo_origen',
+        'id_banco'  ,
+        'referencia' ,
+        'fecha_pago' 
     ];
 }

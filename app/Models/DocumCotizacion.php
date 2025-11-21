@@ -20,6 +20,7 @@ class DocumCotizacion extends Model
         'doda',
         'id_empresa',
         'foto_patio',
+        'boleta_patio'
 
     ];
 

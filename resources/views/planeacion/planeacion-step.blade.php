@@ -10,64 +10,79 @@
     <div class="card">
       <div class="card-body">
         <div class="multisteps-form__progress">
+
+          <!-- PASO 1 -->
           <button class="multisteps-form__progress-btn js-active" type="button" title="User Info">
             <span>Contenedor</span>
           </button>
-          <button class="multisteps-form__progress-btn" type="button" title="User Info">
+
+          <!-- PASO 2 — OCULTO PARA PROVEEDOR DIRECTO -->
+          @cannot('Proveedor Autonomo 11am')
+          <button class="multisteps-form__progress-btn" type="button" title="Tipo de servicio">
             <span>Tipo de servicio</span>
           </button>
+          @endcannot
+
+          <!-- PASO 3 -->
           <button class="multisteps-form__progress-btn" type="button" title="Address">Datos del transporte</button>
+
+          <!-- PASO 4 -->
           <button class="multisteps-form__progress-btn" type="button" title="Socials">Fechas del viaje</button>
+
         </div>
       </div>
     </div>
   </div>
 </div>
-<!--form panels-->
+
+<!-- FORM PANELS -->
 <div class="row">
   <div class="col-12 col-lg-12 m-auto">
     <form class="multisteps-form__form">
-      <!--single form panel-->
+
+      <!-- PANEL 1 -->
       <div class="card multisteps-form__panel p-3 border-radius-xl bg-white js-active" data-animation="FadeIn">
         <div class="card-body">
-        <div class="row">
-          <div class="col-7 mt-3 ">
-            <h5 class="font-weight-normal text-left">¡Empecemos!</h5>
-            <p class="text-left">Seleccione un contenedor para iniciar la planeación</p>
-          </div>
-          <div class="col-sm-5 text-end my-3 mt-3">
-            <div class="h-100">
-              <h5 class="mb-1 font-weight-bolder numContenedorLabel" id="numContenedor"></h5>
-              <p class="mb-0 font-weight-bold text-sm nombreClienteLabel"></p>
+          <div class="row">
+            <div class="col-7 mt-3 ">
+              <h5 class="font-weight-normal text-left">¡Empecemos!</h5>
+              <p class="text-left">Seleccione un contenedor para iniciar la planeación</p>
             </div>
-          </div>
-        </div>
-        <div class="row">
-          <div id="gridAprobadas" class="ag-theme-alpine position-relative" style="height: 500px;">
-            <div id="gridLoadingOverlay" class="loading-overlay" style="display: none;">
-              <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Cargando...</span>
+            <div class="col-sm-5 text-end my-3 mt-3">
+              <div class="h-100">
+                <h5 class="mb-1 font-weight-bolder numContenedorLabel" id="numContenedor"></h5>
+                <p class="mb-0 font-weight-bold text-sm nombreClienteLabel"></p>
               </div>
             </div>
           </div>
+
+          <div class="row">
+            <div id="gridAprobadas" class="ag-theme-alpine position-relative" style="height: 500px;">
+              <div id="gridLoadingOverlay" class="loading-overlay" style="display: none;">
+                <div class="spinner-border text-primary" role="status">
+                  <span class="visually-hidden">Cargando...</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
         </div>
-        </div>
-       
-        
+
         <div class="card-footer">
-        <div class="multisteps-form__content">
           <div class="button-row d-flex mt-4">
-            <button class="btn bg-gradient-info btn-sm ms-auto mb-0 js-btn-next" id="nextOne" disabled="true" type="button" title="Siguiente"> Siguiente <i class="fa fa-arrow-right"></i>
+            <button class="btn bg-gradient-info btn-sm ms-auto mb-0 js-btn-next" id="nextOne" disabled="true" type="button">
+              Siguiente <i class="fa fa-arrow-right"></i>
             </button>
           </div>
         </div>
-        </div>
       </div>
-      <!--single form panel-->
+
+      <!-- PANEL 2 — OCULTO PARA PROVEEDOR DIRECTO -->
+      @cannot('Proveedor Autonomo 11am')
       <div class="card multisteps-form__panel p-3 border-radius-xl bg-white" data-animation="FadeIn">
         <div class="row">
           <div class="col-7 mt-3 text-left">
-            <h5 class="font-weight-normal">¿Cúal medio utilizará para el envío contenedor?</h5>
+            <h5 class="font-weight-normal">¿Cuál medio utilizará para el envío contenedor?</h5>
             <p>Indique como se realizará el viaje</p>
           </div>
           <div class="col-sm-5 text-end mt-3">
@@ -77,40 +92,50 @@
             </div>
           </div>
         </div>
+
         <div class="multisteps-form__content">
           <div class="row mt-4">
-            <div class="row mt-4">
-              <div class="custom-radio-group">
-                <label class="custom-radio">
-                  <input type="radio" name="option" value="propio" onclick="setTipoViaje('propio')">
-                  <div class="content">
-                    <i class="fas fa-truck-moving"></i>
-                    <span>Propio</span>
-                  </div>
-                </label>
-                <label class="custom-radio">
-                  <input type="radio" name="option" value="proveedor" onclick="setTipoViaje('proveedor')">
-                  <div class="content">
-                    <i class="fas fa-trailer"></i>
-                    <span>Sub Contratado</span>
-                  </div>
-                </label>
-              </div>
+            <div class="custom-radio-group">
+
+              <label class="custom-radio">
+                <input type="radio" name="option" value="propio" onclick="setTipoViaje('propio')">
+                <div class="content">
+                  <i class="fas fa-truck-moving"></i>
+                  <span>Propio</span>
+                </div>
+              </label>
+
+              <label class="custom-radio">
+                <input type="radio" name="option" value="proveedor" onclick="setTipoViaje('proveedor')">
+                <div class="content">
+                  <i class="fas fa-trailer"></i>
+                  <span>Sub Contratado</span>
+                </div>
+              </label>
+
             </div>
           </div>
+
           <div class="button-row d-flex mt-4">
-            <button class="btn bg-gradient-info btn-sm mb-0 js-btn-prev" type="button" title="Anterior">
-              <i class="fa fa-arrow-left"></i> Anterior </button>
-            <button class="btn bg-gradient-info btn-sm ms-auto mb-0 js-btn-next" id="nextTwo" disabled="true" type="button" title="Siguiente"> Siguiente <i class="fa fa-arrow-right"></i>
+            <button class="btn bg-gradient-info btn-sm mb-0 js-btn-prev" type="button">
+              <i class="fa fa-arrow-left"></i> Anterior
+            </button>
+
+            <button class="btn bg-gradient-info btn-sm ms-auto mb-0 js-btn-next" id="nextTwo" disabled="true" type="button">
+              Siguiente <i class="fa fa-arrow-right"></i>
             </button>
           </div>
         </div>
+
       </div>
-      <!--single form panel-->
+      @endcannot
+
+      <!-- PANEL 3 -->
       <div class="card multisteps-form__panel p-3 border-radius-xl bg-white" data-animation="FadeIn">
+
         <div class="row">
           <div class="col-7 mt-3 text-left">
-          <h5 class="font-weight-normal">Información general del viaje</h5>
+            <h5 class="font-weight-normal">Información general del viaje</h5>
             <p>Necesitamos algo de información para programar el viaje</p>
           </div>
           <div class="col-sm-5 my-4 mt-3 text-end">
@@ -120,11 +145,14 @@
             </div>
           </div>
         </div>
+
         <div class="multisteps-form__content">
+
           <div class="row mt-2">
-          <div class="col-lg-7 col-12 mt-4 mt-lg-0">
+            <div class="col-lg-7 col-12 mt-4 mt-lg-0">
               <h6 class="mb-0">Fecha de viaje</h6>
               <p class="text-sm">Seleccione rango de fechas para el viaje.</p>
+
               <div class="row">
                 <div class="col-md-6">
                   <label>Fecha salida</label>
@@ -132,48 +160,59 @@
                     <div class="input-group ">
                       <span class="input-group-text">
                         <div class="icon icon-shape bg-gradient-danger text-center border-radius-md mb-2">
-                          <i class="fa fa-calendar opacity-10" aria-hidden="true"></i>
+                          <i class="fa fa-calendar opacity-10"></i>
                         </div>
                       </span>
                       <input class="form-control dateInput" name="txtFechaInicio" id="txtFechaInicio" placeholder="Fecha inicio" type="text">
                     </div>
                   </div>
                 </div>
+
                 <div class="col-md-6">
                   <label>Fecha entrega</label>
                   <div class="form-group">
                     <div class="input-group ">
                       <span class="input-group-text">
                         <div class="icon icon-shape bg-gradient-danger text-center border-radius-md mb-2">
-                          <i class="fa fa-calendar opacity-10" aria-hidden="true"></i>
+                          <i class="fa fa-calendar opacity-10"></i>
                         </div>
                       </span>
                       <input class="form-control dateInput" name="txtFechaFinal" id="txtFechaFinal" placeholder="Fecha fin" type="text">
                     </div>
                   </div>
                 </div>
-            
+
               </div>
             </div>
           </div>
-         
+
+          <!-- VIAJE PROPIO -->
           <div id="viaje-propio" class="d-none">
             @include('planeacion.viaje_propio')
           </div>
 
+          <!-- VIAJE SUBCONTRATADO -->
           <div id="viaje-proveedor" class="d-none">
             @include('planeacion.viaje_subcontratado')
           </div>
-         
+
           <div class="row mt-3">
             <div class="button-row d-flex mt-4 col-12">
-              <button class="btn bg-gradient-info btn-sm mb-0 js-btn-prev" type="button" title="Anterior">
-              <i class="fa fa-arrow-left"></i> Anterior </button>
-              <button class="btn bg-gradient-success btn-sm ms-auto mb-0" type="button" id="btnProgramar" title="Send">Programar viaje</button>
+              <button class="btn bg-gradient-info btn-sm mb-0 js-btn-prev" type="button">
+                <i class="fa fa-arrow-left"></i> Anterior
+              </button>
+
+              <button class="btn bg-gradient-success btn-sm ms-auto mb-0" type="button" id="btnProgramar">
+                Programar viaje
+              </button>
+
             </div>
           </div>
+
         </div>
+
       </div>
+
     </form>
   </div>
 </div>
@@ -442,4 +481,26 @@ function actualizarDisponibles() {
 
 
     </script>
+    @can('Proveedor Autonomo 11am')
+    <script>
+    document.addEventListener("DOMContentLoaded", function () {
+
+    setTipoViaje('propio');
+
+        // Habilitar paso siguiente
+        const nextTwo = document.getElementById('nextTwo');
+        if (nextTwo) nextTwo.disabled = false;
+
+        // Mostrar/ocultar bloques
+        document.getElementById('viaje-propio').classList.remove('d-none');
+        document.getElementById('viaje-proveedor').classList.add('d-none');
+
+        // Avanzar automáticamente al panel 3
+        setTimeout(() => {
+            nextTwo.click();
+        }, 300);
+
+    });
+    </script>
+@endcan
 @endpush

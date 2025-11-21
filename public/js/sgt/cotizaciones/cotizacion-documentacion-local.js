@@ -129,9 +129,7 @@ const gridOptions = {
     { field: "tipo", hide: true },
     { field: "BoletaLiberacion", width: 110, cellRenderer: MissionResultRenderer },
     { field: "DODA", width: 110, cellRenderer: MissionResultRenderer },
-    { field: "FormatoCartaPorte", width: 150, cellRenderer: MissionResultRenderer },
-    { field: "PreAlta", width: 110, cellRenderer: MissionResultRenderer },
-    { field: "foto_patio", width: 110, cellRenderer: MissionResultRenderer },
+    { field: "BoletaPatio", width: 110, cellRenderer: MissionResultRenderer },
     {
       field: "NumContenedor",
       sortable: true,
@@ -154,7 +152,7 @@ const gridOptions = {
     },
     { field: "Estatus", filter: true, floatingFilter: true, cellClassRules: ragCellClassRules },
     { field: "Origen", filter: true, floatingFilter: true },
-    { field: "Destino" },
+   // { field: "Destino" },
     { field: "Peso", width: 100 },
 
   ],
@@ -172,10 +170,10 @@ paginationTitle.textContent = 'Registros por página';
 const btnDocumets = document.querySelectorAll('.btnDocs');
 //const api = createGrid(gridDiv, gridOptions)
 
-function getContenedoresPendientes(estatus = 'Documentos Faltantes') {
+function getContenedoresPendientes(estatus = 'Local') {
   var _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
   $.ajax({
-    url: '/viajes/documents/pending',
+    url: '/viajes/documents/pending-local',
     type: 'post',
     data: { _token, estatus },
     beforeSend: () => { },
@@ -338,7 +336,7 @@ function viajeFull() {
 
 function fileManager() {
   var _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-  var url = '/viajes/file-manager';
+  var url = '/viajes/file-manager-local';
 
   let contenedor = apiGrid.getSelectedRows();
 
@@ -386,7 +384,7 @@ function fileManager() {
 
 function editarViaje() {
   const _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-  const url = '/viajes/editar';
+  const url = '/viajes/editar-local';
 
   let seleccionados = apiGrid.getSelectedRows();
 
@@ -452,6 +450,7 @@ function editarViaje() {
     '<input type="hidden" name="numContenedor" value="' + numContenedor + '" />' +
     '<input type="hidden" name="_token" value="' + _token + '" />' +
     '</form>');
+    
 
   $('body').append(form);
   form.submit();

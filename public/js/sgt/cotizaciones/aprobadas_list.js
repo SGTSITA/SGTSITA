@@ -273,7 +273,10 @@ $('.fieldsCalculo').on('input', function() {
 
 function setTipoViaje(valTipoViaje){
     let nextOne = document.querySelector('#nextTwo');
-    nextOne.disabled = false;
+
+      if (nextOne) {
+        nextOne.disabled = false;
+    }
     tipoViaje = valTipoViaje;
     if(valTipoViaje == "proveedor")
      $("#viaje-proveedor").removeClass('d-none') , $("#viaje-propio").addClass('d-none')

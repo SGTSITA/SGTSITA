@@ -46,14 +46,14 @@ var transportistasLista =@json($transportista);
 <script src="{{asset('assets/handsontable/handsontable.full.min.js')}}"></script>
 <script src="{{asset('assets/handsontable/all.js')}}"></script>
 <script src="{{ asset('js/sgt/common.js') }}?v={{ filemtime(public_path('js/sgt/common.js')) }}"></script>
-<script src="{{ asset('js/sgt/cotizaciones/cotizacion-multiple.js') }}?v={{ filemtime(public_path('js/sgt/cotizaciones/cotizacion-multiple.js')) }}"></script>
+<script src="{{ asset('js/sgt/cotizaciones/cotizacion-multiplelocal.js') }}?v={{ filemtime(public_path('js/sgt/cotizaciones/cotizacion-multiplelocal.js')) }}"></script>
 <script>
        $(document).ready(async () =>{
 																		   
-    let clientes = await getClientes({{Auth::User()->id_cliente}});
-    const handsontable = buildHandsOntable();
+    let clientes = await getClientesLocal({{Auth::User()->id_cliente}});
+    const handsontable = buildHandsOntableLocal();
     var btn = document.querySelector('#btnSolicitar');
-    btn.addEventListener('click',i=> handsontable.validarSolicitud())
+    btn.addEventListener('click',i=> handsontable.validarSolicitudLocal())
 
     var genericUUID = localStorage.getItem('uuid');
      if(genericUUID == null){
