@@ -117,7 +117,7 @@
   </div>
   <!--end::Card header-->
 
-  @if ($action == 'editar' && $cotizacion->tipo_viaje == 'Full')
+  @if ($action == 'editar' &&  ($cotizacion->tipo_viaje ?? '') == 'Full')
   <div class="alert alert-info d-flex align-items-center justify-content-between">
     <div>
       <strong>Este es un viaje tipo Full</strong><br>

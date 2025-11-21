@@ -106,7 +106,7 @@ const localeText = {
 const ragCellClassRules = {
 
   "badge badge-light-info fs-base": (params) => params.value === "Viaje solicitado",
-  "badge badge-light-warning fs-base": (params) => params.value === "En espera",
+  "badge badge-light-warning fs-base": (params) => params.value === "Documentos Faltantes",
   "badge badge-light-success fs-base": (params) => params.value === "Aprobada",
   "badge badge-light-danger fs-base": (params) => params.value === "Cancelada",
 
@@ -172,7 +172,7 @@ paginationTitle.textContent = 'Registros por página';
 const btnDocumets = document.querySelectorAll('.btnDocs');
 //const api = createGrid(gridDiv, gridOptions)
 
-function getContenedoresPendientes(estatus = 'En espera') {
+function getContenedoresPendientes(estatus = 'Documentos Faltantes') {
   var _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
   $.ajax({
     url: '/viajes/documents/pending',

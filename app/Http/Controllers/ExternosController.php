@@ -197,10 +197,10 @@ class ExternosController extends Controller
 
     
     public function getContenedoresPendientes(Request $request){
-        $condicion = ($request->estatus == 'En espera') ? '=' : '!=';
+        $condicion = ($request->estatus == 'Documentos Faltantes') ? '=' : '!=';
         $contenedoresPendientes = Cotizaciones::join('docum_cotizacion as d', 'cotizaciones.id', '=', 'd.id_cotizacion')
                                                 ->where('cotizaciones.id_cliente' ,'=',Auth::User()->id_cliente)
-                                                ->where('estatus',$condicion,'En espera')
+                                                ->where('estatus',$condicion,'Documentos Faltantes')
                                                 ->whereIn('tipo_viaje_seleccion', ['foraneo', 'local_to_foraneo'])
                                                 ->where('jerarquia', "!=",'Secundario')
                                                 ->orderBy('created_at', 'desc')
@@ -327,7 +327,7 @@ class ExternosController extends Controller
 
             $contenedor = Cotizaciones::join('docum_cotizacion as d', 'cotizaciones.id', '=', 'd.id_cotizacion')
             ->where('cotizaciones.id' ,'=',$cotizacion)
-            ->where('estatus','=','En espera')
+            ->where('estatus','=','Documentos Faltantes')
             ->orderBy('created_at', 'desc')
             ->selectRaw('cotizaciones.*, d.num_contenedor,d.doc_eir,doc_ccp ,d.boleta_liberacion,d.doda')
             ->first();
@@ -673,8 +673,16 @@ class ExternosController extends Controller
 
     public function solicitudMultiplelocal(){
 
+         $clienteEmpresa = ClientEmpresa::where('id_client',auth()->user()->id_cliente)->get()->pluck('id_empresa');
+        //return $clienteEmpresa;
+        $empresas = Empresas::whereIn('id',$clienteEmpresa)->get();
+
+         $transportista = Proveedor::whereIn('id_empresa', $clienteEmpresa)->get();
+
         return view('cotizaciones.externos.solicitud_multiple_local',[
-            "action" => "crear"
+            "action" => "crear",
+            "proveedores" => $empresas,
+            "transportista" => $transportista
         ]);
     }
 
@@ -739,7 +747,7 @@ class ExternosController extends Controller
 
             return [
                 "NumContenedor" => $numContenedor,
-                "Estatus" => ($c->estatus == "Local") ? "Local Viaje solicitado" : $c->estatus,
+                "Estatus" => ($c->estatus == "Local") ? "Local solicitado" : $c->estatus,
                 "Origen" => $c->origen, 
                 "Destino" => $c->destino, 
                 "Peso" => $c->peso_contenedor,

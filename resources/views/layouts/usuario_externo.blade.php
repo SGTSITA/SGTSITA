@@ -125,6 +125,7 @@
                                             <span class="menu-title">Mis Viajes</span>
                                         </a>
                                     </div>
+                                     @can('Burrero MEC')
                                     <div class="menu-item">
                                         <a href="{{ route('viajes.local') }}" class="menu-link">
                                             <span class="menu-bullet">
@@ -133,14 +134,16 @@
                                             <span class="menu-title">Solicitar Local</span>
                                         </a>
                                     </div>
+                                  
                                     <div class="menu-item">
                                         <a href="{{ route('mis.viajeslocal') }}" class="menu-link">
                                             <span class="menu-bullet">
                                                 <span class="bullet bullet-dot"></span>
                                             </span>
-                                            <span class="menu-title">viajes Locales</span>
+                                            <span class="menu-title">Viajes Locales</span>
                                         </a>
                                     </div>
+                                    @endcan
                                 </div>
                             </div>
                             <div data-kt-menu-trigger="click" class="menu-item menu-accordion">
