@@ -421,7 +421,7 @@ $InfoViajeExtra = Cotizaciones::query()
         $board[] = ["name" => "Clientes", "id" => "S", "expanded" => true, "children" => $clientesData];
       
         $fecha = Carbon::now()->subdays(10)->format('Y-m-d');
-        return response()->json(["boardCentros"=> $board,"extractor"=>$extractor,"scrollDate"=> $fecha]);  
+        return response()->json(["boardCentros"=> $board,"extractor"=>$extractor,"scrollDate"=> $fecha, "TMensaje" => "success","planeaciones"=>$planeaciones]);  
     }
 
     public function asignacion(Request $request){
@@ -464,27 +464,29 @@ $InfoViajeExtra = Cotizaciones::query()
                 $asignaciones->id_banco1_dinero_viaje = $request->get('cmbBanco');
                 $asignaciones->cantidad_banco1_dinero_viaje = $request->get('txtDineroViaje');
 
-                
-                $resta = $request->get('txtSueldoOperador') - $request->get('txtDineroViaje');
+                $sueldoOperador = $request->filled('txtSueldoOperador') ? $request->get('txtSueldoOperador') : 0;
+                $dineroViaje = $request->filled('txtDineroViaje') ? $request->get('txtDineroViaje') : 0;
+
+                $resta = $sueldoOperador - $dineroViaje;
                 $asignaciones->pago_operador = $resta;
                 $asignaciones->restante_pago_operador = $resta;
                
 
-                if(is_null($request->get('cmbProveedor'))){
+                if(is_null($request->get('cmbProveedor')) && $dineroViaje > 0){ //Agregue para validar el proveedor con sgt elemental no tiene porceso de pagos
                 
                     $contenedoresAbonos = [];
                     $contenedorAbono = [
                         'num_contenedor' => $contenedor->num_contenedor,
-                        'abono' => $request->get('txtDineroViaje')
+                        'abono' =>  $dineroViaje
                     ];
     
                     array_push($contenedoresAbonos, $contenedorAbono);
 
-                    Bancos::where('id' ,'=',$request->get('cmbBanco'))->update(["saldo" => DB::raw("saldo - ". $request->get('txtDineroViaje'))]);
+                    Bancos::where('id' ,'=',$request->get('cmbBanco'))->update(["saldo" => DB::raw("saldo - ". $dineroViaje)]);
                     BancoDineroOpe::insert([[
                                             'id_operador' => $request->get('cmbOperador'), 
                                             'id_banco1' => $request->get('cmbBanco'),
-                                            'monto1' => $request->get('txtDineroViaje'),
+                                            'monto1' => $dineroViaje,
                                             'fecha_pago' => date('Y-m-d'),
                                             'tipo' => 'Salida',
                                             'id_empresa' => auth()->user()->id_empresa,
@@ -496,7 +498,7 @@ $InfoViajeExtra = Cotizaciones::query()
                     $dineroViaje->id_contenedor = $asignaciones->id_contenedor;
                     $dineroViaje->id_banco = $request->get('cmbBanco');
                     $dineroViaje->motivo = 'Dinero para viaje';
-                    $dineroViaje->monto = $request->get('txtDineroViaje');
+                    $dineroViaje->monto =  $dineroViaje;
                     $dineroViaje->fecha_entrega_monto = date('Y-m-d');
                     $dineroViaje->save();
 
