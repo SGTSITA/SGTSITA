@@ -34,6 +34,14 @@
 @endsection
 
 @push('javascript')
+<script>
+const canElegirProveedor = @can('mec-elegir-proveedor') true @else false @endcan;
+//const canElegirProveedor= true;
+    // LISTAS PARA SELECTS
+var proveedoresLista =@json($proveedores);
+var transportistasLista =@json($transportista);
+ 
+</script>
 <link href="{{asset('assets/handsontable/handsontable.full.min.css')}}" rel="stylesheet" media="screen">
 <script src="{{asset('assets/handsontable/handsontable.full.min.js')}}"></script>
 <script src="{{asset('assets/handsontable/all.js')}}"></script>
