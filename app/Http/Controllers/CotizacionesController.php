@@ -489,20 +489,20 @@ public function getCotizacionesCanceladas()
             }
         }
 
-    /*if($request->get('id_cliente_clientes') !== NULL){
-            $cliente = $request->get('id_cliente_clientes');
-        }else if($request->get('nombre_cliente') == NULL){
-            $cliente = $request->get('id_cliente');
-        }else{
-            $cliente = new Client;
-            $cliente->nombre = $request->get('nombre_cliente');
-            $cliente->correo = $request->get('correo_cliente');
-            $cliente->telefono = $request->get('telefono_cliente');
-            $cliente->id_empresa =  6;
-            $cliente->save();
+        /*if($request->get('id_cliente_clientes') !== NULL){
+                $cliente = $request->get('id_cliente_clientes');
+            }else if($request->get('nombre_cliente') == NULL){
+                $cliente = $request->get('id_cliente');
+            }else{
+                $cliente = new Client;
+                $cliente->nombre = $request->get('nombre_cliente');
+                $cliente->correo = $request->get('correo_cliente');
+                $cliente->telefono = $request->get('telefono_cliente');
+                $cliente->id_empresa =  6;
+                $cliente->save();
 
-            $cliente = $cliente->id;
-        }*/
+                $cliente = $cliente->id;
+            }*/
 
         $cliente = $request->get('id_cliente');
 
@@ -1037,7 +1037,8 @@ public function getCotizacionesCanceladas()
 
 
             //cambiar archivo pdf solo si hay cambios en la informacion de carta porte
-        if($request->get('modifico_informacion') == '1'){
+            $modifico = $request->get('modifico_informacion', 0);
+        if($modifico == 1){
 
             $docucotizaciones =  DocumCotizacion::where('id_cotizacion', '=', $cotizaciones->id)->first();
         
