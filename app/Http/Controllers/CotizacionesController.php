@@ -1038,7 +1038,8 @@ public function getCotizacionesCanceladas()
 
             //cambiar archivo pdf solo si hay cambios en la informacion de carta porte
             $modifico = $request->get('modifico_informacion', 0);
-        if($modifico == 1){
+             if($modifico == 1){
+                 \Log::channel('daily')->info('Modifico informacion de carta porte para cotizacion ID: '.$id);
 
             $docucotizaciones =  DocumCotizacion::where('id_cotizacion', '=', $cotizaciones->id)->first();
         
@@ -1049,6 +1050,7 @@ public function getCotizacionesCanceladas()
             $path = public_path('cotizaciones/cotizacion'.$docucotizaciones->id.'/formato_carta_porte_' . $numContenedor . '.pdf');
 
             if($request->has('uuid')){
+                \Log::channel('daily')->info('si hay uuid: '.$request->get('uuid'));
             
                 $cotizaciones->sat_uso_cfdi_id = $request->id_uso_cfdi;
                 $cotizaciones->sat_forma_pago_id = $request->id_forma_pago;
@@ -1076,12 +1078,15 @@ public function getCotizacionesCanceladas()
                 $pdf = \PDF::loadView('cotizaciones.carta_porte_pdf', compact('cotizaciones','numContenedor','subCliente'));
 
                 $folderPath = public_path('cotizaciones/cotizacion' . $docucotizaciones->id);
+
+                \Log::channel('daily')->info('path: '.$folderPath);
                 // Crear la carpeta si no existe
                 if (!File::exists($folderPath)) {
                     File::makeDirectory($folderPath, 0755, true);
                 } else {
                     //  Si el archivo anterior existe, lo eliminamos
                     if (File::exists($path)) {
+                         \Log::channel('daily')->info('borrando archivo: '.$path);
                         File::delete($path);
                     }
                 }
