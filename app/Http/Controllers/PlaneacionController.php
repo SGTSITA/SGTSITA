@@ -472,7 +472,7 @@ $InfoViajeExtra = Cotizaciones::query()
                 $asignaciones->restante_pago_operador = $resta;
                
 
-                if(is_null($request->get('cmbProveedor')) && $dineroViaje > 0){ //Agregue para validar el proveedor con sgt elemental no tiene porceso de pagos
+                if(is_null($request->get('cmbProveedor')) && $CantineroViaje > 0){ //Agregue para validar el proveedor con sgt elemental no tiene porceso de pagos
                 
                     $contenedoresAbonos = [];
                     $contenedorAbono = [
