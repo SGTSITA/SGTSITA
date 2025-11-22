@@ -465,9 +465,9 @@ $InfoViajeExtra = Cotizaciones::query()
                 $asignaciones->cantidad_banco1_dinero_viaje = $request->get('txtDineroViaje');
 
                 $sueldoOperador = $request->filled('txtSueldoOperador') ? $request->get('txtSueldoOperador') : 0;
-                $dineroViaje = $request->filled('txtDineroViaje') ? $request->get('txtDineroViaje') : 0;
+                $CantineroViaje = $request->filled('txtDineroViaje') ? $request->get('txtDineroViaje') : 0;
 
-                $resta = $sueldoOperador - $dineroViaje;
+                $resta = $sueldoOperador - $CantineroViaje;
                 $asignaciones->pago_operador = $resta;
                 $asignaciones->restante_pago_operador = $resta;
                
@@ -477,16 +477,16 @@ $InfoViajeExtra = Cotizaciones::query()
                     $contenedoresAbonos = [];
                     $contenedorAbono = [
                         'num_contenedor' => $contenedor->num_contenedor,
-                        'abono' =>  $dineroViaje
+                        'abono' =>  $CantineroViaje
                     ];
     
                     array_push($contenedoresAbonos, $contenedorAbono);
 
-                    Bancos::where('id' ,'=',$request->get('cmbBanco'))->update(["saldo" => DB::raw("saldo - ". $dineroViaje)]);
+                    Bancos::where('id' ,'=',$request->get('cmbBanco'))->update(["saldo" => DB::raw("saldo - ". $CantineroViaje)]);
                     BancoDineroOpe::insert([[
                                             'id_operador' => $request->get('cmbOperador'), 
                                             'id_banco1' => $request->get('cmbBanco'),
-                                            'monto1' => $dineroViaje,
+                                            'monto1' => $CantineroViaje,
                                             'fecha_pago' => date('Y-m-d'),
                                             'tipo' => 'Salida',
                                             'id_empresa' => auth()->user()->id_empresa,
@@ -494,13 +494,13 @@ $InfoViajeExtra = Cotizaciones::query()
                                             'descripcion_gasto' => 'Dinero para viaje'
                                         ]]);
 
-                    $dineroViaje = new DineroContenedor;
-                    $dineroViaje->id_contenedor = $asignaciones->id_contenedor;
-                    $dineroViaje->id_banco = $request->get('cmbBanco');
-                    $dineroViaje->motivo = 'Dinero para viaje';
-                    $dineroViaje->monto =  $dineroViaje;
-                    $dineroViaje->fecha_entrega_monto = date('Y-m-d');
-                    $dineroViaje->save();
+                            $dineroViaje = new DineroContenedor;
+                            $dineroViaje->id_contenedor = $asignaciones->id_contenedor;
+                            $dineroViaje->id_banco = $request->get('cmbBanco');
+                            $dineroViaje->motivo = 'Dinero para viaje';
+                            $dineroViaje->monto =  $CantineroViaje;
+                            $dineroViaje->fecha_entrega_monto = date('Y-m-d');
+                            $dineroViaje->save();
 
                     
                     
