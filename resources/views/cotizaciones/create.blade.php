@@ -11,7 +11,7 @@
                 <div class="card">
                     <div class="card-header">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
-                        
+
                         <h3 class="mb-3">Crear Cotizacion</h3>
                         <div class="col-6 ">
 
@@ -35,17 +35,17 @@
                     </div>
 
                     <div class="card-body">
-                        <form method="POST" action="{{ route('v2store.cotizaciones') }}" 
+                        <form method="POST" action="{{ route('v2store.cotizaciones') }}"
                         id="cotizacionCreateMultiple" enctype="multipart/form-data" sgt-cotizacion-action="create" role="form">
                             @csrf
 
                             <div class="modal-body">
                                 <div class="row">
-                                
+
                                 <hr class="horizontal dark mt-0 mb-4">
                                     <div class="col-12">
                                         <div class="row">
-                                            
+
                                             <!--div class="col-3">
                                                 <label for="precio">Nuevo cliente</label><br>
                                                 <button class="btn btn-success btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#collapseExample" aria-expanded="false" aria-controls="collapseExample">
@@ -93,11 +93,11 @@
                                             <!--div class="col-lg-2 col-md-2 col-2 my-auto text-end">
                                                 <a href="javascript:;" class="btn btn-sm bg-gradient-info mb-0"><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">Crear Cliente</font></font></a>
                                                 <p class="text-sm mt-2 mb-0">
-                                                   
+
                                                     <font style="vertical-align: inherit;">
                                                     ¿Cliente no registrado? Puede crearlo aquí
                                                     </font>
-                                                   
+
                                                 </p>
                                             </div-->
                                         </div>
@@ -145,6 +145,8 @@
                                             </div>
                                         </div>
                                     </div>
+
+                                     <input type="hidden" value="SGT" id="origen_captura" name="origen_captura" />
 
                                     <div class="col-6 form-group">
                                         <label for="name">Origen</label>
@@ -284,8 +286,8 @@
                                             <input name="base_taref" id="base_taref" autocomplete="off" type="float" readonly class="form-control moneyformat calculo-cotizacion" oninput="allowOnlyDecimals(event)">
                                         </div>
                                     </div>
-                                   
-                                    
+
+
 
                                     <div class="col-4 form-group">
                                         <label for="name">Total</label>
@@ -302,7 +304,7 @@
                                             <label class="custom-nav-item">
                                                 <input type="radio" checked="checked" value="Contenedor-A" class="custom-nav-radio" name="contenedorTabs" id="tab1" />
                                                 <div class="custom-nav-link active">
-                                               
+
                                                 <h6><i class="ni ni-box-2 text-warning text-gradient"></i> Contenedor A  </h6>
                                                 </div>
                                             </label>
@@ -310,16 +312,16 @@
                                             <label class="custom-nav-item d-none" id="tab-contenedor-b">
                                                 <input type="radio" class="custom-nav-radio" value="Contenedor-B" name="contenedorTabs" id="tab2" />
                                                 <div class="custom-nav-link">
-                                               
+
                                                 <h6> <i class="ni ni-box-2 text-info text-gradient"></i> Contenedor B</h6>
                                                 </div>
                                             </label>
                                         </div>
                                     </div>
 
-                                
 
-                                    
+
+
 
                                     <div class="col-3 form-group">
                                         <label for="name">Num. Contenedor</label>
@@ -371,7 +373,7 @@
                                         </div>
                                     </div>
 
-                                    
+
 
                                     <div class="col-3 form-group">
                                         <label for="name">Precio Tonelada</label>
@@ -385,7 +387,7 @@
 
                                     <div class="col-3"></div>
 
-                                    
+
 
                                     <div class="col-4 form-group">
                                         <label for="name">Fecha modulación</label>
@@ -554,7 +556,7 @@
     color: #111;
     border: 1px solid #0d6efd; /* más delgado */
     border-bottom: 2px solid #fff;
-   
+
     transform: scale(1.02);
     z-index: 1;
   }
@@ -591,7 +593,7 @@
   radios.forEach((radio, index) => {
     radio.addEventListener('change', () => {
       links.forEach((link) => link.classList.remove('active')); // Remover la clase active de todos
-      links[index].classList.add('active'); 
+      links[index].classList.add('active');
       let Contenedor = radios[index].value
       showInfoContenedor(Contenedor)
     });
@@ -603,7 +605,7 @@
     let tabB = document.querySelector("#tab-contenedor-b")
     document.querySelectorAll('.custom-option').forEach(opt =>{
          opt.classList.remove('selected')
-         
+
         });
     input.parentElement.classList.add('selected');
     if(input.parentElement.innerText == "Full") {tabB.classList.remove('d-none')}  else {tabB.classList.add('d-none')}

@@ -16,7 +16,7 @@ class MepController extends Controller
 {
     public function index(){
         $empresas = Empresas::get();
-        
+
         $gpsCompanies = GpsCompany::orderBy('nombre')->get();
         return view('mep.viajes.index', compact('empresas','gpsCompanies'));
     }
@@ -31,7 +31,7 @@ class MepController extends Controller
     public function getCotizacionesList()
     {
         $empresa = Empresas::where('id',auth()->user()->id_empresa)->first();
-        $proveedor = Proveedor::where('rfc',$empresa->rfc)->get()->pluck('id');
+        $proveedor = Proveedor::catalogoPrincipal()->where('rfc', $empresa->rfc)->pluck('id');
         $contenedoresAsignados = Asignaciones::whereIn('id_proveedor',$proveedor)->get()->pluck('id_contenedor');
 
         $cotizaciones = Cotizaciones::whereIn('id',$contenedoresAsignados)
@@ -76,7 +76,7 @@ class MepController extends Controller
     public function getCotizacionesFinalizadas()
     {
         $empresa = Empresas::where('id',auth()->user()->id_empresa)->first();
-        $proveedor = Proveedor::where('rfc',$empresa->rfc)->get()->pluck('id');
+        $proveedor = Proveedor::catalogoPrincipal()->where('rfc', $empresa->rfc)->pluck('id');
         $contenedoresAsignados = Asignaciones::whereIn('id_proveedor',$proveedor)->get()->pluck('id_contenedor');
 
         $cotizaciones = Cotizaciones::whereIn('id',$contenedoresAsignados)
@@ -165,7 +165,7 @@ class MepController extends Controller
         //TractoCamion
        // $idUnidad = self::validarEquiposEmpresa($formData['txtNumUnidad'], $formData['txtImei'],$formData['txtPlacas'],$formData['txtSerie'],$formData['selectGPS'],'Tractos / Camiones');
         $unidad = Equipo::where('id_empresa',auth()->user()->id_empresa)->where('id_equipo',$formData['txtNumUnidad']);
-        
+
         if(!$unidad->exists()){
             $unidad = new Equipo;
             $unidad->id_equipo = $formData['txtNumUnidad'];
@@ -198,8 +198,8 @@ class MepController extends Controller
            // $asignacion1 = $asignacion->first();
             $asignacion->update([
                 "id_operador"=>$idOperador,
-                "id_camion" => $idunidad, 
-                "id_chasis" => $idChasisA, 
+                "id_camion" => $idunidad,
+                "id_chasis" => $idChasisA,
                 "id_chasis2" => $idChasisB
             ]);
 
@@ -231,6 +231,6 @@ class MepController extends Controller
     public function verAsignacion(Request $request){
         $asignacion = Asignaciones::with(['Camion', 'Chasis', 'Chasis2','Operador'])->where('id_contenedor',$request->idContenedor)->get();
         return $asignacion;
-        
+
     }
 }

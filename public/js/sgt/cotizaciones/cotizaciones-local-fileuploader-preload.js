@@ -6,7 +6,8 @@ let frm = document.querySelector('#cotizacionCreate')
 
 function adjuntarDocumentos(filesContenedor) {
    // document.getElementById('content-file-input').innerHTML = '<input type="file" name="files" id="fileuploader">';
-   numContenedor = localStorage.getItem('numContenedor'); 
+   numContenedor = localStorage.getItem('numContenedor');
+   idCotizacion = localStorage.getItem('cotizacionId');
    let labelDocsViaje = document.getElementById('labelDocsViaje')
    labelDocsViaje.textContent = `Documentos de viaje ${numContenedor}`
 
@@ -19,10 +20,11 @@ function adjuntarDocumentos(filesContenedor) {
       fileUploaderInstance.setOption('upload', {
 
          files: (filesContenedor != null ) ? [filesContenedor] : null,
-    url: '/contenedores/files/upload', 
+    url: '/contenedores/files/upload',
     data: (item) => ({
         urlRepo: fileSettings.opcion,
         numContenedor: numContenedor,
+        idCotizacion: idCotizacion,
         _token: _token
     }),
     type: 'POST',
@@ -141,6 +143,7 @@ function adjuntarDocumentos(filesContenedor) {
             data: {
                 urlRepo:fileSettings.opcion,
                 numContenedor: numContenedor,
+                 idCotizacion: idCotizacion,
                 _token: _token
             },
             type: 'POST',
@@ -148,47 +151,47 @@ function adjuntarDocumentos(filesContenedor) {
             start: true,
             synchron: true,
             onBeforeSend: (xhr, settings) => {
-    
+
             },
             onSuccess: function(result, item) {
-    
+
                 var data = {};
-    
+
                 // get data
                 if (result && result.files)
                     data = result;
                 else
                     data.hasWarnings = true;
-    
+
                 // if success
                 if (data.isSuccess && data.files[0]) {
                     item.name = data.files[0].name;
                     item.html.find('.column-title > div:first-child').text(data.files[0].old_name).attr('title', data.files[0].old_name);
                 }
-    
+
                 // if warnings
                 if (data.hasWarnings) {
-                   
+
                     for (var warning in result.warnings) {
                        Swal.fire(result.warnings[warning],'','warning');
                     }
-    
+
                     item.html.removeClass('upload-successful').addClass('upload-failed');
                     // go out from success function by calling onError function
                     // in this case we have a animation there
                     // you can also response in PHP with 404
                     return this.onError ? this.onError(item) : null;
                 }
-    
+
                 item.html.find('.fileuploader-action-remove').addClass('fileuploader-action-success');
                 setTimeout(function() {
                     item.html.find('.progress-bar2').fadeOut(400);
                 }, 400);
-    
+
               //  const gridApi = gridOptions.api;
-               
-                
-    
+
+
+
                 /*toastr.options = {
                     "closeButton": true,
                     "debug": false,
@@ -206,26 +209,26 @@ function adjuntarDocumentos(filesContenedor) {
                     "showMethod": "fadeIn",
                     "hideMethod": "fadeOut"
                   };
-                  
+
                   toastr.success( `Se cargó el archivo correctamente en el contenedor ${fileSettings.titulo}`,`${fileSettings.titulo}: Carga Exitosa`);*/
-    
+
             },
             onError: function(item) {
                 var progressBar = item.html.find('.progress-bar2');
-    
+
                 if (progressBar.length) {
                     progressBar.find('span').html(0 + "%");
                     progressBar.find('.fileuploader-progressbar .bar').width(0 + "%");
                     item.html.find('.progress-bar2').fadeOut(400);
                 }
-    
+
                 item.upload.status != 'cancelled' && item.html.find('.fileuploader-action-retry').length == 0 ? item.html.find('.column-actions').prepend(
                     '<button type="button" class="fileuploader-action fileuploader-action-retry" title="Retry"><i class="fileuploader-icon-retry"></i></button>'
                 ) : null;
             },
             onProgress: function(data, item) {
                 var progressBar = item.html.find('.progress-bar2');
-    
+
                 if (progressBar.length > 0) {
                     progressBar.show();
                     progressBar.find('span').html(data.percentage + "%");
@@ -233,8 +236,8 @@ function adjuntarDocumentos(filesContenedor) {
                 }
             },
             onComplete: ()=>{
-           
-                
+
+
             },
         },
         beforeSelect: function(listEl, parentEl, newInputEl, inputEl) {
@@ -268,7 +271,7 @@ function adjuntarDocumentos(filesContenedor) {
     // Obtener la instancia de Fileuploader asociada a este campo de carga
    //var api = $.fileuploader.getInstance(fileInputElement);
    //ejemplo cambio de configuracion en tiempo real
-   
+
    // api.uploadStart(); // Iniciar la carga manualmente
 
 }
@@ -277,9 +280,9 @@ function adjuntarDocumentos(filesContenedor) {
     try {
       const response = await fetch(`/viajes/file-manager/get-file-list/${numContenedor}`, {
         method: 'get',
-      
+
       });
-  
+
       const fileList = await response.json();
       let containerFiles = fileList.data
       if(containerFiles.length == 0) return null;
@@ -357,7 +360,7 @@ async function initFileUploader() {
         { opcion:"BoletaLib", titulo:"Boleta de Liberación", agGrid:"Boleta-de-liberacion", mandatory:true },
         { opcion:"Doda", titulo:"DODA", agGrid:"Doda", mandatory:true },
         { opcion:"BoletaPatio", titulo:"Boleta de Patio", agGrid:"Boleta-de-patio", mandatory:true },
-       
+
     ];
 
     let numContenedor = localStorage.getItem('numContenedor');

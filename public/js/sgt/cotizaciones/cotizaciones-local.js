@@ -23,6 +23,10 @@ const formFields = [
     { field: 'precio_sobre_peso', id: 'precio_sobre_peso', label: 'Precio Sobre Peso', required: false, type: 'numeric', master: true },
     { field: 'precio_tonelada', id: 'precio_tonelada', label: 'Precio Tonelada', required: false, type: 'numeric', master: false },
     { field: 'peso_contenedor', id: 'peso_contenedor', label: 'Peso Contenedor', required: true, type: 'numeric', master: false },
+    { field: 'destino', id: 'destino', label: 'Destino', required: true, type: 'text', master: false },
+    { field: 'Costomaniobra', id: 'Costomaniobra', label: 'Costo Maniobra', required: true, type: 'numeric', master: false },
+    { field: 'estado_contenedor', id: 'estado_contenedor', label: 'Estado contenedor', required: true, type: 'text', master: false },
+
 
     // Datos de ruta
     { field: 'origen', id: 'origen', label: 'Origen', required: true, type: 'text', master: true },
@@ -63,12 +67,12 @@ function getClientes(clienteId,subclienteid) {
             $('#id_subcliente').empty();
             $('#id_subcliente').append('<option value="">Seleccionar subcliente</option>');
             $.each(data, function(key, subcliente) {
-                if(subclienteid && subclienteid == subcliente.id) { 
+                if(subclienteid && subclienteid == subcliente.id) {
                     $('#id_subcliente').append('<option value="' + subcliente.id + '" selected>' + subcliente.nombre + '</option>');
                 }else{
                     $('#id_subcliente').append('<option value="' + subcliente.id + '">' + subcliente.nombre + '</option>');
                 }
-                
+
             });
             $('#id_subcliente').select2();
         }
@@ -184,14 +188,22 @@ $('#solicitarservicio').on('click', function(e) {
         guardarCotizacionLocal();
     }
 
-        
+
     }
-  
+
 });
 
 $('#btnContinuar').on('click', function () {
       if(validateFormFields()){
+        if(localStorage.getItem('cotizacionId')){
+        const cotizacionId = localStorage.getItem('cotizacionId');
+        updateCotizacion(cotizacionId);
+
+    }else{
         guardarCotizacionLocal();
+    }
+
+
     }
 });
 
@@ -204,7 +216,7 @@ function guardarCotizacionLocal() {
     for (const campo in data) {
         formData.append(campo, data[campo]);
     }
- 
+
     return $.ajax({
         url: COTIZACION_URL,
         method: "POST",
@@ -258,12 +270,12 @@ const url =  `/cotizaciones/single/update-local/${id}`;
 
 $.ajax({
     url: url,
-    method: "POST", 
+    method: "POST",
     data: formData,
     processData: false,
     contentType: false,
     success: function (res) {
-       
+
         // Guardar ID de la cotización
         const id = res.id ;
         window.cotLocalId = id;

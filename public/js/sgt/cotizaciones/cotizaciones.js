@@ -27,10 +27,11 @@ const formFields = [
     {'field':'iva', 'id':'iva','label':'IVA','required': false, "type":"money", "master": true},
     {'field':'retencion', 'id':'retencion','label':'Retención','required': false, "type":"money", "master": true},
     {'field':'base_taref', 'id':'base_taref','label':'Base 2','required': false, "type":"money", "master": true},
-    {'field':'total', 'id':'total','label':'Total','required': false, "type":"money", "master": true},  
-    {'field':'terminal', 'id':'terminal','label':'Terminal','required': false, "type":"text", "master": false},  
-    {'field':'num_autorizacion', 'id':'num_autorizacion','label':'Num. Autorización','required': false, "type":"text", "master": false},  
-    {'field':'bloque', 'id':'bloque','label':'Block','required': false, "type":"text", "master": false},       
+    {'field':'total', 'id':'total','label':'Total','required': false, "type":"money", "master": true},
+    {'field':'terminal', 'id':'terminal','label':'Terminal','required': false, "type":"text", "master": false},
+    {'field':'num_autorizacion', 'id':'num_autorizacion','label':'Num. Autorización','required': false, "type":"text", "master": false},
+    {'field':'bloque', 'id':'bloque','label':'Block','required': false, "type":"text", "master": false},
+    {'field':'origen_captura','id':'origen_captura','label':'Origen de Captura','required': false, "type":"text", "master": false},
 ];
 
 const editFormFields = [
@@ -45,17 +46,18 @@ const editFormFields = [
     {'field':'boleta_vacio', 'id':'boleta_vacio','label':'Boleta vacio','required': false, "type":"text", "master": false},
     {'field':'fecha_boleta_vacio', 'id':'fecha_boleta_vacio','label':'Fecha Boleta vacío','required': false, "type":"text", "master": false},
     {'field':'eir', 'id':'eir','label':'EIR','required': false, "type":"text", "master": false},
-    {'field':'cima', 'id':'cima','label':'Administrado por CIMA','required': false, "type":"text", "master": false},    
-    {'field':'ccp', 'id':'ccp','label':'Formato CCP','required': false, "type":"text", "master": false},    
-    {'field':'direccion_recinto', 'id':'direccion_recinto','label':'Dirección recinto','required': false, "type":"text", "master": false},  
-    {'field':'text_recinto', 'id':'text_recinto','label':'¿Va a recinto?','required': false, "type":"text", "master": false},  
-    {'field':'fecha_modulacion', 'id':'fecha_modulacion','label':'Fecha modulación','required': false, "type":"text", "master": false},  
-    {'field':'fecha_entrega', 'id':'fecha_entrega','label':'Fecha Entrega','required': false, "type":"text", "master": false},  
-    {'field':'fecha_eir', 'id':'fecha_eir','label':'Fecha EIR','required': false, "type":"text", "master": false},  
-    {'field':'total', 'id':'total','label':'Total + Gastos','required': false, "type":"money", "master": false}, 
-    {'field':'direccion_entrega', 'id':'direccion_entrega','label':'Dirección de entrega','required': false, "type":"text", "master": false}, 
-    
-    
+    {'field':'cima', 'id':'cima','label':'Administrado por CIMA','required': false, "type":"text", "master": false},
+    {'field':'ccp', 'id':'ccp','label':'Formato CCP','required': false, "type":"text", "master": false},
+    {'field':'direccion_recinto', 'id':'direccion_recinto','label':'Dirección recinto','required': false, "type":"text", "master": false},
+    {'field':'text_recinto', 'id':'text_recinto','label':'¿Va a recinto?','required': false, "type":"text", "master": false},
+    {'field':'fecha_modulacion', 'id':'fecha_modulacion','label':'Fecha modulación','required': false, "type":"text", "master": false},
+    {'field':'fecha_entrega', 'id':'fecha_entrega','label':'Fecha Entrega','required': false, "type":"text", "master": false},
+    {'field':'fecha_eir', 'id':'fecha_eir','label':'Fecha EIR','required': false, "type":"text", "master": false},
+    {'field':'total', 'id':'total','label':'Total + Gastos','required': false, "type":"money", "master": false},
+    {'field':'direccion_entrega', 'id':'direccion_entrega','label':'Dirección de entrega','required': false, "type":"text", "master": false},
+    {'field':'origen_captura','id':'origen_captura','label':'Origen de Captura','required': false, "type":"text", "master": false},
+
+
 ]
 
 let Contenedores = [];
@@ -84,7 +86,8 @@ const formFieldsMec = [
     {'field':'cp_contacto_entrega','id':'cp_contacto_entrega','label':'Teléfono Contacto Entrega','required': true, "type":"text", "trigger":"none"},
     {'field':'cp_fecha_tentativa_entrega','id':'cp_fecha_tentativa_entrega','label':'Fecha tentativa Entregra','required': true, "type":"text", "trigger":"none"},
     {'field':'cp_hora_tentativa_entrega','id':'cp_hora_tentativa_entrega','label':'Hora tentativa entrega','required': true, "type":"text", "trigger":"none"},
-    {'field':'cp_comentarios','id':'cp_comentarios','label':'Comentarios Carta Porte','required': true, "type":"text", "trigger":"none"}
+    {'field':'cp_comentarios','id':'cp_comentarios','label':'Comentarios Carta Porte','required': true, "type":"text", "trigger":"none"},
+    {'field':'origen_captura','id':'origen_captura','label':'Origen de Captura','required': false, "type":"text", "master": false, "trigger":"none"},
 ]
 
 const formFieldsFacturacion = [
@@ -156,25 +159,25 @@ function calcularTotal(modulo = 'crear') {
 
     // Obtener el valor de Precio Tonelada
     //const field_precio_tonelada = fields.find( i => i.field == "precio_tonelada");
-    const precioTonelada = (modulo != "proveedores") 
-    ? parseFloat(reverseMoneyFormat(document.getElementById('total_sobrepeso_viaje').value)) ||0 
+    const precioTonelada = (modulo != "proveedores")
+    ? parseFloat(reverseMoneyFormat(document.getElementById('total_sobrepeso_viaje').value)) ||0
     : parseFloat(reverseMoneyFormat(document.getElementById('total_tonelada').value));
 
     // Sumar el valor de Precio Tonelada al total
     const totalFinal = totalConRetencion + precioTonelada;
-    
+
 
     if((modulo != "proveedores") && document.querySelector("#txtSumGastos")){
         let SumGastos = parseFloat(reverseMoneyFormat(document.querySelector("#txtSumGastos").value)) || 0;
         let txtResultGastos  = document.querySelectorAll(".txtResultGastos");
         txtResultGastos.forEach((r) => r.value = moneyFormat(totalFinal + SumGastos))
     }
-    
+
 
     let totalCotizacion  = (modulo == "proveedores") ? document.querySelectorAll(".total-cotizacion-proveedor") : document.querySelectorAll(".total-cotizacion");
     totalCotizacion.forEach((r) =>{
          r.value = moneyFormat(totalFinal)
-        
+
     })
     //baseTaref Corresponde a Base 2
     const baseTaref = (totalFinal - baseFactura - iva) + retencion;
@@ -199,12 +202,12 @@ function getClientes(clienteId,subclienteid) {
             $('#id_subcliente').empty();
             $('#id_subcliente').append('<option value="">Seleccionar subcliente</option>');
             $.each(data, function(key, subcliente) {
-                if(subclienteid && subclienteid == subcliente.id) { 
+                if(subclienteid && subclienteid == subcliente.id) {
                     $('#id_subcliente').append('<option value="' + subcliente.id + '" selected>' + subcliente.nombre + '</option>');
                 }else{
                     $('#id_subcliente').append('<option value="' + subcliente.id + '">' + subcliente.nombre + '</option>');
                 }
-                
+
             });
             $('#id_subcliente').select2();
         }
@@ -256,7 +259,7 @@ function googleMapsReady() {
                 });
             });
         } else {
-           
+
         }
 
         // Si hay dirección inicial pero no lat/lng, geocodificar
@@ -341,20 +344,20 @@ document.addEventListener('DOMContentLoaded', function () {
     function valorSobrePrecio(){
         // Obtener el valor de Sobrepeso
         var sobrepeso = parseFloat(sobrepesoInput.value.replace(/,/g, '')) || 0;
-   
+
         // Obtener el valor de Precio Sobre Peso
         var precioSobrePeso = parseFloat(reverseMoneyFormat(precioSobrePesoInput.value)) || 0;
-   
+
         // Calcular el resultado de la multiplicación
         var resultado = sobrepeso * precioSobrePeso;
-   
+
         // Mostrar el resultado en el campo "Precio Tonelada"
-        precioToneladaInput.value = moneyFormat(resultado); 
+        precioToneladaInput.value = moneyFormat(resultado);
 
         //Tomar en cuenta el sobrepeso de todos los contenedores. Para obtener el sobrepeso del viaje
         let sobrePeso = reverseMoneyFormat(sobrepesoViajeInput.value)
         precioToneladaViajeInput.value = moneyFormat(sobrePeso * precioSobrePeso)
-   
+
         // Calcular el total
         calcularTotal();
    }
@@ -370,14 +373,14 @@ document.addEventListener('DOMContentLoaded', function () {
     var resultado = sobrepeso * precioSobrePeso;
 
     // Mostrar el resultado en el campo "Precio Tonelada"
-    precioToneladaProveedor.value = moneyFormat(resultado); 
+    precioToneladaProveedor.value = moneyFormat(resultado);
 
     // Calcular el total
     calcularTotal('proveedores');
     }
     // Función para calcular el sobrepeso
     function calcularSobrepeso() {
-     
+
         var pesoReglamentario = parseFloat(pesoReglamentarioInput.value) || 0;
         var pesoContenedor = parseFloat(pesoContenedorInput.value) || 0;
 
@@ -389,9 +392,9 @@ document.addEventListener('DOMContentLoaded', function () {
         if(sobrepesoInput){
             sobrepesoInput.value = sobrepeso.toFixed(4);
         }
-       
 
-       
+
+
         sobrePesoViaje()
         // Calcular el total
         calcularTotal();
@@ -410,7 +413,7 @@ document.addEventListener('DOMContentLoaded', function () {
             valorSobrePrecioProveedor();
         });
     }
-    
+
 
     // Calcular sobrepeso inicialmente al cargar la página
     calcularSobrepeso();
@@ -423,7 +426,7 @@ document.addEventListener('DOMContentLoaded', function () {
     inputMoneyFormatProveedores.on('input',()=>{calcularTotal('proveedores')})
 
 
-  
+
 
 });
 
@@ -470,7 +473,7 @@ function crearurlmapalatitudlongitud(lat, lng) {
             document.getElementById('linkMapa').textContent = urlCrearMapa;
 
             });
-        
+
 
         const lat = parseFloat(document.getElementById('latitud').value);
         const lng = parseFloat(document.getElementById('longitud').value);
@@ -532,7 +535,7 @@ if(document.getElementById('searchInput')){
         }
     });
 }
-   
+
 
 function resolverUrlMapa(url) {
     const _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
@@ -630,7 +633,7 @@ pesoContenedorInput.addEventListener('input', calcularSobrepeso);
 
 function sobrePesoViaje(){
     let tabSelected = document.querySelector('input[name="contenedorTabs"]:checked');
-    
+
     initContenedores(tabSelected.value)
 
     let tipoViajeSelected = document.querySelector('input[name="plan"]:checked');
@@ -645,7 +648,7 @@ function sobrePesoViaje(){
     var sobrePesoProveedor = document.getElementById('cantidad_sobrepeso_proveedor');
     if(sobrePesoProveedor){
         sobrePesoProveedor.value = viajeSobrePeso.toFixed(4);
-        
+
     }
 }
 
@@ -660,11 +663,11 @@ function calcularSobrepeso() {
     if(sobrepesoInput){
         sobrepesoInput.value = sobrepeso.toFixed(4);
     }
-   
+
     var sobrePesoProveedor = document.getElementById('cantidad_sobrepeso_proveedor');
     if(sobrePesoProveedor){
         sobrePesoProveedor.value = sobrepeso.toFixed(4);
-        
+
     }
 
     sobrePesoViaje()
@@ -688,7 +691,7 @@ $('#id_cliente').change(function() {
         $('#id_subcliente').empty();
         $('#id_subcliente').append('<option value="">Seleccionar subcliente</option>');
     }
-   
+
 });
 
 
@@ -708,13 +711,13 @@ await $.ajax({
     data:{_token, uuid},
     beforeSend:()=>{},
     success:(response)=>{
-        
+
         ContenedorA = response[0]
         ContenedorB = response[1]
 
         sobrePesoViaje()
         calcularTotal()
-        
+
     },
     error:()=>{
 
@@ -725,7 +728,7 @@ await $.ajax({
 function initContenedores(Contenedor, action = 'create'){
     const formData = {};
     let specificFields = formFields.filter((f) => f.master == false )
-    
+
     specificFields.forEach((item) =>{
      var input = item.field;
      var inputValue = document.getElementById(input);
@@ -760,13 +763,13 @@ function initContenedores(Contenedor, action = 'create'){
     if(Contenedor == "Contenedor-A"){
         formData['jerarquia'] = 'Principal'
         ContenedorA = {...formData}
-        
+
     }else{
         formData['jerarquia'] = 'Secundario'
         ContenedorB = {...formData}
-      
+
     }
-    
+
 }
 
 function valorSobrePrecioContenedor(){
@@ -783,14 +786,14 @@ function valorSobrePrecioContenedor(){
     var resultado = sobrepeso * precioSobrePeso;
 
     // Mostrar el resultado en el campo "Precio Tonelada"
-    precioToneladaInput.value = moneyFormat(resultado); 
+    precioToneladaInput.value = moneyFormat(resultado);
 
     // Calcular el total
    // calcularTotal();
 }
 
 function showInfoContenedor(Contenedor){
-    
+
     //Guardamos los datos del contenedor activo
     let contenedorActivo = (Contenedor == 'Contenedor-A')  ? 'Contenedor-B' : 'Contenedor-A';
     initContenedores(contenedorActivo,frmMode)
@@ -798,7 +801,7 @@ function showInfoContenedor(Contenedor){
     let fieldsContenedor = (Contenedor == 'Contenedor-A')  ? ContenedorA : ContenedorB;
 
     let specificFields = formFields.filter((f) => f.master == false )
-    
+
     specificFields.forEach((item) =>{
         var input = item.field;
         var htmlField = document.getElementById(input);
@@ -819,7 +822,7 @@ function showInfoContenedor(Contenedor){
 
        localStorage.setItem('numContenedor',fieldsContenedor['num_contenedor'])
        getFilesContenedor()
-       
+
        calcularTotal()
        valorSobrePrecioContenedor()
 }
@@ -827,15 +830,15 @@ function showInfoContenedor(Contenedor){
 async function  validarContenedores (Contenedor) {
     let fieldsContenedor = (Contenedor == 'Contenedor-A')  ? ContenedorA : ContenedorB;
     let specificFields = formFields.filter((f) => f.master == false )
-    
+
     var passValidation = specificFields.every((item) => {
         var field = fieldsContenedor[item.field];
-       
+
             if(item.required === true && field.length == 0){
                 Swal.fire(`Lo sentimos, el campo "${item.label}" de "${Contenedor}" es obligatorio.`,"Parece que no ha proporcionado información en el campo "+item.label,"warning");
                 return false;
             }
-        
+
         return true;
     })
 
@@ -850,7 +853,7 @@ async function  validarContenedores (Contenedor) {
    }*/
 
    return true;
-  
+
 }
 
 $("#cotizacionCreateMultiple").on("submit", async function(e){
@@ -862,17 +865,17 @@ $("#cotizacionCreateMultiple").on("submit", async function(e){
     var url = form.attr('action');
     let input = document.querySelector('input[name="plan"]:checked');
     let tipoCotizacion = input.value
-    
+
     let tabSelected = document.querySelector('input[name="contenedorTabs"]:checked');
-   
+
     initContenedores(tabSelected.value,actionFrm)
-    
+
    let isValidForm = await validarContenedores('Contenedor-A');
-   
+
    if(tipoCotizacion == "Full" && isValidForm){
     isValidForm = await validarContenedores('Contenedor-B');
    }
-   
+
    if(!isValidForm) return false
 
     if($("#id_cliente").val() == ""){
@@ -890,11 +893,11 @@ $("#cotizacionCreateMultiple").on("submit", async function(e){
 
     let contenedores = [];
     contenedores = [...contenedores, ContenedorA]
-    
+
     if(tipoCotizacion == "Full" ){
         contenedores = [...contenedores, ContenedorB]
     }
-   
+
 /** */
     var passValidation = formFields.every((item) => {
         var field = document.getElementById(item.field);
@@ -933,7 +936,7 @@ $("#cotizacionCreateMultiple").on("submit", async function(e){
 
 /**Si estamos editando y tiene asignado un proveedor... validar campos de proveedor */
     if(actionFrm == "edit"){
-        
+
         var passValidation = formFieldsProveedor.every((item) => {
             var field = document.getElementById(item.field);
             if(field){
@@ -944,7 +947,7 @@ $("#cotizacionCreateMultiple").on("submit", async function(e){
             }
             return true;
         })
-    
+
         if(!passValidation) return passValidation;
 
         formFieldsProveedor.forEach((item) =>{
@@ -958,7 +961,7 @@ $("#cotizacionCreateMultiple").on("submit", async function(e){
                 }
             }
             });
-        
+
     }
 
     formData["_token"] = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
@@ -986,24 +989,24 @@ $("#cotizacionCreateMultiple").on("submit", async function(e){
         type: "post",
         data: formData,
         beforeSend:function(){
-        
+
         },
         success:function(data){
                 Swal.fire(data.Titulo,data.Mensaje,data.TMensaje).then(function() {
                     if(data.TMensaje == "success"){
-                       
+
                             location.reload();
-                        
-                    
+
+
                     }
                 });
         },
-        error:function(){       
+        error:function(){
         Swal.fire("Error","Ha ocurrido un error, intentelo nuevamente","error");
         }
     })
-   
-    
+
+
 });
 
 $("#cotizacionCreate").on("submit", function(e){
@@ -1064,7 +1067,7 @@ $("#cotizacionCreate").on("submit", function(e){
    formData["id_cliente"] = $("#id_cliente").val();
    formData["id_subcliente"] = selectSubClient.value;
 
-   
+
   //
     formData["latitud"] = document.getElementById("latitud")?.value ?? null;
     formData["longitud"] = document.getElementById("longitud")?.value ?? null;
@@ -1089,7 +1092,7 @@ $("#cotizacionCreate").on("submit", function(e){
                 return false;
             }
         }
-        
+
         if(field){
             if(item.required === true && field.value.length == 0){
                 Swal.fire("El campo "+item.label+" es obligatorio","Parece que no ha proporcionado información en el campo "+item.label,"warning");
@@ -1097,8 +1100,8 @@ $("#cotizacionCreate").on("submit", function(e){
             }
             formData[item.field] = field.value;
         }
-        
-        
+
+
         return true;
 
     });
@@ -1117,7 +1120,7 @@ $("#cotizacionCreate").on("submit", function(e){
                 return false;
             }
         }
-        
+
         if(field){
             if(item.required === true && field.value.length == 0){
                 Swal.fire("El campo "+item.label+" es obligatorio","Parece que no ha proporcionado información en el campo "+item.label,"warning");
@@ -1127,14 +1130,14 @@ $("#cotizacionCreate").on("submit", function(e){
             formData[item.field] = field.value;
         }
 
-        
+
         return true;
 
     });
 
     if(!passValidation) return passValidation;
 
-    //Validaciones Facturacion 
+    //Validaciones Facturacion
     passValidation = formFieldsFacturacion.every((item) => {
         let trigger = item.trigger;
         let field = document.getElementById(item.field);
@@ -1146,7 +1149,7 @@ $("#cotizacionCreate").on("submit", function(e){
                 return false;
             }
         }
-        
+
         if(field){
             if(item.required === true && field.value.length == 0){
                 Swal.fire("El campo "+item.label+" es obligatorio","Parece que no ha proporcionado información en el campo "+item.label,"warning");
@@ -1160,7 +1163,7 @@ $("#cotizacionCreate").on("submit", function(e){
     });
 
     if(!passValidation) return passValidation;
-    
+
    }
 
    $.ajax({
@@ -1168,40 +1171,40 @@ $("#cotizacionCreate").on("submit", function(e){
         type: "post",
         data: formData,
         beforeSend:function(){
-        
+
         },
         success:function(data){
                 Swal.fire(data.Titulo,data.Mensaje,data.TMensaje).then(function() {
                     if(data.TMensaje == "success"){
-                        localStorage.setItem('numContenedor',formData['num_contenedor']); 
+                        localStorage.setItem('numContenedor',formData['num_contenedor']);
                         var uuid = localStorage.getItem('uuid');
                         if(uuid){
                             initFileUploader()
                             setTimeout(()=>{
                                 document.getElementById('noticeFileUploader').classList.add('d-none')
-                                document.getElementById('fileUploaderContainer').classList.remove('d-none')    
+                                document.getElementById('fileUploaderContainer').classList.remove('d-none')
                             },3000);
-                            
+
                             if(form.data('sgtCotizacionAction') != 'editar'){
 
                                 form.attr('action', `/cotizaciones/single/update/${data.folio}`)
                                 form.data('sgtCotizacionAction','editar')
                             }
-                            
+
 
                         }else{
                             location.reload();
                         }
-                    
+
                     }
                 });
         },
-        error:function(){       
+        error:function(){
         Swal.fire("Error","Ha ocurrido un error, intentelo nuevamente","error");
         }
     })
 
-  
+
 });
 
 
@@ -1223,7 +1226,7 @@ $("#cotizacionesUpdate").on("submit",(e)=>{
 
     var passValidation = formFields.every((item) => {
         var field = document.getElementById(item.field);
-        
+
         if(item.required === true && field.value.length == 0){
             Swal.fire("El campo "+item.label+" es obligatorio","Parece que no ha proporcionado información en el campo "+item.label,"warning");
             return false;

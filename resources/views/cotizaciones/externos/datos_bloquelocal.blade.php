@@ -18,7 +18,7 @@
                   </i>
                 </span>
                 <div class="form-floating">
-                  <input type="text" class="form-control" @if($action=="editar" ) value="{{$cotizacion->bloque}}" @endif id="bloque" />
+                  <input type="text" class="form-control" @if($action=="editar" ) value="{{$cotizacion->bloque_local}}" @endif id="bloque" />
                   <label for="bloque" class="text-gray-700">Núm. Bloque</label>
                 </div>
               </div>
@@ -34,7 +34,7 @@
                   </i>
                 </span>
                 <div class="form-floating">
-                  <input type="time" class="form-control" @if($action=="editar" ) value="{{$cotizacion->bloque_hora_i}}" @endif id="bloque_hora_i" required/>
+                  <input type="time" class="form-control" @if($action=="editar" ) value="{{$cotizacion->bloque_hora_i_local}}" @endif id="bloque_hora_i" required/>
                   <label for="bloque_hora_i" class="text-gray-700">Hora Inicio</label>
                 </div>
               </div>
@@ -48,7 +48,7 @@
                   </i>
                 </span>
                 <div class="form-floating">
-                  <input type="time" class="form-control" @if($action=="editar" ) value="{{$cotizacion->bloque_hora_f}}" @endif id="bloque_hora_f" required />
+                  <input type="time" class="form-control" @if($action=="editar" ) value="{{$cotizacion->bloque_hora_f_local}}" @endif id="bloque_hora_f" required />
                   <label for="bloque_hora_f" class="text-gray-700">Hora Fin</label>
                 </div>
               </div>
