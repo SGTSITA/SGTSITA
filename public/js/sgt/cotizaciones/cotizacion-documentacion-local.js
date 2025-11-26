@@ -142,7 +142,7 @@ const gridOptions = {
           'line-height': '1.5',
         };
 
-        // Si la cotización es tipo "Full", aplicar fondo 
+        // Si la cotización es tipo "Full", aplicar fondo
         if (params.data.tipo === 'Full') {
           styles['background-color'] = '#ffe5b4';
         }
@@ -174,6 +174,26 @@ function getContenedoresPendientes(estatus = 'Local') {
   var _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
   $.ajax({
     url: '/viajes/documents/pending-local',
+    type: 'post',
+    data: { _token, estatus },
+    beforeSend: () => { },
+    success: (response) => {
+
+      if (response.length > 0) {
+        btnDocumets.forEach(btn => btn.disabled = false)
+
+      }
+      apiGrid.setGridOption("rowData", response)
+    },
+    error: () => {
+
+    }
+  });
+}
+function getContenedoresPendientesPatio(estatus = 'Local') {
+  var _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+  $.ajax({
+    url: '/viajes/documents/pending-local-patio',
     type: 'post',
     data: { _token, estatus },
     beforeSend: () => { },
@@ -450,7 +470,7 @@ function editarViaje() {
     '<input type="hidden" name="numContenedor" value="' + numContenedor + '" />' +
     '<input type="hidden" name="_token" value="' + _token + '" />' +
     '</form>');
-    
+
 
   $('body').append(form);
   form.submit();

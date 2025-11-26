@@ -22,6 +22,7 @@ class Proveedor extends Model
         'fecha',
         'tipo',
         'id_empresa',
+        'tipo_viaje'
     ];
 
     public function CuentasBancarias()
@@ -47,5 +48,17 @@ class Proveedor extends Model
         static::updating(function ($empresa) {
             $empresa->id_empresa = Auth::user()->id_empresa;
         });
+    }
+
+
+    //scopes para catalogos princiapal y local
+
+    public function scopeCatalogoPrincipal($query)
+    {
+            return $query->whereIn('tipo_viaje', ['foraneo', 'local_foraneo']);
+    }
+    public function scopeCatalogoLocal($query)
+    {
+            return $query->whereIn('tipo_viaje', ['local', 'local_foraneo']);
     }
 }

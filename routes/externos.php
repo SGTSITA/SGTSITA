@@ -12,6 +12,7 @@ Route::get('gps',function(){
 Route::group(['prefix' => 'mec'], function(){
  Route::post('planeaciones/monitor/board',[ExternosController::class,'initBoard']);
  Route::post('transportistas/list',[ExternosController::class,'transportistasList']);
+ Route::post('transportistas/list-local',[ExternosController::class,'transportistasListLocal']);
 });
 
 Route::group(["prefix" => "viajes"], function(){
@@ -32,19 +33,24 @@ Route::group(["prefix" => "viajes"], function(){
 
     Route::get('mis-viajes',[ExternosController::class,'misViajes'])->name('mis.viajes');
     Route::post('file-manager',[ExternosController::class,'fileManager'])->name('mis.file-manager');
-   
+
     Route::post('file-manager/cfdi-files',[ExternosController::class,'CfdiToZip'])->name('cfdi.file-manager');
     Route::get('file-manager/cfdi-files/{zipFile}',[ExternosController::class,'ZipDownload'])->name('cfdi.file-manager');
     Route::get('file-manager/get-file-list/{numContenedor}',[ExternosController::class,'getFilesProperties'])->name('viajes.files');
 
     Route::post('/get-asignables',[ExternosController::class,'getContenedoresAsignables'])->name('viajes.asignables');
-    
+
     //solicitud viaje local
     Route::get('/viajes-local',[ExternosController::class,'solicitarIndexlocal'])->name('viajes.local');
+
+
     Route::post('selector-local', [ExternosController::class,'selectorlocal'])->name('viajes.selectorlocal');
     Route::post('editar-local',[ExternosController::class,'editFormlocal'])->name('viajes.edit-formlocal');
     Route::get('solicitud/simple-local',[ExternosController::class,'solicitudSimplelocal'])->name('viajes.simplelocal');
     Route::get('mis-viajes-local',[ExternosController::class,'misViajeslocal'])->name('mis.viajeslocal');
+    Route::get('/patio-local',[ExternosController::class,'listPatio'])->name('mis.patiolocal');
+    Route::post('documents/pending-local-patio',[ExternosController::class,'getlistPatio'])->name('lista.patiolocal');
+
     Route::get('solicitud/multiple-local',[ExternosController::class,'solicitudMultiplelocal'])->name('viajes.multiplelocal');
     Route::post('solicitud/multiple-local',[CotizacionesController::class,'storeMultiplelocal'])->name('viajes.multiple.local');
 
@@ -80,7 +86,7 @@ Route::get('coordenadas/extmapas', [App\Http\Controllers\CoordenadasController::
 Route::get('coordenadas/extbusqueda', [App\Http\Controllers\CoordenadasController::class, 'extindexSeach'])->name('seach.extcoordenadas');
 Route::get('coordenadas/extcompartir', [App\Http\Controllers\CoordenadasController::class, 'extcompartir'])->name('extcompartircoor');
 Route::post('coordenadas/extsearchDoctos', [App\Http\Controllers\CoordenadasController::class, 'encontrarURLfoto'])->name('extsearchDoctos');
-//ext 
+//ext
 Route::get('/coordenadas/exrastrear', [App\Http\Controllers\CoordenadasController::class, 'exrastrearIndex'])->name('exrastrearContenedor');
 Route::get('coordenadas/exconboys', [App\Http\Controllers\ConboysController::class, 'exindex'])->name('exindex.conboys');
 Route::get('coordenadas/conboys/ex-encontrar/', [App\Http\Controllers\ConboysController::class, 'exindexconvoy'])->name('exfind-convoy');

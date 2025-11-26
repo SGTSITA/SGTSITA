@@ -39,14 +39,19 @@ class Cotizaciones extends Model
         'prove_restante',
         'id_cuenta_prov',
         'id_cuenta_prov2',
+         'bloque'            ,
+            'bloque_hora_i'       ,
+            'bloque_hora_f',
         'latitud',
         'longitud',
         'direccion_mapa',
         'fecha_seleccion_ubicacion',
         'fecha_seleccion',
-         'puerto',
+        'puerto',
+        'cp_pedimento',
+        'cp_clase_ped',
         'fecha_ingreso_puerto',
-         'fecha_salida_puerto',
+        'fecha_salida_puerto',
         'dias_estadia',
         'dias_pernocta',
             'tarifa_estadia',
@@ -59,7 +64,22 @@ class Cotizaciones extends Model
             'fecha_liberacion',
             'responsable',
             'observaciones',
-            'tipo_viaje_seleccion'
+            'tipo_viaje_seleccion',
+              'origen_local',
+                'destino_local',
+                'costo_maniobra_local',
+                'estado_contenedor',
+                'fecha_modulacion_local',
+                'empresa_local',
+                'sub_cliente_local',
+                'transportista_local',
+                'bloque_local',
+                'bloque_hora_i_local',
+                'bloque_hora_f_local',
+                'en_patio',
+                'fecha_en_patio',
+                'origen_captura',
+                'user_id',
 
     ];
 
@@ -111,6 +131,6 @@ class Cotizaciones extends Model
             $empresa->id_empresa = Auth::user()->id_empresa;
         });
 
-        
+
     }
 }

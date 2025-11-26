@@ -67,11 +67,11 @@
                                 </a>
                             </div>
                             <div data-kt-menu-trigger="click" class="menu-item menu-accordion">
-                               
-                                       
 
 
-                                
+
+
+
                                 <span class="menu-link">
                                     <span class="menu-icon">
                                         <i class="ki-duotone ki-black-right fs-2"></i>
@@ -116,7 +116,7 @@
                                             <span class="menu-title">Solicitar Viaje</span>
                                         </a>
                                     </div>
-                                    
+
                                     <div class="menu-item">
                                         <a href="{{ route('mis.viajes') }}" class="menu-link">
                                             <span class="menu-bullet">
@@ -134,7 +134,7 @@
                                             <span class="menu-title">Solicitar Local</span>
                                         </a>
                                     </div>
-                                  
+
                                     <div class="menu-item">
                                         <a href="{{ route('mis.viajeslocal') }}" class="menu-link">
                                             <span class="menu-bullet">
@@ -144,6 +144,14 @@
                                         </a>
                                     </div>
                                     @endcan
+                                    <div class="menu-item">
+                                        <a href="{{ route('mis.patiolocal') }}" class="menu-link">
+                                            <span class="menu-bullet">
+                                                <span class="bullet bullet-dot"></span>
+                                            </span>
+                                            <span class="menu-title">En patio</span>
+                                        </a>
+                                    </div>
                                 </div>
                             </div>
                             <div data-kt-menu-trigger="click" class="menu-item menu-accordion">
@@ -225,7 +233,7 @@
                                             <span class="menu-title">Convoys Virtuales</span>
                                         </a>
                                         </div> --}}
-                                      
+
                                 </div>
                             </div>
                                  <!--END coordenadas -->
@@ -381,7 +389,7 @@
                                 </form>
                             </div>
                             <div class="d-flex align-items-center ms-3 ms-lg-4">
-                                
+
                                 <a href="#"
                                     class="btn btn-icon btn-color-gray-700 btn-active-color-primary btn-outline w-40px h-40px ml-3"
                                     data-kt-menu-trigger="{default:'click', lg: 'hover'}" data-kt-menu-attach="parent"
@@ -457,7 +465,7 @@
                             <a href="#" id ="waIconStatus" class="btn  btn-color-gray-700 btn-active-color-primary btn-outline  h-40px" >
                                     <i class="ki-duotone ki-whatsapp  fs-1">
                                         <span class="path1"></span>
-                                        <span class="path2"></span> 
+                                        <span class="path2"></span>
                                     </i>
                                     <span class="fs-8 text-dark" id="waTextStatus">...</span>
                                 </a>
@@ -493,7 +501,7 @@
         </div>
     </div>
 
-    @include('cotizaciones.externos.modal_whatsapp_login') 
+    @include('cotizaciones.externos.modal_whatsapp_login')
 
     <div id="kt_scrolltop" class="scrolltop" data-kt-scrolltop="true">
         <i class="ki-duotone ki-arrow-up">
@@ -506,7 +514,7 @@
         var hostUrl = "/assets/metronic/";
         var waClient = {{auth()->user()->id}}
         var waHost = "{{env('WHATSAPP_HOST')}}"
-        
+
     </script>
     <script src="/assets/metronic/plugins/global/plugins.bundle.js"></script>
     <script src="/assets/metronic/js/scripts.bundle.js"></script>

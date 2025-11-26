@@ -58,7 +58,7 @@ Route::group(["prefix" => "prestamos"], function(){
     Route::post("{id}/abonar",[PrestamosController::class,'abonar'])->name('prestamo.abonar');
     Route::get("lista",[PrestamosController::class,'getListaPrestamos'])->name('prestamo.lista');
     Route::get("lista-detalle/{idprestamo}",[PrestamosController::class,'getPrestamosPagos'])->name('prestamo.listadetalle');
-    
+
 
 });
 
@@ -122,7 +122,7 @@ Route::get('registration', [App\Http\Controllers\CustomAuthController::class, 'r
 Route::post('custom-registration', [App\Http\Controllers\CustomAuthController::class, 'customRegistration'])->name('register.custom');
 Route::get('signout', [App\Http\Controllers\CustomAuthController::class, 'signOut'])->name('signout');
 
-//cambio empresa usuario 
+//cambio empresa usuario
 Route::post('/cambiar-empresa', [App\Http\Controllers\UserController::class, 'cambiarEmpresa'])->name('usuario.cambiarEmpresa');
 //
 
@@ -229,7 +229,7 @@ Route::get('/coordenadas/mapa_rastreo_varios', [App\Http\Controllers\ConboysCont
 Route::get('/scheduler/index', [App\Http\Controllers\RastreoIntervalController::class, 'index'])->name('scheduler.index');
 Route::put('/scheduler/edit', [App\Http\Controllers\RastreoIntervalController::class, 'update'])->name('scheduler.update');
 
-//NUEVO SERVICIO DE GPS 
+//NUEVO SERVICIO DE GPS
 Route::get('/gps/{imei}/detalle', [GpsController::class, 'detalleDispositivo']);
 
 //R
@@ -280,11 +280,11 @@ Route::group(['middleware' => ['auth']], function() {
     Route::patch('/cuentas-bancarias/{id}/prioridad', [App\Http\Controllers\ProveedorController::class, 'definirCuentaPrioridad']);
 
     // ==================== E Q U I P O S ====================
-     Route::get('equipos/index', [App\Http\Controllers\EquiposController::class, 'index'])->name('index.equipos');
-     Route::post('equipos/create', [App\Http\Controllers\EquiposController::class, 'store'])->name('store.equipos');
-     Route::patch('equipos/update/{id}', [App\Http\Controllers\EquiposController::class, 'update'])->name('update.equipos');
+    Route::get('equipos/index', [App\Http\Controllers\EquiposController::class, 'index'])->name('index.equipos');
+    Route::post('equipos/create', [App\Http\Controllers\EquiposController::class, 'store'])->name('store.equipos');
+    Route::patch('equipos/update/{id}', [App\Http\Controllers\EquiposController::class, 'update'])->name('update.equipos');
     Route::patch('equipos/desactivar/{id}', [App\Http\Controllers\EquiposController::class, 'desactivar'])->name('desactivar.equipos');
-Route::post('/equipos/asignar-gps/{id}', [App\Http\Controllers\EquiposController::class, 'asignarGps'])->name('equipos.asignarGps');
+    Route::post('/equipos/asignar-gps/{id}', [App\Http\Controllers\EquiposController::class, 'asignarGps'])->name('equipos.asignarGps');
 
     Route::get('/equipos/data', [App\Http\Controllers\EquiposController::class, 'data'])->name('equipos.data');
 
@@ -298,10 +298,10 @@ Route::post('/equipos/asignar-gps/{id}', [App\Http\Controllers\EquiposController
     Route::patch('operadores/pago/update/{id}', [App\Http\Controllers\OperadorController::class, 'update_pago'])->name('update_pago.operadores');
     Route::get('operadores/show/pagos/{id}', [App\Http\Controllers\OperadorController::class, 'show_pagos'])->name('show_pagos.operadores');
     // Ruta para dar de baja (soft delete) a un operador
-Route::delete('operadores/{id}', [App\Http\Controllers\OperadorController::class, 'destroy'])->name('operadores.destroy');
+    Route::delete('operadores/{id}', [App\Http\Controllers\OperadorController::class, 'destroy'])->name('operadores.destroy');
 
-// Ruta para restaurar (reactivar) un operador
-Route::post('operadores/{id}/restaurar', [App\Http\Controllers\OperadorController::class, 'restore'])->name('operadores.restore');
+    // Ruta para restaurar (reactivar) un operador
+    Route::post('operadores/{id}/restaurar', [App\Http\Controllers\OperadorController::class, 'restore'])->name('operadores.restore');
 
     // ==================== C O T I Z A C I O N E S  E X T E R N A S====================
     Route::get('/cotizaciones/index/externo', [App\Http\Controllers\CotizacionesController::class, 'index_externo'])->name('index.cotizaciones_manual');
@@ -388,7 +388,7 @@ Route::post('operadores/{id}/restaurar', [App\Http\Controllers\OperadorControlle
         Route::post('viaje/finalizar', [App\Http\Controllers\PlaneacionController::class, 'finalizarViaje'])->name('finalizar.planeaciones');
         Route::post('cambio/fecha', [App\Http\Controllers\PlaneacionController::class, 'edit_fecha'])->name('asignacion.edit_fecha');
         Route::get('buscador', [App\Http\Controllers\PlaneacionController::class, 'advance_planeaciones'])->name('advance_planeaciones.buscador');
-    
+
         Route::get('buscador/faltantes', [App\Http\Controllers\PlaneacionController::class, 'advance_planeaciones_faltantes'])->name('advance_planeaciones_faltantes.buscador');
         Route::post('monitor/board',[App\Http\Controllers\PlaneacionController::class, 'initBoard'])->name('planeacion.board');
         Route::post('monitor/board/info-viaje',[App\Http\Controllers\PlaneacionController::class, 'infoViaje'])->name('planeacion.info');
@@ -397,7 +397,7 @@ Route::post('operadores/{id}/restaurar', [App\Http\Controllers\OperadorControlle
         Route::post('viajes/reprogramar', [App\Http\Controllers\PlaneacionController::class, 'reprogramarViajes'])->name('asignacion.reprogramar');
 
     });
-   
+
 
     // ==================== B A N C O S ====================
 
@@ -409,7 +409,7 @@ Route::post('operadores/{id}/restaurar', [App\Http\Controllers\OperadorControlle
         Route::patch('/update/{id}', [App\Http\Controllers\BancosController::class, 'update'])->name('update.bancos');
 
         Route::post('/movimientos/registrar', [App\Http\Controllers\BancosController::class, 'registrar_movimiento'])->name('movimientos.bancos');
-    
+
         Route::get('/show/{id}', [App\Http\Controllers\BancosController::class, 'edit'])->name('edit.bancos');
         Route::get('/imprimir/{id}', [App\Http\Controllers\BancosController::class, 'pdf'])->name('pdf.print_banco');
         Route::get('/buscador/{id}', [App\Http\Controllers\BancosController::class, 'advance_bancos'])->name('advance_bancos.buscador');
@@ -417,7 +417,7 @@ Route::post('operadores/{id}/restaurar', [App\Http\Controllers\OperadorControlle
         Route::post('/cambiar-cuenta-global/{id}', [App\Http\Controllers\BancosController::class, 'cambiarCuentaGlobal'])->name('bancos.cambiarCuentaGlobal');
         Route::post('/cambiar-banco1/{id}', [App\Http\Controllers\BancosController::class, 'cambiarBanco1'])->name('bancos.cambiarBanco1');
     });
-   
+
 
     // ==================== C U E N T A S  P O R  C O B R A R ====================
     Route::get('cuentas/cobrar', [App\Http\Controllers\CuentasCobrarController::class, 'index'])->name('index.cobrar');
@@ -494,7 +494,7 @@ Route::post('operadores/{id}/restaurar', [App\Http\Controllers\OperadorControlle
     Route::post('liquidaciones/viajes/gastos/justificar-multiple', [App\Http\Controllers\LiquidacionesController::class, 'justificarGastosMultiples'])->name('justifica.gastos.multiple');
 
 
-    
+
 
     Route::get('liquidaciones/show/{id}', [App\Http\Controllers\LiquidacionesController::class, 'show'])->name('show.liquidacion');
     Route::patch('liquidaciones/update/{id}', [App\Http\Controllers\LiquidacionesController::class, 'update'])->name('update.liquidacion');
@@ -504,9 +504,9 @@ Route::post('operadores/{id}/restaurar', [App\Http\Controllers\OperadorControlle
     Route::get('gastos/generales',[App\Http\Controllers\GastosGeneralesController::class, 'index'])->name('index.gastos_generales');
     Route::get('gastos/viajes',[App\Http\Controllers\GastosContenedoresController::class, 'indexGastosViaje'])->name('index.gastos_viajes');
     Route::post('gastos/viajes/list',[App\Http\Controllers\GastosContenedoresController::class, 'gastosViajesList']);
-   
+
     Route::post('gastos/viajes/confirmar-gastos',[App\Http\Controllers\GastosContenedoresController::class, 'confirmarGastos']);
-    
+
 
     Route::post('gastos/generales/get',[App\Http\Controllers\GastosGeneralesController::class, 'getGastos'])->name('get.gastos_generales');
     Route::post('gastos/generales/create', [App\Http\Controllers\GastosGeneralesController::class, 'store'])->name('store.gastos_generales');

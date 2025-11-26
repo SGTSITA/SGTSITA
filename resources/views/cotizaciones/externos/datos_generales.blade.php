@@ -21,8 +21,8 @@
                             <select class="form-select subcliente d-inline-block" id="id_proveedor" name="id_proveedor">
                                 <option value="">Seleccionar proveedor</option>
                                 @foreach ($proveedores as $p)
-                             
-                                    <option value="{{ $p->id }}" 
+
+                                    <option value="{{ $p->id }}"
                                        @if ($action == 'editar' && $cotizacion?->id_empresa == $p->id) selected @endif>
                                         {{ $p->nombre }}
                                     </option>
@@ -41,7 +41,7 @@
                                 name="id_transportista">
                                 <option value="">Seleccionar transportista</option>
                                 @foreach ($transportista as $tr)
-                                    <option value="{{ $tr->id }}" 
+                                    <option value="{{ $tr->id }}"
                                         @if ($action == 'editar' && $cotizacion?->id_proveedor == $tr->id) selected @endif>
                                         {{ $tr->nombre }}</option>
                                 @endforeach
@@ -91,6 +91,7 @@
             </div>
         </div>
     </div>
+    <input type="hidden" value="MEC" id="origen_captura" name="origen_captura" />
     <div class="fv-row row mb-3">
         <div class="col-6">
             <div class="input-group  mb-5">

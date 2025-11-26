@@ -49,6 +49,17 @@
     background: #fff6f6 !important;
 }
 
+
+.color-select {
+    transition: background-color 0.3s ease;
+    color: #000;
+}
+
+.color-select.verde { background-color: #6EE74F !important; }
+.color-select.amarillo { background-color: #FFE96B !important; }
+.color-select.rojo { background-color: #FF6B6B !important; }
+.color-select.ovt { background-color: #a883ff !important; }
+
 </style>
 <div class="modal fade" id="mapModal" tabindex="-1" aria-labelledby="mapModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-dialog-centered modal-fullscreen-md-down">
@@ -198,17 +209,17 @@
 @endsection
 
 @push('javascript')
- <script> 
+ <script>
 let COTIZACION_URL = "{{ route('store.cotizacioneslocal') }}";
-  
+
     @if ($action == 'editar')
        localStorage.setItem('numContenedor', '{{ $cotizacion->DocCotizacion->num_contenedor }}');
         localStorage.setItem('cotizacionId', '{{ $cotizacion->id }}');
-       
+
     @else
            if(localStorage.getItem('cotizacionId')) {
             localStorage.removeItem('cotizacionId');
-          
+
         }
     @endif
 </script>
@@ -238,7 +249,7 @@ $(document).ready(() => {
     localStorage.setItem('uuid', genericUUID);
   }
 
-  
+
 
 
 
@@ -266,6 +277,27 @@ $(document).ready(() => {
       firstDay: 1
     }
   });
+
+ const selectEstado = document.getElementById('estado_contenedor');
+
+    function aplicarColor() {
+        selectEstado.classList.remove('verde', 'amarillo', 'rojo', 'ovt');
+
+        switch (selectEstado.value) {
+            case "VERDE": selectEstado.classList.add('verde'); break;
+            case "AMARILLO": selectEstado.classList.add('amarillo'); break;
+            case "ROJO": selectEstado.classList.add('rojo'); break;
+            case "OVT": selectEstado.classList.add('ovt'); break;
+        }
+    }
+
+    // Cambia color al seleccionar
+    selectEstado.addEventListener('change', aplicarColor);
+
+    // 👌 Aplica color al cargar la vista (modo editar)
+    aplicarColor();
+
+
 });
 
 

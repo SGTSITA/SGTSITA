@@ -54,13 +54,20 @@ class ExternosController extends Controller
 
         $board = [];
         $board[] = ["name" => "Proveedores", "id" => "S", "expanded" => true, "children" => $clientesData];
-      
+
         $fecha = Carbon::now()->subdays(10)->format('Y-m-d');
-        return response()->json(["boardCentros"=> $board,"extractor"=>$extractor,"scrollDate"=> $fecha]);  
+        return response()->json(["boardCentros"=> $board,"extractor"=>$extractor,"scrollDate"=> $fecha]);
     }
 
     public function transportistasList(Request $r){
-        return Proveedor::where('id_empresa',$r->proveedor)->get();
+        return Proveedor::catalogoPrincipal()
+        ->where('id_empresa', $r->proveedor)
+        ->get();
+    }
+    public function transportistasListLocal(Request $r){
+        return Proveedor::catalogoLocal()
+        ->where('id_empresa', $r->proveedor)
+        ->get();
     }
 
     public function solicitarIndex(){
@@ -77,13 +84,13 @@ class ExternosController extends Controller
         //return $clienteEmpresa;
         $empresas = Empresas::whereIn('id',$clienteEmpresa)->get();
 
-         $transportista = Proveedor::whereIn('id_empresa', $clienteEmpresa)->get();
-        
+        $transportista = Proveedor::catalogoPrincipal()->whereIn('id_empresa', $clienteEmpresa)->get();
+
         return view('cotizaciones.externos.solicitud_simple',[
                     "action" => "crear",
-                    "formasPago" => $formasPago, 
-                    "metodosPago" => $metodosPago, 
-                    "usoCfdi" => $usoCfdi, 
+                    "formasPago" => $formasPago,
+                    "metodosPago" => $metodosPago,
+                    "usoCfdi" => $usoCfdi,
                     "proveedores" => $empresas,
                       "transportista" => $transportista
                 ]);
@@ -102,17 +109,17 @@ class ExternosController extends Controller
         })
         ->first();
 
-        $transportista = Proveedor::whereIn('id_empresa', $clienteEmpresa)->get();
+        $transportista = Proveedor::catalogoPrincipal()->whereIn('id_empresa', $clienteEmpresa)->get();
        // dd($transportista, $clienteEmpresa);
        // $transportista = Proveedor::get();
        // where('id_empresa',$cotizacion->id_proveedor)->
       // where('id_empresa',$cotizacion->id_proveedor)->first();
- 
+
         return view('cotizaciones.externos.solicitud_simple',
                                                             ["action" => "editar",
-                                                            "formasPago" => $formasPago, 
-                                                            "metodosPago" => $metodosPago, 
-                                                            "usoCfdi" => $usoCfdi, 
+                                                            "formasPago" => $formasPago,
+                                                            "metodosPago" => $metodosPago,
+                                                            "usoCfdi" => $usoCfdi,
                                                             "cotizacion" => $cotizacion,
                                                             "proveedores" => $empresas,
                                                             "transportista" => $transportista
@@ -121,11 +128,11 @@ class ExternosController extends Controller
 
     public function solicitudMultiple(){
 
-         $clienteEmpresa = ClientEmpresa::where('id_client',auth()->user()->id_cliente)->get()->pluck('id_empresa');
+        $clienteEmpresa = ClientEmpresa::where('id_client',auth()->user()->id_cliente)->get()->pluck('id_empresa');
         //return $clienteEmpresa;
         $empresas = Empresas::whereIn('id',$clienteEmpresa)->get();
 
-         $transportista = Proveedor::whereIn('id_empresa', $clienteEmpresa)->get();
+        $transportista = Proveedor::catalogoPrincipal()->whereIn('id_empresa', $clienteEmpresa)->get();
 
         return view('cotizaciones.externos.solicitud_multiple',[
             "action" => "crear",
@@ -153,36 +160,36 @@ class ExternosController extends Controller
             $zipPath = public_path($zipName); // Ruta en la carpeta public
 
             $zip = new ZipArchive;
-    
+
             if ($zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) === true) {
 
                 foreach($request->contenedores as $c){
                     $cotizacionQuery = Cotizaciones::join('docum_cotizacion as d', 'cotizaciones.id', '=', 'd.id_cotizacion')
                     ->where('d.num_contenedor',$c['NumContenedor']);
-    
+
                     $cotizacion = $cotizacionQuery->first();
                     $pdf = $cotizacion->carta_porte;
                     $xml = $cotizacion->carta_porte_xml;
 
                     if(\File::exists(public_path('/cotizaciones/cotizacion'.$cotizacion->id_cotizacion."/$xml"))){
-                   
+
                         $zip->addFile(public_path('/cotizaciones/cotizacion'.$cotizacion->id_cotizacion."/$xml"),$c['NumContenedor'].'.xml');
                     }
-    
+
                     if(\File::exists(public_path('/cotizaciones/cotizacion'.$cotizacion->id_cotizacion."/$pdf"))){
                         $zip->addFile(public_path('/cotizaciones/cotizacion'.$cotizacion->id_cotizacion."/$pdf"), $c['NumContenedor'].'.pdf');
                     }
-                    
-                   
+
+
                 }
-        
+
                 $zip->close();
-                
-            } 
 
-            
+            }
 
-           
+
+
+
             return response()->json([
                 'zipUrl' => ($zipName),
                 'success' => true
@@ -195,7 +202,7 @@ class ExternosController extends Controller
         }
     }
 
-    
+
     public function getContenedoresPendientes(Request $request){
         $condicion = ($request->estatus == 'Documentos Faltantes') ? '=' : '!=';
         $contenedoresPendientes = Cotizaciones::join('docum_cotizacion as d', 'cotizaciones.id', '=', 'd.id_cotizacion')
@@ -206,9 +213,9 @@ class ExternosController extends Controller
                                                 ->orderBy('created_at', 'desc')
                                                 ->selectRaw('cotizaciones.*, d.num_contenedor,d.doc_eir,doc_ccp ,d.boleta_liberacion,d.doda,d.foto_patio')
                                                 ->get();
-                                                
 
-        $resultContenedores = 
+
+        $resultContenedores =
         $contenedoresPendientes->map(function($c){
 
             $numContenedor = $c->num_contenedor;
@@ -245,8 +252,8 @@ class ExternosController extends Controller
             return [
                 "NumContenedor" => $numContenedor,
                 "Estatus" => ($c->estatus == "NO ASIGNADA") ? "Viaje solicitado" : $c->estatus,
-                "Origen" => $c->origen, 
-                "Destino" => $c->destino, 
+                "Origen" => $c->origen,
+                "Destino" => $c->destino,
                 "Peso" => $c->peso_contenedor,
                 "BoletaLiberacion" => $boletaLiberacion,
                 "DODA" => $doda,
@@ -273,10 +280,10 @@ class ExternosController extends Controller
                                                 ->selectRaw('cotizaciones.*, d.num_contenedor,d.doc_eir,doc_ccp ,d.boleta_liberacion,d.doda,cl.nombre as cliente,sc.nombre as subcliente')
                                                 ->get();
 
-        
-        
 
-        $resultContenedores = 
+
+
+        $resultContenedores =
         $contenedoresPendientes->map(function($c){
 
         $numContenedor = $c->num_contenedor;
@@ -301,15 +308,15 @@ class ExternosController extends Controller
                 $tipo = "Full";
             }
 
- 
+
             return [
                 "IdContenedor" => $c->id,
                 "Cliente" => $c->cliente,
                 "SubCliente" => $c->subcliente,
                 "NumContenedor" => $numContenedor,
                 "Estatus" => $c->estatus,
-                "Origen" => $c->origen, 
-                "Destino" => $c->destino, 
+                "Origen" => $c->origen,
+                "Destino" => $c->destino,
                 "Peso" => $c->peso_contenedor,
                 "BoletaLiberacion" => $boletaLiberacion,
                 "DODA" => $doda,
@@ -341,14 +348,14 @@ class ExternosController extends Controller
 
                 $cuentasCorreo = [env('MAIL_NOTIFICATIONS'),Auth::User()->email];
                 $cuentasCorreo2 = Correo::where('cotizacion_nueva',1)->get()->pluck('correo')->toArray();
-                
+
                 Mail::to($cuentasCorreo)->send(new \App\Mail\NotificaCotizacionMail($contenedor,$cliente));
 
             }
         }catch(\Throwable $t){
           \Log::channel('daily')->info('Maniobra no se pudo enviar al admin. id: '.$cotizacion.'. '.$t->getMessage());
         }
-        
+
     }
 
     public function cancelarViaje(Request $request){
@@ -463,7 +470,7 @@ class ExternosController extends Controller
                     return response()->json(["TMensaje" => "success", "Titulo" => "Mensaje WhatsApp enviado correctamente","Mensaje" => "Se ha enviado mensaje con los archivos seleccionados"]);
 
             }
-            
+
             foreach($files as $file){
                 array_push($attachment,public_path($file['file']));
             }
@@ -481,7 +488,7 @@ class ExternosController extends Controller
 
     public function fileProperties($id,$file,$title,$contenedor){
         $path = public_path('cotizaciones/cotizacion'.$id.'/'.$file);
-        
+
         if(\File::exists($path)){
             $finfo = finfo_open(FILEINFO_MIME_TYPE); // Abrir la base de datos de tipos MIME
             $mimeType = finfo_file($finfo, $path);
@@ -537,12 +544,12 @@ class ExternosController extends Controller
                 if(sizeof($doc_eir) > 0) array_push($documentList,$doc_eir);
             }
             if(!is_null($documentos->foto_patio)){
-            
+
                 $doc_foto_patio = self::fileProperties($folderId, $documentos->foto_patio, 'Foto patio',$cont);
                 if(sizeof($doc_foto_patio) > 0) array_push($documentList, $doc_foto_patio);
             }
              if(!is_null($documentos->boleta_patio)){
-            
+
                 $doc_boleta_patio = self::fileProperties($folderId, $documentos->boleta_patio, 'Boleta de patio',$cont);
                 if(sizeof($doc_boleta_patio) > 0) array_push($documentList, $doc_boleta_patio);
             }
@@ -566,7 +573,7 @@ class ExternosController extends Controller
         }
 
         return ["data"=>$documentList,"numContenedor" => $numContenedor,"documentos" =>$documentos];
-                
+
 
     }
 
@@ -595,7 +602,7 @@ class ExternosController extends Controller
     function solicitarIndexlocal(){
         return view('cotizaciones.externos.step_one_local');
     }
-    
+
     public function selectorlocal(Request $request){
         // return $request->transac;
             switch($request->transac){
@@ -622,20 +629,22 @@ class ExternosController extends Controller
         //return $clienteEmpresa;
         $empresas = Empresas::whereIn('id',$clienteEmpresa)->get();
 
-       
+
   $opciones = ['A1', 'M3', 'R1', 'A4', 'IN'];
+  $opcionesColores = ['VERDE', 'AMARILLO', 'ROJO', 'OVT'];
 
 
-         $transportista = Proveedor::whereIn('id_empresa', $clienteEmpresa)->get();
-        
+        $transportista = Proveedor::CatalogoLocal()->whereIn('id_empresa', $clienteEmpresa)->get();
+
         return view('cotizaciones.externos.solicitud_simple_local',[
                     "action" => "crear",
-                    "formasPago" => $formasPago, 
-                    "metodosPago" => $metodosPago, 
-                    "usoCfdi" => $usoCfdi, 
+                    "formasPago" => $formasPago,
+                    "metodosPago" => $metodosPago,
+                    "usoCfdi" => $usoCfdi,
                     "proveedores" => $empresas,
                       "transportista" => $transportista,
-                        "opciones" => $opciones
+                        "opciones" => $opciones,
+                        "opcionesColores" => $opcionesColores
                 ]);
     }
      public function editFormlocal(Request $request){
@@ -646,14 +655,14 @@ class ExternosController extends Controller
         $empresas = Empresas::whereIn('id',$clienteEmpresa)->get();
 
         $opciones = ['A1', 'M3', 'R1', 'A4', 'IN'];
-
+        $opcionesColores = ['VERDE', 'AMARILLO', 'ROJO', 'OVT'];
         $cotizacion = Cotizaciones::with(['cliente', 'DocCotizacion'])
         ->whereHas('DocCotizacion', function ($query) use ($request) {
             $query->where('num_contenedor', $request->numContenedor);
         })
         ->first();
 
-        $transportista = Proveedor::whereIn('id_empresa', $clienteEmpresa)->get();
+        $transportista = Proveedor::CatalogoLocal()->whereIn('id_empresa', $clienteEmpresa)->get();
        // dd($transportista, $clienteEmpresa);
        // $transportista = Proveedor::get();
        // where('id_empresa',$cotizacion->id_proveedor)->
@@ -661,13 +670,14 @@ class ExternosController extends Controller
  //dd($cotizacion);
         return view('cotizaciones.externos.solicitud_simple_local',
                                                             ["action" => "editar",
-                                                            "formasPago" => $formasPago, 
-                                                            "metodosPago" => $metodosPago, 
-                                                            "usoCfdi" => $usoCfdi, 
+                                                            "formasPago" => $formasPago,
+                                                            "metodosPago" => $metodosPago,
+                                                            "usoCfdi" => $usoCfdi,
                                                             "cotizacion" => $cotizacion,
                                                             "proveedores" => $empresas,
                                                             "transportista" => $transportista,
-                                                            "opciones" => $opciones
+                                                            "opciones" => $opciones,
+                                                            "opcionesColores" => $opcionesColores
                                                         ]);
     }
 
@@ -677,7 +687,7 @@ class ExternosController extends Controller
         //return $clienteEmpresa;
         $empresas = Empresas::whereIn('id',$clienteEmpresa)->get();
 
-         $transportista = Proveedor::whereIn('id_empresa', $clienteEmpresa)->get();
+        $transportista = Proveedor::CatalogoLocal()->whereIn('id_empresa', $clienteEmpresa)->get();
 
         return view('cotizaciones.externos.solicitud_multiple_local',[
             "action" => "crear",
@@ -695,22 +705,23 @@ class ExternosController extends Controller
         return view('cotizaciones.externos.viajes_solicitados-local');
     }
 
-      public function getContenedoreslocalesPendientes(Request $request){
-        $condicion = ($request->estatus == 'Local') ? '=' : '!=';
-        $contenedoresPendientes = Cotizaciones::join('docum_cotizacion as d', 'cotizaciones.id', '=', 'd.id_cotizacion')
+
+    public function getlistPatio(){
+         $contenedoresPendientes = Cotizaciones::join('docum_cotizacion as d', 'cotizaciones.id', '=', 'd.id_cotizacion')
                                                 ->where('cotizaciones.id_cliente' ,'=',Auth::User()->id_cliente)
-                                                ->where('estatus',$condicion,$request->estatus)
+                                                ->where('estatus','=', 'local')
                                                 ->whereIn('tipo_viaje_seleccion', ['local', 'local_to_foraneo'])
                                                 ->where('jerarquia', "!=",'Secundario')
+                                                ->where('en_patio', "=", '1')
                                                 ->orderBy('created_at', 'desc')
                                                 ->selectRaw('cotizaciones.*, d.num_contenedor,d.doc_eir,doc_ccp ,d.boleta_liberacion,d.doda,d.foto_patio,d.boleta_patio')
                                                 ->get();
 
 
 
-                                                
 
-        $resultContenedores = 
+
+        $resultPatioList =
         $contenedoresPendientes->map(function($c){
 
             $numContenedor = $c->num_contenedor;
@@ -743,13 +754,87 @@ class ExternosController extends Controller
 
                 $tipo = "Full";
             }
-         
+
+
+            return [
+                "NumContenedor" => $numContenedor,
+                "Estatus" => ($c->estatus == "Local") ? "Patio" : $c->estatus,
+                "Origen" => $c->origen,
+                "Destino" => $c->destino,
+                "Peso" => $c->peso_contenedor,
+                "BoletaLiberacion" => $boletaLiberacion,
+                "DODA" => $doda,
+                "foto_patio" => $fotoPatio,
+                "FormatoCartaPorte" => $docCCP,
+                "PreAlta" => $boletaVacio,
+                "BoletaPatio" => $boleta_patio,
+                "FechaSolicitud" => Carbon::parse($c->created_at)->format('Y-m-d'),
+                "tipo" => $tipo,
+                "id" => $c->id
+            ];
+        });
+
+        return $resultPatioList;
+    }
+
+    public function listPatio(){
+       return view('cotizaciones.externos.viajes_patio-local');
+    }
+    public function getContenedoreslocalesPendientes(Request $request){
+        $condicion = ($request->estatus == 'Documentos Faltantes') ? '=' : '!=';
+        $contenedoresPendientes = Cotizaciones::join('docum_cotizacion as d', 'cotizaciones.id', '=', 'd.id_cotizacion')
+                                                ->where('cotizaciones.id_cliente' ,'=',Auth::User()->id_cliente)
+                                                ->where('estatus',$condicion,$request->estatus)
+                                                ->whereIn('tipo_viaje_seleccion', ['local', 'local_to_foraneo'])
+                                                ->where('jerarquia', "!=",'Secundario')
+                                                ->orderBy('created_at', 'desc')
+                                                ->selectRaw('cotizaciones.*, d.num_contenedor,d.doc_eir,doc_ccp ,d.boleta_liberacion,d.doda,d.foto_patio,d.boleta_patio')
+                                                ->get();
+
+
+
+
+
+        $resultContenedores =
+        $contenedoresPendientes->map(function($c){
+
+            $numContenedor = $c->num_contenedor;
+            $docCCP = ($c->doc_ccp == null) ? false : true;
+            $doda = ($c->doda == null) ? false : true;
+            $boletaLiberacion = ($c->boleta_liberacion == null) ? false : true;
+            $cartaPorte = $c->carta_porte;
+            $boletaVacio = ($c->img_boleta == null) ? false : true;
+            $docEir = $c->doc_eir;
+            $fotoPatio = ($c->foto_patio == null) ? false : true;
+            $boleta_patio = ($c->boleta_patio == null) ? false : true;
+            $tipo = "Sencillo";
+
+            if (!is_null($c->referencia_full)) {
+                $secundaria = Cotizaciones::where('referencia_full', $c->referencia_full)
+                    ->where('jerarquia', 'Secundario')
+                    ->with('DocCotizacion.Asignaciones')
+                    ->first();
+
+                if ($secundaria && $secundaria->DocCotizacion) {
+                    $docCCP = ($docCCP && $secundaria->DocCotizacion->doc_ccp) ? true : false;
+                    $doda = ($doda && $secundaria->DocCotizacion->doda) ? true : false;
+                    $docEir = ($docEir && $secundaria->DocCotizacion->doc_eir) ? true : false;
+                    $boletaLiberacion = ($boletaLiberacion && $secundaria->DocCotizacion->boleta_liberacion) ? true : false;
+                    $cartaPorte = ($cartaPorte && $secundaria->carta_porte) ? true : false;
+                    $boletaVacio = ($boletaVacio && $secundaria->img_boleta) ? true : false;
+                    $fotoPatio = ($fotoPatio && $secundaria->foto_patio) ? true : false;
+                    $numContenedor .= '  ' . $secundaria->DocCotizacion->num_contenedor;
+                }
+
+                $tipo = "Full";
+            }
+
 
             return [
                 "NumContenedor" => $numContenedor,
                 "Estatus" => ($c->estatus == "Local") ? "Local solicitado" : $c->estatus,
-                "Origen" => $c->origen, 
-                "Destino" => $c->destino, 
+                "Origen" => $c->origen,
+                "Destino" => $c->destino,
                 "Peso" => $c->peso_contenedor,
                 "BoletaLiberacion" => $boletaLiberacion,
                 "DODA" => $doda,
@@ -766,5 +851,5 @@ class ExternosController extends Controller
         return $resultContenedores;
     }
 
-    
+
 }

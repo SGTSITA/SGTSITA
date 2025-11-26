@@ -32,11 +32,8 @@ class PlaneacionController extends Controller
     }
 
     public function programarViaje(){
-        $proveedores = Proveedor::where('id_empresa' ,'=',auth()->user()->id_empresa)
-        ->where(function ($query) {
-            $query->where('tipo', '=', 'servicio de burreo')
-                  ->orwhere('tipo', '>=', 'servicio de viaje');
-        })
+        $proveedores = Proveedor::catalogoPrincipal()->where('id_empresa' ,'=',auth()->user()->id_empresa)
+        ->wherein('tipo', ['servicio de burreo', 'servicio de viaje'])
         ->get();
 
         $equipos = Equipo::where('id_empresa' ,'=',auth()->user()->id_empresa)->get();
@@ -50,28 +47,28 @@ class PlaneacionController extends Controller
         try{
 
             DB::beginTransaction();
-            $cotizaciones = Cotizaciones::find($request->idCotizacion); 
+            $cotizaciones = Cotizaciones::find($request->idCotizacion);
             $asignaciones = Asignaciones::where('id_contenedor','=',$request->idCotizacion)->first();
 
             if(!is_null($asignaciones->id_operador)){
                 Bancos::where('id' ,'=',$asignaciones->id_banco1_dinero_viaje)->update(["saldo" => DB::raw("saldo + ". $asignaciones->dinero_viaje)]);
-   
+
                 $banco = new BancoDineroOpe;
                 $banco->id_operador = $asignaciones->id_operador;
-                
+
                 $banco->monto1 = $asignaciones->dinero_viaje;
                 $banco->metodo_pago1 = 'Devolución';
                 $banco->descripcion_gasto = "Dinero para Viaje (Devolución)";
                 $banco->id_banco1 = $asignaciones->id_banco1_dinero_viaje;
-    
+
                 $contenedoresAbonos[] = [
                     'num_contenedor' => $request->numContenedor,
                     'abono' => $asignaciones->dinero_viaje
                 ];
                 $contenedoresAbonosJson = json_encode($contenedoresAbonos);
-    
+
                 $banco->contenedores = $contenedoresAbonosJson;
-            
+
                 $banco->tipo = 'Entrada';
                 $banco->fecha_pago = date('Y-m-d');
                 $banco->save();
@@ -93,34 +90,34 @@ class PlaneacionController extends Controller
             $gastosOperador = GastosOperadores::where('id_asignacion',$asignaciones->id)
             ->where('estatus', 'Pagado')
             ->where('id_banco', '!=', null)
-            
+
             ->get();
 
             //recorrer los gastos pagados para hacer devolucion
             foreach($gastosOperador as $gasto){
                 Bancos::where('id' ,'=',$gasto->id_banco)->update(["saldo" => DB::raw("saldo + ". $gasto->cantidad)]);
-   
+
                 $banco = new BancoDineroOpe;
                 $banco->id_operador = $asignaciones->id_operador;
-                
+
                 $banco->monto1 = $gasto->cantidad;
                 $banco->metodo_pago1 = 'Transferencia';
                 $banco->descripcion_gasto = "Gasto Anulado:  ".$gasto->concepto;
                 $banco->id_banco1 = $gasto->id_banco;
-    
+
                 $contenedoresAbonos2[] = [
                     'num_contenedor' => $request->numContenedor,
                     'abono' => $gasto->cantidad
                 ];
                 $contenedoresAbonosJson2 = json_encode($contenedoresAbonos2);
-    
+
                 $banco->contenedores = $contenedoresAbonosJson2;
-            
+
                 $banco->tipo = 'Entrada';
                 $banco->fecha_pago = date('Y-m-d');
                 $banco->save();
-  
-                   
+
+
             }
 
 
@@ -135,18 +132,18 @@ class PlaneacionController extends Controller
 
             DB::commit();
 
-            return response()->json(["Titulo" => "Programa cancelado","Mensaje" => "Se canceló el programa del viaje correctamente", "TMensaje" => "success"]);            
+            return response()->json(["Titulo" => "Programa cancelado","Mensaje" => "Se canceló el programa del viaje correctamente", "TMensaje" => "success"]);
         }catch(\Throwable $t){
             DB::rollback();
-            return response()->json(["Titulo" => "Error","Mensaje" => "Error 500: ".$t->getMessage(), "TMensaje" => "error"]);            
+            return response()->json(["Titulo" => "Error","Mensaje" => "Error 500: ".$t->getMessage(), "TMensaje" => "error"]);
 
         }
-        
-        
+
+
     }
 
     public function finalizarViaje(Request $request){
-        $cotizaciones = Cotizaciones::find($request->idCotizacion); 
+        $cotizaciones = Cotizaciones::find($request->idCotizacion);
         $cotizaciones->estatus = 'Finalizado';
         $cotizaciones->update();
         return response()->json(["Titulo" => "Viaje finalizado","Mensaje" => "Has finalizado correctamente el viaje", "TMensaje" => "success"]);
@@ -282,10 +279,10 @@ $InfoViajeExtra = Cotizaciones::query()
         'cotizaciones.id',
         'clients.nombre as cliente',
         'docum_cotizacion.num_contenedor',
-      
+
         'cotizaciones.referencia_full',
     'cotizaciones.cp_contacto_entrega',
-     
+
         'asignaciones.id_proveedor',
         'asignaciones.fecha_inicio',
         'asignaciones.fecha_fin',
@@ -307,7 +304,7 @@ $InfoViajeExtra = Cotizaciones::query()
 
 
 
-        $misDocumentos = 
+        $misDocumentos =
         $documentos->map(function($cot){
             $numContenedor = $cot->num_contenedor;
             $docCCP = $cot->doc_ccp;
@@ -318,30 +315,30 @@ $InfoViajeExtra = Cotizaciones::query()
             $boletaVacio = $cot->boleta_vacio;
             $docEir = $cot->doc_eir;
             $tipo = "--";
-    
+
             if(!is_null($cot->referencia_full)){
                     $secundaria = Cotizaciones::where('referencia_full', $cot->referencia_full)
                     ->where('jerarquia', 'Secundario')
                     ->with('DocCotizacion.Asignaciones')
                     ->first();
-    
+
                     $docCCP = ($docCCP && $secundaria->DocCotizacion->doc_ccp) ? true : false;
                     $doda = ($doda && $secundaria->DocCotizacion->doda) ? true : false;
                     $docEir = (!is_null($docEir) && !is_null($secundaria->DocCotizacion->doc_eir)) ? true : false;
-    
+
                     $boletaLiberacion = ($boletaLiberacion && $secundaria->DocCotizacion->boleta_liberacion) ? true : false;
                     $cartaPorte = ($cartaPorte && $secundaria->carta_porte) ? true : false;
                     $cartaPorteXml = ($cartaPorteXml && $secundaria->carta_porte_xml) ? true : false;
 
                     $boletaVacio = ($boletaVacio && $secundaria->img_boleta) ? true : false;
-    
-    
+
+
                     if ($secundaria && $secundaria->DocCotizacion) {
                         $numContenedor .= ' / ' . $secundaria->DocCotizacion->num_contenedor;
                     }
                     $tipo = "Full";
             }
-    
+
             return [
                 "id"=> $cot->id,
                 "cliente"=> $cot->cliente,
@@ -363,11 +360,11 @@ $InfoViajeExtra = Cotizaciones::query()
 
         if($asignaciones->Proveedor == NULL){
             return [
-                        "nombre"=>$asignaciones->Operador->nombre ?? '', 
-                        "tipo" => "Viaje Propio", 
-                        "cotizacion" => $cotizacion, 
-                        "cliente" => $cotizacion->Cliente, 
-                        "subcliente" => $cotizacion->Subcliente, 
+                        "nombre"=>$asignaciones->Operador->nombre ?? '',
+                        "tipo" => "Viaje Propio",
+                        "cotizacion" => $cotizacion,
+                        "cliente" => $cotizacion->Cliente,
+                        "subcliente" => $cotizacion->Subcliente,
                         "documentos" => $documentos->first(),
                         "documents" => $misDocumentos->first(),
                         "datosExtraviaje" => $InfoViajeExtra->first()
@@ -375,16 +372,16 @@ $InfoViajeExtra = Cotizaciones::query()
         }
 
         return [
-                    "nombre"=>$asignaciones->Proveedor->nombre, 
-                    "tipo" => "Viaje subcontratado", 
-                    "cotizacion" => $cotizacion, 
-                    "cliente" => $cotizacion->Cliente, 
-                    "subcliente" => $cotizacion->Subcliente, 
+                    "nombre"=>$asignaciones->Proveedor->nombre,
+                    "tipo" => "Viaje subcontratado",
+                    "cotizacion" => $cotizacion,
+                    "cliente" => $cotizacion->Cliente,
+                    "subcliente" => $cotizacion->Subcliente,
                     "documentos" => $documentos->first(),
                     "documents" => $misDocumentos->first(),
                     "datosExtraviaje" => $InfoViajeExtra->first()
                 ];
-        
+
     }
 
     public function initBoard(Request $request){
@@ -419,9 +416,9 @@ $InfoViajeExtra = Cotizaciones::query()
 
         $board = [];
         $board[] = ["name" => "Clientes", "id" => "S", "expanded" => true, "children" => $clientesData];
-      
+
         $fecha = Carbon::now()->subdays(10)->format('Y-m-d');
-        return response()->json(["boardCentros"=> $board,"extractor"=>$extractor,"scrollDate"=> $fecha, "TMensaje" => "success","planeaciones"=>$planeaciones]);  
+        return response()->json(["boardCentros"=> $board,"extractor"=>$extractor,"scrollDate"=> $fecha, "TMensaje" => "success","planeaciones"=>$planeaciones]);
     }
 
     public function asignacion(Request $request){
@@ -429,18 +426,18 @@ $InfoViajeExtra = Cotizaciones::query()
         $numContenedores = json_decode($request->get('num_contenedor'));
         $numContenedor = $numContenedores[0];
        // $numContenedor = ($request->cmbTipoUnidad == "Full") ? substr($numContenedor,0,12) : $numContenedor;
-        
+
         $fechaInicio = common::TransformaFecha($request->txtFechaInicio);
         $fechaFinal = common::TransformaFecha($request->txtFechaFinal);
-        
+
         $contenedor = DocumCotizacion::where('num_contenedor',$numContenedor)->first();
         $cotizacion = Cotizaciones::where('id', '=',  $contenedor->id_cotizacion)->first();
-        
+
         try{
 
             DB::beginTransaction();
             $asignaciones = new Asignaciones;
-           
+
             $asignaciones->id_contenedor = $contenedor->id_cotizacion;
             $asignaciones->fecha_inicio = $fechaInicio;
             $asignaciones->fecha_fin = $fechaFinal . ' 23:00:00';
@@ -470,21 +467,21 @@ $InfoViajeExtra = Cotizaciones::query()
                 $resta = $sueldoOperador - $CantineroViaje;
                 $asignaciones->pago_operador = $resta;
                 $asignaciones->restante_pago_operador = $resta;
-               
+
 
                 if(is_null($request->get('cmbProveedor')) && $CantineroViaje > 0){ //Agregue para validar el proveedor con sgt elemental no tiene porceso de pagos
-                
+
                     $contenedoresAbonos = [];
                     $contenedorAbono = [
                         'num_contenedor' => $contenedor->num_contenedor,
                         'abono' =>  $CantineroViaje
                     ];
-    
+
                     array_push($contenedoresAbonos, $contenedorAbono);
 
                     Bancos::where('id' ,'=',$request->get('cmbBanco'))->update(["saldo" => DB::raw("saldo - ". $CantineroViaje)]);
                     BancoDineroOpe::insert([[
-                                            'id_operador' => $request->get('cmbOperador'), 
+                                            'id_operador' => $request->get('cmbOperador'),
                                             'id_banco1' => $request->get('cmbBanco'),
                                             'monto1' => $CantineroViaje,
                                             'fecha_pago' => date('Y-m-d'),
@@ -502,9 +499,9 @@ $InfoViajeExtra = Cotizaciones::query()
                             $dineroViaje->fecha_entrega_monto = date('Y-m-d');
                             $dineroViaje->save();
 
-                    
-                    
-                
+
+
+
                 }
 
 
@@ -526,24 +523,24 @@ $InfoViajeExtra = Cotizaciones::query()
                 $asignaciones->total_tonelada = round(floatVal($request->get('sobrepeso_proveedor')) * floatVal($request->get('cantidad_sobrepeso_proveedor')),4);
                 $cotizacion->prove_restante = $asignaciones->total_proveedor;
             }
-            
-           /* 
 
-            
+           /*
+
+
             $asignaciones->id_banco2_dinero_viaje = $request->get('id_banco2_dinero_viaje');
             $asignaciones->cantidad_banco2_dinero_viaje = $request->get('cantidad_banco2_dinero_viaje');
-            
+
 
             */
-            
-           
+
+
             $asignaciones->update();
 
             $cotizacion->estatus_planeacion = 1;
             $cotizacion->tipo_viaje = $request->get('cmbTipoUnidad');
             $cotizacion->update();
 
-            
+
 
             $cotizacion_data = [
                 "tipo_viaje" => $cotizacion->tipo_viaje,
@@ -574,15 +571,15 @@ $InfoViajeExtra = Cotizaciones::query()
                         log::info('Guardando otros gastos de planeacion propio...');
 
                              $resultado = self::guardarOtrosGastosPlaneacion($request,$contenedor->num_contenedor,$request->get('cmbOperador'));
-                          
+
                     }
             }
 
             return response()->json([
                 "TMensaje"=>"success",
-                "Titulo" => "Planeado correctamente", 
+                "Titulo" => "Planeado correctamente",
                 "Mensaje" => "Se ha programado correctamente el viaje del contenedor",
-                'success' => true, 
+                'success' => true,
                 'cotizacion_data' => $cotizacion_data
             ]);
 
@@ -593,7 +590,7 @@ $InfoViajeExtra = Cotizaciones::query()
 
             }
 
-       
+
     }
 
     public function reprogramarViajes(Request $request){
@@ -611,7 +608,7 @@ $InfoViajeExtra = Cotizaciones::query()
                 $asignaciones->fehca_fin_guard = $fechaFinal ;
                 $asignaciones->save();
             }
-            
+
             DB::commit();
 
             return response()->json(["TMensaje"=>"success","Titulo" => "Reprogramación exitosa", "Mensaje" => "Se ha realizado la reprogramación de fechas exitosamente",'success' => true]);
@@ -868,11 +865,11 @@ public static function guardarOtrosGastosPlaneacion($r, $num_Contenedor, $idOper
         $urlId = $request->get('urlId');
 
         $cotizaciones = Cotizaciones::find($urlId);
-        
+
         if($request->get('finzalizar_vieje') != NULL){
-            
+
             $cotizaciones->estatus = $request->get('finzalizar_vieje');
-            
+
         }
         $cotizaciones->update();
 
@@ -896,7 +893,7 @@ public static function guardarOtrosGastosPlaneacion($r, $num_Contenedor, $idOper
         return response()->json(['message' => 'Cambios aplicados correctamente','TMensaje' => 'success']);
     }
 
-    
+
     public function advance_planeaciones(Request $request) {
         $cotizaciones = Cotizaciones::where('id_empresa' ,'=',auth()->user()->id_empresa)->where('estatus', '=', 'Aprobada')->where('estatus_planeacion', '=', NULL)->get();
         $numCotizaciones = $cotizaciones->count();
