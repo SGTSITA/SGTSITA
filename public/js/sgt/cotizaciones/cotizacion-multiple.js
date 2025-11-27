@@ -6,17 +6,17 @@ var proveedoresFormateados = [];
 var transportistasFormateados = [];
 
 // NO BORRAR
-async function getClientes(clienteId){ 
-  let dataGetClientes = $.ajax({ 
-    type: 'GET', url: '/subclientes/'+clienteId , 
-    success: function(data) { 
-      let dataClientes = []; 
+async function getClientes(clienteId){
+  let dataGetClientes = $.ajax({
+    type: 'GET', url: '/subclientes/'+clienteId ,
+    success: function(data) {
+      let dataClientes = [];
       $.each(data, function(key, subcliente) {
-         dataClientes.push(formatoConsecutivo(subcliente.id) + ' - ' + subcliente.nombre); 
-      }); 
-      dataDropDown = dataClientes; 
+         dataClientes.push(formatoConsecutivo(subcliente.id) + ' - ' + subcliente.nombre);
+      });
+      dataDropDown = dataClientes;
       return dataClientes;
-    } 
+    }
   });
 
 
@@ -32,8 +32,8 @@ transportistasLista.forEach(t => {
 
 
 
-  
-  return dataGetClientes; 
+
+  return dataGetClientes;
 }
 
 
@@ -80,7 +80,7 @@ function buildHandsOntable(){
             data:15,
             type:'time',
             timeFormat:'HH:mm:ss',
-            correctFormat:true, width: 100 
+            correctFormat:true, width: 100
         },
 
         // 16 HORA FIN
@@ -88,7 +88,7 @@ function buildHandsOntable(){
             data:16,
             type:'time',
             timeFormat:'HH:mm:ss',
-            correctFormat:true, width: 100 
+            correctFormat:true, width: 100
         },
 
         { data:17, width: 200  },  // 17 direccion
@@ -122,8 +122,8 @@ function buildHandsOntable(){
     let columnasOcultas = [];
 let fixetcolimns = 4;
     if (!canElegirProveedor) {
-        columnasOcultas.push(1); 
-        columnasOcultas.push(2); 
+        columnasOcultas.push(1);
+        columnasOcultas.push(2);
         fixetcolimns = 2;
     }
 
@@ -137,7 +137,7 @@ let fixetcolimns = 4;
         columns: columnas,
         rowHeaders: true,
 
-        fixedColumnsLeft: fixetcolimns, 
+        fixedColumnsLeft: fixetcolimns,
 
         height: 450,
         minSpareRows: 1,
@@ -151,7 +151,7 @@ let fixetcolimns = 4;
 
     var hotTable = new Handsontable(containerMultiple, config);
 
-  
+
     function validateMultiple(){
         let rows = hotTable.getData();
  let filasValidas = [];
@@ -161,10 +161,10 @@ let fixetcolimns = 4;
             let r = rows[i];
 
 
-            
+
           let filaVacia = r.every(v => v === null || v === "");
 
-          
+
           if (filaVacia) continue;
 
             if(r.every(v => v===null || v==="")) continue;
@@ -197,8 +197,11 @@ let fixetcolimns = 4;
       var uuid = localStorage.getItem('uuid');
       var permiso_proveedor = canElegirProveedor ? 1 : 0;
 
+var origen_captura = document.getElementById('origen_captura').value;
+
+
       $.post('/viajes/solicitud/multiple',
-          {_token, contenedores, uuid, permiso_proveedor},
+          {_token, contenedores, uuid, permiso_proveedor, origen_captura},
           function(response){
 
               Swal.fire(response.Titulo, response.Mensaje, response.TMensaje)
