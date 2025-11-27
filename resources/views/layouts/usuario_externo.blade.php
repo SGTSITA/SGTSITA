@@ -143,7 +143,7 @@
                                             <span class="menu-title">Viajes Locales</span>
                                         </a>
                                     </div>
-                                    @endcan
+
                                     <div class="menu-item">
                                         <a href="{{ route('mis.patiolocal') }}" class="menu-link">
                                             <span class="menu-bullet">
@@ -152,6 +152,7 @@
                                             <span class="menu-title">En patio</span>
                                         </a>
                                     </div>
+                                @endcan
                                 </div>
                             </div>
                             <div data-kt-menu-trigger="click" class="menu-item menu-accordion">
