@@ -354,6 +354,51 @@ function viajeFull() {
   });
 }
 
+function convertirForaneo() {
+  let seleccion = apiGrid.getSelectedRows();
+
+
+//   if (seleccion.length > 2) {
+//     Swal.fire('Maximo 2 contenedores', 'Lo sentimos, solo puede seleccionar maximo 2 contenedores, estos deben ser de un mismo cliente', 'warning')
+//     return false
+//   }
+
+  Swal.fire({
+    title: '¿Estás seguro?',
+    text: "Esta accion convertirá los contenedores seleccionados a viaje foráneo.",
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonText: 'Sí, continuar',
+    cancelButtonText: 'No, cancelar',
+    reverseButtons: true // Opcional: invierte el orden de los botones
+  }).then((result) => {
+    if (result.isConfirmed) {
+      let _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+      $.ajax({
+        url: '/cotizaciones/transformar/foraneo',
+        type: 'post',
+        data: { _token, seleccion },
+        beforeSend: () => {
+
+        },
+        success: (response) => {
+          Swal.fire(response.Titulo, response.Mensaje, response.TMensaje)
+          if (response.TMensaje == "success") {
+            getContenedoresPendientesPatio();
+          }
+
+        },
+        error: () => {
+
+        }
+      })
+    } else if (result.dismiss === Swal.DismissReason.cancel) {
+      // Acción si el usuario canceló
+      console.log("El usuario canceló");
+    }
+  });
+}
+
 function fileManager() {
   var _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
   var url = '/viajes/file-manager-local';
