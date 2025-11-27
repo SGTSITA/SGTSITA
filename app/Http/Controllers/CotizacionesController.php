@@ -2163,7 +2163,7 @@ public function storelocal(Request $request)
             'origen_local'       => $request->origen,
             'destino_local'       => $request->destino,
             'costo_maniobra_local' => $request->Costomaniobra ?? 0,
-            'estado_contenedor'  => $request->estado_contenedor,
+            'estado_contenedor'  => $request->estado_contenedor??'',
             'fecha_modulacion_local'  => $request->fecha_modulacion,
             'empresa_local' =>$idEmpresaFinal,
             'sub_cliente_local'  => $request->id_subcliente ?? null,
