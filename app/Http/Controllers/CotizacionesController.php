@@ -1803,7 +1803,7 @@ public function getCotizacionesCanceladas()
             if($tipoViajecontenedor !== 'local'){
                  \Log::channel('daily')->info('Maniobra adjuntar documentos foraneo', ['cotizacion' => $cotizacion->cotizacion_id, 'tipoViaje' => $tipoViajecontenedor]);
 
-                self::confirmarDocumentos($cotizacion->cotizacion_id);
+                self::confirmarDocumentos($cotizacion->cotizacion_id); //parche temporal hasta verificar flujo del correo
                 //  if(Auth::User()->id_cliente != 0){
                 //     event(new \App\Events\GenericNotificationEvent([$cotizacion->cliente->correo],'Se cargó '.$r->urlRepo.': '.$r->numContenedor,'Hola, tu transportista cargó el documento "'.$r->urlRepo.'" del contenedor '.$r->numContenedor));
                 //     event(new \App\Events\ConfirmarDocumentosEvent($cotizacion->cotizacion_id));
@@ -2343,6 +2343,165 @@ public function singleUpdatelocal(Request $request, $id)
         ], 500);
     }
 }
+public function storeMultiplelocal(Request $request){
+        try{
+            DB::beginTransaction();
+            $contenedores = $request->contenedores;
+            $row = 1;
+
+            $origen_inicial = $request->origen_captura;
+            foreach($contenedores as $cont){
+                //validaremos que los contenedores no existan
+                $numContenedor = str_replace(' ','',$cont[3]);
+                $idEmpresa = auth()->user()->id_empresa;
+
+                $contenedorExistente = DocumCotizacion::where('num_contenedor', $numContenedor)
+                                                  //  ->where('id_empresa', $idEmpresa)
+                                                    ->first();
+
+                if ($contenedorExistente) {
+                    return response()->json(["Titulo" => "Contenedor creado previamente", "Mensaje" => "El contenedor ya existe en la empresa", "TMensaje" => "warning"]);
+                }
+
+                //Validaremos que el num de sub-cliente sea valido
+                $numSubCliente = substr($cont[0],0,5);
+                $subCliente = Subclientes::where('id',$numSubCliente);
+                if(!$subCliente->exists()){
+                    return response()->json(["Titulo" => "SubCliente NO Valido", "Mensaje" => "El subcliente de la fila $row no es un cliente registrado", "TMensaje" => "warning"]);
+                }
+
+                //Validar si se requiere validar proveedor y transportista
+                if($request->has('permiso_proveedor') && $request->get('permiso_proveedor') == 1){
+                //validar provedor(empresa)
+                    $numProveedor =substr($cont[1],0,5);
+                    $proveedor = Empresas::where('id',$numProveedor);
+                    if(!$proveedor->exists()){
+                        return response()->json(["Titulo" => "Proveedor NO Valido", "Mensaje" => "El proveedor de la fila $row no es un proveedor registrado", "TMensaje" => "warning"]);
+                    }
+
+                    //validar transportista(proveedor)
+                    $numTransportista =substr($cont[2],0,5);
+                    $transportista = Proveedor::where('id',$numTransportista);
+                    if(!$transportista->exists()){
+                        return response()->json(["Titulo" => "Transportista NO Valido", "Mensaje" => "El transportista de la fila $row no es un transportista registrado", "TMensaje" => "warning"]);
+                    }
+                }
+
+
+
+            }
+            $sumarIndex= 0;
+            if($request->has('permiso_proveedor') && $request->get('permiso_proveedor') == 1){
+                //si se requiere validar proveedor y transportista, se ajustan los indices
+                $sumarIndex = 0;
+            }
+
+            //una vez superada todas las validaciones procedemos a guardar los datos
+            foreach($contenedores as $contenedor){
+
+                $pesocontenedor = (float) $contenedor[5+$sumarIndex];
+                $numSubCliente = substr($contenedor[0],0,5);
+                $pesoReglamentario = 22;
+                $numContenedor = str_replace(' ','',$contenedor[3+$sumarIndex]);
+
+
+                $cotizaciones = new Cotizaciones;
+                $cotizaciones->id_cliente = \Auth::User()->id_cliente;
+                $cotizaciones->id_subcliente = $numSubCliente;
+                if($request->has('permiso_proveedor') && $request->get('permiso_proveedor') == 1){
+                    $numProveedor =substr($contenedor[1],0,5);
+                    $numTransportista =substr($contenedor[2],0,5);
+                    $cotizaciones->id_empresa = $numProveedor;
+                    $cotizaciones->id_proveedor = $numTransportista;
+                    $cotizaciones->empresa_local        = $request->id_proveedor ?? null;
+                 }
+                 if($request->has('id_transportista') && $request->id_transportista !== $cotizaciones->id_proveedor){
+                    $cotizaciones->id_proveedor      = $request->id_transportista;
+                    $cotizaciones->transportista_local        = $request->id_transportista ?? null;
+                    }
+                $cotizaciones->origen = $contenedor[2+$sumarIndex];
+                $cotizaciones->destino = $contenedor[3+$sumarIndex];
+                $cotizaciones->tamano = $contenedor[4+$sumarIndex];
+                $cotizaciones->peso_contenedor = $contenedor[5+$sumarIndex]?? 0;
+
+                $cotizaciones->bloque = $contenedor[14+$sumarIndex]?? null;
+                $cotizaciones->bloque_hora_i = $contenedor[15+$sumarIndex]?? null;
+                $cotizaciones->bloque_hora_f = $contenedor[16+$sumarIndex]?? null;
+                $cotizaciones->direccion_entrega = $contenedor[17+$sumarIndex]?? null;
+
+                $cotizaciones->otro = 0;
+                $cotizaciones->fecha_modulacion =  $contenedor[12+$sumarIndex];
+                $cotizaciones->fecha_entrega = $contenedor[13+$sumarIndex];
+
+                //local
+    $cotizaciones->bloque_local               = $contenedor[14+$sumarIndex] ?? null;
+        $cotizaciones->bloque_hora_i_local        = $contenedor[15+$sumarIndex]?? null;
+        $cotizaciones->bloque_hora_f_local        = $contenedor[16+$sumarIndex] ?? null;
+
+
+        $cotizaciones->origen_local        = $request->origen ?? null;
+        $cotizaciones->destino_local        = $request->destino ?? null;
+        $cotizaciones->costo_maniobra_local        = 0;
+        $cotizaciones->estado_contenedor        = 'AMARILLO';
+        $cotizaciones->fecha_modulacion_local        =  $contenedor[12+$sumarIndex] ?? null;
+
+        $cotizaciones->puerto               = 'Lazaro';
+        $cotizaciones->fecha_ingreso_puerto =  null;
+        $cotizaciones->fecha_salida_puerto  = null;
+        $cotizaciones->dias_estadia         = 0;
+        $cotizaciones->tarifa_estadia       =  0;
+        $cotizaciones->total_estadia        =  0;
+        $cotizaciones->dias_pernocta        = 0;
+        $cotizaciones->tarifa_pernocta      =  0;
+        $cotizaciones->total_pernocta       = 0;
+        $cotizaciones->total_general        = 0;
+        $cotizaciones->motivo_demora        = null;
+        $cotizaciones->liberado             = 0;
+        $cotizaciones->fecha_liberacion     = null;
+        $cotizaciones->responsable          = 'Viaje local'; //solo para saber de donde nace el viaje TEMPORAL
+        $cotizaciones->observaciones        = 'Contenedor cargado desde carga masiva local';
+
+                //end local
+                $cotizaciones->iva = 0;
+                $cotizaciones->retencion = 0;
+                $cotizaciones->peso_reglamentario = $pesoReglamentario;
+                $cotizaciones->precio_sobre_peso = 0;
+                $cotizaciones->sobrepeso = ($pesocontenedor > $pesoReglamentario) ? $pesocontenedor - $pesoReglamentario : 0;
+                $cotizaciones->estatus = ($request->has('uuid')) ? 'Documentos Faltantes' : 'Pendiente';
+                $cotizaciones->precio_viaje = 0;
+                $cotizaciones->burreo = 0;
+                $cotizaciones->maniobra = 0;
+                $cotizaciones->estadia = 0;
+                $cotizaciones->base_factura = 0;
+                $cotizaciones->base_taref = 0;
+              //  $cotizaciones->recinto_clientes = $request->get('recinto_clientes');
+                $cotizaciones->precio_tonelada = 0;
+
+                $cotizaciones->total = 0;
+                $cotizaciones->restante = 0;
+                $cotizaciones->estatus_pago = '0';
+                $cotizaciones->origen_captura = $origen_inicial;
+                $cotizaciones->user_id = \Auth::User()->id;
+                $cotizaciones->save();
+
+
+                $docucotizaciones = new DocumCotizacion;
+                $docucotizaciones->id_cotizacion = $cotizaciones->id;
+                $docucotizaciones->num_contenedor = $numContenedor;
+                $docucotizaciones->save();
+
+
+            }
+
+            DB::commit();
+            return response()->json(["Titulo" => "Proceso satisfactorio", "Mensaje" => "Cotización creada con exito", "TMensaje" => "success"]);
+
+        }catch(\Trhowable $t){
+             DB::rollback();
+            \Log::channel('daily')->info($t->getMessage());
+            return response()->json(["Titulo" => "Ocurrion un error", "Mensaje" => "Ocurrio un error mientras procesabamos su solicitud. ".$t->getMessage(), "TMensaje" => "error"]);
+        }
+    }
 
  public static function confirmarDocumentoslocal($cotizacion){
         try{

@@ -179,9 +179,10 @@ function buildHandsOntableLocal() {
         var _token = document.querySelector('meta[name="csrf-token"]').content;
         var uuid = localStorage.getItem('uuid');
         var permiso_proveedor = canElegirProveedor ? 1 : 0;
+        var origen_captura = document.getElementById('origen_captura').value;
 
-        $.post('/solicitud/multiple-local',
-            { _token, contenedores, uuid, permiso_proveedor },
+        $.post('/viajes/solicitud/multiple-local',
+            { _token, contenedores, uuid, permiso_proveedor, origen_captura },
             function (response) {
 
                 Swal.fire(response.Titulo, response.Mensaje, response.TMensaje)
