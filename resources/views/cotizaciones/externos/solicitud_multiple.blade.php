@@ -10,12 +10,13 @@
           <span class="text-gray-500 mt-1 fw-semibold fs-6">Solicitud de servicio de gestion de transporte</span>
         </h3>
         <div class="card-toolbar">
-          
+
         </div>
       </div>
       <div class="card-body">
         <div id="cotizacion-multiple"></div>
       </div>
+       <input type="hidden" value="MEC-Multiple" id="origen_captura" name="origen_captura" />
       <div class="card-footer border-0 text-end">
       <div class="separator separator-dashed mb-8"></div>
       <button type="button" id="btnSolicitar" class="btn btn-lg btn-primary" data-kt-stepper-action="next"> Solicitar viajes
@@ -40,7 +41,7 @@ const canElegirProveedor = @can('mec-elegir-proveedor') true @else false @endcan
     // LISTAS PARA SELECTS
 var proveedoresLista =@json($proveedores);
 var transportistasLista =@json($transportista);
- 
+
 </script>
 <link href="{{asset('assets/handsontable/handsontable.full.min.css')}}" rel="stylesheet" media="screen">
 <script src="{{asset('assets/handsontable/handsontable.full.min.js')}}"></script>
@@ -49,7 +50,7 @@ var transportistasLista =@json($transportista);
 <script src="{{ asset('js/sgt/cotizaciones/cotizacion-multiple.js') }}?v={{ filemtime(public_path('js/sgt/cotizaciones/cotizacion-multiple.js')) }}"></script>
 <script>
        $(document).ready(async () =>{
-																		   
+
     let clientes = await getClientes({{Auth::User()->id_cliente}});
     const handsontable = buildHandsOntable();
     var btn = document.querySelector('#btnSolicitar');

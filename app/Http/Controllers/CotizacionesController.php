@@ -1802,14 +1802,16 @@ public function getCotizacionesCanceladas()
 
             if($tipoViajecontenedor !== 'local'){
                  \Log::channel('daily')->info('Maniobra adjuntar documentos foraneo', ['cotizacion' => $cotizacion->cotizacion_id, 'tipoViaje' => $tipoViajecontenedor]);
-                if(Auth::User()->id_cliente != 0){
-                    event(new \App\Events\GenericNotificationEvent([$cotizacion->cliente->correo],'Se cargó '.$r->urlRepo.': '.$r->numContenedor,'Hola, tu transportista cargó el documento "'.$r->urlRepo.'" del contenedor '.$r->numContenedor));
-                    event(new \App\Events\ConfirmarDocumentosEvent($cotizacion->cotizacion_id));
-                }
 
-                if($estatus != 'Documentos Faltantes' && Auth::User()->id_cliente != 0){
-                    event(new \App\Events\NotificaNuevoDocumentoEvent($cotizacion,$r->urlRepo));
-                }
+                self::confirmarDocumentos($cotizacion->cotizacion_id);
+                //  if(Auth::User()->id_cliente != 0){
+                //     event(new \App\Events\GenericNotificationEvent([$cotizacion->cliente->correo],'Se cargó '.$r->urlRepo.': '.$r->numContenedor,'Hola, tu transportista cargó el documento "'.$r->urlRepo.'" del contenedor '.$r->numContenedor));
+                //     event(new \App\Events\ConfirmarDocumentosEvent($cotizacion->cotizacion_id));
+                // }
+
+                // if($estatus != 'Documentos Faltantes' && Auth::User()->id_cliente != 0){
+                //     event(new \App\Events\NotificaNuevoDocumentoEvent($cotizacion,$r->urlRepo));
+                // }
 
             }else{
                  \Log::channel('daily')->info('Maniobra local adjuntar documentos', ['cotizacion' => $cotizacion->cotizacion_id, 'tipoViaje' => $tipoViajecontenedor]);
@@ -1822,6 +1824,37 @@ public function getCotizacionesCanceladas()
 		return response()->json($upload);
 		exit;
 	}
+
+
+    public static function confirmarDocumentos($cotizacion){
+        try{
+          \Log::channel('daily')->info('Maniobra  '.$cotizacion);
+
+            $contenedor = Cotizaciones::join('docum_cotizacion as d', 'cotizaciones.id', '=', 'd.id_cotizacion')
+            ->where('cotizaciones.id' ,'=',$cotizacion)
+            ->where('estatus','=','Documentos Faltantes')
+            ->orderBy('created_at', 'desc')
+            ->selectRaw('cotizaciones.*, d.num_contenedor,d.doc_eir,doc_ccp ,d.boleta_liberacion,d.doda')
+            ->first();
+            \Log::channel('daily')->info('Doda: '.$contenedor->doda.' / liberacion:'.$contenedor->boleta_liberacion);
+
+            if($contenedor->doda != null && $contenedor->boleta_liberacion != null){
+                $cotizacion = Cotizaciones::where('id',$cotizacion)->first();
+                $cotizacion->estatus = (is_null($cotizacion->id_proveedor)) ? 'NO ASIGNADA' :'Pendiente';
+                $cliente = Client::where('id',$cotizacion->id_cliente)->first();
+                $cotizacion->save();
+
+//$cuentasCorreo = [env('MAIL_NOTIFICATIONS'),Auth::User()->email];
+  //              $cuentasCorreo2 = Correo::where('cotizacion_nueva',1)->get()->pluck('correo')->toArray();
+
+               // Mail::to($cuentasCorreo)->send(new \App\Mail\NotificaCotizacionMail($contenedor,$cliente));
+
+            }
+        }catch(\Throwable $t){
+          \Log::channel('daily')->info('Maniobra no se pudo enviar al admin. id: '.$cotizacion.'. '.$t->getMessage());
+        }
+
+    }
 
     /**
      * Esta metodo se utiliza para asignar los contenedores solicitados desde el modulo de clientes externos
