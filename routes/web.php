@@ -352,6 +352,7 @@ Route::group(['middleware' => ['auth']], function() {
     //burrero local editar
     Route::any('cotizaciones/store-local', [App\Http\Controllers\CotizacionesController::class, 'storelocal'])->name('store.cotizacioneslocal');
     Route::post('cotizaciones/single/update-local/{id}', [App\Http\Controllers\CotizacionesController::class, 'singleUpdatelocal'])->name('update.singlelocal');
+    Route::post('/cotizaciones/transformar/foraneo', [App\Http\Controllers\CotizacionesController::class, 'convertirlocalforaneo'])->name('cotizaciones.transform.foraneo');
     //fin burrero local editar
 
     Route::get('cotizaciones/pdf/{id}', [App\Http\Controllers\CotizacionesController::class, 'pdf'])->name('pdf.cotizaciones');

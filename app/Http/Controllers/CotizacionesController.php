@@ -2136,6 +2136,7 @@ public function storelocal(Request $request)
             $idProveedorFinal = $request->id_transportista;
         }
 
+        $origen_inicial= $request->origen_captura;
 
         $cotizacion = Cotizaciones::create([
             'id_cliente'         => $request->id_cliente,
@@ -2343,6 +2344,31 @@ public function singleUpdatelocal(Request $request, $id)
         ], 500);
     }
 }
+ public function convertirlocalforaneo(Request $request){
+        $viajes = $request->seleccion;
+
+        // //validar estatus de los viajes seleccionados deben tener el mismo, paso que uno estaba en pendiente y otro en aprobado
+        // $ids = collect($viajes)->pluck('id');
+
+
+        // $estatus = Cotizaciones::whereIn('id', $ids)->pluck('estatus')->unique();
+
+
+        // if ($estatus->count() > 1) {
+        //     return response()->json([
+        //         "Titulo"   => "Error en la selección de viajes",
+        //         "Mensaje"  => "Los viajes seleccionados deben tener el mismo estatus para poder convertirlos a Full",
+        //         "TMensaje" => "warning",
+        //     ]);
+        // }
+
+
+        for($x = 0; $x < (sizeof($viajes)); $x++){
+
+            Cotizaciones::where('id', $viajes[$x]['id'])->update(["tipo_viaje_seleccion" => "local_to_foraneo","en_patio" => 0,"estatus" => "Documentos Faltantes"]);
+        }
+        return response()->json(["Titulo" => "Proceso satisfactorio", "Mensaje" => "Se ha realizado el proceso de conversión a viaje foráneo", "TMensaje" => "success"]);
+    }
 public function storeMultiplelocal(Request $request){
         try{
             DB::beginTransaction();
