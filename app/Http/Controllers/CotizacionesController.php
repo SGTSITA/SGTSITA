@@ -714,10 +714,10 @@ public function getCotizacionesCanceladas()
                     $cotizaciones->id_empresa = $numProveedor;
                     $cotizaciones->id_proveedor = $numTransportista;
                  }
-                $cotizaciones->origen = $contenedor[2+$sumarIndex];
-                $cotizaciones->destino = $contenedor[3+$sumarIndex];
-                $cotizaciones->tamano = $contenedor[4+$sumarIndex];
-                $cotizaciones->peso_contenedor = $contenedor[5+$sumarIndex];
+                $cotizaciones->origen = $contenedor[4+$sumarIndex];
+                $cotizaciones->destino = $contenedor[5+$sumarIndex];
+                $cotizaciones->tamano = $contenedor[6+$sumarIndex];
+                $cotizaciones->peso_contenedor = $contenedor[7+$sumarIndex];
 
                 $cotizaciones->bloque = $contenedor[14+$sumarIndex];
                 $cotizaciones->bloque_hora_i = $contenedor[15+$sumarIndex];
@@ -1805,12 +1805,20 @@ public function getCotizacionesCanceladas()
 
                 self::confirmarDocumentos($cotizacion->cotizacion_id); //parche temporal hasta verificar flujo del correo
                 //  if(Auth::User()->id_cliente != 0){
+                //    \Log::channel('daily')->info('GenericNotificationEvent  ', ['cotizacion' => $cotizacion->cotizacion_id, 'tipoViaje' => $tipoViajecontenedor]);
                 //     event(new \App\Events\GenericNotificationEvent([$cotizacion->cliente->correo],'Se cargó '.$r->urlRepo.': '.$r->numContenedor,'Hola, tu transportista cargó el documento "'.$r->urlRepo.'" del contenedor '.$r->numContenedor));
+                //     \Log::channel('daily')->info('GenericNotificationEvent  ok ', ['cotizacion' => $cotizacion->cotizacion_id, 'tipoViaje' => $tipoViajecontenedor]);
+
+                //      \Log::channel('daily')->info('ConfirmarDocumentosEvent  ', ['cotizacion' => $cotizacion->cotizacion_id, 'tipoViaje' => $tipoViajecontenedor]);
                 //     event(new \App\Events\ConfirmarDocumentosEvent($cotizacion->cotizacion_id));
+
+                //      \Log::channel('daily')->info('ConfirmarDocumentosEvent  ok ', ['cotizacion' => $cotizacion->cotizacion_id, 'tipoViaje' => $tipoViajecontenedor]);
                 // }
 
                 // if($estatus != 'Documentos Faltantes' && Auth::User()->id_cliente != 0){
+                //     \Log::channel('daily')->info('NotificaNuevoDocumentoEvent  ', ['cotizacion' => $cotizacion->cotizacion_id, 'tipoViaje' => $tipoViajecontenedor]);
                 //     event(new \App\Events\NotificaNuevoDocumentoEvent($cotizacion,$r->urlRepo));
+                //     \Log::channel('daily')->info('NotificaNuevoDocumentoEvent  ok ', ['cotizacion' => $cotizacion->cotizacion_id, 'tipoViaje' => $tipoViajecontenedor]);
                 // }
 
             }else{
