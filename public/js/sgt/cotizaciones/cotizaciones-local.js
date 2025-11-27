@@ -25,7 +25,7 @@ const formFields = [
     { field: 'peso_contenedor', id: 'peso_contenedor', label: 'Peso Contenedor', required: true, type: 'numeric', master: false },
     { field: 'destino', id: 'destino', label: 'Destino', required: true, type: 'text', master: false },
     { field: 'Costomaniobra', id: 'Costomaniobra', label: 'Costo Maniobra', required: true, type: 'numeric', master: false },
-    { field: 'estado_contenedor', id: 'estado_contenedor', label: 'Estado contenedor', required: true, type: 'text', master: false },
+    { field: 'estado_contenedor', id: 'estado_contenedor', label: 'Estado contenedor', required: false, type: 'text', master: false },
 
 
     // Datos de ruta
