@@ -334,7 +334,7 @@ class ExternosController extends Controller
 
             $contenedor = Cotizaciones::join('docum_cotizacion as d', 'cotizaciones.id', '=', 'd.id_cotizacion')
             ->where('cotizaciones.id' ,'=',$cotizacion)
-           // ->where('estatus','=','Documentos Faltantes')
+            ->where('estatus','=','Documentos Faltantes')
             ->orderBy('created_at', 'desc')
             ->selectRaw('cotizaciones.*, d.num_contenedor,d.doc_eir,doc_ccp ,d.boleta_liberacion,d.doda')
             ->first();
@@ -527,7 +527,7 @@ class ExternosController extends Controller
 
         foreach($contenedores as $cont){
             $documentos = DocumCotizacion::where('num_contenedor',$cont)->first();
-            $folderId = $documentos->id;
+            $folderId = $documentos->id_cotizacion;  //si se guarda con id cotizacion , buscamos con esa clave
 
             if(!is_null($documentos->doda)){
                 $doda = self::fileProperties($folderId,$documentos->doda,'Doda',$cont);
