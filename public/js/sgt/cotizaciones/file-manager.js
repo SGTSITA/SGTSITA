@@ -1,9 +1,9 @@
 
 let tagNumContenedor = document.querySelector("#numContenedor");
 let numContenedor = tagNumContenedor.textContent;
-const safeValue = encodeURIComponent(numContenedor); //agregue porq habia uno que traia // en el num de contenendor , validar en captura..
+//const safeValue = encodeURIComponent(numContenedor); //agregue porq habia uno que traia // en el num de contenendor , validar en captura..
 
-let urlGetFiles = `/viajes/file-manager/get-file-list/${safeValue}`;
+let urlGetFiles = `/viajes/file-manager/get-file-list/${numContenedor}`;
 
 let dt = $("#kt_datatable_example_1").DataTable({
     select: false,
