@@ -16,16 +16,20 @@ class ProveedorController extends Controller
     // Listar proveedores en vista o como JSON (para AJAX)
     public function index()
     {
-
+        $tipoViaje =[
+            'foraneo' => 'Foráneo',
+            'local' => 'Local',
+            'local_foraneo' => 'Ambos'
+        ];
         $user = auth()->user();
 
         if ($user->es_admin) {
-        
-            $proveedores = Proveedor::orderBy('created_at', 'desc')->get();
+
+            $proveedores = Proveedor::CatalogoPrincipal()->orderBy('created_at', 'desc')->get();
             $empresas = Empresas::orderBy('nombre')->get();
         } else {
-            
-            $proveedores = Proveedor::where('id_empresa', $user->id_empresa)
+
+            $proveedores = Proveedor::CatalogoPrincipal()->where('id_empresa', $user->id_empresa)
                 ->orderBy('created_at', 'desc')
                 ->get();
             $empresas = Empresas::where('id', $user->id_empresa)->orderBy('nombre')->get();
@@ -34,11 +38,12 @@ class ProveedorController extends Controller
         if (request()->ajax()) {
                       return response()->json([
         'proveedores' => $proveedores,
-        'empresas' => $empresas
+        'empresas' => $empresas,
+        'tipoViaje' => $tipoViaje
     ]);
         }
 
-        return view('proveedores.index', compact('proveedores', 'empresas'));
+        return view('proveedores.index', compact('proveedores', 'empresas', 'tipoViaje'));
     }
 
     // Crear un nuevo proveedor
@@ -54,6 +59,7 @@ class ProveedorController extends Controller
         'rfc' => 'nullable|string|max:13',
         'tipo' => 'required|string|max:255',
         'tipo_empresa' => 'required|string|in:lista,mep',
+        'tipo_viaje' => 'required|string|max:100',
     ]);
 
     DB::beginTransaction();
@@ -80,6 +86,7 @@ class ProveedorController extends Controller
                 'tipo' => $request->tipo,
                 'fecha' => now()->format('Y-m-d'),
                 'id_empresa' => $idEmpresa,
+                'tipo_viaje' => $request->tipo_viaje,
             ]);
         }
 
@@ -97,7 +104,7 @@ class ProveedorController extends Controller
                 'nombre_sistema' => strtoupper($request->nombre),
                 'color_principal' => '#000000',
                 'color_iconos_sidebar' => '#000000',
-                'color_iconos_cards' => '#000000', 
+                'color_iconos_cards' => '#000000',
                 'color_boton_add' => '#000000',
                 'icon_boton_add' => '#000000',
                 'color_boton_save' => '#000000',
@@ -117,10 +124,10 @@ class ProveedorController extends Controller
                 'id_configuracion' => $config->id,
             ]);
 
-          
+
 
             Proveedor::$forceEmpresaFromAuth = false;
-        
+
             $proveedor = Proveedor::create([
                 'nombre' => $request->nombre,
                 'correo' => $request->correo,
@@ -131,6 +138,7 @@ class ProveedorController extends Controller
                 'tipo' => $request->tipo,
                 'fecha' => now()->format('Y-m-d'),
                 'id_empresa' => $empresa->id,
+                'tipo_viaje' => $request->tipo_viaje,
             ]);
 
            Proveedor::$forceEmpresaFromAuth = true;
@@ -140,7 +148,7 @@ class ProveedorController extends Controller
                 'email' => $request->correo,
                 'password' => bcrypt($request->password),
                 'id_empresa' => $empresa->id,
-                'es_admin' => false, 
+                'es_admin' => false,
                 'id_cliente' => 0,
             ]);
 
@@ -179,22 +187,32 @@ public function validarRFC(Request $request)
     public function edit($id)
     {
         $proveedor = Proveedor::find($id);
-    
+
+         $tipoViaje =[
+            'local' => 'Local',
+            'foraneo' => 'Foráneo',
+            'local_foraneo' => 'Ambos'
+        ];
+
         if (!$proveedor) {
             return response()->json(['success' => false, 'message' => 'Proveedor no encontrado.'], 404);
         }
-    
+
         return response()->json([
             'success' => true,
-            'proveedor' => $proveedor
+            'proveedor' => $proveedor,
+            'tipoViaje' => $tipoViaje
         ]);
     }
-    
+
 
     // Actualizar proveedor (corrección del error)
     public function update(Request $request, $id)
 {
-    $proveedor = Proveedor::find($id);
+    try {
+        DB::beginTransaction();
+
+        $proveedor = Proveedor::find($id);
 
     if (!$proveedor) {
         return response()->json(['success' => false, 'message' => 'Proveedor no encontrado.'], 404);
@@ -208,18 +226,30 @@ public function validarRFC(Request $request)
         'regimen_fiscal' => 'nullable|string|max:255',
         'rfc' => 'nullable|string|max:13',
         'tipo' => 'required|string|max:255',
+        'tipo_viaje' => 'required|string|max:100',
     ]);
 
     $proveedor->update($request->all());
 
-    return response()->json([
-        'success' => true,
-        'message' => 'Proveedor actualizado con éxito.'
-    ]);
+
+        DB::commit();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Proveedor actualizado con éxito.'
+        ]);
+    } catch (\Exception $e) {
+        DB::rollBack();
+        return response()->json([
+            'success' => false,
+            'message' => 'Error al actualizar el proveedor: ' . $e->getMessage()
+        ], 500);
+    }
+
 }
 
-    
-    
+
+
 
     // Agregar una cuenta bancaria a un proveedor
     public function cuenta(Request $request)
@@ -272,7 +302,7 @@ public function definirCuentaPrioridad(Request $request, $id)
     {
         $cuenta = CuentasBancarias::findOrFail($id);
         $cuenta->delete(); // SoftDelete en lugar de eliminar
-    
+
         return response()->json([
             'success' => true,
             'message' => 'Cuenta bancaria eliminada correctamente.'
@@ -296,7 +326,7 @@ public function definirCuentaPrioridad(Request $request, $id)
         $user = auth()->user();
 
         if ($user->es_admin) {
-   
+
         $proveedores = Proveedor::with('empresa')
             ->orderBy('created_at', 'desc')
             ->get();
@@ -306,12 +336,12 @@ public function definirCuentaPrioridad(Request $request, $id)
             ->orderBy('created_at', 'desc')
             ->get();
         }
-    
+
         return response()->json(['list' => $proveedores]);
     }
     public function getCuentasBancarias($id)
     {
-   
+
     $proveedor = Proveedor::find($id);
 
     // 🔹 Obtener las cuentas bancarias (incluyendo las eliminadas)
@@ -326,12 +356,12 @@ public function definirCuentaPrioridad(Request $request, $id)
     ]);
 }
 
-    
+
     public function cambiarEstadoCuenta(Request $request, $id)
     {
         $cuenta = CuentasBancarias::withTrashed()->findOrFail($id);
         $estado = $request->input('activo');
-    
+
         if ($estado) {
             // 🔹 Activar la cuenta bancaria (restaurar SoftDelete)
             $cuenta->restore();
@@ -341,7 +371,7 @@ public function definirCuentaPrioridad(Request $request, $id)
             $cuenta->delete();
             $mensaje = "Cuenta bancaria desactivada correctamente.";
         }
-    
+
         return response()->json([
             'success' => true,
             'message' => $mensaje,
@@ -359,5 +389,5 @@ public function definirCuentaPrioridad(Request $request, $id)
 }
 
 
-    
+
 }

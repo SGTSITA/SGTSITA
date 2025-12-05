@@ -92,7 +92,7 @@ document.getElementById("formEditarProveedor").addEventListener("submit", functi
                 getProveedoresList(); // Recargar AG Grid después de la edición
             });
         } else {
-            Swal.fire("Error", "No se pudo actualizar el proveedor.", "error");
+            Swal.fire("Error", data.message, "error");
         }
     })
     .catch(error => {
@@ -213,8 +213,8 @@ const gridOptions = {
     },
 
     columnDefs: [
-        { 
-            headerCheckboxSelection: true, 
+        {
+            headerCheckboxSelection: true,
             checkboxSelection: true,
             width: 50
         },
@@ -227,25 +227,25 @@ const gridOptions = {
         { field: "direccion", headerName: "Dirección", minWidth: 200 },
         { field: "empresa", headerName: "Empresa", minWidth: 200, valueGetter: (params) => params.data.empresa?.nombre || '' },
         {
-            
+
                 field: "acciones",
                 headerName: "Acciones",
                 minWidth: 500,
                 cellRenderer: function (params) {
                     return `
                         <button class="btn btn-sm btn-outline-secondary" onclick="openEditProveedorModal(${params.data.id})">
-                            <i class="fa fa-edit"></i> 
+                            <i class="fa fa-edit"></i>
                         </button>
                         <button class="btn btn-sm btn-outline-success" onclick="openCuentasBancariasModal(${params.data.id}, '${params.data.nombre}')">
-                <i class="fa fa-credit-card"></i> 
+                <i class="fa fa-credit-card"></i>
             </button>
-                        <button class="btn btn-sm btn-outline-primary" 
+                        <button class="btn btn-sm btn-outline-primary"
                 onclick="agregarCuentaBancaria(${params.data.id}, '${params.data.nombre}')">
                 <i class="fa fa-plus"></i>
             </button>`;
                 }
             }
-            
+
     ],
     rowData: []
 };
@@ -281,6 +281,7 @@ function openEditProveedorModal(idProveedor) {
                 document.getElementById("edit_regimen_fiscal").value = data.proveedor.regimen_fiscal;
                 document.getElementById("edit_rfc").value = data.proveedor.rfc;
                 document.getElementById("edit_tipo").value = data.proveedor.tipo;
+                document.getElementById("edit_tipo_viaje").value = data.proveedor.tipo_viaje;
 
                 // 🔹 Asegurar que el modal se muestra correctamente con Bootstrap
                 let editModal = new bootstrap.Modal(document.getElementById("editProveedorModal"));
@@ -323,7 +324,7 @@ function openCuentasBancariasModal(idProveedor) {
                         let disableCuenta1 = (cuenta1Seleccionada && !cuenta.cuenta_1) || cuenta.deleted_at !== null ? 'disabled' : '';
 let disableCuenta2 = (cuenta2Seleccionada && !cuenta.cuenta_2) || cuenta.deleted_at !== null ? 'disabled' : '';
 
-                        
+
 
                         let row = `
                             <tr>
@@ -334,8 +335,8 @@ let disableCuenta2 = (cuenta2Seleccionada && !cuenta.cuenta_2) || cuenta.deleted
                                 <td>${cuenta.cuenta_clabe}</td>
                                 <td class="text-center">
                                     <div class="form-check form-switch d-flex justify-content-center">
-                                        <input class="form-check-input" type="checkbox" role="switch" 
-                                            id="switchCuenta${cuenta.id}" ${estadoSwitch} 
+                                        <input class="form-check-input" type="checkbox" role="switch"
+                                            id="switchCuenta${cuenta.id}" ${estadoSwitch}
                                             onchange="toggleCuentaEstado(${cuenta.id})">
                                         <span class="ms-2 ${estadoClase}" id="estadoTexto${cuenta.id}">${estadoTexto}</span>
                                     </div>

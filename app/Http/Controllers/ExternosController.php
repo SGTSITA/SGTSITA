@@ -334,17 +334,23 @@ class ExternosController extends Controller
 
             $contenedor = Cotizaciones::join('docum_cotizacion as d', 'cotizaciones.id', '=', 'd.id_cotizacion')
             ->where('cotizaciones.id' ,'=',$cotizacion)
-            ->where('estatus','=','Documentos Faltantes')
+           // ->where('estatus','=','Documentos Faltantes')
             ->orderBy('created_at', 'desc')
             ->selectRaw('cotizaciones.*, d.num_contenedor,d.doc_eir,doc_ccp ,d.boleta_liberacion,d.doda')
             ->first();
-            \Log::channel('daily')->info('Doda: '.$contenedor->doda.' / liberacion:'.$contenedor->boleta_liberacion);
+            if( $contenedor){
+                \Log::channel('daily')->info('Doda: '.$contenedor->doda.' / liberacion:'.$contenedor->boleta_liberacion);
 
-            if($contenedor->doda != null && $contenedor->boleta_liberacion != null){
-                $cotizacion = Cotizaciones::where('id',$cotizacion)->first();
-                $cotizacion->estatus = (is_null($cotizacion->id_proveedor)) ? 'NO ASIGNADA' :'Pendiente';
-                $cliente = Client::where('id',$cotizacion->id_cliente)->first();
-                $cotizacion->save();
+            }
+
+
+
+            if( $contenedor && $contenedor->doda != null && $contenedor->boleta_liberacion != null){
+                \Log::channel('daily')->info('Doda2: '.$contenedor->doda.' / liberacion2:'.$contenedor->boleta_liberacion);
+                $cotizacionC = Cotizaciones::where('id',$cotizacion)->first();
+                $cotizacionC->estatus = (is_null($cotizacionC->id_proveedor)) ? 'NO ASIGNADA' :'Pendiente';
+                $cliente = Client::where('id',$cotizacionC->id_cliente)->first();
+                $cotizacionC->save();
 
                 $cuentasCorreo = [env('MAIL_NOTIFICATIONS'),Auth::User()->email];
                 $cuentasCorreo2 = Correo::where('cotizacion_nueva',1)->get()->pluck('correo')->toArray();
@@ -849,6 +855,55 @@ class ExternosController extends Controller
         });
 
         return $resultContenedores;
+    }
+
+
+    public function listarDocumentos(Request $request)
+    {
+
+        $folderId = $request->idSolicitud;
+
+         $uploadDir = public_path("cotizaciones/cotizacion{$folderId}/");
+    $uploadUrl = asset("cotizaciones/cotizacion{$folderId}/");
+
+    $docs = DocumCotizacion::where('id_cotizacion', $request->idSolicitud)
+                    ->where('num_contenedor', $request->numContenedor)
+                    ->first();
+        if (!$docs) {
+                return response()->json([]);
+            }
+
+
+        $documentList = [];
+
+        $docsMap = [
+            'doda' => 'Doda',
+            'boleta_liberacion' => 'Boleta de liberación',
+            'doc_ccp' => 'Formato para Carta porte',
+            'doc_eir' => 'EIR',
+            'foto_patio' => 'Foto patio',
+            'boleta_patio' => 'Boleta de patio',
+        ];
+
+foreach ($docsMap as $col => $title) {
+
+    if (!is_null($docs->$col)) {
+
+        $docProps = self::fileProperties(
+            $folderId,
+            $docs->$col,
+            $title,
+            $request->numContenedor
+        );
+
+        if (sizeof($docProps) > 0) {
+             $docProps['publicUrl'] = $uploadUrl . '/';
+            $documentList[] = $docProps;
+        }
+    }
+}
+
+        return response()->json($documentList);
     }
 
 

@@ -1,12 +1,12 @@
  const fecha = new Date();
  //const APP_URL = document.querySelector('meta[name="APP_URL"]').getAttribute('content');
  let ajustes = [];
-
+let canEndTravel=0;
  var allEvents = null;
  var festivos = [];
  let dpReady = false;
  let buscarContenedor  = document.querySelector('#txtBuscarContenedor')
- 
+
 function formatFecha(fechaISO){
 const fecha = new Date(fechaISO);
 const btnGuardarBoard = document.querySelector('#btnGuardarBoard')
@@ -20,12 +20,12 @@ const anio = fecha.getFullYear();
 // Formato final
 return `${dia}/${mes}/${anio}`;
 }
- 
+
 
 async function initBoard(fromDate,toDate){
 
      var _token = $('input[name="_token"]').val();
-    
+
      const result = await $.ajax({
          method:'post',
          url:'/planeaciones/monitor/board',
@@ -37,16 +37,16 @@ async function initBoard(fromDate,toDate){
             }
          },
          success:(resp)=>{
-           
-             
+
+
              dp.resources = resp.boardCentros;
-             
+
              //Horizonte
              /*dp.separators = [
                  {color: "red", location: info.Horizonte}
              ];*/
              //Mostrar los eventos planificados previamente
-            
+
              allEvents = resp.extractor;
              //TarifasHilos = resp.TarifasHilo;
              //festivos = resp.festivos;
@@ -72,25 +72,25 @@ async function initBoard(fromDate,toDate){
                  }
                  dp.events.list.push(e);
                 // const threads = array1.findIndex(element => element > 10);
-                
+
              });
              }
 
              dp.startDate = scrollToDate.addDays(-2)
 
              if ( dpReady) {
-              
+
                 dp.update();
             }else{
                 dp.init();
                 dpReady = true;
             }
-             
-             dp.scrollTo(new DayPilot.Date(fromDate));        
 
-            
-             
-                        
+             dp.scrollTo(new DayPilot.Date(fromDate));
+
+
+
+
          },
          error:(e)=>{
              console.log('Ocurrio un error: '+e);
@@ -100,7 +100,7 @@ async function initBoard(fromDate,toDate){
      return result;
 }
 
- 
+
 
  /**Configuracion de DayPilot */
  var mySugesstions = [];
@@ -122,7 +122,7 @@ async function initBoard(fromDate,toDate){
      {groupBy: "Month", format: "MMMM yyyy"},
      {groupBy: "Day", format: "d"}
  ];
-   
+
  dp.crosshairType = "Full";
  dp.allowEventOverlap = true;
 
@@ -130,7 +130,7 @@ async function initBoard(fromDate,toDate){
  dp.bubble = new DayPilot.Bubble();
 
  dp.durationBarMode = "PercentComplete";
- 
+
  dp.contextMenu = new DayPilot.Menu({
      items: [
          {
@@ -145,11 +145,11 @@ async function initBoard(fromDate,toDate){
                   }).then((result) => {
                     /* Read more about isConfirmed, isDenied below */
                     if (result.isConfirmed) {
-                        //var resp = eliminarEvento();                       
+                        //var resp = eliminarEvento();
 
                      //   var _token = $('input[name="_token"]').val();
                         var event = args.source.data.id;
-                        
+
                       /*  $.ajax({
                         method:'post',
                         url:'/thread/programming/event/delete',
@@ -166,14 +166,14 @@ async function initBoard(fromDate,toDate){
                             console.log("error");
                         }
                     })*/
-                    } 
+                    }
                   })
 
-               
-                 
+
+
              }
          },
-    
+
          {
              //text: "Ver Detalles", onClick: function (args) {}
          }/*,
@@ -200,7 +200,7 @@ async function initBoard(fromDate,toDate){
  /*dp.onBeforeCellRender = function (args) {
     var machines = $("#dp").data('allowmachines');
     //var machines = JSON.parse();
-    
+
     for(i= 0; i< machines.length; i++){
         var disabled = true;
         if((machines[i]*1) === args.cell.resource){
@@ -242,11 +242,11 @@ async function initBoard(fromDate,toDate){
             labelNotice.classList.remove('parpadeando')
         }, 2500); // 2.5 segundos
     }
-     
+
  };
 
  dp.onEventMoving = function (args) {
-    
+
  };
 
  // event resizing
@@ -276,7 +276,7 @@ async function initBoard(fromDate,toDate){
 
  // event creating
  dp.onTimeRangeSelected = function (args) {
-   
+
  };
 
  dp.onEventMove = function (args) {
@@ -305,7 +305,7 @@ async function initBoard(fromDate,toDate){
  };
 
  function abrirMapaEnNuevaPestana( contenedor,tipoS) {
-  
+
     const url = `/coordenadas/mapa_rastreo?contenedor=${contenedor}&tipoS=${encodeURIComponent(tipoS)}`;
     window.open(url, '_blank');
 }
@@ -316,11 +316,11 @@ async function initBoard(fromDate,toDate){
 
    let fechaEntrega  = document.querySelector('#fechaEntrega')
    fechaEntrega.textContent = formatFecha(endDate);
-   
+
    let numContenedor = document.querySelector('#numContenedorSpan')
    numContenedor.textContent = numContenedor_
 
-  
+
      let nombreProveedor = document.querySelector('#nombreProveedor')
  // let nombreTransportista = document.querySelector('#nombreTransportista')
   let contactoEntrega = document.querySelector('#ContactoEntrega')
@@ -333,7 +333,7 @@ async function initBoard(fromDate,toDate){
    let destino = document.querySelector('#destino')
    let nombreCliente = document.querySelector('#nombreCliente')
    let nombreSubcliente = document.querySelector('#nombreSubcliente')
-   
+
     let id_equipo_camion = document.querySelector('#id_equipo_camion')
   let placas_camion = document.querySelector('#placas_camion')
 
@@ -381,7 +381,7 @@ async function initBoard(fromDate,toDate){
         },
         success:(response)=>{
             ocultarLoading()
-            
+
               nombreProveedor.textContent = response.datosExtraviaje.empresa_beneficiario
    contactoEntrega.textContent =  response.datosExtraviaje.cp_contacto_entrega ?? "--"
    // nombreTransportista.textContent = response.datosExtraviaje.transportista_nombre ?? "--"
@@ -417,11 +417,12 @@ async function initBoard(fromDate,toDate){
 
             let documentos = response.documents
             let docs = Object.keys(documentos)
+            let allDocumentsCompleted = true;
             docs.forEach(doc => {
                 let documento = document.querySelector("#"+doc)
                 valorDoc = documentos[doc]
                 if(documento){
-                    
+
                     documento.innerHTML = (valorDoc != false && valorDoc != null) ?
                      `<i class="fas fa-circle-check text-success fa-lg"></i>` :
                      `<i class="fas fa-circle-xmark text-secondary fa-lg"></i>`
@@ -431,8 +432,12 @@ async function initBoard(fromDate,toDate){
                     $("#cima-label").removeClass('d-none')
 
                 }
-                
+                if (valorDoc == false || valorDoc == null || valorDoc == 0) {
+                    allDocumentsCompleted = false;
+                }
+
             })
+            canEndTravel = allDocumentsCompleted;
         },
         error:()=>{
             ocultarLoading()
@@ -473,7 +478,7 @@ async function initBoard(fromDate,toDate){
 
                 }
             })
-        } 
+        }
       });
  }
 
@@ -496,9 +501,9 @@ function anularPlaneacion(idCotizacion, numContenedor){
 
             fetch(`/planeaciones/viaje/programa/anular`,
             {
-                method: 'POST',  
+                method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json', 
+                    'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
                     _token: _token,
@@ -516,11 +521,25 @@ function anularPlaneacion(idCotizacion, numContenedor){
             .catch(error => {
                 Swal.fire('Error', 'No pudimos anular el programa del viaje', 'error');
             });
-        } 
+        }
       });
 }
 
 function finalizarViaje(idCotizacion, numContenedor){
+if (!canEndTravel) {
+        Swal.fire({
+            icon: "warning",
+            title: "Faltan documentos",
+            text: "No puedes finalizar el viaje hasta cargar todos los documentos.",
+            confirmButtonText: "Entendido"
+        });
+        return;
+    }
+
+
+
+
+
     $("#viajeModal").modal('hide')
     var _token = $('input[name="_token"]').val();
     Swal.fire({
@@ -535,9 +554,9 @@ function finalizarViaje(idCotizacion, numContenedor){
 
             fetch(`/planeaciones/viaje/finalizar`,
             {
-                method: 'POST',  
+                method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json', 
+                    'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
                     _token: _token,
@@ -555,9 +574,9 @@ function finalizarViaje(idCotizacion, numContenedor){
             .catch(error => {
                 Swal.fire('Error', 'No pudimos finalizar el viaje', 'error');
             });
-        } 
+        }
       });
-      
+
 }
 
 function encontrarContenedor(contenedor){
@@ -574,10 +593,10 @@ function encontrarContenedor(contenedor){
     let idContendor = resultados[resultados.length - 1]?.id_contenedor;
 
     if ( dpReady) {
-        dp.scrollTo(new DayPilot.Date(fromDate));    
+        dp.scrollTo(new DayPilot.Date(fromDate));
         getInfoViaje(fromDate, toDate, numContenedor, idContendor)
     }
-     
+
 }
 
 buscarContenedor.addEventListener('keypress',e => {

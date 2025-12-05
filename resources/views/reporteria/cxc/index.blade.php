@@ -173,7 +173,7 @@
                                         @endif
                                     </tbody>
                                 </table>
-                                < <button type="button" id="exportButton" data-filetype="pdf"
+                                <button type="button" id="exportButton" data-filetype="pdf"
                                     class="btn btn-outline-secondary btn-sm exportButton">Vista previa</button>
                                     <div id="warningMessage" class="alert alert-warning d-none" role="alert">
                                         <strong>Advertencia!</strong> Debes seleccionar al menos una casilla para visualizar

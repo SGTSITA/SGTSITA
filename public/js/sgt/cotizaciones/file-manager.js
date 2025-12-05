@@ -1,7 +1,9 @@
 
 let tagNumContenedor = document.querySelector("#numContenedor");
 let numContenedor = tagNumContenedor.textContent;
-let urlGetFiles = `/viajes/file-manager/get-file-list/${numContenedor}`;
+const safeValue = encodeURIComponent(numContenedor); //agregue porq habia uno que traia // en el num de contenendor , validar en captura..
+
+let urlGetFiles = `/viajes/file-manager/get-file-list/${safeValue}`;
 
 let dt = $("#kt_datatable_example_1").DataTable({
     select: false,
@@ -68,7 +70,7 @@ let dt = $("#kt_datatable_example_1").DataTable({
                 return `
                         <a href="/cotizaciones/cotizacion${data.identifier}/${data.filePath}" target="_blank" class="btn btn-active-primary btn-sm">
                             Ver Archivo
-                        </a>    
+                        </a>
                     `;
             },
         },
@@ -82,7 +84,7 @@ filterSearch.addEventListener('keyup', function (e) {
 });
 
 dt.on('draw', function () {
-    //  
+    //
     toggleToolbars();
     //   handleDeleteRows();
     initToggleToolbar();
@@ -213,7 +215,7 @@ function goToUploadDocuments() {
     let titleFileUploader = document.querySelector("#titleFileUploader");
     let contenedores = numContenedor.replace(/\s+/g, '*');
     contenedores = contenedores.split('*')
-    
+
     while (selectContenedores.options.length > 0) {
         selectContenedores.remove(0);
     }

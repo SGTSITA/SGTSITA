@@ -16,7 +16,7 @@
                     <div class="row g-3">
                         <div class="col-md-6">
                             <div class="form-floating">
-                                <input type="text" class="form-control" id="edit_nombre" name="nombre" required>
+                                <input type="text" class="form-control" id="edit_nombre" name="nombre" value required>
                                 <label for="edit_nombre">Nombre Completo *</label>
                             </div>
                         </div>
@@ -57,7 +57,7 @@
                             </div>
                         </div>
 
-                        <div class="col-12">
+                        <div class="col-6">
                             <div class="form-floating">
                                 <select class="form-select" id="edit_tipo" name="tipo">
                                     <option value="servicio mecánico">Servicio Mecánico</option>
@@ -69,7 +69,16 @@
                                 <label for="edit_tipo">Tipo de Servicio *</label>
                             </div>
                         </div>
-
+                        <div class="col-6">
+                            <div class="form-floating">
+                                <select class="form-select" id="edit_tipo_viaje" name="tipo_viaje">
+                                        @foreach($tipoViaje as $key => $value)
+                                            <option value="{{ $key }}">{{ $value }}</option>
+                                        @endforeach
+                                </select>
+                                <label for="edit_tipo_viaje">Tipo de Viaje *</label>
+                            </div>
+                        </div>
                     </div>
                 </div>
 

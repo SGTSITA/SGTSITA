@@ -50,7 +50,7 @@ document.addEventListener("DOMContentLoaded", function () {
     let currentTab = "planeadas";
 
     const tabs = document.querySelectorAll('#cotTabs .nav-link');
-    
+
     tabs.forEach(tab => {
         tab.addEventListener("click", function () {
             tabs.forEach(t => t.classList.remove("active"));
@@ -66,10 +66,10 @@ document.addEventListener("DOMContentLoaded", function () {
         { headerName: "No", field: "id", sortable: true, filter: true , hide: true},
         { headerName: "Tipo Viaje", field: "tipo", sortable: true, filter: true , hide: true},
         { headerName: "Cliente", field: "cliente", sortable: true, filter: true, minWidth: 150 },
-        {   headerName: "# Contenedor", 
-            field: "contenedor", 
-            sortable: true, 
-            filter: true, 
+        {   headerName: "# Contenedor",
+            field: "contenedor",
+            sortable: true,
+            filter: true,
             minWidth: 150 ,
             autoHeight: true, // Permite que la fila se ajuste en altura
             cellStyle:params => {
@@ -77,18 +77,18 @@ document.addEventListener("DOMContentLoaded", function () {
                   'white-space': 'normal',
                   'line-height': '1.5',
                 };
-            
-                // Si la cotización es tipo "Full", aplicar fondo 
+
+                // Si la cotización es tipo "Full", aplicar fondo
                 if (params.data.tipo === 'Full') {
-                  styles['background-color'] = '#ffe5b4'; 
+                  styles['background-color'] = '#ffe5b4';
                 }
-            
+
                 return styles;
               },
         },
         { headerName: "Origen", field: "origen", sortable: true, filter: true, minWidth: 150  },
         { headerName: "Destino", field: "destino", sortable: true, filter: true, minWidth: 150  },
-        
+
         {
             headerName: "Estatus",
             field: "estatus",
@@ -98,14 +98,14 @@ document.addEventListener("DOMContentLoaded", function () {
                 if (params.data.estatus === "Aprobada") color = "success";
                 else if (params.data.estatus === "Cancelada") color = "danger";
                 else if (params.data.estatus === "Pendiente") color = "warning";
-        
+
                 return `
                     <button class="btn btn-sm btn-outline-${color}" onclick="abrirCambioEstatus(${params.data.id})" title="Cambiar estatus">
                         <i class="fa fa-sync-alt me-1"></i> ${params.data.estatus}
                     </button>
                 `;
             }
-        },        
+        },
         {
             headerName: "Coordenadas",
             field: "coordenadas",
@@ -113,17 +113,17 @@ document.addEventListener("DOMContentLoaded", function () {
             sortable: false,
             filter: false,
             cellRenderer: function (params) {
-                
+
                     return `
-                    <button class="btn btn-sm btn-outline-info" 
-                    onclick="abrirModalCoordenadas(${params.data.id},${params.data.id_asignacion})" 
+                    <button class="btn btn-sm btn-outline-info"
+                    onclick="abrirModalCoordenadas(${params.data.id},${params.data.id_asignacion})"
                      title="Compartir coordenadas">
                      <i class="fa fa-map-marker-alt"></i> Compartir
                      </button>
-                                               
+
                     `;
-                
-               
+
+
             }
         },
         {
@@ -134,17 +134,17 @@ document.addEventListener("DOMContentLoaded", function () {
             filter: false,
             cellRenderer: function (params) {
                 let tipos= "Seguimiento: ";
-                
+
                     return `
-                    <button class="btn btn-sm btn-success" 
-                    onclick="abrirMapaEnNuevaPestana('${params.data.contenedor}','${tipos}')" 
+                    <button class="btn btn-sm btn-success"
+                    onclick="abrirMapaEnNuevaPestana('${params.data.contenedor}','${tipos}')"
                      title="Rastrear contenedor">
                      <i class="fa fa-shipping-fast"></i> Rastreo
                      </button>
-                                               
+
                     `;
-                
-               
+
+
             }
         },
         {
@@ -194,7 +194,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         <button class="btn btn-sm btn-outline-info" onclick="abrirDocumentos(${params.data.id})" title="Ver Documentos">
                             <i class="fa fa-folder"></i>
                         </button>
-                     
+
                     `;
                 } else if (currentTab === "aprobadas") {
                     acciones = `
@@ -207,7 +207,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         <button class="btn btn-sm btn-outline-info" onclick="abrirDocumentos(${params.data.id})" title="Ver Documentos">
                             <i class="fa fa-folder"></i>
                         </button>
-                       
+
                     `;
                 } else if (currentTab === "canceladas") {
                     acciones = `
@@ -225,7 +225,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const gridOptions = {
         columnDefs: columnDefs,
-        domLayout: 'autoHeight', 
+        domLayout: 'autoHeight',
         pagination: true,
         paginationPageSize: 10,
         paginationPageSizeSelector: [10, 50, 100],
@@ -248,15 +248,15 @@ document.addEventListener("DOMContentLoaded", function () {
     function getCotizacionesList() {
         const overlay = document.getElementById("gridLoadingOverlay");
         overlay.style.display = "flex";
-    
+
         let url = "/cotizaciones/list";
         if (currentTab === "finalizadas") url = "/cotizaciones/finalizadas";
         if (currentTab === "en_espera") url = "/cotizaciones/espera";
         if (currentTab === "aprobadas") url = "/cotizaciones/aprobadas";
         if (currentTab === "canceladas") url = "/cotizaciones/canceladas";
-    
-        gridApi.setGridOption("rowData", []); 
-    
+
+        gridApi.setGridOption("rowData", []);
+
         fetch(url)
             .then(response => response.json())
             .then(data => {
@@ -266,7 +266,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 console.error("❌ Error al obtener la lista de cotizaciones:", error);
             })
             .finally(() => {
-                overlay.style.display = "none"; 
+                overlay.style.display = "none";
             });
     }
 
@@ -286,69 +286,108 @@ document.addEventListener("DOMContentLoaded", function () {
     const txtPlacasB = document.querySelector('#txtPlacasB')
     const txtImeiChasisB = document.querySelector('#txtImeiChasisB')
 
+     const dtpFechaSalida = document.querySelector('#txtFechaInicio')
+    const dtpFechaEntrega = document.querySelector('#txtFechaFinal')
+
+    const btnPlanear = document.querySelector('#btnPlanearViaje')
+    const seccionPlanearViaje = document.querySelector('#seccionProgramarViaje')
+
     if(botonAbrirModal){
         botonAbrirModal.addEventListener('click', () => {
             let seleccion = gridApi.getSelectedRows();
-    
+            if(seleccion.length ==0){
+                Swal.fire('Seleccion','Tiene que seleccionar 1 contenendor para esta opcion( + Planear Viaje)','warning')
+                return false;
+            }
+            btnPlanear.classList.add('d-none');
+            seccionPlanearViaje.classList.add('d-none')
+            let statusViaje = '';
+            let planeacionEstatus =0;
             if(seleccion.length == 1){
             document.getElementById('numeroContenedor').textContent = seleccion[0].contenedor;
             document.getElementById('txtTipoViaje').value = seleccion[0].tipo;
             document.getElementById('origenViaje').textContent = seleccion[0].origen;
             document.getElementById('destinoViaje').textContent = seleccion[0].destino;
-            document.getElementById('estatusViaje').textContent = seleccion[0].estatus;
+            statusViaje = seleccion[0].estatus;
+
+            document.getElementById('estatusViaje').textContent = statusViaje;
             }
 
             let _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
             let idContenedor = seleccion[0].id
-           
+
             let payload = {_token, idContenedor}
-            
+
             $.ajax({
                 url:'/mep/viajes/consulta-asignacion',
                 type:'post',
                 data: payload,
                 beforeSend:()=>{},
                 success:(response)=>{
-                    
-                    txtOperador.value = response[0].operador.nombre
-                    txtTelefono.value = response[0].operador.telefono
+                    if (response && Array.isArray(response) && response.length > 0) {
 
-                    txtNumUnidad.value = response[0].camion.id_equipo
-                    txtPlacas.value = response[0].camion.placas
-                    txtSerie.value = response[0].camion.num_serie
-                    txtImei.value = response[0].camion.imei
+                         const data = response[0];
+                         planeacionEstatus = data.contenedor?.cotizacion?.estatus_planeacion ??0;
+                         statusViaje = data.contenedor?.cotizacion?.estatus_planeacion ?? "NO ASIGNADA"
 
-                    document.getElementById('selectGPS').value = response[0].camion.gps_company_id;
+                        // ----- OPERADOR -----
+                        txtOperador.value = data.operador?.nombre ?? "";
+                        txtTelefono.value = data.operador?.telefono ?? "";
 
-                    txtNumChasisA.value = response[0].chasis.id_equipo
-                    txtPlacasA.value = response[0].chasis.placas
-                    txtImeiChasisA.value = response[0].chasis.imei
+                        // ----- CAMIÓN -----
+                        txtNumUnidad.value = data.camion?.id_equipo ?? "";
+                        txtPlacas.value = data.camion?.placas ?? "";
+                        txtSerie.value = data.camion?.num_serie ?? "";
+                        txtImei.value = data.camion?.imei ?? "";
 
-                    document.getElementById('selectChasisAGPS').value = response[0].chasis.gps_company_id;
+                        document.getElementById("selectGPS").value = data.camion?.gps_company_id ?? "";
 
-                    txtNumChasisB.value = response[0].chasis2.id_equipo
-                    txtPlacasB.value = response[0].chasis2.placas
-                    txtImeiChasisB.value = response[0].chasis2.imei
-                    document.getElementById('selectChasisBGPS').value = response[0].chasis2.gps_company_id;
+                        // ----- CHASIS A -----
+                        txtNumChasisA.value = data.chasis?.id_equipo ?? "";
+                        txtPlacasA.value = data.chasis?.placas ?? "";
+                        txtImeiChasisA.value = data.chasis?.imei ?? "";
+                        document.getElementById("selectChasisAGPS").value = data.chasis?.gps_company_id ?? "";
+
+                        // ----- CHASIS B -----
+                        txtNumChasisB.value = data.chasis2?.id_equipo ?? "";
+                        txtPlacasB.value = data.chasis2?.placas ?? "";
+                        txtImeiChasisB.value = data.chasis2?.imei ?? "";
+                        document.getElementById("selectChasisBGPS").value = data.chasis2?.gps_company_id ?? "";
+
+
+                        //FECHAS -- AGREGADO NUEVO
+
+                        dtpFechaSalida.value = data.fecha_inicio;
+                        dtpFechaEntrega.value =data.fecha_fin;
+
+                    }
+
+
 
                 },
                 error:(err)=>{
 
                 }
             });
-    
+
+
+            if(statusViaje=='Aprobada' && planeacionEstatus !=1){
+                btnPlanear.classList.remove('d-none');
+                seccionPlanearViaje.classList.remove('d-none')
+            }
+
             let modalElement = (seleccion.length != 1) ? 'noSeleccionModal' : 'viajeModal'
             const modal1 = new bootstrap.Modal(document.getElementById(modalElement));
             modal1.show();
-        });    
+        });
     }
 
-    
+
 
     if(btnFull){
         btnFull.addEventListener('click',()=>{
             let seleccion = gridApi.getSelectedRows();
-            let validarCliente = seleccion.every(element => 
+            let validarCliente = seleccion.every(element =>
                 element.cliente === seleccion[0].cliente
             );
 
@@ -396,24 +435,26 @@ document.addEventListener("DOMContentLoaded", function () {
                 console.log("El usuario canceló");
                 }
             });
-            
+
         })
     }
 
     function seleccionarContenedor(){
 
         let seleccion = gridApi.getSelectedRows();
-        localStorage.setItem('numContenedor',seleccion[0].contenedor); 
-        localStorage.setItem('idContenedor',seleccion[0].id); 
-        
+
+        if(seleccion.length ==0) {return false} //errro cuando se cambiaba de tab.
+        localStorage.setItem('numContenedor',seleccion[0].contenedor);
+        localStorage.setItem('idContenedor',seleccion[0].id);
+
         if (currentTab != 'en_espera' && currentTab != 'aprobadas') return false
-        
+
         if(seleccion.length > 2){
             Swal.fire('Maximo 2 contenedores','Lo sentimos, solo puede seleccionar maximo 2 contenedores, estos deben ser de un mismo cliente','warning')
             return false
         }
 
-        let validarCliente = seleccion.every(element => 
+        let validarCliente = seleccion.every(element =>
             element.cliente === seleccion[0].cliente
         );
 
@@ -422,11 +463,11 @@ document.addEventListener("DOMContentLoaded", function () {
             return false
         }
 
-        
+
 
     }
 
-  
+
     // Abrir el modal
     window.abrirModalCoordenadas = function(id_cotizacion,idAsignacion) {
         const modal = document.getElementById('modalCoordenadas');
@@ -447,13 +488,13 @@ document.addEventListener("DOMContentLoaded", function () {
                 backdrop.style.zIndex = '1040';
                 document.body.appendChild(backdrop);
             }
-        
+
             document.body.classList.add('modal-open');
             document.body.style.overflow = 'hidden';
-        
+
             document.getElementById('idCotizacionCompartir').value =id_cotizacion;
             document.getElementById('idAsignacionCompartir').value =idAsignacion;
-    
+
             // Activar tab Mail por defecto
             cambiarTab('mail');
         }
@@ -481,7 +522,7 @@ document.addEventListener("DOMContentLoaded", function () {
     function fetchCotizacion(id_cotizacion, tipoCuestionario) {
         const link = `${window.location.origin}/coordenadas/questions/${id_cotizacion}/${tipoCuestionario}`;
         let _url = `/coordenadas/cotizaciones/get/${id_cotizacion}`;
-       
+
         fetch(_url)
             .then(response => response.json())
             .then(data => {
@@ -497,17 +538,17 @@ document.addEventListener("DOMContentLoaded", function () {
                 const item = data.list[0];
                 const mensaje = ` ${item.contenedor}`;
                 if (data.coordenada) {
-                  
+
                     document.getElementById('estadoC').value = data.coordenada.tipo_c_estado ?? 0;
                     document.getElementById('estadoB').value = data.coordenada.tipo_b_estado ?? 0;
                     document.getElementById('estadoF').value = data.coordenada.tipo_f_estado ?? 0;
-                    
+
                     let tVslidacion = '';
 
                     const estadoC = parseInt(document.getElementById('estadoC').value);//completo solo 1 vez, si ya esta finalizado y no se puede elegir otro tipo
                     const estadoB = parseInt(document.getElementById('estadoB').value);
                     const estadoF = parseInt(document.getElementById('estadoF').value);
-                 
+
                     if ([estadoC, estadoB, estadoF].includes(2)) {
                         if (estadoC ===2){
                             alert('El cuestionario "Completo" ya ha sido finalizado, no se puede compartir.');
@@ -525,8 +566,8 @@ document.addEventListener("DOMContentLoaded", function () {
                          // Un contenedor puede tener, burrero y foraneo, pero si es completo ya no se podrá elegir, validar compartir coordenadas.
                          bPasaValidacion=  validarselectTipoCuentio(estadoC,estadoB,estadoF)
                     }
-                                     
-                    
+
+
 
                 } else {
                     bPasaValidacion=1;
@@ -552,9 +593,9 @@ document.addEventListener("DOMContentLoaded", function () {
                 }else {
                     console.error("❌ Validacion de estatus de cuestionario");
                 }
-               
 
-                
+
+
             })
             .catch(error => {
                 console.error("❌ Error al obtener info de cotizaciones:", error);
@@ -577,13 +618,13 @@ let selecvalueuser = selectTipoCuestionario.value;
                 return 1;
         }
     }
-    
+
     if (selecvalueuser==='c' ){
         if ((estadoB === 1 || estadoF===1) ) {
             // Si tipo B o f ya se compartió, deshabilitar opción c
             //selectTipoCuestionario.querySelector('option[value="c"]').disabled = true;
            alert('El cuestionario "Burrero/Foraneo" ya ha sido compartido, no se puede compartir otro tipo.');
-    
+
            return 0;
         }else if ((estadoB === 0 || estadoF===0)){
             return 1;
@@ -591,10 +632,10 @@ let selecvalueuser = selectTipoCuestionario.value;
         }
 
     }
-    
-   
-    
-   
+
+
+
+
     // Si ninguno está compartido, asegúrate de que todas las opciones estén habilitadas
     if (estadoC === 0 && estadoB === 0 && estadoF === 0) {
         // selectTipoCuestionario.querySelector('option[value="c"]').disabled = false;
@@ -608,7 +649,7 @@ let selecvalueuser = selectTipoCuestionario.value;
     function limpiarDatos(message = "") {
         // Limpiar los valores cuando no se selecciona una opción válida
         document.getElementById('linkMail').innerText = message;
-       
+
         document.getElementById('mensajeText').innerText = "";
         document.getElementById('correoDestino').value="";
         document.getElementById("wmensajeText").innerText = "";
@@ -620,7 +661,7 @@ let selecvalueuser = selectTipoCuestionario.value;
         document.getElementById('idCotizacionCompartir').value ="";
         document.getElementById('idAsignacionCompartir').value ="";
     }
-});      
+});
 
 
 function abrirDocumentos(idCotizacion) {
@@ -716,7 +757,7 @@ function abrirDocumentos(idCotizacion) {
                 `;
                 cuerpo.appendChild(col);
             });
-        
+
             modal.show();
         })
         .catch(error => {
@@ -769,7 +810,7 @@ function cerrarModal() {
     if (backdrop) {
         backdrop.remove();
     }
-    
+
     // Quitar la clase modal-open del body
     document.body.classList.remove('modal-open');
     document.body.style.overflow = ''; // restaurar scroll
@@ -777,7 +818,7 @@ function cerrarModal() {
 
 function limpCampos(){
     document.getElementById('linkMail').innerText = "";
-       
+
     document.getElementById('mensajeText').innerText = "";
     document.getElementById('correoDestino').value="";
     document.getElementById("wmensajeText").innerText = "";
@@ -805,7 +846,7 @@ function enviarMailCoordenadas() {
 
     const link = document.getElementById('linkMail').innerText;
     const correo = document.getElementById('correoDestino').value;
- 
+
     fetch('/coordenadas/cotizaciones/mail-coordenadas', {
         method: 'POST',
         headers: {
@@ -823,13 +864,13 @@ function enviarMailCoordenadas() {
     .then(data => alert('Correo enviado ✅'))
     .catch(err => console.error('Error:', err));
     saveCoordenadas();
-    
+
 }
 function guardarYAbrirWhatsApp(event) {
     event.preventDefault(); // Evita que el enlace se abra inmediatamente
     saveCoordenadas();
     window.open(document.getElementById('whatsappLink').href, '_blank');
-       
+
 }
 
 function saveCoordenadas() {
@@ -837,7 +878,7 @@ function saveCoordenadas() {
     let idAsignacionSave= document.getElementById("idAsignacionCompartir").value;
     let idCotizacionSave= document.getElementById("idCotizacionCompartir").value;
     let typeQuestion= document.getElementById("optipoCuestionario").value;
-    
+
     if (idAsignacionSave != null)
     {
 
@@ -853,7 +894,7 @@ function saveCoordenadas() {
         let inicioDescarga = null;
         let finDescarga = null;
         let recepcionDocFirmados = null;
-        
+
         let tipoFlujoDatetime = null;
         let registroPuertoDatetime = null;
         let dentroPuertoDatetime = null;
@@ -870,7 +911,7 @@ function saveCoordenadas() {
         let tipo_b_estado =document.getElementById('estadoB').value;
         let tipo_f_estado = document.getElementById('estadoF').value;
 
-             
+
         if (typeQuestion =='b'){
             tipo_b_estado=1;
         }else if (typeQuestion =='c'){
@@ -878,11 +919,11 @@ function saveCoordenadas() {
         }else if (typeQuestion =='f'){
             tipo_f_estado=1;
         }
-     
+
         const data = {
          idAsig: idAsignacionSave,
          idCotSave: idCotizacionSave,
-     
+
          tipo_flujo: tipoFlujo ?? null,
          registro_puerto: registroPuerto ?? null,
          dentro_puerto: dentroPuerto ?? null,
@@ -895,7 +936,7 @@ function saveCoordenadas() {
          inicio_descarga: inicioDescarga ?? null,
          fin_descarga: finDescarga ?? null,
          recepcion_doc_firmados: recepcionDocFirmados ?? null,
-     
+
          tipo_flujo_datatime: tipoFlujoDatetime ?? null,
          registro_puerto_datatime: registroPuertoDatetime ?? null,
          dentro_puerto_datatime: dentroPuertoDatetime ?? null,
@@ -912,9 +953,9 @@ function saveCoordenadas() {
           tipo_c_estado :tipo_c_estado,
              tipo_b_estado :tipo_b_estado,
         tipo_f_estado :tipo_f_estado
-     
+
         }  ;
-     
+
          fetch('/coordenadas/compartir/save', {
              method: 'POST',
              headers: {
@@ -933,7 +974,7 @@ function saveCoordenadas() {
             }
         })
         .catch(err => console.error('Error:', err));
-    
+
     }
-    
+
 }

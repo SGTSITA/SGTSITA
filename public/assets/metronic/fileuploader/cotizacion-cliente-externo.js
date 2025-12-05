@@ -45,7 +45,7 @@ btnPreAlta.addEventListener('click',()=>{
 function getSubClientes() {
     var clienteId = $(this).val();
     if (clienteId) {
-     
+
         $.ajax({
             type: 'GET',
             url: '/subclientes/' + clienteId,
@@ -55,7 +55,7 @@ function getSubClientes() {
                 });
             }
         });
-    } 
+    }
 }
 
 var uploadConfig = null;
@@ -67,9 +67,9 @@ function resetUploadConfig(){
     // Obtener la instancia de Fileuploader asociada a este campo de carga
     var api = $.fileuploader.getInstance(fileInputElement);
 
-   urlRepo = fileSettings.opcion;   
-   numContenedor = localStorage.getItem('numContenedor'); 
-   
+   urlRepo = fileSettings.opcion;
+   numContenedor = localStorage.getItem('numContenedor');
+
     api.setOption('upload', {
         url: '/contenedores/files/upload',
         data: {
@@ -118,11 +118,14 @@ function resetUploadConfig(){
                 item.html.find('.progress-bar2').fadeOut(400);
             }, 400);
 
-          //  const gridApi = gridOptions.api;
+          const apiGrid=null;
+            if (typeof gridOptions !== "undefined" && gridOptions?.api) {
+                apiGrid = gridOptions.api;
+            }
             if(apiGrid){
                 let dataGrid = apiGrid.getGridOption('rowData');
                 var rowIndex = dataGrid.findIndex(d => d.NumContenedor == numContenedor)
-                
+
                 const colId = fileSettings.agGrid;
 
                 // Obtener el nodo de la fila
@@ -133,7 +136,7 @@ function resetUploadConfig(){
                     rowNode.setDataValue(colId, true);
                 }
             }
-            
+
 
             toastr.options = {
                 "closeButton": true,
@@ -152,7 +155,7 @@ function resetUploadConfig(){
                 "showMethod": "fadeIn",
                 "hideMethod": "fadeOut"
               };
-              
+
               toastr.success( `Se cargó el archivo correctamente en el contenedor ${fileSettings.titulo}`,`${fileSettings.titulo}: Carga Exitosa`);
 
         },
@@ -180,16 +183,22 @@ function resetUploadConfig(){
         },
         onComplete: ()=>{
 
-           
+
             setTimeout(()=> {
-       
+
                adjuntarDocumentos()
+                if (typeof dt !== "undefined" && dt !== null &&
+                        $.fn.DataTable.isDataTable("#kt_datatable_example_1")) {
+
+                        dt.ajax.reload(null, false);
+                    }
+
             },2500)
-            
+
         },
     });
 
- 
+
 }
 
 function adjuntarDocumentos() {
@@ -227,7 +236,7 @@ function adjuntarDocumentos() {
         }),
     });
 
-   
+
    // api.uploadStart(); // Iniciar la carga manualmente
 
 }

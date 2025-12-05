@@ -9,43 +9,45 @@
     async function whatsAppQrCode(id){
         try {
             const response = await fetch(`${waHost}/whatsApp/qr-code/${id}`);
-            
+
             if (!response.ok) { // 'response.ok' es true para status 200-299
                 // Si el servidor envía un error HTTP (ej. 404, 500), lanza un error para que lo capture el 'catch'
                 throw new Error(`Error HTTP: ${response.status} ${response.statusText}`);
             }
-    
+
             const data = await response.json();
-    
+
             let WhatsAppQrPicture = document.querySelector('#WhatsAppQrPicture');
             if (WhatsAppQrPicture && data.status === "qr") {
                 WhatsAppQrPicture.src = data.qr;
             }
-            return data.status; 
+            return data.status;
         } catch (error) {
             console.error('Error al obtener datos:', error);
             return "error"; // Retorna "error" si algo falla
         }
-    
+
+
+
     }
-    
+
     async function whatsAppConversations(id){
         try {
             const response = await fetch(`${waHost}/whatsapp/${id}/conversations/list`);
-            
+
             if (!response.ok) { // 'response.ok' es true para status 200-299
                 // Si el servidor envía un error HTTP (ej. 404, 500), lanza un error para que lo capture el 'catch'
                 throw new Error(`Error HTTP: ${response.status} ${response.statusText}`);
             }
-    
+
             const data = await response.json();
-            return data; 
+            return data;
         } catch (error) {
             console.error('Error al obtener datos:', error);
             return {status:"error", conversations: null}; // Retorna "error" si algo falla
         }
     }
-    
+
     async function whatsAppSendMessage(id, contacts, message, files = []){
         try {
             let datamessage = {message: message, groupName: contacts, files: files};
@@ -56,14 +58,14 @@
                 },
                 body: JSON.stringify(datamessage)
             });
-            
+
             if (!response.ok) { // 'response.ok' es true para status 200-299
                 // Si el servidor envía un error HTTP (ej. 404, 500), lanza un error para que lo capture el 'catch'
                 throw new Error(`Error HTTP: ${response.status} ${response.statusText}`);
             }
-    
+
             const data = await response.json();
-            return data; 
+            return data;
         } catch (error) {
             console.error('Error al obtener datos:', error);
             return {status:"error", conversations: null}; // Retorna "error" si algo falla
@@ -80,7 +82,7 @@
     function waReadyComponents(){
         let whatsAppMessageCompose = document.getElementById('whatsAppMessageCompose')
         if(whatsAppMessageCompose) whatsAppMessageCompose.classList.remove('d-none')
-        
+
         waTextStatus.textContent = 'Conectado'
         waIconStatus.classList.remove('btn-color-gray-700')
         waIconStatus.classList.add('btn-color-success')
@@ -91,12 +93,12 @@
       await getWaQr();
     }, 15000);
 
-    
+
 
     async function getWaQr(){
         waStatusResponse = await whatsAppQrCode(waClient) || 'error';
 
-      
+
     }
 
     setInterval(() => {
@@ -104,7 +106,7 @@
             waElements.forEach((el)=>{
               el.classList.add('d-none')
             });
-    
+
             waStatus = waStatusResponse
             statusMap[waStatusResponse]()
           }
@@ -150,10 +152,10 @@
       }
 
         let waFiles = [];
-        let waNumContenedor = localStorage.getItem('numContenedor'); 
+        let waNumContenedor = localStorage.getItem('numContenedor');
 
         document.querySelectorAll('input[name="waFiles"]:checked').forEach(cb => {
-   
+
         waFiles = [...waFiles,{
                         "fileUrl":`https://sgt.gologipro.com/${cb.value}`,
                         "fileName":`${cb.dataset.wafile}: ${waNumContenedor}`
@@ -181,9 +183,9 @@
                 "showMethod": "fadeIn",
                 "hideMethod": "fadeOut"
               };
-              
+
               toastr.success( `El mensaje WhatsApp se envió correctamente a los contactos seleccionados `,`Mensaje Enviado`);
-      } 
+      }
 
 
     }
