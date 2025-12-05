@@ -414,6 +414,15 @@ async function initBoard(fromDate,toDate){
             btnFinalizar.addEventListener('click', () => finalizarViaje(idContendor,numContenedor_), { once: true });
             btnDeshacer.addEventListener('click', () => anularPlaneacion(idContendor,numContenedor_), { once: true });
             btnRastreo.addEventListener('click', () => abrirMapaEnNuevaPestana(numContenedor_,tipoS), { once: true });
+            let documentosRequeridos = [
+                'boleta_liberacion',
+                'boleta_vacio',
+                'carta_porte',
+                'carta_porte_xml',
+                'doc_ccp',
+                'doc_eir',
+                'doda'
+            ];
 
             let documentos = response.documents
             let docs = Object.keys(documentos)
@@ -432,8 +441,10 @@ async function initBoard(fromDate,toDate){
                     $("#cima-label").removeClass('d-none')
 
                 }
-                if (valorDoc == false || valorDoc == null || valorDoc == 0) {
-                    allDocumentsCompleted = false;
+                if (documentosRequeridos.includes(doc)) {
+                    if (valorDoc == false || valorDoc == null || valorDoc == 0) {
+                        allDocumentsCompleted = false;
+                    }
                 }
 
             })
