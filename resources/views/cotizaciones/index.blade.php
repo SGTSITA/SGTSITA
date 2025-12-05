@@ -26,6 +26,21 @@
     justify-content: center;
     align-items: center;
 }
+
+   .tab-chasis .nav-link {
+        width: 50%;
+        text-align: center;
+        font-weight: bold;
+        padding: 12px;
+        border-radius: 0;
+        border: 1px solid #dee2e6;
+        color: #0d6efd;
+    }
+
+    .tab-chasis .nav-link.active {
+        background-color: #0d6efd;
+        color: white !important;
+    }
     </style>
 
 
@@ -50,7 +65,7 @@
                                 <button type="button" class="btn bg-gradient-info btn-xs mb-2" id="abrirModalBtn">
                                     +&nbsp; Planear viaje
                                 </button>
-                               
+
                             </div>
                         @endcan
                     </div>
@@ -126,7 +141,7 @@
         </div>
       <!-- Tabs -->
       <ul class="nav nav-tabs mb-3">
-        
+
         <li class="nav-item">
           <a class="nav-link active" href="#" onclick="mostrarTab('mail')">📧 Mail</a>
         </li>
@@ -134,7 +149,7 @@
           <a class="nav-link" href="#" onclick="mostrarTab('whatsapp')">📲 WhatsApp</a>
         </li>
       </ul>
-   
+
       <!-- Tab contenido: MAIL -->
       <div id="tab-mail" class="tab-content">
                 @include('emails.email-coordenadas')
@@ -142,7 +157,7 @@
 
       <!-- Tab contenido: WHATSAPP -->
       <div id="tab-whatsapp" class="tab-content" style="display: none;">
-            
+
 
             <label>Contenedor:</label>
             <div id="wmensajeText" class="mb-2"></div>
@@ -294,9 +309,15 @@
     <script
     src="{{ asset('js/mep/viajes/viajes_list.js') }}?v={{ filemtime(public_path('js/mep/viajes/viajes_list.js')) }}">
     </script>
-    <!-- SweetAlert para mostrar mensajes -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
     <script>
         document.addEventListener("DOMContentLoaded", function() {
+             flatpickr(".dateInput", {
+      dateFormat: "d/m/Y",
+      locale: "es"
+    });
+
             @can('mep-asignacion-unidad')
              getCatalogoOperadorUnidad()
             @endcan

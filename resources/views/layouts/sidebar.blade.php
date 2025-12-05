@@ -166,6 +166,13 @@
                                     <span class="sidenav-normal">Solicitudes entrantes</span>
                                 </a>
                             @endcan
+                            @can('cotizacion-solicitudes-locales')
+                                <a class="nav-link {{ Request::is('cotizaciones/busqueda') ? 'show' : '' }}"
+                                    href="{{ route('cotizaciones.Solic-locales') }}">
+                                    <span class="sidenav-mini-icon"> P </span>
+                                    <span class="sidenav-normal">Solicitudes Locales</span>
+                                </a>
+                            @endcan
                         </li>
                     </ul>
                 </div>
@@ -404,7 +411,7 @@
                                                                                                         class="icon icon-shape icon-sm text-center  me-2 d-flex align-items-center justify-content-center">
                                                                                                         <img src="{{ asset('img/icon/pago-en-efectivo.png') }}" alt="" width="20px">
                                                                                                     </div>
-                                                                                                   
+
                                                                                                 </a>
                                                                                             </li-->
             @endcan
@@ -459,7 +466,7 @@
                             </a>
 
                             </a>
-                            
+
                             <a class="nav-link {{ Request::is('coordenadas/conboys') ? 'show' : '' }}"
                                 href="{{ route('HistorialUbicaciones') }}">
                                 <span class="sidenav-mini-icon"> H </span>

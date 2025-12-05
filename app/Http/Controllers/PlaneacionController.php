@@ -48,7 +48,8 @@ class PlaneacionController extends Controller
 
             DB::beginTransaction();
             $cotizaciones = Cotizaciones::find($request->idCotizacion);
-            $asignaciones = Asignaciones::where('id_contenedor','=',$request->idCotizacion)->first();
+            $documenCotizacion = DocumCotizacion::where('id_cotizacion',$request->idCotizacion)->first(); //primero buscamos el id contenedor
+            $asignaciones = Asignaciones::where('id_contenedor','=',$documenCotizacion->id)->first(); //corregir mandar id contenenedor, y no cotizacion???
 
             if(!is_null($asignaciones->id_operador)){
                 Bancos::where('id' ,'=',$asignaciones->id_banco1_dinero_viaje)->update(["saldo" => DB::raw("saldo + ". $asignaciones->dinero_viaje)]);
@@ -129,6 +130,8 @@ class PlaneacionController extends Controller
 
             Coordenadas::where('id_asignacion',$asignaciones->id)->delete();
             $asignaciones->delete();
+
+            DineroContenedor::where('id_contenedor',$documenCotizacion->id)->delete();
 
             DB::commit();
 

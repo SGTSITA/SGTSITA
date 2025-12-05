@@ -11,6 +11,7 @@ use App\Models\Cotizaciones;
 use App\Models\Equipo;
 use App\Models\Operador;
 use App\Models\GpsCompany;
+use App\Models\DocumCotizacion;
 
 class MepController extends Controller
 {
@@ -146,6 +147,7 @@ class MepController extends Controller
 
     public function asignarOperador(Request $r){
         $formData = $r->formData;
+        $planearViaje = $formData['planear'];
 
         //Verificar operador
         $operador = Operador::where('id_empresa',auth()->user()->id_empresa)->where('nombre',$formData['txtOperador']);
@@ -193,6 +195,17 @@ class MepController extends Controller
 
         $idContenedor = $r->input('idContenedor');
         $asignacion = Asignaciones::where('id_contenedor',$idContenedor);
+        $fechaI =  date('Y-m-d');
+        $fechaF =  date('Y-m-d');
+
+
+        if( $planearViaje ==1){
+            $fechaI =$r->txtFechaInicio;
+            $fechaF= $r->txtFechaFinal;
+        }
+
+        $TituloResponse = 'Se ha realizado la asignacion correctamente';
+        $MessageResponse = '';
 
         if($asignacion->exists()){
            // $asignacion1 = $asignacion->first();
@@ -200,10 +213,14 @@ class MepController extends Controller
                 "id_operador"=>$idOperador,
                 "id_camion" => $idunidad,
                 "id_chasis" => $idChasisA,
-                "id_chasis2" => $idChasisB
+                "id_chasis2" => $idChasisB,
+                "fecha_inicio" => $fechaI,
+                "fecha_fin" => $fechaF,
             ]);
 
-            return response()->json(["TMensaje" => "success", "Titulo" => "Actualizado correctamente","Mensaje" => "Los datos fueron modificados con exito"]);
+        $TituloResponse = 'Actualizado correctamente';
+       $MessageResponse ='Los datos fueron modificados con exito';
+
 
         }else{
             $fecha = date('Y-m-d');
@@ -214,22 +231,36 @@ class MepController extends Controller
             $asignacion->id_chasis = $idChasisA;
             $asignacion->id_chasis2 = $idChasisB;
             $asignacion->id_operador = $idOperador;
-            $asignacion->fecha_inicio  = $fecha;
-            $asignacion->fecha_fin = $fecha;
-            $asignacion->fehca_inicio_guard = $fecha;
-            $asignacion->fehca_fin_guard = $fecha;
+            $asignacion->fecha_inicio  = $fechaI ;
+            $asignacion->fecha_fin = $fechaF;
+            $asignacion->fehca_inicio_guard =  $fechaI ;
+            $asignacion->fehca_fin_guard = $fechaF;
             $asignacion->save();
 
-            Cotizaciones::where('id',$idContenedor)->update(['estatus_planeacion' => 1]);
+
         }
+
+            if( $planearViaje ==1){ // validar desde el form
+                //dd($planearViaje);
+                $contenedor = DocumCotizacion::where('id',$idContenedor)->first(); //buscamos la relacion no siempre sera el mismo id
+                Cotizaciones::where('id',$contenedor->id_cotizacion)->update(['estatus_planeacion' => 1]);
+            }
         //$idAsignacion = $contenedor['id_asignacion'];
 
         //Asignaciones::where('id',$idAsignacion)->update(["id_operador"=>$idOperador,"id_camion" => $idunidad]);
-        return response()->json(["TMensaje" => "success", "Titulo" => "Se ha realizado la asignacion correctamente","Mensaje" => ""]);
+        return response()->json(["TMensaje" => "success", "Titulo" =>  $TituloResponse,"Mensaje" => $MessageResponse]);
     }
 
     public function verAsignacion(Request $request){
-        $asignacion = Asignaciones::with(['Camion', 'Chasis', 'Chasis2','Operador'])->where('id_contenedor',$request->idContenedor)->get();
+        $asignacion = Asignaciones::with(['Camion', 'Chasis', 'Chasis2','Operador',
+                'Contenedor' => function($q){
+                $q->select('id', 'id_cotizacion');
+            },
+            'Contenedor.Cotizacion' => function($q){
+            $q->select('id', 'estatus', 'origen', 'destino', 'estatus_planeacion');
+        }
+
+        ])->where('id_contenedor',$request->idContenedor)->get();
         return $asignacion;
 
     }

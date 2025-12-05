@@ -30,6 +30,7 @@ class NotificaNuevoDocumentoMail extends Mailable
      */
     public function envelope()
     {   //cotizacion->DocCotizacion->num_contenedor
+
         return new Envelope(
             subject: 'Nuevo documento cargado: '. ucfirst(strtolower($this->cotizacion->cliente->nombre)).' - '.strtoupper($this->cotizacion->DocCotizacion->num_contenedor),
         );

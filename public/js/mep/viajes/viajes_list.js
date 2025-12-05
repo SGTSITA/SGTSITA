@@ -12,13 +12,15 @@
     {'field':'selectGPS','id':'selectGPS','label':'Compañia GPS','required': true, "type":"text", "trigger":"none"},
     {'field':'txtImei','id':'txtImei','label':'IMEI','required': true, "type":"text", "trigger":"none"},
     {'field':'txtTipoViaje','id':'txtTipoViaje','label':'Tipo Viaje','required': false, "type":"text", "trigger":"none"},
+    {'field':'txtFechaInicio','id':'txtFechaInicio','label':'Fecha Salida','required': false, "type":"text", "trigger":"none"},
+    {'field':'txtFechaFinal','id':'txtFechaFinal','label':'Fecha Entrega','required': false, "type":"text", "trigger":"none"},
 
 
     {'field':'txtNumChasisA','id':'txtNumChasisA','label':'Núm Eco/ Núm Chasis / Identificador','required': true, "type":"text", "trigger":"none"},
     {'field':'txtPlacasA','id':'txtPlacasA','label':'Placas Chasis A','required': true, "type":"text", "trigger":"none"},
     {'field':'selectChasisAGPS','id':'selectChasisAGPS','label':'Compañia GPS Chasis A','required': true, "type":"text", "trigger":"none"},
     {'field':'txtImeiChasisA','id':'txtImeiChasisA','label':'IMEI Chasis A','required': true, "type":"text", "trigger":"none"},
-    
+
 
     {'field':'txtNumChasisB','id':'txtNumChasisB','label':'Núm Eco/ Núm Chasis B / Identificador','required': false, "type":"text", "trigger":"txtTipoViaje",'expectedValue':'Full', labelTrigger: "Tipo Viaje"},
     {'field':'txtPlacasB','id':'txtPlacasB','label':'Placas Chasis B','required': false, "type":"text", "trigger":"txtNumChasisB"},
@@ -27,12 +29,13 @@
 ]
 
 
-    
+
 
     const btnAsignaOperador = document.querySelector('#btnAsignaOperador')
+    const btnPlanearViaje = document.querySelector('#btnPlanearViaje')
 
-    function asignarOperador2() {
-       
+    function asignarOperador2(planear= 0) {
+
         const formData = {};
 
         //formFieldsMep
@@ -43,7 +46,7 @@
 
         if(trigger != "none"){
             let primaryField = document.getElementById(trigger);
-            
+
 
             if(field.value.length <= 0 && primaryField.value == item.expectedValue){
                 if(field.value.length === 0 ){
@@ -69,23 +72,27 @@
         }
 
         formData[item.field] = field.value;
+
+        formData["planear"] = planear;
+
+
         return true;
 
     });
 
-    
+
 
     if(!passValidation) return passValidation;
 
-       let idContenedor = localStorage.getItem('idContenedor'); 
-        
+       let idContenedor = localStorage.getItem('idContenedor');
+
 
         let data = {"idContenedor":idContenedor,"formData":formData};
         fetch('/mep/viajes/operador/asignar', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') 
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
           },
           body: JSON.stringify(data)
         })
@@ -97,7 +104,7 @@
         })
         .then(data => {
           console.log('Respuesta del backend:', data);
-          
+
           Swal.fire(data.Titulo, data.Mensaje, data.TMensaje)
         })
         .catch(error => {
@@ -106,15 +113,18 @@
         });
       }
 
-      btnAsignaOperador.addEventListener('click',asignarOperador2)
-       
+      btnAsignaOperador.addEventListener('click', () => asignarOperador2(0));
 
-   
 
- 
+      btnPlanearViaje.addEventListener('click', () => asignarOperador2(1));
+
+
+
+
+
 
 function buscarOperador(nombre){
-    
+
     let operador = operadores.find(op =>{
         return (op.nombre === nombre) ? op : false
     })
@@ -123,7 +133,7 @@ function buscarOperador(nombre){
 
     toastr.options.positionClass = 'toast-middle-center';
     let txtOperador = document.querySelector("#txtOperador")
-    
+
 
     if(operador){
         txtTelefono.value = operador.telefono
@@ -134,48 +144,96 @@ function buscarOperador(nombre){
         txtOperador.dataset.mepOperador = 0
         toastr.warning('Operador no encontrado');
     }
-    
+
 }
 
-function buscarUnidad(numUnidad){
-    
+function buscarUnidad(numUnidad, sTipo){
+
     let unidad = unidades.find(u =>{
         return (u.id_equipo === numUnidad.toUpperCase()) ? u : false
     })
 
-    let txtPlacas = document.querySelector('#txtPlacas')
-    let txtSerie = document.querySelector('#txtSerie')
-    let txtImei = document.querySelector('#txtImei')
-    let selectGPS = document.querySelector('#selectGPS')
+    // let txtPlacas = document.querySelector('#txtPlacas')
+    // let txtSerie = document.querySelector('#txtSerie')
+    // let txtImei = document.querySelector('#txtImei')
+    // let selectGPS = document.querySelector('#selectGPS')
 
-    let txtNumUnidad = document.querySelector("#txtNumUnidad")
+    // let txtNumUnidad = document.querySelector("#txtNumUnidad")
+
+
+  let mapInputs = {
+        "Unidad": {
+            placas: "txtPlacas",
+            serie: "txtSerie",
+            imei: "txtImei",
+            gps: "selectGPS",
+            dataset: "txtNumUnidad"
+        },
+        "ChasisA": {
+            placas: "txtPlacasA",
+            serie: null,
+            imei: "txtImeiChasisA",
+            gps: "selectChasisAGPS",
+            dataset: "txtNumChasisA"
+        },
+        "ChasisB": {
+            placas: "txtPlacasB",
+            serie: null,
+            imei: "txtImeiChasisB",
+            gps: "selectChasisBGPS",
+            dataset: "txtNumChasisB"
+        }
+    };
+    let config= mapInputs[sTipo];
 
     toastr.options.positionClass = 'toast-middle-center';
     if(unidad){
-        txtPlacas.value = unidad.placas
-        txtSerie.value = unidad.num_serie
-        txtImei.value = unidad.imei
-        
-        txtNumUnidad.dataset.mepUnidad = unidad.id
-        for (let i = 0; i < selectGPS.options.length; i++) {
-            if (selectGPS.options[i].value === String(unidad.gps_company_id)) {
-              selectGPS.selectedIndex = i;
-              break;
+       if (config.placas)
+            document.getElementById(config.placas).value = unidad.placas ?? "";
+
+
+        if (config.serie)
+            document.getElementById(config.serie).value = unidad.num_serie ?? "";
+
+
+        if (config.imei)
+            document.getElementById(config.imei).value = unidad.imei ?? "";
+
+
+        if (config.gps) {
+            let select = document.getElementById(config.gps);
+            for (let i = 0; i < select.options.length; i++) {
+                if (String(select.options[i].value) === String(unidad.gps_company_id)) {
+                    select.selectedIndex = i;
+                    break;
+                }
             }
         }
+
+          document.getElementById(config.dataset).dataset.mepUnidad = unidad.id;
+
         toastr.success('Unidad identificado');
     }else{
-        txtPlacas.value = ''
-        txtSerie.value = ''
-        txtImei.value = ''
-        txtNumUnidad.dataset.mepUnidad = 0
+       if (config.placas)
+            document.getElementById(config.placas).value = "";
+
+        if (config.serie)
+            document.getElementById(config.serie).value = "";
+
+        if (config.imei)
+            document.getElementById(config.imei).value = "";
+
+        if (config.gps)
+            document.getElementById(config.gps).selectedIndex = 0;
+
+        document.getElementById(config.dataset).dataset.mepUnidad = 0;
         toastr.warning('No se encontró unidad');
     }
-    
+
 }
 
 function getCatalogoOperadorUnidad(){
-    let _token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') 
+    let _token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
     $.ajax({
         url:'/mep/catalogos/operador-unidad',
         type:'post',
@@ -240,7 +298,7 @@ function abrirDocumentos(idCotizacion) {
                 `;
                 cuerpo.appendChild(col);
             });
-        
+
             modal.show();
         })
         .catch(error => {

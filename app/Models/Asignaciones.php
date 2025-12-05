@@ -57,6 +57,7 @@ class Asignaciones extends Model
     {
         return $this->belongsTo(DocumCotizacion::class, 'id_contenedor');
     }
+    
     public function Operador()
     {
         return $this->belongsTo(Operador::class, 'id_operador');
@@ -77,7 +78,7 @@ class Asignaciones extends Model
     public function Justificacion(){
         return $this->hasMany(ViaticosOperador::class, 'id_cotizacion','id_contenedor');
     }
-    
+
     protected static function boot()
     {
         parent::boot();

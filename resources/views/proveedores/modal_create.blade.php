@@ -67,7 +67,7 @@
                         </div>
 
                         <!-- Tipo de Servicio -->
-                        <div class="col-12">
+                        <div class="col-6">
                             <div class="form-floating">
                                 <select class="form-select" id="tipo" name="tipo">
                                     <option value="servicio mecánico">Servicio Mecánico</option>
@@ -77,6 +77,17 @@
                                     <option value="Otro">Otro</option>
                                 </select>
                                 <label for="tipo">Tipo de Servicio *</label>
+                            </div>
+                        </div>
+
+                        <div class="col-6">
+                            <div class="form-floating">
+                                <select class="form-select" id="edit_tipo_viaje" name="tipo_viaje">
+                                        @foreach($tipoViaje as $key => $value)
+                                            <option value="{{ $key }}">{{ $value }}</option>
+                                        @endforeach
+                                </select>
+                                <label for="edit_tipo_viaje">Tipo de Viaje *</label>
                             </div>
                         </div>
 
@@ -124,8 +135,8 @@
 
                         <hr class="mt-4">
 
-                       
-                        
+
+
 
                     </div>
                 </div>

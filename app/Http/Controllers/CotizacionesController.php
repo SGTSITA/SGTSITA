@@ -1698,8 +1698,8 @@ public function getCotizacionesCanceladas()
     }
 
     public function adjuntarDocumentos(Request $r){
-        $id_cot =($r->filled('idCotizacion')) ? $r->idCotizacion : null;
-        \Log::channel('daily')->info('inicio adjuntar documentos', ['cotizacion' => $id_cot]);
+        $id_cot = null;
+        \Log::channel('daily')->info('inicio adjuntar documentos');
 
         include('Fileuploader/class.fileuploader.php');
        $cotizacionQuery = Cotizaciones::join('docum_cotizacion as d', 'cotizaciones.id', '=', 'd.id_cotizacion')
@@ -1727,17 +1727,19 @@ public function getCotizacionesCanceladas()
     ])
     ->where('d.num_contenedor', $r->numContenedor);
 
-    if ($r->filled('idCotizacion')) {
-        \Log::channel('daily')->info('Si hay id cotizacion', ['cotizacion' => $id_cot]);
-        $cotizacionQuery->where('cotizaciones.id', $r->idCotizacion);
-    }
+$cotizacion = Cotizaciones::with('docCotizacion','Cliente')
+    ->whereHas('docCotizacion', function($q) use ($r) {
+        $q->where('num_contenedor', $r->numContenedor);
+    })
+    ->first();
 
-        $cotizacion = $cotizacionQuery->first();
-         \Log::channel('daily')->info('Ids confirmar', ['cotizacionRequest' =>$id_cot  , 'cotizacionEncontrada' => $cotizacion->cotizacion_id ?? null ]);
+
+        $id_cot = $cotizacion->id;
+        // \Log::channel('daily')->info('Ids confirmar', ['cotizacionRequest' =>$id_cot  , 'cotizacionEncontrada' => $cotizacion->cotizacion_id ?? null ]);
 
        // dd($cotizacion);
 
-        $idDocum = $cotizacion->documento_id;
+        $idDocum = $cotizacion->docCotizacion->id;
 
         $tipoViajecontenedor = $cotizacion->tipo_viaje_seleccion;
 
@@ -1750,12 +1752,12 @@ public function getCotizacionesCanceladas()
 
         $estatus = $cotizacion->estatus;
 
-        $directorio =  public_path().'/cotizaciones/cotizacion'.$cotizacion->cotizacion_id;
+        $directorio =  public_path().'/cotizaciones/cotizacion'.$id_cot;
         if (!is_dir($directorio)) {
             mkdir($directorio);
         }
 		$FileUploader = new FileUploader('files', array(
-        'uploadDir' => public_path()."/cotizaciones/cotizacion$cotizacion->cotizacion_id/",
+        'uploadDir' => public_path()."/cotizaciones/cotizacion$id_cot/",
         ));
 
 	// call to upload the files
@@ -1765,7 +1767,7 @@ public function getCotizacionesCanceladas()
 				$upload['files'][$key] = array(
 					'extension' => $item['extension'],
 					'format' => $item['format'],
-					'file' =>   public_path()."/cotizaciones/cotizacion$cotizacion->cotizacion_id/".$item['name'],
+					'file' =>   public_path()."/cotizaciones/cotizacion$id_cot/".$item['name'],
 					'name' => $item['name'],
 					'old_name' => $item['old_name'],
 					'size' => $item['size'],
@@ -1795,35 +1797,35 @@ public function getCotizacionesCanceladas()
 
             ($r->urlRepo != 'PreAlta' && $r->urlRepo != 'CartaPortePDF' && $r->urlRepo != 'CartaPorteXML')
             ? DocumCotizacion::where('id',$idDocum)->update($update) // id de cotizacion?? no deberia ser de documentos? corregido
-            : Cotizaciones::where('id',$cotizacion->cotizacion_id)->update($update);
+            : Cotizaciones::where('id',$id_cot)->update($update);
 
             if ($r->urlRepo == 'PreAlta')  DocumCotizacion::where('id',$idDocum)->update(['boleta_vacio'=>'si']);
 
 
             if($tipoViajecontenedor !== 'local'){
-                 \Log::channel('daily')->info('Maniobra adjuntar documentos foraneo', ['cotizacion' => $cotizacion->cotizacion_id, 'tipoViaje' => $tipoViajecontenedor]);
+                 \Log::channel('daily')->info('Maniobra adjuntar documentos foraneo', ['cotizacion' => $id_cot, 'tipoViaje' => $tipoViajecontenedor]);
 
-                self::confirmarDocumentos($cotizacion->cotizacion_id); //parche temporal hasta verificar flujo del correo
-                //  if(Auth::User()->id_cliente != 0){
-                //    \Log::channel('daily')->info('GenericNotificationEvent  ', ['cotizacion' => $cotizacion->cotizacion_id, 'tipoViaje' => $tipoViajecontenedor]);
-                //     event(new \App\Events\GenericNotificationEvent([$cotizacion->cliente->correo],'Se cargó '.$r->urlRepo.': '.$r->numContenedor,'Hola, tu transportista cargó el documento "'.$r->urlRepo.'" del contenedor '.$r->numContenedor));
-                //     \Log::channel('daily')->info('GenericNotificationEvent  ok ', ['cotizacion' => $cotizacion->cotizacion_id, 'tipoViaje' => $tipoViajecontenedor]);
+               // self::confirmarDocumentos($cotizacion->cotizacion_id); //parche temporal hasta verificar flujo del correo
+                if(Auth::User()->id_cliente != 0){
+                   \Log::channel('daily')->info('GenericNotificationEvent  ', ['cotizacion' => $id_cot, 'tipoViaje' => $tipoViajecontenedor]);
+                    event(new \App\Events\GenericNotificationEvent([$cotizacion->cliente->correo],'Se cargó '.$r->urlRepo.': '.$r->numContenedor,'Hola, tu transportista cargó el documento "'.$r->urlRepo.'" del contenedor '.$r->numContenedor));
+                     \Log::channel('daily')->info('GenericNotificationEvent  ok ', ['cotizacion' => $id_cot, 'tipoViaje' => $tipoViajecontenedor]);
 
-                //      \Log::channel('daily')->info('ConfirmarDocumentosEvent  ', ['cotizacion' => $cotizacion->cotizacion_id, 'tipoViaje' => $tipoViajecontenedor]);
-                //     event(new \App\Events\ConfirmarDocumentosEvent($cotizacion->cotizacion_id));
+                    \Log::channel('daily')->info('ConfirmarDocumentosEvent  ', ['cotizacion' => $id_cot, 'tipoViaje' => $tipoViajecontenedor]);
+                    event(new \App\Events\ConfirmarDocumentosEvent($id_cot));
 
-                //      \Log::channel('daily')->info('ConfirmarDocumentosEvent  ok ', ['cotizacion' => $cotizacion->cotizacion_id, 'tipoViaje' => $tipoViajecontenedor]);
-                // }
+                     \Log::channel('daily')->info('ConfirmarDocumentosEvent  ok ', ['cotizacion' => $id_cot, 'tipoViaje' => $tipoViajecontenedor]);
+                }
 
-                // if($estatus != 'Documentos Faltantes' && Auth::User()->id_cliente != 0){
-                //     \Log::channel('daily')->info('NotificaNuevoDocumentoEvent  ', ['cotizacion' => $cotizacion->cotizacion_id, 'tipoViaje' => $tipoViajecontenedor]);
-                //     event(new \App\Events\NotificaNuevoDocumentoEvent($cotizacion,$r->urlRepo));
-                //     \Log::channel('daily')->info('NotificaNuevoDocumentoEvent  ok ', ['cotizacion' => $cotizacion->cotizacion_id, 'tipoViaje' => $tipoViajecontenedor]);
-                // }
+                 if($estatus != 'Documentos Faltantes' && Auth::User()->id_cliente != 0){
+                 \Log::channel('daily')->info('NotificaNuevoDocumentoEvent  ', ['cotizacion' => $id_cot, 'tipoViaje' => $tipoViajecontenedor]);
+                    event(new \App\Events\NotificaNuevoDocumentoEvent($cotizacion,$r->urlRepo));
+                    \Log::channel('daily')->info('NotificaNuevoDocumentoEvent  ok ', ['cotizacion' => $id_cot, 'tipoViaje' => $tipoViajecontenedor]);
+                 }
 
             }else{
-                 \Log::channel('daily')->info('Maniobra local adjuntar documentos', ['cotizacion' => $cotizacion->cotizacion_id, 'tipoViaje' => $tipoViajecontenedor]);
-              self::confirmarDocumentoslocal($cotizacion->cotizacion_id);
+                 \Log::channel('daily')->info('Maniobra local adjuntar documentos', ['cotizacion' => $id_cot, 'tipoViaje' => $tipoViajecontenedor]);
+              self::confirmarDocumentoslocal($id_cot);
 
             }
 
@@ -2112,11 +2114,36 @@ public function getCotizacionesCanceladas()
 
     //locales burrero
 
+
+
+      public function solicitudesLocales(){
+        $empresas = Empresas::get();
+        $cotizaciones =  Cotizaciones::join('docum_cotizacion as d', 'cotizaciones.id', '=', 'd.id_cotizacion')
+        ->join('clients', 'clients.id','=','cotizaciones.id_cliente' )
+
+            ->where('estatus','=','Local')
+           ->wherein('cotizaciones.tipo_viaje_seleccion',['local']) //aseguaramos q solo sean locales
+            ->selectRaw('cotizaciones.id,cotizaciones.estatus,cotizaciones.origen_local,cotizaciones.destino_local,clients.nombre as nombre_cliente, d.num_contenedor,d.doc_eir,doc_ccp ,d.boleta_liberacion,d.doda,d.boleta_patio')
+            ->get();
+        return view('cotizaciones.index_local',compact('empresas','cotizaciones'));
+    }
+
+
+
 public function storelocal(Request $request)
 {
     DB::beginTransaction();
 
     try {
+
+
+         $contenedorExistente = DocumCotizacion::where('num_contenedor', $request->num_contenedor)
+                                                  //  ->where('id_empresa', $idEmpresa)
+                                                    ->first();
+
+                if ($contenedorExistente) {
+                    return response()->json(["Titulo" => "Contenedor creado previamente", "Mensaje" => "El contenedor ya existe en la empresa", "TMensaje" => "warning"]);
+                }
 
         $idempresa = auth()->user()->id_empresa;
         if ($request->id_proveedor) {
