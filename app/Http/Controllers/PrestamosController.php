@@ -91,8 +91,13 @@ class PrestamosController extends Controller
      public function getListaPrestamos()
     {
         $prestamos = Prestamo::with(['operador', 'banco', 'pagoprestamos'])
-        ->orderBy('created_at', 'desc')
-        ->get();
+            ->when(!auth()->user()->is_admin, function ($q) {
+                $q->whereHas('operador', function ($q2) {
+                    $q2->where('id_empresa', auth()->user()->id_empresa);
+                });
+            })
+            ->orderBy('created_at', 'desc')
+            ->get();
 
 
 
