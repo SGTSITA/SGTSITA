@@ -19,8 +19,13 @@ class PrestamosController extends Controller
         $bancos = Bancos::where('id_empresa',auth()->user()->id_empresa)->get();
 
          $prestamos = Prestamo::with(['operador', 'banco', 'pagoprestamos'])
-        ->orderBy('created_at', 'desc')
-        ->get();
+            ->when(!auth()->user()->is_admin, function ($q) {
+                $q->whereHas('operador', function ($q2) {
+                    $q2->where('id_empresa', auth()->user()->id_empresa);
+                });
+            })
+            ->orderBy('created_at', 'desc')
+            ->get();
 
        // $historial = $prestamos->pagos()->orderBy('created_at')->get();
 
@@ -89,11 +94,11 @@ class PrestamosController extends Controller
         ->orderBy('created_at', 'desc')
         ->get();
 
-      
+
 
         return response()->json([
             'prestamos' => $prestamos
-           
+
         ]);
     }
     public function getPrestamosPagos($prestamo)
@@ -120,7 +125,7 @@ class PrestamosController extends Controller
         $request->validate([
             'monto' => 'required|numeric|min:0.01',
             'id_banco_abono' => 'required|exists:bancos,id',
-            'referencia' => 'nullable|string|max:150',  
+            'referencia' => 'nullable|string|max:150',
         ]);
 
     DB::beginTransaction();
