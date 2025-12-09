@@ -43,18 +43,28 @@
       <!-- PANEL 1 -->
       <div class="card multisteps-form__panel p-3 border-radius-xl bg-white js-active" data-animation="FadeIn">
         <div class="card-body">
-          <div class="row">
-            <div class="col-7 mt-3 ">
-              <h5 class="font-weight-normal text-left">¡Empecemos!</h5>
-              <p class="text-left">Seleccione un contenedor para iniciar la planeación</p>
+          <div class="row align-items-center">
+
+
+                <div class="col-3">
+                    <h5 class="font-weight-normal mb-1 text-left">¡Empecemos!</h5>
+                    <p class="text-left mb-0">Seleccione un contenedor para iniciar la planeación</p>
+                </div>
+
+
+                <div class="col-6 text-center">
+                    <h5 class="mb-1 font-weight-bolder numContenedorLabel" id="numContenedor"></h5>
+                    <p class="mb-0 font-weight-bold text-sm nombreClienteLabel"></p>
+                </div>
+
+
+                <div class="col-3 d-flex justify-content-end">
+                    <button class="btn bg-gradient-info btn-sm mb-0 js-btn-next" id="nextOne" disabled type="button">
+                        Siguiente <i class="fa fa-arrow-right"></i>
+                    </button>
+                </div>
+
             </div>
-            <div class="col-sm-5 text-end my-3 mt-3">
-              <div class="h-100">
-                <h5 class="mb-1 font-weight-bolder numContenedorLabel" id="numContenedor"></h5>
-                <p class="mb-0 font-weight-bold text-sm nombreClienteLabel"></p>
-              </div>
-            </div>
-          </div>
 
           <div class="row">
             <div id="gridAprobadas" class="ag-theme-alpine position-relative" style="height: 500px;">
@@ -67,30 +77,41 @@
           </div>
 
         </div>
-
-        <div class="card-footer">
-          <div class="button-row d-flex mt-4">
-            <button class="btn bg-gradient-info btn-sm ms-auto mb-0 js-btn-next" id="nextOne" disabled="true" type="button">
-              Siguiente <i class="fa fa-arrow-right"></i>
-            </button>
-          </div>
-        </div>
       </div>
 
       <!-- PANEL 2 — OCULTO PARA PROVEEDOR DIRECTO -->
       @cannot('Proveedor Autonomo 11am')
       <div class="card multisteps-form__panel p-3 border-radius-xl bg-white" data-animation="FadeIn">
-        <div class="row">
-          <div class="col-7 mt-3 text-left">
-            <h5 class="font-weight-normal">¿Cuál medio utilizará para el envío contenedor?</h5>
-            <p>Indique como se realizará el viaje</p>
-          </div>
-          <div class="col-sm-5 text-end mt-3">
-            <div class="h-100">
-              <h5 class="mb-1 font-weight-bolder numContenedorLabel"></h5>
-              <p class="mb-0 font-weight-bold text-sm nombreClienteLabel"></p>
+            <div class="row align-items-center">
+
+
+            <div class="col-1 text-start">
+                <button class="btn bg-gradient-info btn-sm mb-0 js-btn-prev" type="button">
+                    <i class="fa fa-arrow-left"></i> Anterior
+                </button>
             </div>
-          </div>
+
+
+            <div class="col-4">
+                <h5 class="font-weight-normal">¿Cuál medio utilizará para el envío contenedor?</h5>
+                <p>Indique como se realizará el viaje</p>
+            </div>
+
+
+            <div class="col-5 text-center">
+                <div>
+                    <h5 class="mb-1 font-weight-bolder numContenedorLabel"></h5>
+                    <p class="mb-0 font-weight-bold text-sm nombreClienteLabel"></p>
+                </div>
+            </div>
+
+
+            <div class="col-2 d-flex justify-content-end">
+                <button class="btn bg-gradient-info btn-sm mb-0 js-btn-next" id="nextTwo" disabled type="button">
+                    Siguiente <i class="fa fa-arrow-right"></i>
+                </button>
+            </div>
+
         </div>
 
         <div class="multisteps-form__content">
@@ -116,34 +137,44 @@
             </div>
           </div>
 
-          <div class="button-row d-flex mt-4">
-            <button class="btn bg-gradient-info btn-sm mb-0 js-btn-prev" type="button">
-              <i class="fa fa-arrow-left"></i> Anterior
-            </button>
-
-            <button class="btn bg-gradient-info btn-sm ms-auto mb-0 js-btn-next" id="nextTwo" disabled="true" type="button">
-              Siguiente <i class="fa fa-arrow-right"></i>
-            </button>
-          </div>
-        </div>
+                  </div>
 
       </div>
       @endcannot
 
       <!-- PANEL 3 -->
-      <div class="card multisteps-form__panel p-3 border-radius-xl bg-white" data-animation="FadeIn">
+        <div class="card multisteps-form__panel p-3 border-radius-xl bg-white" data-animation="FadeIn">
 
-        <div class="row">
-          <div class="col-7 mt-3 text-left">
-            <h5 class="font-weight-normal">Información general del viaje</h5>
-            <p>Necesitamos algo de información para programar el viaje</p>
-          </div>
-          <div class="col-sm-5 my-4 mt-3 text-end">
-            <div class="h-100">
-              <h5 class="mb-1 font-weight-bolder text-right numContenedorLabel"></h5>
-              <p class="mb-0 font-weight-bold text-sm text-right nombreClienteLabel"></p>
+            <div class="row align-items-center mt-3">
+
+
+            <div class="col-1 text-start">
+                <button class="btn bg-gradient-info btn-sm mb-0 js-btn-prev" type="button">
+                    <i class="fa fa-arrow-left"></i> Anterior
+                </button>
             </div>
-          </div>
+
+
+            <div class="col-4 text-start">
+                <h5 class="font-weight-normal">Información general del viaje</h5>
+                <p class="mb-0">Necesitamos algo de información para programar el viaje</p>
+            </div>
+
+
+            <div class="col-4 text-center">
+                <div>
+                    <h5 class="mb-1 font-weight-bolder numContenedorLabel"></h5>
+                    <p class="mb-0 font-weight-bold text-sm nombreClienteLabel"></p>
+                </div>
+            </div>
+
+
+            <div class="col-3 d-flex justify-content-end">
+                <button class="btn bg-gradient-success btn-sm mb-0" type="button" id="btnProgramar">
+                    Programar viaje
+                </button>
+            </div>
+
         </div>
 
         <div class="multisteps-form__content">
@@ -196,18 +227,7 @@
             @include('planeacion.viaje_subcontratado')
           </div>
 
-          <div class="row mt-3">
-            <div class="button-row d-flex mt-4 col-12">
-              <button class="btn bg-gradient-info btn-sm mb-0 js-btn-prev" type="button">
-                <i class="fa fa-arrow-left"></i> Anterior
-              </button>
 
-              <button class="btn bg-gradient-success btn-sm ms-auto mb-0" type="button" id="btnProgramar">
-                Programar viaje
-              </button>
-
-            </div>
-          </div>
 
         </div>
 
@@ -231,7 +251,7 @@
   cursor: pointer;
   text-align: center;
   width: 160px;
-  height: 160px; 
+  height: 160px;
   position: relative;
 }
 
@@ -285,7 +305,7 @@ input.flatpickr-input[readonly] {
 
 .flatpickr-day .today {
   background: #28a745 !important; /* verde */
-  border-color: #28a745 !important; 
+  border-color: #28a745 !important;
   color: #fff; /* texto blanco */
 }
 .gasto-item .form-control {
@@ -359,7 +379,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 
-    
+
 });
 
 const botonGastos = document.getElementById('btnAddGasto');

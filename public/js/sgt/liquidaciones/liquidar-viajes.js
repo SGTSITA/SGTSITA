@@ -9,13 +9,13 @@ const gastosFormFields = [
 
 class MissionResultRenderer {
     eGui;
-  
+
     // Optional: Params for rendering. The same params that are passed to the cellRenderer function.
     init(params) {
       let icon = document.createElement("img");
       icon.src = `https://www.ag-grid.com/example-assets/icons/${params.value ? "tick-in-circle" : "cross-in-circle"}.png`;
       icon.setAttribute("style", "width: auto; height: auto;");
-  
+
       this.eGui = document.createElement("span");
       this.eGui.setAttribute(
         "style",
@@ -23,12 +23,12 @@ class MissionResultRenderer {
       );
       this.eGui.appendChild(icon);
     }
-  
+
     // Required: Return the DOM element of the component, this is what the grid puts into the cell
     getGui() {
       return this.eGui;
     }
-  
+
     // Required: Get the cell to refresh.
     refresh(params) {
       return false;
@@ -39,7 +39,7 @@ class MissionResultRenderer {
     eGui;
     eButton;
     eventListener;
-   
+
     init(params) {
       this.eGui = document.createElement("div");
       let button = document.createElement("button");
@@ -55,15 +55,15 @@ class MissionResultRenderer {
       button.addEventListener("click", this.eventListener);
       this.eGui.appendChild(button);
     }
-   
+
     getGui() {
       return this.eGui;
     }
-   
+
     refresh(params) {
       return true;
     }
-   
+
     destroy() {
       if (button) {
         button.removeEventListener("click", this.eventListener);
@@ -131,7 +131,7 @@ class MissionResultRenderer {
         headerCheckbox: true,
       },
    rowData: [
-  
+
    ],
 
    columnDefs: [
@@ -146,19 +146,19 @@ class MissionResultRenderer {
      { field: "MontoPago",width: 150, valueFormatter: params => currencyFormatter(params.value), cellStyle: { textAlign: "right" }},
      { field: "FechaInicia",width: 150 },
      { field: "FechaTermina",width: 150 },
-    
+
    ],
-  
+
    localeText: localeText
   };
-  
+
   const myGridElement = document.querySelector('#myGrid');
   let apiGrid = agGrid.createGrid(myGridElement, gridOptions);
  // const gridInstance = new agGrid.Grid(myGridElement, gridOptions);
-  
+
   var paginationTitle = document.querySelector("#ag-32-label");
   paginationTitle.textContent = 'Registros por página';
-  
+
   let IdContenedor = null;
   let IdOperador = document.querySelector('#IdOperador');
   let dTotalPago = document.querySelector('#totalPago')
@@ -182,8 +182,8 @@ class MissionResultRenderer {
 
   const validFeedBack = document.querySelector('#valid-feedback')
   const invalidFeedBack = document.querySelector('#invalid-feedback')
-  
-   
+
+
    function mostrarViajesOperador(operador){
     var _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     $.ajax({
@@ -203,24 +203,24 @@ class MissionResultRenderer {
             let dataCContenedores = response.data;
 
           if (dataCContenedores.length > 0) {
-  
+
     let saved = JSON.parse(localStorage.getItem("justificaciones")) || {};
 
     saved = [];
 
      dataCContenedores.forEach((contenedor) => {
-   
+
     if (contenedor.justificacion && contenedor.justificacion.length > 0) {
       contenedor.justificacion.forEach((c) => {
         saved.push({
-        
-          [`id_registro|${contenedor.id_contenedor}`]: c.id, 
+
+          [`id_registro|${contenedor.id_contenedor}`]: c.id,
           [`motivo|${contenedor.id_contenedor}`]: c.descripcion_gasto,
           [`monto|${contenedor.id_contenedor}`]: parseFloat(c.monto).toFixed(2)
         });
       });
     } else {
-      
+
       saved.push({
         [`id_registro|${contenedor.id_contenedor}`]: null,
         [`motivo|${contenedor.id_contenedor}`]: '',
@@ -234,13 +234,13 @@ class MissionResultRenderer {
 }
 
             if(saldoActual <= 0) {
-              montoPagoPrestamo.disabled = true; 
-              montoPagoPrestamo.classList.add('is-invalid'); 
+              montoPagoPrestamo.disabled = true;
+              montoPagoPrestamo.classList.add('is-invalid');
               montoPagoPrestamo.value = 0;
             }else{
-              
+
             }
-            
+
             ocultarLoading()
         },
         error:()=>{
@@ -254,20 +254,20 @@ class MissionResultRenderer {
     let montoPago = parseFloat( e.target.value) || 0
     if(montoPago > 0 && montoPago <= saldoActual ) {
       montoPagoPrestamo.classList.add('is-valid')
-      montoPagoPrestamo.classList.remove('is-invalid'); 
-      validFeedBack.textContent = `${moneyFormat(saldoActual - montoPago)} pendiente despues de la operación.` 
+      montoPagoPrestamo.classList.remove('is-invalid');
+      validFeedBack.textContent = `${moneyFormat(saldoActual - montoPago)} pendiente despues de la operación.`
     }else if(montoPago > saldoActual){
-      montoPagoPrestamo.classList.add('is-invalid'); 
+      montoPagoPrestamo.classList.add('is-invalid');
       montoPagoPrestamo.classList.remove('is-valid')
-      invalidFeedBack.textContent = `El monto de pago es mayor al saldo actual del prestamo` 
+      invalidFeedBack.textContent = `El monto de pago es mayor al saldo actual del prestamo`
     }else if(montoPago == 0){
-      montoPagoPrestamo.classList.remove('is-invalid'); 
+      montoPagoPrestamo.classList.remove('is-invalid');
       montoPagoPrestamo.classList.remove('is-valid')
     }
     totalPagoPrestamo = montoPago
     sumaPago.textContent = moneyFormat(totalMontoPago - montoPago)
     sumaPrestamos.textContent = `- ${moneyFormat(montoPago)}`
-    
+
    })
 
    function summaryPay(){
@@ -276,7 +276,7 @@ class MissionResultRenderer {
     if(pagoContenedores.length <= 0){
         Swal.fire('Seleccione contenedores','Debe seleccionar al menos un contenedor de la lista','warning');
         return;
-    } 
+    }
 
     let suma = 0;
     let sumSalario = 0;
@@ -352,7 +352,7 @@ class MissionResultRenderer {
    btnDineroViaje.addEventListener('click',()=>{
     openModalJustificar('dinero_viaje')
    });
-   
+
 
   function openModalJustificar(accion = 'justificar'){
 
@@ -367,7 +367,7 @@ class MissionResultRenderer {
     else if(justificaContenedores.length < 1 && accion == 'justificar-multiple'){
         Swal.fire('Seleccione contenedores','Debe seleccionar al menos un contenedor de la lista','warning');
         return false;
-    } 
+    }
 
     if(accion == 'justificar-multiple'){
         modalElement = document.getElementById('modal-justificar-multiple');
@@ -391,7 +391,7 @@ class MissionResultRenderer {
 
     const bootstrapModal = new bootstrap.Modal(modalElement);
     bootstrapModal.show();
-    
+
   }
 
 function crearPivotTable(gridselectedrows) {
@@ -468,7 +468,7 @@ function crearPivotTable(gridselectedrows) {
     nestedHeadersLevel2.push( "Concepto", "Monto");
 
     columns.push(
-          // Solo cambio visual, sigue apuntando a motivo|id internamente
+
       { data: `motivo|${c.IdContenedor}`, editor: "text", className: "htCenter htMiddle", width: 150 },
       {
         data: `monto|${c.IdContenedor}`,
@@ -480,7 +480,7 @@ function crearPivotTable(gridselectedrows) {
     );
   });
 
-  // Ajustar ancho y altura del grid
+
   let anchoGrid = columns.reduce((sum, col) => sum + (col.width || 100), 0) + 50;
   if (gridselectedrows.length === 1) anchoGrid += 100;
 
@@ -488,7 +488,7 @@ function crearPivotTable(gridselectedrows) {
   const alturaTabla = Math.min(260 + gridselectedrows.length * 30, 800);
   container.style.height = `${alturaTabla + 60}px`;
 
-  // Función para recalcular totales y refrescar encabezados
+
   function recalcularTotales() {
     contenedoresSeleccionados.forEach(id => {
       let total = 0;
@@ -499,13 +499,13 @@ function crearPivotTable(gridselectedrows) {
       totales[id] = total;
     });
 
-    // Actualizar encabezados dinámicamente
+
  window.hotInstance.updateSettings({
   nestedHeaders: [
-    [ 
+    [
       ...gridselectedrows.map(c => ({
         label: `${c.Contenedores}<br><span style="font-size: 14px; color: #008000;">${totales[c.IdContenedor].toLocaleString("es-MX", {style:"currency", currency:"MXN", minimumFractionDigits:2})}</span>`,
-        colspan: 2 
+        colspan: 2
       }))
     ],
     nestedHeadersLevel2
@@ -514,7 +514,7 @@ function crearPivotTable(gridselectedrows) {
 });
   }
 
-  
+
   if (window.hotInstance) {
     window.hotInstance.updateSettings({
       data: dataParaJustificar,
@@ -541,7 +541,7 @@ window.hotInstance.refreshDimensions();
       licenseKey: "non-commercial-and-evaluation",
       afterChange: function (changes, source) {
         if (source === "loadData") return;
-        guardarJustificacionesEnLocalStorage(); // sigue usando motivo|id internamente
+        guardarJustificacionesEnLocalStorage();
         recalcularTotales();
       },
     });
@@ -598,7 +598,7 @@ function limpiarJustificacionesLocalStorage() {
       }    else{
         console.log('La tabla no está inicializada','error');
       }
-    
+
   });
 
   function justificarGasto(){
@@ -630,7 +630,7 @@ function limpiarJustificacionesLocalStorage() {
 
     let sinJustificar = DineroViaje - GastosJustificados;
     let montoJustificacion = reverseMoneyFormat( document.getElementById("txtMonto").value);
-    
+
     let _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
     if(txtDescripcion.length == 0){
@@ -665,7 +665,7 @@ function limpiarJustificacionesLocalStorage() {
           document.getElementById("txtMonto").value = '';
           document.getElementById('txtDescripcion').value = '';
          mostrarViajesOperador(IdOperador)
-          
+
         }
       },
       error:(error)=>{
@@ -676,11 +676,11 @@ function limpiarJustificacionesLocalStorage() {
 
 
   function justificarGastoMultiple(){
- const allData = window.hotInstance.getSourceData(); // todas las filas
-  const gridselectedrows = apiGrid.getSelectedRows(); // contenedores seleccionados actualmente
+ const allData = window.hotInstance.getSourceData();
+  const gridselectedrows = apiGrid.getSelectedRows();
 
-  const payload = []; // lo que se enviará al backend
-  const errores = []; // para capturar validaciones
+  const payload = [];
+  const errores = [];
 
   allData.forEach((fila, rowIndex) => {
     gridselectedrows.forEach(c => {
@@ -691,7 +691,7 @@ function limpiarJustificacionesLocalStorage() {
       const monto = fila[montoKey];
 
       if(!c.id_contenedor){
-        // Validación: si hay motivo, debe haber monto válido
+
             if (motivo && (!monto || isNaN(monto) || monto <= 0)) {
               errores.push(`Contenedor: ${c.Contenedores}, Fila: ${rowIndex + 1}`);
 
@@ -700,9 +700,9 @@ function limpiarJustificacionesLocalStorage() {
         resaltarCelda(rowIndex, colIndex,8);
             }
       }
-    
 
-      // Solo agregar al payload si hay algún dato
+
+
       if (c.IdContenedor && motivo && monto > 0) {
         payload.push({
           idviatico: fila[`id_registro|${c.IdContenedor}`] || null,
@@ -714,17 +714,17 @@ function limpiarJustificacionesLocalStorage() {
     });
   });
 
-  // Mostrar errores si los hay
+
   if (errores.length > 0) {
     Swal.fire({
       icon: "warning",
       title: "Faltan montos válidos",
       html: "Revisa las siguientes filas:<br>" + errores.join("<br>"),
     });
-    return; // no enviar al backend
+    return;
   }
 let token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-  // 🔹 Enviar al backend
+ 
   fetch("/liquidaciones/viajes/gastos/justificar-multiple", {
     method: "POST",
   headers: {
@@ -779,7 +779,7 @@ let token = document.querySelector('meta[name="csrf-token"]').getAttribute('cont
     var val = e.target.value;
     e.target.value = reverseMoneyFormat(val);
     })
-    
+
     $(".moneyformat").on("blur",(e) =>{
     var val = e.target.value;
     e.target.value =  moneyFormat(val);
