@@ -15,6 +15,7 @@ use App\Models\Subclientes;
 use App\Models\Coordenadas;
 use App\Models\GastosOperadores;
 use App\Models\BancoDineroOpe;
+use App\Models\ViaticosOperador;
 use App\Models\DocumCotizacion;
 use App\Models\DineroContenedor;
 use App\Traits\CommonTrait as common;
@@ -132,6 +133,9 @@ class PlaneacionController extends Controller
             $asignaciones->delete();
 
             DineroContenedor::where('id_contenedor',$documenCotizacion->id)->delete();
+
+
+            ViaticosOperador::where('id_cotizacion',$cotizaciones->id)->delete();
 
             DB::commit();
 

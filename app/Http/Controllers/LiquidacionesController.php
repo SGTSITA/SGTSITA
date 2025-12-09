@@ -34,7 +34,7 @@ class LiquidacionesController extends Controller
         ->where('asignaciones.id_empresa', '=',auth()->user()->id_empresa)
         ->where('asignaciones.id_proveedor', '=', NULL)
         ->where('asignaciones.estatus_pagado', '=', 'Pendiente Pago')
-        
+
         ->select('asignaciones.id_operador', DB::raw('COUNT(*) as total_cotizaciones'), DB::raw('SUM(sueldo_viaje) as sueldo_viaje'),DB::raw('SUM(dinero_viaje) as dinero_viaje'),DB::raw('SUM(restante_pago_operador) as total_pago'))
         ->groupBy('asignaciones.id_operador')
         ->get();
@@ -91,9 +91,9 @@ class LiquidacionesController extends Controller
             $asignacion->total_monto = $montos[$asignacion->id_contenedor]->total_monto ?? 0;
         });
 
-      
+
         $contenedores = $asignacion_operador->map(function($c){
-            
+
             $numContenedor = $c->contenedor->num_contenedor;
 
             if(!is_null($c->contenedor->cotizacion->referencia_full)){
@@ -133,10 +133,10 @@ class LiquidacionesController extends Controller
         $prestamos = Prestamo::where('id_operador', $r->operador)->where('saldo_actual','>',0)->get();
 
         return response()->json([
-            "viajes" => $contenedores, 
-            "totalPago" => $totalPago, 
+            "viajes" => $contenedores,
+            "totalPago" => $totalPago,
             "prestamos" => $prestamos,
-            "numViajes" => $numeroViajes, 
+            "numViajes" => $numeroViajes,
             "data" => $asignacion_operador
         ]);
     }
@@ -159,7 +159,7 @@ class LiquidacionesController extends Controller
             ]);
 
             //Los gastos que sean justificados por el operador, deberan reflejarse en el viaje correspondiente
-                                                
+
              $asignacion = Asignaciones::where('id_contenedor', $documCotizacion->id)->first();
 
              $datosGasto = [
@@ -229,7 +229,7 @@ class LiquidacionesController extends Controller
                 ->first();
 
             if (!$documCotizacion) continue;
-          
+
             if (!empty($item['idviatico'])) { // Actualizar registro existente
                 $viaticoAntes = ViaticosOperador::where('id', $item['idviatico'])->first();
                 $montoAntes = $viaticoAntes->monto;
@@ -239,11 +239,11 @@ class LiquidacionesController extends Controller
                         "monto" => $item['monto'],
                     ]);
 
-              $diferencia = $item['monto'] - $montoAntes;
-Asignaciones::where('id_contenedor', $documCotizacion->id)
-    ->update([
-        "restante_pago_operador" => DB::raw('restante_pago_operador + ' . $diferencia)
-    ]);
+                 $diferencia = $item['monto'] - $montoAntes;
+                Asignaciones::where('id_contenedor', $documCotizacion->id)
+                    ->update([
+                        "restante_pago_operador" => DB::raw('restante_pago_operador + ' . $diferencia)
+                    ]);
 
             } else{
                 // Nuevo registro
@@ -251,15 +251,15 @@ Asignaciones::where('id_contenedor', $documCotizacion->id)
                 "id_cotizacion" => $documCotizacion->id_cotizacion,
                 "descripcion_gasto" => $item['motivo'],
                 "monto" => $item['monto'],
-            ]);
-               Asignaciones::where('id_contenedor', $documCotizacion->id)
-                ->update([
-                    "restante_pago_operador" => DB::raw('restante_pago_operador + '.$item['monto'])
-                ]);
+                 ]);
+                Asignaciones::where('id_contenedor', $documCotizacion->id)
+                    ->update([
+                        "restante_pago_operador" => DB::raw('restante_pago_operador + '.$item['monto'])
+                    ]);
 
             }
-           
-         
+
+
 
             $asignacion = Asignaciones::where('id_contenedor', $documCotizacion->id)->first();
 
@@ -352,7 +352,7 @@ Asignaciones::where('id_contenedor', $documCotizacion->id)
 
             Bancos::where('id' ,'=',$request->get('bank'))->update(["saldo" => DB::raw("saldo - ". $request->get('montoJustificacion'))]);
             BancoDineroOpe::insert([[
-                                    'id_operador' => $asignacion->id_operador, 
+                                    'id_operador' => $asignacion->id_operador,
                                     'id_banco1' => $request->get('bank'),
                                     'monto1' => $request->get('montoJustificacion'),
                                     'fecha_pago' => date('Y-m-d'),
@@ -429,7 +429,7 @@ Asignaciones::where('id_contenedor', $documCotizacion->id)
                     $pagoPrestamos = ($pagoPrestamos > $p->saldo_actual) ? $pagoPrestamos - $p->saldo_actual : 0;
 
 
-                 
+
                 }
             }
 
@@ -457,8 +457,8 @@ Asignaciones::where('id_contenedor', $documCotizacion->id)
                 $asignacion->update();
 
                 $cotizacion = DocumCotizacion::where('id', '=', $asignacion->id_contenedor)->first();
-    
-                
+
+
 
                 $contenedoresAbonos[] = [
                     'num_contenedor' => $cotizacion->num_contenedor,
@@ -470,13 +470,13 @@ Asignaciones::where('id_contenedor', $documCotizacion->id)
 
             $banco = new BancoDineroOpe;
             $banco->id_operador = $request->_IdOperador;
-            
+
             $banco->monto1 = $contenedores->sum('MontoPago');;
             $banco->metodo_pago1 = 'Transferencia';
             $banco->descripcion_gasto = 'Pago operador';
             $banco->id_banco1 = $request->bancoId;
             $banco->contenedores = $contenedoresAbonosJson;
-        
+
             $banco->tipo = 'Salida';
             $banco->fecha_pago = date('Y-m-d');
             $banco->save();
@@ -507,7 +507,7 @@ Asignaciones::where('id_contenedor', $documCotizacion->id)
     }
 
    public function historialPagos(){
-    
+
     return view('liquidaciones.historial');
    }
 

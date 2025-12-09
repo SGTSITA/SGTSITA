@@ -39,7 +39,7 @@ const localeText = {
     paginationPageSize: 'Registros por página'
   };
 
-document.addEventListener("DOMContentLoaded", function () {     
+document.addEventListener("DOMContentLoaded", function () {
     if (typeof agGrid === "undefined" || typeof agGrid.createGrid === "undefined") {
         console.error("🚨 Error: AG Grid no está cargado o está usando una versión incorrecta.");
         return;
@@ -55,7 +55,7 @@ document.addEventListener("DOMContentLoaded", function () {
         pagination: true,
         paginationPageSize: 10,
         paginationPageSizeSelector: [10, 50, 100],
-        domLayout: 'autoHeight', 
+        domLayout: 'autoHeight',
         rowSelection: {
             mode: "multiRow",
             headerCheckbox: false,
@@ -65,10 +65,10 @@ document.addEventListener("DOMContentLoaded", function () {
             { headerName: "ContenedorPrincipal", field: "labelContenedor", hide: true},
             { headerName: "Full", field: "referencia_full", hide: true},
             { headerName: "Sub Cliente", field: "subcliente", width: 80 , hide: true},
-            { headerName: "# Contenedor", 
-              field: "contenedor", 
+            { headerName: "# Contenedor",
+              field: "contenedor",
               width: 200,
-              filter: true, 
+              filter: true,
               floatingFilter: true,
               autoHeight: true, // Permite que la fila se ajuste en altura
               cellStyle:params => {
@@ -76,19 +76,19 @@ document.addEventListener("DOMContentLoaded", function () {
                     'white-space': 'normal',
                     'line-height': '1.5',
                   };
-              
-                  // Si la cotización es tipo "Full", aplicar fondo 
+
+                  // Si la cotización es tipo "Full", aplicar fondo
                   if (params.data.tipo === 'Full') {
-                    styles['background-color'] = '#ffe5b4'; 
+                    styles['background-color'] = '#ffe5b4';
                   }
-              
+
                   return styles;
                 },
             },
             { headerName: "Cliente", field: "cliente", width: 150,filter: true, floatingFilter: true },
             { headerName: "Origen", field: "origen", width: 200 ,filter: true, floatingFilter: true},
             { headerName: "Destino", field: "destino", width: 200, filter: true, floatingFilter: true },
-           
+
             { headerName: "Estatus",
             field: "estatus",
             minWidth: 180,
@@ -97,15 +97,15 @@ document.addEventListener("DOMContentLoaded", function () {
                 if (params.data.estatus === "Aprobada") color = "success";
                 else if (params.data.estatus === "Cancelada") color = "danger";
                 else if (params.data.estatus === "Pendiente") color = "warning";
-        
+
                 return `
                     <button class="btn btn-sm btn-outline-${color}" onclick="abrirCambioEstatus(${params.data.id})" title="Cambiar estatus">
                         <i class="fa fa-check me-1"></i> ${params.data.estatus}
                     </button>
                 `;
             } },
-       
-  
+
+
         ],
         defaultColDef: { resizable: true, sortable: true, filter: true },
         localeText: localeText,
@@ -116,13 +116,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
             var paginationTitle = document.querySelector("#ag-32-label");
             paginationTitle.textContent = 'Registros por página';
-           
+
             window.gridApi = params.api;
 
             fetch("/cotizaciones/aprobadas")
                 .then(response => response.json())
                 .then(data => {
-                   
+
                     window.gridApi.applyTransaction({ add: data.list });
                 })
                 .catch(error => console.error("🚨 Error al cargar cotizaciones:", error));
@@ -145,7 +145,7 @@ document.addEventListener("DOMContentLoaded", function () {
             bntNextOne.disabled = true
             if(seleccion.length > 2){
                 Swal.fire('Maximo 2 contenedores','Lo sentimos, solo puede seleccionar maximo 2 contenedores, estos deben ser de un mismo cliente','warning')
-                
+
                 return false
             }
 
@@ -155,26 +155,28 @@ document.addEventListener("DOMContentLoaded", function () {
            // let tamanoContenedorSpan = document.querySelector('#tamanoContenedor');
             let precioViajeSpan = document.querySelector('#precioViaje');
             let direccionEntregaSpan = document.querySelector('#direccionEntrega');
-            
-          
+
+
 
             let contenedoresLabel = '';
+            let cliente_Sublcientelabel='';
             let isFull = false;
             contenedores = []
             seleccion.forEach((contenedor) =>{
                 contenedoresLabel += (contenedoresLabel.length > 0 ) ? ` / ${contenedor.contenedor}` : contenedor.contenedor
-                nombreClienteLabel.forEach(cl => cl.textContent = `${contenedor.cliente} / ${contenedor.subcliente}`)
+                cliente_Sublcientelabel =  `${contenedor.cliente} / ${contenedor.subcliente}`;
+
                 contenedores = [...contenedores,contenedor.labelContenedor]
                 isFull = (!isFull && contenedor.referencia_full?.length > 0) ? true : isFull ;
                 localStorage.setItem('numContenedor',JSON.stringify(contenedores))
                 if(pesoContenedorSpan){
-                    pesoContenedorSpan.textContent = contenedor.peso_contenedor 
+                    pesoContenedorSpan.textContent = contenedor.peso_contenedor
                 }
                 // if(tamanoContenedorSpan){
-                //     tamanoContenedorSpan.textContent = contenedor.tamano 
+                //     tamanoContenedorSpan.textContent = contenedor.tamano
                 // }
                 if(direccionEntregaSpan){
-                    direccionEntregaSpan.textContent = contenedor.direccion_entrega 
+                    direccionEntregaSpan.textContent = contenedor.direccion_entrega
                 }
                 if(precioViajeSpan){
                     precioViajeSpan.textContent =  moneyFormat(contenedor.total)
@@ -183,7 +185,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
             if(isFull && seleccion.length >= 2){
                 Swal.fire('Operación FULL invalida','Lo sentimos, su selección contiene un viaje FULL, este no puede viajar con mas contenedores','warning')
-               
+
                 return false
             }
 
@@ -192,10 +194,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
             numContenedorLabel.forEach(lb=> lb.textContent = contenedoresLabel)
             bntNextOne.disabled = false
+
+            nombreClienteLabel.forEach(cl => cl.textContent = cliente_Sublcientelabel)
           }
     }
 
-  
+
 });
 
 
@@ -229,7 +233,7 @@ const formFieldsProveedor = [
     {'field':'sobrepeso_proveedor','id':'sobrepeso_proveedor','label':'Sobrepeso','required': true, "type":"money", "trigger":"none"},
     {'field':'cantidad_sobrepeso_proveedor','id':'cantidad_sobrepeso_proveedor','label':'Precio sobrepreso','required': true, "type":"money", "trigger":"none"},
     {'field':'total_proveedor','id':'total_proveedor','label':'Total','required': true, "type":"money", "trigger":"none"},
-    {'field':'cmbProveedor','id':'cmbProveedor','label':'Proveedor','required': true, "type":"select", "trigger":"none"}   
+    {'field':'cmbProveedor','id':'cmbProveedor','label':'Proveedor','required': true, "type":"select", "trigger":"none"}
 ]
 
 const tasa_iva = 0.16;
@@ -241,7 +245,7 @@ function calculateTotal() {
     var maniobra = parseFloat(reverseMoneyFormat($('#maniobra_proveedor').val())) || 0;
     var estadia = parseFloat(reverseMoneyFormat($('#estadia_proveedor').val())) || 0;
     var otro = parseFloat(reverseMoneyFormat($('#otro_proveedor').val())) || 0;
-    
+
     var sobrepeso = parseFloat(reverseMoneyFormat($('#sobrepeso_proveedor').val())) || 0;
     var cantidadsob = parseFloat(reverseMoneyFormat($('#cantidad_sobrepeso_proveedor').val())) || 0;
 
@@ -257,18 +261,18 @@ function calculateTotal() {
     var total = (precio + burreo + maniobra + estadia + otro + iva + sobre) - retencion;
 
     const baseTaref = (total - baseFactura - iva) + retencion;
-    
+
     document.getElementById('base_taref').value = moneyFormat(baseTaref.toFixed(2));
-    
-    
+
+
     $('#total_proveedor').val(moneyFormat(total.toFixed(2)));
 
 }
-    
+
 // Eventos para calcular el total
 $('.fieldsCalculo').on('input', function() {
     calculateTotal();
-    
+
 });
 
 function setTipoViaje(valTipoViaje){
@@ -318,7 +322,7 @@ function programarViaje(){
    });
 
    if(tipoViaje == "propio"){ // validar q los inputs de otros gastos esten correctos
-    
+
         let filas = document.querySelectorAll('.gasto-item');
         let gastosValidos = [];
 
@@ -356,7 +360,7 @@ function programarViaje(){
    }
 
    formData["_token"] = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-   formData["num_contenedor"] =  localStorage.getItem('numContenedor') 
+   formData["num_contenedor"] =  localStorage.getItem('numContenedor')
    formData["tipoViaje"] = tipoViaje
    let url = '/planeaciones/viaje/programar'
 
@@ -366,21 +370,21 @@ function programarViaje(){
         data: formData,
         beforeSend:function(){
             mostrarLoading('Planeando viaje... espere un momento')
-            btnProgramar.disabled = true 
+            btnProgramar.disabled = true
         },
         success:function(data){
             ocultarLoading();
                 Swal.fire(data.Titulo,data.Mensaje,data.TMensaje).then(function() {
                     if(data.TMensaje == "success"){
-                        
+
                         window.location.replace("/planeaciones");
-                    
+
                     }
                 });
         },
-        error:function(){     
-            ocultarLoading();  
-            btnProgramar.disabled = false 
+        error:function(){
+            ocultarLoading();
+            btnProgramar.disabled = false
         Swal.fire("Error","Ha ocurrido un error, intentelo nuevamente","error");
         }
     });
@@ -398,7 +402,7 @@ $(".moneyformat").on("blur",(e) =>{
 
 cmbTipoUnidad.addEventListener('change',(e)=>{
     let isActive = (e.target.value  == "Sencillo") ? true : false
-    
+
     cmbChasis2.disabled = isActive
     cmbDoly.disabled = isActive
 })
