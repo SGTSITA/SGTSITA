@@ -17,7 +17,7 @@
                             <div class="d-flex align-items-center">
                                 <div class="fs-4 fw-bold" id="proveedorName">Proveedor:</div>
                             </div>
-                            <select class="form-select subcliente d-inline-block" id="id_proveedorLocal" name="id_proveedor">
+                            <select class="form-select subcliente d-inline-block" id="id_proveedor" name="id_proveedor">
                                 <option value="">Seleccionar proveedor</option>
                                 @foreach ($proveedores as $p)
 
