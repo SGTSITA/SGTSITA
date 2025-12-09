@@ -34,7 +34,7 @@ transportistasLista.forEach(t => {
 });
 
 
-// CAMPOS OBLIGATORIOS (los mismos que usas)
+
 const formFieldsContenedoresLocal = [
     {'field': 'id_subcliente', 'index': 0, 'label': 'Sub Cliente', 'required': true},
     {'field': 'numContenedor', 'index': 3, 'label': 'Núm. Contenedor', 'required': true},
@@ -138,7 +138,7 @@ function buildHandsOntableLocal() {
     var hotLocal = new Handsontable(containerMultipleLocal, config);
 
 
-    // VALIDACIÓN NUEVA (igual que la otra)
+
     function validateMultipleLocal() {
 
         let rows = hotLocal.getData();

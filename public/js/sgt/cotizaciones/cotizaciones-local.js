@@ -26,7 +26,7 @@ const formFields = [
     { field: 'destino', id: 'destino', label: 'Destino', required: true, type: 'text', master: false },
     { field: 'Costomaniobra', id: 'Costomaniobra', label: 'Costo Maniobra', required: true, type: 'numeric', master: false },
     { field: 'estado_contenedor', id: 'estado_contenedor', label: 'Estado contenedor', required: false, type: 'text', master: false },
-
+    {field:'origen_captura','id':'origen_captura','label':'Origen de Captura','required': false, "type":"text", "master": false},
 
     // Datos de ruta
     { field: 'origen', id: 'origen', label: 'Origen', required: true, type: 'text', master: true },
@@ -84,21 +84,16 @@ function getClientes(clienteId,subclienteid) {
 function validateFormFields() {
     for (const f of formFields) {
 
-        // 📌 1️⃣ Si el campo NO es requerido → saltar
         if (!f.required) continue;
-
         const el = document.getElementById(f.id);
 
-        // 📌 2️⃣ Si el campo NO existe → saltar
-        if (!el) continue;
+               if (!el) continue;
 
-        // 📌 3️⃣ Si está deshabilitado por permisos → NO validar
         if (el.disabled || el.readOnly) continue;
 
         let value = el.value?.trim() ?? "";
 
-        // 📌 4️⃣ Validación por tipo
-        let invalid = false;
+              let invalid = false;
 
         switch (f.type) {
             case "select":
@@ -117,7 +112,7 @@ function validateFormFields() {
                 if (value === "") invalid = true;
         }
 
-        // 📌 5️⃣ Si es inválido → lanzar alerta
+
         if (invalid) {
             Swal.fire({
                 icon: 'warning',
@@ -126,7 +121,6 @@ function validateFormFields() {
                 confirmButtonText: "Entendido"
             });
 
-            // Enfocar campo
             setTimeout(() => el.focus(), 300);
 
             return false;
@@ -152,22 +146,20 @@ function getFormData() {
             value = el.value || null;
         }
 
-        // ---- LIMPIEZA AUTOMÁTICA DE NÚMEROS ----
+
         if (value && typeof value === 'string') {
-            // Si contiene dígitos, puntos o comas, lo consideramos número
+
             if (/[\d.,]+/.test(value)) {
                 value = value
-                    .replace(/,/g, '')     // quitar comas
-                    .replace(/\$/g, '')    // quitar moneda
+                    .replace(/,/g, '')
+                    .replace(/\$/g, '')
                     .trim();
 
-                // Si después de limpiar es numérico, conviértelo a número real
                 if (!isNaN(value)) {
                     value = parseFloat(value);
                 }
             }
         }
-        // -----------------------------------------
 
         data[f.field] = value;
     });
@@ -187,8 +179,6 @@ $('#solicitarservicio').on('click', function(e) {
     }else{
         guardarCotizacionLocal();
     }
-
-
     }
 
 });
