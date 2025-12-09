@@ -41,7 +41,7 @@
                             <div class="d-flex align-items-center">
                                 <div class="fs-4 fw-bold" id="proveedorName">Transportista:</div>
                             </div>
-                            <select class="form-select subcliente d-inline-block" id="id_transportistalocal"
+                            <select class="form-select subcliente d-inline-block" id="id_transportista"
                                 name="id_transportista">
                                 <option value="">Seleccionar transportista</option>
                                 @foreach ($transportista as $tr)
