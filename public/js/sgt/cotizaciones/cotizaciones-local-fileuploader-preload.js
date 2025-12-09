@@ -32,8 +32,7 @@ function adjuntarDocumentos(filesContenedor) {
     start: true,
     synchron: true,
 
-    // ✅ Evita enviar archivos vacíos o sin extensión
-    onBeforeSend: (xhr, settings) => {
+      onBeforeSend: (xhr, settings) => {
         const file = settings.files ? settings.files[0] : null;
         if (!file || !file.name) {
             alert('Archivo inválido o vacío.');
@@ -44,11 +43,11 @@ function adjuntarDocumentos(filesContenedor) {
     onSuccess: function (result, item) {
         let data = {};
 
-        // ✅ Verifica respuesta del backend
+
         if (result && typeof result === 'object') data = result;
         else data.hasWarnings = true;
 
-        // ✅ Actualiza UI si fue exitoso
+
         if (data.isSuccess && data.files && data.files[0]) {
             const fileData = data.files[0];
             item.name = fileData.name;
@@ -58,7 +57,7 @@ function adjuntarDocumentos(filesContenedor) {
                 .attr('title', fileData.old_name);
         }
 
-        // ⚠️ Muestra advertencias si las hay
+
         if (data.hasWarnings) {
             if (data.warnings) {
                 for (const warning in data.warnings) {
@@ -69,11 +68,11 @@ function adjuntarDocumentos(filesContenedor) {
             return this.onError ? this.onError(item) : null;
         }
 
-        // ✅ Marca como éxito visual
+
         item.html.find('.fileuploader-action-remove').addClass('fileuploader-action-success');
         setTimeout(() => item.html.find('.progress-bar2').fadeOut(400), 400);
 
-        // ✅ Si tienes ag-Grid, actualiza la celda correspondiente
+
         if (apiGrid) {
             const dataGrid = apiGrid.getGridOption('rowData') || [];
             const rowIndex = dataGrid.findIndex((d) => d.NumContenedor === numContenedor);
@@ -107,7 +106,7 @@ function adjuntarDocumentos(filesContenedor) {
     },
 
     onComplete: () => {
-        // ✅ Espera que el servidor haya guardado todo
+
         getFilesContenedor();
 
         setTimeout(() => {
@@ -115,10 +114,6 @@ function adjuntarDocumentos(filesContenedor) {
         }, 2500);
     },
 });
-
-
-
-     //   console.log(`Instancia de fileuploader en #${fileSettings.opcion} destruida correctamente.`);
     }else {
 
 
@@ -157,19 +152,18 @@ function adjuntarDocumentos(filesContenedor) {
 
                 var data = {};
 
-                // get data
-                if (result && result.files)
+                         if (result && result.files)
                     data = result;
                 else
                     data.hasWarnings = true;
 
-                // if success
+
                 if (data.isSuccess && data.files[0]) {
                     item.name = data.files[0].name;
                     item.html.find('.column-title > div:first-child').text(data.files[0].old_name).attr('title', data.files[0].old_name);
                 }
 
-                // if warnings
+
                 if (data.hasWarnings) {
 
                     for (var warning in result.warnings) {
@@ -177,9 +171,7 @@ function adjuntarDocumentos(filesContenedor) {
                     }
 
                     item.html.removeClass('upload-successful').addClass('upload-failed');
-                    // go out from success function by calling onError function
-                    // in this case we have a animation there
-                    // you can also response in PHP with 404
+
                     return this.onError ? this.onError(item) : null;
                 }
 
@@ -312,19 +304,18 @@ function adjuntarDocumentos(filesContenedor) {
     const fileList = await response.json();
     const containerFiles = fileList.data || [];
 
-    // Si no hay archivos, salimos
+
     if (containerFiles.length === 0) return null;
 
-    // Buscar por el código del archivo
+
     const filter = containerFiles.find((f) => f.fileCode === fileSettings.agGrid);
 
-    // Si no se encuentra coincidencia, no sigas
+
     if (!filter) {
       console.warn(`No se encontró archivo con fileCode: ${fileSettings.agGrid} para el contenedor ${numContenedor}`);
       return null;
     }
 
-    // Crear objeto seguro
     const fileProperties = {
       name: filter.fileName || "SinNombre",
       size: filter.fileSizeBytes || 0,
@@ -369,10 +360,8 @@ async function initFileUploader() {
 
         fileSettings = el;
 
-        // 1. ¿Existe archivo previo?
         let fileData = await consultarArchivos(numContenedor);
 
-        // 2. Inicializa FileUploader
         adjuntarDocumentos(fileData);
     }
 }

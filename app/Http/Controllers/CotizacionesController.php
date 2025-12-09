@@ -2165,8 +2165,7 @@ public function storelocal(Request $request)
 
         $idProveedorFinal = null;
 
-        if ($request->has('id_transportista') &&
-            $request->id_transportista != $request->id_proveedor) {
+        if ($request->has('id_transportista')) {
 
             $idProveedorFinal = $request->id_transportista;
         }
@@ -2300,9 +2299,9 @@ public function singleUpdatelocal(Request $request, $id)
             $cot->id_empresa = $request->id_proveedor;
              $cot->empresa_local        = $request->id_proveedor ?? null;
         }
-         if($request->has('id_transportista') && $request->id_transportista !== $cot->id_proveedor){
+         if($request->has('id_transportista') && $request->id_transportista !== $cot->transportista_local){
               $cot->id_proveedor      = $request->id_transportista;
-                $cot->transportista_local        = $request->id_transportista ?? null;
+            $cot->transportista_local        = $request->id_transportista ?? null;
          }
 
        //$cot->id_transportista     = $request->id_transportista ?? null;
