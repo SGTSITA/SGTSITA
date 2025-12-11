@@ -54,7 +54,10 @@ const formFields = [
     //boque
      { field: 'bloque', id: 'bloque', label: 'Núm. Bloque', required: false, type: 'text', master: false },
     { field: 'bloque_hora_i', id: 'bloque_hora_i', label: 'Hora Inicio', required: true, type: 'time', master: false },
-    { field: 'bloque_hora_f', id: 'bloque_hora_f', label: 'Hora Fin', required: true, type: 'time', master: false }
+    { field: 'bloque_hora_f', id: 'bloque_hora_f', label: 'Hora Fin', required: true, type: 'time', master: false },
+    { field: 'num_autorizacion', id: 'num_autorizacion', label: 'Num. Autorización', required: false, type: 'text', master: false },
+    { field: 'puerto', id: 'puerto', label: 'Puerto', required: true, type: 'select', master: false },
+    { field: 'terminal_local', id: 'terminal_local', label: 'Terminal', required: true, type: 'radio', master: false }
 ];
 
 
@@ -107,6 +110,9 @@ function validateFormFields() {
             case "time":
                 if (!/^\d{2}:\d{2}(:\d{2})?$/.test(value)) invalid = true;
                 break;
+
+            case "radio":
+
 
             default:
                 if (value === "") invalid = true;

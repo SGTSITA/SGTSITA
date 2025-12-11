@@ -636,8 +636,10 @@ class ExternosController extends Controller
         $empresas = Empresas::whereIn('id',$clienteEmpresa)->get();
 
 
-  $opciones = ['A1', 'M3', 'R1', 'A4', 'IN'];
-  $opcionesColores = ['VERDE', 'AMARILLO', 'ROJO', 'OVT'];
+        $opciones =config('CatAuxiliares.opciones');
+        $opcionesColores = config('CatAuxiliares.opcionesColores');
+        $Puertos = config('CatAuxiliares.puertos');
+        $opcionesPuertos = config('CatAuxiliares.puertosOpciones');
 
 
         $transportista = Proveedor::CatalogoLocal()->whereIn('id_empresa', $clienteEmpresa)->get();
@@ -650,7 +652,9 @@ class ExternosController extends Controller
                     "proveedores" => $empresas,
                       "transportista" => $transportista,
                         "opciones" => $opciones,
-                        "opcionesColores" => $opcionesColores
+                        "opcionesColores" => $opcionesColores,
+                        'Puertos'=>$Puertos,
+                        'opcionesPuertos'=>$opcionesPuertos,
                 ]);
     }
      public function editFormlocal(Request $request){
@@ -660,8 +664,11 @@ class ExternosController extends Controller
         $clienteEmpresa = ClientEmpresa::where('id_client',auth()->user()->id_cliente)->get()->pluck('id_empresa');
         $empresas = Empresas::whereIn('id',$clienteEmpresa)->get();
 
-        $opciones = ['A1', 'M3', 'R1', 'A4', 'IN'];
-        $opcionesColores = ['VERDE', 'AMARILLO', 'ROJO', 'OVT'];
+        $opciones =config('CatAuxiliares.opciones');
+        $opcionesColores = config('CatAuxiliares.opcionesColores');
+        $Puertos = config('CatAuxiliares.puertos');
+        $opcionesPuertos = config('CatAuxiliares.puertosOpciones');
+
         $cotizacion = Cotizaciones::with(['cliente', 'DocCotizacion'])
         ->whereHas('DocCotizacion', function ($query) use ($request) {
             $query->where('num_contenedor', $request->numContenedor);
@@ -683,7 +690,10 @@ class ExternosController extends Controller
                                                             "proveedores" => $empresas,
                                                             "transportista" => $transportista,
                                                             "opciones" => $opciones,
-                                                            "opcionesColores" => $opcionesColores
+                                                            "opcionesColores" => $opcionesColores,
+                                                            'Puertos'=>$Puertos,
+                                                            'opcionesPuertos'=>$opcionesPuertos
+
                                                         ]);
     }
 
@@ -838,7 +848,9 @@ class ExternosController extends Controller
 
             return [
                 "NumContenedor" => $numContenedor,
-                "Estatus" => ($c->estatus == "Local") ? "Local solicitado" : $c->estatus,
+              "Estatus" => ($c->estatus == "Documentos Faltantes" && $c->en_patio == 0)//agregue por el traslado a foraneo
+                            ? "Local Solicitado"
+                            : (($c->estatus == "Local") ? "Local solicitado" : $c->estatus),
                 "Origen" => $c->origen,
                 "Destino" => $c->destino,
                 "Peso" => $c->peso_contenedor,
@@ -864,11 +876,13 @@ class ExternosController extends Controller
         $folderId = $request->idSolicitud;
 
          $uploadDir = public_path("cotizaciones/cotizacion{$folderId}/");
-    $uploadUrl = asset("cotizaciones/cotizacion{$folderId}/");
+         $uploadUrl = asset("cotizaciones/cotizacion{$folderId}/");
 
-    $docs = DocumCotizacion::where('id_cotizacion', $request->idSolicitud)
+         $docs = DocumCotizacion::where('id_cotizacion', $request->idSolicitud)
                     ->where('num_contenedor', $request->numContenedor)
                     ->first();
+
+
         if (!$docs) {
                 return response()->json([]);
             }
@@ -885,25 +899,113 @@ class ExternosController extends Controller
             'boleta_patio' => 'Boleta de patio',
         ];
 
-foreach ($docsMap as $col => $title) {
+        foreach ($docsMap as $col => $title) {
 
-    if (!is_null($docs->$col)) {
+            if (!is_null($docs->$col)) {
 
-        $docProps = self::fileProperties(
-            $folderId,
-            $docs->$col,
-            $title,
-            $request->numContenedor
-        );
+                $docProps = self::fileProperties(
+                    $folderId,
+                    $docs->$col,
+                    $title,
+                    $request->numContenedor
+                );
 
-        if (sizeof($docProps) > 0) {
-             $docProps['publicUrl'] = $uploadUrl . '/';
-            $documentList[] = $docProps;
+                if (sizeof($docProps) > 0) {
+                    $docProps['publicUrl'] = $uploadUrl . '/';
+                    $documentList[] = $docProps;
+                }
+            }
         }
-    }
-}
 
         return response()->json($documentList);
+    }
+
+    function infoManiobra(Request $request){
+
+    $folderId = $request->id_cotizacion;
+
+         $uploadDir = public_path("cotizaciones/cotizacion{$folderId}/");
+         $uploadUrl = asset("cotizaciones/cotizacion{$folderId}/");
+
+         $docs = DocumCotizacion::where('id_cotizacion', $request->id_cotizacion)
+                    ->where('num_contenedor', $request->num_contenedor)
+                    ->first();
+
+
+      $cotiInfoManiobra=  \DB::table('docum_cotizacion')
+    ->join('cotizaciones', 'docum_cotizacion.id_cotizacion', '=', 'cotizaciones.id')
+    ->join('subclientes', 'subclientes.id', '=', 'cotizaciones.sub_cliente_local')
+    ->join('clients', 'clients.id', '=', 'subclientes.id_cliente')
+    ->join('empresas', 'empresas.id', '=', 'cotizaciones.empresa_local')
+    ->join('proveedores', 'proveedores.id', '=', 'cotizaciones.transportista_local')
+    ->where('cotizaciones.id', $folderId)
+    ->where('docum_cotizacion.num_contenedor', $request->num_contenedor)
+    ->select([
+        'cotizaciones.id as id_cotizacion',
+        'docum_cotizacion.id as id_contenendor',
+        'docum_cotizacion.num_contenedor',
+        'cotizaciones.puerto',
+        'docum_cotizacion.num_autorizacion',
+        'docum_cotizacion.terminal',
+        'cotizaciones.empresa_local',
+        'empresas.nombre as empresa',
+        'cotizaciones.transportista_local',
+        'proveedores.nombre as proveedor',
+        'cotizaciones.origen_local',
+        'cotizaciones.destino_local',
+        'cotizaciones.tamano',
+        'cotizaciones.estado_contenedor',
+        'cotizaciones.peso_contenedor',
+        'cotizaciones.peso_reglamentario',
+        'cotizaciones.sobrepeso',
+        'cotizaciones.precio_sobre_peso',
+        'cotizaciones.precio_tonelada',
+        'cotizaciones.fecha_modulacion_local',
+        'cotizaciones.cp_pedimento',
+        'cotizaciones.cp_clase_ped',
+        'cotizaciones.costo_maniobra_local',
+        'cotizaciones.tarifa_estadia',
+        'cotizaciones.dias_estadia',
+        'cotizaciones.total_estadia',
+        'cotizaciones.tarifa_pernocta',
+        'cotizaciones.dias_pernocta',
+        'cotizaciones.total_pernocta',
+        'cotizaciones.total_general',
+        'clients.nombre as cliente',
+        'subclientes.nombre as subcliente',
+    ])
+    ->first();
+
+        $documentList = [];
+
+        $docsMap = [
+            'doda' => 'Doda',
+            'boleta_liberacion' => 'Boleta de liberación',
+            'doc_ccp' => 'Formato para Carta porte',
+            'doc_eir' => 'EIR',
+            'foto_patio' => 'Foto patio',
+            'boleta_patio' => 'Boleta de patio',
+        ];
+
+        foreach ($docsMap as $col => $title) {
+
+            if (!is_null($docs->$col)) {
+
+                $docProps = self::fileProperties(
+                    $folderId,
+                    $docs->$col,
+                    $title,
+                    $request->numContenedor
+                );
+
+                if (sizeof($docProps) > 0) {
+                    $docProps['publicUrl'] = $uploadUrl . '/';
+                    $documentList[] = $docProps;
+                }
+            }
+        }
+
+        return response()->json(['documentList'=>$documentList,'cotiInfoManiobra'=> $cotiInfoManiobra]);
     }
 
 

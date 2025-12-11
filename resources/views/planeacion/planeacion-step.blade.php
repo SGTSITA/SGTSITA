@@ -177,59 +177,111 @@
 
         </div>
 
-        <div class="multisteps-form__content">
+            <div class="multisteps-form__content">
 
-          <div class="row mt-2">
-            <div class="col-lg-7 col-12 mt-4 mt-lg-0">
-              <h6 class="mb-0">Fecha de viaje</h6>
-              <p class="text-sm">Seleccione rango de fechas para el viaje.</p>
+    <div class="row mt-0 align-items-start">
 
-              <div class="row">
-                <div class="col-md-6">
-                  <label>Fecha salida</label>
-                  <div class="form-group">
-                    <div class="input-group ">
-                      <span class="input-group-text">
-                        <div class="icon icon-shape bg-gradient-danger text-center border-radius-md mb-2">
-                          <i class="fa fa-calendar opacity-10"></i>
+        <!-- ======================= -->
+        <!-- BLOQUE: FECHAS (Agrupado) -->
+        <!-- ======================= -->
+        <div class="col-lg-4 col-12 mb-4">
+
+
+                <h6 class="mb-0">Fecha de viaje</h6>
+                <p class="text-sm">Seleccione rango de fechas para el viaje.</p>
+
+                <div class="row mt-3">
+
+                    <!-- Fecha salida -->
+                    <div class="col-md-6 col-lg-5 mb-3">
+                        <label class="fw-bold">Fecha salida</label>
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="fa fa-calendar text-danger"></i>
+                            </span>
+                            <input class="form-control dateInput"
+                                   name="txtFechaInicio"
+                                   id="txtFechaInicio"
+                                   placeholder="Fecha inicio"
+                                   type="text">
                         </div>
-                      </span>
-                      <input class="form-control dateInput" name="txtFechaInicio" id="txtFechaInicio" placeholder="Fecha inicio" type="text">
                     </div>
-                  </div>
+
+                    <!-- Fecha entrega -->
+                    <div class="col-md-6 col-lg-5 mb-3">
+                        <label class="fw-bold">Fecha entrega</label>
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="fa fa-calendar text-danger"></i>
+                            </span>
+                            <input class="form-control dateInput"
+                                   name="txtFechaFinal"
+                                   id="txtFechaFinal"
+                                   placeholder="Fecha fin"
+                                   type="text">
+                        </div>
+                    </div>
+
                 </div>
 
-                <div class="col-md-6">
-                  <label>Fecha entrega</label>
-                  <div class="form-group">
-                    <div class="input-group ">
-                      <span class="input-group-text">
-                        <div class="icon icon-shape bg-gradient-danger text-center border-radius-md mb-2">
-                          <i class="fa fa-calendar opacity-10"></i>
-                        </div>
-                      </span>
-                      <input class="form-control dateInput" name="txtFechaFinal" id="txtFechaFinal" placeholder="Fecha fin" type="text">
-                    </div>
-                  </div>
-                </div>
+        </div>
+        <!-- =============================== -->
+        <!-- BLOQUE: Proveedor (alineado igual que fechas) -->
+        <!-- =============================== -->
+        <div class="col-lg-5 col-12 mb-4 d-none" id="proveedorSubcontratado">
 
-              </div>
-            </div>
-          </div>
 
-          <!-- VIAJE PROPIO -->
-          <div id="viaje-propio" class="d-none">
-            @include('planeacion.viaje_propio')
-          </div>
 
-          <!-- VIAJE SUBCONTRATADO -->
-          <div id="viaje-proveedor" class="d-none">
-            @include('planeacion.viaje_subcontratado')
-          </div>
+                <h6 class="mb-0">Proveedor</h6>
+                <p class="text-sm">Seleccione el proveedor que transportará el contenedor.</p>
 
+                <label class="fw-bold text-xs mb-2 d-block">Proveedor</label>
+
+                <select class="form-control" name="cmbProveedor" id="cmbProveedor">
+                    <option value="">Seleccione Proveedor</option>
+                    @foreach ($proveedores as $item)
+                        <option value="{{ $item->id }}">{{ $item->nombre }}</option>
+                    @endforeach
+                </select>
 
 
         </div>
+
+        <!-- ====================================== -->
+        <!-- BLOQUE: Peso + Dirección (Centrado) -->
+        <!-- ====================================== -->
+        <div class="col-lg-3 col-12 mb-4 d-flex justify-content-center d-none" id="BloqueDireccionEn" >
+            <div class="border rounded-3 p-4 shadow-sm bg-light text-center w-100">
+
+                <label class="fw-bold d-block mb-1 text-dark">Peso</label>
+                <span id="pesoContenedorSub" class="fs-5 text-success d-block mb-3">--</span>
+
+                <label class="fw-bold d-flex justify-content-center align-items-center mb-1 text-dark">
+                    <i class="ni ni-pin-3 text-danger me-2"></i>
+                    Dirección de entrega
+                </label>
+                <span id="direccionEntregaSub" class="fs-6 text-success d-block">--</span>
+
+            </div>
+        </div>
+
+
+
+    </div>
+
+
+    <!-- VIAJE PROPIO -->
+    <div id="viaje-propio" class="d-none">
+        @include('planeacion.viaje_propio')
+    </div>
+
+    <!-- VIAJE SUBCONTRATADO -->
+    <div id="viaje-proveedor" class="d-none">
+        @include('planeacion.viaje_subcontratado')
+    </div>
+
+</div>
+
 
       </div>
 
@@ -350,6 +402,9 @@ input.flatpickr-input[readonly] {
 .toggle-switch input:checked + .toggle-slider:before {
   transform: translateX(21px);
 }
+.multisteps-form__content {
+    padding-bottom: 1rem !important;
+}
 </style>
    <!-- AG Grid -->
    <script src="https://unpkg.com/ag-grid-community/dist/ag-grid-community.min.js"></script>
@@ -387,7 +442,8 @@ const container = document.getElementById('otrosGastosContainer');
 
 const opcionesGasto = [
   { value: 'GCM01', text: 'GCM01 - Comisión' },
-  { value: 'GDI02', text: 'GDI02 - Diesel' }
+  { value: 'GDI02', text: 'GDI02 - Diesel' },
+  { value: 'GBV01', text: 'GBV01 - Burrero Vacio' },
 ];
 
 if (botonGastos) {

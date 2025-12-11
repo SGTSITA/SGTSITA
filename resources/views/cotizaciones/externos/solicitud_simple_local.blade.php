@@ -180,7 +180,8 @@
       </div> --}}
 
       <div id="kt_bloque" class="tab-pane fade" role="tabpanel" aria-labelledby="kt_bloque_tab">
-        <h3 class="mb-5">Bloque</h3>
+        <h3 class="mb-5">Bloque <span id="FechaModInformativo"></span></h3>
+
         <div class="row gx-9 gy-6">
           @include('cotizaciones.externos.datos_bloquelocal')
         </div>
@@ -291,23 +292,56 @@ $(document).ready(() => {
         }
     }
 
-    // Cambia color al seleccionar
+
     selectEstado.addEventListener('change', aplicarColor);
 
-    // 👌 Aplica color al cargar la vista (modo editar)
+
     aplicarColor();
 
 
 });
 
+function spanChange(){
+    let fecha_modulacion= document.getElementById('fecha_modulacion').value;
+    let espan = document.getElementById('FechaModInformativo');
+
+    const [anio, mes, dia] = fecha_modulacion.split("-");
+    const fechaFormateada = `${dia}-${mes}-${anio}`;
+    espan.textContent ="(Fecha Modulado: " + fechaFormateada+ ")";
+  }
 
 
-// Detectar cambios en formularios
 $(document).ready(function () {
   $('form').on('change input', 'input, select, textarea', function() {
     console.log('Campo modificado:', $(this).attr('name'));
     $('#modifico_informacion').val('1');
+
+    if($(this).attr('id')=='fecha_modulacion'){
+        spanChange()
+    }
   });
+
+spanChange();
+
+
+  const puerto = document.getElementById("puerto");
+    const subPuerto = document.getElementById("sub_puerto_container");
+    const puertoOpcion = document.getElementById("puerto_opcion");
+
+    function validarPuerto() {
+        if (puerto.value === "LAZARO") {
+            subPuerto.style.display = "block";
+            puertoOpcion.required = true;
+        } else {
+            subPuerto.style.display = "none";
+            puertoOpcion.required = false;
+            puertoOpcion.value = "";
+        }
+    }
+
+    puerto.addEventListener("change", validarPuerto);
+
+    validarPuerto();
 });
 </script>
 @endpush
