@@ -94,7 +94,8 @@
                                                 {{-- @can('cotizaciones-estatus') --}}
                                                     <button type="button" class="btn btn-outline-success btn-xs"
                                                         data-bs-toggle="modal"
-                                                        data-bs-target="#estatusModal{{ $cotizacion->id }}">
+                                                         {{-- data-bs-target="#estatusModal{{ $cotizacion->id }}"--}}
+                                                        >
                                                         {{ $cotizacion->estatus }}
                                                     </button>
                                                 {{-- @endcan --}}
@@ -102,11 +103,17 @@
                                         </td>
                                         <td class="text-center">
 
-                                        <!-- Botón: Subir documentos -->
+                                        {{-- <!-- Botón: Subir documentos oculto
                                         <button class="btn btn-sm btn-outline-primary me-1"
                                                 onclick="abrirModalDocumentos({{ $cotizacion->id }}, '{{ $cotizacion->num_contenedor }}')"
                                                 title="Subir documentos">
                                             <i class="fa-solid fa-upload"></i>
+                                        </button> --> --}}
+
+                                        <button class="btn btn-sm btn-outline-info me-1"
+                                                onclick="abrirModalManiobraLocal({{ $cotizacion->id }}, '{{ $cotizacion->num_contenedor }}')"
+                                                title="Ver maniobra local">
+                                            <i class="fa-solid fa-truck"></i>
                                         </button>
 
                                         <!-- Botón: Ver documentos -->
@@ -183,6 +190,206 @@
         </div>
     </div>
 </div>
+<div class="modal fade" id="modalManiobra" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Información de maniobra local</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                 <h6 class="fw-bold border-bottom pb-2">Datos generales</h6>
+
+                <div class="row mb-3">
+                    <div class="col-6">
+                        <small class="text-muted">Cliente</small>
+                        <div id="m_cliente">—</div>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted">Subcliente</small>
+                        <div id="m_subcliente">—</div>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-6">
+                        <small class="text-muted">Empresa</small>
+                        <div id="m_empresa">—</div>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted">Proveedor / Transportista</small>
+                        <div id="m_proveedor">—</div>
+                    </div>
+                </div>
+
+
+                <!-- =============================
+                    CONTENEDOR
+                ============================== -->
+                <h6 class="fw-bold border-bottom pb-2 mt-4">Contenedor</h6>
+
+                <div class="row mb-3">
+                    <div class="col-6">
+                        <small class="text-muted">Número contenedor</small>
+                        <div id="m_num_contenedor">—</div>
+                    </div>
+
+                    <div class="col-6">
+                        <small class="text-muted">Tamaño</small>
+                        <div id="m_tamano">—</div>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-6">
+                        <small class="text-muted">Estado contenedor</small>
+                        <div id="m_estado_contenedor">—</div>
+                    </div>
+
+                    <div class="col-6">
+                        <small class="text-muted">Puerto</small>
+                        <div id="m_puerto">—</div>
+                    </div>
+                </div>
+
+
+                <!-- =============================
+                    ORIGEN / DESTINO
+                ============================== -->
+                <h6 class="fw-bold border-bottom pb-2 mt-4">Movimiento</h6>
+
+                <div class="row mb-3">
+                    <div class="col-6">
+                        <small class="text-muted">Origen</small>
+                        <div id="m_origen_local">—</div>
+                    </div>
+
+                    <div class="col-6">
+                        <small class="text-muted">Destino</small>
+                        <div id="m_destino_local">—</div>
+                    </div>
+                </div>
+
+
+                <!-- =============================
+                    DOCUMENTO Y MODULACIÓN
+                ============================== -->
+                <h6 class="fw-bold border-bottom pb-2 mt-4">Datos de documentación</h6>
+
+                <div class="row mb-3">
+                    <div class="col-6">
+                        <small class="text-muted">Número autorización</small>
+                        <div id="m_num_autorizacion">—</div>
+                    </div>
+
+                    <div class="col-6">
+                        <small class="text-muted">Terminal</small>
+                        <div id="m_terminal">—</div>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <small class="text-muted">Fecha Modulación</small>
+                        <div id="m_fecha_modulacion_local">—</div>
+                    </div>
+                </div>
+
+                <!-- =============================
+                    PESOS
+                ============================== -->
+                <h6 class="fw-bold border-bottom pb-2 mt-4">Pesos</h6>
+
+                <div class="row mb-3">
+                    <div class="col-4">
+                        <small class="text-muted">Peso contenedor</small>
+                        <div id="m_peso_contenedor">—</div>
+                    </div>
+
+                    <div class="col-4">
+                        <small class="text-muted">Peso reglamentario</small>
+                        <div id="m_peso_reglamentario">—</div>
+                    </div>
+
+                    <div class="col-4">
+                        <small class="text-muted">Sobrepeso</small>
+                        <div id="m_sobrepeso">—</div>
+                    </div>
+                </div>
+
+
+                <!-- =============================
+                    COSTOS
+                ============================== -->
+                <h6 class="fw-bold border-bottom pb-2 mt-4">Costos</h6>
+
+                <div class="row mb-3">
+                    <div class="col-6">
+                        <small class="text-muted">Costo maniobra</small>
+                        <div id="m_costo_maniobra_local">—</div>
+                    </div>
+
+                    <div class="col-6">
+                        <small class="text-muted">Precio tonelada</small>
+                        <div id="m_precio_tonelada">—</div>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+
+                    <div class="col-6">
+                        <small class="text-muted">Tarifa estadía</small>
+                        <div id="m_tarifa_estadia">—</div>
+                    </div>
+
+                    <div class="col-6">
+                        <small class="text-muted">Días estadía / Total</small>
+                        <div id="m_dias_estadia">—</div>
+                        <div id="m_total_estadia" class="text-muted small"></div>
+                    </div>
+                </div>
+
+
+                <div class="row mb-3">
+                    <div class="col-6">
+                        <small class="text-muted">Tarifa pernocta</small>
+                        <div id="m_tarifa_pernocta">—</div>
+                    </div>
+
+                    <div class="col-6">
+                        <small class="text-muted">Días pernocta / Total</small>
+                        <div id="m_dias_pernocta">—</div>
+                        <div id="m_total_pernocta" class="text-muted small"></div>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <small class="text-muted">Total General</small>
+                        <div class="fw-bold" id="m_total_general">—</div>
+                    </div>
+                </div>
+
+
+                <!-- 4) DOCUMENTOS -->
+                <div class="mb-4">
+                    <h6 class="fw-bold">Documentos de maniobra</h6>
+                    <hr>
+                    <div id="maniobra_documentos"  class="d-flex flex-wrap gap-3 justify-content-center">Sin documentos</div>
+                </div>
+
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
 
 @endsection
 @push('scripts')
@@ -364,6 +571,126 @@
 }
 
 
+
+window.abrirModalManiobraLocal= function (idCotizacion,numContenedor) {
+
+       fetch(`/contenedores/infoManiobra`, {
+            method: 'POST',
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content
+            },
+            body: JSON.stringify({
+                id_cotizacion: idCotizacion,
+                num_contenedor: numContenedor
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+        let d= data.cotiInfoManiobra;
+         const set = (id, val) => document.getElementById(id).textContent = val ?? '—';
+
+        // CLIENTES
+        set('m_cliente', d.cliente);
+        set('m_subcliente', d.subcliente);
+        set('m_empresa', d.empresa);
+        set('m_proveedor', d.proveedor);
+
+        // CONTENEDOR
+        set('m_num_contenedor', d.num_contenedor);
+        set('m_tamano', d.tamano);
+        set('m_estado_contenedor', d.estado_contenedor);
+        set('m_puerto', d.puerto);
+
+        // ORIGEN / DESTINO
+        set('m_origen_local', d.origen_local);
+        set('m_destino_local', d.destino_local);
+
+        // DOCUMENTACIÓN
+        set('m_num_autorizacion', d.num_autorizacion);
+        set('m_terminal', d.terminal);
+        set('m_fecha_modulacion_local', d.fecha_modulacion_local);
+
+        // PESOS
+        set('m_peso_contenedor', d.peso_contenedor);
+        set('m_peso_reglamentario', d.peso_reglamentario);
+        set('m_sobrepeso', d.sobrepeso);
+
+        // COSTOS
+        set('m_costo_maniobra_local', d.costo_maniobra_local);
+        set('m_precio_tonelada', d.precio_tonelada);
+
+        // ESTADÍA
+        set('m_tarifa_estadia', d.tarifa_estadia);
+        set('m_dias_estadia', d.dias_estadia);
+        set('m_total_estadia', d.total_estadia);
+
+        // PERNOCTA
+        set('m_tarifa_pernocta', d.tarifa_pernocta);
+        set('m_dias_pernocta', d.dias_pernocta);
+        set('m_total_pernocta', d.total_pernocta);
+
+        // TOTAL GENERAL
+        set('m_total_general', d.total_general);
+
+            // --- DOCUMENTOS ---
+            const contDocs = document.getElementById('maniobra_documentos');
+            contDocs.innerHTML = '';
+
+            if (data.documentList?.length) {
+                data.documentList.forEach(doc => {
+                      let html = "";
+                        let ext = doc.fileType.toLowerCase();
+
+                let isImage = ["jpg", "jpeg", "png", "gif", "webp"].includes(ext);
+                let isPDF   = ext === "pdf";
+                let isExcel = ext === "xlsx" || ext === "xls";
+
+                let urlPath = doc.publicUrl + doc.filePath
+
+                html += `
+                        <div class="card shadow-sm" style="width:180px;">
+                            <div class="card-body text-center">
+
+                                ${
+                                    isImage
+                                    ? `<img src="${urlPath}" class="img-fluid rounded" style="max-height:120px;">`
+                                    : isPDF
+                                    ? `<i class="fa-solid fa-file-pdf fa-2x text-danger mb-2"></i>`
+                                    : isExcel
+                                    ? `<i class="fa-solid fa-file-excel fa-2x text-success mb-2"></i>`
+                                    : `<i class="fa-solid fa-file fa-2x text-secondary mb-2"></i>`
+                                }
+
+                                <div class="mt-2 fw-bold">${doc.fileName}</div>
+
+                                <a href="${urlPath}" target="_blank" class="btn btn-sm btn-primary mt-2">
+                                    <i class="fa-solid fa-eye"></i> Ver / Descargar
+                                </a>
+
+                            </div>
+                        </div>
+                    `;
+
+
+
+                    contDocs.innerHTML +=html;
+                });
+            } else {
+                contDocs.textContent = 'Sin documentos';
+            }
+
+            // Abrir modal
+            const modal = new bootstrap.Modal(document.getElementById('modalManiobra'));
+            modal.show();
+        })
+        .catch(err => {
+            console.error(err);
+            alert("No se pudo cargar la información de la maniobra.");
+        });
+}
+
+
 window.abrirModalVerDocumentos= function (idSolicitud, numContenedor) {
 
      document.getElementById('numContenedorver').textContent = numContenedor;
@@ -455,5 +782,12 @@ window.abrirModalVerDocumentos= function (idSolicitud, numContenedor) {
 
 
 });
+
+
+
+
+
+
+
     </script>
 @endsection

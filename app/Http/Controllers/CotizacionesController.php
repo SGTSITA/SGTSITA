@@ -2207,7 +2207,8 @@ public function storelocal(Request $request)
             'estatus' => 'Documentos Faltantes',
 
             'tipo_viaje_seleccion' => 'local',
-            'puerto'               => 'Lazaro',
+            'puerto'               => $request->puerto ?? '',
+
             'fecha_ingreso_puerto' => $request->fecha_ingreso_puerto ?? null,
             'fecha_salida_puerto'  => $request->fecha_salida_puerto ?? null,
             'dias_estadia'         => (int) $request->input('dias_estadia', 0),
@@ -2232,7 +2233,7 @@ public function storelocal(Request $request)
             'id_cotizacion'          => $cotizacion->id,
             'id_empresa'             => $idempresa,
             'num_contenedor'         => $request->num_contenedor,
-            'terminal'               => $request->terminal,
+            'terminal'               => $request->terminal_local,
             'num_autorizacion'       => $request->num_autorizacion,
             'boleta_liberacion'      => $request->boleta_liberacion,
             'doda'                   => $request->doda,
@@ -2316,7 +2317,7 @@ public function singleUpdatelocal(Request $request, $id)
         $cot->bloque_hora_i        = $request->bloque_hora_i ?? null;
         $cot->bloque_hora_f        = $request->bloque_hora_f ?? null;
 
-        // Campos nuevos que migramos desde local
+        // Campos nuevos que migramos desde local para twner el inicio porq al ser foraneo cambian
         $cot->bloque_local               = $request->bloque ?? null;
         $cot->bloque_hora_i_local        = $request->bloque_hora_i ?? null;
         $cot->bloque_hora_f_local        = $request->bloque_hora_f ?? null;
@@ -2329,7 +2330,7 @@ public function singleUpdatelocal(Request $request, $id)
         $cot->fecha_modulacion_local        = $request->fecha_modulacion ?? null;
 
 
-        $cot->puerto               = 'Lazaro';
+        $cot->puerto               = $request->puerto ?? '';
         $cot->fecha_ingreso_puerto = $request->fecha_ingreso_puerto ?? null;
         $cot->fecha_salida_puerto  = $request->fecha_salida_puerto ?? null;
         $cot-> dias_estadia        = (int) $request->input('dias_estadia', 0);
@@ -2348,12 +2349,12 @@ public function singleUpdatelocal(Request $request, $id)
         $cot->save();
 
 
-        // ==========================================
-        // 3. SI CAMBIÓ EL NÚMERO DE CONTENEDOR
-        // ==========================================
+
         if ($request->num_contenedor != $contenedorOriginal) {
             $doc->num_contenedor = $request->num_contenedor;
         }
+         $doc->terminal = $request->terminal_local;
+        $doc->num_autorizacion = $request->num_autorizacion;
 
         $doc->save();
 

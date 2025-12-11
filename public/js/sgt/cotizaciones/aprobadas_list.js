@@ -155,6 +155,9 @@ document.addEventListener("DOMContentLoaded", function () {
            // let tamanoContenedorSpan = document.querySelector('#tamanoContenedor');
             let precioViajeSpan = document.querySelector('#precioViaje');
             let direccionEntregaSpan = document.querySelector('#direccionEntrega');
+                //viaje subcontratado
+              let pesoContenedorSubSpan = document.querySelector('#pesoContenedorSub');
+            let direccionEntregaSubSpan = document.querySelector('#direccionEntregaSub');
 
 
 
@@ -180,6 +183,13 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
                 if(precioViajeSpan){
                     precioViajeSpan.textContent =  moneyFormat(contenedor.total)
+                }
+                //subcontratado informativo
+                 if(pesoContenedorSubSpan){
+                    pesoContenedorSubSpan.textContent =  contenedor.peso_contenedor
+                }
+                if(direccionEntregaSubSpan){
+                    direccionEntregaSubSpan.textContent =  contenedor.direccion_entrega
                 }
             })
 
@@ -283,9 +293,9 @@ function setTipoViaje(valTipoViaje){
     }
     tipoViaje = valTipoViaje;
     if(valTipoViaje == "proveedor")
-     $("#viaje-proveedor").removeClass('d-none') , $("#viaje-propio").addClass('d-none')
+     $("#viaje-proveedor").removeClass('d-none'), $("#proveedorSubcontratado").removeClass('d-none'),$("#BloqueDireccionEn").removeClass('d-none') , $("#viaje-propio").addClass('d-none')
     else
-     $("#viaje-propio").removeClass('d-none') , $("#viaje-proveedor").addClass('d-none')
+     $("#viaje-propio").removeClass('d-none') ,$("#proveedorSubcontratado").addClass('d-none'),$("#BloqueDireccionEn").addClass('d-none'), $("#viaje-proveedor").addClass('d-none')
 }
 
 function programarViaje(){

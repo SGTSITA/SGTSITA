@@ -1,26 +1,8 @@
-<div class="row mt-4">
-  <div class="col-lg-5 col-12">
-    <h6 class="mb-0">Proveedor</h6>
-    <p class="text-sm">Seleccione el proveedor que transportará el contenedor.</p>
-    <div class="border-dashed border-1 border-secondary border-radius-md p-3">
-      <p class="text-xs mb-2">
-        <span class="font-weight-bolder">Proveedor</span>
-      </p>
-      <div class="d-flex align-items-center">
-        <select class="form-control" name="cmbProveedor" id="cmbProveedor"> 
-            <option value="">Seleccione Proveedor</option>
-            @foreach ($proveedores as $item) 
-            <option value="{{$item->id}}">{{$item->nombre}}</option> 
-            @endforeach 
-        </select>
-      </div>
-    </div>
-  </div>
-</div>
+
 <div class="row">
-  <h6 class="mt-3">Costos</h6>
+  <h6 class="mb-0" style="margin-top:-35px;">Costos</h6>
   <p class="text-sm">Precios de costo del viaje.</p>
-  <div class="col-12 col-md-4  mt-2 text-start">
+  <div class="col-12 col-md-4  mt-1 text-start">
     <label>Costo del viaje</label>
     <input class="form-control fieldsCalculo moneyformat" name="precio_proveedor" id="precio_proveedor" autocomplete="off" placeholder="" oninput="allowOnlyDecimals(event)" type="text">
   </div>

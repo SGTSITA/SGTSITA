@@ -19,7 +19,7 @@
 
     <!--begin::Toolbar-->
     <div class="d-flex justify-content-end" data-kt-docs-table-toolbar="base">
-      
+
         <!--begin::Add customer-->
         <button type="button" class="btn btn-sm btn-primary" name="btnDocs" id="btnDocs">
             Agregar documento
@@ -31,7 +31,7 @@
     <!--begin::Group actions-->
     <div class="d-flex justify-content-end align-items-center d-none" data-kt-docs-table-toolbar="selected">
         <div class="fw-bold me-5">
-            Archivos seleccionados: <span class="me-2" data-kt-docs-table-select="selected_count"></span> 
+            Archivos seleccionados: <span class="me-2" data-kt-docs-table-select="selected_count"></span>
         </div>
 
         <button type="button" class="btn btn-sm btn-secondary" name="btnAdjuntos" id="btnAdjuntos">
@@ -44,7 +44,7 @@
         </button>
     </div>
     <!--end::Group actions-->
-    
+
 </div>
 <!--end::Wrapper-->
 
@@ -65,8 +65,8 @@
     </tr>
     </thead>
     <tbody class="text-gray-600 fw-semibold">
-    
-    
+
+
     </tbody>
 </table>
 
@@ -83,11 +83,11 @@
 <link href="{{asset('assets/metronic/fileuploader/jquery.fileuploader.min.css')}}" media="all" rel="stylesheet">
 <link href="{{asset('assets/metronic/fileuploader/jquery.fileuploader-theme-dragdrop.css')}}" media="all" rel="stylesheet">
 <script src="{{asset('assets/metronic/fileuploader/jquery.fileuploader.min.js')}}" type="text/javascript"></script>
-<script src="{{asset('assets/metronic/fileuploader/cotizacion-cliente-externo.js')}}" type="text/javascript"></script>
+<script src="{{asset('assets/metronic/fileuploader/cotizacion-cliente-externo-local.js')}}" type="text/javascript"></script>
 <script src="{{ asset('/assets/metronic/js/custom/apps/inbox/compose.js') }}?v={{ filemtime(public_path('/assets/metronic/js/custom/apps/inbox/compose.js')) }}"></script>
 <script src="{{ asset('js/sgt/cotizaciones/file-manager.js') }}?v={{ filemtime(public_path('js/sgt/cotizaciones/file-manager.js')) }}"></script>
 <script>
-    
+
     $(document).ready(()=>{
         adjuntarDocumentos();
     })

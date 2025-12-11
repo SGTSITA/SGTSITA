@@ -728,7 +728,8 @@ public static function guardarOtrosGastosPlaneacion($r, $num_Contenedor, $idOper
         //  Solo se permiten estos tipos peticion don  jose
         $descripcionGastosPermitidos = [
             'GCM01' => 'GCM01 - Comisión',
-            'GDI02' => 'GDI02 - Diesel'
+            'GDI02' => 'GDI02 - Diesel',
+            'GBV01' => 'GBV01 - Burrero Vacio'
         ];
 
         foreach ($otrosGastos as $gasto) {
