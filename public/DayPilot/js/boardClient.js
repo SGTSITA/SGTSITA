@@ -1,6 +1,7 @@
 const fecha = new Date();
 //const APP_URL = document.querySelector('meta[name="APP_URL"]').getAttribute('content');
-
+ let ajustes = [];
+let canEndTravel=0;
 var allEvents = null;
 var festivos = [];
 let dpReady = false;
@@ -8,6 +9,8 @@ let dpReady = false;
 
 function formatFecha(fechaISO){
 const fecha = new Date(fechaISO);
+const btnGuardarBoard = document.querySelector('#btnGuardarBoard')
+const labelNotice = document.querySelector('#labelNotice')
 
 // Obtener día, mes y año
 const dia = String(fecha.getDate()).padStart(2, '0');
@@ -22,7 +25,7 @@ return `${dia}/${mes}/${anio}`;
 async function initBoard(fromDate,toDate){
 
     var _token = $('input[name="_token"]').val();
-   
+
     const result = await $.ajax({
         method:'post',
         url:'/mec/planeaciones/monitor/board',
@@ -34,16 +37,16 @@ async function initBoard(fromDate,toDate){
            }
         },
         success:(resp)=>{
-          
-            
+
+
             dp.resources = resp.boardCentros;
-            
+
             //Horizonte
             /*dp.separators = [
                 {color: "red", location: info.Horizonte}
             ];*/
             //Mostrar los eventos planificados previamente
-           
+
             allEvents = resp.extractor;
             //TarifasHilos = resp.TarifasHilo;
             //festivos = resp.festivos;
@@ -69,34 +72,45 @@ async function initBoard(fromDate,toDate){
                 }
                 dp.events.list.push(e);
                // const threads = array1.findIndex(element => element > 10);
-               
+
             });
             }
 
           if (scrollToDate) {
+
+
               dp.startDate = scrollToDate.addDays(-2);
             } else {
-                dp.startDate = new DayPilot.Date(fromDate); 
+                dp.startDate = new DayPilot.Date(fromDate);
+
             }
 
             if ( dpReady) {
-             
+
                dp.update();
            }else{
                dp.init();
                dpReady = true;
            }
-            
-            dp.scrollTo(new DayPilot.Date(fromDate));        
 
-           
-            
-                       
+            dp.scrollTo(new DayPilot.Date(fromDate));
+
+
+
+
         },
         error:(e)=>{
             console.log('Ocurrio un error: '+e);
         }
     })
+
+
+
+
+
+
+
+
 
     return result;
 }
@@ -121,7 +135,7 @@ dp.timeHeaders = [
     {groupBy: "Month", format: "MMMM yyyy"},
     {groupBy: "Day", format: "d"}
 ];
-  
+
 dp.crosshairType = "Full";
 dp.allowEventOverlap = true;
 
@@ -129,6 +143,13 @@ dp.showToolTip = false;
 dp.bubble = new DayPilot.Bubble();
 
 dp.durationBarMode = "PercentComplete";
+
+
+
+
+
+
+
 
 dp.contextMenu = new DayPilot.Menu({
     items: [
@@ -145,16 +166,16 @@ dp.contextMenu = new DayPilot.Menu({
                    /* Read more about isConfirmed, isDenied below */
                    if (result.isConfirmed) {
                        var event = args.source.data.id;
-                       
-                    
-                   } 
+
+
+                   }
                  })
 
-              
-                
+
+
             }
         },
-   
+
         {
             //text: "Ver Detalles", onClick: function (args) {}
         }/*,
@@ -172,16 +193,45 @@ dp.treePreventParentUsage = true;
 dp.heightSpec = "Max";
 dp.height = 500;
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 dp.events.list = [];
+
 
 dp.eventMovingStartEndEnabled = true;
 dp.eventResizingStartEndEnabled = true;
 dp.timeRangeSelectingStartEndEnabled = true;
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /*dp.onBeforeCellRender = function (args) {
    var machines = $("#dp").data('allowmachines');
    //var machines = JSON.parse();
-   
+
    for(i= 0; i< machines.length; i++){
        var disabled = true;
        if((machines[i]*1) === args.cell.resource){
@@ -196,6 +246,9 @@ dp.timeRangeSelectingStartEndEnabled = true;
        args.cell.backColor = "#ccc";
    }
 
+
+
+
    var fecha = ''+args.cell.start+'';
    fecha = fecha.substring(0,10);
    if(festivos.includes(fecha)){
@@ -204,32 +257,44 @@ dp.timeRangeSelectingStartEndEnabled = true;
    }
 };*/
 
+function BoarCambio(args){
+let inforAjustes = ajustes.filter((item) => {return item.text != args.e.data.text});
+     ajustes = (inforAjustes) ? [...inforAjustes,args.e.data] : [...ajustes,args.e.data]
+     dp.message("Se cambió fecha del viaje: " + args.e.text());
+     if(ajustes.length > 0){
+        btnGuardarBoard.classList.remove('d-none')
+        labelNotice.textContent = `Viajes con cambios sin confirmar: ${ajustes.length}`
+        labelNotice.classList.remove('d-none')
+        btnGuardarBoard.classList.add("parpadeando");
+        labelNotice.classList.add("parpadeando");
+        setTimeout(() => {
+            btnGuardarBoard.classList.remove("parpadeando");
+            labelNotice.classList.remove('parpadeando')
+        }, 2500); // 2.5 segundos
+    }
 
+}
 // event moving
 dp.onEventMoved = function (args) {
-    //console.log(args.e);
-    dp.message("Nuevo calculo: " + args.e.text());
-    
+
+BoarCambio(args);
 };
 
+
+
 dp.onEventMoving = function (args) {
-   
-   
+
+
 };
 
 // event resizing
 dp.onEventResized = function (args) {
-   var MS_PER_MINUTE = 60000; 
-   var EndDateTime =  Date.parse(args.newEnd);
-   var myEndDate = new Date(EndDateTime - 1 * MS_PER_MINUTE);
-
-   args.end =(myEndDate.getFullYear()+'-'+(myEndDate.getMonth()+1)+'-'+myEndDate.getDate()); ;
-   dp.message("Programa Modificado: " + args.e.text());
+BoarCambio(args);
 };
 
 // event creating
 dp.onTimeRangeSelected = function (args) {
-  
+
 };
 
 dp.onEventMove = function (args) {
@@ -244,10 +309,10 @@ dp.onEventMove = function (args) {
         dp.events.add(newEvent);
 
         // notify the server about the action here
-
         args.preventDefault(); // prevent the default action - moving event to the new location
     }
 };
+
 
 dp.onRowClick = function (args){
    //console.log(args);
@@ -264,15 +329,19 @@ function abrirMapaEnNuevaPestana( contenedor,tipoS,origenRastreo) {
 }
 
 
+
+
+
 function getInfoViaje(startDate, endDate, numContenedor_, idContendor){
    let fechaSalida = document.querySelector('#fechaSalida')
   fechaSalida.textContent = formatFecha(startDate);
 
   let fechaEntrega  = document.querySelector('#fechaEntrega')
   fechaEntrega.textContent = formatFecha(endDate);
-  
+
   let numContenedor = document.querySelector('#numContenedorSpan')
   numContenedor.textContent = numContenedor_
+
 
   let nombreProveedor = document.querySelector('#nombreProveedor')
  // let nombreTransportista = document.querySelector('#nombreTransportista')
@@ -280,7 +349,7 @@ function getInfoViaje(startDate, endDate, numContenedor_, idContendor){
   let nombreOperador = document.querySelector('#nombreOperador')
   let telefonoOperador = document.querySelector('#telefonoOperador')
 
-   
+
   //let tipoViajeSpan = document.querySelector('#tipoViajeSpan')
 
   let origen = document.querySelector('#origen')
@@ -320,10 +389,14 @@ function getInfoViaje(startDate, endDate, numContenedor_, idContendor){
 
            tipoViajeSpan.textContent = ""
 
+
+
+
            origen.textContent = "--"
            destino.textContent = "--"
            nombreCliente.textContent = "--"
            nombreSubcliente.textContent = "--"
+
               placas_camion.textContent = "--"
                 id_equipo_camion.textContent = "--"
                 marca_camion.textContent = "--"
@@ -343,8 +416,11 @@ function getInfoViaje(startDate, endDate, numContenedor_, idContendor){
    telefonoOperador.textContent = response.datosExtraviaje.beneficiario_telefono ?? "--"
 
 
-    
+
+
           // tipoViajeSpan.textContent = response.tipo
+
+
 
            origen.textContent = response.cotizacion.origen
            destino.textContent = response.cotizacion.destino
@@ -369,13 +445,23 @@ function getInfoViaje(startDate, endDate, numContenedor_, idContendor){
          //  btnDeshacer.addEventListener('click', () => anularPlaneacion(idContendor,numContenedor_), { once: true });
            btnRastreo.addEventListener('click', () => abrirMapaEnNuevaPestana(numContenedor_,tipoS,'MECBoard'), { once: true });
 
+
+
+
+
+
+
+
+
+
            let documentos = response.documents
            let docs = Object.keys(documentos)
+
            docs.forEach(doc => {
                let documento = document.querySelector("#"+doc)
                valorDoc = documentos[doc]
                if(documento){
-                   
+
                    documento.innerHTML = (valorDoc != false && valorDoc != null) ?
                     `<i class="fas fa-circle-check text-success fa-lg"></i>` :
                     `<i class="fas fa-circle-xmark text-secondary fa-lg"></i>`
@@ -384,8 +470,10 @@ function getInfoViaje(startDate, endDate, numContenedor_, idContendor){
                if(doc == 'cima' && valorDoc == 1){
                    $("#cima-label").removeClass('d-none')
 
+
+
                }
-               
+
            })
        },
        error:()=>{
@@ -404,6 +492,40 @@ function mostrarLoading(text = "Espere un momento...") {
     document.getElementById('loading-overlay').style.display = 'flex'
 }
 
+
+function confirmarCambiosPlaneacion(){
+    var _token = $('input[name="_token"]').val();
+    let payload = {_token,ajustes: JSON.stringify( ajustes)}
+    Swal.fire({
+        title: `Guardar cambios para ${ajustes.length} ${(ajustes.length > 1) ? 'Viajes' : 'Viaje'}`,
+        text: `¿Desea guardar la programación de ${ajustes.length} viajes pendientes por confirmar?`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, continuar',
+        cancelButtonText: 'Cancelar',
+      }).then((result) => {
+        if (result.isConfirmed) {
+            $.ajax({
+                url: '/planeaciones/viajes/reprogramar',
+                type:'post',
+                data: payload,
+                beforeSend:()=>{
+                    mostrarLoading('Espere un momento, guardando cambios...')
+                },
+                success:(response)=>{
+                    ocultarLoading()
+                    Swal.fire(response.Titulo,response.Mensaje, response.TMensaje)
+                },
+                error:(e)=>{
+                    ocultarLoading()
+                    Swal.fire('Ha ocurrido un error','error','error')
+
+                }
+            })
+        }
+      });
+ }
+
 function ocultarLoading() {
   document.getElementById('loading-overlay').style.display = 'none';
 }
@@ -416,8 +538,10 @@ function abrirMapaEnNuevaPestana( numContenedor,tipoS,origenRastreo) {
          Swal.fire('Validación', 'No se encontró información del contenedor.', 'warning');
          return;
      }
-   
+
+
 }
+
 function encontrarContenedor(contenedor){
    let busqueda = allEvents
    const resultados = busqueda.filter(f => f.num_contenedor?.includes(contenedor))
@@ -432,10 +556,10 @@ function encontrarContenedor(contenedor){
    let idContendor = resultados[resultados.length - 1]?.id_contenedor;
 
    if ( dpReady) {
-       dp.scrollTo(new DayPilot.Date(fromDate));    
+       dp.scrollTo(new DayPilot.Date(fromDate));
        getInfoViaje(fromDate, toDate, numContenedor, idContendor)
    }
-    
+
 }
 
 /*
