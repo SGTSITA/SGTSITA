@@ -55,7 +55,7 @@
   margin-bottom: 6px;
 }
 
-/* Tabla documentos */
+
 #viajeModal table th {
   /*background-color: #748ea8fb;*/
   color: rgb(60, 100, 153);
@@ -69,7 +69,7 @@
   font-size: 1.2rem;
 }
 
-/* Iconos de documentos */
+
 #viajeModal .documentos i.text-secondary {
   color: #ccc !important;
 }
@@ -90,7 +90,7 @@
   padding: 6px 14px;
 }
 
-/* Efecto de enfoque */
+
 #viajeModal.show .modal-content {
   animation: modalPop 0.3s ease-in-out;
 }
@@ -101,30 +101,52 @@
 }
 </style>
 <div class="card">
-   <div class="card-header ">
+<div class="card-header d-flex flex-column">
+
+
+    <div class="d-flex justify-content-between w-100 align-items-center mb-2">
         <h3 class="card-title align-items-start flex-column">
             <span class="card-label fw-bold text-gray-900">Programa de viajes</span>
-            <span class="text-gray-500 mt-1 fw-semibold fs-6">Visualice fácilmente los viajes programados y mantenga el control de las rutas.</span>
+            <span class="text-gray-500 mt-1 fw-semibold fs-6">
+                Visualice fácilmente los viajes programados y mantenga el control de las rutas.
+            </span>
         </h3>
+
         <div class="card-toolbar">
-            <a href="{{route('viajes.solicitar')}}" type="button" class="btn btn-sm btn-light-primary">
-            <i class="ki-duotone ki-delivery">
-                <span class="path1"></span>
-                <span class="path2"></span>
-                <span class="path3"></span>
-                <span class="path4"></span>
-                <span class="path5"></span>
-            </i>
+            <button onclick="confirmarCambiosPlaneacion()" type="button"
+                class="btn btn-sm btn-success d-none" id="btnGuardarBoard">
+                <i class="fa fa-fw fa-save"></i> Confirmar cambios en Board
+            </button>
+
+            <a href="{{ route('viajes.solicitar') }}" type="button"
+                class="btn btn-sm btn-light-primary">
+                <i class="ki-duotone ki-delivery">
+                    <span class="path1"></span>
+                    <span class="path2"></span>
+                    <span class="path3"></span>
+                    <span class="path4"></span>
+                    <span class="path5"></span>
+                </i>
                 Solicitar viaje
             </a>
         </div>
-        
-  </div>
+    </div>
+
+
+    <div class="d-flex justify-content-end w-100">
+        <div class="p-2 parpadeando d-none" id="labelNotice"
+            style="color:#444;border:1px dashed #ccc;border-radius:8px;background-color:#f8f9fa;font-weight:500;">
+            Viajes con cambios sin confirmar: 3
+        </div>
+    </div>
+
+</div>
+
     <div class="card-body">
     <div id="dp"></div>
         <div class="d-flex flex-column flex-lg-row-fluid">
           <div class="d-flex flex-center flex-column flex-column-fluid">
-          
+
           </div>
         </div>
     </div>
@@ -152,14 +174,14 @@
 @endsection
 
 @push('javascript')
-<script src="{{asset('DayPilot/js/daypilot-all.min.js?v=2022.3.5384')}}"></script>    
+<script src="{{asset('DayPilot/js/daypilot-all.min.js?v=2022.3.5384')}}"></script>
 <script src="{{asset('DayPilot/helpers/v2/app.js?v=2022.3.5384')}}"></script>
 <script type="text/javascript" src="{{asset('DayPilot/js/boardClient.js')}}?v={{ filemtime(public_path('DayPilot/js/boardClient.js')) }}"></script>
 <script>
     $(document).ready(()=>{
 
     const today = new Date();
-   
+
     const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
     const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
 
@@ -171,7 +193,7 @@
    // document.getElementById('daterange').value=`${formatDate(firstDay)} AL ${formatDate(lastDay)}`
 
     initBoard(formatDate(firstDay),formatDate(lastDay));
-  
+
     });
 </script>
 @endpush
