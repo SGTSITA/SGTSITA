@@ -201,7 +201,7 @@
     </div>
     <div class="fv-row row mb-3">
 
- <div class="col-3">
+        <div class="col-3">
             <div class="input-group mb-5">
                 <span class="input-group-text" id="basic-addon1">
                     <i class="ki-duotone ki-delivery-2 fs-2">
@@ -297,9 +297,53 @@
                     </select>
                     <label for="mi_select" class="text-gray-700">Tipo</label>
                 </div>
+
+
             </div>
         </div>
-         <div class="col-2">
+        <div class="col-2 d-none" id="campo_confirmacion_sello">
+            <div class="input-group mb-5">
+                <span class="input-group-text">
+                    <i class="ki-duotone ki-shield-tick fs-2">
+                        <span class="path1"></span>
+                        <span class="path2"></span>
+                    </i>
+                </span>
+
+                <div class="form-floating flex-grow-1 d-flex align-items-center ps-4">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox"
+                            id="confirmacion_sello"
+                            name="confirmacion_sello"
+                           {{ $action == 'editar' && $cotizacion->confirmacion_sello ? 'checked' : ''}} >
+                        <label class="form-check-label ms-2 text-gray-700" for="confirmacion_sello">
+                            Tiene sello validado
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-2 d-none" id="campo_nuevo_sello">
+            <div class="input-group mb-5">
+                <span class="input-group-text">
+                    <i class="ki-duotone ki-lock fs-2">
+                        <span class="path1"></span>
+                        <span class="path2"></span>
+                    </i>
+                </span>
+
+                <div class="form-floating flex-grow-1">
+                   <input type="hidden" name="nuevo_sello" id="nuevo_sello" value="1">
+                    <label class="text-gray-700">Nuevo sello</label>
+                </div>
+            </div>
+        </div>
+
+
+
+    </div>
+     <div class="fv-row row mb-3"> <!--fila 3 -->
+        <div class="col-3">
             <div class="input-group mb-5">
                <span class="input-group-text" id="basic-addon1">
                     <i class="ki-duotone ki-dollar fs-2">
@@ -318,14 +362,23 @@
                 </div>
             </div>
         </div>
+        <div class="col-8">
+            <div class="input-group mb-5">
+                <span class="input-group-text">
+                    <i class="ki-duotone ki-notepad fs-2">
+                        <span class="path1"></span>
+                        <span class="path2"></span>
+                    </i>
+                </span>
 
-
-
-
-
-
-
-    </div>
+                <div class="form-floating flex-grow-1">
+                    <textarea class="form-control" id="observaciones" name="observaciones"
+                       >{{ old('observaciones', $cotizacion->observaciones ?? '') }}</textarea>
+                    <label for="observaciones" class="text-gray-700">Observaciones</label>
+                </div>
+            </div>
+        </div>
+     </div>
     <input type="hidden" value="MEC-local" id="origen_captura" name="origen_captura" />
 
 <div class="separator my-5"></div>

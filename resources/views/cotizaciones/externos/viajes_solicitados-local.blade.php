@@ -7,8 +7,10 @@
                 <div class="card-header ">
                     <h3 class="card-title align-items-start flex-column">
                         <span class="card-label fw-bold text-gray-900">Movimientos locales(Burrero)</span>
-                     
+
                     </h3>
+
+
                     <div class="card-toolbar">
                         <div>
                             <button class="btn btn-primary btn-sm" data-kt-menu-trigger="click"
@@ -30,48 +32,53 @@
                                 {{-- <div class="menu-item px-3">
                                     <a class="menu-link px-3" onclick="getFilesCFDI()"> Obtener CFDI Carta Porte </a>
                                 </div> --}}
-                                <div class="menu-item px-3">
-                                    <a class="menu-link px-3" onclick="cancelarViajeQuestion()"> Cancelar Viaje </a>
-                                </div>
-
-                                <div class="menu-item px-3">
-                                    <a class="menu-link px-3 " onclick="fileManager()"> Ver Documentos </a>
-                                </div>
-                                @can('cotizaciones-edit')
+                                 @can('cotizaciones-edit')
                                     <div class="menu-item px-3">
                                         <a class="menu-link px-3 " onclick="editarViaje()"> Editar Viaje </a>
                                     </div>
                                 @endcan
+                                  <div class="menu-item px-3">
+                                    <a class="menu-link px-3 " onclick="fileManager()"> Ver Documentos </a>
+                                </div>
+                                  <div class="menu-item px-3">
+                                    <a class="menu-link px-3 " onclick="ModalCambiarEstatus()"> Cambiar Estatus </a>
+                                </div>
+                                <div class="menu-item px-3">
+                                    <a class="menu-link px-3" onclick="cancelarViajeQuestion()"> Cancelar Viaje </a>
+                                </div>
+
+
+
                                 <!--end::Menu item-->
 
 
                                 <!--div class="menu-item px-3" data-kt-menu-trigger="hover" data-kt-menu-placement="right-start">
-                        
+
                         <a href="#" class="menu-link px-3" data-bs-toggle="modal" data-bs-target="#kt_modal_top_up_wallet">
                           <span class="menu-title">Ver documentos</span>
                           <span class="menu-arrow"></span>
                         </a>
-                      
-                       
+
+
                         <div class="menu-sub menu-sub-dropdown w-175px py-4">
-                        
+
                           <div class="menu-item px-3">
                             <a href="#" class="menu-link px-3"> DODA </a>
                           </div>
-                       
+
                           <div class="menu-item px-3">
                             <a href="#" class="menu-link px-3"> Pre Alta </a>
                           </div>
-                         
+
                           <div class="menu-item px-3">
                             <a href="#" class="menu-link px-3"> Boleta de liberación </a>
                           </div>
                           <div class="menu-item px-3">
                             <a href="#" class="menu-link px-3"> Formato Carta Porte </a>
                           </div>
-                         
+
                         </div>
-                       
+
                       </div-->
 
 
@@ -80,14 +87,17 @@
                                 <div class="menu-item px-3">
                                     <a class="menu-link px-3 " onclick="viajeFull()"> Viajar en Full </a>
                                 </div>
+                                <div class="menu-item px-3">
+                                    <a class="menu-link px-3 " onclick="ModalExport()"> Exportar </a>
+                                </div>
                                 <!--end::Menu separator-->
                                 <!--begin::Menu item-->
-                                <div class="menu-item px-3">
+                                {{-- <div class="menu-item px-3">
                                     <div class="menu-content px-3 py-3">
                                         <button class="btn btn-primary  btn-sm px-4" name="btnDocs" id="btnDocs"
                                             disabled="true"> Agregar documentos </button>
                                     </div>
-                                </div>
+                                </div> --}}
                                 {{-- <div class="menu-item px-3">
                                     <div class="menu-content px-3 py-3">
                                         <button type="button" class="btn btn-sm btn-success" title="Rastrear contenedor"
@@ -106,7 +116,37 @@
 
                 </div>
                 <div class="card-body">
+                    <div class="row mb-6">
+                            <div class="col-md-4">
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="ki-duotone ki-filter fs-2">
+                                            <span class="path1"></span>
+                                            <span class="path2"></span>
+                                        </i>
+                                    </span>
 
+                                    <div class="form-floating flex-grow-1">
+                                        <select
+                                            class="form-select form-select-lg"
+                                            id="estatus_maniobra"
+                                            name="estatus_maniobra"
+                                            onchange="getContenedoresPendientes(this.value)"
+                                        >
+                                            <option value="all">Todos</option>
+                                            @foreach($estatusManiobras as $estatus)
+                                                <option value="{{ $estatus->id }}">
+                                                    {{ $estatus->nombre }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                        <label class="text-gray-700">
+                                            Estatus de maniobra
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     <div class="row">
                         <div id="myGrid" class="col-12 ag-theme-quartz mb-6" style="height: 500px">
 
@@ -199,7 +239,18 @@
     </script>
     <script>
         $(document).ready(() => {
-            getContenedoresPendientes('all');
+             getContenedoresPendientes('all');
+            document.getElementById('filtro_estatus_maniobra').addEventListener('change', function () {
+                const estatus = this.value;
+
+                // Limpias el grid si lo necesitas
+                if (typeof gridApi !== 'undefined') {
+                    gridApi.setGridOption('rowData', []);
+                }
+
+                // Recargar contenedores según estatus
+                getContenedoresPendientes(estatus);
+            });
             adjuntarDocumentos();
         });
     </script>

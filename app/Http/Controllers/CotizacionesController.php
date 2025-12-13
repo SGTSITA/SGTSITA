@@ -2223,6 +2223,9 @@ public function storelocal(Request $request)
             'fecha_liberacion'     => $request->fecha_liberacion ?? null,
             'responsable'          => 'Viaje local', //solo para saber de donde nace el viaje
             'observaciones'        => $request->observaciones ?? null,
+            'nuevo_sello'        => $request->nuevo_sello ?? null,
+            'confirmacion_sello'        => $request->confirmacion_sello ?? null,
+            'estatus_maniobra_id'=> 4,
             'origen_captura' => $origen_inicial,
             'user_id' => \Auth::User()->id,
 
@@ -2345,6 +2348,18 @@ public function singleUpdatelocal(Request $request, $id)
         $cot->fecha_liberacion     = $request->fecha_liberacion ?? null;
         $cot->responsable          = $request->responsable ?? null;
         $cot->observaciones        = $request->observaciones ?? null;
+        if ($request->has('nuevo_sello')) {
+            $cot->nuevo_sello = $request->boolean('confirmacion_sello');
+        } else {
+              $cot->nuevo_sello  = null;
+        }
+        $cot->nuevo_sello      = $request->nuevo_sello ?? null;
+        if ($request->has('confirmacion_sello')) {
+            $cot->confirmacion_sello = $request->boolean('confirmacion_sello');
+        } else {
+              $cot->confirmacion_sello  = null;
+        }
+
 
         $cot->save();
 
@@ -2571,7 +2586,7 @@ public function storeMultiplelocal(Request $request){
             $contenedor = Cotizaciones::join('docum_cotizacion as d', 'cotizaciones.id', '=', 'd.id_cotizacion')
             ->where('cotizaciones.id' ,'=',$cotizacion)
             ->where('estatus','=','Documentos Faltantes')
-           ->wherein('cotizaciones.tipo_viaje_seleccion',['local']) //aseguaramos q solo sean locales
+           ->wherein('cotizaciones.tipo_viaje_seleccion',['local'])
             ->selectRaw('cotizaciones.*, d.num_contenedor,d.doc_eir,doc_ccp ,d.boleta_liberacion,d.doda,d.boleta_patio')
             ->first();
             \Log::channel('daily')->info('DEBUG valores', [
@@ -2582,6 +2597,8 @@ public function storeMultiplelocal(Request $request){
             if($contenedor->doda != null && $contenedor->boleta_liberacion != null  ){
                 $cotizacion = Cotizaciones::where('id',$cotizacion)->first();
                 $cotizacion->estatus = 'Local';// (is_null($cotizacion->id_proveedor)) ? 'Local' :'Pendiente';
+                $cotizacion->estatus_maniobra_id =1;
+                $cotizacion->en_patio =0;
               //  $cliente = Client::where('id',$cotizacion->id_cliente)->first();
                 $cotizacion->save();
 

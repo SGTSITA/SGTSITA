@@ -44,12 +44,16 @@ const formFields = [
     { field: 'total_pernocta', id: 'total_pernocta', label: 'Total Pernocta', required: false, type: 'numeric', master: false },
 
     { field: 'total_general', id: 'total_general', label: 'Total General', required: false, type: 'numeric', master: false },
+    { field: 'observaciones', id: 'observaciones', label: 'Observaciones', required: false, type: 'textarea', master: false },
+    { field: 'nuevo_sello', id: 'nuevo_sello', label: 'Nuevo Sello', required: false, type: 'hidden', master: false },
+    { field: 'confirmacion_sello', id: 'confirmacion_sello', label: 'Confirmar Sello', required: false, type: 'text', master: false },
+
 
     // Campos comentados (los agrego por si se activan después)
     { field: 'fecha_liberacion', id: 'fecha_liberacion', label: 'Fecha Liberación', required: false, type: 'datetime', master: false },
     { field: 'motivo_demora', id: 'motivo_demora', label: 'Motivo Demora', required: false, type: 'textarea', master: false },
     { field: 'responsable', id: 'responsable', label: 'Responsable', required: false, type: 'text', master: false },
-    { field: 'observaciones', id: 'observaciones', label: 'Observaciones', required: false, type: 'textarea', master: false },
+
 
     //boque
      { field: 'bloque', id: 'bloque', label: 'Núm. Bloque', required: false, type: 'text', master: false },
@@ -110,9 +114,6 @@ function validateFormFields() {
             case "time":
                 if (!/^\d{2}:\d{2}(:\d{2})?$/.test(value)) invalid = true;
                 break;
-
-            case "radio":
-
 
             default:
                 if (value === "") invalid = true;

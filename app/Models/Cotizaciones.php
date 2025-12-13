@@ -80,6 +80,7 @@ class Cotizaciones extends Model
                 'fecha_en_patio',
                 'origen_captura',
                 'user_id',
+                'estatus_maniobra_id'
 
     ];
 
@@ -122,6 +123,12 @@ class Cotizaciones extends Model
     {
         return $this->hasOne(Empresas::class, 'id_empresa');
     }
+
+    public function estatusManiobra() //para local y estatus
+    {
+        return $this->belongsTo(EstatusManiobra::class, 'estatus_maniobra_id');
+    }
+
 
     protected static function boot()
     {

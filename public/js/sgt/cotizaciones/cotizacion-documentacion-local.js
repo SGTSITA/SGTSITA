@@ -105,10 +105,10 @@ const localeText = {
 
 const ragCellClassRules = {
 
-  "badge badge-light-info fs-base": (params) => params.value === "Viaje solicitado",
-  "badge badge-light-warning fs-base": (params) => params.value === "Documentos Faltantes",
-  "badge badge-light-success fs-base": (params) => params.value === "Aprobada",
-  "badge badge-light-danger fs-base": (params) => params.value === "Cancelada",
+  "badge badge-light-info fs-base": (params) => params.value === "Local solicitado",
+  "badge badge-light-warning fs-base": (params) => params.value === "En proceso de documentación",
+  "badge badge-light-success fs-base": (params) => params.value === "En patio",
+  "badge badge-light-danger fs-base": (params) => params.value === "Cancelado",
 
 };
 
@@ -150,10 +150,14 @@ const gridOptions = {
         return styles;
       },
     },
-    { field: "Estatus", filter: true, floatingFilter: true, cellClassRules: ragCellClassRules },
-    { field: "Origen", filter: true, floatingFilter: true },
+    { field: "EstatusManiobra", filter: true, cellClassRules: ragCellClassRules },
+    { field: "Origen", filter: true },
    // { field: "Destino" },
     { field: "Peso", width: 100 },
+    { field: "Terminal", filter: true, width: 120 },
+    { field: "Puerto", filter: true, width: 100 },
+    { field: "NAutorizacion",  filter: true,width: 130 },
+    { field: "Observaciones",  filter: true,width: 150 },
 
   ],
 

@@ -14,6 +14,7 @@ use App\Models\ClientEmpresa;
 use App\Models\Asignaciones;
 use App\Models\Correo;
 use App\Models\Proveedor;
+use App\Models\EstatusManiobra;
 use Illuminate\Support\Facades\Mail;
 use App\Traits\CommonTrait;
 use Carbon\Carbon;
@@ -718,7 +719,8 @@ class ExternosController extends Controller
     }
 
     public function misViajeslocal(){
-        return view('cotizaciones.externos.viajes_solicitados-local');
+        $estatusManiobras  = EstatusManiobra::all();
+        return view('cotizaciones.externos.viajes_solicitados-local',compact('estatusManiobras'));
     }
 
 
@@ -797,14 +799,17 @@ class ExternosController extends Controller
        return view('cotizaciones.externos.viajes_patio-local');
     }
     public function getContenedoreslocalesPendientes(Request $request){
-        $condicion = ($request->estatus == 'Documentos Faltantes') ? '=' : '!=';
+        $condicion = ($request->estatus != 'all') ? '=' : '!=';
         $contenedoresPendientes = Cotizaciones::join('docum_cotizacion as d', 'cotizaciones.id', '=', 'd.id_cotizacion')
+                                                ->join('estatus_maniobras as estat', 'estat.id', '=', 'cotizaciones.estatus_maniobra_id')
                                                 ->where('cotizaciones.id_cliente' ,'=',Auth::User()->id_cliente)
-                                                ->where('estatus',$condicion,$request->estatus)
+                                                // ->where('estatus',$condicion,$request->estatus)
+                                                ->where('cotizaciones.estatus_maniobra_id',$condicion,$request->estatus)
                                                 ->whereIn('tipo_viaje_seleccion', ['local', 'local_to_foraneo'])
                                                 ->where('jerarquia', "!=",'Secundario')
                                                 ->orderBy('created_at', 'desc')
-                                                ->selectRaw('cotizaciones.*, d.num_contenedor,d.doc_eir,doc_ccp ,d.boleta_liberacion,d.doda,d.foto_patio,d.boleta_patio')
+                                                ->selectRaw('cotizaciones.*, d.num_contenedor,d.doc_eir,doc_ccp ,d.boleta_liberacion,d.doda
+                                                ,d.foto_patio,d.boleta_patio,estat.nombre as estatus_maniobra,d.terminal,d.num_autorizacion')
                                                 ->get();
 
 
@@ -824,6 +829,10 @@ class ExternosController extends Controller
             $fotoPatio = ($c->foto_patio == null) ? false : true;
             $boleta_patio = ($c->boleta_patio == null) ? false : true;
             $tipo = "Sencillo";
+            $Observaciones = $c->observaciones;
+            $Terminal = $c->terminal;
+            $num_autorizacion = $c->num_autorizacion;
+            $Puerto = $c->puerto;
 
             if (!is_null($c->referencia_full)) {
                 $secundaria = Cotizaciones::where('referencia_full', $c->referencia_full)
@@ -848,9 +857,7 @@ class ExternosController extends Controller
 
             return [
                 "NumContenedor" => $numContenedor,
-              "Estatus" => ($c->estatus == "Documentos Faltantes" && $c->en_patio == 0)//agregue por el traslado a foraneo
-                            ? "Local Solicitado"
-                            : (($c->estatus == "Local") ? "Local solicitado" : $c->estatus),
+              "EstatusManiobra" => $c->estatus_maniobra,
                 "Origen" => $c->origen,
                 "Destino" => $c->destino,
                 "Peso" => $c->peso_contenedor,
@@ -862,6 +869,10 @@ class ExternosController extends Controller
                 "BoletaPatio" => $boleta_patio,
                 "FechaSolicitud" => Carbon::parse($c->created_at)->format('Y-m-d'),
                 "tipo" => $tipo,
+                "Observaciones" => $Observaciones,
+                "Terminal" => $Terminal,
+                "Puerto" => $Puerto,
+                "NAutorizacion"=> $num_autorizacion,
                 "id" => $c->id
             ];
         });
@@ -963,6 +974,11 @@ class ExternosController extends Controller
         'cotizaciones.fecha_modulacion_local',
         'cotizaciones.cp_pedimento',
         'cotizaciones.cp_clase_ped',
+        'cotizaciones.bloque_hora_i_local',
+        'cotizaciones.bloque_hora_f_local',
+        'cotizaciones.observaciones',
+        'cotizaciones.confirmacion_sello',
+        'cotizaciones.nuevo_sello',
         'cotizaciones.costo_maniobra_local',
         'cotizaciones.tarifa_estadia',
         'cotizaciones.dias_estadia',
@@ -1008,5 +1024,16 @@ class ExternosController extends Controller
         return response()->json(['documentList'=>$documentList,'cotiInfoManiobra'=> $cotiInfoManiobra]);
     }
 
+
+
+    public function Exportpdf(Request $request)
+    {
+        $data = $request->all();
+
+        $pdf = Pdf::loadView('pdf.maniobra', compact('data'))
+            ->setPaper('letter', 'portrait');
+
+        return $pdf->stream('maniobra.pdf');
+    }
 
 }
