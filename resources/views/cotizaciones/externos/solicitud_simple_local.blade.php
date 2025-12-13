@@ -251,9 +251,36 @@ $(document).ready(() => {
   }
 
 
+function clasePedCambiar(tipo){
+const campoR1 = document.getElementById('campo_confirmacion_sello');
+    const campoA4 = document.getElementById('nuevo_sello');
 
 
+    campoR1.classList.add('d-none');
+   // campoA4.classList.add('d-none');
 
+
+    if (tipo === 'R1') {
+        campoR1.classList.remove('d-none');
+    }
+  campoA4.value="0"
+
+    if (tipo === 'A4') {
+      campoA4.value="1"
+    }
+}
+
+document.getElementById('cp_clase_ped').addEventListener('change', function () {
+    const tipo = this.value;
+
+clasePedCambiar(tipo);
+
+
+});
+
+let tipoIninical = document.getElementById('cp_clase_ped').value;
+
+clasePedCambiar(tipoIninical);
 
 
   document.getElementById('num_contenedor').addEventListener('keydown', function(e) {

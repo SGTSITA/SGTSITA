@@ -358,6 +358,7 @@ Route::group(['middleware' => ['auth']], function() {
     Route::get('/cotizaciones/solicitudes-local', [App\Http\Controllers\CotizacionesController::class, 'solicitudesLocales'])->name('cotizaciones.Solic-locales');
     Route::post('/contenedores/files/listar', [ExternosController::class, 'listarDocumentos']);
     Route::post('/contenedores/infoManiobra', [ExternosController::class, 'infoManiobra']);
+    Route::post('/maniobra/pdf', [ExternosController::class, 'Exportpdf']);
     //fin burrero local editar
 
     Route::get('cotizaciones/pdf/{id}', [App\Http\Controllers\CotizacionesController::class, 'pdf'])->name('pdf.cotizaciones');

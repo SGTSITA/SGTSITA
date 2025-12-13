@@ -200,151 +200,120 @@
             </div>
 
             <div class="modal-body">
-                 <h6 class="fw-bold border-bottom pb-2">Datos generales</h6>
-
-                <div class="row mb-3">
-                    <div class="col-6">
-                        <small class="text-muted">Cliente</small>
-                        <div id="m_cliente">—</div>
+                 <h6 class="fw-bold border-bottom pb-1 mb-2">Datos generales</h6>
+                <div class="row mb-2 fs-7">
+                    <div class="col-5">
+                        <span class="text-muted">Proveedor</span>
+                        <div id="m_empresa"></div>
                     </div>
-                    <div class="col-6">
-                        <small class="text-muted">Subcliente</small>
-                        <div id="m_subcliente">—</div>
+                    <div class="col-5">
+                        <span class="text-muted">Transportista</span>
+                        <div id="m_proveedor"></div>
+                    </div>
+                    <div class="col-2">
+                        <span class="text-muted" id="confirmacion_selloT"></span>
+                        <div id="confirmacion_sello"></div>
+                    </div>
+                </div>
+                <div class="row mb-2 fs-7">
+                    <div class="col-5">
+                        <span class="text-muted">Cliente</span>
+                        <div id="m_cliente"></div>
+                    </div>
+                    <div class="col-5">
+                        <span class="text-muted">Subcliente</span>
+                        <div id="m_subcliente"></div>
                     </div>
                 </div>
 
-                <div class="row mb-3">
-                    <div class="col-6">
-                        <small class="text-muted">Empresa</small>
-                        <div id="m_empresa">—</div>
-                    </div>
-                    <div class="col-6">
-                        <small class="text-muted">Proveedor / Transportista</small>
-                        <div id="m_proveedor">—</div>
-                    </div>
-                </div>
 
 
-                <!-- =============================
-                    CONTENEDOR
-                ============================== -->
                 <h6 class="fw-bold border-bottom pb-2 mt-4">Contenedor</h6>
 
                 <div class="row mb-3">
-                    <div class="col-6">
+                    <div class="col-3">
                         <small class="text-muted">Número contenedor</small>
                         <div id="m_num_contenedor">—</div>
                     </div>
-
-                    <div class="col-6">
-                        <small class="text-muted">Tamaño</small>
-                        <div id="m_tamano">—</div>
-                    </div>
-                </div>
-
-                <div class="row mb-3">
-                    <div class="col-6">
+                     <div class="col-3">
                         <small class="text-muted">Estado contenedor</small>
                         <div id="m_estado_contenedor">—</div>
                     </div>
-
-                    <div class="col-6">
+                    <div class="col-3">
                         <small class="text-muted">Puerto</small>
                         <div id="m_puerto">—</div>
                     </div>
-                </div>
-
-
-                <!-- =============================
-                    ORIGEN / DESTINO
-                ============================== -->
-                <h6 class="fw-bold border-bottom pb-2 mt-4">Movimiento</h6>
-
-                <div class="row mb-3">
-                    <div class="col-6">
-                        <small class="text-muted">Origen</small>
-                        <div id="m_origen_local">—</div>
-                    </div>
-
-                    <div class="col-6">
-                        <small class="text-muted">Destino</small>
-                        <div id="m_destino_local">—</div>
-                    </div>
-                </div>
-
-
-                <!-- =============================
-                    DOCUMENTO Y MODULACIÓN
-                ============================== -->
-                <h6 class="fw-bold border-bottom pb-2 mt-4">Datos de documentación</h6>
-
-                <div class="row mb-3">
-                    <div class="col-6">
-                        <small class="text-muted">Número autorización</small>
-                        <div id="m_num_autorizacion">—</div>
-                    </div>
-
-                    <div class="col-6">
+                    <div class="col-3">
                         <small class="text-muted">Terminal</small>
                         <div id="m_terminal">—</div>
                     </div>
                 </div>
 
                 <div class="row mb-3">
-                    <div class="col-12">
+                <div class="col-3">
+                        <small class="text-muted">Origen</small>
+                        <div id="m_origen_local">—</div>
+                    </div>
+
+                    <div class="col-3">
+                        <small class="text-muted">Destino</small>
+                        <div id="m_destino_local">—</div>
+                    </div>
+                    <div class="col-3">
+                        <small class="text-muted">Número autorización</small>
+                        <div id="m_num_autorizacion">—</div>
+                    </div>
+
+                    <div class="col-1">
+                        <small class="text-muted">Tamaño</small>
+                        <div id="m_tamano">—</div>
+                    </div>
+                     <div class="col-1">
+                        <small class="text-muted">Peso</small>
+                         <div id="m_peso_contenedor">—</div>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-3">
                         <small class="text-muted">Fecha Modulación</small>
                         <div id="m_fecha_modulacion_local">—</div>
                     </div>
-                </div>
-
-                <!-- =============================
-                    PESOS
-                ============================== -->
-                <h6 class="fw-bold border-bottom pb-2 mt-4">Pesos</h6>
-
-                <div class="row mb-3">
-                    <div class="col-4">
-                        <small class="text-muted">Peso contenedor</small>
-                        <div id="m_peso_contenedor">—</div>
+                    <div class="col-3">
+                        <small class="text-muted">Hora Incicio</small>
+                        <div id="bloque_hora_i_local">—</div>
                     </div>
-
-                    <div class="col-4">
-                        <small class="text-muted">Peso reglamentario</small>
-                        <div id="m_peso_reglamentario">—</div>
+                    <div class="col-3">
+                        <small class="text-muted">Hora Fin</small>
+                        <div id="bloque_hora_f_local">—</div>
                     </div>
-
-                    <div class="col-4">
-                        <small class="text-muted">Sobrepeso</small>
-                        <div id="m_sobrepeso">—</div>
+                     <div class="col-3">
+                        <small class="text-muted">Notas</small>
+                        <div id="observaciones"></div>
                     </div>
                 </div>
 
 
-                <!-- =============================
-                    COSTOS
-                ============================== -->
+
+
                 <h6 class="fw-bold border-bottom pb-2 mt-4">Costos</h6>
 
                 <div class="row mb-3">
-                    <div class="col-6">
+                    <div class="col-3">
                         <small class="text-muted">Costo maniobra</small>
                         <div id="m_costo_maniobra_local">—</div>
                     </div>
 
-                    <div class="col-6">
+                    <div class="col-3">
                         <small class="text-muted">Precio tonelada</small>
-                        <div id="m_precio_tonelada">—</div>
+                        <div id="m_precio_tonelada">$0.00</div>
                     </div>
-                </div>
-
-                <div class="row mb-3">
-
-                    <div class="col-6">
+                     <div class="col-3">
                         <small class="text-muted">Tarifa estadía</small>
                         <div id="m_tarifa_estadia">—</div>
                     </div>
 
-                    <div class="col-6">
+                    <div class="col-3">
                         <small class="text-muted">Días estadía / Total</small>
                         <div id="m_dias_estadia">—</div>
                         <div id="m_total_estadia" class="text-muted small"></div>
@@ -353,27 +322,23 @@
 
 
                 <div class="row mb-3">
-                    <div class="col-6">
+                    <div class="col-3">
                         <small class="text-muted">Tarifa pernocta</small>
                         <div id="m_tarifa_pernocta">—</div>
                     </div>
 
-                    <div class="col-6">
+                    <div class="col-3">
                         <small class="text-muted">Días pernocta / Total</small>
                         <div id="m_dias_pernocta">—</div>
                         <div id="m_total_pernocta" class="text-muted small"></div>
                     </div>
-                </div>
-
-                <div class="row mb-3">
-                    <div class="col-12">
+                    <div class="col-3">
                         <small class="text-muted">Total General</small>
                         <div class="fw-bold" id="m_total_general">—</div>
                     </div>
                 </div>
 
 
-                <!-- 4) DOCUMENTOS -->
                 <div class="mb-4">
                     <h6 class="fw-bold">Documentos de maniobra</h6>
                     <hr>
@@ -382,7 +347,10 @@
 
             </div>
 
-            <div class="modal-footer">
+            <div class="modal-footer pdf-ignore">
+                 <button class="btn btn-outline-danger" id="btnExportPDF">
+                    <i class="ki-duotone ki-file-pdf fs-3"></i> Exportar PDF
+                </button>
                 <button class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
             </div>
         </div>
@@ -395,6 +363,10 @@
 @push('scripts')
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+ <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script>
+    console.log('html2pdf:', typeof html2pdf);
+</script>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
 
@@ -403,6 +375,8 @@
     <link href="{{ asset('assets/metronic/fileuploader/jquery.fileuploader-theme-dragdrop.css') }}" media="all" rel="stylesheet">
 
     <script src="{{ asset('assets/metronic/fileuploader/jquery.fileuploader.min.js') }}"></script>
+
+
 @endpush
 
 
@@ -455,13 +429,41 @@
 
         document.addEventListener("DOMContentLoaded", function () {
 
-    // ✔ Función para abrir el modal
+            document.getElementById('btnExportPDF').addEventListener('click', () => {
+              const modal = document.querySelector('#modalManiobra');
+
+
+        modal.querySelectorAll('.pdf-ignore').forEach(el => {
+            el.style.display = 'none';
+        });
+
+        const el = modal.querySelector('.modal-body');
+
+        html2pdf()
+            .set({
+                margin: 6,
+                filename: 'maniobra-local.pdf',
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            })
+            .from(el)
+            .save()
+            .then(() => {
+
+                modal.querySelectorAll('.pdf-ignore').forEach(el => {
+                    el.style.display = '';
+                });
+            });
+});
+
+
+
     window.abrirModalDocumentos = function(idSolicitud,numContenedor) {
         console.log("Solicitud recibida:", idSolicitud);
 
           document.getElementById('numContenedorcargar').textContent = numContenedor;
 
-        // Abrir modal
+
         $('#modalDocumentos').modal('show');
 
          setTimeout(() => {
@@ -570,6 +572,41 @@
 
 }
 
+const setValorInfo = (id, val, format = null,classApp= null) => {
+    const el = document.getElementById(id);
+
+    if (!el) return;
+
+    if (val === null || val === undefined || val === '') {
+        el.textContent = '—';
+        return;
+    }
+
+    switch (format) {
+        case 'currency':
+            el.textContent = new Intl.NumberFormat('es-MX', {
+                style: 'currency',
+                currency: 'MXN'
+            }).format(val);
+            break;
+
+        case 'number':
+            el.textContent = new Intl.NumberFormat('es-MX').format(val);
+            break;
+
+        case 'date':
+            el.textContent = new Date(val).toLocaleDateString('es-MX');
+            break;
+
+        default:
+            el.textContent = val;
+    }
+
+    if(classApp){
+         el.classList.add(classApp);
+    }
+};
+
 
 
 window.abrirModalManiobraLocal= function (idCotizacion,numContenedor) {
@@ -588,52 +625,70 @@ window.abrirModalManiobraLocal= function (idCotizacion,numContenedor) {
         .then(response => response.json())
         .then(data => {
         let d= data.cotiInfoManiobra;
-         const set = (id, val) => document.getElementById(id).textContent = val ?? '—';
 
-        // CLIENTES
-        set('m_cliente', d.cliente);
-        set('m_subcliente', d.subcliente);
-        set('m_empresa', d.empresa);
-        set('m_proveedor', d.proveedor);
 
-        // CONTENEDOR
-        set('m_num_contenedor', d.num_contenedor);
-        set('m_tamano', d.tamano);
-        set('m_estado_contenedor', d.estado_contenedor);
-        set('m_puerto', d.puerto);
 
-        // ORIGEN / DESTINO
-        set('m_origen_local', d.origen_local);
-        set('m_destino_local', d.destino_local);
+        setValorInfo('m_cliente', d.cliente);
+        setValorInfo('m_subcliente', d.subcliente);
+        setValorInfo('m_empresa', d.empresa);
+        setValorInfo('m_proveedor', d.proveedor);
 
-        // DOCUMENTACIÓN
-        set('m_num_autorizacion', d.num_autorizacion);
-        set('m_terminal', d.terminal);
-        set('m_fecha_modulacion_local', d.fecha_modulacion_local);
+        setValorInfo('m_num_contenedor', d.num_contenedor);
+        setValorInfo('m_tamano', d.tamano);
+        setValorInfo('m_estado_contenedor', d.estado_contenedor);
+        setValorInfo('m_puerto', d.puerto);
 
-        // PESOS
-        set('m_peso_contenedor', d.peso_contenedor);
-        set('m_peso_reglamentario', d.peso_reglamentario);
-        set('m_sobrepeso', d.sobrepeso);
 
-        // COSTOS
-        set('m_costo_maniobra_local', d.costo_maniobra_local);
-        set('m_precio_tonelada', d.precio_tonelada);
+        setValorInfo('m_origen_local', d.origen_local);
+        setValorInfo('m_destino_local', d.destino_local);
 
-        // ESTADÍA
-        set('m_tarifa_estadia', d.tarifa_estadia);
-        set('m_dias_estadia', d.dias_estadia);
-        set('m_total_estadia', d.total_estadia);
+        setValorInfo('bloque_hora_i_local', d.bloque_hora_i_local);
+        setValorInfo('bloque_hora_f_local', d.bloque_hora_f_local);
+        setValorInfo('observaciones', d.observaciones);
+        let  clase = d.cp_clase_ped;
+         if (clase === 'A4') {
 
-        // PERNOCTA
-        set('m_tarifa_pernocta', d.tarifa_pernocta);
-        set('m_dias_pernocta', d.dias_pernocta);
-        set('m_total_pernocta', d.total_pernocta);
+            setValorInfo('confirmacion_selloT', clase);
+            setValorInfo('confirmacion_sello','Cambio de sello (obligatorio)');
+        }
+        else if (clase === 'R1') {
+           let  texto = d.confirmacion_sello
+                ? 'Sello confirmado'
+                : 'Pendiente de confirmación de sello';
+            claseCss = d.confirmacion_sello ? 'badge-success' : 'badge-warning';
+             setValorInfo('confirmacion_selloT', clase);
+        setValorInfo('confirmacion_sello', texto,null, claseCss);
 
-        // TOTAL GENERAL
-        set('m_total_general', d.total_general);
+        } else {
 
-            // --- DOCUMENTOS ---
+             setValorInfo('confirmacion_selloT', clase);
+        }
+
+        setValorInfo('m_num_autorizacion', d.num_autorizacion);
+        setValorInfo('m_terminal', d.terminal);
+        setValorInfo('m_fecha_modulacion_local', d.fecha_modulacion_local,'date');
+
+
+        setValorInfo('m_peso_contenedor', d.peso_contenedor);
+        //set('m_peso_reglamentario', d.peso_reglamentario);
+       // set('m_sobrepeso', d.sobrepeso);
+
+
+        setValorInfo('m_costo_maniobra_local', d.costo_maniobra_local,'currency');
+        setValorInfo('m_precio_tonelada', d.precio_tonelada,'currency');
+
+
+        setValorInfo('m_tarifa_estadia', d.tarifa_estadia,'currency');
+        setValorInfo('m_dias_estadia', d.dias_estadia);
+        setValorInfo('m_total_estadia', d.total_estadia,'currency');
+
+
+        setValorInfo('m_tarifa_pernocta', d.tarifa_pernocta,'currency');
+        setValorInfo('m_dias_pernocta', d.dias_pernocta);
+        setValorInfo('m_total_pernocta', d.total_pernocta,'currency');
+
+        setValorInfo('m_total_general', d.total_general,'currency');
+
             const contDocs = document.getElementById('maniobra_documentos');
             contDocs.innerHTML = '';
 
@@ -679,6 +734,7 @@ window.abrirModalManiobraLocal= function (idCotizacion,numContenedor) {
             } else {
                 contDocs.textContent = 'Sin documentos';
             }
+
 
             // Abrir modal
             const modal = new bootstrap.Modal(document.getElementById('modalManiobra'));

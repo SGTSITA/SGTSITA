@@ -13,13 +13,13 @@
         <button name="btnDocs1" id="btnDocs1" onclick="fileManager()" disabled="true" class="btnDocs btn btn-sm btn-primary me-3">Ver Documentos </button>
         <button name="btnDocs" id="btnDocs" disabled="true" class="btnDocs btn btn-sm btn-primary me-3">Cargar Documentos </button>
         </div>
-        
+
       </div>
       <div class="card-body">
-         
+
             <div class="row">
                 <div id="myGrid" class="col-12 ag-theme-quartz" style="height: 500px">
-                   
+
                 </div>
             </div>
       </div>
@@ -42,7 +42,7 @@
 <script src="{{ asset('js/sgt/cotizaciones/cotizacion-documentacion-local.js') }}?v={{ filemtime(public_path('js/sgt/cotizaciones/cotizacion-documentacion-local.js')) }}"></script>
 <script>
     $(document).ready(()=>{
-        getContenedoresPendientes();
+        getContenedoresPendientes('4');
         adjuntarDocumentos();
     });
 </script>
