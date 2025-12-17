@@ -1,8 +1,8 @@
 ---
 title: Hexagon half
 categories:
-  - Shapes
+    - Shapes
 tags:
-  - shape
-  - polygon
+    - shape
+    - polygon
 ---

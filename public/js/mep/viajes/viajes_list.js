@@ -1,157 +1,219 @@
+let operadores = [];
+let unidades = [];
 
+const formFieldsMep = [
+    {
+        field: 'txtOperador',
+        id: 'txtOperador',
+        label: 'Nombre operador',
+        required: true,
+        type: 'text',
+        trigger: 'none',
+    },
+    { field: 'txtTelefono', id: 'txtTelefono', label: 'Teléfono', required: true, type: 'text', trigger: 'none' },
+    {
+        field: 'txtNumUnidad',
+        id: 'txtNumUnidad',
+        label: 'Núm Eco/ Núm Unidad / Identificador',
+        required: true,
+        type: 'text',
+        trigger: 'none',
+    },
+    { field: 'txtPlacas', id: 'txtPlacas', label: 'Placas', required: true, type: 'text', trigger: 'none' },
+    { field: 'txtSerie', id: 'txtSerie', label: 'Núm Serie / VIN', required: true, type: 'text', trigger: 'none' },
+    { field: 'selectGPS', id: 'selectGPS', label: 'Compañia GPS', required: true, type: 'text', trigger: 'none' },
+    { field: 'txtImei', id: 'txtImei', label: 'IMEI', required: true, type: 'text', trigger: 'none' },
+    { field: 'txtTipoViaje', id: 'txtTipoViaje', label: 'Tipo Viaje', required: false, type: 'text', trigger: 'none' },
+    {
+        field: 'txtFechaInicio',
+        id: 'txtFechaInicio',
+        label: 'Fecha Salida',
+        required: false,
+        type: 'text',
+        trigger: 'none',
+    },
+    {
+        field: 'txtFechaFinal',
+        id: 'txtFechaFinal',
+        label: 'Fecha Entrega',
+        required: false,
+        type: 'text',
+        trigger: 'none',
+    },
 
-  let operadores = [];
-  let unidades = [];
+    {
+        field: 'txtNumChasisA',
+        id: 'txtNumChasisA',
+        label: 'Núm Eco/ Núm Chasis / Identificador',
+        required: true,
+        type: 'text',
+        trigger: 'none',
+    },
+    { field: 'txtPlacasA', id: 'txtPlacasA', label: 'Placas Chasis A', required: true, type: 'text', trigger: 'none' },
+    {
+        field: 'selectChasisAGPS',
+        id: 'selectChasisAGPS',
+        label: 'Compañia GPS Chasis A',
+        required: true,
+        type: 'text',
+        trigger: 'none',
+    },
+    {
+        field: 'txtImeiChasisA',
+        id: 'txtImeiChasisA',
+        label: 'IMEI Chasis A',
+        required: true,
+        type: 'text',
+        trigger: 'none',
+    },
 
-  const formFieldsMep = [
-    {'field':'txtOperador','id':'txtOperador','label':'Nombre operador','required': true, "type":"text", "trigger":"none"},
-    {'field':'txtTelefono','id':'txtTelefono','label':'Teléfono','required': true, "type":"text", "trigger":"none"},
-    {'field':'txtNumUnidad','id':'txtNumUnidad','label':'Núm Eco/ Núm Unidad / Identificador','required': true, "type":"text", "trigger":"none"},
-    {'field':'txtPlacas','id':'txtPlacas','label':'Placas','required': true, "type":"text", "trigger":"none"},
-    {'field':'txtSerie','id':'txtSerie','label':'Núm Serie / VIN','required': true, "type":"text", "trigger":"none"},
-    {'field':'selectGPS','id':'selectGPS','label':'Compañia GPS','required': true, "type":"text", "trigger":"none"},
-    {'field':'txtImei','id':'txtImei','label':'IMEI','required': true, "type":"text", "trigger":"none"},
-    {'field':'txtTipoViaje','id':'txtTipoViaje','label':'Tipo Viaje','required': false, "type":"text", "trigger":"none"},
-    {'field':'txtFechaInicio','id':'txtFechaInicio','label':'Fecha Salida','required': false, "type":"text", "trigger":"none"},
-    {'field':'txtFechaFinal','id':'txtFechaFinal','label':'Fecha Entrega','required': false, "type":"text", "trigger":"none"},
+    {
+        field: 'txtNumChasisB',
+        id: 'txtNumChasisB',
+        label: 'Núm Eco/ Núm Chasis B / Identificador',
+        required: false,
+        type: 'text',
+        trigger: 'txtTipoViaje',
+        expectedValue: 'Full',
+        labelTrigger: 'Tipo Viaje',
+    },
+    {
+        field: 'txtPlacasB',
+        id: 'txtPlacasB',
+        label: 'Placas Chasis B',
+        required: false,
+        type: 'text',
+        trigger: 'txtNumChasisB',
+    },
+    {
+        field: 'selectChasisBGPS',
+        id: 'selectChasisBGPS',
+        label: 'Compañia GPS Chasis B',
+        required: false,
+        type: 'text',
+        trigger: 'txtNumChasisB',
+    },
+    {
+        field: 'txtImeiChasisB',
+        id: 'txtImeiChasisB',
+        label: 'IMEI Chasis B',
+        required: false,
+        type: 'text',
+        trigger: 'txtNumChasisB',
+    },
+];
 
+const btnAsignaOperador = document.querySelector('#btnAsignaOperador');
+const btnPlanearViaje = document.querySelector('#btnPlanearViaje');
 
-    {'field':'txtNumChasisA','id':'txtNumChasisA','label':'Núm Eco/ Núm Chasis / Identificador','required': true, "type":"text", "trigger":"none"},
-    {'field':'txtPlacasA','id':'txtPlacasA','label':'Placas Chasis A','required': true, "type":"text", "trigger":"none"},
-    {'field':'selectChasisAGPS','id':'selectChasisAGPS','label':'Compañia GPS Chasis A','required': true, "type":"text", "trigger":"none"},
-    {'field':'txtImeiChasisA','id':'txtImeiChasisA','label':'IMEI Chasis A','required': true, "type":"text", "trigger":"none"},
+function asignarOperador2(planear = 0) {
+    const formData = {};
 
-
-    {'field':'txtNumChasisB','id':'txtNumChasisB','label':'Núm Eco/ Núm Chasis B / Identificador','required': false, "type":"text", "trigger":"txtTipoViaje",'expectedValue':'Full', labelTrigger: "Tipo Viaje"},
-    {'field':'txtPlacasB','id':'txtPlacasB','label':'Placas Chasis B','required': false, "type":"text", "trigger":"txtNumChasisB"},
-    {'field':'selectChasisBGPS','id':'selectChasisBGPS','label':'Compañia GPS Chasis B','required': false, "type":"text", "trigger":"txtNumChasisB"},
-    {'field':'txtImeiChasisB','id':'txtImeiChasisB','label':'IMEI Chasis B','required': false, "type":"text", "trigger":"txtNumChasisB"},
-]
-
-
-
-
-    const btnAsignaOperador = document.querySelector('#btnAsignaOperador')
-    const btnPlanearViaje = document.querySelector('#btnPlanearViaje')
-
-    function asignarOperador2(planear= 0) {
-
-        const formData = {};
-
-        //formFieldsMep
+    //formFieldsMep
     let passValidation = formFieldsMep.every((item) => {
-
         let field = document.getElementById(item.field);
         let trigger = item.trigger;
 
-        if(trigger != "none"){
+        if (trigger != 'none') {
             let primaryField = document.getElementById(trigger);
 
-
-            if(field.value.length <= 0 && primaryField.value == item.expectedValue){
-                if(field.value.length === 0 ){
-                    Swal.fire(`El campo "${item.label}" es condicional y está vacío`,`El campo "${item.label}" es obligatorio cuando el valor de ${item.labelTrigger} es ${item.expectedValue}. Por favor proporcione está información.`,"warning");
+            if (field.value.length <= 0 && primaryField.value == item.expectedValue) {
+                if (field.value.length === 0) {
+                    Swal.fire(
+                        `El campo "${item.label}" es condicional y está vacío`,
+                        `El campo "${item.label}" es obligatorio cuando el valor de ${item.labelTrigger} es ${item.expectedValue}. Por favor proporcione está información.`,
+                        'warning',
+                    );
                     return false;
                 }
             }
         }
 
-        if(field){
-            if(item.required === true && field.value.length == 0){
-                Swal.fire("El campo "+item.label+" es obligatorio","Parece que no ha proporcionado información en el campo "+item.label,"warning");
+        if (field) {
+            if (item.required === true && field.value.length == 0) {
+                Swal.fire(
+                    'El campo ' + item.label + ' es obligatorio',
+                    'Parece que no ha proporcionado información en el campo ' + item.label,
+                    'warning',
+                );
                 return false;
             }
         }
 
         if (field.dataset.mepUnidad) {
-            formData['mepUnidad'] = field.dataset.mepUnidad
+            formData['mepUnidad'] = field.dataset.mepUnidad;
         }
 
         if (field.dataset.mepOperador) {
-            formData['mepOperador'] = field.dataset.mepOperador
+            formData['mepOperador'] = field.dataset.mepOperador;
         }
 
         formData[item.field] = field.value;
 
-        formData["planear"] = planear;
-
+        formData['planear'] = planear;
 
         return true;
-
     });
 
+    if (!passValidation) return passValidation;
 
+    let idContenedor = localStorage.getItem('idContenedor');
 
-    if(!passValidation) return passValidation;
-
-       let idContenedor = localStorage.getItem('idContenedor');
-
-
-        let data = {"idContenedor":idContenedor,"formData":formData};
-        fetch('/mep/viajes/operador/asignar', {
-          method: 'POST',
-          headers: {
+    let data = { idContenedor: idContenedor, formData: formData };
+    fetch('/mep/viajes/operador/asignar', {
+        method: 'POST',
+        headers: {
             'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-          },
-          body: JSON.stringify(data)
-        })
-        .then(response => {
-          if (!response.ok) {
-            throw new Error('Error en la respuesta del servidor');
-          }
-          return response.json();
-        })
-        .then(data => {
-          console.log('Respuesta del backend:', data);
-
-          Swal.fire(data.Titulo, data.Mensaje, data.TMensaje)
-        })
-        .catch(error => {
-          console.error('Error al enviar los datos:', error);
-          alert('Ocurrió un error al asignar el operador.');
-        });
-      }
-
-      btnAsignaOperador.addEventListener('click', () => asignarOperador2(0));
-
-
-      btnPlanearViaje.addEventListener('click', () => asignarOperador2(1));
-
-
-
-
-
-
-function buscarOperador(nombre){
-
-    let operador = operadores.find(op =>{
-        return (op.nombre === nombre) ? op : false
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content'),
+        },
+        body: JSON.stringify(data),
     })
+        .then((response) => {
+            if (!response.ok) {
+                throw new Error('Error en la respuesta del servidor');
+            }
+            return response.json();
+        })
+        .then((data) => {
+            console.log('Respuesta del backend:', data);
 
-    let txtTelefono = document.querySelector('#txtTelefono')
-
-    toastr.options.positionClass = 'toast-middle-center';
-    let txtOperador = document.querySelector("#txtOperador")
-
-
-    if(operador){
-        txtTelefono.value = operador.telefono
-        txtOperador.dataset.mepOperador = operador.id
-        toastr.success('Operador identificado');
-    }else{
-        txtTelefono.value = ''
-        txtOperador.dataset.mepOperador = 0
-        toastr.warning('Operador no encontrado');
-    }
-
+            Swal.fire(data.Titulo, data.Mensaje, data.TMensaje);
+        })
+        .catch((error) => {
+            console.error('Error al enviar los datos:', error);
+            alert('Ocurrió un error al asignar el operador.');
+        });
 }
 
-function buscarUnidad(numUnidad, sTipo){
+btnAsignaOperador.addEventListener('click', () => asignarOperador2(0));
 
-    let unidad = unidades.find(u =>{
-        return (u.id_equipo === numUnidad.toUpperCase()) ? u : false
-    })
+btnPlanearViaje.addEventListener('click', () => asignarOperador2(1));
+
+function buscarOperador(nombre) {
+    let operador = operadores.find((op) => {
+        return op.nombre === nombre ? op : false;
+    });
+
+    let txtTelefono = document.querySelector('#txtTelefono');
+
+    toastr.options.positionClass = 'toast-middle-center';
+    let txtOperador = document.querySelector('#txtOperador');
+
+    if (operador) {
+        txtTelefono.value = operador.telefono;
+        txtOperador.dataset.mepOperador = operador.id;
+        toastr.success('Operador identificado');
+    } else {
+        txtTelefono.value = '';
+        txtOperador.dataset.mepOperador = 0;
+        toastr.warning('Operador no encontrado');
+    }
+}
+
+function buscarUnidad(numUnidad, sTipo) {
+    let unidad = unidades.find((u) => {
+        return u.id_equipo === numUnidad.toUpperCase() ? u : false;
+    });
 
     // let txtPlacas = document.querySelector('#txtPlacas')
     // let txtSerie = document.querySelector('#txtSerie')
@@ -160,45 +222,38 @@ function buscarUnidad(numUnidad, sTipo){
 
     // let txtNumUnidad = document.querySelector("#txtNumUnidad")
 
-
-  let mapInputs = {
-        "Unidad": {
-            placas: "txtPlacas",
-            serie: "txtSerie",
-            imei: "txtImei",
-            gps: "selectGPS",
-            dataset: "txtNumUnidad"
+    let mapInputs = {
+        Unidad: {
+            placas: 'txtPlacas',
+            serie: 'txtSerie',
+            imei: 'txtImei',
+            gps: 'selectGPS',
+            dataset: 'txtNumUnidad',
         },
-        "ChasisA": {
-            placas: "txtPlacasA",
+        ChasisA: {
+            placas: 'txtPlacasA',
             serie: null,
-            imei: "txtImeiChasisA",
-            gps: "selectChasisAGPS",
-            dataset: "txtNumChasisA"
+            imei: 'txtImeiChasisA',
+            gps: 'selectChasisAGPS',
+            dataset: 'txtNumChasisA',
         },
-        "ChasisB": {
-            placas: "txtPlacasB",
+        ChasisB: {
+            placas: 'txtPlacasB',
             serie: null,
-            imei: "txtImeiChasisB",
-            gps: "selectChasisBGPS",
-            dataset: "txtNumChasisB"
-        }
+            imei: 'txtImeiChasisB',
+            gps: 'selectChasisBGPS',
+            dataset: 'txtNumChasisB',
+        },
     };
-    let config= mapInputs[sTipo];
+    let config = mapInputs[sTipo];
 
     toastr.options.positionClass = 'toast-middle-center';
-    if(unidad){
-       if (config.placas)
-            document.getElementById(config.placas).value = unidad.placas ?? "";
+    if (unidad) {
+        if (config.placas) document.getElementById(config.placas).value = unidad.placas ?? '';
 
+        if (config.serie) document.getElementById(config.serie).value = unidad.num_serie ?? '';
 
-        if (config.serie)
-            document.getElementById(config.serie).value = unidad.num_serie ?? "";
-
-
-        if (config.imei)
-            document.getElementById(config.imei).value = unidad.imei ?? "";
-
+        if (config.imei) document.getElementById(config.imei).value = unidad.imei ?? '';
 
         if (config.gps) {
             let select = document.getElementById(config.gps);
@@ -210,47 +265,42 @@ function buscarUnidad(numUnidad, sTipo){
             }
         }
 
-          document.getElementById(config.dataset).dataset.mepUnidad = unidad.id;
+        document.getElementById(config.dataset).dataset.mepUnidad = unidad.id;
 
         toastr.success('Unidad identificado');
-    }else{
-       if (config.placas)
-            document.getElementById(config.placas).value = "";
+    } else {
+        if (config.placas) document.getElementById(config.placas).value = '';
 
-        if (config.serie)
-            document.getElementById(config.serie).value = "";
+        if (config.serie) document.getElementById(config.serie).value = '';
 
-        if (config.imei)
-            document.getElementById(config.imei).value = "";
+        if (config.imei) document.getElementById(config.imei).value = '';
 
-        if (config.gps)
-            document.getElementById(config.gps).selectedIndex = 0;
+        if (config.gps) document.getElementById(config.gps).selectedIndex = 0;
 
         document.getElementById(config.dataset).dataset.mepUnidad = 0;
         toastr.warning('No se encontró unidad');
     }
-
 }
 
-function getCatalogoOperadorUnidad(){
-    let _token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+function getCatalogoOperadorUnidad() {
+    let _token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
     $.ajax({
-        url:'/mep/catalogos/operador-unidad',
-        type:'post',
-        data:{_token},
-        beforeSend:()=>{},
-        success:(response)=>{
-            operadores = response.operadores
-            unidades = response.unidades
+        url: '/mep/catalogos/operador-unidad',
+        type: 'post',
+        data: { _token },
+        beforeSend: () => {},
+        success: (response) => {
+            operadores = response.operadores;
+            unidades = response.unidades;
         },
-        error:()=>{
-            console.error('No pudimos obtener los datos de operadores y unidades de la empresa.')
-        }
-    })
+        error: () => {
+            console.error('No pudimos obtener los datos de operadores y unidades de la empresa.');
+        },
+    });
 }
 
 function abrirDocumentos(idCotizacion) {
-    $(`#estatusDoc${idCotizacion}`).modal("show");
+    $(`#estatusDoc${idCotizacion}`).modal('show');
 }
 
 function descargarPDF(idCotizacion) {
@@ -263,15 +313,13 @@ function descargarPDF(idCotizacion) {
     document.body.removeChild(link);
 }
 
-
-
 function abrirDocumentos(idCotizacion) {
     fetch(`/cotizaciones/documentos/${idCotizacion}`)
-        .then(response => response.json())
-        .then(data => {
-            const modal = new bootstrap.Modal(document.getElementById("modalEstatusDocumentos"));
-            const titulo = document.getElementById("tituloContenedor");
-            const cuerpo = document.getElementById("estatusDocumentosBody");
+        .then((response) => response.json())
+        .then((data) => {
+            const modal = new bootstrap.Modal(document.getElementById('modalEstatusDocumentos'));
+            const titulo = document.getElementById('tituloContenedor');
+            const cuerpo = document.getElementById('estatusDocumentosBody');
 
             titulo.innerText = `#${data.num_contenedor ?? 'N/A'}`;
             cuerpo.innerHTML = '';
@@ -287,7 +335,7 @@ function abrirDocumentos(idCotizacion) {
                 // { label: 'Foto Patio', valor: data.foto_patio },
             ];
 
-            campos.forEach(item => {
+            campos.forEach((item) => {
                 const col = document.createElement('div');
                 col.className = 'col-6';
                 col.innerHTML = `
@@ -301,7 +349,7 @@ function abrirDocumentos(idCotizacion) {
 
             modal.show();
         })
-        .catch(error => {
+        .catch((error) => {
             console.error('Error al obtener documentos:', error);
             Swal.fire('Error', 'No se pudieron obtener los documentos', 'error');
         });
@@ -310,7 +358,7 @@ function abrirDocumentos(idCotizacion) {
 function cambiarTab(tabId) {
     // Ocultamos todos los divs con clase 'tab-content'
     const tabs = document.querySelectorAll('.tab-content');
-    tabs.forEach(tab => {
+    tabs.forEach((tab) => {
         tab.style.display = 'none';
     });
 

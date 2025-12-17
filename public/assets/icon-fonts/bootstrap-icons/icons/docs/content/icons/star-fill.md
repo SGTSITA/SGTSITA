@@ -1,9 +1,9 @@
 ---
 title: Star fill
 categories:
-  - Shapes
+    - Shapes
 tags:
-  - shape
-  - like
-  - favorite
+    - shape
+    - like
+    - favorite
 ---

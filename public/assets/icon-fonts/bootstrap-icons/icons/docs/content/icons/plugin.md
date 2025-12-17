@@ -1,8 +1,8 @@
 ---
 title: Plugin
 categories:
-  - UI
+    - UI
 tags:
-  - addon
-  - software
+    - addon
+    - software
 ---

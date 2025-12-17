@@ -1,8 +1,8 @@
 ---
 title: Arrow up right circle
 categories:
-  - Shape Arrows
+    - Shape Arrows
 tags:
-  - arrow
-  - circle
+    - arrow
+    - circle
 ---

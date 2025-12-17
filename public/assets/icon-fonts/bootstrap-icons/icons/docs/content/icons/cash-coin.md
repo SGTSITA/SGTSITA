@@ -1,10 +1,10 @@
 ---
 title: Cash coin
 categories:
-  - Commerce
+    - Commerce
 tags:
-  - money
-  - finance
-  - banking
-  - currency
+    - money
+    - finance
+    - banking
+    - currency
 ---

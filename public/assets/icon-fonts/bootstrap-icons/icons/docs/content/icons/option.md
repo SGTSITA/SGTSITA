@@ -1,8 +1,8 @@
 ---
 title: Option
 categories:
-  - UI and keyboard
+    - UI and keyboard
 tags:
-  - key
-  - mac
+    - key
+    - mac
 ---

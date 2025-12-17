@@ -1,12 +1,12 @@
 ---
 title: Shop window
 categories:
-  - Commerce
+    - Commerce
 tags:
-  - shop
-  - store
-  - market
-  - marketplace
-  - shopping
-  - retail
+    - shop
+    - store
+    - market
+    - marketplace
+    - shopping
+    - retail
 ---

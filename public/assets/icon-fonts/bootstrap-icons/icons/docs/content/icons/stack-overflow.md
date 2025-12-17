@@ -1,7 +1,7 @@
 ---
 title: Stack overflow
 categories:
-  - Brand
+    - Brand
 tags:
-  - social
+    - social
 ---

@@ -1,10 +1,10 @@
 ---
 title: Globe2
 categories:
-  - Communications
+    - Communications
 tags:
-  - world
-  - translate
-  - global
-  - international
+    - world
+    - translate
+    - global
+    - international
 ---

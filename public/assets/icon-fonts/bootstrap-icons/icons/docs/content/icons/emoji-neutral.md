@@ -1,8 +1,8 @@
 ---
 title: Emoji neutral
 categories:
-  - Emoji
+    - Emoji
 tags:
-  - emoticon
-  - expressionless
+    - emoticon
+    - expressionless
 ---

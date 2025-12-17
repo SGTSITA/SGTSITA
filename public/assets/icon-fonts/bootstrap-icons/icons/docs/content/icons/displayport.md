@@ -1,8 +1,8 @@
 ---
 title: DisplayPort
 categories:
-  - Devices
+    - Devices
 tags:
-  - video
-  - input
+    - video
+    - input
 ---
