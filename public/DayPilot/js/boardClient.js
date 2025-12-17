@@ -271,7 +271,121 @@ function getInfoViaje(startDate, endDate, numContenedor_, idContendor) {
     let nombreOperador = document.querySelector('#nombreOperador');
     let telefonoOperador = document.querySelector('#telefonoOperador');
 
-    //let tipoViajeSpan = document.querySelector('#tipoViajeSpan')
+function getInfoViaje(startDate, endDate, numContenedor_, idContendor){
+   let fechaSalida = document.querySelector('#fechaSalida')
+  fechaSalida.textContent = formatFecha(startDate);
+
+  let fechaEntrega  = document.querySelector('#fechaEntrega')
+  fechaEntrega.textContent = formatFecha(endDate);
+
+  let numContenedor = document.querySelector('#numContenedorSpan')
+  numContenedor.textContent = numContenedor_
+
+
+  let nombreProveedor = document.querySelector('#nombreProveedor')
+ // let nombreTransportista = document.querySelector('#nombreTransportista')
+  let contactoEntrega = document.querySelector('#ContactoEntrega')
+  let nombreOperador = document.querySelector('#nombreOperador')
+  let telefonoOperador = document.querySelector('#telefonoOperador')
+
+
+  //let tipoViajeSpan = document.querySelector('#tipoViajeSpan')
+
+  let origen = document.querySelector('#origen')
+  let destino = document.querySelector('#destino')
+  let nombreCliente = document.querySelector('#nombreCliente')
+  let nombreSubcliente = document.querySelector('#nombreSubcliente')
+
+  let id_equipo_camion = document.querySelector('#id_equipo_camion')
+  let placas_camion = document.querySelector('#placas_camion')
+
+  let marca_camion = document.querySelector('#marca_camion')
+  let imei_camion = document.querySelector('#imei_camion')
+
+  let id_equipo_chasis = document.querySelector('#id_equipo_chasis')
+  let imei_chasis = document.querySelector('#imei_chasis')
+
+
+   var _token = $('input[name="_token"]').val();
+   $.ajax({
+       url:'/planeaciones/monitor/board/info-viaje',
+       type:'post',
+       data:{_token:_token, id: idContendor},
+       beforeSend:()=>{
+           $("#cima-label").addClass('d-none')
+           mostrarLoading('Espere un momento, cargando información del contenedor...')
+           let docum = document.querySelectorAll('.documentos')
+           docum.forEach((d) => {
+               d.innerHTML = `--`
+           })
+
+           nombreProveedor.textContent = "--"
+   //nombreTransportista.textContent = "--"
+   contactoEntrega.textContent = "--"
+   nombreOperador.textContent = "--"
+   telefonoOperador.textContent = "--"
+
+
+           tipoViajeSpan.textContent = ""
+
+
+
+
+           origen.textContent = "--"
+           destino.textContent = "--"
+           nombreCliente.textContent = "--"
+           nombreSubcliente.textContent = "--"
+
+              placas_camion.textContent = "--"
+                id_equipo_camion.textContent = "--"
+                marca_camion.textContent = "--"
+                imei_camion.textContent = "--"
+                id_equipo_chasis.textContent = "--"
+                imei_chasis.textContent = "--"
+       },
+       success:(response)=>{
+           ocultarLoading()
+
+
+             nombreProveedor.textContent = response.datosExtraviaje.empresa_beneficiario
+   contactoEntrega.textContent =  response.datosExtraviaje.cp_contacto_entrega ?? "--"
+   // nombreTransportista.textContent = response.datosExtraviaje.transportista_nombre ?? "--"
+   nombreOperador.textContent =    response.datosExtraviaje.beneficiario_nombre
+
+   telefonoOperador.textContent = response.datosExtraviaje.beneficiario_telefono ?? "--"
+
+
+
+
+          // tipoViajeSpan.textContent = response.tipo
+
+
+
+           origen.textContent = response.cotizacion.origen
+           destino.textContent = response.cotizacion.destino
+           nombreCliente.textContent = response.cliente.nombre
+           nombreSubcliente.textContent =  response.subcliente?.nombre ?? ""
+
+                placas_camion.textContent = response.documentos.placas_camion ?? "NA"
+                id_equipo_camion.textContent = response.documentos.id_equipo_camion ?? "NA"
+                marca_camion.textContent = response.documentos.marca_camion ?? "NA"
+                imei_camion.textContent = response.documentos.imei_camion ?? "NA"
+                id_equipo_chasis.textContent = response.documentos.id_equipo_chasis ?? "NA"
+                imei_chasis.textContent = response.documentos.imei_chasis ?? "NA"
+
+           if(response.tipo == "Viaje Propio"){
+               $('#tipoViajeSpan').addClass('bg-gradient-success')
+           }else{
+               $('#tipoViajeSpan').addClass('bg-gradient-info')
+           }
+           let tipoS="Planeacion-> Contenedor:"
+           //Once en true para que se ejecute una sola vez y se elimine el listener    onclick="('${params.data.contenedor}')
+           //btnFinalizar.addEventListener('click', () => finalizarViaje(idContendor,numContenedor_), { once: true });
+         //  btnDeshacer.addEventListener('click', () => anularPlaneacion(idContendor,numContenedor_), { once: true });
+           btnRastreo.addEventListener('click', () => abrirMapaEnNuevaPestana(numContenedor_,tipoS,'MECBoard'), { once: true });
+
+
+
 
     let origen = document.querySelector('#origen');
     let destino = document.querySelector('#destino');
