@@ -1,8 +1,8 @@
 ---
 title: Cloud drizzle
 categories:
-  - Weather
+    - Weather
 tags:
-  - storm
-  - rain
+    - storm
+    - rain
 ---

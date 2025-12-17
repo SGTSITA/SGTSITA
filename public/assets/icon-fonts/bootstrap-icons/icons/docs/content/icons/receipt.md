@@ -1,11 +1,11 @@
 ---
 title: Receipt
 categories:
-  - Commerce
+    - Commerce
 tags:
-  - receipt
-  - invoice
-  - sale
-  - purchase
-  - bill
+    - receipt
+    - invoice
+    - sale
+    - purchase
+    - bill
 ---

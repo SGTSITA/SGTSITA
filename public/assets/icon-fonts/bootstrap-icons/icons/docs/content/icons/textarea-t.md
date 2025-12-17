@@ -1,9 +1,9 @@
 ---
 title: Textarea t
 categories:
-  - Graphics
+    - Graphics
 tags:
-  - text
-  - insert
-  - bounding-box
+    - text
+    - insert
+    - bounding-box
 ---

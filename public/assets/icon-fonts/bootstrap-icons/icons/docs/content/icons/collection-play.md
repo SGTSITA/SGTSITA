@@ -1,9 +1,9 @@
 ---
 title: Collection play
 categories:
-  - Media
+    - Media
 tags:
-  - library
-  - group
-  - play
+    - library
+    - group
+    - play
 ---

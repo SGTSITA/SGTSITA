@@ -1,14 +1,14 @@
 ---
 title: Person hearts
 categories:
-  - People
+    - People
 tags:
-  - human
-  - individual
-  - avatar
-  - user
-  - account
-  - love
-  - valentine
-  - romance
+    - human
+    - individual
+    - avatar
+    - user
+    - account
+    - love
+    - valentine
+    - romance
 ---

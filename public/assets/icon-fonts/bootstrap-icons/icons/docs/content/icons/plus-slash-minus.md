@@ -1,9 +1,9 @@
 ---
 title: Plus slash minus
 categories:
-  - Typography
+    - Typography
 tags:
-  - difference
-  - add
-  - subtract
+    - difference
+    - add
+    - subtract
 ---

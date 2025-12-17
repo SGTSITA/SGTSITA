@@ -1,10 +1,10 @@
 ---
 title: Volume mute
 categories:
-  - Media
+    - Media
 tags:
-  - audio
-  - video
-  - av
-  - sound
+    - audio
+    - video
+    - av
+    - sound
 ---

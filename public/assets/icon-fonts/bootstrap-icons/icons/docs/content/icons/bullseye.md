@@ -1,7 +1,7 @@
 ---
 title: Bullseye
 categories:
-  - Geo
+    - Geo
 tags:
-  - target
+    - target
 ---

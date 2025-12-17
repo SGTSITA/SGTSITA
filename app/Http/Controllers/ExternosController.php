@@ -23,22 +23,23 @@ use Auth;
 
 class ExternosController extends Controller
 {
-    public function initBoard(Request $request){
+    public function initBoard(Request $request)
+    {
         $planeaciones = Asignaciones::join('docum_cotizacion', 'asignaciones.id_contenedor', '=', 'docum_cotizacion.id')
                         ->join('cotizaciones', 'docum_cotizacion.id_cotizacion', '=', 'cotizaciones.id')
                         ->where('asignaciones.fecha_inicio', '>=', $request->fromDate)
                         ->where('cotizaciones.id_cliente', auth()->user()->id_cliente)
                         ->where('cotizaciones.estatus', 'Aprobada')
-                        ->where('estatus_planeacion','=', 1)
-                        ->select('asignaciones.*', 'docum_cotizacion.num_contenedor','cotizaciones.id_cliente','cotizaciones.referencia_full','cotizaciones.tipo_viaje')
+                        ->where('estatus_planeacion', '=', 1)
+                        ->select('asignaciones.*', 'docum_cotizacion.num_contenedor', 'cotizaciones.id_cliente', 'cotizaciones.referencia_full', 'cotizaciones.tipo_viaje')
                         ->orderBy('fecha_inicio')
                         ->get();
 
-        $extractor = $planeaciones->map(function($p){
+        $extractor = $planeaciones->map(function ($p) {
             $itemNumContenedor = $p->num_contenedor;
-            if(!is_null($p->referencia_full)){
-                $cotizacionFull = Cotizaciones::where('referencia_full',$p->referencia_full)->where('jerarquia','Secundario')->first();
-                $contenedorSecundario = DocumCotizacion::where("id_cotizacion",$cotizacionFull->id)->first();
+            if (!is_null($p->referencia_full)) {
+                $cotizacionFull = Cotizaciones::where('referencia_full', $p->referencia_full)->where('jerarquia', 'Secundario')->first();
+                $contenedorSecundario = DocumCotizacion::where("id_cotizacion", $cotizacionFull->id)->first();
                 $itemNumContenedor .= " / ".$contenedorSecundario->num_contenedor;
             }
             return [
@@ -51,43 +52,47 @@ class ExternosController extends Controller
         });
 
         $clientes = $planeaciones->unique('id_empresa')->pluck('id_empresa');
-        $clientesData = Empresas::whereIn('id' ,$clientes)->selectRaw('id, nombre as name, '."'true'".' as expanded')->get();
+        $clientesData = Empresas::whereIn('id', $clientes)->selectRaw('id, nombre as name, '."'true'".' as expanded')->get();
 
         $board = [];
         $board[] = ["name" => "Proveedores", "id" => "S", "expanded" => true, "children" => $clientesData];
 
         $fecha = Carbon::now()->subdays(10)->format('Y-m-d');
-        return response()->json(["boardCentros"=> $board,"extractor"=>$extractor,"scrollDate"=> $fecha]);
+        return response()->json(["boardCentros" => $board,"extractor" => $extractor,"scrollDate" => $fecha]);
     }
 
-    public function transportistasList(Request $r){
+    public function transportistasList(Request $r)
+    {
         return Proveedor::catalogoPrincipal()
         ->where('id_empresa', $r->proveedor)
         ->get();
     }
-    public function transportistasListLocal(Request $r){
+    public function transportistasListLocal(Request $r)
+    {
         return Proveedor::catalogoLocal()
         ->where('id_empresa', $r->proveedor)
         ->get();
     }
 
-    public function solicitarIndex(){
+    public function solicitarIndex()
+    {
         return view('cotizaciones.externos.step_one');
     }
 
 
 
-   public function solicitudSimple(){
+    public function solicitudSimple()
+    {
         $formasPago = SatFormaPago::get();
         $metodosPago = SatMetodoPago::get();
         $usoCfdi = SatUsoCfdi::get();
-        $clienteEmpresa = ClientEmpresa::where('id_client',auth()->user()->id_cliente)->get()->pluck('id_empresa');
+        $clienteEmpresa = ClientEmpresa::where('id_client', auth()->user()->id_cliente)->get()->pluck('id_empresa');
         //return $clienteEmpresa;
-        $empresas = Empresas::whereIn('id',$clienteEmpresa)->get();
+        $empresas = Empresas::whereIn('id', $clienteEmpresa)->get();
 
         $transportista = Proveedor::catalogoPrincipal()->whereIn('id_empresa', $clienteEmpresa)->get();
 
-        return view('cotizaciones.externos.solicitud_simple',[
+        return view('cotizaciones.externos.solicitud_simple', [
                     "action" => "crear",
                     "formasPago" => $formasPago,
                     "metodosPago" => $metodosPago,
@@ -97,12 +102,13 @@ class ExternosController extends Controller
                 ]);
     }
 
-    public function editForm(Request $request){
+    public function editForm(Request $request)
+    {
         $formasPago = SatFormaPago::get();
         $metodosPago = SatMetodoPago::get();
         $usoCfdi = SatUsoCfdi::get();
-        $clienteEmpresa = ClientEmpresa::where('id_client',auth()->user()->id_cliente)->get()->pluck('id_empresa');
-        $empresas = Empresas::whereIn('id',$clienteEmpresa)->get();
+        $clienteEmpresa = ClientEmpresa::where('id_client', auth()->user()->id_cliente)->get()->pluck('id_empresa');
+        $empresas = Empresas::whereIn('id', $clienteEmpresa)->get();
 
         $cotizacion = Cotizaciones::with(['cliente', 'DocCotizacion'])
         ->whereHas('DocCotizacion', function ($query) use ($request) {
@@ -111,73 +117,80 @@ class ExternosController extends Controller
         ->first();
 
         $transportista = Proveedor::catalogoPrincipal()->whereIn('id_empresa', $clienteEmpresa)->get();
-       // dd($transportista, $clienteEmpresa);
-       // $transportista = Proveedor::get();
-       // where('id_empresa',$cotizacion->id_proveedor)->
-      // where('id_empresa',$cotizacion->id_proveedor)->first();
+        // dd($transportista, $clienteEmpresa);
+        // $transportista = Proveedor::get();
+        // where('id_empresa',$cotizacion->id_proveedor)->
+        // where('id_empresa',$cotizacion->id_proveedor)->first();
 
-        return view('cotizaciones.externos.solicitud_simple',
-                                                            ["action" => "editar",
+        return view(
+            'cotizaciones.externos.solicitud_simple',
+            ["action" => "editar",
                                                             "formasPago" => $formasPago,
                                                             "metodosPago" => $metodosPago,
                                                             "usoCfdi" => $usoCfdi,
                                                             "cotizacion" => $cotizacion,
                                                             "proveedores" => $empresas,
                                                             "transportista" => $transportista
-                                                        ]);
+                                                        ]
+        );
     }
 
-    public function solicitudMultiple(){
+    public function solicitudMultiple()
+    {
 
-        $clienteEmpresa = ClientEmpresa::where('id_client',auth()->user()->id_cliente)->get()->pluck('id_empresa');
+        $clienteEmpresa = ClientEmpresa::where('id_client', auth()->user()->id_cliente)->get()->pluck('id_empresa');
         //return $clienteEmpresa;
-        $empresas = Empresas::whereIn('id',$clienteEmpresa)->get();
+        $empresas = Empresas::whereIn('id', $clienteEmpresa)->get();
 
         $transportista = Proveedor::catalogoPrincipal()->whereIn('id_empresa', $clienteEmpresa)->get();
 
-        return view('cotizaciones.externos.solicitud_multiple',[
+        return view('cotizaciones.externos.solicitud_multiple', [
             "action" => "crear",
             "proveedores" => $empresas,
             "transportista" => $transportista
         ]);
     }
 
-    public function viajesDocuments(){
+    public function viajesDocuments()
+    {
         return view('cotizaciones.externos.viajes_documentacion');
     }
 
-    public function misViajes(){
+    public function misViajes()
+    {
         return view('cotizaciones.externos.viajes_solicitados');
     }
 
-    public function ZipDownload($zipFile){
-       return response()->download($zipFile)->deleteFileAfterSend(true);
+    public function ZipDownload($zipFile)
+    {
+        return response()->download($zipFile)->deleteFileAfterSend(true);
     }
 
-    public function CfdiToZip(Request $request){
-        try{
+    public function CfdiToZip(Request $request)
+    {
+        try {
             $zipName = "carta-porte-".uniqid().".zip";
 
             $zipPath = public_path($zipName); // Ruta en la carpeta public
 
-            $zip = new ZipArchive;
+            $zip = new ZipArchive();
 
             if ($zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) === true) {
 
-                foreach($request->contenedores as $c){
+                foreach ($request->contenedores as $c) {
                     $cotizacionQuery = Cotizaciones::join('docum_cotizacion as d', 'cotizaciones.id', '=', 'd.id_cotizacion')
-                    ->where('d.num_contenedor',$c['NumContenedor']);
+                    ->where('d.num_contenedor', $c['NumContenedor']);
 
                     $cotizacion = $cotizacionQuery->first();
                     $pdf = $cotizacion->carta_porte;
                     $xml = $cotizacion->carta_porte_xml;
 
-                    if(\File::exists(public_path('/cotizaciones/cotizacion'.$cotizacion->id_cotizacion."/$xml"))){
+                    if (\File::exists(public_path('/cotizaciones/cotizacion'.$cotizacion->id_cotizacion."/$xml"))) {
 
-                        $zip->addFile(public_path('/cotizaciones/cotizacion'.$cotizacion->id_cotizacion."/$xml"),$c['NumContenedor'].'.xml');
+                        $zip->addFile(public_path('/cotizaciones/cotizacion'.$cotizacion->id_cotizacion."/$xml"), $c['NumContenedor'].'.xml');
                     }
 
-                    if(\File::exists(public_path('/cotizaciones/cotizacion'.$cotizacion->id_cotizacion."/$pdf"))){
+                    if (\File::exists(public_path('/cotizaciones/cotizacion'.$cotizacion->id_cotizacion."/$pdf"))) {
                         $zip->addFile(public_path('/cotizaciones/cotizacion'.$cotizacion->id_cotizacion."/$pdf"), $c['NumContenedor'].'.pdf');
                     }
 
@@ -195,29 +208,30 @@ class ExternosController extends Controller
                 'zipUrl' => ($zipName),
                 'success' => true
             ]);
-        }catch(\Throwable $t){
+        } catch (\Throwable $t) {
             return response()->json([
                 'message' => $t->getMessage(),
-                'success' =>false
+                'success' => false
             ]);
         }
     }
 
 
-    public function getContenedoresPendientes(Request $request){
+    public function getContenedoresPendientes(Request $request)
+    {
         $condicion = ($request->estatus == 'Documentos Faltantes') ? '=' : '!=';
         $contenedoresPendientes = Cotizaciones::join('docum_cotizacion as d', 'cotizaciones.id', '=', 'd.id_cotizacion')
-                                                ->where('cotizaciones.id_cliente' ,'=',Auth::User()->id_cliente)
-                                                ->where('estatus',$condicion,'Documentos Faltantes')
+                                                ->where('cotizaciones.id_cliente', '=', Auth::User()->id_cliente)
+                                                ->where('estatus', $condicion, 'Documentos Faltantes')
                                                 ->whereIn('tipo_viaje_seleccion', ['foraneo', 'local_to_foraneo'])
-                                                ->where('jerarquia', "!=",'Secundario')
+                                                ->where('jerarquia', "!=", 'Secundario')
                                                 ->orderBy('created_at', 'desc')
                                                 ->selectRaw('cotizaciones.*, d.num_contenedor,d.doc_eir,doc_ccp ,d.boleta_liberacion,d.doda,d.foto_patio')
                                                 ->get();
 
 
         $resultContenedores =
-        $contenedoresPendientes->map(function($c){
+        $contenedoresPendientes->map(function ($c) {
 
             $numContenedor = $c->num_contenedor;
             $docCCP = ($c->doc_ccp == null) ? false : true;
@@ -271,12 +285,13 @@ class ExternosController extends Controller
         return $resultContenedores;
     }
 
-    public function getContenedoresAsignables(Request $request){
+    public function getContenedoresAsignables(Request $request)
+    {
         $contenedoresPendientes = Cotizaciones::join('docum_cotizacion as d', 'cotizaciones.id', '=', 'd.id_cotizacion')
-                                                ->join('clients as cl','cotizaciones.id_cliente','=','cl.id')
-                                                ->join('subclientes as sc','cotizaciones.id_subcliente','=','sc.id')
-                                                ->where('estatus','=','NO ASIGNADA')
-                                                ->where('jerarquia', "!=",'Secundario')
+                                                ->join('clients as cl', 'cotizaciones.id_cliente', '=', 'cl.id')
+                                                ->join('subclientes as sc', 'cotizaciones.id_subcliente', '=', 'sc.id')
+                                                ->where('estatus', '=', 'NO ASIGNADA')
+                                                ->where('jerarquia', "!=", 'Secundario')
                                                 ->orderBy('created_at', 'desc')
                                                 ->selectRaw('cotizaciones.*, d.num_contenedor,d.doc_eir,doc_ccp ,d.boleta_liberacion,d.doda,cl.nombre as cliente,sc.nombre as subcliente')
                                                 ->get();
@@ -285,13 +300,13 @@ class ExternosController extends Controller
 
 
         $resultContenedores =
-        $contenedoresPendientes->map(function($c){
+        $contenedoresPendientes->map(function ($c) {
 
-        $numContenedor = $c->num_contenedor;
-        $tipo = "Sencillo";
-        $docCCP = ($c->doc_ccp == null) ? false : true;
-        $doda = ($c->doda == null) ? false : true;
-        $boletaLiberacion = ($c->boleta_liberacion == null) ? false : true;
+            $numContenedor = $c->num_contenedor;
+            $tipo = "Sencillo";
+            $docCCP = ($c->doc_ccp == null) ? false : true;
+            $doda = ($c->doda == null) ? false : true;
+            $boletaLiberacion = ($c->boleta_liberacion == null) ? false : true;
 
             if (!is_null($c->referencia_full)) {
                 $secundaria = Cotizaciones::where('referencia_full', $c->referencia_full)
@@ -329,62 +344,67 @@ class ExternosController extends Controller
 
         return $resultContenedores;
     }
-    public static function confirmarDocumentos($cotizacion){
-        try{
-          \Log::channel('daily')->info('Maniobra  '.$cotizacion);
+    public static function confirmarDocumentos($cotizacion)
+    {
+        try {
+            \Log::channel('daily')->info('Maniobra  '.$cotizacion);
 
             $contenedor = Cotizaciones::join('docum_cotizacion as d', 'cotizaciones.id', '=', 'd.id_cotizacion')
-            ->where('cotizaciones.id' ,'=',$cotizacion)
-            ->where('estatus','=','Documentos Faltantes')
+            ->where('cotizaciones.id', '=', $cotizacion)
+            ->where('estatus', '=', 'Documentos Faltantes')
             ->orderBy('created_at', 'desc')
             ->selectRaw('cotizaciones.*, d.num_contenedor,d.doc_eir,doc_ccp ,d.boleta_liberacion,d.doda')
             ->first();
-            if( $contenedor){
+            if ($contenedor) {
                 \Log::channel('daily')->info('Doda: '.$contenedor->doda.' / liberacion:'.$contenedor->boleta_liberacion);
 
             }
 
 
 
-            if( $contenedor && $contenedor->doda != null && $contenedor->boleta_liberacion != null){
+            if ($contenedor && $contenedor->doda != null && $contenedor->boleta_liberacion != null) {
                 \Log::channel('daily')->info('Doda2: '.$contenedor->doda.' / liberacion2:'.$contenedor->boleta_liberacion);
-                $cotizacionC = Cotizaciones::where('id',$cotizacion)->first();
-                $cotizacionC->estatus = (is_null($cotizacionC->id_proveedor)) ? 'NO ASIGNADA' :'Pendiente';
-                $cliente = Client::where('id',$cotizacionC->id_cliente)->first();
+                $cotizacionC = Cotizaciones::where('id', $cotizacion)->first();
+                $cotizacionC->estatus = (is_null($cotizacionC->id_proveedor)) ? 'NO ASIGNADA' : 'Pendiente';
+                $cliente = Client::where('id', $cotizacionC->id_cliente)->first();
                 $cotizacionC->save();
 
                 $cuentasCorreo = [env('MAIL_NOTIFICATIONS'),Auth::User()->email];
-                $cuentasCorreo2 = Correo::where('cotizacion_nueva',1)->get()->pluck('correo')->toArray();
+                $cuentasCorreo2 = Correo::where('cotizacion_nueva', 1)->get()->pluck('correo')->toArray();
 
-                Mail::to($cuentasCorreo)->send(new \App\Mail\NotificaCotizacionMail($contenedor,$cliente));
+                Mail::to($cuentasCorreo)->send(new \App\Mail\NotificaCotizacionMail($contenedor, $cliente));
 
             }
-        }catch(\Throwable $t){
-          \Log::channel('daily')->info('Maniobra no se pudo enviar al admin. id: '.$cotizacion.'. '.$t->getMessage());
+        } catch (\Throwable $t) {
+            \Log::channel('daily')->info('Maniobra no se pudo enviar al admin. id: '.$cotizacion.'. '.$t->getMessage());
         }
 
     }
 
-    public function cancelarViaje(Request $request){
-       // $documCotizacion = DocumCotizacion::where('num_contenedor',$request->numContenedor)->first();
-        $cotizacion = Cotizaciones::join('docum_cotizacion as d','cotizaciones.id', '=', 'd.id_cotizacion')
-        ->where('d.num_contenedor',$request->numContenedor)
+    public function cancelarViaje(Request $request)
+    {
+        // $documCotizacion = DocumCotizacion::where('num_contenedor',$request->numContenedor)->first();
+        $cotizacion = Cotizaciones::join('docum_cotizacion as d', 'cotizaciones.id', '=', 'd.id_cotizacion')
+        ->where('d.num_contenedor', $request->numContenedor)
         ->first();
 
-        if($cotizacion->estatus == 'Cancelada') return response()->json(["Titulo" => "Previamente Cancelado","Mensaje" => "El contenedor $request->numContenedor fue cancelado previamente","TMensaje" => "info"]);
+        if ($cotizacion->estatus == 'Cancelada') {
+            return response()->json(["Titulo" => "Previamente Cancelado","Mensaje" => "El contenedor $request->numContenedor fue cancelado previamente","TMensaje" => "info"]);
+        }
 
-        Cotizaciones::where('id',$cotizacion->id)->update(['estatus'=>'Cancelada']);
+        Cotizaciones::where('id', $cotizacion->id)->update(['estatus' => 'Cancelada']);
 
         $emailList = [env('MAIL_NOTIFICATIONS'),Auth::User()->email];
-        $cotizacionCancelar = Cotizaciones::where('id',$cotizacion->id)->first();
-        Mail::to($emailList)->send(new \App\Mail\NotificaCancelarViajeMail($cotizacionCancelar,$request->numContenedor));
+        $cotizacionCancelar = Cotizaciones::where('id', $cotizacion->id)->first();
+        Mail::to($emailList)->send(new \App\Mail\NotificaCancelarViajeMail($cotizacionCancelar, $request->numContenedor));
 
         return response()->json(["Titulo" => "Cancelado correctamente","Mensaje" => "Se canceló el viaje con el Núm. Contenedor $request->numContenedor","TMensaje" => "success"]);
     }
 
-    public function selector(Request $request){
-       // return $request->transac;
-        switch($request->transac){
+    public function selector(Request $request)
+    {
+        // return $request->transac;
+        switch ($request->transac) {
             case "simple":
                 $path = 'viajes.simple';
                 break;
@@ -403,28 +423,33 @@ class ExternosController extends Controller
 
 
 
-    public function fileManager(Request $r){
-        return view('cotizaciones.externos.file-manager',["numContenedor" => $r->numContenedor]);
+    public function fileManager(Request $r)
+    {
+        return view('cotizaciones.externos.file-manager', ["numContenedor" => $r->numContenedor]);
     }
 
-    public function fileManagerlocal(Request $r){
-        return view('cotizaciones.externos.file-manager-local',["numContenedor" => $r->numContenedor]);
+    public function fileManagerlocal(Request $r)
+    {
+        return view('cotizaciones.externos.file-manager-local', ["numContenedor" => $r->numContenedor]);
     }
 
-    public function sendFiles1(Request $r){
-        try{
+    public function sendFiles1(Request $r)
+    {
+        try {
 
-            $files = ( $r->attachmentFiles);
+            $files = ($r->attachmentFiles);
             $attachment = [];
 
-            if($r->channel == "WhatsApp"){
-                if(sizeof($r->wa_phone) == 0) return response()->json(["Titulo" => "Seleccione contactos","TMensaje" => "warning" , "Mensaje" => "Para enviar la documentación seleccionada debe seleccionar un contacto"]);
+            if ($r->channel == "WhatsApp") {
+                if (sizeof($r->wa_phone) == 0) {
+                    return response()->json(["Titulo" => "Seleccione contactos","TMensaje" => "warning" , "Mensaje" => "Para enviar la documentación seleccionada debe seleccionar un contacto"]);
+                }
 
-                foreach($r->wa_phone as $phone){
+                foreach ($r->wa_phone as $phone) {
                     //WhatsAppController::sendWhatsAppMessage($r->wa_phone, $r->message);
-                    foreach($files as $file){
+                    foreach ($files as $file) {
                         $urlFile = "https://sgt.gologipro.com/".public_path($file['file']);
-                        $urlFile = str_replace('/var/www/html/SGTSITA/public/','',$urlFile);
+                        $urlFile = str_replace('/var/www/html/SGTSITA/public/', '', $urlFile);
                         $fileLabel = $file['documentSubject']." del contenedor ".$r->numContenedor;
 
                         $data = [
@@ -474,131 +499,152 @@ class ExternosController extends Controller
 
                     }
                 }
-                    return response()->json(["TMensaje" => "success", "Titulo" => "Mensaje WhatsApp enviado correctamente","Mensaje" => "Se ha enviado mensaje con los archivos seleccionados"]);
+                return response()->json(["TMensaje" => "success", "Titulo" => "Mensaje WhatsApp enviado correctamente","Mensaje" => "Se ha enviado mensaje con los archivos seleccionados"]);
 
             }
 
-            foreach($files as $file){
-                array_push($attachment,public_path($file['file']));
+            foreach ($files as $file) {
+                array_push($attachment, public_path($file['file']));
             }
 
             $emailList = (strlen($r->secondaryEmail) > 0) ? [$r->email,$r->secondaryEmail] : [$r->email];
 
             Mail::to($emailList)
-            ->send(new \App\Mail\CustomMessageMail($r->subject,$r->message, $attachment));
+            ->send(new \App\Mail\CustomMessageMail($r->subject, $r->message, $attachment));
             return response()->json(["TMensaje" => "success", "Titulo" => "Mensaje enviado correctamente","Mensaje" => "Se ha enviado mensaje con los archivos seleccionados"]);
 
-        }catch(\Trhowable $t){
+        } catch (\Trhowable $t) {
             return response()->json(["TMensaje" => "error", "Titulo" => "Mensaje no enviado","Mensaje" => "Ocurrio un error mientras enviabamos su mensaje: ".$t->getMessage()]);
         }
     }
 
-    public function fileProperties($id,$file,$title,$contenedor){
+    public function fileProperties($id, $file, $title, $contenedor)
+    {
         $path = public_path('cotizaciones/cotizacion'.$id.'/'.$file);
 
-        if(\File::exists($path)){
+        if (\File::exists($path)) {
             $finfo = finfo_open(FILEINFO_MIME_TYPE); // Abrir la base de datos de tipos MIME
             $mimeType = finfo_file($finfo, $path);
             finfo_close($finfo);
 
             return [
                 "filePath" => $file,
-                'fileName'=> $title,
+                'fileName' => $title,
                 "folder" => $id,
-                'secondaryFileName'=> $title.' '.$contenedor,
+                'secondaryFileName' => $title.' '.$contenedor,
                 "fileDate" => CommonTrait::obtenerFechaEnLetra(date("Y-m-d", filemtime($path))),
                 "fileSize" => CommonTrait::calculateFileSize(filesize($path)),
                 "fileSizeBytes" => (filesize($path)),
                 "fileType" => pathinfo($path, PATHINFO_EXTENSION),
                 "mimeType" => $mimeType,
                 "identifier" => $id,
-                "fileCode" => iconv('UTF-8', 'ASCII//TRANSLIT',str_replace(' ','-',$title))
+                "fileCode" => iconv('UTF-8', 'ASCII//TRANSLIT', str_replace(' ', '-', $title))
                 ];
-                //iconv('UTF-8', 'ASCII//TRANSLIT', $cadena);
-        }else{
+            //iconv('UTF-8', 'ASCII//TRANSLIT', $cadena);
+        } else {
             return [];
         }
     }
 
-    public function getFilesProperties($numContenedor){
+    public function getFilesProperties($numContenedor)
+    {
 
         $numContenedor = preg_replace('/\s+/', '*', $numContenedor);
-        $contenedores = explode('*',$numContenedor);
+        $contenedores = explode('*', $numContenedor);
         $documentList = array();
 
-        foreach($contenedores as $cont){
-            $documentos = DocumCotizacion::where('num_contenedor',$cont)->first();
+        foreach ($contenedores as $cont) {
+            $documentos = DocumCotizacion::where('num_contenedor', $cont)->first();
             $folderId = $documentos->id_cotizacion;  //si se guarda con id cotizacion , buscamos con esa clave
 
-            if(!is_null($documentos->doda)){
-                $doda = self::fileProperties($folderId,$documentos->doda,'Doda',$cont);
-                if(sizeof($doda) > 0) array_push($documentList,$doda);
+            if (!is_null($documentos->doda)) {
+                $doda = self::fileProperties($folderId, $documentos->doda, 'Doda', $cont);
+                if (sizeof($doda) > 0) {
+                    array_push($documentList, $doda);
+                }
             }
 
-            if(!is_null($documentos->boleta_liberacion)){
-                $boleta_liberacion = self::fileProperties($folderId,$documentos->boleta_liberacion,'Boleta de liberación',$cont);
-                if(sizeof($boleta_liberacion) > 0) array_push($documentList,$boleta_liberacion);
+            if (!is_null($documentos->boleta_liberacion)) {
+                $boleta_liberacion = self::fileProperties($folderId, $documentos->boleta_liberacion, 'Boleta de liberación', $cont);
+                if (sizeof($boleta_liberacion) > 0) {
+                    array_push($documentList, $boleta_liberacion);
+                }
             }
 
 
-            if(!is_null($documentos->doc_ccp)){
-                $doc_ccp = self::fileProperties($folderId,$documentos->doc_ccp,'Formato para Carta porte',$cont);
-                if(sizeof($doc_ccp) > 0) array_push($documentList,$doc_ccp);
+            if (!is_null($documentos->doc_ccp)) {
+                $doc_ccp = self::fileProperties($folderId, $documentos->doc_ccp, 'Formato para Carta porte', $cont);
+                if (sizeof($doc_ccp) > 0) {
+                    array_push($documentList, $doc_ccp);
+                }
             }
 
-            if(!is_null($documentos->doc_eir)){
-                $doc_eir = self::fileProperties($folderId,$documentos->doc_eir,'eir',$cont);
-                if(sizeof($doc_eir) > 0) array_push($documentList,$doc_eir);
+            if (!is_null($documentos->doc_eir)) {
+                $doc_eir = self::fileProperties($folderId, $documentos->doc_eir, 'eir', $cont);
+                if (sizeof($doc_eir) > 0) {
+                    array_push($documentList, $doc_eir);
+                }
             }
-            if(!is_null($documentos->foto_patio)){
+            if (!is_null($documentos->foto_patio)) {
 
-                $doc_foto_patio = self::fileProperties($folderId, $documentos->foto_patio, 'Foto patio',$cont);
-                if(sizeof($doc_foto_patio) > 0) array_push($documentList, $doc_foto_patio);
+                $doc_foto_patio = self::fileProperties($folderId, $documentos->foto_patio, 'Foto patio', $cont);
+                if (sizeof($doc_foto_patio) > 0) {
+                    array_push($documentList, $doc_foto_patio);
+                }
             }
-             if(!is_null($documentos->boleta_patio)){
+            if (!is_null($documentos->boleta_patio)) {
 
-                $doc_boleta_patio = self::fileProperties($folderId, $documentos->boleta_patio, 'Boleta de patio',$cont);
-                if(sizeof($doc_boleta_patio) > 0) array_push($documentList, $doc_boleta_patio);
-            }
-
-            $cotizacion = Cotizaciones::where('id',$documentos->id_cotizacion)->first();
-
-            if(!is_null($cotizacion->img_boleta)){
-                $preAlta = self::fileProperties($folderId,$cotizacion->img_boleta,'Pre-Alta',$cont);
-                if(sizeof($preAlta) > 0) array_push($documentList,$preAlta);
-            }
-
-            if(!is_null($cotizacion->carta_porte)){
-                $cpPDF = self::fileProperties($folderId,$cotizacion->carta_porte,'Carta Porte',$cont);
-                if(sizeof($cpPDF) > 0) array_push($documentList,$cpPDF);
+                $doc_boleta_patio = self::fileProperties($folderId, $documentos->boleta_patio, 'Boleta de patio', $cont);
+                if (sizeof($doc_boleta_patio) > 0) {
+                    array_push($documentList, $doc_boleta_patio);
+                }
             }
 
-            if(!is_null($cotizacion->carta_porte_xml)){
-                $cpXML = self::fileProperties($folderId,$cotizacion->carta_porte_xml,'Carta Porte XML',$cont);
-                if(sizeof($cpXML) > 0) array_push($documentList,$cpXML);
+            $cotizacion = Cotizaciones::where('id', $documentos->id_cotizacion)->first();
+
+            if (!is_null($cotizacion->img_boleta)) {
+                $preAlta = self::fileProperties($folderId, $cotizacion->img_boleta, 'Pre-Alta', $cont);
+                if (sizeof($preAlta) > 0) {
+                    array_push($documentList, $preAlta);
+                }
+            }
+
+            if (!is_null($cotizacion->carta_porte)) {
+                $cpPDF = self::fileProperties($folderId, $cotizacion->carta_porte, 'Carta Porte', $cont);
+                if (sizeof($cpPDF) > 0) {
+                    array_push($documentList, $cpPDF);
+                }
+            }
+
+            if (!is_null($cotizacion->carta_porte_xml)) {
+                $cpXML = self::fileProperties($folderId, $cotizacion->carta_porte_xml, 'Carta Porte XML', $cont);
+                if (sizeof($cpXML) > 0) {
+                    array_push($documentList, $cpXML);
+                }
             }
         }
 
-        return ["data"=>$documentList,"numContenedor" => $numContenedor,"documentos" =>$documentos];
+        return ["data" => $documentList,"numContenedor" => $numContenedor,"documentos" => $documentos];
 
 
     }
 
-    public function filePropertiescoordenadas($id,$file,$title,){
+    public function filePropertiescoordenadas($id, $file, $title)
+    {
         $path = public_path('coordenadas/'.$id.'/'.$file);
-        if(\File::exists($path)){
+        if (\File::exists($path)) {
             return [
                 "folder" => $id,
                 "filePath" => $file,
-                'fileName'=> $title,
+                'fileName' => $title,
                 "fileDate" => CommonTrait::obtenerFechaEnLetra(date("Y-m-d", filemtime($path))),
                 "fileSize" => CommonTrait::calculateFileSize(filesize($path)),
                 "fileType" => pathinfo($path, PATHINFO_EXTENSION),
                 "identifier" => $id,
-                "fileCode" => iconv('UTF-8', 'ASCII//TRANSLIT',str_replace(' ','-',$title))
+                "fileCode" => iconv('UTF-8', 'ASCII//TRANSLIT', str_replace(' ', '-', $title))
                 ];
-                //iconv('UTF-8', 'ASCII//TRANSLIT', $cadena);
-        }else{
+            //iconv('UTF-8', 'ASCII//TRANSLIT', $cadena);
+        } else {
             return [];
         }
     }
@@ -606,38 +652,41 @@ class ExternosController extends Controller
 
 
     //viajes locales desde mec
-    function solicitarIndexlocal(){
+    public function solicitarIndexlocal()
+    {
         return view('cotizaciones.externos.step_one_local');
     }
 
-    public function selectorlocal(Request $request){
+    public function selectorlocal(Request $request)
+    {
         // return $request->transac;
-            switch($request->transac){
-                case "simple":
-                    $path = 'viajes.simplelocal';
-                    break;
-                case "multiple":
-                    $path = 'viajes.multiplelocal';
-                    break;
-                case "documents":
-                    $path = 'viajes.documentslocal';
-                    break;
-                default:
-                    $path = 'viajes.index';
-            }
+        switch ($request->transac) {
+            case "simple":
+                $path = 'viajes.simplelocal';
+                break;
+            case "multiple":
+                $path = 'viajes.multiplelocal';
+                break;
+            case "documents":
+                $path = 'viajes.documentslocal';
+                break;
+            default:
+                $path = 'viajes.index';
+        }
 
-            return redirect()->route($path);
+        return redirect()->route($path);
     }
-    public function solicitudSimplelocal(){
+    public function solicitudSimplelocal()
+    {
         $formasPago = SatFormaPago::get();
         $metodosPago = SatMetodoPago::get();
         $usoCfdi = SatUsoCfdi::get();
-        $clienteEmpresa = ClientEmpresa::where('id_client',auth()->user()->id_cliente)->get()->pluck('id_empresa');
+        $clienteEmpresa = ClientEmpresa::where('id_client', auth()->user()->id_cliente)->get()->pluck('id_empresa');
         //return $clienteEmpresa;
-        $empresas = Empresas::whereIn('id',$clienteEmpresa)->get();
+        $empresas = Empresas::whereIn('id', $clienteEmpresa)->get();
 
 
-        $opciones =config('CatAuxiliares.opciones');
+        $opciones = config('CatAuxiliares.opciones');
         $opcionesColores = config('CatAuxiliares.opcionesColores');
         $Puertos = config('CatAuxiliares.puertos');
         $opcionesPuertos = config('CatAuxiliares.puertosOpciones');
@@ -645,7 +694,7 @@ class ExternosController extends Controller
 
         $transportista = Proveedor::CatalogoLocal()->whereIn('id_empresa', $clienteEmpresa)->get();
 
-        return view('cotizaciones.externos.solicitud_simple_local',[
+        return view('cotizaciones.externos.solicitud_simple_local', [
                     "action" => "crear",
                     "formasPago" => $formasPago,
                     "metodosPago" => $metodosPago,
@@ -654,18 +703,19 @@ class ExternosController extends Controller
                       "transportista" => $transportista,
                         "opciones" => $opciones,
                         "opcionesColores" => $opcionesColores,
-                        'Puertos'=>$Puertos,
-                        'opcionesPuertos'=>$opcionesPuertos,
+                        'Puertos' => $Puertos,
+                        'opcionesPuertos' => $opcionesPuertos,
                 ]);
     }
-     public function editFormlocal(Request $request){
+    public function editFormlocal(Request $request)
+    {
         $formasPago = SatFormaPago::get();
         $metodosPago = SatMetodoPago::get();
         $usoCfdi = SatUsoCfdi::get();
-        $clienteEmpresa = ClientEmpresa::where('id_client',auth()->user()->id_cliente)->get()->pluck('id_empresa');
-        $empresas = Empresas::whereIn('id',$clienteEmpresa)->get();
+        $clienteEmpresa = ClientEmpresa::where('id_client', auth()->user()->id_cliente)->get()->pluck('id_empresa');
+        $empresas = Empresas::whereIn('id', $clienteEmpresa)->get();
 
-        $opciones =config('CatAuxiliares.opciones');
+        $opciones = config('CatAuxiliares.opciones');
         $opcionesColores = config('CatAuxiliares.opcionesColores');
         $Puertos = config('CatAuxiliares.puertos');
         $opcionesPuertos = config('CatAuxiliares.puertosOpciones');
@@ -677,13 +727,14 @@ class ExternosController extends Controller
         ->first();
 
         $transportista = Proveedor::CatalogoLocal()->whereIn('id_empresa', $clienteEmpresa)->get();
-       // dd($transportista, $clienteEmpresa);
-       // $transportista = Proveedor::get();
-       // where('id_empresa',$cotizacion->id_proveedor)->
-      // where('id_empresa',$cotizacion->id_proveedor)->first();
- //dd($cotizacion);
-        return view('cotizaciones.externos.solicitud_simple_local',
-                                                            ["action" => "editar",
+        // dd($transportista, $clienteEmpresa);
+        // $transportista = Proveedor::get();
+        // where('id_empresa',$cotizacion->id_proveedor)->
+        // where('id_empresa',$cotizacion->id_proveedor)->first();
+        //dd($cotizacion);
+        return view(
+            'cotizaciones.externos.solicitud_simple_local',
+            ["action" => "editar",
                                                             "formasPago" => $formasPago,
                                                             "metodosPago" => $metodosPago,
                                                             "usoCfdi" => $usoCfdi,
@@ -692,55 +743,60 @@ class ExternosController extends Controller
                                                             "transportista" => $transportista,
                                                             "opciones" => $opciones,
                                                             "opcionesColores" => $opcionesColores,
-                                                            'Puertos'=>$Puertos,
-                                                            'opcionesPuertos'=>$opcionesPuertos
+                                                            'Puertos' => $Puertos,
+                                                            'opcionesPuertos' => $opcionesPuertos
 
-                                                        ]);
+                                                        ]
+        );
     }
 
-    public function solicitudMultiplelocal(){
+    public function solicitudMultiplelocal()
+    {
 
-         $clienteEmpresa = ClientEmpresa::where('id_client',auth()->user()->id_cliente)->get()->pluck('id_empresa');
+        $clienteEmpresa = ClientEmpresa::where('id_client', auth()->user()->id_cliente)->get()->pluck('id_empresa');
         //return $clienteEmpresa;
-        $empresas = Empresas::whereIn('id',$clienteEmpresa)->get();
+        $empresas = Empresas::whereIn('id', $clienteEmpresa)->get();
 
         $transportista = Proveedor::CatalogoLocal()->whereIn('id_empresa', $clienteEmpresa)->get();
 
-        return view('cotizaciones.externos.solicitud_multiple_local',[
+        return view('cotizaciones.externos.solicitud_multiple_local', [
             "action" => "crear",
             "proveedores" => $empresas,
             "transportista" => $transportista
         ]);
     }
 
-    public function viajesDocumentslocal(){
+    public function viajesDocumentslocal()
+    {
         return view('cotizaciones.externos.viajes_documentacion_local');
 
     }
 
-    public function misViajeslocal(){
+    public function misViajeslocal()
+    {
         $estatusManiobras  = EstatusManiobra::all();
-        return view('cotizaciones.externos.viajes_solicitados-local',compact('estatusManiobras'));
+        return view('cotizaciones.externos.viajes_solicitados-local', compact('estatusManiobras'));
     }
 
 
-    public function getlistPatio(){
-         $contenedoresPendientes = Cotizaciones::join('docum_cotizacion as d', 'cotizaciones.id', '=', 'd.id_cotizacion')
-                                                ->where('cotizaciones.id_cliente' ,'=',Auth::User()->id_cliente)
-                                                ->where('estatus','=', 'local')
-                                                ->whereIn('tipo_viaje_seleccion', ['local', 'local_to_foraneo'])
-                                                ->where('jerarquia', "!=",'Secundario')
-                                                ->where('en_patio', "=", '1')
-                                                ->orderBy('created_at', 'desc')
-                                                ->selectRaw('cotizaciones.*, d.num_contenedor,d.doc_eir,doc_ccp ,d.boleta_liberacion,d.doda,d.foto_patio,d.boleta_patio')
-                                                ->get();
+    public function getlistPatio()
+    {
+        $contenedoresPendientes = Cotizaciones::join('docum_cotizacion as d', 'cotizaciones.id', '=', 'd.id_cotizacion')
+                                               ->where('cotizaciones.id_cliente', '=', Auth::User()->id_cliente)
+                                               ->where('estatus', '=', 'local')
+                                               ->whereIn('tipo_viaje_seleccion', ['local', 'local_to_foraneo'])
+                                               ->where('jerarquia', "!=", 'Secundario')
+                                               ->where('en_patio', "=", '1')
+                                               ->orderBy('created_at', 'desc')
+                                               ->selectRaw('cotizaciones.*, d.num_contenedor,d.doc_eir,doc_ccp ,d.boleta_liberacion,d.doda,d.foto_patio,d.boleta_patio')
+                                               ->get();
 
 
 
 
 
         $resultPatioList =
-        $contenedoresPendientes->map(function($c){
+        $contenedoresPendientes->map(function ($c) {
 
             $numContenedor = $c->num_contenedor;
             $docCCP = ($c->doc_ccp == null) ? false : true;
@@ -795,108 +851,174 @@ class ExternosController extends Controller
         return $resultPatioList;
     }
 
-    public function listPatio(){
-       return view('cotizaciones.externos.viajes_patio-local');
+    public function listPatio()
+    {
+        return view('cotizaciones.externos.viajes_patio-local');
     }
-    public function getContenedoreslocalesPendientes(Request $request){
+    public function getContenedoreslocalesPendientes(Request $request)
+    {
         $condicion = ($request->estatus != 'all') ? '=' : '!=';
         $contenedoresPendientes = Cotizaciones::join('docum_cotizacion as d', 'cotizaciones.id', '=', 'd.id_cotizacion')
-                                                ->join('estatus_maniobras as estat', 'estat.id', '=', 'cotizaciones.estatus_maniobra_id')
-                                                ->where('cotizaciones.id_cliente' ,'=',Auth::User()->id_cliente)
-                                                // ->where('estatus',$condicion,$request->estatus)
-                                                ->where('cotizaciones.estatus_maniobra_id',$condicion,$request->estatus)
-                                                ->whereIn('tipo_viaje_seleccion', ['local', 'local_to_foraneo'])
-                                                ->where('jerarquia', "!=",'Secundario')
-                                                ->orderBy('created_at', 'desc')
-                                                ->selectRaw('cotizaciones.*, d.num_contenedor,d.doc_eir,doc_ccp ,d.boleta_liberacion,d.doda
-                                                ,d.foto_patio,d.boleta_patio,estat.nombre as estatus_maniobra,d.terminal,d.num_autorizacion')
-                                                ->get();
+           ->join('estatus_maniobras as estat', 'estat.id', '=', 'cotizaciones.estatus_maniobra_id')
+           ->join('subclientes', 'subclientes.id', '=', 'cotizaciones.sub_cliente_local')
+           ->join('clients', 'clients.id', '=', 'subclientes.id_cliente')
+           ->join('empresas', 'empresas.id', '=', 'cotizaciones.empresa_local')
+           ->join('proveedores', 'proveedores.id', '=', 'cotizaciones.transportista_local')
+           ->where('cotizaciones.id_cliente', Auth::user()->id_cliente)
+           ->where('cotizaciones.estatus_maniobra_id', $condicion, $request->estatus)
+           ->whereIn('tipo_viaje_seleccion', ['local', 'local_to_foraneo'])
+           ->where('jerarquia', '!=', 'Secundario')
+           ->orderBy('cotizaciones.created_at', 'desc')
+           ->select([
+               'cotizaciones.*',
+
+               // docum
+               'd.num_contenedor',
+               'd.doc_eir',
+               'd.doc_ccp',
+               'd.boleta_liberacion',
+               'd.doda',
+               'd.foto_patio',
+               'd.boleta_patio',
+               'd.terminal',
+               'd.num_autorizacion',
+
+               // estatus
+               'estat.nombre as estatus_maniobra',
+
+               // NUEVOS
+               'empresas.nombre as empresa',
+               'proveedores.nombre as proveedor',
+               'clients.nombre as cliente',
+               'subclientes.nombre as subcliente',
+           ])
+           ->get();
 
 
 
 
-
-        $resultContenedores =
-        $contenedoresPendientes->map(function($c){
+        $resultContenedores = $contenedoresPendientes->map(function ($c) {
 
             $numContenedor = $c->num_contenedor;
-            $docCCP = ($c->doc_ccp == null) ? false : true;
-            $doda = ($c->doda == null) ? false : true;
-            $boletaLiberacion = ($c->boleta_liberacion == null) ? false : true;
-            $cartaPorte = $c->carta_porte;
-            $boletaVacio = ($c->img_boleta == null) ? false : true;
-            $docEir = $c->doc_eir;
-            $fotoPatio = ($c->foto_patio == null) ? false : true;
-            $boleta_patio = ($c->boleta_patio == null) ? false : true;
+
+            $docCCP = !is_null($c->doc_ccp);
+            $doda = !is_null($c->doda);
+            $boletaLiberacion = !is_null($c->boleta_liberacion);
+            $boletaVacio = !is_null($c->img_boleta);
+            $docEir = !is_null($c->doc_eir);
+            $fotoPatio = !is_null($c->foto_patio);
+            $boleta_patio = !is_null($c->boleta_patio);
+
             $tipo = "Sencillo";
-            $Observaciones = $c->observaciones;
-            $Terminal = $c->terminal;
-            $num_autorizacion = $c->num_autorizacion;
-            $Puerto = $c->puerto;
 
             if (!is_null($c->referencia_full)) {
+
                 $secundaria = Cotizaciones::where('referencia_full', $c->referencia_full)
                     ->where('jerarquia', 'Secundario')
-                    ->with('DocCotizacion.Asignaciones')
+                    ->with('DocCotizacion')
                     ->first();
 
                 if ($secundaria && $secundaria->DocCotizacion) {
-                    $docCCP = ($docCCP && $secundaria->DocCotizacion->doc_ccp) ? true : false;
-                    $doda = ($doda && $secundaria->DocCotizacion->doda) ? true : false;
-                    $docEir = ($docEir && $secundaria->DocCotizacion->doc_eir) ? true : false;
-                    $boletaLiberacion = ($boletaLiberacion && $secundaria->DocCotizacion->boleta_liberacion) ? true : false;
-                    $cartaPorte = ($cartaPorte && $secundaria->carta_porte) ? true : false;
-                    $boletaVacio = ($boletaVacio && $secundaria->img_boleta) ? true : false;
-                    $fotoPatio = ($fotoPatio && $secundaria->foto_patio) ? true : false;
-                    $numContenedor .= '  ' . $secundaria->DocCotizacion->num_contenedor;
+                    $docCCP &= (bool) $secundaria->DocCotizacion->doc_ccp;
+                    $doda &= (bool) $secundaria->DocCotizacion->doda;
+                    $docEir &= (bool) $secundaria->DocCotizacion->doc_eir;
+                    $boletaLiberacion &= (bool) $secundaria->DocCotizacion->boleta_liberacion;
+                    $boletaVacio &= (bool) $secundaria->img_boleta;
+                    $fotoPatio &= (bool) $secundaria->foto_patio;
+
+                    $numContenedor .= ' '.$secundaria->DocCotizacion->num_contenedor;
                 }
 
                 $tipo = "Full";
             }
 
-
             return [
-                "NumContenedor" => $numContenedor,
-              "EstatusManiobra" => $c->estatus_maniobra,
-                "Origen" => $c->origen,
-                "Destino" => $c->destino,
+                "NumContenedor" => $this->limpiarNumContenedor($numContenedor),
+                "Referencia" => $this->obtenerReferencias($numContenedor),
+                "EstatusManiobra" => $c->estatus_maniobra,
+                "Origen" => $c->origen_local,
+                "Destino" => $c->destino_local,
                 "Peso" => $c->peso_contenedor,
+
                 "BoletaLiberacion" => $boletaLiberacion,
                 "DODA" => $doda,
                 "foto_patio" => $fotoPatio,
                 "FormatoCartaPorte" => $docCCP,
                 "PreAlta" => $boletaVacio,
                 "BoletaPatio" => $boleta_patio,
+
                 "FechaSolicitud" => Carbon::parse($c->created_at)->format('Y-m-d'),
                 "tipo" => $tipo,
-                "Observaciones" => $Observaciones,
-                "Terminal" => $Terminal,
-                "Puerto" => $Puerto,
-                "NAutorizacion"=> $num_autorizacion,
-                "id" => $c->id
+                "Observaciones" => (
+                    is_null($c->observaciones) ||
+                        $c->observaciones === 'null' ||
+                        trim($c->observaciones) === ''
+                )
+                        ? ''
+                        : $c->observaciones,
+
+                "Terminal" => $c->terminal,
+                "Puerto" => $c->puerto,
+                "NAutorizacion" => $c->num_autorizacion,
+                "cp_pedimento" => $c->cp_pedimento,
+                "cp_clase_ped" => $c->cp_clase_ped,
+                "dias_estadia" => $c->dias_estadia,
+                "dias_pernocta" => $c->dias_pernocta,
+                "tarifa_estadia" => $c->tarifa_estadia,
+                "tarifa_pernocta" => $c->tarifa_pernocta,
+                "total_estadia" => $c->total_estadia,
+                "total_pernocta" => $c->total_pernocta,
+                "total_general" => $c->total_general,
+                "costo_maniobra_local" => $c->costo_maniobra_local,
+               "estado_contenedor" => (
+                   is_null($c->estado_contenedor) ||
+                        $c->estado_contenedor === 'null' ||
+                        trim($c->estado_contenedor) === ''
+               )
+                        ? 'Ninguno'
+                        : $c->estado_contenedor,
+
+                "Empresa" => $c->empresa,
+                "Proveedor" => $c->proveedor,
+                "Cliente" => $c->cliente,
+                "Subcliente" => $c->subcliente,
+
+                "id" => $c->id,
+                "estatus_maniobra_id" => $c->estatus_maniobra_id,
             ];
         });
 
         return $resultContenedores;
     }
+    public function obtenerReferencias($texto)
+    {
+        preg_match_all('/-([A-Za-z0-9]+)/', $texto, $matches);
+        return !empty($matches[1])
+            ? implode(' / ', $matches[1])
+            : null;
+    }
 
+    public function limpiarNumContenedor($texto)
+    {
 
+        return trim(preg_replace('/-[A-Za-z0-9]+/', '', $texto));
+    }
     public function listarDocumentos(Request $request)
     {
 
         $folderId = $request->idSolicitud;
 
-         $uploadDir = public_path("cotizaciones/cotizacion{$folderId}/");
-         $uploadUrl = asset("cotizaciones/cotizacion{$folderId}/");
+        $uploadDir = public_path("cotizaciones/cotizacion{$folderId}/");
+        $uploadUrl = asset("cotizaciones/cotizacion{$folderId}/");
 
-         $docs = DocumCotizacion::where('id_cotizacion', $request->idSolicitud)
-                    ->where('num_contenedor', $request->numContenedor)
-                    ->first();
+        $docs = DocumCotizacion::where('id_cotizacion', $request->idSolicitud)
+                   ->where('num_contenedor', $request->numContenedor)
+                   ->first();
 
 
         if (!$docs) {
-                return response()->json([]);
-            }
+            return response()->json([]);
+        }
 
 
         $documentList = [];
@@ -931,19 +1053,20 @@ class ExternosController extends Controller
         return response()->json($documentList);
     }
 
-    function infoManiobra(Request $request){
+    public function infoManiobra(Request $request)
+    {
 
-    $folderId = $request->id_cotizacion;
+        $folderId = $request->id_cotizacion;
 
-         $uploadDir = public_path("cotizaciones/cotizacion{$folderId}/");
-         $uploadUrl = asset("cotizaciones/cotizacion{$folderId}/");
+        $uploadDir = public_path("cotizaciones/cotizacion{$folderId}/");
+        $uploadUrl = asset("cotizaciones/cotizacion{$folderId}/");
 
-         $docs = DocumCotizacion::where('id_cotizacion', $request->id_cotizacion)
-                    ->where('num_contenedor', $request->num_contenedor)
-                    ->first();
+        $docs = DocumCotizacion::where('id_cotizacion', $request->id_cotizacion)
+                   ->where('num_contenedor', $request->num_contenedor)
+                   ->first();
 
 
-      $cotiInfoManiobra=  \DB::table('docum_cotizacion')
+        $cotiInfoManiobra =  \DB::table('docum_cotizacion')
     ->join('cotizaciones', 'docum_cotizacion.id_cotizacion', '=', 'cotizaciones.id')
     ->join('subclientes', 'subclientes.id', '=', 'cotizaciones.sub_cliente_local')
     ->join('clients', 'clients.id', '=', 'subclientes.id_cliente')
@@ -952,43 +1075,43 @@ class ExternosController extends Controller
     ->where('cotizaciones.id', $folderId)
     ->where('docum_cotizacion.num_contenedor', $request->num_contenedor)
     ->select([
-        'cotizaciones.id as id_cotizacion',
-        'docum_cotizacion.id as id_contenendor',
-        'docum_cotizacion.num_contenedor',
-        'cotizaciones.puerto',
-        'docum_cotizacion.num_autorizacion',
-        'docum_cotizacion.terminal',
-        'cotizaciones.empresa_local',
-        'empresas.nombre as empresa',
-        'cotizaciones.transportista_local',
-        'proveedores.nombre as proveedor',
-        'cotizaciones.origen_local',
-        'cotizaciones.destino_local',
-        'cotizaciones.tamano',
-        'cotizaciones.estado_contenedor',
-        'cotizaciones.peso_contenedor',
-        'cotizaciones.peso_reglamentario',
-        'cotizaciones.sobrepeso',
-        'cotizaciones.precio_sobre_peso',
-        'cotizaciones.precio_tonelada',
-        'cotizaciones.fecha_modulacion_local',
-        'cotizaciones.cp_pedimento',
-        'cotizaciones.cp_clase_ped',
-        'cotizaciones.bloque_hora_i_local',
-        'cotizaciones.bloque_hora_f_local',
-        'cotizaciones.observaciones',
-        'cotizaciones.confirmacion_sello',
-        'cotizaciones.nuevo_sello',
-        'cotizaciones.costo_maniobra_local',
-        'cotizaciones.tarifa_estadia',
-        'cotizaciones.dias_estadia',
-        'cotizaciones.total_estadia',
-        'cotizaciones.tarifa_pernocta',
-        'cotizaciones.dias_pernocta',
-        'cotizaciones.total_pernocta',
-        'cotizaciones.total_general',
-        'clients.nombre as cliente',
-        'subclientes.nombre as subcliente',
+          'cotizaciones.id as id_cotizacion',
+          'docum_cotizacion.id as id_contenendor',
+          'docum_cotizacion.num_contenedor',
+          'cotizaciones.puerto',
+          'docum_cotizacion.num_autorizacion',
+          'docum_cotizacion.terminal',
+          'cotizaciones.empresa_local',
+          'empresas.nombre as empresa',
+          'cotizaciones.transportista_local',
+          'proveedores.nombre as proveedor',
+          'cotizaciones.origen_local',
+          'cotizaciones.destino_local',
+          'cotizaciones.tamano',
+          'cotizaciones.estado_contenedor',
+          'cotizaciones.peso_contenedor',
+          'cotizaciones.peso_reglamentario',
+          'cotizaciones.sobrepeso',
+          'cotizaciones.precio_sobre_peso',
+          'cotizaciones.precio_tonelada',
+          'cotizaciones.fecha_modulacion_local',
+          'cotizaciones.cp_pedimento',
+          'cotizaciones.cp_clase_ped',
+          'cotizaciones.bloque_hora_i_local',
+          'cotizaciones.bloque_hora_f_local',
+          'cotizaciones.observaciones',
+          'cotizaciones.confirmacion_sello',
+          'cotizaciones.nuevo_sello',
+          'cotizaciones.costo_maniobra_local',
+          'cotizaciones.tarifa_estadia',
+          'cotizaciones.dias_estadia',
+          'cotizaciones.total_estadia',
+          'cotizaciones.tarifa_pernocta',
+          'cotizaciones.dias_pernocta',
+          'cotizaciones.total_pernocta',
+          'cotizaciones.total_general',
+          'clients.nombre as cliente',
+          'subclientes.nombre as subcliente',
     ])
     ->first();
 
@@ -1021,7 +1144,28 @@ class ExternosController extends Controller
             }
         }
 
-        return response()->json(['documentList'=>$documentList,'cotiInfoManiobra'=> $cotiInfoManiobra]);
+        return response()->json(['documentList' => $documentList,'cotiInfoManiobra' => $cotiInfoManiobra]);
+    }
+
+    public function cambiarestatuslocal(Request $request)
+    {
+        try {
+            \DB::beginTransaction();
+
+
+            $cotizacion = Cotizaciones::where('id', $request->idCotizacion)->first();
+
+            $cotizacion->estatus_maniobra_id = $request->estatus_id;
+            $cotizacion->save();
+
+            \DB::commit();
+
+            return response()->json(["Titulo" => "Estatus actualizado","Mensaje" => "El estatus de la maniobra se actualizó correctamente","TMensaje" => "success"]);
+        } catch (\Throwable $t) {
+            \DB::rollBack();
+            return response()->json(["Titulo" => "Error al actualizar estatus","Mensaje" => "Ocurrió un error al actualizar el estatus: ".$t->getMessage(),"TMensaje" => "error"]);
+        }
+
     }
 
 

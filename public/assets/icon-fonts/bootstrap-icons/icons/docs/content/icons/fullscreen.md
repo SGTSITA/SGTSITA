@@ -1,8 +1,8 @@
 ---
 title: Fullscreen
 categories:
-  - UI and keyboard
+    - UI and keyboard
 tags:
-  - window
-  - maximize
+    - window
+    - maximize
 ---

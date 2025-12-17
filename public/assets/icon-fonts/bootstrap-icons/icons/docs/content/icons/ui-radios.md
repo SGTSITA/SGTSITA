@@ -1,8 +1,8 @@
 ---
 title: Ui radios
 categories:
-  - Controls
+    - Controls
 tags:
-  - radio
-  - form
+    - radio
+    - form
 ---

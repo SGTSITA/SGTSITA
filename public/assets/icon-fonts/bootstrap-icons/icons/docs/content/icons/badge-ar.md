@@ -1,9 +1,9 @@
 ---
 title: Badge ar
 categories:
-  - Badges
+    - Badges
 tags:
-  - augmented
-  - reality
-  - ar
+    - augmented
+    - reality
+    - ar
 ---

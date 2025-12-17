@@ -4,65 +4,66 @@ const WrapperPlugin = require('wrapper-webpack-plugin');
 const packageJson = require('./package.json');
 
 module.exports = {
-  entry: `${__dirname}/src/index.js`,
-  output: {
-    path: path.resolve(__dirname, 'dist'),
-    library: 'BoxIconElement',
-    libraryTarget: 'umd',
-    filename: 'boxicons.js',
-  },
-  devtool: 'source-map',
-  module: {
-    rules: [
-      {
-        test: /\.js$/,
-        loader: 'babel-loader',
-        options: {
-          babelrc: false,
-          presets: [
-              ['env', { modules: false, targets: { uglify: true } }],
-          ],
-          plugins: [
-            ['babel-plugin-transform-builtin-classes', {
-              globals: ['Array', 'Error', 'HTMLElement'],
-            }],
-          ],
-        },
-      },
-      {
-        test: /\.css$/,
-        use: [
-            { loader: 'to-string-loader' },
-          {
-            loader: 'css-loader',
-            options: {
-              camelCase: true,
+    entry: `${__dirname}/src/index.js`,
+    output: {
+        path: path.resolve(__dirname, 'dist'),
+        library: 'BoxIconElement',
+        libraryTarget: 'umd',
+        filename: 'boxicons.js',
+    },
+    devtool: 'source-map',
+    module: {
+        rules: [
+            {
+                test: /\.js$/,
+                loader: 'babel-loader',
+                options: {
+                    babelrc: false,
+                    presets: [['env', { modules: false, targets: { uglify: true } }]],
+                    plugins: [
+                        [
+                            'babel-plugin-transform-builtin-classes',
+                            {
+                                globals: ['Array', 'Error', 'HTMLElement'],
+                            },
+                        ],
+                    ],
+                },
             },
-          },
+            {
+                test: /\.css$/,
+                use: [
+                    { loader: 'to-string-loader' },
+                    {
+                        loader: 'css-loader',
+                        options: {
+                            camelCase: true,
+                        },
+                    },
+                ],
+            },
         ],
-      },
+    },
+    plugins: [
+        new webpack.DefinePlugin({
+            'BUILD.DATA': {
+                VERSION: JSON.stringify(packageJson.version),
+            },
+        }),
+        new WrapperPlugin({
+            test: /boxicons\.js$/,
+            header: getWrapper('header'),
+            footer: getWrapper('footer'),
+        }),
     ],
-  },
-  plugins: [
-    new webpack.DefinePlugin({
-      'BUILD.DATA': {
-        VERSION: JSON.stringify(packageJson.version),
-      },
-    }),
-    new WrapperPlugin({
-      test: /boxicons\.js$/,
-      header: getWrapper('header'),
-      footer: getWrapper('footer'),
-    }),
-  ],
 };
 
 function getWrapper(type) {
-  if (getWrapper.header) {
-    return getWrapper[type];
-  }
+    if (getWrapper.header) {
+        return getWrapper[type];
+    }
 
-  const templatePieces = `(function (
+    const templatePieces = `(function (
     DEFAULT_CDN_PREFIX,   
     STRING_WEB_COMPONENTS_REQUESTED,
     WINDOW,
@@ -181,9 +182,8 @@ ____SPLIT_HERE____
     }
 );`.split('____SPLIT_HERE____');
 
-  getWrapper.header = templatePieces[0];
-  getWrapper.footer = templatePieces[1];
+    getWrapper.header = templatePieces[0];
+    getWrapper.footer = templatePieces[1];
 
-  return getWrapper[type];
+    return getWrapper[type];
 }
-

@@ -1,9 +1,9 @@
 ---
 title: Stars
 categories:
-  - Weather
+    - Weather
 tags:
-  - clear
-  - skies
-  - night
+    - clear
+    - skies
+    - night
 ---

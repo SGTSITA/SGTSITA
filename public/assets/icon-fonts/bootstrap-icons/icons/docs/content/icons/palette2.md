@@ -1,10 +1,10 @@
 ---
 title: Palette2
 categories:
-  - Graphics
+    - Graphics
 tags:
-  - color
-  - paint
-  - fill
-  - palette
+    - color
+    - paint
+    - fill
+    - palette
 ---

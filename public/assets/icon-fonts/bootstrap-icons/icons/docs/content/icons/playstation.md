@@ -1,8 +1,8 @@
 ---
 title: Playstation
 categories:
-  - Brand
+    - Brand
 tags:
-  - sony
-  - gaming
+    - sony
+    - gaming
 ---

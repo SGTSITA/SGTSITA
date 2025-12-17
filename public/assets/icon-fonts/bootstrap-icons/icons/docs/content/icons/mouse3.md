@@ -1,8 +1,8 @@
 ---
 title: Mouse3
 categories:
-  - Devices
+    - Devices
 tags:
-  - mice
-  - input
+    - mice
+    - input
 ---

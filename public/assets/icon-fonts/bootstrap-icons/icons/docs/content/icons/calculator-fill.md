@@ -1,8 +1,8 @@
 ---
 title: Calculator fill
 categories:
-  - Devices
+    - Devices
 tags:
-  - calculator
-  - math
+    - calculator
+    - math
 ---

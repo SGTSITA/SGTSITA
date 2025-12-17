@@ -1,8 +1,8 @@
 ---
 title: Type bold
 categories:
-  - Typography
+    - Typography
 tags:
-  - text
-  - type
+    - text
+    - type
 ---

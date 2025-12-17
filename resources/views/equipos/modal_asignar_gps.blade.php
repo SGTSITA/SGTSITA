@@ -14,8 +14,10 @@
                         <select class="form-select" name="gps_company_id" id="gps_company_{{ $item->id }}">
                             <option value="">-- Selecciona un proveedor --</option>
                             @foreach ($gps_companies as $gps)
-                                <option value="{{ $gps->id }}"
-                                    {{ $item->gps_company_id == $gps->id ? 'selected' : '' }}>
+                                <option
+                                    value="{{ $gps->id }}"
+                                    {{ $item->gps_company_id == $gps->id ? 'selected' : '' }}
+                                >
                                     {{ $gps->nombre }} ({{ $gps->url }})
                                 </option>
                             @endforeach
@@ -25,8 +27,14 @@
                     {{-- Campo de IMEI --}}
                     <div class="mb-3">
                         <label for="imei_{{ $item->id }}" class="form-label">IMEI del dispositivo</label>
-                        <input type="text" class="form-control" name="imei" id="imei_{{ $item->id }}"
-                            value="{{ $item->imei ?? '' }}" placeholder="Ej. 352094083132191">
+                        <input
+                            type="text"
+                            class="form-control"
+                            name="imei"
+                            id="imei_{{ $item->id }}"
+                            value="{{ $item->imei ?? '' }}"
+                            placeholder="Ej. 352094083132191"
+                        />
                     </div>
                 </div>
 

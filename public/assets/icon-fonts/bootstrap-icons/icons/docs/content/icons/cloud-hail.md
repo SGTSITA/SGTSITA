@@ -1,7 +1,7 @@
 ---
 title: Cloud hail
 categories:
-  - Weather
+    - Weather
 tags:
-  - storm
+    - storm
 ---

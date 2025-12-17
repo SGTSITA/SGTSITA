@@ -1,8 +1,8 @@
 ---
 title: HDMI fill
 categories:
-  - Devices
+    - Devices
 tags:
-  - video
-  - input
+    - video
+    - input
 ---

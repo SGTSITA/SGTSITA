@@ -2,11 +2,11 @@ let urlRepo = '';
 
 var _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
-var [BoletaLib, Doda,CartaPorte, PreAlta] = [
-    {"opcion":"BoletaLib","titulo":"Boleta de Liberación","agGrid": "BoletaLiberacion"},
-    {"opcion":"Doda","titulo":"DODA","agGrid": "DODA"},
-    {"opcion":"CartaPorte","titulo":"Carta Porte","agGrid": "CartaPorte"},
-    {"opcion":"PreAlta","titulo":"Pre Alta","agGrid": "PreAlta"}
+var [BoletaLib, Doda, CartaPorte, PreAlta] = [
+    { opcion: 'BoletaLib', titulo: 'Boleta de Liberación', agGrid: 'BoletaLiberacion' },
+    { opcion: 'Doda', titulo: 'DODA', agGrid: 'DODA' },
+    { opcion: 'CartaPorte', titulo: 'Carta Porte', agGrid: 'CartaPorte' },
+    { opcion: 'PreAlta', titulo: 'Pre Alta', agGrid: 'PreAlta' },
 ];
 
 let fileSettings = BoletaLib;
@@ -15,89 +15,84 @@ let fileCartaPorte = document.querySelector('#fileCartaPorte');
 let btnFileCartaPorte = document.querySelector('#btnFileCartaPorte');
 let btnFileDODA = document.querySelector('#btnFileDODA');
 let btnFileBoletaLiberacion = document.querySelector('#btnFileBoletaLiberacion');
-let btnPreAlta = document.querySelector("#btnFilePrealta");
+let btnPreAlta = document.querySelector('#btnFilePrealta');
 
 if (btnFileCartaPorte) {
-  btnFileCartaPorte.addEventListener('click', () => {
-    fileSettings = CartaPorte;
-  });
+    btnFileCartaPorte.addEventListener('click', () => {
+        fileSettings = CartaPorte;
+    });
 }
 if (btnFileDODA) {
-    btnFileDODA.addEventListener('click',()=>{
-    fileSettings = Doda;
-})
+    btnFileDODA.addEventListener('click', () => {
+        fileSettings = Doda;
+    });
 }
 
 if (btnFileBoletaLiberacion) {
-btnFileBoletaLiberacion.addEventListener('click',()=>{
-    fileSettings = BoletaLib;
-})
+    btnFileBoletaLiberacion.addEventListener('click', () => {
+        fileSettings = BoletaLib;
+    });
 }
-
 
 if (btnPreAlta) {
-btnPreAlta.addEventListener('click',()=>{
-    fileSettings = PreAlta
-})
+    btnPreAlta.addEventListener('click', () => {
+        fileSettings = PreAlta;
+    });
 }
-
 
 function getSubClientes() {
     var clienteId = $(this).val();
     if (clienteId) {
-
         $.ajax({
             type: 'GET',
             url: '/subclientes/' + clienteId,
-            success: function(data) {
-                $.each(data, function(key, subcliente) {
-                    $('#id_subcliente').append('<option value="' + subcliente.id + '">' + subcliente.nombre + '</option>');
+            success: function (data) {
+                $.each(data, function (key, subcliente) {
+                    $('#id_subcliente').append(
+                        '<option value="' + subcliente.id + '">' + subcliente.nombre + '</option>',
+                    );
                 });
-            }
+            },
         });
     }
 }
 
 var uploadConfig = null;
 
-
-
-function resetUploadConfig(){
+function resetUploadConfig() {
     var fileInputElement = document.getElementById('fileuploader');
     // Obtener la instancia de Fileuploader asociada a este campo de carga
     var api = $.fileuploader.getInstance(fileInputElement);
 
-   urlRepo = fileSettings.opcion;
-   numContenedor = localStorage.getItem('numContenedor');
+    urlRepo = fileSettings.opcion;
+    numContenedor = localStorage.getItem('numContenedor');
 
     api.setOption('upload', {
         url: '/contenedores/files/upload',
         data: {
-            urlRepo:urlRepo,
+            urlRepo: urlRepo,
             numContenedor: numContenedor,
-            _token: _token
+            _token: _token,
         },
         type: 'POST',
         enctype: 'multipart/form-data',
         start: true,
         synchron: true,
-        onBeforeSend: (xhr, settings) => {
-
-        },
-        onSuccess: function(result, item) {
-
+        onBeforeSend: (xhr, settings) => {},
+        onSuccess: function (result, item) {
             var data = {};
 
             // get data
-            if (result && result.files)
-                data = result;
-            else
-                data.hasWarnings = true;
+            if (result && result.files) data = result;
+            else data.hasWarnings = true;
 
             // if success
             if (data.isSuccess && data.files[0]) {
                 item.name = data.files[0].name;
-                item.html.find('.column-title > div:first-child').text(data.files[0].old_name).attr('title', data.files[0].old_name);
+                item.html
+                    .find('.column-title > div:first-child')
+                    .text(data.files[0].old_name)
+                    .attr('title', data.files[0].old_name);
             }
 
             // if warnings
@@ -114,17 +109,17 @@ function resetUploadConfig(){
             }
 
             item.html.find('.fileuploader-action-remove').addClass('fileuploader-action-success');
-            setTimeout(function() {
+            setTimeout(function () {
                 item.html.find('.progress-bar2').fadeOut(400);
             }, 400);
 
-          const apiGrid=null;
-            if (typeof gridOptions !== "undefined" && gridOptions?.api) {
+            const apiGrid = null;
+            if (typeof gridOptions !== 'undefined' && gridOptions?.api) {
                 apiGrid = gridOptions.api;
             }
-            if(apiGrid){
+            if (apiGrid) {
                 let dataGrid = apiGrid.getGridOption('rowData');
-                var rowIndex = dataGrid.findIndex(d => d.NumContenedor == numContenedor)
+                var rowIndex = dataGrid.findIndex((d) => d.NumContenedor == numContenedor);
 
                 const colId = fileSettings.agGrid;
 
@@ -137,68 +132,64 @@ function resetUploadConfig(){
                 }
             }
 
-
             toastr.options = {
-                "closeButton": true,
-                "debug": false,
-                "newestOnTop": false,
-                "progressBar": true,
-                "positionClass": "toastr-bottom-center",
-                "preventDuplicates": false,
-                "onclick": null,
-                "showDuration": "1500",
-                "hideDuration": "1000",
-                "timeOut": "5000",
-                "extendedTimeOut": "1000",
-                "showEasing": "swing",
-                "hideEasing": "linear",
-                "showMethod": "fadeIn",
-                "hideMethod": "fadeOut"
-              };
+                closeButton: true,
+                debug: false,
+                newestOnTop: false,
+                progressBar: true,
+                positionClass: 'toastr-bottom-center',
+                preventDuplicates: false,
+                onclick: null,
+                showDuration: '1500',
+                hideDuration: '1000',
+                timeOut: '5000',
+                extendedTimeOut: '1000',
+                showEasing: 'swing',
+                hideEasing: 'linear',
+                showMethod: 'fadeIn',
+                hideMethod: 'fadeOut',
+            };
 
-              toastr.success( `Se cargó el archivo correctamente en el contenedor ${fileSettings.titulo}`,`${fileSettings.titulo}: Carga Exitosa`);
-
+            toastr.success(
+                `Se cargó el archivo correctamente en el contenedor ${fileSettings.titulo}`,
+                `${fileSettings.titulo}: Carga Exitosa`,
+            );
         },
-        onError: function(item) {
+        onError: function (item) {
             var progressBar = item.html.find('.progress-bar2');
 
             if (progressBar.length) {
-                progressBar.find('span').html(0 + "%");
-                progressBar.find('.fileuploader-progressbar .bar').width(0 + "%");
+                progressBar.find('span').html(0 + '%');
+                progressBar.find('.fileuploader-progressbar .bar').width(0 + '%');
                 item.html.find('.progress-bar2').fadeOut(400);
             }
 
-            item.upload.status != 'cancelled' && item.html.find('.fileuploader-action-retry').length == 0 ? item.html.find('.column-actions').prepend(
-                '<button type="button" class="fileuploader-action fileuploader-action-retry" title="Retry"><i class="fileuploader-icon-retry"></i></button>'
-            ) : null;
+            item.upload.status != 'cancelled' && item.html.find('.fileuploader-action-retry').length == 0
+                ? item.html
+                      .find('.column-actions')
+                      .prepend(
+                          '<button type="button" class="fileuploader-action fileuploader-action-retry" title="Retry"><i class="fileuploader-icon-retry"></i></button>',
+                      )
+                : null;
         },
-        onProgress: function(data, item) {
+        onProgress: function (data, item) {
             var progressBar = item.html.find('.progress-bar2');
 
             if (progressBar.length > 0) {
                 progressBar.show();
-                progressBar.find('span').html(data.percentage + "%");
-                progressBar.find('.fileuploader-progressbar .bar').width(data.percentage + "%");
+                progressBar.find('span').html(data.percentage + '%');
+                progressBar.find('.fileuploader-progressbar .bar').width(data.percentage + '%');
             }
         },
-        onComplete: ()=>{
-
-
-            setTimeout(()=> {
-
-               adjuntarDocumentos()
-                if (typeof dt !== "undefined" && dt !== null &&
-                        $.fn.DataTable.isDataTable("#kt_datatable_example_1")) {
-
-                        dt.ajax.reload(null, false);
-                    }
-
-            },2500)
-
+        onComplete: () => {
+            setTimeout(() => {
+                adjuntarDocumentos();
+                if (typeof dt !== 'undefined' && dt !== null && $.fn.DataTable.isDataTable('#kt_datatable_example_1')) {
+                    dt.ajax.reload(null, false);
+                }
+            }, 2500);
         },
     });
-
-
 }
 
 function adjuntarDocumentos() {
@@ -207,7 +198,8 @@ function adjuntarDocumentos() {
         captions: 'es',
         enableApi: true,
         start: true,
-        changeInput: '<div class="fileuploader-input">' +
+        changeInput:
+            '<div class="fileuploader-input">' +
             '<div class="fileuploader-input-inner">' +
             '<div class="fileuploader-icon-main"></div>' +
             '<h3 class="fileuploader-input-caption"><span>${captions.feedback}</span></h3>' +
@@ -217,14 +209,14 @@ function adjuntarDocumentos() {
             '</div>',
         theme: 'dragdrop',
         upload: uploadConfig,
-        beforeSelect: function(listEl, parentEl, newInputEl, inputEl) {
+        beforeSelect: function (listEl, parentEl, newInputEl, inputEl) {
             resetUploadConfig();
         },
-        onRemove: function(item) {
+        onRemove: function (item) {
             $.post('remove', {
                 _token: _token,
                 _Folio: _Folio,
-                file: item.name
+                file: item.name,
             });
         },
         captions: $.extend(true, {}, $.fn.fileuploader.languages['es'], {
@@ -236,7 +228,5 @@ function adjuntarDocumentos() {
         }),
     });
 
-
-   // api.uploadStart(); // Iniciar la carga manualmente
-
+    // api.uploadStart(); // Iniciar la carga manualmente
 }

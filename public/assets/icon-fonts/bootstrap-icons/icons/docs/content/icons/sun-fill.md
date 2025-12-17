@@ -1,8 +1,8 @@
 ---
 title: Sun fill
 categories:
-  - Weather
+    - Weather
 tags:
-  - solar
-  - weather
+    - solar
+    - weather
 ---

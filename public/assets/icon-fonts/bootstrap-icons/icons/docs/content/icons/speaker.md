@@ -1,8 +1,8 @@
 ---
 title: Speaker
 categories:
-  - Devices
+    - Devices
 tags:
-  - audio
-  - sound
+    - audio
+    - sound
 ---

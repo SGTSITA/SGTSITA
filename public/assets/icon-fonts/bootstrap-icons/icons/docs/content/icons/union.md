@@ -1,10 +1,10 @@
 ---
 title: Union
 categories:
-  - Graphics
+    - Graphics
 tags:
-  - graphics
-  - vector
-  - merge
-  - layers
+    - graphics
+    - vector
+    - merge
+    - layers
 ---
