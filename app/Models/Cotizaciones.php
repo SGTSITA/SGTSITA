@@ -80,7 +80,9 @@ class Cotizaciones extends Model
         'fecha_en_patio',
         'origen_captura',
         'user_id',
-        'estatus_maniobra_id'
+        'estatus_maniobra_id',
+        'confirmacion_sello',
+        'nuevo_sello'
 
     ];
 

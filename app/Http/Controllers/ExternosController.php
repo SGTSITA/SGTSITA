@@ -425,6 +425,7 @@ class ExternosController extends Controller
 
     public function fileManager(Request $r)
     {
+        
         return view('cotizaciones.externos.file-manager', ["numContenedor" => $r->numContenedor]);
     }
 
@@ -554,7 +555,10 @@ class ExternosController extends Controller
         $documentList = array();
 
         foreach ($contenedores as $cont) {
-            $documentos = DocumCotizacion::where('num_contenedor', $cont)->first();
+            $documentos = DocumCotizacion::with('Cotizacion')
+                ->where('num_contenedor', $cont)
+                ->first();
+
             $folderId = $documentos->id_cotizacion;  //si se guarda con id cotizacion , buscamos con esa clave
 
             if (!is_null($documentos->doda)) {

@@ -395,7 +395,7 @@
     <script src="https://unpkg.com/ag-grid-community/dist/ag-grid-community.min.js"></script>
 
     <script
-        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAtAO2AZBgzC7QaBxnMnPoa-DAq8vaEvUc"
+        src="https://maps.googleapis.com/maps/api/js?key={{ config('services.googleMapsApi.apikey') }}"
         async
         defer
         onload="googleMapsReady()"

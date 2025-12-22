@@ -1,77 +1,92 @@
+// para compartir el link y generar la informacion de whatsapp
+let waLinkGenerado = null;
+let waPasswordGenerado = null;
+let waArchivosSeleccionados = [];
+
 let tagNumContenedor = document.querySelector('#numContenedor');
 let numContenedor = tagNumContenedor.textContent;
 //const safeValue = encodeURIComponent(numContenedor); //agregue porq habia uno que traia // en el num de contenendor , validar en captura..
 
 let urlGetFiles = `/viajes/file-manager/get-file-list/${numContenedor}`;
-
-let dt = $('#kt_datatable_example_1').DataTable({
-    select: false,
-    ajax: {
-        url: urlGetFiles,
-    },
-    searchDelay: 500,
-
-    order: [[5, 'desc']],
-    select: {
-        style: 'multi',
-        selector: 'td:first-child input[type="checkbox"]',
-        className: 'row-selected',
-    },
-    language: {
-        paginate: {
-            first: 'Primero',
-            last: 'Último',
-            next: 'Siguiente',
-            previous: 'Anterior',
+let archivosData = [];
+let dt = $('#kt_datatable_example_1')
+    .on('xhr.dt', function (e, settings, json, xhr) {
+        archivosData = json.documentos;
+    })
+    .DataTable({
+        select: false,
+        ajax: {
+            url: urlGetFiles,
         },
+        searchDelay: 500,
+
+        order: [[5, 'desc']],
         select: {
-            rows: {
-                1: '',
-                _: '',
-            },
+            style: 'multi',
+            selector: 'td:first-child input[type="checkbox"]',
+            className: 'row-selected',
         },
-        decimal: '.',
-        emptyTable: 'No hay datos disponibles en la tabla',
-        zeroRecords: 'No se encontraron coincidencias',
-        info: '_START_ a _END_ de _TOTAL_ entradas',
-        infoFiltered: '(Filtrado de _MAX_ total de entradas)',
-        lengthMenu: 'Mostrar _MENU_ entradas',
-        thousands: ',',
-    },
-    columns: [
-        { data: null },
-        { data: 'secondaryFileName' },
-        { data: 'fileType' },
-        { data: 'fileSize' },
-        { data: 'fileDate' },
-        { data: null },
-    ],
-    columnDefs: [
-        {
-            targets: 0,
-            orderable: false,
-            render: function (data) {
-                return `
+        language: {
+            paginate: {
+                first: 'Primero',
+                last: 'Último',
+                next: 'Siguiente',
+                previous: 'Anterior',
+            },
+            select: {
+                rows: {
+                    1: '',
+                    _: '',
+                },
+            },
+            decimal: '.',
+            emptyTable: 'No hay datos disponibles en la tabla',
+            zeroRecords: 'No se encontraron coincidencias',
+            info: '_START_ a _END_ de _TOTAL_ entradas',
+            infoFiltered: '(Filtrado de _MAX_ total de entradas)',
+            lengthMenu: 'Mostrar _MENU_ entradas',
+            thousands: ',',
+        },
+        columns: [
+            { data: null },
+            { data: 'secondaryFileName' },
+            { data: 'fileType' },
+            { data: 'fileSize' },
+            { data: 'fileDate' },
+            { data: null },
+            { data: 'fileCode' },
+        ],
+        columnDefs: [
+            {
+                targets: 0,
+                orderable: false,
+                render: function (data) {
+                    return `
                     <div class="form-check form-check-sm form-check-custom form-check-solid">
                         <input class="form-check-input" type="checkbox" value="cotizaciones/cotizacion${data.identifier}/${data.filePath}" />
                     </div>`;
+                },
             },
-        },
-        {
-            targets: 5,
+            {
+                targets: 5,
 
-            orderable: false,
+                orderable: false,
 
-            render: function (data, type, row) {
-                return `
+                render: function (data, type, row) {
+                    return `
                         <a href="/cotizaciones/cotizacion${data.identifier}/${data.filePath}" target="_blank" class="btn btn-active-primary btn-sm">
                             Ver Archivo
                         </a>
                     `;
+                },
             },
-        },
-    ],
-});
+            {
+                targets: 6,
+                visible: false,
+                searchable: false,
+            },
+        ],
+    });
 
 const filterSearch = document.querySelector('[data-kt-docs-table-filter="search"]');
 filterSearch.addEventListener('keyup', function (e) {
@@ -446,6 +461,119 @@ function enviarCorreo() {
         });
 }
 
+function mostrarLoading() {
+    return Swal.fire({
+        title: 'Generando acceso',
+        text: 'Espere un momento...',
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        },
+    });
+}
+
+async function abrirModalWhatsapp() {
+    waArchivosSeleccionados = obtenerArchivosSeleccionados();
+
+    if (waArchivosSeleccionados.length === 0) {
+        alert('Seleccione al menos un archivo');
+        return;
+    }
+
+    mostrarLoading();
+
+    try {
+        const res = await fetch(`/cotizacion/${archivosData.id}/acceso`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            },
+            body: JSON.stringify({
+                archivos: waArchivosSeleccionados,
+                proveedor_id: archivosData.cotizacion.transportista_local,
+            }),
+        });
+
+        const data = await res.json();
+
+        if (!data.success) {
+            Swal.close();
+            alert('Error al generar acceso');
+            return;
+        }
+
+        waLinkGenerado = data.link; // /externos/ver-documentos/{token}
+        waPasswordGenerado = data.password;
+
+        cargarDatosModalWhatsapp();
+
+        Swal.close();
+
+        const modal = new bootstrap.Modal(document.getElementById('modalWhatsapp'));
+        modal.show();
+    } catch (error) {
+        Swal.close();
+        console.error(error);
+        alert('Error de conexión');
+    }
+
+    const modal = new bootstrap.Modal(document.getElementById('modalWhatsapp'));
+    modal.show();
+}
+
+document.getElementById('btnEnviarWhatsapp').addEventListener('click', () => {
+    let mensaje = `
+Fecha: ${wa_fecha.value}
+Referencia: ${wa_referencia.value}
+Horario: ${wa_hora_inicio.value} - ${wa_hora_fin.value}
+Terminal: ${wa_terminal.value}
+
+${wa_cambio_sello.checked ? '*CAMBIO DE SELLO*' : ''}
+
+${wa_observaciones.value}
+
+Documentos:
+${waLinkGenerado}
+Contraseña de acceso: ${waPasswordGenerado}
+    `.trim();
+
+    const url = `https://wa.me/?text=${encodeURIComponent(mensaje)}`;
+    window.open(url, '_blank');
+});
+
+function cargarDatosModalWhatsapp() {
+    let data = archivosData;
+    document.getElementById('wa_fecha').value = data.cotizacion.fecha_modulacion ?? '';
+    document.getElementById('wa_referencia').value = `${data.num_contenedor}`;
+
+    document.getElementById('wa_hora_inicio').value = data.cotizacion.bloque_hora_i_local ?? '';
+    document.getElementById('wa_hora_fin').value = data.cotizacion.bloque_hora_f_local ?? '';
+    document.getElementById('wa_terminal').value = data.terminal ?? '';
+    document.getElementById('wa_cambio_sello').checked = !!data.cotizacion.confirmacion_sello;
+    document.getElementById('wa_observaciones').value = data.cotizacion.observaciones ?? '';
+}
+
+function obtenerArchivosSeleccionados() {
+    let archivos = [];
+
+    let table = $('#kt_datatable_example_1').DataTable();
+
+    table.rows().every(function () {
+        let row = this.node();
+        let checked = $(row).find('input[type="checkbox"]').is(':checked');
+
+        if (checked) {
+            let data = this.data();
+
+            archivos.push({
+                fileCode: data.fileCode,
+            });
+        }
+    });
+
+    return archivos;
+}
 btnDocumets.addEventListener('click', goToUploadDocuments);
 btnAdjuntos.addEventListener('click', modalEmail);
 btnWhatsApp.addEventListener('click', modalWhatsApp);

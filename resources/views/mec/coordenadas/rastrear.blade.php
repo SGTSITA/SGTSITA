@@ -5,7 +5,8 @@
         .switch {
             position: relative;
             display: inline-block;
-            width: 200px; /* Ancho mayor para incluir el texto */
+            width: 200px;
+            /* Ancho mayor para incluir el texto */
             height: 30px;
         }
 
@@ -49,21 +50,22 @@
             left: 4px;
         }
 
-        input:checked + .slider {
+        input:checked+.slider {
             background-color: #4caf50;
         }
 
-        input:checked + .slider:before {
+        input:checked+.slider:before {
             transform: translateX(170px);
         }
 
-        input:checked + .slider #ubicacion-texto {
+        input:checked+.slider #ubicacion-texto {
             transform: translateX(80px);
         }
 
-        input:not(:checked) + .slider #ubicacion-texto {
+        input:not(:checked)+.slider #ubicacion-texto {
             transform: translateX(-80px);
         }
+
         .btn-close {
             filter: invert(1);
         }
@@ -71,37 +73,47 @@
         #contenedoreseditar {
             font-size: 0.85rem;
         }
+
         #contenedoreseditar th,
         #contenedoreseditar td {
             padding: 0.3rem 0.5rem;
             vertical-align: middle;
         }
+
         #contenedoreseditar thead {
             background-color: #f0f0f0;
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.03em;
         }
+
         .input-alto {
-            height: 38px; /* o lo que tú necesites */
+            height: 38px;
+            /* o lo que tú necesites */
         }
+
         .loading-overlay {
             position: absolute;
             top: 0;
             left: 0;
-            z-index: 10; /* asegúrate que esté por encima del grid */
+            z-index: 10;
+            /* asegúrate que esté por encima del grid */
             width: 100%;
             height: 100%;
-            background-color: rgba(255, 255, 255, 0.6); /* opcional para desenfoque */
+            background-color: rgba(255, 255, 255, 0.6);
+            /* opcional para desenfoque */
             display: flex;
             justify-content: center;
             align-items: center;
         }
+
         .nav-tabs .nav-link.active {
-            background-color: #0d6efd; /* Azul Bootstrap */
+            background-color: #0d6efd;
+            /* Azul Bootstrap */
             color: #fff !important;
             font-weight: bold;
-            border-radius: 0.5rem 0.5rem 0 0; /* esquinas redondeadas arriba */
+            border-radius: 0.5rem 0.5rem 0 0;
+            /* esquinas redondeadas arriba */
         }
 
         /* Hover */
@@ -117,14 +129,8 @@
         <ul class="nav nav-tabs" id="rastreoTabs" role="tablist">
             @can('Coordenadas-MEC-Rastreo-vivo')
                 <li class="nav-item" role="presentation">
-                    <button
-                        class="nav-link active"
-                        id="tab-rastreo"
-                        data-bs-toggle="tab"
-                        data-bs-target="#rastreo"
-                        type="button"
-                        role="tab"
-                    >
+                    <button class="nav-link active" id="tab-rastreo" data-bs-toggle="tab" data-bs-target="#rastreo" type="button"
+                        role="tab">
                         Rastreo en Vivo
                     </button>
                 </li>
@@ -132,14 +138,8 @@
 
             @can('Coordenadas-MEC-Gest-Convoys')
                 <li class="nav-item" role="presentation">
-                    <button
-                        class="nav-link"
-                        id="tab-convoys"
-                        data-bs-toggle="tab"
-                        data-bs-target="#convoys"
-                        type="button"
-                        role="tab"
-                    >
+                    <button class="nav-link" id="tab-convoys" data-bs-toggle="tab" data-bs-target="#convoys" type="button"
+                        role="tab">
                         Gestión de Convoys
                     </button>
                 </li>
@@ -147,14 +147,8 @@
 
             @can('Coordenadas-MEC-Historial-Reportes')
                 <li class="nav-item" role="presentation">
-                    <button
-                        class="nav-link"
-                        id="tab-historial"
-                        data-bs-toggle="tab"
-                        data-bs-target="#historial"
-                        type="button"
-                        role="tab"
-                    >
+                    <button class="nav-link" id="tab-historial" data-bs-toggle="tab" data-bs-target="#historial" type="button"
+                        role="tab">
                         Historial / Reportes
                     </button>
                 </li>
@@ -174,19 +168,12 @@
                             <!-- Buscador -->
                             <div class="flex-grow-1">
                                 <div class="position-relative">
-                                    <input
-                                        type="text"
-                                        id="buscadorGeneral"
+                                    <input type="text" id="buscadorGeneral"
                                         placeholder="Buscar convoy, contenedor o equipo..."
-                                        class="form-control bg-light shadow-sm"
-                                        style="min-width: 250px"
-                                    />
+                                        class="form-control bg-light shadow-sm" style="min-width: 250px" />
                                     <div id="chipsBusqueda" class="d-flex flex-wrap gap-2 mt-2"></div>
-                                    <div
-                                        id="resultadosBusqueda"
-                                        class="dropdown-menu show mt-1"
-                                        style="max-height: 200px; overflow-y: auto; width: 100%"
-                                    ></div>
+                                    <div id="resultadosBusqueda" class="dropdown-menu show mt-1"
+                                        style="max-height: 200px; overflow-y: auto; width: 100%"></div>
                                 </div>
                             </div>
                         </div>
@@ -207,22 +194,14 @@
                             <div class="card shadow-lg border-0 bg-white rounded-4 p-4">
                                 <div class="mb-4 d-flex align-items-center justify-content-between">
                                     <div class="d-flex align-items-center gap-2">
-                                        <button
-                                            type="button"
-                                            class="btn btn-primary"
-                                            data-bs-toggle="modal"
-                                            id="btnNuevoconboy"
-                                        >
+                                        <button type="button" class="btn btn-primary" data-bs-toggle="modal"
+                                            id="btnNuevoconboy">
                                             <i class="bi bi-plus-circle me-1"></i>
                                             Nuevo Convoy
                                         </button>
 
-                                        <button
-                                            type="button"
-                                            class="btn btn-info"
-                                            data-bs-toggle="modal"
-                                            id="btnBuscarconboy"
-                                        >
+                                        <button type="button" class="btn btn-info" data-bs-toggle="modal"
+                                            id="btnBuscarconboy">
                                             <i class="bi bi-search me-1"></i>
                                             Buscar Convoy
                                         </button>
@@ -250,25 +229,15 @@
                         </div>
                     </div>
                 </div>
-                <div
-                    class="modal fade"
-                    id="modalCambiarEstatus"
-                    tabindex="-1"
-                    aria-labelledby="estatusModalLabel"
-                    aria-hidden="true"
-                    data-id=""
-                >
+                <div class="modal fade" id="modalCambiarEstatus" tabindex="-1" aria-labelledby="estatusModalLabel"
+                    aria-hidden="true" data-id="">
                     <div class="modal-dialog">
                         <form id="formCambiarEstatus">
                             <div class="modal-content">
                                 <div class="modal-header">
                                     <h5 class="modal-title" id="estatusModalLabel">Cambiar Estatus</h5>
-                                    <button
-                                        type="button"
-                                        class="btn-close"
-                                        data-bs-dismiss="modal"
-                                        aria-label="Cerrar"
-                                    ></button>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                        aria-label="Cerrar"></button>
                                 </div>
                                 <div class="modal-body">
                                     <label for="nuevoEstatus" class="form-label">Selecciona nuevo estatus:</label>
@@ -292,48 +261,29 @@
                         </form>
                     </div>
                 </div>
-                <div
-                    class="modal fade"
-                    id="CreateModal"
-                    tabindex="-1"
-                    aria-labelledby="filtroModalLabel"
-                    aria-hidden="true"
-                >
+                <div class="modal fade" id="CreateModal" tabindex="-1" aria-labelledby="filtroModalLabel"
+                    aria-hidden="true">
                     <div class="modal-dialog modal-lg">
                         <div class="modal-content">
                             <div class="modal-header">
                                 <h5 class="modal-title" id="filtroModalLabel">Crear Convoy Virtual</h5>
                                 <!-- Botón de cierre del modal -->
-                                <button
-                                    type="button"
-                                    class="btn-close"
-                                    id="btnCerrarModal"
-                                    data-bs-dismiss="modal"
-                                    aria-label="Close"
-                                ></button>
+                                <button type="button" class="btn-close" id="btnCerrarModal" data-bs-dismiss="modal"
+                                    aria-label="Close"></button>
                             </div>
                             <div class="modal-body">
                                 <form id="formFiltros" data-edit-id="0">
                                     <input type="hidden" class="form-control" name="id_convoy" id="id_convoy" />
                                     <div class="mb-3">
                                         <label for="no_convoy" class="form-label">No. Convoy</label>
-                                        <input
-                                            type="text"
-                                            class="form-control"
-                                            name="no_convoy"
-                                            id="no_convoy"
-                                            readonly
-                                        />
+                                        <input type="text" class="form-control" name="no_convoy" id="no_convoy"
+                                            readonly />
                                     </div>
                                     <div class="row align-items-end">
                                         <div class="col-md-4">
                                             <label for="tipo_disolucion" class="form-label">Tipo de disolución</label>
-                                            <select
-                                                name="tipo_disolucion"
-                                                id="tipo_disolucion"
-                                                class="form-select"
-                                                required
-                                            >
+                                            <select name="tipo_disolucion" id="tipo_disolucion" class="form-select"
+                                                required>
                                                 <option value="">Seleccione una opción</option>
                                                 <option value="geocerca">Geocerca</option>
                                                 <option value="tiempo">Tiempo</option>
@@ -341,21 +291,13 @@
                                         </div>
                                         <div class="col-md-4">
                                             <label for="fecha_inicio" class="form-label">Inicio</label>
-                                            <input
-                                                type="datetime-local"
-                                                name="fecha_inicio"
-                                                id="fecha_inicio"
-                                                class="form-control input-alto"
-                                            />
+                                            <input type="datetime-local" name="fecha_inicio" id="fecha_inicio"
+                                                class="form-control input-alto" />
                                         </div>
                                         <div class="col-md-4">
                                             <label for="fecha_fin" class="form-label">Fin</label>
-                                            <input
-                                                type="datetime-local"
-                                                name="fecha_fin"
-                                                id="fecha_fin"
-                                                class="form-control input-alto"
-                                            />
+                                            <input type="datetime-local" name="fecha_fin" id="fecha_fin"
+                                                class="form-control input-alto" />
                                         </div>
                                     </div>
 
@@ -376,15 +318,9 @@
 
                                     <div class="mb-3 position-relative">
                                         <label for="contenedor-input" class="form-label">Contenedores</label>
-                                        <input
-                                            type="text"
-                                            class="form-control"
-                                            id="contenedor-input"
-                                            oninput="mostrarSugerencias()"
-                                            placeholder="Buscar contenedor..."
-                                        />
-                                        <div
-                                            id="sugerencias"
+                                        <input type="text" class="form-control" id="contenedor-input"
+                                            oninput="mostrarSugerencias()" placeholder="Buscar contenedor..." />
+                                        <div id="sugerencias"
                                             style="
                                                 border: 1px solid #ccc;
                                                 max-height: 150px;
@@ -394,24 +330,18 @@
                                                 background: white;
                                                 z-index: 1050;
                                                 width: 100%;
-                                            "
-                                        ></div>
-                                        <button
-                                            type="button"
-                                            class="btn btn-sm btn-outline-secondary mt-2"
-                                            onclick="agregarContenedor()"
-                                        >
+                                            ">
+                                        </div>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary mt-2"
+                                            onclick="agregarContenedor()">
                                             Agregar
                                         </button>
                                         <div id="contenedores-seleccionados" class="mt-2"></div>
                                         <input type="hidden" name="contenedores" id="contenedores" />
                                         <input type="hidden" id="ItemsSelects" name="ItemsSelects" />
                                     </div>
-                                    <table
-                                        class="table table-sm table-bordered align-middle text-center"
-                                        style="display: block"
-                                        id="tablaContenedores"
-                                    >
+                                    <table class="table table-sm table-bordered align-middle text-center"
+                                        style="display: block" id="tablaContenedores">
                                         <thead class="table-light">
                                             <tr>
                                                 <th>Contenedor</th>
@@ -428,11 +358,8 @@
                                             <i class="fas fa-times"></i>
                                             Cancelar
                                         </button>
-                                        <button
-                                            type="submit"
-                                            class="btn btn-primary text-white"
-                                            id="btnActualizarEditar"
-                                        >
+                                        <button type="submit" class="btn btn-primary text-white"
+                                            id="btnActualizarEditar">
                                             <i class="fas fa-sync-alt"></i>
                                             Guardar
                                         </button>
@@ -469,22 +396,16 @@
                                 <label>Se comparte el siguiente no. de Convoy:</label>
                                 <div id="wmensajeText" class="mb-2"></div>
 
-                                <a href="#" id="whatsappLink" class="btn btn-success" target="_blank">Abrir WhatsApp</a>
+                                <a href="#" id="whatsappLink" class="btn btn-success" target="_blank">Abrir
+                                    WhatsApp</a>
                             </div>
 
                             <button class="btn btn-secondary mt-2" onclick="cerrarModal()">Cerrar</button>
                         </div>
                     </div>
                 </div>
-                <div
-                    class="modal fade"
-                    id="modalBuscarConvoy"
-                    tabindex="-1"
-                    aria-labelledby="modalBuscarConvoyLabel"
-                    aria-hidden="true"
-                    data-bs-backdrop="static"
-                    data-bs-keyboard="false"
-                >
+                <div class="modal fade" id="modalBuscarConvoy" tabindex="-1" aria-labelledby="modalBuscarConvoyLabel"
+                    aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
                     <div class="modal-dialog modal-lg modal-dialog-centered">
                         <div class="modal-content rounded-4">
                             <div class="modal-header bg-primary text-white">
@@ -495,21 +416,12 @@
                                     <div class="mb-3">
                                         <input type="hidden" class="form-control" name="id_convoy" id="id_convoy" />
                                         <label for="numero_convoy" class="form-label">Número de convoy</label>
-                                        <input
-                                            type="text"
-                                            class="form-control"
-                                            id="numero_convoy"
-                                            name="numero_convoy"
-                                            required
-                                        />
+                                        <input type="text" class="form-control" id="numero_convoy"
+                                            name="numero_convoy" required />
                                     </div>
                                     <button type="submit" class="btn btn-primary">Buscar</button>
-                                    <button
-                                        type="button"
-                                        class="btn btn-secondary"
-                                        data-bs-dismiss="modal"
-                                        onclick="limpiarFormularioConvoy2()"
-                                    >
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
+                                        onclick="limpiarFormularioConvoy2()">
                                         Cerrar
                                     </button>
                                 </form>
@@ -540,15 +452,9 @@
 
                                     <div class="mb-3 position-relative">
                                         <label for="contenedor-input" class="form-label">Agregar Contenedores</label>
-                                        <input
-                                            type="text"
-                                            class="form-control"
-                                            id="contenedor-input2"
-                                            oninput="mostrarSugerencias2()"
-                                            placeholder="Buscar contenedor..."
-                                        />
-                                        <div
-                                            id="sugerencias2"
+                                        <input type="text" class="form-control" id="contenedor-input2"
+                                            oninput="mostrarSugerencias2()" placeholder="Buscar contenedor..." />
+                                        <div id="sugerencias2"
                                             style="
                                                 border: 1px solid #ccc;
                                                 max-height: 150px;
@@ -558,23 +464,18 @@
                                                 background: white;
                                                 z-index: 1050;
                                                 width: 100%;
-                                            "
-                                        ></div>
-                                        <button
-                                            type="button"
-                                            class="btn btn-sm btn-outline-secondary mt-2"
-                                            onclick="agregarContenedor2()"
-                                        >
+                                            ">
+                                        </div>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary mt-2"
+                                            onclick="agregarContenedor2()">
                                             Agregar
                                         </button>
                                         <div id="contenedores-seleccionados2" class="mt-2"></div>
                                         <input type="hidden" name="contenedores" id="contenedores" />
                                         <input type="hidden" id="ItemsSelects" name="ItemsSelects" />
                                     </div>
-                                    <table
-                                        class="table table-sm table-bordered align-middle text-center"
-                                        id="tablaContenedoresBuscar"
-                                    >
+                                    <table class="table table-sm table-bordered align-middle text-center"
+                                        id="tablaContenedoresBuscar">
                                         <thead class="table-light">
                                             <tr>
                                                 <th>Contenedor</th>
@@ -587,12 +488,8 @@
                                     </table>
 
                                     <div class="modal-footer">
-                                        <button
-                                            type="button"
-                                            class="btn btn-secondary"
-                                            data-bs-dismiss="modal"
-                                            onclick="limpiarFormularioConvoy2()"
-                                        >
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
+                                            onclick="limpiarFormularioConvoy2()">
                                             Cerrar
                                         </button>
                                         <button type="button" class="btn btn-success" id="btnGuardarContenedores">
@@ -611,13 +508,8 @@
                 <h5>
                     <div class="d-flex align-items-center gap-2 px-4 pt-3">
                         <label class="mb-0 fw-semibold text-sm">Periodo:</label>
-                        <input
-                            type="text"
-                            id="daterange"
-                            readonly
-                            class="form-control form-control-sm"
-                            style="width: auto; min-width: 200px; box-shadow: none"
-                        />
+                        <input type="text" id="daterange" readonly class="form-control form-control-sm"
+                            style="width: auto; min-width: 200px; box-shadow: none" />
                     </div>
                 </h5>
                 <div id="myGridConvoyFinalizados" class="ag-theme-alpine position-relative" style="height: 500px">
@@ -630,7 +522,8 @@
             </div>
         </div>
     </div>
-    <div class="modal fade" id="modalInfoViaje" tabindex="-1" aria-labelledby="modalInfoViajeLabel" aria-hidden="true">
+    <div class="modal fade" id="modalInfoViaje" tabindex="-1" aria-labelledby="modalInfoViajeLabel"
+        aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content shadow-lg rounded-4">
                 <div class="modal-header bg-primary text-white rounded-top-4">
@@ -638,12 +531,8 @@
                         <i class="bi bi-truck-front-fill me-2"></i>
                         Información del Viaje
                     </h5>
-                    <button
-                        type="button"
-                        class="btn-close btn-close-white"
-                        data-bs-dismiss="modal"
-                        aria-label="Cerrar"
-                    ></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Cerrar"></button>
                 </div>
                 <div class="modal-body">
                     <!-- Nav tabs (se generan dinámicamente con los contenedores) -->
@@ -669,14 +558,12 @@
 
 @push('javascript')
     <script src="https://unpkg.com/ag-grid-community/dist/ag-grid-community.min.js"></script>
-    <script src="{{ asset('js/sgt/coordenadas/coordenadasRastreo.js') }}?v={{ filemtime(public_path('js/sgt/coordenadas/coordenadasRastreo.js')) }}"></script>
-
     <script
-        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAtAO2AZBgzC7QaBxnMnPoa-DAq8vaEvUc"
-        async
-        defer
-        onload="googleMapsReady()"
-    ></script>
+        src="{{ asset('js/sgt/coordenadas/coordenadasRastreo.js') }}?v={{ filemtime(public_path('js/sgt/coordenadas/coordenadasRastreo.js')) }}">
+    </script>
+
+    <script src="https://maps.googleapis.com/maps/api/js?key={{ config('services.googleMapsApi.apikey') }}" async defer
+        onload="googleMapsReady()"></script>
     <!-- jQuery -->
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
 

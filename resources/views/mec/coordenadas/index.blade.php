@@ -5,25 +5,30 @@
         #contenedoreseditar {
             font-size: 0.85rem;
         }
+
         #contenedoreseditar th,
         #contenedoreseditar td {
             padding: 0.3rem 0.5rem;
             vertical-align: middle;
         }
+
         #contenedoreseditar thead {
             background-color: #f0f0f0;
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.03em;
         }
+
         .loading-overlay {
             position: absolute;
             top: 0;
             left: 0;
-            z-index: 10; /* asegúrate que esté por encima del grid */
+            z-index: 10;
+            /* asegúrate que esté por encima del grid */
             width: 100%;
             height: 100%;
-            background-color: rgba(255, 255, 255, 0.6); /* opcional para desenfoque */
+            background-color: rgba(255, 255, 255, 0.6);
+            /* opcional para desenfoque */
             display: flex;
             justify-content: center;
             align-items: center;
@@ -69,13 +74,7 @@
             </div>
         </div>
     </div>
-    <div
-        class="modal fade"
-        id="modalCambiarEstatus"
-        tabindex="-1"
-        aria-labelledby="estatusModalLabel"
-        aria-hidden="true"
-    >
+    <div class="modal fade" id="modalCambiarEstatus" tabindex="-1" aria-labelledby="estatusModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <form id="formCambiarEstatus">
                 <div class="modal-content">
@@ -107,13 +106,8 @@
                 <div class="modal-header">
                     <h5 class="modal-title" id="filtroModalLabel">Crear Convoy Virtual</h5>
                     <!-- Botón de cierre del modal -->
-                    <button
-                        type="button"
-                        class="btn-close"
-                        id="btnCerrarModal"
-                        data-bs-dismiss="modal"
-                        aria-label="Close"
-                    ></button>
+                    <button type="button" class="btn-close" id="btnCerrarModal" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <form id="formFiltros" data-edit-id="0">
@@ -133,21 +127,13 @@
                             </div>
                             <div class="col-md-4">
                                 <label for="fecha_inicio" class="form-label">Inicio</label>
-                                <input
-                                    type="datetime-local"
-                                    name="fecha_inicio"
-                                    id="fecha_inicio"
-                                    class="form-control input-alto"
-                                />
+                                <input type="datetime-local" name="fecha_inicio" id="fecha_inicio"
+                                    class="form-control input-alto" />
                             </div>
                             <div class="col-md-4">
                                 <label for="fecha_fin" class="form-label">Fin</label>
-                                <input
-                                    type="datetime-local"
-                                    name="fecha_fin"
-                                    id="fecha_fin"
-                                    class="form-control input-alto"
-                                />
+                                <input type="datetime-local" name="fecha_fin" id="fecha_fin"
+                                    class="form-control input-alto" />
                             </div>
                         </div>
 
@@ -168,15 +154,9 @@
 
                         <div class="mb-3 position-relative">
                             <label for="contenedor-input" class="form-label">Contenedores</label>
-                            <input
-                                type="text"
-                                class="form-control"
-                                id="contenedor-input"
-                                oninput="mostrarSugerencias()"
-                                placeholder="Buscar contenedor..."
-                            />
-                            <div
-                                id="sugerencias"
+                            <input type="text" class="form-control" id="contenedor-input"
+                                oninput="mostrarSugerencias()" placeholder="Buscar contenedor..." />
+                            <div id="sugerencias"
                                 style="
                                     border: 1px solid #ccc;
                                     max-height: 150px;
@@ -186,24 +166,18 @@
                                     background: white;
                                     z-index: 1050;
                                     width: 100%;
-                                "
-                            ></div>
-                            <button
-                                type="button"
-                                class="btn btn-sm btn-outline-secondary mt-2"
-                                onclick="agregarContenedor()"
-                            >
+                                ">
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-secondary mt-2"
+                                onclick="agregarContenedor()">
                                 Agregar
                             </button>
                             <div id="contenedores-seleccionados" class="mt-2"></div>
                             <input type="hidden" name="contenedores" id="contenedores" />
                             <input type="hidden" id="ItemsSelects" name="ItemsSelects" />
                         </div>
-                        <table
-                            class="table table-sm table-bordered align-middle text-center"
-                            style="display: block"
-                            id="tablaContenedores"
-                        >
+                        <table class="table table-sm table-bordered align-middle text-center" style="display: block"
+                            id="tablaContenedores">
                             <thead class="table-light">
                                 <tr>
                                     <th>Contenedor</th>
@@ -264,15 +238,8 @@
             </div>
         </div>
     </div>
-    <div
-        class="modal fade"
-        id="modalBuscarConvoy"
-        tabindex="-1"
-        aria-labelledby="modalBuscarConvoyLabel"
-        aria-hidden="true"
-        data-bs-backdrop="static"
-        data-bs-keyboard="false"
-    >
+    <div class="modal fade" id="modalBuscarConvoy" tabindex="-1" aria-labelledby="modalBuscarConvoyLabel"
+        aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
         <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content rounded-4">
                 <div class="modal-header bg-primary text-white">
@@ -283,15 +250,12 @@
                         <div class="mb-3">
                             <input type="hidden" class="form-control" name="id_convoy" id="id_convoy" />
                             <label for="numero_convoy" class="form-label">Número de convoy</label>
-                            <input type="text" class="form-control" id="numero_convoy" name="numero_convoy" required />
+                            <input type="text" class="form-control" id="numero_convoy" name="numero_convoy"
+                                required />
                         </div>
                         <button type="submit" class="btn btn-primary">Buscar</button>
-                        <button
-                            type="button"
-                            class="btn btn-secondary"
-                            data-bs-dismiss="modal"
-                            onclick="limpiarFormularioConvoy2()"
-                        >
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
+                            onclick="limpiarFormularioConvoy2()">
                             Cerrar
                         </button>
                     </form>
@@ -320,15 +284,9 @@
 
                         <div class="mb-3 position-relative">
                             <label for="contenedor-input" class="form-label">Agregar Contenedores</label>
-                            <input
-                                type="text"
-                                class="form-control"
-                                id="contenedor-input2"
-                                oninput="mostrarSugerencias2()"
-                                placeholder="Buscar contenedor..."
-                            />
-                            <div
-                                id="sugerencias2"
+                            <input type="text" class="form-control" id="contenedor-input2"
+                                oninput="mostrarSugerencias2()" placeholder="Buscar contenedor..." />
+                            <div id="sugerencias2"
                                 style="
                                     border: 1px solid #ccc;
                                     max-height: 150px;
@@ -338,23 +296,18 @@
                                     background: white;
                                     z-index: 1050;
                                     width: 100%;
-                                "
-                            ></div>
-                            <button
-                                type="button"
-                                class="btn btn-sm btn-outline-secondary mt-2"
-                                onclick="agregarContenedor2()"
-                            >
+                                ">
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-secondary mt-2"
+                                onclick="agregarContenedor2()">
                                 Agregar
                             </button>
                             <div id="contenedores-seleccionados2" class="mt-2"></div>
                             <input type="hidden" name="contenedores" id="contenedores" />
                             <input type="hidden" id="ItemsSelects" name="ItemsSelects" />
                         </div>
-                        <table
-                            class="table table-sm table-bordered align-middle text-center"
-                            id="tablaContenedoresBuscar"
-                        >
+                        <table class="table table-sm table-bordered align-middle text-center"
+                            id="tablaContenedoresBuscar">
                             <thead class="table-light">
                                 <tr>
                                     <th>Contenedor</th>
@@ -367,12 +320,8 @@
                         </table>
 
                         <div class="modal-footer">
-                            <button
-                                type="button"
-                                class="btn btn-secondary"
-                                data-bs-dismiss="modal"
-                                onclick="limpiarFormularioConvoy2()"
-                            >
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
+                                onclick="limpiarFormularioConvoy2()">
                                 Cerrar
                             </button>
                             <button type="button" class="btn btn-success" id="btnGuardarContenedores">Guardar</button>
@@ -387,12 +336,10 @@
 @push('javascript')
     <!-- AG Grid -->
     <script src="https://unpkg.com/ag-grid-community/dist/ag-grid-community.min.js"></script>
-    <script
-        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAtAO2AZBgzC7QaBxnMnPoa-DAq8vaEvUc"
-        async
-        defer
-        onload="googleMapsReady()"
-    ></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key={{ config('services.googleMapsApi.apikey') }}" async defer
+        onload="googleMapsReady()"></script>
 
-    <script src="{{ asset('js/sgt/coordenadas/coordenadasconboys.js') }}?v={{ filemtime(public_path('js/sgt/coordenadas/coordenadasconboys.js')) }}"></script>
+    <script
+        src="{{ asset('js/sgt/coordenadas/coordenadasconboys.js') }}?v={{ filemtime(public_path('js/sgt/coordenadas/coordenadasconboys.js')) }}">
+    </script>
 @endpush
