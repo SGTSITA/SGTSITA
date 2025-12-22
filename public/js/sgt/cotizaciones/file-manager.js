@@ -215,6 +215,7 @@ const emailCC = document.querySelector('[data-kt-inbox-form="cc"]');
 const subject = document.querySelector('#compose_subject');
 const messageMail = document.querySelector('#kt_inbox_form_editor');
 let selectContenedores = document.querySelector('#selectContenedores');
+const btnEnviarWhatsappv2 = document.querySelector('#btnEnviarWhatsapp');
 
 selectContenedores.addEventListener('change', (e) => {
     localStorage.setItem('numContenedor', e.target.value);
@@ -522,7 +523,11 @@ async function abrirModalWhatsapp() {
     modal.show();
 }
 
-document.getElementById('btnEnviarWhatsapp').addEventListener('click', () => {
+if (btnEnviarWhatsappv2) {
+    btnEnviarWhatsappv2.addEventListener('click', EnviarWhatsappGenerados);
+}
+
+function EnviarWhatsappGenerados() {
     let mensaje = `
 Fecha: ${wa_fecha.value}
 Referencia: ${wa_referencia.value}
@@ -540,7 +545,7 @@ Contraseña de acceso: ${waPasswordGenerado}
 
     const url = `https://wa.me/?text=${encodeURIComponent(mensaje)}`;
     window.open(url, '_blank');
-});
+}
 
 function cargarDatosModalWhatsapp() {
     let data = archivosData;
