@@ -81,6 +81,8 @@ Route::group(['prefix' => 'manager'], function () {
 
 });
 
+Route::post('/whatsapp/send', [WhatsAppController::class, 'enviarGrupo'])->name('whatsapp.enviarGrupo');
+
 
 Route::group(['prefix' => 'coordenadas'], function () {
     //externos coordenadas MEC
@@ -95,4 +97,19 @@ Route::group(['prefix' => 'coordenadas'], function () {
     Route::get('/coordenadas/ext/historialUbi', [App\Http\Controllers\ConboysController::class, 'extHistorialUbicaciones'])->name('extHistorialUbicaciones');
 
 
+});
+
+
+Route::middleware('auth')->group(function () {
+    Route::post('/cotizacion/{id}/acceso', [App\Http\Controllers\CotizacionAccesoController::class, 'generar']);
+    Route::post('/cotizacion/{id}/acceso/revocar', [App\Http\Controllers\CotizacionAccesoController::class, 'revocar']);
+});
+
+Route::group(['prefix' => 'externos'], function () {
+    Route::get('/ver-documentos/{token}', [App\Http\Controllers\DocsController::class, 'formPassword']);
+    Route::post('/ver-documentos/{token}', [App\Http\Controllers\DocsController::class, 'validarPassword'])->name('externos.validarPassword');
+    Route::post('/acceso/validar/{token}', [App\Http\Controllers\DocsController::class, 'validarRevocacion'])->name('externos.validarRevocacion');
+    Route::get('/acceso/revocado', [App\Http\Controllers\DocsController::class, 'accesoRevocado'])->name('externos.acceso.revocado');
+    Route::get('/documentos/{token}/download/{archivo}', [App\Http\Controllers\DocsController::class, 'download'])->name('externos.documentos.download');
+    Route::post('/documentos/{token}/download-zip', [App\Http\Controllers\DocsController::class, 'downloadZip'])->name('externos.documentos.zip');
 });

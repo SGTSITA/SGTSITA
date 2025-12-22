@@ -23,9 +23,18 @@ return [
     'LAZARO' => [
         'APM' => 'APM',
         'HUTCHINSON' => 'HUTCHINSON',
-    ],
+    ]
 ],
+ 'columnsbycode' => [
+        'Doda' => 'doda',
+        'Boleta-de-liberacion' => 'boleta_liberacion',
+        'Formato-para-Carta-porte' => 'doc_ccp',
+        'eir' => 'doc_eir',
+        'Foto-patio' => 'foto_patio',
+        'Boleta-de-patio' => 'boleta_patio',
+        'Pre-Alta' => 'img_boleta',
+        'Carta-Porte' => 'carta_porte',
+        'Carta-Porte-XML' => 'carta_porte_xml',
+    ]
 
 ];
-
-
