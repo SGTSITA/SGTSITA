@@ -2368,7 +2368,7 @@
         }
     </style>
     <script
-        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAtAO2AZBgzC7QaBxnMnPoa-DAq8vaEvUc"
+        src="https://maps.googleapis.com/maps/api/js?key={{ config('services.googleMapsApi.apikey') }}"
         async
         defer
     ></script>

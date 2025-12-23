@@ -29,22 +29,55 @@
 <div class="d-none" id="fileUploaderContainer">
     <div class="d-flex flex-column flex-xl-row gap-7 gap-lg-10">
         <!--begin::Order details-->
-        {{--
-            <div class="card card-flush py-4 flex-row-fluid">
+
+        <div class="card card-flush py-4 flex-row-fluid">
             <!--begin::Card header-->
             <div class="card-header">
-            <div class="card-title">
-            <h2>Boleta patio</h2>
-            </div>
+                <div class="card-title">
+                    <h2>Boleta patio</h2>
+                </div>
             </div>
             <!--end::Card header-->
             <!--begin::Card body-->
             <div class="card-body pt-0">
-            @if($action=="editar")  @endif
-            <input type="file" name="files" id="BoletaPatio" >
+                @if ($action == 'editar')
+                @endif
+                <input type="file" name="files" id="BoletaPatio">
             </div>
             <!--end::Card body-->
+        </div>
+
+        <div class="card card-flush py-4 flex-row-fluid">
+            <!--begin::Card header-->
+            <div class="card-header">
+                <div class="card-title">
+                    <h2>Boleta liberación</h2>
+                </div>
             </div>
-        --}}
+            <!--end::Card header-->
+            <!--begin::Card body-->
+            <div class="card-body pt-0">
+                @if ($action == 'editar')
+                @endif
+                <input type="file" name="files" id="BoletaLib">
+            </div>
+            <!--end::Card body-->
+        </div>
+        <div class="card card-flush py-4 flex-row-fluid">
+            <!--begin::Card header-->
+            <div class="card-header">
+                <div class="card-title">
+                    <h2>Doda</h2>
+                </div>
+            </div>
+            <!--end::Card header-->
+            <!--begin::Card body-->
+            <div class="card-body pt-0">
+                @if ($action == 'editar')
+                @endif
+                <input type="file" name="files" id="Doda">
+            </div>
+            <!--end::Card body-->
+        </div>
     </div>
 </div>
