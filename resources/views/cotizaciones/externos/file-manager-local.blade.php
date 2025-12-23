@@ -92,79 +92,13 @@
     </div>
     @include('cotizaciones.externos.modal_fileuploader-local')
     @include('cotizaciones.externos.email_compose')
-
-    <div class="modal fade" id="modalWhatsapp" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-
-                <div class="modal-header">
-                    <h5 class="modal-title">Enviar WhatsApp</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-
-                <div class="modal-body">
-
-                    <div class="row g-3">
-
-                        <div class="col-md-4">
-                            <label class="form-label">Fecha</label>
-                            <input type="date" class="form-control" id="wa_fecha">
-                        </div>
-
-                        <div class="col-md-8">
-                            <label class="form-label">Referencia</label>
-                            <input type="text" class="form-control" id="wa_referencia">
-                        </div>
-
-                        <div class="col-md-6">
-                            <label class="form-label">Hora inicio</label>
-                            <input type="time" class="form-control" id="wa_hora_inicio">
-                        </div>
-
-                        <div class="col-md-6">
-                            <label class="form-label">Hora fin</label>
-                            <input type="time" class="form-control" id="wa_hora_fin">
-                        </div>
-
-                        <div class="col-md-12">
-                            <label class="form-label">Terminal</label>
-                            <input type="text" class="form-control" id="wa_terminal">
-                        </div>
-
-                        <div class="col-md-12">
-                            <div class="form-check mt-2">
-                                <input class="form-check-input" type="checkbox" id="wa_cambio_sello">
-                                <label class="form-check-label">
-                                    CAMBIO DE SELLO (R1 / A4)
-                                </label>
-                            </div>
-                        </div>
-
-                        <div class="col-md-12">
-                            <label class="form-label">Observaciones</label>
-                            <textarea class="form-control" rows="3" id="wa_observaciones"></textarea>
-                        </div>
-
-                    </div>
-                </div>
-
-                <div class="modal-footer">
-                    <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button class="btn btn-success" id="btnEnviarWhatsapp">
-                        Enviar WhatsApp
-                    </button>
-                </div>
-
-            </div>
-        </div>
-    </div>
+    @include('cotizaciones.externos.modal_whatsapp-compartir')
 @endsection
 
 @push('javascript')
     <script src="{{ asset('js/sgt/common.js') }}?v={{ filemtime(public_path('js/sgt/common.js')) }}"></script>
     <link href="{{ asset('assets/metronic/fileuploader/font/font-fileuploader.css') }}" rel="stylesheet" />
-    <link href="{{ asset('assets/metronic/fileuploader/jquery.fileuploader.min.css') }}" media="all"
-        rel="stylesheet" />
+    <link href="{{ asset('assets/metronic/fileuploader/jquery.fileuploader.min.css') }}" media="all" rel="stylesheet" />
     <link href="{{ asset('assets/metronic/fileuploader/jquery.fileuploader-theme-dragdrop.css') }}" media="all"
         rel="stylesheet" />
     <script src="{{ asset('assets/metronic/fileuploader/jquery.fileuploader.min.js') }}" type="text/javascript"></script>

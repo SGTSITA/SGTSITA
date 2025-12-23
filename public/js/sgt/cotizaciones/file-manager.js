@@ -216,6 +216,9 @@ const subject = document.querySelector('#compose_subject');
 const messageMail = document.querySelector('#kt_inbox_form_editor');
 let selectContenedores = document.querySelector('#selectContenedores');
 const btnEnviarWhatsappv2 = document.querySelector('#btnEnviarWhatsapp');
+const btnCancelarWhatsApp = document.querySelector('#btnCancelarWhatsApp');
+const modalWhatsApp2Element = document.querySelector('#modalWhatsapp');
+let modalWhatsApp2 = null;
 
 selectContenedores.addEventListener('change', (e) => {
     localStorage.setItem('numContenedor', e.target.value);
@@ -473,7 +476,14 @@ function mostrarLoading() {
     });
 }
 
+if (btnEnviarWhatsappv2) {
+    btnEnviarWhatsappv2.addEventListener('click', EnviarWhatsappGenerados);
+}
+
 async function abrirModalWhatsapp() {
+    if (modalWhatsApp2Element && !modalWhatsApp2) {
+        modalWhatsApp2 = new bootstrap.Modal(modalWhatsApp2Element);
+    }
     waArchivosSeleccionados = obtenerArchivosSeleccionados();
 
     if (waArchivosSeleccionados.length === 0) {
@@ -504,27 +514,30 @@ async function abrirModalWhatsapp() {
             return;
         }
 
-        waLinkGenerado = data.link; // /externos/ver-documentos/{token}
+        waLinkGenerado = data.link; 
         waPasswordGenerado = data.password;
 
         cargarDatosModalWhatsapp();
 
         Swal.close();
 
-        const modal = new bootstrap.Modal(document.getElementById('modalWhatsapp'));
-        modal.show();
+        modalWhatsApp2.show();
     } catch (error) {
         Swal.close();
         console.error(error);
         alert('Error de conexión');
     }
-
-    const modal = new bootstrap.Modal(document.getElementById('modalWhatsapp'));
-    modal.show();
 }
 
-if (btnEnviarWhatsappv2) {
-    btnEnviarWhatsappv2.addEventListener('click', EnviarWhatsappGenerados);
+if (btnCancelarWhatsApp) {
+    btnCancelarWhatsApp.addEventListener('click', () => {
+        waLinkGenerado = null;
+        waPasswordGenerado = null;
+        waArchivosSeleccionados = [];
+        if (modalWhatsApp2) {
+            modalWhatsApp2.hide();
+        }
+    });
 }
 
 function EnviarWhatsappGenerados() {
@@ -581,5 +594,8 @@ function obtenerArchivosSeleccionados() {
 }
 btnDocumets.addEventListener('click', goToUploadDocuments);
 btnAdjuntos.addEventListener('click', modalEmail);
-btnWhatsApp.addEventListener('click', modalWhatsApp);
+if (btnWhatsApp) {
+    btnWhatsApp.addEventListener('click', modalWhatsApp);
+}
+
 buttonSendMail.addEventListener('click', sendEmail);

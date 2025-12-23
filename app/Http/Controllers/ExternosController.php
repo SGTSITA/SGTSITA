@@ -425,7 +425,7 @@ class ExternosController extends Controller
 
     public function fileManager(Request $r)
     {
-        
+
         return view('cotizaciones.externos.file-manager', ["numContenedor" => $r->numContenedor]);
     }
 
@@ -724,12 +724,14 @@ class ExternosController extends Controller
         $Puertos = config('CatAuxiliares.puertos');
         $opcionesPuertos = config('CatAuxiliares.puertosOpciones');
 
+
         $cotizacion = Cotizaciones::with(['cliente', 'DocCotizacion'])
         ->whereHas('DocCotizacion', function ($query) use ($request) {
             $query->where('num_contenedor', $request->numContenedor);
         })
         ->first();
 
+        // dd($request->numContenedor, $cotizacion);
         $transportista = Proveedor::CatalogoLocal()->whereIn('id_empresa', $clienteEmpresa)->get();
         // dd($transportista, $clienteEmpresa);
         // $transportista = Proveedor::get();
@@ -937,6 +939,7 @@ class ExternosController extends Controller
             }
 
             return [
+                "NUM_CONTENEDOR_REFER" => $numContenedor,
                 "NumContenedor" => $this->limpiarNumContenedor($numContenedor),
                 "Referencia" => $this->obtenerReferencias($numContenedor),
                 "EstatusManiobra" => $c->estatus_maniobra,

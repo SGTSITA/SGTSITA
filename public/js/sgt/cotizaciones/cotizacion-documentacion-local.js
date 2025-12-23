@@ -143,6 +143,7 @@ const gridOptions = {
         { field: 'id', hide: true },
         { field: 'estatus_maniobra_id', hide: true },
         { field: 'tipo', hide: true },
+        { field: 'NUM_CONTENEDOR_REFER', hide: true },
 
         // ===== DOCUMENTOS =====
         {
@@ -763,7 +764,7 @@ function editarViaje() {
 
     //  Comportamiento original si NO es FULL o solo hay un contenedor
     let numContenedor = null;
-    seleccionados.forEach((c) => (numContenedor = c.NumContenedor));
+    seleccionados.forEach((c) => (numContenedor = c.NUM_CONTENEDOR_REFER));
 
     const form = $(
         '<form action="' +
