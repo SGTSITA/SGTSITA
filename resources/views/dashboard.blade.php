@@ -349,7 +349,7 @@
 @endsection
 
 @section('content')
-    <!--modal cambiar de empresa menu  -->
+    {{-- <!--modal cambiar de empresa menu  -->
     <div class="modal fade" id="modalCambiarEmpresa" tabindex="-1" aria-labelledby="modalCambiarEmpresaLabel"
         aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
@@ -377,7 +377,7 @@
                 </form>
             </div>
         </div>
-    </div>
+    </div> --}}
 @endsection
 
 @push('scripts')

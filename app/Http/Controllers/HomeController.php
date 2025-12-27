@@ -34,11 +34,11 @@ class HomeController extends Controller
         $userActual = Auth::User()->id;
         $empActual = Auth::User()->id_empresa;
 
+        $userT = User::find($userActual);
+
+        $empresasAsignadas =  $userT->empresasAsignadas();
+
         $user = User::find($userActual);
-
-        $empresasAsignadas =  $user->empresasAsignadas();
-
-
 
         $roles = Role::pluck('name', 'name')->all();
 
