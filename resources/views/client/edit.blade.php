@@ -1,10 +1,5 @@
-<div
-    class="modal fade"
-    id="editModal-{{ $client->id }}"
-    tabindex="-1"
-    aria-labelledby="editModalLabel"
-    aria-hidden="true"
->
+<div class="modal fade" id="editModal-{{ $client->id }}" tabindex="-1" aria-labelledby="editModalLabel"
+    aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
@@ -12,13 +7,8 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
 
-            <form
-                method="POST"
-                action="{{ route('update.clients', $client->id) }}"
-                id=""
-                enctype="multipart/form-data"
-                role="form"
-            >
+            <form method="POST" action="{{ route('update.clientes', $client->id) }}" id=""
+                enctype="multipart/form-data" role="form">
                 <input type="hidden" name="_method" value="PATCH" />
                 @csrf
 
@@ -28,15 +18,11 @@
                             <label for="name">Nombre Completo*</label>
                             <div class="input-group mb-3">
                                 <span class="input-group-text" id="basic-addon1">
-                                    <img src="{{ asset('img/icon/user_predeterminado.webp') }}" alt="" width="25px" />
+                                    <img src="{{ asset('img/icon/user_predeterminado.webp') }}" alt=""
+                                        width="25px" />
                                 </span>
-                                <input
-                                    name="nombre"
-                                    id="nombre"
-                                    type="text"
-                                    class="form-control"
-                                    value="{{ $client->nombre }}"
-                                />
+                                <input name="nombre" id="nombre" type="text" class="form-control"
+                                    value="{{ $client->nombre }}" />
                             </div>
                         </div>
 
@@ -46,13 +32,8 @@
                                 <span class="input-group-text" id="basic-addon1">
                                     <img src="{{ asset('img/icon/sobre.png.webp') }}" alt="" width="25px" />
                                 </span>
-                                <input
-                                    name="correo"
-                                    id="correo"
-                                    type="email"
-                                    class="form-control"
-                                    value="{{ $client->correo }}"
-                                />
+                                <input name="correo" id="correo" type="email" class="form-control"
+                                    value="{{ $client->correo }}" />
                             </div>
                         </div>
 
@@ -60,15 +41,11 @@
                             <label for="name">Telefono *</label>
                             <div class="input-group mb-3">
                                 <span class="input-group-text" id="basic-addon1">
-                                    <img src="{{ asset('img/icon/telefono.png.webp') }}" alt="" width="25px" />
+                                    <img src="{{ asset('img/icon/telefono.png.webp') }}" alt=""
+                                        width="25px" />
                                 </span>
-                                <input
-                                    name="telefono"
-                                    id="telefono"
-                                    type="number"
-                                    class="form-control"
-                                    value="{{ $client->telefono }}"
-                                />
+                                <input name="telefono" id="telefono" type="number" class="form-control"
+                                    value="{{ $client->telefono }}" />
                             </div>
                         </div>
 
@@ -76,15 +53,11 @@
                             <label for="name">Direccion *</label>
                             <div class="input-group mb-3">
                                 <span class="input-group-text" id="basic-addon1">
-                                    <img src="{{ asset('img/icon/mapa-de-la-ciudad.webp') }}" alt="" width="25px" />
+                                    <img src="{{ asset('img/icon/mapa-de-la-ciudad.webp') }}" alt=""
+                                        width="25px" />
                                 </span>
-                                <input
-                                    name="direccion"
-                                    id="direccion"
-                                    type="text"
-                                    class="form-control"
-                                    value="{{ $client->direccion }}"
-                                />
+                                <input name="direccion" id="direccion" type="text" class="form-control"
+                                    value="{{ $client->direccion }}" />
                             </div>
                         </div>
 
@@ -94,13 +67,8 @@
                                 <span class="input-group-text" id="basic-addon1">
                                     <img src="{{ asset('img/icon/gear.webp') }}" alt="" width="25px" />
                                 </span>
-                                <input
-                                    name="regimen_fiscal"
-                                    id="regimen_fiscal"
-                                    type="text"
-                                    class="form-control"
-                                    value="{{ $client->regimen_fiscal }}"
-                                />
+                                <input name="regimen_fiscal" id="regimen_fiscal" type="text" class="form-control"
+                                    value="{{ $client->regimen_fiscal }}" />
                             </div>
                         </div>
 
@@ -110,13 +78,8 @@
                                 <span class="input-group-text" id="basic-addon1">
                                     <img src="{{ asset('img/icon/gear.webp') }}" alt="" width="25px" />
                                 </span>
-                                <input
-                                    name="rfc"
-                                    id="rfc"
-                                    type="text"
-                                    class="form-control"
-                                    value="{{ $client->rfc }}"
-                                />
+                                <input name="rfc" id="rfc" type="text" class="form-control"
+                                    value="{{ $client->rfc }}" />
                             </div>
                         </div>
 
@@ -124,15 +87,11 @@
                             <label for="name">Nombre de Empresa</label>
                             <div class="input-group mb-3">
                                 <span class="input-group-text" id="basic-addon1">
-                                    <img src="{{ asset('img/icon/edificios_ciudad.webp') }}" alt="" width="25px" />
+                                    <img src="{{ asset('img/icon/edificios_ciudad.webp') }}" alt=""
+                                        width="25px" />
                                 </span>
-                                <input
-                                    name="nombre_empresa"
-                                    id="nombre_empresa"
-                                    type="text"
-                                    class="form-control"
-                                    value="{{ $client->nombre_empresa }}"
-                                />
+                                <input name="nombre_empresa" id="nombre_empresa" type="text" class="form-control"
+                                    value="{{ $client->nombre_empresa }}" />
                             </div>
                         </div>
                     </div>

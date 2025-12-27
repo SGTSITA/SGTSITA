@@ -102,24 +102,53 @@ const localeText = {
 };
 
 const gridOptions = {
+    domLayout: 'autoHeight',
     pagination: true,
     paginationPageSize: 100,
     paginationPageSizeSelector: [100, 200, 500],
-    rowSelection: {
-        mode: 'singleRow',
-        headerCheckbox: false,
+    getRowClass: (params) => {
+        return params.node.rowIndex % 2 === 0 ? 'row-even' : 'row-odd';
     },
     rowData: [],
 
     columnDefs: [
         { field: 'IdCliente', hide: true },
-        { field: 'Nombre', filter: true, floatingFilter: true },
-        { field: 'Correo', filter: true, floatingFilter: true },
+        { field: 'Nombre', filter: true, floatingFilter: true, width: 200 },
+        { field: 'Correo', filter: true, floatingFilter: true, width: 200 },
         { field: 'Telefono', filter: true, floatingFilter: true },
-        { field: 'RFC', width: 100 },
+        { field: 'RFC', filter: true, floatingFilter: true, width: 100 },
         { field: 'RegimenFiscal', width: 200 },
         { field: 'Empresa', width: 110 },
-        { field: 'Direccion', width: 110 },
+        { field: 'Direccion', width: 120 },
+        {
+            headerName: 'Acciones',
+            field: 'acciones',
+            width: 140,
+            cellRenderer: function (params) {
+                if (!window.canCreateClientes) return document.createElement('div');
+
+                const container = document.createElement('div');
+                container.className = 'd-flex gap-1 align-items-center'; // horizontal, con espacio
+
+                // Botón Editar Cliente
+                const btnEdit = document.createElement('button');
+                btnEdit.className = 'btn btn-outline-info btn-xs p-1'; // p-1 para más pequeño
+                btnEdit.style.fontSize = '10px';
+                btnEdit.innerText = 'Editar Cliente';
+                btnEdit.onclick = () => goToClientEdit(params.data.IdCliente);
+                container.appendChild(btnEdit);
+
+                // Botón Sub Clientes
+                const btnSub = document.createElement('button');
+                btnSub.className = 'btn btn-outline-info btn-xs p-1'; // p-1 para más pequeño
+                btnSub.style.fontSize = '10px';
+                btnSub.innerText = 'Sub Clientes';
+                btnSub.onclick = () => goToSubClients(params.data.IdCliente);
+                container.appendChild(btnSub);
+
+                return container;
+            },
+        },
     ],
 
     localeText: localeText,
@@ -137,30 +166,34 @@ let IdContenedor = null;
 function getClientesList() {
     var _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     $.ajax({
-        url: '/clients/get-list',
+        url: '/clientes/get-list',
         type: 'post',
         data: { _token },
         beforeSend: () => {},
         success: (response) => {
             apiGrid.setGridOption('rowData', response.list);
+
+            setTimeout(() => {
+                apiGrid.sizeColumnsToFit();
+            }, 0);
         },
         error: () => {},
     });
 }
 
-function goToClientEdit() {
+function goToClientEdit(idClient) {
     var _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-    let client = apiGrid.getSelectedRows();
+    // let client = apiGrid.getSelectedRows();
 
-    if (client.length == 0) {
-        Swal.fire('Seleccione cliente', 'Debe seleccionar un cliente', 'warning');
-        return false;
-    }
-    let IdCliente = null;
+    // if (client.length == 0) {
+    //     Swal.fire('Seleccione cliente', 'Debe seleccionar un cliente', 'warning');
+    //     return false;
+    // }
+    let IdCliente = idClient;
 
-    client.forEach((c) => (IdCliente = c.IdCliente));
+    //client.forEach((c) => (IdCliente = c.IdCliente));
 
-    var url = '/clients/edit';
+    var url = '/clientes/edit';
 
     var form = $(
         '<form action="' +
@@ -184,17 +217,17 @@ function goToClientEdit() {
     }, 1000);
 }
 
-function goToSubClients() {
+function goToSubClients(idClient) {
     var _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-    let client = apiGrid.getSelectedRows();
+    // let client = apiGrid.getSelectedRows();
 
-    if (client.length == 0) {
-        Swal.fire('Seleccione cliente', 'Debe seleccionar un cliente', 'warning');
-        return false;
-    }
-    let IdCliente = null;
+    // if (client.length == 0) {
+    //     Swal.fire('Seleccione cliente', 'Debe seleccionar un cliente', 'warning');
+    //     return false;
+    // }
+    let IdCliente = idClient;
 
-    client.forEach((c) => (IdCliente = c.IdCliente));
+    // client.forEach((c) => (IdCliente = c.IdCliente));
 
     var url = '/subclientes/list';
 

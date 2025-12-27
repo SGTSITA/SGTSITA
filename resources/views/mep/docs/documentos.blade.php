@@ -48,45 +48,51 @@
                 </button>
             </div>
 
-            <!-- Tabla -->
-            <table id="tablaDocumentos" class="table align-middle table-row-dashed fs-6 gy-5">
-                <thead>
-                    <tr class="text-start text-gray-500 fw-bold fs-7 text-uppercase gs-0">
-                        <th class="w-10px">
-                            <div class="form-check form-check-sm form-check-custom form-check-solid">
-                                <input class="form-check-input" type="checkbox" id="checkAll">
-                            </div>
-                        </th>
-                        <th>Archivo</th>
-                        <th>Tipo</th>
-                        <th>Tamaño</th>
-                        <th>Fecha</th>
-                        <th class="text-end">Acción</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach ($documentos as $doc)
-                        <tr>
-                            <td>
+            <div class="table-responsive">
+                <table id="tablaDocumentos" class="table align-middle table-row-dashed fs-6 gy-5">
+                    <thead>
+                        <tr class="text-start text-gray-500 fw-bold fs-7 text-uppercase gs-0">
+                            <th class="w-10px">
                                 <div class="form-check form-check-sm form-check-custom form-check-solid">
-                                    <input class="form-check-input check-doc" type="checkbox"
-                                        value="{{ $doc['fileCode'] }}">
+                                    <input class="form-check-input" type="checkbox" id="checkAll">
                                 </div>
-                            </td>
-                            <td>{{ $doc['secondaryFileName'] }}</td>
-                            <td>{{ $doc['fileType'] }}</td>
-                            <td>{{ $doc['fileSize'] }}</td>
-                            <td>{{ $doc['fileDate'] }}</td>
-                            <td class="text-end">
-                                <a href="{{ url("/externos/documentos/$token/download/" . $doc['filePath']) }}"
-                                    class="btn btn-sm btn-primary">
-                                    Descargar
-                                </a>
-                            </td>
+                            </th>
+                            <th>Archivo</th>
+                            <th class="d-none d-md-table-cell">Tipo</th>
+                            <th class="d-none d-md-table-cell">Tamaño</th>
+                            <th class="d-none d-md-table-cell">Fecha</th>
+                            <th class="text-end">Acción</th>
                         </tr>
-                    @endforeach
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        @foreach ($documentos as $doc)
+                            <tr>
+                                <td>
+                                    <div class="form-check form-check-sm form-check-custom form-check-solid">
+                                        <input class="form-check-input check-doc" type="checkbox"
+                                            value="{{ $doc['fileCode'] }}">
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="fw-semibold">{{ $doc['secondaryFileName'] }}</div>
+                                    <div class="d-md-none text-muted fs-7">
+                                        {{ $doc['fileType'] }} · {{ $doc['fileSize'] }}
+                                    </div>
+                                </td>
+                                <td class="d-none d-md-table-cell">{{ $doc['fileType'] }}</td>
+                                <td class="d-none d-md-table-cell">{{ $doc['fileSize'] }}</td>
+                                <td class="d-none d-md-table-cell">{{ $doc['fileDate'] }}</td>
+                                <td class="text-end">
+                                    <a href="{{ url("/externos/documentos/$token/download/" . $doc['filePath']) }}"
+                                        class="btn btn-sm btn-primary">
+                                        Descargar
+                                    </a>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
 
         </div>
     </div>

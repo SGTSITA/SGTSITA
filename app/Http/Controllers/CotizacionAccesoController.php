@@ -7,7 +7,7 @@ use App\Models\DocumCotizacionAcceso;
 use App\Models\DocumCotizacion;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Hash;
-use Auth;
+use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 
 class CotizacionAccesoController extends Controller

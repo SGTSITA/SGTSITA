@@ -16,30 +16,20 @@
                             @can('clientes-create')
                                 <div class="float-right">
                                     <!--button type="button" class="btn btn-sm bg-gradient-info" data-bs-toggle="modal" data-bs-target="#exampleModal" >
-                                    <i class="fa fa-fw fa-plus"></i>  Nuevo cliente
-                                </button-->
+                                                                                                                    <i class="fa fa-fw fa-plus"></i>  Nuevo cliente
+                                                                                                                </button-->
                                     <div class="ms-auto my-auto">
-                                        <a
-                                            href="{{ route('create.clients') }}"
-                                            class="btn bg-gradient-info btn-xs mb-2"
-                                        >
+                                        <a href="{{ route('create.clientes') }}" class="btn bg-gradient-info btn-xs mb-2">
                                             +&nbsp; Nuevo cliente
                                         </a>
-                                        <button
-                                            type="button"
-                                            class="btn btn-outline-info btn-xs mb-2"
-                                            onclick="goToClientEdit()"
-                                        >
+                                        {{--  <button type="button" class="btn btn-outline-info btn-xs mb-2"
+                                            onclick="goToClientEdit()">
                                             Editar Cliente
                                         </button>
-                                        <button
-                                            class="btn btn-outline-info btn-xs mb-2 mt-sm-0 mt-1"
-                                            type="button"
-                                            name="button"
-                                            onclick="goToSubClients()"
-                                        >
+                                        <button class="btn btn-outline-info btn-xs mb-2 mt-sm-0 mt-1" type="button"
+                                            name="button" onclick="goToSubClients()">
                                             Sub Clientes
-                                        </button>
+                                        </button> --}}
                                     </div>
                                 </div>
                             @endcan
@@ -48,7 +38,7 @@
 
                     <div class="card-body mt-3" style="padding: 0rem 1.5rem 1.5rem 1.5rem">
                         <div class="row">
-                            <div id="myGrid" class="col-12 ag-theme-quartz" style="height: 500px"></div>
+                            <div id="myGrid" class="col-12 ag-theme-quartz" style="width: 100%;"></div>
                         </div>
                     </div>
                 </div>
@@ -60,9 +50,12 @@
 @push('custom-javascript')
     <script src="{{ asset('js/sgt/common.js') }}?v={{ filemtime(public_path('js/sgt/common.js')) }}"></script>
     <script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.js"></script>
-    <script src="{{ asset('js/sgt/clientes/clientes_list.js') }}?v={{ filemtime(public_path('js/sgt/clientes/clientes_list.js')) }}"></script>
+    <script
+        src="{{ asset('js/sgt/clientes/clientes_list.js') }}?v={{ filemtime(public_path('js/sgt/clientes/clientes_list.js')) }}">
+    </script>
 
     <script>
+        window.canCreateClientes = @json(auth()->user()->can('clientes-create'));
         $(document).ready(() => {
             getClientesList();
         });

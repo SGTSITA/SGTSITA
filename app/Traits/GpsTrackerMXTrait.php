@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Crypt;
 use App\Models\Empresas;
 use App\Models\ServicioGps;
 use App\Dto\ApiResponse;
-use Log;
+use Illuminate\Support\Facades\Log;
 
 trait GpsTrackerMXTrait
 {
@@ -33,13 +33,14 @@ trait GpsTrackerMXTrait
                 throw new \Exception('No se pudo obtener el token.');
             });
         } catch (\Exception $e) {
-            \Log::error('Error al obtener token GPS Tracker MX: ' . $e->getMessage());
+            Log::error('Error al obtener token GPS Tracker MX: ' . $e->getMessage());
             Cache::forget($cacheKey);
             return false;
         }
     }
 
-    public static function getMutiDevicePosition($accessAccount){
+    public static function getMutiDevicePosition($accessAccount)
+    {
         $basePath = config('services.GpsTrackerMX.url_base');
         $endpoint = $basePath.'/api/positions';
 
@@ -68,11 +69,11 @@ trait GpsTrackerMXTrait
             ]);
 
             return new ApiResponse(
-                    success: false,
-                    data: $response->json(),
-                    message: 'Error al consultar GpsTrackeMX',
-                    status: $response->status()
-                );
+                success: false,
+                data: $response->json(),
+                message: 'Error al consultar GpsTrackeMX',
+                status: $response->status()
+            );
 
         }
 

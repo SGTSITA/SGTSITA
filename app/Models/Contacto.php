@@ -8,7 +8,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Contacto extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory;
+    use SoftDeletes;
 
     // Tabla asociada (opcional si se llama "contactos")
     protected $table = 'contactos';
@@ -19,7 +20,9 @@ class Contacto extends Model
         'telefono',
         'email',
         'empresa',
-        'foto'
+        'foto',
+        'tipo',
+        'wa_id',
     ];
 
     // Activar timestamps

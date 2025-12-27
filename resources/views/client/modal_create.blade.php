@@ -5,7 +5,8 @@
                 <h5 class="modal-title">Crear Usuario</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form method="POST" action="{{ route('store.clients') }}" id="" enctype="multipart/form-data" role="form">
+            <form method="POST" action="{{ route('store.clientes') }}" id="" enctype="multipart/form-data"
+                role="form">
                 @csrf
 
                 <div class="modal-body">
@@ -14,7 +15,8 @@
                             <label for="name">Nombre Completo*</label>
                             <div class="input-group mb-3">
                                 <span class="input-group-text" id="basic-addon1">
-                                    <img src="{{ asset('img/icon/user_predeterminado.webp') }}" alt="" width="25px" />
+                                    <img src="{{ asset('img/icon/user_predeterminado.webp') }}" alt=""
+                                        width="25px" />
                                 </span>
                                 <input name="nombre" id="nombre" type="text" class="form-control" />
                             </div>
@@ -34,7 +36,8 @@
                             <label for="name">Telefono *</label>
                             <div class="input-group mb-3">
                                 <span class="input-group-text" id="basic-addon1">
-                                    <img src="{{ asset('img/icon/telefono.png.webp') }}" alt="" width="25px" />
+                                    <img src="{{ asset('img/icon/telefono.png.webp') }}" alt=""
+                                        width="25px" />
                                 </span>
                                 <input name="telefono" id="telefono" type="number" class="form-control" />
                             </div>
@@ -44,7 +47,8 @@
                             <label for="name">Direccion *</label>
                             <div class="input-group mb-3">
                                 <span class="input-group-text" id="basic-addon1">
-                                    <img src="{{ asset('img/icon/mapa-de-la-ciudad.webp') }}" alt="" width="25px" />
+                                    <img src="{{ asset('img/icon/mapa-de-la-ciudad.webp') }}" alt=""
+                                        width="25px" />
                                 </span>
                                 <input name="direccion" id="direccion" type="text" class="form-control" />
                             </div>
@@ -74,9 +78,11 @@
                             <label for="name">Nombre de Empresa</label>
                             <div class="input-group mb-3">
                                 <span class="input-group-text" id="basic-addon1">
-                                    <img src="{{ asset('img/icon/edificios_ciudad.webp') }}" alt="" width="25px" />
+                                    <img src="{{ asset('img/icon/edificios_ciudad.webp') }}" alt=""
+                                        width="25px" />
                                 </span>
-                                <input name="nombre_empresa" id="nombre_empresa" type="text" class="form-control" />
+                                <input name="nombre_empresa" id="nombre_empresa" type="text"
+                                    class="form-control" />
                             </div>
                         </div>
                     </div>

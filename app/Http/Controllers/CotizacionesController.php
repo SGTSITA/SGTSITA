@@ -24,12 +24,14 @@ use App\Models\BancoDineroOpe;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Carbon\Carbon;
-use Session;
-use DB;
-use Auth;
-use File;
+use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\File;
 use App\Events\EnvioCorreoCoordenadasEvent;
 use App\Traits\CommonTrait as Common;
+use Illuminate\Support\Facades\Log;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class CotizacionesController extends Controller
 {
@@ -470,7 +472,7 @@ class CotizacionesController extends Controller
                 $cotizaciones->restante = $cotizaciones->total;
                 $cotizaciones->estatus_pago = '0';
                 $cotizaciones->origen_captura = $contenedor['origen_captura'];
-                $cotizaciones->user_id = \Auth::User()->id;
+                $cotizaciones->user_id = Auth::User()->id;
                 $cotizaciones->save();
 
                 $docucotizaciones = new DocumCotizacion();
@@ -570,7 +572,7 @@ class CotizacionesController extends Controller
         $cotizaciones->restante = $cotizaciones->total;
         $cotizaciones->estatus_pago = '0';
         $cotizaciones->origen_captura = $origen_inicial;
-        $cotizaciones->user_id = \Auth::User()->id;
+        $cotizaciones->user_id = Auth::User()->id;
         $cotizaciones->save();
 
         $docucotizaciones = new DocumCotizacion();
@@ -605,7 +607,7 @@ class CotizacionesController extends Controller
 
             $subCliente = Subclientes::where('id', $cotizaciones->id_subcliente)->first();
 
-            $pdf = \PDF::loadView('cotizaciones.carta_porte_pdf', compact('cotizaciones', 'numContenedor', 'subCliente'));
+            $pdf = PDF::loadView('cotizaciones.carta_porte_pdf', compact('cotizaciones', 'numContenedor', 'subCliente'));
 
             // Crear la carpeta si no existe
             if (!File::exists(public_path('cotizaciones/cotizacion'.$docucotizaciones->id.''))) {
@@ -723,7 +725,7 @@ class CotizacionesController extends Controller
 
 
                 $cotizaciones = new Cotizaciones();
-                $cotizaciones->id_cliente = \Auth::User()->id_cliente;
+                $cotizaciones->id_cliente = Auth::User()->id_cliente;
                 $cotizaciones->id_subcliente = $numSubCliente;
                 if ($request->has('permiso_proveedor') && $request->get('permiso_proveedor') == 1) {
                     $numProveedor = substr($contenedor[1], 0, 5);
@@ -763,7 +765,7 @@ class CotizacionesController extends Controller
                 $cotizaciones->restante = 0;
                 $cotizaciones->estatus_pago = '0';
                 $cotizaciones->origen_captura = $origen_inicial;
-                $cotizaciones->user_id = \Auth::User()->id;
+                $cotizaciones->user_id = Auth::User()->id;
                 $cotizaciones->save();
 
 
@@ -778,9 +780,9 @@ class CotizacionesController extends Controller
             DB::commit();
             return response()->json(["Titulo" => "Proceso satisfactorio", "Mensaje" => "Cotización creada con exito", "TMensaje" => "success"]);
 
-        } catch (\Trhowable $t) {
+        } catch (\Throwable $t) {
             DB::rollback();
-            \Log::channel('daily')->info($t->getMessage());
+            Log::channel('daily')->info($t->getMessage());
             return response()->json(["Titulo" => "Ocurrion un error", "Mensaje" => "Ocurrio un error mientras procesabamos su solicitud. ".$t->getMessage(), "TMensaje" => "error"]);
         }
     }
@@ -901,7 +903,7 @@ class CotizacionesController extends Controller
         $fecha = date('Y-m-d');
         $fechaCarbon = Carbon::parse($fecha);
 
-        $pdf = \PDF::loadView('cotizaciones.pdf', compact('cotizacion', 'documentacion', 'clientes', 'gastos_extras', 'configuracion', 'fechaCarbon', 'bancos_oficiales', 'bancos_no_oficiales'));
+        $pdf = PDF::loadView('cotizaciones.pdf', compact('cotizacion', 'documentacion', 'clientes', 'gastos_extras', 'configuracion', 'fechaCarbon', 'bancos_oficiales', 'bancos_no_oficiales'));
         //return $pdf->stream();
         return $pdf->download('cotizacion'.$cotizacion->Cliente->nombre.'_#'.$cotizacion->id.'.pdf');
     }
@@ -1085,7 +1087,7 @@ class CotizacionesController extends Controller
             //cambiar archivo pdf solo si hay cambios en la informacion de carta porte
             $modifico = $request->get('modifico_informacion', 0);
             if ($modifico == 1) {
-                \Log::channel('daily')->info('Modifico informacion de carta porte para cotizacion ID: '.$id);
+                Log::channel('daily')->info('Modifico informacion de carta porte para cotizacion ID: '.$id);
 
                 $docucotizaciones =  DocumCotizacion::where('id_cotizacion', '=', $cotizaciones->id)->first();
 
@@ -1096,7 +1098,7 @@ class CotizacionesController extends Controller
                 $path = public_path('cotizaciones/cotizacion'.$docucotizaciones->id.'/formato_carta_porte_' . $numContenedor . '.pdf');
 
                 if ($request->has('uuid')) {
-                    \Log::channel('daily')->info('si hay uuid: '.$request->get('uuid'));
+                    Log::channel('daily')->info('si hay uuid: '.$request->get('uuid'));
 
                     $cotizaciones->sat_uso_cfdi_id = $request->id_uso_cfdi;
                     $cotizaciones->sat_forma_pago_id = $request->id_forma_pago;
@@ -1121,18 +1123,18 @@ class CotizacionesController extends Controller
 
                     $subCliente = Subclientes::where('id', $cotizaciones->id_subcliente)->first();
 
-                    $pdf = \PDF::loadView('cotizaciones.carta_porte_pdf', compact('cotizaciones', 'numContenedor', 'subCliente'));
+                    $pdf = PDF::loadView('cotizaciones.carta_porte_pdf', compact('cotizaciones', 'numContenedor', 'subCliente'));
 
                     $folderPath = public_path('cotizaciones/cotizacion' . $docucotizaciones->id);
 
-                    \Log::channel('daily')->info('path: '.$folderPath);
+                    Log::channel('daily')->info('path: '.$folderPath);
                     // Crear la carpeta si no existe
                     if (!File::exists($folderPath)) {
                         File::makeDirectory($folderPath, 0755, true);
                     } else {
                         //  Si el archivo anterior existe, lo eliminamos
                         if (File::exists($path)) {
-                            \Log::channel('daily')->info('borrando archivo: '.$path);
+                            Log::channel('daily')->info('borrando archivo: '.$path);
                             File::delete($path);
                         }
                     }
@@ -1446,7 +1448,7 @@ class CotizacionesController extends Controller
         } catch (\Throwable $t) {
             DB::rollback();
             $idError = uniqid();
-            \Log::channel('daily')->info("$idError : ".$t->getMessage());
+            Log::channel('daily')->info("$idError : ".$t->getMessage());
             return response()->json([
                 "Titulo" => "Ha ocurrido un error",
                 "Mensaje" => "Ocurrio un error mientras procesabamos su solicitud. Cod Error $idError",
@@ -1515,7 +1517,7 @@ class CotizacionesController extends Controller
         } catch (\Throwable $t) {
             DB::rollback();
             $idError = uniqid();
-            \Log::channel('daily')->info("$idError : ".$t->getMessage());
+            Log::channel('daily')->info("$idError : ".$t->getMessage());
             return response()->json([
                 "Titulo" => "Ha ocurrido un error",
                 "Mensaje" => "Ocurrio un error mientras procesabamos su solicitud. Cod Error $idError",
@@ -1566,7 +1568,7 @@ class CotizacionesController extends Controller
             DB::commit();
             return response()->json(["Titulo" => "Eliminado Correctamente", "Mensaje" => "El gasto fue eliminado.", "TMensaje" => "success"]);
 
-        } catch (\Trhowable $t) {
+        } catch (\Throwable $t) {
             DB::rollback();
             return response()->json(["Titulo" => "No pudimos eliminar el gasto", "Mensaje" => "Lo sentimos, ocurrio un error $t->getMessage()", "TMensaje" => "error"]);
 
@@ -1597,7 +1599,7 @@ class CotizacionesController extends Controller
             Cotizaciones::where('id', $contenedor->id_cotizacion)->update(["restante" => DB::raw('restante + '.$r->montoGasto)]);
             DB::commit();
             return response()->json(["TMensaje" => "success", "Mensaje" => "Agregado correctamente", "Titulo" => "Gasto agregado"]);
-        } catch (\Trhowable $t) {
+        } catch (\Throwable $t) {
             DB::rollback();
             return response()->json(["TMensaje" => "error", "Mensaje" => $t->getMessage(), "Titulo" => "Error al agregar gasto"]);
 
@@ -1627,7 +1629,7 @@ class CotizacionesController extends Controller
 
             DB::commit();
             return response()->json(["TMensaje" => "success", "Mensaje" => "Eliminado correctamente", "Titulo" => "Gasto eliminado del contenedor"]);
-        } catch (\Trhowable $t) {
+        } catch (\Throwable $t) {
             DB::rollback();
             return response()->json(["TMensaje" => "error", "Mensaje" => $t->getMessage(), "Titulo" => "Error al agregar gasto"]);
 
@@ -1732,7 +1734,7 @@ class CotizacionesController extends Controller
     public function adjuntarDocumentos(Request $r)
     {
         $id_cot = null;
-        \Log::channel('daily')->info('inicio adjuntar documentos');
+        Log::channel('daily')->info('inicio adjuntar documentos');
 
         include('Fileuploader/class.fileuploader.php');
         $cotizacionQuery = Cotizaciones::join('docum_cotizacion as d', 'cotizaciones.id', '=', 'd.id_cotizacion')
@@ -1768,7 +1770,7 @@ class CotizacionesController extends Controller
 
 
         $id_cot = $cotizacion->id;
-        // \Log::channel('daily')->info('Ids confirmar', ['cotizacionRequest' =>$id_cot  , 'cotizacionEncontrada' => $cotizacion->cotizacion_id ?? null ]);
+        // Log::channel('daily')->info('Ids confirmar', ['cotizacionRequest' =>$id_cot  , 'cotizacionEncontrada' => $cotizacion->cotizacion_id ?? null ]);
 
         // dd($cotizacion);
 
@@ -1847,28 +1849,28 @@ class CotizacionesController extends Controller
 
 
             if ($tipoViajecontenedor !== 'local') {
-                \Log::channel('daily')->info('Maniobra adjuntar documentos foraneo', ['cotizacion' => $id_cot, 'tipoViaje' => $tipoViajecontenedor]);
+                Log::channel('daily')->info('Maniobra adjuntar documentos foraneo', ['cotizacion' => $id_cot, 'tipoViaje' => $tipoViajecontenedor]);
 
                 // self::confirmarDocumentos($cotizacion->cotizacion_id); //parche temporal hasta verificar flujo del correo
                 if (Auth::User()->id_cliente != 0) {
-                    \Log::channel('daily')->info('GenericNotificationEvent  ', ['cotizacion' => $id_cot, 'tipoViaje' => $tipoViajecontenedor]);
+                    Log::channel('daily')->info('GenericNotificationEvent  ', ['cotizacion' => $id_cot, 'tipoViaje' => $tipoViajecontenedor]);
                     event(new \App\Events\GenericNotificationEvent([$cotizacion->cliente->correo], 'Se cargó '.$r->urlRepo.': '.$r->numContenedor, 'Hola, tu transportista cargó el documento "'.$r->urlRepo.'" del contenedor '.$r->numContenedor));
-                    \Log::channel('daily')->info('GenericNotificationEvent  ok ', ['cotizacion' => $id_cot, 'tipoViaje' => $tipoViajecontenedor]);
+                    Log::channel('daily')->info('GenericNotificationEvent  ok ', ['cotizacion' => $id_cot, 'tipoViaje' => $tipoViajecontenedor]);
 
-                    \Log::channel('daily')->info('ConfirmarDocumentosEvent  ', ['cotizacion' => $id_cot, 'tipoViaje' => $tipoViajecontenedor]);
+                    Log::channel('daily')->info('ConfirmarDocumentosEvent  ', ['cotizacion' => $id_cot, 'tipoViaje' => $tipoViajecontenedor]);
                     event(new \App\Events\ConfirmarDocumentosEvent($id_cot));
 
-                    \Log::channel('daily')->info('ConfirmarDocumentosEvent  ok ', ['cotizacion' => $id_cot, 'tipoViaje' => $tipoViajecontenedor]);
+                    Log::channel('daily')->info('ConfirmarDocumentosEvent  ok ', ['cotizacion' => $id_cot, 'tipoViaje' => $tipoViajecontenedor]);
                 }
 
                 if ($estatus != 'Documentos Faltantes' && Auth::User()->id_cliente != 0) {
-                    \Log::channel('daily')->info('NotificaNuevoDocumentoEvent  ', ['cotizacion' => $id_cot, 'tipoViaje' => $tipoViajecontenedor]);
+                    Log::channel('daily')->info('NotificaNuevoDocumentoEvent  ', ['cotizacion' => $id_cot, 'tipoViaje' => $tipoViajecontenedor]);
                     event(new \App\Events\NotificaNuevoDocumentoEvent($cotizacion, $r->urlRepo));
-                    \Log::channel('daily')->info('NotificaNuevoDocumentoEvent  ok ', ['cotizacion' => $id_cot, 'tipoViaje' => $tipoViajecontenedor]);
+                    Log::channel('daily')->info('NotificaNuevoDocumentoEvent  ok ', ['cotizacion' => $id_cot, 'tipoViaje' => $tipoViajecontenedor]);
                 }
 
             } else {
-                \Log::channel('daily')->info('Maniobra local adjuntar documentos', ['cotizacion' => $id_cot, 'tipoViaje' => $tipoViajecontenedor]);
+                Log::channel('daily')->info('Maniobra local adjuntar documentos', ['cotizacion' => $id_cot, 'tipoViaje' => $tipoViajecontenedor]);
                 self::confirmarDocumentoslocal($id_cot);
 
             }
@@ -1883,7 +1885,7 @@ class CotizacionesController extends Controller
     public static function confirmarDocumentos($cotizacion)
     {
         try {
-            \Log::channel('daily')->info('Maniobra  '.$cotizacion);
+            Log::channel('daily')->info('Maniobra  '.$cotizacion);
 
             $contenedor = Cotizaciones::join('docum_cotizacion as d', 'cotizaciones.id', '=', 'd.id_cotizacion')
             ->where('cotizaciones.id', '=', $cotizacion)
@@ -1891,7 +1893,7 @@ class CotizacionesController extends Controller
             ->orderBy('created_at', 'desc')
             ->selectRaw('cotizaciones.*, d.num_contenedor,d.doc_eir,doc_ccp ,d.boleta_liberacion,d.doda')
             ->first();
-            \Log::channel('daily')->info('Doda: '.$contenedor->doda.' / liberacion:'.$contenedor->boleta_liberacion);
+            Log::channel('daily')->info('Doda: '.$contenedor->doda.' / liberacion:'.$contenedor->boleta_liberacion);
 
             if ($contenedor->doda != null && $contenedor->boleta_liberacion != null) {
                 $cotizacion = Cotizaciones::where('id', $cotizacion)->first();
@@ -1906,7 +1908,7 @@ class CotizacionesController extends Controller
 
             }
         } catch (\Throwable $t) {
-            \Log::channel('daily')->info('Maniobra no se pudo enviar al admin. id: '.$cotizacion.'. '.$t->getMessage());
+            Log::channel('daily')->info('Maniobra no se pudo enviar al admin. id: '.$cotizacion.'. '.$t->getMessage());
         }
 
     }
@@ -1947,7 +1949,7 @@ class CotizacionesController extends Controller
 
             DB::commit();
             return response()->json(["TMensaje" => "success", "Mensaje" => "Contenedores asignados correctamente","Titulo" => "Proceso satisfactorio"]);
-        } catch (\Trhowable $t) {
+        } catch (\Throwable $t) {
             DB::rollback();
             return response()->json(["TMensaje" => "error", "Mensaje" => "No fue posible asignar los contenedores. $t->getMessage()","Titulo" => "No asignado"]);
 
@@ -2151,7 +2153,7 @@ class CotizacionesController extends Controller
     public function enviarCorreo(Request $request)
     {
         $datos = $request->only('correo', 'asunto', 'mensaje', 'link');
-        \Log::info('Evento disparado con datos: ', $datos);
+        Log::info('Evento disparado con datos: ', $datos);
         event(new \App\Events\EnvioCorreoCoordenadasEvent($datos));
 
         return response()->json(['success' => true]);
@@ -2289,7 +2291,7 @@ class CotizacionesController extends Controller
 
                 'estatus_maniobra_id' => 4,
                 'origen_captura' => $origen_inicial,
-                'user_id' => \Auth::User()->id,
+                'user_id' => Auth::User()->id,
 
             ]);
 
@@ -2332,7 +2334,7 @@ class CotizacionesController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-            \Log::error("Error en cotización local: " . $e->getMessage());
+            Log::error("Error en cotización local: " . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Error al guardar la cotización local',
@@ -2546,7 +2548,7 @@ class CotizacionesController extends Controller
 
 
                 $cotizaciones = new Cotizaciones();
-                $cotizaciones->id_cliente = \Auth::User()->id_cliente;
+                $cotizaciones->id_cliente = Auth::User()->id_cliente;
                 $cotizaciones->id_subcliente = $numSubCliente;
                 if ($request->has('permiso_proveedor') && $request->get('permiso_proveedor') == 1) {
                     $numProveedor = substr($contenedor[1], 0, 5);
@@ -2621,7 +2623,7 @@ class CotizacionesController extends Controller
                 $cotizaciones->restante = 0;
                 $cotizaciones->estatus_pago = '0';
                 $cotizaciones->origen_captura = $origen_inicial;
-                $cotizaciones->user_id = \Auth::User()->id;
+                $cotizaciones->user_id = Auth::User()->id;
                 $cotizaciones->save();
 
 
@@ -2636,9 +2638,9 @@ class CotizacionesController extends Controller
             DB::commit();
             return response()->json(["Titulo" => "Proceso satisfactorio", "Mensaje" => "Cotización creada con exito", "TMensaje" => "success"]);
 
-        } catch (\Trhowable $t) {
+        } catch (\Throwable $t) {
             DB::rollback();
-            \Log::channel('daily')->info($t->getMessage());
+            Log::channel('daily')->info($t->getMessage());
             return response()->json(["Titulo" => "Ocurrion un error", "Mensaje" => "Ocurrio un error mientras procesabamos su solicitud. ".$t->getMessage(), "TMensaje" => "error"]);
         }
     }
@@ -2646,7 +2648,7 @@ class CotizacionesController extends Controller
     public static function confirmarDocumentoslocal($cotizacion)
     {
         try {
-            \Log::channel('daily')->info('Maniobra local iniciada', ['cotizacion' => $cotizacion]);
+            Log::channel('daily')->info('Maniobra local iniciada', ['cotizacion' => $cotizacion]);
 
             $contenedor = Cotizaciones::join('docum_cotizacion as d', 'cotizaciones.id', '=', 'd.id_cotizacion')
             ->where('cotizaciones.id', '=', $cotizacion)
@@ -2654,7 +2656,7 @@ class CotizacionesController extends Controller
            ->wherein('cotizaciones.tipo_viaje_seleccion', ['local'])
             ->selectRaw('cotizaciones.*, d.num_contenedor,d.doc_eir,doc_ccp ,d.boleta_liberacion,d.doda,d.boleta_patio')
             ->first();
-            \Log::channel('daily')->info('DEBUG valores', [
+            Log::channel('daily')->info('DEBUG valores', [
                 'doda' => $contenedor->doda,
                 'boleta_liberacion' => $contenedor->boleta_liberacion,
             ]);
@@ -2674,7 +2676,7 @@ class CotizacionesController extends Controller
 
             }
         } catch (\Throwable $t) {
-            \Log::channel('daily')->info('Maniobra no se pudo enviar al admin. id: '.$cotizacion.'. '.$t->getMessage());
+            Log::channel('daily')->info('Maniobra no se pudo enviar al admin. id: '.$cotizacion.'. '.$t->getMessage());
         }
 
     }

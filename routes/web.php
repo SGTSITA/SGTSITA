@@ -1,4 +1,5 @@
 <?php
+
 use Illuminate\Support\Facades\Route;
 use Laravel\Socialite\Facades\Socialite;
 use App\Http\Controllers\HomeController;
@@ -18,53 +19,53 @@ use App\Http\Controllers\ContactoController;
 use App\Http\Controllers\ReporteriaController;
 use App\Http\Controllers\MepController;
 use App\Http\Controllers\PrestamosController;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
-use App\Models\User;
+Route::group(["prefix" => "gps"], function () {
+    Route::get('globalgps/ubicacion/by-imei/{imei}', [GpsController::class,'obtenerUbicacionByImei'])->name('ubicacion.byimei');
+    Route::get('skyangel/ubicacion/', [GpsController::class,'getLocationSkyAngel'])->name('ubicacion.byimei');
 
+    Route::get('jimi/api/test', [GpsCompanyController::class,'testGpsApi']);
 
-Route::group(["prefix" => "gps"],function(){
- Route::get('globalgps/ubicacion/by-imei/{imei}',[GpsController::class,'obtenerUbicacionByImei'])->name('ubicacion.byimei');
- Route::get('skyangel/ubicacion/',[GpsController::class,'getLocationSkyAngel'])->name('ubicacion.byimei');
-
- Route::get('jimi/api/test',[GpsCompanyController::class,'testGpsApi']);
-
- Route::get('setup',[GpsCompanyController::class,'setupGps'])->name('gps.setup');
- Route::get('config',[GpsCompanyController::class,'getConfig'])->name('gps.config');
- Route::post('config/store',[GpsCompanyController::class,'setConfig'])->name('gps.store');
+    Route::get('setup', [GpsCompanyController::class,'setupGps'])->name('gps.setup');
+    Route::get('config', [GpsCompanyController::class,'getConfig'])->name('gps.config');
+    Route::post('config/store', [GpsCompanyController::class,'setConfig'])->name('gps.store');
 });
 
-Route::group(["prefix" => "mep"], function(){
- Route::get('viajes',[MepController::class, 'index'])->name('mep.index');
- Route::post('viajes/consulta-asignacion',[MepController::class, 'verAsignacion'])->name('mep.asignacion');
+Route::group(["prefix" => "mep"], function () {
+    Route::get('viajes', [MepController::class, 'index'])->name('mep.index');
+    Route::post('viajes/consulta-asignacion', [MepController::class, 'verAsignacion'])->name('mep.asignacion');
 
- Route::get('viajes/list',[MepController::class, 'getCotizacionesList'])->name('mep.viajes');
- Route::get('viajes/finalizadas',[MepController::class, 'getCotizacionesFinalizadas'])->name('mep.viajes');
- Route::post('viajes/operador/asignar',[MepController::class, 'asignarOperador'])->name('mep.asignaoperdor');
- Route::post('catalogos/operador-unidad',[MepController::class, 'getCatalogosMep'])->name('mep.catalogos');
+    Route::get('viajes/list', [MepController::class, 'getCotizacionesList'])->name('mep.viajes');
+    Route::get('viajes/finalizadas', [MepController::class, 'getCotizacionesFinalizadas'])->name('mep.viajes');
+    Route::post('viajes/operador/asignar', [MepController::class, 'asignarOperador'])->name('mep.asignaoperdor');
+    Route::post('catalogos/operador-unidad', [MepController::class, 'getCatalogosMep'])->name('mep.catalogos');
 });
 
 
-Route::group(["prefix" => "whatsapp"],function(){
-    Route::get('sendtext/{phone}/{text}',[WhatsAppController::class,'sendText'])->name('whatsapp.text');
-    Route::get('webhook',[WhatsAppController::class,'webHook'])->name('whatsapp.webhook');
-    Route::post('webhook',[WhatsAppController::class,'verifyWebHook'])->name('whatsapp.verify.webhook');
+Route::group(["prefix" => "whatsapp"], function () {
+    Route::get('sendtext/{phone}/{text}', [WhatsAppController::class,'sendText'])->name('whatsapp.text');
+    Route::get('webhook', [WhatsAppController::class,'webHook'])->name('whatsapp.webhook');
+    Route::post('webhook', [WhatsAppController::class,'verifyWebHook'])->name('whatsapp.verify.webhook');
 
 });
 
-Route::group(["prefix" => "prestamos"], function(){
-    Route::get("registro",[PrestamosController::class,'index'])->name('operadores.prestamo');
-    Route::post("store",[PrestamosController::class,'store'])->name('prestamo.store');
+Route::group(["prefix" => "prestamos"], function () {
+    Route::get("registro", [PrestamosController::class,'index'])->name('operadores.prestamo');
+    Route::post("store", [PrestamosController::class,'store'])->name('prestamo.store');
 
-    Route::post("{id}/abonar",[PrestamosController::class,'abonar'])->name('prestamo.abonar');
-    Route::get("lista",[PrestamosController::class,'getListaPrestamos'])->name('prestamo.lista');
-    Route::get("lista-detalle/{idprestamo}",[PrestamosController::class,'getPrestamosPagos'])->name('prestamo.listadetalle');
+    Route::post("{id}/abonar", [PrestamosController::class,'abonar'])->name('prestamo.abonar');
+    Route::get("lista", [PrestamosController::class,'getListaPrestamos'])->name('prestamo.lista');
+    Route::get("lista-detalle/{idprestamo}", [PrestamosController::class,'getPrestamosPagos'])->name('prestamo.listadetalle');
 
 
 });
 
 
 Route::post('/exportar-cxc', [ReporteriaController::class, 'export'])->name('exportar.cxc');
-Route::post('sendfiles',[ExternosController::class,'sendFiles1'])->name('file-manager.sendfiles');
+Route::post('sendfiles', [ExternosController::class,'sendFiles1'])->name('file-manager.sendfiles');
 
 Route::post('/users/{id}/reset-password', [UserController::class, 'resetPassword'])
     ->middleware('auth')
@@ -105,11 +106,11 @@ include('api.php');
 
 Route::get('/', function () {
     return view('landing.index');
-   // return view('auth.login');
+    // return view('auth.login');
 
 });
 
-Route::get('aviso-privacidad',function(){
+Route::get('aviso-privacidad', function () {
     return view('landing.aviso-privacidad');
 })->name('aviso-privacidad');
 
@@ -133,7 +134,7 @@ Route::get('/auth/google', function () {
 
 // Callback de Google
 Route::get('/auth/google/callback', function () {
-    $googleUser = Socialite::driver('google')->stateless()->user();
+    $googleUser = Socialite::driver('google')->user();
 
     $user = \App\Models\User::where('email', $googleUser->getEmail())->first();
 
@@ -239,7 +240,7 @@ Route::get('/gps/{imei}/detalle', [GpsController::class, 'detalleDispositivo']);
 Route::get('/coordenadas/rastrearTabs', [App\Http\Controllers\CoordenadasController::class, 'RastreoTabs'])->name('rastrearTabs');
 
 
-Route::group(['middleware' => ['auth']], function() {
+Route::group(['middleware' => ['auth']], function () {
     Route::resource('roles', RoleController::class);
     Route::resource('permisos', PermisosController::class);
     Route::resource('users', UserController::class);
@@ -250,19 +251,19 @@ Route::group(['middleware' => ['auth']], function() {
     Route::patch('empresas/update/{id}', [App\Http\Controllers\EmpresasController::class, 'update'])->name('update.empresas');
 
     // ==================== C L I E N T E S ====================
-    Route::resource('clients', ClientController::class);
-    Route::post('clients/get-list',[App\Http\Controllers\ClientController::class,'get_list'])->name('clients.get');
-    Route::post('clients/create', [App\Http\Controllers\ClientController::class, 'create'])->name('create.clients');
+    Route::resource('clientes', ClientController::class);
+    Route::post('clientes/get-list', [App\Http\Controllers\ClientController::class,'get_list'])->name('clientes.get');
+    Route::post('clientes/create', [App\Http\Controllers\ClientController::class, 'create'])->name('create.clientes');
     //
-    Route::post('clients/store', [App\Http\Controllers\ClientController::class, 'store'])->name('store.clients');
-    Route::post('clients/edit', [App\Http\Controllers\ClientController::class, 'edit'])->name('edit.clients');
-    Route::post('clients/confirm-update', [App\Http\Controllers\ClientController::class, 'update'])->name('update.client');
-   // Route::patch('clients/update/{id}', [App\Http\Controllers\ClientController::class, 'update'])->name('update.clients');
-    Route::post('subclientes/crear-nuevo',[ClientController::class,'new_subcliente'])->name('new.subcliente');
-    Route::post('subclientes/list',[ClientController::class,'subcliente_list_internal'])->name('subcliente.list');
-    Route::get('subclientes/edit/{id}', [App\Http\Controllers\ClientController::class, 'edit_subclientes'])->name('edit_subclientes.clients');
-    Route::patch('subclientes/update/{id}', [App\Http\Controllers\ClientController::class, 'update_subclientes'])->name('update_subclientes.clients');
-    Route::post('clients/subclientes/create', [App\Http\Controllers\ClientController::class, 'store_subclientes'])->name('store_subclientes.clients');
+    Route::post('clientes/store', [App\Http\Controllers\ClientController::class, 'store'])->name('store.clientes');
+    Route::post('clientes/edit', [App\Http\Controllers\ClientController::class, 'edit'])->name('edit.clientes');
+    Route::post('clientes/confirm-update', [App\Http\Controllers\ClientController::class, 'update'])->name('update.cliente');
+    // Route::patch('clientes/update/{id}', [App\Http\Controllers\ClientController::class, 'update'])->name('update.clientes');
+    Route::post('subclientes/crear-nuevo', [ClientController::class,'new_subcliente'])->name('new.subcliente');
+    Route::post('subclientes/list', [ClientController::class,'subcliente_list_internal'])->name('subcliente.list');
+    Route::get('subclientes/edit/{id}', [App\Http\Controllers\ClientController::class, 'edit_subclientes'])->name('edit_subclientes.clientes');
+    Route::patch('subclientes/update/{id}', [App\Http\Controllers\ClientController::class, 'update_subclientes'])->name('update_subclientes.clientes');
+    Route::post('clientes/subclientes/create', [App\Http\Controllers\ClientController::class, 'store_subclientes'])->name('store_subclientes.clientes');
 
     // ==================== P R O V E E D O R E S ====================
     Route::get('proveedores', [App\Http\Controllers\ProveedorController::class, 'index'])->name('index.proveedores');
@@ -354,7 +355,7 @@ Route::group(['middleware' => ['auth']], function() {
     Route::post('cotizaciones/single/update-local/{id}', [App\Http\Controllers\CotizacionesController::class, 'singleUpdatelocal'])->name('update.singlelocal');
     Route::post('/cotizaciones/transformar/foraneo', [App\Http\Controllers\CotizacionesController::class, 'convertirlocalforaneo'])->name('cotizaciones.transform.foraneo');
 
-// sgt busqueda y asignacion de doc boleta patio
+    // sgt busqueda y asignacion de doc boleta patio
     Route::get('/cotizaciones/solicitudes-local', [App\Http\Controllers\CotizacionesController::class, 'solicitudesLocales'])->name('cotizaciones.Solic-locales');
     Route::post('/contenedores/files/listar', [ExternosController::class, 'listarDocumentos']);
     Route::post('/contenedores/infoManiobra', [ExternosController::class, 'infoManiobra']);
@@ -370,20 +371,20 @@ Route::group(['middleware' => ['auth']], function() {
 
     Route::patch('cotizaciones/cambiar/empresa/{id}', [App\Http\Controllers\CotizacionesController::class, 'cambiar_empresa'])->name('cambiar_empresa.cotizaciones');
     Route::post('cotizaciones/asignar/empresa', [App\Http\Controllers\CotizacionesController::class, 'asignar_empresa'])->name('asignar_empresa.cotizaciones');
-    Route::post('cotizaciones/gastos/registrar',[App\Http\Controllers\CotizacionesController::class, 'agregar_gasto_cotizacion'])->name('gastos.cotizaciones');
-    Route::post('cotizaciones/gastos/get',[App\Http\Controllers\CotizacionesController::class, 'get_gastos'])->name('gastos.cotizaciones');
-    Route::post('cotizaciones/gastos/eliminar',[App\Http\Controllers\CotizacionesController::class, 'eliminar_gasto_cotizacion'])->name('gastos.eliminar');
+    Route::post('cotizaciones/gastos/registrar', [App\Http\Controllers\CotizacionesController::class, 'agregar_gasto_cotizacion'])->name('gastos.cotizaciones');
+    Route::post('cotizaciones/gastos/get', [App\Http\Controllers\CotizacionesController::class, 'get_gastos'])->name('gastos.cotizaciones');
+    Route::post('cotizaciones/gastos/eliminar', [App\Http\Controllers\CotizacionesController::class, 'eliminar_gasto_cotizacion'])->name('gastos.eliminar');
 
-    Route::post('cotizaciones/gastos-operador/registrar',[App\Http\Controllers\CotizacionesController::class, 'agregar_gasto_operador'])->name('gastos.cotizaciones');
-    Route::post('cotizaciones/gastos-operador/get',[App\Http\Controllers\CotizacionesController::class, 'get_gastos_operador'])->name('gastos.cotizaciones');
-    Route::post('cotizaciones/gastos-operador/pagar',[App\Http\Controllers\CotizacionesController::class, 'pagar_gasto_operador'])->name('pagar.gastos');
-    Route::post('cotizaciones/gastos-operador/eliminar',[App\Http\Controllers\CotizacionesController::class, 'eliminar_gasto_operador'])->name('eliminar.gastos');
+    Route::post('cotizaciones/gastos-operador/registrar', [App\Http\Controllers\CotizacionesController::class, 'agregar_gasto_operador'])->name('gastos.cotizaciones');
+    Route::post('cotizaciones/gastos-operador/get', [App\Http\Controllers\CotizacionesController::class, 'get_gastos_operador'])->name('gastos.cotizaciones');
+    Route::post('cotizaciones/gastos-operador/pagar', [App\Http\Controllers\CotizacionesController::class, 'pagar_gasto_operador'])->name('pagar.gastos');
+    Route::post('cotizaciones/gastos-operador/eliminar', [App\Http\Controllers\CotizacionesController::class, 'eliminar_gasto_operador'])->name('eliminar.gastos');
 
 
 
 
     // ==================== P L A N E A C I O N ====================
-    Route::group(["prefix" => "planeaciones"], function(){
+    Route::group(["prefix" => "planeaciones"], function () {
         Route::get('/', [App\Http\Controllers\PlaneacionController::class, 'index'])->name('index.planeaciones');
         Route::post('create', [App\Http\Controllers\PlaneacionController::class, 'store'])->name('store.planeaciones');
         Route::patch('update/{id}', [App\Http\Controllers\PlaneacionController::class, 'update'])->name('update.planeaciones');
@@ -397,9 +398,9 @@ Route::group(['middleware' => ['auth']], function() {
         Route::get('buscador', [App\Http\Controllers\PlaneacionController::class, 'advance_planeaciones'])->name('advance_planeaciones.buscador');
 
         Route::get('buscador/faltantes', [App\Http\Controllers\PlaneacionController::class, 'advance_planeaciones_faltantes'])->name('advance_planeaciones_faltantes.buscador');
-        Route::post('monitor/board',[App\Http\Controllers\PlaneacionController::class, 'initBoard'])->name('planeacion.board');
-        Route::post('monitor/board/info-viaje',[App\Http\Controllers\PlaneacionController::class, 'infoViaje'])->name('planeacion.info');
-        Route::get('/programar-viaje',[App\Http\Controllers\PlaneacionController::class, 'programarViaje'])->name('planeacion.programar');
+        Route::post('monitor/board', [App\Http\Controllers\PlaneacionController::class, 'initBoard'])->name('planeacion.board');
+        Route::post('monitor/board/info-viaje', [App\Http\Controllers\PlaneacionController::class, 'infoViaje'])->name('planeacion.info');
+        Route::get('/programar-viaje', [App\Http\Controllers\PlaneacionController::class, 'programarViaje'])->name('planeacion.programar');
 
         Route::post('viajes/reprogramar', [App\Http\Controllers\PlaneacionController::class, 'reprogramarViajes'])->name('asignacion.reprogramar');
 
@@ -409,7 +410,7 @@ Route::group(['middleware' => ['auth']], function() {
     // ==================== B A N C O S ====================
 
 
-    Route::group(['prefix'=>'bancos','middleware' => 'finanzas:3'],function(){
+    Route::group(['prefix' => 'bancos','middleware' => 'finanzas:3'], function () {
         Route::get('/', [App\Http\Controllers\BancosController::class, 'index'])->name('index.bancos')->middleware('finanzas:3');
         Route::post('/create', [App\Http\Controllers\BancosController::class, 'store'])->name('store.bancos');
         Route::get('list', [App\Http\Controllers\BancosController::class, 'list'])->name('list.bancos');
@@ -428,7 +429,7 @@ Route::group(['middleware' => ['auth']], function() {
 
     // ==================== C U E N T A S  P O R  C O B R A R ====================
     Route::get('cuentas/cobrar', [App\Http\Controllers\CuentasCobrarController::class, 'index'])->name('index.cobrar');
-   // Route::get('cuentas/cobrar/show/{id}', [App\Http\Controllers\CuentasCobrarController::class, 'show'])->name('show.cobrar');
+    // Route::get('cuentas/cobrar/show/{id}', [App\Http\Controllers\CuentasCobrarController::class, 'show'])->name('show.cobrar');
     Route::get('cuentas/cobrar/show/{id}', [App\Http\Controllers\CuentasCobrarController::class, 'cobranza_v2'])->name('show.cobrar');
     Route::post('cuentas/cobrar/por_liquidar', [App\Http\Controllers\CuentasCobrarController::class, 'viajes_por_liquidar'])->name('por_liquidar.cobrar');
     Route::post('cuentas/cobrar/confirmar_pagos', [App\Http\Controllers\CuentasCobrarController::class, 'aplicar_pagos'])->name('confirmar.cobrar');
@@ -462,7 +463,7 @@ Route::group(['middleware' => ['auth']], function() {
 
 
     Route::get('reporteria/utilidad', [App\Http\Controllers\ReporteriaController::class, 'index_utilidad'])->name('index_utilidad.reporteria')->middleware('finanzas:3');
-    Route::post('reporteria/utilidad/ver-utilidad' ,[App\Http\Controllers\ReporteriaController::class, 'getContenedorUtilidad']);
+    Route::post('reporteria/utilidad/ver-utilidad', [App\Http\Controllers\ReporteriaController::class, 'getContenedorUtilidad']);
     Route::get('reporteria/utilidad/buscador', [App\Http\Controllers\ReporteriaController::class, 'advance_utilidad'])->name('advance_utilidad.buscador')->middleware('finanzas:3');
     Route::post('reporteria/utilidad/export', [App\Http\Controllers\ReporteriaController::class, 'export_utilidad'])->name('export_utilidad.export')->middleware('finanzas:3');
 
@@ -478,7 +479,7 @@ Route::group(['middleware' => ['auth']], function() {
     Route::get('reporteria/liquidados/cxp/buscador', [App\Http\Controllers\ReporteriaController::class, 'advance_liquidados_cxp'])->name('advance_liquidados_cxp.buscador');
     Route::post('reporteria/liquidados/cxp/export', [App\Http\Controllers\ReporteriaController::class, 'export_liquidados_cxp'])->name('liquidados_cxp.export');
 
-    Route::post('reporteria/excel/export',[App\Http\Controllers\ReporteriaController::class, 'exportGenericExcel'])->name('generic_excel');
+    Route::post('reporteria/excel/export', [App\Http\Controllers\ReporteriaController::class, 'exportGenericExcel'])->name('generic_excel');
 
     Route::get('reporteria/gastos-pagar', [App\Http\Controllers\ReporteriaController::class, 'index_gxp'])->name('index_gxp.reporteria');
     Route::get('reporteria/gastos-pagar/data', [App\Http\Controllers\ReporteriaController::class, 'getGastosPorPagarData'])->name('gxp.data');
@@ -490,8 +491,8 @@ Route::group(['middleware' => ['auth']], function() {
     Route::get('liquidaciones', [App\Http\Controllers\LiquidacionesController::class, 'index'])->name('index.liquidacion');
     Route::get('liquidaciones/historial', [App\Http\Controllers\LiquidacionesController::class, 'historialPagos'])->name('historial.liquidacion');
 
-    Route::post('liquidaciones/historial/data',[App\Http\Controllers\LiquidacionesController::class, 'historialPagosData'])->name('historialdata.liquidacion');
-    Route::post('liquidaciones/historial/pagos/comprobante',[App\Http\Controllers\LiquidacionesController::class, 'comprobantePago'])->name('comprobante.liquidacion');
+    Route::post('liquidaciones/historial/data', [App\Http\Controllers\LiquidacionesController::class, 'historialPagosData'])->name('historialdata.liquidacion');
+    Route::post('liquidaciones/historial/pagos/comprobante', [App\Http\Controllers\LiquidacionesController::class, 'comprobantePago'])->name('comprobante.liquidacion');
     Route::post('liquidaciones/viajes/pagos-operadores', [App\Http\Controllers\LiquidacionesController::class, 'getPagosOperadores'])->name('operadores.liquidacion');
     Route::post('liquidaciones/viajes/operador', [App\Http\Controllers\LiquidacionesController::class, 'getViajesOperador'])->name('operador.viajes');
     Route::post('liquidaciones/viajes/dinero_para_viaje', [App\Http\Controllers\LiquidacionesController::class, 'agregarDineroViaje'])->name('dinero.viaje');
@@ -508,21 +509,21 @@ Route::group(['middleware' => ['auth']], function() {
     Route::post('liquidaciones/update/varios', [App\Http\Controllers\LiquidacionesController::class, 'update_varios'])->name('update_varios.liquidacion');
 
     // ==================== G A S T O S  ====================
-    Route::get('gastos/generales',[App\Http\Controllers\GastosGeneralesController::class, 'index'])->name('index.gastos_generales');
-    Route::get('gastos/viajes',[App\Http\Controllers\GastosContenedoresController::class, 'indexGastosViaje'])->name('index.gastos_viajes');
-    Route::post('gastos/viajes/list',[App\Http\Controllers\GastosContenedoresController::class, 'gastosViajesList']);
+    Route::get('gastos/generales', [App\Http\Controllers\GastosGeneralesController::class, 'index'])->name('index.gastos_generales');
+    Route::get('gastos/viajes', [App\Http\Controllers\GastosContenedoresController::class, 'indexGastosViaje'])->name('index.gastos_viajes');
+    Route::post('gastos/viajes/list', [App\Http\Controllers\GastosContenedoresController::class, 'gastosViajesList']);
 
-    Route::post('gastos/viajes/confirmar-gastos',[App\Http\Controllers\GastosContenedoresController::class, 'confirmarGastos']);
+    Route::post('gastos/viajes/confirmar-gastos', [App\Http\Controllers\GastosContenedoresController::class, 'confirmarGastos']);
 
 
-    Route::post('gastos/generales/get',[App\Http\Controllers\GastosGeneralesController::class, 'getGastos'])->name('get.gastos_generales');
+    Route::post('gastos/generales/get', [App\Http\Controllers\GastosGeneralesController::class, 'getGastos'])->name('get.gastos_generales');
     Route::post('gastos/generales/create', [App\Http\Controllers\GastosGeneralesController::class, 'store'])->name('store.gastos_generales');
     Route::post('gastos/generales/delete', [App\Http\Controllers\GastosGeneralesController::class, 'eliminarGasto'])->name('delete.gastos_generales');
-    Route::post('gastos/diferir',[App\Http\Controllers\GastosGeneralesController::class, 'aplicarGastos'])->name('diferir.gastos_generales');
-    Route::get('gastos/por-pagar',[App\Http\Controllers\GastosContenedoresController::class, 'IndexPayment'])->name('index.gastos_por_pagar');
-    Route::post('gastos/getGxp',[App\Http\Controllers\GastosContenedoresController::class, 'getGxp'])->name('get.gastos_por_pagar');
-    Route::post('gastos/payGxp',[App\Http\Controllers\GastosContenedoresController::class, 'PagarGastosMultiple'])->name('pay.gastos_por_pagar');
-     Route::post('gastos/exportar', [App\Http\Controllers\GastosContenedoresController::class, 'exportarSeleccionados'])->name('gastos.exportar');
+    Route::post('gastos/diferir', [App\Http\Controllers\GastosGeneralesController::class, 'aplicarGastos'])->name('diferir.gastos_generales');
+    Route::get('gastos/por-pagar', [App\Http\Controllers\GastosContenedoresController::class, 'IndexPayment'])->name('index.gastos_por_pagar');
+    Route::post('gastos/getGxp', [App\Http\Controllers\GastosContenedoresController::class, 'getGxp'])->name('get.gastos_por_pagar');
+    Route::post('gastos/payGxp', [App\Http\Controllers\GastosContenedoresController::class, 'PagarGastosMultiple'])->name('pay.gastos_por_pagar');
+    Route::post('gastos/exportar', [App\Http\Controllers\GastosContenedoresController::class, 'exportarSeleccionados'])->name('gastos.exportar');
 
 
     // ==================== C A T A L O G O ====================
@@ -559,12 +560,12 @@ Route::post('/configmec', [App\Http\Controllers\ConfigMecController::class, 'upd
 Route::get('/cuenta-global', [App\Http\Controllers\CuentaGlobalController::class, 'show']);
 Route::post('/cuenta-global/update', [App\Http\Controllers\CuentaGlobalController::class, 'update']);
 
-    Route::get('/gps', [App\Http\Controllers\GpsCompanyController::class, 'index'])->name('gps.index');
-    Route::get('/gps/data', [App\Http\Controllers\GpsCompanyController::class, 'data']);
-    Route::post('/gps/store', [App\Http\Controllers\GpsCompanyController::class, 'store']);
-    Route::put('/gps/{id}', [App\Http\Controllers\GpsCompanyController::class, 'update']);
-    Route::delete('/gps/{id}', [App\Http\Controllers\GpsCompanyController::class, 'destroy']);
-    Route::post('/gps/restore/{id}', [App\Http\Controllers\GpsCompanyController::class, 'restore']);
+Route::get('/gps', [App\Http\Controllers\GpsCompanyController::class, 'index'])->name('gps.index');
+Route::get('/gps/data', [App\Http\Controllers\GpsCompanyController::class, 'data']);
+Route::post('/gps/store', [App\Http\Controllers\GpsCompanyController::class, 'store']);
+Route::put('/gps/{id}', [App\Http\Controllers\GpsCompanyController::class, 'update']);
+Route::delete('/gps/{id}', [App\Http\Controllers\GpsCompanyController::class, 'destroy']);
+Route::post('/gps/restore/{id}', [App\Http\Controllers\GpsCompanyController::class, 'restore']);
 
 
 
@@ -588,7 +589,7 @@ Route::put('/permisos/{id}/editar-json', [App\Http\Controllers\PermisosControlle
 Route::get('costos/mep/', [App\Http\Controllers\MEP\CostosViajeMEPController::class, 'index'])->name('index.costos_mep');
 Route::get('costos/mep/data', [App\Http\Controllers\MEP\CostosViajeMEPController::class, 'getCostosViajes'])->name('data.costos_mep');
 Route::post('costos/mep/guardar-cambio', [App\Http\Controllers\MEP\CostosViajeMEPController::class, 'guardarCambio'])->name('guardar_cambio.costos_mep');
-Route::get('costos/mep/pendientes',[App\Http\Controllers\MEP\CostosViajeMEPController::class, 'getPendientes'])->name('pendientes.costos_mep');
+Route::get('costos/mep/pendientes', [App\Http\Controllers\MEP\CostosViajeMEPController::class, 'getPendientes'])->name('pendientes.costos_mep');
 Route::get('costos/mep/pendientes/vista', [App\Http\Controllers\MEP\CostosViajeMEPController::class, 'vistaPendientes'])->name('vista_pendientes.costos_mep');
 Route::get('costos/mep/pendientes/{id}/comparacion', [App\Http\Controllers\MEP\CostosViajeMEPController::class, 'compararCostos']);
 Route::get('mep/pendientes/count', [App\Http\Controllers\MEP\CostosViajeMEPController::class, 'contarPendientes'])->name('mep.pendientes.count');
@@ -605,4 +606,3 @@ Route::post('/costos/mep/cambios/{id}/reenviar', [App\Http\Controllers\MEP\Costo
 Route::get('reporteria/viajes-por-cobrar', [App\Http\Controllers\ReporteriaController::class, 'indexVXC'])->name('index_vxc.reporteria');
 Route::get('/reporteria/viajes-por-cobrar/data', [App\Http\Controllers\ReporteriaController::class, 'dataVXC'])->name('reporteria.vxc.data');
 Route::post('/reporteria/viajes-por-cobrar/exportar', [App\Http\Controllers\ReporteriaController::class, 'exportarVXC']);
-

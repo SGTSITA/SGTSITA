@@ -19,7 +19,11 @@ use Illuminate\Support\Facades\Mail;
 use App\Traits\CommonTrait;
 use Carbon\Carbon;
 use ZipArchive;
-use Auth;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\DB;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class ExternosController extends Controller
 {
@@ -185,12 +189,12 @@ class ExternosController extends Controller
                     $pdf = $cotizacion->carta_porte;
                     $xml = $cotizacion->carta_porte_xml;
 
-                    if (\File::exists(public_path('/cotizaciones/cotizacion'.$cotizacion->id_cotizacion."/$xml"))) {
+                    if (File::exists(public_path('/cotizaciones/cotizacion'.$cotizacion->id_cotizacion."/$xml"))) {
 
                         $zip->addFile(public_path('/cotizaciones/cotizacion'.$cotizacion->id_cotizacion."/$xml"), $c['NumContenedor'].'.xml');
                     }
 
-                    if (\File::exists(public_path('/cotizaciones/cotizacion'.$cotizacion->id_cotizacion."/$pdf"))) {
+                    if (File::exists(public_path('/cotizaciones/cotizacion'.$cotizacion->id_cotizacion."/$pdf"))) {
                         $zip->addFile(public_path('/cotizaciones/cotizacion'.$cotizacion->id_cotizacion."/$pdf"), $c['NumContenedor'].'.pdf');
                     }
 
@@ -347,7 +351,7 @@ class ExternosController extends Controller
     public static function confirmarDocumentos($cotizacion)
     {
         try {
-            \Log::channel('daily')->info('Maniobra  '.$cotizacion);
+            Log::channel('daily')->info('Maniobra  '.$cotizacion);
 
             $contenedor = Cotizaciones::join('docum_cotizacion as d', 'cotizaciones.id', '=', 'd.id_cotizacion')
             ->where('cotizaciones.id', '=', $cotizacion)
@@ -356,14 +360,14 @@ class ExternosController extends Controller
             ->selectRaw('cotizaciones.*, d.num_contenedor,d.doc_eir,doc_ccp ,d.boleta_liberacion,d.doda')
             ->first();
             if ($contenedor) {
-                \Log::channel('daily')->info('Doda: '.$contenedor->doda.' / liberacion:'.$contenedor->boleta_liberacion);
+                Log::channel('daily')->info('Doda: '.$contenedor->doda.' / liberacion:'.$contenedor->boleta_liberacion);
 
             }
 
 
 
             if ($contenedor && $contenedor->doda != null && $contenedor->boleta_liberacion != null) {
-                \Log::channel('daily')->info('Doda2: '.$contenedor->doda.' / liberacion2:'.$contenedor->boleta_liberacion);
+                Log::channel('daily')->info('Doda2: '.$contenedor->doda.' / liberacion2:'.$contenedor->boleta_liberacion);
                 $cotizacionC = Cotizaciones::where('id', $cotizacion)->first();
                 $cotizacionC->estatus = (is_null($cotizacionC->id_proveedor)) ? 'NO ASIGNADA' : 'Pendiente';
                 $cliente = Client::where('id', $cotizacionC->id_cliente)->first();
@@ -376,7 +380,7 @@ class ExternosController extends Controller
 
             }
         } catch (\Throwable $t) {
-            \Log::channel('daily')->info('Maniobra no se pudo enviar al admin. id: '.$cotizacion.'. '.$t->getMessage());
+            Log::channel('daily')->info('Maniobra no se pudo enviar al admin. id: '.$cotizacion.'. '.$t->getMessage());
         }
 
     }
@@ -514,7 +518,7 @@ class ExternosController extends Controller
             ->send(new \App\Mail\CustomMessageMail($r->subject, $r->message, $attachment));
             return response()->json(["TMensaje" => "success", "Titulo" => "Mensaje enviado correctamente","Mensaje" => "Se ha enviado mensaje con los archivos seleccionados"]);
 
-        } catch (\Trhowable $t) {
+        } catch (\Throwable $t) {
             return response()->json(["TMensaje" => "error", "Titulo" => "Mensaje no enviado","Mensaje" => "Ocurrio un error mientras enviabamos su mensaje: ".$t->getMessage()]);
         }
     }
@@ -523,7 +527,7 @@ class ExternosController extends Controller
     {
         $path = public_path('cotizaciones/cotizacion'.$id.'/'.$file);
 
-        if (\File::exists($path)) {
+        if (File::exists($path)) {
             $finfo = finfo_open(FILEINFO_MIME_TYPE); // Abrir la base de datos de tipos MIME
             $mimeType = finfo_file($finfo, $path);
             finfo_close($finfo);
@@ -558,6 +562,7 @@ class ExternosController extends Controller
             $documentos = DocumCotizacion::with('Cotizacion')
                 ->where('num_contenedor', $cont)
                 ->first();
+
 
             $folderId = $documentos->id_cotizacion;  //si se guarda con id cotizacion , buscamos con esa clave
 
@@ -636,7 +641,7 @@ class ExternosController extends Controller
     public function filePropertiescoordenadas($id, $file, $title)
     {
         $path = public_path('coordenadas/'.$id.'/'.$file);
-        if (\File::exists($path)) {
+        if (File::exists($path)) {
             return [
                 "folder" => $id,
                 "filePath" => $file,
@@ -1073,7 +1078,7 @@ class ExternosController extends Controller
                    ->first();
 
 
-        $cotiInfoManiobra =  \DB::table('docum_cotizacion')
+        $cotiInfoManiobra =  DB::table('docum_cotizacion')
     ->join('cotizaciones', 'docum_cotizacion.id_cotizacion', '=', 'cotizaciones.id')
     ->join('subclientes', 'subclientes.id', '=', 'cotizaciones.sub_cliente_local')
     ->join('clients', 'clients.id', '=', 'subclientes.id_cliente')
@@ -1157,7 +1162,7 @@ class ExternosController extends Controller
     public function cambiarestatuslocal(Request $request)
     {
         try {
-            \DB::beginTransaction();
+            DB::beginTransaction();
 
 
             $cotizacion = Cotizaciones::where('id', $request->idCotizacion)->first();
@@ -1165,11 +1170,11 @@ class ExternosController extends Controller
             $cotizacion->estatus_maniobra_id = $request->estatus_id;
             $cotizacion->save();
 
-            \DB::commit();
+            DB::commit();
 
             return response()->json(["Titulo" => "Estatus actualizado","Mensaje" => "El estatus de la maniobra se actualizó correctamente","TMensaje" => "success"]);
         } catch (\Throwable $t) {
-            \DB::rollBack();
+            DB::rollBack();
             return response()->json(["Titulo" => "Error al actualizar estatus","Mensaje" => "Ocurrió un error al actualizar el estatus: ".$t->getMessage(),"TMensaje" => "error"]);
         }
 

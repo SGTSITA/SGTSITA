@@ -514,7 +514,7 @@ async function abrirModalWhatsapp() {
             return;
         }
 
-        waLinkGenerado = data.link; 
+        waLinkGenerado = data.link;
         waPasswordGenerado = data.password;
 
         cargarDatosModalWhatsapp();
@@ -541,22 +541,32 @@ if (btnCancelarWhatsApp) {
 }
 
 function EnviarWhatsappGenerados() {
+    let messageadd = '';
+    let messageadd2 = '';
     let mensaje = `
 Fecha: ${wa_fecha.value}
 Referencia: ${wa_referencia.value}
-Horario: ${wa_hora_inicio.value} - ${wa_hora_fin.value}
+Horario: ${wa_hora_inicio.value} - ${wa_hora_fin.value}`.trim();
+
+    if (archivosData.cotizacion.tipo_viaje_seleccion == 'local') {
+        messageadd = `
 Terminal: ${wa_terminal.value}
 
 ${wa_cambio_sello.checked ? '*CAMBIO DE SELLO*' : ''}
 
-${wa_observaciones.value}
+${wa_observaciones.value}`.trim();
+    } else {
+        messageadd = '';
+    }
 
+    messageadd2 = `
 Documentos:
 ${waLinkGenerado}
 Contraseña de acceso: ${waPasswordGenerado}
     `.trim();
 
-    const url = `https://wa.me/?text=${encodeURIComponent(mensaje)}`;
+    let messagefinal = mensaje + '\n\n' + messageadd + '\n\n' + messageadd2;
+    const url = `https://wa.me/?text=${encodeURIComponent(messagefinal)}`;
     window.open(url, '_blank');
 }
 
@@ -567,6 +577,17 @@ function cargarDatosModalWhatsapp() {
 
     document.getElementById('wa_hora_inicio').value = data.cotizacion.bloque_hora_i_local ?? '';
     document.getElementById('wa_hora_fin').value = data.cotizacion.bloque_hora_f_local ?? '';
+    if (data.cotizacion.tipo_viaje_seleccion == 'local') {
+        document.getElementById('div_terminal_whatsapp').classList.remove('d-none');
+        document.getElementById('div_servicios_whatsapp').classList.remove('d-none');
+        document.getElementById('div_observaciones_whatsapp').classList.remove('d-none');
+    } else {
+        document.getElementById('wa_hora_inicio').value = data.cotizacion.bloque_hora_i ?? '';
+        document.getElementById('wa_hora_fin').value = data.cotizacion.bloque_hora_f ?? '';
+        document.getElementById('div_terminal_whatsapp').classList.add('d-none');
+        document.getElementById('div_servicios_whatsapp').classList.add('d-none');
+        document.getElementById('div_observaciones_whatsapp').classList.add('d-none');
+    }
     document.getElementById('wa_terminal').value = data.terminal ?? '';
     document.getElementById('wa_cambio_sello').checked = !!data.cotizacion.confirmacion_sello;
     document.getElementById('wa_observaciones').value = data.cotizacion.observaciones ?? '';

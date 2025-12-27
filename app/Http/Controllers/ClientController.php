@@ -8,16 +8,12 @@ use App\Models\User;
 use App\Models\Empresas;
 use App\Models\ClientEmpresa;
 use Illuminate\Http\Request;
-use Mediconesystems\LivewireDatatables\Column;
-use Mediconesystems\LivewireDatatables\NumberColumn;
-use Mediconesystems\LivewireDatatables\DateColumn;
-use Mediconesystems\LivewireDatatables\Http\Livewire\LivewireDatatable;
-use Session;
-use DB;
-use Log;
-use Hash;
-use Mail;
-use Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Auth;
 
 /**
  * Class ClientController
@@ -131,6 +127,7 @@ class ClientController extends Controller
      */
     public function get_list()
     {
+
         $clientes = Client::join('client_empresa as ce', 'clients.id', '=', 'ce.id_client')
                             ->where('ce.id_empresa', Auth::User()->id_empresa)
                             ->where('is_active', 1)
@@ -317,7 +314,7 @@ class ClientController extends Controller
         return response()->json(["TMensaje" => "success","Mensaje" => "SubCliente modificado con exito","Titulo" => "Proceso exitoso!"]);
 
         Session::flash('edit', 'Se ha editado sus datos con exito');
-        return redirect()->route('clients.index')
+        return redirect()->route('clientes.index')
             ->with('success', 'Client updated successfully');
     }
 
@@ -347,7 +344,7 @@ class ClientController extends Controller
         $client = Client::find($id)->delete();
 
         Session::flash('delete', 'Se ha eliminado sus datos con exito');
-        return redirect()->route('clients.index')
+        return redirect()->route('clientes.index')
             ->with('success', 'Client deleted successfully');
     }
 

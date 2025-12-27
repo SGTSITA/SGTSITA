@@ -11,6 +11,7 @@ use App\Http\Controllers\Controller;
 use App\Traits\CommonTrait;
 use Illuminate\Http\Request;
 use ZipArchive;
+use Illuminate\Support\Facades\File;
 
 class DocsController extends Controller
 {
@@ -60,40 +61,10 @@ class DocsController extends Controller
         if (is_string($columns)) {
             $columns = json_decode($columns, true);
         }
-        $DocDocumento = Cotizaciones::join('docum_cotizacion as d', 'cotizaciones.id', '=', 'd.id_cotizacion')
-         ->join('estatus_maniobras as estat', 'estat.id', '=', 'cotizaciones.estatus_maniobra_id')
-         ->join('subclientes', 'subclientes.id', '=', 'cotizaciones.sub_cliente_local')
-         ->join('clients', 'clients.id', '=', 'subclientes.id_cliente')
-         ->join('empresas', 'empresas.id', '=', 'cotizaciones.empresa_local')
-         ->join('proveedores', 'proveedores.id', '=', 'cotizaciones.transportista_local')
-          ->where('d.id', '=', $acceso->documento_id)
-         ->whereIn('tipo_viaje_seleccion', ['local', 'local_to_foraneo'])
-         ->where('jerarquia', '!=', 'Secundario')
-            ->select([
-             'cotizaciones.*',
 
-             // docum
-             'd.num_contenedor',
-             'd.doc_eir',
-             'd.doc_ccp',
-             'd.boleta_liberacion',
-             'd.doda',
-             'd.foto_patio',
-             'd.boleta_patio',
-             'd.terminal',
-             'd.num_autorizacion',
-
-             // estatus
-             'estat.nombre as estatus_maniobra',
-
-             // NUEVOS
-             'empresas.nombre as empresa',
-             'proveedores.nombre as proveedor',
-             'clients.nombre as cliente',
-             'subclientes.nombre as subcliente',
-         ])
-         ->first();
         //$DocDocumento = DocumCotizacion::with('Cotizacion')->where('id', '=', $acceso->documento_id)->first();
+
+        $DocDocumento = $this->documentosGet($acceso->documento_id);
 
         $documentos = $this->getFilesByColumns(
             $acceso->documento_id,
@@ -102,6 +73,83 @@ class DocsController extends Controller
 
         //dd($DocDocumento);
         return view("mep.docs.documentos", compact('token', 'documentos', 'DocDocumento'));
+    }
+
+    public function documentosGet($documento_id)
+    {
+        $DocDocumento = Cotizaciones::join('docum_cotizacion as d', 'cotizaciones.id', '=', 'd.id_cotizacion')
+          ->join('estatus_maniobras as estat', 'estat.id', '=', 'cotizaciones.estatus_maniobra_id')
+          ->join('subclientes', 'subclientes.id', '=', 'cotizaciones.sub_cliente_local')
+          ->join('clients', 'clients.id', '=', 'subclientes.id_cliente')
+          ->join('empresas', 'empresas.id', '=', 'cotizaciones.empresa_local')
+          ->join('proveedores', 'proveedores.id', '=', 'cotizaciones.transportista_local')
+           ->where('d.id', '=', $documento_id)
+          ->whereIn('tipo_viaje_seleccion', ['local', 'local_to_foraneo'])
+          ->where('jerarquia', '!=', 'Secundario')
+             ->select([
+              'cotizaciones.*',
+
+              // docum
+              'd.num_contenedor',
+              'd.doc_eir',
+              'd.doc_ccp',
+              'd.boleta_liberacion',
+              'd.doda',
+              'd.foto_patio',
+              'd.boleta_patio',
+              'd.terminal',
+              'd.num_autorizacion',
+
+              // estatus
+              'estat.nombre as estatus_maniobra',
+
+              // NUEVOS
+              'empresas.nombre as empresa',
+              'proveedores.nombre as proveedor',
+              'clients.nombre as cliente',
+              'subclientes.nombre as subcliente',
+          ])
+          ->first();
+
+        if (!$DocDocumento) { //buscar en cotizaciones de manera normal , tipo foraneo
+            $DocDocumento = Cotizaciones::join('docum_cotizacion as d', 'cotizaciones.id', '=', 'd.id_cotizacion')
+            ->join('subclientes', 'subclientes.id', '=', 'cotizaciones.id_subcliente')
+            ->join('clients', 'clients.id', '=', 'subclientes.id_cliente')
+            ->join('empresas', 'empresas.id', '=', 'cotizaciones.id_empresa')
+            ->join('proveedores', 'proveedores.id', '=', 'cotizaciones.id_proveedor')
+             ->where('d.id', '=', $documento_id)
+            ->whereIn('tipo_viaje_seleccion', ['foraneo', 'foraneo_to_local'])
+            ->where('jerarquia', '!=', 'Secundario')
+               ->select([
+                'cotizaciones.*',
+
+                // docum
+                'd.num_contenedor',
+                'd.doc_eir',
+                'd.doc_ccp',
+                'd.boleta_liberacion',
+                'd.doda',
+                'd.foto_patio',
+                'd.boleta_patio',
+                'd.terminal',
+                'd.num_autorizacion',
+
+
+
+                // NUEVOS
+                'empresas.nombre as empresa',
+                'proveedores.nombre as proveedor',
+                'clients.nombre as cliente',
+                'subclientes.nombre as subcliente',
+            ])
+            ->first();
+
+
+
+        }
+
+        return $DocDocumento;
+
     }
 
     public function documentos($token)
@@ -291,7 +339,7 @@ class DocsController extends Controller
         $clave = array_search($title, $columnsbycode, true);
         $path = public_path('cotizaciones/cotizacion'.$id.'/'.$file);
 
-        if (\File::exists($path)) {
+        if (File::exists($path)) {
             $finfo = finfo_open(FILEINFO_MIME_TYPE); // Abrir la base de datos de tipos MIME
             $mimeType = finfo_file($finfo, $path);
             finfo_close($finfo);

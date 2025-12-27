@@ -40,12 +40,12 @@
                         <input type="time" class="form-control" id="wa_hora_fin">
                     </div>
 
-                    <div class="col-md-12">
+                    <div class="d-none col-md-12" id="div_terminal_whatsapp">
                         <label class="form-label">Terminal</label>
                         <input type="text" class="form-control" id="wa_terminal">
                     </div>
 
-                    <div class="col-md-12">
+                    <div class="d-none col-md-12" id="div_servicios_whatsapp">
                         <div class="form-check mt-2">
                             <input class="form-check-input" type="checkbox" id="wa_cambio_sello">
                             <label class="form-check-label">
@@ -54,7 +54,7 @@
                         </div>
                     </div>
 
-                    <div class="col-md-12">
+                    <div class="d-none col-md-12" id="div_observaciones_whatsapp">
                         <label class="form-label">Observaciones</label>
                         <textarea class="form-control" rows="3" id="wa_observaciones"></textarea>
                     </div>
