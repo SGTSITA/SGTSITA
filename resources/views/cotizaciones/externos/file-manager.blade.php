@@ -17,12 +17,8 @@
                         <span class="path1"></span>
                         <span class="path2"></span>
                     </i>
-                    <input
-                        type="text"
-                        data-kt-docs-table-filter="search"
-                        class="form-control form-control-solid w-250px ps-15"
-                        placeholder="Buscar archivo"
-                    />
+                    <input type="text" data-kt-docs-table-filter="search"
+                        class="form-control form-control-solid w-250px ps-15" placeholder="Buscar archivo" />
                 </div>
                 <!--end::Search-->
 
@@ -50,7 +46,15 @@
                         </i>
                         Enviar archivos
                     </button>
-                    <button type="button" class="btn btn-sm btn-success ms-2" name="btnWhatsApp" id="btnWhatsApp">
+                    {{-- <button type="button" class="btn btn-sm btn-success ms-2" name="btnWhatsApp" id="btnWhatsApp">
+                        <i class="ki-duotone ki-whatsapp fs-2">
+                            <span class="path1"></span>
+                            <span class="path2"></span>
+                        </i>
+                        WhatsApp
+                    </button> --}}
+                    <button type="button" class="btn btn-sm btn-success ms-2" name="btnWhatsAppgrupo" id="btnWhatsAppgrupo"
+                        onclick='abrirModalWhatsapp()'>
                         <i class="ki-duotone ki-whatsapp fs-2">
                             <span class="path1"></span>
                             <span class="path2"></span>
@@ -68,13 +72,8 @@
                     <tr class="text-start text-gray-500 fw-bold fs-7 text-uppercase gs-0">
                         <th class="w-10px pe-2">
                             <div class="form-check form-check-sm form-check-custom form-check-solid me-3">
-                                <input
-                                    class="form-check-input"
-                                    type="checkbox"
-                                    data-kt-check="true"
-                                    data-kt-check-target="#kt_datatable_example_1 .form-check-input"
-                                    value="1"
-                                />
+                                <input class="form-check-input" type="checkbox" data-kt-check="true"
+                                    data-kt-check-target="#kt_datatable_example_1 .form-check-input" value="1" />
                             </div>
                         </th>
                         <th>Archivo</th>
@@ -92,31 +91,23 @@
     </div>
     @include('cotizaciones.externos.modal_fileuploader')
     @include('cotizaciones.externos.email_compose')
+    @include('cotizaciones.externos.modal_whatsapp-compartir')
 @endsection
 
 @push('javascript')
     <script src="{{ asset('js/sgt/common.js') }}?v={{ filemtime(public_path('js/sgt/common.js')) }}"></script>
     <link href="{{ asset('assets/metronic/fileuploader/font/font-fileuploader.css') }}" rel="stylesheet" />
-    <link
-        href="{{ asset('assets/metronic/fileuploader/jquery.fileuploader.min.css') }}"
-        media="all"
-        rel="stylesheet"
-    />
-    <link
-        href="{{ asset('assets/metronic/fileuploader/jquery.fileuploader-theme-dragdrop.css') }}"
-        media="all"
-        rel="stylesheet"
-    />
+    <link href="{{ asset('assets/metronic/fileuploader/jquery.fileuploader.min.css') }}" media="all" rel="stylesheet" />
+    <link href="{{ asset('assets/metronic/fileuploader/jquery.fileuploader-theme-dragdrop.css') }}" media="all"
+        rel="stylesheet" />
+    <script src="{{ asset('assets/metronic/fileuploader/jquery.fileuploader.min.js') }}" type="text/javascript"></script>
+    <script src="{{ asset('assets/metronic/fileuploader/cotizacion-cliente-externo.js') }}" type="text/javascript"></script>
     <script
-        src="{{ asset('assets/metronic/fileuploader/jquery.fileuploader.min.js') }}"
-        type="text/javascript"
-    ></script>
+        src="{{ asset('/assets/metronic/js/custom/apps/inbox/compose.js') }}?v={{ filemtime(public_path('/assets/metronic/js/custom/apps/inbox/compose.js')) }}">
+    </script>
     <script
-        src="{{ asset('assets/metronic/fileuploader/cotizacion-cliente-externo.js') }}"
-        type="text/javascript"
-    ></script>
-    <script src="{{ asset('/assets/metronic/js/custom/apps/inbox/compose.js') }}?v={{ filemtime(public_path('/assets/metronic/js/custom/apps/inbox/compose.js')) }}"></script>
-    <script src="{{ asset('js/sgt/cotizaciones/file-manager.js') }}?v={{ filemtime(public_path('js/sgt/cotizaciones/file-manager.js')) }}"></script>
+        src="{{ asset('js/sgt/cotizaciones/file-manager.js') }}?v={{ filemtime(public_path('js/sgt/cotizaciones/file-manager.js')) }}">
+    </script>
     <script>
         $(document).ready(() => {
             adjuntarDocumentos();

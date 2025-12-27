@@ -20,42 +20,45 @@ use App\Models\DocumCotizacion;
 use App\Models\DineroContenedor;
 use App\Traits\CommonTrait as common;
 use Illuminate\Http\Request;
-use DB;
-use Log;
-use Session;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Validator;
 use Carbon\Carbon;
 
 class PlaneacionController extends Controller
 {
-    public function index(){
+    public function index()
+    {
         return view('planeacion.index');
     }
 
-    public function programarViaje(){
-        $proveedores = Proveedor::catalogoPrincipal()->where('id_empresa' ,'=',auth()->user()->id_empresa)
+    public function programarViaje()
+    {
+        $proveedores = Proveedor::catalogoPrincipal()->where('id_empresa', '=', auth()->user()->id_empresa)
         ->wherein('tipo', ['servicio de burreo', 'servicio de viaje'])
         ->get();
 
-        $equipos = Equipo::where('id_empresa' ,'=',auth()->user()->id_empresa)->get();
-        $operadores = Operador::where('id_empresa' ,'=',auth()->user()->id_empresa)->get();
-        $bancos = Bancos::where('id_empresa' ,'=',auth()->user()->id_empresa)->where('saldo', '>', '0')->get();
+        $equipos = Equipo::where('id_empresa', '=', auth()->user()->id_empresa)->get();
+        $operadores = Operador::where('id_empresa', '=', auth()->user()->id_empresa)->get();
+        $bancos = Bancos::where('id_empresa', '=', auth()->user()->id_empresa)->where('saldo', '>', '0')->get();
 
-        return view('planeacion.planeacion-step',compact('equipos', 'operadores',  'proveedores','bancos'));
+        return view('planeacion.planeacion-step', compact('equipos', 'operadores', 'proveedores', 'bancos'));
     }
 
-    public function anularPlaneacion(Request $request){
-        try{
+    public function anularPlaneacion(Request $request)
+    {
+        try {
 
             DB::beginTransaction();
             $cotizaciones = Cotizaciones::find($request->idCotizacion);
-            $documenCotizacion = DocumCotizacion::where('id_cotizacion',$request->idCotizacion)->first(); //primero buscamos el id contenedor
-            $asignaciones = Asignaciones::where('id_contenedor','=',$documenCotizacion->id)->first(); //corregir mandar id contenenedor, y no cotizacion???
+            $documenCotizacion = DocumCotizacion::where('id_cotizacion', $request->idCotizacion)->first(); //primero buscamos el id contenedor
+            $asignaciones = Asignaciones::where('id_contenedor', '=', $documenCotizacion->id)->first(); //corregir mandar id contenenedor, y no cotizacion???
 
-            if(!is_null($asignaciones->id_operador)){
-                Bancos::where('id' ,'=',$asignaciones->id_banco1_dinero_viaje)->update(["saldo" => DB::raw("saldo + ". $asignaciones->dinero_viaje)]);
+            if (!is_null($asignaciones->id_operador)) {
+                Bancos::where('id', '=', $asignaciones->id_banco1_dinero_viaje)->update(["saldo" => DB::raw("saldo + ". $asignaciones->dinero_viaje)]);
 
-                $banco = new BancoDineroOpe;
+                $banco = new BancoDineroOpe();
                 $banco->id_operador = $asignaciones->id_operador;
 
                 $banco->monto1 = $asignaciones->dinero_viaje;
@@ -79,8 +82,8 @@ class PlaneacionController extends Controller
 
             }
 
-            if(!is_null($cotizaciones->referencia_full)){
-                $contenedor2 = Cotizaciones::where('referencia_full',$cotizaciones->referencia_full)->update(["estatus_planeacion" => 0]);
+            if (!is_null($cotizaciones->referencia_full)) {
+                $contenedor2 = Cotizaciones::where('referencia_full', $cotizaciones->referencia_full)->update(["estatus_planeacion" => 0]);
             }
 
             $cotizaciones->estatus = 'Aprobada';
@@ -89,17 +92,17 @@ class PlaneacionController extends Controller
 
             //validar si ay gastos operador y eliminarlos y si hay pagados hacer devolucion de banco
 
-            $gastosOperador = GastosOperadores::where('id_asignacion',$asignaciones->id)
+            $gastosOperador = GastosOperadores::where('id_asignacion', $asignaciones->id)
             ->where('estatus', 'Pagado')
             ->where('id_banco', '!=', null)
 
             ->get();
 
             //recorrer los gastos pagados para hacer devolucion
-            foreach($gastosOperador as $gasto){
-                Bancos::where('id' ,'=',$gasto->id_banco)->update(["saldo" => DB::raw("saldo + ". $gasto->cantidad)]);
+            foreach ($gastosOperador as $gasto) {
+                Bancos::where('id', '=', $gasto->id_banco)->update(["saldo" => DB::raw("saldo + ". $gasto->cantidad)]);
 
-                $banco = new BancoDineroOpe;
+                $banco = new BancoDineroOpe();
                 $banco->id_operador = $asignaciones->id_operador;
 
                 $banco->monto1 = $gasto->cantidad;
@@ -125,22 +128,22 @@ class PlaneacionController extends Controller
 
 
 
-            GastosOperadores::where('id_asignacion',$asignaciones->id)->delete();
+            GastosOperadores::where('id_asignacion', $asignaciones->id)->delete();
 
 
 
-            Coordenadas::where('id_asignacion',$asignaciones->id)->delete();
+            Coordenadas::where('id_asignacion', $asignaciones->id)->delete();
             $asignaciones->delete();
 
-            DineroContenedor::where('id_contenedor',$documenCotizacion->id)->delete();
+            DineroContenedor::where('id_contenedor', $documenCotizacion->id)->delete();
 
 
-            ViaticosOperador::where('id_cotizacion',$cotizaciones->id)->delete();
+            ViaticosOperador::where('id_cotizacion', $cotizaciones->id)->delete();
 
             DB::commit();
 
             return response()->json(["Titulo" => "Programa cancelado","Mensaje" => "Se canceló el programa del viaje correctamente", "TMensaje" => "success"]);
-        }catch(\Throwable $t){
+        } catch (\Throwable $t) {
             DB::rollback();
             return response()->json(["Titulo" => "Error","Mensaje" => "Error 500: ".$t->getMessage(), "TMensaje" => "error"]);
 
@@ -149,16 +152,18 @@ class PlaneacionController extends Controller
 
     }
 
-    public function finalizarViaje(Request $request){
+    public function finalizarViaje(Request $request)
+    {
         $cotizaciones = Cotizaciones::find($request->idCotizacion);
         $cotizaciones->estatus = 'Finalizado';
         $cotizaciones->update();
         return response()->json(["Titulo" => "Viaje finalizado","Mensaje" => "Has finalizado correctamente el viaje", "TMensaje" => "success"]);
     }
 
-    public function infoViaje(Request $request){
-        $asignaciones = Asignaciones::where('id_contenedor','=',$request->id)->first();
-        $cotizacion = Cotizaciones::where('id','=',$request->id)->first();
+    public function infoViaje(Request $request)
+    {
+        $asignaciones = Asignaciones::where('id_contenedor', '=', $request->id)->first();
+        $cotizacion = Cotizaciones::where('id', '=', $request->id)->first();
 
         $documentos = Cotizaciones::query()
         ->where('cotizaciones.id', $request->id)
@@ -191,7 +196,7 @@ class PlaneacionController extends Controller
             'chasis.imei as imei_chasis',
             DB::raw("CASE WHEN asignaciones.id_proveedor IS NULL THEN asignaciones.id_operador ELSE asignaciones.id_proveedor END as beneficiario_id"),
             DB::raw("CASE WHEN asignaciones.id_proveedor IS NULL THEN 'Propio' ELSE 'Subcontratado' END as tipo_contrato")
-            )
+        )
         ->get();
 
 
@@ -225,94 +230,91 @@ class PlaneacionController extends Controller
             'equipos.imei as imei_camion',
             'chasis.id_equipo as id_equipo_chasis',
             'chasis.imei as imei_chasis',
-             DB::raw("CASE WHEN asignaciones.id_proveedor IS NULL THEN asignaciones.id_operador ELSE asignaciones.id_proveedor END as beneficiario_id"),
-        DB::raw("CASE WHEN asignaciones.id_proveedor IS NULL THEN 'Propio' ELSE 'Subcontratado' END as tipo_contrato")
-            )
+            DB::raw("CASE WHEN asignaciones.id_proveedor IS NULL THEN asignaciones.id_operador ELSE asignaciones.id_proveedor END as beneficiario_id"),
+            DB::raw("CASE WHEN asignaciones.id_proveedor IS NULL THEN 'Propio' ELSE 'Subcontratado' END as tipo_contrato")
+        )
         ->get();
 
 
 
-      $beneficiariosSubquery = DB::table(function ($query) {
-    $query->select(
-        'operadores.id',
-        'operadores.nombre',
-        'operadores.telefono',
-        'empresas.rfc as RFC',
-        DB::raw("'Propio' as tipo_contrato"),
-        'operadores.id_empresa',
-        'empresas.nombre as nombreempresa'
-    )
-    ->from('operadores')
-    ->join('empresas', 'empresas.id', '=', 'operadores.id_empresa')
-
-    ->union(
-        DB::table('proveedores')
-            ->select(
-                'proveedores.id',
-                'proveedores.nombre',
-                'proveedores.telefono',
-                'proveedores.RFC',
-                DB::raw("'Subcontratado' as tipo_contrato"),
-                'proveedores.id_empresa',
+        $beneficiariosSubquery = DB::table(function ($query) {
+            $query->select(
+                'operadores.id',
+                'operadores.nombre',
+                'operadores.telefono',
+                'empresas.rfc as RFC',
+                DB::raw("'Propio' as tipo_contrato"),
+                'operadores.id_empresa',
                 'empresas.nombre as nombreempresa'
             )
-            ->join('empresas', 'empresas.id', '=', 'proveedores.id_empresa')
-    );
-});
+            ->from('operadores')
+            ->join('empresas', 'empresas.id', '=', 'operadores.id_empresa')
 
-$InfoViajeExtra = Cotizaciones::query()
-    ->where('cotizaciones.id', $request->id)
-    ->leftJoin('docum_cotizacion', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
-    ->leftJoin('asignaciones', 'docum_cotizacion.id', '=', 'asignaciones.id_contenedor')
-    ->leftJoin('clients', 'cotizaciones.id_cliente', '=', 'clients.id')
-    ->leftJoin('equipos', 'asignaciones.id_camion', '=', 'equipos.id')
-    ->leftJoin('equipos as chasis', 'asignaciones.id_chasis', '=', 'chasis.id')
+            ->union(
+                DB::table('proveedores')
+                    ->select(
+                        'proveedores.id',
+                        'proveedores.nombre',
+                        'proveedores.telefono',
+                        'proveedores.RFC',
+                        DB::raw("'Subcontratado' as tipo_contrato"),
+                        'proveedores.id_empresa',
+                        'empresas.nombre as nombreempresa'
+                    )
+                    ->join('empresas', 'empresas.id', '=', 'proveedores.id_empresa')
+            );
+        });
 
-    // ✅ join correcto con 3 parámetros (sin closure)
-    ->leftJoinSub(
-        $beneficiariosSubquery,
-        'beneficiarios',
-        function ($join) {
-            $join->on(
-                DB::raw("beneficiarios.id"),
-                '=',
-                DB::raw("(CASE WHEN asignaciones.id_proveedor IS NULL THEN asignaciones.id_operador ELSE asignaciones.id_proveedor END)")
+        $InfoViajeExtra = Cotizaciones::query()
+            ->where('cotizaciones.id', $request->id)
+            ->leftJoin('docum_cotizacion', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
+            ->leftJoin('asignaciones', 'docum_cotizacion.id', '=', 'asignaciones.id_contenedor')
+            ->leftJoin('clients', 'cotizaciones.id_cliente', '=', 'clients.id')
+            ->leftJoin('equipos', 'asignaciones.id_camion', '=', 'equipos.id')
+            ->leftJoin('equipos as chasis', 'asignaciones.id_chasis', '=', 'chasis.id')
+
+            // ✅ join correcto con 3 parámetros (sin closure)
+            ->leftJoinSub(
+                $beneficiariosSubquery,
+                'beneficiarios',
+                function ($join) {
+                    $join->on(
+                        DB::raw("beneficiarios.id"),
+                        '=',
+                        DB::raw("(CASE WHEN asignaciones.id_proveedor IS NULL THEN asignaciones.id_operador ELSE asignaciones.id_proveedor END)")
+                    )
+                    ->whereRaw("beneficiarios.tipo_contrato = CASE WHEN asignaciones.id_proveedor IS NULL THEN 'Propio' ELSE 'Subcontratado' END");
+                }
             )
-            ->whereRaw("beneficiarios.tipo_contrato = CASE WHEN asignaciones.id_proveedor IS NULL THEN 'Propio' ELSE 'Subcontratado' END");
-        }
-    )
 
-    ->select(
-        'cotizaciones.id',
-        'clients.nombre as cliente',
-        'docum_cotizacion.num_contenedor',
-
-        'cotizaciones.referencia_full',
-    'cotizaciones.cp_contacto_entrega',
-
-        'asignaciones.id_proveedor',
-        'asignaciones.fecha_inicio',
-        'asignaciones.fecha_fin',
-        'equipos.placas as placas_camion',
-        'equipos.id_equipo as id_equipo_camion',
-        'equipos.marca as marca_camion',
-        'equipos.imei as imei_camion',
-        'chasis.id_equipo as id_equipo_chasis',
-        'chasis.imei as imei_chasis',
-        DB::raw("CASE WHEN asignaciones.id_proveedor IS NULL THEN asignaciones.id_operador ELSE asignaciones.id_proveedor END as beneficiario_id"),
-        DB::raw("CASE WHEN asignaciones.id_proveedor IS NULL THEN 'Propio' ELSE 'Subcontratado' END as tipo_contrato"),
-
-        'beneficiarios.nombre as beneficiario_nombre',
-        'beneficiarios.telefono as beneficiario_telefono',
-        'beneficiarios.RFC as beneficiario_rfc',
-        'beneficiarios.nombreempresa as empresa_beneficiario'
-    )
-    ->get();
+            ->select(
+                'cotizaciones.id',
+                'clients.nombre as cliente',
+                'docum_cotizacion.num_contenedor',
+                'cotizaciones.referencia_full',
+                'cotizaciones.cp_contacto_entrega',
+                'asignaciones.id_proveedor',
+                'asignaciones.fecha_inicio',
+                'asignaciones.fecha_fin',
+                'equipos.placas as placas_camion',
+                'equipos.id_equipo as id_equipo_camion',
+                'equipos.marca as marca_camion',
+                'equipos.imei as imei_camion',
+                'chasis.id_equipo as id_equipo_chasis',
+                'chasis.imei as imei_chasis',
+                DB::raw("CASE WHEN asignaciones.id_proveedor IS NULL THEN asignaciones.id_operador ELSE asignaciones.id_proveedor END as beneficiario_id"),
+                DB::raw("CASE WHEN asignaciones.id_proveedor IS NULL THEN 'Propio' ELSE 'Subcontratado' END as tipo_contrato"),
+                'beneficiarios.nombre as beneficiario_nombre',
+                'beneficiarios.telefono as beneficiario_telefono',
+                'beneficiarios.RFC as beneficiario_rfc',
+                'beneficiarios.nombreempresa as empresa_beneficiario'
+            )
+            ->get();
 
 
 
         $misDocumentos =
-        $documentos->map(function($cot){
+        $documentos->map(function ($cot) {
             $numContenedor = $cot->num_contenedor;
             $docCCP = $cot->doc_ccp;
             $doda = $cot->doda;
@@ -323,51 +325,51 @@ $InfoViajeExtra = Cotizaciones::query()
             $docEir = $cot->doc_eir;
             $tipo = "--";
 
-            if(!is_null($cot->referencia_full)){
-                    $secundaria = Cotizaciones::where('referencia_full', $cot->referencia_full)
-                    ->where('jerarquia', 'Secundario')
-                    ->with('DocCotizacion.Asignaciones')
-                    ->first();
+            if (!is_null($cot->referencia_full)) {
+                $secundaria = Cotizaciones::where('referencia_full', $cot->referencia_full)
+                ->where('jerarquia', 'Secundario')
+                ->with('DocCotizacion.Asignaciones')
+                ->first();
 
-                    $docCCP = ($docCCP && $secundaria->DocCotizacion->doc_ccp) ? true : false;
-                    $doda = ($doda && $secundaria->DocCotizacion->doda) ? true : false;
-                    $docEir = (!is_null($docEir) && !is_null($secundaria->DocCotizacion->doc_eir)) ? true : false;
+                $docCCP = ($docCCP && $secundaria->DocCotizacion->doc_ccp) ? true : false;
+                $doda = ($doda && $secundaria->DocCotizacion->doda) ? true : false;
+                $docEir = (!is_null($docEir) && !is_null($secundaria->DocCotizacion->doc_eir)) ? true : false;
 
-                    $boletaLiberacion = ($boletaLiberacion && $secundaria->DocCotizacion->boleta_liberacion) ? true : false;
-                    $cartaPorte = ($cartaPorte && $secundaria->carta_porte) ? true : false;
-                    $cartaPorteXml = ($cartaPorteXml && $secundaria->carta_porte_xml) ? true : false;
+                $boletaLiberacion = ($boletaLiberacion && $secundaria->DocCotizacion->boleta_liberacion) ? true : false;
+                $cartaPorte = ($cartaPorte && $secundaria->carta_porte) ? true : false;
+                $cartaPorteXml = ($cartaPorteXml && $secundaria->carta_porte_xml) ? true : false;
 
-                    $boletaVacio = ($boletaVacio && $secundaria->img_boleta) ? true : false;
+                $boletaVacio = ($boletaVacio && $secundaria->img_boleta) ? true : false;
 
 
-                    if ($secundaria && $secundaria->DocCotizacion) {
-                        $numContenedor .= ' / ' . $secundaria->DocCotizacion->num_contenedor;
-                    }
-                    $tipo = "Full";
+                if ($secundaria && $secundaria->DocCotizacion) {
+                    $numContenedor .= ' / ' . $secundaria->DocCotizacion->num_contenedor;
+                }
+                $tipo = "Full";
             }
 
             return [
-                "id"=> $cot->id,
-                "cliente"=> $cot->cliente,
-                "num_contenedor"=>$numContenedor,
-                "doc_ccp"=> $docCCP,
-                "boleta_liberacion"=> $boletaLiberacion,
-                "doda"=> $doda,
-                "cima"=> $cot->cima,
-                "carta_porte"=> $cartaPorte,
-                "carta_porte_xml"=> $cartaPorteXml,
-                "boleta_vacio"=> $boletaVacio,
-                "doc_eir"=> $docEir,
-                "id_proveedor"=> $cot->id_proveedor,
-                "fecha_inicio"=> $cot->fecha_inicio,
-                "fecha_fin"=> $cot->fecha_fin,
+                "id" => $cot->id,
+                "cliente" => $cot->cliente,
+                "num_contenedor" => $numContenedor,
+                "doc_ccp" => $docCCP,
+                "boleta_liberacion" => $boletaLiberacion,
+                "doda" => $doda,
+                "cima" => $cot->cima,
+                "carta_porte" => $cartaPorte,
+                "carta_porte_xml" => $cartaPorteXml,
+                "boleta_vacio" => $boletaVacio,
+                "doc_eir" => $docEir,
+                "id_proveedor" => $cot->id_proveedor,
+                "fecha_inicio" => $cot->fecha_inicio,
+                "fecha_fin" => $cot->fecha_fin,
                 "tipo" => $tipo
             ];
         });
 
-        if($asignaciones->Proveedor == NULL){
+        if ($asignaciones->Proveedor == null) {
             return [
-                        "nombre"=>$asignaciones->Operador->nombre ?? '',
+                        "nombre" => $asignaciones->Operador->nombre ?? '',
                         "tipo" => "Viaje Propio",
                         "cotizacion" => $cotizacion,
                         "cliente" => $cotizacion->Cliente,
@@ -379,7 +381,7 @@ $InfoViajeExtra = Cotizaciones::query()
         }
 
         return [
-                    "nombre"=>$asignaciones->Proveedor->nombre,
+                    "nombre" => $asignaciones->Proveedor->nombre,
                     "tipo" => "Viaje subcontratado",
                     "cotizacion" => $cotizacion,
                     "cliente" => $cotizacion->Cliente,
@@ -391,22 +393,23 @@ $InfoViajeExtra = Cotizaciones::query()
 
     }
 
-    public function initBoard(Request $request){
+    public function initBoard(Request $request)
+    {
         $planeaciones = Asignaciones::join('docum_cotizacion', 'asignaciones.id_contenedor', '=', 'docum_cotizacion.id')
                         ->join('cotizaciones', 'docum_cotizacion.id_cotizacion', '=', 'cotizaciones.id')
                         ->where('asignaciones.fecha_inicio', '>=', $request->fromDate)
-                        ->where('asignaciones.id_empresa' ,'=',auth()->user()->id_empresa)
+                        ->where('asignaciones.id_empresa', '=', auth()->user()->id_empresa)
                         ->where('cotizaciones.estatus', 'Aprobada')
-                        ->where('estatus_planeacion','=', 1)
-                        ->select('asignaciones.*', 'docum_cotizacion.num_contenedor','cotizaciones.id_cliente','cotizaciones.referencia_full','cotizaciones.tipo_viaje')
+                        ->where('estatus_planeacion', '=', 1)
+                        ->select('asignaciones.*', 'docum_cotizacion.num_contenedor', 'cotizaciones.id_cliente', 'cotizaciones.referencia_full', 'cotizaciones.tipo_viaje')
                         ->orderBy('fecha_inicio')
                         ->get();
 
-        $extractor = $planeaciones->map(function($p){
+        $extractor = $planeaciones->map(function ($p) {
             $itemNumContenedor = $p->num_contenedor;
-            if(!is_null($p->referencia_full)){
-                $cotizacionFull = Cotizaciones::where('referencia_full',$p->referencia_full)->where('jerarquia','Secundario')->first();
-                $contenedorSecundario = DocumCotizacion::where("id_cotizacion",$cotizacionFull->id)->first();
+            if (!is_null($p->referencia_full)) {
+                $cotizacionFull = Cotizaciones::where('referencia_full', $p->referencia_full)->where('jerarquia', 'Secundario')->first();
+                $contenedorSecundario = DocumCotizacion::where("id_cotizacion", $cotizacionFull->id)->first();
                 $itemNumContenedor .= " / ".$contenedorSecundario->num_contenedor;
             }
             return [
@@ -419,31 +422,32 @@ $InfoViajeExtra = Cotizaciones::query()
         });
 
         $clientes = $planeaciones->unique('id_cliente')->pluck('id_cliente');
-        $clientesData = Client::whereIn('id' ,$clientes)->selectRaw('id, nombre as name, '."'true'".' as expanded')->get();
+        $clientesData = Client::whereIn('id', $clientes)->selectRaw('id, nombre as name, '."'true'".' as expanded')->get();
 
         $board = [];
         $board[] = ["name" => "Clientes", "id" => "S", "expanded" => true, "children" => $clientesData];
 
         $fecha = Carbon::now()->subdays(10)->format('Y-m-d');
-        return response()->json(["boardCentros"=> $board,"extractor"=>$extractor,"scrollDate"=> $fecha, "TMensaje" => "success","planeaciones"=>$planeaciones]);
+        return response()->json(["boardCentros" => $board,"extractor" => $extractor,"scrollDate" => $fecha, "TMensaje" => "success","planeaciones" => $planeaciones]);
     }
 
-    public function asignacion(Request $request){
+    public function asignacion(Request $request)
+    {
 
         $numContenedores = json_decode($request->get('num_contenedor'));
         $numContenedor = $numContenedores[0];
-       // $numContenedor = ($request->cmbTipoUnidad == "Full") ? substr($numContenedor,0,12) : $numContenedor;
+        // $numContenedor = ($request->cmbTipoUnidad == "Full") ? substr($numContenedor,0,12) : $numContenedor;
 
         $fechaInicio = common::TransformaFecha($request->txtFechaInicio);
         $fechaFinal = common::TransformaFecha($request->txtFechaFinal);
 
-        $contenedor = DocumCotizacion::where('num_contenedor',$numContenedor)->first();
-        $cotizacion = Cotizaciones::where('id', '=',  $contenedor->id_cotizacion)->first();
+        $contenedor = DocumCotizacion::where('num_contenedor', $numContenedor)->first();
+        $cotizacion = Cotizaciones::where('id', '=', $contenedor->id_cotizacion)->first();
 
-        try{
+        try {
 
             DB::beginTransaction();
-            $asignaciones = new Asignaciones;
+            $asignaciones = new Asignaciones();
 
             $asignaciones->id_contenedor = $contenedor->id_cotizacion;
             $asignaciones->fecha_inicio = $fechaInicio;
@@ -453,9 +457,9 @@ $InfoViajeExtra = Cotizaciones::query()
 
             $asignaciones->save();
 
-            $viajePropio=0;
+            $viajePropio = 0;
 
-            if($request->tipoViaje == "propio"){
+            if ($request->tipoViaje == "propio") {
                 $asignaciones->id_chasis = $request->get('cmbChasis');
                 $asignaciones->id_chasis2 = $request->get('cmbChasis2');
                 $asignaciones->id_dolys = $request->get('cmbDoly');
@@ -476,7 +480,7 @@ $InfoViajeExtra = Cotizaciones::query()
                 $asignaciones->restante_pago_operador = $resta;
 
 
-                if(is_null($request->get('cmbProveedor')) && $CantineroViaje > 0){ //Agregue para validar el proveedor con sgt elemental no tiene porceso de pagos
+                if (is_null($request->get('cmbProveedor')) && $CantineroViaje > 0) { //Agregue para validar el proveedor con sgt elemental no tiene porceso de pagos
 
                     $contenedoresAbonos = [];
                     $contenedorAbono = [
@@ -486,7 +490,7 @@ $InfoViajeExtra = Cotizaciones::query()
 
                     array_push($contenedoresAbonos, $contenedorAbono);
 
-                    Bancos::where('id' ,'=',$request->get('cmbBanco'))->update(["saldo" => DB::raw("saldo - ". $CantineroViaje)]);
+                    Bancos::where('id', '=', $request->get('cmbBanco'))->update(["saldo" => DB::raw("saldo - ". $CantineroViaje)]);
                     BancoDineroOpe::insert([[
                                             'id_operador' => $request->get('cmbOperador'),
                                             'id_banco1' => $request->get('cmbBanco'),
@@ -498,13 +502,13 @@ $InfoViajeExtra = Cotizaciones::query()
                                             'descripcion_gasto' => 'Dinero para viaje'
                                         ]]);
 
-                            $dineroViaje = new DineroContenedor;
-                            $dineroViaje->id_contenedor = $asignaciones->id_contenedor;
-                            $dineroViaje->id_banco = $request->get('cmbBanco');
-                            $dineroViaje->motivo = 'Dinero para viaje';
-                            $dineroViaje->monto =  $CantineroViaje;
-                            $dineroViaje->fecha_entrega_monto = date('Y-m-d');
-                            $dineroViaje->save();
+                    $dineroViaje = new DineroContenedor();
+                    $dineroViaje->id_contenedor = $asignaciones->id_contenedor;
+                    $dineroViaje->id_banco = $request->get('cmbBanco');
+                    $dineroViaje->motivo = 'Dinero para viaje';
+                    $dineroViaje->monto =  $CantineroViaje;
+                    $dineroViaje->fecha_entrega_monto = date('Y-m-d');
+                    $dineroViaje->save();
 
 
 
@@ -512,9 +516,9 @@ $InfoViajeExtra = Cotizaciones::query()
                 }
 
 
-                $viajePropio=1;
+                $viajePropio = 1;
 
-            }else{
+            } else {
                 $asignaciones->id_proveedor = $request->get('cmbProveedor');
                 $asignaciones->precio = $request->get('precio_proveedor');
                 $asignaciones->burreo = $request->get('burreo_proveedor');
@@ -527,18 +531,18 @@ $InfoViajeExtra = Cotizaciones::query()
                 $asignaciones->sobrepeso_proveedor = $request->get('sobrepeso_proveedor');
                 $asignaciones->base1_proveedor = $request->get('base_factura');
                 $asignaciones->base2_proveedor = $request->get('base_taref');
-                $asignaciones->total_tonelada = round(floatVal($request->get('sobrepeso_proveedor')) * floatVal($request->get('cantidad_sobrepeso_proveedor')),4);
+                $asignaciones->total_tonelada = round(floatVal($request->get('sobrepeso_proveedor')) * floatVal($request->get('cantidad_sobrepeso_proveedor')), 4);
                 $cotizacion->prove_restante = $asignaciones->total_proveedor;
             }
 
-           /*
+            /*
 
 
-            $asignaciones->id_banco2_dinero_viaje = $request->get('id_banco2_dinero_viaje');
-            $asignaciones->cantidad_banco2_dinero_viaje = $request->get('cantidad_banco2_dinero_viaje');
+             $asignaciones->id_banco2_dinero_viaje = $request->get('id_banco2_dinero_viaje');
+             $asignaciones->cantidad_banco2_dinero_viaje = $request->get('cantidad_banco2_dinero_viaje');
 
 
-            */
+             */
 
 
             $asignaciones->update();
@@ -553,14 +557,14 @@ $InfoViajeExtra = Cotizaciones::query()
                 "tipo_viaje" => $cotizacion->tipo_viaje,
             ];
 
-            if(sizeof($numContenedores) == 2){
+            if (sizeof($numContenedores) == 2) {
                 $fullUUID = Common::generarUuidV4();
-                foreach($numContenedores as $i => $cont){
-                    $contenedor = DocumCotizacion::where('num_contenedor',$cont)->first();
-                    $cotizacion = Cotizaciones::where('id', '=',  $contenedor->id_cotizacion)->first();
+                foreach ($numContenedores as $i => $cont) {
+                    $contenedor = DocumCotizacion::where('num_contenedor', $cont)->first();
+                    $cotizacion = Cotizaciones::where('id', '=', $contenedor->id_cotizacion)->first();
                     $cotizacion->referencia_full = $fullUUID;
                     $cotizacion->jerarquia = ($i == 0) ? 'Principal' : 'Secundario';
-                  //  \Log::debug("index: $i contenedor: $cont jerarquia: $cotizacion->jerarquia");
+                    //  Log::debug("index: $i contenedor: $cont jerarquia: $cotizacion->jerarquia");
                     $cotizacion->estatus_planeacion = 1;
                     $cotizacion->tipo_viaje = 'Full';
                     $cotizacion->update();
@@ -573,42 +577,43 @@ $InfoViajeExtra = Cotizaciones::query()
 
             //se envia aki los nuevos parametros los gastos despues de actualizar los datos de asignacion
             if ($viajePropio) {
-               //nuevos cambios en form planeacion propio
-                    if ($request->filled('filasOtrosGastos')) {
-                        log::info('Guardando otros gastos de planeacion propio...');
+                //nuevos cambios en form planeacion propio
+                if ($request->filled('filasOtrosGastos')) {
+                    log::info('Guardando otros gastos de planeacion propio...');
 
-                             $resultado = self::guardarOtrosGastosPlaneacion($request,$contenedor->num_contenedor,$request->get('cmbOperador'));
+                    $resultado = self::guardarOtrosGastosPlaneacion($request, $contenedor->num_contenedor, $request->get('cmbOperador'));
 
-                    }
+                }
             }
 
             return response()->json([
-                "TMensaje"=>"success",
+                "TMensaje" => "success",
                 "Titulo" => "Planeado correctamente",
                 "Mensaje" => "Se ha programado correctamente el viaje del contenedor",
                 'success' => true,
                 'cotizacion_data' => $cotizacion_data
             ]);
 
-            }catch(\Trowable $t){
-                DB::rollback();
-                \Log::channel('daily')->info('No se guardó planeacion: '.$t->getMessage());
-                return response()->json(["TMensaje"=>"warning","Titulo" => "No se pudo planear", "Mensaje" => "Ocurrio un error mientras procesabamos su solicitud",'success' => true, 'cotizacion_data' => $cotizacion_data]);
+        } catch (\Throwable $t) {
+            DB::rollback();
+            Log::channel('daily')->info('No se guardó planeacion: '.$t->getMessage());
+            return response()->json(["TMensaje" => "warning","Titulo" => "No se pudo planear", "Mensaje" => "Ocurrio un error mientras procesabamos su solicitud",'success' => true, 'cotizacion_data' => $cotizacion_data]);
 
-            }
+        }
 
 
     }
 
-    public function reprogramarViajes(Request $request){
-        try{
+    public function reprogramarViajes(Request $request)
+    {
+        try {
             DB::beginTransaction();
             $viajes = json_decode($request->ajustes);
-            foreach($viajes as $v){
-                $asignaciones = Asignaciones::where('id_contenedor',$v->id)->first();
+            foreach ($viajes as $v) {
+                $asignaciones = Asignaciones::where('id_contenedor', $v->id)->first();
                 //$asignaciones->id_contenedor = $contenedor->id_cotizacion;
-                $fechaInicio = str_replace('T',' ',$v->start);
-                $fechaFinal = str_replace('T',' ',$v->end);
+                $fechaInicio = str_replace('T', ' ', $v->start);
+                $fechaFinal = str_replace('T', ' ', $v->end);
                 $asignaciones->fecha_inicio = $fechaInicio;
                 $asignaciones->fecha_fin = $fechaFinal ;
                 $asignaciones->fehca_inicio_guard = $fechaInicio;
@@ -618,21 +623,22 @@ $InfoViajeExtra = Cotizaciones::query()
 
             DB::commit();
 
-            return response()->json(["TMensaje"=>"success","Titulo" => "Reprogramación exitosa", "Mensaje" => "Se ha realizado la reprogramación de fechas exitosamente",'success' => true]);
+            return response()->json(["TMensaje" => "success","Titulo" => "Reprogramación exitosa", "Mensaje" => "Se ha realizado la reprogramación de fechas exitosamente",'success' => true]);
 
-        }catch(\Throwable $t){
+        } catch (\Throwable $t) {
             DB::rollback();
-            \Log::channel('daily')->info('No se guardó Reprogramacion viajes: '.$t->getMessage());
-            return response()->json(["TMensaje"=>"warning","Titulo" => "No se pudo reprogramar", "Mensaje" => "Ocurrio un error mientras procesabamos su solicitud",'success' => true]);
+            Log::channel('daily')->info('No se guardó Reprogramacion viajes: '.$t->getMessage());
+            return response()->json(["TMensaje" => "warning","Titulo" => "No se pudo reprogramar", "Mensaje" => "Ocurrio un error mientras procesabamos su solicitud",'success' => true]);
         }
     }
 
-    public function equipos(Request $request){
+    public function equipos(Request $request)
+    {
         $fechaInicio = $request->fecha_inicio;
         $fechaFin = $request->fecha_fin;
 
-        if($fechaInicio  &&  $fechaFin){
-            $camionesAsignados = Asignaciones::where('id_empresa' ,'=',auth()->user()->id_empresa)
+        if ($fechaInicio  &&  $fechaFin) {
+            $camionesAsignados = Asignaciones::where('id_empresa', '=', auth()->user()->id_empresa)
             ->whereNotNull('id_camion')
             ->where(function ($query) use ($fechaInicio, $fechaFin) {
                 $query->where('fecha_inicio', '<=', $fechaFin)
@@ -640,7 +646,7 @@ $InfoViajeExtra = Cotizaciones::query()
             })
             ->pluck('id_camion');
 
-            $camionesNoAsignados = Equipo::where('id_empresa' ,'=',auth()->user()->id_empresa)
+            $camionesNoAsignados = Equipo::where('id_empresa', '=', auth()->user()->id_empresa)
             ->where('tipo', 'LIKE', '%Camiones%')
             ->whereNotIn('id', $camionesAsignados)
             ->orWhereNotIn('id', function ($query) {
@@ -648,7 +654,7 @@ $InfoViajeExtra = Cotizaciones::query()
             })
             ->get();
 
-            $chasisAsignados = Asignaciones::where('id_empresa' ,'=',auth()->user()->id_empresa)
+            $chasisAsignados = Asignaciones::where('id_empresa', '=', auth()->user()->id_empresa)
             ->whereNotNull('id_chasis')
             ->where(function ($query) use ($fechaInicio, $fechaFin) {
                 $query->where('fecha_inicio', '<=', $fechaFin)
@@ -656,7 +662,7 @@ $InfoViajeExtra = Cotizaciones::query()
             })
             ->pluck('id_chasis');
 
-            $chasisNoAsignados = Equipo::where('id_empresa' ,'=',auth()->user()->id_empresa)
+            $chasisNoAsignados = Equipo::where('id_empresa', '=', auth()->user()->id_empresa)
             ->where('tipo', 'LIKE', '%Chasis%')
                 ->whereNotIn('id', $chasisAsignados)
                 ->orWhereNotIn('id', function ($query) {
@@ -664,7 +670,7 @@ $InfoViajeExtra = Cotizaciones::query()
                 })
                 ->get();
 
-            $dolysAsignados = Asignaciones::where('id_empresa' ,'=',auth()->user()->id_empresa)
+            $dolysAsignados = Asignaciones::where('id_empresa', '=', auth()->user()->id_empresa)
             ->whereNotNull('id_camion')
             ->where(function ($query) use ($fechaInicio, $fechaFin) {
                 $query->where('fecha_inicio', '<=', $fechaFin)
@@ -672,7 +678,7 @@ $InfoViajeExtra = Cotizaciones::query()
             })
             ->pluck('id_camion');
 
-            $dolysNoAsignados = Equipo::where('id_empresa' ,'=',auth()->user()->id_empresa)
+            $dolysNoAsignados = Equipo::where('id_empresa', '=', auth()->user()->id_empresa)
             ->where('tipo', 'LIKE', '%Dolys%')
                 ->whereNotIn('id', $dolysAsignados)
                 ->orWhereNotIn('id', function ($query) {
@@ -680,7 +686,7 @@ $InfoViajeExtra = Cotizaciones::query()
                 })
                 ->get();
 
-            $operadorAsignados = Asignaciones::where('id_empresa' ,'=',auth()->user()->id_empresa)
+            $operadorAsignados = Asignaciones::where('id_empresa', '=', auth()->user()->id_empresa)
             ->whereNotNull('id_operador')
             ->where(function ($query) use ($fechaInicio, $fechaFin) {
                 $query->where('fecha_inicio', '<=', $fechaFin)
@@ -688,7 +694,7 @@ $InfoViajeExtra = Cotizaciones::query()
             })
             ->pluck('id_operador');
 
-            $operadorNoAsignados = Operador::where('id_empresa' ,'=',auth()->user()->id_empresa)
+            $operadorNoAsignados = Operador::where('id_empresa', '=', auth()->user()->id_empresa)
             ->whereNotIn('id', $operadorAsignados)
                 ->orWhereNotIn('id', function ($query) {
                     $query->select('id_operador')->from('asignaciones')->whereNull('id_operador');
@@ -696,175 +702,183 @@ $InfoViajeExtra = Cotizaciones::query()
                 ->get();
 
 
-            $bancos = Bancos::where('id_empresa' ,'=',auth()->user()->id_empresa)->where('saldo', '>', '0')->get();
+            $bancos = Bancos::where('id_empresa', '=', auth()->user()->id_empresa)->where('saldo', '>', '0')->get();
 
             return view('planeacion.resultado_equipos', ['bancos' => $bancos, 'dolysNoAsignados' => $dolysNoAsignados, 'camionesNoAsignados' => $camionesNoAsignados, 'chasisNoAsignados' => $chasisNoAsignados, 'operadorNoAsignados' => $operadorNoAsignados]);
 
         }
     }
 
-public static function guardarOtrosGastosPlaneacion($r, $num_Contenedor, $idOperadorViaje)
-{
-    DB::beginTransaction();
-    $respuesta = null;
+    public static function guardarOtrosGastosPlaneacion($r, $num_Contenedor, $idOperadorViaje)
+    {
+        DB::beginTransaction();
+        $respuesta = null;
 
-    try {
-        $otrosGastos = json_decode($r->filasOtrosGastos, true);
-        \Log::info('Otros gastos recibidos:', $otrosGastos);
+        try {
+            $otrosGastos = json_decode($r->filasOtrosGastos, true);
+            Log::info('Otros gastos recibidos:', $otrosGastos);
 
-        if (empty($otrosGastos) || !is_array($otrosGastos)) {
-            return [
-                "Titulo" => "Sin datos",
-                "Mensaje" => "No se recibieron gastos válidos.",
-                "TMensaje" => "warning"
-            ];
-        }
-
-        $datosGasto = [];
-        $bancoDinero = [];
-        $nuevosGastos = [];
-        $idEmpresa = auth()->user()->id_empresa;
-
-        //  Solo se permiten estos tipos peticion don  jose
-        $descripcionGastosPermitidos = [
-            'GCM01' => 'GCM01 - Comisión',
-            'GDI02' => 'GDI02 - Diesel',
-            'GBV01' => 'GBV01 - Burrero Vacio'
-        ];
-
-        foreach ($otrosGastos as $gasto) {
-            \Log::info('Procesando gasto:', $gasto);
-
-            $motivo = $gasto['motivo'] ?? null;
-            $monto = floatval($gasto['monto'] ?? 0);
-            $esPagoInmediato = !empty($gasto['pagoInmediato']);
-            $idBanco = !empty($gasto['banco']) ? intval($gasto['banco']) : null;
-            $numContenedor = $num_Contenedor;
-
-            // Validaciones básicas
-            if (!$motivo || !isset($descripcionGastosPermitidos[$motivo])) continue;
-            if ($monto <= 0) continue;
-
-            if ($esPagoInmediato && empty($idBanco)) {
-                $respuesta = [
-                    "Titulo" => "Debe seleccionar banco",
-                    "Mensaje" => "Ha seleccionado pago inmediato. Por favor, indique el banco desde el cual se realizará el retiro.",
+            if (empty($otrosGastos) || !is_array($otrosGastos)) {
+                return [
+                    "Titulo" => "Sin datos",
+                    "Mensaje" => "No se recibieron gastos válidos.",
                     "TMensaje" => "warning"
                 ];
-                continue;
             }
 
-            $contenedor = DocumCotizacion::where('num_contenedor', $numContenedor)
-                ->where('id_empresa', $idEmpresa)
-                ->first();
+            $datosGasto = [];
+            $bancoDinero = [];
+            $nuevosGastos = [];
+            $idEmpresa = auth()->user()->id_empresa;
 
-            if (!$contenedor) continue;
-
-            $asignacion = Asignaciones::where('id_contenedor', $contenedor->id)->first();
-            if (!$asignacion) continue;
-
-            $tipoGasto = $descripcionGastosPermitidos[$motivo];
-
-            // 🔹 Evitar duplicados
-            $gastoExistente = GastosOperadores::where('id_cotizacion', $contenedor->id_cotizacion)
-                ->where('tipo', $tipoGasto)
-                ->first();
-
-            if ($gastoExistente) {
-                if ($gastoExistente->cantidad != $monto) {
-                    $gastoExistente->update(["cantidad" => $monto]);
-                }
-                continue;
-            }
-
-            // 🔹 Registrar gasto operador
-            $datosGasto[] = [
-                "id_cotizacion" => $contenedor->id_cotizacion,
-                "id_banco" => $esPagoInmediato ? $idBanco : null,
-                "id_asignacion" => $asignacion->id,
-                "id_operador" => $asignacion->id_operador,
-                "cantidad" => $monto,
-                "tipo" => $tipoGasto,
-                "estatus" => $esPagoInmediato ? 'Pagado' : 'Pago Pendiente',
-                "fecha_pago" => $esPagoInmediato ? Carbon::now() : null,
-                "pago_inmediato" => $esPagoInmediato,
-                "created_at" => Carbon::now()
+            //  Solo se permiten estos tipos peticion don  jose
+            $descripcionGastosPermitidos = [
+                'GCM01' => 'GCM01 - Comisión',
+                'GDI02' => 'GDI02 - Diesel',
+                'GBV01' => 'GBV01 - Burrero Vacio'
             ];
 
-            // 🔹 Si es pago inmediato, validar y descontar saldo
-            if ($esPagoInmediato && $idBanco) {
-                $banco = Bancos::where('id_empresa', $idEmpresa)->where('id', $idBanco)->first();
+            foreach ($otrosGastos as $gasto) {
+                Log::info('Procesando gasto:', $gasto);
 
-                if (!$banco) {
+                $motivo = $gasto['motivo'] ?? null;
+                $monto = floatval($gasto['monto'] ?? 0);
+                $esPagoInmediato = !empty($gasto['pagoInmediato']);
+                $idBanco = !empty($gasto['banco']) ? intval($gasto['banco']) : null;
+                $numContenedor = $num_Contenedor;
+
+                // Validaciones básicas
+                if (!$motivo || !isset($descripcionGastosPermitidos[$motivo])) {
+                    continue;
+                }
+                if ($monto <= 0) {
+                    continue;
+                }
+
+                if ($esPagoInmediato && empty($idBanco)) {
                     $respuesta = [
-                        "Titulo" => "Banco no encontrado",
-                        "Mensaje" => "El banco seleccionado no existe o no pertenece a la empresa.",
+                        "Titulo" => "Debe seleccionar banco",
+                        "Mensaje" => "Ha seleccionado pago inmediato. Por favor, indique el banco desde el cual se realizará el retiro.",
                         "TMensaje" => "warning"
                     ];
                     continue;
                 }
 
-                if ($banco->saldo < $monto) {
-                    $respuesta = [
-                        "Titulo" => "Saldo insuficiente",
-                        "Mensaje" => "El banco {$banco->nombre} no cuenta con saldo suficiente.",
-                        "TMensaje" => "warning"
-                    ];
+                $contenedor = DocumCotizacion::where('num_contenedor', $numContenedor)
+                    ->where('id_empresa', $idEmpresa)
+                    ->first();
+
+                if (!$contenedor) {
                     continue;
                 }
 
-                // 🔹 Registrar movimiento bancario
-                $contenedoresAbonosJson = json_encode([
-                    ['num_contenedor' => $numContenedor, 'abono' => $monto]
-                ]);
+                $asignacion = Asignaciones::where('id_contenedor', $contenedor->id)->first();
+                if (!$asignacion) {
+                    continue;
+                }
 
-                $bancoDinero[] = [
-                    "monto1" => $monto,
-                    "metodo_pago1" => 'Transferencia',
-                    "descripcion" => "{$tipoGasto} {$numContenedor}",
-                    "id_banco1" => $idBanco,
-                    "contenedores" => $contenedoresAbonosJson,
-                    "tipo" => 'Salida',
-                    "fecha_pago" => date('Y-m-d'),
+                $tipoGasto = $descripcionGastosPermitidos[$motivo];
+
+                // 🔹 Evitar duplicados
+                $gastoExistente = GastosOperadores::where('id_cotizacion', $contenedor->id_cotizacion)
+                    ->where('tipo', $tipoGasto)
+                    ->first();
+
+                if ($gastoExistente) {
+                    if ($gastoExistente->cantidad != $monto) {
+                        $gastoExistente->update(["cantidad" => $monto]);
+                    }
+                    continue;
+                }
+
+                // 🔹 Registrar gasto operador
+                $datosGasto[] = [
+                    "id_cotizacion" => $contenedor->id_cotizacion,
+                    "id_banco" => $esPagoInmediato ? $idBanco : null,
+                    "id_asignacion" => $asignacion->id,
+                    "id_operador" => $asignacion->id_operador,
+                    "cantidad" => $monto,
+                    "tipo" => $tipoGasto,
+                    "estatus" => $esPagoInmediato ? 'Pagado' : 'Pago Pendiente',
+                    "fecha_pago" => $esPagoInmediato ? Carbon::now() : null,
+                    "pago_inmediato" => $esPagoInmediato,
+                    "created_at" => Carbon::now()
                 ];
 
-                // 🔹 Descontar saldo de inmediato
-                Bancos::where('id', $idBanco)->update([
-                    "saldo" => DB::raw("saldo - {$monto}")
-                ]);
+                // 🔹 Si es pago inmediato, validar y descontar saldo
+                if ($esPagoInmediato && $idBanco) {
+                    $banco = Bancos::where('id_empresa', $idEmpresa)->where('id', $idBanco)->first();
+
+                    if (!$banco) {
+                        $respuesta = [
+                            "Titulo" => "Banco no encontrado",
+                            "Mensaje" => "El banco seleccionado no existe o no pertenece a la empresa.",
+                            "TMensaje" => "warning"
+                        ];
+                        continue;
+                    }
+
+                    if ($banco->saldo < $monto) {
+                        $respuesta = [
+                            "Titulo" => "Saldo insuficiente",
+                            "Mensaje" => "El banco {$banco->nombre} no cuenta con saldo suficiente.",
+                            "TMensaje" => "warning"
+                        ];
+                        continue;
+                    }
+
+                    // 🔹 Registrar movimiento bancario
+                    $contenedoresAbonosJson = json_encode([
+                        ['num_contenedor' => $numContenedor, 'abono' => $monto]
+                    ]);
+
+                    $bancoDinero[] = [
+                        "monto1" => $monto,
+                        "metodo_pago1" => 'Transferencia',
+                        "descripcion" => "{$tipoGasto} {$numContenedor}",
+                        "id_banco1" => $idBanco,
+                        "contenedores" => $contenedoresAbonosJson,
+                        "tipo" => 'Salida',
+                        "fecha_pago" => date('Y-m-d'),
+                    ];
+
+                    // 🔹 Descontar saldo de inmediato
+                    Bancos::where('id', $idBanco)->update([
+                        "saldo" => DB::raw("saldo - {$monto}")
+                    ]);
+                }
             }
+
+            // 🔹 Guardar registros
+            if (!empty($datosGasto)) {
+                Log::info('Insertando gastos operadores:', $datosGasto);
+                GastosOperadores::insert($datosGasto);
+            }
+
+            if (!empty($bancoDinero)) {
+                Log::info('Insertando movimientos bancarios:', $bancoDinero);
+                BancoDinero::insert($bancoDinero);
+            }
+
+            DB::commit();
+
+            return $respuesta ?? [
+                "Titulo" => "Gasto agregado",
+                "Mensaje" => "Se agregaron los gastos correctamente.",
+                "TMensaje" => "success"
+            ];
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error en guardarOtrosGastos: ' . $e->getMessage());
+
+            return [
+                "Titulo" => "Error interno",
+                "Mensaje" => "Ocurrió un error al guardar los gastos.",
+                "TMensaje" => "error"
+            ];
         }
-
-        // 🔹 Guardar registros
-        if (!empty($datosGasto)) {
-            \Log::info('Insertando gastos operadores:', $datosGasto);
-            GastosOperadores::insert($datosGasto);
-        }
-
-        if (!empty($bancoDinero)) {
-            \Log::info('Insertando movimientos bancarios:', $bancoDinero);
-            BancoDinero::insert($bancoDinero);
-        }
-
-        DB::commit();
-
-        return $respuesta ?? [
-            "Titulo" => "Gasto agregado",
-            "Mensaje" => "Se agregaron los gastos correctamente.",
-            "TMensaje" => "success"
-        ];
-
-    } catch (\Exception $e) {
-        DB::rollBack();
-        \Log::error('Error en guardarOtrosGastos: ' . $e->getMessage());
-
-        return [
-            "Titulo" => "Error interno",
-            "Mensaje" => "Ocurrió un error al guardar los gastos.",
-            "TMensaje" => "error"
-        ];
     }
-}
 
 
     public function edit_fecha(Request $request)
@@ -874,19 +888,19 @@ public static function guardarOtrosGastosPlaneacion($r, $num_Contenedor, $idOper
 
         $cotizaciones = Cotizaciones::find($urlId);
 
-        if($request->get('finzalizar_vieje') != NULL){
+        if ($request->get('finzalizar_vieje') != null) {
 
             $cotizaciones->estatus = $request->get('finzalizar_vieje');
 
         }
         $cotizaciones->update();
 
-        $asignaciones = Asignaciones::where('id_contenedor','=',$cotizaciones->id)->first();
+        $asignaciones = Asignaciones::where('id_contenedor', '=', $cotizaciones->id)->first();
 
-        if($request->get('finzalizar_vieje') == 'Finalizado'){
+        if ($request->get('finzalizar_vieje') == 'Finalizado') {
             $asignaciones->fecha_inicio = null;
             $asignaciones->fecha_fin = null;
-        }else{
+        } else {
             $asignaciones->fecha_inicio = $request->get('nuevaFechaInicio');
             $asignaciones->fecha_fin = $request->get('nuevaFechaFin');
         }
@@ -902,34 +916,35 @@ public static function guardarOtrosGastosPlaneacion($r, $num_Contenedor, $idOper
     }
 
 
-    public function advance_planeaciones(Request $request) {
-        $cotizaciones = Cotizaciones::where('id_empresa' ,'=',auth()->user()->id_empresa)->where('estatus', '=', 'Aprobada')->where('estatus_planeacion', '=', NULL)->get();
+    public function advance_planeaciones(Request $request)
+    {
+        $cotizaciones = Cotizaciones::where('id_empresa', '=', auth()->user()->id_empresa)->where('estatus', '=', 'Aprobada')->where('estatus_planeacion', '=', null)->get();
         $numCotizaciones = $cotizaciones->count();
-        $proveedores = Proveedor::where('id_empresa' ,'=',auth()->user()->id_empresa)
+        $proveedores = Proveedor::where('id_empresa', '=', auth()->user()->id_empresa)
         ->where(function ($query) {
             $query->where('tipo', '=', 'servicio de burreo')
                   ->orwhere('tipo', '>=', 'servicio de viaje');
         })
         ->get();
 
-        $equipos = Equipo::where('id_empresa' ,'=',auth()->user()->id_empresa)->get();
-        $operadores = Operador::where('id_empresa' ,'=',auth()->user()->id_empresa)->get();
+        $equipos = Equipo::where('id_empresa', '=', auth()->user()->id_empresa)->get();
+        $operadores = Operador::where('id_empresa', '=', auth()->user()->id_empresa)->get();
         $events = [];
 
-        $appointments = Asignaciones::where('id_empresa' ,'=',auth()->user()->id_empresa)->get();
+        $appointments = Asignaciones::where('id_empresa', '=', auth()->user()->id_empresa)->get();
 
 
         foreach ($appointments as $appointment) {
-            if($appointment->id_operador == NULL){
+            if ($appointment->id_operador == null) {
                 $description = 'Proveedor: ' . $appointment->Proveedor->nombre . ' - ' . $appointment->Proveedor->telefono . '<br>' . 'Costo viaje: ' . $appointment->precio;
                 $tipo = 'S';
-            }else{
-                if($appointment->Contenedor->Cotizacion->tipo_viaje == 'Sencillo'){
+            } else {
+                if ($appointment->Contenedor->Cotizacion->tipo_viaje == 'Sencillo') {
                     $description = 'Tipo viaje: ' . $appointment->Contenedor->Cotizacion->tipo_viaje . '<br> <br>' .
                     'Operador: ' . $appointment->Operador->nombre . ' - ' . $appointment->Operador->telefono . '<br>' .
                     'Camion: ' . ' #' . $appointment->Camion->id_equipo . ' - ' . $appointment->Camion->num_serie . ' - ' . $appointment->Camion->modelo . '<br>' .
                     'Chasis: ' . $appointment->Chasis->num_serie . ' - ' . $appointment->Chasis->modelo . '<br>';
-                }elseif($appointment->Contenedor->Cotizacion->tipo_viaje == 'Full'){
+                } elseif ($appointment->Contenedor->Cotizacion->tipo_viaje == 'Full') {
                     $description = 'Tipo viaje: ' . $appointment->Contenedor->Cotizacion->tipo_viaje . '<br> <br>' .
                     'Operador: ' . $appointment->Operador->nombre . ' - ' . $appointment->Operador->telefono . '<br>' .
                     'Camion: ' . ' #' . $appointment->Camion->id_equipo . ' - ' . $appointment->Camion->num_serie . ' - ' . $appointment->Camion->modelo . '<br>' .
@@ -944,7 +959,7 @@ public static function guardarOtrosGastosPlaneacion($r, $num_Contenedor, $idOper
 
             $description = str_replace('<br>', "\n", $description);
 
-            $isOperadorNull = $appointment->id_operador === NULL;
+            $isOperadorNull = $appointment->id_operador === null;
 
             $event = [
                 'title' => $tipo .' / '. $appointment->Contenedor->Cotizacion->Cliente->nombre . ' / #' . $appointment->Contenedor->Cotizacion->DocCotizacion->num_contenedor,
@@ -977,11 +992,11 @@ public static function guardarOtrosGastosPlaneacion($r, $num_Contenedor, $idOper
         }
 
         $planeaciones = Asignaciones::join('docum_cotizacion', 'asignaciones.id_contenedor', '=', 'docum_cotizacion.id')
-        ->where('asignaciones.fecha_inicio', '!=', NULL)->where('asignaciones.id_empresa' ,'=',auth()->user()->id_empresa)
+        ->where('asignaciones.fecha_inicio', '!=', null)->where('asignaciones.id_empresa', '=', auth()->user()->id_empresa)
         ->select('asignaciones.*', 'docum_cotizacion.num_contenedor')
         ->get();
 
-        $asignaciones = Asignaciones::where('id_empresa' ,'=', auth()->user()->id_empresa);
+        $asignaciones = Asignaciones::where('id_empresa', '=', auth()->user()->id_empresa);
 
         if ($request->contenedor !== null) {
             $asignaciones = $asignaciones->where('id', $request->contenedor);
@@ -989,37 +1004,38 @@ public static function guardarOtrosGastosPlaneacion($r, $num_Contenedor, $idOper
 
         $asignaciones = $asignaciones->first();
 
-        return view('planeacion.index', compact('equipos', 'operadores', 'events',  'cotizaciones', 'proveedores', 'numCotizaciones', 'asignaciones', 'planeaciones'));
+        return view('planeacion.index', compact('equipos', 'operadores', 'events', 'cotizaciones', 'proveedores', 'numCotizaciones', 'asignaciones', 'planeaciones'));
     }
 
-    public function advance_planeaciones_faltantes(Request $request) {
-        $cotizaciones = Cotizaciones::where('id_empresa' ,'=',auth()->user()->id_empresa)->where('estatus', '=', 'Aprobada')->where('estatus_planeacion', '=', NULL)->get();
+    public function advance_planeaciones_faltantes(Request $request)
+    {
+        $cotizaciones = Cotizaciones::where('id_empresa', '=', auth()->user()->id_empresa)->where('estatus', '=', 'Aprobada')->where('estatus_planeacion', '=', null)->get();
         $numCotizaciones = $cotizaciones->count();
-        $proveedores = Proveedor::where('id_empresa' ,'=',auth()->user()->id_empresa)
+        $proveedores = Proveedor::where('id_empresa', '=', auth()->user()->id_empresa)
         ->where(function ($query) {
             $query->where('tipo', '=', 'servicio de burreo')
                   ->orwhere('tipo', '>=', 'servicio de viaje');
         })
         ->get();
 
-        $equipos = Equipo::where('id_empresa' ,'=',auth()->user()->id_empresa)->get();
-        $operadores = Operador::where('id_empresa' ,'=',auth()->user()->id_empresa)->get();
+        $equipos = Equipo::where('id_empresa', '=', auth()->user()->id_empresa)->get();
+        $operadores = Operador::where('id_empresa', '=', auth()->user()->id_empresa)->get();
         $events = [];
 
-        $appointments = Asignaciones::where('id_empresa' ,'=',auth()->user()->id_empresa)->get();
+        $appointments = Asignaciones::where('id_empresa', '=', auth()->user()->id_empresa)->get();
 
 
         foreach ($appointments as $appointment) {
-            if($appointment->id_operador == NULL){
+            if ($appointment->id_operador == null) {
                 $description = 'Proveedor: ' . $appointment->Proveedor->nombre . ' - ' . $appointment->Proveedor->telefono . '<br>' . 'Costo viaje: ' . $appointment->precio;
                 $tipo = 'S';
-            }else{
-                if($appointment->Contenedor->Cotizacion->tipo_viaje == 'Sencillo'){
+            } else {
+                if ($appointment->Contenedor->Cotizacion->tipo_viaje == 'Sencillo') {
                     $description = 'Tipo viaje: ' . $appointment->Contenedor->Cotizacion->tipo_viaje . '<br> <br>' .
                     'Operador: ' . $appointment->Operador->nombre . ' - ' . $appointment->Operador->telefono . '<br>' .
                     'Camion: ' . ' #' . $appointment->Camion->id_equipo . ' - ' . $appointment->Camion->num_serie . ' - ' . $appointment->Camion->modelo . '<br>' .
                     'Chasis: ' . $appointment->Chasis->num_serie . ' - ' . $appointment->Chasis->modelo . '<br>';
-                }elseif($appointment->Contenedor->Cotizacion->tipo_viaje == 'Full'){
+                } elseif ($appointment->Contenedor->Cotizacion->tipo_viaje == 'Full') {
                     $description = 'Tipo viaje: ' . $appointment->Contenedor->Cotizacion->tipo_viaje . '<br> <br>' .
                     'Operador: ' . $appointment->Operador->nombre . ' - ' . $appointment->Operador->telefono . '<br>' .
                     'Camion: ' . ' #' . $appointment->Camion->id_equipo . ' - ' . $appointment->Camion->num_serie . ' - ' . $appointment->Camion->modelo . '<br>' .
@@ -1034,7 +1050,7 @@ public static function guardarOtrosGastosPlaneacion($r, $num_Contenedor, $idOper
 
             $description = str_replace('<br>', "\n", $description);
 
-            $isOperadorNull = $appointment->id_operador === NULL;
+            $isOperadorNull = $appointment->id_operador === null;
 
             $event = [
                 'title' => $tipo .' / '. $appointment->Contenedor->Cotizacion->Cliente->nombre . ' / #' . $appointment->Contenedor->Cotizacion->DocCotizacion->num_contenedor,
@@ -1067,11 +1083,11 @@ public static function guardarOtrosGastosPlaneacion($r, $num_Contenedor, $idOper
         }
 
         $planeaciones = Asignaciones::join('docum_cotizacion', 'asignaciones.id_contenedor', '=', 'docum_cotizacion.id')
-        ->where('asignaciones.fecha_inicio', '!=', NULL)->where('asignaciones.id_empresa' ,'=',auth()->user()->id_empresa)
+        ->where('asignaciones.fecha_inicio', '!=', null)->where('asignaciones.id_empresa', '=', auth()->user()->id_empresa)
         ->select('asignaciones.*', 'docum_cotizacion.num_contenedor')
         ->get();
 
-        $cotizaciones_faltantes = Cotizaciones::where('id_empresa' ,'=',auth()->user()->id_empresa)->where('estatus', '=', 'Aprobada')->where('estatus_planeacion', '=', NULL);
+        $cotizaciones_faltantes = Cotizaciones::where('id_empresa', '=', auth()->user()->id_empresa)->where('estatus', '=', 'Aprobada')->where('estatus_planeacion', '=', null);
 
         if ($request->contenedor_faltantes !== null) {
             $cotizaciones_faltantes = $cotizaciones_faltantes->where('id', $request->contenedor_faltantes);
@@ -1079,7 +1095,7 @@ public static function guardarOtrosGastosPlaneacion($r, $num_Contenedor, $idOper
 
         $cotizaciones_faltantes = $cotizaciones_faltantes->first();
 
-        return view('planeacion.index', compact('equipos', 'operadores', 'events',  'cotizaciones', 'proveedores', 'numCotizaciones', 'cotizaciones_faltantes', 'planeaciones'));
+        return view('planeacion.index', compact('equipos', 'operadores', 'events', 'cotizaciones', 'proveedores', 'numCotizaciones', 'cotizaciones_faltantes', 'planeaciones'));
     }
 
 }

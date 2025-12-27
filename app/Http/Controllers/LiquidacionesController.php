@@ -17,32 +17,33 @@ use App\Models\PagoPrestamo;
 use App\Models\DineroContenedor;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
-use DB;
-use Log;
-use Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 use PDF;
-
 
 class LiquidacionesController extends Controller
 {
-    public function index(){
-       return view('liquidaciones.index');
+    public function index()
+    {
+        return view('liquidaciones.index');
     }
 
-    public function getPagosOperadores(Request $r){
+    public function getPagosOperadores(Request $r)
+    {
         $asignacion_operador = Asignaciones::join('operadores', 'asignaciones.id_operador', '=', 'operadores.id')
-        ->where('asignaciones.id_empresa', '=',auth()->user()->id_empresa)
-        ->where('asignaciones.id_proveedor', '=', NULL)
+        ->where('asignaciones.id_empresa', '=', auth()->user()->id_empresa)
+        ->where('asignaciones.id_proveedor', '=', null)
         ->where('asignaciones.estatus_pagado', '=', 'Pendiente Pago')
 
-        ->select('asignaciones.id_operador', DB::raw('COUNT(*) as total_cotizaciones'), DB::raw('SUM(sueldo_viaje) as sueldo_viaje'),DB::raw('SUM(dinero_viaje) as dinero_viaje'),DB::raw('SUM(restante_pago_operador) as total_pago'))
+        ->select('asignaciones.id_operador', DB::raw('COUNT(*) as total_cotizaciones'), DB::raw('SUM(sueldo_viaje) as sueldo_viaje'), DB::raw('SUM(dinero_viaje) as dinero_viaje'), DB::raw('SUM(restante_pago_operador) as total_pago'))
         ->groupBy('asignaciones.id_operador')
         ->get();
 
-        $datosPago = $asignacion_operador->map(function($ope){
+        $datosPago = $asignacion_operador->map(function ($ope) {
             return [
                 "IdOperador" => $ope->id_operador,
-                "Operador" => (!is_null($ope->operador)) ?$ope->operador->nombre: 'N/A',
+                "Operador" => (!is_null($ope->operador)) ? $ope->operador->nombre : 'N/A',
                 "SueldoViaje" => $ope->sueldo_viaje,
                 "DineroViaje" => $ope->dinero_viaje,
                 "MontoPago" => $ope->total_pago,
@@ -53,18 +54,20 @@ class LiquidacionesController extends Controller
         return $datosPago;
     }
 
-    public function show($id){
-        $operador = Operador::where('id', '=', $id)->where('id_empresa', '=',auth()->user()->id_empresa)->first();
-        $bancos = Bancos::where('id_empresa' ,'=',auth()->user()->id_empresa)->get();
+    public function show($id)
+    {
+        $operador = Operador::where('id', '=', $id)->where('id_empresa', '=', auth()->user()->id_empresa)->first();
+        $bancos = Bancos::where('id_empresa', '=', auth()->user()->id_empresa)->get();
 
-        if(is_null($operador)){
+        if (is_null($operador)) {
             return "No existe información";
         }
 
-        return view('liquidaciones.show', compact('operador','id','bancos'));
+        return view('liquidaciones.show', compact('operador', 'id', 'bancos'));
     }
 
-    public function getViajesOperador(Request $r){
+    public function getViajesOperador(Request $r)
+    {
 
         $suma_por_asignacion = DB::table('dinero_contenedor')
         ->join('asignaciones', 'dinero_contenedor.id_contenedor', '=', 'asignaciones.id_contenedor')
@@ -81,9 +84,9 @@ class LiquidacionesController extends Controller
 
         $montos = $suma_por_asignacion->keyBy('id_contenedor');
 
-        $asignacion_operador = Asignaciones::where('id_empresa', '=',auth()->user()->id_empresa)
+        $asignacion_operador = Asignaciones::where('id_empresa', '=', auth()->user()->id_empresa)
         ->where('estatus_pagado', '=', 'Pendiente Pago')
-        ->where('id_proveedor', '=', NULL)
+        ->where('id_proveedor', '=', null)
         ->where('id_operador', '=', $r->operador)
         ->get();
 
@@ -92,19 +95,19 @@ class LiquidacionesController extends Controller
         });
 
 
-        $contenedores = $asignacion_operador->map(function($c){
+        $contenedores = $asignacion_operador->map(function ($c) {
 
             $numContenedor = $c->contenedor->num_contenedor;
 
-            if(!is_null($c->contenedor->cotizacion->referencia_full)){
+            if (!is_null($c->contenedor->cotizacion->referencia_full)) {
                 $secundaria = Cotizaciones::where('referencia_full', $c->contenedor->cotizacion->referencia_full)
                         ->where('jerarquia', 'Secundario')
                         ->with('DocCotizacion.Asignaciones')
                         ->first();
 
-                    if ($secundaria && $secundaria->DocCotizacion) {
-                        $numContenedor .= ' / ' . $secundaria->DocCotizacion->num_contenedor;
-                    }
+                if ($secundaria && $secundaria->DocCotizacion) {
+                    $numContenedor .= ' / ' . $secundaria->DocCotizacion->num_contenedor;
+                }
             }
 
             $justificaciones = (!is_null($c->justificacion)) ? $c->justificacion->sum('monto') : 0;
@@ -127,10 +130,10 @@ class LiquidacionesController extends Controller
         $totalPago = $asignacion_operador->sum('restante_pago_operador');
         $numeroViajes = $asignacion_operador->count();
 
-        $bancos = Bancos::where('id_empresa' ,'=',auth()->user()->id_empresa)->get();
+        $bancos = Bancos::where('id_empresa', '=', auth()->user()->id_empresa)->get();
         $gastos_ope = GastosOperadores::where('id_operador', '=', $r->operador)->get();
 
-        $prestamos = Prestamo::where('id_operador', $r->operador)->where('saldo_actual','>',0)->get();
+        $prestamos = Prestamo::where('id_operador', $r->operador)->where('saldo_actual', '>', 0)->get();
 
         return response()->json([
             "viajes" => $contenedores,
@@ -141,11 +144,12 @@ class LiquidacionesController extends Controller
         ]);
     }
 
-    public function justificarGastos(Request $r){
-        try{
+    public function justificarGastos(Request $r)
+    {
+        try {
             DB::beginTransaction();
             $idEmpresa = auth()->user()->id_empresa;
-            $documCotizacion = DocumCotizacion::where('num_contenedor',$r->numContenedor)
+            $documCotizacion = DocumCotizacion::where('num_contenedor', $r->numContenedor)
                                               ->where('id_empresa', $idEmpresa)
                                               ->first();
             ViaticosOperador::insert([
@@ -154,31 +158,31 @@ class LiquidacionesController extends Controller
                                         "monto" => $r->montoJustificacion
                                     ]);
 
-            $asignacion = Asignaciones::where('id_contenedor',$documCotizacion->id)->update([
+            $asignacion = Asignaciones::where('id_contenedor', $documCotizacion->id)->update([
                 "restante_pago_operador" => DB::raw('restante_pago_operador + '.$r->montoJustificacion)
             ]);
 
             //Los gastos que sean justificados por el operador, deberan reflejarse en el viaje correspondiente
 
-             $asignacion = Asignaciones::where('id_contenedor', $documCotizacion->id)->first();
+            $asignacion = Asignaciones::where('id_contenedor', $documCotizacion->id)->first();
 
-             $datosGasto = [
-                            "id_cotizacion" => $documCotizacion->id_cotizacion,
-                            "id_banco" => null,
-                            "id_asignacion" => $asignacion->id,
-                            "id_operador" => $asignacion->id_operador,
-                            "cantidad" => ($r->montoJustificacion > $r->sinJustificar) ? $r->sinJustificar : $r->montoJustificacion, //Registrar solo el monto por justificar del dinero entregado para viaje, el excedente se registra en otra partida
-                            "tipo" => $r->txtDescripcion,
-                            "estatus" =>  'Pagado' ,
-                            "fecha_pago" => null,
-                            "pago_inmediato" => 1,
-                            "created_at" => Carbon::now()
-                           ];
+            $datosGasto = [
+                           "id_cotizacion" => $documCotizacion->id_cotizacion,
+                           "id_banco" => null,
+                           "id_asignacion" => $asignacion->id,
+                           "id_operador" => $asignacion->id_operador,
+                           "cantidad" => ($r->montoJustificacion > $r->sinJustificar) ? $r->sinJustificar : $r->montoJustificacion, //Registrar solo el monto por justificar del dinero entregado para viaje, el excedente se registra en otra partida
+                           "tipo" => $r->txtDescripcion,
+                           "estatus" =>  'Pagado' ,
+                           "fecha_pago" => null,
+                           "pago_inmediato" => 1,
+                           "created_at" => Carbon::now()
+                          ];
 
-             GastosOperadores::insert($datosGasto);
+            GastosOperadores::insert($datosGasto);
 
-             //Registramos el excedente en una nueva partida y lo dejamos como pendiente de pago
-             if($r->montoJustificacion > $r->sinJustificar){
+            //Registramos el excedente en una nueva partida y lo dejamos como pendiente de pago
+            if ($r->montoJustificacion > $r->sinJustificar) {
                 $datosGasto = [
                     "id_cotizacion" => $documCotizacion->id_cotizacion,
                     "id_banco" => null,
@@ -193,17 +197,17 @@ class LiquidacionesController extends Controller
                    ];
 
                 GastosOperadores::insert($datosGasto);
-             }
-             //Fin
+            }
+            //Fin
 
             DB::commit();
 
             return response()->json(["Titulo" => "Correcto", "Mensaje" => "Datos guardados con exito", "TMensaje" => "success"]);
-        }catch(\Throwable $t){
+        } catch (\Throwable $t) {
             DB::rollback();
             $uniqid = uniqid();
             Log::channel('daily')->info("Codigo: $uniqid, Error: LiquidacionesController/justificarGastos ".$t->getMessage());
-            return response()->json(["Titulo" =>"Ha ocurrido un problema", "Mensaje" => "Codigo error: $uniqid. Mensaje: ".$t->getMessage(), "TMensaje" => "error"]);
+            return response()->json(["Titulo" => "Ha ocurrido un problema", "Mensaje" => "Codigo error: $uniqid. Mensaje: ".$t->getMessage(), "TMensaje" => "error"]);
 
         }
     }
@@ -211,130 +215,133 @@ class LiquidacionesController extends Controller
 
 
     public function justificarGastosMultiples(Request $r)
-{
-    try {
-        DB::beginTransaction();
-        $idEmpresa = auth()->user()->id_empresa;
+    {
+        try {
+            DB::beginTransaction();
+            $idEmpresa = auth()->user()->id_empresa;
 
-       $filas = $r->input('filas');
+            $filas = $r->input('filas');
 
-         if (!is_array($filas) || empty($filas)) {
-            throw new \Exception("No hay datos válidos para procesar");
-        }
-        //dd($filas);
+            if (!is_array($filas) || empty($filas)) {
+                throw new \Exception("No hay datos válidos para procesar");
+            }
+            //dd($filas);
 
-        foreach ($filas as $item) {
-            $documCotizacion = DocumCotizacion::where('id', $item['IdContenedor'])
-                ->where('id_empresa', $idEmpresa)
-                ->first();
+            foreach ($filas as $item) {
+                $documCotizacion = DocumCotizacion::where('id', $item['IdContenedor'])
+                    ->where('id_empresa', $idEmpresa)
+                    ->first();
 
-            if (!$documCotizacion) continue;
+                if (!$documCotizacion) {
+                    continue;
+                }
 
-            if (!empty($item['idviatico'])) { // Actualizar registro existente
-                $viaticoAntes = ViaticosOperador::where('id', $item['idviatico'])->first();
-                $montoAntes = $viaticoAntes->monto;
-                ViaticosOperador::where('id', $item['idviatico'])
-                    ->update([
-                        "descripcion_gasto" => $item['motivo'],
-                        "monto" => $item['monto'],
-                    ]);
+                if (!empty($item['idviatico'])) { // Actualizar registro existente
+                    $viaticoAntes = ViaticosOperador::where('id', $item['idviatico'])->first();
+                    $montoAntes = $viaticoAntes->monto;
+                    ViaticosOperador::where('id', $item['idviatico'])
+                        ->update([
+                            "descripcion_gasto" => $item['motivo'],
+                            "monto" => $item['monto'],
+                        ]);
 
-                 $diferencia = $item['monto'] - $montoAntes;
-                Asignaciones::where('id_contenedor', $documCotizacion->id)
-                    ->update([
-                        "restante_pago_operador" => DB::raw('restante_pago_operador + ' . $diferencia)
-                    ]);
+                    $diferencia = $item['monto'] - $montoAntes;
+                    Asignaciones::where('id_contenedor', $documCotizacion->id)
+                        ->update([
+                            "restante_pago_operador" => DB::raw('restante_pago_operador + ' . $diferencia)
+                        ]);
 
-            } else{
-                // Nuevo registro
-                 ViaticosOperador::insert([
+                } else {
+                    // Nuevo registro
+                    ViaticosOperador::insert([
                 "id_cotizacion" => $documCotizacion->id_cotizacion,
                 "descripcion_gasto" => $item['motivo'],
                 "monto" => $item['monto'],
-                 ]);
-                Asignaciones::where('id_contenedor', $documCotizacion->id)
-                    ->update([
-                        "restante_pago_operador" => DB::raw('restante_pago_operador + '.$item['monto'])
                     ]);
+                    Asignaciones::where('id_contenedor', $documCotizacion->id)
+                        ->update([
+                            "restante_pago_operador" => DB::raw('restante_pago_operador + '.$item['monto'])
+                        ]);
 
-            }
+                }
 
 
 
-            $asignacion = Asignaciones::where('id_contenedor', $documCotizacion->id)->first();
+                $asignacion = Asignaciones::where('id_contenedor', $documCotizacion->id)->first();
 
-            $montoJustificacion = $item['monto'];
-            $sinJustificar = $asignacion->restante_pago_operador ?? 0;
+                $montoJustificacion = $item['monto'];
+                $sinJustificar = $asignacion->restante_pago_operador ?? 0;
 
-            $datosGasto = [
-                "id_cotizacion" => $documCotizacion->id_cotizacion,
-                "id_banco" => null,
-                "id_asignacion" => $asignacion->id,
-                "id_operador" => $asignacion->id_operador,
-                "cantidad" => ($montoJustificacion > $sinJustificar) ? $sinJustificar : $montoJustificacion,
-                "tipo" => $item['motivo'],
-                "estatus" => 'Pagado',
-                "fecha_pago" => null,
-                "pago_inmediato" => 1,
-                "created_at" => Carbon::now(),
-            ];
-
-            GastosOperadores::insert($datosGasto);
-
-            // Si excede
-            if ($montoJustificacion > $sinJustificar) {
-                $excedente = [
+                $datosGasto = [
                     "id_cotizacion" => $documCotizacion->id_cotizacion,
                     "id_banco" => null,
                     "id_asignacion" => $asignacion->id,
                     "id_operador" => $asignacion->id_operador,
-                    "cantidad" => $montoJustificacion - $sinJustificar,
-                    "tipo" => $item['motivo'] . " **Excedente",
-                    "estatus" => 'Pago Pendiente',
+                    "cantidad" => ($montoJustificacion > $sinJustificar) ? $sinJustificar : $montoJustificacion,
+                    "tipo" => $item['motivo'],
+                    "estatus" => 'Pagado',
                     "fecha_pago" => null,
-                    "pago_inmediato" => 0,
+                    "pago_inmediato" => 1,
                     "created_at" => Carbon::now(),
                 ];
 
-                GastosOperadores::insert($excedente);
+                GastosOperadores::insert($datosGasto);
+
+                // Si excede
+                if ($montoJustificacion > $sinJustificar) {
+                    $excedente = [
+                        "id_cotizacion" => $documCotizacion->id_cotizacion,
+                        "id_banco" => null,
+                        "id_asignacion" => $asignacion->id,
+                        "id_operador" => $asignacion->id_operador,
+                        "cantidad" => $montoJustificacion - $sinJustificar,
+                        "tipo" => $item['motivo'] . " **Excedente",
+                        "estatus" => 'Pago Pendiente',
+                        "fecha_pago" => null,
+                        "pago_inmediato" => 0,
+                        "created_at" => Carbon::now(),
+                    ];
+
+                    GastosOperadores::insert($excedente);
+                }
             }
+
+            DB::commit();
+
+            return response()->json([
+                "Titulo" => "Correcto",
+                "Mensaje" => "Justificaciones guardadas correctamente",
+                "TMensaje" => "success"
+            ]);
+        } catch (\Throwable $t) {
+            DB::rollback();
+            $uniqid = uniqid();
+            Log::channel('daily')->error("Codigo: $uniqid, Error: justificarGastosMultiples ".$t->getMessage());
+            return response()->json([
+                "Titulo" => "Error",
+                "Mensaje" => "Codigo error: $uniqid. Mensaje: ".$t->getMessage(),
+                "TMensaje" => "error"
+            ]);
         }
-
-        DB::commit();
-
-        return response()->json([
-            "Titulo" => "Correcto",
-            "Mensaje" => "Justificaciones guardadas correctamente",
-            "TMensaje" => "success"
-        ]);
-    } catch (\Throwable $t) {
-        DB::rollback();
-        $uniqid = uniqid();
-        Log::channel('daily')->error("Codigo: $uniqid, Error: justificarGastosMultiples ".$t->getMessage());
-        return response()->json([
-            "Titulo" => "Error",
-            "Mensaje" => "Codigo error: $uniqid. Mensaje: ".$t->getMessage(),
-            "TMensaje" => "error"
-        ]);
     }
-}
 
-    public function agregarDineroViaje(Request $request){
-        try{
+    public function agregarDineroViaje(Request $request)
+    {
+        try {
             DB::beginTransaction();
             $idEmpresa = auth()->user()->id_empresa;
-            $documCotizacion = DocumCotizacion::where('num_contenedor',$request->numContenedor)
+            $documCotizacion = DocumCotizacion::where('num_contenedor', $request->numContenedor)
                                               ->where('id_empresa', $idEmpresa)
                                               ->first();
 
 
-            $asignacion = Asignaciones::where('id_contenedor',$documCotizacion->id)->update([
+            $asignacion = Asignaciones::where('id_contenedor', $documCotizacion->id)->update([
                 "restante_pago_operador" => DB::raw('restante_pago_operador - '.$request->montoJustificacion)
             ]);
 
-             $asignacion = Asignaciones::where('id_contenedor', $documCotizacion->id)->first();
+            $asignacion = Asignaciones::where('id_contenedor', $documCotizacion->id)->first();
 
-            $dineroViaje = new DineroContenedor;
+            $dineroViaje = new DineroContenedor();
             $dineroViaje->id_contenedor = $asignacion->id_contenedor;
             $dineroViaje->id_banco = $request->get('bank');
             $dineroViaje->motivo = $request->txtDescripcion;
@@ -342,7 +349,7 @@ class LiquidacionesController extends Controller
             $dineroViaje->fecha_entrega_monto = date('Y-m-d');
             $dineroViaje->save();
 
-             $contenedoresAbonos = [];
+            $contenedoresAbonos = [];
             $contenedorAbono = [
                 'num_contenedor' => $request->numContenedor,
                 'abono' => $request->get('montoJustificacion')
@@ -350,7 +357,7 @@ class LiquidacionesController extends Controller
 
             array_push($contenedoresAbonos, $contenedorAbono);
 
-            Bancos::where('id' ,'=',$request->get('bank'))->update(["saldo" => DB::raw("saldo - ". $request->get('montoJustificacion'))]);
+            Bancos::where('id', '=', $request->get('bank'))->update(["saldo" => DB::raw("saldo - ". $request->get('montoJustificacion'))]);
             BancoDineroOpe::insert([[
                                     'id_operador' => $asignacion->id_operador,
                                     'id_banco1' => $request->get('bank'),
@@ -365,34 +372,35 @@ class LiquidacionesController extends Controller
             DB::commit();
             return response()->json(["Titulo" => "Correcto", "Mensaje" => "Datos guardados con exito", "TMensaje" => "success"]);
 
-        }catch(\Throwable $t){
+        } catch (\Throwable $t) {
             DB::rollback();
             $uniqid = uniqid();
             Log::channel('daily')->info("Codigo: $uniqid, Error: LiquidacionesController/agregarDineroViaje ".$t->getMessage());
-            return response()->json(["Titulo" =>"Ha ocurrido un problema", "Mensaje" => "Codigo error: $uniqid. Mensaje: ".$t->getMessage(), "TMensaje" => "error"]);
+            return response()->json(["Titulo" => "Ha ocurrido un problema", "Mensaje" => "Codigo error: $uniqid. Mensaje: ".$t->getMessage(), "TMensaje" => "error"]);
         }
     }
 
-    public function aplicarPago(Request $request){
-        try{
+    public function aplicarPago(Request $request)
+    {
+        try {
             DB::beginTransaction();
 
-            $prestamosVigentes = Prestamo::where('id_operador', $request->_IdOperador)->where('saldo_actual','>',0)->get();
-            if($request->totalPagoPrestamo > $prestamosVigentes->sum('saldo_actual') ){
+            $prestamosVigentes = Prestamo::where('id_operador', $request->_IdOperador)->where('saldo_actual', '>', 0)->get();
+            if ($request->totalPagoPrestamo > $prestamosVigentes->sum('saldo_actual')) {
                 return response()->json(["Titulo" => "Acción rechazada","Mensaje" => "No se puede aplicar porque el saldo del operador es menor a la cantidad que intenta cobrar","TMensaje" => "warning"]);
             }
 
-            $bancos = Bancos::where('id' ,'=',$request->bancoId)->first();
+            $bancos = Bancos::where('id', '=', $request->bancoId)->first();
             $saldoActual = $bancos->saldo;
             $totalPagar = $request->totalMontoPago - $request->totalPagoPrestamo;
 
-            if($totalPagar> $saldoActual){
+            if ($totalPagar > $saldoActual) {
                 return response()->json(["Titulo" => "Saldo insuficiente","Mensaje" => "No se puede aplicar el pago en la cuenta seleccionada","TMensaje" => "warning"]);
             }
 
             $contenedores = collect($request->pagoContenedores);
 
-            $liquidacion = new Liquidaciones;
+            $liquidacion = new Liquidaciones();
             $liquidacion->id_operador = $request->_IdOperador;
             $liquidacion->id_banco = $request->bancoId;
             $liquidacion->fecha = Carbon::now()->format('Y-m-d');
@@ -401,14 +409,14 @@ class LiquidacionesController extends Controller
             $liquidacion->dinero_viaje = $contenedores->sum('DineroViaje');
             $liquidacion->dinero_justificado = $contenedores->sum('GastosJustificados');
             $liquidacion->pago_prestamos = $request->totalPagoPrestamo;
-            $liquidacion->total_pago = ($request->totalPagoPrestamo > 0 ) ? $contenedores->sum('MontoPago') - $request->totalPagoPrestamo : $contenedores->sum('MontoPago');
+            $liquidacion->total_pago = ($request->totalPagoPrestamo > 0) ? $contenedores->sum('MontoPago') - $request->totalPagoPrestamo : $contenedores->sum('MontoPago');
             $liquidacion->save();
 
             //Registrar abonos por orden de prestamo. Se abona la mayor cantidad posible al prestamo
             $pagoPrestamos = $request->totalPagoPrestamo;
-            foreach($prestamosVigentes as $p){
-                if($pagoPrestamos > 0){
-                    $prestamo = Prestamo::where('id',$p->id)->first();
+            foreach ($prestamosVigentes as $p) {
+                if ($pagoPrestamos > 0) {
+                    $prestamo = Prestamo::where('id', $p->id)->first();
                     $prestamo->saldo_actual = ($pagoPrestamos > $p->saldo_actual) ? 0 : $p->saldo_actual - $pagoPrestamos;
                     $prestamo->save();
 
@@ -433,7 +441,7 @@ class LiquidacionesController extends Controller
                 }
             }
 
-            $contenedores->map(function($contenedor) use ($liquidacion){
+            $contenedores->map(function ($contenedor) use ($liquidacion) {
                 $cont = [
                         'id_liquidacion' => $liquidacion->id,
                         'id_contenedor' => $contenedor['IdContenedor'] ,
@@ -445,13 +453,13 @@ class LiquidacionesController extends Controller
                 LiquidacionContenedor::insert($cont);
             });
 
-            foreach($contenedores as $c){
+            foreach ($contenedores as $c) {
                 $asignacion = Asignaciones::where('id', '=', $c['IdAsignacion'])->first();
                 $saldoContenedor = $asignacion->restante_pago_operador;
                 $asignacion->restante_pago_operador = $saldoContenedor - $c['MontoPago'];
                 $asignacion->fecha_pago_operador = date('Y-m-d');
 
-                if(($saldoContenedor - $c['MontoPago']) <= 0){
+                if (($saldoContenedor - $c['MontoPago']) <= 0) {
                     $asignacion->estatus_pagado = 'Pagado';
                 }
                 $asignacion->update();
@@ -468,10 +476,11 @@ class LiquidacionesController extends Controller
 
             }
 
-            $banco = new BancoDineroOpe;
+            $banco = new BancoDineroOpe();
             $banco->id_operador = $request->_IdOperador;
 
-            $banco->monto1 = $contenedores->sum('MontoPago');;
+            $banco->monto1 = $contenedores->sum('MontoPago');
+            ;
             $banco->metodo_pago1 = 'Transferencia';
             $banco->descripcion_gasto = 'Pago operador';
             $banco->id_banco1 = $request->bancoId;
@@ -481,11 +490,11 @@ class LiquidacionesController extends Controller
             $banco->fecha_pago = date('Y-m-d');
             $banco->save();
 
-            Bancos::where('id' ,'=',$request->bancoId)->update(["saldo" => DB::raw("saldo - ". $request->totalMontoPago)]);
+            Bancos::where('id', '=', $request->bancoId)->update(["saldo" => DB::raw("saldo - ". $request->totalMontoPago)]);
             DB::commit();
 
             return response()->json(["Titulo" => "Pago aplicado","Mensaje" => "Se aplicó el pago correctamente al operador","TMensaje" => "success"]);
-        }catch(\Throwable $t){
+        } catch (\Throwable $t) {
             DB::rollback();
             Log::channel('daily')->info('LiquidacionesController->aplicarPago:'.$t->getMessage());
             return response()->json(["Titulo" => "Pago NO aplicado","Mensaje" => "Ocurrio un error al aplicar el pago: ".$t->getMessage(),"TMensaje" => "error"]);
@@ -493,48 +502,51 @@ class LiquidacionesController extends Controller
         }
     }
 
-    public function comprobantePago(Request $r){
-        $liquidacion = Liquidaciones::where('id',$r->IdOperacion)->first();
+    public function comprobantePago(Request $r)
+    {
+        $liquidacion = Liquidaciones::where('id', $r->IdOperacion)->first();
         $user = Auth::User();
 
         $idViajes = $liquidacion->viajes->pluck('id_contenedor');
-        $viaticos = ViaticosOperador::whereIn('id_cotizacion',$idViajes)->get();
+        $viaticos = ViaticosOperador::whereIn('id_cotizacion', $idViajes)->get();
 
-        $dineroViaje = DineroContenedor::whereIn('id_contenedor',$idViajes)->orderBy('id_contenedor')->get();
+        $dineroViaje = DineroContenedor::whereIn('id_contenedor', $idViajes)->orderBy('id_contenedor')->get();
 
-        $pdf = PDF::loadView('liquidaciones.pdf', compact('liquidacion','user','viaticos','dineroViaje'));
+        $pdf = PDF::loadView('liquidaciones.pdf', compact('liquidacion', 'user', 'viaticos', 'dineroViaje'));
         return $pdf->stream('utilidades_rpt.pdf');
     }
 
-   public function historialPagos(){
+    public function historialPagos()
+    {
 
-    return view('liquidaciones.historial');
-   }
+        return view('liquidaciones.historial');
+    }
 
-   public function historialPagosData(Request $r){
-    $idOperadores = Operador::where('id_empresa',Auth::User()->id_empresa)->get()->pluck('id');
-    $fechaI = $r->startDate;
-    $fechaF = $r->endDate;
+    public function historialPagosData(Request $r)
+    {
+        $idOperadores = Operador::where('id_empresa', Auth::User()->id_empresa)->get()->pluck('id');
+        $fechaI = $r->startDate;
+        $fechaF = $r->endDate;
 
-    $historial = Liquidaciones::whereIn('id_operador',$idOperadores)->whereBetween('fecha',[$fechaI, $fechaF])->get();
+        $historial = Liquidaciones::whereIn('id_operador', $idOperadores)->whereBetween('fecha', [$fechaI, $fechaF])->get();
 
-    $mapHistory = $historial->map(function($h){
-        return
-        [
-            "IdPago" => $h->id,
-            "IdOperador" => $h->id_operador,
-            "IdBanco" => $h->id_banco,
-            "Operador" => $h->operadores->nombre ,
-            "Fecha" => $h->fecha,
-            "ViajesRealizados" => $h->viajes_realizados,
-            "SueldoOperador" => $h->sueldo_operador,
-            "DineroViaje" => $h->dinero_viaje,
-            "DineroJustificado" => $h->dinero_justificado,
-            "TotalPagado" => $h->total_pago
-        ];
-    });
+        $mapHistory = $historial->map(function ($h) {
+            return
+            [
+                "IdPago" => $h->id,
+                "IdOperador" => $h->id_operador,
+                "IdBanco" => $h->id_banco,
+                "Operador" => $h->operadores->nombre ,
+                "Fecha" => $h->fecha,
+                "ViajesRealizados" => $h->viajes_realizados,
+                "SueldoOperador" => $h->sueldo_operador,
+                "DineroViaje" => $h->dinero_viaje,
+                "DineroJustificado" => $h->dinero_justificado,
+                "TotalPagado" => $h->total_pago
+            ];
+        });
 
-    return response()->json(["TMensaje" => "success", "data" => $mapHistory]);
+        return response()->json(["TMensaje" => "success", "data" => $mapHistory]);
 
-   }
+    }
 }

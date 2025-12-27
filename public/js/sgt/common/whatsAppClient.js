@@ -87,57 +87,57 @@ function waReadyComponents() {
     waIconStatus.classList.add('btn-color-success');
 }
 
-setInterval(async () => {
-    await getWaQr();
-}, 15000);
+// setInterval(async () => {
+//     await getWaQr();
+// }, 15000);
 
 async function getWaQr() {
     waStatusResponse = (await whatsAppQrCode(waClient)) || 'error';
 }
 
-setInterval(() => {
-    if (waStatus != waStatusResponse) {
-        waElements.forEach((el) => {
-            el.classList.add('d-none');
-        });
+// setInterval(() => {
+//     if (waStatus != waStatusResponse) {
+//         waElements.forEach((el) => {
+//             el.classList.add('d-none');
+//         });
 
-        waStatus = waStatusResponse;
-        statusMap[waStatusResponse]();
-    }
-}, 4000);
+//         waStatus = waStatusResponse;
+//         statusMap[waStatusResponse]();
+//     }
+// }, 4000);
 
 let waTagify = null;
 let btnSendWhatsApp = document.querySelector('#kt_whatsapp');
 let textMessageWhatsApp = document.querySelector('#kt_whatsapp_text_input');
 
-setInterval(async () => {
-    var tagifyUsers = document.querySelector('#kt_tagify_users');
-    if (waStatus == 'ready' && waContacts.length == 0) {
-        waTextStatus.textContent = 'Sincronizando...';
-        var waConversations = await whatsAppConversations(waClient);
+// setInterval(async () => {
+//     var tagifyUsers = document.querySelector('#kt_tagify_users');
+//     if (waStatus == 'ready' && waContacts.length == 0) {
+//         waTextStatus.textContent = 'Sincronizando...';
+//         var waConversations = await whatsAppConversations(waClient);
 
-        if (waConversations.status === 'syncing') return false;
-        waConversationsResult = waConversations.conversations;
+//         if (waConversations.status === 'syncing') return false;
+//         waConversationsResult = waConversations.conversations;
 
-        waTextStatus.textContent = 'Conectado';
-        waConversationsResult.forEach((c) => {
-            let participants = c.participants;
-            waContacts = [
-                ...waContacts,
-                {
-                    value: c.id,
-                    name: c.name,
-                    avatar: null,
-                    email: !c.isGroup ? c.id : `Grupo de WhatsApp: ${participants.length} miembros`,
-                },
-            ];
-        });
-    }
+//         waTextStatus.textContent = 'Conectado';
+//         waConversationsResult.forEach((c) => {
+//             let participants = c.participants;
+//             waContacts = [
+//                 ...waContacts,
+//                 {
+//                     value: c.id,
+//                     name: c.name,
+//                     avatar: null,
+//                     email: !c.isGroup ? c.id : `Grupo de WhatsApp: ${participants.length} miembros`,
+//                 },
+//             ];
+//         });
+//     }
 
-    if (waTagify == null && tagifyUsers && waContacts.length > 0) {
-        waTagify = tagifyInit(waContacts);
-    }
-}, 5000);
+//     if (waTagify == null && tagifyUsers && waContacts.length > 0) {
+//         waTagify = tagifyInit(waContacts);
+//     }
+// }, 5000);
 
 async function sendWhatsApp() {
     let usersWhatsApp = waTagify.value;

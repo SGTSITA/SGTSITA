@@ -669,7 +669,7 @@ function fileManager() {
     }
 
     let numContenedor = null;
-    contenedor.forEach((c) => (numContenedor = c.NumContenedor));
+    contenedor.forEach((c) => (numContenedor = c.NUM_CONTENEDOR_REFER));
 
     var form = $(
         '<form action="' +

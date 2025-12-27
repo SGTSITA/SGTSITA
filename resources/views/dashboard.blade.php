@@ -7,15 +7,15 @@
                 <div class="card p-3 mb-4">
                     <div class="row">
                         <div class="col-2 my-auto">
-                            <a href="{{ route('clients.index') }}">
+                            <a href="{{ route('clientes.index') }}">
                                 <img src="{{ asset('img/icon/empleados.webp') }}" alt="" width="35px" />
                             </a>
                         </div>
 
                         <div class="col-8">
-                            <a href="{{ route('clients.index') }}">
+                            <a href="{{ route('clientes.index') }}">
                                 <p style="margin: 0">Consulta</p>
-                                <h5>I - Clients</h5>
+                                <h5>I - Clientes</h5>
                             </a>
                         </div>
 
@@ -311,9 +311,7 @@
                                 <i class="fas fa-bell fs-3 position-relative">
                                     <span
                                         class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
-                                        id="badgeMEP"
-                                        style="display: none; font-size: 0.7rem"
-                                    >
+                                        id="badgeMEP" style="display: none; font-size: 0.7rem">
                                         0
                                     </span>
                                 </i>
@@ -335,14 +333,9 @@
 
         @can('catalogo')
             <li class="nav-item">
-                <a
-                    class="nav-link {{ Request::is('catalogo*') ? 'active' : '' }}"
-                    href="{{ route('index.catalogo') }}"
-                    target=""
-                >
-                    <div
-                        class="icon icon-shape icon-sm text-center me-2 d-flex align-items-center justify-content-center"
-                    >
+                <a class="nav-link {{ Request::is('catalogo*') ? 'active' : '' }}" href="{{ route('index.catalogo') }}"
+                    target="">
+                    <div class="icon icon-shape icon-sm text-center me-2 d-flex align-items-center justify-content-center">
                         <img src="{{ asset('img/icon/catalogo.webp') }}" alt="" width="20px" />
                     </div>
                     <span class="nav-link-text ms-1">
@@ -357,13 +350,8 @@
 
 @section('content')
     <!--modal cambiar de empresa menu  -->
-    <div
-        class="modal fade"
-        id="modalCambiarEmpresa"
-        tabindex="-1"
-        aria-labelledby="modalCambiarEmpresaLabel"
-        aria-hidden="true"
-    >
+    <div class="modal fade" id="modalCambiarEmpresa" tabindex="-1" aria-labelledby="modalCambiarEmpresaLabel"
+        aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <form method="POST" action="{{ route('usuario.cambiarEmpresa') }}">
@@ -397,7 +385,7 @@
     <script>
         let pendientesCount = 0;
 
-        document.addEventListener('DOMContentLoaded', function () {
+        document.addEventListener('DOMContentLoaded', function() {
             fetch('/mep/pendientes/count')
                 .then((res) => res.json())
                 .then((data) => {
@@ -414,7 +402,7 @@
             const texto = document.getElementById('notificacionesMEP-text');
 
             [icono, texto].forEach((el) => {
-                el.addEventListener('click', function (e) {
+                el.addEventListener('click', function(e) {
                     e.preventDefault();
 
                     if (pendientesCount > 0) {
@@ -427,7 +415,8 @@
                             cancelButtonText: 'Más tarde',
                         }).then((result) => {
                             if (result.isConfirmed) {
-                                window.location.href = '{{ route('vista_pendientes.costos_mep') }}';
+                                window.location.href =
+                                    '{{ route('vista_pendientes.costos_mep') }}';
                             }
                         });
                     } else {

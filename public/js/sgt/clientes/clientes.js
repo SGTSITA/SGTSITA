@@ -79,7 +79,7 @@ $('#clienteCreate').on('submit', function (e) {
         success: function (data) {
             Swal.fire(data.Titulo, data.Mensaje, data.TMensaje).then(function () {
                 if (data.TMensaje == 'success') {
-                    window.location.replace('/clients/');
+                    window.location.replace('/clientes/');
                 }
             });
         },

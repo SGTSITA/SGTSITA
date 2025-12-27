@@ -8,17 +8,18 @@ use App\Models\Client;
 use App\Models\Cotizaciones;
 use App\Models\Subclientes;
 use Illuminate\Http\Request;
-use DB;
+use Illuminate\Support\Facades\DB;
 
 class CuentasCobrarController extends Controller
 {
-    public function index(){
+    public function index()
+    {
         $cotizacionesPorCliente = Cotizaciones::join('docum_cotizacion', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
         ->where('cotizaciones.estatus_pago', '=', '0')
-        ->where('jerarquia','Principal')
+        ->where('jerarquia', 'Principal')
         ->where('cotizaciones.id_empresa', '=', auth()->user()->id_empresa)
         ->where('cotizaciones.restante', '>', 0)
-        ->where(function($query) {
+        ->where(function ($query) {
             $query->where('cotizaciones.estatus', '=', 'Aprobada')
                   ->orWhere('cotizaciones.estatus', '=', 'Finalizado');
         })
@@ -33,13 +34,14 @@ class CuentasCobrarController extends Controller
         return view('cuentas_cobrar.index', compact('cotizacionesPorCliente'));
     }
 
-    public function cobranza_v2($id){
+    public function cobranza_v2($id)
+    {
         $cotizacion = Cotizaciones::join('docum_cotizacion', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
         ->where('cotizaciones.id_empresa', '=', auth()->user()->id_empresa)
         ->where('cotizaciones.estatus_pago', '=', '0')
-        ->where('jerarquia','Principal')
+        ->where('jerarquia', 'Principal')
         ->where('cotizaciones.restante', '>', 0)
-        ->where(function($query) {
+        ->where(function ($query) {
             $query->where('cotizaciones.estatus', '=', 'Aprobada')
                   ->orWhere('cotizaciones.estatus', '=', 'Finalizado');
         })
@@ -54,18 +56,19 @@ class CuentasCobrarController extends Controller
 
         $cliente = Client::where('id', '=', $id)->first();
 
-        $bancos = Bancos::where('id_empresa' ,'=',auth()->user()->id_empresa)->get();
+        $bancos = Bancos::where('id_empresa', '=', auth()->user()->id_empresa)->get();
 
-        return view('cuentas_cobrar.cobranza_cliente',compact('bancos','cliente', 'cotizacion'));
+        return view('cuentas_cobrar.cobranza_cliente', compact('bancos', 'cliente', 'cotizacion'));
     }
 
-    public function viajes_por_liquidar(Request $request){
+    public function viajes_por_liquidar(Request $request)
+    {
         $cotizacionesPorPagar = Cotizaciones::join('docum_cotizacion', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
         ->where('cotizaciones.id_empresa', '=', auth()->user()->id_empresa)
         ->where('cotizaciones.estatus_pago', '=', '0')
-        ->where('jerarquia','Principal')
+        ->where('jerarquia', 'Principal')
         ->where('cotizaciones.restante', '>', 0)
-        ->where(function($query) {
+        ->where(function ($query) {
             $query->where('cotizaciones.estatus', '=', 'Aprobada')
                   ->orWhere('cotizaciones.estatus', '=', 'Finalizado');
         })
@@ -73,21 +76,21 @@ class CuentasCobrarController extends Controller
         ->select('cotizaciones.*')
         ->get();
 
-        $handsOnTableData = $cotizacionesPorPagar->map(function($item){
-            $subCliente = ($item->id_subcliente != NULL) ? $item->Subcliente->nombre." / ".$item->Subcliente->telefono : "";
-            $tipoViaje = ($item->tipo_viaje == NULL || $item->tipo_viaje == 'Seleccionar Opcion') ? "Subcontratado" : $item->tipo_viaje;
+        $handsOnTableData = $cotizacionesPorPagar->map(function ($item) {
+            $subCliente = ($item->id_subcliente != null) ? $item->Subcliente->nombre." / ".$item->Subcliente->telefono : "";
+            $tipoViaje = ($item->tipo_viaje == null || $item->tipo_viaje == 'Seleccionar Opcion') ? "Subcontratado" : $item->tipo_viaje;
 
             $numContenedor = $item->DocCotizacion->num_contenedor;
 
-            if(!is_null($item->referencia_full)){
+            if (!is_null($item->referencia_full)) {
                 $secundaria = Cotizaciones::where('referencia_full', $item->referencia_full)
                         ->where('jerarquia', 'Secundario')
                         ->with('DocCotizacion.Asignaciones')
                         ->first();
 
-                    if ($secundaria && $secundaria->DocCotizacion) {
-                        $numContenedor .= ' / ' . $secundaria->DocCotizacion->num_contenedor;
-                    }
+                if ($secundaria && $secundaria->DocCotizacion) {
+                    $numContenedor .= ' / ' . $secundaria->DocCotizacion->num_contenedor;
+                }
             }
 
             return [
@@ -108,24 +111,26 @@ class CuentasCobrarController extends Controller
         return response()->json(["success" => true,"handsOnTableData" => $handsOnTableData, "cotizacionesPorPagar" => $cotizacionesPorPagar]);
     }
 
-    public function aplicar_pagos(Request $request){
-        try{
+    public function aplicar_pagos(Request $request)
+    {
+        try {
             //Primero validaremos que los pagos/abonos de cada contenedor no sea mayor al saldo pendiente
             $cotizaciones = json_decode($request->datahotTable);
-            foreach($cotizaciones as $c){
-                if($c[8] > $c[4]) 
-                  return response()->json([
-                                            "success" => false, 
-                                            "Titulo" => "Error en el contenedor $c[0]",
-                                            "Mensaje" => "No se puede aplicar el pago para el contenedor porque existe un error monto del pago ó es mayor al Saldo Original",
-                                            "TMensaje" => "warning"
-                                        ]);
+            foreach ($cotizaciones as $c) {
+                if ($c[8] > $c[4]) {
+                    return response()->json([
+                                              "success" => false,
+                                              "Titulo" => "Error en el contenedor $c[0]",
+                                              "Mensaje" => "No se puede aplicar el pago para el contenedor porque existe un error monto del pago ó es mayor al Saldo Original",
+                                              "TMensaje" => "warning"
+                                          ]);
+                }
             }
 
             DB::beginTransaction();
             $contenedoresAbonos = [];
-             foreach($cotizaciones as $c){
-                if($c[8] > 0){ //Si total cobrado es mayor a cero
+            foreach ($cotizaciones as $c) {
+                if ($c[8] > 0) { //Si total cobrado es mayor a cero
                     $id = $c[9]; //Obtenemos el ID
                     $cotizacion = Cotizaciones::where('id', '=', $id)->first();
 
@@ -150,10 +155,10 @@ class CuentasCobrarController extends Controller
 
                     array_push($contenedoresAbonos, $contenedorAbono);
                 }
-                    
-             }
 
-            $banco = new BancoDinero;
+            }
+
+            $banco = new BancoDinero();
             $banco->contenedores = json_encode($contenedoresAbonos);
             $banco->id_cliente = $request->theClient;
             $banco->monto1 = $request->amountPayOne;
@@ -169,25 +174,26 @@ class CuentasCobrarController extends Controller
 
             $banco->save();
 
-            Bancos::where('id' ,'=',$request->bankOne)->update(["saldo" => DB::raw("saldo + ". $request->amountPayOne)]);
-            Bancos::where('id' ,'=',$request->bankTwo)->update(["saldo" => DB::raw("saldo + ". $request->amountPayTwo)]);
+            Bancos::where('id', '=', $request->bankOne)->update(["saldo" => DB::raw("saldo + ". $request->amountPayOne)]);
+            Bancos::where('id', '=', $request->bankTwo)->update(["saldo" => DB::raw("saldo + ". $request->amountPayTwo)]);
 
             DB::commit();
             return response()->json(["success" => true, "Titulo" => "Cobro exitoso", "Mensaje" => "Hemos aplicado el cobro de los elementos indicados", "TMensaje" => "success"]);
-        }catch(\Throwable $t){
+        } catch (\Throwable $t) {
             DB::rollback();
-           
+
             return response()->json(["success" => false,"dataRequest" => $request->all(), "Titulo" => "Error", "Mensaje" => "No pudimos aplicar el cobro, existe un error: ".$t->getMessage(), "TMensaje" => "error"]);
         }
     }
 
-    public function show($id){
+    public function show($id)
+    {
         $cliente = Client::where('id', '=', $id)->first();
         $cotizacionesPorPagar = Cotizaciones::join('docum_cotizacion', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
         ->where('cotizaciones.id_empresa', '=', auth()->user()->id_empresa)
         ->where('cotizaciones.estatus_pago', '=', '0')
         ->where('cotizaciones.restante', '>', 0)
-        ->where(function($query) {
+        ->where(function ($query) {
             $query->where('cotizaciones.estatus', '=', 'Aprobada')
                   ->orWhere('cotizaciones.estatus', '=', 'Finalizado');
         })
@@ -199,7 +205,7 @@ class CuentasCobrarController extends Controller
         ->where('cotizaciones.id_empresa', '=', auth()->user()->id_empresa)
         ->where('cotizaciones.estatus_pago', '=', '0')
         ->where('cotizaciones.restante', '>', 0)
-        ->where(function($query) {
+        ->where(function ($query) {
             $query->where('cotizaciones.estatus', '=', 'Aprobada')
                   ->orWhere('cotizaciones.estatus', '=', 'Finalizado');
         })
@@ -212,12 +218,13 @@ class CuentasCobrarController extends Controller
         ->groupBy('cotizaciones.id_cliente') // Agrupa por el ID de cotización
         ->first();
 
-        $bancos = Bancos::where('id_empresa' ,'=',auth()->user()->id_empresa)->get();
-        
+        $bancos = Bancos::where('id_empresa', '=', auth()->user()->id_empresa)->get();
+
         return view('cuentas_cobrar.show', compact('cotizacionesPorPagar', 'bancos', 'cliente', 'cotizacion'));
     }
 
-    public function update(Request $request, $id){
+    public function update(Request $request, $id)
+    {
         $cotizacion = Cotizaciones::where('id', '=', $id)->first();
         $cotizacion->monto1 = $request->get('monto1');
         $cotizacion->metodo_pago1 = $request->get('metodo_pago1');
@@ -286,7 +293,7 @@ class CuentasCobrarController extends Controller
         // Convertir el array de contenedores y abonos a JSON
         $contenedoresAbonosJson = json_encode($contenedoresAbonos);
 
-        $banco = new BancoDinero;
+        $banco = new BancoDinero();
         $banco->contenedores = $contenedoresAbonosJson;
         $banco->id_cliente = $request->get('id_cliente');
         $banco->monto1 = $request->get('monto1_varios');
