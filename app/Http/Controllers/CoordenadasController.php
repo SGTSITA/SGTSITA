@@ -20,8 +20,8 @@ use Auth;
 class CoordenadasController extends Controller
 {
 
-    
-    
+
+
     //externos cliente MEC
     public function extindexMapa(){
         $idCliente = Auth::User()->id_cliente;
@@ -46,7 +46,7 @@ class CoordenadasController extends Controller
                 ->where('estatus', '=', 'Aprobada')
                 ->where('estatus_planeacion', '=', 1)
                 ->orderBy('created_at', 'desc')
-                ->with(['cliente', 'DocCotizacion.Asignaciones'])             
+                ->with(['cliente', 'DocCotizacion.Asignaciones'])
                 ->get()
                 ->map(function ($cotizacion) {
                     return [
@@ -58,10 +58,10 @@ class CoordenadasController extends Controller
                         'estatus' => $cotizacion->estatus,
                         'coordenadas' => optional($cotizacion->DocCotizacion)->Asignaciones ? 'Compartir' : '',
                         'id_asignacion' => optional($cotizacion->DocCotizacion)->Asignaciones->id ?? null
-                        
+
                     ];
                 });
-        
+
             return response()->json(['list' => $cotizaciones]);
         }
 
@@ -127,7 +127,7 @@ class CoordenadasController extends Controller
         return view('coordenadas.search');
     }
 
-    public function  getcoorcontenedor(Request  $request) 
+    public function  getcoorcontenedor(Request  $request)
     {
         $preguntas_A = [
             [ 'texto' => "1) ¿ Registro en Puerto ?", 'campo' => 'registro_puerto', 'tooltip' => "Registro en Puerto" ],
@@ -146,7 +146,7 @@ class CoordenadasController extends Controller
 
         $params = $request->query();
 
-        $proveedor = $params['proveedor'] ?? null;  
+        $proveedor = $params['proveedor'] ?? null;
         $cliente = $params['cliente'] ?? null;
         $subcliente = $params['subcliente'] ?? null;
         $fecha_inicio = $params['fecha_inicio'] ?? null;
@@ -154,8 +154,8 @@ class CoordenadasController extends Controller
         $contenedor = $params['contenedor'] ?? null;
         $idCliente = $params['idCliente'] ?? null;
         $contenedoresVarios = $params['contenedores'] ?? null;
-        
-        
+
+
         $asignaciones = DB::table('asignaciones')
         ->join('docum_cotizacion', 'docum_cotizacion.id', '=', 'asignaciones.id_contenedor')
         ->select(
@@ -175,7 +175,7 @@ class CoordenadasController extends Controller
                 );
         }, 'beneficiarios');
 
-  
+
         $datos = DB::table('cotizaciones')
      ->select(
         'cotizaciones.id as id_cotizacion',
@@ -214,32 +214,32 @@ class CoordenadasController extends Controller
         'coordenadas.cargado_patio',
         'coordenadas.cargado_patio_datetime',
         'tipo_b_estado',
-        DB::raw("CASE tipo_b_estado 
-        WHEN 0 THEN 'No Iniciado' 
-        WHEN 1 THEN 'Iniciado' 
-        WHEN 2 THEN 'Finalizado' 
+        DB::raw("CASE tipo_b_estado
+        WHEN 0 THEN 'No Iniciado'
+        WHEN 1 THEN 'Iniciado'
+        WHEN 2 THEN 'Finalizado'
          END as Estatus_Burrero"),
          'tipo_f_estado',
-        DB::raw("CASE tipo_f_estado 
-        WHEN 0 THEN 'No Iniciado' 
-        WHEN 1 THEN 'Iniciado' 
-        WHEN 2 THEN 'Finalizado' 
+        DB::raw("CASE tipo_f_estado
+        WHEN 0 THEN 'No Iniciado'
+        WHEN 1 THEN 'Iniciado'
+        WHEN 2 THEN 'Finalizado'
          END as Estatus_Foraneo"),
          'tipo_c_estado',
-        DB::raw("CASE tipo_c_estado 
-        WHEN 0 THEN 'No Iniciado' 
-        WHEN 1 THEN 'Iniciado' 
-        WHEN 2 THEN 'Finalizado' 
+        DB::raw("CASE tipo_c_estado
+        WHEN 0 THEN 'No Iniciado'
+        WHEN 1 THEN 'Iniciado'
+        WHEN 2 THEN 'Finalizado'
      END as Estatus_Completo"),
      'asig.foto_patio',
      'coordenadas.toma_foto_patio'
      )
     ->join('clients', 'cotizaciones.id_cliente', '=', 'clients.id')
-    
+
    ->joinSub($asignaciones, 'asig', function ($join) {
-      $join->on('asig.id_contenedor', '=', 'cotizaciones.id'); 
+      $join->on('asig.id_contenedor', '=', 'cotizaciones.id');
     })
-    ->Join('coordenadas', 'coordenadas.id_asignacion', '=', 'asig.id') 
+    ->Join('coordenadas', 'coordenadas.id_asignacion', '=', 'asig.id')
     ->joinSub($beneficiarios, 'beneficiarios', function ($join) {
         $join->on('asig.beneficiario_id', '=', 'beneficiarios.id')
              ->on('asig.tipo_contrato', '=', 'beneficiarios.tipo_contrato');
@@ -266,11 +266,11 @@ class CoordenadasController extends Controller
         return $query->whereBetween('asig.fecha_inicio', [$fecha_inicio, $fecha_fin]);
     })
     ->when($contenedor, function ($query) use ($contenedor) {
-        return $query->where('asig.num_contenedor', $contenedor); 
+        return $query->where('asig.num_contenedor', $contenedor);
     })
     ->when($contenedoresVarios, function ($query) use ($contenedoresVarios) {
         $contenedores = array_filter(array_map('trim', explode(';', $contenedoresVarios)));
-    
+
         if (count($contenedores) > 1) {
             return $query->whereIn('asig.num_contenedor', $contenedores);
         } else {
@@ -293,7 +293,7 @@ class CoordenadasController extends Controller
             ->orWhereNotNull('cargado_patio');
     })
     ->get();
-            
+
           if ($datos) {
             return response()->json([
                 'success' => true,
@@ -303,11 +303,11 @@ class CoordenadasController extends Controller
         } else {
             return response()->json(['success' => false]);
         }
-        
+
     }
     public function index($id,$tipoCuestionario){
 
-      
+
         $asignaciones = DB::table('asignaciones')
         ->join('docum_cotizacion', 'docum_cotizacion.id', '=', 'asignaciones.id_contenedor')
         ->select(
@@ -428,7 +428,7 @@ $idCordenada= $coordenadas->id_coordenadas;
 
     }
 
-    public function store(Request $request) 
+    public function store(Request $request)
     {
         $cotizacionesEx = Coordenadas::where('id_asignacion', $request->idAsig)
     ->where('id_cotizacion', $request->idCotSave)
@@ -450,7 +450,7 @@ $idCordenada= $coordenadas->id_coordenadas;
                 'inicio_descarga' => $request->inicio_descarga ?? null,
                 'fin_descarga' => $request->fin_descarga ?? null,
                 'recepcion_doc_firmados' => $request->recepcion_doc_firmados ?? null,
-        
+
                 'tipo_flujo_datatime' => $request->tipo_flujo_datatime ?? null,
                 'registro_puerto_datatime' => $request->registro_puerto_datatime ?? null,
                 'dentro_puerto_datatime' => $request->dentro_puerto_datatime ?? null,
@@ -467,7 +467,7 @@ $idCordenada= $coordenadas->id_coordenadas;
                 'tipo_b_estado' => $request-> tipo_b_estado,
                 'tipo_f_estado' => $request-> tipo_f_estado,
             ]);
-        
+
             return response()->json([
                 'message' => 'Coordenada guardada correctamente',
                 'data' => $nuevaCot
@@ -490,31 +490,31 @@ $idCordenada= $coordenadas->id_coordenadas;
                    $idCotizacion = $coordenada->id_cotizacion;
 
                     $coordenada->update([
-                        $request->columna => $request->coordenadas,  
-                        $request->columna_datetime =>  $fecha  
-                       
+                        $request->columna => $request->coordenadas,
+                        $request->columna_datetime =>  $fecha
+
                     ]);
                       $message='Coordenada guardada.';
                     if($request->columna === 'recepcion_doc_firmados'){
-                            //finalizar viaje 
+                            //finalizar viaje
                          $cotizacion=    Cotizaciones::find($idCotizacion);
                          if ($cotizacion){
                                    $cotizacion->update([
                                             'estatus' => 'Finalizado'
-                                             
-                                        
+
+
                                         ]);
 
                              $message='Coordenada guardada. Viaje finalizado';
                          }
 
                     }
-                   
-                    
+
+
                     return response()->json(['success' => true,'message'=> $message]);
                 }
-            
-                
+
+
                 return response()->json(['error' => 'Coordenada no encontrada'], 404);
         }
 
@@ -563,23 +563,24 @@ $idCordenada= $coordenadas->id_coordenadas;
         return redirect()->back();
 
     }
-    
+
     public function getEntidadesPC()
     {
-       
-        
-        $proveedores = Proveedor::where('id_empresa', auth()->user()->id_empresa)
-                                ->orderBy('created_at', 'desc')
-                                ->get(['id', 'nombre']); 
 
-       
+
+        $proveedores = Proveedor::catalogoPrincipal()
+            ->where('id_empresa', auth()->user()->id_empresa)
+            ->orderBy('created_at', 'desc')
+            ->get(['id', 'nombre']);
+
+
         $clientes = Client::join('client_empresa as ce', 'clients.id', '=', 'ce.id_client')
                         ->where('ce.id_empresa', Auth::User()->id_empresa)
                         ->where('is_active', 1)
                         ->orderBy('nombre')
-                        ->get(['clients.id', 'clients.nombre']); 
+                        ->get(['clients.id', 'clients.nombre']);
 
-        
+
         return response()->json([
             'proveedor' => $proveedores,
             'client' => $clientes
@@ -593,18 +594,18 @@ $idCordenada= $coordenadas->id_coordenadas;
 
             return response()->json($subclientes);
         }
-  
+
 
     public function subirArchivo(Request $request)
         {
             if ($request->hasFile('documento_pregunta_8')) {
                 $idArc = $request->cotizacion_id;
-                
+
                 $file = $request->file('documento_pregunta_8');
                  $path = public_path() . '/cotizaciones/cotizacion'. $idArc;
-               
- 
-                
+
+
+
                 if (!file_exists($path)) {
                     mkdir($path, 0755, true);
                 }
@@ -612,9 +613,9 @@ $idCordenada= $coordenadas->id_coordenadas;
                 $fileName = uniqid() . '_' . $file->getClientOriginalName();
                 $file->move($path, $fileName);
 
-             
+
                 $doc = \App\Models\DocumCotizacion::firstOrNew([
-                    'id_cotizacion' =>  $idArc 
+                    'id_cotizacion' =>  $idArc
                 ]);
 
                 $doc->foto_patio = $fileName;
@@ -625,16 +626,16 @@ $idCordenada= $coordenadas->id_coordenadas;
 
                 if ($coordenada && $doc) {
                     $fecha = Carbon::now();
-                   
+
                     $coordenada->update([
-                        'toma_foto_patio' => '1',  
-                        'toma_foto_patio_datetime' =>  $fecha  
-                       
+                        'toma_foto_patio' => '1',
+                        'toma_foto_patio_datetime' =>  $fecha
+
                     ]);
-            
-                    
+
+
                 }
-            
+
 
                 return response()->json([
                     'success' => true,
@@ -650,14 +651,14 @@ $idCordenada= $coordenadas->id_coordenadas;
         }
 
 
-        //rastreo de gps camiones 
+        //rastreo de gps camiones
     public function rastrearIndex(){
 
         return view('coordenadas.rastrear');
     }
 
 
-    public function  getEquiposGps(Request  $request) 
+    public function  getEquiposGps(Request  $request)
     {
 
         $idCliente =0;
@@ -666,13 +667,13 @@ $idCordenada= $coordenadas->id_coordenadas;
         {
             $idCliente =$cliendID;
         }
-         
+
 
         $params = $request->query();
 
-      
+
         $contenedoresVarios = $params['contenedores'] ?? null;
-        
+
         $idEmpresa = Auth::User()->id_empresa;
         $asignaciones = DB::table('asignaciones')
         ->join('docum_cotizacion', 'docum_cotizacion.id', '=', 'asignaciones.id_contenedor')
@@ -690,8 +691,8 @@ $idCordenada= $coordenadas->id_coordenadas;
         'asignaciones.fecha_fin',
         'equipos.id as id_equipo_unico',
         'equipos.id_equipo',
-        'equipos.imei', 
-        
+        'equipos.imei',
+
         'gps_company.url_conexion as tipoGps',
         'eq_chasis.imei as imei_chasis',
          'eq_chasis.id_equipo as id_equipo_chasis',
@@ -709,7 +710,7 @@ $idCordenada= $coordenadas->id_coordenadas;
                 );
         }, 'beneficiarios');
 
-  
+
         $datosAll = DB::table('cotizaciones')
          ->select(
             'cotizaciones.id as id_cotizacion',
@@ -719,7 +720,7 @@ $idCordenada= $coordenadas->id_coordenadas;
             'clients.nombre as cliente',
             'cotizaciones.origen',
             'cotizaciones.destino',
-            'asig.num_contenedor as contenedor', 
+            'asig.num_contenedor as contenedor',
             'cotizaciones.estatus',
             'asig.id_equipo_unico',
             'asig.imei',
@@ -740,28 +741,28 @@ $idCordenada= $coordenadas->id_coordenadas;
             'beneficiarios.telefono as telefono_beneficiario'
         )
     ->join('clients', 'cotizaciones.id_cliente', '=', 'clients.id')
-    
+
    ->joinSub($asignaciones, 'asig', function ($join) {
-      $join->on('asig.id_contenedor', '=', 'cotizaciones.id'); 
+      $join->on('asig.id_contenedor', '=', 'cotizaciones.id');
     })
-    ->LeftJoin('coordenadas', 'coordenadas.id_asignacion', '=', 'asig.id') 
+    ->LeftJoin('coordenadas', 'coordenadas.id_asignacion', '=', 'asig.id')
     ->joinSub($beneficiarios, 'beneficiarios', function ($join) {
         $join->on('asig.beneficiario_id', '=', 'beneficiarios.id')
              ->on('asig.tipo_contrato', '=', 'beneficiarios.tipo_contrato');
     })
     ->whereNotNull('asig.imei')
     ->whereDate('asig.fecha_fin', '>=',  Carbon::now()->toDateString())
-   
+
     ->when($contenedoresVarios, function ($query) use ($contenedoresVarios) {
         $contenedores = array_filter(array_map('trim', explode(';', $contenedoresVarios)));
-    
+
         if (count($contenedores) > 1) {
             return $query->whereIn('asig.num_contenedor', $contenedores);
         } else {
             return $query->where('asig.num_contenedor', $contenedores[0]);
         }
     })->where('cotizaciones.estatus', '=', 'Aprobada')
-    
+
     ->get();
     //dd($datosAll);
     $datos= null;
@@ -799,7 +800,7 @@ $idCordenada= $coordenadas->id_coordenadas;
   ->where('conboys.estatus', '=', 'Activo')
     ->when($idCliente !== 0, function ($query) use ($idCliente) {
     return $query->where('cotizaciones.id_cliente', $idCliente);
-})   
+})
     ->distinct()
     ->get();
 
@@ -829,7 +830,7 @@ $idCordenada= $coordenadas->id_coordenadas;
         )
             ->when($idCliente !== 0, function ($query) use ($idCliente) {
             return $query->where('cotizaciones.id_cliente', $idCliente);
-        })   ->where('conboys.estatus', '=', 'Activo')  
+        })   ->where('conboys.estatus', '=', 'Activo')
         ->get();
 
 
@@ -868,7 +869,7 @@ $idCordenada= $coordenadas->id_coordenadas;
         } else {
             return response()->json(['success' => false]);
         }
-        
+
     }
 
 
@@ -876,8 +877,8 @@ $idCordenada= $coordenadas->id_coordenadas;
 
         $intervals = RastreoIntervals::where('task_name', 'rastreo_gps_interval')->first();
 
-    
+
         return view('coordenadas.rastreoTab',compact('intervals'));
-        
+
     }
 }

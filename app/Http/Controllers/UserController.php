@@ -8,6 +8,7 @@ use App\Models\User;
 use Spatie\Permission\Models\Role;
 use DB;
 use Hash;
+use Illuminate\Support\Str;
 use Illuminate\Support\Arr;
 use Session;
 use App\Models\Empresas;
@@ -23,11 +24,20 @@ class UserController extends Controller
     public function index(Request $request)
 {
     // Si viene la petición con ?json=1 (desde AG Grid)
+   $user = auth()->user();
+
+    // 🔹 Consulta base dependiendo si es admin o no
+    $query = User::with('Empresa')
+        ->orderBy('id', 'DESC');
+
+    if (!$user->es_admin) {
+        // Si NO es admin → solo usuarios de su empresa
+        $query->where('id_empresa', $user->id_empresa);
+    }
+
+    // 🔹 Si viene el parámetro ?json
     if ($request->has('json')) {
-        $users = User::with(['Empresa'])
-            ->where('id_empresa', auth()->user()->Empresa->id)
-            ->orderBy('id', 'DESC')
-            ->get();
+        $users = $query->get();
 
         return response()->json($users->map(function ($user) {
             return [
@@ -40,10 +50,8 @@ class UserController extends Controller
         }));
     }
 
-    // Si NO viene ?json, entonces renderiza la vista como siempre
-    $data = User::where('id_empresa', auth()->user()->Empresa->id)
-        ->orderBy('id', 'DESC')
-        ->paginate(10);
+    // 🔹 Si NO viene ?json, renderiza la vista normal
+    $data = $query->paginate(10);
 
     return view('users.index', compact('data'))
         ->with('i', ($request->input('page', 1) - 1) * 10);
@@ -92,9 +100,11 @@ class UserController extends Controller
         'id_cliente' => 'nullable|integer|min:0',
     ]);
 
+    
     $input = $request->only(['name', 'email', 'password', 'id_empresa', 'id_cliente']);
     $input['password'] = Hash::make($input['password']);
 
+    $input['es_admin'] = $request->has('es_admin');
     $roles = $request->input('roles');
 
     // Si no es cliente, se borra el id_cliente
@@ -214,5 +224,32 @@ class UserController extends Controller
         $user->save();
 
         return redirect()->back()->with('success', 'Empresa cambiada correctamente.');
+    }
+
+    public function resetPassword($id)
+    {
+    try {
+            $user = User::findOrFail($id);
+
+            // Generar una contraseña temporal
+            $tempPassword = Str::random(8);
+
+            // Guardar en BD
+            $user->password = Hash::make($tempPassword);
+            $user->save();
+
+            // Responder JSON
+            return response()->json([
+                'success' => true,
+                'temp_password' => $tempPassword,
+                'email' => $user->email,
+                'name' => $user->name,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al generar la contraseña: ' . $e->getMessage()
+            ]);
+        }
     }
 }

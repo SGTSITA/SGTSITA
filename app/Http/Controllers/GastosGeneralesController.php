@@ -267,7 +267,12 @@ class GastosGeneralesController extends Controller
           
             DB::commit();
 
-            $aplicarGasto = self::aplicarGastos($gasto_general->id, $request->formasAplicar, $request->viajes,$request->unidades);
+            $id_banco = $request->get('id_banco1') ? $request->get('id_banco1') : null;
+            if($request->get('tipoPago') == 1){
+                $id_banco = null; //Si es diferido, no se aplica al banco
+            }
+
+            $aplicarGasto = self::aplicarGastos($gasto_general->id, $request->formasAplicar, $request->viajes,$request->unidades,$id_banco);
 
             if($aplicarGasto["TMensaje"] == "success"){
                 GastosGenerales::where('gasto_origen_id',$gasto_general->id)->update(["aplicacion_gasto" => $aplicarGasto["Aplicacion"]]);
@@ -290,12 +295,15 @@ class GastosGeneralesController extends Controller
 
     }
 
-    public function aplicarGastos($gastoId, $formaAplicacion, $viajes,$unidades){
+    public function aplicarGastos($gastoId, $formaAplicacion, $viajes,$unidades, $bancoId){
         try{
 
             DB::beginTransaction();
+          
             
             $gastosGenerales = GastosGenerales::where('id',$gastoId)->first();
+
+
 
             switch($formaAplicacion){
                 case  "Viaje":
@@ -322,13 +330,13 @@ class GastosGeneralesController extends Controller
                         //Añadir la parte proporcional a cada viaje de la lista
                         $datosGasto = [
                             "id_cotizacion" => $contenedor->id_cotizacion,
-                            "id_banco" =>  null,
+                            "id_banco" =>  $bancoId ? $bancoId : null,
                             "id_asignacion" => $asignacion->id,
                             "id_operador" => $asignacion->id_operador,
                             "cantidad" => $montoViaje,
                             "tipo" => $gastosGenerales->motivo,
-                            "estatus" => 'Pago Pendiente',
-                            "fecha_pago" => null,
+                            "estatus" =>  $bancoId ? 'Pagado':'Pago Pendiente',
+                            "fecha_pago" =>  $bancoId ? date('Y-m-d') : null, 
                             "pago_inmediato" => $gastosGenerales->diferir_gasto  ,
                             "id_gasto_origen" => $gastoId,
                             "created_at" => Carbon::now()

@@ -1,10 +1,10 @@
 ---
 title: Broadcast
 categories:
-  - Communications
+    - Communications
 tags:
-  - radio
-  - "radio wave"
-  - amplify
-  - wavelength
+    - radio
+    - 'radio wave'
+    - amplify
+    - wavelength
 ---

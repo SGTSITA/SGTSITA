@@ -1,7 +1,7 @@
 ---
 title: Arrows expand
 categories:
-  - Arrows
+    - Arrows
 tags:
-  - arrow
+    - arrow
 ---
