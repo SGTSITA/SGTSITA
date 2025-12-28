@@ -159,6 +159,7 @@ class BancosController extends Controller
         $banco->cuenta_bancaria = $request->get('cuenta_bancaria');
         $banco->clabe = $request->get('clabe');
         $banco->saldo_inicial = $request->get('saldo_inicial');
+        $banco->saldo = 0;
         $banco->save();
 
         return redirect()->route('index.bancos')

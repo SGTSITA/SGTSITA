@@ -12,6 +12,7 @@ use App\Models\DocumCotizacion;
 use App\Models\Proveedor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class CuentasPagarController extends Controller
 {
