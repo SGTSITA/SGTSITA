@@ -103,6 +103,17 @@ const formFieldsMep = [
     },
 ];
 
+const normalizarFecha = (valueFecha) => {
+    if (!valueFecha) return null;
+
+    if (valueFecha.includes('/')) {
+        const [d, m, y] = valueFecha.split('/');
+        return `${y}-${m}-${d}`;
+    }
+
+    return valueFecha.substring(0, 10);
+};
+
 const btnAsignaOperador = document.querySelector('#btnAsignaOperador');
 const btnPlanearViaje = document.querySelector('#btnPlanearViaje');
 
@@ -138,6 +149,25 @@ function asignarOperador2(planear = 0) {
                 );
                 return false;
             }
+
+            //validar fechas de inicio y fin si se planea el viaje.
+            if (planear === 1 && (item.field === 'txtFechaInicio' || item.field === 'txtFechaFinal')) {
+                let valueFecha = field.value;
+
+                if (!valueFecha) {
+                    Swal.fire(
+                        'El campo ' + item.label + ' es obligatorio al planear el viaje',
+                        'Parece que no ha proporcionado información en el campo ' + item.label,
+                        'warning',
+                    );
+                    return false;
+                }
+                //formatear fecha para yyy-mm-dd hh:mm:ss
+                let fechaObj = normalizarFecha(valueFecha);
+
+                formData[item.field] = fechaObj;
+                return true;
+            }
         }
 
         if (field.dataset.mepUnidad) {
@@ -150,10 +180,9 @@ function asignarOperador2(planear = 0) {
 
         formData[item.field] = field.value;
 
-        formData['planear'] = planear;
-
         return true;
     });
+    formData['planear'] = planear;
 
     if (!passValidation) return passValidation;
 

@@ -81,7 +81,7 @@ Route::group(['prefix' => 'manager'], function () {
 
 });
 
-Route::post('/whatsapp/send', [WhatsAppController::class, 'enviarGrupo'])->name('whatsapp.enviarGrupo');
+// Route::post('/whatsapp/send', [WhatsAppController::class, 'enviarGrupo'])->name('whatsapp.enviarGrupo');
 
 
 Route::group(['prefix' => 'coordenadas'], function () {
