@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Crypt;
 use App\Models\Empresas;
 use App\Models\ServicioGps;
+use Illuminate\Support\Facades\Log;
 
 trait JimiGpsTrait
 {
@@ -47,7 +48,8 @@ trait JimiGpsTrait
             });
         } catch (\Exception $e) {
             Log::error('Error al obtener token GPS JIMI: ' . $e->getMessage());
-            Cache::forget($cacheKey);
+            // Cache::forget($cacheKey);
+
             return false;
         }
     }
