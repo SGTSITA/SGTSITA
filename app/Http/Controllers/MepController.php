@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-
 use App\Models\Empresas;
 use App\Models\Proveedor;
 use App\Models\Asignaciones;
@@ -15,30 +14,32 @@ use App\Models\DocumCotizacion;
 
 class MepController extends Controller
 {
-    public function index(){
+    public function index()
+    {
         $empresas = Empresas::get();
 
         $gpsCompanies = GpsCompany::orderBy('nombre')->get();
-        return view('mep.viajes.index', compact('empresas','gpsCompanies'));
+        return view('mep.viajes.index', compact('empresas', 'gpsCompanies'));
     }
 
-    public function getCatalogosMep(Request $request){
-        $unidades = Equipo::where('id_empresa',auth()->user()->id_empresa)->get();
-        $operadores = Operador::where('id_empresa',auth()->user()->id_empresa)->get();
+    public function getCatalogosMep(Request $request)
+    {
+        $unidades = Equipo::where('id_empresa', auth()->user()->id_empresa)->get();
+        $operadores = Operador::where('id_empresa', auth()->user()->id_empresa)->get();
 
         return response()->json(["TMensaje" => "success", "unidades" => $unidades, "operadores" => $operadores]);
     }
 
     public function getCotizacionesList()
     {
-        $empresa = Empresas::where('id',auth()->user()->id_empresa)->first();
+        $empresa = Empresas::where('id', auth()->user()->id_empresa)->first();
         $proveedor = Proveedor::catalogoPrincipal()->where('rfc', $empresa->rfc)->pluck('id');
-        $contenedoresAsignados = Asignaciones::whereIn('id_proveedor',$proveedor)->get()->pluck('id_contenedor');
+        $contenedoresAsignados = Asignaciones::whereIn('id_proveedor', $proveedor)->get()->pluck('id_contenedor');
 
-        $cotizaciones = Cotizaciones::whereIn('id',$contenedoresAsignados)
+        $cotizaciones = Cotizaciones::whereIn('id', $contenedoresAsignados)
             ->where('estatus', '=', 'Aprobada')
             ->where('estatus_planeacion', '=', 1)
-            ->where('jerarquia', "!=",'Secundario')
+            ->where('jerarquia', "!=", 'Secundario')
             ->orderBy('created_at', 'desc')
             ->with(['cliente', 'DocCotizacion.Asignaciones'])
             ->get()
@@ -76,13 +77,13 @@ class MepController extends Controller
 
     public function getCotizacionesFinalizadas()
     {
-        $empresa = Empresas::where('id',auth()->user()->id_empresa)->first();
+        $empresa = Empresas::where('id', auth()->user()->id_empresa)->first();
         $proveedor = Proveedor::catalogoPrincipal()->where('rfc', $empresa->rfc)->pluck('id');
-        $contenedoresAsignados = Asignaciones::whereIn('id_proveedor',$proveedor)->get()->pluck('id_contenedor');
+        $contenedoresAsignados = Asignaciones::whereIn('id_proveedor', $proveedor)->get()->pluck('id_contenedor');
 
-        $cotizaciones = Cotizaciones::whereIn('id',$contenedoresAsignados)
+        $cotizaciones = Cotizaciones::whereIn('id', $contenedoresAsignados)
             ->where('estatus', 'Finalizado')
-            ->where('jerarquia', "!=",'Secundario')
+            ->where('jerarquia', "!=", 'Secundario')
             ->orderBy('created_at', 'desc')
             ->with([
                 'Cliente',
@@ -122,10 +123,11 @@ class MepController extends Controller
         return response()->json(['list' => $cotizaciones]);
     }
 
-    public function validarEquiposEmpresa($numUnidad, $imei, $placas, $serie, $provGps, $tipoEquipo){
-        $unidad = Equipo::where('id_empresa',auth()->user()->id_empresa)->where('id_equipo',$numUnidad);
-        if(!$unidad->exists()){
-            $unidad = new Equipo;
+    public function validarEquiposEmpresa($numUnidad, $imei, $placas, $serie, $provGps, $tipoEquipo)
+    {
+        $unidad = Equipo::where('id_empresa', auth()->user()->id_empresa)->where('id_equipo', $numUnidad);
+        if (!$unidad->exists()) {
+            $unidad = new Equipo();
             $unidad->id_equipo = $numUnidad;
             $unidad->imei = $imei;
             $unidad->placas = $placas;
@@ -133,7 +135,7 @@ class MepController extends Controller
             $unidad->gps_company_id = $provGps;
             $unidad->tipo = $tipoEquipo;
             $unidad->save();
-        }else{
+        } else {
             $unidad = $unidad->first();
             $unidad->imei = $imei;
             $unidad->placas = $placas;
@@ -145,18 +147,19 @@ class MepController extends Controller
         return $unidad->id;
     }
 
-    public function asignarOperador(Request $r){
+    public function asignarOperador(Request $r)
+    {
         $formData = $r->formData;
         $planearViaje = $formData['planear'];
 
         //Verificar operador
-        $operador = Operador::where('id_empresa',auth()->user()->id_empresa)->where('nombre',$formData['txtOperador']);
-        if(!$operador->exists()){
-            $operador = new Operador;
+        $operador = Operador::where('id_empresa', auth()->user()->id_empresa)->where('nombre', $formData['txtOperador']);
+        if (!$operador->exists()) {
+            $operador = new Operador();
             $operador->nombre = $formData['txtOperador'];
             $operador->telefono = $formData['txtTelefono'];
             $operador->save();
-        }else{
+        } else {
             $operador = $operador->first();
             $operador->telefono = $formData['txtTelefono'];
             $operador->update();
@@ -165,11 +168,11 @@ class MepController extends Controller
         $idOperador = $operador->id;
 
         //TractoCamion
-       // $idUnidad = self::validarEquiposEmpresa($formData['txtNumUnidad'], $formData['txtImei'],$formData['txtPlacas'],$formData['txtSerie'],$formData['selectGPS'],'Tractos / Camiones');
-        $unidad = Equipo::where('id_empresa',auth()->user()->id_empresa)->where('id_equipo',$formData['txtNumUnidad']);
+        // $idUnidad = self::validarEquiposEmpresa($formData['txtNumUnidad'], $formData['txtImei'],$formData['txtPlacas'],$formData['txtSerie'],$formData['selectGPS'],'Tractos / Camiones');
+        $unidad = Equipo::where('id_empresa', auth()->user()->id_empresa)->where('id_equipo', $formData['txtNumUnidad']);
 
-        if(!$unidad->exists()){
-            $unidad = new Equipo;
+        if (!$unidad->exists()) {
+            $unidad = new Equipo();
             $unidad->id_equipo = $formData['txtNumUnidad'];
             $unidad->imei = $formData['txtImei'];
             $unidad->placas = $formData['txtPlacas'];
@@ -178,7 +181,7 @@ class MepController extends Controller
             $unidad->tipo = 'Tractos / Camiones';
             $unidad->save();
 
-        }else{
+        } else {
             $unidad = $unidad->first();
             $unidad->imei = $formData['txtImei'];
             $unidad->placas = $formData['txtPlacas'];
@@ -189,28 +192,29 @@ class MepController extends Controller
 
         $idunidad = $unidad->id;
         //Chasis / Plataforma
-        $idChasisA = self::validarEquiposEmpresa($formData['txtNumChasisA'], $formData['txtImeiChasisA'],$formData['txtPlacasA'],'',$formData['selectChasisAGPS'],'Chasis / Plataforma');
-        $idChasisB = self::validarEquiposEmpresa($formData['txtNumChasisB'], $formData['txtImeiChasisB'],$formData['txtPlacasB'],'',$formData['selectChasisBGPS'],'Chasis / Plataforma');
+        $idChasisA = self::validarEquiposEmpresa($formData['txtNumChasisA'], $formData['txtImeiChasisA'], $formData['txtPlacasA'], '', $formData['selectChasisAGPS'], 'Chasis / Plataforma');
+        $idChasisB = self::validarEquiposEmpresa($formData['txtNumChasisB'], $formData['txtImeiChasisB'], $formData['txtPlacasB'], '', $formData['selectChasisBGPS'], 'Chasis / Plataforma');
 
 
         $idContenedor = $r->input('idContenedor');
-        $asignacion = Asignaciones::where('id_contenedor',$idContenedor);
+        $asignacion = Asignaciones::where('id_contenedor', $idContenedor);
         $fechaI =  date('Y-m-d');
         $fechaF =  date('Y-m-d');
 
 
-        if( $planearViaje ==1){
-            $fechaI =$r->txtFechaInicio;
-            $fechaF= $r->txtFechaFinal;
+        if ($planearViaje == 1) {
+            $fechaI = $formData['txtFechaInicio'];
+            $fechaF = $formData['txtFechaFinal'];
+            // dd($fechaI);
         }
 
         $TituloResponse = 'Se ha realizado la asignacion correctamente';
         $MessageResponse = '';
 
-        if($asignacion->exists()){
-           // $asignacion1 = $asignacion->first();
+        if ($asignacion->exists()) {
+            // $asignacion1 = $asignacion->first();
             $asignacion->update([
-                "id_operador"=>$idOperador,
+                "id_operador" => $idOperador,
                 "id_camion" => $idunidad,
                 "id_chasis" => $idChasisA,
                 "id_chasis2" => $idChasisB,
@@ -218,13 +222,13 @@ class MepController extends Controller
                 "fecha_fin" => $fechaF,
             ]);
 
-        $TituloResponse = 'Actualizado correctamente';
-       $MessageResponse ='Los datos fueron modificados con exito';
+            $TituloResponse = 'Actualizado correctamente';
+            $MessageResponse = 'Los datos fueron modificados con exito';
 
 
-        }else{
+        } else {
             $fecha = date('Y-m-d');
-            $asignacion = new Asignaciones;
+            $asignacion = new Asignaciones();
             $asignacion->id_empresa = auth()->user()->id_empresa;
             $asignacion->id_contenedor = $idContenedor;
             $asignacion->id_camion = $idunidad;
@@ -240,27 +244,30 @@ class MepController extends Controller
 
         }
 
-            if( $planearViaje ==1){ // validar desde el form
-                //dd($planearViaje);
-                $contenedor = DocumCotizacion::where('id',$idContenedor)->first(); //buscamos la relacion no siempre sera el mismo id
-                Cotizaciones::where('id',$contenedor->id_cotizacion)->update(['estatus_planeacion' => 1]);
-            }
+        if ($planearViaje == 1) { // validar desde el form
+            //dd($planearViaje);
+            $contenedor = DocumCotizacion::where('id', $idContenedor)->first(); //buscamos la relacion no siempre sera el mismo id
+            Cotizaciones::where('id', $contenedor->id_cotizacion)->update(['estatus_planeacion' => 1]);
+            $TituloResponse = 'Datos guardados correctamente';
+            $MessageResponse = 'Viaje planeado con exito';
+        }
         //$idAsignacion = $contenedor['id_asignacion'];
 
         //Asignaciones::where('id',$idAsignacion)->update(["id_operador"=>$idOperador,"id_camion" => $idunidad]);
         return response()->json(["TMensaje" => "success", "Titulo" =>  $TituloResponse,"Mensaje" => $MessageResponse]);
     }
 
-    public function verAsignacion(Request $request){
+    public function verAsignacion(Request $request)
+    {
         $asignacion = Asignaciones::with(['Camion', 'Chasis', 'Chasis2','Operador',
-                'Contenedor' => function($q){
-                $q->select('id', 'id_cotizacion');
-            },
-            'Contenedor.Cotizacion' => function($q){
-            $q->select('id', 'estatus', 'origen', 'destino', 'estatus_planeacion');
-        }
+                'Contenedor' => function ($q) {
+                    $q->select('id', 'id_cotizacion');
+                },
+            'Contenedor.Cotizacion' => function ($q) {
+                $q->select('id', 'estatus', 'origen', 'destino', 'estatus_planeacion');
+            }
 
-        ])->where('id_contenedor',$request->idContenedor)->get();
+        ])->where('id_contenedor', $request->idContenedor)->get();
         return $asignacion;
 
     }
