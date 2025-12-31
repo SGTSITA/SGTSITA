@@ -15,6 +15,7 @@ use App\Models\Asignaciones;
 use App\Models\Correo;
 use App\Models\Proveedor;
 use App\Models\EstatusManiobra;
+use App\Models\BitacoraCotizacionesEstatus;
 use Illuminate\Support\Facades\Mail;
 use App\Traits\CommonTrait;
 use Carbon\Carbon;
@@ -989,7 +990,13 @@ class ExternosController extends Controller
                )
                         ? 'Ninguno'
                         : $c->estado_contenedor,
-
+                'agente_aduanal' => (
+                    is_null($c->agente_aduanal) ||
+                        $c->agente_aduanal === 'null' ||
+                        trim($c->agente_aduanal) === ''
+                )
+                        ? ''
+                        : $c->agente_aduanal,
                 "Empresa" => $c->empresa,
                 "Proveedor" => $c->proveedor,
                 "Cliente" => $c->cliente,
@@ -1170,6 +1177,14 @@ class ExternosController extends Controller
             $cotizacion->estatus_maniobra_id = $request->estatus_id;
             $cotizacion->save();
 
+
+            $bitacora = new BitacoraCotizacionesEstatus();
+            $bitacora->cotizaciones_id = $cotizacion->id;
+            $bitacora->estatus_id = $request->estatus_id;
+            $bitacora->user_id = Auth::user()->id;
+            $bitacora->nota = $request->notaEstatus;
+            $bitacora->save();
+
             DB::commit();
 
             return response()->json(["Titulo" => "Estatus actualizado","Mensaje" => "El estatus de la maniobra se actualizó correctamente","TMensaje" => "success"]);
@@ -1180,6 +1195,23 @@ class ExternosController extends Controller
 
     }
 
+    public function historialEstatus($idCotizacion)
+    {
+        $historial = BitacoraCotizacionesEstatus::with('estatus', 'usuario')
+    ->where('cotizaciones_id', $idCotizacion)
+    ->orderBy('created_at', 'desc')
+    ->get()
+    ->map(function ($h) {
+        return [
+            'estatus' => $h->estatus->nombre,
+            'nota' => $h->nota,
+            'usuario' => $h->usuario->name,
+            'created_at' => $h->created_at->format('d/m/Y H:i'),
+        ];
+    });
+
+        return response()->json($historial);
+    }
 
 
     public function Exportpdf(Request $request)

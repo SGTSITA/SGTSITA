@@ -82,7 +82,8 @@ class Cotizaciones extends Model
         'user_id',
         'estatus_maniobra_id',
         'confirmacion_sello',
-        'nuevo_sello'
+        'nuevo_sello',
+        'agente_aduanal'
 
     ];
 

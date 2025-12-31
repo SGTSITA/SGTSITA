@@ -59,6 +59,7 @@ Route::group(["prefix" => "viajes"], function () {
     Route::post('documents/pending-local', [ExternosController::class,'getContenedoreslocalesPendientes'])->name('documents.pendinglocal');
     Route::post('file-manager-local', [ExternosController::class,'fileManagerlocal'])->name('mis.file-managerlocal');
     Route::post('/maniobras/cambiar-estatus', [ExternosController::class,'cambiarestatuslocal'])->name('maniobras.cambiarestatuslocal');
+    Route::get('/maniobras/{maniobraId}/historial-estatus', [ExternosController::class,'historialEstatus'])->name('maniobras.historial-estatus');
 
 });
 
