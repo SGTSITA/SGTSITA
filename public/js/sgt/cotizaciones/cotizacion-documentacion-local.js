@@ -60,6 +60,36 @@ class CustomButtonComponent {
     }
 }
 
+function verHistorialEstatus(maniobraId, contenedor) {
+    fetch(`/viajes/maniobras/${maniobraId}/historial-estatus`)
+        .then((res) => res.json())
+        .then((data) => {
+            let html = '';
+            let title = `Historial de estatus - ${contenedor || ''}`;
+
+            if (data.length === 0) {
+                html = '<p class="text-muted text-center">Sin historial</p>';
+            }
+
+            data.forEach((item) => {
+                html += `
+                    <div class="mb-3 border-start ps-3">
+                        <strong>${item.estatus}</strong><br>
+                        <small class="text-muted">
+                          Fecha Creado:  ${item.created_at}
+                        </small>
+                        <p class="mb-0">${item.nota ?? ''}</p>
+                    </div>
+                `;
+            });
+
+            document.getElementById('historialEstatusContenido').innerHTML = html;
+            document.getElementById('modalHistorialEstatusTitle').innerText = title;
+
+            new bootstrap.Modal(document.getElementById('modalHistorialEstatus')).show();
+        });
+}
+
 const localeText = {
     page: 'Página',
     more: 'Más',
@@ -203,7 +233,7 @@ const gridOptions = {
                 return styles;
             },
         },
-        { field: 'Referencia', headerName: 'Referencia', minWidth: 180, autoHeight: true },
+        { field: 'Referencia', headerName: 'Referencia', minWidth: 150, autoHeight: true },
         {
             field: 'estado_contenedor',
             headerName: 'Estado Contenedor',
@@ -231,9 +261,22 @@ const gridOptions = {
         {
             field: 'EstatusManiobra',
             headerName: 'Estatus',
-            cellRenderer: (p) => `<span>${p.value}</span>`,
+
             cellClassRules: agCellClassRules,
             minWidth: 180,
+            cellRenderer: (p) => {
+                if (!p.value) return '';
+
+                return `
+            <span
+                style="cursor:pointer; text-decoration:underline;"
+                onclick="verHistorialEstatus(${p.data.id}, '${p.data.NumContenedor}')"
+                title="Ver historial de estatus"
+            >
+                ${p.value}
+            </span>
+        `;
+            },
         },
 
         { field: 'Origen', minWidth: 140 },
@@ -255,6 +298,7 @@ const gridOptions = {
         { field: 'total_pernocta', headerName: 'Total Pernocta', width: 120 },
         { field: 'costo_maniobra_local', headerName: 'Maniobra', width: 120 },
         { field: 'total_general', headerName: 'Total General', width: 120 },
+        { field: 'agente_aduanal', minWidth: 180 },
 
         { field: 'Empresa', minWidth: 180 },
         { field: 'Proveedor', minWidth: 180 },
@@ -867,6 +911,7 @@ function ModalCambiarEstatus() {
 function guardarCambioEstatus() {
     const maniobraId = document.getElementById('maniobra_id').value;
     const estatusId = document.getElementById('estatus_id').value;
+    const notaEstatus = document.getElementById('nota_estatus').value;
     var _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
     if (!estatusId) {
@@ -883,6 +928,7 @@ function guardarCambioEstatus() {
             body: JSON.stringify({
                 estatus_id: estatusId,
                 idCotizacion: maniobraId, //cotizacion id
+                notaEstatus: notaEstatus,
             }),
         })
             .then((r) => r.json())

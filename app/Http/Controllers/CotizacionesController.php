@@ -21,6 +21,7 @@ use App\Models\ClientEmpresa;
 use App\Models\EmpresaGps;
 use App\Models\GpsCompany;
 use App\Models\BancoDineroOpe;
+use App\Models\BitacoraCotizacionesEstatus;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Carbon\Carbon;
@@ -2186,7 +2187,7 @@ class CotizacionesController extends Controller
 
         try {
 
-
+            $estatus_maniobra_id_inicial = 4;
             $contenedorExistente = DocumCotizacion::where('num_contenedor', $request->num_contenedor)
                                                      //  ->where('id_empresa', $idEmpresa)
                                                        ->first();
@@ -2289,11 +2290,20 @@ class CotizacionesController extends Controller
                 'nuevo_sello'        => $nuevoSelloBool,
                 'confirmacion_sello'        => $confirmacionSelloBool,
 
-                'estatus_maniobra_id' => 4,
+                'estatus_maniobra_id' => $estatus_maniobra_id_inicial,
                 'origen_captura' => $origen_inicial,
                 'user_id' => Auth::User()->id,
+                'agente_aduanal' => $request->agente_aduanal ?? '',
 
             ]);
+
+
+            $bitacora = new BitacoraCotizacionesEstatus();
+            $bitacora->cotizaciones_id = $cotizacion->id;
+            $bitacora->estatus_id = $estatus_maniobra_id_inicial;
+            $bitacora->user_id = Auth::user()->id;
+            $bitacora->nota = 'Creación de cotización local';
+            $bitacora->save();
 
 
             $doc = DocumCotizacion::create([
@@ -2423,6 +2433,8 @@ class CotizacionesController extends Controller
             } else {
                 $cot->confirmacion_sello  = null;
             }
+
+            $cot->agente_aduanal = $request->agente_aduanal ?? '';
 
 
             $cot->save();

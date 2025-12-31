@@ -90,6 +90,14 @@ const formFields = [
         type: 'text',
         master: false,
     },
+    {
+        field: 'agente_aduanal',
+        id: 'agente_aduanal',
+        label: 'Agente Aduanal',
+        required: false,
+        type: 'text',
+        master: true,
+    },
 
     // Datos de ruta
     { field: 'origen', id: 'origen', label: 'Origen', required: true, type: 'text', master: true },
