@@ -404,9 +404,16 @@ function getInfoViaje(startDate, endDate, numContenedor_, idContendor) {
             let documentos = response.documents;
             let docs = Object.keys(documentos);
             let allDocumentsCompleted = true;
+            let documentosRequeridosFinal = [...documentosRequeridos];
+
+            if (documentos['cima'] == 1) {
+                documentosRequeridosFinal = documentosRequeridosFinal.filter((doc) => doc !== 'doc_eir');
+            }
+
             docs.forEach((doc) => {
                 let documento = document.querySelector('#' + doc);
-                valorDoc = documentos[doc];
+                let valorDoc = documentos[doc];
+
                 if (documento) {
                     documento.innerHTML =
                         valorDoc != false && valorDoc != null
@@ -414,15 +421,17 @@ function getInfoViaje(startDate, endDate, numContenedor_, idContendor) {
                             : `<i class="fas fa-circle-xmark text-secondary fa-lg"></i>`;
                 }
 
-                if (doc == 'cima' && valorDoc == 1) {
+                if (doc === 'cima' && valorDoc == 1) {
                     $('#cima-label').removeClass('d-none');
                 }
-                if (documentosRequeridos.includes(doc)) {
-                    if (valorDoc == false || valorDoc == null || valorDoc == 0) {
+
+                if (documentosRequeridosFinal.includes(doc)) {
+                    if (!valorDoc || valorDoc == 0) {
                         allDocumentsCompleted = false;
                     }
                 }
             });
+
             canEndTravel = allDocumentsCompleted;
         },
         error: () => {

@@ -900,6 +900,8 @@ function ModalCambiarEstatus() {
     let maniobraId = contenedores[0].id;
     let statusActual = contenedores[0].estatus_maniobra_id;
 
+    document.getElementById('nota_estatus').value = '';
+
     document.getElementById('estatus_id').value = statusActual;
 
     document.getElementById('maniobra_id').value = maniobraId;
