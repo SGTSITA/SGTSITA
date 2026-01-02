@@ -281,6 +281,7 @@ const gridOptions = {
 
         { field: 'Origen', minWidth: 140 },
         { field: 'Destino', minWidth: 140 },
+        { field: 'FechaModulacion', headerName: 'Fecha Modulación', width: 140 },
 
         { field: 'Peso', width: 100 },
         { field: 'Terminal', width: 120 },
@@ -677,7 +678,6 @@ function convertirForaneo() {
                 error: () => {},
             });
         } else if (result.dismiss === Swal.DismissReason.cancel) {
-            // Acción si el usuario canceló
             console.log('El usuario canceló');
         }
     });

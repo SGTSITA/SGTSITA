@@ -2,9 +2,9 @@
 
 @section('content')
     <div class="d-flex flex-column flex-root min-vh-100">
-        <div class="d-flex flex-center flex-column flex-column-fluid p-4 p-md-10">
+        <div class="d-flex flex-center flex-column flex-column-fluid px-4 py-6 py-md-10">
 
-            <div class="card shadow-sm w-100" style="max-width:420px;">
+            <div class="card shadow-sm w-100 w-md-75 w-lg-50" style="max-width:480px;">
                 <div class="card-body p-5 p-md-10">
 
                     <div class="text-center mb-6">

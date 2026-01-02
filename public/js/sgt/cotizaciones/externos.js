@@ -28,7 +28,7 @@ function getTranspotistas() {
     });
 }
 
-let selectProveedorLocal = document.querySelector('#id_proveedorLocal');
+let selectProveedorLocal = document.querySelector('#id_proveedorlocal');
 let selectTransportLocal = document.querySelector('#id_transportistalocal');
 
 if (selectProveedorLocal) {

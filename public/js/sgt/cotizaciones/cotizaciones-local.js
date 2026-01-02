@@ -12,12 +12,19 @@ const formFields = [
 
     // Selects principales
     { field: 'id_subcliente', id: 'id_subcliente', label: 'Sub Cliente', required: true, type: 'select', master: true },
-    { field: 'id_proveedor', id: 'id_proveedor', label: 'Proveedor', required: false, type: 'select', master: true },
+    {
+        field: 'id_proveedor',
+        id: 'id_proveedorlocal',
+        label: 'Proveedor',
+        required: false,
+        type: 'select',
+        master: true,
+    },
     {
         field: 'id_transportista',
-        id: 'id_transportista',
+        id: 'id_transportistalocal',
         label: 'Transportista',
-        required: false,
+        required: true,
         type: 'select',
         master: true,
     },

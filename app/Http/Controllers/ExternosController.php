@@ -954,6 +954,7 @@ class ExternosController extends Controller
                 "Peso" => $c->peso_contenedor,
 
                 "BoletaLiberacion" => $boletaLiberacion,
+                "FechaModulacion" => Carbon::parse($c->fecha_modulacion)->format('Y-m-d'),
                 "DODA" => $doda,
                 "foto_patio" => $fotoPatio,
                 "FormatoCartaPorte" => $docCCP,
