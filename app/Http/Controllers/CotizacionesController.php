@@ -2474,25 +2474,17 @@ class CotizacionesController extends Controller
     {
         $viajes = $request->seleccion;
 
-        // //validar estatus de los viajes seleccionados deben tener el mismo, paso que uno estaba en pendiente y otro en aprobado
-        // $ids = collect($viajes)->pluck('id');
 
-
-        // $estatus = Cotizaciones::whereIn('id', $ids)->pluck('estatus')->unique();
-
-
-        // if ($estatus->count() > 1) {
-        //     return response()->json([
-        //         "Titulo"   => "Error en la selección de viajes",
-        //         "Mensaje"  => "Los viajes seleccionados deben tener el mismo estatus para poder convertirlos a Full",
-        //         "TMensaje" => "warning",
-        //     ]);
-        // }
 
 
         for ($x = 0; $x < (sizeof($viajes)); $x++) {
+            $documCotizacion = DocumCotizacion::where('id_cotizacion', $viajes[$x]['id'])->first();
+            $estatusA = "Documentos Faltantes";
+            if ($documCotizacion->boleta_liberacion != null && $documCotizacion->doda != null) {
+                $estatusA = "Pendiente";
+            }
 
-            Cotizaciones::where('id', $viajes[$x]['id'])->update(["tipo_viaje_seleccion" => "local_to_foraneo","en_patio" => 0,"estatus" => "Documentos Faltantes"]);
+            Cotizaciones::where('id', $viajes[$x]['id'])->update(["tipo_viaje_seleccion" => "local_to_foraneo","en_patio" => 0,"estatus" => $estatusA]);
         }
         return response()->json(["Titulo" => "Proceso satisfactorio", "Mensaje" => "Se ha realizado el proceso de conversión a viaje foráneo", "TMensaje" => "success"]);
     }

@@ -17,7 +17,8 @@
                         <div class="d-flex align-items-center">
                             <div class="fs-4 fw-bold" id="proveedorName">Proveedor:</div>
                         </div>
-                        <select class="form-select subcliente d-inline-block" id="id_proveedor" name="id_proveedor">
+                        <select class="form-select subcliente d-inline-block" id="id_proveedorlocal"
+                            name="id_proveedor">
                             <option value="">Seleccionar proveedor</option>
                             @foreach ($proveedores as $p)
                                 <option value="{{ $p->id }}" @if ($action == 'editar' && $cotizacion?->empresa_local == $p->id) selected @endif>
@@ -36,7 +37,7 @@
                         <div class="d-flex align-items-center">
                             <div class="fs-4 fw-bold" id="proveedorName">Transportista:</div>
                         </div>
-                        <select class="form-select subcliente d-inline-block" id="id_transportista"
+                        <select class="form-select subcliente d-inline-block" id="id_transportistalocal"
                             name="id_transportista">
                             <option value="">Seleccionar transportista</option>
                             @foreach ($transportista as $tr)
