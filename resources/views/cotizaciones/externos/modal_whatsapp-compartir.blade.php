@@ -39,6 +39,10 @@
                         <label class="form-label">Hora fin</label>
                         <input type="time" class="form-control" id="wa_hora_fin">
                     </div>
+                    <div class="d-none col-md-6" id="div_no_autorizacion">
+                        <label class="form-label">No. Autorización</label>
+                        <input type="text" class="form-control" id="wa_no_autorizacion">
+                    </div>
 
                     <div class="d-none col-md-12" id="div_terminal_whatsapp">
                         <label class="form-label">Terminal</label>

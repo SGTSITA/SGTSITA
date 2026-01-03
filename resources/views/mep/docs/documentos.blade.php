@@ -1,11 +1,17 @@
-@extends('layouts.externo')
+@extends('layouts.externos-docs')
 
 @section('content')
     <div class="card">
         <div class="card-header">
             <h3 class="card-title">
-                Documentos compartidos
+                📁 Documentos compartidos
             </h3>
+            <div class="col-md-3">
+                <div class="fw-semibold text-gray-600 fs-7">Contenedor</div>
+                <div class="fw-bold fs-6 text-primary">
+                    {{ $DocDocumento->num_contenedor ?? '—' }}
+                </div>
+            </div>
         </div>
 
         <div class="card-body">
@@ -33,12 +39,7 @@
                     </div>
                 </div>
 
-                <div class="col-md-3">
-                    <div class="fw-semibold text-gray-600 fs-7">Contenedor</div>
-                    <div class="fw-bold fs-6 text-primary">
-                        {{ $DocDocumento->num_contenedor ?? '—' }}
-                    </div>
-                </div>
+
             </div>
 
             <div class="mb-4 d-none" id="accionesMasivas">
