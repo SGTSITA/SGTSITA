@@ -493,6 +493,11 @@ async function abrirModalWhatsapp() {
 
     mostrarLoading();
 
+    let id_proveedor = archivosData.cotizacion.transportista_local;
+    if (!id_proveedor) {
+        id_proveedor = archivosData.cotizacion.id_proveedor;
+    }
+
     try {
         const res = await fetch(`/cotizacion/${archivosData.id}/acceso`, {
             method: 'POST',
@@ -502,7 +507,7 @@ async function abrirModalWhatsapp() {
             },
             body: JSON.stringify({
                 archivos: waArchivosSeleccionados,
-                proveedor_id: archivosData.cotizacion.transportista_local,
+                proveedor_id: id_proveedor,
             }),
         });
 
@@ -541,6 +546,9 @@ if (btnCancelarWhatsApp) {
 }
 
 function EnviarWhatsappGenerados() {
+    const autorizacion = wa_no_autorizacion.value;
+
+    let tieneAutorizacion = autorizacion && autorizacion !== 'null' && autorizacion !== 'undefined';
     let messageadd = '';
     let messageadd2 = '';
     let mensaje = `
@@ -548,13 +556,19 @@ Fecha: ${wa_fecha.value}
 Referencia: ${wa_referencia.value}
 Horario: ${wa_hora_inicio.value} - ${wa_hora_fin.value}`.trim();
 
-    if (archivosData.cotizacion.tipo_viaje_seleccion == 'local') {
+    if (
+        archivosData.cotizacion.tipo_viaje_seleccion === 'local' ||
+        archivosData.cotizacion.tipo_viaje_seleccion === 'local_to_foraneo'
+    ) {
         messageadd = `
 Terminal: ${wa_terminal.value}
 
 ${wa_cambio_sello.checked ? '*CAMBIO DE SELLO*' : ''}
 
-${wa_observaciones.value}`.trim();
+${tieneAutorizacion ? `No Autorización: ${wa_no_autorizacion.value}` : ''}
+
+${wa_observaciones.value || ''}
+`.trim();
     } else {
         messageadd = '';
     }
@@ -577,20 +591,26 @@ function cargarDatosModalWhatsapp() {
 
     document.getElementById('wa_hora_inicio').value = data.cotizacion.bloque_hora_i_local ?? '';
     document.getElementById('wa_hora_fin').value = data.cotizacion.bloque_hora_f_local ?? '';
-    if (data.cotizacion.tipo_viaje_seleccion == 'local') {
+    if (
+        data.cotizacion.tipo_viaje_seleccion == 'local' ||
+        archivosData.cotizacion.tipo_viaje_seleccion == 'local_to_foraneo'
+    ) {
         document.getElementById('div_terminal_whatsapp').classList.remove('d-none');
         document.getElementById('div_servicios_whatsapp').classList.remove('d-none');
         document.getElementById('div_observaciones_whatsapp').classList.remove('d-none');
+        document.getElementById('div_no_autorizacion').classList.remove('d-none');
     } else {
         document.getElementById('wa_hora_inicio').value = data.cotizacion.bloque_hora_i ?? '';
         document.getElementById('wa_hora_fin').value = data.cotizacion.bloque_hora_f ?? '';
         document.getElementById('div_terminal_whatsapp').classList.add('d-none');
         document.getElementById('div_servicios_whatsapp').classList.add('d-none');
         document.getElementById('div_observaciones_whatsapp').classList.add('d-none');
+        document.getElementById('div_no_autorizacion').classList.add('d-none');
     }
     document.getElementById('wa_terminal').value = data.terminal ?? '';
     document.getElementById('wa_cambio_sello').checked = !!data.cotizacion.confirmacion_sello;
     document.getElementById('wa_observaciones').value = data.cotizacion.observaciones ?? '';
+    document.getElementById('wa_no_autorizacion').value = data.num_autorizacion ?? '';
 }
 
 function obtenerArchivosSeleccionados() {

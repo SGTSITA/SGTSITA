@@ -25,7 +25,7 @@ class CotizacionAccesoController extends Controller
             'documento_id' => $documento_id,
             'token' => Str::random(60),
             'password_hash' => Hash::make($password),
-            'expires_at' => now()->addDays(3),
+            'expires_at' => now()->addDays(7),
             'user_id' => auth()->user()->id,
             'shared_files' => $filesNames,
             'proveedor_id' => $request->input('proveedor_id'),
