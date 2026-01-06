@@ -23,19 +23,19 @@ class UserController extends Controller
      */
     public function index(Request $request)
     {
-        // Si viene la petición con ?json=1 (desde AG Grid)
+
         $user = auth()->user();
 
-        // 🔹 Consulta base dependiendo si es admin o no
+
         $query = User::with('Empresa')
             ->orderBy('id', 'DESC');
 
         if (!$user->es_admin) {
-            // Si NO es admin → solo usuarios de su empresa
+
             $query->where('id_empresa', $user->id_empresa);
         }
 
-        // 🔹 Si viene el parámetro ?json
+
         if ($request->has('json')) {
             $users = $query->get();
 
@@ -50,7 +50,7 @@ class UserController extends Controller
             }));
         }
 
-        // 🔹 Si NO viene ?json, renderiza la vista normal
+
         $data = $query->paginate(10);
 
         return view('users.index', compact('data'))
@@ -74,12 +74,21 @@ class UserController extends Controller
     {
         $roles = Role::pluck('name', 'name')->all();
 
-        // Lista de todas las empresas para el selector manual
-        $listaEmpresas = Empresas::orderBy('nombre')->get();
+        $user = auth()->user();
 
-        $clientes = Client::where('id_empresa', auth()->user()->id_empresa)
-                        ->orderBy('created_at', 'desc')
-                        ->get();
+
+        $listaEmpresas = $user->es_admin
+            ? Empresas::orderBy('nombre')->get()
+            : Empresas::where('id', $user->id_empresa)
+                ->orderBy('nombre')
+                ->get();
+
+
+        $clientes = $user->es_admin
+            ? Client::orderBy('created_at', 'desc')->get()
+            : Client::where('id_empresa', $user->id_empresa)
+                ->orderBy('created_at', 'desc')
+                ->get();
 
         return view('users.create', compact('roles', 'listaEmpresas', 'clientes'));
     }
@@ -149,14 +158,19 @@ class UserController extends Controller
         $roles = Role::pluck('name', 'name')->all();
         $userRole = $user->roles->pluck('name', 'name')->all();
 
-        // 🔁 Aquí unificamos en una sola variable como en create()
-        $listaEmpresas = auth()->user()->Empresa->id == 1
-            ? Empresas::orderBy('id', 'DESC')->get()   // Si es administrador, muestra todas
-            : Empresas::where('id', auth()->user()->Empresa->id)->get(); // Si no, solo su empresa
+        $userAuth = auth()->user();
 
-        $clientes = Client::where('id_empresa', auth()->user()->id_empresa)
-                        ->orderBy('created_at', 'desc')
-                        ->get();
+        /* EMPRESAS */
+        $listaEmpresas = $userAuth->es_admin
+            ? Empresas::orderBy('id', 'DESC')->get()
+            : Empresas::where('id', $userAuth->id_empresa)->get();
+        /* CLIENTES */
+        $clientes = $userAuth->es_admin
+            ? Client::orderBy('created_at', 'desc')->get()
+            : Client::where('id_empresa', $userAuth->id_empresa)
+                ->orderBy('created_at', 'desc')
+                ->get();
+
 
         return view('users.edit', compact('user', 'roles', 'userRole', 'listaEmpresas', 'clientes'));
     }
@@ -178,6 +192,8 @@ class UserController extends Controller
         ]);
 
 
+
+
         $input = $request->all();
         if (!empty($input['password'])) {
             $input['password'] = Hash::make($input['password']);
@@ -186,7 +202,7 @@ class UserController extends Controller
         }
 
         $user = User::find($id);
-
+        $input['id_cliente'] = $user->id_cliente;
         $user->update($input);
         DB::table('model_has_roles')->where('model_id', $id)->delete();
 
