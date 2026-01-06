@@ -400,34 +400,36 @@
 
             const icono = document.getElementById('notificacionesMEP');
             const texto = document.getElementById('notificacionesMEP-text');
+            if (icono && texto) {
+                [icono, texto].forEach((el) => {
+                    el.addEventListener('click', function(e) {
+                        e.preventDefault();
 
-            [icono, texto].forEach((el) => {
-                el.addEventListener('click', function(e) {
-                    e.preventDefault();
-
-                    if (pendientesCount > 0) {
-                        Swal.fire({
-                            icon: 'info',
-                            title: 'Pendientes por verificar',
-                            text: `Tienes ${pendientesCount} viajes pendientes por verificar.`,
-                            confirmButtonText: 'Ir a revisar',
-                            showCancelButton: true,
-                            cancelButtonText: 'Más tarde',
-                        }).then((result) => {
-                            if (result.isConfirmed) {
-                                window.location.href =
-                                    '{{ route('vista_pendientes.costos_mep') }}';
-                            }
-                        });
-                    } else {
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Sin pendientes',
-                            text: 'No hay viajes pendientes por verificar.',
-                        });
-                    }
+                        if (pendientesCount > 0) {
+                            Swal.fire({
+                                icon: 'info',
+                                title: 'Pendientes por verificar',
+                                text: `Tienes ${pendientesCount} viajes pendientes por verificar.`,
+                                confirmButtonText: 'Ir a revisar',
+                                showCancelButton: true,
+                                cancelButtonText: 'Más tarde',
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    window.location.href =
+                                        '{{ route('vista_pendientes.costos_mep') }}';
+                                }
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Sin pendientes',
+                                text: 'No hay viajes pendientes por verificar.',
+                            });
+                        }
+                    });
                 });
-            });
+            }
+
         });
     </script>
 @endpush
