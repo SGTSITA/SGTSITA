@@ -21,7 +21,7 @@ class CustomAuthController extends Controller
     {
 
 
-        if ($request->password == true) {
+        if ($request->filled('password')) {
 
             $request->validate([
                 'email' => 'required',
@@ -29,18 +29,24 @@ class CustomAuthController extends Controller
             ]);
 
 
+
             $credentials = $request->only('email', 'password');
             if (Auth::attempt($credentials)) {
+
                 return redirect()->intended('dashboard')
                             ->withSuccess('Signed in');
+
+
             }
 
+            // dd('las credenciales son incorrectas');
             //  return redirect("login")->withSuccess('Login details are not valid');
             return response([
                                   "mensaje" => "Las credenciales de acceso son incorrectas. Verifique su información"
                               ], 401);
 
         } else {
+            // dd('else request password');
 
             $client = Client::where('email', $request->email)->firstOrFail();
 

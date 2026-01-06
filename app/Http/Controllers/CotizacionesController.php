@@ -2235,7 +2235,7 @@ class CotizacionesController extends Controller
             } else {
                 $confirmacionSelloBool = null;
             }
-
+            $pesoReglamentario = 22;
             $cotizacion = Cotizaciones::create([
                 'id_cliente'         => $request->id_cliente,
                 'id_empresa'         => $idEmpresaFinal,
@@ -2251,7 +2251,8 @@ class CotizacionesController extends Controller
                 'bloque_local'          => $request->bloque ?? null,
                 'bloque_hora_i_local' => $request->bloque_hora_i ?? null,
                 'bloque_hora_f_local' => $request->bloque_hora_f ?? null,
-
+                'peso_reglamentario'  => $pesoReglamentario,
+                'sobrepeso'  => 0,
 
                 'origen'             => $request->origen,
                 'tamano'             => $request->tamano,
@@ -2359,18 +2360,26 @@ class CotizacionesController extends Controller
 
         try {
 
-            // ==========================================
-            // 1. OBTENER REGISTROS BASE
-            // ==========================================
+
             $cot = Cotizaciones::findOrFail($id);
             $doc = DocumCotizacion::where('id_cotizacion', $id)->firstOrFail();
 
             $contenedorOriginal = $doc->num_contenedor;
 
+            if ($request->num_contenedor !== $contenedorOriginal) {
 
-            // ==========================================
-            // 2. ACTUALIZAR COTIZACIÓN
-            // ==========================================
+                $contenedorExistente = DocumCotizacion::where('num_contenedor', $request->num_contenedor)
+                    ->where('id_cotizacion', '!=', $doc->id_cotizacion)
+                    ->exists();
+
+                if ($contenedorExistente) {
+                    return response()->json(["Titulo" => "Contenedor creado previamente", "Mensaje" => "El contenedor ya existe en el sistema y no puede duplicarse", "TMensaje" => "warning"]);
+                }
+            }
+
+
+            $pesoReglamentario = 22;
+
             $cot->id_subcliente        = $request->id_subcliente ?? null;
             $cot->sub_cliente_local        = $request->id_subcliente ?? null;
             if ($request->has('id_proveedor') && $request->id_proveedor !== $cot->id_empresa) { //checar si se cambio de empresa
@@ -2381,6 +2390,10 @@ class CotizacionesController extends Controller
                 $cot->id_proveedor      = $request->id_transportista;
                 $cot->transportista_local        = $request->id_transportista ?? null;
             }
+
+
+            $cot->peso_reglamentario  = $pesoReglamentario;
+            $cot->sobrepeso  = 0;
 
             //$cot->id_transportista     = $request->id_transportista ?? null;
 
@@ -2473,9 +2486,6 @@ class CotizacionesController extends Controller
     public function convertirlocalforaneo(Request $request)
     {
         $viajes = $request->seleccion;
-
-
-
 
         for ($x = 0; $x < (sizeof($viajes)); $x++) {
             $documCotizacion = DocumCotizacion::where('id_cotizacion', $viajes[$x]['id'])->first();
@@ -2635,7 +2645,6 @@ class CotizacionesController extends Controller
                 $docucotizaciones->id_cotizacion = $cotizaciones->id;
                 $docucotizaciones->num_contenedor = $numContenedor;
                 $docucotizaciones->save();
-
 
             }
 

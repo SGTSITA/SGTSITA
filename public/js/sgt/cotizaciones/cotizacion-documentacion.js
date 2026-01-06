@@ -146,6 +146,7 @@ const gridOptions = {
                 return styles;
             },
         },
+        { field: 'transportista', filter: true, floatingFilter: true },
         { field: 'Estatus', filter: true, floatingFilter: true, cellClassRules: ragCellClassRules },
         { field: 'Origen', filter: true, floatingFilter: true },
         { field: 'Destino' },

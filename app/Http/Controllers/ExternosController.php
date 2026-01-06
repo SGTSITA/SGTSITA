@@ -224,17 +224,100 @@ class ExternosController extends Controller
 
     public function getContenedoresPendientes(Request $request)
     {
+        $proveedorEmpresa = DB::table('empresas')
+            ->select(
+                'id',
+                'nombre',
+                DB::raw("'Empresa' as tipo"),
+                'id as relacion_id'
+            )
+            ->unionAll(
+                DB::table('proveedores')
+                    ->select(
+                        'id',
+                        'nombre',
+                        DB::raw("'Proveedor' as tipo"),
+                        'id as relacion_id'
+                    )
+            );
+
+        $docCotizacion = DB::table('cotizaciones')
+    ->join('docum_cotizacion as d', 'd.id_cotizacion', '=', 'cotizaciones.id')
+    ->select(
+        'cotizaciones.*',
+        'd.num_contenedor',
+        'd.doc_eir',
+        'd.doc_ccp',
+        'd.boleta_liberacion',
+        'd.doda',
+        'd.foto_patio',
+        'd.boleta_patio',
+        DB::raw("
+            CASE
+                WHEN cotizaciones.id_proveedor IS NULL
+                THEN cotizaciones.id_empresa
+                ELSE cotizaciones.id_proveedor
+            END as proveedor_empresa_id
+        "),
+        DB::raw("
+            CASE
+                WHEN cotizaciones.id_proveedor IS NULL
+                THEN 'Empresa'
+                ELSE 'Proveedor'
+            END as proveedor_empresa_tipo
+        ")
+    );
+
+
         $condicion = ($request->estatus == 'Documentos Faltantes') ? '=' : '!=';
-        $contenedoresPendientes = Cotizaciones::join('docum_cotizacion as d', 'cotizaciones.id', '=', 'd.id_cotizacion')
-                                                ->where('cotizaciones.id_cliente', '=', Auth::User()->id_cliente)
-                                                ->where('estatus', $condicion, 'Documentos Faltantes')
-                                                ->whereIn('tipo_viaje_seleccion', ['foraneo', 'local_to_foraneo'])
-                                                ->where('jerarquia', "!=", 'Secundario')
-                                                ->orderBy('created_at', 'desc')
-                                                ->selectRaw('cotizaciones.*, d.num_contenedor,d.doc_eir,doc_ccp ,d.boleta_liberacion,d.doda,d.foto_patio')
-                                                ->get();
+        // $contenedoresPendientes = Cotizaciones::join('docum_cotizacion as d', 'cotizaciones.id', '=', 'd.id_cotizacion')
+        // ->leftjoin('proveedores as prov', 'cotizaciones.id_proveedor', '=', 'prov.id')
+        // ->leftjoin('empresa as empres', 'cotizaciones.id_empresa', '=', 'empres.id')
+        //                                         ->where('cotizaciones.id_cliente', '=', Auth::User()->id_cliente)
+        //                                         ->where('estatus', $condicion, 'Documentos Faltantes')
+        //                                         ->whereIn('tipo_viaje_seleccion', ['foraneo', 'local_to_foraneo'])
+        //                                         ->where('jerarquia', "!=", 'Secundario')
+        //                                         ->orderBy('created_at', 'desc')
+        //                                         ->selectRaw('cotizaciones.*, d.num_contenedor,d.doc_eir,doc_ccp ,d.boleta_liberacion,d.doda,d.foto_patio,case when prov.razon_social is null then empres.nombre else prov.razon_social end as transportista ')
+        //                                         ->get();
+
+        $contenedoresPendientes = DB::table('cotizaciones')
+        ->join('clients', 'cotizaciones.id_cliente', '=', 'clients.id')
+
+        ->joinSub($docCotizacion, 'cotidoc', function ($join) {
+            $join->on('cotidoc.id', '=', 'cotizaciones.id');
+        })
+
+        ->leftJoinSub($proveedorEmpresa, 'proveedor_empresa', function ($join) {
+            $join->on('proveedor_empresa.relacion_id', '=', 'cotidoc.proveedor_empresa_id')
+                 ->on('proveedor_empresa.tipo', '=', 'cotidoc.proveedor_empresa_tipo');
+        })
 
 
+
+        ->select(
+            'cotizaciones.*',
+            'clients.nombre as cliente',
+            'cotidoc.num_contenedor',
+            'cotidoc.doc_eir',
+            'cotidoc.doc_ccp',
+            'cotidoc.boleta_liberacion',
+            'cotidoc.doda',
+            'cotidoc.foto_patio',
+            'cotidoc.boleta_patio',
+            'proveedor_empresa.nombre as transportista',
+            'proveedor_empresa.tipo as tipo_transportista',
+            'cotizaciones.estatus'
+        )
+->where('cotizaciones.id_cliente', '=', Auth::User()->id_cliente)
+                                              ->where('cotizaciones.estatus', $condicion, 'Documentos Faltantes')
+                                                ->whereIn('cotizaciones.tipo_viaje_seleccion', ['foraneo', 'local_to_foraneo'])
+                                                ->where('cotizaciones.jerarquia', "!=", 'Secundario')
+
+        ->orderBy('cotizaciones.created_at', 'desc')
+        ->get();
+
+        // dd($contenedoresPendientes);
         $resultContenedores =
         $contenedoresPendientes->map(function ($c) {
 
@@ -283,7 +366,8 @@ class ExternosController extends Controller
                 "BoletaPatio" => $boletaPatio,
                 "FechaSolicitud" => Carbon::parse($c->created_at)->format('Y-m-d'),
                 "tipo" => $tipo,
-                "id" => $c->id
+                "id" => $c->id,
+                "transportista" => $c->transportista,
             ];
         });
 
