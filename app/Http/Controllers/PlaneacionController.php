@@ -11,7 +11,7 @@ use App\Models\Operador;
 use App\Models\Planeacion;
 use App\Models\Proveedor;
 use App\Models\Client;
-use App\Models\Subclientes;
+use App\Models\User;
 use App\Models\Coordenadas;
 use App\Models\GastosOperadores;
 use App\Models\BancoDineroOpe;
@@ -395,12 +395,28 @@ class PlaneacionController extends Controller
 
     public function initBoard(Request $request)
     {
+
+        $userProveedores = User::find(auth()->user()->id);
+
+
+        // if ($userProveedores->proveedores()->exists()) {
+        //     $cotizacionesQuery->whereIn(
+        //         'id_proveedor',
+        //         $userProveedores->proveedores()->pluck('proveedor_id')
+        //     );
+        // }
+        $proveedorIds = $userProveedores->proveedores()->pluck('proveedor_id');
+
+
         $planeaciones = Asignaciones::join('docum_cotizacion', 'asignaciones.id_contenedor', '=', 'docum_cotizacion.id')
                         ->join('cotizaciones', 'docum_cotizacion.id_cotizacion', '=', 'cotizaciones.id')
                         ->where('asignaciones.fecha_inicio', '>=', $request->fromDate)
                         ->where('asignaciones.id_empresa', '=', auth()->user()->id_empresa)
                         ->where('cotizaciones.estatus', 'Aprobada')
                         ->where('estatus_planeacion', '=', 1)
+                         ->when($userProveedores->proveedores()->exists(), function ($query) use ($proveedorIds) {
+                             $query->whereIn('cotizaciones.id_proveedor', $proveedorIds);
+                         })
                         ->select('asignaciones.*', 'docum_cotizacion.num_contenedor', 'cotizaciones.id_cliente', 'cotizaciones.referencia_full', 'cotizaciones.tipo_viaje')
                         ->orderBy('fecha_inicio')
                         ->get();
