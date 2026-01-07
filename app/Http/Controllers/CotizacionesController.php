@@ -314,7 +314,7 @@ class CotizacionesController extends Controller
         //         ];
         //     });
 
-        $cotizaciones = $this->obtenerCotizacionesparametros('Aprobada', null);
+        $cotizaciones = $this->obtenerCotizacionesparametros('Aprobada', null, 1);
 
         return response()->json(['list' => $cotizaciones]);
     }
