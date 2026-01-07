@@ -48,18 +48,25 @@ class CotizacionesController extends Controller
 
     public function getCotizacionesList()
     {
+        //planeadas
         $cotizaciones = $this->obtenerCotizacionesparametros('Aprobada', 1);
 
         return response()->json(['list' => $cotizaciones]);
     }
 
-    public function obtenerCotizacionesparametros($estatusSearch = 'Aprobada', $estatus_planeacion = null)
+    public function obtenerCotizacionesparametros($estatusSearch = 'Aprobada', $estatus_planeacion = null, $validarNoplaneadas = null)
     {
         $cotizacionesQuery = Cotizaciones::where('id_empresa', auth()->user()->id_empresa)
     ->where('estatus', $estatusSearch)
      ->when(!is_null($estatus_planeacion), function ($query) use ($estatus_planeacion) {
          $query->where('estatus_planeacion', $estatus_planeacion);
      })
+      ->when($validarNoplaneadas == 1, function ($query) {
+          $query->where(function ($q) {
+              $q->where('estatus_planeacion', 0)
+                ->orWhereNull('estatus_planeacion');
+          });
+      })
     ->where('jerarquia', '!=', 'Secundario')
     ->orderBy('created_at', 'desc')
     ->with(['cliente', 'DocCotizacion.Asignaciones']);
@@ -126,6 +133,11 @@ class CotizacionesController extends Controller
                     'total' => $cotizacion->total,
                ];
             });
+
+
+
+
+
 
         return  $cotizaciones;
 
@@ -302,7 +314,7 @@ class CotizacionesController extends Controller
         //         ];
         //     });
 
-        $cotizaciones = $this->obtenerCotizacionesparametros('Aprobada');
+        $cotizaciones = $this->obtenerCotizacionesparametros('Aprobada', null);
 
         return response()->json(['list' => $cotizaciones]);
     }
