@@ -49,7 +49,7 @@ class CotizacionesController extends Controller
     public function getCotizacionesList()
     {
         //planeadas
-        $cotizaciones = $this->obtenerCotizacionesparametros('Aprobada', 1);
+        $cotizaciones = $this->obtenerCotizacionesparametros('Aprobada', 1, null);
 
         return response()->json(['list' => $cotizaciones]);
     }
@@ -58,7 +58,7 @@ class CotizacionesController extends Controller
     {
         $cotizacionesQuery = Cotizaciones::where('id_empresa', auth()->user()->id_empresa)
     ->where('estatus', $estatusSearch)
-     ->when(!is_null($estatus_planeacion), function ($query) use ($estatus_planeacion) {
+     ->when(!is_null($estatus_planeacion) && is_null($validarNoplaneadas), function ($query) use ($estatus_planeacion) {
          $query->where('estatus_planeacion', $estatus_planeacion);
      })
       ->when($validarNoplaneadas == 1, function ($query) {
@@ -131,6 +131,7 @@ class CotizacionesController extends Controller
                     'precio_viaje' => $cotizacion->precio_viaje,
                     'direccion_entrega' => $cotizacion->direccion_entrega,
                     'total' => $cotizacion->total,
+                    'estatus_planeacion' => $cotizacion->estatus_planeacion,
                ];
             });
 
