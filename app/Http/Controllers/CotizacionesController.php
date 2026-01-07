@@ -48,7 +48,7 @@ class CotizacionesController extends Controller
 
     public function getCotizacionesList()
     {
-        $cotizaciones = $this->obtenerCotizacionesparametros('Aprobada', );
+        $cotizaciones = $this->obtenerCotizacionesparametros('Aprobada', 1);
 
         return response()->json(['list' => $cotizaciones]);
     }
