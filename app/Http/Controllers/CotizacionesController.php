@@ -48,16 +48,18 @@ class CotizacionesController extends Controller
 
     public function getCotizacionesList()
     {
-        $cotizaciones = $this->obtenerCotizacionesparametros('Aprobada');
+        $cotizaciones = $this->obtenerCotizacionesparametros('Aprobada', 1);
 
         return response()->json(['list' => $cotizaciones]);
     }
 
-    public function obtenerCotizacionesparametros($estatusSearch = 'Aprobada')
+    public function obtenerCotizacionesparametros($estatusSearch = 'Aprobada', $estatus_planeacion = null)
     {
         $cotizacionesQuery = Cotizaciones::where('id_empresa', auth()->user()->id_empresa)
     ->where('estatus', $estatusSearch)
-    ->where('estatus_planeacion', 1)
+     ->when(!is_null($estatus_planeacion), function ($query) use ($estatus_planeacion) {
+         $query->where('estatus_planeacion', $estatus_planeacion);
+     })
     ->where('jerarquia', '!=', 'Secundario')
     ->orderBy('created_at', 'desc')
     ->with(['cliente', 'DocCotizacion.Asignaciones']);
