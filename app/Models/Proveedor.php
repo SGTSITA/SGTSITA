@@ -10,7 +10,7 @@ class Proveedor extends Model
 {
     use HasFactory;
     protected $table = 'proveedores';
-   public static $forceEmpresaFromAuth = true;
+    public static $forceEmpresaFromAuth = true;
 
     protected $fillable = [
         'nombre',
@@ -35,6 +35,16 @@ class Proveedor extends Model
         return $this->belongsTo(Empresas::class, 'id_empresa');
     }
 
+    public function users()
+    {
+        return $this->belongsToMany(
+            User::class,
+            'user_proveedores',
+            'proveedor_id',
+            'user_id'
+        );
+    }
+
     protected static function boot()
     {
         parent::boot();
@@ -55,10 +65,10 @@ class Proveedor extends Model
 
     public function scopeCatalogoPrincipal($query)
     {
-            return $query->whereIn('tipo_viaje', ['foraneo', 'local_foraneo']);
+        return $query->whereIn('tipo_viaje', ['foraneo', 'local_foraneo']);
     }
     public function scopeCatalogoLocal($query)
     {
-            return $query->whereIn('tipo_viaje', ['local', 'local_foraneo']);
+        return $query->whereIn('tipo_viaje', ['local', 'local_foraneo']);
     }
 }
