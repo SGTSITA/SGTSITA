@@ -152,6 +152,18 @@ const agCellClassRules = {
         Object.entries(estatusColorMap).map(([id, clase]) => [clase, (p) => p.data?.estatus_maniobra_id == id]),
     ),
 };
+let motivoBloqueo = 'Selecciona al menos un registro';
+
+function bloquearBoton(btn) {
+    btn.classList.add('disabled');
+    btn.style.pointerEvents = 'auto'; // IMPORTANTE: permitir click
+}
+
+function habilitarBoton(btn) {
+    btn.classList.remove('disabled');
+    btn.style.pointerEvents = 'auto';
+}
+
 const gridOptions = {
     pagination: true,
     paginationPageSize: 500,
@@ -160,6 +172,27 @@ const gridOptions = {
     rowSelection: {
         mode: 'multiRow',
         headerCheckbox: true,
+    },
+
+    onSelectionChanged: (event) => {
+        const rows = event.api.getSelectedRows();
+        const btn = document.getElementById('btnConvertirForaneo');
+
+        if (rows.length === 0) {
+            motivoBloqueo = 'Selecciona al menos un registro';
+            bloquearBoton(btn);
+            return;
+        }
+
+        const hayForaneos = rows.some((r) => r.convertido_foraneo);
+
+        if (hayForaneos) {
+            motivoBloqueo = 'No puedes convertir registros que ya son foráneos';
+            bloquearBoton(btn);
+        } else {
+            motivoBloqueo = '';
+            habilitarBoton(btn);
+        }
     },
 
     defaultColDef: {
@@ -174,6 +207,7 @@ const gridOptions = {
         { field: 'estatus_maniobra_id', hide: true },
         { field: 'tipo', hide: true },
         { field: 'NUM_CONTENEDOR_REFER', hide: true },
+        { field: 'convertido_foraneo', hide: true },
 
         // ===== DOCUMENTOS =====
         {
@@ -475,10 +509,12 @@ function saveColumnsState() {
 
 function getContenedoresPendientes(estatus = 'Local') {
     var _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+    let OcultarForaneos = document.getElementById('validar_foraneos').value;
     $.ajax({
         url: '/viajes/documents/pending-local',
         type: 'post',
-        data: { _token, estatus },
+        data: { _token, estatus, OcultarForaneos },
         beforeSend: () => {},
         success: (response) => {
             if (response.length > 0) {
@@ -647,11 +683,16 @@ function viajeFull() {
 
 function convertirForaneo() {
     let seleccion = apiGrid.getSelectedRows();
-
-    //   if (seleccion.length > 2) {
-    //     Swal.fire('Maximo 2 contenedores', 'Lo sentimos, solo puede seleccionar maximo 2 contenedores, estos deben ser de un mismo cliente', 'warning')
-    //     return false
-    //   }
+    let btnforaneo = document.getElementById('btnConvertirForaneo');
+    if (btnforaneo.classList.contains('disabled')) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Acción no permitida',
+            text: motivoBloqueo,
+            confirmButtonText: 'Entendido',
+        });
+        return;
+    }
 
     Swal.fire({
         title: '¿Estás seguro?',
@@ -672,7 +713,8 @@ function convertirForaneo() {
                 success: (response) => {
                     Swal.fire(response.Titulo, response.Mensaje, response.TMensaje);
                     if (response.TMensaje == 'success') {
-                        getContenedoresPendientesPatio();
+                        let estat = document.getElementById('estatus_maniobra').value;
+                        getContenedoresPendientes(estat);
                     }
                 },
                 error: () => {},
