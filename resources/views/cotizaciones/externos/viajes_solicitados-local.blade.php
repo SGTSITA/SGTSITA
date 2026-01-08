@@ -56,32 +56,32 @@
 
                                 <!--div class="menu-item px-3" data-kt-menu-trigger="hover" data-kt-menu-placement="right-start">
 
-                                                                                                            <a href="#" class="menu-link px-3" data-bs-toggle="modal" data-bs-target="#kt_modal_top_up_wallet">
-                                                                                                              <span class="menu-title">Ver documentos</span>
-                                                                                                              <span class="menu-arrow"></span>
-                                                                                                            </a>
+                                                                                                                                                                    <a href="#" class="menu-link px-3" data-bs-toggle="modal" data-bs-target="#kt_modal_top_up_wallet">
+                                                                                                                                                                      <span class="menu-title">Ver documentos</span>
+                                                                                                                                                                      <span class="menu-arrow"></span>
+                                                                                                                                                                    </a>
 
 
-                                                                                                            <div class="menu-sub menu-sub-dropdown w-175px py-4">
+                                                                                                                                                                    <div class="menu-sub menu-sub-dropdown w-175px py-4">
 
-                                                                                                              <div class="menu-item px-3">
-                                                                                                                <a href="#" class="menu-link px-3"> DODA </a>
-                                                                                                              </div>
+                                                                                                                                                                      <div class="menu-item px-3">
+                                                                                                                                                                        <a href="#" class="menu-link px-3"> DODA </a>
+                                                                                                                                                                      </div>
 
-                                                                                                              <div class="menu-item px-3">
-                                                                                                                <a href="#" class="menu-link px-3"> Pre Alta </a>
-                                                                                                              </div>
+                                                                                                                                                                      <div class="menu-item px-3">
+                                                                                                                                                                        <a href="#" class="menu-link px-3"> Pre Alta </a>
+                                                                                                                                                                      </div>
 
-                                                                                                              <div class="menu-item px-3">
-                                                                                                                <a href="#" class="menu-link px-3"> Boleta de liberación </a>
-                                                                                                              </div>
-                                                                                                              <div class="menu-item px-3">
-                                                                                                                <a href="#" class="menu-link px-3"> Formato Carta Porte </a>
-                                                                                                              </div>
+                                                                                                                                                                      <div class="menu-item px-3">
+                                                                                                                                                                        <a href="#" class="menu-link px-3"> Boleta de liberación </a>
+                                                                                                                                                                      </div>
+                                                                                                                                                                      <div class="menu-item px-3">
+                                                                                                                                                                        <a href="#" class="menu-link px-3"> Formato Carta Porte </a>
+                                                                                                                                                                      </div>
 
-                                                                                                            </div>
+                                                                                                                                                                    </div>
 
-                                                                                                          </div-->
+                                                                                                                                                                  </div-->
 
                                 <!--begin::Menu separator-->
                                 <div class="separator mt-3 opacity-75"></div>
@@ -89,7 +89,7 @@
                                     <a class="menu-link px-3" onclick="viajeFull()">Viajar en Full</a>
                                 </div>
                                 <div class="separator mt-3 opacity-75"></div>
-                                <div class="menu-item px-3">
+                                <div class="menu-item px-3 disabled" id="btnConvertirForaneo">
                                     <a class="menu-link px-3" onclick="convertirForaneo()">Convertir a Foraneo</a>
                                 </div>
 
@@ -143,6 +143,15 @@
                                     </select>
                                     <label class="text-gray-700">Estatus de maniobra</label>
                                 </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-check form-switch form-check-custom form-check-solid mt-4">
+                                <input class="form-check-input" type="checkbox" id="validar_foraneos"
+                                    name="validar_planeacion" value="1" checked>
+                                <label class="form-check-label fw-semibold text-gray-700" for="validar_planeacion">
+                                    Ocultar Foraneos
+                                </label>
                             </div>
                         </div>
                     </div>
@@ -298,22 +307,24 @@
         $(document).ready(() => {
             getContenedoresPendientes('all');
 
-            let filtroEdManiobra = document.getElementById('filtro_estatus_maniobra');
-            if (filtroEdManiobra) {
-                filtroEdManiobra.addEventListener('change', function() {
-                    const estatus = this.value;
+            let filtroEdManiobra = document.getElementById('estatus_maniobra');
 
-                    // Limpias el grid si lo necesitas
-                    if (typeof gridApi !== 'undefined') {
-                        gridApi.setGridOption('rowData', []);
+
+            adjuntarDocumentos();
+            const chekedForaneos = document.getElementById('validar_foraneos');
+            if (chekedForaneos) {
+                chekedForaneos.addEventListener('change', function() {
+                    const estatus = filtroEdManiobra.value;
+                    if (this.checked) {
+                        this.value = 1;
+                    } else {
+                        this.value = 0;
                     }
 
-                    // Recargar contenedores según estatus
                     getContenedoresPendientes(estatus);
                 });
             }
 
-            adjuntarDocumentos();
         });
     </script>
     <style>

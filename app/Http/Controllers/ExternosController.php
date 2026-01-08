@@ -953,6 +953,7 @@ class ExternosController extends Controller
     }
     public function getContenedoreslocalesPendientes(Request $request)
     {
+        $ocultarforaneo = $request->boolean('OcultarForaneos');
         $condicion = ($request->estatus != 'all') ? '=' : '!=';
         $contenedoresPendientes = Cotizaciones::join('docum_cotizacion as d', 'cotizaciones.id', '=', 'd.id_cotizacion')
            ->join('estatus_maniobras as estat', 'estat.id', '=', 'cotizaciones.estatus_maniobra_id')
@@ -962,32 +963,36 @@ class ExternosController extends Controller
            ->join('proveedores', 'proveedores.id', '=', 'cotizaciones.transportista_local')
            ->where('cotizaciones.id_cliente', Auth::user()->id_cliente)
            ->where('cotizaciones.estatus_maniobra_id', $condicion, $request->estatus)
-           ->whereIn('tipo_viaje_seleccion', ['local', 'local_to_foraneo'])
+           ->when($ocultarforaneo, function ($query) {
+               $query->where('tipo_viaje_seleccion', 'local');
+           }, function ($query) {
+               $query->whereIn('tipo_viaje_seleccion', ['local', 'local_to_foraneo']);
+           })
            ->where('jerarquia', '!=', 'Secundario')
            ->orderBy('cotizaciones.created_at', 'desc')
            ->select([
-               'cotizaciones.*',
+                      'cotizaciones.*',
 
-               // docum
-               'd.num_contenedor',
-               'd.doc_eir',
-               'd.doc_ccp',
-               'd.boleta_liberacion',
-               'd.doda',
-               'd.foto_patio',
-               'd.boleta_patio',
-               'd.terminal',
-               'd.num_autorizacion',
+                      // docum
+                      'd.num_contenedor',
+                      'd.doc_eir',
+                      'd.doc_ccp',
+                      'd.boleta_liberacion',
+                      'd.doda',
+                      'd.foto_patio',
+                      'd.boleta_patio',
+                      'd.terminal',
+                      'd.num_autorizacion',
 
-               // estatus
-               'estat.nombre as estatus_maniobra',
+                      // estatus
+                      'estat.nombre as estatus_maniobra',
 
-               // NUEVOS
-               'empresas.nombre as empresa',
-               'proveedores.nombre as proveedor',
-               'clients.nombre as cliente',
-               'subclientes.nombre as subcliente',
-           ])
+                      // NUEVOS
+                      'empresas.nombre as empresa',
+                      'proveedores.nombre as proveedor',
+                      'clients.nombre as cliente',
+                      'subclientes.nombre as subcliente',
+                  ])
            ->get();
 
 
@@ -1089,6 +1094,7 @@ class ExternosController extends Controller
 
                 "id" => $c->id,
                 "estatus_maniobra_id" => $c->estatus_maniobra_id,
+                "convertido_foraneo" => str_contains($c->tipo_viaje_seleccion, 'foraneo'),
             ];
         });
 
