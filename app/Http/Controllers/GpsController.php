@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Crypt;
 use App\Traits\GlobalGpsTrait as GlobalGps;
 use App\Traits\SkyAngelGpsTrait as SkyAngel;
 use App\Traits\JimiGpsTrait;
@@ -10,6 +11,7 @@ use App\Traits\LegoGpsTrait as LegoGps;
 use App\Traits\CommonGpsTrait;
 use App\Traits\GpsTrackerMXTrait;
 use App\Models\Empresas;
+use App\Models\GpsCompanyProveedor;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -37,7 +39,7 @@ class GpsController extends Controller
                 // dd($imei);
                 $RfcyEquipo = $this->buscartipoProveedor($contenedor, $id_contenendor, $imei);
 
-                [$Rfc,$equipo,$empresaIdRastro,$TipoEquipo] = explode('|', $RfcyEquipo);
+                [$Rfc,$equipo,$empresaIdRastro,$TipoEquipo,$gps_company_id] = explode('|', $RfcyEquipo);
 
                 // dd($RfcyEquipo);
 
@@ -51,7 +53,21 @@ class GpsController extends Controller
 
                 switch ($tipoGps) {
                     case 'https://open.iopgps.com': //global
-                        $data = GlobalGps::getDeviceRealTimeLocation($imei);
+                        $config = GpsCompanyProveedor::with('proveedor', 'empresa', 'gpsCompany')
+        ->whereHas('proveedor', function ($q) use ($Rfc) {
+            $q->where('RFC', $Rfc);
+        })->where('id_gps_company', $gps_company_id)
+        ->first();
+
+
+                        $account = $config
+                               ? json_decode(
+                                   Crypt::decryptString($config->account_info),
+                                   true
+                               )
+                               : [];
+
+                        $data = GlobalGps::getDeviceRealTimeLocation($imei, $account['appkey'] ?? null, $account['account'] ?? null); //ahora se pasara apikey y id user
                         $tipoGpsresponse = "Global GPS";
                         // $ubicacionApiResponse = $data['data'];
                         $ubicacionApiResponse = $data->data;
@@ -203,6 +219,8 @@ class GpsController extends Controller
     }
 
 
+
+
     public function buscartipoProveedor($num_Contenendor, $idKey, $imei)
     {
         //TP-001|865468051839242|5|https://open.iopgps.com
@@ -232,6 +250,7 @@ class GpsController extends Controller
                 'equipos.modelo',
                 'equipos.placas',
                 'gps_company.url_conexion as tipoGps',
+                'gps_company.id as gps_company_id',
                 'eq_chasis.imei as imei_chasis',
                 'eq_chasis.id_equipo as id_equipo_chasis',
                 DB::raw("CASE WHEN asignaciones.id_proveedor IS NULL THEN asignaciones.id_operador ELSE asignaciones.id_proveedor END as beneficiario_id"),
@@ -266,6 +285,7 @@ class GpsController extends Controller
                 'asig.tipoGps',
                 'asig.imei_chasis',
                 'asig.id_equipo_chasis',
+                'asig.gps_company_id',
                 'cotizaciones.id_empresa',
                 'beneficiarios.RFC'
             )
@@ -307,7 +327,8 @@ class GpsController extends Controller
                   'equipos.id_equipo',
                   'gps_company.url_conexion as tipoGps',
                   'equipos.id_empresa',
-                  'empresas.RFC'
+                  'empresas.RFC',
+                  'gps_company.id as gps_company_id'
               )
             ->where('equipos.id', '=', $idKey)->first();
         }
@@ -318,6 +339,7 @@ class GpsController extends Controller
             $RFCContenedor = $datosAll?->RFC;
             //  $Equipo = $datosAll?->id_equipo;
             $empresaIdRastreo = $datosAll?->id_empresa;
+            $gps_company_id = $datosAll?->gps_company_id;
             if ($RFCContenedor === 'buscarEmpresaRFC') {
                 //buscamos el rfc de la empresa pues no tiene asignado un proveedor....
                 $empresas = Empresas::where('id', '=', auth()->user()->Empresa->id)->orderBy('created_at', 'desc')->first();
@@ -327,7 +349,7 @@ class GpsController extends Controller
             }
 
 
-            return   $RFCContenedor . '|'. $Equipo . '|'.  $empresaIdRastreo .'|'. $TipoEquipo;
+            return   $RFCContenedor . '|'. $Equipo . '|'.  $empresaIdRastreo .'|'. $TipoEquipo.'|'. $gps_company_id;
 
 
         }
