@@ -24,4 +24,12 @@ class GpsCompany extends Model
     {
         return $this->hasMany(ServicioGps::class, 'id_gps_company');
     }
+
+    public function empresas()
+    {
+        return $this->hasMany(
+            GpsCompanyProveedor::class,
+            'id_gps_company'
+        );
+    }
 }

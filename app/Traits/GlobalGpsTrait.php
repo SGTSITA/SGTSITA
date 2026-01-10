@@ -19,19 +19,25 @@ trait GlobalGpsTrait
         return $signature;
     }
 
-    public static function getAccessToken()
+    public static function getAccessToken($apikey, $idUs)
     {
 
-        return Cache::remember('api_bearer_token', 115 * 60, function () { //ApiToken será recordado por 1 hora y 55 minutos
+        return Cache::remember('api_bearer_token', 115 * 60, function () use ($apikey, $idUs) { //ApiToken será recordado por 1 hora y 55 minutos
             $endpoint = config('services.globalGps.url_base').'/api/auth';
 
             $timestamp = time();
             $key = config('services.globalGps.appkey');
+            $apiid = config('services.globalGps.appid');
+            if ($apikey) {
+                //KEY DE USUARIO
+                $key = $apikey;
+                $apiid = $idUs;
+            }
 
             $signature = self::generateSignature($key, $timestamp);
 
             $response = Http::post($endpoint, [
-                'appid' => config('services.globalGps.appid'),
+                'appid' => $apiid ,//,//  ID USER SE VA CAMBIAR
                 'time' => $timestamp,
                 'signature' => $signature,
             ]);
@@ -47,13 +53,13 @@ trait GlobalGpsTrait
         });
     }
 
-    public static function getDeviceRealTimeLocation($imei)
+    public static function getDeviceRealTimeLocation($imei, $apikey, $idUs)
     {
         try {
 
             $endpoint = config('services.globalGps.url_base').'/api/device/location';
 
-            $accessToken = self::getAccessToken();
+            $accessToken = self::getAccessToken($apikey, $idUs);
 
             $headers = [
                 'accessToken' => $accessToken,
@@ -62,7 +68,7 @@ trait GlobalGpsTrait
             $response = Http::withHeaders($headers)
                 ->get($endpoint, ['imei' => $imei]);
 
-            // Puedes validar la respuesta aquí si tu API devuelve un código de error dentro del JSON
+
             if ($response->failed()) {
                 Log::error('API request failed', [
                     'endpoint' => $endpoint,
@@ -86,7 +92,7 @@ trait GlobalGpsTrait
                 status: $response->status()
             );
 
-        } catch (RequestException $e) {
+        } catch (\Throwable $e) {
             Log::error('HTTP exception', [
                 'endpoint' => $endpoint,
                 'message' => $e->getMessage(),
