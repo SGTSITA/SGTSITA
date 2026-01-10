@@ -17,9 +17,9 @@ function configuracionGps(gps) {
         beforeSend: () => {},
         success: (response) => {
             titelModal.dataset.gpsCompany = gps;
-            titelModal.textContent = response.data[0].nombre;
+            titelModal.textContent = response.data.nombre;
 
-            formFields = JSON.parse(response.data[0].account_fields);
+            formFields = JSON.parse(response.data.account_fields);
             const contenedor = document.getElementById('form-account');
             contenedor.innerHTML = '';
 
