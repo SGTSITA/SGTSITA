@@ -547,31 +547,27 @@ if (btnCancelarWhatsApp) {
 
 function EnviarWhatsappGenerados() {
     const autorizacion = wa_no_autorizacion.value;
+    const obs = wa_observaciones.value;
 
     let tieneAutorizacion = autorizacion && autorizacion !== 'null' && autorizacion !== 'undefined';
+    let tieneObservacion = obs && obs !== 'null' && obs !== 'undefined';
     let messageadd = '';
     let messageadd2 = '';
     let mensaje = `
-Fecha: ${wa_fecha.value}
+${esLocal ? `Fecha: ${wa_fecha.value}` : `Fecha entrega: ${wa_fecha.value}`}
+
 Referencia: ${wa_referencia.value}
 Horario: ${wa_hora_inicio.value} - ${wa_hora_fin.value}`.trim();
 
-    if (
-        archivosData.cotizacion.tipo_viaje_seleccion === 'local' ||
-        archivosData.cotizacion.tipo_viaje_seleccion === 'local_to_foraneo'
-    ) {
-        messageadd = `
+    messageadd = `
 Terminal: ${wa_terminal.value}
 
 ${wa_cambio_sello.checked ? '*CAMBIO DE SELLO*' : ''}
 
 ${tieneAutorizacion ? `No Autorización: ${wa_no_autorizacion.value}` : ''}
 
-${wa_observaciones.value || ''}
+${tieneObservacion ? `${tieneObservacion}` : ''}
 `.trim();
-    } else {
-        messageadd = '';
-    }
 
     messageadd2 = `
 Documentos:
@@ -606,6 +602,7 @@ function cargarDatosModalWhatsapp() {
         document.getElementById('div_servicios_whatsapp').classList.add('d-none');
         document.getElementById('div_observaciones_whatsapp').classList.add('d-none');
         document.getElementById('div_no_autorizacion').classList.add('d-none');
+        document.getElementById('wa_fecha').value = data.cotizacion.fecha_entrega;
     }
     document.getElementById('wa_terminal').value = data.terminal ?? '';
     document.getElementById('wa_cambio_sello').checked = !!data.cotizacion.confirmacion_sello;
