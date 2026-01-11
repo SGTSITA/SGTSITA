@@ -112,5 +112,6 @@
         $(document).ready(() => {
             adjuntarDocumentos();
         });
+        const esLocal = false;
     </script>
 @endpush
