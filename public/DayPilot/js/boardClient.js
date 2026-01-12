@@ -332,6 +332,49 @@ function getInfoViaje(startDate, endDate, numContenedor_, idContendor) {
             imei_camion.textContent = response.documentos.imei_camion ?? 'NA';
             id_equipo_chasis.textContent = response.documentos.id_equipo_chasis ?? 'NA';
             imei_chasis.textContent = response.documentos.imei_chasis ?? 'NA';
+
+            let documentosRequeridos = [
+                'boleta_liberacion',
+                'boleta_vacio',
+                'carta_porte',
+                'carta_porte_xml',
+                'doc_ccp',
+                'doc_eir',
+                'doda',
+            ];
+
+            let documentos = response.documents;
+            let docs = Object.keys(documentos);
+            let allDocumentsCompleted = true;
+            let documentosRequeridosFinal = [...documentosRequeridos];
+
+            if (documentos['cima'] == 1) {
+                documentosRequeridosFinal = documentosRequeridosFinal.filter((doc) => doc !== 'doc_eir');
+            }
+
+            docs.forEach((doc) => {
+                let documento = document.querySelector('#' + doc);
+                let valorDoc = documentos[doc];
+
+                if (documento) {
+                    documento.innerHTML =
+                        valorDoc != false && valorDoc != null
+                            ? `<i class="fas fa-circle-check text-success fa-lg"></i>`
+                            : `<i class="fas fa-circle-xmark text-secondary fa-lg"></i>`;
+                }
+
+                if (doc === 'cima' && valorDoc == 1) {
+                    $('#cima-label').removeClass('d-none');
+                }
+
+                if (documentosRequeridosFinal.includes(doc)) {
+                    if (!valorDoc || valorDoc == 0) {
+                        allDocumentsCompleted = false;
+                    }
+                }
+            });
+
+            canEndTravel = allDocumentsCompleted;
         },
 
         error: () => {
