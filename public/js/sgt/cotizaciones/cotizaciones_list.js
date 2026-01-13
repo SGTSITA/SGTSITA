@@ -835,7 +835,7 @@ function enviarMailCoordenadas() {
     saveCoordenadas();
 }
 function guardarYAbrirWhatsApp(event) {
-    event.preventDefault(); // Evita que el enlace se abra inmediatamente
+    event.preventDefault();
     saveCoordenadas();
     window.open(document.getElementById('whatsappLink').href, '_blank');
 }
