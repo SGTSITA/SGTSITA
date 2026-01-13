@@ -2254,8 +2254,10 @@ class CotizacionesController extends Controller
 
         try {
 
+            $numContenedor = str_replace(' ', '', $request->num_contenedor);
+
             $estatus_maniobra_id_inicial = 4;
-            $contenedorExistente = DocumCotizacion::where('num_contenedor', $request->num_contenedor)
+            $contenedorExistente = DocumCotizacion::where('num_contenedor', $numContenedor)
                                                      //  ->where('id_empresa', $idEmpresa)
                                                        ->first();
 
@@ -2377,7 +2379,7 @@ class CotizacionesController extends Controller
             $doc = DocumCotizacion::create([
                 'id_cotizacion'          => $cotizacion->id,
                 'id_empresa'             => $idempresa,
-                'num_contenedor'         => $request->num_contenedor,
+                'num_contenedor'         => $numContenedor,
                 'terminal'               => $request->terminal_local,
                 'num_autorizacion'       => $request->num_autorizacion,
                 'boleta_liberacion'      => $request->boleta_liberacion,
@@ -2406,7 +2408,7 @@ class CotizacionesController extends Controller
                 'message' => 'Cotización local guardada correctamente',
                 'cotizacion_id' => $cotizacion->id,
                 'docum_cotizacion_id' => $doc->id,
-                'num_contenedor' => $request->num_contenedor,
+                'num_contenedor' => $numContenedor,
 
             ]);
 
@@ -2432,10 +2434,10 @@ class CotizacionesController extends Controller
             $doc = DocumCotizacion::where('id_cotizacion', $id)->firstOrFail();
 
             $contenedorOriginal = $doc->num_contenedor;
+            $contenedorupdate = str_replace(' ', '', $request->num_contenedor);
+            if ($contenedorupdate !== $contenedorOriginal) {
 
-            if ($request->num_contenedor !== $contenedorOriginal) {
-
-                $contenedorExistente = DocumCotizacion::where('num_contenedor', $request->num_contenedor)
+                $contenedorExistente = DocumCotizacion::where('num_contenedor', $contenedorupdate)
                     ->where('id_cotizacion', '!=', $doc->id_cotizacion)
                     ->exists();
 
@@ -2522,7 +2524,7 @@ class CotizacionesController extends Controller
 
 
             if ($request->num_contenedor != $contenedorOriginal) {
-                $doc->num_contenedor = $request->num_contenedor;
+                $doc->num_contenedor = $contenedorupdate;
             }
             $doc->terminal = $request->terminal_local;
             $doc->num_autorizacion = $request->num_autorizacion;
@@ -2536,7 +2538,7 @@ class CotizacionesController extends Controller
                 'message' => 'Cotización actualizada correctamente.',
                 'cotizacion_id' => $cot->id,
                 'docum_cotizacion_id' => $doc->id,
-                'num_contenedor' => $request->num_contenedor,
+                'num_contenedor' => $contenedorupdate,
             ]);
 
         } catch (\Throwable $e) {

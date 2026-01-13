@@ -364,6 +364,7 @@ class ExternosController extends Controller
                 "FormatoCartaPorte" => $docCCP,
                 "PreAlta" => $boletaVacio,
                 "BoletaPatio" => $boletaPatio,
+                "docEir" => $docEir,
                 "FechaSolicitud" => Carbon::parse($c->created_at)->format('Y-m-d'),
                 "tipo" => $tipo,
                 "id" => $c->id,
