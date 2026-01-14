@@ -29,8 +29,8 @@ use Illuminate\Support\Facades\Storage;
 use App\Traits\CommonTrait as Common;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
-use PDF;
-use Excel;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\Auth;
 
 class ReporteriaController extends Controller
@@ -390,7 +390,7 @@ class ReporteriaController extends Controller
 
         $subclientes = Subclientes::where('id_empresa', '=', auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
         $proveedores = Proveedor::where('id_empresa', '=', auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
-        $estatus = \DB::table('cotizaciones')
+        $estatus = DB::table('cotizaciones')
                     ->where('id_empresa', auth()->user()->id_empresa)
                     ->select('estatus')
                     ->distinct()
@@ -500,7 +500,7 @@ class ReporteriaController extends Controller
         $clientes = Client::where('id_empresa', auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
         $subclientes = Subclientes::where('id_empresa', auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
         $proveedores = Proveedor::where('id_empresa', auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
-        $estatus = \DB::table('cotizaciones')
+        $estatus = DB::table('cotizaciones')
             ->where('id_empresa', auth()->user()->id_empresa)
             ->select('estatus')
             ->distinct()
@@ -1601,7 +1601,7 @@ class ReporteriaController extends Controller
             }
 
             if ($tipo === 'excel') {
-                return \Excel::download(
+                return Excel::download(
                     new \App\Exports\VXCExport($cotizaciones, $totalGenerado, $retenido, $pagoNeto),
                     'viajes_por_cobrar.xlsx'
                 );

@@ -6,6 +6,7 @@ use App\Models\GpsCompany;
 use App\Models\Equipo;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Auth;
 
 class EquiposController extends Controller
 {
@@ -75,7 +76,7 @@ class EquiposController extends Controller
                 $file->move(public_path('/equipos'), $fileName);
                 $proveedor->poliza_seguro = $fileName;
             }
-
+            $proveedor->user_id = auth()->user()->id;
             $proveedor->save();
 
             // === Chasis / Plataforma ===
@@ -107,6 +108,10 @@ class EquiposController extends Controller
                 $proveedor->poliza_seguro = $fileName;
             }
 
+
+            $proveedor->user_id = auth()->user()->id;
+
+
             $proveedor->save();
 
             // === Dolys ===
@@ -136,6 +141,8 @@ class EquiposController extends Controller
                 $file->move(public_path('/equipos'), $fileName);
                 $proveedor->poliza_seguro = $fileName;
             }
+
+            $proveedor->user_id = auth()->user()->id;
 
             $proveedor->save();
         }

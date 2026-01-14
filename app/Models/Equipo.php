@@ -6,7 +6,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 
-
 class Equipo extends Model
 {
     use HasFactory;
@@ -28,14 +27,15 @@ class Equipo extends Model
         'id_equipo',
         'id_empresa',
         'placas',
-        'imei'
+        'imei',
+        'user_id',
     ];
 
     public function gps()
     {
         return $this->belongsTo(GpsCompany::class, 'gps_company_id');
     }
-    
+
     protected static function boot()
     {
         parent::boot();
@@ -48,5 +48,5 @@ class Equipo extends Model
             $empresa->id_empresa = Auth::user()->id_empresa;
         });
     }
-    
+
 }

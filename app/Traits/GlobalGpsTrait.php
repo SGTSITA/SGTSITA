@@ -37,12 +37,10 @@ trait GlobalGpsTrait
             $signature = self::generateSignature($key, $timestamp);
 
             $response = Http::post($endpoint, [
-                'appid' => $apiid ,//,//  ID USER SE VA CAMBIAR
+                'appid' => $apiid,//,//  ID USER SE VA CAMBIAR
                 'time' => $timestamp,
                 'signature' => $signature,
             ]);
-
-
 
             if ($response->successful() && isset($response->json()['accessToken'])) {
                 return $response->json()['accessToken'];

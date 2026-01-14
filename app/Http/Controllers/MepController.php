@@ -134,6 +134,7 @@ class MepController extends Controller
             $unidad->num_serie = $serie;
             $unidad->gps_company_id = $provGps;
             $unidad->tipo = $tipoEquipo;
+            $unidad->user_id = auth()->user()->id;
             $unidad->save();
         } else {
             $unidad = $unidad->first();
@@ -179,6 +180,7 @@ class MepController extends Controller
             $unidad->num_serie = $formData['txtSerie'];
             $unidad->gps_company_id = $formData['selectGPS'];
             $unidad->tipo = 'Tractos / Camiones';
+            $unidad->user_id = auth()->user()->id;
             $unidad->save();
 
         } else {
