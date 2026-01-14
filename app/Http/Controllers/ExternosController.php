@@ -120,6 +120,8 @@ class ExternosController extends Controller
             $query->where('num_contenedor', $request->numContenedor);
         })
         ->first();
+        // dd($request->numContenedor);
+        // dd($cotizacion);
 
         $transportista = Proveedor::catalogoPrincipal()->whereIn('id_empresa', $clienteEmpresa)->get();
         // dd($transportista, $clienteEmpresa);
