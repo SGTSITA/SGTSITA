@@ -382,6 +382,8 @@
                                 longitud: lnglocal,
                                 ubicacionable_id: idConvoyOContenedor,
                                 tipo: tipo,
+                                tipoRastreo: "Seguimiento",
+                                idProceso: 0,
                             };
                             if (idConvoyOContenedor != '') {
                                 actualizarUbicacionReal(datasave);
