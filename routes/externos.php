@@ -111,6 +111,18 @@ Route::group(['prefix' => 'externos'], function () {
     Route::post('/ver-documentos/{token}', [App\Http\Controllers\DocsController::class, 'validarPassword'])->name('externos.validarPassword');
     Route::post('/acceso/validar/{token}', [App\Http\Controllers\DocsController::class, 'validarRevocacion'])->name('externos.validarRevocacion');
     Route::get('/acceso/revocado', [App\Http\Controllers\DocsController::class, 'accesoRevocado'])->name('externos.acceso.revocado');
-    Route::get('/documentos/{token}/download/{archivo}', [App\Http\Controllers\DocsController::class, 'download'])->name('externos.documentos.download');
+    Route::get('/documentos/{token}/download/{docId}/{archivo}', [App\Http\Controllers\DocsController::class, 'download'])->name('externos.documentos.download');
     Route::post('/documentos/{token}/download-zip', [App\Http\Controllers\DocsController::class, 'downloadZip'])->name('externos.documentos.zip');
+    Route::get('/documentos/{token}/download-full', [App\Http\Controllers\DocsController::class, 'downloadFull'])->name('externos.documentos.download.full');
+});
+
+
+
+Route::group(['prefix' => 'documentos_ext'], function () {
+
+    Route::get('reporteria/documentos', [App\Http\Controllers\ExternosController::class, 'ext_index_documentos'])->name('ext_index_documentos.reporteria');
+    Route::get('reporteria/documentos/buscador', [App\Http\Controllers\ExternosController::class, 'ext_advance_documentos'])->name('ext_advance_documentos.buscador');
+    Route::post('reporteria/documentos/export', [App\Http\Controllers\ExternosController::class, 'ext_export_documentos'])->name('ext_export_documentos.export');
+
+
 });

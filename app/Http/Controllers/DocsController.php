@@ -57,26 +57,70 @@ class DocsController extends Controller
         session(['acceso_autorizado_'.$token => true]);
 
         //dd($acceso);
-        $columns = $acceso->shared_files;
-        if (is_string($columns)) {
-            $columns = json_decode($columns, true);
-        }
+        $raw = $acceso->shared_files;
+
+        $items = is_string($raw)
+            ? json_decode($raw, true)
+            : $raw;
+
+        $archivosPorDoc = collect($items)->groupBy(function ($item) {
+            return $item['docId'] ?? 'ALL';
+        });
 
         //$DocDocumento = DocumCotizacion::with('Cotizacion')->where('id', '=', $acceso->documento_id)->first();
 
         $DocDocumento = $this->documentosGet($acceso->documento_id);
+        $contenedores = collect([$DocDocumento]);
+        if ($DocDocumento) {
 
-        $documentos = $this->getFilesByColumns(
-            $acceso->documento_id,
-            $columns
-        );
 
-        //dd($DocDocumento);
-        return view("mep.docs.documentos", compact('token', 'documentos', 'DocDocumento'));
+            if (!is_null($DocDocumento->referencia_full)) {
+                $secundarios = Cotizaciones::with('DocCotizacion')
+                    ->where('referencia_full', $DocDocumento->referencia_full)
+                    ->where('jerarquia', 'Secundario')
+                    ->get();
+
+                $contenedores = $contenedores->merge($secundarios);
+            }
+        }
+
+
+        $tabs = [];
+        foreach ($contenedores as $c) {
+
+            $doc = $c->DocCotizacion;
+
+            if (!$doc) {
+                continue;
+            }
+
+
+            $docId = $doc->id;
+
+            $permitidos = collect(
+                $archivosPorDoc[$docId]
+        ?? $archivosPorDoc['ALL']
+        ?? []
+            )->pluck('fileCode')
+ ->unique()
+ ->values()
+ ->toArray();
+
+
+            $tabs[] = [
+                'id'         => 'cont_' . $c->id,
+                'label'      => $doc->num_contenedor,
+                'documentos' => $this->getFilesByColumns($doc->id, $permitidos),
+            ];
+        }
+
+        // dd($tabs);
+        return view("mep.docs.documentos", compact('token', 'DocDocumento', 'tabs'));
     }
 
     public function documentosGet($documento_id)
     {
+
         $DocDocumento = Cotizaciones::join('docum_cotizacion as d', 'cotizaciones.id', '=', 'd.id_cotizacion')
           ->join('estatus_maniobras as estat', 'estat.id', '=', 'cotizaciones.estatus_maniobra_id')
           ->join('subclientes', 'subclientes.id', '=', 'cotizaciones.sub_cliente_local')
@@ -110,6 +154,8 @@ class DocsController extends Controller
               'subclientes.nombre as subcliente',
           ])
           ->first();
+
+
 
         if (!$DocDocumento) { //buscar en cotizaciones de manera normal , tipo foraneo
             $DocDocumento = Cotizaciones::join('docum_cotizacion as d', 'cotizaciones.id', '=', 'd.id_cotizacion')
@@ -148,6 +194,9 @@ class DocsController extends Controller
 
         }
 
+
+
+
         return $DocDocumento;
 
     }
@@ -165,7 +214,7 @@ class DocsController extends Controller
         return view('proveedor.documentos', compact('token'));
     }
 
-    public function download($token, $archivo)
+    public function download($token, $docId, $archivo)
     {
         $acceso = $this->accesoValido($token);
         if (!$acceso) {
@@ -189,9 +238,13 @@ class DocsController extends Controller
         //     return redirect()->route('externos.acceso.revocado', compact('titmesage', 'messag', 'submessag'));
 
         // }
-        $documento = DocumCotizacion::where('id', '=', $acceso->documento_id)->first();
 
-        $path = public_path("cotizaciones/cotizacion{$documento->id_cotizacion}/{$file}");
+        $documento = DocumCotizacion::findOrFail($docId);
+
+        $path = public_path(
+            "cotizaciones/cotizacion{$documento->id_cotizacion}/{$file}"
+        );
+
 
         if (!file_exists($path)) {
             $titmesage = 'Archivo no encontrado';
@@ -290,7 +343,12 @@ class DocsController extends Controller
         $columnskey = config('CatAuxiliares.columnsbycode');
 
         foreach ($columns as $item) {
-            $column = $columnskey[$item['fileCode']] ?? null;
+            $fileCode = is_array($item)
+        ? ($item['fileCode'] ?? null)
+        : $item;
+
+            $column = $columnskey[$fileCode] ?? $fileCode;
+
             if (!$column) {
                 $column = $item['fileCode'];
             }
@@ -298,7 +356,7 @@ class DocsController extends Controller
 
 
             //dd($column);
-
+            $num_contenendor = $documentos->num_contenedor;
             // buscar en DocumCotizacion
             if (isset($documentos->$column) && $documentos->$column) {
                 $file = $documentos->$column;
@@ -306,7 +364,8 @@ class DocsController extends Controller
                 $doc = self::fileProperties(
                     $documentos->id_cotizacion,
                     $file,
-                    $column
+                    $column,
+                    $num_contenendor
                 );
 
                 if (!empty($doc)) {
@@ -321,7 +380,8 @@ class DocsController extends Controller
                 $doc = self::fileProperties(
                     $documentos->id_cotizacion,
                     $file,
-                    $column
+                    $column,
+                    $num_contenendor
                 );
 
                 if (!empty($doc)) {
@@ -333,8 +393,9 @@ class DocsController extends Controller
         return $documentList;
     }
 
-    public function fileProperties($id, $file, $title)
+    public function fileProperties($id, $file, $title, $num_contenendor)
     {
+
         $columnsbycode = config('CatAuxiliares.columnsbycode');
         $clave = array_search($title, $columnsbycode, true);
         $path = public_path('cotizaciones/cotizacion'.$id.'/'.$file);
@@ -348,7 +409,7 @@ class DocsController extends Controller
                 "filePath" => $file,
                 'fileName' => $title,
                 "folder" => $id,
-                'secondaryFileName' => str_replace('-', ' ', $clave),
+                'secondaryFileName' => str_replace('-', ' ', $clave).' '. $num_contenendor ,
                 "fileDate" => CommonTrait::obtenerFechaEnLetra(date("Y-m-d", filemtime($path))),
                 "fileSize" => CommonTrait::calculateFileSize(filesize($path)),
                 "fileSizeBytes" => (filesize($path)),
@@ -366,6 +427,94 @@ class DocsController extends Controller
     public function accesoRevocado()
     {
         return view('mep.docs.revocado');
+    }
+
+
+    public function downloadFull(string $token)
+    {
+        $acceso = $this->accesoValido($token);
+        if (!$acceso) {
+            $titmesage = 'Acceso revocado';
+            $messag = 'El acceso a estos documentos ya no es válido.';
+            $submessag = 'La contraseña fue revocada o el enlace ha expirado.';
+            return redirect()->route('externos.acceso.revocado', compact('titmesage', 'messag', 'submessag'));
+        }
+
+        $columns = json_decode($acceso->shared_files, true);
+
+        if (empty($columns)) {
+            abort(404, 'No hay archivos compartidos');
+        }
+
+        $zipName = 'documentos_full_' . now()->format('Ymd_His') . '.zip';
+        $zipPath = public_path($zipName);
+
+        $zip = new \ZipArchive();
+        $result = $zip->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE);
+
+        if ($result !== true) {
+            dd('Error al crear ZIP', $result);
+        }
+        if ($zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) === true) {
+            $columnsKey = config('CatAuxiliares.columnsbycode');
+
+            foreach ($columns as $item) {
+
+                $fileCode = is_array($item)
+                    ? ($item['fileCode'] ?? null)
+                    : $item;
+
+                if (!$fileCode) {
+                    continue;
+                }
+
+                // 1️⃣ Obtener columna real
+                $column = $columnsKey[$fileCode] ?? null;
+                if (!$column) {
+                    continue;
+                }
+
+                // 2️⃣ Obtener documento
+                $doc = DocumCotizacion::find($item['docId']);
+                if (!$doc) {
+                    continue;
+                }
+
+                // 3️⃣ Obtener nombre REAL del archivo desde BD
+                $fileName = $doc->$column ?? null;
+                if (!$fileName) {
+                    continue;
+                }
+
+                // 4️⃣ Path correcto
+                $path = public_path(
+                    "cotizaciones/cotizacion{$doc->id_cotizacion}/{$fileName}"
+                );
+
+                if (!file_exists($path)) {
+                    continue;
+                }
+
+                // 5️⃣ Carpeta por contenedor
+                $folder = preg_replace('/[^A-Za-z0-9_\-]/', '_', $doc->num_contenedor);
+
+                // 6️⃣ Agregar al ZIP
+                $zip->addFile(
+                    $path,
+                    "{$folder}/{$fileName}"
+                );
+            }
+
+            $zip->close();
+        }
+
+        if (!file_exists($zipPath)) {
+            dd('error 2', $zipPath);
+        }
+
+
+
+        return response()->download($zipPath)->deleteFileAfterSend();
     }
 
 }
