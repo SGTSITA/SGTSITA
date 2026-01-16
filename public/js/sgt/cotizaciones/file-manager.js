@@ -9,9 +9,13 @@ let numContenedor = tagNumContenedor.textContent;
 
 let urlGetFiles = `/viajes/file-manager/get-file-list/${numContenedor}`;
 let archivosData = [];
+let contendores = '';
+let autorizaciones = '';
 let dt = $('#kt_datatable_example_1')
     .on('xhr.dt', function (e, settings, json, xhr) {
         archivosData = json.documentos;
+        contendores = json.numContenedor;
+        autorizaciones = json.num_autorizaciones;
     })
     .DataTable({
         select: false,
@@ -582,8 +586,10 @@ Contraseña de acceso: ${waPasswordGenerado}
 
 function cargarDatosModalWhatsapp() {
     let data = archivosData;
+    let limpiocontenrepl = contendores.replaceAll('*', ' ');
+
     document.getElementById('wa_fecha').value = data.cotizacion.fecha_modulacion ?? '';
-    document.getElementById('wa_referencia').value = `${data.num_contenedor}`;
+    document.getElementById('wa_referencia').value = `${limpiocontenrepl}`;
 
     document.getElementById('wa_hora_inicio').value = data.cotizacion.bloque_hora_i_local ?? '';
     document.getElementById('wa_hora_fin').value = data.cotizacion.bloque_hora_f_local ?? '';
@@ -607,7 +613,7 @@ function cargarDatosModalWhatsapp() {
     document.getElementById('wa_terminal').value = data.terminal ?? '';
     document.getElementById('wa_cambio_sello').checked = !!data.cotizacion.confirmacion_sello;
     document.getElementById('wa_observaciones').value = data.cotizacion.observaciones ?? '';
-    document.getElementById('wa_no_autorizacion').value = data.num_autorizacion ?? '';
+    document.getElementById('wa_no_autorizacion').value = autorizaciones ?? '';
 }
 
 function obtenerArchivosSeleccionados() {
@@ -623,6 +629,7 @@ function obtenerArchivosSeleccionados() {
             let data = this.data();
 
             archivos.push({
+                docId: data.identifier,
                 fileCode: data.fileCode,
             });
         }

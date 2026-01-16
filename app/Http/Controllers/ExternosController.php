@@ -14,6 +14,7 @@ use App\Models\ClientEmpresa;
 use App\Models\Asignaciones;
 use App\Models\Correo;
 use App\Models\Proveedor;
+use App\Models\Subclientes;
 use App\Models\EstatusManiobra;
 use App\Models\BitacoraCotizacionesEstatus;
 use Illuminate\Support\Facades\Mail;
@@ -645,11 +646,22 @@ class ExternosController extends Controller
         $numContenedor = preg_replace('/\s+/', '*', $numContenedor);
         $contenedores = explode('*', $numContenedor);
         $documentList = array();
+        $doccotiPrincipal = null;
+        $num_autorizaciones = '';
 
         foreach ($contenedores as $cont) {
             $documentos = DocumCotizacion::with('Cotizacion')
-                ->where('num_contenedor', $cont)
-                ->first();
+                  ->where('num_contenedor', $cont)
+                  ->first();
+
+            if ($documentos->cotizacion->jerarquia == 'Principal') {
+                $doccotiPrincipal =  $documentos;
+                $num_autorizaciones = $documentos->num_autorizacion;
+
+            } else {
+
+                $num_autorizaciones = $num_autorizaciones.' '. $documentos->num_autorizacion;
+            }
 
 
             $folderId = $documentos->id_cotizacion;  //si se guarda con id cotizacion , buscamos con esa clave
@@ -721,7 +733,7 @@ class ExternosController extends Controller
             }
         }
 
-        return ["data" => $documentList,"numContenedor" => $numContenedor,"documentos" => $documentos];
+        return ["data" => $documentList,"numContenedor" => $numContenedor,"documentos" => $doccotiPrincipal,'num_autorizaciones' => $num_autorizaciones];
 
 
     }
@@ -1316,6 +1328,129 @@ class ExternosController extends Controller
             ->setPaper('letter', 'portrait');
 
         return $pdf->stream('maniobra.pdf');
+    }
+
+
+    public function ext_index_documentos(Request $request)
+    {
+        $clientes = Client::where('id_empresa', auth()->user()->id_empresa)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $subclientes = Subclientes::where('id_empresa', auth()->user()->id_empresa)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $proveedores = Proveedor::where('id_empresa', auth()->user()->id_empresa)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // Construir consulta base
+        $cotizacionesQuery = Cotizaciones::query()
+
+            ->where('cotizaciones.id_empresa', auth()->user()->id_empresa)
+            ->where('cotizaciones.estatus', '!=', 'Cancelada')
+            ->where('cotizaciones.jerarquia', "Principal")
+            ->leftJoin('docum_cotizacion', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
+            ->leftJoin('asignaciones', 'docum_cotizacion.id', '=', 'asignaciones.id_contenedor')
+            ->leftJoin('clients', 'cotizaciones.id_cliente', '=', 'clients.id')
+            ->select(
+                'cotizaciones.id',
+                'clients.nombre as cliente',
+                'docum_cotizacion.num_contenedor',
+                'docum_cotizacion.doc_ccp',
+                'docum_cotizacion.boleta_liberacion',
+                'docum_cotizacion.doda',
+                'cotizaciones.carta_porte',
+                'cotizaciones.img_boleta AS boleta_vacio',
+                'docum_cotizacion.doc_eir',
+                'docum_cotizacion.cima',
+                'asignaciones.id_proveedor',
+                'asignaciones.fecha_inicio',
+                'asignaciones.fecha_fin',
+                'cotizaciones.referencia_full',
+            )
+            ->distinct();
+
+
+        // Aplicar filtro por fechas si vienen del request
+        if ($request->filled('fecha_inicio') && $request->filled('fecha_fin')) {
+            $cotizacionesQuery->whereBetween('asignaciones.fecha_inicio', [
+                $request->fecha_inicio,
+                $request->fecha_fin
+            ]);
+        }
+
+        $cotizaciones = $cotizacionesQuery->get();
+
+        $cotizaciones = $cotizaciones->map(function ($cot) {
+            $numContenedor = $cot->num_contenedor;
+            $docCCP = $cot->doc_ccp;
+            $doda = $cot->doda;
+            $boletaLiberacion = $cot->boleta_liberacion;
+            $cartaPorte = $cot->carta_porte;
+            $boletaVacio = $cot->boleta_vacio;
+            $docEir = $cot->doc_eir;
+
+            $tipo = "";
+            $eirPrimario = $cot->doc_eir;
+            $cimaPrimario = $cot->cima;
+            $eirSecundario = null;
+            $cimaSecundario = null;
+
+            $proveedorNombre = null;
+            if ($cot->id_proveedor) {
+                $proveedor = \App\Models\Proveedor::find($cot->id_proveedor);
+                $proveedorNombre = $proveedor ? $proveedor->nombre : null;
+            }
+
+            if (!is_null($cot->referencia_full)) {
+                $secundaria = \App\Models\Cotizaciones::where('referencia_full', $cot->referencia_full)
+                    ->where('jerarquia', 'Secundario')
+                    ->with('DocCotizacion')
+                    ->first();
+
+                if ($secundaria && $secundaria->DocCotizacion) {
+                    $eirSecundario = $secundaria->DocCotizacion->doc_eir;
+                    $cimaSecundario = $secundaria->DocCotizacion->cima;
+
+                    $docCCP = ($docCCP && $secundaria->DocCotizacion->doc_ccp) ? true : false;
+                    $doda = ($doda && $secundaria->DocCotizacion->doda) ? true : false;
+                    $docEir = ($docEir && $secundaria->DocCotizacion->doc_eir) ? true : false;
+                    $boletaLiberacion = ($boletaLiberacion && $secundaria->DocCotizacion->boleta_liberacion) ? true : false;
+                    $cartaPorte = ($cartaPorte && $secundaria->carta_porte) ? true : false;
+                    $boletaVacio = ($boletaVacio && $secundaria->img_boleta) ? true : false;
+                    $numContenedor .= '/' . $secundaria->DocCotizacion->num_contenedor;
+                }
+
+                $tipo = 'Full';
+            }
+
+            return [
+             "id" => $cot->id,
+             "cliente" => $cot->cliente,
+             "num_contenedor" => $numContenedor,
+             "doc_ccp" => $docCCP,
+             "boleta_liberacion" => $boletaLiberacion,
+             "doda" => $doda,
+             "carta_porte" => $cartaPorte,
+             "boleta_vacio" => $boletaVacio,
+             "doc_eir" => $docEir,
+             "proveedor" => $proveedorNombre,
+             "fecha_inicio" => $cot->fecha_inicio,
+             "fecha_fin" => $cot->fecha_fin,
+             "tipo" => $tipo,
+             "cima" => $cot->cima, //  agrega esta línea
+             "eir_primario" => $eirPrimario,
+"eir_secundario" => $eirSecundario,
+"cima_primario" => $cimaPrimario,
+"cima_secundario" => $cimaSecundario,
+];
+
+        });
+
+
+        return view('mec.repor_documentos.index', compact('cotizaciones', 'clientes', 'subclientes', 'proveedores'));
     }
 
 }
