@@ -1,10 +1,10 @@
 ---
 title: Patch exclamation fill
 categories:
-  - Badges
+    - Badges
 tags:
-  - excited
-  - certified
+    - excited
+    - certified
 aliases:
-  - /icons/patch-exclamation-fll/
+    - /icons/patch-exclamation-fll/
 ---

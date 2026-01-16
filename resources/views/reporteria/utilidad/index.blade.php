@@ -51,11 +51,11 @@
                             <h5 id="card_title">
                                 Reporte de Resultados
                                 <p class="text-sm mb-0">
-
+                                </p>
                                 <div class="font-weight-bolder text-sm"><span class="small">Periodo</span></div>
                                 <input type="text" id="daterange" readonly class="form-control form-control-sm min-w-100"
                                     style="border: none; box-shadow: none;" />
-                                </p>
+
                             </h5>
 
                             <div class="float-right">

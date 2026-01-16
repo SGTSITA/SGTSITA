@@ -39,11 +39,51 @@ class Cotizaciones extends Model
         'prove_restante',
         'id_cuenta_prov',
         'id_cuenta_prov2',
+        'bloque',
+        'bloque_hora_i',
+        'bloque_hora_f',
         'latitud',
         'longitud',
         'direccion_mapa',
         'fecha_seleccion_ubicacion',
         'fecha_seleccion',
+        'puerto',
+        'cp_pedimento',
+        'cp_clase_ped',
+        'fecha_ingreso_puerto',
+        'fecha_salida_puerto',
+        'dias_estadia',
+        'dias_pernocta',
+        'tarifa_estadia',
+        'tarifa_pernocta',
+        'total_estadia',
+        'total_pernocta',
+        'total_general',
+        'motivo_demora',
+        'liberado',
+        'fecha_liberacion',
+        'responsable',
+        'observaciones',
+        'tipo_viaje_seleccion',
+        'origen_local',
+        'destino_local',
+        'costo_maniobra_local',
+        'estado_contenedor',
+        'fecha_modulacion_local',
+        'empresa_local',
+        'sub_cliente_local',
+        'transportista_local',
+        'bloque_local',
+        'bloque_hora_i_local',
+        'bloque_hora_f_local',
+        'en_patio',
+        'fecha_en_patio',
+        'origen_captura',
+        'user_id',
+        'estatus_maniobra_id',
+        'confirmacion_sello',
+        'nuevo_sello',
+        'agente_aduanal'
 
     ];
 
@@ -87,6 +127,12 @@ class Cotizaciones extends Model
         return $this->hasOne(Empresas::class, 'id_empresa');
     }
 
+    public function estatusManiobra() //para local y estatus
+    {
+        return $this->belongsTo(EstatusManiobra::class, 'estatus_maniobra_id');
+    }
+
+
     protected static function boot()
     {
         parent::boot();
@@ -95,6 +141,6 @@ class Cotizaciones extends Model
             $empresa->id_empresa = Auth::user()->id_empresa;
         });
 
-        
+
     }
 }

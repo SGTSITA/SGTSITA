@@ -1,10 +1,10 @@
 ---
 title: Bounding box
 categories:
-  - Graphics
+    - Graphics
 tags:
-  - text
-  - shape
-  - resize
-  - dimensions
+    - text
+    - shape
+    - resize
+    - dimensions
 ---

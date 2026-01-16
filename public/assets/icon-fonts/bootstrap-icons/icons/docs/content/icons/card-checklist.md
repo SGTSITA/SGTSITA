@@ -1,9 +1,9 @@
 ---
 title: Card checklist
 categories:
-  - Files and folders
+    - Files and folders
 tags:
-  - note
-  - card
-  - notecard
+    - note
+    - card
+    - notecard
 ---

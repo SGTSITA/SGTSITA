@@ -10,7 +10,9 @@ use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-   use HasFactory, Notifiable, HasRoles;
+    use HasFactory;
+    use Notifiable;
+    use HasRoles;
 
     /**
      * The attributes that are mass assignable.
@@ -24,7 +26,12 @@ class User extends Authenticatable
         'password',
         'id_cliente',
         'consecutivo_conboy',
+    'es_admin',
     ];
+
+
+
+
 
     /**
      * The attributes that should be hidden for serialization.
@@ -43,9 +50,8 @@ class User extends Authenticatable
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'es_admin' => 'boolean',
     ];
-
-
     public function Empresa()
     {
         return $this->belongsTo(Empresas::class, 'id_empresa');
@@ -53,6 +59,16 @@ class User extends Authenticatable
     public function empresasAsignadas()
     {
         return $this->belongsToMany(Empresas::class, 'users_empresas', 'id_user', 'id_empresa');
+    }
+
+    public function proveedores()
+    {
+        return $this->belongsToMany(
+            Proveedor::class,
+            'user_proveedores',
+            'user_id',
+            'proveedor_id'
+        );
     }
 
 }

@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Crypt;
 use App\Models\Empresas;
 use App\Models\ServicioGps;
 use App\Dto\ApiResponse;
-use Log;
+use Illuminate\Support\Facades\Log;
 
 trait BeyondGPSTrait
 {
@@ -16,7 +16,8 @@ trait BeyondGPSTrait
      * Fn validateOwner
      * Proposito: No existe capa de seguridad adicional, por lo que se hace una simulacion
      */
-    public static function validateOwner($appKey){
+    public static function validateOwner($appKey)
+    {
         return  true ;
     }
 
@@ -25,7 +26,7 @@ trait BeyondGPSTrait
         try {
 
             $endpoint = config('services.BeyondGpsCustomized.url_base');
-          
+
             $response = Http::post($endpoint, [
                 'User' => $username,
                 'Password' => $password,
@@ -40,11 +41,11 @@ trait BeyondGPSTrait
                 ]);
 
                 return new ApiResponse(
-                        success: false,
-                        data: $response->json(),
-                        message: 'Error al consultar Beyond GPS',
-                        status: $response->status()
-                    );
+                    success: false,
+                    data: $response->json(),
+                    message: 'Error al consultar Beyond GPS',
+                    status: $response->status()
+                );
 
             }
 
@@ -61,12 +62,12 @@ trait BeyondGPSTrait
                 'message' => $e->getMessage(),
             ]);
 
-           return new ApiResponse(
-                        success: false,
-                        data: null,
-                        message: 'Excepción HTTP BeyondGps::getLocation => ' .$e->getMessage(),
-                        status: 500
-                    );
+            return new ApiResponse(
+                success: false,
+                data: null,
+                message: 'Excepción HTTP BeyondGps::getLocation => ' .$e->getMessage(),
+                status: 500
+            );
 
         } catch (\Throwable $e) {
             Log::critical('Unexpected error ', [
@@ -75,11 +76,11 @@ trait BeyondGPSTrait
             ]);
 
             return new ApiResponse(
-                        success: false,
-                        data: null,
-                        message: 'Error inesperado BeyondGps::getLocation => ' .$e->getMessage(),
-                        status: 500
-                    );
+                success: false,
+                data: null,
+                message: 'Error inesperado BeyondGps::getLocation => ' .$e->getMessage(),
+                status: 500
+            );
 
         }
     }

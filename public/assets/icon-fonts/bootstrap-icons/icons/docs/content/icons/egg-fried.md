@@ -1,7 +1,7 @@
 ---
 title: Egg fried
 categories:
-  - Real world
+    - Real world
 tags:
-  - food
+    - food
 ---
