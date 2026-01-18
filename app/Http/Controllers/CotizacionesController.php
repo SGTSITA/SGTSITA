@@ -22,6 +22,7 @@ use App\Models\EmpresaGps;
 use App\Models\GpsCompany;
 use App\Models\BancoDineroOpe;
 use App\Models\User;
+use App\Models\GpsCompanyProveedor;
 use App\Models\BitacoraCotizacionesEstatus;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -40,8 +41,11 @@ class CotizacionesController extends Controller
     public function index()
     {
         $empresas = Empresas::get();
-        $EmpresasGPS = EmpresaGps::where('id_empresa', auth()->user()->id_empresa)->with('serviciosGps')->get()->pluck('id_gps_company');
-        $gpsCompanies = GpsCompany::whereIn('id', $EmpresasGPS)->get();
+        $gpsCompanyIds = GpsCompanyProveedor::where('id_empresa', auth()->user()->id_empresa)
+    ->where('estado', 1)
+    ->pluck('id_gps_company');
+
+        $gpsCompanies = GpsCompany::whereIn('id', $gpsCompanyIds)->get();
 
         return view('cotizaciones.index', compact('empresas', 'gpsCompanies'));
     }
