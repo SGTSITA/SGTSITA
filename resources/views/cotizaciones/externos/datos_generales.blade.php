@@ -10,6 +10,9 @@
                 </select>
             </div>
         </div>
+        @php
+            $isFinalizado = isset($cotizacion) && $cotizacion->estatus === 'Finalizado';
+        @endphp
         @can('mec-elegir-proveedor')
             <div class="col-12 min-w-450px">
                 <div class="border border-gray-300 border-dashed rounded min-w-450px py-3 px-4 me-6 mb-3">
@@ -18,13 +21,11 @@
                             <div class="d-flex align-items-center">
                                 <div class="fs-4 fw-bold" id="proveedorName">Proveedor:</div>
                             </div>
-                            <select class="form-select subcliente d-inline-block" id="id_proveedor" name="id_proveedor">
+                            <select class="form-select subcliente d-inline-block" id="id_proveedor" name="id_proveedor"
+                                {{ $isFinalizado ? 'disabled' : '' }}>
                                 <option value="">Seleccionar proveedor</option>
                                 @foreach ($proveedores as $p)
-                                    <option
-                                        value="{{ $p->id }}"
-                                        @if ($action == 'editar' && $cotizacion?->id_empresa == $p->id) selected @endif
-                                    >
+                                    <option value="{{ $p->id }}" @if ($action == 'editar' && $cotizacion?->id_empresa == $p->id) selected @endif>
                                         {{ $p->nombre }}
                                     </option>
                                 @endforeach
@@ -37,23 +38,23 @@
                             <div class="d-flex align-items-center">
                                 <div class="fs-4 fw-bold" id="proveedorName">Transportista:</div>
                             </div>
-                            <select
-                                class="form-select subcliente d-inline-block"
-                                id="id_transportista"
-                                name="id_transportista"
-                            >
+                            <select class="form-select subcliente d-inline-block" id="id_transportista"
+                                name="id_transportista" {{ $isFinalizado ? 'disabled' : '' }}>
                                 <option value="">Seleccionar transportista</option>
                                 @foreach ($transportista as $tr)
-                                    <option
-                                        value="{{ $tr->id }}"
-                                        @if ($action == 'editar' && $cotizacion?->id_proveedor == $tr->id) selected @endif
-                                    >
+                                    <option value="{{ $tr->id }}" @if ($action == 'editar' && $cotizacion?->id_proveedor == $tr->id) selected @endif>
                                         {{ $tr->nombre }}
                                     </option>
                                 @endforeach
                             </select>
                         </div>
                     </div>
+                    @if ($isFinalizado)
+                        <div class="alert alert-warning mb-4">
+                            <strong>Viaje finalizado</strong><br>
+                            No es posible editar el proveedor ni el transportista en un viaje finalizado.
+                        </div>
+                    @endif
                 </div>
             </div>
         @endcan
@@ -72,14 +73,8 @@
                     </i>
                 </span>
                 <div class="form-floating">
-                    <input
-                        @if ($action == 'editar') value="{{ $cotizacion->origen }}" @endif
-                        type="text"
-                        class="form-control"
-                        id="origen"
-                        autocomplete="off"
-                        placeholder=""
-                    />
+                    <input @if ($action == 'editar') value="{{ $cotizacion->origen }}" @endif type="text"
+                        class="form-control" id="origen" autocomplete="off" placeholder="" />
                     <label for="origen" class="text-gray-700">Origen</label>
                 </div>
             </div>
@@ -95,14 +90,8 @@
                     </i>
                 </span>
                 <div class="form-floating">
-                    <input
-                        @if ($action == 'editar') value="{{ $cotizacion->destino }}" @endif
-                        type="text"
-                        class="form-control"
-                        id="destino"
-                        autocomplete="off"
-                        placeholder=""
-                    />
+                    <input @if ($action == 'editar') value="{{ $cotizacion->destino }}" @endif type="text"
+                        class="form-control" id="destino" autocomplete="off" placeholder="" />
                     <label for="destino" class="text-gray-700">Destino</label>
                 </div>
             </div>
@@ -124,15 +113,9 @@
                     </i>
                 </span>
                 <div class="form-floating">
-                    <input
-                        type="text"
-                        class="form-control"
-                        autocomplete="off"
-                        id="num_contenedor"
-                        placeholder=""
+                    <input type="text" class="form-control" autocomplete="off" id="num_contenedor" placeholder=""
                         @if ($action == 'editar') value="{{ $cotizacion->DocCotizacion->num_contenedor }}" @endif
-                        oninput="changeTag('tagContenedor', this.value)"
-                    />
+                        oninput="changeTag('tagContenedor', this.value)" />
                     <label for="num_contenedor" class="text-gray-700">Número de Contenedor</label>
                 </div>
             </div>
@@ -147,15 +130,9 @@
                     </i>
                 </span>
                 <div class="form-floating">
-                    <input
-                        @if ($action == 'editar') value="{{ $cotizacion->tamano }}" @endif
-                        type="text"
-                        class="form-control"
-                        autocomplete="off"
-                        id="tamano"
-                        placeholder=""
-                        oninput="allowOnlyDecimals(event)"
-                    />
+                    <input @if ($action == 'editar') value="{{ $cotizacion->tamano }}" @endif type="text"
+                        class="form-control" autocomplete="off" id="tamano" placeholder=""
+                        oninput="allowOnlyDecimals(event)" />
                     <label for="tamano" class="text-gray-700">Tamaño de Contenedor</label>
                 </div>
             </div>
@@ -176,43 +153,15 @@
                     </i>
                 </span>
                 <div class="form-floating">
-                    <input
-                        type="text"
-                        class="form-control"
-                        autocomplete="off"
-                        value="22"
-                        id="peso_reglamentario"
-                        placeholder=""
-                        oninput="allowOnlyDecimals(event)"
-                    />
+                    <input type="text" class="form-control" autocomplete="off" value="22"
+                        id="peso_reglamentario" placeholder="" oninput="allowOnlyDecimals(event)" />
                     <label for="peso_reglamentario" class="text-gray-700">Peso de Reglamentario</label>
-                    <input
-                        type="text"
-                        class="form-control"
-                        autocomplete="off"
-                        id="sobrepeso"
-                        placeholder=""
-                        value="0"
-                        oninput="allowOnlyDecimals(event)"
-                    />
-                    <input
-                        type="text"
-                        class="form-control"
-                        autocomplete="off"
-                        id="precio_sobre_peso"
-                        placeholder=""
-                        value="0"
-                        oninput="allowOnlyDecimals(event)"
-                    />
-                    <input
-                        type="text"
-                        class="form-control"
-                        autocomplete="off"
-                        id="precio_tonelada"
-                        placeholder=""
-                        value="0"
-                        oninput="allowOnlyDecimals(event)"
-                    />
+                    <input type="text" class="form-control" autocomplete="off" id="sobrepeso" placeholder=""
+                        value="0" oninput="allowOnlyDecimals(event)" />
+                    <input type="text" class="form-control" autocomplete="off" id="precio_sobre_peso"
+                        placeholder="" value="0" oninput="allowOnlyDecimals(event)" />
+                    <input type="text" class="form-control" autocomplete="off" id="precio_tonelada"
+                        placeholder="" value="0" oninput="allowOnlyDecimals(event)" />
                 </div>
             </div>
         </div>
@@ -232,15 +181,10 @@
                     </i>
                 </span>
                 <div class="form-floating">
-                    <input
-                        type="text"
+                    <input type="text"
                         @if ($action == 'editar') value="{{ $cotizacion->peso_contenedor }}" @endif
-                        class="form-control"
-                        autocomplete="off"
-                        id="peso_contenedor"
-                        placeholder=""
-                        oninput="allowOnlyDecimals(event)"
-                    />
+                        class="form-control" autocomplete="off" id="peso_contenedor" placeholder=""
+                        oninput="allowOnlyDecimals(event)" />
                     <label for="peso_contenedor" class="text-gray-700">Peso de Contenedor</label>
                 </div>
             </div>
@@ -259,16 +203,9 @@
                     </i>
                 </span>
                 <div class="form-floating">
-                    <input
-                        @if ($action == 'editar') value="{{ $cotizacion->fecha_modulacion }}" @endif
-                        type="text"
-                        class="form-control fechas"
-                        autocomplete="off"
-                        id="fecha_modulacion"
-                        name="fecha_modulacion"
-                        placeholder=""
-                        oninput="allowOnlyDecimals(event)"
-                    />
+                    <input @if ($action == 'editar') value="{{ $cotizacion->fecha_modulacion }}" @endif
+                        type="text" class="form-control fechas" autocomplete="off" id="fecha_modulacion"
+                        name="fecha_modulacion" placeholder="" oninput="allowOnlyDecimals(event)" />
                     <label for="fecha_modulacion" class="text-gray-700">Fecha Modulación</label>
                 </div>
             </div>
@@ -286,16 +223,9 @@
                     </i>
                 </span>
                 <div class="form-floating">
-                    <input
-                        @if ($action == 'editar') value="{{ $cotizacion->fecha_entrega }}" @endif
-                        type="text"
-                        class="form-control fechas"
-                        autocomplete="off"
-                        id="fecha_entrega"
-                        name="fecha_entrega"
-                        placeholder=""
-                        oninput="allowOnlyDecimals(event)"
-                    />
+                    <input @if ($action == 'editar') value="{{ $cotizacion->fecha_entrega }}" @endif
+                        type="text" class="form-control fechas" autocomplete="off" id="fecha_entrega"
+                        name="fecha_entrega" placeholder="" oninput="allowOnlyDecimals(event)" />
                     <label for="fecha_entrega" class="text-gray-700">Fecha Entrega</label>
                 </div>
             </div>
