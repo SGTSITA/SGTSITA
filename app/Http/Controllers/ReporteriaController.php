@@ -77,7 +77,10 @@ class ReporteriaController extends Controller
                 $query->where('estatus', '=', 'Aprobada')
                     ->orWhere('estatus', '=', 'Finalizado');
             })
-            ->where('estatus_pago', '=', '0')
+           ->where(function ($q) {
+               $q->where('estatus_pago', 0)
+                 ->orWhereNull('estatus_pago');
+           })
             ->where('restante', '>', 0);  // Solo cotizaciones con saldo restante
 
         // Filtrar por cliente si se selecciona uno

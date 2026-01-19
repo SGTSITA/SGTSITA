@@ -1061,7 +1061,7 @@ class CotizacionesController extends Controller
                 //validamos planeacion
                 $asignaciones = Asignaciones::where('id_contenedor', $doc_cotizaciones->id)->first();
                 $statusPlaneacion = $cotizaciones->estatus_planeacion ?? 0;
-                if ($statusPlaneacion === 1) { //quitaremos la planeacion
+                if ($cotizaciones->estatus !== 'Finalizado' && $statusPlaneacion === 1) { //quitaremos la planeacion
 
                     try {
 
