@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\Gps;
+namespace App\Services;
 
 use App\Models\GpsCompanyProveedor;
 use Illuminate\Support\Facades\Crypt;

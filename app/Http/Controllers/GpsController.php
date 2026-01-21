@@ -16,7 +16,7 @@ use App\Models\GpsCompanyProveedor;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Termwind\Components\Dd;
-use App\Services\Gps\GpsCredentialsService;
+use App\Services\GpsCredentialsService;
 use App\Traits\BeyondGPSTrait;
 use App\Traits\WialonGpsTrait;
 
