@@ -390,7 +390,7 @@ function getInfoViaje(startDate, endDate, numContenedor_, idContendor) {
             //Once en true para que se ejecute una sola vez y se elimine el listener    onclick="('${params.data.contenedor}')
             btnFinalizar.addEventListener('click', () => finalizarViaje(idContendor, numContenedor_), { once: true });
             btnDeshacer.addEventListener('click', () => anularPlaneacion(idContendor, numContenedor_), { once: true });
-            btnRastreo.addEventListener('click', () => abrirMapaEnNuevaPestana(numContenedor_, tipoS), { once: true });
+            btnRastreo.addEventListener('click', () => abrirMapaEnNuevaPestana(numContenedor_, tipoS), { once: false });
             let documentosRequeridos = [
                 'boleta_liberacion',
                 'boleta_vacio',

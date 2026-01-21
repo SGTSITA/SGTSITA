@@ -335,6 +335,8 @@ function getInfoViaje(startDate, endDate, numContenedor_, idContendor) {
             imei_camion.textContent = response.documentos.imei_camion ?? 'NA';
             id_equipo_chasis.textContent = response.documentos.id_equipo_chasis ?? 'NA';
             imei_chasis.textContent = response.documentos.imei_chasis ?? 'NA';
+            let tipoS = 'Cliente->Rastreo Board';
+            btnRastreo.addEventListener('click', () => abrirMapaEnNuevaPestana(numContenedor_, tipoS), { once: false });
 
             let documentosRequeridos = [
                 'boleta_liberacion',
