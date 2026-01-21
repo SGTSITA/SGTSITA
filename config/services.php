@@ -76,4 +76,8 @@ return [
 
     ],
 
+    'GPS_SIS_URL' => [
+    'urlbasesoap' => env('GPS_SIS_URL')
+    ],
+
 ];

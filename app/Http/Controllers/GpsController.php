@@ -10,10 +10,15 @@ use App\Traits\JimiGpsTrait;
 use App\Traits\LegoGpsTrait as LegoGps;
 use App\Traits\CommonGpsTrait;
 use App\Traits\GpsTrackerMXTrait;
+use App\Traits\SISGPSTrait as SISGPSTrait;
 use App\Models\Empresas;
 use App\Models\GpsCompanyProveedor;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Termwind\Components\Dd;
+use App\Services\Gps\GpsCredentialsService;
+use App\Traits\BeyondGPSTrait;
+use App\Traits\WialonGpsTrait;
 
 class GpsController extends Controller
 {
@@ -30,6 +35,7 @@ class GpsController extends Controller
         $ubicacion = null;
         $tipoGpsresponse = "";
 
+        // dd($datos);
 
         foreach ($datos as $dato) {
             if (!empty($dato)) {
@@ -50,24 +56,39 @@ class GpsController extends Controller
 
                     $esDatoEmp = "SI";
                 }
+                //             $config = GpsCompanyProveedor::with('proveedor', 'empresa', 'gpsCompany')
+                //     ->whereHas('proveedor', function ($q) use ($Rfc) {
+                //         $q->where('RFC', $Rfc);
+                //     })->where('id_gps_company', $gps_company_id)
+                //     ->first();
+
+
+                //             $account = $config
+                //                    ? json_decode(
+                //                        Crypt::decryptString($config->account_info),
+                //                        true
+                //                    )
+                //                    : [];
+
+                $result = GpsCredentialsService::getByProveedor($Rfc, $gps_company_id);
+
+                if (!$result['success']) {
+                    return $result;
+                }
+
+                $credenciales = $result['credentials'];
+                //             $normalized = collect($account)
+                // ->pluck('valor', 'field')
+                // ->toArray();
+
+
+                //   dd($account);
 
                 switch ($tipoGps) {
                     case 'https://open.iopgps.com': //global
-                        $config = GpsCompanyProveedor::with('proveedor', 'empresa', 'gpsCompany')
-        ->whereHas('proveedor', function ($q) use ($Rfc) {
-            $q->where('RFC', $Rfc);
-        })->where('id_gps_company', $gps_company_id)
-        ->first();
 
 
-                        $account = $config
-                               ? json_decode(
-                                   Crypt::decryptString($config->account_info),
-                                   true
-                               )
-                               : [];
-
-                        $data = GlobalGps::getDeviceRealTimeLocation($imei, $account['appkey'] ?? null, $account['account'] ?? null); //ahora se pasara apikey y id user
+                        $data = GlobalGps::getDeviceRealTimeLocation($imei, $credenciales['appkey'] ?? null, $credenciales['account'] ?? null); //ahora se pasara apikey y id user
                         $tipoGpsresponse = "Global GPS";
                         // $ubicacionApiResponse = $data['data'];
                         $ubicacionApiResponse = $data->data;
@@ -87,9 +108,12 @@ class GpsController extends Controller
 
                         break;
 
-                    case 'http://sta.skyangel.com.mx:8085/api/tracks/v1': //skyangel
+                    case 'http://sta.skyangel.com.mx:8085/api/tracks/v1': //skyangel este servicio no filtra por imei -revisar
                         $username = config('services.SkyAngelGps.username');
                         $password = config('services.SkyAngelGps.password');
+
+                        $username = $credenciales['email'] ?? null;
+                        $password = $credenciales['password'] ?? null;
 
                         $accessToken = SkyAngel::getAccessToken($username, $password);
                         $ubicacion = SkyAngel::getLocation($accessToken);
@@ -109,16 +133,16 @@ class GpsController extends Controller
                             ];
                         break;
 
-                    case 'https://us-open.tracksolidpro.com/route/rest'://jimi -Concox
+                    case 'https://www.tracksolidpro.com'://jimi -Concox
                         //Datos de dispositivo por IMEI: El metodo soporta multiples IMEIS, Separe cada imei por coma (,). Maximo 100 IMEIS
 
                         $adicionales['imeis'] = $imei;//'869066062080354'; //El IMEI deberá corresponder a una unidad registrada
 
                         //Pasar el RFC de la empresa previamente configurada
-                        $credenciales = JimiGpsTrait::getAuthenticationCredentials($Rfc);
+                        // $credenciales = $normalized;// JimiGpsTrait::getAuthenticationCredentials($Rfc);
 
                         $data = ($credenciales['success'])
-                        ? JimiGpsTrait::callGpsApi('jimi.device.location.get', $credenciales['accessAccount'], $adicionales)
+                        ? JimiGpsTrait::callGpsApi('jimi.device.location.get', $credenciales, $adicionales)
                         : []
                         ;
                         // $ubicacion = $this->detalleDispositivo($imei);
@@ -139,9 +163,11 @@ class GpsController extends Controller
                         $tipoGpsresponse = "jimi";
                         break;
 
-                    case 'wialon':// 'https://alxdevelopments.com': //LegoGps
-                        $credenciales = CommonGpsTrait::getAuthenticationCredentials($Rfc, 3);
-                        $data = ($credenciales['success']) ? LegoGps::getLocation($credenciales['accessAccount']) : [];
+                    case 'https://alxdevelopments.com':// 'https://alxdevelopments.com': //LegoGps
+
+
+                        // $credenciales = CommonGpsTrait::getAuthenticationCredentials($Rfc, 3);
+                        $data = ($credenciales['success']) ? LegoGps::getLocation($credenciales) : [];
                         $ubicacionApi = $data?->data[0] ?? null;
 
                         $ubicacion = [
@@ -157,9 +183,85 @@ class GpsController extends Controller
                         ];
                         $tipoGpsresponse = "LegoGps";
                         break;
-                    case 'TrackerGps':
-                        $credenciales = CommonGpsTrait::getAuthenticationCredentials($Rfc, 4);
-                        $data = GpsTrackerMXTrait::getMutiDevicePosition($credenciales['accessAccount']);
+                    case 'https://gpstracker.mx':
+                        // $credenciales = CommonGpsTrait::getAuthenticationCredentials($Rfc, 4);
+                        $data = GpsTrackerMXTrait::getMutiDevicePosition($credenciales);
+
+                        $ubicacion = [
+    'lat'        =>  0,
+    'lng'        =>  0,
+    'velocidad'  =>  null,
+    'imei'       =>  null,
+    'deviceName' =>  null,
+    'mcType'     =>  null,
+    'datac'      => $data,
+    'esDatoEmp'  => $esDatoEmp ?? false,
+    'tipoEquipo' => $TipoEquipo ?? null,
+];
+                        $tipoGpsresponse = "TrackerGps";
+                        break;
+                    case 'Beyond Kajivo': //Beyond
+                        BeyondGPSTrait::validateOwner($credenciales['appkey'] ?? null);
+                        $data = BeyondGPSTrait::getLocation(
+                            $credenciales['username'] ?? null,
+                            $credenciales['password'] ?? null
+                        );
+                        $ubicacion = [
+    'lat'        =>  0,
+    'lng'        =>  0,
+    'velocidad'  =>  null,
+    'imei'       =>  null,
+    'deviceName' =>  null,
+    'mcType'     =>  null,
+    'datac'      => $data,
+    'esDatoEmp'  => $esDatoEmp ?? false,
+    'tipoEquipo' => $TipoEquipo ?? null,
+];
+
+
+
+                        $tipoGpsresponse = "Beyond Kajivo";
+                        break;
+                    case 'https://gpsv7.com/php/wialon_data.php':
+                        $data = WialonGpsTrait::getgetLocation(
+                            $credenciales['username'] ?? null,
+                            $credenciales['password'] ?? null,
+                            $imei
+                        );
+
+                        $tipoGpsresponse = "Wialon";
+                        break;
+                    case 'https://www.rastreogps.com/': //SIS GPS
+
+                        // dd($config, $account);
+                        if (!isset($credenciales['account']) || !isset($credenciales['appkey'])) {
+                            break;
+                        }
+
+                        $data = SISGPSTrait::sisGetLastPosition(
+                            $credenciales['account'],
+                            $credenciales['appkey'],
+                            $imei
+                        );
+
+                        $raw =  $data->data['raw']->return ?? null;
+
+                        $ubicacionApi = $raw
+                            ? json_decode($raw, true)
+                            : [];
+                        $ubicacion = [
+    'lat'        => $ubicacionApi['Latitude'] ?? 0,
+    'lng'        => $ubicacionApi['Longitude'] ?? 0,
+    'velocidad'  => $ubicacionApi['Speed'] ?? null,
+    'imei'       => $ubicacionApi['ID'] ?? null,
+    'deviceName' => $ubicacionApi['UnitType'] ?? null,
+    'mcType'     => $ubicacionApi['DataCommType'] ?? null,
+    'datac'      => $ubicacionApi,
+    'esDatoEmp'  => $esDatoEmp ?? false,
+    'tipoEquipo' => $TipoEquipo ?? null,
+];
+                        $tipoGpsresponse = "SIS GPS";
+                        // Dd($ubicacionApi);
                         break;
                     default:
                         $ubicacion = [
@@ -182,6 +284,7 @@ class GpsController extends Controller
                     'EquipoBD' => $equipo
                 ];
             }
+            //  dd($resultados);
         }
 
 
@@ -206,7 +309,7 @@ class GpsController extends Controller
 
     public function tokenJimi()
     {
-        return $this->getGpsAccessToken();
+        return $this->getGpsAccessToken(0, []);
     }
 
     public function detalleDispositivo($imei)
@@ -216,6 +319,37 @@ class GpsController extends Controller
         ]);
 
         return response()->json($data);
+    }
+
+    //pruebas de sis gps
+    public function loginSisGps(Request $request)
+    {
+        $user = $request->input('user');
+        $pass = $request->input('pass');
+
+        $user = 'SENSACION';
+        $pass = '6f2a46c04f2f5e274b684dhbt3';
+
+        $isValid = SISGPStrait::sisValidarCredenciales($user, $pass);
+
+        return response()->json([
+            'success' => $isValid
+        ]);
+    }
+
+    public function getlocationSIS(Request $request, $deviceid)
+    {
+        $user = $request->input('user');
+        $pass = $request->input('pass');
+
+        $user = 'SENSACION';
+        $pass = '6f2a46c04f2f5e274b684dhbt3';
+
+        $location = SISGPStrait::sisGetLastPosition($user, $pass, $deviceid);
+
+        return response()->json([
+            'location' => $location
+        ]);
     }
 
 
@@ -342,12 +476,27 @@ class GpsController extends Controller
             $gps_company_id = $datosAll?->gps_company_id;
             if ($RFCContenedor === 'buscarEmpresaRFC') {
                 //buscamos el rfc de la empresa pues no tiene asignado un proveedor....
-                $empresas = Empresas::where('id', '=', auth()->user()->Empresa->id)->orderBy('created_at', 'desc')->first();
+                // $empresas = Empresas::where('id', '=', auth()->user()->Empresa->id)->orderBy('created_at', 'desc')->first();
+
+                $cotizaciones = DB::table('cotizaciones')->join(
+                    'docum_cotizacion',
+                    'docum_cotizacion.id_cotizacion',
+                    '=',
+                    'cotizaciones.id'
+                )->join('proveedores', 'proveedores.id', '=', 'cotizaciones.id_proveedor')
+                ->where(
+                    'docum_cotizacion.num_contenedor',
+                    '=',
+                    $num_Contenendor
+                )->first();
+
+
+
                 // dd($empresas);
-                $RFCContenedor =   $empresas->rfc; //minusculas
+                $RFCContenedor =   $cotizaciones->rfc; //minusculas
                 //dd($RFCContenedor);
             }
-
+            // dd($datosAll, $cotizaciones);
 
             return   $RFCContenedor . '|'. $Equipo . '|'.  $empresaIdRastreo .'|'. $TipoEquipo.'|'. $gps_company_id;
 
