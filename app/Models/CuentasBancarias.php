@@ -1,14 +1,18 @@
 <?php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes; // Importar SoftDeletes
 use Illuminate\Support\Facades\Auth;
+use App\Traits\Auditable;
 
 class CuentasBancarias extends Model
 {
-    use HasFactory, SoftDeletes; // Usar SoftDeletes
+    use HasFactory;
+    use SoftDeletes; // Usar SoftDeletes
+    use Auditable;
 
     protected $table = 'cuentas_bancarias';
 
@@ -23,7 +27,7 @@ class CuentasBancarias extends Model
         'cuenta_1', // 🔹 Agregar esto
         'cuenta_2', // 🔹 Y esto también
     ];
-    
+
 
     protected $dates = ['deleted_at']; // Indica que SoftDeletes usará la columna deleted_at
 

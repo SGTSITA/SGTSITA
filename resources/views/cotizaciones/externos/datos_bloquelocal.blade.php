@@ -17,12 +17,9 @@
                                 </i>
                             </span>
                             <div class="form-floating">
-                                <input
-                                    type="text"
-                                    class="form-control"
-                                    @if($action=="editar" ) value="{{ $cotizacion->bloque_local }}" @endif
-                                    id="bloque"
-                                />
+                                <input type="text" class="form-control"
+                                    @if ($action == 'editar') value="{{ $cotizacion->bloque_local }}" @endif
+                                    id="bloque" />
                                 <label for="bloque" class="text-gray-700">Núm. Bloque</label>
                             </div>
                         </div>
@@ -37,13 +34,9 @@
                                 </i>
                             </span>
                             <div class="form-floating">
-                                <input
-                                    type="time"
-                                    class="form-control"
-                                    @if($action=="editar" ) value="{{ $cotizacion->bloque_hora_i_local }}" @endif
-                                    id="bloque_hora_i"
-                                    required
-                                />
+                                <input type="time" class="form-control"
+                                    @if ($action == 'editar') value="{{ $cotizacion->bloque_hora_i_local }}" @endif
+                                    id="bloque_hora_i" required />
                                 <label for="bloque_hora_i" class="text-gray-700">Hora Inicio</label>
                             </div>
                         </div>
@@ -58,13 +51,9 @@
                                 </i>
                             </span>
                             <div class="form-floating">
-                                <input
-                                    type="time"
-                                    class="form-control"
-                                    @if($action=="editar" ) value="{{ $cotizacion->bloque_hora_f_local }}" @endif
-                                    id="bloque_hora_f"
-                                    required
-                                />
+                                <input type="time" class="form-control"
+                                    @if ($action == 'editar') value="{{ $cotizacion->bloque_hora_f_local }}" @endif
+                                    id="bloque_hora_f" required />
                                 <label for="bloque_hora_f" class="text-gray-700">Hora Fin</label>
                             </div>
                         </div>
@@ -81,13 +70,8 @@
                                 </i>
                             </span>
                             <div class="form-floating">
-                                <input
-                                    type="text"
-                                    class="form-control"
-                                    id="num_autorizacion"
-                                    name="num_autorizacion"
-                                    @if($action=="editar") value="{{ $cotizacion->DocCotizacion->num_autorizacion }}" @endif
-                                />
+                                <input type="text" class="form-control" id="num_autorizacion" name="num_autorizacion"
+                                    @if ($action == 'editar') value="{{ $cotizacion->DocCotizacion->num_autorizacion }}" @endif />
                                 <label class="text-gray-700">Número de Autorización</label>
                             </div>
                         </div>
@@ -106,10 +90,8 @@
                                 <select class="form-select" id="puerto" name="puerto" required>
                                     <option value="">Seleccione...</option>
                                     @foreach ($Puertos as $key => $value)
-                                        <option
-                                            value="{{ $key }}"
-                                            @if($action=="editar" && $cotizacion->puerto == $key) selected @endif
-                                        >
+                                        <option value="{{ $key }}"
+                                            @if ($action == 'editar' && $cotizacion->puerto == $key) selected @endif>
                                             {{ $value }}
                                         </option>
                                     @endforeach
@@ -127,19 +109,10 @@
                         <div class="d-flex gap-5 align-items-center">
                             @foreach ($opcionesPuertos['LAZARO'] as $key => $value)
                                 <label class="form-check form-check-custom form-check-solid d-flex align-items-center">
-                                    <input
-                                        class="form-check-input me-2"
-                                        type="radio"
-                                        name="terminal_local"
-                                        id="terminal_local"
-                                        value="{{ $key }}"
-                                        @if($action=='editar' && $cotizacion->DocCotizacion->terminal == $key) checked @endif
-                                    />
+                                    <input class="form-check-input me-2" type="radio" name="terminal_local"
+                                        value="{{ $key }}" @if ($action == 'editar' && $cotizacion->DocCotizacion->terminal == $key) checked @endif />
                                     <span class="form-check-label d-flex align-items-center">
-                                        <i class="ki-duotone ki-geolocation fs-2 me-2">
-                                            <span class="path1"></span>
-                                            <span class="path2"></span>
-                                        </i>
+                                        <i class="ki-duotone ki-geolocation fs-2 me-2"></i>
                                         {{ $value }}
                                     </span>
                                 </label>

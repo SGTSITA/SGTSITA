@@ -319,24 +319,26 @@ function getFormData() {
     const data = {};
 
     formFields.forEach((f) => {
-        const el = document.getElementById(f.id);
-        if (!el) return;
+        let value = null;
 
-        let value;
-
-        if (f.type === 'select') {
-            value = el.options[el.selectedIndex]?.value || null;
+        if (f.type === 'radio') {
+            const checked = document.querySelector(`input[name="${f.field}"]:checked`);
+            value = checked ? checked.value : null;
         } else {
-            value = el.value || null;
+            const el = document.getElementById(f.id);
+            if (!el) return;
+
+            if (f.type === 'select') {
+                value = el.options[el.selectedIndex]?.value || null;
+            } else {
+                value = el.value || null;
+            }
         }
 
         if (value && typeof value === 'string') {
             if (/[\d.,]+/.test(value)) {
                 value = value.replace(/,/g, '').replace(/\$/g, '').trim();
-
-                if (!isNaN(value)) {
-                    value = parseFloat(value);
-                }
+                if (!isNaN(value)) value = parseFloat(value);
             }
         }
 

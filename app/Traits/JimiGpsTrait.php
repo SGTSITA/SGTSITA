@@ -54,6 +54,7 @@ trait JimiGpsTrait
         }
     }
 
+    //ya no se usa
     public static function getAuthenticationCredentials($rfc)
     {
         //Obtener las credenciales previamente guardadas, correspondiente a una empresa

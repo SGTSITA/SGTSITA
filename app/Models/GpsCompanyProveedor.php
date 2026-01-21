@@ -3,9 +3,11 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\Auditable;
 
 class GpsCompanyProveedor extends Model
 {
+    use Auditable;
     protected $table = 'gps_company_proveedores';
 
     protected $fillable = [

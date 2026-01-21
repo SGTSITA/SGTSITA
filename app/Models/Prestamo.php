@@ -4,12 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\Auditable;
 
 class Prestamo extends Model
 {
     use HasFactory;
+    use Auditable;
 
-    protected $table = 'prestamos'; 
+    protected $table = 'prestamos';
     protected $appends = ['total_pagado'];
 
     protected $fillable = [
@@ -37,7 +39,7 @@ class Prestamo extends Model
 
     public function getTotalPagadoAttribute()
     {
-         return (float) $this->pagoprestamos->sum('monto_pago');
+        return (float) $this->pagoprestamos->sum('monto_pago');
     }
     public function getSaldoCalculadoAttribute()
     {

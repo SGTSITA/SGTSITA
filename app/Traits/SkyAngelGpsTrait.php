@@ -8,6 +8,7 @@ use Illuminate\Http\Exceptions\HttpResponseException;
 use App\Dto\ApiResponse;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Http\Client\RequestException;
 
 trait SkyAngelGpsTrait
 {

@@ -4,12 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\Auditable;
 
 class GastosOperadores extends Model
 {
     use HasFactory;
+    use Auditable;
     protected $table = 'gastos_operadores';
-      public $timestamps = true;
+    public $timestamps = true;
 
     protected $fillable = [
         'id_asignacion',

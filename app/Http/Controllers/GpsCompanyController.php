@@ -15,6 +15,7 @@ use App\Traits\GpsTrackerMXTrait;
 use App\Traits\BeyondGPSTrait;
 use App\Traits\WialonGpsTrait;
 use App\Traits\GlobalGpsTrait;
+use App\Traits\SISGPStrait;
 
 class GpsCompanyController extends Controller
 {
@@ -123,37 +124,50 @@ class GpsCompanyController extends Controller
         /* ================= VALIDACIÓN ================= */
 
         switch ((int) $r->gps) {
-            case 1:
+            case 1: //Global GPS
                 $token = GlobalGpsTrait::getAccessToken(
                     $credenciales['appkey'] ?? null,
                     $credenciales['account'] ?? null
                 );
                 break;
 
-            case 2:
+            case 2: //Jimi GPS
                 $token = JimiGpsTrait::getGpsAccessToken(
                     $empresaId,
                     $credenciales
                 );
                 break;
 
-            case 3:
+            case 3: //Lego GPS
                 $token = LegoGpsTrait::validateOwner($credenciales);
                 break;
 
-            case 4:
+            case 4: //Tracker GPS MX
                 $token = GpsTrackerMXTrait::getGpsAccessToken(
                     $empresaId,
                     $credenciales
                 );
                 break;
 
-            case 5:
+            case 5: // Beyond GPS
                 $token = BeyondGPSTrait::validateOwner($credenciales);
                 break;
 
-            case 6:
+            case 6: // Wialon GPS
                 $token = true;
+                break;
+
+            case 7: //SIS GPS
+                $response = SISGPStrait::sisValidarCredenciales(
+                    $credenciales['account'] ?? '',
+                    $credenciales['key'] ?? ''
+                );
+
+                if ($response->success) {
+                    $token = $response->data['token'] ?? null;
+                } else {
+                    throw new \Exception($response->message);
+                }
                 break;
 
             default:

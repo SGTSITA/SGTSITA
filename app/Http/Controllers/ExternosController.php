@@ -26,6 +26,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ExternosController extends Controller
 {
@@ -1345,15 +1346,17 @@ class ExternosController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
+
         // Construir consulta base
         $cotizacionesQuery = Cotizaciones::query()
 
-            ->where('cotizaciones.id_empresa', auth()->user()->id_empresa)
+            ->where('cotizaciones.id_cliente', Auth::user()->id_cliente)
             ->where('cotizaciones.estatus', '!=', 'Cancelada')
             ->where('cotizaciones.jerarquia', "Principal")
             ->leftJoin('docum_cotizacion', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
             ->leftJoin('asignaciones', 'docum_cotizacion.id', '=', 'asignaciones.id_contenedor')
             ->leftJoin('clients', 'cotizaciones.id_cliente', '=', 'clients.id')
+            ->leftJoin('subclientes', 'cotizaciones.id_subcliente', '=', 'subclientes.id')
             ->select(
                 'cotizaciones.id',
                 'clients.nombre as cliente',
@@ -1369,6 +1372,7 @@ class ExternosController extends Controller
                 'asignaciones.fecha_inicio',
                 'asignaciones.fecha_fin',
                 'cotizaciones.referencia_full',
+                'subclientes.nombre as subcliente',
             )
             ->distinct();
 
@@ -1382,6 +1386,8 @@ class ExternosController extends Controller
         }
 
         $cotizaciones = $cotizacionesQuery->get();
+
+        //   dd($cotizaciones);
 
         $cotizaciones = $cotizaciones->map(function ($cot) {
             $numContenedor = $cot->num_contenedor;
@@ -1445,12 +1451,131 @@ class ExternosController extends Controller
 "eir_secundario" => $eirSecundario,
 "cima_primario" => $cimaPrimario,
 "cima_secundario" => $cimaSecundario,
+                "subcliente" => $cot->subcliente,
 ];
 
         });
 
 
         return view('mec.repor_documentos.index', compact('cotizaciones', 'clientes', 'subclientes', 'proveedores'));
+    }
+
+    public function ext_export_documentos(Request $request)
+    {
+
+        ini_set('memory_limit', '512M');
+        ini_set('max_execution_time', 120);
+        $fecha = date('Y-m-d');
+        $fechaCarbon = Carbon::parse($fecha);
+        $cotizacionIds = $request->input('selected_ids', []);
+
+        if (empty($cotizacionIds)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No se seleccionaron cotizaciones.'
+            ], 400);
+        }
+
+        $cotizaciones1 = Cotizaciones::join('docum_cotizacion', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
+            ->whereIn('cotizaciones.id', $cotizacionIds)
+            ->where('cotizaciones.jerarquia', "Principal")
+            ->select(
+                'docum_cotizacion.num_contenedor',
+                'docum_cotizacion.doc_ccp',
+                'docum_cotizacion.boleta_liberacion',
+                'docum_cotizacion.doda',
+                'cotizaciones.carta_porte',
+                'docum_cotizacion.boleta_vacio',
+                'docum_cotizacion.doc_eir',
+                'docum_cotizacion.cima',
+                'cotizaciones.referencia_full'
+            )
+            ->get();
+
+        $cotizacion = Cotizaciones::whereIn('id', $cotizacionIds)->get();
+
+        $cotizaciones = $cotizaciones1->map(function ($cot) {
+            $numContenedor = $cot->num_contenedor;
+            $docCCP = $cot->doc_ccp;
+            $doda = $cot->doda;
+            $boletaLiberacion = $cot->boleta_liberacion;
+            $cartaPorte = $cot->carta_porte;
+            $boletaVacio = $cot->boleta_vacio;
+            $docEir = $cot->doc_eir;
+            $tipo = "";
+
+            // Nuevos campos para EIR y CIMA individuales
+            $eirPrimario = $docEir;
+            $cimaPrimario = $cot->cima;
+            $eirSecundario = null;
+            $cimaSecundario = null;
+
+            if (!is_null($cot->referencia_full)) {
+                $secundaria = \App\Models\Cotizaciones::where('referencia_full', $cot->referencia_full)
+                    ->where('jerarquia', 'Secundario')
+                    ->with('DocCotizacion')
+                    ->first();
+
+                if ($secundaria && $secundaria->DocCotizacion) {
+                    $eirSecundario = $secundaria->DocCotizacion->doc_eir;
+                    $cimaSecundario = $secundaria->DocCotizacion->cima;
+
+                    $docCCP = ($docCCP && $secundaria->DocCotizacion->doc_ccp) ? true : false;
+                    $doda = ($doda && $secundaria->DocCotizacion->doda) ? true : false;
+                    $docEir = ($docEir && $secundaria->DocCotizacion->doc_eir) ? true : false;
+                    $boletaLiberacion = ($boletaLiberacion && $secundaria->DocCotizacion->boleta_liberacion) ? true : false;
+                    $cartaPorte = ($cartaPorte && $secundaria->carta_porte) ? true : false;
+                    $boletaVacio = ($boletaVacio && $secundaria->img_boleta) ? true : false;
+
+                    $numContenedor .= ' / ' . $secundaria->DocCotizacion->num_contenedor;
+                    $tipo = "Full";
+                }
+            }
+
+            return [
+                "id" => $cot->id,
+                "cliente" => $cot->cliente ?? null,
+                "num_contenedor" => $numContenedor,
+                "doc_ccp" => $docCCP,
+                "boleta_liberacion" => $boletaLiberacion,
+                "doda" => $doda,
+                "carta_porte" => $cartaPorte,
+                "boleta_vacio" => $boletaVacio,
+                "doc_eir" => $docEir,
+                "id_proveedor" => $cot->id_proveedor ?? null,
+                "fecha_inicio" => $cot->fecha_inicio ?? null,
+                "fecha_fin" => $cot->fecha_fin ?? null,
+                "tipo" => $tipo,
+                "cima" => $cot->cima,
+
+                // 👇 Agregados para PDF dinámico
+                "eir_primario" => $eirPrimario,
+                "eir_secundario" => $eirSecundario,
+                "cima_primario" => $cimaPrimario,
+                "cima_secundario" => $cimaSecundario,
+            ];
+        });
+
+
+        $user = auth()->user();
+
+        if ($request->fileType === 'xlsx') {
+            return Excel::download(
+                new \App\Exports\DocumentosExport($cotizaciones, $fechaCarbon, $cotizacion, $user),
+                'documentos.xlsx'
+            );
+        }
+
+        if ($request->fileType === 'pdf') {
+            $pdf = PDF::loadView('reporteria.documentos.pdf', compact('cotizaciones', 'fechaCarbon', 'cotizacion', 'user'))
+                ->setPaper('a4', 'landscape');
+            return $pdf->download('documentos.pdf');
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Tipo de archivo no soportado.'
+        ], 400);
     }
 
 }
