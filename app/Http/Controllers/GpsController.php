@@ -201,7 +201,7 @@ class GpsController extends Controller
                         $tipoGpsresponse = "TrackerGps";
                         break;
                     case 'Beyond Kajivo': //Beyond
-                        BeyondGPSTrait::validateOwner($credenciales['appkey'] ?? null);
+                        //BeyondGPSTrait::validateOwner($credenciales['appkey'] ?? null);
                         $data = BeyondGPSTrait::getLocation(
                             $credenciales['username'] ?? null,
                             $credenciales['password'] ?? null
