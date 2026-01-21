@@ -3,7 +3,7 @@
 
 <head>
     <base href="/" />
-    <title>Sistema de Gestión de Transporte</title>
+    <title> Sistema de Gestión de Transporte</title>
     <meta charset="utf-8" />
     <meta name="csrf-token" content="{{ csrf_token() }}" />
     <meta name="id-cliente" content="{{ Auth::User()->id_cliente }}" />
@@ -267,6 +267,38 @@
                                     </div>
                                 </div>
                             </div>
+
+
+                            <!--Reportes de documentos -->
+                            @can('Reportes MEC')
+                                <div data-kt-menu-trigger="click" class="menu-item menu-accordion">
+                                    <span class="menu-link">
+                                        <span class="menu-icon">
+                                            <i class="ki-duotone ki-black-right fs-2"></i>
+                                        </span>
+                                        <span class="menu-title">Reportes</span>
+                                        <span class="menu-arrow"></span>
+                                    </span>
+                                    <div class="menu-sub menu-sub-accordion">
+                                        <div class="menu-item">
+                                            <a href="{{ route('ext_index_documentos.reporteria') }}" class="menu-link">
+                                                <span class="menu-bullet">
+                                                    <span class="bullet bullet-dot"></span>
+                                                </span>
+                                                <span class="menu-title">Documentos</span>
+                                            </a>
+                                        </div>
+                                        {{-- <div class="menu-item">
+                                            <a href="{{ route('contactos.create') }}" class="menu-link">
+                                                <span class="menu-bullet">
+                                                    <span class="bullet bullet-dot"></span>
+                                                </span>
+                                                <span class="menu-title">Agregar Contacto</span>
+                                            </a>
+                                        </div> --}}
+                                    </div>
+                                </div>
+                            @endcan
                         </div>
                     </div>
                 </div>
@@ -313,12 +345,12 @@
                                 </div>
                                 <div class="separator my-2"></div>
                                 <!--div class="menu-item px-5">
-                    <a href="account/overview.html" class="menu-link px-5">My Profile</a>
-                  </div-->
+                        <a href="account/overview.html" class="menu-link px-5">My Profile</a>
+                      </div-->
                                 <!--div class="separator my-2"></div-->
                                 <!--div class="menu-item px-5 my-1">
-                    <a href="account/settings.html" class="menu-link px-5">Account Settings</a>
-                  </div-->
+                        <a href="account/settings.html" class="menu-link px-5">Account Settings</a>
+                      </div-->
                                 <div class="menu-item px-5">
                                     <a href="/signout" class="menu-link px-5">Cerrar sesión</a>
                                 </div>
@@ -347,9 +379,9 @@
                                 </i>
                             </div>
                             <!-- <a href="/" class="d-flex align-items-center">
-                  <img alt="Logo" src="/assets/metronic/media/logos/demo3.svg" class="theme-light-show h-20px" />
-                  <img alt="Logo" src="/assets/metronic/media/logos/demo3-dark.svg" class="theme-dark-show h-20px" />
-                </a> -->
+                      <img alt="Logo" src="/assets/metronic/media/logos/demo3.svg" class="theme-light-show h-20px" />
+                      <img alt="Logo" src="/assets/metronic/media/logos/demo3-dark.svg" class="theme-dark-show h-20px" />
+                    </a> -->
                         </div>
                         <div class="d-flex align-items-center flex-shrink-0 mb-0 mb-lg-0">
                             <div id="kt_header_search" class="header-search d-flex align-items-center w-lg-250px"
@@ -491,11 +523,11 @@
                         </div>
                         <ul class="menu menu-gray-600 menu-hover-primary fw-semibold order-1">
                             <!--li class="menu-item">
-                  <a href="#" target="_blank" class="menu-link px-2">Acerca de</a>
-                </li>
-                <li class="menu-item">
-                  <a href="#" target="_blank" class="menu-link px-2">Soporte</a>
-                </li-->
+                      <a href="#" target="_blank" class="menu-link px-2">Acerca de</a>
+                    </li>
+                    <li class="menu-item">
+                      <a href="#" target="_blank" class="menu-link px-2">Soporte</a>
+                    </li-->
                             <li class="menu-item">
                                 <a href="#" target="_blank" class="menu-link px-2">+52 561 068 5796</a>
                             </li>
