@@ -3,9 +3,11 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\Auditable;
 
 class DocumCotizacionAcceso extends Model
 {
+    use Auditable;
     protected $table = 'docum_cotizacion_accesos';
 
     protected $fillable = [

@@ -4,13 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-
+use App\Traits\Auditable;
 use App\Models\Conboys;
 
 class conboysContenedores extends Model
 {
     use HasFactory;
-    
+    use Auditable;
+
 
     protected $fillable = ['conboy_id', 'id_contenedor','es_primero', 'usuario','imei'];
 

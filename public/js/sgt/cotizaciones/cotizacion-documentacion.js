@@ -175,9 +175,9 @@ function getContenedoresPendientes(estatus = 'Documentos Faltantes') {
         data: { _token, estatus },
         beforeSend: () => {},
         success: (response) => {
-            if (response.length > 0) {
-                btnDocumets.forEach((btn) => (btn.disabled = false));
-            }
+            // if (response.length > 0) {
+            //     btnDocumets.forEach((btn) => (btn.disabled = false));
+            // }
             apiGrid.setGridOption('rowData', response);
         },
         error: () => {},

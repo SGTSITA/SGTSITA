@@ -9,6 +9,7 @@ use App\Models\Empresas;
 use App\Models\ServicioGps;
 use App\Dto\ApiResponse;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Http\Client\RequestException;
 
 trait BeyondGPSTrait
 {

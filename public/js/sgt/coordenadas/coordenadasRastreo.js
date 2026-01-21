@@ -232,11 +232,13 @@ function validarTipo(items) {
     } else {
         ItemsSelectsID[items.id + '|' + items.value] = [];
     }
-    ItemsSelectsID[items.id + '|' + items.value] = items.value;
+    let valorFinal = items.value;
+
     if (items.value_chasis && items.value_chasis !== 'NO DISPONIBLE|') {
-        ItemsSelectsID[items.id + '|' + items.value] = items.value_chasis;
+        valorFinal = items.value + ';' + items.value_chasis;
     }
-    ItemsSelectsID[items.id + '|' + items.value] = items.value;
+
+    ItemsSelectsID[items.id + '|' + items.value] = valorFinal;
 
     if (tabx === 'Convoy') {
         ItemsSelectsID[items.id + '|' + items.value] = obtenerImeisPorConvoyId(items.id);
@@ -710,7 +712,7 @@ function actualizarUbicacion(imeis, t, KEYITEM, labelMuestra, num_convoy, map, i
                     max-width: 240px;
                   ">
               <div style="font-weight: bold; font-size: 17px; margin-bottom: 6px;">
-               
+
               </div>
               <div class="text-white fs-6 lh-base" style="font-size: 17px; line-height: 1.5;">
                 <div><strong >Equipo:</strong> ${filtroEqu.id_equipo}</div>
@@ -718,7 +720,7 @@ function actualizarUbicacion(imeis, t, KEYITEM, labelMuestra, num_convoy, map, i
                 <div><strong >Placas:</strong> ${filtroEqu.placas || 'sin placas'}</div>
 
               </div>
-           
+
             </div>
           `;
                                 } else if (t === 'Contenedor') {
@@ -732,7 +734,7 @@ function actualizarUbicacion(imeis, t, KEYITEM, labelMuestra, num_convoy, map, i
                         max-width: 270px;
                     ">
                 <div style="font-weight: bold; font-size: 17px; margin-bottom: 6px;">
-                
+
                 </div>
                 <div class="text-white fs-6 lh-base" style="font-size: 17px; line-height: 1.5;">
                     <div><strong >Equipo:</strong> ${item.EquipoBD}</div>
@@ -750,9 +752,9 @@ function actualizarUbicacion(imeis, t, KEYITEM, labelMuestra, num_convoy, map, i
                     font-family: Arial, sans-serif;
                     box-shadow: 0 2px 6px  rgba(255, 255, 255, 1);
                     max-width: 270px;
-                  "> 
+                  ">
               <div style="font-weight: bold; font-size: 17px; margin-bottom: 6px;">
-               
+
               </div>
               <div class="text-white fs-6 lh-base" style="font-size: 17px; line-height: 1.5;">
               <div><strong >Convoy:</strong> ${num_convoy} </div>
@@ -814,7 +816,7 @@ function actualizarUbicacion(imeis, t, KEYITEM, labelMuestra, num_convoy, map, i
                     <p><strong>Contrato:</strong> ${info.tipo_contrato}</p>
                     <p><strong>Fecha Inicio:</strong> ${info.fecha_inicio}</p>
                     <p><strong>IMEI:</strong> ${info.imei}</p>
-                   
+
                                    ${extraInfo}
                   </div>
                 `;
@@ -953,30 +955,30 @@ function actualizarUbicacion(imeis, t, KEYITEM, labelMuestra, num_convoy, map, i
                     });
 
                     /*   if(estado){
-             
-          
+
+
             //eliminar todos los marcadores q correspondel al convoy buscado
           Object.keys(markers).forEach(key => {
-                if (key.startsWith(KEYITEM + "|")) {    
+                if (key.startsWith(KEYITEM + "|")) {
                     if( item.ubicacion.esDatoEmp !=='SI' && key.includes(item.contenedor)){ // ocultar todos los que no corresponede
-                      markers[key].setMap(null); 
+                      markers[key].setMap(null);
                     console.log('Marcador eliminado:', key);
-                      
+
                     }
-                    
+
                                     }
             });
-            
+
             //tenemos q mostrar grupo, un contenedor que debe ser el de la empresa al menos 1.
         }else{
            Object.keys(markers).forEach(key => {
-                if (key.startsWith(KEYITEM + "|")) {    
+                if (key.startsWith(KEYITEM + "|")) {
                     if( item.ubicacion.esDatoEmp !=='SI'){ // volver asignar el correspondiente al mapa todos
-                      markers[key].setMap(map); 
+                      markers[key].setMap(map);
                     console.log('Marcador mapa asignado:', key);
-                      
+
                     }
-                    
+
                                     }
             });
         } */
@@ -1035,13 +1037,13 @@ function mostrarInfoConvoy(contenedores, equipo, chasis) {
         // Crear pestaña
         tabs.innerHTML += `
       <li class="nav-item" role="presentation">
-        <button class="nav-link ${index === 0 ? 'active' : ''}" 
-                id="${tabId}-tab" 
-                data-bs-toggle="tab" 
-                data-bs-target="#${tabId}" 
-                type="button" 
-                role="tab" 
-                aria-controls="${tabId}" 
+        <button class="nav-link ${index === 0 ? 'active' : ''}"
+                id="${tabId}-tab"
+                data-bs-toggle="tab"
+                data-bs-target="#${tabId}"
+                type="button"
+                role="tab"
+                aria-controls="${tabId}"
                 aria-selected="${index === 0 ? 'true' : 'false'}">
            ${tabId}
         </button>
@@ -1056,14 +1058,14 @@ function mostrarInfoConvoy(contenedores, equipo, chasis) {
         if (info) {
             let filtroEqu = equiposSearch.find((equipo) => equipo.id === info.id_equipo_unico);
 
-            let infoContenido = `  
-                  <div class="tab-pane fade ${index === 0 ? 'show active' : ''}" 
-           id="${tabId}" 
-           role="tabpanel" 
+            let infoContenido = `
+                  <div class="tab-pane fade ${index === 0 ? 'show active' : ''}"
+           id="${tabId}"
+           role="tabpanel"
            aria-labelledby="${tabId}-tab">
-                   
+
                     <p><strong>Cliente:</strong> ${info.cliente}</p>
-                  
+
                     <p><strong>Origen:</strong> ${info.origen}</p>
                     <p><strong>Destino:</strong> ${info.destino}</p>
                     <p><strong>Contrato:</strong> ${info.tipo_contrato}</p>
@@ -1543,7 +1545,7 @@ function definirTable() {
             if (!val) {
                 botonEliminar = `
                     <button type="button" class="btn btn-sm btn-danger" onclick="confirmarEliminacion('${item.id_contenedor}', '${item.conboy_id}', this,${i})">
-                        <i class="bi bi-trash"></i> 
+                        <i class="bi bi-trash"></i>
                     </button>
                 `;
             }
@@ -1846,10 +1848,10 @@ function actualizarVista() {
     seleccionados.forEach((cont, i) => {
         const row = document.createElement('tr');
         row.innerHTML = `
-          
+
             <td>${cont}</td>
             <td>
-                <button type="button" 
+                <button type="button"
                         class="btn btn-sm btn-danger"
                         onclick="eliminarContenedor(${i})">
                      <i class="bi bi-trash"></i>
@@ -1917,10 +1919,10 @@ function actualizarVista2() {
     seleccionados.forEach((cont, i) => {
         const row = document.createElement('tr');
         row.innerHTML = `
-          
+
             <td>${cont}</td>
             <td>
-                <button type="button" 
+                <button type="button"
                         class="btn btn-sm btn-danger"
                         onclick="eliminarContenedor2(${i})">
                      <i class="bi bi-trash"></i>

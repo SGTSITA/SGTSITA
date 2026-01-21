@@ -431,6 +431,12 @@
                             let conponerStrin =
                                 cod + '|' + infoc.imei + '|' + infoc.id_contenedor + '|' + infoc.tipoGps;
                             ItemsSelects.push(conponerStrin);
+                            if (infoc.imei_chasis != 'NO DISPONIBLE') {
+                                let conponerStrin2 =
+                                    cod + '|' + infoc.imei_chasis + '|' + infoc.id_contenedor + '|' + infoc
+                                    .tipoGpsChasis;
+                                ItemsSelects.push(conponerStrin2);
+                            }
                         } else {
                             //buscamos en todos pero se valida si es convoy para saber si tenemos que buscar aunq no le pertenece el contenedor al user
                             if (tipoSpans.toLowerCase().includes('convoy')) {

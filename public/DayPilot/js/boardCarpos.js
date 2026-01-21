@@ -52,9 +52,10 @@ async function initBoard(fromDate, toDate) {
                     let x = Math.floor(Math.random() * 8) + 1;
                     if (i.fecha_inicio !== null) {
                         scrollToDate = scrollToDate ?? new DayPilot.Date(i.fecha_inicio);
+                        let fecha_finalmuestra = new DayPilot.Date(i.fecha_fin).addDays(1);
                         var e = {
                             start: new DayPilot.Date(i.fecha_inicio),
-                            end: new DayPilot.Date(i.fecha_fin),
+                            end: new DayPilot.Date(fecha_finalmuestra),
                             id: i.id_contenedor,
                             resource: parseInt(i.id_cliente), //(i.id_cliente != null) ? parseInt(i.id_proveedor.toString()+"7000") : parseInt(i.id_camion.toString()+"5000"), //<=======Este es el ID del recurso (maquina) donde se ha de colocar el servicio de viaje
                             text: i.num_contenedor,
@@ -297,7 +298,6 @@ function getInfoViaje(startDate, endDate, numContenedor_, idContendor) {
     fechaSalida.textContent = formatFecha(startDate);
 
     let fechaEntrega = document.querySelector('#fechaEntrega');
-    fechaEntrega.textContent = formatFecha(endDate);
 
     let numContenedor = document.querySelector('#numContenedorSpan');
     numContenedor.textContent = numContenedor_;
@@ -359,7 +359,7 @@ function getInfoViaje(startDate, endDate, numContenedor_, idContendor) {
         },
         success: (response) => {
             ocultarLoading();
-
+            fechaEntrega.textContent = formatFecha(response.datosExtraviaje.fecha_fin);
             nombreProveedor.textContent = response.datosExtraviaje.empresa_beneficiario;
             contactoEntrega.textContent = response.datosExtraviaje.cp_contacto_entrega ?? '--';
             // nombreTransportista.textContent = response.datosExtraviaje.transportista_nombre ?? "--"

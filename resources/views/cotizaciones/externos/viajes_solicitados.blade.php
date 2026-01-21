@@ -14,20 +14,14 @@
                     </h3>
                     <div class="card-toolbar">
                         <div>
-                            <button
-                                class="btn btn-primary btn-sm"
-                                data-kt-menu-trigger="click"
-                                data-kt-menu-placement="bottom-end"
-                                data-kt-menu-overflow="true"
-                            >
+                            <button class="btn btn-primary btn-sm" data-kt-menu-trigger="click"
+                                data-kt-menu-placement="bottom-end" data-kt-menu-overflow="true">
                                 Opciones
                                 <i class="ki-outline ki-plus fs-1 text-gray-500 me-n1"></i>
                             </button>
                             <!--begin::Menu 2-->
-                            <div
-                                class="menu menu-sub menu-sub-dropdown menu-column menu-rounded menu-gray-800 menu-state-bg-light-primary fw-semibold w-200px"
-                                data-kt-menu="true"
-                            >
+                            <div class="menu menu-sub menu-sub-dropdown menu-column menu-rounded menu-gray-800 menu-state-bg-light-primary fw-semibold w-200px"
+                                data-kt-menu="true">
                                 <!--begin::Menu item-->
                                 <div class="menu-item px-3">
                                     <div class="menu-content fs-6 text-gray-900 fw-bold px-3 py-4">
@@ -59,32 +53,32 @@
 
                                 <!--div class="menu-item px-3" data-kt-menu-trigger="hover" data-kt-menu-placement="right-start">
 
-                        <a href="#" class="menu-link px-3" data-bs-toggle="modal" data-bs-target="#kt_modal_top_up_wallet">
-                          <span class="menu-title">Ver documentos</span>
-                          <span class="menu-arrow"></span>
-                        </a>
+                            <a href="#" class="menu-link px-3" data-bs-toggle="modal" data-bs-target="#kt_modal_top_up_wallet">
+                              <span class="menu-title">Ver documentos</span>
+                              <span class="menu-arrow"></span>
+                            </a>
 
 
-                        <div class="menu-sub menu-sub-dropdown w-175px py-4">
+                            <div class="menu-sub menu-sub-dropdown w-175px py-4">
 
-                          <div class="menu-item px-3">
-                            <a href="#" class="menu-link px-3"> DODA </a>
-                          </div>
+                              <div class="menu-item px-3">
+                                <a href="#" class="menu-link px-3"> DODA </a>
+                              </div>
 
-                          <div class="menu-item px-3">
-                            <a href="#" class="menu-link px-3"> Pre Alta </a>
-                          </div>
+                              <div class="menu-item px-3">
+                                <a href="#" class="menu-link px-3"> Pre Alta </a>
+                              </div>
 
-                          <div class="menu-item px-3">
-                            <a href="#" class="menu-link px-3"> Boleta de liberación </a>
-                          </div>
-                          <div class="menu-item px-3">
-                            <a href="#" class="menu-link px-3"> Formato Carta Porte </a>
-                          </div>
+                              <div class="menu-item px-3">
+                                <a href="#" class="menu-link px-3"> Boleta de liberación </a>
+                              </div>
+                              <div class="menu-item px-3">
+                                <a href="#" class="menu-link px-3"> Formato Carta Porte </a>
+                              </div>
 
-                        </div>
+                            </div>
 
-                      </div-->
+                          </div-->
 
                                 <!--begin::Menu separator-->
                                 <div class="separator mt-3 opacity-75"></div>
@@ -95,24 +89,15 @@
                                 <!--begin::Menu item-->
                                 <div class="menu-item px-3">
                                     <div class="menu-content px-3 py-3">
-                                        <button
-                                            class="btn btn-primary btn-sm px-4"
-                                            name="btnDocs"
-                                            id="btnDocs"
-                                            disabled="true"
-                                        >
+                                        <button class="btn btn-primary btn-sm px-4" name="btnDocs" id="btnDocs">
                                             Agregar documentos
                                         </button>
                                     </div>
                                 </div>
                                 <div class="menu-item px-3">
                                     <div class="menu-content px-3 py-3">
-                                        <button
-                                            type="button"
-                                            class="btn btn-sm btn-success"
-                                            title="Rastrear contenedor"
-                                            id="btnRastreo"
-                                        >
+                                        <button type="button" class="btn btn-sm btn-success" title="Rastrear contenedor"
+                                            id="btnRastreo">
                                             <i class="fa fa-shipping-fast"></i>
                                             Rastreo
                                         </button>
@@ -153,10 +138,7 @@
                                             <!--end::Description-->
                                         </div>
 
-                                        <div
-                                            class="btn btn-sm btn-icon btn-active-color-primary"
-                                            data-bs-dismiss="modal"
-                                        >
+                                        <div class="btn btn-sm btn-icon btn-active-color-primary" data-bs-dismiss="modal">
                                             <i class="ki-duotone ki-cross fs-1">
                                                 <span class="path1"></span>
                                                 <span class="path2"></span>
@@ -173,13 +155,8 @@
         </div>
     </div>
 
-    <div
-        class="modal fade"
-        id="modalSeleccionContenedor"
-        tabindex="-1"
-        aria-labelledby="seleccionContenedorLabel"
-        aria-hidden="true"
-    >
+    <div class="modal fade" id="modalSeleccionContenedor" tabindex="-1" aria-labelledby="seleccionContenedorLabel"
+        aria-hidden="true">
         <div class="modal-dialog modal-md">
             <div class="modal-content">
                 <div class="modal-header">
@@ -210,28 +187,18 @@
         }
     </style>
     <link href="{{ asset('assets/metronic/fileuploader/font/font-fileuploader.css') }}" rel="stylesheet" />
-    <link
-        href="{{ asset('assets/metronic/fileuploader/jquery.fileuploader.min.css') }}"
-        media="all"
-        rel="stylesheet"
-    />
-    <link
-        href="{{ asset('assets/metronic/fileuploader/jquery.fileuploader-theme-dragdrop.css') }}"
-        media="all"
-        rel="stylesheet"
-    />
-    <script
-        src="{{ asset('assets/metronic/fileuploader/jquery.fileuploader.min.js') }}"
-        type="text/javascript"
-    ></script>
-    <script
-        src="{{ asset('assets/metronic/fileuploader/cotizacion-cliente-externo.js') }}"
-        type="text/javascript"
-    ></script>
+    <link href="{{ asset('assets/metronic/fileuploader/jquery.fileuploader.min.css') }}" media="all"
+        rel="stylesheet" />
+    <link href="{{ asset('assets/metronic/fileuploader/jquery.fileuploader-theme-dragdrop.css') }}" media="all"
+        rel="stylesheet" />
+    <script src="{{ asset('assets/metronic/fileuploader/jquery.fileuploader.min.js') }}" type="text/javascript"></script>
+    <script src="{{ asset('assets/metronic/fileuploader/cotizacion-cliente-externo.js') }}" type="text/javascript"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.js"></script>
 
-    <script src="{{ asset('js/sgt/cotizaciones/cotizacion-documentacion.js') }}?v={{ filemtime(public_path('js/sgt/cotizaciones/cotizacion-documentacion.js')) }}"></script>
+    <script
+        src="{{ asset('js/sgt/cotizaciones/cotizacion-documentacion.js') }}?v={{ filemtime(public_path('js/sgt/cotizaciones/cotizacion-documentacion.js')) }}">
+    </script>
     <script>
         $(document).ready(() => {
             getContenedoresPendientes('all');

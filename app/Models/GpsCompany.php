@@ -4,10 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Traits\Auditable;
 
 class GpsCompany extends Model
 {
     use SoftDeletes;
+    use Auditable;
 
     protected $table = 'gps_company';
 

@@ -40,10 +40,8 @@
                                     <select name="id_client" id="id_client" class="form-control">
                                         <option value="">Seleccionar Cliente</option>
                                         @foreach ($clientes as $cliente)
-                                            <option
-                                                value="{{ $cliente->id }}"
-                                                {{ request('id_client') == $cliente->id ? 'selected' : '' }}
-                                            >
+                                            <option value="{{ $cliente->id }}"
+                                                {{ request('id_client') == $cliente->id ? 'selected' : '' }}>
                                                 {{ $cliente->nombre }}
                                             </option>
                                         @endforeach
@@ -55,10 +53,8 @@
                                     <select name="id_subcliente" id="id_subcliente" class="form-control">
                                         <option value="">Seleccionar Subcliente</option>
                                         @foreach ($subclientes as $subcliente)
-                                            <option
-                                                value="{{ $subcliente->id }}"
-                                                {{ request('id_subcliente') == $subcliente->id ? 'selected' : '' }}
-                                            >
+                                            <option value="{{ $subcliente->id }}"
+                                                {{ request('id_subcliente') == $subcliente->id ? 'selected' : '' }}>
                                                 {{ $subcliente->nombre }}
                                             </option>
                                         @endforeach
@@ -70,10 +66,8 @@
                                     <select name="id_proveedor" id="id_proveedor" class="form-control">
                                         <option value="">Seleccionar Proveedor</option>
                                         @foreach ($proveedores as $proveedor)
-                                            <option
-                                                value="{{ $proveedor->id }}"
-                                                {{ request('id_proveedor') == $proveedor->id ? 'selected' : '' }}
-                                            >
+                                            <option value="{{ $proveedor->id }}"
+                                                {{ request('id_proveedor') == $proveedor->id ? 'selected' : '' }}>
                                                 {{ $proveedor->nombre }}
                                             </option>
                                         @endforeach
@@ -84,6 +78,13 @@
                                 </div>
                             </div>
                         </form>
+
+                        <div class="d-flex justify-content-end my-2">
+                            <button type="button" id="btnAsignarEdoCuenta" class="btn btn-primary d-none"
+                                data-bs-toggle="modal" data-bs-target="#modalAsignarEdoCuenta">
+                                Asignar No Edo cuenta
+                            </button>
+                        </div>
 
                         <div class="table-responsive">
                             <div class="mb-3"></div>
@@ -99,46 +100,37 @@
                                         <tr>
                                             <th></th>
                                             <th>#</th>
+                                            <th>Edo. Cuenta</th>
                                             <th>Fecha inicio</th>
                                             <th>
-                                                <img
-                                                    src="{{ asset('img/icon/user_predeterminado.webp') }}"
-                                                    alt=""
-                                                    width="25px"
-                                                />
+                                                <img src="{{ asset('img/icon/user_predeterminado.webp') }}" alt=""
+                                                    width="25px" />
                                                 Cliente
                                             </th>
                                             <th>
-                                                <img
-                                                    src="{{ asset('img/icon/user_predeterminado.webp') }}"
-                                                    alt=""
-                                                    width="25px"
-                                                />
+                                                <img src="{{ asset('img/icon/user_predeterminado.webp') }}" alt=""
+                                                    width="25px" />
                                                 Subcliente
                                             </th>
                                             <th>
-                                                <img src="{{ asset('img/icon/gps.webp') }}" alt="" width="25px" />
+                                                <img src="{{ asset('img/icon/gps.webp') }}" alt=""
+                                                    width="25px" />
                                                 Origen
                                             </th>
                                             <th>
-                                                <img src="{{ asset('img/icon/origen.png') }}" alt="" width="25px" />
+                                                <img src="{{ asset('img/icon/origen.png') }}" alt=""
+                                                    width="25px" />
                                                 Destino
                                             </th>
                                             <th>
-                                                <img
-                                                    src="{{ asset('img/icon/contenedor.png') }}"
-                                                    alt=""
-                                                    width="25px"
-                                                />
+                                                <img src="{{ asset('img/icon/contenedor.png') }}" alt=""
+                                                    width="25px" />
                                                 # Contenedor
                                             </th>
                                             <th>Tipo</th>
                                             <th>
-                                                <img
-                                                    src="{{ asset('img/icon/semaforos.webp') }}"
-                                                    alt=""
-                                                    width="25px"
-                                                />
+                                                <img src="{{ asset('img/icon/semaforos.webp') }}" alt=""
+                                                    width="25px" />
                                                 Estatus
                                             </th>
                                         </tr>
@@ -148,14 +140,12 @@
                                             @foreach ($cotizaciones as $cotizacion)
                                                 <tr>
                                                     <td>
-                                                        <input
-                                                            type="checkbox"
-                                                            name="cotizacion_ids[]"
+                                                        <input type="checkbox" name="cotizacion_ids[]"
                                                             value="{{ $cotizacion->id }}"
-                                                            class="select-checkbox visually-hidden"
-                                                        />
+                                                            class="select-checkbox visually-hidden" />
                                                     </td>
                                                     <td>{{ $cotizacion->id }}</td>
+                                                    <td>{{ $cotizacion->edo_cuenta ?? 'NA' }}</td>
                                                     <td>
                                                         {{ optional($cotizacion->DocCotizacion->Asignaciones)->fehca_inicio_guard ? Carbon\Carbon::parse($cotizacion->DocCotizacion->Asignaciones->fehca_inicio_guard)->format('d-m-Y') : 'Sin fecha' }}
                                                     </td>
@@ -168,7 +158,10 @@
                                                         $docPrincipal = optional($cotizacion->DocCotizacion);
                                                         $numContenedor = $docPrincipal->num_contenedor ?? '';
 
-                                                        if ($cotizacion->jerarquia === 'Principal' && $cotizacion->referencia_full) {
+                                                        if (
+                                                            $cotizacion->jerarquia === 'Principal' &&
+                                                            $cotizacion->referencia_full
+                                                        ) {
                                                             $cotSecundaria = \App\Models\Cotizaciones::where(
                                                                 'referencia_full',
                                                                 $cotizacion->referencia_full,
@@ -179,7 +172,8 @@
 
                                                             $docSecundaria = optional($cotSecundaria)->DocCotizacion;
                                                             if ($docSecundaria && $docSecundaria->num_contenedor) {
-                                                                $numContenedor .= ' / ' . $docSecundaria->num_contenedor;
+                                                                $numContenedor .=
+                                                                    ' / ' . $docSecundaria->num_contenedor;
                                                             }
                                                         }
                                                     @endphp
@@ -192,10 +186,8 @@
 
                                                     <td>
                                                         @can('cotizaciones-estatus')
-                                                            <button
-                                                                type="button"
-                                                                class="btn btn-outline-{{ $cotizacion->estatus == 'Aprobada' ? 'info' : 'success' }} btn-xs"
-                                                            >
+                                                            <button type="button"
+                                                                class="btn btn-outline-{{ $cotizacion->estatus == 'Aprobada' ? 'info' : 'success' }} btn-xs">
                                                                 {{ $cotizacion->estatus }}
                                                             </button>
                                                         @endcan
@@ -205,12 +197,8 @@
                                         @endif
                                     </tbody>
                                 </table>
-                                <button
-                                    type="button"
-                                    id="exportButton"
-                                    data-filetype="pdf"
-                                    class="btn btn-outline-secondary btn-sm exportButton"
-                                >
+                                <button type="button" id="exportButton" data-filetype="pdf"
+                                    class="btn btn-outline-secondary btn-sm exportButton">
                                     Vista previa
                                 </button>
                                 <div id="warningMessage" class="alert alert-warning d-none" role="alert">
@@ -221,26 +209,16 @@
                                     <canvas id="pdf-canvas"></canvas>
                                     <div class="button-container">
                                         @if (isset($cotizaciones) && $cotizaciones != null)
-                                            <button
-                                                type="button"
-                                                id="exportButtonExcel1"
-                                                data-filetype="xlsx"
-                                                class="btn btn-outline-secondary btn-sm exportButton"
-                                            >
+                                            <button type="button" id="exportButtonExcel1" data-filetype="xlsx"
+                                                class="btn btn-outline-secondary btn-sm exportButton">
                                                 Exportar a Excel
                                             </button>
-                                            <input
-                                                type="hidden"
-                                                id="txtDataCotizaciones"
-                                                value="{{ json_encode($cotizaciones) }}"
-                                            />
+                                            <input type="hidden" id="txtDataCotizaciones"
+                                                value="{{ json_encode($cotizaciones) }}" />
                                         @endif
 
-                                        <button
-                                            type="button"
-                                            id="downloadPdfButton"
-                                            class="btn btn-outline-secondary btn-sm d-none"
-                                        >
+                                        <button type="button" id="downloadPdfButton"
+                                            class="btn btn-outline-secondary btn-sm d-none">
                                             Exportar a PDF
                                         </button>
                                     </div>
@@ -252,6 +230,35 @@
             </div>
         </div>
     </div>
+    <div class="modal fade" id="modalAsignarEdoCuenta" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-md modal-dialog-centered">
+            <div class="modal-content">
+
+                <div class="modal-header">
+                    <h5 class="modal-title">Asignar No Edo cuenta</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body">
+                    <input type="hidden" id="registroSeleccionado">
+
+                    <div class="mb-3">
+                        <label class="form-label">Número de estado de cuenta</label>
+                        <input type="text" class="form-control" id="noEdoCuenta">
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button class="btn btn-primary" id="btnGuardarEdoCuenta">
+                        Guardar
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
 @endsection
 
 @section('datatable')
@@ -268,22 +275,22 @@
     <script src="https://cdn.datatables.net/select/2.0.3/js/select.bootstrap5.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
     <script>
-        $(document).ready(function () {
+        $(document).ready(function() {
             $('.cliente').select2();
             $('.proveedor').select2();
 
             const table = $('#datatable-search').DataTable({
-                columnDefs: [
-                    {
-                        orderable: false,
-                        className: 'select-checkbox',
-                        targets: 0,
-                    },
-                ],
+                columnDefs: [{
+                    orderable: false,
+                    className: 'select-checkbox',
+                    targets: 0,
+                }, ],
                 fixedColumns: {
                     start: 2,
                 },
-                order: [[1, 'asc']],
+                order: [
+                    [1, 'asc']
+                ],
                 paging: true,
                 pageLength: 30,
                 select: {
@@ -293,29 +300,35 @@
             });
 
             // Actualización del botón "Seleccionar todo" al cambiar la selección de filas
-            table.on('select deselect', function () {
-                // Si todas las filas están seleccionadas, cambia el texto del botón
-                if (
-                    table
-                        .rows({
-                            selected: true,
-                        })
-                        .count() === table.rows().count()
-                ) {
+            table.on('select deselect', function() {
+
+                const selectedCount = table.rows({
+                    selected: true
+                }).count();
+
+                // Botón seleccionar todo (tu lógica actual)
+                if (selectedCount === table.rows().count()) {
                     $('#selectAllButton').text('Deseleccionar todo');
                 } else {
                     $('#selectAllButton').text('Seleccionar todo');
                 }
+
+                // 🔹 Mostrar / ocultar botón Asignar
+                if (selectedCount > 0) {
+                    $('#btnAsignarEdoCuenta').removeClass('d-none');
+                } else {
+                    $('#btnAsignarEdoCuenta').addClass('d-none');
+                }
             });
 
             // Botón "Seleccionar todo" para seleccionar/desmarcar todas las filas
-            $('#selectAllButton').on('click', function () {
+            $('#selectAllButton').on('click', function() {
                 if (
                     table
-                        .rows({
-                            selected: true,
-                        })
-                        .count() === table.rows().count()
+                    .rows({
+                        selected: true,
+                    })
+                    .count() === table.rows().count()
                 ) {
                     // Si todas las filas están seleccionadas, deseleccionarlas
                     table.rows().deselect();
@@ -327,7 +340,7 @@
                 }
             });
 
-            $('.exportButton').on('click', function (event) {
+            $('.exportButton').on('click', function(event) {
                 const selectedIds = table
                     .rows('.selected')
                     .data()
@@ -355,7 +368,7 @@
                     xhrFields: {
                         responseType: 'blob', // Indicar que esperamos una respuesta tipo blob (archivo)
                     },
-                    success: function (response) {
+                    success: function(response) {
                         var blob = new Blob([response], {
                             type: 'application/' + fileType,
                         });
@@ -371,8 +384,8 @@
                             var pdfUrl = url;
 
                             // Usar PDF.js para renderizar el PDF
-                            pdfjsLib.getDocument(pdfUrl).promise.then(function (pdf) {
-                                pdf.getPage(1).then(function (page) {
+                            pdfjsLib.getDocument(pdfUrl).promise.then(function(pdf) {
+                                pdf.getPage(1).then(function(page) {
                                     var scale = 1.5;
                                     var viewport = page.getViewport({
                                         scale: scale,
@@ -392,18 +405,19 @@
                             $('#downloadPdfButton').removeClass('d-none');
 
                             // Agregar un evento para descargar el PDF
-                            $('#downloadPdfButton').on('click', function () {
+                            $('#downloadPdfButton').on('click', function() {
                                 var a = document.createElement('a');
                                 a.href = url;
                                 a.download =
                                     'cxc_' +
-                                    new Date().toLocaleDateString('es-ES').replaceAll('/', '-') +
+                                    new Date().toLocaleDateString('es-ES').replaceAll(
+                                        '/', '-') +
                                     '_' +
                                     new Date()
-                                        .toLocaleTimeString('es-ES', {
-                                            hour12: false,
-                                        })
-                                        .replaceAll(':', '_') +
+                                    .toLocaleTimeString('es-ES', {
+                                        hour12: false,
+                                    })
+                                    .replaceAll(':', '_') +
                                     '.pdf';
 
                                 document.body.appendChild(a);
@@ -421,10 +435,10 @@
                                 new Date().toLocaleDateString('es-ES').replaceAll('/', '-') +
                                 '_' +
                                 new Date()
-                                    .toLocaleTimeString('es-ES', {
-                                        hour12: false,
-                                    })
-                                    .replaceAll(':', '_') +
+                                .toLocaleTimeString('es-ES', {
+                                    hour12: false,
+                                })
+                                .replaceAll(':', '_') +
                                 '.xlsx';
 
                             document.body.appendChild(a);
@@ -432,26 +446,28 @@
                             document.body.removeChild(a);
                         }
                     },
-                    error: function (xhr, status, error) {
+                    error: function(xhr, status, error) {
                         console.error(error);
                         alert('Ocurrió un error al exportar los datos.');
                     },
                 });
             });
 
-            $('#id_client').on('change', function () {
+            $('#id_client').on('change', function() {
                 var clientId = $(this).val();
                 if (clientId) {
                     $.ajax({
                         url: '/subclientes/' + clientId,
                         type: 'GET',
                         dataType: 'json',
-                        success: function (data) {
+                        success: function(data) {
                             $('#id_subcliente').empty();
-                            $('#id_subcliente').append('<option selected value="">Seleccionar subcliente</option>');
-                            $.each(data, function (key, subcliente) {
+                            $('#id_subcliente').append(
+                                '<option selected value="">Seleccionar subcliente</option>');
+                            $.each(data, function(key, subcliente) {
                                 $('#id_subcliente').append(
-                                    '<option value="' + subcliente.id + '">' + subcliente.nombre + '</option>',
+                                    '<option value="' + subcliente.id + '">' +
+                                    subcliente.nombre + '</option>',
                                 );
                             });
                         },
