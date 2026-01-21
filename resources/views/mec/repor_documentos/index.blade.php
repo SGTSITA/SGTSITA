@@ -30,19 +30,7 @@
                             <input type="text" id="daterange" readonly class="form-control form-control-sm" />
                         </div>
 
-                        <div class="col-md-3">
-                            <label class="form-label">Proveedor</label>
-                            <select id="filtroProveedor" class="form-select form-select-sm">
-                                <option value="">Todos</option>
-                            </select>
-                        </div>
 
-                        <div class="col-md-3">
-                            <label class="form-label">Subcliente</label>
-                            <select id="filtroSubcliente" class="form-select form-select-sm" disabled>
-                                <option value="">Todos</option>
-                            </select>
-                        </div>
                     </div>
                     {{-- <div class="d-flex align-items-center gap-2" style="margin-left: 20px">
                         <label class="mb-0 fw-semibold text-sm">Periodo:</label>
