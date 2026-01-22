@@ -4,9 +4,11 @@
     @csrf
     <style>
         <style>
-/* Estilo general del modal */
-#viajeModal .modal-content {
-            background: #f9fafb; /* gris muy claro para diferenciar del fondo blanco */
+
+        /* Estilo general del modal */
+        #viajeModal .modal-content {
+            background: #f9fafb;
+            /* gris muy claro para diferenciar del fondo blanco */
             border-radius: 16px;
             box-shadow: 0 0 25px rgba(0, 0, 0, 0.2);
             border: none;
@@ -71,6 +73,7 @@
         #viajeModal .documentos i.text-secondary {
             color: #ccc !important;
         }
+
         #viajeModal .documentos i.text-success {
             color: #28a745 !important;
         }
@@ -97,6 +100,7 @@
                 transform: scale(0.95);
                 opacity: 0;
             }
+
             to {
                 transform: scale(1);
                 opacity: 1;
@@ -113,13 +117,15 @@
                     </span>
                 </h3>
 
+
+                <div class="search-container">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" id="txtBuscarContenedor" class="input-apple-style" placeholder="Buscar...">
+                </div>
+
                 <div class="card-toolbar">
-                    <button
-                        onclick="confirmarCambiosPlaneacion()"
-                        type="button"
-                        class="btn btn-sm btn-success d-none"
-                        id="btnGuardarBoard"
-                    >
+                    <button onclick="confirmarCambiosPlaneacion()" type="button" class="btn btn-sm btn-success d-none"
+                        id="btnGuardarBoard">
                         <i class="fa fa-fw fa-save"></i>
                         Confirmar cambios en Board
                     </button>
@@ -138,17 +144,14 @@
             </div>
 
             <div class="d-flex justify-content-end w-100">
-                <div
-                    class="p-2 parpadeando d-none"
-                    id="labelNotice"
+                <div class="p-2 parpadeando d-none" id="labelNotice"
                     style="
                         color: #444;
                         border: 1px dashed #ccc;
                         border-radius: 8px;
                         background-color: #f8f9fa;
                         font-weight: 500;
-                    "
-                >
+                    ">
                     Viajes con cambios sin confirmar: 3
                 </div>
             </div>
@@ -186,10 +189,9 @@
 @push('javascript')
     <script src="{{ asset('DayPilot/js/daypilot-all.min.js?v=2022.3.5384') }}"></script>
     <script src="{{ asset('DayPilot/helpers/v2/app.js?v=2022.3.5384') }}"></script>
-    <script
-        type="text/javascript"
-        src="{{ asset('DayPilot/js/boardClient.js') }}?v={{ filemtime(public_path('DayPilot/js/boardClient.js')) }}"
-    ></script>
+    <script type="text/javascript"
+        src="{{ asset('DayPilot/js/boardClient.js') }}?v={{ filemtime(public_path('DayPilot/js/boardClient.js')) }}">
+    </script>
     <script>
         $(document).ready(() => {
             const today = new Date();

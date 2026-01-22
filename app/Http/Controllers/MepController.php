@@ -167,27 +167,31 @@ class MepController extends Controller
         }
 
         $idOperador = $operador->id;
-
+        $numeroUnidad = strtoupper(trim($formData['txtNumUnidad']));
         //TractoCamion
         // $idUnidad = self::validarEquiposEmpresa($formData['txtNumUnidad'], $formData['txtImei'],$formData['txtPlacas'],$formData['txtSerie'],$formData['selectGPS'],'Tractos / Camiones');
-        $unidad = Equipo::where('id_empresa', auth()->user()->id_empresa)->where('id_equipo', $formData['txtNumUnidad']);
+        $unidadQuery = Equipo::where('id_empresa', auth()->user()->id_empresa)->where('id_equipo', $numeroUnidad);
 
-        if (!$unidad->exists()) {
+
+        if (!$unidadQuery->exists()) {
+
             $unidad = new Equipo();
-            $unidad->id_equipo = $formData['txtNumUnidad'];
-            $unidad->imei = $formData['txtImei'];
-            $unidad->placas = $formData['txtPlacas'];
-            $unidad->num_serie = $formData['txtSerie'];
+            $unidad->id_empresa = auth()->user()->id_empresa;
+            $unidad->id_equipo = $numeroUnidad;
+            $unidad->imei = strtoupper(trim($formData['txtImei']));
+            $unidad->placas = strtoupper(trim($formData['txtPlacas']));
+            $unidad->num_serie = strtoupper(trim($formData['txtSerie']));
             $unidad->gps_company_id = $formData['selectGPS'];
             $unidad->tipo = 'Tractos / Camiones';
             $unidad->user_id = auth()->user()->id;
             $unidad->save();
 
         } else {
-            $unidad = $unidad->first();
-            $unidad->imei = $formData['txtImei'];
-            $unidad->placas = $formData['txtPlacas'];
-            $unidad->num_serie = $formData['txtSerie'];
+
+            $unidad = $unidadQuery->first();
+            $unidad->imei = strtoupper(trim($formData['txtImei']));
+            $unidad->placas = strtoupper(trim($formData['txtPlacas']));
+            $unidad->num_serie = strtoupper(trim($formData['txtSerie']));
             $unidad->gps_company_id = $formData['selectGPS'];
             $unidad->update();
         }
@@ -213,6 +217,8 @@ class MepController extends Controller
         $TituloResponse = 'Se ha realizado la asignacion correctamente';
         $MessageResponse = '';
 
+        $proveedorid = $formData['cmbProveedor'];
+
         if ($asignacion->exists()) {
             // $asignacion1 = $asignacion->first();
             $asignacion->update([
@@ -222,6 +228,7 @@ class MepController extends Controller
                 "id_chasis2" => $idChasisB,
                 "fecha_inicio" => $fechaI,
                 "fecha_fin" => $fechaF,
+                "id_proveedor" => $proveedorid,
             ]);
 
             $TituloResponse = 'Actualizado correctamente';
@@ -241,10 +248,12 @@ class MepController extends Controller
             $asignacion->fecha_fin = $fechaF;
             $asignacion->fehca_inicio_guard =  $fechaI ;
             $asignacion->fehca_fin_guard = $fechaF;
+            $asignacion->id_proveedor = $proveedorid;
             $asignacion->save();
 
 
         }
+        //  dd($asignacion, $proveedorid);
 
         if ($planearViaje == 1) { // validar desde el form
             //dd($planearViaje);

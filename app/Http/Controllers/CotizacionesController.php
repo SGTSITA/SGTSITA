@@ -47,7 +47,11 @@ class CotizacionesController extends Controller
 
         $gpsCompanies = GpsCompany::whereIn('id', $gpsCompanyIds)->get();
 
-        return view('cotizaciones.index', compact('empresas', 'gpsCompanies'));
+        $user = User::find(auth()->user()->id);
+
+        $proveedorId =  $user->proveedores()->pluck('proveedor_id')->first();
+
+        return view('cotizaciones.index', compact('empresas', 'gpsCompanies', 'proveedorId'));
     }
 
     public function getCotizacionesList()
@@ -897,7 +901,7 @@ class CotizacionesController extends Controller
     public function edit($id)
     {
         $cotizacion = Cotizaciones::where('id', '=', $id)->first();
-        $documentacion = DocumCotizacion::where('id_cotizacion', '=', $cotizacion->id)->first();
+        $documentacion = DocumCotizacion::with('Asignaciones')->where('id_cotizacion', '=', $cotizacion->id)->first();
         $gastos_extras = GastosExtras::where('id_cotizacion', '=', $cotizacion->id)->get();
         //$clientes = Client::where('id_empresa' ,'=',auth()->user()->id_empresa)->get();
         $clientes = Client::join('client_empresa as ce', 'clients.id', '=', 'ce.id_client')
@@ -907,9 +911,10 @@ class CotizacionesController extends Controller
 
         $gastos_ope = GastosOperadores::where('id_cotizacion', '=', $cotizacion->id)->get();
         $proveedores = Proveedor::catalogoPrincipal()->where('id_empresa', auth()->user()->id_empresa)->get();
-        // dd( $proveedores );
+        // dd($documentacion);
         $bancos = Bancos::where('id_empresa', Auth::User()->id_empresa)->get();
 
+        // dd($documentacion);
         return view('cotizaciones.editv1', compact('bancos', 'cotizacion', 'documentacion', 'clientes', 'gastos_extras', 'gastos_ope', 'proveedores'));
     }
 
@@ -958,6 +963,7 @@ class CotizacionesController extends Controller
         $clientes = Client::where('id_empresa', '=', auth()->user()->id_empresa)->get();
         $gastos_ope = GastosOperadores::where('id_cotizacion', '=', $cotizacion->id)->get();
         $subclientes = Subclientes::where('id_cliente', '=', auth()->user()->id_cliente)->get();
+
 
         return view('cotizaciones.externos.edit', compact('cotizacion', 'documentacion', 'clientes', 'gastos_extras', 'gastos_ope', 'subclientes'));
     }
@@ -2456,11 +2462,11 @@ class CotizacionesController extends Controller
             $cot->id_subcliente        = $request->id_subcliente ?? null;
             $cot->sub_cliente_local        = $request->id_subcliente ?? null;
             if ($request->has('id_proveedor') && $request->id_proveedor !== $cot->id_empresa) { //checar si se cambio de empresa
-                $cot->id_empresa = $request->id_proveedor;
+                //   $cot->id_empresa = $request->id_proveedor;
                 $cot->empresa_local        = $request->id_proveedor ?? null;
             }
             if ($request->has('id_transportista') && $request->id_transportista !== $cot->transportista_local) {
-                $cot->id_proveedor      = $request->id_transportista;
+                // $cot->id_proveedor      = $request->id_transportista;
                 $cot->transportista_local        = $request->id_transportista ?? null;
             }
 
@@ -2470,15 +2476,15 @@ class CotizacionesController extends Controller
 
             //$cot->id_transportista     = $request->id_transportista ?? null;
 
-            $cot->origen               = $request->origen;
-            $cot->tamano               = $request->tamano;
+            // $cot->origen               = $request->origen;
+            // $cot->tamano               = $request->tamano;
             $cot->peso_contenedor      = $request->peso_contenedor;
             $cot->fecha_modulacion     = $request->fecha_modulacion;
             $cot->cp_pedimento         = $request->num_pedimento;
             $cot->cp_clase_ped         = $request->cp_clase_ped;
-            $cot->bloque               = $request->bloque ?? null;
-            $cot->bloque_hora_i        = $request->bloque_hora_i ?? null;
-            $cot->bloque_hora_f        = $request->bloque_hora_f ?? null;
+            // $cot->bloque               = $request->bloque ?? null;
+            //$cot->bloque_hora_i        = $request->bloque_hora_i ?? null;
+            //$cot->bloque_hora_f        = $request->bloque_hora_f ?? null;
 
             // Campos nuevos que migramos desde local para twner el inicio porq al ser foraneo cambian
             $cot->bloque_local               = $request->bloque ?? null;
