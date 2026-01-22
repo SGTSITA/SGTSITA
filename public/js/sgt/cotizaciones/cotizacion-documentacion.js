@@ -105,6 +105,7 @@ const ragCellClassRules = {
     'badge badge-light-info fs-base': (params) => params.value === 'Viaje solicitado',
     'badge badge-light-warning fs-base': (params) => params.value === 'Documentos Faltantes',
     'badge badge-light-success fs-base': (params) => params.value === 'Aprobada',
+    'badge badge-light-primary fs-base': (params) => params.value === 'Planeado',
     'badge badge-light-danger fs-base': (params) => params.value === 'Cancelada',
 };
 

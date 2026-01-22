@@ -52,10 +52,10 @@ async function initBoard(fromDate, toDate) {
                     let x = Math.floor(Math.random() * 8) + 1;
                     if (i.fecha_inicio !== null) {
                         scrollToDate = scrollToDate ?? new DayPilot.Date(i.fecha_inicio);
-                        let fecha_finalmuestra = new DayPilot.Date(i.fecha_fin).addDays(1);
+                        // let fecha_finalmuestra = new DayPilot.Date(i.fecha_fin).addDays(1);
                         var e = {
                             start: new DayPilot.Date(i.fecha_inicio),
-                            end: new DayPilot.Date(fecha_finalmuestra),
+                            end: new DayPilot.Date(i.fecha_fin),
                             id: i.id_contenedor,
                             resource: parseInt(i.id_cliente), //(i.id_cliente != null) ? parseInt(i.id_proveedor.toString()+"7000") : parseInt(i.id_camion.toString()+"5000"), //<=======Este es el ID del recurso (maquina) donde se ha de colocar el servicio de viaje
                             text: i.num_contenedor,

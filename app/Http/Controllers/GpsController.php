@@ -140,8 +140,8 @@ class GpsController extends Controller
 
                         //Pasar el RFC de la empresa previamente configurada
                         // $credenciales = $normalized;// JimiGpsTrait::getAuthenticationCredentials($Rfc);
-
-                        $data = ($credenciales['success'])
+                        // dd($credenciales);
+                        $data = ($result['success'])
                         ? JimiGpsTrait::callGpsApi('jimi.device.location.get', $credenciales, $adicionales)
                         : []
                         ;
@@ -167,7 +167,7 @@ class GpsController extends Controller
 
 
                         // $credenciales = CommonGpsTrait::getAuthenticationCredentials($Rfc, 3);
-                        $data = ($credenciales['success']) ? LegoGps::getLocation($credenciales) : [];
+                        $data = ($result['success']) ? LegoGps::getLocation($credenciales) : [];
                         $ubicacionApi = $data?->data[0] ?? null;
 
                         $ubicacion = [

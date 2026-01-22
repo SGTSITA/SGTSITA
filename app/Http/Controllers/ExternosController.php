@@ -358,7 +358,7 @@ class ExternosController extends Controller
 
             return [
                 "NumContenedor" => $numContenedor,
-                "Estatus" => ($c->estatus == "NO ASIGNADA") ? "Viaje solicitado" : $c->estatus,
+                "Estatus" => ($c->estatus == "NO ASIGNADA") ? "Viaje solicitado" : ($c->estatus == "Aprobada" && $c->estatus_planeacion == 1 ? "Planeado" : $c->estatus),
                 "Origen" => $c->origen,
                 "Destino" => $c->destino,
                 "Peso" => $c->peso_contenedor,
