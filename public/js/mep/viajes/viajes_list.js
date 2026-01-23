@@ -101,6 +101,7 @@ const formFieldsMep = [
         type: 'text',
         trigger: 'txtNumChasisB',
     },
+    { field: 'cmbProveedor', id: 'cmbProveedor', label: 'Proveedor', required: false, type: 'hidden', trigger: 'none' },
 ];
 
 const normalizarFecha = (valueFecha) => {
@@ -217,6 +218,26 @@ function asignarOperador2(planear = 0) {
 btnAsignaOperador.addEventListener('click', () => asignarOperador2(0));
 
 btnPlanearViaje.addEventListener('click', () => asignarOperador2(1));
+// async function buscarRecurso(params = {}) {
+//     const query = new URLSearchParams(params).toString();
+
+//     try {
+//         const response = await fetch(`/api/buscar-recursos?${query}`, {
+//             headers: {
+//                 Accept: 'application/json',
+//             },
+//         });
+
+//         if (!response.ok) {
+//             throw new Error('Error en la búsqueda');
+//         }
+
+//         return await response.json();
+//     } catch (error) {
+//         console.error(error);
+//         return [];
+//     }
+// }
 
 function buscarOperador(nombre) {
     let operador = operadores.find((op) => {
