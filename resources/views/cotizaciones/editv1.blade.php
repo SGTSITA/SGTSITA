@@ -163,13 +163,13 @@
 
                                         <div class="col-6 form-group">
                                             <!--label for="name">Cliente *</label>
-                                                                <select class="form-select cliente d-inline-block" data-toggle="select" id="id_cliente" name="id_cliente">
-                                                                    <option value="{{ $cotizacion->id_cliente }}">{{ $cotizacion->Cliente->nombre }} / {{ $cotizacion->Cliente->telefono }}</option>
-                                                                    @foreach ($clientes as $item)
+                                                                        <select class="form-select cliente d-inline-block" data-toggle="select" id="id_cliente" name="id_cliente">
+                                                                            <option value="{{ $cotizacion->id_cliente }}">{{ $cotizacion->Cliente->nombre }} / {{ $cotizacion->Cliente->telefono }}</option>
+                                                                            @foreach ($clientes as $item)
     <option value="{{ $item->id }}">{{ $item->nombre }} / {{ $item->telefono }}</option>
     @endforeach
 
-                                                                </select-->
+                                                                        </select-->
                                             <ul class="list-group">
                                                 <li
                                                     class="list-group-item border-1 border-dashed d-flex p-4 mb-2 bg-gray-100 border-radius-lg">
@@ -210,15 +210,15 @@
 
                                         <div class="col-6 form-group">
                                             <!--label for="name">Subcliente *</label>
-                                                                <select class="form-select subcliente d-inline-block" id="id_subcliente" name="id_subcliente">
+                                                                        <select class="form-select subcliente d-inline-block" id="id_subcliente" name="id_subcliente">
 
-                @if ($cotizacion->id_subcliente != null)
+                        @if ($cotizacion->id_subcliente != null)
 
-                                                                        <option value="{{ $cotizacion->id_subcliente }}">{{ $cotizacion->Subcliente->nombre }} / {{ $cotizacion->Subcliente->telefono }}</option>
+                                                                                <option value="{{ $cotizacion->id_subcliente }}">{{ $cotizacion->Subcliente->nombre }} / {{ $cotizacion->Subcliente->telefono }}</option>
 @else
     <option value="">Seleccionar subcliente</option>
-                @endif
-                                                                </select-->
+                        @endif
+                                                                        </select-->
                                             <ul class="list-group">
                                                 <li
                                                     class="list-group-item border-1 border-dashed d-flex p-4 mb-2 bg-gray-100 border-radius-lg">
@@ -1265,7 +1265,7 @@
                                 </div>
 
                                 @if ($cotizacion->estatus_planeacion == 1)
-                                    @if ($documentacion->Asignaciones->id_operador == null)
+                                    @if ($documentacion->Asignaciones->id_proveedor != null)
                                         <div class="tab-pane fade" id="nav-Proveedor" role="tabpanel"
                                             aria-labelledby="nav-Proveedor-tab" tabindex="0">
                                             <div class="row">
@@ -1291,7 +1291,7 @@
 
                                                                         @foreach ($proveedores as $p)
                                                                             <option value="{{ $p->id }}"
-                                                                                @if ($p->id == $documentacion->Asignaciones?->Proveedor?->id) selected @endif>
+                                                                                @if ($p->id == $documentacion->Asignaciones->id_proveedor) selected @endif>
                                                                                 {{ $p->nombre }}
                                                                             </option>
                                                                         @endforeach

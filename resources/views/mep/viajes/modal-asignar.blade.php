@@ -18,23 +18,18 @@
                                 Si deseas asignarlo nuevamente, solo haz clic en el ícono de búsqueda.
                             </span>
                         </h6>
+                        <input type="hidden" id="cmbProveedor" name="cmbProveedor" value="{{ $proveedorId }}" />
 
                         <div class="col-md-6">
                             <label for="operadorSelect" class="form-label">Nombre</label>
                             <div class="position-relative w-100">
-                                <input
-                                    type="text"
-                                    class="form-control form-control-sm ps-3 pe-5 rounded-pill"
-                                    placeholder="Nombre completo del operador..."
-                                    id="txtOperador"
-                                    data-mep-operador="0"
-                                />
+                                <input type="text" class="form-control form-control-sm ps-3 pe-5 rounded-pill"
+                                    placeholder="Nombre completo del operador..." id="txtOperador"
+                                    data-mep-operador="0" />
                                 <!-- Icono convertido en botón -->
-                                <button
-                                    type="button"
+                                <button type="button"
                                     class="btn btn-sm position-absolute end-0 top-50 translate-middle-y me-2 p-1 rounded-circle"
-                                    onclick="buscarOperador(txtOperador.value)"
-                                >
+                                    onclick="buscarOperador(txtOperador.value)">
                                     <i class="fas fa-search"></i>
                                 </button>
                             </div>
@@ -42,12 +37,8 @@
                         <div class="col-md-6">
                             <label for="operadorSelect" class="form-label">Teléfono</label>
                             <div class="position-relative w-100" style="max-width: 300px">
-                                <input
-                                    type="text"
-                                    class="form-control form-control-sm ps-3 pe-5 rounded-pill"
-                                    placeholder="Teléfono del operador..."
-                                    id="txtTelefono"
-                                />
+                                <input type="text" class="form-control form-control-sm ps-3 pe-5 rounded-pill"
+                                    placeholder="Teléfono del operador..." id="txtTelefono" />
                                 <span class="position-absolute end-0 top-50 translate-middle-y pe-3 text-muted">
                                     <i class="fas fa-phone"></i>
                                 </span>
@@ -67,19 +58,13 @@
                         <div class="col-md-4">
                             <label for="operadorSelect" class="form-label">Núm Eco/ Núm Unidad / Identificador</label>
                             <div class="position-relative w-100">
-                                <input
-                                    type="text"
+                                <input type="text"
                                     class="form-control form-control-sm ps-3 pe-5 rounded-pill text-uppercase"
-                                    placeholder="Ej. SF001..."
-                                    id="txtNumUnidad"
-                                    data-mep-unidad="0"
-                                />
+                                    placeholder="Ej. SF001..." id="txtNumUnidad" data-mep-unidad="0" />
                                 <!-- Icono convertido en botón -->
-                                <button
-                                    type="button"
+                                <button type="button"
                                     class="btn btn-sm position-absolute end-0 top-50 translate-middle-y me-2 p-1 rounded-circle"
-                                    onclick="buscarUnidad(txtNumUnidad.value, 'Unidad')"
-                                >
+                                    onclick="buscarUnidad(txtNumUnidad.value, 'Unidad')">
                                     <i class="fas fa-search"></i>
                                 </button>
                             </div>
@@ -87,12 +72,9 @@
                         <div class="col-md-3">
                             <label for="operadorSelect" class="form-label">Placas</label>
                             <div class="position-relative w-100" style="max-width: 300px">
-                                <input
-                                    type="text"
+                                <input type="text"
                                     class="form-control form-control-sm ps-3 pe-5 rounded-pill text-uppercase"
-                                    id="txtPlacas"
-                                    placeholder="Placas..."
-                                />
+                                    id="txtPlacas" placeholder="Placas..." />
                                 <span class="position-absolute end-0 top-50 translate-middle-y pe-3 text-muted">
                                     <i class="fas fa-barcode"></i>
                                 </span>
@@ -102,12 +84,9 @@
                         <div class="col-md-3">
                             <label for="operadorSelect" class="form-label">Núm Serie / VIN</label>
                             <div class="position-relative w-100" style="max-width: 300px">
-                                <input
-                                    type="text"
+                                <input type="text"
                                     class="form-control form-control-sm ps-3 pe-5 rounded-pill text-uppercase"
-                                    id="txtSerie"
-                                    placeholder="Serie de la unidad"
-                                />
+                                    id="txtSerie" placeholder="Serie de la unidad" />
                                 <span class="position-absolute end-0 top-50 translate-middle-y pe-3 text-muted">
                                     <i class="fas fa-qrcode"></i>
                                 </span>
@@ -119,10 +98,8 @@
                         <div class="col-md-4">
                             <label for="selectGPS" class="form-label">Compañia GPS</label>
                             <div class="position-relative w-100" style="max-width: 300px">
-                                <select
-                                    id="selectGPS"
-                                    class="form-select form-select-sm ps-3 pe-5 rounded-pill text-uppercase"
-                                >
+                                <select id="selectGPS"
+                                    class="form-select form-select-sm ps-3 pe-5 rounded-pill text-uppercase">
                                     <option value="" disabled selected>Selecciona compañia GPS...</option>
                                     @foreach ($gpsCompanies as $gps)
                                         <option value="{{ $gps->id }}">{{ $gps->nombre }}</option>
@@ -136,12 +113,9 @@
                         <div class="col-md-3">
                             <label for="operadorSelect" class="form-label">IMEI</label>
                             <div class="position-relative w-100" style="max-width: 300px">
-                                <input
-                                    type="text"
+                                <input type="text"
                                     class="form-control form-control-sm ps-3 pe-5 rounded-pill text-uppercase"
-                                    id="txtImei"
-                                    placeholder="Imei GPS..."
-                                />
+                                    id="txtImei" placeholder="Imei GPS..." />
                                 <span class="position-absolute end-0 top-50 translate-middle-y pe-3 text-muted">
                                     <i class="fas fa-microchip"></i>
                                 </span>
@@ -159,27 +133,15 @@
 
                     <ul class="nav nav-tabs mb-3" id="chasisTabs" role="tablist">
                         <li class="nav-item" role="presentation">
-                            <button
-                                class="nav-link active"
-                                id="chasisA-tab"
-                                data-bs-toggle="tab"
-                                data-bs-target="#chasisA"
-                                type="button"
-                                role="tab"
-                            >
+                            <button class="nav-link active" id="chasisA-tab" data-bs-toggle="tab"
+                                data-bs-target="#chasisA" type="button" role="tab">
                                 Chasis A
                             </button>
                         </li>
 
                         <li class="nav-item" role="presentation">
-                            <button
-                                class="nav-link"
-                                id="chasisB-tab"
-                                data-bs-toggle="tab"
-                                data-bs-target="#chasisB"
-                                type="button"
-                                role="tab"
-                            >
+                            <button class="nav-link" id="chasisB-tab" data-bs-toggle="tab" data-bs-target="#chasisB"
+                                type="button" role="tab">
                                 Chasis B
                             </button>
                         </li>
@@ -192,18 +154,12 @@
                                 <div class="col-md-4">
                                     <label class="form-label">Núm Eco / Núm Chasis / Identificador</label>
                                     <div class="position-relative w-100">
-                                        <input
-                                            type="text"
+                                        <input type="text"
                                             class="form-control form-control-sm ps-3 pe-5 rounded-pill text-uppercase"
-                                            placeholder="Ej. CH001..."
-                                            id="txtNumChasisA"
-                                            data-mep-unidad="0"
-                                        />
-                                        <button
-                                            type="button"
+                                            placeholder="Ej. CH001..." id="txtNumChasisA" data-mep-unidad="0" />
+                                        <button type="button"
                                             class="btn btn-sm position-absolute end-0 top-50 translate-middle-y me-2 p-1 rounded-circle"
-                                            onclick="buscarUnidad(txtNumChasisA.value, 'ChasisA')"
-                                        >
+                                            onclick="buscarUnidad(txtNumChasisA.value, 'ChasisA')">
                                             <i class="fas fa-search"></i>
                                         </button>
                                     </div>
@@ -212,13 +168,11 @@
                                 <div class="col-md-3">
                                     <label class="form-label">Placas</label>
                                     <div class="position-relative w-100">
-                                        <input
-                                            type="text"
+                                        <input type="text"
                                             class="form-control form-control-sm ps-3 pe-5 rounded-pill text-uppercase"
-                                            id="txtPlacasA"
-                                            placeholder="Placas..."
-                                        />
-                                        <span class="position-absolute end-0 top-50 translate-middle-y pe-3 text-muted">
+                                            id="txtPlacasA" placeholder="Placas..." />
+                                        <span
+                                            class="position-absolute end-0 top-50 translate-middle-y pe-3 text-muted">
                                             <i class="fas fa-barcode"></i>
                                         </span>
                                     </div>
@@ -229,16 +183,16 @@
                                 <div class="col-md-4">
                                     <label class="form-label">Compañía GPS</label>
                                     <div class="position-relative w-100">
-                                        <select
-                                            id="selectChasisAGPS"
-                                            class="form-select form-select-sm ps-3 pe-5 rounded-pill text-uppercase"
-                                        >
-                                            <option value="" disabled selected>Selecciona compañia GPS...</option>
+                                        <select id="selectChasisAGPS"
+                                            class="form-select form-select-sm ps-3 pe-5 rounded-pill text-uppercase">
+                                            <option value="" disabled selected>Selecciona compañia GPS...
+                                            </option>
                                             @foreach ($gpsCompanies as $gps)
                                                 <option value="{{ $gps->id }}">{{ $gps->nombre }}</option>
                                             @endforeach
                                         </select>
-                                        <span class="position-absolute end-0 top-50 translate-middle-y pe-3 text-muted">
+                                        <span
+                                            class="position-absolute end-0 top-50 translate-middle-y pe-3 text-muted">
                                             <i class="fas fa-satellite-dish"></i>
                                         </span>
                                     </div>
@@ -247,13 +201,11 @@
                                 <div class="col-md-3">
                                     <label class="form-label">IMEI</label>
                                     <div class="position-relative w-100">
-                                        <input
-                                            type="text"
+                                        <input type="text"
                                             class="form-control form-control-sm ps-3 pe-5 rounded-pill text-uppercase"
-                                            id="txtImeiChasisA"
-                                            placeholder="Imei GPS..."
-                                        />
-                                        <span class="position-absolute end-0 top-50 translate-middle-y pe-3 text-muted">
+                                            id="txtImeiChasisA" placeholder="Imei GPS..." />
+                                        <span
+                                            class="position-absolute end-0 top-50 translate-middle-y pe-3 text-muted">
                                             <i class="fas fa-microchip"></i>
                                         </span>
                                     </div>
@@ -267,18 +219,12 @@
                                 <div class="col-md-4">
                                     <label class="form-label">Núm Eco / Núm Chasis B / Identificador</label>
                                     <div class="position-relative w-100">
-                                        <input
-                                            type="text"
+                                        <input type="text"
                                             class="form-control form-control-sm ps-3 pe-5 rounded-pill text-uppercase"
-                                            placeholder="Ej. CH002..."
-                                            id="txtNumChasisB"
-                                            data-mep-unidad="0"
-                                        />
-                                        <button
-                                            type="button"
+                                            placeholder="Ej. CH002..." id="txtNumChasisB" data-mep-unidad="0" />
+                                        <button type="button"
                                             class="btn btn-sm position-absolute end-0 top-50 translate-middle-y me-2 p-1 rounded-circle"
-                                            onclick="buscarUnidad(txtNumChasisB.value, 'ChasisB')"
-                                        >
+                                            onclick="buscarUnidad(txtNumChasisB.value, 'ChasisB')">
                                             <i class="fas fa-search"></i>
                                         </button>
                                     </div>
@@ -287,13 +233,11 @@
                                 <div class="col-md-3">
                                     <label class="form-label">Placas</label>
                                     <div class="position-relative w-100">
-                                        <input
-                                            type="text"
+                                        <input type="text"
                                             class="form-control form-control-sm ps-3 pe-5 rounded-pill text-uppercase"
-                                            id="txtPlacasB"
-                                            placeholder="Placas..."
-                                        />
-                                        <span class="position-absolute end-0 top-50 translate-middle-y pe-3 text-muted">
+                                            id="txtPlacasB" placeholder="Placas..." />
+                                        <span
+                                            class="position-absolute end-0 top-50 translate-middle-y pe-3 text-muted">
                                             <i class="fas fa-barcode"></i>
                                         </span>
                                     </div>
@@ -304,16 +248,16 @@
                                 <div class="col-md-4">
                                     <label class="form-label">Compañía GPS</label>
                                     <div class="position-relative w-100">
-                                        <select
-                                            id="selectChasisBGPS"
-                                            class="form-select form-select-sm ps-3 pe-5 rounded-pill text-uppercase"
-                                        >
-                                            <option value="" disabled selected>Selecciona compañia GPS...</option>
+                                        <select id="selectChasisBGPS"
+                                            class="form-select form-select-sm ps-3 pe-5 rounded-pill text-uppercase">
+                                            <option value="" disabled selected>Selecciona compañia GPS...
+                                            </option>
                                             @foreach ($gpsCompanies as $gps)
                                                 <option value="{{ $gps->id }}">{{ $gps->nombre }}</option>
                                             @endforeach
                                         </select>
-                                        <span class="position-absolute end-0 top-50 translate-middle-y pe-3 text-muted">
+                                        <span
+                                            class="position-absolute end-0 top-50 translate-middle-y pe-3 text-muted">
                                             <i class="fas fa-satellite-dish"></i>
                                         </span>
                                     </div>
@@ -323,13 +267,11 @@
                                 <div class="col-md-3">
                                     <label class="form-label">IMEI</label>
                                     <div class="position-relative w-100">
-                                        <input
-                                            type="text"
+                                        <input type="text"
                                             class="form-control form-control-sm ps-3 pe-5 rounded-pill text-uppercase"
-                                            id="txtImeiChasisB"
-                                            placeholder="Imei GPS..."
-                                        />
-                                        <span class="position-absolute end-0 top-50 translate-middle-y pe-3 text-muted">
+                                            id="txtImeiChasisB" placeholder="Imei GPS..." />
+                                        <span
+                                            class="position-absolute end-0 top-50 translate-middle-y pe-3 text-muted">
                                             <i class="fas fa-microchip"></i>
                                         </span>
                                     </div>
@@ -353,18 +295,12 @@
                                             <div class="input-group">
                                                 <span class="input-group-text">
                                                     <div
-                                                        class="icon icon-shape bg-gradient-danger text-center border-radius-md mb-2"
-                                                    >
+                                                        class="icon icon-shape bg-gradient-danger text-center border-radius-md mb-2">
                                                         <i class="fa fa-calendar opacity-10"></i>
                                                     </div>
                                                 </span>
-                                                <input
-                                                    class="form-control dateInput"
-                                                    name="txtFechaInicio"
-                                                    id="txtFechaInicio"
-                                                    placeholder="Fecha inicio"
-                                                    type="text"
-                                                />
+                                                <input class="form-control dateInput" name="txtFechaInicio"
+                                                    id="txtFechaInicio" placeholder="Fecha inicio" type="text" />
                                             </div>
                                         </div>
                                     </div>
@@ -375,18 +311,12 @@
                                             <div class="input-group">
                                                 <span class="input-group-text">
                                                     <div
-                                                        class="icon icon-shape bg-gradient-danger text-center border-radius-md mb-2"
-                                                    >
+                                                        class="icon icon-shape bg-gradient-danger text-center border-radius-md mb-2">
                                                         <i class="fa fa-calendar opacity-10"></i>
                                                     </div>
                                                 </span>
-                                                <input
-                                                    class="form-control dateInput"
-                                                    name="txtFechaFinal"
-                                                    id="txtFechaFinal"
-                                                    placeholder="Fecha fin"
-                                                    type="text"
-                                                />
+                                                <input class="form-control dateInput" name="txtFechaFinal"
+                                                    id="txtFechaFinal" placeholder="Fecha fin" type="text" />
                                             </div>
                                         </div>
                                     </div>

@@ -5,7 +5,7 @@ let canEndTravel = 0;
 var allEvents = null;
 var festivos = [];
 let dpReady = false;
-//let buscarContenedor  = document.querySelector('#txtBuscarContenedor')
+let buscarContenedor = document.querySelector('#txtBuscarContenedor');
 
 function formatFecha(fechaISO) {
     const fecha = new Date(fechaISO);
@@ -447,11 +447,12 @@ function abrirMapaEnNuevaPestana(numContenedor, tipoS, origenRastreo) {
 
 function encontrarContenedor(contenedor) {
     let busqueda = allEvents;
-    const resultados = busqueda.filter((f) => f.num_contenedor?.includes(contenedor));
+    const resultados = busqueda.filter((f) => f.num_contenedor?.toLowerCase().includes(contenedor.toLowerCase()));
     if (resultados.length != 1) {
         Swal.fire(
             'No se encontró contenedor',
-            `No existe ningún contenedor "PLANEADO" con el numero de contenedor proporcionado`,
+            `No existe ningún contenedor "PLANEADO" con el numero de contenedor proporcionado` +
+                `"${contenedor}". Por favor, verifique e intente de nuevo.`,
             'warning',
         );
         return;
@@ -468,6 +469,11 @@ function encontrarContenedor(contenedor) {
     }
 }
 
+buscarContenedor.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+        encontrarContenedor(e.target.value);
+    }
+});
 /*
 buscarContenedor.addEventListener('keypress',e => {
    if (e.key === 'Enter') {
