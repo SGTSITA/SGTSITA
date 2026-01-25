@@ -1368,7 +1368,7 @@ class ExternosController extends Controller
                 'cotizaciones.img_boleta AS boleta_vacio',
                 'docum_cotizacion.doc_eir',
                 'docum_cotizacion.cima',
-                'asignaciones.id_proveedor',
+                'cotizaciones.id_proveedor',
                 'asignaciones.fecha_inicio',
                 'asignaciones.fecha_fin',
                 'cotizaciones.referencia_full',
@@ -1387,9 +1387,10 @@ class ExternosController extends Controller
 
         $cotizaciones = $cotizacionesQuery->get();
 
-        //   dd($cotizaciones);
+        // dd($cotizaciones);
 
         $cotizaciones = $cotizaciones->map(function ($cot) {
+            //   dd($cot);
             $numContenedor = $cot->num_contenedor;
             $docCCP = $cot->doc_ccp;
             $doda = $cot->doda;

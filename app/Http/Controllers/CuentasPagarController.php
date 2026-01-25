@@ -20,7 +20,8 @@ class CuentasPagarController extends Controller
     {
         $cotizacionIds = Cotizaciones::join('docum_cotizacion', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
         ->join('asignaciones', 'docum_cotizacion.id', '=', 'asignaciones.id_contenedor')
-        ->whereNull('asignaciones.id_camion')
+        //->whereNull('asignaciones.id_camion') se rompio la logica al agregar contratos de tipo propio
+         ->wherein('asignaciones.tipo_contrato', ['Subcontratado'])
         ->where('cotizaciones.id_empresa', '=', auth()->user()->id_empresa)
         ->where(function ($query) {
             $query->where('cotizaciones.estatus', '=', 'Aprobada')
@@ -51,7 +52,7 @@ class CuentasPagarController extends Controller
     {
         $cotizacionesPorPagar = Cotizaciones::join('docum_cotizacion', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
         ->join('asignaciones', 'docum_cotizacion.id', '=', 'asignaciones.id_contenedor')
-        ->where('asignaciones.id_camion', '=', null)
+       ->wherein('asignaciones.tipo_contrato', ['Subcontratado'])
         ->where('jerarquia', 'Principal')
         ->where(function ($query) {
             $query->where('cotizaciones.estatus', '=', 'Aprobada')

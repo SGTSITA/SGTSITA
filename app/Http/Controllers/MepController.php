@@ -219,6 +219,8 @@ class MepController extends Controller
 
         $proveedorid = $formData['cmbProveedor'];
 
+
+
         if ($asignacion->exists()) {
             // $asignacion1 = $asignacion->first();
             $asignacion->update([
@@ -229,6 +231,7 @@ class MepController extends Controller
                 "fecha_inicio" => $fechaI,
                 "fecha_fin" => $fechaF,
                 "id_proveedor" => $proveedorid,
+                'tipo_contrato' => 'Subcontratado', //mep siempre sera subcontratado , aun asi tenga unidad , camion y id proveedor
             ]);
 
             $TituloResponse = 'Actualizado correctamente';
@@ -249,6 +252,7 @@ class MepController extends Controller
             $asignacion->fehca_inicio_guard =  $fechaI ;
             $asignacion->fehca_fin_guard = $fechaF;
             $asignacion->id_proveedor = $proveedorid;
+            $asignacion->tipo_contrato = 'Subcontratado'; //mep siempre sera subcontratado , aun asi tenga unidad , camion y id proveedor
             $asignacion->save();
 
 
