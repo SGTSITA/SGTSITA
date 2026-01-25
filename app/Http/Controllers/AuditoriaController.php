@@ -14,7 +14,7 @@ class AuditoriaController extends Controller
             abort(403, 'No autorizado, solo administradores');
         }
         $logs = ActivityLog::with('user')
-            ->latest();
+            ->latest() ->get();
 
         return view('auditoria.index', compact('logs'));
     }
