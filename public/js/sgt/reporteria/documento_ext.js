@@ -41,6 +41,14 @@ document.addEventListener('DOMContentLoaded', () => {
             cellClass: 'text-center',
         },
         {
+            headerName: 'Linea de Transporte',
+            field: 'proveedor',
+            filter: 'agTextColumnFilter',
+            floatingFilter: true,
+            width: 230,
+            cellClass: 'text-center',
+        },
+        {
             headerName: '# Contenedor',
             field: 'num_contenedor',
             width: 200,
@@ -59,15 +67,6 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
         `;
             },
-        },
-
-        {
-            headerName: 'Proveedor',
-            field: 'proveedor',
-            filter: 'agTextColumnFilter',
-            floatingFilter: true,
-            width: 230,
-            cellClass: 'text-center',
         },
 
         {

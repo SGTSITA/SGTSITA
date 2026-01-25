@@ -306,7 +306,8 @@ class ReporteriaController extends Controller
             $cotizaciones = Cotizaciones::join('docum_cotizacion', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
                 ->join('asignaciones', 'docum_cotizacion.id', '=', 'asignaciones.id_contenedor')
                 ->where('cotizaciones.id_empresa', '=', auth()->user()->id_empresa)
-                ->whereNull('asignaciones.id_camion') // Verificar que el camión sea NULL
+              //  ->whereNull('asignaciones.id_camion') // Verificar que el camión sea NULL , se rompio la logica al agregar contratos de tipo propio
+                ->where('asignaciones.tipo_contrato', 'Subcontratado')
                 ->where(function ($query) {
                     $query->where('cotizaciones.estatus', '=', 'Aprobada')
                           ->orWhere('cotizaciones.estatus', '=', 'Finalizado');

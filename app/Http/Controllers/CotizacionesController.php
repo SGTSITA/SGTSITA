@@ -1763,6 +1763,7 @@ class CotizacionesController extends Controller
             $asignacion->cantidad_banco2_pago_operador = $request->cantidad_banco2_pago_operador;
             $asignacion->fecha_pago_salida = date('Y-m-d');
             $asignacion->estatus_pagado = 'Pendiente Pago';
+            $asignacion->tipo_contrato = 'Propio';
             $asignacion->update();
         } elseif ($tipo_cambio  == 'subcontratado') {
             // Cambiar a subcontratado
@@ -1795,6 +1796,7 @@ class CotizacionesController extends Controller
             $asignacion->total_proveedor = $request->total_proveedor;
             $asignacion->fecha_inicio = $request->fecha_inicio_proveedor;
             $asignacion->fecha_fin = $request->fecha_fin_proveedor . ' 23:00:00';
+            $asignacion->tipo_contrato = 'Subcontratado';
             $asignacion->update();
 
             $doc = DocumCotizacion::where('id', '=', $asignacion->id_contenedor)->first();
@@ -2374,6 +2376,7 @@ class CotizacionesController extends Controller
                 'origen_captura' => $origen_inicial,
                 'user_id' => Auth::User()->id,
                 'agente_aduanal' => $request->agente_aduanal ?? '',
+                'estatus_pago' =>   '0',
 
             ]);
 
