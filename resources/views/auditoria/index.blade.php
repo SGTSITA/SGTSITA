@@ -56,7 +56,7 @@
     <script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.js"></script>
 
     <script>
-        const rowData = @json($logs->items());
+        const rowData = @json($logs);
 
         const columnDefs = [{
                 headerName: 'Fecha',
