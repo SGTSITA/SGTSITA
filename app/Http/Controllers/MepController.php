@@ -12,6 +12,7 @@ use App\Models\Operador;
 use App\Models\GpsCompany;
 use App\Models\DocumCotizacion;
 use App\Traits\CommonTrait as common;
+use Carbon\Carbon;
 
 class MepController extends Controller
 {
@@ -213,12 +214,17 @@ class MepController extends Controller
             $fechaI = $formData['txtFechaInicio'];
             $fechaF = $formData['txtFechaFinal'];
 
-            // dd($fechaI);
+
         }
-        $fechaI  = common::TransformaFecha($fechaI);
-        $fechaF = common::TransformaFecha($fechaF);
 
 
+        $fechaInicio = Carbon::createFromFormat('Y-m-d', $fechaI)
+                    ->startOfDay(); // 2026-01-17 00:00:00
+
+        $fechaFin = Carbon::createFromFormat('Y-m-d', $fechaF)
+                        ->setTime(23, 0, 0);
+
+        //dd($fechaInicio, $fechaFin);
 
 
         $TituloResponse = 'Se ha realizado la asignacion correctamente';
@@ -235,10 +241,10 @@ class MepController extends Controller
                 "id_camion" => $idunidad,
                 "id_chasis" => $idChasisA,
                 "id_chasis2" => $idChasisB,
-                "fecha_inicio" => $fechaI,
-                "fecha_fin" => $fechaF. ' 23:00:00',
-                "fehca_inicio_guard" => $fechaI,
-                "fehca_fin_guard" => $fechaF. ' 23:00:00',
+                "fecha_inicio" =>    $fechaInicio,
+                "fecha_fin" => $fechaFin,
+                "fehca_inicio_guard" =>    $fechaInicio,
+                "fehca_fin_guard" => $fechaFin,
                 "id_proveedor" => $proveedorid,
                 'tipo_contrato' => 'Subcontratado', //mep siempre sera subcontratado , aun asi tenga unidad , camion y id proveedor
             ]);
@@ -256,10 +262,10 @@ class MepController extends Controller
             $asignacion->id_chasis = $idChasisA;
             $asignacion->id_chasis2 = $idChasisB;
             $asignacion->id_operador = $idOperador;
-            $asignacion->fecha_inicio  = $fechaI ;
-            $asignacion->fecha_fin = $fechaF. ' 23:00:00';
-            $asignacion->fehca_inicio_guard =  $fechaI ;
-            $asignacion->fehca_fin_guard = $fechaF. ' 23:00:00';
+            $asignacion->fecha_inicio  = $fechaInicio ;
+            $asignacion->fecha_fin = $fechaFin;
+            $asignacion->fehca_inicio_guard =   $fechaInicio;
+            $asignacion->fehca_fin_guard = $fechaFin;
             $asignacion->id_proveedor = $proveedorid;
             $asignacion->tipo_contrato = 'Subcontratado'; //mep siempre sera subcontratado , aun asi tenga unidad , camion y id proveedor
             $asignacion->save();
