@@ -51,7 +51,7 @@ async function initBoard(fromDate, toDate) {
                 resp.extractor.forEach((i) => {
                     if (i.fecha_inicio !== null && i.fecha_fin !== null) {
                         let start = new DayPilot.Date(i.fecha_inicio);
-                        let end = new DayPilot.Date(i.fecha_fin).addDays(1); // 👈 CLAVE
+                        let end = new DayPilot.Date(i.fecha_fin);
 
                         scrollToDate = scrollToDate ?? start;
 
