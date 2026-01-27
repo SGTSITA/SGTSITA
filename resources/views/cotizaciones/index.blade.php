@@ -5,8 +5,21 @@
 @section('content')
     <style>
         #myGrid {
-            height: 500px;
+            height: 600px;
             width: 100%;
+
+        }
+
+        .card {
+            max-width: 100%;
+            overflow-x: hidden;
+        }
+
+        .card {
+            height: calc(100vh - 180px);
+            /* ajusta según header/navbar */
+            display: flex;
+            flex-direction: column;
         }
 
         #cotTabs .nav-link {
@@ -17,10 +30,12 @@
             position: absolute;
             top: 0;
             left: 0;
-            z-index: 10; /* asegúrate que esté por encima del grid */
+            z-index: 10;
+            /* asegúrate que esté por encima del grid */
             width: 100%;
             height: 100%;
-            background-color: rgba(255, 255, 255, 0.6); /* opcional para desenfoque */
+            background-color: rgba(255, 255, 255, 0.6);
+            /* opcional para desenfoque */
             display: flex;
             justify-content: center;
             align-items: center;
@@ -50,16 +65,17 @@
                         <span id="card_title">Cotizaciones</span>
                         @can('cotizaciones-create')
                             <div>
-                                <a
-                                    type="button"
-                                    class="btn bg-gradient-info btn-xs mb-2"
-                                    href="{{ route('create.cotizaciones') }}"
-                                >
+                                <a type="button" class="btn bg-gradient-info btn-xs mb-2"
+                                    href="{{ route('create.cotizaciones') }}">
                                     +&nbsp; Crear Cotizacion
                                 </a>
                                 <button type="button" class="btn bg-gradient-success btn-xs mb-2" id="btnFull" disabled>
                                     <i class="fas fa-truck-moving"></i>
                                     Convertir a Full
+                                </button>
+                                <button type="button" class="btn bg-gradient-danger btn-xs mb-2" id="btnCancelarFull" disabled>
+                                    <i class="fas fa-ban"></i>
+                                    Cancelar viaje Full
                                 </button>
                             </div>
                         @endcan
@@ -110,7 +126,7 @@
                     </div>
 
                     <!-- Contenedor de AG Grid -->
-                    <div id="myGrid" class="ag-theme-alpine position-relative" style="height: 500px">
+                    <div id="myGrid" class="ag-theme-alpine position-relative" style="height: 600px; width: 100%;">
                         <div id="gridLoadingOverlay" class="loading-overlay" style="display: none">
                             <div class="spinner-border text-primary" role="status">
                                 <span class="visually-hidden">Cargando...</span>
@@ -168,13 +184,8 @@
                     <button class="btn btn-primary mb-2" onclick="copiarDesdeInput('linkWhatsapp')">
                         📋 Copiar enlace
                     </button>
-                    <a
-                        href="#"
-                        id="whatsappLink"
-                        class="btn btn-success"
-                        target="_blank"
-                        onclick="guardarYAbrirWhatsApp(event)"
-                    >
+                    <a href="#" id="whatsappLink" class="btn btn-success" target="_blank"
+                        onclick="guardarYAbrirWhatsApp(event)">
                         Abrir WhatsApp
                     </a>
                 </div>
@@ -184,16 +195,12 @@
         </div>
     </div>
     <!-- Modal: Cambio de Empresa -->
-    <div
-        class="modal fade"
-        id="modalCambioEmpresa"
-        tabindex="-1"
-        aria-labelledby="modalCambioEmpresaLabel"
-        aria-hidden="true"
-    >
+    <div class="modal fade" id="modalCambioEmpresa" tabindex="-1" aria-labelledby="modalCambioEmpresaLabel"
+        aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content shadow-lg border-0 rounded-4">
-                <form method="POST" id="formCambioEmpresa" action="" enctype="multipart/form-data" class="p-3">
+                <form method="POST" id="formCambioEmpresa" action="" enctype="multipart/form-data"
+                    class="p-3">
                     @csrf
                     <input type="hidden" name="_method" value="PATCH" />
 
@@ -202,12 +209,8 @@
                             <i class="fa-solid fa-building-circle-arrow-right me-2"></i>
                             Cambio de Empresa
                         </h5>
-                        <button
-                            type="button"
-                            class="btn-close btn-close-white"
-                            data-bs-dismiss="modal"
-                            aria-label="Cerrar"
-                        ></button>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                            aria-label="Cerrar"></button>
                     </div>
 
                     <div class="modal-body pt-4">
@@ -239,13 +242,8 @@
         </div>
     </div>
     <!-- Modal: Estatus de Documentos -->
-    <div
-        class="modal fade"
-        id="modalEstatusDocumentos"
-        tabindex="-1"
-        aria-labelledby="modalEstatusDocumentosLabel"
-        aria-hidden="true"
-    >
+    <div class="modal fade" id="modalEstatusDocumentos" tabindex="-1" aria-labelledby="modalEstatusDocumentosLabel"
+        aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content shadow-lg border-0 rounded-4">
                 <div class="modal-header text-white rounded-top-4">
@@ -254,12 +252,8 @@
                         Estatus de Documentos
                         <span id="tituloContenedor" class="ms-2 t fw-bold"></span>
                     </h5>
-                    <button
-                        type="button"
-                        class="btn-close btn-close-white"
-                        data-bs-dismiss="modal"
-                        aria-label="Cerrar"
-                    ></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Cerrar"></button>
                 </div>
 
                 <div class="modal-body p-4">
@@ -278,13 +272,8 @@
         </div>
     </div>
     <!-- Modal: Cambio de Estatus -->
-    <div
-        class="modal fade"
-        id="modalCambioEstatus"
-        tabindex="-1"
-        aria-labelledby="modalCambioEstatusLabel"
-        aria-hidden="true"
-    >
+    <div class="modal fade" id="modalCambioEstatus" tabindex="-1" aria-labelledby="modalCambioEstatusLabel"
+        aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content shadow-lg border-0 rounded-4 overflow-hidden">
                 <form id="formCambioEstatus" method="POST" action="" enctype="multipart/form-data">
@@ -296,12 +285,8 @@
                             <i class="fa-solid fa-sync-alt me-2"></i>
                             Cambio de Estatus
                         </h5>
-                        <button
-                            type="button"
-                            class="btn-close btn-close-white"
-                            data-bs-dismiss="modal"
-                            aria-label="Cerrar"
-                        ></button>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                            aria-label="Cerrar"></button>
                     </div>
 
                     <div class="modal-body px-4 py-3">
@@ -348,38 +333,42 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
     <!-- Nuestro JavaScript unificado -->
-    <script src="{{ asset('js/sgt/cotizaciones/cotizaciones_list.js') }}?v={{ filemtime(public_path('js/sgt/cotizaciones/cotizaciones_list.js')) }}"></script>
-    <script src="{{ asset('js/mep/viajes/viajes_list.js') }}?v={{ filemtime(public_path('js/mep/viajes/viajes_list.js')) }}"></script>
+    <script
+        src="{{ asset('js/sgt/cotizaciones/cotizaciones_list.js') }}?v={{ filemtime(public_path('js/sgt/cotizaciones/cotizaciones_list.js')) }}">
+    </script>
+    <script
+        src="{{ asset('js/mep/viajes/viajes_list.js') }}?v={{ filemtime(public_path('js/mep/viajes/viajes_list.js')) }}">
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
     <script>
         document.addEventListener("DOMContentLoaded", function() {
-                     flatpickr(".dateInput", {
-              dateFormat: "d/m/Y",
-              locale: "es"
+            flatpickr(".dateInput", {
+                dateFormat: "d/m/Y",
+                locale: "es"
             });
 
-                    @can('mep-asignacion-unidad')
-                     getCatalogoOperadorUnidad()
-                    @endcan
-                    getCatalogoOperadorUnidad()
-                    @if (session('success'))
-                        Swal.fire({
-                            icon: 'success',
-                            title: '¡Éxito!',
-                            text: "{{ session('success') }}",
-                            confirmButtonText: 'Aceptar'
-                        });
-                    @endif
-
-                    @if (session('error'))
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Error',
-                            text: "{{ session('error') }}",
-                            confirmButtonText: 'Cerrar'
-                        });
-                    @endif
+            @can('mep-asignacion-unidad')
+                getCatalogoOperadorUnidad()
+            @endcan
+            getCatalogoOperadorUnidad()
+            @if (session('success'))
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡Éxito!',
+                    text: "{{ session('success') }}",
+                    confirmButtonText: 'Aceptar'
                 });
+            @endif
+
+            @if (session('error'))
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: "{{ session('error') }}",
+                    confirmButtonText: 'Cerrar'
+                });
+            @endif
+        });
     </script>
 @endpush

@@ -11,6 +11,7 @@ use App\Models\Equipo;
 use App\Models\Operador;
 use App\Models\GpsCompany;
 use App\Models\DocumCotizacion;
+use App\Traits\CommonTrait as common;
 
 class MepController extends Controller
 {
@@ -211,8 +212,14 @@ class MepController extends Controller
         if ($planearViaje == 1) {
             $fechaI = $formData['txtFechaInicio'];
             $fechaF = $formData['txtFechaFinal'];
+
             // dd($fechaI);
         }
+        $fechaI  = common::TransformaFecha($fechaI);
+        $fechaF = common::TransformaFecha($fechaF);
+
+
+
 
         $TituloResponse = 'Se ha realizado la asignacion correctamente';
         $MessageResponse = '';
@@ -229,7 +236,9 @@ class MepController extends Controller
                 "id_chasis" => $idChasisA,
                 "id_chasis2" => $idChasisB,
                 "fecha_inicio" => $fechaI,
-                "fecha_fin" => $fechaF,
+                "fecha_fin" => $fechaF. ' 23:00:00',
+                "fehca_inicio_guard" => $fechaI,
+                "fehca_fin_guard" => $fechaF. ' 23:00:00',
                 "id_proveedor" => $proveedorid,
                 'tipo_contrato' => 'Subcontratado', //mep siempre sera subcontratado , aun asi tenga unidad , camion y id proveedor
             ]);
@@ -248,9 +257,9 @@ class MepController extends Controller
             $asignacion->id_chasis2 = $idChasisB;
             $asignacion->id_operador = $idOperador;
             $asignacion->fecha_inicio  = $fechaI ;
-            $asignacion->fecha_fin = $fechaF;
+            $asignacion->fecha_fin = $fechaF. ' 23:00:00';
             $asignacion->fehca_inicio_guard =  $fechaI ;
-            $asignacion->fehca_fin_guard = $fechaF;
+            $asignacion->fehca_fin_guard = $fechaF. ' 23:00:00';
             $asignacion->id_proveedor = $proveedorid;
             $asignacion->tipo_contrato = 'Subcontratado'; //mep siempre sera subcontratado , aun asi tenga unidad , camion y id proveedor
             $asignacion->save();

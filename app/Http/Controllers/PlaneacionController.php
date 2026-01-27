@@ -273,7 +273,7 @@ class PlaneacionController extends Controller
             ->leftJoin('equipos', 'asignaciones.id_camion', '=', 'equipos.id')
             ->leftJoin('equipos as chasis', 'asignaciones.id_chasis', '=', 'chasis.id')
 
-            // ✅ join correcto con 3 parámetros (sin closure)
+
             ->leftJoinSub(
                 $beneficiariosSubquery,
                 'beneficiarios',
@@ -366,6 +366,9 @@ class PlaneacionController extends Controller
                 "tipo" => $tipo
             ];
         });
+
+
+
 
         if ($asignaciones->Proveedor == null) {
             return [
@@ -494,6 +497,7 @@ class PlaneacionController extends Controller
                 $resta = $sueldoOperador - $CantineroViaje;
                 $asignaciones->pago_operador = $resta;
                 $asignaciones->restante_pago_operador = $resta;
+                $asignaciones->tipo_contrato = 'Propio';
 
 
                 if (is_null($request->get('cmbProveedor')) && $CantineroViaje > 0) { //Agregue para validar el proveedor con sgt elemental no tiene porceso de pagos
@@ -535,6 +539,7 @@ class PlaneacionController extends Controller
                 $viajePropio = 1;
 
             } else {
+
                 $asignaciones->id_proveedor = $request->get('cmbProveedor');
                 $asignaciones->precio = $request->get('precio_proveedor');
                 $asignaciones->burreo = $request->get('burreo_proveedor');
@@ -549,6 +554,7 @@ class PlaneacionController extends Controller
                 $asignaciones->base2_proveedor = $request->get('base_taref');
                 $asignaciones->total_tonelada = round(floatVal($request->get('sobrepeso_proveedor')) * floatVal($request->get('cantidad_sobrepeso_proveedor')), 4);
                 $cotizacion->prove_restante = $asignaciones->total_proveedor;
+                $asignaciones->tipo_contrato = 'Subcontratado';
             }
 
             /*

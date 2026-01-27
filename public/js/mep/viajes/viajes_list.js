@@ -214,10 +214,13 @@ function asignarOperador2(planear = 0) {
             alert('Ocurrió un error al asignar el operador.');
         });
 }
+if (btnAsignaOperador) {
+    btnAsignaOperador.addEventListener('click', () => asignarOperador2(0));
+}
+if (btnPlanearViaje) {
+    btnPlanearViaje.addEventListener('click', () => asignarOperador2(1));
+}
 
-btnAsignaOperador.addEventListener('click', () => asignarOperador2(0));
-
-btnPlanearViaje.addEventListener('click', () => asignarOperador2(1));
 // async function buscarRecurso(params = {}) {
 //     const query = new URLSearchParams(params).toString();
 

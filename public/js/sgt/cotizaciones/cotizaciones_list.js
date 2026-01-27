@@ -40,6 +40,8 @@ const localeText = {
 };
 
 const btnFull = document.querySelector('#btnFull');
+const btnCancelarFull = document.querySelector('#btnCancelarFull');
+
 function abrirMapaEnNuevaPestana(contenedor, tipoS) {
     //const url = `/mapa-comparacion?latitud=${latitud}&longitud=${longitud}&latitud_seguimiento=${latitud_seguimiento}&longitud_seguimiento=${longitud_seguimiento}&contenedor=${contenedor}`;
     const url = `/coordenadas/mapa_rastreo?contenedor=${contenedor}&tipoS=${encodeURIComponent(tipoS)}`;
@@ -57,6 +59,7 @@ document.addEventListener('DOMContentLoaded', function () {
             this.classList.add('active');
             currentTab = this.getAttribute('data-status');
             if (btnFull) btnFull.disabled = currentTab == 'en_espera' || currentTab == 'aprobadas' ? false : true;
+
             getCotizacionesList();
         });
     });
@@ -433,8 +436,70 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    function cancelarFull() {
+        let seleccion = gridApi.getSelectedRows();
+
+        if (seleccion.length != 1) {
+            Swal.fire('Seleccione un contenedor', 'Debe seleccionar un contenedor que sea Full', 'warning');
+            return false;
+        }
+        if (!seleccion[0].tipo || seleccion[0].tipo != 'Full') {
+            Swal.fire('Contenedor no es Full', 'El contenedor seleccionado no es un viaje Full', 'warning');
+            return false;
+        }
+
+        Swal.fire({
+            title: '¿Estás seguro?',
+            text: 'Quiere separar los contenedores del viaje Full.',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, continuar',
+            cancelButtonText: 'No, cancelar',
+            reverseButtons: true,
+        }).then((result) => {
+            if (result.isConfirmed) {
+                let _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                $.ajax({
+                    url: '/cotizaciones/transformar/cancelar-full',
+                    type: 'post',
+                    data: { _token, seleccion },
+                    beforeSend: () => {},
+                    success: (response) => {
+                        Swal.fire(response.Titulo, response.Mensaje, response.TMensaje);
+                        if (response.TMensaje == 'success') {
+                            getContenedoresPendientes('all');
+                        }
+                    },
+                    error: () => {},
+                });
+            } else if (result.dismiss === Swal.DismissReason.cancel) {
+                // Acción si el usuario canceló
+                console.log('El usuario canceló');
+            }
+        });
+    }
+    if (btnCancelarFull) {
+        btnCancelarFull.addEventListener('click', cancelarFull);
+    }
+
     function seleccionarContenedor() {
         let seleccion = gridApi.getSelectedRows();
+        if (seleccion.length === 0) {
+            btnCancelarFull.disabled = true;
+            return;
+        }
+
+        // Obtener el tipo de la primera fila
+        const tipoBase = seleccion[0].tipo;
+
+        // Validar que TODAS tengan el mismo tipo
+        const mismoTipo = seleccion.every((row) => row.tipo === tipoBase);
+
+        if (mismoTipo && tipoBase === 'Full') {
+            btnCancelarFull.disabled = false;
+        } else {
+            btnCancelarFull.disabled = true;
+        }
 
         if (seleccion.length == 0) {
             return false;

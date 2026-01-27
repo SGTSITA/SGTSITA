@@ -67,6 +67,7 @@ const formFieldsMep = [
 ];
 
 const btnFull = document.querySelector('#btnFull');
+const btnCancelarFull = document.querySelector('#btnCancelarFull');
 
 document.addEventListener('DOMContentLoaded', function () {
     let gridApi;
@@ -80,6 +81,7 @@ document.addEventListener('DOMContentLoaded', function () {
             this.classList.add('active');
             currentTab = this.getAttribute('data-status');
             btnFull.disabled = currentTab == 'en_espera' || currentTab == 'aprobadas' ? false : true;
+
             getCotizacionesList();
         });
     });
@@ -138,12 +140,12 @@ document.addEventListener('DOMContentLoaded', function () {
             filter: false,
             cellRenderer: function (params) {
                 return `
-                    <button class="btn btn-sm btn-outline-info" 
-                    onclick="abrirModalCoordenadas(${params.data.id},${params.data.id_asignacion})" 
+                    <button class="btn btn-sm btn-outline-info"
+                    onclick="abrirModalCoordenadas(${params.data.id},${params.data.id_asignacion})"
                      title="Compartir coordenadas">
                      <i class="fa fa-map-marker-alt"></i> Compartir
                      </button>
-                                               
+
                     `;
             },
         },
@@ -156,7 +158,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 if (currentTab === 'planeadas') {
                     acciones = `
-                        
+
                         <button class="btn btn-sm btn-outline-warning" onclick="abrirDocumentos(${params.data.id})" title="Ver Documentos">
                             <i class="fa fa-folder"></i>
                         </button>
@@ -175,26 +177,26 @@ document.addEventListener('DOMContentLoaded', function () {
                         }`;
                 } else if (currentTab === 'finalizadas') {
                     acciones = `
-              
+
                         <button class="btn btn-sm btn-outline-info" onclick="abrirDocumentos(${params.data.id})" title="Ver Documentos">
                             <i class="fa fa-folder"></i>
                         </button>
                     `;
                 } else if (currentTab === 'en_espera') {
                     acciones = `
-                   
+
                         <button class="btn btn-sm btn-outline-info" onclick="abrirDocumentos(${params.data.id})" title="Ver Documentos">
                             <i class="fa fa-folder"></i>
                         </button>
-                     
+
                     `;
                 } else if (currentTab === 'aprobadas') {
                     acciones = `
-                  
+
                         <button class="btn btn-sm btn-outline-info" onclick="abrirDocumentos(${params.data.id})" title="Ver Documentos">
                             <i class="fa fa-folder"></i>
                         </button>
-                       
+
                     `;
                 } else if (currentTab === 'canceladas') {
                     acciones = `<button class="btn btn-sm btn-outline-warning" onclick="abrirDocumentos(${params.data.id})" title="Ver Documentos"><i class="fa fa-folder"></i></button>`;
@@ -306,6 +308,51 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
+    function cancelarFull() {
+        let seleccion = gridApi.getSelectedRows();
+
+        if (seleccion.length != 1) {
+            Swal.fire('Seleccione un contenedor', 'Debe seleccionar un contenedor que sea Full', 'warning');
+            return false;
+        }
+        if (!seleccion[0].tipo || seleccion[0].tipo != 'Full') {
+            Swal.fire('Contenedor no es Full', 'El contenedor seleccionado no es un viaje Full', 'warning');
+            return false;
+        }
+
+        Swal.fire({
+            title: '¿Estás seguro?',
+            text: 'Quiere separar los contenedores del viaje Full.',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, continuar',
+            cancelButtonText: 'No, cancelar',
+            reverseButtons: true,
+        }).then((result) => {
+            if (result.isConfirmed) {
+                let _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                $.ajax({
+                    url: '/cotizaciones/transformar/cancelar-full',
+                    type: 'post',
+                    data: { _token, seleccion },
+                    beforeSend: () => {},
+                    success: (response) => {
+                        Swal.fire(response.Titulo, response.Mensaje, response.TMensaje);
+                        if (response.TMensaje == 'success') {
+                            getCotizacionesList();
+                        }
+                    },
+                    error: () => {},
+                });
+            } else if (result.dismiss === Swal.DismissReason.cancel) {
+                console.log('El usuario canceló');
+            }
+        });
+    }
+    if (btnCancelarFull) {
+        btnCancelarFull.addEventListener('click', cancelarFull);
+    }
+
     const botonAbrirModal = document.getElementById('abrirModalBtn');
 
     botonAbrirModal.addEventListener('click', () => {
@@ -384,12 +431,31 @@ document.addEventListener('DOMContentLoaded', function () {
                 alert('Ocurrió un error al asignar el operador.');
             });
     }
-
-    btnAsignaOperador.addEventListener('click', asignarOperador2);
+    if (btnAsignaOperador) {
+        btnAsignaOperador.addEventListener('click', asignarOperador2);
+    }
 
     function seleccionarContenedor() {
-        if (currentTab != 'en_espera' && currentTab != 'aprobadas') return false;
         let seleccion = gridApi.getSelectedRows();
+        if (seleccion.length === 0) {
+            btnCancelarFull.disabled = true;
+            return;
+        }
+
+        // Obtener el tipo de la primera fila
+        const tipoBase = seleccion[0].tipo;
+
+        // Validar que TODAS tengan el mismo tipo
+        const mismoTipo = seleccion.every((row) => row.tipo === tipoBase);
+
+        if (mismoTipo && tipoBase === 'Full') {
+            btnCancelarFull.disabled = false;
+        } else {
+            btnCancelarFull.disabled = true;
+        }
+
+        if (currentTab != 'en_espera' && currentTab != 'aprobadas') return false;
+
         if (seleccion.length > 2) {
             Swal.fire(
                 'Maximo 2 contenedores',

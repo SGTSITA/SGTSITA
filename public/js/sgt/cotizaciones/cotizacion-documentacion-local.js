@@ -375,36 +375,70 @@ function toggleColumns() {
         const checked = !col.hide;
 
         container.innerHTML += `
-            <div class="col-md-6 column-item" data-name="${(col.headerName || col.field).toLowerCase()}">
-                <div class="card shadow-sm">
-                    <div class="card-body py-2 px-3 d-flex justify-content-between align-items-center">
-                        <span class="fw-semibold">
-                            ${col.headerName || col.field}
-                        </span>
+    <div class="col-12 column-item mb-2"
+         data-field="${col.field}"
+         data-name="${(col.headerName || col.field).toLowerCase()}">
 
-                        <div class="form-check form-switch m-0">
-                            <input
-                                class="form-check-input"
-                                type="checkbox"
-                                ${checked ? 'checked' : ''}
-                                onchange="toggleColumn('${col.field}', this.checked)"
-                            >
-                        </div>
-                    </div>
+        <div class="card shadow-sm cursor-move">
+            <div class="card-body py-2 px-3 d-flex justify-content-between align-items-center">
+                <span class="fw-semibold">
+                    ☰ ${col.headerName || col.field}
+                </span>
+
+                <div class="form-check form-switch m-0">
+                    <input
+                        class="form-check-input"
+                        type="checkbox"
+                        ${checked ? 'checked' : ''}
+                        onchange="toggleColumn('${col.field}', this.checked)"
+                    >
                 </div>
             </div>
-        `;
+        </div>
+    </div>
+`;
     });
 
     new bootstrap.Modal(document.getElementById('columnsModal')).show();
+
+    new Sortable(document.getElementById('columnsCheckboxes'), {
+        animation: 150,
+        ghostClass: 'bg-light',
+    });
 }
+
+let btnAplicarcambiosmodal = document.getElementById('btnAplicarCambios');
+function applyColumnsOrderFromModal() {
+    const items = document.querySelectorAll('.column-item');
+
+    const state = [];
+    let order = 0;
+
+    items.forEach((el) => {
+        const field = el.dataset.field;
+        const checkbox = el.querySelector('input[type="checkbox"]');
+
+        state.push({
+            colId: field,
+            hide: !checkbox.checked,
+            order: order++,
+        });
+    });
+
+    apiGrid.applyColumnState({
+        state,
+        applyOrder: true,
+    });
+
+    saveColumnsState();
+}
+
+btnAplicarcambiosmodal.addEventListener('click', applyColumnsOrderFromModal);
 
 function toggleColumn(field, visible) {
     apiGrid.applyColumnState({
         state: [{ colId: field, hide: !visible }],
     });
-
-    saveColumnsState();
 }
 function filterColumns(text) {
     text = text.toLowerCase();
@@ -424,8 +458,6 @@ function updateColumnSwitches(visible) {
     document.querySelectorAll('#columnsCheckboxes input[type="checkbox"]').forEach((checkbox) => {
         checkbox.checked = visible;
     });
-
-    saveColumnsState();
 }
 
 function showAllColumns() {
@@ -505,6 +537,30 @@ function exportPDF() {
 
 function saveColumnsState() {
     localStorage.setItem('maniobras_columns', JSON.stringify(apiGrid.getColumnState()));
+    let gridNamebydata = document.getElementById('myGrid').getAttribute('data-name');
+    //grid_viajes_solicitados_local
+
+    var _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    $.ajax({
+        url: 'viajes/columnas-estado/store',
+        type: 'post',
+        data: { _token, grid_key: gridNamebydata, stateColumns: JSON.stringify(apiGrid.getColumnState()) },
+        beforeSend: () => {},
+        success: (response) => {
+            //console.log('Columnas guardadas en el servidor');
+            if (!response.ok) {
+                Swal.fire({
+                    icon: 'Error',
+                    message: 'No se pudo guardar el orden de columnas por usuario.',
+                    title: 'Error',
+                });
+            }
+
+            //aqui paso ok true y mandamos alerta para informar
+            Swal.fire({ icon: 'success', message: 'Datos guardaos correctamente', title: 'Guardado' });
+        },
+        error: () => {},
+    });
 }
 
 function getContenedoresPendientes(estatus = 'Local') {

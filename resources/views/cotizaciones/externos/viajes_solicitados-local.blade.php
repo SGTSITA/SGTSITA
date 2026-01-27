@@ -56,32 +56,32 @@
 
                                 <!--div class="menu-item px-3" data-kt-menu-trigger="hover" data-kt-menu-placement="right-start">
 
-                                                                                                                                                                            <a href="#" class="menu-link px-3" data-bs-toggle="modal" data-bs-target="#kt_modal_top_up_wallet">
-                                                                                                                                                                              <span class="menu-title">Ver documentos</span>
-                                                                                                                                                                              <span class="menu-arrow"></span>
-                                                                                                                                                                            </a>
+                                                                                                                                                                                                                                                                                <a href="#" class="menu-link px-3" data-bs-toggle="modal" data-bs-target="#kt_modal_top_up_wallet">
+                                                                                                                                                                                                                                                                                  <span class="menu-title">Ver documentos</span>
+                                                                                                                                                                                                                                                                                  <span class="menu-arrow"></span>
+                                                                                                                                                                                                                                                                                </a>
 
 
-                                                                                                                                                                            <div class="menu-sub menu-sub-dropdown w-175px py-4">
+                                                                                                                                                                                                                                                                                <div class="menu-sub menu-sub-dropdown w-175px py-4">
 
-                                                                                                                                                                              <div class="menu-item px-3">
-                                                                                                                                                                                <a href="#" class="menu-link px-3"> DODA </a>
-                                                                                                                                                                              </div>
+                                                                                                                                                                                                                                                                                  <div class="menu-item px-3">
+                                                                                                                                                                                                                                                                                    <a href="#" class="menu-link px-3"> DODA </a>
+                                                                                                                                                                                                                                                                                  </div>
 
-                                                                                                                                                                              <div class="menu-item px-3">
-                                                                                                                                                                                <a href="#" class="menu-link px-3"> Pre Alta </a>
-                                                                                                                                                                              </div>
+                                                                                                                                                                                                                                                                                  <div class="menu-item px-3">
+                                                                                                                                                                                                                                                                                    <a href="#" class="menu-link px-3"> Pre Alta </a>
+                                                                                                                                                                                                                                                                                  </div>
 
-                                                                                                                                                                              <div class="menu-item px-3">
-                                                                                                                                                                                <a href="#" class="menu-link px-3"> Boleta de liberación </a>
-                                                                                                                                                                              </div>
-                                                                                                                                                                              <div class="menu-item px-3">
-                                                                                                                                                                                <a href="#" class="menu-link px-3"> Formato Carta Porte </a>
-                                                                                                                                                                              </div>
+                                                                                                                                                                                                                                                                                  <div class="menu-item px-3">
+                                                                                                                                                                                                                                                                                    <a href="#" class="menu-link px-3"> Boleta de liberación </a>
+                                                                                                                                                                                                                                                                                  </div>
+                                                                                                                                                                                                                                                                                  <div class="menu-item px-3">
+                                                                                                                                                                                                                                                                                    <a href="#" class="menu-link px-3"> Formato Carta Porte </a>
+                                                                                                                                                                                                                                                                                  </div>
 
-                                                                                                                                                                            </div>
+                                                                                                                                                                                                                                                                                </div>
 
-                                                                                                                                                                          </div-->
+                                                                                                                                                                                                                                                                              </div-->
 
                                 <!--begin::Menu separator-->
                                 <div class="separator mt-3 opacity-75"></div>
@@ -169,7 +169,8 @@
                                 Exportar PDF
                             </button>
                         </div>
-                        <div id="myGrid" class="col-12 ag-theme-quartz mb-6" style="height: 500px"></div>
+                        <div id="myGrid" class="col-12 ag-theme-quartz mb-6" style="height: 550px"
+                            data-name="grid_viajes_solicitados_local"></div>
 
                         <div class="modal fade" id="kt_modal_top_up_wallet" tabindex="-1" aria-hidden="true">
                             <!--begin::Modal dialog-->
@@ -266,7 +267,7 @@
                 </div>
 
                 <div class="modal-footer">
-                    <button class="btn btn-sm btn-primary" data-bs-dismiss="modal">
+                    <button class="btn btn-sm btn-primary" data-bs-dismiss="modal" id="btnAplicarCambios">
                         Aplicar cambios
                     </button>
                 </div>
@@ -274,9 +275,6 @@
             </div>
         </div>
     </div>
-@endsection
-
-@push('javascript')
     <style>
         .disabled-link {
             pointer-events: none;
@@ -285,7 +283,15 @@
             /* Cambia el estilo visual */
             cursor: default;
         }
+
+        .card {
+            max-width: 100%;
+            overflow-x: hidden;
+        }
     </style>
+@endsection
+
+@push('javascript')
     <link href="{{ asset('assets/metronic/fileuploader/font/font-fileuploader.css') }}" rel="stylesheet" />
     <link href="{{ asset('assets/metronic/fileuploader/jquery.fileuploader.min.css') }}" media="all"
         rel="stylesheet" />
@@ -298,6 +304,7 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 
 
     <script
@@ -322,6 +329,23 @@
                     }
 
                     getContenedoresPendientes(estatus);
+                });
+            }
+
+            const savedState = @json($stateGridColumns);
+
+            let parsedState = [];
+
+            try {
+                parsedState = JSON.parse(savedState);
+            } catch (e) {
+                console.error('Error al parsear estado del grid', e);
+            }
+
+            if (Array.isArray(parsedState) && parsedState.length) {
+                apiGrid.applyColumnState({
+                    state: parsedState,
+                    applyOrder: true
                 });
             }
 

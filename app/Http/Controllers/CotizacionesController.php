@@ -948,11 +948,47 @@ class CotizacionesController extends Controller
         }
 
 
+        //vamos a validar si los ids no esten ya en otro viaje full porq no se deberia poder convertir
+        $viajesExistentes = Cotizaciones::whereIn('id', $ids)
+                                        ->whereNotNull('referencia_full')
+                                        ->pluck('id')
+                                        ->toArray();
+        if (count($viajesExistentes) > 0) {
+            return response()->json([
+                "Titulo"   => "Error en la selección de viajes",
+                "Mensaje"  => "Los siguientes viajes ya pertenecen a un viaje Full: ".implode(', ', $viajesExistentes),
+                "TMensaje" => "warning",
+            ]);
+        }
+
+
         for ($x = 0; $x < (sizeof($viajes)); $x++) {
             $jerarquia = ($x == 0) ? 'Principal' : 'Secundario';
             Cotizaciones::where('id', $viajes[$x]['id'])->update(["tipo_viaje" => "Full","referencia_full" => $fullUUID, 'jerarquia' => $jerarquia]);
         }
         return response()->json(["Titulo" => "Proceso satisfactorio", "Mensaje" => "Se ha realizado la fusion de viajes a tipo Full", "TMensaje" => "success"]);
+    }
+
+    public function cancelarFull(Request $request)
+    {
+        $viajes = $request->seleccion;
+
+        //validar estats de viaje no deben ser finalizados para poder cancelar la fusion
+        $ids = collect($viajes)->pluck('id');
+        $estatus = Cotizaciones::whereIn('id', $ids)->whereIn('estatus', ['Finalizado', 'Cancelada'])->pluck('estatus')->unique();
+        // dd($estatus);
+        if ($estatus->count() > 0) {
+            return response()->json([
+                "Titulo"   => "Error en la selección de viajes",
+                "Mensaje"  => "Los viajes seleccionados no pueden ser cancelados de tipo Full por que ya estan Finalizados o Cancelados",
+                "TMensaje" => "warning",
+            ]);
+        }
+
+        for ($x = 0; $x < (sizeof($viajes)); $x++) {
+            Cotizaciones::where('id', $viajes[$x]['id'])->update(["tipo_viaje" => 'Sencillo',"referencia_full" => null, 'jerarquia' => 'Principal']);
+        }
+        return response()->json(["Titulo" => "Proceso satisfactorio", "Mensaje" => "Se ha cancelado la fusion de viajes Full", "TMensaje" => "success"]);
     }
 
     public function edit_externo($id)
