@@ -312,7 +312,50 @@ function viajeFull() {
                 success: (response) => {
                     Swal.fire(response.Titulo, response.Mensaje, response.TMensaje);
                     if (response.TMensaje == 'success') {
-                        getCotizacionesList();
+                        getContenedoresPendientes('all');
+                    }
+                },
+                error: () => {},
+            });
+        } else if (result.dismiss === Swal.DismissReason.cancel) {
+            // Acción si el usuario canceló
+            console.log('El usuario canceló');
+        }
+    });
+}
+
+function cancelarFull() {
+    let seleccion = apiGrid.getSelectedRows();
+
+    if (seleccion.length != 1) {
+        Swal.fire('Seleccione un contenedor', 'Debe seleccionar un contenedor que sea Full', 'warning');
+        return false;
+    }
+    if (!seleccion[0].tipo || seleccion[0].tipo != 'Full') {
+        Swal.fire('Contenedor no es Full', 'El contenedor seleccionado no es un viaje Full', 'warning');
+        return false;
+    }
+
+    Swal.fire({
+        title: '¿Estás seguro?',
+        text: 'Quiere separar los contenedores del viaje Full.',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, continuar',
+        cancelButtonText: 'No, cancelar',
+        reverseButtons: true,
+    }).then((result) => {
+        if (result.isConfirmed) {
+            let _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            $.ajax({
+                url: '/cotizaciones/transformar/cancelar-full',
+                type: 'post',
+                data: { _token, seleccion },
+                beforeSend: () => {},
+                success: (response) => {
+                    Swal.fire(response.Titulo, response.Mensaje, response.TMensaje);
+                    if (response.TMensaje == 'success') {
+                        getContenedoresPendientes('all');
                     }
                 },
                 error: () => {},

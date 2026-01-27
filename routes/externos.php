@@ -61,6 +61,8 @@ Route::group(["prefix" => "viajes"], function () {
     Route::post('/maniobras/cambiar-estatus', [ExternosController::class,'cambiarestatuslocal'])->name('maniobras.cambiarestatuslocal');
     Route::get('/maniobras/{maniobraId}/historial-estatus', [ExternosController::class,'historialEstatus'])->name('maniobras.historial-estatus');
 
+    Route::post('columnas-estado/store', [ExternosController::class,'guardarColumnsestado'])->name('local.guardarColumnsestado');
+
 });
 
 Route::group(["prefix" => "contenedores"], function () {

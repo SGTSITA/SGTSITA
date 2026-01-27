@@ -106,6 +106,50 @@
                 opacity: 1;
             }
         }
+
+
+
+        .input-apple-style::placeholder {
+            color: #8e8e93;
+        }
+
+        .input-apple-style:focus {
+            background-color: #ffffff;
+            border-color: #ff9800;
+            /* naranja suave */
+            box-shadow: 0 0 0 3px rgba(255, 152, 0, 0.15);
+        }
+
+        .search-container {
+            position: relative;
+            width: 100%;
+            max-width: 380px;
+            /* un poco más corto */
+        }
+
+        .input-apple-style {
+            width: 100%;
+            padding: 8px 16px 8px 38px;
+            /* ↓ altura */
+            border-radius: 999px;
+            border: 1px solid #d1d1d6;
+            background-color: #f7f7f9;
+            font-size: 14px;
+            /* más delgado visualmente */
+            color: #1d1d1f;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        .search-icon {
+            position: absolute;
+            top: 50%;
+            left: 14px;
+            transform: translateY(-50%);
+            font-size: 13px;
+            /* icono más discreto */
+            color: #8e8e93;
+        }
     </style>
     <div class="card">
         <div class="card-header d-flex flex-column">
@@ -120,7 +164,7 @@
 
                 <div class="search-container">
                     <i class="fas fa-search search-icon"></i>
-                    <input type="text" id="txtBuscarContenedor" class="input-apple-style" placeholder="Buscar...">
+                    <input type="text" id="txtBuscarContenedor" class="input-apple-style" placeholder="Buscar…">
                 </div>
 
                 <div class="card-toolbar">

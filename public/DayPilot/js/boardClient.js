@@ -49,27 +49,28 @@ async function initBoard(fromDate, toDate) {
             let scrollToDate = null;
             if (allEvents != null) {
                 resp.extractor.forEach((i) => {
-                    let x = Math.floor(Math.random() * 8) + 1;
-                    if (i.fecha_inicio !== null) {
-                        scrollToDate = scrollToDate ?? new DayPilot.Date(i.fecha_inicio);
-                        let fecha_inicio = new DayPilot.Date(i.fecha_fin);
-                        let fecha_finalmuestra = fecha_inicio.addDays(1);
+                    if (i.fecha_inicio !== null && i.fecha_fin !== null) {
+                        let start = new DayPilot.Date(i.fecha_inicio);
+                        let end = new DayPilot.Date(i.fecha_fin).addDays(1); // 👈 CLAVE
+
+                        scrollToDate = scrollToDate ?? start;
+
                         var e = {
-                            start: new DayPilot.Date(i.fecha_inicio),
-                            end: new DayPilot.Date(fecha_finalmuestra),
+                            start: start,
+                            end: end, // end exclusivo
                             id: i.id_contenedor,
-                            resource: parseInt(i.id_cliente), //(i.id_cliente != null) ? parseInt(i.id_proveedor.toString()+"7000") : parseInt(i.id_camion.toString()+"5000"), //<=======Este es el ID del recurso (maquina) donde se ha de colocar el servicio de viaje
+                            resource: parseInt(i.id_cliente),
                             text: i.num_contenedor,
                             bubbleHtml: i.num_contenedor,
-                            barColor: barColor(x),
-                            barBackColor: barBackColor(x),
-                            backColor: barBackColor(x),
+                            barColor: barColor(Math.floor(Math.random() * 8) + 1),
+                            barBackColor: barBackColor(Math.floor(Math.random() * 8) + 1),
+                            backColor: barBackColor(Math.floor(Math.random() * 8) + 1),
                             complete: 100,
                             tooltip: i.num_contenedor,
                         };
+
+                        dp.events.list.push(e);
                     }
-                    dp.events.list.push(e);
-                    // const threads = array1.findIndex(element => element > 10);
                 });
             }
 

@@ -20,7 +20,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
-use PDF;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class LiquidacionesController extends Controller
 {
@@ -33,7 +33,7 @@ class LiquidacionesController extends Controller
     {
         $asignacion_operador = Asignaciones::join('operadores', 'asignaciones.id_operador', '=', 'operadores.id')
         ->where('asignaciones.id_empresa', '=', auth()->user()->id_empresa)
-        ->where('asignaciones.id_proveedor', '=', null)
+        ->where('asignaciones.tipo_contrato', '=', 'Propio')
         ->where('asignaciones.estatus_pagado', '=', 'Pendiente Pago')
 
         ->select('asignaciones.id_operador', DB::raw('COUNT(*) as total_cotizaciones'), DB::raw('SUM(sueldo_viaje) as sueldo_viaje'), DB::raw('SUM(dinero_viaje) as dinero_viaje'), DB::raw('SUM(restante_pago_operador) as total_pago'))

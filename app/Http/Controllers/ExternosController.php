@@ -17,6 +17,7 @@ use App\Models\Proveedor;
 use App\Models\Subclientes;
 use App\Models\EstatusManiobra;
 use App\Models\BitacoraCotizacionesEstatus;
+use App\Models\GridColumnasUserEstado;
 use Illuminate\Support\Facades\Mail;
 use App\Traits\CommonTrait;
 use Carbon\Carbon;
@@ -887,7 +888,12 @@ class ExternosController extends Controller
     public function misViajeslocal()
     {
         $estatusManiobras  = EstatusManiobra::all();
-        return view('cotizaciones.externos.viajes_solicitados-local', compact('estatusManiobras'));
+        $stateColumnsGrid = GridColumnasUserEstado::where('user_id', auth()->id())
+    ->where('grid_key', 'grid_viajes_solicitados_local')
+    ->first();
+
+        $stateGridColumns = $stateColumnsGrid?->state_json ?? [];
+        return view('cotizaciones.externos.viajes_solicitados-local', compact('estatusManiobras', 'stateGridColumns'));
     }
 
 
@@ -1577,6 +1583,29 @@ class ExternosController extends Controller
             'success' => false,
             'message' => 'Tipo de archivo no soportado.'
         ], 400);
+    }
+
+
+    public function guardarColumnsestado(Request $request)
+    {
+        try {
+            //dd($request);
+            GridColumnasUserEstado::updateOrCreate(
+                [
+                'user_id' => auth()->id(),
+                'grid_key' => $request->grid_key
+            ],
+                [
+                'state_json' => $request->stateColumns
+            ]
+            );
+        } catch (\Throwable $e) {
+            return response()->json(['ok' => false, 'errors' => $e->getMessage()], 422);
+        }
+
+
+
+        return response()->json(['ok' => true]);
     }
 
 }
