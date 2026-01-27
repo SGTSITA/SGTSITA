@@ -484,21 +484,23 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function seleccionarContenedor() {
         let seleccion = gridApi.getSelectedRows();
-        if (seleccion.length === 0) {
-            btnCancelarFull.disabled = true;
-            return;
-        }
+        if (btnCancelarFull) {
+            if (seleccion.length === 0) {
+                btnCancelarFull.disabled = true;
+                return;
+            }
 
-        // Obtener el tipo de la primera fila
-        const tipoBase = seleccion[0].tipo;
+            // Obtener el tipo de la primera fila
+            const tipoBase = seleccion[0].tipo;
 
-        // Validar que TODAS tengan el mismo tipo
-        const mismoTipo = seleccion.every((row) => row.tipo === tipoBase);
+            // Validar que TODAS tengan el mismo tipo
+            const mismoTipo = seleccion.every((row) => row.tipo === tipoBase);
 
-        if (mismoTipo && tipoBase === 'Full') {
-            btnCancelarFull.disabled = false;
-        } else {
-            btnCancelarFull.disabled = true;
+            if (mismoTipo && tipoBase === 'Full') {
+                btnCancelarFull.disabled = false;
+            } else {
+                btnCancelarFull.disabled = true;
+            }
         }
 
         if (seleccion.length == 0) {
