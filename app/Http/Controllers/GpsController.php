@@ -45,7 +45,7 @@ class GpsController extends Controller
                 // dd($imei);
                 $RfcyEquipo = $this->buscartipoProveedor($contenedor, $id_contenendor, $imei);
 
-                [$Rfc,$equipo,$empresaIdRastro,$TipoEquipo,$gps_company_id] = explode('|', $RfcyEquipo);
+                [$Rfc,$equipo,$empresaIdRastro,$TipoEquipo,$gps_company_id,$tipo_viaje_contrato] = explode('|', $RfcyEquipo);
 
                 // dd($RfcyEquipo);
 
@@ -69,8 +69,10 @@ class GpsController extends Controller
                 //                        true
                 //                    )
                 //                    : [];
-
-                $result = GpsCredentialsService::getByProveedor($Rfc, $gps_company_id);
+                //dd($contenedor, $imei, $id_contenendor, $tipoGps);
+                // dd($Rfc, $gps_company_id);
+                $result = GpsCredentialsService::getByProveedor($Rfc, $gps_company_id, $tipo_viaje_contrato);
+                //  dd($result);
 
                 if (!$result['success']) {
                     return $result;
@@ -86,6 +88,7 @@ class GpsController extends Controller
 
                 switch ($tipoGps) {
                     case 'https://open.iopgps.com': //global
+                        // dd($credenciales);
 
 
                         $data = GlobalGps::getDeviceRealTimeLocation($imei, $credenciales['appkey'] ?? null, $credenciales['account'] ?? null); //ahora se pasara apikey y id user
@@ -328,8 +331,8 @@ class GpsController extends Controller
         $user = $request->input('user');
         $pass = $request->input('pass');
 
-        $user = 'SENSACION';
-        $pass = '6f2a46c04f2f5e274b684dhbt3';
+        $user = 'SEON';
+        $pass = '6f2a46c04fjsjs2f5e274b684dhbt3';
 
         $isValid = SISGPStrait::sisValidarCredenciales($user, $pass);
 
@@ -343,8 +346,8 @@ class GpsController extends Controller
         $user = $request->input('user');
         $pass = $request->input('pass');
 
-        $user = 'SENSACION';
-        $pass = '6f2a46c04f2f5e274b684dhbt3';
+        $user = 'SEON';
+        $pass = '6f2a46c04fjsjs2f5e274b684dhbt3';
 
         $location = SISGPStrait::sisGetLastPosition($user, $pass, $deviceid);
 
@@ -379,6 +382,7 @@ class GpsController extends Controller
                 'docum_cotizacion.num_contenedor',
                 'asignaciones.fecha_inicio',
                 'asignaciones.fecha_fin',
+                'asignaciones.tipo_contrato as tipo_viaje_contratado',
                 'equipos.imei',
                 'equipos.id_equipo',
                 'equipos.marca',
@@ -411,6 +415,7 @@ class GpsController extends Controller
                 'cotizaciones.destino',
                 'asig.num_contenedor as contenedor',
                 'cotizaciones.estatus',
+                'asig.tipo_viaje_contratado',
                 'asig.imei',
                 'asig.id_equipo',
                 'asig.id_contenedor',
@@ -463,7 +468,8 @@ class GpsController extends Controller
                   'gps_company.url_conexion as tipoGps',
                   'equipos.id_empresa',
                   'empresas.RFC',
-                  'gps_company.id as gps_company_id'
+                  'gps_company.id as gps_company_id',
+                  DB::raw("'Propio' as tipo_viaje_contratado"),
               )
             ->where('equipos.id', '=', $idKey)->first();
         }
@@ -475,6 +481,7 @@ class GpsController extends Controller
             //  $Equipo = $datosAll?->id_equipo;
             $empresaIdRastreo = $datosAll?->id_empresa;
             $gps_company_id = $datosAll?->gps_company_id;
+            $tipoviaje =  $datosAll?->tipo_viaje_contratado;
             if ($RFCContenedor === 'buscarEmpresaRFC') {
                 //buscamos el rfc de la empresa pues no tiene asignado un proveedor....
                 // $empresas = Empresas::where('id', '=', auth()->user()->Empresa->id)->orderBy('created_at', 'desc')->first();
@@ -499,7 +506,7 @@ class GpsController extends Controller
             }
             // dd($datosAll, $cotizaciones);
 
-            return   $RFCContenedor . '|'. $Equipo . '|'.  $empresaIdRastreo .'|'. $TipoEquipo.'|'. $gps_company_id;
+            return   $RFCContenedor . '|'. $Equipo . '|'.  $empresaIdRastreo .'|'. $TipoEquipo.'|'. $gps_company_id.'|'.$tipoviaje;
 
 
         }
