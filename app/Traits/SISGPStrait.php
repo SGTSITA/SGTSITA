@@ -31,29 +31,53 @@ trait SISGPSTrait
         try {
             $client = self::sisClient();
 
-            $client->getIdsListXml([
+            $response = $client->getIdsListXml([
                 'username' => $user,
                 'key'      => $key,
             ]);
 
-            if ($client) {
-                $fakeToken = hash('sha256', $user.'|'.$key.'|SIS');
-                Cache::put('sis_gps_token_'.$user, $fakeToken, now()->addMinutes(28));
+            // 🔎 Validar respuesta real del servicio
+            if (!$response) {
                 return new ApiResponse(
-                    success: true,
-                    data: [
-                              'token' => $fakeToken,
-                          ],
-                    message: 'Credenciales SIS válidas',
-                    status: 200
+                    success: false,
+                    message: 'Respuesta vacía del servicio SIS',
+                    status: 401
                 );
             }
 
+            // (ajusta esta validación según lo que SIS devuelva realmente)
+            if (is_object($response) && property_exists($response, 'success') && $response->success === false) {
+                return new ApiResponse(
+                    success: false,
+                    message: $response->message ?? 'Credenciales inválidas en SIS',
+                    status: 401
+                );
+            }
+
+
+            $fakeToken = hash('sha256', $user.'|'.$key.'|SIS');
+            Cache::put('sis_gps_token_'.$user, $fakeToken, now()->addMinutes(28));
+
+            return new ApiResponse(
+                success: true,
+                data: [
+                    'token' => $fakeToken,
+                ],
+                message: 'Credenciales SIS válidas',
+                status: 200
+            );
+
         } catch (\SoapFault $e) {
+
             Log::warning('SIS GPS credenciales inválidas', [
                 'error' => $e->getMessage()
             ]);
-            return false;
+
+            return new ApiResponse(
+                success: false,
+                message: 'Error de autenticación con SIS',
+                status: 401
+            );
         }
     }
 
