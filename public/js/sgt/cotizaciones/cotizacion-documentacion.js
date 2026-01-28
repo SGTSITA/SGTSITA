@@ -127,7 +127,7 @@ const gridOptions = {
         { field: 'FormatoCartaPorte', width: 100, cellRenderer: MissionResultRenderer },
         { field: 'PreAlta', width: 100, cellRenderer: MissionResultRenderer },
         { field: 'foto_patio', width: 100, cellRenderer: MissionResultRenderer },
-        { field: 'docEir', with: 70, cellRenderer: MissionResultRenderer },
+        { field: 'docEir', headerName: 'EIR', with: 70, cellRenderer: MissionResultRenderer },
         {
             field: 'NumContenedor',
             sortable: true,
