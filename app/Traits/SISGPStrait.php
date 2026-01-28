@@ -75,7 +75,7 @@ trait SISGPSTrait
 
             return new ApiResponse(
                 success: false,
-                message: 'Error de autenticación con SIS',
+                message: 'Error de autenticación con SIS'.$e->getMessage(),
                 status: 401
             );
         }
