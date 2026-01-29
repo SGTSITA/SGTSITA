@@ -1063,6 +1063,7 @@ class ExternosController extends Controller
                 "Origen" => $c->origen_local,
                 "Destino" => $c->destino_local,
                 "Peso" => $c->peso_contenedor,
+                "Tamano" => $c->tamano,
 
                 "BoletaLiberacion" => $boletaLiberacion,
                 "FechaModulacion" => Carbon::parse($c->fecha_modulacion)->format('Y-m-d'),

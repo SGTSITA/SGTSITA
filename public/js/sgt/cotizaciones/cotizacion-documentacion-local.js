@@ -313,11 +313,13 @@ const gridOptions = {
             },
         },
 
-        { field: 'Origen', minWidth: 140 },
-        { field: 'Destino', minWidth: 140 },
+        { field: 'Origen', minWidth: 120 },
+        { field: 'Destino', minWidth: 120 },
         { field: 'FechaModulacion', headerName: 'Fecha Modulación', width: 140 },
 
-        { field: 'Peso', width: 100 },
+        { field: 'Peso', width: 80 },
+        { field: 'Tamano', headerName: 'Tamaño', width: 70 },
+
         { field: 'Terminal', width: 120 },
         { field: 'Puerto', width: 100 },
         { field: 'NAutorizacion', headerName: 'N° Autorización', width: 150 },
