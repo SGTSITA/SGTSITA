@@ -2516,7 +2516,7 @@ class CotizacionesController extends Controller
             //$cot->id_transportista     = $request->id_transportista ?? null;
 
             // $cot->origen               = $request->origen;
-            // $cot->tamano               = $request->tamano;
+            $cot->tamano               = $request->tamano;
             $cot->peso_contenedor      = $request->peso_contenedor;
             $cot->fecha_modulacion     = $request->fecha_modulacion;
             $cot->cp_pedimento         = $request->num_pedimento;
