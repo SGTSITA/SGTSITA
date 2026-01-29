@@ -856,8 +856,8 @@ function actualizarUbicacion(imeis, t, KEYITEM, labelMuestra, num_convoy, map, i
                                                 lng: position.lng(),
                                             };
 
-                                            let latLlegada = parseInt(info.latitud);
-                                            let lngLlegada = parseInt(info.longitud);
+                                            let latLlegada = parseFloat(info.latitud);
+                                            let lngLlegada = parseFloat(info.longitud);
                                             // Si ya existe la ruta, la ocultamos
                                             if (
                                                 directionsRenderer[
