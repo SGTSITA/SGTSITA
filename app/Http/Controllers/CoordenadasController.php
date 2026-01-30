@@ -692,6 +692,7 @@ class CoordenadasController extends Controller
 
         ->select(
             'docum_cotizacion.id as id_contenedor',
+            'docum_cotizacion.id_cotizacion as id_cotizacion_doc',
             'asignaciones.id',
             'asignaciones.id_camion',
             'docum_cotizacion.num_contenedor',
@@ -750,7 +751,7 @@ class CoordenadasController extends Controller
     ->join('clients', 'cotizaciones.id_cliente', '=', 'clients.id')
 
    ->joinSub($asignaciones, 'asig', function ($join) {
-       $join->on('asig.id_contenedor', '=', 'cotizaciones.id');
+       $join->on('asig.id_cotizacion_doc', '=', 'cotizaciones.id');
    })
     ->LeftJoin('coordenadas', 'coordenadas.id_asignacion', '=', 'asig.id')
     ->joinSub($beneficiarios, 'beneficiarios', function ($join) {
