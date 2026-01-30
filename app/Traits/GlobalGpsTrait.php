@@ -22,33 +22,42 @@ trait GlobalGpsTrait
     public static function getAccessToken($apikey, $idUs)
     {
 
-        return Cache::remember('api_bearer_token', 115 * 60, function () use ($apikey, $idUs) { //ApiToken será recordado por 1 hora y 55 minutos
-            $endpoint = config('services.globalGps.url_base').'/api/auth';
+        try {
+            return Cache::remember('api_bearer_token', 115 * 60, function () use ($apikey, $idUs) {
 
-            $timestamp = time();
-            $key = config('services.globalGps.appkey');
-            $apiid = config('services.globalGps.appid');
-            if ($apikey) {
-                //KEY DE USUARIO
-                $key = $apikey;
-                $apiid = $idUs;
-            }
+                $endpoint = config('services.globalGps.url_base').'/api/auth';
 
-            $signature = self::generateSignature($key, $timestamp);
+                $timestamp = time();
+                $key   = $apikey ?: config('services.globalGps.appkey');
+                $apiid = $idUs ?: config('services.globalGps.appid');
 
-            $response = Http::post($endpoint, [
-                'appid' => $apiid,//,//  ID USER SE VA CAMBIAR
-                'time' => $timestamp,
-                'signature' => $signature,
-            ]);
+                $signature = self::generateSignature($key, $timestamp);
 
-            if ($response->successful() && isset($response->json()['accessToken'])) {
-                return $response->json()['accessToken'];
-            }
+                $response = Http::asJson()
+                    ->acceptJson()
+                    ->timeout(30)
+                    ->post($endpoint, [
+                        'appid'     => $apiid,
+                        'time'      => $timestamp,
+                        'signature' => $signature,
+                    ]);
 
-            throw new \Exception('No se pudo obtener el token.');
+                if ($response->successful() && $response->json('accessToken')) {
+                    return $response->json('accessToken');
+                }
 
-        });
+                Log::error('IOPGPS AUTH ERROR', [
+                    'status' => $response->status(),
+                    'body'   => $response->body(),
+                ]);
+
+                throw new \Exception('No se pudo obtener el token IOPGPS');
+
+            });
+        } catch (\Throwable $e) {
+            Cache::forget('api_bearer_token');
+            throw $e;
+        }
     }
 
     public static function getDeviceRealTimeLocation($imei, $apikey, $idUs)
