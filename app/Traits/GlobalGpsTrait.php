@@ -21,9 +21,10 @@ trait GlobalGpsTrait
 
     public static function getAccessToken($apikey, $idUs)
     {
-
+        $cacheKey = "api_bearer_token_{$idUs}";
         try {
-            return Cache::remember('api_bearer_token', 115 * 60, function () use ($apikey, $idUs) {
+
+            return Cache::remember($cacheKey, 115 * 60, function () use ($apikey, $idUs) {
 
                 $endpoint = config('services.globalGps.url_base').'/api/auth';
 
@@ -55,7 +56,11 @@ trait GlobalGpsTrait
 
             });
         } catch (\Throwable $e) {
-            Cache::forget('api_bearer_token');
+            Cache::forget($cacheKey);
+            Log::error('IOPGPS AUTH ERROR 2', [
+                  'err' => $e,
+
+              ]);
             throw $e;
         }
     }
