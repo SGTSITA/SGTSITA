@@ -1097,10 +1097,17 @@ class CotizacionesController extends Controller
             }
 
 
+            $idTransportistai = (int) $request->id_transportista;
 
-
-            if ($request->has('id_transportista') && $request->id_transportista !== $cotizaciones->id_proveedor) { //checar si se cambio de proveedor
+            if ($request->has('id_transportista') && $idTransportistai !== $cotizaciones->id_proveedor) { //checar si se cambio de proveedor
                 //validamos planeacion
+                dd(
+                    gettype($request->id_transportista),
+                    $request->id_transportista,
+                    gettype($cotizaciones->id_proveedor),
+                    $cotizaciones->id_proveedor
+                );
+
                 $asignaciones = Asignaciones::where('id_contenedor', $doc_cotizaciones->id)->first();
                 $statusPlaneacion = $cotizaciones->estatus_planeacion ?? 0;
                 if ($cotizaciones->estatus !== 'Finalizado' && $statusPlaneacion === 1) { //quitaremos la planeacion
@@ -1192,7 +1199,7 @@ class CotizacionesController extends Controller
                     }
 
                 }
-                $cotizaciones->id_proveedor = $request->id_transportista;
+                $cotizaciones->id_proveedor = $idTransportistai;
 
             }
             $cotizaciones->save();
