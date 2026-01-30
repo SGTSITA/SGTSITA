@@ -771,19 +771,20 @@ class CoordenadasController extends Controller
         } else {
             return $query->where('asig.num_contenedor', $contenedores[0]);
         }
-    })->where('cotizaciones.estatus', '=', 'Aprobada')
+    })->where('cotizaciones.estatus', '=', 'Aprobada');
 
-    ->get();
+        Log::info('SQL', [
+                      'sql'        => $datosAll->toSql(),
+                      'bindings'   => $datosAll->getBindings(),
+                      'empresa_id' => $idEmpresa,
+                      'cliente_id' => $idCliente,
+                  ]);
+
+        $datosAll = $datosAll->get();
+
+
         //dd($datosAll);
-        DB::listen(function ($datosAll) use ($idEmpresa, $idCliente) {
-            Log::info('SQL', [
-                'sql'        => $datosAll->sql,
-                'bindings'   => $datosAll->bindings,
-                'time_ms'    => $datosAll->time,
-                'empresa_id' => $idEmpresa,
-                'cliente_id' => $idCliente,
-            ]);
-        });
+
         $datos = null;
         if (!is_null($idEmpresa)) {
             $datos = $datosAll->where('id_empresa', $idEmpresa);
