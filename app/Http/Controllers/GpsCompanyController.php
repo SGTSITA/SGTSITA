@@ -15,7 +15,7 @@ use App\Traits\GpsTrackerMXTrait;
 use App\Traits\BeyondGPSTrait;
 use App\Traits\WialonGpsTrait;
 use App\Traits\GlobalGpsTrait;
-use App\Traits\SISGPStrait;
+use App\Traits\SISGPSTrait;
 
 class GpsCompanyController extends Controller
 {
@@ -158,7 +158,7 @@ class GpsCompanyController extends Controller
                 break;
 
             case 7: //SIS GPS
-                $response = SISGPStrait::sisValidarCredenciales(
+                $response = SISGPSTrait::sisValidarCredenciales(
                     $credenciales['account'] ?? '',
                     $credenciales['key'] ?? ''
                 );
