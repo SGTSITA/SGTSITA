@@ -1101,12 +1101,12 @@ class CotizacionesController extends Controller
 
             if ($request->has('id_transportista') && $idTransportistai !== $cotizaciones->id_proveedor) { //checar si se cambio de proveedor
                 //validamos planeacion
-                dd(
-                    gettype($request->id_transportista),
-                    $request->id_transportista,
-                    gettype($cotizaciones->id_proveedor),
-                    $cotizaciones->id_proveedor
-                );
+                // dd(
+                //     gettype($request->id_transportista),
+                //     $request->id_transportista,
+                //     gettype($cotizaciones->id_proveedor),
+                //     $cotizaciones->id_proveedor
+                // );
 
                 $asignaciones = Asignaciones::where('id_contenedor', $doc_cotizaciones->id)->first();
                 $statusPlaneacion = $cotizaciones->estatus_planeacion ?? 0;
