@@ -17,6 +17,7 @@ use App\Models\RastreoIntervals;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\File;
 use App\Traits\CommonTrait;
+use Illuminate\Support\Facades\Log;
 
 class CoordenadasController extends Controller
 {
@@ -759,7 +760,8 @@ class CoordenadasController extends Controller
              ->on('asig.tipo_contrato', '=', 'beneficiarios.tipo_contrato');
     })
     ->whereNotNull('asig.imei')
-    ->whereDate('asig.fecha_fin', '>=', Carbon::now()->toDateString())
+    // ->whereDate('asig.fecha_fin', '>=', Carbon::now()->toDateString())
+    ->where('asig.fecha_fin', '>=', Carbon::today())
 
     ->when($contenedoresVarios, function ($query) use ($contenedoresVarios) {
         $contenedores = array_filter(array_map('trim', explode(';', $contenedoresVarios)));
@@ -773,6 +775,15 @@ class CoordenadasController extends Controller
 
     ->get();
         //dd($datosAll);
+        DB::listen(function ($datosAll, $idEmpresa, $idCliente) {
+            Log::info('SQL', [
+                'sql'      => $datosAll->sql,
+                'bindings' => $datosAll->bindings,
+                'time_ms'  => $datosAll->time,
+                'empresa id' => $idEmpresa,
+                'client' => $idCliente
+            ]);
+        });
         $datos = null;
         if (!is_null($idEmpresa)) {
             $datos = $datosAll->where('id_empresa', $idEmpresa);
@@ -803,8 +814,10 @@ class CoordenadasController extends Controller
             'conboys.geocerca_lng',
             'conboys.geocerca_radio',
         )
-        ->whereDate('conboys.fecha_fin', '>=', Carbon::now()->toDateString())
-        ->whereDate('conboys.fecha_inicio', '<=', Carbon::now()->toDateString())
+     /*    ->whereDate('conboys.fecha_fin', '>=', Carbon::now()->toDateString())
+        ->whereDate('conboys.fecha_inicio', '<=', Carbon::now()->toDateString()) */
+        ->where('conboys.fecha_inicio', '<=', now())
+->where('conboys.fecha_fin', '>=', now())
   ->where('conboys.estatus', '=', 'Activo')
         ->when($idCliente !== 0, function ($query) use ($idCliente) {
             return $query->where('cotizaciones.id_cliente', $idCliente);
