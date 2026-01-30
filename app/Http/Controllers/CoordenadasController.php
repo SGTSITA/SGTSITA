@@ -775,13 +775,13 @@ class CoordenadasController extends Controller
 
     ->get();
         //dd($datosAll);
-        DB::listen(function ($datosAll, $idEmpresa, $idCliente) {
+        DB::listen(function ($datosAll) use ($idEmpresa, $idCliente) {
             Log::info('SQL', [
-                'sql'      => $datosAll->sql,
-                'bindings' => $datosAll->bindings,
-                'time_ms'  => $datosAll->time,
-                'empresa id' => $idEmpresa,
-                'client' => $idCliente
+                'sql'        => $datosAll->sql,
+                'bindings'   => $datosAll->bindings,
+                'time_ms'    => $datosAll->time,
+                'empresa_id' => $idEmpresa,
+                'cliente_id' => $idCliente,
             ]);
         });
         $datos = null;
