@@ -65,6 +65,7 @@ class Cotizaciones extends Model
         'liberado',
         'fecha_liberacion',
         'responsable',
+      'estatus_pago',
         'observaciones',
         'tipo_viaje_seleccion',
         'origen_local',
