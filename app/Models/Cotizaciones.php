@@ -65,7 +65,7 @@ class Cotizaciones extends Model
         'liberado',
         'fecha_liberacion',
         'responsable',
-      'estatus_pago',
+        'estatus_pago',
         'observaciones',
         'tipo_viaje_seleccion',
         'origen_local',
@@ -133,6 +133,27 @@ class Cotizaciones extends Model
     public function estatusManiobra() //para local y estatus
     {
         return $this->belongsTo(EstatusManiobra::class, 'estatus_maniobra_id');
+    }
+
+    public function estadoCuentaCotizacion()
+    {
+        return $this->hasOne(
+            Estado_Cuenta_Cotizaciones::class,
+            'cotizacion_id',
+            'id'
+        );
+    }
+
+    public function estadoCuenta()
+    {
+        return $this->hasOneThrough(
+            Estado_Cuenta::class,
+            Estado_Cuenta_Cotizaciones::class,
+            'cotizacion_id',      // FK en tabla intermedia
+            'id',                 // PK en estado_cuentas
+            'id',                 // PK en cotizaciones
+            'estado_cuenta_id'    // FK hacia estado_cuentas
+        );
     }
 
 

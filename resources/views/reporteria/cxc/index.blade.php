@@ -33,7 +33,7 @@
                         <h5>Reporte de Cuentas por Cobrar</h5>
                     </div>
                     <div class="card-body">
-                        <form method="GET" action="{{ route('reporteria.advance') }}">
+                        <form id="filtroReporte" method="GET" action="{{ route('reporteria.advance') }}">
                             <div class="row">
                                 <div class="col-md-3">
                                     <label for="id_client">Cliente</label>
@@ -73,6 +73,18 @@
                                         @endforeach
                                     </select>
                                 </div>
+                                <div class="col-md-2">
+                                    <label for="numero_edo_cuenta">Num. Estado de Cuenta</label>
+                                    <select name="numero_edo_cuenta" id="numero_edo_cuenta" class="form-control">
+                                        <option value="">Seleccionar numero</option>
+                                        @foreach ($estadosCuentas as $edoCuenta)
+                                            <option value="{{ $edoCuenta->id }}"
+                                                {{ request('numero_edo_cuenta') == $edoCuenta->id ? 'selected' : '' }}>
+                                                {{ $edoCuenta->numero }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
                                 <div class="col-md-3">
                                     <button type="submit" class="btn btn-outline-secondary btn-sm mt-3">Buscar</button>
                                 </div>
@@ -81,7 +93,7 @@
 
                         <div class="d-flex justify-content-end my-2">
                             <button type="button" id="btnAsignarEdoCuenta" class="btn btn-primary d-none"
-                                data-bs-toggle="modal" data-bs-target="#modalAsignarEdoCuenta">
+                                data-bs-toggle="modal">
                                 Asignar No Edo cuenta
                             </button>
                         </div>
@@ -101,6 +113,7 @@
                                             <th></th>
                                             <th>#</th>
                                             <th>Edo. Cuenta</th>
+                                            <th>|</th>
                                             <th>Fecha inicio</th>
                                             <th>
                                                 <img src="{{ asset('img/icon/user_predeterminado.webp') }}" alt=""
@@ -145,7 +158,10 @@
                                                             class="select-checkbox visually-hidden" />
                                                     </td>
                                                     <td>{{ $cotizacion->id }}</td>
-                                                    <td>{{ $cotizacion->edo_cuenta ?? 'NA' }}</td>
+                                                    <td>
+                                                        {{ $cotizacion->numero_edo_cuenta ?? 'NA' }}
+                                                    </td>
+                                                    <td>{{ $cotizacion->id_numero_edo_cuenta }}</td>
                                                     <td>
                                                         {{ optional($cotizacion->DocCotizacion->Asignaciones)->fehca_inicio_guard ? Carbon\Carbon::parse($cotizacion->DocCotizacion->Asignaciones->fehca_inicio_guard)->format('d-m-Y') : 'Sin fecha' }}
                                                     </td>
@@ -240,11 +256,24 @@
                 </div>
 
                 <div class="modal-body">
+
                     <input type="hidden" id="registroSeleccionado">
+                    <input type="hidden" id="edoCuentaIdActual">
+                    <input type="hidden" id="modoEdoCuenta"> <!-- nuevo | editar -->
 
                     <div class="mb-3">
                         <label class="form-label">Número de estado de cuenta</label>
                         <input type="text" class="form-control" id="noEdoCuenta">
+                        <small class="text-warning d-none" id="edoCuentaWarning">
+                            ⚠️ Este número ya existe
+                        </small>
+                    </div>
+
+                    <div class="form-check d-none" id="opcionesCambio">
+                        <input class="form-check-input" type="checkbox" id="soloEstaCotizacion" checked>
+                        <label class="form-check-label">
+                            Aplicar cambio solo a esta cotización
+                        </label>
                     </div>
                 </div>
 
@@ -275,50 +304,89 @@
     <script src="https://cdn.datatables.net/select/2.0.3/js/select.bootstrap5.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
     <script>
+        let parametrosSearch = '';
+        let valorEdicion = null;
+        let numeroEdicion = null;
         $(document).ready(function() {
+
+
             $('.cliente').select2();
             $('.proveedor').select2();
+            $('.numero_edo_cuenta').select2();
 
-            const table = $('#datatable-search').DataTable({
-                columnDefs: [{
-                    orderable: false,
-                    className: 'select-checkbox',
-                    targets: 0,
-                }, ],
-                fixedColumns: {
-                    start: 2,
-                },
-                order: [
-                    [1, 'asc']
-                ],
-                paging: true,
-                pageLength: 30,
-                select: {
-                    style: 'multi',
-                    selector: 'td:first-child',
-                },
+            function initDataTable() {
+                return $('#datatable-search').DataTable({
+                    columnDefs: [{
+                            orderable: false,
+                            className: 'select-checkbox',
+                            targets: 0,
+                        },
+                        {
+                            targets: 3,
+                            visible: false,
+                            searchable: false
+                        }
+                    ],
+                    select: {
+                        style: 'multi',
+                        selector: 'td:first-child',
+                    },
+                    order: [
+                        [1, 'asc']
+                    ],
+                    paging: true,
+                    pageLength: 30,
+                    fixedColumns: {
+                        start: 2,
+                    }
+                });
+            }
+
+            let table = initDataTable();
+
+
+            function buscarInformacion(parametros) {
+                $.ajax({
+                    url: "{{ route('reporteria.advance') }}",
+                    method: 'GET',
+                    data: parametros,
+                    success: function(html) {
+
+                        table.clear().destroy();
+
+                        $('#datatable-search tbody').html(
+                            $(html).find('#datatable-search tbody').html()
+                        );
+
+                        table = initDataTable();
+                    }
+                });
+
+            }
+
+            $('#filtroReporte').on('submit', function(e) {
+                e.preventDefault();
+                let parametrosSearch = $(this).serialize();
+                buscarInformacion(parametrosSearch);
+
             });
 
-            // Actualización del botón "Seleccionar todo" al cambiar la selección de filas
+
             table.on('select deselect', function() {
 
                 const selectedCount = table.rows({
                     selected: true
                 }).count();
 
-                // Botón seleccionar todo (tu lógica actual)
+
                 if (selectedCount === table.rows().count()) {
                     $('#selectAllButton').text('Deseleccionar todo');
                 } else {
                     $('#selectAllButton').text('Seleccionar todo');
                 }
+                evaluarEstadoCuentaSeleccion();
 
-                // 🔹 Mostrar / ocultar botón Asignar
-                if (selectedCount > 0) {
-                    $('#btnAsignarEdoCuenta').removeClass('d-none');
-                } else {
-                    $('#btnAsignarEdoCuenta').addClass('d-none');
-                }
+
             });
 
             // Botón "Seleccionar todo" para seleccionar/desmarcar todas las filas
@@ -477,6 +545,228 @@
                     $('#id_subcliente').append('<option selected value="">Seleccionar subcliente</option>');
                 }
             });
+
+
+            function evaluarEstadoCuentaSeleccion() {
+                const rows = table.rows('.selected').data().toArray();
+                const rowsNodes = table.rows({
+                    selected: true
+                }).nodes().toArray();
+
+                if (!rows.length) {
+                    $('#btnAsignarEdoCuenta').addClass('d-none');
+                    return;
+                }
+
+
+                let tieneAsignado = false;
+
+                rows.forEach(row => {
+                    const edo = row[2];
+                    if (edo && edo !== 'NA') {
+                        tieneAsignado = true;
+                    }
+                });
+
+                const $btn = $('#btnAsignarEdoCuenta');
+
+                if (tieneAsignado) {
+
+                    //VALIDAR ID PARA SELECCION Y MANDAR A EDITAR  SOLO POR ID
+                    const idsUnicos = [...new Set(
+                        rows.map(r => r[3]).filter(v => v)
+                    )];
+
+                    if (idsUnicos.length > 1) {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Edición no permitida',
+                            text: 'Los registros seleccionados pertenecen a diferentes estados de cuenta, seleccione filas con el mismo numero para editar'
+                        });
+                        return;
+                    }
+                    valorEdicion = idsUnicos[0] ?? null;
+                    numeroEdicion = rows[0][2];
+
+
+                    $btn
+                        .removeClass('d-none')
+                        .removeClass('btn-primary')
+                        .addClass('btn-warning')
+                        .text('Editar No Edo Cuenta')
+                        .data('modo', 'editar');
+                } else {
+
+                    $btn
+                        .removeClass('d-none')
+                        .removeClass('btn-warning')
+                        .addClass('btn-primary')
+                        .text('Asignar No Edo Cuenta')
+                        .data('modo', 'crear');
+                }
+            }
+
+
+
+
+            $('#btnGuardarEdoCuenta').on('click', function() {
+                let cotizacionesId = table
+                    .rows('.selected')
+                    .data()
+                    .toArray()
+                    .map(row => row[1]);
+
+                let payload = {
+                    _token: $('input[name="_token"]').val(),
+                    cotizacionesId: cotizacionesId,
+                    numero: $('#noEdoCuenta').val().trim(),
+                    modo: $('#modoEdoCuenta').val(),
+                    edo_cuenta_actual_id: $('#edoCuentaIdActual').val(),
+                    solo_esta: $('#soloEstaCotizacion').is(':checked')
+                };
+
+
+                if (!payload.numero) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Falta información',
+                        text: 'Debes ingresar un número de estado de cuenta'
+                    });
+                    return;
+                }
+
+                if (payload.cotizacionesId.length === 0) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Sin selección',
+                        text: 'Selecciona al menos una cotización'
+                    });
+                    return;
+                }
+
+                $.ajax({
+                    url: '/reporteria/cxp/EdoCuenta/store',
+                    method: 'POST',
+                    data: payload,
+                    beforeSend: () => {
+                        Swal.fire({
+                            title: 'Guardando...',
+                            text: 'Asignando estado de cuenta',
+                            allowOutsideClick: false,
+                            didOpen: () => Swal.showLoading()
+                        });
+                    },
+                    success: (resp) => {
+
+                        if (!resp || !resp.ok) {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: resp?.message ??
+                                    'Error al guardar el estado de cuenta'
+                            });
+                            return;
+                        }
+
+                        $('#modalAsignarEdoCuenta').modal('hide');
+
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Asignado',
+                            text: 'Estado de cuenta asignado correctamente',
+                            timer: 1500,
+                            showConfirmButton: false
+                        });
+
+
+                        buscarInformacion(parametrosSearch);
+                        evaluarEstadoCuentaSeleccion();
+                    },
+                    error: (xhr) => {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: xhr.responseJSON?.message ??
+                                'Error inesperado del servidor'
+                        });
+                    }
+                });
+            });
         });
+
+        function prepararModalCrear() {
+            $('#modalAsignarEdoCuenta .modal-title')
+                .text('Asignar No Edo Cuenta');
+
+            $('#modoEdoCuenta').val('crear');
+            $('#edoCuentaIdActual').val('');
+
+            $('#noEdoCuenta')
+                .val('')
+                .prop('readonly', false)
+                .removeClass('is-invalid');
+
+            $('#edoCuentaWarning').addClass('d-none');
+            $('#opcionesCambio').addClass('d-none');
+        }
+
+        function prepararModalEditar(edoActual, edoCuentaId) {
+            $('#modalAsignarEdoCuenta .modal-title')
+                .text('Editar No Edo Cuenta');
+
+            $('#modoEdoCuenta').val('editar');
+            $('#edoCuentaIdActual').val(edoCuentaId ?? '');
+
+            $('#noEdoCuenta')
+                .val(edoActual)
+                .prop('readonly', false)
+                .removeClass('is-invalid');
+
+            $('#edoCuentaWarning').addClass('d-none');
+            $('#opcionesCambio').removeClass('d-none');
+            $('#soloEstaCotizacion').prop('checked', false);
+        }
+
+        $('#btnAsignarEdoCuenta').on('click', function() {
+            const modo = $(this).data('modo');
+
+            $('#modoEdoCuenta').val(modo);
+
+            let noActual = numeroEdicion;
+            let idActual = valorEdicion;
+
+            if (modo === 'editar') {
+                prepararModalEditar(noActual, idActual);
+            } else {
+                prepararModalCrear();
+            }
+
+            $('#modalAsignarEdoCuenta').modal('show');
+        });
+
+
+        function abrirModalEdoCuenta({
+            modo,
+            edoCuentaId = null,
+            numeroActual = ''
+        }) {
+            // básicos
+
+            $('#modoEdoCuenta').val(modo);
+            $('#edoCuentaIdActual').val(edoCuentaId ?? '');
+
+            // reset
+            $('#noEdoCuenta').val(numeroActual);
+            $('#soloEstaCotizacion').prop('checked', false);
+            $('#edoCuentaWarning').addClass('d-none');
+
+            if (modo === 'editar') {
+                $('#opcionesCambio').removeClass('d-none');
+            } else {
+                $('#opcionesCambio').addClass('d-none');
+            }
+
+            $('#modalAsignarEdoCuenta').modal('show');
+        }
     </script>
 @endsection

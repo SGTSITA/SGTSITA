@@ -23,6 +23,7 @@ use App\Models\GastosDiferidosDetalle;
 use App\Models\DineroContenedor;
 use App\Models\ViaticosOperador;
 use App\Models\CuentaGlobal;
+use App\Models\Estado_Cuenta;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Storage;
@@ -49,7 +50,9 @@ class ReporteriaController extends Controller
         $subclientes = Subclientes::whereIn('id_cliente', $clientesIds)->orderBy('created_at', 'desc')->get();
         $proveedores = Proveedor::where('id_empresa', '=', auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
 
-        return view('reporteria.cxc.index', compact('clientes', 'subclientes', 'proveedores'));
+        $estadosCuentas = Estado_Cuenta::where('id_empresa', '=', auth()->user()->id_empresa)->get();
+
+        return view('reporteria.cxc.index', compact('clientes', 'subclientes', 'proveedores', 'estadosCuentas'));
     }
 
     public function advance(Request $request)
@@ -58,6 +61,7 @@ class ReporteriaController extends Controller
         $id_client = $request->input('id_client');
         $id_subcliente = $request->input('id_subcliente');
         $id_proveedor = $request->input('id_proveedor');
+        $numeroEdoCuenta = $request->numero_edo_cuenta ?? null;
 
         // Obtener los clientes, subclientes y proveedores para mostrarlos en el formulario
         //$clientes = Client::where('id_empresa', auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
@@ -71,8 +75,27 @@ class ReporteriaController extends Controller
         $subclientes = Subclientes::whereIn('id_cliente', $clientesIds)->orderBy('created_at', 'desc')->get();
         $proveedores = Proveedor::where('id_empresa', auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
 
+        $estadosCuentas = Estado_Cuenta::where('id_empresa', '=', auth()->user()->id_empresa)->get();
+
         // Inicializar la consulta de cotizaciones
-        $cotizaciones = Cotizaciones::where('id_empresa', auth()->user()->id_empresa)
+        $cotizaciones = Cotizaciones::query()
+    ->select(
+        'cotizaciones.*',
+        'estado_cuenta.numero as numero_edo_cuenta',
+        'estado_cuenta.id as id_numero_edo_cuenta'
+    )
+    ->leftJoin(
+        'estado_cuenta_cotizaciones',
+        'estado_cuenta_cotizaciones.cotizacion_id',
+        '=',
+        'cotizaciones.id'
+    )
+    ->leftJoin(
+        'estado_cuenta',
+        'estado_cuenta.id',
+        '=',
+        'estado_cuenta_cotizaciones.estado_cuenta_id'
+    )->where('cotizaciones.id_empresa', auth()->user()->id_empresa)
             ->where(function ($query) {
                 $query->where('estatus', '=', 'Aprobada')
                     ->orWhere('estatus', '=', 'Finalizado');
@@ -99,12 +122,16 @@ class ReporteriaController extends Controller
                 $query->where('id_proveedor', $id_proveedor);
             });
         }
+        //nuevo para el num edo cuenta x id
+        if ($numeroEdoCuenta) {
+            $cotizaciones->where('estado_cuenta.id', '=', $numeroEdoCuenta);
+        }
 
         // Ejecutar la consulta
         $cotizaciones = $cotizaciones->get();
 
         // Devolver la vista con los filtros y las cotizaciones
-        return view('reporteria.cxc.index', compact('clientes', 'subclientes', 'proveedores', 'cotizaciones'));
+        return view('reporteria.cxc.index', compact('clientes', 'subclientes', 'proveedores', 'cotizaciones', 'estadosCuentas'));
     }
 
 
@@ -128,7 +155,7 @@ class ReporteriaController extends Controller
         $user = User::where('id', '=', auth()->user()->id)->first();
         $cuentaGlobal = CuentaGlobal::first();
 
-        $cotizaciones = Cotizaciones::whereIn('id', $cotizacionIds)->get();
+        $cotizaciones = Cotizaciones::with('estadoCuenta')->whereIn('id', $cotizacionIds)->get();
         if (in_array($cotizacion->id_empresa, [2,6])) {
             $bancos_oficiales = Bancos::where('id_empresa', '=', $cotizacion->id_empresa)->get();
             $bancos_no_oficiales = Bancos::where('id_empresa', '=', $cotizacion->id_empresa)->get();
@@ -269,11 +296,13 @@ class ReporteriaController extends Controller
                                 ->where('is_active', 1)
                                 ->orderBy('nombre')->get();
 
+        $estadosCuentas = Estado_Cuenta::where('id_empresa', '=', auth()->user()->id_empresa)->get();
+
         $clientesIds = $clientes->pluck('id');
 
         $subclientes = Subclientes::whereIn('id_cliente', $clientesIds)->orderBy('created_at', 'desc')->get();
 
-        return view('reporteria.cxp.index', compact('proveedores', 'clientes', 'subclientes'));
+        return view('reporteria.cxp.index', compact('proveedores', 'clientes', 'subclientes', 'estadosCuentas'));
     }
     public function advance_cxp(Request $request)
     {
@@ -286,6 +315,7 @@ class ReporteriaController extends Controller
                             ->where('ce.id_empresa', Auth::User()->id_empresa)
                             ->where('is_active', 1)
                             ->orderBy('nombre')->get();
+        $estadosCuentas = Estado_Cuenta::where('id_empresa', '=', auth()->user()->id_empresa)->get();
 
         $clientesIds = $clientes->pluck('id');
 
@@ -293,6 +323,7 @@ class ReporteriaController extends Controller
 
         // Obtener el ID del proveedor y del cliente desde la solicitud
         $id_proveedor = $request->input('id_proveedor');
+        $numeroEdoCuenta = $request->numero_edo_cuenta ?? null;
 
         // Mostrar advertencia si no se seleccionó proveedor
         $showWarning = empty($id_proveedor);
@@ -302,35 +333,99 @@ class ReporteriaController extends Controller
         $proveedor_cxp = null;
 
         // Si se seleccionó un proveedor, filtrar las cotizaciones correspondientes
-        if ($id_proveedor) {
-            $cotizaciones = Cotizaciones::join('docum_cotizacion', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
-                ->join('asignaciones', 'docum_cotizacion.id', '=', 'asignaciones.id_contenedor')
-                ->where('cotizaciones.id_empresa', '=', auth()->user()->id_empresa)
-              //  ->whereNull('asignaciones.id_camion') // Verificar que el camión sea NULL , se rompio la logica al agregar contratos de tipo propio
-                ->where('asignaciones.tipo_contrato', 'Subcontratado')
-                ->where(function ($query) {
-                    $query->where('cotizaciones.estatus', '=', 'Aprobada')
-                          ->orWhere('cotizaciones.estatus', '=', 'Finalizado');
-                })
-                ->where('asignaciones.id_proveedor', '=', $id_proveedor)
-                ->where('cotizaciones.prove_restante', '>', 0)
-                ->select(
-                    'asignaciones.*',
-                    'docum_cotizacion.num_contenedor',
-                    'docum_cotizacion.id_cotizacion',
-                    'cotizaciones.origen',
-                    'cotizaciones.destino',
-                    'cotizaciones.estatus',
-                    'cotizaciones.prove_restante'
-                )
-                ->get();
+        //     if ($id_proveedor) {
+        //         $cotizaciones = Cotizaciones::join('docum_cotizacion', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
+        //             ->join('asignaciones', 'docum_cotizacion.id', '=', 'asignaciones.id_contenedor')
+        //              ->leftJoin(
+        //                  'estado_cuenta_cotizaciones',
+        //                  'estado_cuenta_cotizaciones.cotizacion_id',
+        //                  '=',
+        //                  'cotizaciones.id'
+        //              )
+        // ->leftJoin(
+        //     'estado_cuenta',
+        //     'estado_cuenta.id',
+        //     '=',
+        //     'estado_cuenta_cotizaciones.estado_cuenta_id'
+        // )
+        //             ->where('cotizaciones.id_empresa', '=', auth()->user()->id_empresa)
+        //           //  ->whereNull('asignaciones.id_camion') // Verificar que el camión sea NULL , se rompio la logica al agregar contratos de tipo propio
+        //             ->where('asignaciones.tipo_contrato', 'Subcontratado')
+        //             ->where(function ($query) {
+        //                 $query->where('cotizaciones.estatus', '=', 'Aprobada')
+        //                       ->orWhere('cotizaciones.estatus', '=', 'Finalizado');
+        //             })
+        //             ->where('asignaciones.id_proveedor', '=', $id_proveedor)
+        //             ->where('cotizaciones.prove_restante', '>', 0)
+        //             ->select(
+        //                 'asignaciones.*',
+        //                 'docum_cotizacion.num_contenedor',
+        //                 'docum_cotizacion.id_cotizacion',
+        //                 'cotizaciones.origen',
+        //                 'cotizaciones.destino',
+        //                 'cotizaciones.estatus',
+        //                 'cotizaciones.prove_restante',
+        //                 'estado_cuenta.numero as numero_edo_cuenta'
+        //             )
+        //             ->get();
 
-            // Obtener datos del proveedor seleccionado
+        //         // Obtener datos del proveedor seleccionado
+        //         $proveedor_cxp = Proveedor::find($id_proveedor);
+        //     }
+
+
+
+        $cotizacionesQuery = Cotizaciones::join('docum_cotizacion', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
+        ->join('asignaciones', 'docum_cotizacion.id', '=', 'asignaciones.id_contenedor')
+        ->leftJoin(
+            'estado_cuenta_cotizaciones',
+            'estado_cuenta_cotizaciones.cotizacion_id',
+            '=',
+            'cotizaciones.id'
+        )
+        ->leftJoin(
+            'estado_cuenta',
+            'estado_cuenta.id',
+            '=',
+            'estado_cuenta_cotizaciones.estado_cuenta_id'
+        )
+        ->where('cotizaciones.id_empresa', auth()->user()->id_empresa)
+        ->where('asignaciones.tipo_contrato', 'Subcontratado')
+        ->where(function ($query) {
+            $query->where('cotizaciones.estatus', 'Aprobada')
+                  ->orWhere('cotizaciones.estatus', 'Finalizado');
+        })
+        ->where('cotizaciones.prove_restante', '>', 0);
+
+        if (!empty($id_proveedor)) {
+            $cotizacionesQuery->where('asignaciones.id_proveedor', $id_proveedor);
+        }
+
+        if (!empty($numeroEdoCuenta)) {
+            $cotizacionesQuery->where('estado_cuenta.id', $numeroEdoCuenta);
+        }
+
+        $cotizaciones = $cotizacionesQuery
+    ->select(
+        'asignaciones.*',
+        'docum_cotizacion.num_contenedor',
+        'docum_cotizacion.id_cotizacion',
+        'cotizaciones.origen',
+        'cotizaciones.destino',
+        'cotizaciones.estatus',
+        'cotizaciones.prove_restante',
+        'estado_cuenta.numero as numero_edo_cuenta',
+        'estado_cuenta.id as id_numero_edo_cuenta'
+    )
+    ->get();
+
+
+        if (!empty($id_proveedor)) {
             $proveedor_cxp = Proveedor::find($id_proveedor);
         }
 
         // Retornar la vista con los datos necesarios
-        return view('reporteria.cxp.index', compact('proveedores', 'clientes', 'cotizaciones', 'proveedor_cxp', 'showWarning', 'id_proveedor', 'subclientes'));
+        return view('reporteria.cxp.index', compact('proveedores', 'clientes', 'cotizaciones', 'proveedor_cxp', 'showWarning', 'id_proveedor', 'subclientes', 'estadosCuentas'));
     }
 
 
@@ -349,15 +444,19 @@ class ReporteriaController extends Controller
         // Cargar las cotizaciones con sus proveedores y cuentas bancarias
         $cotizaciones = Asignaciones::with([
             'Proveedor.CuentasBancarias',
-            'Contenedor.Cotizacion.Subcliente'
+            'Contenedor.Cotizacion.Subcliente',
+            'Contenedor.Cotizacion.estadoCuenta'
         ])->whereIn('id', $cotizacionIds)->get();
+
+
 
 
         $bancos_oficiales = Bancos::where('tipo', '=', 'Oficial')->get();
         $bancos_no_oficiales = Bancos::where('tipo', '=', 'No Oficial')->get();
 
         // Obtener la primera cotización (si es necesario)
-        $cotizacion = Asignaciones::where('id', $cotizacionIds)->first();
+        $cotizacion = Asignaciones::with('Contenedor.Cotizacion.estadoCuenta')->where('id', $cotizacionIds)->first();
+        //  dd($cotizacion);
 
         // Obtener los datos del usuario autenticado
         $user = User::where('id', '=', auth()->user()->id)->first();

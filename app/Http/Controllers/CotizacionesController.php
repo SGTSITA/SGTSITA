@@ -2518,7 +2518,7 @@ class CotizacionesController extends Controller
 
 
             $cot->peso_reglamentario  = $pesoReglamentario;
-            $cot->sobrepeso  = 0;
+            // $cot->sobrepeso  = 0;
 
             //$cot->id_transportista     = $request->id_transportista ?? null;
 
