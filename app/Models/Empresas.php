@@ -31,4 +31,12 @@ class Empresas extends Model
     {
         return $this->belongsTo(Configuracion::class, 'id_configuracion');
     }
+
+    public function estadosCuenta()
+    {
+        return $this->hasMany(
+            Estado_Cuenta::class,
+            'id_empresa'
+        );
+    }
 }

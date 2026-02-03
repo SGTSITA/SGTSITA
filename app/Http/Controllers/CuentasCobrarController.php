@@ -6,9 +6,13 @@ use App\Models\BancoDinero;
 use App\Models\Bancos;
 use App\Models\Client;
 use App\Models\Cotizaciones;
+use App\Models\Estado_Cuenta;
+use App\Models\Estado_Cuenta_Cotizaciones;
 use App\Models\Subclientes;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rules\Exists;
+use PhpParser\Node\Stmt\TryCatch;
 
 class CuentasCobrarController extends Controller
 {
@@ -191,7 +195,7 @@ class CuentasCobrarController extends Controller
         $cliente = Client::where('id', '=', $id)->first();
         $cotizacionesPorPagar = Cotizaciones::join('docum_cotizacion', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
         ->where('cotizaciones.id_empresa', '=', auth()->user()->id_empresa)
-        ->where('cotizaciones.estatus_pago', '=', '0')
+        ->where('cotizaciones.estatus_pago', '=', '0') // revisar
         ->where('cotizaciones.restante', '>', 0)
         ->where(function ($query) {
             $query->where('cotizaciones.estatus', '=', 'Aprobada')
@@ -324,5 +328,94 @@ class CuentasCobrarController extends Controller
         $banco->save();
 
         return redirect()->back()->with('success', 'Cobro exitoso');
+    }
+
+
+
+
+
+    public function storeEdocuenta(Request $request)
+    {
+
+        $request->validate([
+    'numero' => 'required|string|max:50',
+    'cotizacionesId' => 'required|array|min:1',
+]);
+
+        try {
+
+            DB::beginTransaction();
+
+            $numeroEdoCuenta = trim($request->numero);
+            $idsSeleccionados = $request->cotizacionesId;
+
+
+            $estadoCuentaNuevo = Estado_Cuenta::firstOrCreate(
+                [
+        'numero'     => $numeroEdoCuenta,
+        'id_empresa' => auth()->user()->id_empresa,
+    ],
+                [
+        'created_by' => auth()->id(),
+    ]
+            );
+
+            if ($request->modo === 'editar') {
+
+                $estadoCuentaActualId = $request->edo_cuenta_actual_id;
+                $soloEsta = $request->boolean("solo_esta");
+
+                if ($soloEsta) {
+
+                    Estado_Cuenta_Cotizaciones::whereIn('cotizacion_id', $idsSeleccionados)
+                        ->update([
+                            'estado_cuenta_id' => $estadoCuentaNuevo->id,
+                            'assigned_by' => auth()->id(),
+                            'updated_at' => now()
+                        ]);
+                } else {
+
+                    Estado_Cuenta_Cotizaciones::where('estado_cuenta_id', $estadoCuentaActualId)
+                        ->update([
+                            'estado_cuenta_id' => $estadoCuentaNuevo->id,
+                            'assigned_by' => auth()->id(),
+                            'updated_at' => now()
+                        ]);
+                }
+
+            } else {
+
+                //  dd($estadoCuentaNuevo);
+
+                foreach ($idsSeleccionados as $idcot) {
+                    Estado_Cuenta_Cotizaciones::updateOrCreate(
+                        ['cotizacion_id' => $idcot],
+                        [
+                            'estado_cuenta_id' => $estadoCuentaNuevo->id,
+                            'assigned_by' => auth()->id(),
+                           'id_empresa' =>  auth()->user()->id_empresa
+                        ]
+                    );
+                }
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'ok' => true,
+                'message' => 'Estado de cuenta asignado correctamente'
+            ]);
+
+        } catch (\Throwable $th) {
+
+            DB::rollBack();
+
+            return response()->json([
+                'ok' => false,
+                'message' => 'No se pudo asignar el estado de cuenta',
+                'error' => $th->getMessage()
+            ], 422);
+        }
+
     }
 }
