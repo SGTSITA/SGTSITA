@@ -435,6 +435,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::post('cuentas/cobrar/confirmar_pagos', [App\Http\Controllers\CuentasCobrarController::class, 'aplicar_pagos'])->name('confirmar.cobrar');
     Route::patch('cuentas/cobrar/update/{id}', [App\Http\Controllers\CuentasCobrarController::class, 'update'])->name('update.cobrar');
     Route::post('cuentas/cobrar/update/varios', [App\Http\Controllers\CuentasCobrarController::class, 'update_varios'])->name('update_varios.cobrar');
+    Route::post('/reporteria/cxp/EdoCuenta/store', [App\Http\Controllers\CuentasCobrarController::class, 'storeEdocuenta'])->name('storeEdocuenta');
 
     // ==================== C U E N T A S  P O R  P A G A R ====================
     Route::get('cuentas/pagar', [App\Http\Controllers\CuentasPagarController::class, 'index'])->name('index.pagar');
@@ -531,6 +532,12 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('catalogo/create', [App\Http\Controllers\CatalogoController::class, 'create'])->name('create.catalogo');
     Route::post('catalogo/store', [App\Http\Controllers\CatalogoController::class, 'store'])->name('store.catalogo');
     Route::get('catalogo/pdf/{id}', [App\Http\Controllers\CatalogoController::class, 'pdf'])->name('pdf.catalogo');
+
+
+     Route::get('/admin/auditoria', [App\Http\Controllers\AuditoriaController::class, 'index'])
+        ->name('auditoria.index');
+
+    Route::get('/admin/auditoria/{id}', [App\Http\Controllers\AuditoriaController::class, 'show']);
 });
 
 //Route Hooks - Do not delete//
