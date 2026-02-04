@@ -162,7 +162,7 @@
         </div>
 
         <h4 class="margin_cero" style="margin: 2px">
-            Proveedor: {{ $cotizacion->Proveedor->nombre }}</h4>
+            Proveedor: {{ $cotizacion->Proveedor->nombre }}
         </h4>
         <br />
     </div>
