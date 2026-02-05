@@ -121,19 +121,20 @@
         $total_no_ofi = 0;
     @endphp
 
-    <div class="container" style="padding: 0;">
-        <h4 class="margin_cero" style="margin: 2px">
-            Empresa: {{ $user->Empresa->nombre }}
-        </h4>
-
-        <div style="display: flex; align-items: center; position: relative;">
-            <h4 class="margin_cero" style="margin: 2px;">
-                Estado de cuenta
+    @if (!isset($isExcel))
+        <div class="container" style="padding: 0;">
+            <h4 class="margin_cero" style="margin: 2px">
+                Empresa: {{ $user->Empresa->nombre }}
             </h4>
 
-            <!-- TÍTULO CENTRADO -->
-            <h2
-                style="
+            <div style="display: flex; align-items: center; position: relative;">
+                <h4 class="margin_cero" style="margin: 2px;">
+                    Estado de cuenta
+                </h4>
+
+                <!-- TÍTULO CENTRADO -->
+                <h2
+                    style="
             position: absolute;
             left: 50%;
             top:-5px;
@@ -141,22 +142,75 @@
             margin: 0;
             font-weight: bold;
         ">
-                {{ $cotizacion->estadoCuenta->numero }}
-            </h2>
+                    {{ $cotizacion->estadoCuenta->numero }}
+                </h2>
+
+                <div class="container" style="position: relative">
+                    <h5 style="position: absolute; left: 80%; top: -5%; font-size: 10px; margin-top: 5px">
+                        Cuentas por Cobrar : {{ date('d-m-Y') }}
+                    </h5>
+                    <br />
+                </div>
+            </div>
+
+            <h4 class="margin_cero" style="margin: 2px">
+                Cliente: {{ $cotizacion->Cliente->nombre }}
+            </h4>
+            <br />
         </div>
+    @endif
+    @if (isset($isExcel))
+        <table width="100%" style="border-collapse:collapse;">
+            <tr>
+                <td colspan="4">
 
-        <h4 class="margin_cero" style="margin: 2px">
-            Cliente: {{ $cotizacion->Cliente->nombre }}
-        </h4>
-        <br />
-    </div>
+                    <b>Empresa:</b> {{ $user->Empresa->nombre }}
+                </td>
+            </tr>
+            <tr>
+                <td colspan="7">
 
-    <div class="container" style="position: relative">
+                    <b> Estado de cuenta</b>
+
+                </td>
+
+                <td colspan="6" align="center" style="font-size:18pt; font-weight:bold;">
+                    <b> {{ $cotizacion->estadoCuenta->numero }} </b>
+                </td>
+
+                <td colspan="7" align="right">
+                    <b> Cuentas por Cobrar : {{ date('d-m-Y') }} </b>
+                </td>
+
+            </tr>
+            <tr>
+                <td colspan="20">
+                    <b> Cliente: {{ $cotizacion->Cliente->nombre }} </b>
+                </td>
+            </tr>
+            {{-- <tr>
+                <td colspan="4">
+                    <b>Empresa:</b> {{ $user->Empresa->nombre }}<br>
+                    Estado de cuenta<br>
+                    <b>Proveedor:</b> {{ $cotizacion->Proveedor->nombre }}
+                </td>
+                <td colspan="4" align="center">
+                    {{ $cotizacion->Contenedor->Cotizacion->estadoCuenta->numero }}
+                </td>
+                <td colspan="4" align="right">
+                    {{ date('d-m-Y') }}
+                </td>
+            </tr> --}}
+        </table>
+    @endif
+
+
+    {{-- <div class="container" style="position: relative">
         <h5 style="position: absolute; left: 80%; top: -10%; font-size: 10px; margin-top: 5px">
             Cuentas por Cobrar : {{ date('d-m-Y') }}
         </h5>
         <br />
-    </div>
+    </div> --}}
 
     <table class="table text-white tabla-completa"
         style="

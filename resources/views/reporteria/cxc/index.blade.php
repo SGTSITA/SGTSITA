@@ -224,6 +224,10 @@
                                 <div id="pdf-preview-container" class="d-none">
                                     <canvas id="pdf-canvas"></canvas>
                                     <div class="button-container">
+                                        <button type="button" id="exportButtonExcel1" data-filetype="xlsx"
+                                            class="btn btn-outline-secondary btn-sm exportButton">
+                                            Exportar a Excel
+                                        </button>
                                         @if (isset($cotizaciones) && $cotizaciones != null)
                                             <button type="button" id="exportButtonExcel1" data-filetype="xlsx"
                                                 class="btn btn-outline-secondary btn-sm exportButton">
@@ -310,9 +314,10 @@
         $(document).ready(function() {
 
 
-            $('.cliente').select2();
-            $('.proveedor').select2();
-            $('.numero_edo_cuenta').select2();
+            $('#id_client').select2();
+            $('#id_subcliente').select2();
+            $('#id_proveedor').select2();
+            $('#numero_edo_cuenta').select2();
 
             function initDataTable() {
                 return $('#datatable-search').DataTable({
