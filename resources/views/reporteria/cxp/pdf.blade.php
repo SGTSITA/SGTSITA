@@ -131,63 +131,106 @@
         $totalImporteVTA = 0;
     @endphp
 
+
+
     <!-- Encabezado principal -->
     {{-- <div class="contianer sin_margem">
         <h4 class="sin_espacios2" style="position: top: -10%;">Empresa: {{ $user->Empresa->nombre }}</h4>
         <h4 class="sin_espacios2" style="position: top: -10%;">Estado de cuenta</h4>
         <h4 class="sin_espacios2" style="position: top: -10%;">Proveedor: {{ $cotizacion->Proveedor->nombre }}</h4>
     </div> --}}
-    <div class="contianer sin_margem">
-        <h4 class="margin_cero" style="margin: 2px">
-            Empresa: {{ $user->Empresa->nombre }}
-        </h4>
+    @if (!isset($isExcel))
+        <div class="contianer sin_margem">
+            <h4 style="margin: 2px">Empresa: {{ $user->Empresa->nombre }}</h4>
 
-        <div style="display: flex; align-items: center; position: relative;">
-            <h4 class="margin_cero" style="margin: 2px;">
-                Estado de cuenta
+            <div style="display:flex; align-items:center; position:relative;">
+                <h4 style="margin: 2px">Estado de cuenta</h4>
+
+                <h2
+                    style="
+                position:absolute;
+                left:50%;
+                top:-5px;
+                transform:translateX(-50%);
+                margin:0;
+                font-weight:bold;">
+                    {{ $cotizacion->Contenedor->Cotizacion->estadoCuenta->numero }}
+                </h2>
+            </div>
+
+            <h4 style="margin: 2px">
+                Proveedor: {{ $cotizacion->Proveedor->nombre }}
             </h4>
-
-            <!-- TÍTULO CENTRADO -->
-            <h2
-                style="
-            position: absolute;
-            left: 50%;
-            top:-5px;
-            transform: translateX(-50%);
-            margin: 0;
-            font-weight: bold;
-        ">
-                {{ $cotizacion->Contenedor->Cotizacion->estadoCuenta->numero }}
-            </h2>
+            <br>
         </div>
 
-        <h4 class="margin_cero" style="margin: 2px">
-            Proveedor: {{ $cotizacion->Proveedor->nombre }}
-        </h4>
-        <br />
-    </div>
+        <div class="contianer sin_margem" style="position: relative">
+            <h5 style="position:absolute; left:80%; top:-5%">
+                Estado de cuenta por pagar: {{ date('d-m-Y') }}
+            </h5>
+        </div>
+    @endif
+    @if (isset($isExcel))
+        <table width="100%" style="border-collapse:collapse;">
+            <tr>
+                <td colspan="4">
+                    <b>Empresa:</b> {{ $user->Empresa->nombre }}
+                </td>
+            </tr>
+            <tr>
+                <td colspan="3">
 
-    <div class="contianer sin_margem" style="position: relative">
-        <h5 style="position: absolute; left: 80%; top: -5%">Estado de cuenta por pagar: {{ date('d-m-Y') }}</h5>
-    </div>
+                    <b> Estado de cuenta</b>
+
+                </td>
+
+                <td colspan="3" align="center" style="font-size:18pt; font-weight:bold;">
+                    <b> {{ $cotizacion->Contenedor->Cotizacion->estadoCuenta->numero }} </b>
+                </td>
+
+                <td colspan="6" align="right">
+                    Estado de cuenta por pagar: {{ date('d-m-Y') }}
+                </td>
+
+            </tr>
+            <tr>
+                <td colspan="4">
+                    <b>Proveedor:</b> {{ $cotizacion->Proveedor->nombre }}
+                </td>
+            </tr>
+            {{-- <tr>
+                <td colspan="4">
+                    <b>Empresa:</b> {{ $user->Empresa->nombre }}<br>
+                    Estado de cuenta<br>
+                    <b>Proveedor:</b> {{ $cotizacion->Proveedor->nombre }}
+                </td>
+                <td colspan="4" align="center">
+                    {{ $cotizacion->Contenedor->Cotizacion->estadoCuenta->numero }}
+                </td>
+                <td colspan="4" align="right">
+                    {{ date('d-m-Y') }}
+                </td>
+            </tr> --}}
+        </table>
+    @endif
 
     <!-- Tabla principal de cuentas por pagar -->
     <table class="table tabla-completa"
         style="color: #000; width: 100%; margin-top: 55px; font-size: 10px; border-collapse: collapse">
         <thead>
             <tr>
-                <th>Facturado a</th>
-                <th>Contenedor</th>
-                <th>Importe CT</th>
-                <th>A pagar 1</th>
-                <th>A pagar 2</th>
-                <th>Retención</th>
-                <th>IVA</th>
-                <th>Base factura</th>
-                <th>Precio viaje</th>
-                <th>Otro</th>
-                <th>Estadía</th>
-                <th>Burreo</th>
+                <th style="background-color:#007bff; color:#ffffff;">Facturado a</th>
+                <th style="background-color:#007bff; color:#ffffff;">Contenedor</th>
+                <th style="background-color:#007bff; color:#ffffff;">Importe CT</th>
+                <th style="background-color:#007bff; color:#ffffff;">A pagar 1</th>
+                <th style="background-color:#007bff; color:#ffffff;">A pagar 2</th>
+                <th style="background-color:#007bff; color:#ffffff;">Retención</th>
+                <th style="background-color:#007bff; color:#ffffff;">IVA</th>
+                <th style="background-color:#007bff; color:#ffffff;">Base factura</th>
+                <th style="background-color:#007bff; color:#ffffff;">Precio viaje</th>
+                <th style="background-color:#007bff; color:#ffffff;">Otro</th>
+                <th style="background-color:#007bff; color:#ffffff;">Estadía</th>
+                <th style="background-color:#007bff; color:#ffffff;">Burreo</th>
             </tr>
         </thead>
         <tbody style="text-align: center; font-size: 10px; line-height: 1">
@@ -244,6 +287,7 @@
                     <td>${{ number_format($item->burreo, 2, '.', ',') }}</td>
                 </tr>
             @endforeach
+
         </tbody>
     </table>
 
@@ -253,39 +297,42 @@
             @if ($cotizacion->Proveedor && $cotizacion->Proveedor->CuentasBancarias->isNotEmpty())
                 @php
                     $contador = 1;
+                    $colspan = 0;
                 @endphp
 
-                <tr>
-                    @foreach ($cotizacion->Proveedor->CuentasBancarias as $cuentas)
-                        <td
-                            style="
-                                    padding: 5px;
-                                    border: 1px solid #ccc;
-                                    text-align: left;
-                                    vertical-align: top;
-                                    width: 150px;
-                                    min-width: 150px;
-                                ">
-                            <h4 style="margin: 0; font-size: 10px">Cuenta #{{ $contador }}</h4>
-                            <p>Beneficiario: {{ $cuentas->nombre_beneficiario }}</p>
-                            <p>Banco: {{ $cuentas->nombre_banco }}</p>
-                            <p>Cuenta: {{ $cuentas->cuenta_bancaria }}</p>
-                            <p>
-                                Clabe:
-                                <b>{{ $cuentas->cuenta_clabe }}</b>
-                            </p>
-                            <p>
-                                A pagar:
-                                <b>
-                                    ${{ number_format($contador == 1 ? $pagar1 : ($contador == 2 ? $pagar2 : 0), 2, '.', ',') }}
-                                </b>
-                            </p>
+                <table width="100%" cellspacing="0" cellpadding="0" style="margin-top:5px;">
+                    <tr>
+
+                        @foreach ($cotizacion->Proveedor->CuentasBancarias as $cuentas)
                             @php
-                                $contador++;
+                                $colspan = $contador == 1 ? 4 : 8;
                             @endphp
-                        </td>
-                    @endforeach
-                </tr>
+                            <td colspan="{{ $colspan }}"
+                                style="
+                    padding: 8px;
+                    border: 1px solid #ccc;
+                    text-align: left;
+                    vertical-align: top;
+                    font-size: 10px;
+                ">
+                                <strong>Cuenta #{{ $contador }}</strong><br>
+
+                                Beneficiario: {{ $cuentas->nombre_beneficiario }}<br>
+                                Banco: {{ $cuentas->nombre_banco }}<br>
+                                Cuenta: {{ $cuentas->cuenta_bancaria }}<br>
+                                Clabe: <strong>{{ $cuentas->cuenta_clabe }}</strong><br>
+                                A pagar:
+                                <strong>
+                                    ${{ number_format($contador == 1 ? $pagar1 : ($contador == 2 ? $pagar2 : 0), 2, '.', ',') }}
+                                </strong>
+                                <br><br><br><br><br>
+                            </td>
+
+                            @php $contador++; @endphp
+                        @endforeach
+
+                    </tr>
+                </table>
             @else
                 <tr>
                     <td colspan="3"
@@ -300,12 +347,25 @@
     </table>
 
     <!-- Totales finales -->
-    <div class="totales">
-        <h3 style="background: rgb(0, 174, 255)">Totales</h3>
-        <h4>A pagar oficial: ${{ number_format($pagar1, 2, '.', ',') }}</h4>
-        <h4>A pagar no oficial: ${{ number_format($pagar2, 2, '.', ',') }}</h4>
-        <h4>Importe CT: ${{ number_format($importeCT, 2, '.', ',') }}</h4>
-    </div>
+    <table width="100%" style="margin-top:8px; border-collapse:collapse; border:none;">
+        <tr>
+            <td colspan="12" style="background-color:#00aaff; color:#000; font-weight:bold; border:none;">
+                Totales
+            </td>
+        </tr>
+    </table>
+
+    <table style="border-collapse:collapse; border:none;">
+        <tr>
+            <td style="border:none;">A pagar oficial: ${{ number_format($pagar1, 2) }}</td>
+        </tr>
+        <tr>
+            <td style="border:none;">A pagar no oficial: ${{ number_format($pagar2, 2) }}</td>
+        </tr>
+        <tr>
+            <td style="border:none;">Importe CT: ${{ number_format($importeCT, 2) }}</td>
+        </tr>
+    </table>
 </body>
 
 </html>

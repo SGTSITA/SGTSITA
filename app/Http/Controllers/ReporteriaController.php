@@ -33,6 +33,7 @@ use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class ReporteriaController extends Controller
 {
@@ -464,7 +465,7 @@ class ReporteriaController extends Controller
         // Generar el archivo Excel o PDF según el tipo de archivo solicitado
         if ($request->fileType == "xlsx") {
             // Generar el archivo Excel y almacenarlo
-            Excel::store(new CxpExport($cotizaciones, $fechaCarbon, $bancos_oficiales, $bancos_no_oficiales, $cotizacion, $user), 'cotizaciones_cxp.xlsx', 'public');
+            Excel::store(new CxpExport($cotizaciones, $fechaCarbon, $bancos_oficiales, $bancos_no_oficiales, $cotizacion, $user, true), 'cotizaciones_cxp.xlsx', 'public');
 
             // Devolver el archivo Excel como descarga
             return Response::download(storage_path('app/public/cotizaciones_cxp.xlsx'), "cxp.xlsx")->deleteFileAfterSend(true);
@@ -1619,7 +1620,7 @@ class ReporteriaController extends Controller
             $query->where('rfc', $rfc);
         })
         ->where('restante', '>', 0)
-        ->where('estatus', '!=', 'Cancelada') // ❌ Excluir cancelados
+        ->where('estatus', '!=', 'Cancelada')
         ->with([
             'DocCotizacion.Asignaciones.Proveedor',
             'DocCotizacion',
