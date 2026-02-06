@@ -785,7 +785,8 @@ class CoordenadasController extends Controller
 
         //dd($datosAll);
 
-        $datos = null;
+        $datos = $datosAll;
+
         if (!is_null($idEmpresa) && $idCliente == 0) {
             $datos = $datosAll->where('id_empresa', $idEmpresa);
         }
