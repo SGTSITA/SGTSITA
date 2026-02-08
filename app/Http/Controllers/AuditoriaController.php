@@ -6,19 +6,20 @@ use App\Models\ActivityLog;
 use Illuminate\Support\Facades\Auth;
 use App\Services\AuditoriaCifrado;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Http\Request;
 
 class AuditoriaController extends Controller
 {
     public function index()
     {
-        Log::info('Auditoria@index - inicio');
+        // Log::info('Auditoria@index - inicio');
 
         if (!Auth::check()) {
             Log::warning('Auditoria@index - usuario NO autenticado');
             abort(401, 'No autenticado');
         }
 
-        Log::info('Auditoria@index - usuario autenticado', [
+        Log::info('Audit - usuario autenticado', [
             'user_id'  => Auth::id(),
             'es_admin' => Auth::user()->es_admin ?? null,
         ]);
@@ -30,17 +31,33 @@ class AuditoriaController extends Controller
             abort(403, 'No autorizado, solo administradores');
         }
 
-        Log::info('Auditoria@index - usuario es admin, consultando logs');
+        //  Log::info('Auditoria@index - usuario es admin, consultando logs');
 
-        $logs = ActivityLog::with('user')
-            ->latest()
-            ->get();
 
-        Log::info('Auditoria@index - logs obtenidos', [
-            'total' => $logs->count(),
-        ]);
 
-        return view('auditoria.index', compact('logs'));
+        // Log::info('Auditoria@index - logs obtenidos', [
+        //     'total' => $logs->count(),
+        // ]);
+
+        return view('auditoria.index', );
+
+    }
+    public function data(Request $request)
+    {
+        if (!Auth::user()->es_admin) {
+            abort(403);
+        }
+        $query = ActivityLog::with('user')
+        ->orderByDesc('created_at');
+
+        if ($request->filled('fecha_inicio') && $request->filled('fecha_fin')) {
+            $query->whereBetween('created_at', [
+                $request->fecha_inicio . ' 00:00:00',
+                $request->fecha_fin . ' 23:59:59'
+            ]);
+        }
+
+        return $query->paginate(100);
 
     }
 
