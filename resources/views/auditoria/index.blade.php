@@ -98,7 +98,7 @@
             fetch(`/admin/auditoria-data/inicial?${params}`)
                 .then(r => r.json())
                 .then(resp => {
-                    gridApi.setGridOption('rowData', resp.data);
+                    gridApi.setGridOption('rowData', resp);
                 })
                 .catch(err => {
                     console.error(err);
