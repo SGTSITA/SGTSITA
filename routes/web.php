@@ -534,7 +534,8 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('catalogo/pdf/{id}', [App\Http\Controllers\CatalogoController::class, 'pdf'])->name('pdf.catalogo');
 
 
-     Route::get('/admin/auditoria', [App\Http\Controllers\AuditoriaController::class, 'index'])
+    
+    Route::get('/admin/auditoria', [App\Http\Controllers\AuditoriaController::class, 'index'])
         ->name('auditoria.index');
 
     Route::get('/admin/auditoria/{id}', [App\Http\Controllers\AuditoriaController::class, 'show']);
