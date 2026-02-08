@@ -57,7 +57,7 @@ class AuditoriaController extends Controller
             ]);
         }
 
-        return $query->paginate(100);
+        return $query->get();
 
     }
 
