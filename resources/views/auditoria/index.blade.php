@@ -58,7 +58,12 @@
         let fechaInicio = null;
         let fechaFin = null;
 
+        const hoy = moment();
+        const hace15Dias = moment().subtract(15, 'days');
+
         $('#auditoriaRange').daterangepicker({
+            startDate: hace15Dias,
+            endDate: hoy,
             autoUpdateInput: false,
             opens: 'left',
             locale: {
