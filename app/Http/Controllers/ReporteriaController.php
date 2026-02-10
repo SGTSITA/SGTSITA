@@ -1658,7 +1658,7 @@ class ReporteriaController extends Controller
             $query->where('rfc', $rfc);
         })
         ->where('restante', '>', 0)
-        ->where('estatus', '!=', 'Cancelada') // ❌ Filtrar cancelados
+        ->where('estatus', '!=', 'Cancelada')
         ->with([
             'DocCotizacion.Asignaciones.Proveedor',
             'DocCotizacion',
