@@ -1,18 +1,59 @@
 @extends('layouts.usuario_externo')
 
 @section('WorkSpace')
+    <style>
+        .header-center .ag-header-cell-label {
+            justify-content: center;
+            /* centra horizontal */
+            text-align: center;
+            /* centra el texto */
+        }
+
+        .header-center .ag-header-cell-text {
+            white-space: normal;
+            /* permite salto de línea */
+            line-height: 1.3;
+        }
+    </style>
     <div class="row gx-5 gx-xl-10">
         <div class="col-sm-12 mb-5 mb-xl-10">
             <div class="card card-flush h-lg-100">
                 <div class="card-header">
-                    <h3 class="card-title align-items-start flex-column">
-                        <span class="card-label fw-bold text-gray-900">Mis Viajes</span>
-                        <span class="text-gray-500 mt-1 fw-semibold fs-6">
-                            Lista de viajes
-                            <span class="text-gray-600 fw-bold">Aprobados</span>
-                        </span>
-                    </h3>
+                    <div class="d-flex flex-column gap-3">
+
+                        <!-- Título -->
+                        <div>
+                            <h3 class="card-title mb-1 fw-bold text-gray-900">
+                                Mis Viajes
+                            </h3>
+                            <div class="text-gray-500 fw-semibold fs-6">
+                                Lista de viajes
+                                <span class="text-primary fw-bold ms-1">Aprobados</span>
+                            </div>
+                        </div>
+
+                        <!-- Filtro -->
+                        <div class="d-flex align-items-center gap-3">
+
+                            <label class="fw-semibold text-gray-600 mb-0">
+                                Periodo:
+                            </label>
+
+                            <div class="position-relative">
+                                <input type="text" id="rangoFechasViajes"
+                                    class="form-control form-control-sm ps-12 w-275px" placeholder="Seleccionar rango" />
+
+                                <i
+                                    class="ki-outline ki-calendar fs-2 position-absolute top-50 start-0 translate-middle-y ms-4"></i>
+                            </div>
+
+                        </div>
+
+                    </div>
+
                     <div class="card-toolbar">
+
+
                         <div>
                             <button class="btn btn-primary btn-sm" data-kt-menu-trigger="click"
                                 data-kt-menu-placement="bottom-end" data-kt-menu-overflow="true">
@@ -53,32 +94,32 @@
 
                                 <!--div class="menu-item px-3" data-kt-menu-trigger="hover" data-kt-menu-placement="right-start">
 
-                                                        <a href="#" class="menu-link px-3" data-bs-toggle="modal" data-bs-target="#kt_modal_top_up_wallet">
-                                                          <span class="menu-title">Ver documentos</span>
-                                                          <span class="menu-arrow"></span>
-                                                        </a>
+                                                                                                    <a href="#" class="menu-link px-3" data-bs-toggle="modal" data-bs-target="#kt_modal_top_up_wallet">
+                                                                                                      <span class="menu-title">Ver documentos</span>
+                                                                                                      <span class="menu-arrow"></span>
+                                                                                                    </a>
 
 
-                                                        <div class="menu-sub menu-sub-dropdown w-175px py-4">
+                                                                                                    <div class="menu-sub menu-sub-dropdown w-175px py-4">
 
-                                                          <div class="menu-item px-3">
-                                                            <a href="#" class="menu-link px-3"> DODA </a>
-                                                          </div>
+                                                                                                      <div class="menu-item px-3">
+                                                                                                        <a href="#" class="menu-link px-3"> DODA </a>
+                                                                                                      </div>
 
-                                                          <div class="menu-item px-3">
-                                                            <a href="#" class="menu-link px-3"> Pre Alta </a>
-                                                          </div>
+                                                                                                      <div class="menu-item px-3">
+                                                                                                        <a href="#" class="menu-link px-3"> Pre Alta </a>
+                                                                                                      </div>
 
-                                                          <div class="menu-item px-3">
-                                                            <a href="#" class="menu-link px-3"> Boleta de liberación </a>
-                                                          </div>
-                                                          <div class="menu-item px-3">
-                                                            <a href="#" class="menu-link px-3"> Formato Carta Porte </a>
-                                                          </div>
+                                                                                                      <div class="menu-item px-3">
+                                                                                                        <a href="#" class="menu-link px-3"> Boleta de liberación </a>
+                                                                                                      </div>
+                                                                                                      <div class="menu-item px-3">
+                                                                                                        <a href="#" class="menu-link px-3"> Formato Carta Porte </a>
+                                                                                                      </div>
 
-                                                        </div>
+                                                                                                    </div>
 
-                                                      </div-->
+                                                                                                  </div-->
 
                                 <!--begin::Menu separator-->
                                 <div class="separator mt-3 opacity-75"></div>
@@ -119,7 +160,7 @@
                 </div>
                 <div class="card-body">
                     <div class="row">
-                        <div id="myGrid" class="col-12 ag-theme-quartz mb-6" style="height: 500px"></div>
+                        <div id="myGrid" class="col-12 ag-theme-quartz mb-6" style="height: 610px"></div>
 
                         <div class="modal fade" id="kt_modal_top_up_wallet" tabindex="-1" aria-hidden="true">
                             <!--begin::Modal dialog-->

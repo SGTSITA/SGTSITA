@@ -274,6 +274,7 @@ class ExternosController extends Controller
     );
 
 
+
         $condicion = ($request->estatus == 'Documentos Faltantes') ? '=' : '!=';
         // $contenedoresPendientes = Cotizaciones::join('docum_cotizacion as d', 'cotizaciones.id', '=', 'd.id_cotizacion')
         // ->leftjoin('proveedores as prov', 'cotizaciones.id_proveedor', '=', 'prov.id')
@@ -318,6 +319,12 @@ class ExternosController extends Controller
                                               ->where('cotizaciones.estatus', $condicion, 'Documentos Faltantes')
                                                 ->whereIn('cotizaciones.tipo_viaje_seleccion', ['foraneo', 'local_to_foraneo'])
                                                 ->where('cotizaciones.jerarquia', "!=", 'Secundario')
+                                                ->when($request->filled('fechaInicioViajes') && $request->filled('fechaFinViajes'), function ($q) use ($request) {
+                                                    $q->whereBetween('cotizaciones.fecha_entrega', [
+                                                        $request->fechaInicioViajes,
+                                                        $request->fechaFinViajes
+                                                    ]);
+                                                })
 
         ->orderBy('cotizaciones.created_at', 'desc')
         ->get();
@@ -330,11 +337,15 @@ class ExternosController extends Controller
             $docCCP = ($c->doc_ccp == null) ? false : true;
             $doda = ($c->doda == null) ? false : true;
             $boletaLiberacion = ($c->boleta_liberacion == null) ? false : true;
-            $cartaPorte = $c->carta_porte;
+
             $boletaVacio = ($c->img_boleta == null) ? false : true;
             $docEir = $c->doc_eir;
             $fotoPatio = ($c->foto_patio == null) ? false : true;
             $boletaPatio = ($c->boleta_patio == null) ? false : true;
+            $cartaPortepdf = ($c->carta_porte == null) ? false : true;
+            $carta_porte_xml = ($c->carta_porte_xml == null) ? false : true;
+
+
             $tipo = "Sencillo";
 
             if (!is_null($c->referencia_full)) {
@@ -348,7 +359,8 @@ class ExternosController extends Controller
                     $doda = ($doda && $secundaria->DocCotizacion->doda) ? true : false;
                     $docEir = ($docEir && $secundaria->DocCotizacion->doc_eir) ? true : false;
                     $boletaLiberacion = ($boletaLiberacion && $secundaria->DocCotizacion->boleta_liberacion) ? true : false;
-                    $cartaPorte = ($cartaPorte && $secundaria->carta_porte) ? true : false;
+                    $cartaPortepdf = ($cartaPortepdf && $secundaria->carta_porte) ? true : false;
+                    $carta_porte_xml = ($carta_porte_xml && $secundaria->carta_porte_xml) ? true : false;
                     $boletaVacio = ($boletaVacio && $secundaria->img_boleta) ? true : false;
                     $fotoPatio = ($fotoPatio && $secundaria->foto_patio) ? true : false;
                     $numContenedor .= '  ' . $secundaria->DocCotizacion->num_contenedor;
@@ -370,6 +382,8 @@ class ExternosController extends Controller
                 "PreAlta" => $boletaVacio,
                 "BoletaPatio" => $boletaPatio,
                 "docEir" => $docEir,
+                "cartaPortepdf" => $cartaPortepdf,
+                "carta_porte_xml" => $carta_porte_xml,
                 "FechaSolicitud" => Carbon::parse($c->created_at)->format('Y-m-d'),
                 "tipo" => $tipo,
                 "id" => $c->id,
