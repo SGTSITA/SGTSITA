@@ -2620,7 +2620,7 @@ class CotizacionesController extends Controller
                 $estatusA = "Pendiente";
             }
 
-            Cotizaciones::where('id', $viajes[$x]['id'])->update(["tipo_viaje_seleccion" => "local_to_foraneo","en_patio" => 0,"estatus" => $estatusA]);
+            Cotizaciones::where('id', $viajes[$x]['id'])->update(["tipo_viaje_seleccion" => "local_to_foraneo","en_patio" => 0,"estatus" => $estatusA,"fecha_entrega" => Carbon::now()]);
         }
         return response()->json(["Titulo" => "Proceso satisfactorio", "Mensaje" => "Se ha realizado el proceso de conversión a viaje foráneo", "TMensaje" => "success"]);
     }
