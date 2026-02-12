@@ -36,7 +36,13 @@ class LiquidacionesController extends Controller
         ->where('asignaciones.tipo_contrato', '=', 'Propio')
         ->where('asignaciones.estatus_pagado', '=', 'Pendiente Pago')
 
-        ->select('asignaciones.id_operador', DB::raw('COUNT(*) as total_cotizaciones'), DB::raw('SUM(sueldo_viaje) as sueldo_viaje'), DB::raw('SUM(dinero_viaje) as dinero_viaje'), DB::raw('SUM(restante_pago_operador) as total_pago'))
+        ->select(
+            'asignaciones.id_operador',
+            DB::raw('COUNT(*) as total_cotizaciones'),
+            DB::raw('SUM(sueldo_viaje) as sueldo_viaje'),
+            DB::raw('SUM(dinero_viaje) as dinero_viaje'),
+            DB::raw('SUM(restante_pago_operador) as total_pago')
+        )
         ->groupBy('asignaciones.id_operador')
         ->get();
 
@@ -52,6 +58,74 @@ class LiquidacionesController extends Controller
         });
 
         return $datosPago;
+    }
+
+    public function getpagosOperadoressaldo()
+    {
+
+        $subLiquidacion = DB::table('liquidacion_contenedor')
+        ->select(
+            'id_contenedor',
+            DB::raw('SUM(total_pagado) as pagado'),
+            DB::raw('SUM(dinero_justificado) as justificado')
+        )
+        ->groupBy('id_contenedor');
+
+        $subDinero = DB::table('dinero_contenedor')
+            ->select(
+                'id_contenedor',
+                DB::raw('SUM(monto) as total_dinero')
+            )
+            ->groupBy('id_contenedor');
+
+
+        $asignaciones = DB::table('asignaciones as a')
+        ->join('operadores as o', 'a.id_operador', '=', 'o.id')
+
+        ->leftJoinSub($subLiquidacion, 'lc', function ($join) {
+            $join->on('lc.id_contenedor', '=', 'a.id_contenedor');
+        })
+
+        ->leftJoinSub($subDinero, 'dc2', function ($join) {
+            $join->on('dc2.id_contenedor', '=', 'a.id_contenedor');
+        })
+
+        ->where('a.id_empresa', auth()->user()->id_empresa)
+        ->where('a.tipo_contrato', 'Propio')
+        ->where('a.estatus_pagado', 'Pendiente Pago')
+        ->select(
+            'a.id_operador',
+            'o.nombre',
+            DB::raw('SUM(IFNULL(dc2.total_dinero,0)) as total_dinero'),
+            DB::raw('COUNT(*) as total_cotizaciones'),
+            DB::raw('SUM(a.sueldo_viaje) as sueldo_viaje'),
+            DB::raw('SUM(
+            (
+                a.sueldo_viaje
+                - IFNULL(dc2.total_dinero,0)
+                + IFNULL(lc.justificado,0)
+            )
+            - IFNULL(lc.pagado,0)
+        ) as total_pago_real')
+        )
+
+        ->groupBy('a.id_operador', 'o.nombre')
+  ->havingRaw('total_pago_real <> restante_pago_operador')
+        ->get();
+
+        $datosPago = $asignaciones->map(function ($ope) {
+            return [
+                "IdOperador" => $ope->id_operador,
+                "Operador" => $ope->nombre ?? 'N/A',
+                "SueldoViaje" => $ope->sueldo_viaje,
+                 "DineroViaje" => $ope->total_dinero,
+                "MontoPago" => $ope->total_pago_real,
+                "ViajesRealizados" => $ope->total_cotizaciones
+            ];
+        });
+
+        return $datosPago;
+
     }
 
     public function show($id)

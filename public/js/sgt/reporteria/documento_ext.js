@@ -45,7 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
             field: 'proveedor',
             filter: 'agTextColumnFilter',
             floatingFilter: true,
-            width: 230,
+            width: 280,
             cellClass: 'text-center',
         },
         {
@@ -245,11 +245,25 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // ========== RANGO DE FECHAS ==========
+    const fechaInicioUrl = getUrlParam('fecha_inicio');
+    const fechaFinUrl = getUrlParam('fecha_fin');
+
+    if (!fechaInicioUrl || !fechaFinUrl) {
+        const start = moment().subtract(1, 'month').format('YYYY-MM-DD');
+        const end = moment().format('YYYY-MM-DD');
+
+        const url = new URL(window.location.href);
+        url.searchParams.set('fecha_inicio', start);
+        url.searchParams.set('fecha_fin', end);
+
+        window.location.href = url.toString();
+        return;
+    }
+
     $('#daterange').daterangepicker(
         {
-            startDate: getUrlParam('fecha_inicio') || moment().subtract(7, 'days'),
-            endDate: getUrlParam('fecha_fin') || moment(),
+            startDate: moment(fechaInicioUrl),
+            endDate: moment(fechaFinUrl),
             maxDate: moment(),
             opens: 'right',
             locale: {
@@ -277,14 +291,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 ],
                 firstDay: 1,
             },
+            ranges: {
+                Hoy: [moment(), moment()],
+                'Últimos 7 días': [moment().subtract(6, 'days'), moment()],
+                'Últimos 30 días': [moment().subtract(29, 'days'), moment()],
+                'Este mes': [moment().startOf('month'), moment().endOf('month')],
+                'Mes anterior': [
+                    moment().subtract(1, 'month').startOf('month'),
+                    moment().subtract(1, 'month').endOf('month'),
+                ],
+            },
         },
         function (start, end) {
-            const currentStart = getUrlParam('fecha_inicio');
-            const currentEnd = getUrlParam('fecha_fin');
-
-            if (start.format('YYYY-MM-DD') !== currentStart || end.format('YYYY-MM-DD') !== currentEnd) {
-                getDatosFiltradosPorFecha(start.format('YYYY-MM-DD'), end.format('YYYY-MM-DD'));
-            }
+            getDatosFiltradosPorFecha(start.format('YYYY-MM-DD'), end.format('YYYY-MM-DD'));
         },
     );
 

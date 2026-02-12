@@ -1,3 +1,66 @@
+let fechaInicioViajes;
+let fechaFinViajes;
+
+$(document).ready(function () {
+    let start = moment().subtract(1, 'month');
+    let end = moment();
+
+    function setFechas(start, end) {
+        fechaInicioViajes = start.format('YYYY-MM-DD');
+        fechaFinViajes = end.format('YYYY-MM-DD');
+
+        $('#rangoFechasViajes').val(start.format('DD/MM/YYYY') + ' - ' + end.format('DD/MM/YYYY'));
+
+        getContenedoresPendientes('all');
+    }
+
+    $('#rangoFechasViajes').daterangepicker(
+        {
+            startDate: start,
+            endDate: end,
+            autoApply: true,
+            locale: {
+                format: 'DD/MM/YYYY',
+                applyLabel: 'Aplicar',
+                cancelLabel: 'Cancelar',
+                fromLabel: 'Desde',
+                toLabel: 'Hasta',
+                customRangeLabel: 'Personalizado',
+                daysOfWeek: ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa'],
+                monthNames: [
+                    'Enero',
+                    'Febrero',
+                    'Marzo',
+                    'Abril',
+                    'Mayo',
+                    'Junio',
+                    'Julio',
+                    'Agosto',
+                    'Septiembre',
+                    'Octubre',
+                    'Noviembre',
+                    'Diciembre',
+                ],
+                firstDay: 1,
+            },
+            ranges: {
+                Hoy: [moment(), moment()],
+                'Últimos 7 días': [moment().subtract(6, 'days'), moment()],
+                'Últimos 30 días': [moment().subtract(29, 'days'), moment()],
+                'Este mes': [moment().startOf('month'), moment().endOf('month')],
+                'Mes anterior': [
+                    moment().subtract(1, 'month').startOf('month'),
+                    moment().subtract(1, 'month').endOf('month'),
+                ],
+            },
+        },
+        setFechas,
+    );
+
+    // Ejecuta al cargar
+    setFechas(start, end);
+});
+
 class MissionResultRenderer {
     eGui;
 
@@ -122,12 +185,52 @@ const gridOptions = {
     columnDefs: [
         { field: 'id', hide: true },
         { field: 'tipo', hide: true },
-        { field: 'BoletaLiberacion', width: 110, cellRenderer: MissionResultRenderer },
-        { field: 'DODA', width: 70, cellRenderer: MissionResultRenderer },
-        { field: 'FormatoCartaPorte', width: 100, cellRenderer: MissionResultRenderer },
+        {
+            field: 'BoletaLiberacion',
+            wrapHeaderText: true,
+            autoHeaderHeight: true,
+            width: 110,
+            headerClass: 'header-center',
+            cellRenderer: MissionResultRenderer,
+        },
+        { field: 'DODA', width: 80, cellRenderer: MissionResultRenderer },
+        {
+            field: 'FormatoCartaPorte',
+            wrapHeaderText: true,
+            autoHeaderHeight: true,
+            width: 100,
+            headerClass: 'header-center',
+            cellRenderer: MissionResultRenderer,
+        },
+        {
+            field: 'cartaPortepdf',
+            headerName: 'Carta porte pdf',
+            wrapHeaderText: true,
+            autoHeaderHeight: true,
+            width: 100,
+            headerClass: 'header-center',
+            cellRenderer: MissionResultRenderer,
+        },
+        {
+            field: 'carta_porte_xml',
+            headerName: 'Carta porte xml',
+            wrapHeaderText: true,
+            autoHeaderHeight: true,
+            width: 100,
+            headerClass: 'header-center',
+            cellRenderer: MissionResultRenderer,
+        },
+        {
+            field: 'FormatoCartaPorte',
+            wrapHeaderText: true,
+            autoHeaderHeight: true,
+            width: 100,
+            headerClass: 'header-center',
+            cellRenderer: MissionResultRenderer,
+        },
         { field: 'PreAlta', width: 100, cellRenderer: MissionResultRenderer },
-        { field: 'foto_patio', width: 100, cellRenderer: MissionResultRenderer },
-        { field: 'docEir', headerName: 'EIR', with: 70, cellRenderer: MissionResultRenderer },
+        { field: 'foto_patio', headerName: 'Foto Patio', width: 100, cellRenderer: MissionResultRenderer },
+        { field: 'docEir', headerName: 'EIR', width: 70, cellRenderer: MissionResultRenderer },
         {
             field: 'NumContenedor',
             sortable: true,
@@ -148,10 +251,10 @@ const gridOptions = {
                 return styles;
             },
         },
-        { field: 'transportista', filter: true, floatingFilter: true },
-        { field: 'Estatus', filter: true, floatingFilter: true, cellClassRules: ragCellClassRules },
-        { field: 'Origen', filter: true, floatingFilter: true },
-        { field: 'Destino' },
+        { field: 'transportista', width: 200, filter: true, floatingFilter: true },
+        { field: 'Estatus', width: 100, filter: true, floatingFilter: true, cellClassRules: ragCellClassRules },
+        { field: 'Origen', width: 100, filter: true, floatingFilter: true },
+        { field: 'Destino', width: 100 },
         { field: 'Peso', width: 100 },
     ],
 
@@ -173,7 +276,7 @@ function getContenedoresPendientes(estatus = 'Documentos Faltantes') {
     $.ajax({
         url: '/viajes/documents/pending',
         type: 'post',
-        data: { _token, estatus },
+        data: { _token, estatus, fechaInicioViajes, fechaFinViajes },
         beforeSend: () => {},
         success: (response) => {
             if (response.length > 0) {

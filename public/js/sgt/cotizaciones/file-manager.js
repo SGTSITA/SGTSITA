@@ -588,7 +588,9 @@ function cargarDatosModalWhatsapp() {
     let data = archivosData;
     let limpiocontenrepl = contendores.replaceAll('*', ' ');
 
-    document.getElementById('wa_fecha').value = data.cotizacion.fecha_modulacion ?? '';
+    document.getElementById('wa_fecha').value = esLocal
+        ? data.cotizacion.fecha_modulacion
+        : (data.cotizacion.fecha_entrega ?? '');
     document.getElementById('wa_referencia').value = `${limpiocontenrepl}`;
 
     document.getElementById('wa_hora_inicio').value = data.cotizacion.bloque_hora_i_local ?? '';
