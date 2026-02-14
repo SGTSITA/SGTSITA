@@ -1,3 +1,6 @@
+let fechaInicioViajes;
+let fechaFinViajes;
+
 document.addEventListener('DOMContentLoaded', () => {
     const gridDiv = document.querySelector('#viajesGrid');
     let gridApi = null;
@@ -14,6 +17,8 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         { headerName: 'Contenedor', field: 'contenedor', filter: 'agTextColumnFilter', floatingFilter: true, flex: 1 },
         { headerName: 'Proveedor', field: 'proveedor', filter: 'agTextColumnFilter', floatingFilter: true, flex: 1 },
+        { headerName: 'Operador', field: 'operador', filter: 'agTextColumnFilter', floatingFilter: true, flex: 1 },
+
         { headerName: 'Cliente', field: 'cliente', filter: 'agTextColumnFilter', floatingFilter: true, flex: 1 },
         { headerName: 'Subcliente', field: 'subcliente', filter: 'agTextColumnFilter', floatingFilter: true, flex: 1 },
         { headerName: 'Origen', field: 'origen', filter: 'agTextColumnFilter', floatingFilter: true, flex: 1 },
@@ -148,6 +153,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 cancelLabel: 'Cancelar',
                 fromLabel: 'Desde',
                 toLabel: 'Hasta',
+                customRangeLabel: 'Personalizado',
                 daysOfWeek: ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa'],
                 monthNames: [
                     'Enero',
@@ -164,6 +170,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     'Diciembre',
                 ],
                 firstDay: 1,
+            },
+            ranges: {
+                Hoy: [moment(), moment()],
+                'Últimos 7 días': [moment().subtract(6, 'days'), moment()],
+                'Últimos 30 días': [moment().subtract(29, 'days'), moment()],
+                'Este mes': [moment().startOf('month'), moment().endOf('month')],
+                'Mes anterior': [
+                    moment().subtract(1, 'month').startOf('month'),
+                    moment().subtract(1, 'month').endOf('month'),
+                ],
             },
         },
         function (start, end) {

@@ -96,6 +96,7 @@ class LiquidacionesController extends Controller
         ->select(
             'a.id_operador',
             'o.nombre',
+            DB::raw('SUM(a.restante_pago_operador) as restante_pago_operador'),
             DB::raw('SUM(IFNULL(dc2.total_dinero,0)) as total_dinero'),
             DB::raw('COUNT(*) as total_cotizaciones'),
             DB::raw('SUM(a.sueldo_viaje) as sueldo_viaje'),
@@ -110,7 +111,17 @@ class LiquidacionesController extends Controller
         )
 
         ->groupBy('a.id_operador', 'o.nombre')
-  ->havingRaw('total_pago_real <> restante_pago_operador')
+->havingRaw('
+    SUM(
+        (
+            a.sueldo_viaje
+            - IFNULL(dc2.total_dinero,0)
+            + IFNULL(lc.justificado,0)
+        )
+        - IFNULL(lc.pagado,0)
+    )
+    > 0
+')
         ->get();
 
         $datosPago = $asignaciones->map(function ($ope) {

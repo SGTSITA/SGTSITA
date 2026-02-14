@@ -502,7 +502,8 @@ class ReporteriaController extends Controller
         $asignaciones = Asignaciones::with([
             'Contenedor.Cotizacion.Cliente',
             'Contenedor.Cotizacion.Subcliente',
-            'Proveedor'
+            'Proveedor',
+            'Operador'
         ])
         ->where('id_empresa', auth()->user()->id_empresa)
         ->get();
@@ -530,6 +531,7 @@ class ReporteriaController extends Controller
                 'fecha_llegada' => \Carbon\Carbon::parse($a->fehca_fin_guard)->format('d-m-Y'),
                 'estatus' => $a->Contenedor->Cotizacion->estatus ?? '',
                 'proveedor' => $a->Proveedor->nombre ?? '-',
+                'operador' => $a->Operador->nombre ?? '-',
             ];
         })->toArray();
 
@@ -544,7 +546,8 @@ class ReporteriaController extends Controller
         $asignaciones = Asignaciones::with([
             'Contenedor.Cotizacion.Cliente',
             'Contenedor.Cotizacion.Subcliente',
-            'Proveedor'
+            'Proveedor',
+            'Operador'
         ])
         ->where('id_empresa', auth()->user()->id_empresa)
         ->whereBetween('fehca_inicio_guard', [
@@ -576,6 +579,7 @@ class ReporteriaController extends Controller
                 'fecha_llegada' => optional($a->fehca_fin_guard)->format('d-m-Y'),
                 'estatus' => $a->Contenedor->Cotizacion->estatus ?? '',
                 'proveedor' => $a->Proveedor->nombre ?? '-',
+                 'operador' => $a->Operador->nombre ?? '-',
             ];
         });
 
