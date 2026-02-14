@@ -460,7 +460,7 @@ class PlaneacionController extends Controller
     public function asignacion(Request $request)
     {
 
-
+        $validadarSaldos = 'SI';
         $CantineroViaje = $request->filled('txtDineroViaje') ? $request->get('txtDineroViaje') : 0;
         $idEmpresa = auth()->user()->id_empresa;
         //validar si el banco tiene dinero antes de todo
@@ -468,7 +468,7 @@ class PlaneacionController extends Controller
 
             $bancovalidar = Bancos::where('id', '=', $request->get('cmbBanco'))->where('id_empresa', '=', $idEmpresa)->first();
             if ($bancovalidar->saldo <  $CantineroViaje) {
-
+                $validadarSaldos = 'NO';
                 return response()->json([
                   "TMensaje" => "error",
                   "Titulo" => "Saldo bancos",
@@ -478,9 +478,9 @@ class PlaneacionController extends Controller
                 ]);
 
 
-
+                //  dd($bancovalidar, $validadarSaldos);
             }
-
+            // dd($bancovalidar, $validadarSaldos.$bancovalidar->saldo, $CantineroViaje);
         }
 
 
@@ -488,10 +488,10 @@ class PlaneacionController extends Controller
 
 
         $otrosGastos = json_decode($request->filasOtrosGastos, true);
-        $validadarSaldos = 'SI';
+
         // dd($otrosGastos);
         if ($otrosGastos && is_array($otrosGastos)) {
-
+            $validadarSaldos = 'SI';
             $montosPorBanco = [];
 
 
@@ -522,7 +522,6 @@ class PlaneacionController extends Controller
                                ->where('id', $idBanco)
                                ->first();
 
-                //dd($banco);
 
                 if (!$banco) {
                     $validadarSaldos = 'NO';
@@ -534,6 +533,8 @@ class PlaneacionController extends Controller
                     ]);
 
                 }
+                //  dd($banco, $validadarSaldos);
+
 
                 if ($banco->saldo < $totalMonto) {
                     $validadarSaldos = 'NO';
@@ -553,7 +554,7 @@ class PlaneacionController extends Controller
 
         //finaliza y sigue si ay dinero
         if ($validadarSaldos === 'SI') {
-            $cotizacion_data = [             ];
+            $cotizacion_data = [];
             // dd($validadarSaldos);
             $numContenedores = json_decode($request->get('num_contenedor'));
             $numContenedor = $numContenedores[0];
@@ -721,7 +722,7 @@ class PlaneacionController extends Controller
             } catch (\Throwable $t) {
                 DB::rollback();
                 Log::channel('daily')->info('No se guardó planeacion: '.$t->getMessage());
-                return response()->json(["TMensaje" => "warning","Titulo" => "No se pudo planear", "Mensaje" => "Ocurrio un error mientras procesabamos su solicitud",'success' => true, 'cotizacion_data' => $cotizacion_data]);
+                return response()->json(["TMensaje" => "warning","Titulo" => "No se pudo planear", "Mensaje" => "Ocurrio un error mientras procesabamos su solicitud",'success' => true, 'cotizacion_data' => $cotizacion_data,'ERROR-ADMIN' => $t->getMessage()]);
 
             }
 
