@@ -423,6 +423,11 @@ async function programarViaje() {
                     Swal.fire('Sueldo inválido', 'El sueldo del operador debe ser mayor a 0.', 'error');
                     return false;
                 }
+
+                if (sueldo > 999999.99) {
+                    Swal.fire('Sueldo demasiado alto', 'El monto excede el límite permitido.', 'error');
+                    return false;
+                }
             }
         }
         return true;
@@ -448,6 +453,10 @@ async function programarViaje() {
             if (!confirmacion.isConfirmed) {
                 return;
             }
+        }
+        if (dineroViaje > 999999.99) {
+            Swal.fire('Dinero viaje demasiado alto', 'El monto excede el límite permitido.', 'error');
+            return false;
         }
     }
 
@@ -533,6 +542,7 @@ async function programarViaje() {
                     window.location.replace('/planeaciones');
                 }
             });
+            btnProgramar.disabled = false;
         },
         error: function () {
             ocultarLoading();
