@@ -401,7 +401,7 @@ function setTipoViaje(valTipoViaje) {
             $('#viaje-proveedor').addClass('d-none'));
 }
 
-function programarViaje() {
+async function programarViaje() {
     let fieldsViaje = tipoViaje == 'propio' ? formFieldsPlaneacion : formFieldsProveedor;
 
     let passValidation = fieldsViaje.every((item) => {
@@ -415,11 +415,41 @@ function programarViaje() {
                 );
                 return false;
             }
+            if (item.field === 'txtSueldoOperador') {
+                let value = field.value.replace(/[$,]/g, '').trim();
+                let sueldo = parseFloat(value);
+
+                if (isNaN(sueldo) || sueldo <= 0) {
+                    Swal.fire('Sueldo inválido', 'El sueldo del operador debe ser mayor a 0.', 'error');
+                    return false;
+                }
+            }
         }
         return true;
     });
 
     if (!passValidation) return passValidation;
+
+    let dineroViajeInput = document.getElementById('txtDineroViaje');
+
+    if (dineroViajeInput) {
+        let dineroViaje = parseFloat(dineroViajeInput.value.replace(/[$,]/g, '').trim()) || 0;
+
+        if (dineroViaje === 0) {
+            let confirmacion = await Swal.fire({
+                title: '¿Continuar sin dinero de viaje?',
+                text: 'Está asignando $0.00 para dinero de viaje.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, continuar',
+                cancelButtonText: 'Cancelar',
+            });
+
+            if (!confirmacion.isConfirmed) {
+                return;
+            }
+        }
+    }
 
     const formData = {};
 
@@ -440,8 +470,9 @@ function programarViaje() {
 
         let filas = document.querySelectorAll('.gasto-item');
         let gastosValidos = [];
+        let hayErrorGastos = false;
 
-        filas.forEach((fila) => {
+        for (const fila of filas) {
             const motivo = fila.querySelector('[name="gasto_nombre[]"]').value.trim();
             const monto = parseFloat(fila.querySelector('[name="gasto_monto[]"]').value) || 0;
             const pagoInmediato = fila.querySelector('[name="gasto_pago_inmediato[]"]').checked;
@@ -449,18 +480,20 @@ function programarViaje() {
 
             if (motivo !== '' && monto <= 0) {
                 Swal.fire('Monto inválido', "El monto del gasto '" + motivo + "' debe ser mayor a cero.", 'warning');
-                return false;
+                hayErrorGastos = true;
+                break;
             }
-            if (pagoInmediato && (!banco || banco === '')) {
+
+            if (pagoInmediato && !banco) {
                 Swal.fire(
                     'Banco inválido',
                     "Debe seleccionar un banco para el gasto '" + motivo + "' que se pagará de inmediato.",
                     'warning',
                 );
-                return false;
+                hayErrorGastos = true;
+                break;
             }
 
-            // Solo agrega si hay al menos motivo o monto (no son obligatorios)
             if (motivo !== '' || monto > 0) {
                 gastosValidos.push({
                     motivo,
@@ -469,13 +502,15 @@ function programarViaje() {
                     banco: pagoInmediato ? banco : null,
                 });
             }
-        });
-        7;
+        }
+
         if (gastosValidos.length > 0) {
             // solo si hay gastos validos
             formData['filasOtrosGastos'] = JSON.stringify(gastosValidos);
             //  formData.append("otrosgastoscontenedor", JSON.stringify(gastosValidos));
         }
+
+        if (hayErrorGastos) return;
     }
 
     formData['_token'] = document.querySelector('meta[name="csrf-token"]').getAttribute('content');

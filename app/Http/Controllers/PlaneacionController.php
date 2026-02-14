@@ -142,6 +142,9 @@ class PlaneacionController extends Controller
 
             ViaticosOperador::where('id_cotizacion', $cotizaciones->id)->delete();
 
+
+
+
             DB::commit();
 
             return response()->json(["Titulo" => "Programa cancelado","Mensaje" => "Se canceló el programa del viaje correctamente", "TMensaje" => "success"]);
@@ -452,178 +455,280 @@ class PlaneacionController extends Controller
         return response()->json(["boardCentros" => $board,"extractor" => $extractor,"scrollDate" => $fecha, "TMensaje" => "success","planeaciones" => $planeaciones]);
     }
 
+
+
     public function asignacion(Request $request)
     {
 
-        $numContenedores = json_decode($request->get('num_contenedor'));
-        $numContenedor = $numContenedores[0];
-        // $numContenedor = ($request->cmbTipoUnidad == "Full") ? substr($numContenedor,0,12) : $numContenedor;
 
-        $fechaInicio = common::TransformaFecha($request->txtFechaInicio);
-        $fechaFinal = common::TransformaFecha($request->txtFechaFinal);
+        $CantineroViaje = $request->filled('txtDineroViaje') ? $request->get('txtDineroViaje') : 0;
+        $idEmpresa = auth()->user()->id_empresa;
+        //validar si el banco tiene dinero antes de todo
+        if ($CantineroViaje > 0) {
 
-        $contenedor = DocumCotizacion::where('num_contenedor', $numContenedor)->first();
-        $cotizacion = Cotizaciones::where('id', '=', $contenedor->id_cotizacion)->first();
+            $bancovalidar = Bancos::where('id', '=', $request->get('cmbBanco'))->where('id_empresa', '=', $idEmpresa)->first();
+            if ($bancovalidar->saldo <  $CantineroViaje) {
 
-        try {
-
-            DB::beginTransaction();
-            $asignaciones = new Asignaciones();
-
-            $asignaciones->id_contenedor = $contenedor->id_cotizacion;
-            $asignaciones->fecha_inicio = $fechaInicio;
-            $asignaciones->fecha_fin = $fechaFinal . ' 23:00:00';
-            $asignaciones->fehca_inicio_guard = $fechaInicio;
-            $asignaciones->fehca_fin_guard = $fechaFinal . ' 23:00:00';
-
-            $asignaciones->save();
-
-            $viajePropio = 0;
-
-            if ($request->tipoViaje == "propio") {
-                $asignaciones->id_chasis = $request->get('cmbChasis');
-                $asignaciones->id_chasis2 = $request->get('cmbChasis2');
-                $asignaciones->id_dolys = $request->get('cmbDoly');
-                $asignaciones->id_camion = $request->get('cmbCamion');
-                $asignaciones->id_operador = $request->get('cmbOperador');
-                $asignaciones->sueldo_viaje = $request->get('txtSueldoOperador');
-                $asignaciones->estatus_pagado = 'Pendiente Pago';
-                $asignaciones->dinero_viaje = $request->get('txtDineroViaje');
-
-                $asignaciones->id_banco1_dinero_viaje = $request->get('cmbBanco');
-                $asignaciones->cantidad_banco1_dinero_viaje = $request->get('txtDineroViaje');
-
-                $sueldoOperador = $request->filled('txtSueldoOperador') ? $request->get('txtSueldoOperador') : 0;
-                $CantineroViaje = $request->filled('txtDineroViaje') ? $request->get('txtDineroViaje') : 0;
-
-                $resta = $sueldoOperador - $CantineroViaje;
-                $asignaciones->pago_operador = $resta;
-                $asignaciones->restante_pago_operador = $resta;
-                $asignaciones->tipo_contrato = 'Propio';
-
-
-                if (is_null($request->get('cmbProveedor')) && $CantineroViaje > 0) { //Agregue para validar el proveedor con sgt elemental no tiene porceso de pagos
-
-                    $contenedoresAbonos = [];
-                    $contenedorAbono = [
-                        'num_contenedor' => $contenedor->num_contenedor,
-                        'abono' =>  $CantineroViaje
-                    ];
-
-                    array_push($contenedoresAbonos, $contenedorAbono);
-
-                    Bancos::where('id', '=', $request->get('cmbBanco'))->update(["saldo" => DB::raw("saldo - ". $CantineroViaje)]);
-                    BancoDineroOpe::insert([[
-                                            'id_operador' => $request->get('cmbOperador'),
-                                            'id_banco1' => $request->get('cmbBanco'),
-                                            'monto1' => $CantineroViaje,
-                                            'fecha_pago' => date('Y-m-d'),
-                                            'tipo' => 'Salida',
-                                            'id_empresa' => auth()->user()->id_empresa,
-                                            'contenedores' => json_encode($contenedoresAbonos),
-                                            'descripcion_gasto' => 'Dinero para viaje'
-                                        ]]);
-
-                    $dineroViaje = new DineroContenedor();
-                    $dineroViaje->id_contenedor = $asignaciones->id_contenedor;
-                    $dineroViaje->id_banco = $request->get('cmbBanco');
-                    $dineroViaje->motivo = 'Dinero para viaje';
-                    $dineroViaje->monto =  $CantineroViaje;
-                    $dineroViaje->fecha_entrega_monto = date('Y-m-d');
-                    $dineroViaje->save();
+                return response()->json([
+                  "TMensaje" => "error",
+                  "Titulo" => "Saldo bancos",
+                  "Mensaje" => "No se puede realizar la programacion de este viaje, el saldo del banco no es suficiente",
+                  'success' => false,
+                  'cotizacion_data' => []
+                ]);
 
 
 
-
-                }
-
-
-                $viajePropio = 1;
-
-            } else {
-
-                $asignaciones->id_proveedor = $request->get('cmbProveedor');
-                $asignaciones->precio = $request->get('precio_proveedor');
-                $asignaciones->burreo = $request->get('burreo_proveedor');
-                $asignaciones->maniobra = $request->get('maniobra_proveedor');
-                $asignaciones->estadia = $request->get('estadia_proveedor');
-                $asignaciones->otro = $request->get('otro_proveedor');
-                $asignaciones->iva = $request->get('iva_proveedor');
-                $asignaciones->retencion = $request->get('retencion_proveedor');
-                $asignaciones->total_proveedor = $request->get('total_proveedor');
-                $asignaciones->sobrepeso_proveedor = $request->get('sobrepeso_proveedor');
-                $asignaciones->base1_proveedor = $request->get('base_factura');
-                $asignaciones->base2_proveedor = $request->get('base_taref');
-                $asignaciones->total_tonelada = round(floatVal($request->get('sobrepeso_proveedor')) * floatVal($request->get('cantidad_sobrepeso_proveedor')), 4);
-                $cotizacion->prove_restante = $asignaciones->total_proveedor;
-                $asignaciones->tipo_contrato = 'Subcontratado';
             }
-
-            /*
-
-
-             $asignaciones->id_banco2_dinero_viaje = $request->get('id_banco2_dinero_viaje');
-             $asignaciones->cantidad_banco2_dinero_viaje = $request->get('cantidad_banco2_dinero_viaje');
-
-
-             */
-
-
-            $asignaciones->update();
-
-            $cotizacion->estatus_planeacion = 1;
-            $cotizacion->tipo_viaje = $request->get('cmbTipoUnidad');
-            $cotizacion->update();
-
-
-
-            $cotizacion_data = [
-                "tipo_viaje" => $cotizacion->tipo_viaje,
-            ];
-
-            if (sizeof($numContenedores) == 2) {
-                $fullUUID = Common::generarUuidV4();
-                foreach ($numContenedores as $i => $cont) {
-                    $contenedor = DocumCotizacion::where('num_contenedor', $cont)->first();
-                    $cotizacion = Cotizaciones::where('id', '=', $contenedor->id_cotizacion)->first();
-                    $cotizacion->referencia_full = $fullUUID;
-                    $cotizacion->jerarquia = ($i == 0) ? 'Principal' : 'Secundario';
-                    //  Log::debug("index: $i contenedor: $cont jerarquia: $cotizacion->jerarquia");
-                    $cotizacion->estatus_planeacion = 1;
-                    $cotizacion->tipo_viaje = 'Full';
-                    $cotizacion->update();
-
-                }
-            }
-
-            DB::commit();
-
-
-            //se envia aki los nuevos parametros los gastos despues de actualizar los datos de asignacion
-            if ($viajePropio) {
-                //nuevos cambios en form planeacion propio
-                if ($request->filled('filasOtrosGastos')) {
-                    log::info('Guardando otros gastos de planeacion propio...');
-
-                    $resultado = self::guardarOtrosGastosPlaneacion($request, $contenedor->num_contenedor, $request->get('cmbOperador'));
-
-                }
-            }
-
-            return response()->json([
-                "TMensaje" => "success",
-                "Titulo" => "Planeado correctamente",
-                "Mensaje" => "Se ha programado correctamente el viaje del contenedor",
-                'success' => true,
-                'cotizacion_data' => $cotizacion_data
-            ]);
-
-        } catch (\Throwable $t) {
-            DB::rollback();
-            Log::channel('daily')->info('No se guardó planeacion: '.$t->getMessage());
-            return response()->json(["TMensaje" => "warning","Titulo" => "No se pudo planear", "Mensaje" => "Ocurrio un error mientras procesabamos su solicitud",'success' => true, 'cotizacion_data' => $cotizacion_data]);
 
         }
+
+
+        //validacion saldo otros gastos
+
+
+        $otrosGastos = json_decode($request->filasOtrosGastos, true);
+        $validadarSaldos = 'SI';
+        // dd($otrosGastos);
+        if ($otrosGastos && is_array($otrosGastos)) {
+
+            $montosPorBanco = [];
+
+
+            foreach ($otrosGastos as $gasto) {
+
+                $monto = floatval($gasto['monto'] ?? 0);
+                $esPagoInmediato = !empty($gasto['pagoInmediato']);
+                $idBanco = !empty($gasto['banco']) ? intval($gasto['banco']) : null;
+
+
+                //dd($gasto, $validadarSaldos);
+                if ($esPagoInmediato && $idBanco) {
+
+                    // Acumular monto por banco
+                    if (!isset($montosPorBanco[$idBanco])) {
+                        $montosPorBanco[$idBanco] = 0;
+                    }
+
+                    $montosPorBanco[$idBanco] += $monto;
+                }
+                //  dd($idBanco, $esPagoInmediato, $monto);
+            }
+            //  dd($montosPorBanco);
+            // 🔎 Ahora validar saldos reales
+            foreach ($montosPorBanco as $idBanco => $totalMonto) {
+
+                $banco = Bancos::where('id_empresa', $idEmpresa)
+                               ->where('id', $idBanco)
+                               ->first();
+
+                //dd($banco);
+
+                if (!$banco) {
+                    $validadarSaldos = 'NO';
+                    return response()->json([
+                        "Titulo" => "Banco no encontrado",
+                        "Mensaje" => "El banco seleccionado no existe o no pertenece a la empresa.",
+                        "TMensaje" => "error",
+                         'success' => false,
+                    ]);
+
+                }
+
+                if ($banco->saldo < $totalMonto) {
+                    $validadarSaldos = 'NO';
+                    return response()->json([
+                        "Titulo" => "Saldo insuficiente",
+                        "Mensaje" => "El banco {$banco->nombre} no cuenta con saldo suficiente para cubrir el total de {$totalMonto}.",
+                        "TMensaje" => "error",
+                         'success' => false,
+                    ]);
+                    break;
+                }
+            }
+
+
+        }
+
+
+        //finaliza y sigue si ay dinero
+        if ($validadarSaldos === 'SI') {
+            // dd($validadarSaldos);
+            $numContenedores = json_decode($request->get('num_contenedor'));
+            $numContenedor = $numContenedores[0];
+            // $numContenedor = ($request->cmbTipoUnidad == "Full") ? substr($numContenedor,0,12) : $numContenedor;
+
+            $fechaInicio = common::TransformaFecha($request->txtFechaInicio);
+            $fechaFinal = common::TransformaFecha($request->txtFechaFinal);
+
+            $contenedor = DocumCotizacion::where('num_contenedor', $numContenedor)->first();
+            $cotizacion = Cotizaciones::where('id', '=', $contenedor->id_cotizacion)->first();
+
+            try {
+
+                DB::beginTransaction();
+                $asignaciones = new Asignaciones();
+
+                $asignaciones->id_contenedor = $contenedor->id_cotizacion;
+                $asignaciones->fecha_inicio = $fechaInicio;
+                $asignaciones->fecha_fin = $fechaFinal . ' 23:00:00';
+                $asignaciones->fehca_inicio_guard = $fechaInicio;
+                $asignaciones->fehca_fin_guard = $fechaFinal . ' 23:00:00';
+
+                $asignaciones->save();
+
+                $viajePropio = 0;
+
+                if ($request->tipoViaje == "propio") {
+                    $asignaciones->id_chasis = $request->get('cmbChasis');
+                    $asignaciones->id_chasis2 = $request->get('cmbChasis2');
+                    $asignaciones->id_dolys = $request->get('cmbDoly');
+                    $asignaciones->id_camion = $request->get('cmbCamion');
+                    $asignaciones->id_operador = $request->get('cmbOperador');
+                    $asignaciones->sueldo_viaje = $request->get('txtSueldoOperador');
+                    $asignaciones->estatus_pagado = 'Pendiente Pago';
+                    $asignaciones->dinero_viaje = $request->get('txtDineroViaje');
+
+                    $asignaciones->id_banco1_dinero_viaje = $request->get('cmbBanco');
+                    $asignaciones->cantidad_banco1_dinero_viaje = $request->get('txtDineroViaje');
+
+                    $sueldoOperador = $request->filled('txtSueldoOperador') ? $request->get('txtSueldoOperador') : 0;
+
+
+                    $resta = $sueldoOperador - $CantineroViaje;
+                    $asignaciones->pago_operador = $resta;
+                    $asignaciones->restante_pago_operador = $resta;
+                    $asignaciones->tipo_contrato = 'Propio';
+
+
+                    if (is_null($request->get('cmbProveedor')) && $CantineroViaje > 0) { //Agregue para validar el proveedor con sgt elemental no tiene porceso de pagos
+
+                        $contenedoresAbonos = [];
+                        $contenedorAbono = [
+                            'num_contenedor' => $contenedor->num_contenedor,
+                            'abono' =>  $CantineroViaje
+                        ];
+
+                        array_push($contenedoresAbonos, $contenedorAbono);
+
+                        Bancos::where('id', '=', $request->get('cmbBanco'))->update(["saldo" => DB::raw("saldo - ". $CantineroViaje)]);
+                        BancoDineroOpe::insert([[
+                                                'id_operador' => $request->get('cmbOperador'),
+                                                'id_banco1' => $request->get('cmbBanco'),
+                                                'monto1' => $CantineroViaje,
+                                                'fecha_pago' => date('Y-m-d'),
+                                                'tipo' => 'Salida',
+                                                'id_empresa' => auth()->user()->id_empresa,
+                                                'contenedores' => json_encode($contenedoresAbonos),
+                                                'descripcion_gasto' => 'Dinero para viaje'
+                                            ]]);
+
+                        $dineroViaje = new DineroContenedor();
+                        $dineroViaje->id_contenedor = $asignaciones->id_contenedor;
+                        $dineroViaje->id_banco = $request->get('cmbBanco');
+                        $dineroViaje->motivo = 'Dinero para viaje';
+                        $dineroViaje->monto =  $CantineroViaje;
+                        $dineroViaje->fecha_entrega_monto = date('Y-m-d');
+                        $dineroViaje->save();
+
+
+
+
+                    }
+
+
+                    $viajePropio = 1;
+
+                } else {
+
+                    $asignaciones->id_proveedor = $request->get('cmbProveedor');
+                    $asignaciones->precio = $request->get('precio_proveedor');
+                    $asignaciones->burreo = $request->get('burreo_proveedor');
+                    $asignaciones->maniobra = $request->get('maniobra_proveedor');
+                    $asignaciones->estadia = $request->get('estadia_proveedor');
+                    $asignaciones->otro = $request->get('otro_proveedor');
+                    $asignaciones->iva = $request->get('iva_proveedor');
+                    $asignaciones->retencion = $request->get('retencion_proveedor');
+                    $asignaciones->total_proveedor = $request->get('total_proveedor');
+                    $asignaciones->sobrepeso_proveedor = $request->get('sobrepeso_proveedor');
+                    $asignaciones->base1_proveedor = $request->get('base_factura');
+                    $asignaciones->base2_proveedor = $request->get('base_taref');
+                    $asignaciones->total_tonelada = round(floatVal($request->get('sobrepeso_proveedor')) * floatVal($request->get('cantidad_sobrepeso_proveedor')), 4);
+                    $cotizacion->prove_restante = $asignaciones->total_proveedor;
+                    $asignaciones->tipo_contrato = 'Subcontratado';
+                }
+
+                /*
+
+
+                 $asignaciones->id_banco2_dinero_viaje = $request->get('id_banco2_dinero_viaje');
+                 $asignaciones->cantidad_banco2_dinero_viaje = $request->get('cantidad_banco2_dinero_viaje');
+
+
+                 */
+
+
+                $asignaciones->update();
+
+                $cotizacion->estatus_planeacion = 1;
+                $cotizacion->tipo_viaje = $request->get('cmbTipoUnidad');
+                $cotizacion->update();
+
+
+
+                $cotizacion_data = [
+                    "tipo_viaje" => $cotizacion->tipo_viaje,
+                ];
+
+                if (sizeof($numContenedores) == 2) {
+                    $fullUUID = Common::generarUuidV4();
+                    foreach ($numContenedores as $i => $cont) {
+                        $contenedor = DocumCotizacion::where('num_contenedor', $cont)->first();
+                        $cotizacion = Cotizaciones::where('id', '=', $contenedor->id_cotizacion)->first();
+                        $cotizacion->referencia_full = $fullUUID;
+                        $cotizacion->jerarquia = ($i == 0) ? 'Principal' : 'Secundario';
+                        //  Log::debug("index: $i contenedor: $cont jerarquia: $cotizacion->jerarquia");
+                        $cotizacion->estatus_planeacion = 1;
+                        $cotizacion->tipo_viaje = 'Full';
+                        $cotizacion->update();
+
+                    }
+                }
+
+                DB::commit();
+
+
+                //se envia aki los nuevos parametros los gastos despues de actualizar los datos de asignacion
+                if ($viajePropio) {
+                    //nuevos cambios en form planeacion propio
+                    if ($request->filled('filasOtrosGastos')) {
+                        log::info('Guardando otros gastos de planeacion propio...');
+
+                        $resultado = self::guardarOtrosGastosPlaneacion($request, $contenedor->num_contenedor, $request->get('cmbOperador'));
+
+                    }
+                }
+
+                return response()->json([
+                    "TMensaje" => "success",
+                    "Titulo" => "Planeado correctamente",
+                    "Mensaje" => "Se ha programado correctamente el viaje del contenedor",
+                    'success' => true,
+                    'cotizacion_data' => $cotizacion_data
+                ]);
+
+            } catch (\Throwable $t) {
+                DB::rollback();
+                Log::channel('daily')->info('No se guardó planeacion: '.$t->getMessage());
+                return response()->json(["TMensaje" => "warning","Titulo" => "No se pudo planear", "Mensaje" => "Ocurrio un error mientras procesabamos su solicitud",'success' => true, 'cotizacion_data' => $cotizacion_data]);
+
+            }
+
+
+
+        }
+
+
 
 
     }
