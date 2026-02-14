@@ -553,6 +553,7 @@ class PlaneacionController extends Controller
 
         //finaliza y sigue si ay dinero
         if ($validadarSaldos === 'SI') {
+            $cotizacion_data = [             ];
             // dd($validadarSaldos);
             $numContenedores = json_decode($request->get('num_contenedor'));
             $numContenedor = $numContenedores[0];
@@ -695,8 +696,8 @@ class PlaneacionController extends Controller
                     }
                 }
 
-                DB::commit();
 
+                DB::commit();
 
                 //se envia aki los nuevos parametros los gastos despues de actualizar los datos de asignacion
                 if ($viajePropio) {
