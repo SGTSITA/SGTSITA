@@ -822,7 +822,7 @@ class CotizacionesController extends Controller
 
                 $cotizaciones->otro = 0;
                 $cotizaciones->fecha_modulacion =  $contenedor[12 + $sumarIndex];
-                $cotizaciones->fecha_entrega = $contenedor[13 + $sumarIndex];
+                $cotizaciones->fecha_entrega = $contenedor[13 + $sumarIndex] ?? Carbon::now();
                 $cotizaciones->iva = 0;
                 $cotizaciones->retencion = 0;
                 $cotizaciones->peso_reglamentario = $pesoReglamentario;
