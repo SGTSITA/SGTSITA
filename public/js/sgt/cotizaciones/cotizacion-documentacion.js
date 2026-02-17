@@ -11,7 +11,7 @@ $(document).ready(function () {
 
         $('#rangoFechasViajes').val(start.format('DD/MM/YYYY') + ' - ' + end.format('DD/MM/YYYY'));
 
-        getContenedoresPendientes('all');
+        getContenedoresPendientes(estatusSearch);
     }
 
     $('#rangoFechasViajes').daterangepicker(
