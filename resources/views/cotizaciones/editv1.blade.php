@@ -163,13 +163,13 @@
 
                                         <div class="col-6 form-group">
                                             <!--label for="name">Cliente *</label>
-                                                                        <select class="form-select cliente d-inline-block" data-toggle="select" id="id_cliente" name="id_cliente">
-                                                                            <option value="{{ $cotizacion->id_cliente }}">{{ $cotizacion->Cliente->nombre }} / {{ $cotizacion->Cliente->telefono }}</option>
-                                                                            @foreach ($clientes as $item)
+                                                                                    <select class="form-select cliente d-inline-block" data-toggle="select" id="id_cliente" name="id_cliente">
+                                                                                        <option value="{{ $cotizacion->id_cliente }}">{{ $cotizacion->Cliente->nombre }} / {{ $cotizacion->Cliente->telefono }}</option>
+                                                                                        @foreach ($clientes as $item)
     <option value="{{ $item->id }}">{{ $item->nombre }} / {{ $item->telefono }}</option>
     @endforeach
 
-                                                                        </select-->
+                                                                                    </select-->
                                             <ul class="list-group">
                                                 <li
                                                     class="list-group-item border-1 border-dashed d-flex p-4 mb-2 bg-gray-100 border-radius-lg">
@@ -210,15 +210,14 @@
 
                                         <div class="col-6 form-group">
                                             <!--label for="name">Subcliente *</label>
-                                                                        <select class="form-select subcliente d-inline-block" id="id_subcliente" name="id_subcliente">
+                                                                                    <select class="form-select subcliente d-inline-block" id="id_subcliente" name="id_subcliente">
 
-                        @if ($cotizacion->id_subcliente != null)
-
-                                                                                <option value="{{ $cotizacion->id_subcliente }}">{{ $cotizacion->Subcliente->nombre }} / {{ $cotizacion->Subcliente->telefono }}</option>
+                                    @if ($cotizacion->id_subcliente != null)
+    <option value="{{ $cotizacion->id_subcliente }}">{{ $cotizacion->Subcliente->nombre }} / {{ $cotizacion->Subcliente->telefono }}</option>
 @else
     <option value="">Seleccionar subcliente</option>
-                        @endif
-                                                                        </select-->
+    @endif
+                                                                                    </select-->
                                             <ul class="list-group">
                                                 <li
                                                     class="list-group-item border-1 border-dashed d-flex p-4 mb-2 bg-gray-100 border-radius-lg">
@@ -1616,317 +1615,324 @@
                             <div class="modal-footer">
                                 @can('cotizacion-valores')
                                     <button type="submit" class="btn btn-primary">Guardar</button>
-                                    @endif
-                                </div>
-                            </form>
-                        </div>
+                                @endcan
+
+                                @can('cotizacion-cambiocimamep')
+                                    <button type="button" id="btnCambiarCimaOpcion" data-id="{{ $cotizacion->id }}"
+                                        class="btn btn-primary">Guardar</button>
+                                @endcan
+
+                            </div>
+
+                        </form>
                     </div>
                 </div>
             </div>
         </div>
-        @include('cotizaciones.modal_agregar_gasto')
-        @include('cotizaciones.modal_agregar_gasto_operador')
-        @include('cotizaciones.modal_pagar_gastos_operador')
-        @include('cotizaciones.modal_fileuploader')
-        @include('cotizaciones.modal_mapa_Direccion')
-    @endsection
+    </div>
+    @include('cotizaciones.modal_agregar_gasto')
+    @include('cotizaciones.modal_agregar_gasto_operador')
+    @include('cotizaciones.modal_pagar_gastos_operador')
+    @include('cotizaciones.modal_fileuploader')
+    @include('cotizaciones.modal_mapa_Direccion')
+@endsection
 
-    @section('select2')
-        <style>
-            /* Fondo transparente y sin bordes */
-            .select2-container .select2-selection--single {
-                background-color: transparent !important;
-                border: none !important;
-                box-shadow: none !important;
-                /* Eliminar sombras */
-            }
+@section('select2')
+    <style>
+        /* Fondo transparente y sin bordes */
+        .select2-container .select2-selection--single {
+            background-color: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            /* Eliminar sombras */
+        }
 
-            .select2-container .select2-selection--single:focus {
-                outline: none !important;
-            }
+        .select2-container .select2-selection--single:focus {
+            outline: none !important;
+        }
 
-            .select2-container .select2-selection--single .select2-selection__rendered {
-                color: inherit;
-                /* Heredar color del texto */
-                background-color: transparent !important;
-            }
-        </style>
-        <script src="https://maps.googleapis.com/maps/api/js?key={{ config('services.googleMapsApi.apikey') }}" async defer>
-        </script>
-        <!-- jQuery -->
-        <script src="{{ asset('assets/vendor/jquery/dist/jquery.min.js') }}"></script>
-        <script src="{{ asset('assets/vendor/select2/dist/js/select2.min.js') }}"></script>
-        <script src="{{ asset('js/sgt/common.js') }}?v={{ filemtime(public_path('js/sgt/common.js')) }}"></script>
-        <script
-            src="{{ asset('js/sgt/cotizaciones/cotizaciones.js') }}?v={{ filemtime(public_path('js/sgt/cotizaciones/cotizaciones.js')) }}">
-        </script>
+        .select2-container .select2-selection--single .select2-selection__rendered {
+            color: inherit;
+            /* Heredar color del texto */
+            background-color: transparent !important;
+        }
+    </style>
+    <script src="https://maps.googleapis.com/maps/api/js?key={{ config('services.googleMapsApi.apikey') }}" async defer>
+    </script>
+    <!-- jQuery -->
+    <script src="{{ asset('assets/vendor/jquery/dist/jquery.min.js') }}"></script>
+    <script src="{{ asset('assets/vendor/select2/dist/js/select2.min.js') }}"></script>
+    <script src="{{ asset('js/sgt/common.js') }}?v={{ filemtime(public_path('js/sgt/common.js')) }}"></script>
+    <script
+        src="{{ asset('js/sgt/cotizaciones/cotizaciones.js') }}?v={{ filemtime(public_path('js/sgt/cotizaciones/cotizaciones.js')) }}">
+    </script>
 
-        <link href="{{ asset('assets/metronic/fileuploader/font/font-fileuploader.css') }}" rel="stylesheet" />
-        <link href="{{ asset('assets/metronic/fileuploader/jquery.fileuploader.min.css') }}" media="all"
-            rel="stylesheet" />
-        <link href="{{ asset('assets/metronic/fileuploader/jquery.fileuploader-theme-dragdrop.css') }}" media="all"
-            rel="stylesheet" />
-        <script src="{{ asset('assets/metronic/fileuploader/jquery.fileuploader.min.js') }}" type="text/javascript"></script>
+    <link href="{{ asset('assets/metronic/fileuploader/font/font-fileuploader.css') }}" rel="stylesheet" />
+    <link href="{{ asset('assets/metronic/fileuploader/jquery.fileuploader.min.css') }}" media="all"
+        rel="stylesheet" />
+    <link href="{{ asset('assets/metronic/fileuploader/jquery.fileuploader-theme-dragdrop.css') }}" media="all"
+        rel="stylesheet" />
+    <script src="{{ asset('assets/metronic/fileuploader/jquery.fileuploader.min.js') }}" type="text/javascript"></script>
 
-        <script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.js"></script>
-        <script
-            src="{{ asset('js/sgt/cotizaciones/cotizacion-gastos.js') }}?v={{ filemtime(public_path('js/sgt/cotizaciones/cotizacion-gastos.js')) }}">
-        </script>
-        <script
-            src="{{ asset('js/sgt/cotizaciones/cotizacion-gastos-operador.js') }}?v={{ filemtime(public_path('js/sgt/cotizaciones/cotizacion-gastos-operador.js')) }}">
-        </script>
+    <script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.js"></script>
+    <script
+        src="{{ asset('js/sgt/cotizaciones/cotizacion-gastos.js') }}?v={{ filemtime(public_path('js/sgt/cotizaciones/cotizacion-gastos.js')) }}">
+    </script>
+    <script
+        src="{{ asset('js/sgt/cotizaciones/cotizacion-gastos-operador.js') }}?v={{ filemtime(public_path('js/sgt/cotizaciones/cotizacion-gastos-operador.js')) }}">
+    </script>
 
-        <script
-            src="{{ asset('js/sgt/cotizaciones/cotizacion-fileuploader.js') }}?v={{ filemtime(public_path('js/sgt/cotizaciones/cotizacion-fileuploader.js')) }}">
-        </script>
+    <script
+        src="{{ asset('js/sgt/cotizaciones/cotizacion-fileuploader.js') }}?v={{ filemtime(public_path('js/sgt/cotizaciones/cotizacion-fileuploader.js')) }}">
+    </script>
 
-        <style>
-            .custom-nav-tabs {
-                display: flex;
-                width: 100%;
-                border-bottom: none;
-                gap: 0.3rem;
-            }
+    <style>
+        .custom-nav-tabs {
+            display: flex;
+            width: 100%;
+            border-bottom: none;
+            gap: 0.3rem;
+        }
 
-            .custom-nav-item {
-                flex: 1;
-                text-align: center;
-            }
+        .custom-nav-item {
+            flex: 1;
+            text-align: center;
+        }
 
-            .custom-nav-link {
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                padding: 14px;
-                background-color: #f1f1f1;
-                color: #999;
-                border-radius: 12px 12px 0 0;
-                cursor: pointer;
-                border: 1px solid transparent;
-                transition: all 0.3s ease;
-            }
+        .custom-nav-link {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 14px;
+            background-color: #f1f1f1;
+            color: #999;
+            border-radius: 12px 12px 0 0;
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
 
-            .custom-nav-link i {
-                font-size: 20px;
-                color: inherit !important;
-            }
+        .custom-nav-link i {
+            font-size: 20px;
+            color: inherit !important;
+        }
 
-            .custom-nav-link h6 {
-                margin: 2px 0 0;
-                font-size: 1rem;
-                font-weight: 500;
-                color: inherit;
-            }
+        .custom-nav-link h6 {
+            margin: 2px 0 0;
+            font-size: 1rem;
+            font-weight: 500;
+            color: inherit;
+        }
 
-            .custom-nav-link.active {
-                background-color: #fff;
-                color: #111;
-                border: 1px solid #0d6efd;
-                /* más delgado */
-                border-bottom: 2px solid #fff;
+        .custom-nav-link.active {
+            background-color: #fff;
+            color: #111;
+            border: 1px solid #0d6efd;
+            /* más delgado */
+            border-bottom: 2px solid #fff;
 
-                transform: scale(1.02);
-                z-index: 1;
-            }
+            transform: scale(1.02);
+            z-index: 1;
+        }
 
-            .custom-nav-link.active h6 {
-                font-weight: 600;
-                /* negrita */
-            }
+        .custom-nav-link.active h6 {
+            font-weight: 600;
+            /* negrita */
+        }
 
-            .custom-nav-link:not(.active) i {
-                color: #bbb;
-            }
+        .custom-nav-link:not(.active) i {
+            color: #bbb;
+        }
 
-            .custom-nav-link:not(.active) h6 {
-                color: #aaa;
-            }
+        .custom-nav-link:not(.active) h6 {
+            color: #aaa;
+        }
 
-            .custom-nav-radio {
-                display: none;
-            }
-        </style>
-        <style>
-            .option-group {
-                display: flex;
-                flex-wrap: wrap;
-                gap: 16px;
-                max-width: 100%;
-            }
+        .custom-nav-radio {
+            display: none;
+        }
+    </style>
+    <style>
+        .option-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            max-width: 100%;
+        }
 
-            .custom-option {
-                position: relative;
-                display: flex;
-                align-items: center;
-                border: 1px dashed #ccc;
-                border-radius: 8px;
-                padding: 12px 16px;
-                min-height: 79px;
-                flex: 1 1 200px;
-                cursor: pointer;
-                transition:
-                    background-color 0.2s,
-                    border-color 0.2s;
-            }
+        .custom-option {
+            position: relative;
+            display: flex;
+            align-items: center;
+            border: 1px dashed #ccc;
+            border-radius: 8px;
+            padding: 12px 16px;
+            min-height: 79px;
+            flex: 1 1 200px;
+            cursor: pointer;
+            transition:
+                background-color 0.2s,
+                border-color 0.2s;
+        }
 
-            .custom-option input[type='radio'] {
-                display: none;
-            }
+        .custom-option input[type='radio'] {
+            display: none;
+        }
 
-            .custom-option .icon {
-                margin-right: 16px;
-                font-size: 24px;
-                color: #ccc;
-                flex-shrink: 0;
-                transition: color 0.2s;
-            }
+        .custom-option .icon {
+            margin-right: 16px;
+            font-size: 24px;
+            color: #ccc;
+            flex-shrink: 0;
+            transition: color 0.2s;
+        }
 
-            .custom-option .text {
-                font-size: 1rem;
-                color: #333;
-            }
+        .custom-option .text {
+            font-size: 1rem;
+            color: #333;
+        }
 
-            .custom-option.selected {
-                background-color: #e6f4ff;
-                border-color: #007bff;
-            }
+        .custom-option.selected {
+            background-color: #e6f4ff;
+            border-color: #007bff;
+        }
 
-            .custom-option.selected .icon {
-                color: #007bff;
-            }
+        .custom-option.selected .icon {
+            color: #007bff;
+        }
 
-            .check-icon {
-                position: absolute;
-                top: 50%;
-                right: 8px;
-                transform: translateY(-50%);
-                background-color: #a5dc86;
-                border-radius: 50%;
-                padding: 4px;
-                font-size: 14px;
-                color: white;
-                display: none;
-            }
+        .check-icon {
+            position: absolute;
+            top: 50%;
+            right: 8px;
+            transform: translateY(-50%);
+            background-color: #a5dc86;
+            border-radius: 50%;
+            padding: 4px;
+            font-size: 14px;
+            color: white;
+            display: none;
+        }
 
-            .custom-option.selected .check-icon {
-                display: inline-block;
-            }
-        </style>
-        <script>
-            // JavaScript para manejar la clase 'active'
-            const radios = document.querySelectorAll('.custom-nav-radio');
-            const links = document.querySelectorAll('.custom-nav-link');
+        .custom-option.selected .check-icon {
+            display: inline-block;
+        }
+    </style>
+    <script>
+        // JavaScript para manejar la clase 'active'
+        const radios = document.querySelectorAll('.custom-nav-radio');
+        const links = document.querySelectorAll('.custom-nav-link');
 
-            radios.forEach((radio, index) => {
-                radio.addEventListener('change', () => {
-                    links.forEach((link) => link.classList.remove(
-                        'active')); // Remover la clase active de todos
-                    links[index].classList.add('active');
-                    let Contenedor = radios[index].value;
-                    showInfoContenedor(Contenedor);
-                });
+        radios.forEach((radio, index) => {
+            radio.addEventListener('change', () => {
+                links.forEach((link) => link.classList.remove(
+                    'active')); // Remover la clase active de todos
+                links[index].classList.add('active');
+                let Contenedor = radios[index].value;
+                showInfoContenedor(Contenedor);
             });
-        </script>
+        });
+    </script>
 
-        <script type="text/javascript">
-            $(document).ready(async function() {
-                $('.cliente').select2();
-                getGastosContenedor();
-                getGastosOperador();
-                btnPaymentStatus();
+    <script type="text/javascript">
+        $(document).ready(async function() {
+            $('.cliente').select2();
+            getGastosContenedor();
+            getGastosOperador();
+            btnPaymentStatus();
 
-                adjuntarDocumentos();
-                localStorage.setItem('numContenedor', '{{ $documentacion->num_contenedor }}');
-                await getContenedoresOnFull();
-                // showInfoContenedor('Contenedor-A')
+            adjuntarDocumentos();
+            localStorage.setItem('numContenedor', '{{ $documentacion->num_contenedor }}');
+            await getContenedoresOnFull();
+            // showInfoContenedor('Contenedor-A')
 
-                getFilesContenedor();
-            });
+            getFilesContenedor();
+        });
 
-            $(document).ready(function() {
-                function loadSubclientes(clienteId, selectedSubclienteId = null) {
-                    if (clienteId) {
-                        $.ajax({
-                            type: 'GET',
-                            url: '/subclientes/' + clienteId,
-                            success: function(data) {
-                                $('#id_subcliente').empty();
-                                $('#id_subcliente').append(
-                                    '<option value="">Seleccionar subcliente</option>');
-                                $.each(data, function(key, subcliente) {
-                                    if (selectedSubclienteId && selectedSubclienteId == subcliente
-                                        .id) {
-                                        $('#id_subcliente').append(
-                                            '<option value="' +
-                                            subcliente.id +
-                                            '" selected>' +
-                                            subcliente.nombre +
-                                            '</option>',
-                                        );
-                                    } else {
-                                        $('#id_subcliente').append(
-                                            '<option value="' + subcliente.id + '">' +
-                                            subcliente.nombre + '</option>',
-                                        );
-                                    }
-                                });
-                                $('#id_subcliente').select2();
-                            },
-                        });
-                    } else {
-                        $('#id_subcliente').empty();
-                        $('#id_subcliente').append('<option value="">Seleccionar subcliente</option>');
-                    }
+        $(document).ready(function() {
+            function loadSubclientes(clienteId, selectedSubclienteId = null) {
+                if (clienteId) {
+                    $.ajax({
+                        type: 'GET',
+                        url: '/subclientes/' + clienteId,
+                        success: function(data) {
+                            $('#id_subcliente').empty();
+                            $('#id_subcliente').append(
+                                '<option value="">Seleccionar subcliente</option>');
+                            $.each(data, function(key, subcliente) {
+                                if (selectedSubclienteId && selectedSubclienteId == subcliente
+                                    .id) {
+                                    $('#id_subcliente').append(
+                                        '<option value="' +
+                                        subcliente.id +
+                                        '" selected>' +
+                                        subcliente.nombre +
+                                        '</option>',
+                                    );
+                                } else {
+                                    $('#id_subcliente').append(
+                                        '<option value="' + subcliente.id + '">' +
+                                        subcliente.nombre + '</option>',
+                                    );
+                                }
+                            });
+                            $('#id_subcliente').select2();
+                        },
+                    });
+                } else {
+                    $('#id_subcliente').empty();
+                    $('#id_subcliente').append('<option value="">Seleccionar subcliente</option>');
                 }
+            }
 
-                $('#id_cliente').change(function() {
-                    var clienteId = $(this).val();
-                    loadSubclientes(clienteId);
-                });
-
-                // Load subclientes on page load
-                var initialClienteId = $('#id_cliente').val();
-                var initialSubclienteId = '{{ $cotizacion->id_subcliente }}';
-                loadSubclientes(initialClienteId, initialSubclienteId);
+            $('#id_cliente').change(function() {
+                var clienteId = $(this).val();
+                loadSubclientes(clienteId);
             });
 
-            $(document).ready(() => {
-                sobrePesoViaje();
+            // Load subclientes on page load
+            var initialClienteId = $('#id_cliente').val();
+            var initialSubclienteId = '{{ $cotizacion->id_subcliente }}';
+            loadSubclientes(initialClienteId, initialSubclienteId);
+        });
 
-                formFields.forEach((item) => {
-                    if (item.type == 'money') {
-                        var field = document.getElementById(item.field);
+        $(document).ready(() => {
+            sobrePesoViaje();
+
+            formFields.forEach((item) => {
+                if (item.type == 'money') {
+                    var field = document.getElementById(item.field);
+                    field.value = field.value.length > 0 ? reverseMoneyFormat(field.value) : 0;
+                    field.value = moneyFormat(field.value || 0);
+                }
+            });
+
+            formFieldsProveedor.forEach((item) => {
+                if (item.type == 'money') {
+                    var field = document.getElementById(item.id);
+                    if (field) {
                         field.value = field.value.length > 0 ? reverseMoneyFormat(field.value) : 0;
                         field.value = moneyFormat(field.value || 0);
                     }
-                });
+                }
+            });
+        });
 
-                formFieldsProveedor.forEach((item) => {
-                    if (item.type == 'money') {
-                        var field = document.getElementById(item.id);
-                        if (field) {
-                            field.value = field.value.length > 0 ? reverseMoneyFormat(field.value) : 0;
-                            field.value = moneyFormat(field.value || 0);
-                        }
-                    }
+        document.addEventListener('DOMContentLoaded', function() {
+            let condicionRecinto = document.querySelectorAll('.recinto');
+            let inputRecinto = document.querySelector('#input-recinto');
+            let textRecinto = document.querySelector('#text_recinto');
+
+            condicionRecinto.forEach(function(elemento) {
+                //  elemento.classList.remove('active')
+                elemento.addEventListener('click', function() {
+                    inputRecinto.classList.toggle('d-none', elemento.attributes['data-kt-plan']
+                        .value != 'recinto-si');
+                    textRecinto.value = elemento.attributes['data-kt-plan'].value != 'recinto-si' ?
+                        '' : 'recinto-si';
                 });
             });
-
-            document.addEventListener('DOMContentLoaded', function() {
-                let condicionRecinto = document.querySelectorAll('.recinto');
-                let inputRecinto = document.querySelector('#input-recinto');
-                let textRecinto = document.querySelector('#text_recinto');
-
-                condicionRecinto.forEach(function(elemento) {
-                    //  elemento.classList.remove('active')
-                    elemento.addEventListener('click', function() {
-                        inputRecinto.classList.toggle('d-none', elemento.attributes['data-kt-plan']
-                            .value != 'recinto-si');
-                        textRecinto.value = elemento.attributes['data-kt-plan'].value != 'recinto-si' ?
-                            '' : 'recinto-si';
-                    });
-                });
-            });
-        </script>
-    @endsection
+        });
+    </script>
+@endsection

@@ -6,6 +6,7 @@ use App\Models\Asignaciones;
 use App\Models\BancoDinero;
 use App\Models\BancoDineroOpe;
 use App\Models\Bancos;
+use App\Models\CatBanco;
 use App\Models\Cotizaciones;
 use App\Models\GastosGenerales;
 use App\Models\BancoSaldoDiario;
@@ -16,9 +17,17 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\Empresas;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Services\BancosService;
 
 class BancosController extends Controller
 {
+    protected $BancosService;
+
+    public function __construct(BancosService $BancosService)
+    {
+        $this->BancosService = $BancosService;
+    }
+
     public function index()
     {
         $bancos = Bancos::where('id_empresa', '=', auth()->user()->id_empresa)->get();
@@ -122,12 +131,16 @@ class BancosController extends Controller
             $banco->saldo = $saldo;
             // $banco->save();
         }
+        //  dd('index banco cuentas', $banco);
         return view('bancos.index', compact('bancos'));
     }
 
     public function list()
     {
-        return $bancos = Bancos::where('id_empresa', '=', auth()->user()->id_empresa)->get();
+        $fecha = Carbon::now()->format('Y-m-d');
+        $bancos = $this->BancosService->getCuentasOption(auth()->user()->id_empresa, $fecha, $fecha, true);
+
+        return  $bancos;// $bancos = Bancos::where('id_empresa', '=', auth()->user()->id_empresa)->get();
     }
 
     public function cambiarEstado(Request $request, $id)
@@ -353,16 +366,18 @@ class BancosController extends Controller
         ->whereBetween('fecha_pago', [$startOfWeek, $endOfWeek])
         ->get();
 
-        $banco_dinero_salida_ope = BancoDineroOpe::where('tipo', '=', 'Salida')
-        ->where('contenedores', '=', null)
-        ->where(function ($query) use ($id) {
-            $query->where('id_banco1', '=', $id)
-                  ->orWhere('id_banco2', '=', $id);
-        })
-        ->whereBetween('fecha_pago', [$startOfWeek, $endOfWeek])
-        ->get();
+        $banco_dinero_salida_ope = BancoDineroOpe::whereIn('tipo', ['Entrada','Salida']) //correccion de busquedas distintas, mover al servicio con nuevo refactor todo
+         ->where('contenedores', '=', null)
+         ->where(function ($query) use ($id) {
+             $query->where('id_banco1', '=', $id)
+                   ->orWhere('id_banco2', '=', $id);
+         })
+         ->whereBetween('fecha_pago', [$startOfWeek, $endOfWeek])
+         ->get();
 
-        $banco_dinero_salida_ope_varios = BancoDineroOpe::where('tipo', '=', 'Salida')
+        $empresaPropiaUsuario = Empresas::where('id', auth()->user()->id_empresa)
+            ->value('empresa_propia') == 1;
+        $banco_dinero_salida_ope_varios = BancoDineroOpe::whereIn('tipo', ['Entrada','Salida'])
         ->where('id_cotizacion', '=', null)
         ->where(function ($query) use ($id) {
             $query->where('id_banco1', '=', $id)
@@ -370,6 +385,7 @@ class BancosController extends Controller
         })
         ->whereBetween('fecha_pago', [$startOfWeek, $endOfWeek])
         ->get();
+
 
         $gastos_generales = GastosGenerales::where('id_banco1', '=', $id)
         ->whereBetween('fecha', [$startOfWeek, $endOfWeek])
@@ -428,6 +444,7 @@ class BancosController extends Controller
             }
             return null;
         });
+        // dd($combined);
 
         return view('bancos.show', compact('combined', 'empresaPropiaUsuario', 'startOfWeek', 'endOfWeek', 'fecha', 'banco', 'cotizaciones', 'proveedores', 'banco_dinero_entrada', 'banco_dinero_salida', 'banco_dinero_salida_ope', 'banco_dinero_salida_ope_varios', 'gastos_generales', 'saldoInicial', 'saldoFinal'));
     }
@@ -678,6 +695,13 @@ class BancosController extends Controller
                 'message' => 'Banco desactivado como Banco 1.'
             ]);
         }
+    }
+
+    public function index2()
+    {
+        $catbancos = CatBanco::all()->sortBy('orden');
+
+        return view('bancos.indexv2', compact('catbancos'));
     }
 
 

@@ -303,7 +303,9 @@ function applyPayment() {
     }
 
     var bankOne = $('#cmbBankOne').val();
+    var FechaAplicacionbank1 = $('#FechaAplicacionbank1').val();
     var bankTwo = $('#cmbBankTwo').val();
+    var FechaAplicacionbank2 = $('#FechaAplicacionbank2').val();
 
     if (bankOne == 'null' || bankTwo == 'null') {
         Swal.fire({
@@ -321,6 +323,22 @@ function applyPayment() {
         return false;
     }
 
+    if (!FechaAplicacionbank1 || !FechaAplicacionbank2) {
+        Swal.fire({
+            customClass: {
+                confirmButton: 'btn btn-success',
+                cancelButton: 'btn btn-danger',
+            },
+            buttonsStyling: true,
+            showConfirmButton: true,
+            confirmButtonText: 'Entendido!',
+            title: 'Seleccione fechas',
+            text: 'Falta seleccionar fecha de aplicacion para movimiento en bancos',
+            icon: 'warning',
+        });
+        return false;
+    }
+
     var datahotTable = JSON.stringify(hotTable.getData());
     var amountPayOne = sumPayOne;
     var amountPayTwo = sumPayTwo;
@@ -329,7 +347,18 @@ function applyPayment() {
     $.ajax({
         url: '/cuentas/cobrar/confirmar_pagos',
         type: 'post',
-        data: { _token, theClient, bankOne, bankTwo, amountPayOne, amountPayTwo, applyPayments, datahotTable },
+        data: {
+            _token,
+            theClient,
+            bankOne,
+            bankTwo,
+            amountPayOne,
+            amountPayTwo,
+            applyPayments,
+            datahotTable,
+            FechaAplicacionbank1,
+            FechaAplicacionbank2,
+        },
         beforeSend: function () {},
         success: function (response) {
             Swal.fire(response.Titulo, response.Mensaje, response.TMensaje);

@@ -22,7 +22,13 @@ class DocumCotizacion extends Model
         'doda',
         'id_empresa',
         'foto_patio',
-        'boleta_patio'
+        'boleta_patio',
+        'fecha_boleta_vacio',
+        'num_carta_porte',
+        'num_doda',
+        'num_boleta_liberacion',
+        'ccp',
+        'cima'
 
     ];
 

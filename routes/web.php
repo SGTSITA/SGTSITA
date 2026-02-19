@@ -28,6 +28,8 @@ Route::group(["prefix" => "gps"], function () {
     Route::get('skyangel/ubicacion/', [GpsController::class,'getLocationSkyAngel'])->name('ubicacion.byimei');
 
     Route::get('jimi/api/test', [GpsCompanyController::class,'testGpsApi']);
+    Route::get('SIS/login', [GpsController::class,'loginSisGps'])->name('loginSisGps');
+    Route::get('SIS/getlocation/{deviceid}', [GpsController::class,'getlocationSIS'])->name('getlocationSIS');
 
     Route::get('setup', [GpsCompanyController::class,'setupGps'])->name('gps.setup');
     Route::get('config', [GpsCompanyController::class,'getConfig'])->name('gps.config');
@@ -79,6 +81,7 @@ Route::get('/reporteria', [ReporteriaController::class, 'index'])->name('reporte
 Route::get('/reporteria/advance', [ReporteriaController::class, 'advance'])->name('reporteria.advance');
 
 Route::get('/reporteria/cxp/advance', [ReporteriaController::class, 'advance_cxp'])->name('ruta_advance_cxp');
+//Route::post('/reporteria/cxp/EdoCuenta/store', [ReporteriaController::class, 'storeEdocuenta'])->name('storeEdocuenta');
 
 Route::get('exportar-cxc', [ReporteriaController::class, 'exportarCxc']);
 
@@ -330,6 +333,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('/cotizaciones/busqueda', [App\Http\Controllers\CotizacionesController::class, 'find'])->name('busqueda.cotizaciones');
     Route::post('/cotizaciones/full', [App\Http\Controllers\CotizacionesController::class, 'cotizacionesFull'])->name('cotizaciones.full');
     Route::post('/cotizaciones/transformar/full', [App\Http\Controllers\CotizacionesController::class, 'convertirFull'])->name('cotizaciones.transform.full');
+    Route::post('/cotizaciones/transformar/cancelar-full', [App\Http\Controllers\CotizacionesController::class, 'cancelarFull'])->name('cotizaciones.cancelar.full');
 
     Route::post('/cotizaciones/busqueda', [App\Http\Controllers\CotizacionesController::class, 'findExecute'])->name('exec.busqueda.cotizaciones');
     Route::get('/cotizaciones/documentos/{id}', [App\Http\Controllers\CotizacionesController::class, 'getDocumentos']);
@@ -349,6 +353,8 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('cotizaciones/edit/{id}', [App\Http\Controllers\CotizacionesController::class, 'edit'])->name('edit.cotizaciones');
     Route::post('cotizaciones/update/{id}', [App\Http\Controllers\CotizacionesController::class, 'update'])->name('update.cotizaciones');
     Route::post('cotizaciones/single/update/{id}', [App\Http\Controllers\CotizacionesController::class, 'singleUpdate'])->name('update.single');
+
+    Route::post('cotizaciones/updateMep/{id}', [App\Http\Controllers\CotizacionesController::class, 'updateMep'])->name('updatemep.cotizaciones');
 
     //burrero local editar
     Route::any('cotizaciones/store-local', [App\Http\Controllers\CotizacionesController::class, 'storelocal'])->name('store.cotizacioneslocal');
@@ -424,7 +430,46 @@ Route::group(['middleware' => ['auth']], function () {
         Route::put('/bancos/{id}/estado', [App\Http\Controllers\BancosController::class, 'cambiarEstado'])->name('bancos.estado');
         Route::post('/cambiar-cuenta-global/{id}', [App\Http\Controllers\BancosController::class, 'cambiarCuentaGlobal'])->name('bancos.cambiarCuentaGlobal');
         Route::post('/cambiar-banco1/{id}', [App\Http\Controllers\BancosController::class, 'cambiarBanco1'])->name('bancos.cambiarBanco1');
+
+
+
+        //inicia bancos v2
+        Route::get('/bancosv2', [App\Http\Controllers\CatBancoController::class, 'index'])->name('index.bancos2');
+
+        Route::get('/cuentas/create/{banco}', [App\Http\Controllers\CatBancoController::class, 'create_cuentas'])->name('cuentas.create');
+        Route::post('/cat-bancos/store', [App\Http\Controllers\CatBancoController::class, 'store'])->name('cat-bancos.store');
+        Route::put('/cat-bancos/edit/{id}', [App\Http\Controllers\CatBancoController::class, 'update'])->name('cat-bancos.update');
+        // Route::patch('/cuentas/update/{id}', [App\Http\Controllers\CatBancoController::class, 'update'])->name('cuentas.update');
+
+        Route::get('/cat-bancos/cuentas/{banco}', [App\Http\Controllers\CatBancoController::class, 'create_cuentas'])->name('bancos.cuentas');
+        Route::post('/cat-bancos/cuentas/update/{id}', [App\Http\Controllers\CatBancoController::class, 'update_cuentas'])->name('bancoscuentas.update');
+        Route::post('/cat-bancos/cuentas/create', [App\Http\Controllers\CatBancoController::class, 'store_cuentas'])->name('bancoscuentas.create');
+        Route::get('/cat-bancos/cuentas/movimientos/{id}', [App\Http\Controllers\CatBancoController::class, 'mostrar_movimientos'])->name('bancoscuentas.movimientos');
+
+        Route::post(
+            '/cat-bancos/cuentas/movimientos/{cuenta}',
+            [App\Http\Controllers\CatBancoController::class, 'store_movimientos_cuentas']
+        )->name('bancos.movimientos.store');
+
+
+        Route::post('/cat-bancos/cuentas/transferencia', [App\Http\Controllers\CatBancoController::class, 'transferencia'])
+        ->name('bancos.cuentas.transferencia');
+
+
+
+        Route::post('/movimientos/export/pdf', [App\Http\Controllers\CatBancoController::class, 'exportarpdf'])
+        ->name('movimientos.export.pdf');
+
+
+        Route::get('/cat-bancos/cuentas/movimientosperiodo/{idcuenta}', [App\Http\Controllers\CatBancoController::class, 'getmovimientosperiodo']);
+
+        //finaliza bancos v2.0
+
     });
+
+
+
+
 
 
     // ==================== C U E N T A S  P O R  C O B R A R ====================
@@ -434,7 +479,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::post('cuentas/cobrar/por_liquidar', [App\Http\Controllers\CuentasCobrarController::class, 'viajes_por_liquidar'])->name('por_liquidar.cobrar');
     Route::post('cuentas/cobrar/confirmar_pagos', [App\Http\Controllers\CuentasCobrarController::class, 'aplicar_pagos'])->name('confirmar.cobrar');
     Route::patch('cuentas/cobrar/update/{id}', [App\Http\Controllers\CuentasCobrarController::class, 'update'])->name('update.cobrar');
-    Route::post('cuentas/cobrar/update/varios', [App\Http\Controllers\CuentasCobrarController::class, 'update_varios'])->name('update_varios.cobrar');
+    Route::post('cuentas/cobrar/update/varios', [\App\Http\Controllers\CuentasCobrarController::class, 'update_varios'])->name('update_varios.cobrar');
     Route::post('/reporteria/cxp/EdoCuenta/store', [App\Http\Controllers\CuentasCobrarController::class, 'storeEdocuenta'])->name('storeEdocuenta');
 
     // ==================== C U E N T A S  P O R  P A G A R ====================
@@ -494,7 +539,7 @@ Route::group(['middleware' => ['auth']], function () {
 
     Route::post('liquidaciones/historial/data', [App\Http\Controllers\LiquidacionesController::class, 'historialPagosData'])->name('historialdata.liquidacion');
     Route::post('liquidaciones/historial/pagos/comprobante', [App\Http\Controllers\LiquidacionesController::class, 'comprobantePago'])->name('comprobante.liquidacion');
-    Route::post('liquidaciones/viajes/pagos-operadores', [App\Http\Controllers\LiquidacionesController::class, 'getPagosOperadores'])->name('operadores.liquidacion');
+    Route::post('liquidaciones/viajes/pagos-operadores', [App\Http\Controllers\LiquidacionesController::class, 'getpagosOperadoressaldo'])->name('operadores.liquidacion');
     Route::post('liquidaciones/viajes/operador', [App\Http\Controllers\LiquidacionesController::class, 'getViajesOperador'])->name('operador.viajes');
     Route::post('liquidaciones/viajes/dinero_para_viaje', [App\Http\Controllers\LiquidacionesController::class, 'agregarDineroViaje'])->name('dinero.viaje');
 
@@ -534,10 +579,16 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('catalogo/pdf/{id}', [App\Http\Controllers\CatalogoController::class, 'pdf'])->name('pdf.catalogo');
 
 
-     Route::get('/admin/auditoria', [App\Http\Controllers\AuditoriaController::class, 'index'])
+
+
+
+    Route::get('/admin/auditoria', [App\Http\Controllers\AuditoriaController::class, 'index'])
         ->name('auditoria.index');
 
     Route::get('/admin/auditoria/{id}', [App\Http\Controllers\AuditoriaController::class, 'show']);
+
+    Route::get('/admin/auditoria-data/inicial', [App\Http\Controllers\AuditoriaController::class, 'data']);
+
 });
 
 //Route Hooks - Do not delete//

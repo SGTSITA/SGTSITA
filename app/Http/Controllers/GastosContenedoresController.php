@@ -17,13 +17,25 @@ use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use App\Exports\GastosPorPagarExport;
 use Maatwebsite\Excel\Facades\Excel;
-use PDF;
+use Barryvdh\DomPDF\Facade\Pdf;
+use App\Services\BancosService;
+use Illuminate\Support\Facades\Log;
 
 class GastosContenedoresController extends Controller
 {
+    protected $BancosService;
+
+    public function __construct(BancosService $BancosService)
+    {
+        $this->BancosService = $BancosService;
+    }
+
+
     public function IndexPayment()
     {
-        $bancos = Bancos::where('id_empresa', Auth::User()->id_empresa)->get();
+        $bancos2 = Bancos::where('id_empresa', Auth::User()->id_empresa)->get();
+        $fecha = Carbon::now()->format('Y-m-d');
+        $bancos = $this->BancosService->getCuentasOption(auth()->user()->id_empresa, $fecha, $fecha, true);
         return view('gastos_contenedor.index', ["bancos" => $bancos]);
     }
 
@@ -197,7 +209,10 @@ class GastosContenedoresController extends Controller
     public function indexGastosViaje()
     {
 
-        $bancos = Bancos::where('id_empresa', auth()->user()->id_empresa)->get();
+        $bancos2 = Bancos::where('id_empresa', auth()->user()->id_empresa)->get();
+        $fecha = Carbon::now()->format('Y-m-d');
+        $bancos = $this->BancosService->getCuentasOption(auth()->user()->id_empresa, $fecha, $fecha, true);
+
         $categorias = CategoriasGastos::orderBy('categoria')->get();
         $empresa = Auth::User()->id_empresa;
         $equipos = Equipo::where('id_empresa', $empresa)->get();
@@ -247,7 +262,7 @@ class GastosContenedoresController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        $handsOnTableData = $cotizaciones->map(function ($cotizacion) use ($gastosUnidad) {
+        /* $handsOnTableData = $cotizaciones->map(function ($cotizacion) use ($gastosUnidad) {
             $contenedor = $cotizacion->DocCotizacion ? $cotizacion->DocCotizacion->num_contenedor : 'N/A';
             $gastosDiferidos = (sizeof($gastosUnidad) > 0) ? $gastosUnidad->where('id_camion', $cotizacion->DocCotizacion->Asignaciones->id_camion)->sum('gasto_por_viaje') : 0;
             // Si es tipo 'Full', buscamos la secundaria para obtener su contenedor
@@ -278,7 +293,59 @@ class GastosContenedoresController extends Controller
                 $cotizacion->id,
             ];
         });
+ */
 
+        $handsOnTableData = $cotizaciones->map(function ($cotizacion) use ($gastosUnidad) {
+
+            $doc = $cotizacion->DocCotizacion;
+            $asignacion = $doc?->Asignaciones;
+
+            $contenedor = $doc?->num_contenedor ?? 'N/A';
+
+            if (!is_null($cotizacion->referencia_full)) {
+                $secundaria = Cotizaciones::where('referencia_full', $cotizacion->referencia_full)
+                    ->where('jerarquia', 'Secundario')
+                    ->with('DocCotizacion')
+                    ->first();
+
+                if ($secundaria?->DocCotizacion) {
+                    $contenedor .= ' ' . $secundaria->DocCotizacion->num_contenedor;
+                }
+            }
+
+            $gastos = GastosOperadores::where('id_cotizacion', $cotizacion->id)->get();
+
+            $comision = $gastos->first(fn ($g) => str_contains($g->tipo, 'GCM01'));
+            $diesel   = $gastos->first(fn ($g) => str_contains($g->tipo, 'GDI02'));
+            $casetas  = $gastos->first(fn ($g) => str_contains($g->tipo, 'GCP03'));
+
+            $gastosDiferidos = $gastosUnidad
+                ->where('id_camion', $asignacion?->id_camion)
+                ->sum('gasto_por_viaje');
+
+            return [
+                "contenedor"       => $contenedor,
+                "comision"         => $gastos->where('tipo', 'like', '%GCM01%')->sum('cantidad'),
+                "diesel"           => $gastos->where('tipo', 'like', '%GDI02%')->sum('cantidad'),
+                "casetas"          => $gastos->where('tipo', 'like', '%GCP03%')->sum('cantidad'),
+                "varios"           => $gastos->reject(
+                    fn ($g) =>
+                                            str_contains($g->tipo, 'GCM01') ||
+                                            str_contains($g->tipo, 'GDI02') ||
+                                            str_contains($g->tipo, 'GCP03')
+                )->sum('cantidad'),
+                "diferidos"        => $gastosDiferidos,
+
+                "pago_comision"    => $comision?->estatus === 'Pagado' ? 1 : 0,
+                "pago_diesel"      => $diesel?->estatus === 'Pagado' ? 1 : 0,
+                "pago_casetas"     => $casetas?->estatus === 'Pagado' ? 1 : 0,
+
+                "banco"            => null,
+                "fecha_aplicacion" => null,
+
+                "id_cotizacion"    => $cotizacion->id,
+            ];
+        });
 
 
         return response()->json(['handsOnTableData' => $handsOnTableData]);
@@ -287,134 +354,352 @@ class GastosContenedoresController extends Controller
     public function confirmarGastos(Request $r)
     {
         try {
-            $gastosContenedores = json_decode($r->datahandsOnTableGastos);
+            $gastosContenedores = $r->datahandsOnTableGastos;
+            //  $gastosContenedores = json_decode($r->datahandsOnTableGastos);
+            /*  DB::beginTransaction();
+             $nuevosGastos = [];
+             $datosGasto = [];
+             $bancoDinero = [];
+             foreach ($gastosContenedores as $gasto) {
+                 $numContenedor = $gasto[0];
+                 $camposGastos = [1,2,3];
+                 $camposGastoInmediato = [6,7,8];
+                 $descripcionGastos = ['GCM01 - Comisión','GDI02 - Diesel','GCP03 - Casetas / Peaje'];
+                 $idEmpresa = auth()->user()->id_empresa;
+
+                 $contenedor = DocumCotizacion::where('num_contenedor', $numContenedor)
+                                                    ->where('id_empresa', $idEmpresa)
+                                                    ->first();
+
+                 $asignacion = Asignaciones::where('id_contenedor', $contenedor->id)->first();
+
+                 for ($e = 0; $e <= 2; $e++) {
+                     if ($gasto[$camposGastos[$e]] > 0) {
+
+                         $esPagoInmediato = $gasto[$camposGastoInmediato[$e]];
+                         $bank = trim(substr($gasto[9], 0, 5));
+
+                         $gastoViaje = GastosOperadores::where('id_cotizacion', $contenedor->id_cotizacion)->where('tipo', $descripcionGastos[$e]);
+                         $existeGasto = $gastoViaje->exists();
+
+                         //Una vez superada la validacion proceder a guardar
+                         if (!$existeGasto) {
+
+                             if ($esPagoInmediato && empty($bank)) {
+                                 return response()->json([
+                                     "Titulo" => "Debe seleccionar banco",
+                                     "Mensaje" => "Ha seleccionado la opción de pago inmediato. Por favor, indique el banco desde el cual se realizará el retiro.",
+                                     "TMensaje" => "warning"
+                                 ]);
+                             }
+
+                             $nuevosGastos[] = [
+                                 "banco" => intval($bank),
+                                 "gasto" => $gasto[$camposGastos[$e]]
+                             ];
+
+                             $datosGasto[] = [
+                                "id_cotizacion" => $contenedor->id_cotizacion,
+                                "id_banco" => $esPagoInmediato != 0 ? intval($bank) : null,
+                                "id_asignacion" => $asignacion->id,
+                                "id_operador" => $asignacion->id_operador,
+                                "cantidad" => $gasto[$camposGastos[$e]],
+                                "tipo" => $descripcionGastos[$e],
+                                "estatus" => $esPagoInmediato != 0 ? 'Pagado' : 'Pago Pendiente',
+                                "fecha_pago" => $esPagoInmediato != 0 ? Carbon::now() : null,
+                                "pago_inmediato" => $esPagoInmediato,
+                                "created_at" => Carbon::now()
+                               ];
+
+                             if ($esPagoInmediato) {
+
+                                 $contenedoresAbonos[] = [
+                                     'num_contenedor' => $numContenedor,
+                                     'abono' => $gasto[$camposGastos[$e]]
+                                 ];
+
+                                 $contenedoresAbonosJson = json_encode($contenedoresAbonos);
+                                 $bancoDinero[] = [
+                                     "monto1" => $gasto[$camposGastos[$e]],
+                                     "metodo_pago1" => 'Transferencia',
+                                     "descripcion" => $descripcionGastos[$e]. " ".$numContenedor,
+                                     "id_banco1" => $bank,
+                                     "contenedores" => $contenedoresAbonosJson,
+                                     "tipo" => 'Salida',
+                                     "fecha_pago" =>  date('Y-m-d'),
+                                 ];
+
+                             }
+
+                         } else {
+                             $detalleGasto = $gastoViaje->first();
+                             if ($detalleGasto->cantidad != $gasto[$camposGastos[$e]]) {
+                                 $detalleGasto->update([
+                                     "cantidad" => $gasto[$camposGastos[$e]]
+                                 ]);
+
+                             }
+                         }
+
+                     }
+                 }
+
+             }
+
+             //Validemos que el banco tenga saldo suficiente para pagar el total de los gastos segun la seleccion del usuario
+             $gastosBancos = collect($nuevosGastos)
+             ->groupBy('banco')
+             ->map(fn ($items) => $items->sum('gasto'));
+
+
+             $idsBancos = $gastosBancos->keys(); //Obtener los id de banco de la suma anterior
+
+             $bancos = Bancos::where('id_empresa', Auth::user()->id_empresa)
+                             ->whereIn('id', $idsBancos)
+                             ->get()
+                             ->keyBy('id');
+
+             foreach ($gastosBancos as $idBanco => $totalGasto) {
+                 $banco = $bancos->get($idBanco);
+
+                 if (!is_null($banco) && $banco->saldo < $totalGasto) {
+                     return response()->json([
+                         "Titulo" => "Saldo insuficiente en Banco",
+                         "Mensaje" => "La cuenta bancaria seleccionada no cuenta con saldo suficiente para registrar esta transacción",
+                         "TMensaje" => "warning"
+                     ]);
+
+                 }
+             }
+
+             GastosOperadores::insert($datosGasto);
+             BancoDinero::insert($bancoDinero);
+
+             //Descontar la suma de los bancos correspondientes
+
+             foreach ($gastosBancos as $idBanco => $totalGasto) {
+                 Bancos::where('id', '=', $idBanco)->update(
+                     ["saldo" => DB::raw("saldo - ". $totalGasto)
+                 ]
+                 );
+             }
+
+             DB::commit(); */
+
             DB::beginTransaction();
+
             $nuevosGastos = [];
-            $datosGasto = [];
-            $bancoDinero = [];
+            $dataBancoNuevo = [];
+            $datosGasto   = [];
+            $bancoDinero  = [];
+            $contenedoresAbonos = [];
+
+            $idEmpresa = auth()->user()->id_empresa;
+
             foreach ($gastosContenedores as $gasto) {
-                $numContenedor = $gasto[0];
-                $camposGastos = [1,2,3];
-                $camposGastoInmediato = [6,7,8];
-                $descripcionGastos = ['GCM01 - Comisión','GDI02 - Diesel','GCP03 - Casetas / Peaje'];
-                $idEmpresa = auth()->user()->id_empresa;
+
+                $numContenedor = $gasto['contenedor'];
+                $bank          = isset($gasto['banco']) ? trim(substr($gasto['banco'], 0, 5)) : null;
+                $fechaPago     = $gasto['fecha_aplicacion']
+                                    ? Carbon::parse($gasto['fecha_aplicacion'])
+                                    : null;
+
+
+
+
+
 
                 $contenedor = DocumCotizacion::where('num_contenedor', $numContenedor)
-                                                   ->where('id_empresa', $idEmpresa)
-                                                   ->first();
+                                ->where('id_empresa', $idEmpresa)
+                                ->first();
+
+                if (!$contenedor) {
+                    continue;
+                }
 
                 $asignacion = Asignaciones::where('id_contenedor', $contenedor->id)->first();
 
-                for ($e = 0; $e <= 2; $e++) {
-                    if ($gasto[$camposGastos[$e]] > 0) {
+                $tipos = [
+                    'comision' => [
+                        'codigo' => 'GCM01 - Comisión',
+                        'monto'  => $gasto['comision'],
+                        'pago'   => $gasto['pago_comision']
+                    ],
+                    'diesel' => [
+                        'codigo' => 'GDI02 - Diesel',
+                        'monto'  => $gasto['diesel'],
+                        'pago'   => $gasto['pago_diesel']
+                    ],
+                    'casetas' => [
+                        'codigo' => 'GCP03 - Casetas / Peaje',
+                        'monto'  => $gasto['casetas'],
+                        'pago'   => $gasto['pago_casetas']
+                    ],
+                ];
 
-                        $esPagoInmediato = $gasto[$camposGastoInmediato[$e]];
-                        $bank = trim(substr($gasto[9], 0, 5));
+                foreach ($tipos as $tipo) {
 
-                        $gastoViaje = GastosOperadores::where('id_cotizacion', $contenedor->id_cotizacion)->where('tipo', $descripcionGastos[$e]);
-                        $existeGasto = $gastoViaje->exists();
+                    if ($tipo['monto'] <= 0) {
+                        continue;
+                    }
 
-                        //Una vez superada la validacion proceder a guardar
-                        if (!$existeGasto) {
+                    if ($tipo['pago'] && empty($bank)) {
+                        DB::rollBack();
+                        return response()->json([
+                            "Titulo"  => "Debe seleccionar banco",
+                            "Mensaje" => "Ha seleccionado pago inmediato pero no indicó banco.",
+                            "TMensaje" => "warning"
+                        ]);
+                    }
 
-                            if ($esPagoInmediato && empty($bank)) {
-                                return response()->json([
-                                    "Titulo" => "Debe seleccionar banco",
-                                    "Mensaje" => "Ha seleccionado la opción de pago inmediato. Por favor, indique el banco desde el cual se realizará el retiro.",
-                                    "TMensaje" => "warning"
-                                ]);
+                    $existeGasto = GastosOperadores::where('id_cotizacion', $contenedor->id_cotizacion)
+                                        ->where('tipo', $tipo['codigo'])
+                                        ->first();
+
+                    if (!$existeGasto) {
+
+                        $nuevosGastos[] = [
+                            "banco" => intval($bank),
+                            "gasto" => $tipo['monto'],
+                            "fechaAplicacion" =>  $fechaPago
+                        ];
+
+                        $datosGasto = [
+                            "id_cotizacion" => $contenedor->id_cotizacion,
+                            "id_banco"      => $tipo['pago'] ? intval($bank) : null,
+                            "id_asignacion" => $asignacion?->id,
+                            "id_operador"   => $asignacion?->id_operador,
+                            "cantidad"      => $tipo['monto'],
+                            "tipo"          => $tipo['codigo'],
+                            "estatus"       => $tipo['pago'] ? 'Pagado' : 'Pago Pendiente',
+                            "fecha_pago"    => $tipo['pago'] ? $fechaPago : null,
+                            "pago_inmediato" => $tipo['pago'],
+                            "created_at"    => now(),
+
+                        ];
+
+                        if ($tipo['pago']) {
+
+
+
+                            if ($bank &&  $tipo['monto'] > 0) {
+                                $fechaPago = $fechaPago;
+
+                                $validarSaldos = $this->BancosService->validarsaldoparacargo($idEmpresa, intval($bank), $fechaPago, $tipo['monto']);
+                                //  dd($validarSaldos);
+                                if ($validarSaldos["saldodisponible"] == false) {
+                                    DB::rollBack();
+                                    return response()->json([
+                                                      "TMensaje" => "error",
+                                                   "Titulo" => "Saldo bancos 2",
+                                                      "Mensaje" => $validarSaldos["message"],
+                                                      'success' => false
+                                                     ]);
+
+                                }
                             }
 
-                            $nuevosGastos[] = [
-                                "banco" => intval($bank),
-                                "gasto" => $gasto[$camposGastos[$e]]
+                            $contenedoresAbonos[] = [
+                                'num_contenedor' => $numContenedor,
+                                'tipo' => $tipo['codigo'],
+                                'abono' => $tipo['monto']
                             ];
 
-                            $datosGasto[] = [
-                               "id_cotizacion" => $contenedor->id_cotizacion,
-                               "id_banco" => $esPagoInmediato != 0 ? intval($bank) : null,
-                               "id_asignacion" => $asignacion->id,
-                               "id_operador" => $asignacion->id_operador,
-                               "cantidad" => $gasto[$camposGastos[$e]],
-                               "tipo" => $descripcionGastos[$e],
-                               "estatus" => $esPagoInmediato != 0 ? 'Pagado' : 'Pago Pendiente',
-                               "fecha_pago" => $esPagoInmediato != 0 ? Carbon::now() : null,
-                               "pago_inmediato" => $esPagoInmediato,
-                               "created_at" => Carbon::now()
-                              ];
+                            $bancoDinero[] = [
+                                "monto1"        => $tipo['monto'],
+                                "metodo_pago1"  => 'Transferencia',
+                                "descripcion"   => $tipo['codigo']." ".$numContenedor,
+                                "id_banco1"     => $bank,
+                                "contenedores"  => json_encode($contenedoresAbonos),
+                                "tipo"          => 'Salida',
+                                "fecha_pago"    => $fechaPago?->format('Y-m-d'),
+                            ];
 
-                            if ($esPagoInmediato) {
+                            $gasto = GastosOperadores::create($datosGasto);
 
-                                $contenedoresAbonos[] = [
-                                    'num_contenedor' => $numContenedor,
-                                    'abono' => $gasto[$camposGastos[$e]]
-                                ];
+                            $dataBancoNuevo = [
+                                'cuenta_bancaria_id' =>  intval($bank),
+                                'tipo' => 'cargo',
+                                'monto' => floatval($tipo['monto']),
+                                'concepto' =>   $tipo['codigo']." ".$numContenedor,
+                                'fecha_movimiento' =>  $fechaPago?->format('Y-m-d'),
+                                'origen' => null,
+                                'referencia' => 'GOP',
+                                'detalles' => json_encode($contenedoresAbonos),
+                                   'referenciaable_id' => $gasto->id,
+                                'referenciaable_type' => \App\Models\GastosOperadores::class, //para polimorfismo
+                            ];
 
-                                $contenedoresAbonosJson = json_encode($contenedoresAbonos);
-                                $bancoDinero[] = [
-                                    "monto1" => $gasto[$camposGastos[$e]],
-                                    "metodo_pago1" => 'Transferencia',
-                                    "descripcion" => $descripcionGastos[$e]. " ".$numContenedor,
-                                    "id_banco1" => $bank,
-                                    "contenedores" => $contenedoresAbonosJson,
-                                    "tipo" => 'Salida',
-                                    "fecha_pago" =>  date('Y-m-d'),
-                                ];
+                            // dd($dataBancoNuevo);
 
-                            }
+                            $movimeintoCrear   = $this->BancosService->registrarMovimiento($dataBancoNuevo);
 
-                        } else {
-                            $detalleGasto = $gastoViaje->first();
-                            if ($detalleGasto->cantidad != $gasto[$camposGastos[$e]]) {
-                                $detalleGasto->update([
-                                    "cantidad" => $gasto[$camposGastos[$e]]
-                                ]);
-
+                            if (!$movimeintoCrear) {
+                                throw new \Exception('No se pudo crear el movimiento bancario, dinero para viaje adicional ');
                             }
                         }
 
+                    } else {
+
+                        if ($existeGasto->cantidad != $tipo['monto']) {
+                            $existeGasto->update([
+                                "cantidad" => $tipo['monto']
+                            ]);
+                        }
                     }
                 }
-
             }
 
-            //Validemos que el banco tenga saldo suficiente para pagar el total de los gastos segun la seleccion del usuario
+
+            // $bancos = Bancos::where('id_empresa', $idEmpresa)
+            //     ->whereIn('id', $gastosBancos->keys())
+            //     ->get()
+            //     ->keyBy('id');
+
+
+
+            // foreach ($gastosBancos as $idBanco => $totalGasto) {
+
+
+
+
+
+            //     if ($banco && $banco->saldo < $totalGasto) {
+
+            //         DB::rollBack();
+
+            //         return response()->json([
+            //             "Titulo"  => "Saldo insuficiente en Banco",
+            //             "Mensaje" => "La cuenta bancaria seleccionada no cuenta con saldo suficiente.",
+            //             "TMensaje" => "warning"
+            //         ]);
+            //     }
+            // }
+
             $gastosBancos = collect($nuevosGastos)
             ->groupBy('banco')
             ->map(fn ($items) => $items->sum('gasto'));
 
 
-            $idsBancos = $gastosBancos->keys(); //Obtener los id de banco de la suma anterior
+            if (!empty($bancoDinero)) {
+                BancoDinero::insert($bancoDinero);
 
-            $bancos = Bancos::where('id_empresa', Auth::user()->id_empresa)
-                            ->whereIn('id', $idsBancos)
-                            ->get()
-                            ->keyBy('id');
+            }
+
+
 
             foreach ($gastosBancos as $idBanco => $totalGasto) {
-                $banco = $bancos->get($idBanco);
-
-                if (!is_null($banco) && $banco->saldo < $totalGasto) {
-                    return response()->json([
-                        "Titulo" => "Saldo insuficiente en Banco",
-                        "Mensaje" => "La cuenta bancaria seleccionada no cuenta con saldo suficiente para registrar esta transacción",
-                        "TMensaje" => "warning"
+                Bancos::where('id', $idBanco)
+                    ->update([
+                        "saldo" => DB::raw("saldo - {$totalGasto}")
                     ]);
-
-                }
             }
 
-            GastosOperadores::insert($datosGasto);
-            BancoDinero::insert($bancoDinero);
 
-            //Descontar la suma de los bancos correspondientes
 
-            foreach ($gastosBancos as $idBanco => $totalGasto) {
-                Bancos::where('id', '=', $idBanco)->update(
-                    ["saldo" => DB::raw("saldo - ". $totalGasto)
-                ]
-                );
-            }
+
+
+
 
             DB::commit();
 
@@ -428,7 +713,8 @@ class GastosContenedoresController extends Controller
             return response()->json([
                 "Titulo" => "Ha ocurrido un error",
                 "Mensaje" => "Ocurrio un error mientras procesabamos su solicitud. Cod Error $idError",
-                "TMensaje" => "warning"
+                "TMensaje" => "warning",
+                "eerr admin"  => $t->getMessage()
             ]);
         }
 

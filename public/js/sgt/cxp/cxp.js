@@ -290,7 +290,9 @@ function applyPayment() {
     }
 
     var bankOne = $('#cmbBankOne').val();
+    var FechaAplicacionbank1 = $('#FechaAplicacionbank1').val();
     var bankTwo = $('#cmbBankTwo').val();
+    var FechaAplicacionbank2 = $('#FechaAplicacionbank2').val();
     var bankProvOne = $('#cmbBankProvOne').val();
     var bankProvTwo = $('#cmbBankProvTwo').val();
 
@@ -305,6 +307,21 @@ function applyPayment() {
             confirmButtonText: 'Entendido!',
             title: 'Seleccione bancos',
             text: 'Falta seleccionar al menos uno de los bancos',
+            icon: 'warning',
+        });
+        return false;
+    }
+    if (!FechaAplicacionbank1 || !FechaAplicacionbank2) {
+        Swal.fire({
+            customClass: {
+                confirmButton: 'btn btn-success',
+                cancelButton: 'btn btn-danger',
+            },
+            buttonsStyling: true,
+            showConfirmButton: true,
+            confirmButtonText: 'Entendido!',
+            title: 'Seleccione fechas',
+            text: 'Falta seleccionar fecha de aplicacion para movimiento en bancos',
             icon: 'warning',
         });
         return false;
@@ -329,6 +346,8 @@ function applyPayment() {
             amountPayTwo,
             applyPayments,
             datahotTableCXP,
+            FechaAplicacionbank1,
+            FechaAplicacionbank2,
         },
         beforeSend: function () {},
         success: function (response) {

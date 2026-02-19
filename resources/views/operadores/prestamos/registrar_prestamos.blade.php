@@ -15,6 +15,7 @@
             cursor: pointer;
             transition: background 0.2s;
         }
+
         .btn-abonar:hover {
             background-color: #218838;
         }
@@ -31,7 +32,7 @@
                         <form id="formPrestamo" novalidate>
                             <div class="row align-items-end g-3">
                                 <!-- Nombre de operador -->
-                                <div class="col-md-4">
+                                <div class="col-md-3">
                                     <label for="id_operador" class="form-label fw-semibold">Nombre de operador</label>
                                     <select id="id_operador" name="id_operador" class="form-select" required>
                                         <option value="">Seleccione un operador</option>
@@ -47,30 +48,36 @@
                                     <label for="cantidad" class="form-label fw-semibold">Cantidad de préstamo</label>
                                     <div class="input-group">
                                         <span class="input-group-text bg-light border-end-0">$</span>
-                                        <input
-                                            type="number"
-                                            name="cantidad"
-                                            id="cantidad"
-                                            class="form-control border-start-0"
-                                            placeholder="Ingrese la cantidad"
-                                            required
-                                            min="0.01"
-                                            step="0.01"
-                                        />
+                                        <input type="number" name="cantidad" id="cantidad"
+                                            class="form-control border-start-0" placeholder="Ingrese la cantidad" required
+                                            min="0.01" step="0.01" />
                                     </div>
                                     <div class="invalid-feedback">Ingrese una cantidad válida mayor a 0.</div>
                                 </div>
 
                                 <!-- Banco -->
-                                <div class="col-md-4">
+                                <div class="col-md-3">
                                     <label for="id_banco" class="form-label fw-semibold">Banco de retiro</label>
                                     <select id="id_banco" name="id_banco" class="form-select" required>
                                         <option value="">Seleccione un banco</option>
-                                        @foreach ($bancos as $b)
-                                            <option value="{{ $b->id }}">{{ $b->nombre_banco }}</option>
+                                        @foreach ($bancos as $item)
+                                            <option value="{{ $item['id'] }}">
+                                                {{ $item['display'] }} :${{ number_format($item['saldo_actual'], 2) }}
+                                            </option>
                                         @endforeach
                                     </select>
                                     <div class="invalid-feedback">Seleccione banco de retiro.</div>
+                                </div>
+                                <div class="col-md-2">
+                                    <label for="FechaAplicacion">Fecha Aplicación</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">
+                                            <i class="fa fa-calendar text-danger"></i>
+                                        </span>
+                                        <input class="form-control dateInput" name="FechaAplicacion" id="FechaAplicacion"
+                                            placeholder="Fecha Aplicación" type="text" />
+                                    </div>
+                                    <div class="invalid-feedback">Seleccione fecha aplicacion.</div>
                                 </div>
 
                                 <!-- Botón -->
@@ -117,34 +124,44 @@
 
 @push('custom-javascript')
     <script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.js"></script>
-    <script src="{{ asset('js/sgt/operadores/prestamos.js') }}?v={{ filemtime(public_path('js/sgt/operadores/prestamos.js')) }}"></script>
+    <script
+        src="{{ asset('js/sgt/operadores/prestamos.js') }}?v={{ filemtime(public_path('js/sgt/operadores/prestamos.js')) }}">
+    </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
-
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
     <script>
-        $(function () {
+        flatpickr(".dateInput", {
+            dateFormat: "d/m/Y",
+            locale: "es"
+        });
+        $(function() {
             const $form = $('#formPrestamo');
 
             const csrfToken = $('meta[name="csrf-token"]').attr('content') || '';
 
-            // Limpiar errores al cambiar inputs
-            $form.on('input change', 'input, select', function () {
+
+            $form.on('input change', 'input, select', function() {
                 $(this).removeClass('is-invalid');
             });
 
-            $form.on('submit', function (e) {
+            $form.on('submit', function(e) {
                 e.preventDefault();
 
-                // Limpiar marcas previas
+
                 $form.find('.is-invalid').removeClass('is-invalid');
 
-                // Validación simple en cliente
+
                 let invalid = false;
 
                 const id_operador = $('#id_operador').val();
                 const id_banco = $('#id_banco').val();
 
                 const cantidad = $('#cantidad').val();
+
+                const FechaAplicacion = $('#FechaAplicacion').val();
 
                 if (!id_operador) {
                     $('#id_operador').addClass('is-invalid');
@@ -154,21 +171,26 @@
                     $('#id_banco').addClass('is-invalid');
                     invalid = true;
                 }
+                if (!FechaAplicacion) {
+                    $('#FechaAplicacion').addClass('is-invalid');
+                    invalid = true;
+                }
                 if (!cantidad || Number(cantidad) <= 0) {
                     $('#cantidad').addClass('is-invalid');
                     invalid = true;
                 }
 
                 if (invalid) {
-                    // no enviamos si hay errores cliente
+
                     return;
                 }
 
-                // Payload
+
                 const payload = {
                     id_operador,
                     id_banco,
                     cantidad,
+                    FechaAplicacion: FechaAplicacion,
 
                     _token: csrfToken,
                 };
@@ -177,28 +199,41 @@
                     url: '/prestamos/store',
                     method: 'POST',
                     data: payload,
-                    success: function (resp) {
-                        // éxito
+                    success: function(resp) {
+
+                        if (resp.success === false) {
+
+                            Swal.fire({
+                                icon: 'error',
+                                title: resp.Titulo ?? 'Error',
+                                text: resp.Mensaje ?? 'Ocurrió un error'
+                            });
+
+                            return;
+                        }
                         Swal.fire('Préstamo guardado correctamente', '', 'success');
-                        // opcional: reset form
+
                         $form[0].reset();
                     },
-                    error: function (xhr) {
+                    error: function(xhr) {
                         if (xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.errors) {
                             const errors = xhr.responseJSON.errors;
-                            // asigna errores a campos
-                            Object.keys(errors).forEach(function (field) {
-                                // los nombres son iguales a los name/id usados en el form
+
+                            Object.keys(errors).forEach(function(field) {
+
                                 const $el = $('#' + field);
                                 if ($el.length) {
                                     $el.addClass('is-invalid');
-                                    // muestra mensaje en el .invalid-feedback (el primero)
-                                    $el.next('.invalid-feedback').text(errors[field][0]);
+
+                                    $el.next('.invalid-feedback').text(errors[field][
+                                        0
+                                    ]);
                                 }
                             });
                         } else {
                             console.error(xhr.responseText);
-                            Swal.fire('Ocurrió un error al guardar.', 'Revisa la consola.', 'error');
+                            Swal.fire('Ocurrió un error al guardar.', 'Revisa la consola.',
+                                'error');
                         }
                     },
                 });

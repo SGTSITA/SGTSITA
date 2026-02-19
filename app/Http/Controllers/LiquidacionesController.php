@@ -21,9 +21,18 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Services\BancosService;
 
 class LiquidacionesController extends Controller
 {
+    protected $BancosService;
+
+    public function __construct(BancosService $BancosService)
+    {
+        $this->BancosService = $BancosService;
+    }
+
+
     public function index()
     {
         return view('liquidaciones.index');
@@ -141,9 +150,11 @@ class LiquidacionesController extends Controller
 
     public function show($id)
     {
+        $fecha = Carbon::now()->format('Y-m-d');
         $operador = Operador::where('id', '=', $id)->where('id_empresa', '=', auth()->user()->id_empresa)->first();
-        $bancos = Bancos::where('id_empresa', '=', auth()->user()->id_empresa)->get();
-
+        $bancos2 = Bancos::where('id_empresa', '=', auth()->user()->id_empresa)->get();
+        $bancos2 = Bancos::where('id_empresa', '=', auth()->user()->id_empresa)->get();
+        $bancos = $this->BancosService->getCuentasOption(auth()->user()->id_empresa, $fecha, $fecha, true);
         if (is_null($operador)) {
             return "No existe información";
         }
@@ -415,6 +426,30 @@ class LiquidacionesController extends Controller
         try {
             DB::beginTransaction();
             $idEmpresa = auth()->user()->id_empresa;
+
+
+            //validar saldo nuevo banco
+            if ($request->filled('bank') && $request->montoJustificacion > 0) {
+                $fechaAplicacionDinero = $request->get('FechaAplicacionDinero');
+
+                $validarSaldos = $this->BancosService->validarsaldoparacargo($idEmpresa, $request->get('bank'), $fechaAplicacionDinero, $request->montoJustificacion);
+                //  dd($validarSaldos);
+                if ($validarSaldos["saldodisponible"] == false) {
+
+                    return response()->json([
+                                      "TMensaje" => "error",
+                                   "Titulo" => "Saldo bancos",
+                                      "Mensaje" => $validarSaldos["message"],
+                                      'success' => false
+                                     ]);
+
+                }
+            }
+
+
+
+            //finaliza validacion saldos
+
             $documCotizacion = DocumCotizacion::where('num_contenedor', $request->numContenedor)
                                               ->where('id_empresa', $idEmpresa)
                                               ->first();
@@ -454,6 +489,43 @@ class LiquidacionesController extends Controller
                                     'descripcion_gasto' => 'Dinero para viaje: '.$request->txtDescripcion
                                 ]]);
 
+
+            //proceso bancos nuevo
+            if ($request->filled('bank') && $request->montoJustificacion > 0) {
+                $fechaAplicacionDinero = $request->get('FechaAplicacionDinero');
+
+                $operadorN = Operador::find($asignacion->id_operador);
+
+                $data = [
+                        'cuenta_bancaria_id' => $request->get('bank'),            'tipo' => 'cargo',
+                        'monto' => floatval($request->montoJustificacion),
+                        'concepto' => 'Dinero para viaje: '.$request->txtDescripcion .' - ' .'
+                                '.  $operadorN?->nombre ??  '',
+                        'fecha_movimiento' => \Carbon\Carbon::createFromFormat(
+                            'd/m/Y',
+                            $fechaAplicacionDinero
+                        )->format('Y-m-d'),
+                        'origen' => null,
+                        'referencia' => $request->numContenedor,
+                        'detalles' => json_encode($contenedoresAbonos),
+                         'referenciaable_id' => $asignacion->id,
+                          'referenciaable_type' => \App\Models\Asignaciones::class, //para polimorfismo
+                    ];
+
+
+
+
+                $movimeintoCrear = $this->BancosService->registrarMovimiento($data);
+                //   dd('no pasar', $movimeintoCrear);
+
+                if (!$movimeintoCrear) {
+                    throw new \Exception('No se pudo crear el movimiento bancario, dinero para viaje adicional ');
+                }
+
+
+            }
+
+
             DB::commit();
             return response()->json(["Titulo" => "Correcto", "Mensaje" => "Datos guardados con exito", "TMensaje" => "success"]);
 
@@ -475,13 +547,29 @@ class LiquidacionesController extends Controller
                 return response()->json(["Titulo" => "Acción rechazada","Mensaje" => "No se puede aplicar porque el saldo del operador es menor a la cantidad que intenta cobrar","TMensaje" => "warning"]);
             }
 
-            $bancos = Bancos::where('id', '=', $request->bancoId)->first();
-            $saldoActual = $bancos->saldo;
+            // $bancos = Bancos::where('id', '=', $request->bancoId)->first();
+            $saldoActual = 0;
             $totalPagar = $request->totalMontoPago - $request->totalPagoPrestamo;
+            if ($request->filled('bancoId') && $totalPagar > 0) {
+                $idEmpresa = auth()->user()->id_empresa;
+                $fechaAplicacionDinero = $request->get('FechaAplicacionPago');
 
-            if ($totalPagar > $saldoActual) {
-                return response()->json(["Titulo" => "Saldo insuficiente","Mensaje" => "No se puede aplicar el pago en la cuenta seleccionada","TMensaje" => "warning"]);
+                $validarSaldos = $this->BancosService->validarsaldoparacargo($idEmpresa, $request->get('bancoId'), $fechaAplicacionDinero, $totalPagar);
+                //  dd($validarSaldos);
+                if ($validarSaldos["saldodisponible"] == false) {
+
+                    return response()->json([
+                                      "TMensaje" => "error",
+                                   "Titulo" => "Saldo bancos",
+                                      "Mensaje" => $validarSaldos["message"],
+                                      'success' => false
+                                     ]);
+
+                }
             }
+            // if ($totalPagar > $saldoActual) {
+            //     return response()->json(["Titulo" => "Saldo insuficiente","Mensaje" => "No se puede aplicar el pago en la cuenta seleccionada","TMensaje" => "warning"]);
+            // }
 
             $contenedores = collect($request->pagoContenedores);
 
@@ -564,8 +652,7 @@ class LiquidacionesController extends Controller
             $banco = new BancoDineroOpe();
             $banco->id_operador = $request->_IdOperador;
 
-            $banco->monto1 = $contenedores->sum('MontoPago');
-            ;
+            $banco->monto1 = $totalPagar;
             $banco->metodo_pago1 = 'Transferencia';
             $banco->descripcion_gasto = 'Pago operador';
             $banco->id_banco1 = $request->bancoId;
@@ -576,6 +663,47 @@ class LiquidacionesController extends Controller
             $banco->save();
 
             Bancos::where('id', '=', $request->bancoId)->update(["saldo" => DB::raw("saldo - ". $request->totalMontoPago)]);
+
+
+            //bancos nuevo registrar movi
+
+            if ($request->filled('bancoId') &&  $contenedores->sum('MontoPago') > 0) {
+                $FechaAplicacionPago = $request->get('FechaAplicacionPago');
+
+                $operadorN = Operador::find($request->_IdOperador);
+
+                $data = [
+                        'cuenta_bancaria_id' => $request->get('bancoId'),
+                        'tipo' => 'cargo',
+                        'monto' => floatval($totalPagar),
+                        'concepto' => 'Pago Operador: ' .'
+                                '.  $operadorN?->nombre ??  '',
+                        'fecha_movimiento' => \Carbon\Carbon::createFromFormat(
+                            'd/m/Y',
+                            $FechaAplicacionPago
+                        )->format('Y-m-d'),
+                        'origen' => null,
+                        'referencia' => 'Liquidacion',
+                        'detalles' =>  $contenedoresAbonosJson,
+                         'referenciaable_id' => $liquidacion->id,
+                          'referenciaable_type' => \App\Models\Liquidaciones::class, //para polimorfismo
+                    ];
+
+
+
+
+                $movimeintoCrear = $this->BancosService->registrarMovimiento($data);
+                //   dd('no pasar', $movimeintoCrear);
+
+                if (!$movimeintoCrear) {
+                    throw new \Exception('No se pudo crear el movimiento bancario, prestamo operador  ');
+                }
+
+
+            }
+            //termina nuevo bancos
+
+
             DB::commit();
 
             return response()->json(["Titulo" => "Pago aplicado","Mensaje" => "Se aplicó el pago correctamente al operador","TMensaje" => "success"]);

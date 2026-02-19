@@ -10,14 +10,26 @@ use App\Models\Bancos;
 use App\Models\BancoDinero;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Carbon\Carbon;
+use App\Services\BancosService;
+use Illuminate\Support\Facades\Log;
 
 class PrestamosController extends Controller
 {
+    protected $BancosService;
+
+    public function __construct(BancosService $BancosService)
+    {
+        $this->BancosService = $BancosService;
+    }
+
+
     public function index()
     {
         $operadores = Operador::where('id_empresa', auth()->user()->id_empresa)->get();
-        $bancos = Bancos::where('id_empresa', auth()->user()->id_empresa)->get();
-
+        $bancos2 = Bancos::where('id_empresa', auth()->user()->id_empresa)->get(); //old bancos
+        $fecha = Carbon::now()->format('Y-m-d');
+        $bancos = $this->BancosService->getCuentasOption(auth()->user()->id_empresa, $fecha, $fecha, true);
         $prestamos = Prestamo::with(['operador', 'banco', 'pagoprestamos'])
            ->when(!auth()->user()->is_admin, function ($q) {
                $q->whereHas('operador', function ($q2) {
@@ -37,7 +49,7 @@ class PrestamosController extends Controller
         $rules = [
             'id_operador' => 'required|exists:operadores,id',
             'id_banco' => 'required|exists:bancos,id',
-            'cantidad' => 'required|numeric|min:0.01',
+            'cantidad' => 'required|numeric|min:0.01'
         ];
 
         $validator = Validator::make($request->all(), $rules);
@@ -50,18 +62,38 @@ class PrestamosController extends Controller
                 'errors' => $validator->errors()
             ], 422);
         }
-
         $data = $request->only(['id_operador', 'id_banco', 'cantidad']);
+        if ($request->filled('id_banco') && $data['cantidad'] > 0) {
+            $idEmpresa = auth()->user()->id_empresa;
+            $fechaAplicacion = $request->get('FechaAplicacion');
+
+            $validarSaldos = $this->BancosService->validarsaldoparacargo($idEmpresa, $request->get('id_banco'), $fechaAplicacion, $data['cantidad']);
+            //  dd($validarSaldos);
+            if ($validarSaldos["saldodisponible"] == false) {
+
+                return response()->json([
+                                  "TMensaje" => "error",
+                               "Titulo" => "Saldo bancos",
+                                  "Mensaje" => $validarSaldos["message"],
+                                  'success' => false
+
+
+                                 ]);
+
+            }
+        }
+
+
         $data['pagos'] = 0;
         $data['saldo_actual'] = $data['cantidad'];
-
-        $bancoAfectado = Bancos::where('id', '=', $request->get('id_banco'));
-        $saldoActualBanco = $bancoAfectado->first()->saldo || 0;
         $montoPrestamo = $request->get('cantidad');
+        // $bancoAfectado = Bancos::where('id', '=', $request->get('id_banco'));
+        // $saldoActualBanco = $bancoAfectado->first()->saldo || 0;
+        // $montoPrestamo = $request->get('cantidad');
 
-        if ($saldoActualBanco < $montoPrestamo) {
-            return response()->json(["Titulo" => "Prestamo no aplicado","Mensaje" => "No se puede aplicar el prestamo desde la cuenta seleccionada ya que el saldo es insuficiente", "TMensaje" => "warning"]);
-        }
+        // if ($saldoActualBanco < $montoPrestamo) {
+        //     return response()->json(["Titulo" => "Prestamo no aplicado","Mensaje" => "No se puede aplicar el prestamo desde la cuenta seleccionada ya que el saldo es insuficiente", "TMensaje" => "warning"]);
+        // }
 
         $prestamo = Prestamo::create($data);
 
@@ -78,6 +110,49 @@ class PrestamosController extends Controller
         ];
 
         BancoDinero::insert($bancoDinero);
+
+
+        //bancos nuevo registrar movi
+
+
+
+
+
+        if ($request->filled('id_banco') && $montoPrestamo > 0) {
+            $FechaAplicacion = $request->get('FechaAplicacion');
+
+            $operadorN = Operador::find($data["id_operador"]);
+
+            $data = [
+                    'cuenta_bancaria_id' => $request->get('id_banco'),
+                    'tipo' => 'cargo',
+                    'monto' => floatval($montoPrestamo),
+                    'concepto' => 'Prestamo Operador: ' .'
+                                '.  $operadorN?->nombre ??  '',
+                    'fecha_movimiento' => \Carbon\Carbon::createFromFormat(
+                        'd/m/Y',
+                        $FechaAplicacion
+                    )->format('Y-m-d'),
+                    'origen' => null,
+                    'referencia' => 'Prestamo',
+                    'detalles' => [],
+                     'referenciaable_id' => $prestamo->id,
+                      'referenciaable_type' => \App\Models\Prestamo::class, //para polimorfismo
+                ];
+
+
+
+
+            $movimeintoCrear = $this->BancosService->registrarMovimiento($data);
+            //   dd('no pasar', $movimeintoCrear);
+
+            if (!$movimeintoCrear) {
+                throw new \Exception('No se pudo crear el movimiento bancario, prestamo operador  ');
+            }
+
+
+        }
+        //termina nuevo bancos
 
         return response()->json([
             'success' => true,

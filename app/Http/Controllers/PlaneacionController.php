@@ -25,9 +25,18 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Validator;
 use Carbon\Carbon;
+use App\Services\BancosService;
 
 class PlaneacionController extends Controller
 {
+    protected $BancosService;
+
+    public function __construct(BancosService $BancosService)
+    {
+        $this->BancosService = $BancosService;
+    }
+
+
     public function index()
     {
         return view('planeacion.index');
@@ -35,13 +44,16 @@ class PlaneacionController extends Controller
 
     public function programarViaje()
     {
+        $fecha = Carbon::now()->format('Y-m-d');
         $proveedores = Proveedor::catalogoPrincipal()->where('id_empresa', '=', auth()->user()->id_empresa)
         ->wherein('tipo', ['servicio de burreo', 'servicio de viaje'])
         ->get();
 
         $equipos = Equipo::where('id_empresa', '=', auth()->user()->id_empresa)->get();
         $operadores = Operador::where('id_empresa', '=', auth()->user()->id_empresa)->get();
-        $bancos = Bancos::where('id_empresa', '=', auth()->user()->id_empresa)->where('saldo', '>', '0')->get();
+        $bancos2 = Bancos::where('id_empresa', '=', auth()->user()->id_empresa)->where('saldo', '>', '0')->get();
+        $bancos = $this->BancosService->getCuentasOption(auth()->user()->id_empresa, $fecha, $fecha, true);
+
 
         return view('planeacion.planeacion-step', compact('equipos', 'operadores', 'proveedores', 'bancos'));
     }
@@ -80,6 +92,19 @@ class PlaneacionController extends Controller
                 $banco->fecha_pago = date('Y-m-d');
                 $banco->save();
 
+                //anular nuevo movimiento devolucion
+
+
+                $movimientoBanco = $this->BancosService->findMovimiento($asignaciones->id, \App\Models\Asignaciones::class, $asignaciones->id_banco1_dinero_viaje);
+
+                $cancelarMovimientoBanco =  $this->BancosService->cancelarMovimiento($asignaciones->id_banco1_dinero_viaje, $movimientoBanco->id);
+
+                if (!$cancelarMovimientoBanco) {
+
+                    throw new \Exception('No se pudo crear el movimiento bancario, dinero para viaje ');
+                }
+
+
 
 
             }
@@ -99,6 +124,9 @@ class PlaneacionController extends Controller
             ->where('id_banco', '!=', null)
 
             ->get();
+
+
+            // dd($gastosOperador);
 
             //recorrer los gastos pagados para hacer devolucion
             foreach ($gastosOperador as $gasto) {
@@ -123,6 +151,17 @@ class PlaneacionController extends Controller
                 $banco->tipo = 'Entrada';
                 $banco->fecha_pago = date('Y-m-d');
                 $banco->save();
+
+                log::info('Regresando movimiento banco nuevo', ["gasto" => $gasto]);
+
+                $movimientoBancoGasto = $this->BancosService->findMovimiento($gasto->id, \App\Models\GastosOperadores::class, $gasto->id_banco);
+                log::info('Regresando movimiento banco nuevo', ["movi encontrado" => $movimientoBancoGasto]);
+                $cancelarMovimientoBanco =  $this->BancosService->cancelarMovimiento($gasto->id_banco, $movimientoBancoGasto->id);
+                log::info('Regresando movimiento banco nuevo', ["movicancel" => $cancelarMovimientoBanco]);
+                if (!$movimientoBancoGasto) {
+
+                    throw new \Exception('No se pudo crear el movimiento bancario, gasto  ');
+                }
 
 
             }
@@ -464,22 +503,36 @@ class PlaneacionController extends Controller
         $CantineroViaje = $request->filled('txtDineroViaje') ? $request->get('txtDineroViaje') : 0;
         $idEmpresa = auth()->user()->id_empresa;
         //validar si el banco tiene dinero antes de todo
-        if ($CantineroViaje > 0) {
-
+        if ($CantineroViaje > 0 && $request->filled('cmbBanco')) {
+            $fechaAplicacionDinero = $request->get('FechaAplicacionDinero');
             $bancovalidar = Bancos::where('id', '=', $request->get('cmbBanco'))->where('id_empresa', '=', $idEmpresa)->first();
-            if ($bancovalidar->saldo <  $CantineroViaje) {
+            $validarSaldos = $this->BancosService->validarsaldoparacargo($idEmpresa, $request->get('cmbBanco'), $fechaAplicacionDinero, $CantineroViaje);
+            //  dd($validarSaldos);
+            if ($validarSaldos["saldodisponible"] == false) {
                 $validadarSaldos = 'NO';
                 return response()->json([
-                  "TMensaje" => "error",
-                  "Titulo" => "Saldo bancos",
-                  "Mensaje" => "No se puede realizar la programacion de este viaje, el saldo del banco no es suficiente",
-                  'success' => false,
-                  'cotizacion_data' => []
-                ]);
+                                  "TMensaje" => "error",
+                               "Titulo" => "Saldo bancos",
+                                  "Mensaje" => $validarSaldos["message"],
+                                  'success' => false,
+                                  'cotizacion_data' => []
+                                 ]);
 
-
-                //  dd($bancovalidar, $validadarSaldos);
             }
+
+            // if ($bancovalidar->saldo <  $CantineroViaje) {
+            //     $validadarSaldos = 'NO';
+            //     return response()->json([
+            //       "TMensaje" => "error",
+            //       "Titulo" => "Saldo bancos",
+            //       "Mensaje" => "No se puede realizar la programacion de este viaje, el saldo del banco no es suficiente",
+            //       'success' => false,
+            //       'cotizacion_data' => []
+            //     ]);
+
+
+            //     //  dd($bancovalidar, $validadarSaldos);
+            // }
             // dd($bancovalidar, $validadarSaldos.$bancovalidar->saldo, $CantineroViaje);
         }
 
@@ -505,51 +558,75 @@ class PlaneacionController extends Controller
                 //dd($gasto, $validadarSaldos);
                 if ($esPagoInmediato && $idBanco) {
 
-                    // Acumular monto por banco
+
                     if (!isset($montosPorBanco[$idBanco])) {
                         $montosPorBanco[$idBanco] = 0;
                     }
 
-                    $montosPorBanco[$idBanco] += $monto;
+                    $gastosPorBanco[$idBanco][] = [
+    'monto' => $monto,
+    'fecha' => Carbon::createFromFormat('d/m/Y', $gasto['fechaAplicacion'])
+                    ->format('Y-m-d') ,
+];
                 }
                 //  dd($idBanco, $esPagoInmediato, $monto);
             }
-            //  dd($montosPorBanco);
-            // 🔎 Ahora validar saldos reales
-            foreach ($montosPorBanco as $idBanco => $totalMonto) {
+            //   dd($gastosPorBanco);
+
+            foreach ($gastosPorBanco as $idcuenta => $gastosBanco) {
 
                 $banco = Bancos::where('id_empresa', $idEmpresa)
-                               ->where('id', $idBanco)
+                               ->where('id', $idcuenta)
                                ->first();
 
-
                 if (!$banco) {
-                    $validadarSaldos = 'NO';
                     return response()->json([
                         "Titulo" => "Banco no encontrado",
                         "Mensaje" => "El banco seleccionado no existe o no pertenece a la empresa.",
                         "TMensaje" => "error",
-                         'success' => false,
+                        'success' => false,
                     ]);
-
                 }
-                //  dd($banco, $validadarSaldos);
 
 
-                if ($banco->saldo < $totalMonto) {
-                    $validadarSaldos = 'NO';
-                    return response()->json([
-                        "Titulo" => "Saldo insuficiente",
-                        "Mensaje" => "El banco {$banco->nombre} no cuenta con saldo suficiente para cubrir el total de {$totalMonto}.",
-                        "TMensaje" => "error",
-                         'success' => false,
-                    ]);
-                    break;
+                usort($gastosBanco, function ($a, $b) {
+                    return strtotime($a['fecha']) <=> strtotime($b['fecha']);
+                });
+
+
+                $fechaInicial = $gastosBanco[0]['fecha'];
+
+
+                $movimientos = $this->BancosService
+                    ->validarsaldoparacargo($idEmpresa, $idcuenta, $fechaInicial, 0);
+
+                $saldoSimulado = $movimientos["saldoActual"];
+
+                //dd($movimientos, $fechaInicial);
+
+
+                foreach ($gastosBanco as $gasto) {
+
+                    $saldoSimulado -= $gasto['monto'];
+
+                    if ($saldoSimulado < 0) {
+                        $validadarSaldos = 'NO';
+                        return response()->json([
+                            "Titulo" => "Saldo para gastos..",
+                            "Mensaje" => "Saldo insuficiente para fecha "
+                                . $gasto['fecha']
+                                . ". Faltan $" . number_format(abs($saldoSimulado), 2),
+                            "TMensaje" => "error",
+                            'success' => false,
+                        ]);
+                    }
                 }
             }
 
 
         }
+
+
 
 
         //finaliza y sigue si ay dinero
@@ -634,6 +711,37 @@ class PlaneacionController extends Controller
                         $dineroViaje->save();
 
 
+                        //dd($fechaInicio, $fechaFinal);
+                        //nuevo banco movimiento
+                        $operadorN = Operador::find($request->get('cmbOperador'));
+
+                        $data = [
+                                'cuenta_bancaria_id' => $request->get('cmbBanco'),            'tipo' => 'cargo',
+                                'monto' => floatval($CantineroViaje),
+                                'concepto' => 'Dinero para viaje '. $contenedor->num_contenedor .'
+                                '.  $operadorN?->nombre ??  '',
+                                'fecha_movimiento' => \Carbon\Carbon::createFromFormat(
+                                    'd/m/Y',
+                                    $request->get('FechaAplicacionDinero')
+                                )->format('Y-m-d'),
+                                'origen' => null,
+                                'referencia' => 'del ' .\Carbon\Carbon::parse($fechaInicio)->format('d/m/Y') . ' al '.\Carbon\Carbon::parse($fechaFinal)->format('d/m/Y') ,
+                                'detalles' => json_encode($contenedoresAbonos),
+                                 'referenciaable_id' => $asignaciones->id,
+                                  'referenciaable_type' => \App\Models\Asignaciones::class, //para polimorfismo
+                            ];
+
+
+
+
+                        $movimeintoCrear = $this->BancosService->registrarMovimiento($data);
+                        // dd('no pasar', $movimeintoCrear);
+
+                        if (!$movimeintoCrear) {
+                            throw new \Exception('No se pudo crear el movimiento bancario, dinero para viaje ');
+                        }
+
+
 
 
                     }
@@ -707,7 +815,7 @@ class PlaneacionController extends Controller
                         log::info('Guardando otros gastos de planeacion propio...');
 
                         $resultado = self::guardarOtrosGastosPlaneacion($request, $contenedor->num_contenedor, $request->get('cmbOperador'));
-
+                        log::info('Guardado otros gastos planeacion', $resultado);
                     }
                 }
 
@@ -840,7 +948,7 @@ class PlaneacionController extends Controller
         }
     }
 
-    public static function guardarOtrosGastosPlaneacion($r, $num_Contenedor, $idOperadorViaje)
+    public function guardarOtrosGastosPlaneacion($r, $num_Contenedor, $idOperadorViaje)
     {
         DB::beginTransaction();
         $respuesta = null;
@@ -876,9 +984,12 @@ class PlaneacionController extends Controller
                 $monto = floatval($gasto['monto'] ?? 0);
                 $esPagoInmediato = !empty($gasto['pagoInmediato']);
                 $idBanco = !empty($gasto['banco']) ? intval($gasto['banco']) : null;
+                $fechaAplicacion = !empty($gasto['fechaAplicacion']) ? $gasto['fechaAplicacion'] : null;
                 $numContenedor = $num_Contenedor;
 
-                // Validaciones básicas
+                //  dd($fechaAplicacion);
+
+                // Validaciones
                 if (!$motivo || !isset($descripcionGastosPermitidos[$motivo])) {
                     continue;
                 }
@@ -910,7 +1021,7 @@ class PlaneacionController extends Controller
 
                 $tipoGasto = $descripcionGastosPermitidos[$motivo];
 
-                // 🔹 Evitar duplicados
+                // Evitar duplicados
                 $gastoExistente = GastosOperadores::where('id_cotizacion', $contenedor->id_cotizacion)
                     ->where('tipo', $tipoGasto)
                     ->first();
@@ -922,8 +1033,8 @@ class PlaneacionController extends Controller
                     continue;
                 }
 
-                // 🔹 Registrar gasto operador
-                $datosGasto[] = [
+                // Registrar gasto operador
+                $datosGasto = [
                     "id_cotizacion" => $contenedor->id_cotizacion,
                     "id_banco" => $esPagoInmediato ? $idBanco : null,
                     "id_asignacion" => $asignacion->id,
@@ -936,7 +1047,7 @@ class PlaneacionController extends Controller
                     "created_at" => Carbon::now()
                 ];
 
-                // 🔹 Si es pago inmediato, validar y descontar saldo
+                //  Si es pago inmediato, validar y descontar saldo
                 if ($esPagoInmediato && $idBanco) {
                     $banco = Bancos::where('id_empresa', $idEmpresa)->where('id', $idBanco)->first();
 
@@ -948,17 +1059,18 @@ class PlaneacionController extends Controller
                         ];
                         continue;
                     }
+                    Log::info('si ay banco:', ['idbanco' => $idBanco]);
+                    // if ($banco->saldo < $monto) {
+                    //     Log::info('no hay saldo ', ['saldo' => $banco->saldo]);
+                    //     $respuesta = [
+                    //         "Titulo" => "Saldo insuficiente",
+                    //         "Mensaje" => "El banco {$banco->nombre} no cuenta con saldo suficiente.",
+                    //         "TMensaje" => "warning"
+                    //     ];
+                    //     continue;
+                    // }
+                    //  Log::info('si ay saldo banco viejo:');
 
-                    if ($banco->saldo < $monto) {
-                        $respuesta = [
-                            "Titulo" => "Saldo insuficiente",
-                            "Mensaje" => "El banco {$banco->nombre} no cuenta con saldo suficiente.",
-                            "TMensaje" => "warning"
-                        ];
-                        continue;
-                    }
-
-                    // 🔹 Registrar movimiento bancario
                     $contenedoresAbonosJson = json_encode([
                         ['num_contenedor' => $numContenedor, 'abono' => $monto]
                     ]);
@@ -972,19 +1084,56 @@ class PlaneacionController extends Controller
                         "tipo" => 'Salida',
                         "fecha_pago" => date('Y-m-d'),
                     ];
+                    $gastosNuevo  = null;
+                    if (!empty($datosGasto)) {
+                        Log::info('Insertando gastos operadores:', $datosGasto);
+                        $gastosNuevo =   GastosOperadores::create($datosGasto);
+                    }
 
-                    // 🔹 Descontar saldo de inmediato
+                    Log::info('Armar data paa nuevo gasto:', $datosGasto);
+                    Log::info('inserto en bd:', ['registro' => $gastosNuevo]);
+
+
+                    //nuevo banco movimiento
+                    $data = [
+                            'cuenta_bancaria_id' => $idBanco,            'tipo' => 'cargo',
+                            'monto' => floatval($monto),
+                            'concepto' => "GOP". "{$tipoGasto} {$numContenedor}" ,
+                            'fecha_movimiento' => \Carbon\Carbon::createFromFormat(
+                                'd/m/Y',
+                                $fechaAplicacion
+                            )->format('Y-m-d'),
+                            'origen' => null,
+                            'referencia' => 'Gastos' ,
+                            'detalles' => $contenedoresAbonosJson,
+                             'referenciaable_id' => $gastosNuevo->id,
+                              'referenciaable_type' => \App\Models\GastosOperadores::class, //para polimorfismo
+                        ];
+
+
+
+
+                    $movimeintoCrear = $this->BancosService->registrarMovimiento($data);
+
+
+                    if (!$movimeintoCrear) {
+                        Log::info('No se creo movimeinto banco nuevo:', $data);
+                        throw new \Exception('No se pudo crear el movimiento bancario, gasto ');
+                    }
+
+                    //Descontar saldo de inmediato, mal echo xd
                     Bancos::where('id', $idBanco)->update([
                         "saldo" => DB::raw("saldo - {$monto}")
                     ]);
+                } else {
+                    if (!empty($datosGasto)) {
+                        Log::info('Insertando gastos operadores pendientes:', $datosGasto);
+                        $gastosNuevo =   GastosOperadores::create($datosGasto);
+                    }
                 }
             }
 
-            // 🔹 Guardar registros
-            if (!empty($datosGasto)) {
-                Log::info('Insertando gastos operadores:', $datosGasto);
-                GastosOperadores::insert($datosGasto);
-            }
+
 
             if (!empty($bancoDinero)) {
                 Log::info('Insertando movimientos bancarios:', $bancoDinero);

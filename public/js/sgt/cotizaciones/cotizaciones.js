@@ -583,6 +583,76 @@ document.addEventListener('DOMContentLoaded', function () {
     var precioSobrePesoProveedor = document.getElementById('sobrepeso_proveedor');
     var sobrePesoProveedor = document.getElementById('cantidad_sobrepeso_proveedor');
     var precioToneladaProveedor = document.getElementById('total_tonelada');
+    const btnsaveCimaMep = document.getElementById('btnCambiarCimaOpcion');
+    if (btnsaveCimaMep) {
+        //para guardar si es cima en mep, pero se separo porq no envia informacion de cantidades y quitaba lo q ya tenian guardado
+        btnsaveCimaMep.addEventListener('click', function () {
+            Swal.fire({
+                title: 'Guardando...',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                },
+            });
+
+            const idCotizacion = this.dataset.id;
+            let cima = document.getElementById('cima').value;
+            let ccp = document.getElementById('ccp').value;
+            let num_boleta_liberacion = document.getElementById('num_boleta_liberacion').value;
+            let num_doda = document.getElementById('num_doda').value;
+            let num_carta_porte = document.getElementById('num_carta_porte').value;
+            let num_carta_porte_xml = document.getElementById('num_carta_porte_xml').value;
+            let fecha_boleta_vacio = document.getElementById('fecha_boleta_vacio').value;
+            let fecha_eir = document.getElementById('fecha_eir').value;
+
+            fetch('/cotizaciones/updateMep/' + idCotizacion, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                },
+                body: JSON.stringify({
+                    cima: cima,
+                    ccp: ccp,
+                    num_boleta_liberacion: num_boleta_liberacion,
+                    num_doda: num_doda,
+                    num_carta_porte: num_carta_porte,
+                    num_carta_porte_xml: num_carta_porte_xml,
+                    fecha_boleta_vacio: fecha_boleta_vacio,
+                    fecha_eir: fecha_eir,
+                }),
+            })
+                .then((response) => response.json())
+                .then((data) => {
+                    Swal.close();
+
+                    if (data.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Guardado correctamente',
+                            text: data.message ?? 'La información se registró con éxito',
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: data.Titulo ?? 'Atención',
+                            text: data.Mensaje ?? 'Ocurrió un problema',
+                        });
+                    }
+                })
+                .catch((error) => {
+                    Swal.close();
+
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Ocurrió un error inesperado',
+                    });
+
+                    console.error(error);
+                });
+        });
+    }
 
     // Agregar evento de cambio a los inputs
     pesoReglamentarioInput.addEventListener('input', calcularSobrepeso);

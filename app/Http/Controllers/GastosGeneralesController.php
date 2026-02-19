@@ -17,12 +17,24 @@ use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use App\Services\BancosService;
+use Illuminate\Support\Facades\Log;
 
 class GastosGeneralesController extends Controller
 {
+    protected $BancosService;
+
+    public function __construct(BancosService $BancosService)
+    {
+        $this->BancosService = $BancosService;
+    }
     public function index()
     {
-        $bancos = Bancos::where('id_empresa', auth()->user()->id_empresa)->get();
+        $bancos2 = Bancos::where('id_empresa', auth()->user()->id_empresa)->get();
+
+        $fecha = Carbon::now()->format('Y-m-d');
+        $bancos = $this->BancosService->getCuentasOption(auth()->user()->id_empresa, $fecha, $fecha, true);
+
         $categorias = CategoriasGastos::orderBy('categoria')->get();
         $now = Carbon::now()->format('d.m.Y');
         $initDay = Carbon::now()->subDays(15)->format('d.m.Y');
@@ -181,13 +193,34 @@ class GastosGeneralesController extends Controller
     {
         try {
             DB::beginTransaction();
-            $bancoAfectado = Bancos::where('id', '=', $request->get('id_banco1'));
-            $saldoActualBanco = $bancoAfectado->first()->saldo;
+            // $bancoAfectado = Bancos::where('id', '=', $request->get('id_banco1'));
+            // $saldoActualBanco = $bancoAfectado->first()->saldo;
             $montoGasto = $request->get('monto1');
 
-            if ($saldoActualBanco < $montoGasto) {
-                return response()->json(["Titulo" => "Gasto no aplicado","Mensaje" => "No se puede aplicar el gasto en la cuenta seleccionada ya que el saldo es insuficiente", "TMensaje" => "warning"]);
+            // if ($saldoActualBanco < $montoGasto) {
+            //     return response()->json(["Titulo" => "Gasto no aplicado","Mensaje" => "No se puede aplicar el gasto en la cuenta seleccionada ya que el saldo es insuficiente", "TMensaje" => "warning"]);
+            // }
+
+            $idEmpresa = auth()->user()->id_empresa;
+
+
+            if ($request->filled('id_banco1') && $montoGasto > 0) {
+                $fecha_aplicacion = $request->get('fecha_aplicacion');
+
+                $validarSaldos = $this->BancosService->validarsaldoparacargo($idEmpresa, $request->get('id_banco1'), $fecha_aplicacion, $montoGasto);
+                //  dd($validarSaldos);
+                if ($validarSaldos["saldodisponible"] == false) {
+
+                    return response()->json([
+                                      "TMensaje" => "error",
+                                   "Titulo" => "Saldo bancos 1",
+                                      "Mensaje" => $validarSaldos["message"],
+                                      'success' => false
+                                     ]);
+
+                }
             }
+
 
             $fechaActual = date('Y-m-d');
             $gasto_general = new GastosGenerales();
@@ -265,6 +298,39 @@ class GastosGeneralesController extends Controller
                 $banco->fecha_pago = date('Y-m-d');
                 $banco->tipo = 'Salida';
                 $banco->save();
+
+
+
+                //proceso bancos nuevo
+                if ($request->filled('id_banco1') && $montoGasto > 0) {
+                    $fecha_aplicacion = $request->get('fecha_aplicacion');
+
+                    $data = [
+                            'cuenta_bancaria_id' => $request->get('id_banco1'),            'tipo' => 'cargo',
+                            'monto' => floatval($montoGasto),
+                            'concepto' => $request->get('motivo'),
+                            'fecha_movimiento' =>  $fecha_aplicacion,
+
+                            'origen' => null,
+                            'referencia' => '',
+                            'detalles' => "[]",
+                             'referenciaable_id' => $gasto_general->id,
+                              'referenciaable_type' => \App\Models\GastosGenerales::class, //para polimorfismo
+                              'observaciones' => 'id banco a proveedor: '. $request->bankProvOne,
+                        ];
+
+
+
+
+                    $movimeintoCrear = $this->BancosService->registrarMovimiento($data);
+                    //   dd('no pasar', $movimeintoCrear);
+
+                    if (!$movimeintoCrear) {
+                        throw new \Exception('No se pudo crear el movimiento bancario, gastos  ');
+                    }
+
+
+                }
             }
 
             DB::commit();

@@ -17,10 +17,17 @@ class GastosOperadores extends Model
         'id_asignacion',
         'id_operador',
         'id_cotizacion',
+        'id_banco',
         'cantidad',
         'tipo',
+        'estatus',
+        'fecha_pago',
+        'pago_inmediato',
         'comprobante',
+        'created_at'
     ];
+
+
 
     public function Asignaciones()
     {

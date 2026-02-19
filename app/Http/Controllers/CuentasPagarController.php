@@ -13,9 +13,17 @@ use App\Models\Proveedor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Services\BancosService;
+use Carbon\Carbon;
 
 class CuentasPagarController extends Controller
 {
+    protected $BancosService;
+
+    public function __construct(BancosService $BancosService)
+    {
+        $this->BancosService = $BancosService;
+    }
     public function index()
     {
         $cotizacionIds = Cotizaciones::join('docum_cotizacion', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
@@ -110,9 +118,11 @@ class CuentasPagarController extends Controller
 
     public function show($id)
     {
-        $bancos = Bancos::where('id_empresa', '=', auth()->user()->id_empresa)->get();
-        $cliente = Proveedor::where('id', '=', $id)->first();
-        $banco_proveedor = CuentasBancarias::where('id_proveedores', '=', $cliente->id)->get();
+        $bancos2 = Bancos::where('id_empresa', '=', auth()->user()->id_empresa)->get();
+        $fecha = Carbon::now()->format('Y-m-d');
+        $bancos = $this->BancosService->getCuentasOption(auth()->user()->id_empresa, $fecha, $fecha, true);
+        $proveedor = Proveedor::where('id', '=', $id)->first();
+        $banco_proveedor = CuentasBancarias::where('id_proveedores', '=', $proveedor->id)->get();
 
         /*$cotizacionesPorPagar = Cotizaciones::join('docum_cotizacion', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
         ->join('asignaciones', 'docum_cotizacion.id', '=', 'asignaciones.id_contenedor')
@@ -154,7 +164,7 @@ class CuentasPagarController extends Controller
 
         return view('cuentas_pagar.show', compact('cotizacionesPorPagar', 'bancos', 'cliente', 'banco_proveedor', 'cotizacionesAgrupadas'));*/
 
-        return view('cuentas_pagar.pagos_v2', compact('bancos', 'cliente', 'banco_proveedor'));
+        return view('cuentas_pagar.pagos_v2', compact('bancos', 'proveedor', 'banco_proveedor'));
 
     }
 
@@ -174,32 +184,70 @@ class CuentasPagarController extends Controller
                 }
             }
 
-            $bankOne = Bancos::where('id', '=', $request->bankOne);
-            $bankTwo = Bancos::where('id', '=', $request->bankTwo);
+            // $bankOne = Bancos::where('id', '=', $request->bankOne);
+            // $bankTwo = Bancos::where('id', '=', $request->bankTwo);
 
-            $saldoCtaOne = $bankOne->first()->saldo;
-            $saldoCtaTwo = $bankTwo->first()->saldo;
+            // $saldoCtaOne = $bankOne->first()->saldo;
+            // $saldoCtaTwo = $bankTwo->first()->saldo;
 
-            if ($saldoCtaOne < $request->amountPayOne) {
-                return response()->json([
-                    "success" => false,
-                    "Titulo" => "Saldo insuficiente",
-                    "Mensaje" => "No se puede aplicar el pago porque el saldo en el Banco 1 es insuficiente",
-                    "TMensaje" => "warning"
-                ]);
+            // if ($saldoCtaOne < $request->amountPayOne) {
+            //     return response()->json([
+            //         "success" => false,
+            //         "Titulo" => "Saldo insuficiente",
+            //         "Mensaje" => "No se puede aplicar el pago porque el saldo en el Banco 1 es insuficiente",
+            //         "TMensaje" => "warning"
+            //     ]);
+            // }
+
+            // if ($saldoCtaTwo < $request->amountPayTwo) {
+            //     return response()->json([
+            //         "success" => false,
+            //         "Titulo" => "Saldo insuficiente",
+            //         "Mensaje" => "No se puede aplicar el pago porque el saldo en el Banco 2 es insuficiente",
+            //         "TMensaje" => "warning"
+            //     ]);
+            // }
+            $idEmpresa = auth()->user()->id_empresa;
+
+
+            if ($request->filled('bankOne') && $request->amountPayOne > 0) {
+                $FechaAplicacionPago1 = $request->get('FechaAplicacionPago1');
+
+                $validarSaldos = $this->BancosService->validarsaldoparacargo($idEmpresa, $request->get('bankOne'), $FechaAplicacionPago1, $request->amountPayOne);
+                //  dd($validarSaldos);
+                if ($validarSaldos["saldodisponible"] == false) {
+
+                    return response()->json([
+                                      "TMensaje" => "error",
+                                   "Titulo" => "Saldo bancos 1",
+                                      "Mensaje" => $validarSaldos["message"],
+                                      'success' => false
+                                     ]);
+
+                }
             }
 
-            if ($saldoCtaTwo < $request->amountPayTwo) {
-                return response()->json([
-                    "success" => false,
-                    "Titulo" => "Saldo insuficiente",
-                    "Mensaje" => "No se puede aplicar el pago porque el saldo en el Banco 2 es insuficiente",
-                    "TMensaje" => "warning"
-                ]);
+            if ($request->filled('bankTwo') && $request->amountPayTwo > 0) {
+                $FechaAplicacionPago2 = $request->get('FechaAplicacionPago2');
+
+                $validarSaldos = $this->BancosService->validarsaldoparacargo($idEmpresa, $request->get('bankTwo'), $FechaAplicacionPago2, $request->amountPayTwo);
+                //  dd($validarSaldos);
+                if ($validarSaldos["saldodisponible"] == false) {
+
+                    return response()->json([
+                                      "TMensaje" => "error",
+                                   "Titulo" => "Saldo bancos 2",
+                                      "Mensaje" => $validarSaldos["message"],
+                                      'success' => false
+                                     ]);
+
+                }
             }
 
             DB::beginTransaction();
             $contenedoresAbonos = [];
+            $contenedoresAbonos1 = [];
+            $contenedoresAbonos2 = [];
 
             foreach ($cotizaciones as $c) {
                 if ($c[6] > 0) {//Si el pago es mayor a cero
@@ -223,10 +271,20 @@ class CuentasPagarController extends Controller
                         'num_contenedor' => $c[0],
                         'abono' => $c[6]
                     ];
+                    $contenedorAbono1 = [
+                     'num_contenedor' => $c[0],
+                     'abono' => $c[4]
+                    ];
+                    $contenedorAbono2 = [
+                     'num_contenedor' => $c[0],
+                     'abono' => $c[5]
+                    ];
 
 
 
                     array_push($contenedoresAbonos, $contenedorAbono);
+                    array_push($contenedoresAbonos1, $contenedorAbono1);
+                    array_push($contenedoresAbonos2, $contenedorAbono2);
                 }
             }
 
@@ -250,6 +308,80 @@ class CuentasPagarController extends Controller
             //Actualizamos cuentas bancarias de retiro
             Bancos::where('id', '=', $request->bankOne)->update(["saldo" => DB::raw("saldo - ". $request->amountPayOne)]);
             Bancos::where('id', '=', $request->bankTwo)->update(["saldo" => DB::raw("saldo - ". $request->amountPayTwo)]);
+
+            //proceso bancos nuevo
+            if ($request->filled('bankOne') && $request->amountPayOne > 0) {
+                $FechaAplicacionbank1 = $request->get('FechaAplicacionbank1');
+
+                $proveedor = Proveedor::find($request->theProvider);
+
+                $data = [
+                        'cuenta_bancaria_id' => $request->get('bankOne'),            'tipo' => 'cargo',
+                        'monto' => floatval($request->amountPayOne),
+                        'concepto' => 'Pago proveedor: '.'
+                                '.  $proveedor?->nombre ??  '',
+                        'fecha_movimiento' => \Carbon\Carbon::createFromFormat(
+                            'd/m/Y',
+                            $FechaAplicacionbank1
+                        )->format('Y-m-d'),
+                        'origen' => null,
+                        'referencia' => 'CXP',
+                        'detalles' => json_encode($contenedoresAbonos1),
+                         'referenciaable_id' => 0, //NO EXISTE RELACION NI TABLA EN BD REVISAR
+                          'referenciaable_type' => \App\Models\Cotizaciones::class, //para polimorfismo
+                          'observaciones' => 'id banco a proveedor: '. $request->bankProvOne,
+                    ];
+
+
+
+
+                $movimeintoCrear = $this->BancosService->registrarMovimiento($data);
+                //   dd('no pasar', $movimeintoCrear);
+
+                if (!$movimeintoCrear) {
+                    throw new \Exception('No se pudo crear el movimiento bancario, dinero para viaje adicional ');
+                }
+
+
+            }
+
+
+            //BANCK 2
+            if ($request->filled('bankTwo') && $request->amountPayTwo > 0) {
+                $FechaAplicacionbank1 = $request->get('FechaAplicacionbank1');
+
+                $proveedor = Proveedor::find($request->theProvider);
+
+                $data = [
+                        'cuenta_bancaria_id' => $request->get('bankTwo'),            'tipo' => 'cargo',
+                        'monto' => floatval($request->amountPayTwo),
+                        'concepto' => 'Pago proveedor: '.'
+                                '.  $proveedor?->nombre ??  '',
+                        'fecha_movimiento' => \Carbon\Carbon::createFromFormat(
+                            'd/m/Y',
+                            $FechaAplicacionbank1
+                        )->format('Y-m-d'),
+                        'origen' => null,
+                        'referencia' => 'CXP',
+                        'detalles' => json_encode($contenedoresAbonos2),
+                         'referenciaable_id' => 0,
+                          'referenciaable_type' => \App\Models\Cotizaciones::class, //para polimorfismo
+                           'observaciones' => 'id banco a proveedor: '. $request->bankProvTwo,
+                    ];
+
+
+
+
+                $movimeintoCrear = $this->BancosService->registrarMovimiento($data);
+                //   dd('no pasar', $movimeintoCrear);
+
+                if (!$movimeintoCrear) {
+                    throw new \Exception('No se pudo crear el movimiento bancario, dinero para viaje adicional ');
+                }
+
+
+            }
+            //proceso bancos nuevo
 
             //Actualizamos cuentas bancarias de deposito
             // CuentasBancarias::where('id' ,'=',$request->bankProvOne)->update(["saldo" => DB::raw("saldo + ". $request->amountPayOne)]);

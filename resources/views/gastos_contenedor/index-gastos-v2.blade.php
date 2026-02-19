@@ -11,21 +11,13 @@
             <div class="row">
                 <div class="col-lg-4 col-md-6 col-12">
                     <div class="font-weight-bolder text-sm"><span class="small">Periodo</span></div>
-                    <input
-                        type="text"
-                        id="daterange"
-                        readonly
-                        class="form-control form-control-sm min-w-100"
-                        style="border: none; box-shadow: none"
-                    />
+                    <input type="text" id="daterange" readonly class="form-control form-control-sm min-w-100"
+                        style="border: none; box-shadow: none" />
                 </div>
                 <div class="col-lg-6 col-md-6 col-12 my-auto ms-auto">
                     <div class="d-flex justify-content-end">
-                        <button
-                            class="btn btn-sm bg-gradient-info m-1"
-                            data-bs-toggle="modal"
-                            data-bs-target="#modalAgregarGasto"
-                        >
+                        <button class="btn btn-sm bg-gradient-info m-1" data-bs-toggle="modal"
+                            data-bs-target="#modalAgregarGasto">
                             <i class="ni ni-plus text-lg text-body ms-auto"></i>
                             Registrar gasto
                         </button>
@@ -63,6 +55,7 @@
         .rag-green {
             background-color: #33cc3344;
         }
+
         .option-group {
             display: flex;
             flex-wrap: wrap;
@@ -132,19 +125,22 @@
     <script src="/assets/handsontable/handsontable.full.min.js"></script>
     <script src="/assets/handsontable/all.js"></script>
 
-    <script src="{{ asset('js/sgt/gastos/gastosViajes.js') }}?v={{ filemtime(public_path('js/sgt/gastos/gastosViajes.js')) }}"></script>
+    <script
+        src="{{ asset('js/sgt/gastos/gastosViajes.js') }}?v={{ filemtime(public_path('js/sgt/gastos/gastosViajes.js')) }}">
+    </script>
     <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/moment@2.29.1/moment.min.js"></script>
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
 
     <script src="{{ asset('js/sgt/common.js') }}?v={{ filemtime(public_path('js/sgt/common.js')) }}"></script>
-    <script src="{{ asset('js/sgt/gastos/gastosV2.js') }}?v={{ filemtime(public_path('js/sgt/gastos/gastosV2.js')) }}"></script>
+    <script src="{{ asset('js/sgt/gastos/gastosV2.js') }}?v={{ filemtime(public_path('js/sgt/gastos/gastosV2.js')) }}">
+    </script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
     <script src="https://demos.creative-tim.com/argon-dashboard-pro/assets/js/plugins/choices.min.js"></script>
     <script>
-        $(document).ready(function () {
+        $(document).ready(function() {
             flatpickr('.fechas', {
                 locale: 'es',
                 dateFormat: 'Y-m-d', // Formato de la fecha (Año-Mes-Día)
@@ -159,11 +155,11 @@
             }
 
             /* if (document.getElementById('selectViajes')) {
-            var element = document.getElementById('selectViajes');
-            const example = new Choices(element, {
-                removeItemButton: true
-            });
-        }*/
+                var element = document.getElementById('selectViajes');
+                const example = new Choices(element, {
+                    removeItemButton: true
+                });
+            }*/
         });
     </script>
     <script>
@@ -175,8 +171,7 @@
             const btnStore = document.querySelector('#btnStore');
             btnStore.addEventListener('click', (i) => gastosHandsOnTable.storeDataHTGastos());
 
-            $('#daterange').daterangepicker(
-                {
+            $('#daterange').daterangepicker({
                     opens: 'right',
                     locale: {
                         format: 'YYYY-MM-DD', // Formato de fecha
@@ -203,11 +198,22 @@
                         ],
                         firstDay: 1,
                     },
+                    ranges: {
+                        Hoy: [moment(), moment()],
+                        'Últimos 7 días': [moment().subtract(6, 'days'), moment()],
+                        'Últimos 30 días': [moment().subtract(29, 'days'), moment()],
+                        'Este mes': [moment().startOf('month'), moment().endOf('month')],
+                        'Mes anterior': [
+                            moment().subtract(1, 'month').startOf('month'),
+                            moment().subtract(1, 'month').endOf('month'),
+                        ],
+                    },
                     maxDate: moment(),
                 },
-                function (start, end, label) {
+                function(start, end, label) {
                     //  getUtilidadesViajes();
-                    gastosHandsOnTable.fillDataHTGastos(start.format('YYYY-MM-DD'), end.format('YYYY-MM-DD'));
+                    gastosHandsOnTable.fillDataHTGastos(start.format('YYYY-MM-DD'), end.format(
+                        'YYYY-MM-DD'));
                     $('#daterange').attr('data-start', start.format('YYYY-MM-DD'));
                     $('#daterange').attr('data-end', end.format('YYYY-MM-DD'));
                 },
@@ -218,7 +224,8 @@
 
             const formatDate = (date) => date.toISOString().split('T')[0];
 
-            document.getElementById('daterange').value = `${formatDate(firstDayOfMonth)} AL ${formatDate(today)}`;
+            document.getElementById('daterange').value =
+                `${formatDate(firstDayOfMonth)} AL ${formatDate(today)}`;
 
             gastosHandsOnTable.fillDataHTGastos(formatDate(firstDayOfMonth), formatDate(today));
 

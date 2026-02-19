@@ -1,25 +1,13 @@
-<div
-    class="modal fade"
-    id="exampleModal"
-    tabindex="-1"
-    data-bs-backdrop="static"
-    data-bs-keyboard="false"
-    aria-labelledby="exampleModalLabel"
-    aria-hidden="true"
->
+<div class="modal fade" id="exampleModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false"
+    aria-labelledby="exampleModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Realizar pago</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form
-                method="POST"
-                action="{{ route('store.gastos_generales') }}"
-                id="frmCrearGasto"
-                enctype="multipart/form-data"
-                role="form"
-            >
+            <form method="POST" action="{{ route('store.gastos_generales') }}" id="frmCrearGasto"
+                enctype="multipart/form-data" role="form">
                 @csrf
                 <div class="modal-body">
                     <div class="row">
@@ -29,31 +17,31 @@
                                 <select name="cmbBankOne" id="cmbBankOne" class="form-control">
                                     <option value="null">Seleccione banco</option>
                                     @foreach ($bancos as $item)
-                                        <option value="{{ $item->id }}">
-                                            {{ $item->nombre_banco }}: ${{ number_format($item->saldo, 2) }}
+                                        <option value="{{ $item['id'] }}">
+                                            {{ $item['display'] }} :${{ number_format($item['saldo_actual'], 2) }}
                                         </option>
                                     @endforeach
                                 </select>
                             </div>
+                            <div class="form-group">
+                                <label for="FechaAplicacionPago">Fecha Aplicación</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="fa fa-calendar text-danger"></i>
+                                    </span>
+                                    <input class="form-control dateInput" name="FechaAplicacionPago"
+                                        id="FechaAplicacionPago" placeholder="Fecha Aplicación" type="text" />
+                                </div>
+                            </div>
 
                             <div class="col-md-9">
                                 <label for="cantidad" class="form-label">Pago de préstamo</label>
-                                <input
-                                    type="number"
-                                    name="montoPagoPrestamo"
-                                    id="montoPagoPrestamo"
-                                    class="form-control"
-                                    placeholder="Ingrese la cantidad"
-                                    required
-                                    min="0.01"
-                                    step="0.01"
-                                />
+                                <input type="number" name="montoPagoPrestamo" id="montoPagoPrestamo"
+                                    class="form-control" placeholder="Ingrese la cantidad" required min="0.01"
+                                    step="0.01" />
                                 <div class="invalid-feedback" id="invalid-feedback">No hay prestamos pendientes.</div>
-                                <div
-                                    class="valid-feedback text-sm"
-                                    style="color: #6c757d !important"
-                                    id="valid-feedback"
-                                >
+                                <div class="valid-feedback text-sm" style="color: #6c757d !important"
+                                    id="valid-feedback">
                                     $0.00 pendiente despues de esta operación.
                                 </div>
                             </div>

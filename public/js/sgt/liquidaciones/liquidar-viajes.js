@@ -311,8 +311,13 @@ function summaryPay() {
 
 function aplicarPago() {
     let banco = document.getElementById('cmbBankOne');
+    let FechaAplicacionPago = document.getElementById('FechaAplicacionPago').value;
     if (banco.value == 'null') {
         Swal.fire('Seleccione cuenta de retiro', 'Por favor seleccione la cuenta de retiro', 'warning');
+        return;
+    }
+    if (!FechaAplicacionPago) {
+        Swal.fire('Seleccione Fecha aplicacion', 'Por favor seleccione fecha aplicacion para el pago', 'warning');
         return;
     }
 
@@ -324,7 +329,15 @@ function aplicarPago() {
     $.ajax({
         url: '/liquidaciones/viajes/aplicar-pago',
         type: 'post',
-        data: { _token, _IdOperador, pagoContenedores, bancoId, totalMontoPago, totalPagoPrestamo },
+        data: {
+            _token,
+            _IdOperador,
+            pagoContenedores,
+            bancoId,
+            totalMontoPago,
+            totalPagoPrestamo,
+            FechaAplicacionPago,
+        },
         beforeSend: () => {},
         success: (response) => {
             Swal.fire(response.Titulo, response.Mensaje, response.TMensaje);
@@ -640,13 +653,21 @@ function justificarGasto() {
     let url = null;
     if (accion == 'dinero_viaje') {
         let cmbBancoRetiro = document.querySelector('#cmbBancoRetiro');
+        let FechaAplicacionDinero = document.getElementById('FechaAplicacionDinero').value;
         if (cmbBancoRetiro.value == 'null')
             return Swal.fire(
                 'Seleccione cuenta retiro',
                 'Por favor seleccione banco de donde se retira el recurso',
                 'warning',
             );
-        payload = { ...payload, bank: cmbBancoRetiro.value };
+        if (!FechaAplicacionDinero)
+            return Swal.fire(
+                'Fecha aplicacion',
+                'Por favor seleccione fecha aplicacion para movimeinto en banco',
+                'warning',
+            );
+
+        payload = { ...payload, bank: cmbBancoRetiro.value, FechaAplicacionDinero: FechaAplicacionDinero };
         url = '/liquidaciones/viajes/dinero_para_viaje';
     } else {
         url = '/liquidaciones/viajes/gastos/justificar';

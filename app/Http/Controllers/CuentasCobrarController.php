@@ -13,9 +13,18 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rules\Exists;
 use PhpParser\Node\Stmt\TryCatch;
+use App\Services\BancosService;
+use Carbon\Carbon;
 
 class CuentasCobrarController extends Controller
 {
+    protected $BancosService;
+
+    public function __construct(BancosService $BancosService)
+    {
+        $this->BancosService = $BancosService;
+    }
+
     public function index()
     {
         $cotizacionesPorCliente = Cotizaciones::join('docum_cotizacion', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
@@ -60,7 +69,9 @@ class CuentasCobrarController extends Controller
 
         $cliente = Client::where('id', '=', $id)->first();
 
-        $bancos = Bancos::where('id_empresa', '=', auth()->user()->id_empresa)->get();
+        $bancos2 = Bancos::where('id_empresa', '=', auth()->user()->id_empresa)->get();
+        $fecha = Carbon::now()->format('Y-m-d');
+        $bancos = $this->BancosService->getCuentasOption(auth()->user()->id_empresa, $fecha, $fecha, true);
 
         return view('cuentas_cobrar.cobranza_cliente', compact('bancos', 'cliente', 'cotizacion'));
     }
@@ -133,6 +144,9 @@ class CuentasCobrarController extends Controller
 
             DB::beginTransaction();
             $contenedoresAbonos = [];
+            $contenedoresAbonos1 = [];
+            $contenedoresAbonos2 = [];
+            $ids = [];
             foreach ($cotizaciones as $c) {
                 if ($c[8] > 0) { //Si total cobrado es mayor a cero
                     $id = $c[9]; //Obtenemos el ID
@@ -157,7 +171,19 @@ class CuentasCobrarController extends Controller
                         'abono' => $c[8]
                     ];
 
+                    $contenedorAbono1 = [
+                        'num_contenedor' => $c[0],
+                        'abono' => $c[6]
+                    ];
+
+                    $contenedorAbono2 = [
+                     'num_contenedor' => $c[0],
+                     'abono' => $c[7]
+                    ];
+
                     array_push($contenedoresAbonos, $contenedorAbono);
+                    array_push($contenedoresAbonos1, $contenedorAbono1);
+                    array_push($contenedoresAbonos2, $contenedorAbono2);
                 }
 
             }
@@ -180,6 +206,78 @@ class CuentasCobrarController extends Controller
 
             Bancos::where('id', '=', $request->bankOne)->update(["saldo" => DB::raw("COALESCE(saldo, 0) + ". $request->amountPayOne)]);
             Bancos::where('id', '=', $request->bankTwo)->update(["saldo" => DB::raw("COALESCE(saldo, 0) + ". $request->amountPayTwo)]);
+
+
+            //proceso bancos nuevo
+            if ($request->filled('bankOne') && $request->amountPayOne > 0) {
+                $FechaAplicacionbank1 = $request->get('FechaAplicacionbank1');
+
+                $cliente = client::find($request->theClient);
+
+                $data = [
+                        'cuenta_bancaria_id' => $request->get('bankOne'),            'tipo' => 'abono',
+                        'monto' => floatval($request->amountPayOne),
+                        'concepto' => 'Cobro viajes: '.'
+                                '.  $cliente?->nombre ??  '',
+                        'fecha_movimiento' => \Carbon\Carbon::createFromFormat(
+                            'd/m/Y',
+                            $FechaAplicacionbank1
+                        )->format('Y-m-d'),
+                        'origen' => null,
+                        'referencia' => 'CXC',
+                        'detalles' => json_encode($contenedoresAbonos1),
+                         'referenciaable_id' => 0,
+                          'referenciaable_type' => \App\Models\Cotizaciones::class, //para polimorfismo
+                    ];
+
+
+
+
+                $movimeintoCrear = $this->BancosService->registrarMovimiento($data);
+                //   dd('no pasar', $movimeintoCrear);
+
+                if (!$movimeintoCrear) {
+                    throw new \Exception('No se pudo crear el movimiento bancario, dinero para viaje adicional ');
+                }
+
+
+            }
+            //proceso bancos nuevo
+            if ($request->filled('bankTwo') && $request->amountPayTwo > 0) {
+                $FechaAplicacionbank2 = $request->get('FechaAplicacionbank2');
+
+                $cliente = client::find($request->theClient);
+
+                $data = [
+                        'cuenta_bancaria_id' => $request->get('bankTwo'),            'tipo' => 'abono',
+                        'monto' => floatval($request->amountPayTwo),
+                        'concepto' =>  'Cobro viajes: '.'
+                                '.  $cliente?->nombre ??  '',
+                        'fecha_movimiento' => \Carbon\Carbon::createFromFormat(
+                            'd/m/Y',
+                            $FechaAplicacionbank2
+                        )->format('Y-m-d'),
+                        'origen' => null,
+                        'referencia' => 'CXC 2',
+                        'detalles' => json_encode($contenedoresAbonos2),
+                         'referenciaable_id' => 0,
+                          'referenciaable_type' => \App\Models\Cotizaciones::class, //para polimorfismo
+                    ];
+
+
+
+
+                $movimeintoCrear = $this->BancosService->registrarMovimiento($data);
+                //   dd('no pasar', $movimeintoCrear);
+
+                if (!$movimeintoCrear) {
+                    throw new \Exception('No se pudo crear el movimiento bancario, dinero para viaje adicional ');
+                }
+
+
+            }
+
+
 
             DB::commit();
             return response()->json(["success" => true, "Titulo" => "Cobro exitoso", "Mensaje" => "Hemos aplicado el cobro de los elementos indicados", "TMensaje" => "success"]);
