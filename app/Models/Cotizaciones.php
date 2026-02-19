@@ -86,7 +86,8 @@ class Cotizaciones extends Model
         'estatus_maniobra_id',
         'confirmacion_sello',
         'nuevo_sello',
-        'agente_aduanal'
+        'agente_aduanal',
+        'fecha_eir'
 
     ];
 

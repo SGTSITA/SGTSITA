@@ -26,9 +26,9 @@
                         <ul class="list-group">
                             <li class="list-group-item border-0 d-flex p-4 mb-2 bg-gray-100 border-radius-lg">
                                 <div class="d-flex flex-column">
-                                    <h6 class="mb-3 text-sm">Información del cliente</h6>
+
                                     <span class="mb-2 text-md">
-                                        Nombre:
+                                        Nombre Cliente:
                                         <span class="text-dark font-weight-bold ms-sm-2">{{ $cliente->nombre }}</span>
                                     </span>
                                     <span class="mb-2 text-md">
@@ -58,23 +58,20 @@
                             </div>
                         </div>
                         <div class="col-lg-4 col-6 text-center">
-                            <div
-                                class="border-dashed border-1 border-secondary border-radius-md py-3"
-                                id="borderBalance"
-                            >
+                            <div class="border-dashed border-1 border-secondary border-radius-md py-3" id="borderBalance">
                                 <h6 class="text-primary mb-0">Saldo Final</h6>
                                 <h4 class="font-weight-bolder"><span class="small" id="finalBalance">$ 0.00</span></h4>
                             </div>
                         </div>
                     </div>
                     <!--div class="col-md-6">
-            <div class="card card-body border card-plain border-radius-lg d-flex align-items-center flex-row">
-            <img class="w-10 me-3 mb-0" src="../assets/img/logos/visa.png" alt="logo">
-            <h6 class="mb-0">****&nbsp;&nbsp;&nbsp;****&nbsp;&nbsp;&nbsp;****&nbsp;&nbsp;&nbsp;5248</h6>
-            <i class="fas fa-pencil-alt ms-auto text-dark cursor-pointer" data-bs-toggle="tooltip" data-bs-placement="top" aria-hidden="true" aria-label="Edit Card" data-bs-original-title="Edit Card"></i><span class="sr-only">Edit Card</span>
-            </div>
+                                                                                            <div class="card card-body border card-plain border-radius-lg d-flex align-items-center flex-row">
+                                                                                            <img class="w-10 me-3 mb-0" src="../assets/img/logos/visa.png" alt="logo">
+                                                                                            <h6 class="mb-0">****&nbsp;&nbsp;&nbsp;****&nbsp;&nbsp;&nbsp;****&nbsp;&nbsp;&nbsp;5248</h6>
+                                                                                            <i class="fas fa-pencil-alt ms-auto text-dark cursor-pointer" data-bs-toggle="tooltip" data-bs-placement="top" aria-hidden="true" aria-label="Edit Card" data-bs-original-title="Edit Card"></i><span class="sr-only">Edit Card</span>
+                                                                                            </div>
 
-         </div-->
+                                                                                         </div-->
                 </div>
             </div>
         </div>
@@ -115,39 +112,71 @@
                     <div class="row">
                         <div class="col-8 offset-4 text-end mt-3">
                             <div class="row">
-                                <div class="col-md-4">
-                                    <div class="form-group">
-                                        <label for="example-text-input" class="form-control-label">Banco 1</label>
-                                        <select name="cmbBankOne" id="cmbBankOne" class="form-control">
-                                            <option value="null">Seleccione banco</option>
-                                            @foreach ($bancos as $item)
-                                                <option value="{{ $item->id }}">
-                                                    {{ $item->nombre_banco }}: ${{ number_format($item->saldo, 2) }}
-                                                </option>
-                                            @endforeach
-                                        </select>
+                                <div class="col-md-5">
+                                    <div class="card p-3 border">
+                                        <h6>Banco 1</h6>
+
+                                        <div class="form-group">
+                                            {{-- <label>Seleccione banco</label> --}}
+                                            <select name="cmbBankOne" id="cmbBankOne" class="form-control">
+                                                <option value="">Seleccione banco 1</option>
+                                                @foreach ($bancos as $item)
+                                                    <option value="{{ $item['id'] }}">
+                                                        {{ $item['display'] }} :
+                                                        ${{ number_format($item['saldo_actual'], 2) }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+
+                                        </div>
+
+                                        <div class="form-group">
+                                            {{-- <label for="FechaAplicacionbank1">Fecha Aplicación</label> --}}
+                                            <div class="input-group">
+                                                <span class="input-group-text">
+                                                    <i class="fa fa-calendar text-danger"></i>
+                                                </span>
+                                                <input class="form-control dateInput" name="FechaAplicacionbank1"
+                                                    id="FechaAplicacionbank1" placeholder="Fecha Aplicación banco 1"
+                                                    type="text" />
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-                                <div class="col-md-4">
-                                    <div class="form-group">
-                                        <label for="example-text-input" class="form-control-label">Banco 2</label>
-                                        <select name="cmbBankTwo" id="cmbBankTwo" class="form-control">
-                                            <option value="null">Seleccione banco</option>
-                                            @foreach ($bancos as $item)
-                                                <option value="{{ $item->id }}">
-                                                    {{ $item->nombre_banco }}: ${{ number_format($item->saldo, 2) }}
-                                                </option>
-                                            @endforeach
-                                        </select>
+                                <div class="col-md-5">
+                                    <div class="card p-3 border">
+                                        <h6>Banco 2</h6>
+
+                                        <div class="form-group">
+                                            {{-- <label>Seleccione banco</label> --}}
+                                            <select name="cmbBankTwo" id="cmbBankTwo" class="form-control">
+                                                <option value="">Seleccione banco 2</option>
+                                                @foreach ($bancos as $item)
+                                                    <option value="{{ $item['id'] }}">
+                                                        {{ $item['display'] }} :
+                                                        ${{ number_format($item['saldo_actual'], 2) }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+
+
+                                        <div class="form-group">
+                                            {{-- <label for="FechaAplicacionbank2">Fecha Aplicación</label> --}}
+                                            <div class="input-group">
+                                                <span class="input-group-text">
+                                                    <i class="fa fa-calendar text-danger"></i>
+                                                </span>
+                                                <input class="form-control dateInput" name="FechaAplicacionbank2"
+                                                    id="FechaAplicacionbank2" placeholder="Fecha Aplicación banco 2"
+                                                    type="text" />
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-                                <div class="col-4 d-flex flex-column">
-                                    <button
-                                        class="btn btn-sm bg-gradient-success mt-auto"
-                                        name="btnAplicarPago"
-                                        id="btnAplicarPago"
-                                        type="button"
-                                    >
+                                <div class="col-2 d-flex flex-column">
+                                    <button class="btn btn-sm bg-gradient-success mt-auto" name="btnAplicarPago"
+                                        id="btnAplicarPago" type="button">
                                         <i class="fas fa-check" aria-hidden="true"></i>
                                         &nbsp;&nbsp;Aplicar cobro
                                     </button>
@@ -167,10 +196,19 @@
     <script src="/assets/handsontable/all.js"></script>
     <!--script src="/js/sgt/cxc/cxc.js"></script-->
     <script src="{{ asset('js/sgt/cxc/cxc.js') }}?v={{ filemtime(public_path('js/sgt/cxc/cxc.js')) }}"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
 
     <script>
         $(document).ready(() => {
             getViajesSinLiquidar({{ $cliente->id }});
+
+
+            flatpickr(".dateInput", {
+                dateFormat: "d/m/Y",
+                locale: "es"
+            });
         });
     </script>
 @endpush

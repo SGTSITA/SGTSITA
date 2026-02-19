@@ -11,12 +11,14 @@
             justify-content: center;
             align-items: center;
             width: auto;
-            max-width: none; /* JS controla ancho */
+            max-width: none;
+            /* JS controla ancho */
             margin: auto;
         }
 
         #gridJustificar {
-            overflow: hidden; /* evita scroll interno */
+            overflow: hidden;
+            /* evita scroll interno */
         }
     </style>
     <div class="container-fluid">
@@ -28,11 +30,8 @@
                             <div class="h-100">
                                 <h5 class="mb-1 font-weight-bolder">
                                     {{ $operador->nombre }}
-                                    <input
-                                        type="hidden"
-                                        id="IdOperador"
-                                        value="{{ str_pad($operador->id,10,'0',STR_PAD_LEFT) }}"
-                                    />
+                                    <input type="hidden" id="IdOperador"
+                                        value="{{ str_pad($operador->id, 10, '0', STR_PAD_LEFT) }}" />
                                 </h5>
                                 <p class="mb-0 font-weight-bold text-sm">Liquidación viajes operador</p>
                             </div>
@@ -112,11 +111,22 @@
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/handsontable@12.0.1/dist/handsontable.full.min.css" />
     <script src="https://cdn.jsdelivr.net/npm/handsontable@12.0.1/dist/handsontable.full.min.js"></script>
-    <script src="{{ asset('js/sgt/liquidaciones/liquidar-viajes.js') }}?v={{ filemtime(public_path('js/sgt/liquidaciones/liquidar-viajes.js')) }}"></script>
+    <script
+        src="{{ asset('js/sgt/liquidaciones/liquidar-viajes.js') }}?v={{ filemtime(public_path('js/sgt/liquidaciones/liquidar-viajes.js')) }}">
+    </script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
 
     <script>
         $(document).ready(() => {
             mostrarViajesOperador({{ $id }});
+
+
+            flatpickr(".dateInput", {
+                dateFormat: "d/m/Y",
+                locale: "es"
+            });
         });
     </script>
 @endpush

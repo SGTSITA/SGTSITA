@@ -42,10 +42,7 @@
         <div class="col-12 col-lg-12 m-auto">
             <form class="multisteps-form__form">
                 <!-- PANEL 1 -->
-                <div
-                    class="card multisteps-form__panel p-3 border-radius-xl bg-white js-active"
-                    data-animation="FadeIn"
-                >
+                <div class="card multisteps-form__panel p-3 border-radius-xl bg-white js-active" data-animation="FadeIn">
                     <div class="card-body">
                         <div class="row align-items-center">
                             <div class="col-3">
@@ -59,12 +56,8 @@
                             </div>
 
                             <div class="col-3 d-flex justify-content-end">
-                                <button
-                                    class="btn bg-gradient-info btn-sm mb-0 js-btn-next"
-                                    id="nextOne"
-                                    disabled
-                                    type="button"
-                                >
+                                <button class="btn bg-gradient-info btn-sm mb-0 js-btn-next" id="nextOne" disabled
+                                    type="button">
                                     Siguiente
                                     <i class="fa fa-arrow-right"></i>
                                 </button>
@@ -107,12 +100,8 @@
                             </div>
 
                             <div class="col-2 d-flex justify-content-end">
-                                <button
-                                    class="btn bg-gradient-info btn-sm mb-0 js-btn-next"
-                                    id="nextTwo"
-                                    disabled
-                                    type="button"
-                                >
+                                <button class="btn bg-gradient-info btn-sm mb-0 js-btn-next" id="nextTwo" disabled
+                                    type="button">
                                     Siguiente
                                     <i class="fa fa-arrow-right"></i>
                                 </button>
@@ -123,12 +112,7 @@
                             <div class="row mt-4">
                                 <div class="custom-radio-group">
                                     <label class="custom-radio">
-                                        <input
-                                            type="radio"
-                                            name="option"
-                                            value="propio"
-                                            onclick="setTipoViaje('propio')"
-                                        />
+                                        <input type="radio" name="option" value="propio" onclick="setTipoViaje('propio')" />
                                         <div class="content">
                                             <i class="fas fa-truck-moving"></i>
                                             <span>Propio</span>
@@ -136,12 +120,8 @@
                                     </label>
 
                                     <label class="custom-radio">
-                                        <input
-                                            type="radio"
-                                            name="option"
-                                            value="proveedor"
-                                            onclick="setTipoViaje('proveedor')"
-                                        />
+                                        <input type="radio" name="option" value="proveedor"
+                                            onclick="setTipoViaje('proveedor')" />
                                         <div class="content">
                                             <i class="fas fa-trailer"></i>
                                             <span>Sub Contratado</span>
@@ -199,13 +179,8 @@
                                             <span class="input-group-text">
                                                 <i class="fa fa-calendar text-danger"></i>
                                             </span>
-                                            <input
-                                                class="form-control dateInput"
-                                                name="txtFechaInicio"
-                                                id="txtFechaInicio"
-                                                placeholder="Fecha inicio"
-                                                type="text"
-                                            />
+                                            <input class="form-control dateInput" name="txtFechaInicio"
+                                                id="txtFechaInicio" placeholder="Fecha inicio" type="text" />
                                         </div>
                                     </div>
 
@@ -216,13 +191,8 @@
                                             <span class="input-group-text">
                                                 <i class="fa fa-calendar text-danger"></i>
                                             </span>
-                                            <input
-                                                class="form-control dateInput"
-                                                name="txtFechaFinal"
-                                                id="txtFechaFinal"
-                                                placeholder="Fecha fin"
-                                                type="text"
-                                            />
+                                            <input class="form-control dateInput" name="txtFechaFinal" id="txtFechaFinal"
+                                                placeholder="Fecha fin" type="text" />
                                         </div>
                                     </div>
                                 </div>
@@ -247,17 +217,12 @@
                             <!-- ====================================== -->
                             <!-- BLOQUE: Peso + Dirección (Centrado) -->
                             <!-- ====================================== -->
-                            <div
-                                class="col-lg-3 col-12 mb-4 d-flex justify-content-center d-none"
-                                id="BloqueDireccionEn"
-                            >
+                            <div class="col-lg-3 col-12 mb-4 d-flex justify-content-center d-none" id="BloqueDireccionEn">
                                 <div class="border rounded-3 p-4 shadow-sm bg-light text-center w-100">
                                     <label class="fw-bold d-block mb-1 text-dark">Peso</label>
                                     <span id="pesoContenedorSub" class="fs-5 text-success d-block mb-3">--</span>
 
-                                    <label
-                                        class="fw-bold d-flex justify-content-center align-items-center mb-1 text-dark"
-                                    >
+                                    <label class="fw-bold d-flex justify-content-center align-items-center mb-1 text-dark">
                                         <i class="ni ni-pin-3 text-danger me-2"></i>
                                         Dirección de entrega
                                     </label>
@@ -328,12 +293,13 @@
         }
 
         /* Cuando está seleccionado */
-        .custom-radio input[type='radio']:checked + .content {
-            border: 1px solid #007bff; /* Borde sólido azul */
+        .custom-radio input[type='radio']:checked+.content {
+            border: 1px solid #007bff;
+            /* Borde sólido azul */
         }
 
-        .custom-radio input[type='radio']:checked + .content i,
-        .custom-radio input[type='radio']:checked + .content span {
+        .custom-radio input[type='radio']:checked+.content i,
+        .custom-radio input[type='radio']:checked+.content span {
             color: #007bff;
         }
 
@@ -343,15 +309,20 @@
         }
 
         input.flatpickr-input[readonly] {
-            background-color: #fff !important; /* Fondo blanco */
-            cursor: pointer; /* Opcional: para que el mouse cambie a "manita" */
+            background-color: #fff !important;
+            /* Fondo blanco */
+            cursor: pointer;
+            /* Opcional: para que el mouse cambie a "manita" */
         }
 
         .flatpickr-day .today {
-            background: #28a745 !important; /* verde */
+            background: #28a745 !important;
+            /* verde */
             border-color: #28a745 !important;
-            color: #fff; /* texto blanco */
+            color: #fff;
+            /* texto blanco */
         }
+
         .gasto-item .form-control {
             height: calc(2.5rem + 2px);
         }
@@ -363,9 +334,11 @@
             height: 24px;
             display: inline-block;
         }
+
         .toggle-switch input {
             display: none;
         }
+
         .toggle-slider {
             position: absolute;
             cursor: pointer;
@@ -377,6 +350,7 @@
             transition: 0.3s;
             border-radius: 34px;
         }
+
         .toggle-slider:before {
             position: absolute;
             content: '';
@@ -388,12 +362,15 @@
             transition: 0.3s;
             border-radius: 50%;
         }
-        .toggle-switch input:checked + .toggle-slider {
+
+        .toggle-switch input:checked+.toggle-slider {
             background-color: #2dce89;
         }
-        .toggle-switch input:checked + .toggle-slider:before {
+
+        .toggle-switch input:checked+.toggle-slider:before {
             transform: translateX(21px);
         }
+
         .multisteps-form__content {
             padding-bottom: 1rem !important;
         }
@@ -412,8 +389,8 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             flatpickr(".dateInput", {
-              dateFormat: "d/m/Y",
-              locale: "es"
+                dateFormat: "d/m/Y",
+                locale: "es"
             });
 
             let moneyformatInput = document.querySelectorAll('.moneyformat');
@@ -432,24 +409,32 @@
         const botonGastos = document.getElementById('btnAddGasto');
         const container = document.getElementById('otrosGastosContainer');
 
-        const opcionesGasto = [
-          { value: 'GCM01', text: 'GCM01 - Comisión' },
-          { value: 'GDI02', text: 'GDI02 - Diesel' },
-          { value: 'GBV01', text: 'GBV01 - Burrero Vacio' },
+        const opcionesGasto = [{
+                value: 'GCM01',
+                text: 'GCM01 - Comisión'
+            },
+            {
+                value: 'GDI02',
+                text: 'GDI02 - Diesel'
+            },
+            {
+                value: 'GBV01',
+                text: 'GBV01 - Burrero Vacio'
+            },
         ];
 
         if (botonGastos) {
-          botonGastos.addEventListener('click', function() {
-            const total = container.querySelectorAll('.gasto-item').length;
+            botonGastos.addEventListener('click', function() {
+                const total = container.querySelectorAll('.gasto-item').length;
 
-            if (total >= 2) {
-              alert('Solo puedes agregar un máximo de 2 gastos.');
-              return;
-            }
+                if (total >= 2) {
+                    alert('Solo puedes agregar un máximo de 2 gastos.');
+                    return;
+                }
 
-            const gastoHTML = `
+                const gastoHTML = `
               <div class="row gasto-item align-items-center mb-3 border-bottom pb-3">
-                <div class="col-md-4">
+                <div class="col-md-3">
                   <label class="form-label mb-1">Motivo del gasto</label>
                   <select class="form-control gasto-select" name="gasto_nombre[]" required>
                     <option value="">Seleccione un motivo</option>
@@ -457,7 +442,7 @@
                   </select>
                 </div>
 
-                <div class="col-md-3">
+                <div class="col-md-2">
                   <label class="form-label mb-1">Monto</label>
                   <div class="input-group">
                     <span class="input-group-text bg-gradient-success text-white">
@@ -467,7 +452,7 @@
                   </div>
                 </div>
 
-                <div class="col-md-2">
+                <div class="col-md-1">
                   <label class="form-label mb-1 d-block">Pago inmediato</label>
                   <label class="toggle-switch">
                     <input type="checkbox" class="pagoInmediatoCheck" name="gasto_pago_inmediato[]">
@@ -475,14 +460,26 @@
                   </label>
                 </div>
 
-                <div class="col-md-2 banco-col" style="display:none;">
+                <div class="col-md-3 banco-col" style="display:none;">
                   <label class="form-label mb-1">Banco</label>
                   <select class="form-control" name="gasto_banco_id[]">
                     <option value="">Seleccione banco</option>
                     @foreach ($bancos as $item)
-                      <option value="{{ $item->id }}">{{ $item->nombre_banco }} / {{ $item->nombre_beneficiario }}</option>
+                       <option value="{{ $item['id'] }}">
+                                    {{ $item['display'] }}
+                                </option>
                     @endforeach
                   </select>
+                </div>
+                 <div class="col-2 col-md- fecha-col" style="display:none;">
+                    <label for="txtFechaInicio">Fecha Aplicación</label>
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="fa fa-calendar text-danger"></i>
+                        </span>
+                        <input class="form-control dateInput" name="fechaAplicacion[]"
+                                    placeholder="Fecha Aplicación" type="text" />
+                    </div>
                 </div>
 
                 <div class="col-md-1 text-end">
@@ -493,63 +490,77 @@
                 </div>
               </div>`;
 
-            container.insertAdjacentHTML('beforeend', gastoHTML);
-            actualizarDisponibles();
-          });
+                container.insertAdjacentHTML('beforeend', gastoHTML);
+
+                const ultimoDateInput = container.querySelector('.gasto-item:last-child .dateInput');
+
+                if (!ultimoDateInput._flatpickr) {
+                    flatpickr(ultimoDateInput, {
+                        dateFormat: "d/m/Y",
+                        locale: "es"
+                    });
+                }
+                actualizarDisponibles();
+            });
         }
 
         // Mostrar/ocultar banco según pago inmediato
         document.addEventListener('change', function(e) {
-          if (e.target.classList.contains('pagoInmediatoCheck')) {
-            const row = e.target.closest('.gasto-item');
-            const bancoCol = row.querySelector('.banco-col');
-            bancoCol.style.display = e.target.checked ? 'block' : 'none';
-            if (!e.target.checked) bancoCol.querySelector('select').value = '';
-          }
+            if (e.target.classList.contains('pagoInmediatoCheck')) {
+                const row = e.target.closest('.gasto-item');
+                const bancoCol = row.querySelector('.banco-col');
+                bancoCol.style.display = e.target.checked ? 'block' : 'none';
+                if (!e.target.checked) bancoCol.querySelector('select').value = '';
 
-          if (e.target.name === 'gasto_nombre[]') {
-            actualizarDisponibles();
-          }
+                const fechaCol = row.querySelector('.fecha-col');
+                fechaCol.style.display = e.target.checked ? 'block' : 'none';
+            }
+
+            if (e.target.name === 'gasto_nombre[]') {
+                actualizarDisponibles();
+            }
         });
 
         // Eliminar gasto
         document.addEventListener('click', function(e) {
-          if (e.target.closest('.removeGastoBtn')) {
-            e.target.closest('.gasto-item').remove();
-            actualizarDisponibles();
-          }
+            if (e.target.closest('.removeGastoBtn')) {
+                e.target.closest('.gasto-item').remove();
+                actualizarDisponibles();
+            }
         });
 
         // Función principal: sincroniza selects
         function actualizarDisponibles() {
-          const selects = Array.from(container.querySelectorAll('select[name="gasto_nombre[]"]'));
-          const seleccionados = selects.map(s => s.value).filter(v => v !== '');
+            const selects = Array.from(container.querySelectorAll('select[name="gasto_nombre[]"]'));
+            const seleccionados = selects.map(s => s.value).filter(v => v !== '');
 
-          selects.forEach((select) => {
-            const valorActual = select.value;
+            selects.forEach((select) => {
+                const valorActual = select.value;
 
-            // reconstruimos las opciones
-            const opciones = ['<option value="">Seleccione un motivo</option>'];
-            opcionesGasto.forEach(op => {
-              const ocupadoPorOtro = seleccionados.includes(op.value) && op.value !== valorActual;
-              opciones.push(`<option value="${op.value}" ${ocupadoPorOtro ? 'disabled' : ''}>${op.text}</option>`);
+                // reconstruimos las opciones
+                const opciones = ['<option value="">Seleccione un motivo</option>'];
+                opcionesGasto.forEach(op => {
+                    const ocupadoPorOtro = seleccionados.includes(op.value) && op.value !== valorActual;
+                    opciones.push(
+                        `<option value="${op.value}" ${ocupadoPorOtro ? 'disabled' : ''}>${op.text}</option>`
+                    );
+                });
+
+                // reemplazamos el contenido del select
+                select.innerHTML = opciones.join('');
+
+                // mantenemos su valor si sigue siendo válido
+                if (valorActual && [...select.options].some(o => o.value === valorActual && !o.disabled)) {
+                    select.value = valorActual;
+                } else {
+                    select.value = '';
+                }
             });
-
-            // reemplazamos el contenido del select
-            select.innerHTML = opciones.join('');
-
-            // mantenemos su valor si sigue siendo válido
-            if (valorActual && [...select.options].some(o => o.value === valorActual && !o.disabled)) {
-              select.value = valorActual;
-            } else {
-              select.value = '';
-            }
-          });
         }
     </script>
     @can('Proveedor Autonomo 11am')
         <script>
-            document.addEventListener('DOMContentLoaded', function () {
+            document.addEventListener('DOMContentLoaded', function() {
                 setTipoViaje('propio');
 
                 // Habilitar paso siguiente

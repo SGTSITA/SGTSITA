@@ -411,7 +411,7 @@ class CotizacionesController extends Controller
         return view('cotizaciones.busqueda');
     }
 
-    public function findExecute(Request $request)
+    public function findExecute(Request $request) //esta roto revisar
     {
         $where = 'id_empresa = '.auth()->user()->id_empresa;
         if ($request->txtCliente != null) {
@@ -1005,6 +1005,90 @@ class CotizacionesController extends Controller
         return view('cotizaciones.externos.edit', compact('cotizacion', 'documentacion', 'clientes', 'gastos_extras', 'gastos_ope', 'subclientes'));
     }
 
+    public function updateMep(Request $request, $idcotizacion)
+    {
+        $cotizacion = Cotizaciones::where('id', '=', $idcotizacion)->first();
+        $documentacion = DocumCotizacion::where('id_cotizacion', '=', $cotizacion->id)->first();
+
+        $cima = $request->cima;
+        $ccp = $request->ccp;
+        $num_boleta_liberacion = $request->num_boleta_liberacion;
+        $num_doda = $request->num_doda;
+        $num_carta_porte = $request->num_carta_porte;
+        $num_carta_porte_xml = $request->num_carta_porte_xml;  //al editar se carga unicamente el de num carta porte
+        $fecha_boleta_vacio = $request->fecha_boleta_vacio;
+        $fecha_eir = $request->fecha_eir;
+
+
+        try {
+
+            DB::transaction(function () use (
+                $documentacion,
+                $cotizacion,
+                $cima,
+                $ccp,
+                $num_boleta_liberacion,
+                $num_doda,
+                $num_carta_porte,
+                $fecha_boleta_vacio,
+                $fecha_eir
+            ) {
+
+                if ($documentacion) {
+
+                    $documentacion->update([
+                        'cima' => $cima,
+                        'ccp' => $ccp,
+                        'num_boleta_liberacion' => $num_boleta_liberacion,
+                        'num_doda' => $num_doda,
+                        'num_carta_porte' => $num_carta_porte,
+                        'fecha_boleta_vacio' => $fecha_boleta_vacio,
+                    ]);
+
+                    //  dd($documentacion);
+                }
+
+                if ($cotizacion) {
+
+                    $cotizacion->update([
+                        'fecha_eir' => $fecha_eir,
+                    ]);
+                }
+
+            });
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Información actualizada correctamente'
+            ]);
+
+        } catch (\Exception $e) {
+
+            return response()->json([
+                'success' => false,
+                'Titulo' => 'Ocurrió un error',
+                'message' => 'No se hicieron cambios en los datos',
+                'error' => $e->getMessage()
+            ], 500);
+
+        }
+
+        // dd($request);
+
+        // $documentacion->cima
+        // $documentacion->fecha_boleta_vacio
+        // $documentacion->num_carta_porte
+        // $documentacion->num_doda
+        //  $documentacion->num_boleta_liberacion
+        //  $documentacion->ccp
+
+        // $cotizacion->fecha_eir
+
+
+
+
+    }
+
     public function pdf($id)
     {
         $cotizacion = Cotizaciones::where('id', '=', $id)->first();
@@ -1448,6 +1532,8 @@ class CotizacionesController extends Controller
 
     public function get_gastos(Request $r)
     {
+
+        // dd($r);
         $numContenedor = $r->input('numContenedor');
         $idEmpresa = auth()->user()->id_empresa;
 
@@ -1455,6 +1541,8 @@ class CotizacionesController extends Controller
                                             ->where('id_empresa', $idEmpresa)
                                             ->first();
 
+
+        // dd($contenedor, $numContenedor);
         $gastosExtra = GastosExtras::where('id_cotizacion', $contenedor->id_cotizacion)->get();
         $gastosContenedor =
         $gastosExtra->map(function ($g) {
@@ -1479,7 +1567,7 @@ class CotizacionesController extends Controller
         $contenedor = DocumCotizacion::where('num_contenedor', $numContenedor)
                                             ->where('id_empresa', $idEmpresa)
                                             ->first();
-
+        // dd($contenedor, $numContenedor);
         $gastosOperador = GastosOperadores::leftJoin('bancos', 'gastos_operadores.id_banco', '=', 'bancos.id')
         ->where('id_cotizacion', $contenedor->id_cotizacion)
         ->select('bancos.nombre_banco', 'bancos.nombre_beneficiario', 'gastos_operadores.*')

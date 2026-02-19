@@ -13,23 +13,15 @@
                 <div class="col-lg-6 col-md-6 col-12 d-flex align-items-center gap-3">
                     <div>
                         <label for="daterange" class="small mb-1">Periodo</label>
-                        <input
-                            type="text"
-                            id="daterange"
-                            readonly
-                            class="form-control form-control-sm"
-                            style="min-width: 450px; border: none; box-shadow: none"
-                        />
+                        <input type="text" id="daterange" readonly class="form-control form-control-sm"
+                            style="min-width: 450px; border: none; box-shadow: none" />
                     </div>
                 </div>
                 @can('gastos-create')
                     <!-- Botones -->
                     <div class="col-lg-6 col-md-6 col-12 d-flex justify-content-end gap-2">
-                        <button
-                            class="btn btn-sm btn-info d-flex align-items-center gap-1"
-                            data-bs-toggle="modal"
-                            data-bs-target="#modalAgregarGasto"
-                        >
+                        <button class="btn btn-sm btn-info d-flex align-items-center gap-1" data-bs-toggle="modal"
+                            data-bs-target="#modalAgregarGasto">
                             <i class="ni ni-plus"></i>
                             Registrar gasto
                         </button>
@@ -38,11 +30,8 @@
                             <i class="fa fa-fw fa-coins"></i> Aplicar Pago
                             </button>
                         --}}
-                        <button
-                            type="button"
-                            class="btn btn-sm btn-danger d-flex align-items-center gap-1"
-                            id="btnEliminarGasto"
-                        >
+                        <button type="button" class="btn btn-sm btn-danger d-flex align-items-center gap-1"
+                            id="btnEliminarGasto">
                             <i class="fa fa-fw fa-trash"></i>
                             Eliminar gasto
                         </button>
@@ -78,6 +67,7 @@
         .rag-green {
             background-color: #33cc3344;
         }
+
         .option-group {
             display: flex;
             flex-wrap: wrap;
@@ -172,8 +162,7 @@
                 // console.log(bancos);
             })();
 
-            $('#daterange').daterangepicker(
-                {
+            $('#daterange').daterangepicker({
                     opens: 'right',
                     locale: {
                         format: 'YYYY-MM-DD', // Formato de fecha
@@ -200,9 +189,19 @@
                         ],
                         firstDay: 1,
                     },
+                    ranges: {
+                        Hoy: [moment(), moment()],
+                        'Últimos 7 días': [moment().subtract(6, 'days'), moment()],
+                        'Últimos 30 días': [moment().subtract(29, 'days'), moment()],
+                        'Este mes': [moment().startOf('month'), moment().endOf('month')],
+                        'Mes anterior': [
+                            moment().subtract(1, 'month').startOf('month'),
+                            moment().subtract(1, 'month').endOf('month'),
+                        ],
+                    },
                     maxDate: moment(),
                 },
-                function (start, end, label) {
+                function(start, end, label) {
                     let spanPeriodoc = document.getElementById('periodo');
                     spanPeriodoc.textContent = ` ${start.format('DD-MM-YYYY')} AL ${end.format('DD-MM-YYYY')}`;
 
@@ -225,7 +224,8 @@
             $('#daterange').attr('data-start', formatDate(firstDayOfMonth));
             $('#daterange').attr('data-end', formatDate(today));
             let spanPeriodo = document.getElementById('periodo');
-            spanPeriodo.textContent = `${moment(firstDayOfMonth).format('DD-MM-YYYY')} AL ${moment(today).format('DD-MM-YYYY')}`;
+            spanPeriodo.textContent =
+                `${moment(firstDayOfMonth).format('DD-MM-YYYY')} AL ${moment(today).format('DD-MM-YYYY')}`;
 
             if (document.getElementById('selectUnidadesGeneral')) {
                 var element = document.getElementById('selectUnidadesGeneral');
@@ -235,11 +235,11 @@
             }
 
             /* if (document.getElementById('selectViajes')) {
-            var element = document.getElementById('selectViajes');
-            const example = new Choices(element, {
-                removeItemButton: true
-            });
-        } */
+                var element = document.getElementById('selectViajes');
+                const example = new Choices(element, {
+                    removeItemButton: true
+                });
+            } */
         });
     </script>
 @endpush

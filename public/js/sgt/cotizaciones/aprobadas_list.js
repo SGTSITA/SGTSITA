@@ -263,6 +263,14 @@ const formFieldsPlaneacion = [
         trigger: 'none',
     },
     { field: 'cmbBanco', id: 'cmbBanco', label: 'Banco', required: true, type: 'text', trigger: 'none' },
+    {
+        field: 'FechaAplicacionDinero',
+        id: 'FechaAplicacionDinero',
+        label: 'Fecha Aplicacion para Dinero de viaje',
+        required: true,
+        type: 'date',
+        trigger: 'none',
+    },
 ];
 
 const formFieldsProveedor = [
@@ -486,6 +494,7 @@ async function programarViaje() {
             const monto = parseFloat(fila.querySelector('[name="gasto_monto[]"]').value) || 0;
             const pagoInmediato = fila.querySelector('[name="gasto_pago_inmediato[]"]').checked;
             const banco = fila.querySelector('[name="gasto_banco_id[]"]').value || null;
+            const fechaAplicacion = fila.querySelector('[name="fechaAplicacion[]"]').value || null;
 
             if (motivo !== '' && monto <= 0) {
                 Swal.fire('Monto inválido', "El monto del gasto '" + motivo + "' debe ser mayor a cero.", 'warning');
@@ -502,6 +511,15 @@ async function programarViaje() {
                 hayErrorGastos = true;
                 break;
             }
+            if (pagoInmediato && !fechaAplicacion) {
+                Swal.fire(
+                    'Fecha inválido',
+                    "Debe seleccionar fecha aplicacion para el gasto '" + motivo + "' que se pagará de inmediato.",
+                    'warning',
+                );
+                hayErrorGastos = true;
+                break;
+            }
 
             if (motivo !== '' || monto > 0) {
                 gastosValidos.push({
@@ -509,6 +527,7 @@ async function programarViaje() {
                     monto,
                     pagoInmediato,
                     banco: pagoInmediato ? banco : null,
+                    fechaAplicacion: pagoInmediato ? fechaAplicacion : null,
                 });
             }
         }

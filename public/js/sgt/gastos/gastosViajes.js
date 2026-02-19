@@ -8,9 +8,7 @@ async function getBancos() {
         success: function (data) {
             let dataBancos = [];
             $.each(data, function (key, banco) {
-                dataBancos.push(
-                    formatoConsecutivo(banco.id) + ' - ' + banco.nombre_beneficiario + ' - ' + banco.nombre_banco,
-                );
+                dataBancos.push(formatoConsecutivo(banco.id) + ' - ' + banco.display);
             });
             bancosList = dataBancos;
             return dataBancos;
@@ -52,55 +50,47 @@ function buildGastosHandsOnTable() {
                 'Pago Diesel',
                 'Pago Casetas',
                 'Banco',
+                'Fecha Aplicacion',
             ],
         ],
         fixedColumnsLeft: 1,
         columns: [
-            { readOnly: true, width: 350 },
+            { data: 'contenedor', readOnly: true, width: 350 },
+
+            { data: 'comision', type: 'numeric', numericFormat: { pattern: '$ 0,0.00', culture: 'en-US' } },
+            { data: 'diesel', type: 'numeric', numericFormat: { pattern: '$ 0,0.00', culture: 'en-US' } },
+            { data: 'casetas', type: 'numeric', numericFormat: { pattern: '$ 0,0.00', culture: 'en-US' } },
+
+            { data: 'varios', type: 'numeric', numericFormat: { pattern: '$ 0,0.00', culture: 'en-US' } },
+            { data: 'diferidos', type: 'numeric', numericFormat: { pattern: '$ 0,0.00', culture: 'en-US' } },
+
             {
-                type: 'numeric',
-                numericFormat: {
-                    pattern: '$ 0,0.00',
-                    culture: 'en-US',
-                },
+                data: 'pago_comision',
+                type: 'checkbox',
+                className: 'htCenter htMiddle',
+                checkedTemplate: 1,
+                uncheckedTemplate: 0,
             },
             {
-                type: 'numeric',
-                numericFormat: {
-                    pattern: '$ 0,0.00',
-                    culture: 'en-US',
-                },
+                data: 'pago_diesel',
+                type: 'checkbox',
+                className: 'htCenter htMiddle',
+                checkedTemplate: 1,
+                uncheckedTemplate: 0,
             },
             {
-                type: 'numeric',
-                numericFormat: {
-                    pattern: '$ 0,0.00',
-                    culture: 'en-US',
-                },
+                data: 'pago_casetas',
+                type: 'checkbox',
+                className: 'htCenter htMiddle',
+                checkedTemplate: 1,
+                uncheckedTemplate: 0,
             },
-            {
-                type: 'numeric',
-                numericFormat: {
-                    pattern: '$ 0,0.00',
-                    culture: 'en-US',
-                },
-            },
-            {
-                type: 'numeric',
-                numericFormat: {
-                    pattern: '$ 0,0.00',
-                    culture: 'en-US',
-                },
-            },
-            { className: 'htCenter', type: 'checkbox', checkedTemplate: '1', uncheckedTemplate: '0' },
-            { className: 'htCenter', type: 'checkbox', checkedTemplate: '1', uncheckedTemplate: '0' },
-            { className: 'htCenter', type: 'checkbox', checkedTemplate: '1', uncheckedTemplate: '0' },
-            { type: 'dropdown', source: bancosList, strict: true, width: 375 },
-            {
-                readOnly: true,
-            },
+
+            { data: 'banco', type: 'dropdown', source: bancosList, strict: true, width: 375 },
+
+            { data: 'fecha_aplicacion', type: 'date', dateFormat: 'YYYY-MM-DD', correctFormat: true, width: 140 },
         ],
-        hiddenColumns: { columns: [10], indicators: false },
+        hiddenColumns: { columns: [11], indicators: false },
         filters: true,
         dropdownMenu: ['filter_by_value', 'filter_action_bar'],
         licenseKey: 'non-commercial-and-evaluation',
@@ -164,7 +154,8 @@ function buildGastosHandsOnTable() {
 
     function guardarGastos() {
         var _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-        var datahandsOnTableGastos = JSON.stringify(handsOnTableGastos.getData());
+        // var datahandsOnTableGastos = JSON.stringify(handsOnTableGastos.getData());
+        var datahandsOnTableGastos = handsOnTableGastos.getSourceData();
 
         $.ajax({
             url: '/gastos/viajes/confirmar-gastos',
