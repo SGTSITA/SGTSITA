@@ -11,21 +11,21 @@ return new class () extends Migration {
 
             $table->id();
 
-            // 🔗 Cuenta bancaria
+
             $table->foreignId('cuenta_bancaria_id')
                 ->constrained('bancos')
                 ->cascadeOnDelete();
 
-            // 📅 Datos del movimiento
+
             $table->date('fecha_movimiento');
             $table->string('concepto', 355);
             $table->string('referencia', 100)->nullable();
 
-            // 💸 Tipo y monto
+
             $table->enum('tipo', ['cargo', 'abono']);
             $table->decimal('monto', 15, 2);
 
-            // 🔍 Origen del movimiento
+
             $table->enum('origen', [
                 'manual',
                 'banco',
@@ -34,11 +34,15 @@ return new class () extends Migration {
                 'importacion'
             ])->default('manual');
 
-            // 🔗 Referencia polimórfica (cotización, planeación, liquidación, etc.)
-            $table->nullableMorphs('referenciaable');
-            // crea referenciaable_id y referenciaable_type
 
-            // 🔁 Cancelación (no se elimina)
+            $table->string('referenciaable_type')->nullable();
+            $table->unsignedBigInteger('referenciaable_id')->nullable();
+
+            $table->index(
+                ['referenciaable_type', 'referenciaable_id'],
+                'mov_ref_index'
+            );
+
             $table->boolean('cancelado')->default(false);
             $table->timestamp('fecha_cancelacion')->nullable();
 
@@ -48,12 +52,12 @@ return new class () extends Migration {
                 ->constrained()
                 ->nullOnDelete();
 
-            // 📝 Extras
+
             $table->text('observaciones')->nullable();
 
             $table->timestamps();
 
-            // ⚡ Índices útiles
+
             $table->index(['fecha_movimiento', 'tipo']);
             $table->index('origen');
             $table->index('cancelado');
