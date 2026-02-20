@@ -17,6 +17,9 @@
         </div>
     </div>
 
+    <!--Indica si se ha modificado alguna información en el formulario-->
+    <input type="hidden" id="modifico_informacion" name="modifico_informacion" value="0">
+
     <div class="card mb-5 mb-xl-10">
         <!--begin::Card header-->
         <div class="card-header card-header-stretch pb-0">
@@ -112,69 +115,69 @@
             <div id="kt_billing_payment_tab_content" class="card-body tab-content">
                 <!--begin::Tab panel-->
                 <div id="kt_billing_creditcard" class="tab-pane fade show active" role="tabpanel" "="" aria-labelledby="kt_billing_creditcard_tab">
-                            <!--begin::Title-->
-                            <h3 class="mb-5">Datos Generales</h3>
-                            <!--end::Title-->
+                                    <!--begin::Title-->
+                                    <h3 class="mb-5">Datos Generales</h3>
+                                    <!--end::Title-->
 
-                            <!--begin::Row-->
-                            <div class="row gx-9 gy-6">
-                            @csrf
-                            <input type="hidden" value="{{ Auth::User()->id_cliente }}" name="id_cliente" id="id_cliente">
-                            @include('cotizaciones.externos.datos_generales')
+                                    <!--begin::Row-->
+                                    <div class="row gx-9 gy-6">
+                                    @csrf
+                                    <input type="hidden" value="{{ Auth::User()->id_cliente }}" name="id_cliente" id="id_cliente">
+                                    @include('cotizaciones.externos.datos_generales')
+                                    </div>
+                                    <!--end::Row-->
+                                </div>
+                                <!--end::Tab panel-->
+
+                                <!--begin::Tab panel-->
+                                <div id="kt_billing_paypal" class="tab-pane fade" role="tabpanel" aria-labelledby="kt_billing_paypal_tab">
+                                    <!--begin::Title-->
+                                    <h3 class="mb-5">Ubicacion GPS</h3>
+                                    <!--end::Title-->
+                                    <div class="row gx-9 gy-6">
+
+                                    @include('cotizaciones.externos.datos_ubicacion')
+                                    </div>
+                                </div>
+                                <!--end::Tab panel-->
+                                <!--begin::Tab panel-->
+                                <div id="kt_bloque" class="tab-pane fade" role="tabpanel" aria-labelledby="kt_bloque_tab">
+                                    <!--begin::Title-->
+                                    <h3 class="mb-5">Bloque</h3>
+                                    <!--end::Title-->
+                                    <div class="row gx-9 gy-6">
+
+                                    @include('cotizaciones.externos.datos_bloque')
+                                    </div>
+                                </div>
+                                <!--end::Tab panel-->
+
+                                <!--begin::Tab panel-->
+                                <div id="kt_documentos" class="tab-pane fade" role="tabpanel" aria-labelledby="kt_documentos_tab">
+                                    <!--begin::Title-->
+                                    <h3 class="mb-5" id="labelDocsViaje">Documentos de viaje </h3>
+                                    <!--end::Title-->
+                                    <div class="row gx-9 gy-6">
+
+                                    @include('cotizaciones.externos.datos_fileuploader')
+                                    </div>
+                                </div>
+                                <!--end::Tab panel-->
+                                <!--begin::Tab panel-->
+                                <div id="kt_facturacion" class="tab-pane fade" role="tabpanel" aria-labelledby="kt_facturacion_tab">
+                                    <!--begin::Title-->
+                                    <h3 class="mb-5">Datos para Carta Porte</h3>
+                                    <!--end::Title-->
+                                    <div class="row gx-9 gy-6">
+
+                                    @include('cotizaciones.externos.datos_facturacion')
+                                    </div>
+                                </div>
+                                <!--end::Tab panel-->
                             </div>
-                            <!--end::Row-->
-                        </div>
-                        <!--end::Tab panel-->
-
-                        <!--begin::Tab panel-->
-                        <div id="kt_billing_paypal" class="tab-pane fade" role="tabpanel" aria-labelledby="kt_billing_paypal_tab">
-                            <!--begin::Title-->
-                            <h3 class="mb-5">Ubicacion GPS</h3>
-                            <!--end::Title-->
-                            <div class="row gx-9 gy-6">
-
-                            @include('cotizaciones.externos.datos_ubicacion')
-                            </div>
-                        </div>
-                        <!--end::Tab panel-->
-                        <!--begin::Tab panel-->
-                        <div id="kt_bloque" class="tab-pane fade" role="tabpanel" aria-labelledby="kt_bloque_tab">
-                            <!--begin::Title-->
-                            <h3 class="mb-5">Bloque</h3>
-                            <!--end::Title-->
-                            <div class="row gx-9 gy-6">
-
-                            @include('cotizaciones.externos.datos_bloque')
-                            </div>
-                        </div>
-                        <!--end::Tab panel-->
-                         
-                        <!--begin::Tab panel-->
-                        <div id="kt_documentos" class="tab-pane fade" role="tabpanel" aria-labelledby="kt_documentos_tab">
-                            <!--begin::Title-->
-                            <h3 class="mb-5" id="labelDocsViaje">Documentos de viaje </h3>
-                            <!--end::Title-->
-                            <div class="row gx-9 gy-6">
-
-                            @include('cotizaciones.externos.datos_fileuploader')
-                            </div>
-                        </div>
-                        <!--end::Tab panel-->
-                        <!--begin::Tab panel-->
-                        <div id="kt_facturacion" class="tab-pane fade" role="tabpanel" aria-labelledby="kt_facturacion_tab">
-                            <!--begin::Title-->
-                            <h3 class="mb-5">Datos para Carta Porte</h3>
-                            <!--end::Title-->
-                            <div class="row gx-9 gy-6">
-
-                            @include('cotizaciones.externos.datos_facturacion')
-                            </div>
-                        </div>
-                        <!--end::Tab panel-->
-                    </div>
-                    <!--end::Tab content-->
-                    <div class="separator separator-dashed mb-8"></div>
-                          @if ($action == 'editar')
+                            <!--end::Tab content-->
+                            <div class="separator separator-dashed mb-8"></div>
+                                    @if ($action == 'editar')
                     <button type="submit" class="btn btn-success">
                         Actualizar viaje
                     </button>
@@ -187,13 +190,14 @@
     </div>
 
 
-    </div>
+
 
     @include('cotizaciones.externos.modal_whatsapp')
 @endsection
 
 @push('javascript')
-  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAtAO2AZBgzC7QaBxnMnPoa-DAq8vaEvUc" async defer onload="googleMapsReady()"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key={{ config('services.googleMapsApi.apikey') }}" async defer
+        onload="googleMapsReady()"></script>
     <script
         src="{{ asset('js/sgt/cotizaciones/cotizaciones.js') }}?v={{ filemtime(public_path('js/sgt/cotizaciones/cotizaciones.js')) }}">
     </script>
@@ -213,13 +217,12 @@
     <script
         src="{{ asset('js/sgt/cotizaciones/externos.js') }}?v={{ filemtime(public_path('js/sgt/cotizaciones/externos.js')) }}">
     </script>
-    
 
-    <script>																																													 
-																																				   
-		
+
+    <script>
         $(document).ready(() => {
-            getClientes({{ Auth::User()->id_cliente }})
+            let subclienteid = {{ $cotizacion?->id_subcliente ?? 'null' }};
+            getClientes({{ Auth::User()->id_cliente }}, subclienteid)
 
             var genericUUID = localStorage.getItem('uuid');
             if (genericUUID == null) {
@@ -233,8 +236,10 @@
 
             condicionRecinto.forEach(function(elemento) {
                 elemento.addEventListener('click', function() {
-                    inputRecinto.classList.toggle('d-none', elemento.attributes['data-kt-plan'].value != 'recinto-si')
-                    textRecinto.value = (elemento.attributes['data-kt-plan'].value != 'recinto-si') ? '' : 'recinto-si';
+                    inputRecinto.classList.toggle('d-none', elemento.attributes['data-kt-plan']
+                        .value != 'recinto-si')
+                    textRecinto.value = (elemento.attributes['data-kt-plan'].value !=
+                        'recinto-si') ? '' : 'recinto-si';
                 });
             });
 
@@ -242,8 +247,8 @@
                 localStorage.setItem('numContenedor', '{{ $cotizacion->DocCotizacion->num_contenedor }}');
 
                 initFileUploader()
-	
-			
+
+
 
                 setTimeout(() => {
                     document.getElementById('fileUploaderContainer').classList.remove('d-none')
@@ -302,5 +307,13 @@
                 form.submit();
             });
         @endif
+
+        $(document).ready(function() {
+            // Detectar si algún campo cambia en cualquier formulario de la página para carta porte
+            $('form').on('change input', 'input, select, textarea', function() {
+                console.log('Campo modificado:', $(this).attr('name')); // <-- Para probar
+                $('#modifico_informacion').val('1');
+            });
+        });
     </script>
-@endpush		
+@endpush

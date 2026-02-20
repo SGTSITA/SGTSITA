@@ -1,11 +1,11 @@
 ---
 title: Dice 4
 categories:
-  - Entertainment
+    - Entertainment
 tags:
-  - dice
-  - die
-  - games
-  - gaming
-  - gambling
+    - dice
+    - die
+    - games
+    - gaming
+    - gambling
 ---

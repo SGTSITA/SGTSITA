@@ -1,9 +1,9 @@
 ---
 title: Motherboard
 categories:
-  - Devices
+    - Devices
 tags:
-  - mobo
-  - computer
-  - hardware
+    - mobo
+    - computer
+    - hardware
 ---

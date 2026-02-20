@@ -1,9 +1,9 @@
 ---
 title: Cloud plus
 categories:
-  - Clouds
+    - Clouds
 tags:
-  - add
-  - new
-  - upload
+    - add
+    - new
+    - upload
 ---

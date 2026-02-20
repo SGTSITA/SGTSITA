@@ -1,7 +1,7 @@
 ---
 title: Sunrise
 categories:
-  - Weather
+    - Weather
 tags:
-  - dawn
+    - dawn
 ---

@@ -1,8 +1,8 @@
 ---
 title: Thermometer
 categories:
-  - Real world
+    - Real world
 tags:
-  - temperature
-  - weather
+    - temperature
+    - weather
 ---

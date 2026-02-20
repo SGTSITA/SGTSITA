@@ -36,18 +36,18 @@ const localeText = {
     resetColumns: 'Restablecer columnas',
     blank: 'Vacíos',
     notBlank: 'No Vacíos',
-    paginationPageSize: 'Registros por página'
-  };
+    paginationPageSize: 'Registros por página',
+};
 
-document.addEventListener("DOMContentLoaded", function () {     
-    if (typeof agGrid === "undefined" || typeof agGrid.createGrid === "undefined") {
-        console.error("🚨 Error: AG Grid no está cargado o está usando una versión incorrecta.");
+document.addEventListener('DOMContentLoaded', function () {
+    if (typeof agGrid === 'undefined' || typeof agGrid.createGrid === 'undefined') {
+        console.error('🚨 Error: AG Grid no está cargado o está usando una versión incorrecta.');
         return;
     }
 
-    var gridDiv = document.querySelector("#gridAprobadas");
+    var gridDiv = document.querySelector('#gridAprobadas');
     if (!gridDiv) {
-        console.error("🚨 Error: No se encontró el contenedor de la tabla (#gridAprobadas).");
+        console.error('🚨 Error: No se encontró el contenedor de la tabla (#gridAprobadas).');
         return;
     }
 
@@ -55,163 +55,304 @@ document.addEventListener("DOMContentLoaded", function () {
         pagination: true,
         paginationPageSize: 10,
         paginationPageSizeSelector: [10, 50, 100],
-        domLayout: 'autoHeight', 
+        domLayout: 'autoHeight',
         rowSelection: {
-            mode: "multiRow",
+            mode: 'multiRow',
             headerCheckbox: false,
         },
         columnDefs: [
-            { headerName: "No", field: "id", width: 80 , hide: true},
-            { headerName: "ContenedorPrincipal", field: "labelContenedor", hide: true},
-            { headerName: "Full", field: "referencia_full", hide: true},
-            { headerName: "Sub Cliente", field: "subcliente", width: 80 , hide: true},
-            { headerName: "# Contenedor", 
-              field: "contenedor", 
-              width: 200,
-              filter: true, 
-              floatingFilter: true,
-              autoHeight: true, // Permite que la fila se ajuste en altura
-              cellStyle:params => {
-                  const styles = {
-                    'white-space': 'normal',
-                    'line-height': '1.5',
-                  };
-              
-                  // Si la cotización es tipo "Full", aplicar fondo 
-                  if (params.data.tipo === 'Full') {
-                    styles['background-color'] = '#ffe5b4'; 
-                  }
-              
-                  return styles;
+            { headerName: 'No', field: 'id', width: 80, hide: true },
+            { headerName: 'ContenedorPrincipal', field: 'labelContenedor', hide: true },
+            { headerName: 'Full', field: 'referencia_full', hide: true },
+            { headerName: 'Sub Cliente', field: 'subcliente', width: 80, hide: true },
+            {
+                headerName: '# Contenedor',
+                field: 'contenedor',
+                width: 200,
+                filter: true,
+                floatingFilter: true,
+                autoHeight: true, // Permite que la fila se ajuste en altura
+                cellStyle: (params) => {
+                    const styles = {
+                        'white-space': 'normal',
+                        'line-height': '1.5',
+                    };
+
+                    // Si la cotización es tipo "Full", aplicar fondo
+                    if (params.data.tipo === 'Full') {
+                        styles['background-color'] = '#ffe5b4';
+                    }
+
+                    return styles;
                 },
             },
-            { headerName: "Cliente", field: "cliente", width: 150,filter: true, floatingFilter: true },
-            { headerName: "Origen", field: "origen", width: 200 ,filter: true, floatingFilter: true},
-            { headerName: "Destino", field: "destino", width: 200, filter: true, floatingFilter: true },
-           
-            { headerName: "Estatus",
-            field: "estatus",
-            minWidth: 180,
-            cellRenderer: function (params) {
-                let color = "secondary";
-                if (params.data.estatus === "Aprobada") color = "success";
-                else if (params.data.estatus === "Cancelada") color = "danger";
-                else if (params.data.estatus === "Pendiente") color = "warning";
-        
-                return `
+            { headerName: 'Cliente', field: 'cliente', width: 150, filter: true, floatingFilter: true },
+            { headerName: 'Origen', field: 'origen', width: 200, filter: true, floatingFilter: true },
+            { headerName: 'Destino', field: 'destino', width: 200, filter: true, floatingFilter: true },
+
+            {
+                headerName: 'Estatus',
+                field: 'estatus',
+                minWidth: 180,
+                cellRenderer: function (params) {
+                    let color = 'secondary';
+                    if (params.data.estatus === 'Aprobada') color = 'success';
+                    else if (params.data.estatus === 'Cancelada') color = 'danger';
+                    else if (params.data.estatus === 'Pendiente') color = 'warning';
+
+                    return `
                     <button class="btn btn-sm btn-outline-${color}" onclick="abrirCambioEstatus(${params.data.id})" title="Cambiar estatus">
                         <i class="fa fa-check me-1"></i> ${params.data.estatus}
                     </button>
                 `;
-            } },
-       
-  
+                },
+            },
         ],
         defaultColDef: { resizable: true, sortable: true, filter: true },
         localeText: localeText,
-        onRowSelected:(event)=>{
-            seleccionContenedor()
+        onRowSelected: (event) => {
+            seleccionContenedor();
         },
         onGridReady: function (params) {
-
-            var paginationTitle = document.querySelector("#ag-32-label");
+            var paginationTitle = document.querySelector('#ag-32-label');
             paginationTitle.textContent = 'Registros por página';
-           
+
             window.gridApi = params.api;
 
-            fetch("/cotizaciones/aprobadas")
-                .then(response => response.json())
-                .then(data => {
-                   
+            fetch('/cotizaciones/aprobadas')
+                .then((response) => response.json())
+                .then((data) => {
                     window.gridApi.applyTransaction({ add: data.list });
                 })
-                .catch(error => console.error("🚨 Error al cargar cotizaciones:", error));
-        }
+                .catch((error) => console.error('🚨 Error al cargar cotizaciones:', error));
+        },
     };
 
     let apiGridAprobadas = agGrid.createGrid(gridDiv, gridOptions);
-    let tipoViaje = null
-    let cmbTipoUnidad = document.querySelector('#cmbTipoUnidad')
-    let cmbChasis = document.querySelector('#cmbChasis')
-    let cmbChasis2 = document.querySelector('#cmbChasis2')
-    let cmbDoly  = document.querySelector('#cmbDoly')
-    let btnProgramar = document.querySelector('#btnProgramar')
-    let contenedores = []
+    let tipoViaje = null;
+    let cmbTipoUnidad = document.querySelector('#cmbTipoUnidad');
+    let cmbChasis = document.querySelector('#cmbChasis');
+    let cmbChasis2 = document.querySelector('#cmbChasis2');
+    let cmbDoly = document.querySelector('#cmbDoly');
+    let btnProgramar = document.querySelector('#btnProgramar');
+    let contenedores = [];
 
-    function  seleccionContenedor(){
-        if(gridDiv){
+    function seleccionContenedor() {
+        if (gridDiv) {
             let seleccion = apiGridAprobadas.getSelectedRows();
-            let bntNextOne = document.querySelector('#nextOne')
-            bntNextOne.disabled = true
-            if(seleccion.length > 2){
-                Swal.fire('Maximo 2 contenedores','Lo sentimos, solo puede seleccionar maximo 2 contenedores, estos deben ser de un mismo cliente','warning')
-                
-                return false
+            let bntNextOne = document.querySelector('#nextOne');
+            bntNextOne.disabled = true;
+            if (seleccion.length > 2) {
+                Swal.fire(
+                    'Maximo 2 contenedores',
+                    'Lo sentimos, solo puede seleccionar maximo 2 contenedores, estos deben ser de un mismo cliente',
+                    'warning',
+                );
+
+                return false;
             }
 
             let numContenedorLabel = document.querySelectorAll('.numContenedorLabel');
             let nombreClienteLabel = document.querySelectorAll('.nombreClienteLabel');
-            let contenedoresLabel = '';
-            let isFull = false;
-            contenedores = []
-            seleccion.forEach((contenedor) =>{
-                contenedoresLabel += (contenedoresLabel.length > 0 ) ? ` / ${contenedor.contenedor}` : contenedor.contenedor
-                nombreClienteLabel.forEach(cl => cl.textContent = `${contenedor.cliente} / ${contenedor.subcliente}`)
-                contenedores = [...contenedores,contenedor.labelContenedor]
-                isFull = (!isFull && contenedor.referencia_full?.length > 0) ? true : isFull ;
-                localStorage.setItem('numContenedor',JSON.stringify(contenedores))
-            })
+            let pesoContenedorSpan = document.querySelector('#pesoContenedor');
+            // let tamanoContenedorSpan = document.querySelector('#tamanoContenedor');
+            let precioViajeSpan = document.querySelector('#precioViaje');
+            let direccionEntregaSpan = document.querySelector('#direccionEntrega');
+            //viaje subcontratado
+            let pesoContenedorSubSpan = document.querySelector('#pesoContenedorSub');
+            let direccionEntregaSubSpan = document.querySelector('#direccionEntregaSub');
 
-            if(isFull && seleccion.length >= 2){
-                Swal.fire('Operación FULL invalida','Lo sentimos, su selección contiene un viaje FULL, este no puede viajar con mas contenedores','warning')
-               
-                return false
+            let contenedoresLabel = '';
+            let cliente_Sublcientelabel = '';
+            let isFull = false;
+            contenedores = [];
+            seleccion.forEach((contenedor) => {
+                contenedoresLabel +=
+                    contenedoresLabel.length > 0 ? ` / ${contenedor.contenedor}` : contenedor.contenedor;
+                cliente_Sublcientelabel = `${contenedor.cliente} / ${contenedor.subcliente}`;
+
+                contenedores = [...contenedores, contenedor.labelContenedor];
+                isFull = !isFull && contenedor.referencia_full?.length > 0 ? true : isFull;
+                localStorage.setItem('numContenedor', JSON.stringify(contenedores));
+                if (pesoContenedorSpan) {
+                    pesoContenedorSpan.textContent = contenedor.peso_contenedor;
+                }
+                // if(tamanoContenedorSpan){
+                //     tamanoContenedorSpan.textContent = contenedor.tamano
+                // }
+                if (direccionEntregaSpan) {
+                    direccionEntregaSpan.textContent = contenedor.direccion_entrega;
+                }
+                if (precioViajeSpan) {
+                    precioViajeSpan.textContent = moneyFormat(contenedor.total);
+                }
+                //subcontratado informativo
+                if (pesoContenedorSubSpan) {
+                    pesoContenedorSubSpan.textContent = contenedor.peso_contenedor;
+                }
+                if (direccionEntregaSubSpan) {
+                    direccionEntregaSubSpan.textContent = contenedor.direccion_entrega;
+                }
+            });
+
+            if (isFull && seleccion.length >= 2) {
+                Swal.fire(
+                    'Operación FULL invalida',
+                    'Lo sentimos, su selección contiene un viaje FULL, este no puede viajar con mas contenedores',
+                    'warning',
+                );
+
+                return false;
             }
 
-            cmbTipoUnidad.value = (seleccion.length == 2 || isFull) ? "Full" : "Sencillo"
+            cmbTipoUnidad.value = seleccion.length == 2 || isFull ? 'Full' : 'Sencillo';
             cmbTipoUnidad.dispatchEvent(new Event('change'));
 
-            numContenedorLabel.forEach(lb=> lb.textContent = contenedoresLabel)
-            bntNextOne.disabled = false
-          }
-    }
+            numContenedorLabel.forEach((lb) => (lb.textContent = contenedoresLabel));
+            bntNextOne.disabled = false;
 
-  
+            nombreClienteLabel.forEach((cl) => (cl.textContent = cliente_Sublcientelabel));
+        }
+    }
 });
 
-
-
 const formFieldsPlaneacion = [
-    {'field':'txtFechaInicio','id':'txtFechaInicio','label':'Fecha salida','required': true, "type":"text", "trigger":"none"},
-    {'field':'txtFechaFinal','id':'txtFechaFinal','label':'Fecha entrega','required': true, "type":"text", "trigger":"none"},
-    {'field':'cmbTipoUnidad','id':'cmbTipoUnidad','label':'Tipo unidad','required': true, "type":"text", "trigger":"none"},
-    {'field':'cmbCamion','id':'cmbCamion','label':'Unidad','required': true, "type":"text", "trigger":"none"},
-    {'field':'cmbChasis','id':'cmbChasis','label':'Chasis','required': true, "type":"text", "trigger":"none"},
-    {'field':'cmbChasis2','id':'cmbChasis2','label':'Chasis 2','required': true, "type":"text", "trigger":"none"},
-    {'field':'cmbDoly','id':'cmbDoly','label':'Doly','required': true, "type":"text", "trigger":"none"},
-    {'field':'cmbOperador','id':'cmbOperador','label':'Operador','required': true, "type":"text", "trigger":"none"},
-    {'field':'txtSueldoOperador','id':'txtSueldoOperador','label':'Sueldo Operador','required': true, "type":"money", "trigger":"none"},
-    {'field':'txtDineroViaje','id':'txtDineroViaje','label':'Dinero viaje','required': true, "type":"money", "trigger":"none"},
-    {'field':'cmbBanco','id':'cmbBanco','label':'Banco','required': true, "type":"text", "trigger":"none"}
-]
+    {
+        field: 'txtFechaInicio',
+        id: 'txtFechaInicio',
+        label: 'Fecha salida',
+        required: true,
+        type: 'text',
+        trigger: 'none',
+    },
+    {
+        field: 'txtFechaFinal',
+        id: 'txtFechaFinal',
+        label: 'Fecha entrega',
+        required: true,
+        type: 'text',
+        trigger: 'none',
+    },
+    {
+        field: 'cmbTipoUnidad',
+        id: 'cmbTipoUnidad',
+        label: 'Tipo unidad',
+        required: true,
+        type: 'text',
+        trigger: 'none',
+    },
+    { field: 'cmbCamion', id: 'cmbCamion', label: 'Unidad', required: true, type: 'text', trigger: 'none' },
+    { field: 'cmbChasis', id: 'cmbChasis', label: 'Chasis', required: true, type: 'text', trigger: 'none' },
+    { field: 'cmbChasis2', id: 'cmbChasis2', label: 'Chasis 2', required: true, type: 'text', trigger: 'none' },
+    { field: 'cmbDoly', id: 'cmbDoly', label: 'Doly', required: true, type: 'text', trigger: 'none' },
+    { field: 'cmbOperador', id: 'cmbOperador', label: 'Operador', required: true, type: 'text', trigger: 'none' },
+    {
+        field: 'txtSueldoOperador',
+        id: 'txtSueldoOperador',
+        label: 'Sueldo Operador',
+        required: true,
+        type: 'money',
+        trigger: 'none',
+    },
+    {
+        field: 'txtDineroViaje',
+        id: 'txtDineroViaje',
+        label: 'Dinero viaje',
+        required: true,
+        type: 'money',
+        trigger: 'none',
+    },
+    { field: 'cmbBanco', id: 'cmbBanco', label: 'Banco', required: true, type: 'text', trigger: 'none' },
+    {
+        field: 'FechaAplicacionDinero',
+        id: 'FechaAplicacionDinero',
+        label: 'Fecha Aplicacion para Dinero de viaje',
+        required: true,
+        type: 'date',
+        trigger: 'none',
+    },
+];
 
 const formFieldsProveedor = [
-    {'field':'txtFechaInicio','id':'txtFechaInicio','label':'Fecha salida','required': true, "type":"text", "trigger":"none"},
-    {'field':'txtFechaFinal','id':'txtFechaFinal','label':'Fecha entrega','required': true, "type":"text", "trigger":"none"},
-    {'field':'precio_proveedor','id':'precio_proveedor','label':'Costo del viaje','required': true, "type":"money", "trigger":"none"},
-    {'field':'burreo_proveedor','id':'burreo_proveedor','label':'Burreo','required': true, "type":"money", "trigger":"none"},
-    {'field':'maniobra_proveedor','id':'maniobra_proveedor','label':'Maniobra','required': true, "type":"money", "trigger":"none"},
-    {'field':'estadia_proveedor','id':'estadia_proveedor','label':'Estadía','required': true, "type":"money", "trigger":"none"},
-    {'field':'otro_proveedor','id':'otro_proveedor','label':'Otros','required': true, "type":"money", "trigger":"none"},
-    {'field':'iva_proveedor','id':'iva_proveedor','label':'IVA','required': true, "type":"money", "trigger":"none"},
-    {'field':'retencion_proveedor','id':'retencion_proveedor','label':'Retención','required': true, "type":"money", "trigger":"none"},
-    {'field':'base_factura','id':'base_factura','label':'Base 1','required': true, "type":"money", "trigger":"none"},
-    {'field':'base_taref','id':'base_taref','label':'Base 2','required': true, "type":"money", "trigger":"none"},
-    {'field':'sobrepeso_proveedor','id':'sobrepeso_proveedor','label':'Sobrepeso','required': true, "type":"money", "trigger":"none"},
-    {'field':'cantidad_sobrepeso_proveedor','id':'cantidad_sobrepeso_proveedor','label':'Precio sobrepreso','required': true, "type":"money", "trigger":"none"},
-    {'field':'total_proveedor','id':'total_proveedor','label':'Total','required': true, "type":"money", "trigger":"none"},
-    {'field':'cmbProveedor','id':'cmbProveedor','label':'Proveedor','required': true, "type":"select", "trigger":"none"}   
-]
+    {
+        field: 'txtFechaInicio',
+        id: 'txtFechaInicio',
+        label: 'Fecha salida',
+        required: true,
+        type: 'text',
+        trigger: 'none',
+    },
+    {
+        field: 'txtFechaFinal',
+        id: 'txtFechaFinal',
+        label: 'Fecha entrega',
+        required: true,
+        type: 'text',
+        trigger: 'none',
+    },
+    {
+        field: 'precio_proveedor',
+        id: 'precio_proveedor',
+        label: 'Costo del viaje',
+        required: true,
+        type: 'money',
+        trigger: 'none',
+    },
+    {
+        field: 'burreo_proveedor',
+        id: 'burreo_proveedor',
+        label: 'Burreo',
+        required: true,
+        type: 'money',
+        trigger: 'none',
+    },
+    {
+        field: 'maniobra_proveedor',
+        id: 'maniobra_proveedor',
+        label: 'Maniobra',
+        required: true,
+        type: 'money',
+        trigger: 'none',
+    },
+    {
+        field: 'estadia_proveedor',
+        id: 'estadia_proveedor',
+        label: 'Estadía',
+        required: true,
+        type: 'money',
+        trigger: 'none',
+    },
+    { field: 'otro_proveedor', id: 'otro_proveedor', label: 'Otros', required: true, type: 'money', trigger: 'none' },
+    { field: 'iva_proveedor', id: 'iva_proveedor', label: 'IVA', required: true, type: 'money', trigger: 'none' },
+    {
+        field: 'retencion_proveedor',
+        id: 'retencion_proveedor',
+        label: 'Retención',
+        required: true,
+        type: 'money',
+        trigger: 'none',
+    },
+    { field: 'base_factura', id: 'base_factura', label: 'Base 1', required: true, type: 'money', trigger: 'none' },
+    { field: 'base_taref', id: 'base_taref', label: 'Base 2', required: true, type: 'money', trigger: 'none' },
+    {
+        field: 'sobrepeso_proveedor',
+        id: 'sobrepeso_proveedor',
+        label: 'Sobrepeso',
+        required: true,
+        type: 'money',
+        trigger: 'none',
+    },
+    {
+        field: 'cantidad_sobrepeso_proveedor',
+        id: 'cantidad_sobrepeso_proveedor',
+        label: 'Precio sobrepreso',
+        required: true,
+        type: 'money',
+        trigger: 'none',
+    },
+    { field: 'total_proveedor', id: 'total_proveedor', label: 'Total', required: true, type: 'money', trigger: 'none' },
+    { field: 'cmbProveedor', id: 'cmbProveedor', label: 'Proveedor', required: true, type: 'select', trigger: 'none' },
+];
 
 const tasa_iva = 0.16;
 const tasa_retencion = 0.04;
@@ -222,123 +363,229 @@ function calculateTotal() {
     var maniobra = parseFloat(reverseMoneyFormat($('#maniobra_proveedor').val())) || 0;
     var estadia = parseFloat(reverseMoneyFormat($('#estadia_proveedor').val())) || 0;
     var otro = parseFloat(reverseMoneyFormat($('#otro_proveedor').val())) || 0;
-    
+
     var sobrepeso = parseFloat(reverseMoneyFormat($('#sobrepeso_proveedor').val())) || 0;
     var cantidadsob = parseFloat(reverseMoneyFormat($('#cantidad_sobrepeso_proveedor').val())) || 0;
 
     var sobre = cantidadsob * sobrepeso;
-    var subTotal = (precio + burreo + maniobra + estadia + otro );
+    var subTotal = precio + burreo + maniobra + estadia + otro;
 
     const baseFactura = parseFloat(reverseMoneyFormat(document.getElementById('base_factura').value)) || 0;
-    var iva = (baseFactura * tasa_iva);
-    var retencion = (baseFactura * tasa_retencion);
+    var iva = baseFactura * tasa_iva;
+    var retencion = baseFactura * tasa_retencion;
 
-    document.getElementById('iva_proveedor').value = (moneyFormat(iva.toFixed(2)));
-    document.getElementById('retencion_proveedor').value = (moneyFormat(retencion.toFixed(2)));
-    var total = (precio + burreo + maniobra + estadia + otro + iva + sobre) - retencion;
+    document.getElementById('iva_proveedor').value = moneyFormat(iva.toFixed(2));
+    document.getElementById('retencion_proveedor').value = moneyFormat(retencion.toFixed(2));
+    var total = precio + burreo + maniobra + estadia + otro + iva + sobre - retencion;
 
-    const baseTaref = (total - baseFactura - iva) + retencion;
-    
+    const baseTaref = total - baseFactura - iva + retencion;
+
     document.getElementById('base_taref').value = moneyFormat(baseTaref.toFixed(2));
-    
-    
-    $('#total_proveedor').val(moneyFormat(total.toFixed(2)));
 
+    $('#total_proveedor').val(moneyFormat(total.toFixed(2)));
 }
-    
+
 // Eventos para calcular el total
-$('.fieldsCalculo').on('input', function() {
+$('.fieldsCalculo').on('input', function () {
     calculateTotal();
-    
 });
 
-function setTipoViaje(valTipoViaje){
+function setTipoViaje(valTipoViaje) {
     let nextOne = document.querySelector('#nextTwo');
-    nextOne.disabled = false;
+
+    if (nextOne) {
+        nextOne.disabled = false;
+    }
     tipoViaje = valTipoViaje;
-    if(valTipoViaje == "proveedor")
-     $("#viaje-proveedor").removeClass('d-none') , $("#viaje-propio").addClass('d-none')
+    if (valTipoViaje == 'proveedor')
+        ($('#viaje-proveedor').removeClass('d-none'),
+            $('#proveedorSubcontratado').removeClass('d-none'),
+            $('#BloqueDireccionEn').removeClass('d-none'),
+            $('#viaje-propio').addClass('d-none'));
     else
-     $("#viaje-propio").removeClass('d-none') , $("#viaje-proveedor").addClass('d-none')
+        ($('#viaje-propio').removeClass('d-none'),
+            $('#proveedorSubcontratado').addClass('d-none'),
+            $('#BloqueDireccionEn').addClass('d-none'),
+            $('#viaje-proveedor').addClass('d-none'));
 }
 
-function programarViaje(){
-
-    let fieldsViaje = (tipoViaje == "propio") ? formFieldsPlaneacion :  formFieldsProveedor
+async function programarViaje() {
+    let fieldsViaje = tipoViaje == 'propio' ? formFieldsPlaneacion : formFieldsProveedor;
 
     let passValidation = fieldsViaje.every((item) => {
         let field = document.getElementById(item.field);
-        if(field){
-            if(item.required === true && field.value.length == 0){
-                Swal.fire("El campo "+item.label+" es obligatorio","Parece que no ha proporcionado información en el campo "+item.label,"warning");
+        if (field) {
+            if (item.required === true && field.value.length == 0) {
+                Swal.fire(
+                    'El campo ' + item.label + ' es obligatorio',
+                    'Parece que no ha proporcionado información en el campo ' + item.label,
+                    'warning',
+                );
                 return false;
+            }
+            if (item.field === 'txtSueldoOperador') {
+                let value = field.value.replace(/[$,]/g, '').trim();
+                let sueldo = parseFloat(value);
+
+                if (isNaN(sueldo) || sueldo <= 0) {
+                    Swal.fire('Sueldo inválido', 'El sueldo del operador debe ser mayor a 0.', 'error');
+                    return false;
+                }
+
+                if (sueldo > 999999.99) {
+                    Swal.fire('Sueldo demasiado alto', 'El monto excede el límite permitido.', 'error');
+                    return false;
+                }
             }
         }
         return true;
-    })
+    });
 
-   if(!passValidation) return passValidation;
+    if (!passValidation) return passValidation;
 
-   const formData = {};
+    let dineroViajeInput = document.getElementById('txtDineroViaje');
 
-   fieldsViaje.forEach((item) =>{
-    var input = item.field;
-    var inputValue = document.getElementById(input);
-    if(inputValue){
-        if(item.type == "money"){
-            formData[input] = (inputValue.value.length > 0) ? parseFloat(reverseMoneyFormat(inputValue.value)) : 0;
-        }else{
-            formData[input] = inputValue.value;
+    if (dineroViajeInput) {
+        let dineroViaje = parseFloat(dineroViajeInput.value.replace(/[$,]/g, '').trim()) || 0;
+
+        if (dineroViaje === 0) {
+            let confirmacion = await Swal.fire({
+                title: '¿Continuar sin dinero de viaje?',
+                text: 'Está asignando $0.00 para dinero de viaje.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, continuar',
+                cancelButtonText: 'Cancelar',
+            });
+
+            if (!confirmacion.isConfirmed) {
+                return;
+            }
+        }
+        if (dineroViaje > 999999.99) {
+            Swal.fire('Dinero viaje demasiado alto', 'El monto excede el límite permitido.', 'error');
+            return false;
         }
     }
-   });
 
-   formData["_token"] = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-   formData["num_contenedor"] =  localStorage.getItem('numContenedor') 
-   formData["tipoViaje"] = tipoViaje
-   let url = '/planeaciones/viaje/programar'
+    const formData = {};
+
+    fieldsViaje.forEach((item) => {
+        var input = item.field;
+        var inputValue = document.getElementById(input);
+        if (inputValue) {
+            if (item.type == 'money') {
+                formData[input] = inputValue.value.length > 0 ? parseFloat(reverseMoneyFormat(inputValue.value)) : 0;
+            } else {
+                formData[input] = inputValue.value;
+            }
+        }
+    });
+
+    if (tipoViaje == 'propio') {
+        // validar q los inputs de otros gastos esten correctos
+
+        let filas = document.querySelectorAll('.gasto-item');
+        let gastosValidos = [];
+        let hayErrorGastos = false;
+
+        for (const fila of filas) {
+            const motivo = fila.querySelector('[name="gasto_nombre[]"]').value.trim();
+            const monto = parseFloat(fila.querySelector('[name="gasto_monto[]"]').value) || 0;
+            const pagoInmediato = fila.querySelector('[name="gasto_pago_inmediato[]"]').checked;
+            const banco = fila.querySelector('[name="gasto_banco_id[]"]').value || null;
+            const fechaAplicacion = fila.querySelector('[name="fechaAplicacion[]"]').value || null;
+
+            if (motivo !== '' && monto <= 0) {
+                Swal.fire('Monto inválido', "El monto del gasto '" + motivo + "' debe ser mayor a cero.", 'warning');
+                hayErrorGastos = true;
+                break;
+            }
+
+            if (pagoInmediato && !banco) {
+                Swal.fire(
+                    'Banco inválido',
+                    "Debe seleccionar un banco para el gasto '" + motivo + "' que se pagará de inmediato.",
+                    'warning',
+                );
+                hayErrorGastos = true;
+                break;
+            }
+            if (pagoInmediato && !fechaAplicacion) {
+                Swal.fire(
+                    'Fecha inválido',
+                    "Debe seleccionar fecha aplicacion para el gasto '" + motivo + "' que se pagará de inmediato.",
+                    'warning',
+                );
+                hayErrorGastos = true;
+                break;
+            }
+
+            if (motivo !== '' || monto > 0) {
+                gastosValidos.push({
+                    motivo,
+                    monto,
+                    pagoInmediato,
+                    banco: pagoInmediato ? banco : null,
+                    fechaAplicacion: pagoInmediato ? fechaAplicacion : null,
+                });
+            }
+        }
+
+        if (gastosValidos.length > 0) {
+            // solo si hay gastos validos
+            formData['filasOtrosGastos'] = JSON.stringify(gastosValidos);
+            //  formData.append("otrosgastoscontenedor", JSON.stringify(gastosValidos));
+        }
+
+        if (hayErrorGastos) return;
+    }
+
+    formData['_token'] = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    formData['num_contenedor'] = localStorage.getItem('numContenedor');
+    formData['tipoViaje'] = tipoViaje;
+    let url = '/planeaciones/viaje/programar';
 
     $.ajax({
         url: url,
-        type: "post",
+        type: 'post',
         data: formData,
-        beforeSend:function(){
-            mostrarLoading('Planeando viaje... espere un momento')
-            btnProgramar.disabled = true 
+        beforeSend: function () {
+            mostrarLoading('Planeando viaje... espere un momento');
+            btnProgramar.disabled = true;
         },
-        success:function(data){
+        success: function (data) {
             ocultarLoading();
-                Swal.fire(data.Titulo,data.Mensaje,data.TMensaje).then(function() {
-                    if(data.TMensaje == "success"){
-                        
-                        window.location.replace("/planeaciones");
-                    
-                    }
-                });
+            Swal.fire(data.Titulo, data.Mensaje, data.TMensaje).then(function () {
+                if (data.TMensaje == 'success') {
+                    window.location.replace('/planeaciones');
+                }
+            });
+            btnProgramar.disabled = false;
         },
-        error:function(){     
-            ocultarLoading();  
-            btnProgramar.disabled = false 
-        Swal.fire("Error","Ha ocurrido un error, intentelo nuevamente","error");
-        }
+        error: function () {
+            ocultarLoading();
+            btnProgramar.disabled = false;
+            Swal.fire('Error', 'Ha ocurrido un error, intentelo nuevamente', 'error');
+        },
     });
 }
 
-$(".moneyformat").on("focus",(e)=>{
+$('.moneyformat').on('focus', (e) => {
     var val = e.target.value;
     e.target.value = reverseMoneyFormat(val);
-})
+});
 
-$(".moneyformat").on("blur",(e) =>{
+$('.moneyformat').on('blur', (e) => {
     var val = e.target.value;
-    e.target.value =  moneyFormat(val);
-})
+    e.target.value = moneyFormat(val);
+});
 
-cmbTipoUnidad.addEventListener('change',(e)=>{
-    let isActive = (e.target.value  == "Sencillo") ? true : false
-    
-    cmbChasis2.disabled = isActive
-    cmbDoly.disabled = isActive
-})
+cmbTipoUnidad.addEventListener('change', (e) => {
+    let isActive = e.target.value == 'Sencillo' ? true : false;
 
-btnProgramar.addEventListener('click',programarViaje)
+    cmbChasis2.disabled = isActive;
+    cmbDoly.disabled = isActive;
+});
+
+btnProgramar.addEventListener('click', programarViaje);

@@ -1,12 +1,12 @@
 ---
 title: File earmark music
 categories:
-  - Files and folders
+    - Files and folders
 tags:
-  - doc
-  - document
-  - music
-  - audio
-  - playlist
-  - songs
+    - doc
+    - document
+    - music
+    - audio
+    - playlist
+    - songs
 ---

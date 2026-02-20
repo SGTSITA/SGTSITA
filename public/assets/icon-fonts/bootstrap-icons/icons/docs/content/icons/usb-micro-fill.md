@@ -1,8 +1,8 @@
 ---
 title: USB micro fill
 categories:
-  - Devices
+    - Devices
 tags:
-  - port
-  - plug
+    - port
+    - plug
 ---

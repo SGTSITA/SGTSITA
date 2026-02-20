@@ -1,11 +1,11 @@
 ---
 title: Wallet fill
 categories:
-  - Commerce
+    - Commerce
 tags:
-  - cards
-  - money
-  - funds
-  - cash
-  - payment
+    - cards
+    - money
+    - funds
+    - cash
+    - payment
 ---
