@@ -32,7 +32,7 @@ class CatBanco extends Model
 
     public function cuentas()
     {
-        return $this->hasMany(bancos::class, 'cat_banco_id');
+        return $this->hasMany(Bancos::class, 'cat_banco_id');
     }
 
     /* =========================
