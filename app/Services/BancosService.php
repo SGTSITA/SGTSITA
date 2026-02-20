@@ -102,6 +102,10 @@ class BancosService
         $saldo = (float) $cuenta->inicial_saldo;
 
 
+        $fecha_ini = $this->parseFecha($fecha_ini);
+        $fecha_fin = $this->parseFecha($fecha_fin);
+
+
         if ($fecha_ini) {
             $previos = $cuenta->movimientos()
                 ->where('fecha_movimiento', '<', $fecha_ini)
@@ -136,6 +140,26 @@ class BancosService
         ];
 
 
+    }
+    private function parseFecha($fecha)
+    {
+        if (!$fecha) {
+            return null;
+        }
+
+        try {
+
+
+            if (str_contains($fecha, '/')) {
+                return Carbon::createFromFormat('d/m/Y', $fecha)->format('Y-m-d');
+            }
+
+
+            return Carbon::createFromFormat('Y-m-d', $fecha)->format('Y-m-d');
+
+        } catch (\Exception $e) {
+            return null;
+        }
     }
     private function aplicarMovimiento(float $saldo, $mov): float
     {
