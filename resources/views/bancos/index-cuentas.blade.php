@@ -353,7 +353,7 @@
             const cuentaId = document.getElementById('cuenta_id').value;
 
             const url = isEdit ?
-                `/cat-bancos/cuentas/update/${cuentaId}` :
+                `/bancos/cat-bancos/cuentas/update/${cuentaId}` :
                 "{{ route('bancoscuentas.create') }}";
 
             const formData = new FormData(formCuenta);

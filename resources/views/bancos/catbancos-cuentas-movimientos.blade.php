@@ -342,7 +342,8 @@
             let fechaInicio = inicio;
             let fechaFin = fin;
 
-            fetch(`/cat-bancos/cuentas/movimientosperiodo/${cuentaId}?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`)
+            fetch(
+                    `/bancos/cat-bancos/cuentas/movimientosperiodo/${cuentaId}?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`)
                 .then(response => response.json())
                 .then(data => {
                     console.log(data);
