@@ -440,7 +440,8 @@ class LiquidacionesController extends Controller
                                       "TMensaje" => "error",
                                    "Titulo" => "Saldo bancos",
                                       "Mensaje" => $validarSaldos["message"],
-                                      'success' => false
+                                      'success' => false,
+                                      'RESP' => $validarSaldos
                                      ]);
 
                 }
