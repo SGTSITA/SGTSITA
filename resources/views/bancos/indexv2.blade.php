@@ -295,7 +295,7 @@
             const bancoId = document.getElementById('banco_id').value;
 
             const url = isEdit ?
-                `/cat-bancos/edit/${bancoId}` :
+                `/bancos/cat-bancos/edit/${bancoId}` :
                 "{{ route('cat-bancos.store') }}";
 
             try {
