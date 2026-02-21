@@ -500,7 +500,7 @@
                             }
 
                             if ($proveedor && !$proveedor->CuentasBancarias->isEmpty()) {
-                                $cuentaCLABE = $proveedor->CuentasBancarias->first();
+                                $cuentaCLABE = $proveedor->CuentasBancarias->firstWhere('cuenta_1', true);
 
                                 $beneficiarioCuenta1 = $cuentaCLABE->nombre_beneficiario ?? 'No disponible';
                             }
