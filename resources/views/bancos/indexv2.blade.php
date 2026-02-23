@@ -7,6 +7,7 @@
 
         {{-- HEADER --}}
         <div class="row mb-4">
+
             <div class="col-12">
                 <div class="card shadow-sm border-0">
                     <div class="card-body py-3">
@@ -34,6 +35,9 @@
                                 <!-- Divider visual -->
                                 <div class="vr d-none d-md-block"></div>
 
+                                <a href="{{ route('index.bancos') }}" class="btn btn-outline-secondary btn-sm">
+                                    Ver historial de bancos (v1)
+                                </a>
                                 <!-- CTA secundario -->
                                 {{-- @can('cuentas-create') --}}
                                 <button class="btn btn-success btn-sm d-flex align-items-center gap-1"

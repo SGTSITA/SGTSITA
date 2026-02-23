@@ -10,6 +10,9 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Services\BancosService;
+use Carbon\Carbon;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\CuentaBancosExport;
 
 class CatBancoController extends Controller
 {
@@ -379,8 +382,22 @@ class CatBancoController extends Controller
 
         try {
             //$referencia =
+            $empresaId = auth()->user()->id_empresa;
+            $validarSaldo = $this->bankService->validarsaldoparacargo($empresaId, $request->cuenta_origen, $request->fecha_aplicacion, $request->monto);
+            if ($validarSaldo["saldodisponible"] == false) {
 
-            // Cargo cuenta origen
+                return response()->json([
+                                  "TMensaje" => "error",
+                               "Titulo" => "Saldo Insuficiente",
+                                  "Mensaje" => $validarSaldo["message"],
+                                  'success' => false
+
+                                 ]);
+
+            }
+
+
+
             CatBancoCuentasMovimientos::create([
                 'cuenta_bancaria_id'   => $request->cuenta_origen,
                 'tipo'        => 'cargo',
@@ -393,7 +410,7 @@ class CatBancoController extends Controller
 
             ]);
 
-            // Depósito cuenta destino
+
             CatBancoCuentasMovimientos::create([
                 'cuenta_bancaria_id'   => $request->cuenta_destino,
                 'tipo'        => 'abono',
@@ -428,44 +445,41 @@ class CatBancoController extends Controller
 
 
 
-    public function exportarpdf(Request $request)
+    public function exportar(Request $request)
     {
-        $movimientos = json_decode($request->movimientos);
 
-        $html = '
-    <h3 style="text-align:center;">Reporte de Movimientos</h3>
-    <table width="100%" border="1" cellspacing="0" cellpadding="5">
-        <thead>
-            <tr style="background:#f2f2f2;">
-                <th>Fecha</th>
-                <th>Concepto</th>
-                <th>Referencia</th>
-                <th>Cargo</th>
-                <th>Abono</th>
-                <th>Saldo</th>
-                <th>Origen</th>
-            </tr>
-        </thead>
-        <tbody>';
+        $request->validate([
+        'cuenta_id' => 'required|integer',
+        'formato' => 'required|in:pdf,excel',
+        'fecha_inicio' => 'nullable|date',
+        'fecha_fin' => 'nullable|date',
+    ]);
 
-        foreach ($movimientos as $mov) {
-            $html .= '
-            <tr>
-                <td>'.$mov->fecha_movimiento.'</td>
-                <td>'.$mov->concepto.'</td>
-                <td>'.$mov->referencia.'</td>
-                <td>'.($mov->tipo === "cargo" ? number_format($mov->monto, 2) : "0.00").'</td>
-                <td>'.($mov->tipo === "abono" ? number_format($mov->monto, 2) : "0.00").'</td>
-                <td>'.number_format($mov->saldo_resultante, 2).'</td>
-                <td>'.$mov->origen.'</td>
-            </tr>';
+        $empresaId = auth()->user()->id_empresa;
+
+        $data = $this->bankService->obtenerDetalleCuenta($request->cuenta_id, $empresaId, $request->fecha_inicio, $request->fecha_fin);
+
+        if ($request->formato === 'excel') {
+            $movimientos = $data['movimientos'];
+
+            return Excel::download(
+                new CuentaBancosExport($movimientos, $data['cuenta'], $data['saldoAnterior'], $data['total_depositos'], $data['total_cargos'], $data['saldoActual']),
+                'movimientos.xlsx'
+            );
         }
 
-        $html .= '</tbody></table>';
+        $data['fecha_inicio'] = Carbon::parse($request->fecha_inicio)->toDateString();
+        $data['fecha_fin']    = Carbon::parse($request->fecha_fin)->toDateString();
 
-        $pdf = Pdf::loadHTML($html)->setPaper('a4', 'landscape');
+        if ($request->formato === 'pdf') {
+            // dd('algo');
+            $pdf = PDF::loadView('bancos.pdf_catbancos_cuentas_movimientos', $data);
+            return $pdf->download('movimientos.pdf');
+        }
 
-        return $pdf->download('movimientos.pdf');
+        abort(400);
+
+
     }
 
 }

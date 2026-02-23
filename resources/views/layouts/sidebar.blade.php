@@ -205,7 +205,7 @@
 
 
             @can('bancos-list')
-                <li class="nav-item">
+                {{-- <li class="nav-item">
                     <a class="nav-link {{ Request::is('bancos*') ? 'active' : '' }}" href="{{ route('index.bancos') }}"
                         target="">
                         <div
@@ -214,7 +214,7 @@
                         </div>
                         <span class="nav-link-text ms-1"><b>VII</b> Bancos old</span>
                     </a>
-                </li>
+                </li> --}}
                 <li class="nav-item">
                     <a class="nav-link {{ Request::is('bancos*') ? 'active' : '' }}" href="{{ route('index.bancos2') }}"
                         target="">
@@ -222,7 +222,7 @@
                             class="icon icon-shape icon-sm text-center  me-2 d-flex align-items-center justify-content-center">
                             <img src="{{ asset('img/icon/banco.png') }}" alt="" width="20px">
                         </div>
-                        <span class="nav-link-text ms-1"><b>VII</b> Bancos 2.0</span>
+                        <span class="nav-link-text ms-1"><b>VII</b> Bancos</span>
                     </a>
                 </li>
             @endcan
@@ -417,15 +417,15 @@
                     </ul>
                 </div>
                 <!--li class="nav-item">
-                                                                                                                                    <a class="nav-link {{ Request::is('liquidaciones*') ? 'active' : '' }}"
-                                                                                                                                        href="{{ route('index.liquidacion') }}" target="">
-                                                                                                                                        <div
-                                                                                                                                            class="icon icon-shape icon-sm text-center  me-2 d-flex align-items-center justify-content-center">
-                                                                                                                                            <img src="{{ asset('img/icon/pago-en-efectivo.png') }}" alt="" width="20px">
-                                                                                                                                        </div>
+                                                                                                                                            <a class="nav-link {{ Request::is('liquidaciones*') ? 'active' : '' }}"
+                                                                                                                                                href="{{ route('index.liquidacion') }}" target="">
+                                                                                                                                                <div
+                                                                                                                                                    class="icon icon-shape icon-sm text-center  me-2 d-flex align-items-center justify-content-center">
+                                                                                                                                                    <img src="{{ asset('img/icon/pago-en-efectivo.png') }}" alt="" width="20px">
+                                                                                                                                                </div>
 
-                                                                                                                                    </a>
-                                                                                                                                </li-->
+                                                                                                                                            </a>
+                                                                                                                                        </li-->
             @endcan
             @can('Coordenadas SGT')
                 <a data-bs-toggle="collapse" href="#pagesExamplesCoordenadas"
@@ -552,12 +552,12 @@
 
                     <!-- @can('usuarios-empresas')
     <li class="nav-item ">
-                                                                                                        <a class="nav-link {{ Request::is('usuarios-empresas*') ? 'show' : '' }}"
-                                                                                                            href="{{ route('Usuarios-empresas.index') }}">
-                                                                                                            <span class="sidenav-mini-icon"> P </span>
-                                                                                                            <span class="sidenav-normal">Usuarios Empresas </span>
-                                                                                                        </a>
-                                                                                                    </li>
+                                                                                                                <a class="nav-link {{ Request::is('usuarios-empresas*') ? 'show' : '' }}"
+                                                                                                                    href="{{ route('Usuarios-empresas.index') }}">
+                                                                                                                    <span class="sidenav-mini-icon"> P </span>
+                                                                                                                    <span class="sidenav-normal">Usuarios Empresas </span>
+                                                                                                                </a>
+                                                                                                            </li>
 @endcan -->
 
 

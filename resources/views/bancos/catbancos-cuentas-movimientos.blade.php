@@ -17,7 +17,7 @@
 
                             {{-- IZQUIERDA --}}
                             <div>
-                                <h2 class="mb-1">Movimientos de la cuenta</h2>
+                                <h2 class="mb-1">Movimientos de la cuenta en banco {{ $cuenta->catBanco->nombre }}</h2>
                                 <small class="text-muted">
                                     {{ $cuenta->nombre_beneficiario }} · {{ $cuenta->moneda }}
                                 </small>
@@ -146,18 +146,24 @@
 
                         {{-- Exportar --}}
                         <div class="d-flex align-items-center gap-1">
-                            <button class="btn btn-sm btn-outline-success" onclick="exportarExcel()">
+
+                            <button type="button" class="btn btn-sm btn-outline-success" onclick="exportar('excel')">
                                 <i class="fa fa-file-excel"></i> Excel
                             </button>
 
-                            <button class="btn btn-sm btn-outline-danger" onclick="exportarPdf()">
+                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="exportar('pdf')">
                                 <i class="fa fa-file-pdf"></i> PDF
                             </button>
 
-                            <form id="formPdf" method="POST" action="{{ route('movimientos.export.pdf') }}">
+                            <form id="formExport" method="POST" action="{{ route('movimientoscuentas.export') }}"
+                                target="_blank">
                                 @csrf
-                                <input type="hidden" name="movimientos" id="movimientosInput">
+                                <input type="hidden" name="formato" id="formatoInput">
+                                <input type="hidden" name="cuenta_id" id="cuentaIdInput">
+                                <input type="hidden" name="fecha_inicio" id="fechaInicioInput">
+                                <input type="hidden" name="fecha_fin" id="fechaFinInput">
                             </form>
+
                         </div>
 
                     </div>
@@ -182,59 +188,7 @@
                                 </tr>
                             </thead>
                             <tbody id="tablaMovimientos">
-                                {{-- @forelse ($movimientos as $mov)
-                                    <tr id="row-{{ $mov->id }}">
-                                        <td>{{ $mov->fecha_movimiento->format('d/m/Y') }}</td>
-                                        <td>{{ $mov->concepto }}</td>
-                                        <td>{{ $mov->referencia }}</td>
 
-                                        <td class="{{ $mov->tipo === 'cargo' ? 'text-danger fw-bold' : '' }}">
-                                            @if ($mov->tipo === 'cargo')
-                                                - ${{ number_format($mov->monto, 2) }}
-                                            @else
-                                                0.00
-                                            @endif
-                                        </td>
-
-                                        <td class="{{ $mov->tipo === 'abono' ? 'text-success fw-bold' : '' }}">
-                                            @if ($mov->tipo === 'abono')
-                                                + ${{ number_format($mov->monto, 2) }}
-                                            @else
-                                                0.00
-                                            @endif
-                                        </td>
-
-
-                                        <td class="text-end fw-semibold">
-                                            ${{ number_format($mov->saldo_resultante, 2) }}
-                                        </td>
-
-                                        <td>{{ $mov->origen }}</td>
-
-                                        <td class="text-center">
-                                            <button class="btn btn-light btn-sm"
-                                                onclick="toggleDetalle({{ $mov->id }})">
-                                                <i class="fa fa-chevron-down" id="icon-{{ $mov->id }}"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-
-                                    {{-- Fila expandible --}
-                                <tr id="detalle-{{ $mov->id }}" class="detalle-row d-none">
-                                    <td colspan="8" class="bg-light">
-                                        <div id="detalle-content-{{ $mov->id }}" class="p-3">
-                                            <div class="text-muted">Cargando...</div>
-                                        </div>
-                                    </td>
-                                </tr>
-
-                                @empty
-                                    <tr>
-                                        <td colspan="8" class="text-center py-4 text-muted">
-                                            No hay movimientos registrados
-                                        </td>
-                                    </tr>
-                                    @endforelse --}}
                             </tbody>
                         </table>
                     </div>
@@ -273,10 +227,20 @@
     <script>
         const cuentaId = {{ $cuenta->id }};
 
-        function exportarPdf() {
-            let movimientos = @json($movimientos);
-            document.getElementById('movimientosInput').value = JSON.stringify(movimientos);
-            document.getElementById('formPdf').submit();
+        let fechaInicioGlobal;
+        let fechaFinGlobal;
+
+        function exportar(formato) {
+
+            document.getElementById('formatoInput').value = formato;
+
+            document.getElementById('cuentaIdInput').value =
+                cuentaId;
+
+            document.getElementById('fechaInicioInput').value = fechaInicioGlobal;
+            document.getElementById('fechaFinInput').value = fechaFinGlobal;
+
+            document.getElementById('formExport').submit();
         }
 
         function formatearmoneda(valor) {
@@ -294,7 +258,7 @@
             document.getElementById('saldoActual').innerText =
                 formatearmoneda(data.saldoActual);
 
-            // 🔹 Actualizar métricas
+
             document.getElementById('conteoDepositos').innerText = 'Depósitos (' + data.conteo_depositos + ')';
             document.getElementById('totalDepositos').innerText =
                 formatearmoneda(data.total_depositos);
@@ -303,11 +267,11 @@
             document.getElementById('totalCargos').innerText =
                 formatearmoneda(data.total_cargos);
 
-            // 🔹 Limpiar tabla
+
             let tbody = document.getElementById('tablaMovimientos');
             tbody.innerHTML = '';
 
-            // 🔹 Llenar tabla
+
             data.movimientos.forEach(mov => {
                 let claseCargo = mov.tipo === 'cargo' ?
                     'text-danger fw-bold' :
@@ -343,10 +307,11 @@
             let fechaFin = fin;
 
             fetch(
-                    `/bancos/cat-bancos/cuentas/movimientosperiodo/${cuentaId}?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`)
+                    `/bancos/cat-bancos/cuentas/movimientosperiodo/${cuentaId}?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`
+                )
                 .then(response => response.json())
                 .then(data => {
-                    console.log(data);
+                    //console.log(data);
                     actualizarVista(data);
                 });
         }
@@ -361,9 +326,9 @@
         }
 
         function formatearLabel(key) {
-            // reemplaza _ o camelCase por espacios y pone mayúscula inicial
+
             let label = key.replace(/_/g, ' ');
-            label = label.replace(/([a-z])([A-Z])/g, '$1 $2'); // camelCase → espacios
+            label = label.replace(/([a-z])([A-Z])/g, '$1 $2');
             return label.charAt(0).toUpperCase() + label.slice(1);
         }
 
@@ -532,7 +497,8 @@
                 .then(data => {
 
                     if (!data.success) {
-                        Swal.fire('Error', data.message, 'error');
+                        Swal.fire(data.Titulo ?? 'Error', data.Mensaje ??
+                            'Error al intentar registrar el movimiento', 'error');
                         return;
                     }
 
@@ -629,16 +595,16 @@
             },
             function(start, end) {
 
-                let fechaInicio = start.format('YYYY-MM-DD HH:mm:ss');
-                let fechaFin = end.format('YYYY-MM-DD HH:mm:ss');
+                fechaInicioGlobal = start.format('YYYY-MM-DD HH:mm:ss');
+                fechaFinGlobal = end.format('YYYY-MM-DD HH:mm:ss');
 
-                cargarMovimientos(fechaInicio, fechaFin);
+                cargarMovimientos(fechaInicioGlobal, fechaFinGlobal);
             },
         );
-        let fechaInicio = startDate.format('YYYY-MM-DD 00:00:00');
-        let fechaFin = endDate.format('YYYY-MM-DD 23:59:59');
+        fechaInicioGlobal = startDate.format('YYYY-MM-DD 00:00:00');
+        fechaFinGlobal = endDate.format('YYYY-MM-DD 23:59:59');
 
-        cargarMovimientos(fechaInicio, fechaFin);
+        cargarMovimientos(fechaInicioGlobal, fechaFinGlobal);
 
         function formatearFecha(fecha) {
 

@@ -165,13 +165,13 @@
                 <div class="card p-3 mb-4">
                     <div class="row">
                         <div class="col-2 my-auto">
-                            <a href="{{ route('index.bancos') }}">
+                            <a href="{{ route('index.bancos2') }}">
                                 <img src="{{ asset('img/icon/banco.png') }}" alt="" width="35px" />
                             </a>
                         </div>
 
                         <div class="col-8">
-                            <a href="{{ route('index.bancos') }}">
+                            <a href="{{ route('index.bancos2') }}">
                                 <p style="margin: 0">Consulta</p>
                                 <h5>VII Bancos</h5>
                             </a>
