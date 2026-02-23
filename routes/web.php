@@ -457,8 +457,8 @@ Route::group(['middleware' => ['auth']], function () {
 
 
 
-        Route::post('/movimientos/export/pdf', [App\Http\Controllers\CatBancoController::class, 'exportarpdf'])
-        ->name('movimientos.export.pdf');
+        Route::post('/cuentas/movimientos/export', [App\Http\Controllers\CatBancoController::class, 'exportar'])
+        ->name('movimientoscuentas.export');
 
 
         Route::get('/cat-bancos/cuentas/movimientosperiodo/{idcuenta}', [App\Http\Controllers\CatBancoController::class, 'getmovimientosperiodo']);

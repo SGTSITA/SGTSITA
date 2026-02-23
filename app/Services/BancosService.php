@@ -61,7 +61,7 @@ class BancosService
     public function obtenerDetalleCuenta($cuentaId, $empresaId, $fechaInicio = null, $fechaFin = null)
     {
 
-        $cuenta = Bancos::where('id', $cuentaId)
+        $cuenta = Bancos::with('catBanco')->where('id', $cuentaId)
             ->where('id_empresa', $empresaId)
             ->where('estado', 1)
             ->firstOrFail();

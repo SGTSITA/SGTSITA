@@ -71,7 +71,7 @@ class CuentasCobrarController extends Controller
 
         $bancos2 = Bancos::where('id_empresa', '=', auth()->user()->id_empresa)->get();
         $fecha = Carbon::now()->format('Y-m-d');
-        $bancos = $this->BancosService->getCuentasOption(auth()->user()->id_empresa, $fecha, $fecha, true);
+        $bancos = $this->BancosService->getCuentasOption(auth()->user()->id_empresa, $fecha, $fecha, false);
 
         return view('cuentas_cobrar.cobranza_cliente', compact('bancos', 'cliente', 'cotizacion'));
     }
@@ -320,8 +320,9 @@ class CuentasCobrarController extends Controller
         ->groupBy('cotizaciones.id_cliente') // Agrupa por el ID de cotización
         ->first();
 
-        $bancos = Bancos::where('id_empresa', '=', auth()->user()->id_empresa)->get();
-
+        $bancos2 = Bancos::where('id_empresa', '=', auth()->user()->id_empresa)->get();
+        $fecha = Carbon::now()->format('Y-m-d');
+        $bancos = $this->BancosService->getCuentasOption(auth()->user()->id_empresa, $fecha, $fecha, false);
         return view('cuentas_cobrar.show', compact('cotizacionesPorPagar', 'bancos', 'cliente', 'cotizacion'));
     }
 
