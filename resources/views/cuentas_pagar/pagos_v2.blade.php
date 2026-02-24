@@ -48,7 +48,7 @@
                     <div class="col-md-6 row">
                         <div class="col-lg-4 col-6 text-center">
                             <div class="border-dashed border-1 border-secondary border-radius-md py-3">
-                                <h6 class="text-primary mb-0">Saldo Original</h6>
+                                <h6 class="text-primary mb-0">Saldo Actual</h6>
                                 <h4 class="font-weight-bolder">
                                     <span class="small" id="currentBalance">$ 0.00</span>
                                 </h4>
@@ -68,13 +68,13 @@
                         </div>
                     </div>
                     <!--div class="col-md-6">
-                                                                                                                                        <div class="card card-body border card-plain border-radius-lg d-flex align-items-center flex-row">
-                                                                                                                                        <img class="w-10 me-3 mb-0" src="../assets/img/logos/visa.png" alt="logo">
-                                                                                                                                        <h6 class="mb-0">****&nbsp;&nbsp;&nbsp;****&nbsp;&nbsp;&nbsp;****&nbsp;&nbsp;&nbsp;5248</h6>
-                                                                                                                                        <i class="fas fa-pencil-alt ms-auto text-dark cursor-pointer" data-bs-toggle="tooltip" data-bs-placement="top" aria-hidden="true" aria-label="Edit Card" data-bs-original-title="Edit Card"></i><span class="sr-only">Edit Card</span>
-                                                                                                                                        </div>
+                                                                                                                                            <div class="card card-body border card-plain border-radius-lg d-flex align-items-center flex-row">
+                                                                                                                                            <img class="w-10 me-3 mb-0" src="../assets/img/logos/visa.png" alt="logo">
+                                                                                                                                            <h6 class="mb-0">****&nbsp;&nbsp;&nbsp;****&nbsp;&nbsp;&nbsp;****&nbsp;&nbsp;&nbsp;5248</h6>
+                                                                                                                                            <i class="fas fa-pencil-alt ms-auto text-dark cursor-pointer" data-bs-toggle="tooltip" data-bs-placement="top" aria-hidden="true" aria-label="Edit Card" data-bs-original-title="Edit Card"></i><span class="sr-only">Edit Card</span>
+                                                                                                                                            </div>
 
-                                                                                                                                     </div-->
+                                                                                                                                         </div-->
                 </div>
             </div>
         </div>

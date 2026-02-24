@@ -150,12 +150,43 @@ class Cotizaciones extends Model
         return $this->hasOneThrough(
             Estado_Cuenta::class,
             Estado_Cuenta_Cotizaciones::class,
-            'cotizacion_id',      // FK en tabla intermedia
-            'id',                 // PK en estado_cuentas
-            'id',                 // PK en cotizaciones
-            'estado_cuenta_id'    // FK hacia estado_cuentas
+            'cotizacion_id',
+            'id',
+            'id',
+            'estado_cuenta_id'
         );
     }
+
+    public function movimientos()
+    {
+        return $this->hasMany(CobroPagoCotizacion::class, 'cotizacion_id');
+    }
+    //cxc cliente
+    public function cobros()
+    {
+        return $this->movimientos()->whereHas('cobroPago', function ($q) {
+            $q->where('tipo', 'cxc');
+        });
+    }
+    //cxp proveedor
+    public function pagos()
+    {
+        return $this->movimientos()->whereHas('cobroPago', function ($q) {
+            $q->where('tipo', 'cxp');
+        });
+    }
+
+    public function getTotalCobradoAttribute()
+    {
+        return $this->cobros()->sum('monto');
+    }
+
+    public function getTotalPagadoAttribute()
+    {
+        return $this->pagos()->sum('monto');
+    }
+
+    //final con nuevo modelo
 
 
     protected static function boot()

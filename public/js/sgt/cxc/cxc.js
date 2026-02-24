@@ -118,6 +118,8 @@ var errorRenderer = function (instance, td, row, col, prop, value, cellPropertie
     td.style.fontWeight = 'bold';
 };
 
+var btnAplicarPago = document.querySelector('#btnAplicarPago');
+
 Handsontable.renderers.registerRenderer('negativeValueRenderer', negativeValueRenderer);
 Handsontable.renderers.registerRenderer('colorRenderer', colorRenderer);
 Handsontable.renderers.registerRenderer('errorRenderer', errorRenderer);
@@ -133,8 +135,10 @@ hotTable.updateSettings({
         var cellTotalPayment = hotTable.getDataAtCell(row, 6) + hotTable.getDataAtCell(row, 7);
         if (col >= 1 && cellTotalPayment > hotTable.getDataAtCell(row, 4)) {
             this.renderer = errorRenderer;
+            btnAplicarPago.disabled = true;
         } else {
             this.renderer = undefined;
+            btnAplicarPago.disabled = false;
         }
         return cellProperties;
     },
@@ -276,7 +280,6 @@ function sumPayment(colPayOne, colPayTwo) {
 }
 /*================================================================ */
 
-var btnAplicarPago = document.querySelector('#btnAplicarPago');
 $(btnAplicarPago).on('click', () => {
     applyPayment();
 });
