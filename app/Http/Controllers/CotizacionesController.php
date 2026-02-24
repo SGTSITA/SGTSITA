@@ -1462,17 +1462,26 @@ class CotizacionesController extends Controller
              }
 
 */
-            $cotizaciones->restante = $request->total;
+            $verificarCobroAnterior = $cotizaciones->restante;
+
+            $cobrado = $cotizaciones->cobros()->sum('monto');
+            $total =  $request->total;
+
+            $cotizaciones->restante = $total - $cobrado;
 
             $cotizaciones->latitud =  $request->latitud;
             $cotizaciones->longitud = $request->longitud;
             $cotizaciones->direccion_mapa = $request->direccion_mapa;
-
+            $cotizaciones->motivo_demora = $verificarCobroAnterior; //solo para ir viendo cambien en pruebas
 
 
             $asignacion = Asignaciones::where('id_contenedor', $id)->first();
             if (!is_null($asignacion)) {
-                $cotizaciones->prove_restante = $request->get('total_proveedor');
+                $pagado = $cotizaciones->pagos()->sum('monto');
+                $totalPagadopro =  $request->get('total_proveedor');
+
+                //  dd($totalPagadopro, $pagado);
+                $cotizaciones->prove_restante =  $totalPagadopro - $pagado;
 
                 $asignacion->precio = $request->get('precio_proveedor');
                 $asignacion->burreo = $request->get('burreo_proveedor');

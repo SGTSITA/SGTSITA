@@ -8,7 +8,8 @@ use App\Models\Client;
 use App\Models\Cotizaciones;
 use App\Models\Estado_Cuenta;
 use App\Models\Estado_Cuenta_Cotizaciones;
-use App\Models\Subclientes;
+use App\Models\CobroPago;
+use App\Models\CobroPagoCotizacion;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rules\Exists;
@@ -53,7 +54,7 @@ class CuentasCobrarController extends Controller
         ->where('cotizaciones.id_empresa', '=', auth()->user()->id_empresa)
         ->where('cotizaciones.estatus_pago', '=', '0')
         ->where('jerarquia', 'Principal')
-        ->where('cotizaciones.restante', '>', 0)
+       // ->where('cotizaciones.restante', '>', 0)
         ->where(function ($query) {
             $query->where('cotizaciones.estatus', '=', 'Aprobada')
                   ->orWhere('cotizaciones.estatus', '=', 'Finalizado');
@@ -65,6 +66,12 @@ class CuentasCobrarController extends Controller
             DB::raw('SUM(cotizaciones.restante) as total_restante') // Sumar la columna restante
         )
         ->groupBy('cotizaciones.id_cliente') // Agrupa por el ID de cotización
+        ->havingRaw('SUM(cotizaciones.total) - SUM((SELECT COALESCE(SUM(cpc.monto),0)
+                  FROM cobros_pagos_cotizaciones cpc
+                  JOIN cobros_pagos cp
+                    ON cp.id = cpc.cobro_pago_id
+                  WHERE cpc.cotizacion_id = cotizaciones.id
+                    AND cp.tipo = "cxc")) > 0')
         ->first();
 
         $cliente = Client::where('id', '=', $id)->first();
@@ -78,24 +85,39 @@ class CuentasCobrarController extends Controller
 
     public function viajes_por_liquidar(Request $request)
     {
-        $cotizacionesPorPagar = Cotizaciones::join('docum_cotizacion', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
+        $querybase = Cotizaciones::join('docum_cotizacion', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
+        ->leftjoin('subclientes', 'subclientes.id', '=', 'cotizaciones.id_subcliente')
         ->where('cotizaciones.id_empresa', '=', auth()->user()->id_empresa)
         ->where('cotizaciones.estatus_pago', '=', '0')
         ->where('jerarquia', 'Principal')
-        ->where('cotizaciones.restante', '>', 0)
+        //->where('cotizaciones.restante', '>', 0)
         ->where(function ($query) {
             $query->where('cotizaciones.estatus', '=', 'Aprobada')
-                  ->orWhere('cotizaciones.estatus', '=', 'Finalizado');
-        })
-        ->where('cotizaciones.id_cliente', '=', $request->client)
-        ->select('cotizaciones.*')
-        ->get();
+       ->orWhere('cotizaciones.estatus', '=', 'Finalizado');
+        }) ->where('cotizaciones.id_cliente', '=', $request->client)
+        ->select(
+            'cotizaciones.*',
+            'subclientes.nombre as nombre_subcliente',
+            'subclientes.telefono as telefono_subcliente',
+            'docum_cotizacion.num_contenedor',
+            DB::raw(
+                ' ( SELECT COALESCE(SUM(cpc.monto),0)
+        FROM cobros_pagos_cotizaciones cpc JOIN cobros_pagos cp
+        ON cp.id = cpc.cobro_pago_id
+        WHERE cpc.cotizacion_id = cotizaciones.id
+        AND cp.tipo = "cxc"
+        ) as total_pagado_cxc'
+            )
+        );
+        $cotizacionesPorPagar = DB::query() ->fromSub($querybase, 't') ->whereRaw('(t.total - t.total_pagado_cxc) > 0') ->get();
+
+
 
         $handsOnTableData = $cotizacionesPorPagar->map(function ($item) {
-            $subCliente = ($item->id_subcliente != null) ? $item->Subcliente->nombre." / ".$item->Subcliente->telefono : "";
+            $subCliente = ($item->id_subcliente != null) ? $item->nombre_subcliente." / ".$item->telefono_subcliente : "";
             $tipoViaje = ($item->tipo_viaje == null || $item->tipo_viaje == 'Seleccionar Opcion') ? "Subcontratado" : $item->tipo_viaje;
 
-            $numContenedor = $item->DocCotizacion->num_contenedor;
+            $numContenedor = $item->num_contenedor;
 
             if (!is_null($item->referencia_full)) {
                 $secundaria = Cotizaciones::where('referencia_full', $item->referencia_full)
@@ -107,14 +129,14 @@ class CuentasCobrarController extends Controller
                     $numContenedor .= ' / ' . $secundaria->DocCotizacion->num_contenedor;
                 }
             }
-
+            $restante = (float) $item->total - (float)$item->total_pagado_cxc;
             return [
                 $numContenedor,
                 $subCliente,
                 $tipoViaje,
                 ($item->estatus == 'Aprobada') ? "En Curso" : $item->estatus,
-                $item->restante,
-                $item->restante,
+                  $restante,
+                 $restante,
                 0,
                 0,
                 0,
@@ -147,6 +169,32 @@ class CuentasCobrarController extends Controller
             $contenedoresAbonos1 = [];
             $contenedoresAbonos2 = [];
             $ids = [];
+
+            //guardar cxc en tabla principal para despues guardar el detalle de contenendores
+
+            $cobroPago = CobroPago::create([
+        'tipo' => 'cxc',
+        'cliente_id' => $request->theClient,
+
+        'bancoA_id' => $request->bankOne,
+        'monto_A' => $request->amountPayOne ?? 0,
+        'fechaAplicacion1' => $request->FechaAplicacionbank1
+            ? \Carbon\Carbon::createFromFormat('d/m/Y', $request->FechaAplicacionbank1)->format('Y-m-d')
+            : null,
+
+        'bancoB_id' => $request->bankTwo,
+        'monto_B' => $request->amountPayTwo ?? 0,
+        'fechaAplicacion2' => $request->FechaAplicacionbank2
+            ? \Carbon\Carbon::createFromFormat('d/m/Y', $request->FechaAplicacionbank2)->format('Y-m-d')
+            : null,
+
+        'user_id' => auth()->id(),
+        'observaciones' => null,
+    ]);
+
+
+            //
+
             foreach ($cotizaciones as $c) {
                 if ($c[8] > 0) { //Si total cobrado es mayor a cero
                     $id = $c[9]; //Obtenemos el ID
@@ -184,6 +232,28 @@ class CuentasCobrarController extends Controller
                     array_push($contenedoresAbonos, $contenedorAbono);
                     array_push($contenedoresAbonos1, $contenedorAbono1);
                     array_push($contenedoresAbonos2, $contenedorAbono2);
+
+
+
+                    if ($c[6] > 0) { //validamos si el pago 1 trae cantidad
+                        CobroPagoCotizacion::create([
+                                        'cobro_pago_id' => $cobroPago->id,
+                                        'cotizacion_id' => $id ,
+                                        'origen' => 'A',
+                                        'monto' => $c[6],
+                                    ]);
+
+                    }
+
+                    if ($c[7] > 0) { //validamos si el pago 2 trae cantidad
+                        CobroPagoCotizacion::create([
+                                      'cobro_pago_id' => $cobroPago->id,
+                                      'cotizacion_id' =>  $id ,
+                                      'origen' => 'B',
+                                      'monto' => $c[7],
+                                  ]);
+
+                    }
                 }
 
             }
@@ -214,6 +284,9 @@ class CuentasCobrarController extends Controller
 
                 $cliente = client::find($request->theClient);
 
+
+
+
                 $data = [
                         'cuenta_bancaria_id' => $request->get('bankOne'),            'tipo' => 'abono',
                         'monto' => floatval($request->amountPayOne),
@@ -224,10 +297,10 @@ class CuentasCobrarController extends Controller
                             $FechaAplicacionbank1
                         )->format('Y-m-d'),
                         'origen' => null,
-                        'referencia' => 'CXC',
+                        'referencia' => 'CXC A',
                         'detalles' => json_encode($contenedoresAbonos1),
-                         'referenciaable_id' => 0,
-                          'referenciaable_type' => \App\Models\Cotizaciones::class, //para polimorfismo
+                         'referenciaable_id' =>   $cobroPago->id,
+                          'referenciaable_type' => \App\Models\CobroPago::class, //para polimorfismo
                     ];
 
 
@@ -258,10 +331,10 @@ class CuentasCobrarController extends Controller
                             $FechaAplicacionbank2
                         )->format('Y-m-d'),
                         'origen' => null,
-                        'referencia' => 'CXC 2',
+                        'referencia' => 'CXC B',
                         'detalles' => json_encode($contenedoresAbonos2),
-                         'referenciaable_id' => 0,
-                          'referenciaable_type' => \App\Models\Cotizaciones::class, //para polimorfismo
+                         'referenciaable_id' => $cobroPago->id,
+                          'referenciaable_type' => \App\Models\CobroPago::class, //para polimorfismo
                     ];
 
 

@@ -22,7 +22,17 @@ var config = {
     rowHeaders: true,
     minSpareRows: 0,
     autoWrapRow: true,
-    colHeaders: ['# CONTENEDOR', 'ESTATUS', 'SALDO ORIGINAL', 'SALDO ACTUAL', 'PAGO 1', 'PAGO 2', 'TOTAL PAGADO', 'ID'],
+    colHeaders: [
+        '# CONTENEDOR',
+        'ESTATUS',
+        'SALDO ORIGINAL',
+        'SALDO ACTUAL',
+        'PAGO 1',
+        'PAGO 2',
+        'TOTAL PAGADO',
+        'ID',
+        'T_PAGADO_BD',
+    ],
     fixedColumnsLeft: 1,
     columns: [
         { readOnly: true },
@@ -69,8 +79,12 @@ var config = {
         {
             readOnly: true,
         },
+
+        {
+            readOnly: true, // ← ESTA FALTABA (index 8)
+        },
     ],
-    hiddenColumns: { columns: [7], indicators: false },
+    hiddenColumns: { columns: [7, 8], indicators: false },
     filters: true,
     dropdownMenu: ['filter_by_value', 'filter_action_bar'],
     licenseKey: 'non-commercial-and-evaluation',
@@ -104,6 +118,7 @@ var errorRenderer = function (instance, td, row, col, prop, value, cellPropertie
     td.style.color = '#C21A1A'; // Cambia el color del texto a rojo
     td.style.fontWeight = 'bold';
 };
+var btnAplicarPago = document.querySelector('#btnAplicarPago');
 
 Handsontable.renderers.registerRenderer('negativeValueRenderer', negativeValueRenderer);
 Handsontable.renderers.registerRenderer('colorRenderer', colorRenderer);
@@ -120,8 +135,10 @@ hotTableCXP.updateSettings({
         var cellTotalPayment = hotTableCXP.getDataAtCell(row, 4) + hotTableCXP.getDataAtCell(row, 5);
         if (col >= 1 && cellTotalPayment > hotTableCXP.getDataAtCell(row, 2)) {
             this.renderer = errorRenderer;
+            btnAplicarPago.disabled = true;
         } else {
             this.renderer = undefined;
+            btnAplicarPago.disabled = false;
         }
         return cellProperties;
     },
@@ -263,7 +280,6 @@ function sumPayment(colPayOne, colPayTwo) {
 }
 /*================================================================ */
 
-var btnAplicarPago = document.querySelector('#btnAplicarPago');
 $(btnAplicarPago).on('click', () => {
     applyPayment();
 });

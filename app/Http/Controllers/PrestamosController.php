@@ -205,26 +205,46 @@ class PrestamosController extends Controller
         $request->validate([
             'monto' => 'required|numeric|min:0.01',
             'id_banco_abono' => 'required|exists:bancos,id',
-            'referencia' => 'nullable|string|max:150',
+            'referencia' => 'nullable|string|max:150'
+
         ]);
 
         DB::beginTransaction();
         try {
+
+
+
+
             $prestamo = Prestamo::findOrFail($id);
+            $saldoActual =  $prestamo->cantidad -  $prestamo->TotalPagado;
+
+
+            if ($request->monto >  $saldoActual) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No puedes abonar más de la deuda actual. Tu saldo pendiente es de $' . number_format($saldoActual, 2),
+                    'titulo' => 'Validacion saldo '
+                ], 422);
+            }
 
             // Registrar el abono en pagos_prestamos (NUEVO ESTÁNDAR)
-            PagoPrestamo::create([
-                'id_liquidacion' => 0, // porque es pago directo del operador
-                'id_prestamo'    => $prestamo->id,
-                'saldo_anterior' => $prestamo->saldo_actual,
-                'monto_pago'     => $request->monto,
+            $nuevoabono =   PagoPrestamo::create([
+                   'id_liquidacion' => 0, // porque es pago directo del operador
+                   'id_prestamo'    => $prestamo->id,
+                   'saldo_anterior' => $prestamo->saldo_actual, //no tiene sentido
+                   'monto_pago'     => $request->monto,
 
-                // Nuevos campos
-                'tipo_origen'    => 'directo',
-                'id_banco'       => $request->id_banco_abono,
-                'referencia'     => $request->referencia ?? '',
-                'fecha_pago'     => now(),
-            ]);
+                   // Nuevos campos
+                   'tipo_origen'    => 'directo',
+                   'id_banco'       => $request->id_banco_abono,
+                   'referencia'     => $request->referencia ?? '',
+                   'fecha_pago'     => \Carbon\Carbon::createFromFormat(
+                       'd/m/Y',
+                       $request->fechaAbono
+                   )->format('Y-m-d') ,
+               ]);
+
+
 
             // Actualizar saldo del préstamo
             $prestamo->pagos += $request->monto;
@@ -243,10 +263,48 @@ class PrestamosController extends Controller
                 "id_banco1"    => $request->id_banco_abono,
                 "contenedores" => '[]',
                 "tipo"         => 'Salida',
-                "fecha_pago"   => date('Y-m-d'),
+                "fecha_pago"   => \Carbon\Carbon::createFromFormat(
+                    'd/m/Y',
+                    $request->fechaAbono
+                )->format('Y-m-d'),
             ];
 
             BancoDinero::insert($bancoDinero);
+
+            //  dd($prestamo);
+
+            if ($request->filled('id_banco_abono') && $request->monto > 0) {
+                $operador = $prestamo->operador?->nombre;
+
+
+                $data = [
+                        'cuenta_bancaria_id' => $request->get('id_banco_abono'),
+                                'tipo' => 'abono',
+                        'monto' => floatval($request->monto),
+                        'concepto' => "Abono a préstamo de operador " . ($request->referencia ?? '').' '. $operador,
+                        'fecha_movimiento' => \Carbon\Carbon::createFromFormat(
+                            'd/m/Y',
+                            $request->fechaAbono
+                        )->format('Y-m-d'),
+                        'origen' => null,
+                        'referencia' => 'Abono prestamo',
+                        'detalles' => [],
+                         'referenciaable_id' =>   $nuevoabono->id,
+                          'referenciaable_type' => \App\Models\PagoPrestamo::class, //para polimorfismo
+                    ];
+
+
+
+
+                $movimeintoCrear = $this->BancosService->registrarMovimiento($data);
+                //   dd('no pasar', $movimeintoCrear);
+
+                if (!$movimeintoCrear) {
+                    throw new \Exception('No se pudo crear el movimiento bancario, dinero para viaje adicional ');
+                }
+
+
+            }
 
             DB::commit();
 
@@ -265,7 +323,8 @@ class PrestamosController extends Controller
             Log::error('Error al registrar abono: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Error al registrar el abono'
+                'message' => 'Error al registrar el abono',
+                'errorAdmin' => $e->getMessage()
             ], 500);
         }
     }

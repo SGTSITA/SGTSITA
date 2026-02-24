@@ -149,8 +149,16 @@ class GpsCompanyController extends Controller
                 );
                 break;
 
-            case 5: // Beyond GPS
-                $token = BeyondGPSTrait::validateOwner($credenciales);
+            case 5: // Beyond GPS tajiro
+
+                $response = BeyondGPSTrait::getLocation(
+                    $credenciales['user'] ?? null,
+                    $credenciales['password'] ?? null
+                );
+                $success = $response['success'] ?? false;
+                $message = $response['message'] ?? null;
+                $token =  [$success, $message ];
+
                 break;
 
             case 6: // Wialon GPS
@@ -178,7 +186,8 @@ class GpsCompanyController extends Controller
             return response()->json([
                 "Titulo"   => "Credenciales incorrectas",
                 "Mensaje"  => "No se pudo validar el acceso al proveedor GPS",
-                "TMensaje" => "warning"
+                "TMensaje" => "warning",
+                 "resp"    => $token
             ]);
         }
 

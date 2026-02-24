@@ -25,17 +25,17 @@
                         <div class="invalid-feedback">Debe seleccionar un banco para el abono.</div>
                     </div>
                     <div class="mb-3">
-                        <div class="col-md-2">
-                            <label for="FechaAplicacion">Fecha Aplicación</label>
-                            <div class="input-group">
-                                <span class="input-group-text">
-                                    <i class="fa fa-calendar text-danger"></i>
-                                </span>
-                                <input class="form-control dateInput" name="FechaAplicacion" id="FechaAplicacion"
-                                    placeholder="Fecha Aplicación" type="text" />
-                            </div>
-                            <div class="invalid-feedback">Seleccione fecha aplicacion.</div>
+
+                        <label for="FechaAplicacionAbono">Fecha Aplicación</label>
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="fa fa-calendar text-danger"></i>
+                            </span>
+                            <input class="form-control dateInput" name="FechaAplicacionAbono" id="FechaAplicacionAbono"
+                                placeholder="Fecha Aplicación" type="text" />
                         </div>
+                        <div class="invalid-feedback">Seleccione fecha aplicacion.</div>
+
                     </div>
 
 

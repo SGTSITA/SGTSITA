@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             pagos: parseFloat(p.total_pagado ?? 0).toFixed(2),
 
-            saldo_actual: parseFloat(p.saldo_actual ?? 0).toFixed(2),
+            saldo_actual: (parseFloat(p.cantidad ?? 0) - parseFloat(p.total_pagado ?? 0)).toFixed(2),
             fecha: p.created_at ? new Date(p.created_at).toLocaleDateString() : 'N/A',
         }));
     }
@@ -163,10 +163,17 @@ document.addEventListener('DOMContentLoaded', function () {
         const monto = parseFloat(document.getElementById('monto_abono').value);
         const idBancoAbono = document.getElementById('id_banco_abono').value;
         const referencia = document.getElementById('referencia').value;
+
+        const fechaAbono = document.getElementById('FechaAplicacionAbono').value;
         const _token = document.querySelector('meta[name="csrf-token"]').content;
 
         if (!idBancoAbono) {
-            errorServidor('Seleccione un banco para el abono.');
+            errorServidor('Seleccione un banco para el abono.', 'validacion');
+            return;
+        }
+
+        if (!fechaAbono) {
+            errorServidor('Seleccione fecha aplicacion.', 'validacion');
             return;
         }
 
@@ -176,9 +183,20 @@ document.addEventListener('DOMContentLoaded', function () {
                 'Content-Type': 'application/json',
                 'X-CSRF-TOKEN': _token,
             },
-            body: JSON.stringify({ monto, id_banco_abono: idBancoAbono, referencia }),
+            body: JSON.stringify({ monto, id_banco_abono: idBancoAbono, referencia, fechaAbono }),
         })
-            .then((r) => r.json())
+            .then(async (response) => {
+                // console.log('Status:', response.status);
+
+                const text = await response.text();
+                //  console.log('Respuesta cruda:', text);
+
+                try {
+                    return JSON.parse(text);
+                } catch (e) {
+                    throw new Error('No es JSON válido');
+                }
+            })
             .then((data) => {
                 if (data.success) {
                     Swal.fire({
@@ -190,16 +208,16 @@ document.addEventListener('DOMContentLoaded', function () {
                     bootstrap.Modal.getInstance(document.getElementById('modalAbono')).hide();
                     getlistprestamos();
                 } else {
-                    errorServidor('No se pudo registrar el abono. Intenta nuevamente');
+                    errorServidor(data.message ?? 'No se pudo registrar el abono. Intenta nuevamente', data.titulo);
                 }
             })
             .catch(() => errorServidor());
     });
 
-    function errorServidor(mssagex = 'No se pudo conectar con el servidor. Intenta nuevamente') {
+    function errorServidor(mssagex = 'No se pudo conectar con el servidor. Intenta nuevamente', titulo) {
         Swal.fire({
             icon: 'error',
-            title: 'Error de conexión',
+            title: titulo ?? 'Error de conexión',
             text: mssagex,
         });
     }
