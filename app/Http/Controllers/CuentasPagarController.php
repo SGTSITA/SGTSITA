@@ -37,7 +37,7 @@ class CuentasPagarController extends Controller
             $query->where('cotizaciones.estatus', '=', 'Aprobada')
                   ->orWhere('cotizaciones.estatus', '=', 'Finalizado');
         })
-      //  ->where('cotizaciones.prove_restante', '>', 0)
+        ->where('cotizaciones.prove_restante', '>', 0) // cada vez q se modifique y no tenga correcto el abono se va mostrar , revisar
         ->whereRaw('
         (
             asignaciones.total_proveedor -
@@ -82,7 +82,7 @@ class CuentasPagarController extends Controller
         })
         ->where('cotizaciones.id_empresa', '=', auth()->user()->id_empresa)
         ->where('asignaciones.id_proveedor', '=', $request->proveedor)
-       // ->where('cotizaciones.prove_restante', '>', 0) nuevo modelo ya no funciona asi
+       ->where('cotizaciones.prove_restante', '>', 0) //nuevo modelo ya no funciona asi
         ->select(
             'asignaciones.*',
             'docum_cotizacion.num_contenedor',
