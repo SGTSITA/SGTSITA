@@ -61,6 +61,8 @@ class BancosService
     public function obtenerDetalleCuenta($cuentaId, $empresaId, $fechaInicio = null, $fechaFin = null)
     {
 
+
+
         $cuenta = Bancos::with('catBanco')->where('id', $cuentaId)
             ->where('id_empresa', $empresaId)
             ->where('estado', 1)
@@ -105,7 +107,7 @@ class BancosService
         $fecha_ini = $this->parseFecha($fecha_ini);
         $fecha_fin = $this->parseFecha($fecha_fin);
 
-
+        // dd($fecha_ini, $fecha_fin);
         if ($fecha_ini) {
             $previos = $cuenta->movimientos()
                 ->where('fecha_movimiento', '<', $fecha_ini)
@@ -152,12 +154,12 @@ class BancosService
         try {
 
 
-            if (str_contains($fecha, '/')) {
-                return Carbon::createFromFormat('d/m/Y', $fecha)->format('Y-m-d');
+            if (preg_match('/^\d{2}\/\d{2}\/\d{4}$/', $fecha)) {
+                return \Carbon\Carbon::createFromFormat('d/m/Y', $fecha)->format('Y-m-d');
             }
 
 
-            return Carbon::createFromFormat('Y-m-d', $fecha)->format('Y-m-d');
+            return \Carbon\Carbon::parse($fecha)->format('Y-m-d');
 
         } catch (\Exception $e) {
             return null;
