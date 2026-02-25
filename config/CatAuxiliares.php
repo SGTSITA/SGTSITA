@@ -215,6 +215,15 @@ return [
             'primary_color' => '#0065B3',
             'secondary_color' => '#E61030',
         ],
+   [
+            'key' => 'OPM',
+            'label' => 'Operadora de Pagos Móviles de México - Transfer',
+            'logo' => '/assets/bancos/transferOPM.png',
+            'primary_color' => '#5499ce',
+            'secondary_color' => '#77c5e4',
+        ],
+
+
         [
             'key' => 'OTROS',
             'label' => 'Varios / Otros',

@@ -90,7 +90,7 @@ class CuentasCobrarController extends Controller
         ->where('cotizaciones.id_empresa', '=', auth()->user()->id_empresa)
         ->where('cotizaciones.estatus_pago', '=', '0')
         ->where('jerarquia', 'Principal')
-        //->where('cotizaciones.restante', '>', 0)
+        ->where('cotizaciones.restante', '>', 0)
         ->where(function ($query) {
             $query->where('cotizaciones.estatus', '=', 'Aprobada')
        ->orWhere('cotizaciones.estatus', '=', 'Finalizado');

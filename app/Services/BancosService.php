@@ -119,7 +119,9 @@ class BancosService
         $saldoAnterior = $saldo;
 
         $query = $cuenta->movimientos()
-            ->orderBy('fecha_movimiento');
+            ->orderBy('fecha_movimiento')
+            ->orderBy('created_at');
+
 
         if ($fecha_ini && $fecha_fin) {
             $query->whereBetween('fecha_movimiento', [$fecha_ini, $fecha_fin]);
