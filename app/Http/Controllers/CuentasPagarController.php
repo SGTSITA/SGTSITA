@@ -332,23 +332,19 @@ class CuentasPagarController extends Controller
                         'num_contenedor' => $c[0],
                         'abono' => $c[6]
                     ];
-                    $contenedorAbono1 = [
-                     'num_contenedor' => $c[0],
-                     'abono' => $c[4]
-                    ];
-                    $contenedorAbono2 = [
-                     'num_contenedor' => $c[0],
-                     'abono' => $c[5]
-                    ];
+
 
 
 
                     array_push($contenedoresAbonos, $contenedorAbono);
-                    array_push($contenedoresAbonos1, $contenedorAbono1);
-                    array_push($contenedoresAbonos2, $contenedorAbono2);
+
 
 
                     if ($c[4] > 0) { //validamos si el pago 1 trae cantidad
+                        $contenedorAbono1 = [
+                     'num_contenedor' => $c[0],
+                     'abono' => $c[4]
+                    ];
                         CobroPagoCotizacion::create([
                                         'cobro_pago_id' => $cobroPago->id,
                                         'cotizacion_id' => $id ,
@@ -356,15 +352,25 @@ class CuentasPagarController extends Controller
                                         'monto' => $c[4],
                                     ]);
 
+                        array_push($contenedoresAbonos1, $contenedorAbono1);
+
                     }
 
                     if ($c[5] > 0) { //validamos si el pago 2 trae cantidad
+                        $contenedorAbono2 = [
+                     'num_contenedor' => $c[0],
+                     'abono' => $c[5]
+                    ];
+
                         CobroPagoCotizacion::create([
                                       'cobro_pago_id' => $cobroPago->id,
                                       'cotizacion_id' =>  $id ,
                                       'origen' => 'B',
                                       'monto' => $c[5],
                                   ]);
+
+                        array_push($contenedoresAbonos2, $contenedorAbono2);
+
 
                     }
                 }
