@@ -371,7 +371,7 @@
 
             $('#filtroReporte').on('submit', function(e) {
                 e.preventDefault();
-                let parametrosSearch = $(this).serialize();
+                parametrosSearch = $(this).serialize();
                 buscarInformacion(parametrosSearch);
 
             });
@@ -577,7 +577,7 @@
 
                 if (tieneAsignado) {
 
-                    //VALIDAR ID PARA SELECCION Y MANDAR A EDITAR  SOLO POR ID
+
                     const idsUnicos = [...new Set(
                         rows.map(r => r[3]).filter(v => v)
                     )];

@@ -4,6 +4,49 @@
 
 @section('content')
 
+    <style>
+        .detalle-list {
+            list-style: none;
+            padding-left: 0;
+            margin: 0;
+        }
+
+        .detalle-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            font-size: 0.85rem;
+        }
+
+        .detalle-item .monto {
+            font-weight: 600;
+        }
+
+        .detalle-total-line {
+            display: flex;
+            justify-content: space-between;
+            border-top: 1px solid #e5e7eb;
+            padding-top: 6px;
+            margin-top: 6px;
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+
+        .monto-total {
+            color: #16a34a;
+        }
+
+        .tabla-scroll {
+            max-height: 500px;
+            /* Ajusta a lo que quieras */
+            overflow-y: auto;
+        }
+
+        .tabla-scroll table {
+            margin-bottom: 0;
+        }
+    </style>
+
     <div class="container-fluid">
 
         ```
@@ -172,9 +215,9 @@
 
 
                 <div class="card-body p-0">
-                    <div class="table-responsive">
+                    <div class="tabla-scroll">
                         <table class="table table-hover mb-0 align-middle">
-                            <thead class="table-light">
+                            <thead class="table-light sticky-top">
                                 <tr>
                                     <th>Fecha</th>
                                     <th>Concepto</th>
@@ -182,28 +225,24 @@
                                     <th>Cargo</th>
                                     <th>Abono</th>
                                     <th class="text-end">Saldo</th>
-
                                     <th>Origen</th>
                                     <th class="text-center">Acciones</th>
                                 </tr>
                             </thead>
-                            <tbody id="tablaMovimientos">
-
-                            </tbody>
+                            <tbody id="tablaMovimientos"></tbody>
                         </table>
                     </div>
-                </div>
 
-                {{-- @if (method_exists($movimientos, 'links'))
+                    {{-- @if (method_exists($movimientos, 'links'))
                         <div class="card-footer bg-white">
                             {{ $movimientos->links() }}
                         </div>
                     @endif --}}
 
+                </div>
             </div>
         </div>
-    </div>
-    ```
+        ```
 
     </div>
 
@@ -293,7 +332,7 @@
                         <td></td>
                     </tr>
                     <tr id="detalle-${mov.id}" class="d-none bg-light">
-    <td colspan="5">
+    <td colspan="3">
         ${construirDetalle(mov.detalles)}
     </td>
 </tr>
@@ -326,7 +365,6 @@
         }
 
         function formatearLabel(key) {
-
             let label = key.replace(/_/g, ' ');
             label = label.replace(/([a-z])([A-Z])/g, '$1 $2');
             return label.charAt(0).toUpperCase() + label.slice(1);
@@ -338,75 +376,121 @@
                 return '<div class="text-muted">Sin detalles</div>';
             }
 
-
             if (typeof detalles === 'string') {
                 try {
                     detalles = JSON.parse(detalles);
                 } catch (e) {
-                    console.error('Error parseando detalles:', e);
                     return '<div class="text-danger">Error en detalles</div>';
                 }
             }
-
 
             if (Array.isArray(detalles) && detalles.length === 0) {
                 return '<div class="text-muted">Sin detalles</div>';
             }
 
-
-            if (!Array.isArray(detalles) && Object.keys(detalles).length === 0) {
-                return '<div class="text-muted">Sin detalles</div>';
-            }
-
             let html = `
-        <div class="card border-0 shadow-sm">
-            <div class="card-body py-2">
-                <div class="row">
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-body p-0">
     `;
 
+            // 🔥 SI ES ARRAY → TABLA PRO
+            if (Array.isArray(detalles)) {
 
-            const pintarObjeto = (obj) => {
+                let totalMonto = 0;
 
-                Object.entries(obj).forEach(([key, value]) => {
+                html += `
+        <div class="p-3">
+            <div class="fw-semibold mb-2 text-secondary">
+                Contenedores y Abonos
+            </div>
+            <ul class="detalle-list mb-2">
+    `;
 
+                detalles.forEach(obj => {
+
+                    let contenedor = '';
+                    let monto = 0;
+
+                    Object.entries(obj).forEach(([key, value]) => {
+
+                        if (key.toLowerCase().includes('contenedor')) {
+                            contenedor = value;
+                        }
+
+                        if (!isNaN(value) && value !== '' && value !== null) {
+                            monto = Number(value);
+                            totalMonto += monto;
+                        }
+                    });
+
+                    html += `
+            <li class="detalle-item">
+                <span>${contenedor}</span>
+                <span class="monto">
+                    ${formatearmoneda(monto)}
+                </span>
+            </li>
+        `;
+                });
+
+                html += `
+            </ul>
+
+            <div class="detalle-total-line">
+                <span>Total</span>
+                <span class="monto-total">
+                    ${formatearmoneda(totalMonto)}
+                </span>
+            </div>
+        </div>
+    `;
+            }
+            // 🔹 OBJETO SIMPLE
+            else {
+                html += `
+    <div class="p-3">
+        <ul class="detalle-simple-list">
+`;
+
+                Object.entries(detalles).forEach(([key, value]) => {
+
+                    let alignMonto = '';
 
                     if (!isNaN(value) && value !== '' && value !== null) {
                         value = formatearmoneda(Number(value));
+                        alignMonto = 'monto';
                     }
-
 
                     if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}/.test(value)) {
                         value = formatearFecha(value);
                     }
 
                     html += `
-                <div class="col-md-4 mb-2">
-                    <small class="text-muted d-block">
-                        <strong>${formatearLabel(key)}:</strong>
-                    </small>
-                    <div>${value ?? '-'}</div>
-                </div>
-            `;
+        <li class="detalle-simple-item">
+            <span class="label">
+                ${formatearLabel(key)}
+            </span>
+            <span class="valor ${alignMonto}">
+                ${value ?? '-'}
+            </span>
+        </li>
+    `;
                 });
-            };
 
-
-            if (Array.isArray(detalles)) {
-                detalles.forEach(obj => {
-                    pintarObjeto(obj);
-                });
-            } else {
-                pintarObjeto(detalles);
+                html += `
+        </ul>
+    </div>
+`;
             }
 
             html += `
-                </div>
             </div>
         </div>
     `;
 
             return html;
         }
+
         document.getElementById('btnGuardarMovimiento').addEventListener('click', function() {
 
             const form = document.getElementById('formcrearmovimientom');

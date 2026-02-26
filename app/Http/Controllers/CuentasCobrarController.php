@@ -219,39 +219,44 @@ class CuentasCobrarController extends Controller
                         'abono' => $c[8]
                     ];
 
-                    $contenedorAbono1 = [
-                        'num_contenedor' => $c[0],
-                        'abono' => $c[6]
-                    ];
 
-                    $contenedorAbono2 = [
-                     'num_contenedor' => $c[0],
-                     'abono' => $c[7]
-                    ];
 
                     array_push($contenedoresAbonos, $contenedorAbono);
-                    array_push($contenedoresAbonos1, $contenedorAbono1);
-                    array_push($contenedoresAbonos2, $contenedorAbono2);
+
+
 
 
 
                     if ($c[6] > 0) { //validamos si el pago 1 trae cantidad
+                        $contenedorAbono1 = [
+                           'num_contenedor' => $c[0],
+                           'abono' => $c[6]
+                    ];
                         CobroPagoCotizacion::create([
                                         'cobro_pago_id' => $cobroPago->id,
                                         'cotizacion_id' => $id ,
                                         'origen' => 'A',
                                         'monto' => $c[6],
                                     ]);
+                        array_push($contenedoresAbonos1, $contenedorAbono1);
 
                     }
 
                     if ($c[7] > 0) { //validamos si el pago 2 trae cantidad
+
+                        $contenedorAbono2 = [
+                         'num_contenedor' => $c[0],
+                         'abono' => $c[7]
+                        ];
+
                         CobroPagoCotizacion::create([
                                       'cobro_pago_id' => $cobroPago->id,
                                       'cotizacion_id' =>  $id ,
                                       'origen' => 'B',
                                       'monto' => $c[7],
                                   ]);
+
+                        array_push($contenedoresAbonos2, $contenedorAbono2);
 
                     }
                 }
