@@ -490,50 +490,50 @@ class ReporteriaController extends Controller
     public function index_viajes()
     {
 
-        $clientes = Client::where('id_empresa', '=', auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
+        /*   $clientes = Client::where('id_empresa', '=', auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
 
-        $subclientes = Subclientes::where('id_empresa', '=', auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
-        $proveedores = Proveedor::where('id_empresa', '=', auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
-        $estatus = DB::table('cotizaciones')
-                    ->where('id_empresa', auth()->user()->id_empresa)
-                    ->select('estatus')
-                    ->distinct()
-                    ->pluck('estatus');
-        $asignaciones = Asignaciones::with([
-            'Contenedor.Cotizacion.Cliente',
-            'Contenedor.Cotizacion.Subcliente',
-            'Proveedor',
-            'Operador'
-        ])
-        ->where('id_empresa', auth()->user()->id_empresa)
-        ->get();
+          $subclientes = Subclientes::where('id_empresa', '=', auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
+          $proveedores = Proveedor::where('id_empresa', '=', auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
+          $estatus = DB::table('cotizaciones')
+                      ->where('id_empresa', auth()->user()->id_empresa)
+                      ->select('estatus')
+                      ->distinct()
+                      ->pluck('estatus');
+          $asignaciones = Asignaciones::with([
+              'Contenedor.Cotizacion.Cliente',
+              'Contenedor.Cotizacion.Subcliente',
+              'Proveedor',
+              'Operador'
+          ])
+          ->where('id_empresa', auth()->user()->id_empresa)
+          ->get();
 
-        $viajesData = $asignaciones->map(function ($a) {
-            $numContenedor = $a->Contenedor->num_contenedor;
-            if (!is_null($a->Contenedor->Cotizacion->referencia_full)) {
-                $secundaria = Cotizaciones::where('referencia_full', $a->Contenedor->Cotizacion->referencia_full)
-                ->where('jerarquia', 'Secundario')
-                ->with('DocCotizacion.Asignaciones')
-                ->first();
+          $viajesData = $asignaciones->map(function ($a) {
+              $numContenedor = $a->Contenedor->num_contenedor;
+              if (!is_null($a->Contenedor->Cotizacion->referencia_full)) {
+                  $secundaria = Cotizaciones::where('referencia_full', $a->Contenedor->Cotizacion->referencia_full)
+                  ->where('jerarquia', 'Secundario')
+                  ->with('DocCotizacion.Asignaciones')
+                  ->first();
 
-                if ($secundaria && $secundaria->DocCotizacion) {
-                    $numContenedor .= ' / ' . $secundaria->DocCotizacion->num_contenedor;
-                }
-            }
-            return [
-                'id' => $a->id,
-                'cliente' => $a->Contenedor->Cotizacion->Cliente->nombre ?? '-',
-                'subcliente' => $a->Contenedor->Cotizacion->Subcliente->nombre ?? '-',
-                'origen' => $a->Contenedor->Cotizacion->origen ?? '',
-                'destino' => $a->Contenedor->Cotizacion->destino ?? '',
-                'contenedor' => $numContenedor ?? '',
-                'fecha_salida' => \Carbon\Carbon::parse($a->fehca_inicio_guard)->format('d-m-Y'),
-                'fecha_llegada' => \Carbon\Carbon::parse($a->fehca_fin_guard)->format('d-m-Y'),
-                'estatus' => $a->Contenedor->Cotizacion->estatus ?? '',
-                'proveedor' => $a->Proveedor->nombre ?? '-',
-                'operador' => $a->Operador->nombre ?? '-',
-            ];
-        })->toArray();
+                  if ($secundaria && $secundaria->DocCotizacion) {
+                      $numContenedor .= ' / ' . $secundaria->DocCotizacion->num_contenedor;
+                  }
+              }
+              return [
+                  'id' => $a->id,
+                  'cliente' => $a->Contenedor->Cotizacion->Cliente->nombre ?? '-',
+                  'subcliente' => $a->Contenedor->Cotizacion->Subcliente->nombre ?? '-',
+                  'origen' => $a->Contenedor->Cotizacion->origen ?? '',
+                  'destino' => $a->Contenedor->Cotizacion->destino ?? '',
+                  'contenedor' => $numContenedor ?? '',
+                  'fecha_salida' => \Carbon\Carbon::parse($a->fecha_inicio)->format('d-m-Y'),
+                  'fecha_llegada' => \Carbon\Carbon::parse($a->fecha_fin)->format('d-m-Y'),
+                  'estatus' => $a->Contenedor->Cotizacion->estatus ?? '',
+                  'proveedor' => $a->Proveedor->nombre ?? '-',
+                  'operador' => $a->Operador->nombre ?? '-',
+              ];
+          })->toArray(); */
 
         return view('reporteria.asignaciones.index', compact('clientes', 'subclientes', 'proveedores', 'estatus', 'asignaciones', 'viajesData'));
     }
@@ -550,7 +550,7 @@ class ReporteriaController extends Controller
             'Operador'
         ])
         ->where('id_empresa', auth()->user()->id_empresa)
-        ->whereBetween('fehca_inicio_guard', [
+        ->whereBetween('fecha_inicio', [
             Carbon::parse($fechaInicio)->startOfDay(),
             Carbon::parse($fechaFin)->endOfDay()
         ])
@@ -792,8 +792,12 @@ class ReporteriaController extends Controller
         if ($request->fecha_de && $request->fecha_hasta) {
             $inicio = $request->fecha_de;
             $fin = $request->fecha_hasta;
-            $asignaciones = $asignaciones->where('asignaciones.fecha_inicio', '>=', $inicio)
-                                         ->where('asignaciones.fecha_inicio', '<=', $fin);
+            $asignaciones = $asignaciones->whereBetween('asignaciones.fecha_inicio', [
+        Carbon::parse($inicio)->startOfDay(),
+        Carbon::parse($fin)->endOfDay()
+    ]);
+            // ->where('asignaciones.fecha_inicio', '>=', $inicio)
+            //                                      ->where('asignaciones.fecha_inicio', '<=', $fin);
         }
 
         // Obtener los resultados
@@ -825,7 +829,7 @@ class ReporteriaController extends Controller
             $fechaInialGastos = Carbon::parse($fechaIniciaPeriodo)->startOfMonth();
 
             $fechaI = $fechaIniciaPeriodo.' 00:00:00';
-            $fechaF = $fechaFinPeriodo.' 00:00:00';
+            $fechaF = $fechaFinPeriodo.' 23:59:59'; //no tomaba el ultimo dia completo, se agrego hora para incluirlo
 
             //Obtener los gastos de las unidades (vehiculos)
             $gastosUnidadQuery = "SELECT
@@ -1435,7 +1439,7 @@ class ReporteriaController extends Controller
                 $query->where('cotizaciones.estatus', '=', 'Aprobada')
                     ->orWhere('cotizaciones.estatus', '=', 'Finalizado');
             })
-            ->where('asignaciones.id_proveedor', '=', $id_proveedor)
+            ->where('asignaciones.id_proveedor', '=', $id_proveedor) //checar despues de corregir cxp detallado
             ->where('cotizaciones.prove_restante', '=', 0)
             ->select('asignaciones.*', 'docum_cotizacion.num_contenedor', 'docum_cotizacion.id_cotizacion', 'cotizaciones.origen', 'cotizaciones.destino', 'cotizaciones.estatus', 'cotizaciones.prove_restante')
             ->get();

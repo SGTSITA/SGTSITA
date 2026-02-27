@@ -7,8 +7,8 @@
 @section('content')
     <style>
         #viajesGrid {
-            height: 600px;
-            width: 100%;
+            height: 620px;
+            width: 98%;
         }
     </style>
 
@@ -25,13 +25,8 @@
                     <!-- Rango de fechas -->
                     <div class="d-flex align-items-center gap-2 px-4 pt-3">
                         <label class="mb-0 fw-semibold text-sm">Periodo:</label>
-                        <input
-                            type="text"
-                            id="daterange"
-                            readonly
-                            class="form-control form-control-sm"
-                            style="width: auto; min-width: 200px; box-shadow: none"
-                        />
+                        <input type="text" id="daterange" readonly class="form-control form-control-sm"
+                            style="width: auto; min-width: 200px; box-shadow: none" />
                     </div>
 
                     <div class="card-body">
@@ -43,20 +38,12 @@
                                     Exportar Tablero
                                 </button>
 
-                                <button
-                                    type="button"
-                                    id="exportButtonExcel"
-                                    data-filetype="xlsx"
-                                    class="btn btn-outline-info btn-xs exportButton"
-                                >
+                                <button type="button" id="exportButtonExcel" data-filetype="xlsx"
+                                    class="btn btn-outline-info btn-xs exportButton">
                                     Exportar a Excel
                                 </button>
-                                <button
-                                    type="button"
-                                    id="exportButtonPDF"
-                                    data-filetype="pdf"
-                                    class="btn btn-outline-info btn-xs exportButton"
-                                >
+                                <button type="button" id="exportButtonPDF" data-filetype="pdf"
+                                    class="btn btn-outline-info btn-xs exportButton">
                                     Exportar a PDF
                                 </button>
 
@@ -85,5 +72,7 @@
     <script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
 
-    <script src="{{ asset('js/sgt/reporteria/viajes_list.js') }}?v={{ filemtime(public_path('js/sgt/reporteria/viajes_list.js')) }}"></script>
+    <script
+        src="{{ asset('js/sgt/reporteria/viajes_list.js') }}?v={{ filemtime(public_path('js/sgt/reporteria/viajes_list.js')) }}">
+    </script>
 @endsection
