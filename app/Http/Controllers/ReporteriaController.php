@@ -556,6 +556,8 @@ class ReporteriaController extends Controller
         ])
         ->get();
 
+        //dd(Carbon::parse($fechaFin)->endOfDay(), $asignaciones);
+
         $viajesData = $asignaciones->map(function ($a) {
             $numContenedor = $a->Contenedor->num_contenedor;
             if (!is_null($a->Contenedor->Cotizacion->referencia_full)) {
@@ -784,7 +786,7 @@ class ReporteriaController extends Controller
         // Construir la consulta inicial
         $asignaciones = Asignaciones::join('docum_cotizacion', 'asignaciones.id_contenedor', '=', 'docum_cotizacion.id')
             ->join('cotizaciones', 'docum_cotizacion.id_cotizacion', '=', 'cotizaciones.id')
-            ->where('cotizaciones.id_empresa', auth()->user()->id_empresa)
+            ->where('asignaciones.id_empresa', auth()->user()->id_empresa)
             ->where('cotizaciones.estatus', 'Aprobada')
             ->select('asignaciones.*', 'cotizaciones.total');
 
