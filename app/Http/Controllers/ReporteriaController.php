@@ -556,7 +556,7 @@ class ReporteriaController extends Controller
         ])
         ->get();
 
-        //dd(Carbon::parse($fechaFin)->endOfDay(), $asignaciones);
+        dd(Carbon::parse($fechaFin)->endOfDay(), $asignaciones);
 
         $viajesData = $asignaciones->map(function ($a) {
             $numContenedor = $a->Contenedor->num_contenedor;
@@ -786,7 +786,7 @@ class ReporteriaController extends Controller
         // Construir la consulta inicial
         $asignaciones = Asignaciones::join('docum_cotizacion', 'asignaciones.id_contenedor', '=', 'docum_cotizacion.id')
             ->join('cotizaciones', 'docum_cotizacion.id_cotizacion', '=', 'cotizaciones.id')
-            ->where('asignaciones.id_empresa', auth()->user()->id_empresa)
+            ->where('cotizaciones.id_empresa', auth()->user()->id_empresa)
             ->where('cotizaciones.estatus', 'Aprobada')
             ->select('asignaciones.*', 'cotizaciones.total');
 
@@ -829,10 +829,12 @@ class ReporteriaController extends Controller
             $finalMes = $finalMes->endOfMonth();
             $fechaFinPeriodo = $finalMes->toDateString();
             $fechaInialGastos = Carbon::parse($fechaIniciaPeriodo)->startOfMonth();
+            $inicio = Carbon::parse($fechaIniciaPeriodo)->startOfDay();
+            $fin = Carbon::parse($fechaHasta)->endOfDay();
 
-            $fechaI = $fechaIniciaPeriodo.' 00:00:00';
-            $fechaF = $fechaFinPeriodo.' 23:59:59'; //no tomaba el ultimo dia completo, se agrego hora para incluirlo
-
+            $fechaI =  $inicio;
+            $fechaF =  $fin; //no tomaba el ultimo dia completo, se agrego hora para incluirlo
+            //  dd($fechaI, $fechaF);
             //Obtener los gastos de las unidades (vehiculos)
             $gastosUnidadQuery = "SELECT
             a.id_camion,
