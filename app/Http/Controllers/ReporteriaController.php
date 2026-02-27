@@ -556,7 +556,7 @@ class ReporteriaController extends Controller
         ])
         ->get();
 
-        dd(Carbon::parse($fechaFin)->endOfDay(), $asignaciones);
+        //  dd(Carbon::parse($fechaFin)->endOfDay(), $asignaciones);
 
         $viajesData = $asignaciones->map(function ($a) {
             $numContenedor = $a->Contenedor->num_contenedor;
