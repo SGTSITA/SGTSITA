@@ -535,7 +535,7 @@ class ReporteriaController extends Controller
               ];
           })->toArray(); */
 
-        return view('reporteria.asignaciones.index', compact('clientes', 'subclientes', 'proveedores', 'estatus', 'asignaciones', 'viajesData'));
+        return view('reporteria.asignaciones.index');
     }
 
     public function getViajesFiltrados(Request $request)
