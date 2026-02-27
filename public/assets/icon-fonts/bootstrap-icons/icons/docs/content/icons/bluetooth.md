@@ -1,7 +1,7 @@
 ---
 title: Bluetooth
 categories:
-  - Brand
+    - Brand
 tags:
-  - wireless
+    - wireless
 ---

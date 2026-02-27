@@ -1,9 +1,9 @@
 ---
 title: Gear fill
 categories:
-  - Tools
+    - Tools
 tags:
-  - tool
-  - settings
-  - preferences
+    - tool
+    - settings
+    - preferences
 ---

@@ -51,11 +51,11 @@
                             <h5 id="card_title">
                                 Reporte de Resultados
                                 <p class="text-sm mb-0">
-
+                                </p>
                                 <div class="font-weight-bolder text-sm"><span class="small">Periodo</span></div>
                                 <input type="text" id="daterange" readonly class="form-control form-control-sm min-w-100"
                                     style="border: none; box-shadow: none;" />
-                                </p>
+
                             </h5>
 
                             <div class="float-right">
@@ -69,7 +69,7 @@
                     </div>
 
                     <div class="card-body">
-                        <div id="myGrid" class="col-12 ag-theme-quartz" style="height: 500px"></div>
+                        <div id="myGrid" class="col-12 ag-theme-quartz" style="height: 620px"></div>
 
                     </div>
                 </div>
@@ -167,6 +167,16 @@
                             "Septiembre", "Octubre", "Noviembre", "Diciembre"
                         ],
                         firstDay: 1
+                    },
+                    ranges: {
+                        Hoy: [moment(), moment()],
+                        'Últimos 7 días': [moment().subtract(6, 'days'), moment()],
+                        'Últimos 30 días': [moment().subtract(29, 'days'), moment()],
+                        'Este mes': [moment().startOf('month'), moment().endOf('month')],
+                        'Mes anterior': [
+                            moment().subtract(1, 'month').startOf('month'),
+                            moment().subtract(1, 'month').endOf('month'),
+                        ],
                     },
                     maxDate: moment()
                 },

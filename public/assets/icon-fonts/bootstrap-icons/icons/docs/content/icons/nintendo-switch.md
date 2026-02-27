@@ -1,7 +1,7 @@
 ---
 title: Nintendo Switch
 categories:
-  - Brand
+    - Brand
 tags:
-  - gaming
+    - gaming
 ---

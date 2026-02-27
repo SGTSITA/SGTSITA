@@ -3,16 +3,19 @@
 namespace App\Http\Controllers;
 
 use App\Models\GpsCompany;
+use App\Models\User;
+use App\Models\GpsCompanyProveedor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
-
 use App\Models\ServicioGps;
 use App\Traits\JimiGpsTrait;
-use App\Traits\LegoGpsTrait as LegoGps;
+use App\Traits\LegoGpsTrait;
 use App\Traits\CommonGpsTrait;
 use App\Traits\GpsTrackerMXTrait;
 use App\Traits\BeyondGPSTrait;
 use App\Traits\WialonGpsTrait;
+use App\Traits\GlobalGpsTrait;
+use App\Traits\SISGPSTrait;
 
 class GpsCompanyController extends Controller
 {
@@ -21,91 +24,224 @@ class GpsCompanyController extends Controller
         return view('gps.index');
     }
 
-    public function setupGps(){
-        $empresaId = auth()->user()->id_empresa;
-        $gpsCompanies = GpsCompany::with(['serviciosGps' => function($q) use ($empresaId) {
-            $q->where('id_empresa', $empresaId);
-        }])->get();
-        
+    public function setupGps()
+    {
+        // $empresaId = auth()->user()->id_empresa;
+        // $gpsCompanies = GpsCompany::with(['serviciosGps' => function ($q) use ($empresaId) {
+        //     $q->where('id_empresa', $empresaId);
+        // }])->get();
+
+        // $companies = $gpsCompanies->map(function ($g) {
+        //     $g->estado = $g->serviciosGps->isNotEmpty() ? 'Activo' : 'No contratado';
+        //     return $g;
+        // });
+        $user =  User::find(auth()->user()->id);
+        $empresaId   = auth()->user()->id_empresa;
+        $proveedorId =   $user ->proveedores()
+            ->value('proveedor_id');
+
+        $gpsCompanies = GpsCompany::with([
+            'empresas' => function ($q) use ($empresaId, $proveedorId) {
+                $q->where('id_empresa', $empresaId)
+                  ->where('id_proveedor', $proveedorId)
+                  ->where('estado', 1);
+            }
+        ])->get();
+
         $companies = $gpsCompanies->map(function ($g) {
-            $g->estado = $g->serviciosGps->isNotEmpty() ? 'Activo' : 'No contratado';
+            $g->estado = $g->empresas->isNotEmpty()
+                ? 'Activo'
+                : 'No contratado';
+
+
+            $g->configuracion = $g->empresas->first();
+
             return $g;
         });
-
-        return view('gps.setup',["companies" => $companies]);
+        return view('gps.setup', ["companies" => $companies]);
     }
 
-    //Obtiene la configuración GPS-Proveedor
-    function getConfig(Request $r){
-        $empresaId = auth()->user()->id_empresa;
-       
-        $gpsConfig = GpsCompany::leftJoin('servicio_gps_empresa as ge','gps_company.id',"=",'ge.id_gps_company')
-                                ->where('gps_company.id',$r->gps)
-                                ->get();
+    //Obtiene la configuración GPS-Proveedor, verificar con los usuarios nuevos con proveedor asignado
+    public function getConfig(Request $r)
+    {
+        // $empresaId = auth()->user()->id_empresa;
 
-       $cuenta = $gpsConfig->where('id_empresa',$empresaId);
-       $account = (sizeof($cuenta) > 0) ? json_decode(Crypt::decryptString($gpsConfig[0]->account_info)) : [];
-       
-       return response()->json(["data"=>$gpsConfig,"account" => ($account)]);
+        // $gpsConfig = GpsCompany::leftJoin('servicio_gps_empresa as ge', 'gps_company.id', "=", 'ge.id_gps_company')
+        //                         ->where('gps_company.id', $r->gps)
+        //                         ->get();
+
+        // $cuenta = $gpsConfig->where('id_empresa', $empresaId);
+        // $account = (sizeof($cuenta) > 0) ? json_decode(Crypt::decryptString($gpsConfig[0]->account_info)) : [];
+        $user =  User::find(auth()->user()->id);
+
+        $empresaId   = auth()->user()->id_empresa;
+        $proveedorId = $user->proveedores()
+            ->value('proveedor_id');
+
+
+        $gpsCompany = GpsCompany::findOrFail($r->gps);
+
+
+        $config = GpsCompanyProveedor::where('id_empresa', $empresaId)
+            ->where('id_proveedor', $proveedorId)
+            ->where('id_gps_company', $r->gps)
+            ->first();
+
+        $account = $config
+            ? json_decode(
+                Crypt::decryptString($config->account_info),
+                true
+            )
+            : [];
+
+        return response()->json([
+            'data'    => $gpsCompany,
+            'account' => $account,
+            'estado'  => $config?->estado ?? 0
+        ]);
+
+        return response()->json(["data" => $gpsConfig,"account" => ($account)]);
     }
 
-    public function setConfig(Request $r){
+    public function setConfig(Request $r)
+    {
 
         /*
-            - Primero validaremos las credenciales del GPS Seleccionado. 
+            - Primero validaremos las credenciales del GPS Seleccionado.
             - Si la conexion al servicio Falla con las credenciales proporcionadas no se Guardaran cambios
         */
         $empresaId = auth()->user()->id_empresa;
-        $detailAccount = $r->account;
-        $credenciales = [];
-        foreach($detailAccount as $a){
-            $credenciales[$a['field']] =  $a['valor'];
-        }
+        $user =  User::find(auth()->user()->id);
 
-        
+        $proveedorId = $user->proveedores()
+            ->value('proveedor_id');
 
-        switch($r->gps){
-            case 1:
+
+        $credenciales = collect($r->account)
+            ->pluck('valor', 'field')
+            ->toArray();
+
+        /* ================= VALIDACIÓN ================= */
+
+        switch ((int) $r->gps) {
+            case 1: //Global GPS
+                $token = GlobalGpsTrait::getAccessToken(
+                    $credenciales['appkey'] ?? null,
+                    $credenciales['account'] ?? null
+                );
                 break;
-            case 2:
-                $token = JimiGpsTrait::getGpsAccessToken($empresaId,$credenciales);
+
+            case 2: //Jimi GPS
+                $token = JimiGpsTrait::getGpsAccessToken(
+                    $empresaId,
+                    $credenciales
+                );
                 break;
-            case 3:
+
+            case 3: //Lego GPS
                 $token = LegoGpsTrait::validateOwner($credenciales);
                 break;
-            case 4:
-                $token = GpsTrackerMXTrait::getGpsAccessToken($empresaId,$credenciales);
+
+            case 4: //Tracker GPS MX
+                $token = GpsTrackerMXTrait::getGpsAccessToken(
+                    $empresaId,
+                    $credenciales
+                );
                 break;
-            case 5:
-                $token = BeyondGPSTrait::validateOwner($credenciales);
+
+            case 5: // Beyond GPS tajiro
+
+                $response = BeyondGPSTrait::getLocation(
+                    $credenciales['user'] ?? null,
+                    $credenciales['password'] ?? null
+                );
+                $success = $response['success'] ?? false;
+                $message = $response['message'] ?? null;
+                $token =  [$success, $message ];
+
                 break;
-            case 6:
+
+            case 6: // Wialon GPS
                 $token = true;
                 break;
+
+            case 7: //SIS GPS
+                $response = SISGPSTrait::sisValidarCredenciales(
+                    $credenciales['account'] ?? '',
+                    $credenciales['key'] ?? ''
+                );
+
+                if ($response->success) {
+                    $token = $response->data['token'] ?? null;
+                } else {
+                    throw new \Exception($response->message);
+                }
+                break;
+
+            default:
+                $token = false;
         }
 
-        if(!$token){
+        if (!$token) {
             return response()->json([
-                "Titulo" => "Credenciales de acceso incorrectas", 
-                "Mensaje" => "No se puede guardar la configuración porque las credenciales de acceso no son correctas", 
-                "TMensaje" => "warning"
+                "Titulo"   => "Credenciales incorrectas",
+                "Mensaje"  => "No se pudo validar el acceso al proveedor GPS",
+                "TMensaje" => "warning",
+                 "resp"    => $token
             ]);
         }
 
-        $servicio = ServicioGps::firstOrNew([
-            'id_empresa' => $empresaId,
-            'id_gps_company' => $r->gps
+
+        $config = GpsCompanyProveedor::updateOrCreate(
+            [
+                'id_empresa'     => $empresaId,
+                'id_proveedor'   => $proveedorId,
+                'id_gps_company' => $r->gps,
+            ],
+            [
+                'account_info' => Crypt::encryptString(
+                    json_encode($r->account)
+                ),
+                'estado' => 1
+            ]
+        );
+        // dd($config);
+
+        return response()->json([
+            "Titulo"   => "Correcto",
+            "Mensaje"  => "Se guardó la configuración del servicio GPS",
+            "TMensaje" => "success",
+            "token"    => $token
         ]);
-
-        $servicio->account_info = Crypt::encryptString(json_encode($r->account));
-        $servicio->save();
-
-        return response()->json(["Titulo" => "Correcto", "Mensaje" => "Se guardó la configuración para la compañia GPS", "TMensaje" => "success","token"=>$token]);
     }
 
     public function data()
     {
-        return GpsCompany::withTrashed()->get();
+        $user =  User::find(auth()->user()->id);
+        $empresaId = auth()->user()->id_empresa;
+        $proveedorId = $user->proveedores()
+            ->value('proveedor_id');
+
+        return GpsCompany::withTrashed()
+            ->with([
+                'empresas' => function ($q) use ($empresaId, $proveedorId) {
+                    $q->where('id_empresa', $empresaId)
+                      ->where('id_proveedor', $proveedorId);
+                }
+            ])
+            ->get()
+            ->map(function ($gps) {
+                $config = $gps->empresas->first();
+
+                return [
+                    'id'        => $gps->id,
+                    'nombre'    => $gps->nombre,
+                    'url'       => $gps->url,
+                    'estado'    => $config ? ($config->estado ? 'Activo' : 'Inactivo') : 'No configurado',
+                    'config_id' => $config?->id,
+                    'deleted_at' => $gps->deleted_at,
+                ];
+            });
     }
 
 
@@ -142,42 +278,43 @@ class GpsCompanyController extends Controller
         return response()->json(['success' => true]);
     }
 
-    public function testGpsApi(){
-        
+    public function testGpsApi()
+    {
+
         $toTest = 'JimiGps';
 
         $empresaId = auth()->user()->id_empresa;
 
-        switch($toTest){
+        switch ($toTest) {
             case 'LegoGPS':
-                $credenciales = CommonGpsTrait::getAuthenticationCredentials('AECC890930E41',3);
-                $data = ($credenciales['success']) ? LegoGps::getLocation($credenciales['accessAccount']) : [];
+                $credenciales = CommonGpsTrait::getAuthenticationCredentials('AECC890930E41', 3);
+                $data = ($credenciales['success']) ? LegoGpsTrait::getLocation($credenciales['accessAccount']) : [];
                 break;
             case 'JimiGps':
-                 //Datos de dispositivo por IMEI
+                //Datos de dispositivo por IMEI
                 $adicionales['imeis'] = '356153592336785'; //869066061506169 y  356153592336785
                 $credenciales = JimiGpsTrait::getAuthenticationCredentials('XAXA890930E41');
 
-                $data = JimiGpsTrait::callGpsApi('jimi.device.location.get',$credenciales['accessAccount'],$adicionales);
+                $data = JimiGpsTrait::callGpsApi('jimi.device.location.get', $credenciales['accessAccount'], $adicionales);
                 break;
             case 'TrackerGps':
-                $credenciales = CommonGpsTrait::getAuthenticationCredentials('AECC890930E41',4);
+                $credenciales = CommonGpsTrait::getAuthenticationCredentials('AECC890930E41', 4);
                 $data = GpsTrackerMXTrait::getMutiDevicePosition($credenciales['accessAccount']);
                 break;
             case 'BeyondGps':
-                $credenciales = CommonGpsTrait::getAuthenticationCredentials('AECC890930E41',5);
-                $data = BeyondGPSTrait::getLocation($credenciales['accessAccount']['user'],$credenciales['accessAccount']['password']);
+                $credenciales = CommonGpsTrait::getAuthenticationCredentials('AECC890930E41', 5);
+                $data = BeyondGPSTrait::getLocation($credenciales['accessAccount']['user'], $credenciales['accessAccount']['password']);
                 break;
             case 'WialonGps':
-                $credenciales = CommonGpsTrait::getAuthenticationCredentials('AECC890930E41',6);
-             //    return $credenciales;
+                $credenciales = CommonGpsTrait::getAuthenticationCredentials('AECC890930E41', 6);
+                //    return $credenciales;
                 $data = WialonGpsTrait::getLocation($credenciales['accessAccount']['token']);
-                break;                
+                break;
             default:
-            $data = "Bad GPS Config";
+                $data = "Bad GPS Config";
         }
-        
+
         return $data;
     }
-    
+
 }

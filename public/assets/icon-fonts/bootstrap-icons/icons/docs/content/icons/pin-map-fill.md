@@ -1,10 +1,10 @@
 ---
 title: Pin map fill
 categories:
-  - Geo
+    - Geo
 tags:
-  - geography
-  - map
-  - pin
-  - location
+    - geography
+    - map
+    - pin
+    - location
 ---

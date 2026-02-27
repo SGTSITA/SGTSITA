@@ -3,19 +3,17 @@
 
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
     <!-- CSRF Token -->
-    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="csrf-token" content="{{ csrf_token() }}" />
     @yield('meta-tags')
-    <link rel="stylesheet" href="{{ asset('assets/css/sweetalert2.css?v=2') }}">
-    <link rel="apple-touch-icon" sizes="76x76" href="{{ asset('favicon/' . $configuracion->favicon) }}">
-    <link rel="icon" type="image/png" href="{{ asset('favicon/' . $configuracion->favicon) }}">
-    <title>
-        @yield('template_title') - {{ $configuracion->nombre_sistema }}
-    </title>
+    <link rel="stylesheet" href="{{ asset('assets/css/sweetalert2.css?v=2') }}" />
+    <link rel="apple-touch-icon" sizes="76x76" href="{{ asset('favicon/' . $configuracion->favicon) }}" />
+    <link rel="icon" type="image/png" href="{{ asset('favicon/' . $configuracion->favicon) }}" />
+    <title>@yield('template_title') - {{ $configuracion->nombre_sistema }}</title>
 
-
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet" />
 
     <!-- Nucleo Icons -->
     <link href="{{ asset('assets/css/icons.css') }}" rel="stylesheet" />
@@ -31,12 +29,12 @@
     <link href="{{ asset('assets/css/nucleo-svg.css') }}" rel="stylesheet" />
     @yield('css')
     <!-- Select2  -->
-    <link rel="stylesheet" href="{{ asset('assets/vendor/select2/dist/css/select2.min.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/vendor/select2/dist/css/select2.min.css') }}" />
 
     <!-- CSS Files -->
     <link id="pagestyle" href="{{ asset('assets/css/argon-dashboard.css?v=2.0.4') }}" rel="stylesheet" />
-   
-    <link rel="stylesheet" href="{{ asset('css/sgt/loading.css') }}">
+
+    <link rel="stylesheet" href="{{ asset('css/sgt/loading.css') }}" />
 
     <style>
         input:before {
@@ -61,13 +59,20 @@
         body {
             font-family: 'Inter', sans-serif;
         }
-    </style>
 
+        .ag-theme-quartz .row-even {
+            background-color: #f9fafb;
+        }
+
+        .ag-theme-quartz .row-odd {
+            background-color: #ffffff;
+        }
+    </style>
 </head>
 
-<body class="g-sidenav-show   bg-gray-100">
-    <div class="min-height-300  position-absolute w-100"
-        style="background-color: {{ $configuracion->color_principal }}!important;"></div>
+<body class="g-sidenav-show bg-gray-100">
+    <div class="min-height-300 position-absolute w-100"
+        style="background-color: {{ $configuracion->color_principal }} !important"></div>
     <div id="page-loader"><span class="preloader-interior"></span></div>
     <!-- Loading Overlay -->
     <div id="loading-overlay">
@@ -90,18 +95,16 @@
         </div>
     </div>
 
-
     <!-- Sidenav -->
     @include('layouts.sidebar')
 
-    <main class="main-content position-relative border-radius-lg ">
+    <main class="main-content position-relative border-radius-lg">
         <!-- Navbar -->
         @include('layouts.navbar')
 
         <!-- End Navbar -->
 
         <div class="container-fluid">
-
             {{-- @include('layouts.header') --}}
             @include('layouts.simple_alert')
             @yield('breadcrumb')
@@ -109,10 +112,9 @@
 
             @include('client.modal_create')
             @include('operadores.modal_create')
-            @include('proveedores.modal_create')
+            {{-- @include('proveedores.modal_create') --}}
             @include('equipos.modal_create')
             @include('bancos.modal_create')
-
         </div>
     </main>
 
@@ -122,7 +124,6 @@
     <!-- Modal lateral Congif -->
     {{-- @include('layouts.modal_config') --}}
     <!-- End Modal lateral Congif -->
-
 
     <!--   Core JS Files   -->
     {{-- <script src="{{ asset('assets/vendor/jquery/dist/jquery.min.js')}}"></script> --}}
@@ -134,28 +135,20 @@
     <script src="{{ asset('assets/js/plugins/smooth-scrollbar.min.js') }}"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 
-
     <script src="{{ asset('assets/js/plugins/datatables.js') }}"></script>
 
     <script src="{{ asset('assets/js/argon-dashboard.min.js') }}"></script>
 
-
-
     <script type="text/javascript" src="{{ asset('assets/js/sweetalert2.all.min.js') }}"></script>
-
 
     <script>
         var token = $('meta[name="csrf-token"]').attr('content');
     </script>
 
-
-
     @yield('datatable')
 
     @yield('fullcalendar')
     @yield('alerta')
-
-
 
     @yield('select2')
     @stack('custom-javascript')

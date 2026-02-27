@@ -1,6 +1,6 @@
 ---
 title: USB plug fill
 categories:
-  - Devices
+    - Devices
 tags:
 ---

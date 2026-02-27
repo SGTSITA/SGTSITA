@@ -18,7 +18,7 @@ function recalcularTotales(row) {
     const iva = base1 * tasa_iva;
     const retencion = base1 * tasa_retencion;
     const total = subtotal + sobre + iva - retencion;
-    const base2 = (total - base1 - iva) + retencion;
+    const base2 = total - base1 - iva + retencion;
 
     row.iva = parseFloat(iva.toFixed(4));
     row.retencion = parseFloat(retencion.toFixed(4));
@@ -26,28 +26,42 @@ function recalcularTotales(row) {
     row.base2 = parseFloat(base2.toFixed(4));
 }
 
-
 document.addEventListener('DOMContentLoaded', function () {
-    $('#daterange').daterangepicker({
-        opens: 'right',
-        locale: {
-            format: 'YYYY-MM-DD',
-            separator: ' - ',
-            applyLabel: 'Aplicar',
-            cancelLabel: 'Cancelar',
-            fromLabel: 'Desde',
-            toLabel: 'Hasta',
-            customRangeLabel: 'Personalizado',
-            weekLabel: 'S',
-            daysOfWeek: ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa'],
-            monthNames: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-                'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
+    $('#daterange').daterangepicker(
+        {
+            opens: 'right',
+            locale: {
+                format: 'YYYY-MM-DD',
+                separator: ' - ',
+                applyLabel: 'Aplicar',
+                cancelLabel: 'Cancelar',
+                fromLabel: 'Desde',
+                toLabel: 'Hasta',
+                customRangeLabel: 'Personalizado',
+                weekLabel: 'S',
+                daysOfWeek: ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa'],
+                monthNames: [
+                    'Enero',
+                    'Febrero',
+                    'Marzo',
+                    'Abril',
+                    'Mayo',
+                    'Junio',
+                    'Julio',
+                    'Agosto',
+                    'Septiembre',
+                    'Octubre',
+                    'Noviembre',
+                    'Diciembre',
+                ],
+            },
+            startDate: moment().subtract(7, 'days'),
+            endDate: moment(),
         },
-        startDate: moment().subtract(7, 'days'),
-        endDate: moment()
-    }, function (start, end) {
-        cargarDatos(start.format('YYYY-MM-DD'), end.format('YYYY-MM-DD'));
-    });
+        function (start, end) {
+            cargarDatos(start.format('YYYY-MM-DD'), end.format('YYYY-MM-DD'));
+        },
+    );
 
     const container = document.getElementById('tablaCostosMEP');
     hot = new Handsontable(container, {
@@ -62,11 +76,22 @@ document.addEventListener('DOMContentLoaded', function () {
             { data: 'otro', title: 'Otros', type: 'numeric', numericFormat: { pattern: '$0,0.00' } },
             { data: 'peso_contenedor', title: 'Peso Contenedor', type: 'numeric', readOnly: true },
             { data: 'sobrepeso', title: 'Sobrepeso', type: 'numeric', readOnly: true },
-            { data: 'precio_sobrepeso', title: 'Precio sobrepeso', type: 'numeric', numericFormat: { pattern: '$0,0.00' } },
+            {
+                data: 'precio_sobrepeso',
+                title: 'Precio sobrepeso',
+                type: 'numeric',
+                numericFormat: { pattern: '$0,0.00' },
+            },
             { data: 'base1', title: 'Base 1', type: 'numeric', numericFormat: { pattern: '$0,0.00' } },
             { data: 'base2', title: 'Base 2', readOnly: true, type: 'numeric', numericFormat: { pattern: '$0,0.00' } },
             { data: 'iva', title: 'IVA', readOnly: true, type: 'numeric', numericFormat: { pattern: '$0,0.00' } },
-            { data: 'retencion', title: 'Retención', readOnly: true, type: 'numeric', numericFormat: { pattern: '$0,0.00' } },
+            {
+                data: 'retencion',
+                title: 'Retención',
+                readOnly: true,
+                type: 'numeric',
+                numericFormat: { pattern: '$0,0.00' },
+            },
             { data: 'total', title: 'Total', readOnly: true, type: 'numeric', numericFormat: { pattern: '$0,0.00' } },
         ],
         data: rowData,
@@ -78,8 +103,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
             changes.forEach(([rowIndex, prop, oldValue, newValue]) => {
                 const camposTrigger = [
-                    'precio_viaje', 'burreo', 'maniobra', 'estadia',
-                    'otro', 'base1', 'sobrepeso', 'precio_sobrepeso'
+                    'precio_viaje',
+                    'burreo',
+                    'maniobra',
+                    'estadia',
+                    'otro',
+                    'base1',
+                    'sobrepeso',
+                    'precio_sobrepeso',
                 ];
 
                 if (camposTrigger.includes(prop)) {
@@ -91,12 +122,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     hot.setDataAtRowProp(rowIndex, 'base2', row.base2);
                 }
             });
-        }
-
-
-
-
-
+        },
     });
 
     const range = $('#daterange').data('daterangepicker');
@@ -105,8 +131,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
 function cargarDatos(start, end) {
     fetch(`/costos/mep/data?fecha_inicio=${start}&fecha_fin=${end}`)
-        .then(res => res.json())
-        .then(data => {
+        .then((res) => res.json())
+        .then((data) => {
             rowData = data;
             hot.loadData(rowData);
 
@@ -115,7 +141,7 @@ function cargarDatos(start, end) {
                     icon: 'info',
                     title: 'Sin resultados',
                     text: 'No se encontraron viajes pendientes de registro en este periodo.',
-                    confirmButtonText: 'Aceptar'
+                    confirmButtonText: 'Aceptar',
                 });
             }
         });
@@ -128,10 +154,20 @@ function abrirModal(index) {
     filaSeleccionada = row;
 
     [
-        'id_asignacion', 'precio_viaje', 'burreo', 'maniobra', 'estadia',
-        'otro', 'iva', 'retencion', 'base1', 'base2', 'sobrepeso',
-        'precio_sobrepeso', 'total'
-    ].forEach(campo => {
+        'id_asignacion',
+        'precio_viaje',
+        'burreo',
+        'maniobra',
+        'estadia',
+        'otro',
+        'iva',
+        'retencion',
+        'base1',
+        'base2',
+        'sobrepeso',
+        'precio_sobrepeso',
+        'total',
+    ].forEach((campo) => {
         $(`#${campo}`).val(row[campo] ?? 0);
     });
 
@@ -151,7 +187,7 @@ document.getElementById('guardarCambios').addEventListener('click', async () => 
     const datos = hot.getSourceData(); // Obtener todos los datos de la tabla
 
     // Validamos si hay cambios y generamos las peticiones
-    const formularios = datos.map(row => {
+    const formularios = datos.map((row) => {
         return {
             id_asignacion: row.id,
             precio_viaje: parseFloat(row.precio_viaje || 0),
@@ -166,7 +202,7 @@ document.getElementById('guardarCambios').addEventListener('click', async () => 
             sobrepeso: parseFloat(row.sobrepeso || 0),
             precio_sobrepeso: parseFloat(row.precio_sobrepeso || 0),
             total: parseFloat(row.total || 0),
-            motivo_cambio: 'Modificación por revisión masiva'
+            motivo_cambio: 'Modificación por revisión masiva',
         };
     });
 
@@ -177,7 +213,7 @@ document.getElementById('guardarCambios').addEventListener('click', async () => 
         icon: 'question',
         showCancelButton: true,
         confirmButtonText: 'Sí, guardar',
-        cancelButtonText: 'Cancelar'
+        cancelButtonText: 'Cancelar',
     });
 
     if (!confirmacion.isConfirmed) return;
@@ -189,9 +225,9 @@ document.getElementById('guardarCambios').addEventListener('click', async () => 
                 method: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(form)
+                body: JSON.stringify(form),
             });
 
             const data = await res.json();

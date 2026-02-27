@@ -1,8 +1,8 @@
 ---
 title: Heptagon half
 categories:
-  - Shapes
+    - Shapes
 tags:
-  - shape
-  - polygon
+    - shape
+    - polygon
 ---

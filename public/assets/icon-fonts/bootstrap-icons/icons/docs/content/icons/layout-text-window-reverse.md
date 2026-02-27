@@ -1,8 +1,8 @@
 ---
 title: Layout text window reverse
 categories:
-  - Layout
+    - Layout
 tags:
-  - layout
-  - columns
+    - layout
+    - columns
 ---

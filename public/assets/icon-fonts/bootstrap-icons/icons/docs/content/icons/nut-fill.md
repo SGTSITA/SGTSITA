@@ -1,10 +1,10 @@
 ---
 title: Nut fill
 categories:
-  - Tools
+    - Tools
 tags:
-  - nut
-  - bolt
-  - hexagon
-  - tools
+    - nut
+    - bolt
+    - hexagon
+    - tools
 ---

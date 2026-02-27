@@ -11,6 +11,13 @@
             transform: translate(-50%, -50%) !important;
             position: fixed !important;
         }
+
+
+        .card {
+            max-width: 100%;
+            overflow-x: hidden;
+        }
+
         #myGrid {
             height: 500px;
             width: 100%;
@@ -38,43 +45,51 @@
     <div class="container-fluid">
         <div class="row">
             <div class="col-sm-12">
-            <div class="d-sm-flex justify-content-between">
-        <div>
-         
-        </div>
-        <div class="d-flex">
-          <div class="dropdown d-inline">
-            <a href="javascript:;" class="btn btn-white dropdown-toggle" data-bs-toggle="dropdown" id="navbarDropdownMenuLink2" aria-expanded="false">
-              Opciones
-            </a>
-            <ul class="dropdown-menu dropdown-menu-lg-start px-2 py-3" aria-labelledby="navbarDropdownMenuLink2" style="">
-              <li><a class="dropdown-item border-radius-md btnDocs" href="javascript:;" id="btnFileCartaPorteXML" >Archivo: Carta Porte XML</a></li>
-              <li><a class="dropdown-item border-radius-md btnDocs" href="javascript:;" id="btnFileCartaPortePDF" >Archivo: Carta Porte PDF</a></li>
-              <li><a class="dropdown-item border-radius-md" href="javascript:;" id="abrirModalBtn">Asignar Operador</a></li>
-              
-              <li>
-                <hr class="horizontal dark my-2">
-              </li>
-              <!--li><a class="dropdown-item border-radius-md text-danger" href="javascript:;">Remove Filter</a></li-->
-            </ul>
-          </div>
-          <button class="btn btn-icon btn-white ms-2 "  type="button" id="btnFull" disabled>
-            <span class="btn-inner--icon"> <i class="fas fa-truck-moving"></i> </span>
-            <span class="btn-inner--text" >Convertir a Full</span>
-          </button>
-        </div>
-      </div>
+                <div class="d-sm-flex justify-content-between">
+                    <div>
+
+                    </div>
+                    <div class="d-flex">
+                        <div class="dropdown d-inline">
+                            <a href="javascript:;" class="btn btn-white dropdown-toggle" data-bs-toggle="dropdown"
+                                id="navbarDropdownMenuLink2" aria-expanded="false">
+                                Opciones
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-lg-start px-2 py-3"
+                                aria-labelledby="navbarDropdownMenuLink2" style="">
+                                <li><a class="dropdown-item border-radius-md btnDocs" href="javascript:;"
+                                        id="btnFileCartaPorteXML">Archivo: Carta Porte XML</a></li>
+                                <li><a class="dropdown-item border-radius-md btnDocs" href="javascript:;"
+                                        id="btnFileCartaPortePDF">Archivo: Carta Porte PDF</a></li>
+                                <li><a class="dropdown-item border-radius-md" href="javascript:;" id="abrirModalBtn">Asignar
+                                        Operador</a></li>
+
+                                <li>
+                                    <hr class="horizontal dark my-2">
+                                </li>
+                                <!--li><a class="dropdown-item border-radius-md text-danger" href="javascript:;">Remove Filter</a></li-->
+                            </ul>
+                        </div>
+                        <button class="btn btn-icon btn-white ms-2 " type="button" id="btnFull" disabled>
+                            <span class="btn-inner--icon"> <i class="fas fa-truck-moving"></i> </span>
+                            <span class="btn-inner--text">Convertir a Full</span>
+                        </button>
+                        <button type="button" class="btn bg-gradient-danger btn-xs mb-2" id="btnCancelarFull" disabled>
+                            <i class="fas fa-ban"></i>
+                            Cancelar viaje Full
+                        </button>
+                    </div>
+                </div>
                 <div class="card">
-                    
+
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h6 id="card_title">Viajes</span>
-                        @can('cotizaciones-create')
-                        
-                            <div>
-                            
-                               
-                            </div>
-                        @endcan
+                            @can('cotizaciones-create')
+                                <div>
+
+
+                                </div>
+                            @endcan
                     </div>
 
                     <!-- Pestañas sin recargar página -->
@@ -125,7 +140,7 @@
             </div>
         </div>
     </div>
-   
+
 
     <!-- Modal: Estatus de Documentos -->
     <div class="modal fade" id="modalEstatusDocumentos" tabindex="-1" aria-labelledby="modalEstatusDocumentosLabel"
@@ -201,28 +216,31 @@
         </div>
     </div>
 
-@include('mep.viajes.modal-asignar')
-@include('mep.viajes.modal-alert')
-@include('mep.viajes.modal-upload-files')
+    @include('mep.viajes.modal-asignar')
+    @include('mep.viajes.modal-alert')
+    @include('mep.viajes.modal-upload-files')
 
 @endsection
 
 @push('custom-javascript')
     <!-- AG Grid -->
     <script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.js"></script>
-    <script src="{{ asset('assets/vendor/jquery/dist/jquery.min.js')}}"></script>
-    <link href="{{asset('assets/metronic/fileuploader/font/font-fileuploader.css')}}" rel="stylesheet">
-    <link href="{{asset('assets/metronic/fileuploader/jquery.fileuploader.min.css')}}" media="all" rel="stylesheet">
-    <link href="{{asset('assets/metronic/fileuploader/jquery.fileuploader-theme-dragdrop.css')}}" media="all" rel="stylesheet">
-    <script src="{{asset('assets/metronic/fileuploader/jquery.fileuploader.min.js')}}" type="text/javascript"></script>
+    <script src="{{ asset('assets/vendor/jquery/dist/jquery.min.js') }}"></script>
+    <link href="{{ asset('assets/metronic/fileuploader/font/font-fileuploader.css') }}" rel="stylesheet">
+    <link href="{{ asset('assets/metronic/fileuploader/jquery.fileuploader.min.css') }}" media="all" rel="stylesheet">
+    <link href="{{ asset('assets/metronic/fileuploader/jquery.fileuploader-theme-dragdrop.css') }}" media="all"
+        rel="stylesheet">
+    <script src="{{ asset('assets/metronic/fileuploader/jquery.fileuploader.min.js') }}" type="text/javascript"></script>
 
-    <script src="{{ asset('js/mep/viajes/viajes-fileuploader.js') }}?v={{ filemtime(public_path('js/mep/viajes/viajes-fileuploader.js')) }}"></script>
+    <script
+        src="{{ asset('js/mep/viajes/viajes-fileuploader.js') }}?v={{ filemtime(public_path('js/mep/viajes/viajes-fileuploader.js')) }}">
+    </script>
 
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet"/>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
 
     <script
-    src="{{ asset('js/mep/viajes/cotizaciones_list.js') }}?v={{ filemtime(public_path('js/mep/viajes/cotizaciones_list.js')) }}">
+        src="{{ asset('js/mep/viajes/cotizaciones_list.js') }}?v={{ filemtime(public_path('js/mep/viajes/cotizaciones_list.js')) }}">
     </script>
 
     <!-- SweetAlert para mostrar mensajes -->

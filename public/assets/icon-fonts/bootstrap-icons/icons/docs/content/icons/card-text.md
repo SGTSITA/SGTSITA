@@ -1,10 +1,10 @@
 ---
 title: Card text
 categories:
-  - Files and folders
+    - Files and folders
 tags:
-  - note
-  - card
-  - notecard
-  - letter
+    - note
+    - card
+    - notecard
+    - letter
 ---

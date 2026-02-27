@@ -1,8 +1,8 @@
 ---
 title: Blockquote left
 categories:
-  - Typography
+    - Typography
 tags:
-  - text
-  - type
+    - text
+    - type
 ---

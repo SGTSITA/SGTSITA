@@ -7,30 +7,31 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use App\Dto\ApiResponse;
 use Carbon\Carbon;
-use Log;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Http\Client\RequestException;
 
 trait SkyAngelGpsTrait
 {
     public static function getAccessToken($username, $password)
     {
-		$tokenFor = 'api_sky_angel_token_for_'.$username;
-        return Cache::remember($tokenFor, 28 * 60, function () use ($username, $password){ //ApiToken será recordado por 28 minutos
-			
+        $tokenFor = 'api_sky_angel_token_for_'.$username;
+        return Cache::remember($tokenFor, 28 * 60, function () use ($username, $password) { //ApiToken será recordado por 28 minutos
+
             $endpoint = config('services.SkyAngelGps.url_base').'/token';
 
             $response = Http::post($endpoint, [
                 'username' => $username,
                 'password' => $password,
             ]);
-			
-			
+
+
 
             if ($response->successful() && isset($response->json()['token'])) {
-             return $response->json()['token'];
+                return $response->json()['token'];
             }
 
             throw new \Exception('No se pudo obtener el token Sky Angel.');
-			
+
         });
     }
 
@@ -55,11 +56,11 @@ trait SkyAngelGpsTrait
                 ]);
 
                 return new ApiResponse(
-                        success: false,
-                        data: $response->json(),
-                        message: 'Error al consultar SkyAngel',
-                        status: $response->status()
-                    );
+                    success: false,
+                    data: $response->json(),
+                    message: 'Error al consultar SkyAngel',
+                    status: $response->status()
+                );
 
             }
 
@@ -76,12 +77,12 @@ trait SkyAngelGpsTrait
                 'message' => $e->getMessage(),
             ]);
 
-           return new ApiResponse(
-                        success: false,
-                        data: null,
-                        message: 'Excepción HTTP SkyAngel::getLocation => ' .$e->getMessage(),
-                        status: 500
-                    );
+            return new ApiResponse(
+                success: false,
+                data: null,
+                message: 'Excepción HTTP SkyAngel::getLocation => ' .$e->getMessage(),
+                status: 500
+            );
 
         } catch (\Throwable $e) {
             Log::critical('Unexpected error ', [
@@ -90,11 +91,11 @@ trait SkyAngelGpsTrait
             ]);
 
             return new ApiResponse(
-                        success: false,
-                        data: null,
-                        message: 'Error inesperado SkyAngel::getLocation => ' .$e->getMessage(),
-                        status: 500
-                    );
+                success: false,
+                data: null,
+                message: 'Error inesperado SkyAngel::getLocation => ' .$e->getMessage(),
+                status: 500
+            );
 
         }
     }

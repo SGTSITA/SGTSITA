@@ -1,8 +1,8 @@
 ---
 title: Recycle
 categories:
-  - Arrows
+    - Arrows
 tags:
-  - recyling
-  - trash
+    - recyling
+    - trash
 ---

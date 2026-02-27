@@ -1,8 +1,8 @@
 ---
 title: Layout text window
 categories:
-  - Layout
+    - Layout
 tags:
-  - layout
-  - columns
+    - layout
+    - columns
 ---

@@ -1,7 +1,7 @@
 ---
 title: Earbuds
 categories:
-  - Devices
+    - Devices
 tags:
-  - headphones
+    - headphones
 ---

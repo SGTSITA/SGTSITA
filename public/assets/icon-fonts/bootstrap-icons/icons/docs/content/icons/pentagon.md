@@ -1,8 +1,8 @@
 ---
 title: Pentagon
 categories:
-  - Shapes
+    - Shapes
 tags:
-  - shape
-  - polygon
+    - shape
+    - polygon
 ---

@@ -1,8 +1,8 @@
 ---
 title: Eraser
 categories:
-  - Graphics
+    - Graphics
 tags:
-  - erase
-  - remove
+    - erase
+    - remove
 ---

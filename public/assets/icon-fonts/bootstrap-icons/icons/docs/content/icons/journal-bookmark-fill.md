@@ -1,10 +1,10 @@
 ---
 title: Journal bookmark fill
 categories:
-  - Files and folders
+    - Files and folders
 tags:
-  - file
-  - folder
-  - journal
-  - notebook
+    - file
+    - folder
+    - journal
+    - notebook
 ---

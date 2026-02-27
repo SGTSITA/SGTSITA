@@ -6,10 +6,13 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes; // <- Importar
 use Illuminate\Support\Facades\Auth;
+use App\Traits\Auditable;
 
 class Operador extends Model
 {
-    use HasFactory, SoftDeletes; // <- Usar el trait
+    use HasFactory;
+    use SoftDeletes; // <- Usar el trait
+    use Auditable;
 
     protected $table = 'operadores';
 

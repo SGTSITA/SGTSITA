@@ -1,7 +1,7 @@
 ---
 title: Cloud haze
 categories:
-  - Weather
+    - Weather
 tags:
-  - smog
+    - smog
 ---

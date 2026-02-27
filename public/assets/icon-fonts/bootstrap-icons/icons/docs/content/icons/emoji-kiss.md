@@ -1,9 +1,9 @@
 ---
 title: Emoji kiss
 categories:
-  - Emoji
+    - Emoji
 tags:
-  - emoticon
-  - heart
-  - love
+    - emoticon
+    - heart
+    - love
 ---

@@ -1,11 +1,11 @@
 ---
 title: Filetype java
 categories:
-  - Files and folders
+    - Files and folders
 tags:
-  - file
-  - "file type"
-  - extension
-  - code
-  - java
+    - file
+    - 'file type'
+    - extension
+    - code
+    - java
 ---

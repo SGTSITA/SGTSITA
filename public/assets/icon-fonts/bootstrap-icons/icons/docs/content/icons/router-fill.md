@@ -1,9 +1,9 @@
 ---
 title: Router fill
 categories:
-  - Devices
+    - Devices
 tags:
-  - wifi
-  - internet
-  - wireless
+    - wifi
+    - internet
+    - wireless
 ---

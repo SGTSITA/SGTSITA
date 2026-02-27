@@ -1,9 +1,9 @@
 ---
 title: GPU card
 categories:
-  - Devices
+    - Devices
 tags:
-  - video
-  - output
-  - graphics
+    - video
+    - output
+    - graphics
 ---

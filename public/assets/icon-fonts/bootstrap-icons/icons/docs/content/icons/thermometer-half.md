@@ -1,8 +1,8 @@
 ---
 title: Thermometer half
 categories:
-  - Weather
+    - Weather
 tags:
-  - temperature
-  - weather
+    - temperature
+    - weather
 ---
