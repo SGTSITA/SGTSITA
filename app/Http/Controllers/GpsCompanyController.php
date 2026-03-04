@@ -82,7 +82,9 @@ class GpsCompanyController extends Controller
         $gpsCompany = GpsCompany::findOrFail($r->gps);
 
 
-        $config = GpsCompanyProveedor::where('id_empresa', $empresaId)
+        $config = GpsCompanyProveedor::when($empresaId != 0, function ($q) use ($empresaId) {
+            $q->where('id_empresa', $empresaId);
+        })
             ->where('id_proveedor', $proveedorId)
             ->where('id_gps_company', $r->gps)
             ->first();
@@ -113,8 +115,8 @@ class GpsCompanyController extends Controller
         $empresaId = auth()->user()->id_empresa;
         $user =  User::find(auth()->user()->id);
 
-        $proveedorId = $user->proveedores()
-            ->value('proveedor_id');
+        $proveedorIds = $user->proveedores()
+    ->pluck('proveedor_id');
 
 
         $credenciales = collect($r->account)
@@ -191,20 +193,36 @@ class GpsCompanyController extends Controller
             ]);
         }
 
+        foreach ($proveedorIds as $proveedorId) {
 
-        $config = GpsCompanyProveedor::updateOrCreate(
-            [
-                'id_empresa'     => $empresaId,
-                'id_proveedor'   => $proveedorId,
-                'id_gps_company' => $r->gps,
-            ],
-            [
-                'account_info' => Crypt::encryptString(
-                    json_encode($r->account)
-                ),
-                'estado' => 1
-            ]
-        );
+            GpsCompanyProveedor::updateOrCreate(
+                [
+                    'id_empresa'     => $empresaId,
+                    'id_proveedor'   => $proveedorId,
+                    'id_gps_company' => $r->gps,
+                ],
+                [
+                    'account_info' => Crypt::encryptString(
+                        json_encode($r->account)
+                    ),
+                    'estado' => 1
+                ]
+            );
+
+        }
+        // $config = GpsCompanyProveedor::updateOrCreate(
+        //     [
+        //         'id_empresa'     => $empresaId,
+        //         'id_proveedor'   => $proveedorId,
+        //         'id_gps_company' => $r->gps,
+        //     ],
+        //     [
+        //         'account_info' => Crypt::encryptString(
+        //             json_encode($r->account)
+        //         ),
+        //         'estado' => 1
+        //     ]
+        // );
         // dd($config);
 
         return response()->json([
@@ -225,7 +243,9 @@ class GpsCompanyController extends Controller
         return GpsCompany::withTrashed()
             ->with([
                 'empresas' => function ($q) use ($empresaId, $proveedorId) {
-                    $q->where('id_empresa', $empresaId)
+                    $q->when($empresaId != 0, function ($q) use ($empresaId) {
+                        $q->where('id_empresa', $empresaId);
+                    })
                       ->where('id_proveedor', $proveedorId);
                 }
             ])
