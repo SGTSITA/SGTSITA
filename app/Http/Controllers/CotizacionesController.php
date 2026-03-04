@@ -64,20 +64,24 @@ class CotizacionesController extends Controller
 
     public function obtenerCotizacionesparametros($estatusSearch = 'Aprobada', $estatus_planeacion = null, $validarNoplaneadas = null)
     {
-        $cotizacionesQuery = Cotizaciones::where('id_empresa', auth()->user()->id_empresa)
-    ->where('estatus', $estatusSearch)
-     ->when(!is_null($estatus_planeacion) && is_null($validarNoplaneadas), function ($query) use ($estatus_planeacion) {
-         $query->where('estatus_planeacion', $estatus_planeacion);
-     })
-      ->when($validarNoplaneadas == 1, function ($query) {
-          $query->where(function ($q) {
-              $q->where('estatus_planeacion', 0)
-                ->orWhereNull('estatus_planeacion');
-          });
-      })
-    ->where('jerarquia', '!=', 'Secundario')
-    ->orderBy('created_at', 'desc')
-    ->with(['cliente', 'DocCotizacion.Asignaciones']);
+
+        $ID_EMPRESA = auth()->user()->id_empresa;
+        $cotizacionesQuery = Cotizaciones::when($ID_EMPRESA != 0, function ($query) use ($ID_EMPRESA) {
+            $query->where('id_empresa', $ID_EMPRESA);
+        })
+        ->where('estatus', $estatusSearch)
+         ->when(!is_null($estatus_planeacion) && is_null($validarNoplaneadas), function ($query) use ($estatus_planeacion) {
+             $query->where('estatus_planeacion', $estatus_planeacion);
+         })
+          ->when($validarNoplaneadas == 1, function ($query) {
+              $query->where(function ($q) {
+                  $q->where('estatus_planeacion', 0)
+                    ->orWhereNull('estatus_planeacion');
+              });
+          })
+        ->where('jerarquia', '!=', 'Secundario')
+        ->orderBy('created_at', 'desc')
+        ->with(['cliente', 'DocCotizacion.Asignaciones']);
 
         $userProveedores = User::find(auth()->user()->id);
 
@@ -2030,7 +2034,8 @@ class CotizacionesController extends Controller
                     'size2' => $item['size2'],
                     'title' => $item['title'],
                     'type' => $item['type'],
-                    'url' => asset($directorio.'/'.$item['name'])
+                    'url' => asset($directorio.'/'.$item['name']),
+                    'opcion' => $r->urlRepo
                 );
 
                 //$fileName = uniqid() . $item['name'];
