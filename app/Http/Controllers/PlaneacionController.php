@@ -458,7 +458,9 @@ class PlaneacionController extends Controller
         $planeaciones = Asignaciones::join('docum_cotizacion', 'asignaciones.id_contenedor', '=', 'docum_cotizacion.id')
                         ->join('cotizaciones', 'docum_cotizacion.id_cotizacion', '=', 'cotizaciones.id')
                         ->where('asignaciones.fecha_inicio', '>=', $request->fromDate)
-                        ->where('asignaciones.id_empresa', '=', auth()->user()->id_empresa)
+                         ->when(auth()->user()->id_empresa != 0, function ($q) { //para poder filtrar por empresa en caso de que el usuario tenga acceso a varias empresas, si tiene acceso a todas no se filtra
+                             $q->where('asignaciones.id_empresa', auth()->user()->id_empresa);
+                         })
                         ->where('cotizaciones.estatus', 'Aprobada')
                         ->where('estatus_planeacion', '=', 1)
                          ->when($userProveedores->proveedores()->exists(), function ($query) use ($proveedorIds) {
