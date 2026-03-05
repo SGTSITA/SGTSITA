@@ -44,7 +44,11 @@ class CoordenadasController extends Controller
 
     public function getCotizCoordenadasList()
     {
-        $cotizaciones = Cotizaciones::where('id_empresa', auth()->user()->id_empresa)
+        $empresaId = Auth::user()->id_empresa;
+        $cotizaciones = Cotizaciones::where('id_empresa', )
+       ->when($empresaId != 0, function ($q) use ($empresaId) {
+           $q->where('id_empresa', $empresaId);
+       })
             ->where('estatus', '=', 'Aprobada')
             ->where('estatus_planeacion', '=', 1)
             ->orderBy('created_at', 'desc')
@@ -133,7 +137,7 @@ class CoordenadasController extends Controller
         return view('coordenadas.search');
     }
 
-    public function getcoorcontenedor(Request  $request)
+    public function getcoorcontenedor(Request  $request) //cambiar a nueva modalidad de tipo viaje desde asignaciones y revisar optimizacion de consulta
     {
         $preguntas_A = [
             [ 'texto' => "1) ¿ Registro en Puerto ?", 'campo' => 'registro_puerto', 'tooltip' => "Registro en Puerto" ],
@@ -787,7 +791,7 @@ class CoordenadasController extends Controller
 
         $datos = $datosAll;
 
-        if (!is_null($idEmpresa) && $idCliente == 0) {
+        if (!is_null($idEmpresa) && $idCliente == 0 && $idEmpresa !== 0) {
             $datos = $datosAll->where('id_empresa', $idEmpresa);
         }
 
@@ -866,7 +870,8 @@ class CoordenadasController extends Controller
             'equipos.id_equipo',
             'equipos.placas',
             'gps_company.url_conexion as tipoGps',
-            'equipos.id_empresa'
+            'equipos.id_empresa',
+            'equipos.user_id'
         )
          ->join('gps_company', 'gps_company.id', '=', 'equipos.gps_company_id')
          //->where('equipos.id_empresa', $idEmpresa)
@@ -876,6 +881,13 @@ class CoordenadasController extends Controller
          ->get();
 
         $equipos = $equiposAll->where('id_empresa', $idEmpresa)->values();
+        if ($idEmpresa != 0) {
+
+            $equipos = $equiposAll->where('id_empresa', $idEmpresa)->values();
+        } else {
+
+            $equipos = $equiposAll->where('user_id', auth()->id())->values();
+        }
 
         if ($datos) {
             return response()->json([

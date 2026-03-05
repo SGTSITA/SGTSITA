@@ -23,26 +23,16 @@ class PrestamosController extends Controller
         $this->BancosService = $BancosService;
     }
 
-
     public function index()
     {
         $operadores = Operador::where('id_empresa', auth()->user()->id_empresa)->get();
         $bancos2 = Bancos::where('id_empresa', auth()->user()->id_empresa)->get(); //old bancos
         $fecha = Carbon::now()->format('Y-m-d');
         $bancos = $this->BancosService->getCuentasOption(auth()->user()->id_empresa, $fecha, $fecha, true);
-        $prestamos = Prestamo::with(['operador', 'banco', 'pagoprestamos'])
-           ->when(!auth()->user()->is_admin, function ($q) {
-               $q->whereHas('operador', function ($q2) {
-                   $q2->where('id_empresa', auth()->user()->id_empresa);
-               });
-           })
-           ->orderBy('created_at', 'desc')
-           ->get();
 
-        // $historial = $prestamos->pagos()->orderBy('created_at')->get();
-
-        return view('operadores.prestamos.registrar_prestamos', compact('operadores', 'bancos', 'prestamos'));
+        return view('operadores.prestamos.registrar_prestamos', compact('operadores', 'bancos'));
     }
+
 
     public function store(Request $request)
     {
@@ -62,7 +52,7 @@ class PrestamosController extends Controller
                 'errors' => $validator->errors()
             ], 422);
         }
-        $data = $request->only(['id_operador', 'id_banco', 'cantidad']);
+        $data = $request->only(['id_operador', 'id_banco', 'cantidad','tipo']);
         if ($request->filled('id_banco') && $data['cantidad'] > 0) {
             $idEmpresa = auth()->user()->id_empresa;
             $fechaAplicacion = $request->get('FechaAplicacion');
@@ -165,14 +155,63 @@ class PrestamosController extends Controller
 
     public function getListaPrestamos()
     {
-        $prestamos = Prestamo::with(['operador', 'banco', 'pagoprestamos'])
-            ->when(!auth()->user()->is_admin, function ($q) {
-                $q->whereHas('operador', function ($q2) {
-                    $q2->where('id_empresa', auth()->user()->id_empresa);
-                });
-            })
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $prestamos = Prestamo::with(['operador', 'pagoprestamos'])
+    ->when(!auth()->user()->is_admin, function ($q) {
+        $q->whereHas('operador', function ($q2) {
+            $q2->where('id_empresa', auth()->user()->id_empresa);
+        });
+    })
+    ->get()
+    ->groupBy('id_operador')
+    ->map(function ($items) {
+
+        $operador = $items->first()->operador;
+
+
+        $prestamos = $items->where('tipo', Prestamo::TIPO_PRESTAMO);
+        $conteoPrestamos = $prestamos->count();
+        $totalPrestamos = $prestamos->sum('cantidad');
+
+
+        $adelantos = $items->where('tipo', Prestamo::TIPO_ADELANTO);
+        $conteoAdelantos = $adelantos->count();
+        $totalAdelantos = $adelantos->sum('cantidad');
+
+
+        $totalDeuda = $totalPrestamos + $totalAdelantos;
+
+
+        $totalAbonos = $items
+            ->flatMap(fn ($p) => $p->pagoprestamos)
+            ->sum('monto_pago');
+
+
+        $saldoFinal = $totalDeuda - $totalAbonos;
+
+
+        $conteoMovimientos = $items
+            ->flatMap(fn ($p) => $p->pagoprestamos)
+            ->count();
+
+        return [
+            'id_operador'        => $operador->id,
+            'operador'           => $operador->nombre,
+
+            'conteo_prestamos'   => $conteoPrestamos,
+            'total_prestamos'    => $totalPrestamos,
+
+            'conteo_adelantos'   => $conteoAdelantos,
+            'total_adelantos'    => $totalAdelantos,
+
+            'total_deuda'        => $totalDeuda,
+
+            'conteo_movimientos' => $conteoMovimientos,
+            'total_abonos'       => $totalAbonos,
+
+            'saldo_final'        => $saldoFinal,
+        ];
+    })
+    ->values();
 
 
 
@@ -197,6 +236,53 @@ class PrestamosController extends Controller
             'id_prestamo' => $prestamo,
             'total' => (float) $prestamos->cantidad,
         ]);
+    }
+    public function showOperador($id)
+    {
+
+        $fecha = Carbon::now()->format('Y-m-d');
+        $bancos = $this->BancosService->getCuentasOption(auth()->user()->id_empresa, $fecha, $fecha, true);
+
+        $operador = Operador::findOrFail($id);
+
+
+        $prestamos = Prestamo::with(['banco', 'pagoprestamos'])
+            ->where('id_operador', $id)
+            ->when(!auth()->user()->is_admin, function ($q) {
+                $q->whereHas('operador', function ($q2) {
+                    $q2->where('id_empresa', auth()->user()->id_empresa);
+                });
+            })
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // 🔹 Totales
+        $totalPrestamos = $prestamos
+            ->where('tipo', Prestamo::TIPO_PRESTAMO)
+            ->sum('cantidad');
+
+        $totalAdelantos = $prestamos
+            ->where('tipo', Prestamo::TIPO_ADELANTO)
+            ->sum('cantidad');
+
+        $totalDeuda = $totalPrestamos + $totalAdelantos;
+
+        $totalAbonos = $prestamos
+            ->flatMap(fn ($p) => $p->pagoprestamos)
+            ->sum('monto_pago');
+
+        $saldoFinal = $totalDeuda - $totalAbonos;
+
+        return view('operadores.prestamos.show', compact(
+            'operador',
+            'prestamos',
+            'totalPrestamos',
+            'totalAdelantos',
+            'totalDeuda',
+            'totalAbonos',
+            'saldoFinal',
+            'bancos'
+        ));
     }
 
 

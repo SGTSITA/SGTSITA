@@ -909,13 +909,22 @@ class CotizacionesController extends Controller
         $documentacion = DocumCotizacion::with('Asignaciones')->where('id_cotizacion', '=', $cotizacion->id)->first();
         $gastos_extras = GastosExtras::where('id_cotizacion', '=', $cotizacion->id)->get();
         //$clientes = Client::where('id_empresa' ,'=',auth()->user()->id_empresa)->get();
+        $idEmpresa = auth()->user()->id_empresa;
         $clientes = Client::join('client_empresa as ce', 'clients.id', '=', 'ce.id_client')
-                            ->where('ce.id_empresa', Auth::User()->id_empresa)
+                          //  ->where('ce.id_empresa', Auth::User()->id_empresa)
+->when($idEmpresa != 0, function ($query) use ($idEmpresa) {
+    $query->where('ce.id_empresa', $idEmpresa);
+})
                             ->where('is_active', 1)
                             ->orderBy('nombre')->get();
 
         $gastos_ope = GastosOperadores::where('id_cotizacion', '=', $cotizacion->id)->get();
-        $proveedores = Proveedor::catalogoPrincipal()->where('id_empresa', auth()->user()->id_empresa)->get();
+
+        $proveedores = Proveedor::catalogoPrincipal()->when($idEmpresa != 0, function ($query) use ($idEmpresa) {
+            $query->where('id_empresa', $idEmpresa);
+        })
+     //   where('id_empresa', $idEmpresa)
+        ->get();
         // dd($documentacion);
         $bancos = Bancos::where('id_empresa', Auth::User()->id_empresa)->get();
 
@@ -1503,7 +1512,7 @@ class CotizacionesController extends Controller
                 $asignacion->id_proveedor = $request->id_proveedor;
                 $asignacion->update();
             }
-
+            $cotizaciones->id_proveedor = $request->id_proveedor;
             $cotizaciones->update();
 
         }

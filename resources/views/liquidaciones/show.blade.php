@@ -74,6 +74,10 @@
                             </h5>
 
                             <div class="float-right">
+                                <button class="btn btn-sm bg-gradient-primary" id="btnPreview">
+                                    <i class="fa fa-eye"></i>
+                                    Vista previa
+                                </button>
                                 <button type="button" id="btnDineroViaje" class="btn btn-sm bg-gradient-success">
                                     <i class="fa fa-dollar"></i>
                                     Registrar dinero viaje
@@ -103,6 +107,29 @@
     @include('liquidaciones.modal-pagar')
     @include('liquidaciones.modal-justificar-gasto')
     @include('liquidaciones.modal-justificar-hotable')
+    <div class="modal fade" id="modalPreview" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalPreviewLabel">Vista Previa Liquidación</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body">
+                    <div id="previewContainer"></div>
+                </div>
+
+                <div class="modal-footer">
+                    <button id="btnDescargar" class="btn btn-danger">
+                        Descargar PDF
+                    </button>
+                    <button class="btn btn-success" onclick="confirmarLiquidacion()">Confirmar Pago</button>
+                </div>
+
+            </div>
+        </div>
+    </div>
 @endsection
 
 @push('custom-javascript')
@@ -118,7 +145,12 @@
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
     <script>
+        let idOperador = {{ $id }};
+        let operadorNombre = "{{ $operador->nombre }}";
+        let dataRespons = {};
         $(document).ready(() => {
             mostrarViajesOperador({{ $id }});
 
