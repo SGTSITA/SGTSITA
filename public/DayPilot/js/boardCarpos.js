@@ -5,16 +5,16 @@ let canEndTravel = 0;
 var allEvents = null;
 var festivos = [];
 let dpReady = false;
-let buscarContenedor = document.querySelector('#txtBuscarContenedor');
+let buscarContenedor = document.querySelector("#txtBuscarContenedor");
 
 function formatFecha(fechaISO) {
     const fecha = new Date(fechaISO);
-    const btnGuardarBoard = document.querySelector('#btnGuardarBoard');
-    const labelNotice = document.querySelector('#labelNotice');
+    const btnGuardarBoard = document.querySelector("#btnGuardarBoard");
+    const labelNotice = document.querySelector("#labelNotice");
 
     // Obtener día, mes y año
-    const dia = String(fecha.getDate()).padStart(2, '0');
-    const mes = String(fecha.getMonth() + 1).padStart(2, '0'); // Los meses empiezan desde 0
+    const dia = String(fecha.getDate()).padStart(2, "0");
+    const mes = String(fecha.getMonth() + 1).padStart(2, "0"); // Los meses empiezan desde 0
     const anio = fecha.getFullYear();
 
     // Formato final
@@ -25,8 +25,8 @@ async function initBoard(fromDate, toDate) {
     var _token = $('input[name="_token"]').val();
 
     const result = await $.ajax({
-        method: 'post',
-        url: '/planeaciones/monitor/board',
+        method: "post",
+        url: "/planeaciones/monitor/board",
         data: { _token: _token, fromDate: fromDate },
         beforeSend: () => {
             if (dpReady) {
@@ -51,7 +51,8 @@ async function initBoard(fromDate, toDate) {
                 resp.extractor.forEach((i) => {
                     let x = Math.floor(Math.random() * 8) + 1;
                     if (i.fecha_inicio !== null) {
-                        scrollToDate = scrollToDate ?? new DayPilot.Date(i.fecha_inicio);
+                        scrollToDate =
+                            scrollToDate ?? new DayPilot.Date(i.fecha_inicio);
                         // let fecha_finalmuestra = new DayPilot.Date(i.fecha_fin).addDays(1);
                         var e = {
                             start: new DayPilot.Date(i.fecha_inicio),
@@ -84,7 +85,7 @@ async function initBoard(fromDate, toDate) {
             dp.scrollTo(new DayPilot.Date(fromDate));
         },
         error: (e) => {
-            console.log('Ocurrio un error: ' + e);
+            console.log("Ocurrio un error: " + e);
         },
     });
 
@@ -95,42 +96,42 @@ async function initBoard(fromDate, toDate) {
 var mySugesstions = [];
 var allEvents = [];
 
-var dp = new DayPilot.Scheduler('dp');
+var dp = new DayPilot.Scheduler("dp");
 
-dp.startDate = $('#daterange').attr('data-start');
+dp.startDate = $("#daterange").attr("data-start");
 dp.days = 365;
 
 dp.cellWidth = 160;
 
 dp.rowMarginBottom = 10;
 dp.rowMarginTop = 10;
-dp.scale = 'Day';
-dp.locale = 'es-mx';
+dp.scale = "Day";
+dp.locale = "es-mx";
 dp.timeHeaders = [
-    { groupBy: 'Month', format: 'MMMM yyyy' },
-    { groupBy: 'Day', format: 'd' },
+    { groupBy: "Month", format: "MMMM yyyy" },
+    { groupBy: "Day", format: "d" },
 ];
 
-dp.crosshairType = 'Full';
+dp.crosshairType = "Full";
 dp.allowEventOverlap = true;
 
 dp.showToolTip = false;
 dp.bubble = new DayPilot.Bubble();
 
-dp.durationBarMode = 'PercentComplete';
+dp.durationBarMode = "PercentComplete";
 
 dp.contextMenu = new DayPilot.Menu({
     items: [
         {
-            text: '... ',
+            text: "... ",
             onClick: function (args) {
                 Swal.fire({
-                    title: '¿Desea ver las corrdenadas del viaje?',
+                    title: "¿Desea ver las corrdenadas del viaje?",
                     showDenyButton: false,
                     showCancelButton: true,
-                    confirmButtonText: 'Si, Actualizar!',
-                    cancelButtonText: 'Cancelar!',
-                    icon: 'question',
+                    confirmButtonText: "Si, Actualizar!",
+                    cancelButtonText: "Cancelar!",
+                    icon: "question",
                 }).then((result) => {
                     /* Read more about isConfirmed, isDenied below */
                     if (result.isConfirmed) {
@@ -174,7 +175,7 @@ dp.contextMenu = new DayPilot.Menu({
 dp.treeEnabled = true;
 dp.treePreventParentUsage = true;
 
-dp.heightSpec = 'Max';
+dp.heightSpec = "Max";
 dp.height = 500;
 
 dp.events.list = [];
@@ -214,19 +215,21 @@ dp.onEventMoved = function (args) {
     let inforAjustes = ajustes.filter((item) => {
         return item.text != args.e.data.text;
     });
-    ajustes = inforAjustes ? [...inforAjustes, args.e.data] : [...ajustes, args.e.data];
+    ajustes = inforAjustes
+        ? [...inforAjustes, args.e.data]
+        : [...ajustes, args.e.data];
 
-    dp.message('Se cambió fecha del viaje: ' + args.e.text());
+    dp.message("Se cambió fecha del viaje: " + args.e.text());
 
     if (ajustes.length > 0) {
-        btnGuardarBoard.classList.remove('d-none');
+        btnGuardarBoard.classList.remove("d-none");
         labelNotice.textContent = `Viajes con cambios sin confirmar: ${ajustes.length}`;
-        labelNotice.classList.remove('d-none');
-        btnGuardarBoard.classList.add('parpadeando');
-        labelNotice.classList.add('parpadeando');
+        labelNotice.classList.remove("d-none");
+        btnGuardarBoard.classList.add("parpadeando");
+        labelNotice.classList.add("parpadeando");
         setTimeout(() => {
-            btnGuardarBoard.classList.remove('parpadeando');
-            labelNotice.classList.remove('parpadeando');
+            btnGuardarBoard.classList.remove("parpadeando");
+            labelNotice.classList.remove("parpadeando");
         }, 2500); // 2.5 segundos
     }
 };
@@ -244,18 +247,20 @@ dp.onEventResized = function (args) {
     let inforAjustes = ajustes.filter((item) => {
         return item.text != args.e.data.text;
     });
-    ajustes = inforAjustes ? [...inforAjustes, args.e.data] : [...ajustes, args.e.data];
+    ajustes = inforAjustes
+        ? [...inforAjustes, args.e.data]
+        : [...ajustes, args.e.data];
 
-    dp.message('Periodo de viaje modificado: ' + args.e.text());
+    dp.message("Periodo de viaje modificado: " + args.e.text());
     if (ajustes.length > 0) {
-        btnGuardarBoard.classList.remove('d-none');
+        btnGuardarBoard.classList.remove("d-none");
         labelNotice.textContent = `Viajes con cambios sin confirmar: ${ajustes.length}`;
-        labelNotice.classList.remove('d-none');
-        btnGuardarBoard.classList.add('parpadeando');
-        labelNotice.classList.add('parpadeando');
+        labelNotice.classList.remove("d-none");
+        btnGuardarBoard.classList.add("parpadeando");
+        labelNotice.classList.add("parpadeando");
         setTimeout(() => {
-            btnGuardarBoard.classList.remove('parpadeando');
-            labelNotice.classList.remove('parpadeando');
+            btnGuardarBoard.classList.remove("parpadeando");
+            labelNotice.classList.remove("parpadeando");
         }, 2500); // 2.5 segundos
     }
 };
@@ -270,7 +275,7 @@ dp.onEventMove = function (args) {
             end: args.newEnd,
             text: args.e.text(),
             resource: args.newResource,
-            id: 'id/' + args.e.id() + '/' + DayPilot.guid(), // generate random id
+            id: "id/" + args.e.id() + "/" + DayPilot.guid(), // generate random id
         });
         dp.events.add(newEvent);
 
@@ -285,87 +290,100 @@ dp.onRowClick = function (args) {
 };
 
 dp.onEventClick = function (args) {
-    getInfoViaje(args.e.data.start.value, args.e.data.end.value, args.e.data.text, args.e.data.id);
+    getInfoViaje(
+        args.e.data.start.value,
+        args.e.data.end.value,
+        args.e.data.text,
+        args.e.data.id,
+    );
 };
 
 function abrirMapaEnNuevaPestana(contenedor, tipoS) {
     const url = `/coordenadas/mapa_rastreo?contenedor=${contenedor}&tipoS=${encodeURIComponent(tipoS)}`;
-    window.open(url, '_blank');
+    window.open(url, "_blank");
 }
 
 function getInfoViaje(startDate, endDate, numContenedor_, idContendor) {
-    let fechaSalida = document.querySelector('#fechaSalida');
+    let fechaSalida = document.querySelector("#fechaSalida");
     fechaSalida.textContent = formatFecha(startDate);
 
-    let fechaEntrega = document.querySelector('#fechaEntrega');
+    let fechaEntrega = document.querySelector("#fechaEntrega");
 
-    let numContenedor = document.querySelector('#numContenedorSpan');
+    let numContenedor = document.querySelector("#numContenedorSpan");
     numContenedor.textContent = numContenedor_;
 
-    let nombreProveedor = document.querySelector('#nombreProveedor');
+    let nombreProveedor = document.querySelector("#nombreProveedor");
     // let nombreTransportista = document.querySelector('#nombreTransportista')
-    let contactoEntrega = document.querySelector('#ContactoEntrega');
-    let nombreOperador = document.querySelector('#nombreOperador');
-    let telefonoOperador = document.querySelector('#telefonoOperador');
+    let contactoEntrega = document.querySelector("#ContactoEntrega");
+    let nombreOperador = document.querySelector("#nombreOperador");
+    let telefonoOperador = document.querySelector("#telefonoOperador");
 
-    let tipoViajeSpan = document.querySelector('#tipoViajeSpan');
+    let tipoViajeSpan = document.querySelector("#tipoViajeSpan");
 
-    let origen = document.querySelector('#origen');
-    let destino = document.querySelector('#destino');
-    let nombreCliente = document.querySelector('#nombreCliente');
-    let nombreSubcliente = document.querySelector('#nombreSubcliente');
+    let origen = document.querySelector("#origen");
+    let destino = document.querySelector("#destino");
+    let nombreCliente = document.querySelector("#nombreCliente");
+    let nombreSubcliente = document.querySelector("#nombreSubcliente");
 
-    let id_equipo_camion = document.querySelector('#id_equipo_camion');
-    let placas_camion = document.querySelector('#placas_camion');
+    let id_equipo_camion = document.querySelector("#id_equipo_camion");
+    let placas_camion = document.querySelector("#placas_camion");
 
-    let marca_camion = document.querySelector('#marca_camion');
-    let imei_camion = document.querySelector('#imei_camion');
+    let marca_camion = document.querySelector("#marca_camion");
+    let imei_camion = document.querySelector("#imei_camion");
 
-    let id_equipo_chasis = document.querySelector('#id_equipo_chasis');
-    let imei_chasis = document.querySelector('#imei_chasis');
+    let id_equipo_chasis = document.querySelector("#id_equipo_chasis");
+    let imei_chasis = document.querySelector("#imei_chasis");
 
     var _token = $('input[name="_token"]').val();
     $.ajax({
-        url: '/planeaciones/monitor/board/info-viaje',
-        type: 'post',
+        url: "/planeaciones/monitor/board/info-viaje",
+        type: "post",
         data: { _token: _token, id: idContendor },
         beforeSend: () => {
-            $('#cima-label').addClass('d-none');
-            mostrarLoading('Espere un momento, cargando información del contenedor...');
-            let docum = document.querySelectorAll('.documentos');
+            $("#cima-label").addClass("d-none");
+            mostrarLoading(
+                "Espere un momento, cargando información del contenedor...",
+            );
+            let docum = document.querySelectorAll(".documentos");
             docum.forEach((d) => {
                 d.innerHTML = `--`;
             });
 
-            nombreProveedor.textContent = '--';
+            nombreProveedor.textContent = "--";
             //nombreTransportista.textContent = "--"
-            contactoEntrega.textContent = '--';
-            nombreOperador.textContent = '--';
-            telefonoOperador.textContent = '--';
+            contactoEntrega.textContent = "--";
+            nombreOperador.textContent = "--";
+            telefonoOperador.textContent = "--";
 
-            tipoViajeSpan.textContent = '--';
+            tipoViajeSpan.textContent = "--";
 
-            origen.textContent = '--';
-            destino.textContent = '--';
-            nombreCliente.textContent = '--';
-            nombreSubcliente.textContent = '--';
+            origen.textContent = "--";
+            destino.textContent = "--";
+            nombreCliente.textContent = "--";
+            nombreSubcliente.textContent = "--";
 
-            placas_camion.textContent = '--';
-            id_equipo_camion.textContent = '--';
-            marca_camion.textContent = '--';
-            imei_camion.textContent = '--';
-            id_equipo_chasis.textContent = '--';
-            imei_chasis.textContent = '--';
+            placas_camion.textContent = "--";
+            id_equipo_camion.textContent = "--";
+            marca_camion.textContent = "--";
+            imei_camion.textContent = "--";
+            id_equipo_chasis.textContent = "--";
+            imei_chasis.textContent = "--";
         },
         success: (response) => {
             ocultarLoading();
-            fechaEntrega.textContent = formatFecha(response.datosExtraviaje.fecha_fin);
-            nombreProveedor.textContent = response.datosExtraviaje.empresa_beneficiario;
-            contactoEntrega.textContent = response.datosExtraviaje.cp_contacto_entrega ?? '--';
+            fechaEntrega.textContent = formatFecha(
+                response.datosExtraviaje.fecha_fin,
+            );
+            nombreProveedor.textContent =
+                response.datosExtraviaje.empresa_beneficiario;
+            contactoEntrega.textContent =
+                response.datosExtraviaje.cp_contacto_entrega ?? "--";
             // nombreTransportista.textContent = response.datosExtraviaje.transportista_nombre ?? "--"
-            nombreOperador.textContent = response.datosExtraviaje.beneficiario_nombre;
+            nombreOperador.textContent =
+                response.datosExtraviaje.beneficiario_nombre;
 
-            telefonoOperador.textContent = response.datosExtraviaje.beneficiario_telefono ?? '--';
+            telefonoOperador.textContent =
+                response.datosExtraviaje.beneficiario_telefono ?? "--";
 
             tipoViajeSpan.textContent = response.tipo;
 
@@ -374,31 +392,44 @@ function getInfoViaje(startDate, endDate, numContenedor_, idContendor) {
             nombreCliente.textContent = response.cliente.nombre;
             nombreSubcliente.textContent = response.subcliente.nombre;
 
-            placas_camion.textContent = response.documentos.placas_camion ?? 'NA';
-            id_equipo_camion.textContent = response.documentos.id_equipo_camion ?? 'NA';
-            marca_camion.textContent = response.documentos.marca_camion ?? 'NA';
-            imei_camion.textContent = response.documentos.imei_camion ?? 'NA';
-            id_equipo_chasis.textContent = response.documentos.id_equipo_chasis ?? 'NA';
-            imei_chasis.textContent = response.documentos.imei_chasis ?? 'NA';
+            placas_camion.textContent =
+                response.documentos.placas_camion ?? "NA";
+            id_equipo_camion.textContent =
+                response.documentos.id_equipo_camion ?? "NA";
+            marca_camion.textContent = response.documentos.marca_camion ?? "NA";
+            imei_camion.textContent = response.documentos.imei_camion ?? "NA";
+            id_equipo_chasis.textContent =
+                response.documentos.id_equipo_chasis ?? "NA";
+            imei_chasis.textContent = response.documentos.imei_chasis ?? "NA";
 
-            if (response.tipo == 'Viaje Propio') {
-                $('#tipoViajeSpan').addClass('bg-gradient-success');
+            if (response.tipo == "Viaje Propio") {
+                $("#tipoViajeSpan").addClass("bg-gradient-success");
             } else {
-                $('#tipoViajeSpan').addClass('bg-gradient-info');
+                $("#tipoViajeSpan").addClass("bg-gradient-info");
             }
-            let tipoS = 'Planeacion-> Contenedor:';
+            let tipoS = "Planeacion-> Contenedor:";
             //Once en true para que se ejecute una sola vez y se elimine el listener    onclick="('${params.data.contenedor}')
-            btnFinalizar.addEventListener('click', () => finalizarViaje(idContendor, numContenedor_), { once: true });
-            btnDeshacer.addEventListener('click', () => anularPlaneacion(idContendor, numContenedor_), { once: true });
-            btnRastreo.addEventListener('click', () => abrirMapaEnNuevaPestana(numContenedor_, tipoS), { once: false });
+            btnFinalizar.addEventListener(
+                "click",
+                () => finalizarViaje(idContendor, numContenedor_),
+                { once: true },
+            );
+            btnDeshacer.addEventListener(
+                "click",
+                () => anularPlaneacion(idContendor, numContenedor_),
+                { once: true },
+            );
+            btnRastreo.onclick = () => {
+                abrirMapaEnNuevaPestana(numContenedor_, tipoS);
+            };
             let documentosRequeridos = [
-                'boleta_liberacion',
-                'boleta_vacio',
-                'carta_porte',
-                'carta_porte_xml',
-                'doc_ccp',
-                'doc_eir',
-                'doda',
+                "boleta_liberacion",
+                "boleta_vacio",
+                "carta_porte",
+                "carta_porte_xml",
+                "doc_ccp",
+                "doc_eir",
+                "doda",
             ];
 
             let documentos = response.documents;
@@ -406,12 +437,14 @@ function getInfoViaje(startDate, endDate, numContenedor_, idContendor) {
             let allDocumentsCompleted = true;
             let documentosRequeridosFinal = [...documentosRequeridos];
 
-            if (documentos['cima'] == 1) {
-                documentosRequeridosFinal = documentosRequeridosFinal.filter((doc) => doc !== 'doc_eir');
+            if (documentos["cima"] == 1) {
+                documentosRequeridosFinal = documentosRequeridosFinal.filter(
+                    (doc) => doc !== "doc_eir",
+                );
             }
 
             docs.forEach((doc) => {
-                let documento = document.querySelector('#' + doc);
+                let documento = document.querySelector("#" + doc);
                 let valorDoc = documentos[doc];
 
                 if (documento) {
@@ -421,8 +454,8 @@ function getInfoViaje(startDate, endDate, numContenedor_, idContendor) {
                             : `<i class="fas fa-circle-xmark text-secondary fa-lg"></i>`;
                 }
 
-                if (doc === 'cima' && valorDoc == 1) {
-                    $('#cima-label').removeClass('d-none');
+                if (doc === "cima" && valorDoc == 1) {
+                    $("#cima-label").removeClass("d-none");
                 }
 
                 if (documentosRequeridosFinal.includes(doc)) {
@@ -439,7 +472,7 @@ function getInfoViaje(startDate, endDate, numContenedor_, idContendor) {
         },
     });
 
-    const modalElement = document.getElementById('viajeModal');
+    const modalElement = document.getElementById("viajeModal");
     const bootstrapModal = new bootstrap.Modal(modalElement);
     bootstrapModal.show();
 }
@@ -448,28 +481,32 @@ function confirmarCambiosPlaneacion() {
     var _token = $('input[name="_token"]').val();
     let payload = { _token, ajustes: JSON.stringify(ajustes) };
     Swal.fire({
-        title: `Guardar cambios para ${ajustes.length} ${ajustes.length > 1 ? 'Viajes' : 'Viaje'}`,
+        title: `Guardar cambios para ${ajustes.length} ${ajustes.length > 1 ? "Viajes" : "Viaje"}`,
         text: `¿Desea guardar la programación de ${ajustes.length} viajes pendientes por confirmar?`,
-        icon: 'question',
+        icon: "question",
         showCancelButton: true,
-        confirmButtonText: 'Sí, continuar',
-        cancelButtonText: 'Cancelar',
+        confirmButtonText: "Sí, continuar",
+        cancelButtonText: "Cancelar",
     }).then((result) => {
         if (result.isConfirmed) {
             $.ajax({
-                url: '/planeaciones/viajes/reprogramar',
-                type: 'post',
+                url: "/planeaciones/viajes/reprogramar",
+                type: "post",
                 data: payload,
                 beforeSend: () => {
-                    mostrarLoading('Espere un momento, guardando cambios...');
+                    mostrarLoading("Espere un momento, guardando cambios...");
                 },
                 success: (response) => {
                     ocultarLoading();
-                    Swal.fire(response.Titulo, response.Mensaje, response.TMensaje);
+                    Swal.fire(
+                        response.Titulo,
+                        response.Mensaje,
+                        response.TMensaje,
+                    );
                 },
                 error: (e) => {
                     ocultarLoading();
-                    Swal.fire('Ha ocurrido un error', 'error', 'error');
+                    Swal.fire("Ha ocurrido un error", "error", "error");
                 },
             });
         }
@@ -481,21 +518,21 @@ if (btnGuardarBoard) {
 }
 
 function anularPlaneacion(idCotizacion, numContenedor) {
-    $('#viajeModal').modal('hide');
+    $("#viajeModal").modal("hide");
     var _token = $('input[name="_token"]').val();
     Swal.fire({
         title: `Quitar programación ${numContenedor}`,
         text: `¿Desea cancelar la programación actual del viaje? Una vez realizada esta acción no se podrá deshacer`,
-        icon: 'question',
+        icon: "question",
         showCancelButton: true,
-        confirmButtonText: 'Sí, continuar',
-        cancelButtonText: 'Cancelar',
+        confirmButtonText: "Sí, continuar",
+        cancelButtonText: "Cancelar",
     }).then((result) => {
         if (result.isConfirmed) {
             fetch(`/planeaciones/viaje/programa/anular`, {
-                method: 'POST',
+                method: "POST",
                 headers: {
-                    'Content-Type': 'application/json',
+                    "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
                     _token: _token,
@@ -506,12 +543,16 @@ function anularPlaneacion(idCotizacion, numContenedor) {
                 .then((response) => response.json())
                 .then((data) => {
                     Swal.fire(data.Titulo, data.Mensaje, data.TMensaje);
-                    if (data.TMensaje == 'success') {
+                    if (data.TMensaje == "success") {
                         dp.events.remove(idCotizacion); //Eliminar del board
                     }
                 })
                 .catch((error) => {
-                    Swal.fire('Error', 'No pudimos anular el programa del viaje', 'error');
+                    Swal.fire(
+                        "Error",
+                        "No pudimos anular el programa del viaje",
+                        "error",
+                    );
                 });
         }
     });
@@ -520,29 +561,29 @@ function anularPlaneacion(idCotizacion, numContenedor) {
 function finalizarViaje(idCotizacion, numContenedor) {
     if (!canEndTravel) {
         Swal.fire({
-            icon: 'warning',
-            title: 'Faltan documentos',
-            text: 'No puedes finalizar el viaje hasta cargar todos los documentos.',
-            confirmButtonText: 'Entendido',
+            icon: "warning",
+            title: "Faltan documentos",
+            text: "No puedes finalizar el viaje hasta cargar todos los documentos.",
+            confirmButtonText: "Entendido",
         });
         return;
     }
 
-    $('#viajeModal').modal('hide');
+    $("#viajeModal").modal("hide");
     var _token = $('input[name="_token"]').val();
     Swal.fire({
         title: `Finalizar viaje ${numContenedor}`,
         text: `¿Se encuentra seguro que desea finalizar el viaje? Una vez realizada esta acción no se podrá deshacer`,
-        icon: 'question',
+        icon: "question",
         showCancelButton: true,
-        confirmButtonText: 'Sí, continuar',
-        cancelButtonText: 'Cancelar',
+        confirmButtonText: "Sí, continuar",
+        cancelButtonText: "Cancelar",
     }).then((result) => {
         if (result.isConfirmed) {
             fetch(`/planeaciones/viaje/finalizar`, {
-                method: 'POST',
+                method: "POST",
                 headers: {
-                    'Content-Type': 'application/json',
+                    "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
                     _token: _token,
@@ -552,12 +593,16 @@ function finalizarViaje(idCotizacion, numContenedor) {
                 .then((response) => response.json())
                 .then((data) => {
                     Swal.fire(data.Titulo, data.Mensaje, data.TMensaje);
-                    if (data.TMensaje == 'success') {
+                    if (data.TMensaje == "success") {
                         dp.events.remove(idCotizacion); //Eliminar del board
                     }
                 })
                 .catch((error) => {
-                    Swal.fire('Error', 'No pudimos finalizar el viaje', 'error');
+                    Swal.fire(
+                        "Error",
+                        "No pudimos finalizar el viaje",
+                        "error",
+                    );
                 });
         }
     });
@@ -565,13 +610,15 @@ function finalizarViaje(idCotizacion, numContenedor) {
 
 function encontrarContenedor(contenedor) {
     let busqueda = allEvents;
-    const resultados = busqueda.filter((f) => f.num_contenedor?.toLowerCase().includes(contenedor.toLowerCase()));
+    const resultados = busqueda.filter((f) =>
+        f.num_contenedor?.toLowerCase().includes(contenedor.toLowerCase()),
+    );
     if (resultados.length != 1) {
         Swal.fire(
-            'No se encontró contenedor',
+            "No se encontró contenedor",
             `No existe ningún contenedor "PLANEADO" con el numero de contenedor proporcionado` +
                 `"${contenedor}". Por favor, verifique e intente de nuevo.`,
-            'warning',
+            "warning",
         );
         return;
     }
@@ -587,25 +634,39 @@ function encontrarContenedor(contenedor) {
     }
 }
 
-buscarContenedor.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') {
+buscarContenedor.addEventListener("keypress", (e) => {
+    if (e.key === "Enter") {
         encontrarContenedor(e.target.value);
     }
 });
 
 function barColor(i) {
-    var colors = ['#A9A9A9', '#6aa84f', '#f1c232', '#cc0000', '#C8A2C8', '#0057B8'];
+    var colors = [
+        "#A9A9A9",
+        "#6aa84f",
+        "#f1c232",
+        "#cc0000",
+        "#C8A2C8",
+        "#0057B8",
+    ];
     return colors[i % 6];
 }
 
 function barBackColor(i) {
-    var colors = ['#CBCBCB', '#b6d7a8', '#ffe599', '#ea9999', '#D8BFD8', '#87CEEB'];
+    var colors = [
+        "#CBCBCB",
+        "#b6d7a8",
+        "#ffe599",
+        "#ea9999",
+        "#D8BFD8",
+        "#87CEEB",
+    ];
     return colors[i % 6];
 }
 
 function zooming(ev) {
     var cellwidth = parseInt(ev);
-    document.querySelector('#labelZoom').innerText = cellwidth;
+    document.querySelector("#labelZoom").innerText = cellwidth;
     var start = dp.getViewPort().start;
 
     dp.cellWidth = cellwidth;
