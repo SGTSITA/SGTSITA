@@ -41,11 +41,28 @@ class CotizacionesController extends Controller
     public function index()
     {
         $empresas = Empresas::get();
+        $userProveedores = User::find(auth()->user()->id);
+        $idempresa = auth()->user()->id_empresa;
         $gpsCompanyIds = GpsCompanyProveedor::where('id_empresa', auth()->user()->id_empresa)
-    ->where('estado', 1)
-    ->pluck('id_gps_company');
+         ->where('estado', 1)
+            ->pluck('id_gps_company');
+
+        if ($userProveedores->proveedores()->exists()) {
+
+            $gpsCompanyIds = GpsCompanyProveedor::when($idempresa != 0, function ($query) use ($idempresa) {
+                $query->where('id_empresa', $idempresa);
+            })
+                ->whereIn('id_proveedor', $userProveedores->proveedores()->pluck('proveedor_id'))
+                ->where('estado', 1)
+                ->pluck('id_gps_company');
+        }
 
         $gpsCompanies = GpsCompany::whereIn('id', $gpsCompanyIds)->get();
+
+
+
+
+
 
         $user = User::find(auth()->user()->id);
 
