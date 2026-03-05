@@ -14,12 +14,16 @@ class Prestamo extends Model
     protected $table = 'prestamos';
     protected $appends = ['total_pagado'];
 
+    public const TIPO_PRESTAMO = 'prestamo';
+    public const TIPO_ADELANTO = 'adelanto';
+
     protected $fillable = [
         'id_operador',
         'id_banco',
         'cantidad',
         'pagos',
-        'saldo_actual'
+        'saldo_actual',
+         'tipo'
     ];
 
     // Relación: un préstamo pertenece a un operador
