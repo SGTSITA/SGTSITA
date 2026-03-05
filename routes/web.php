@@ -61,7 +61,7 @@ Route::group(["prefix" => "prestamos"], function () {
     Route::post("{id}/abonar", [PrestamosController::class,'abonar'])->name('prestamo.abonar');
     Route::get("lista", [PrestamosController::class,'getListaPrestamos'])->name('prestamo.lista');
     Route::get("lista-detalle/{idprestamo}", [PrestamosController::class,'getPrestamosPagos'])->name('prestamo.listadetalle');
-
+    Route::get("operador/{id}", [PrestamosController::class, 'showOperador']) ->name('prestamos.operador.show');
 
 });
 
