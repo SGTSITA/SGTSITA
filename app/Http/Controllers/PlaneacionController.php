@@ -709,7 +709,10 @@ class PlaneacionController extends Controller
                         $dineroViaje->id_banco = $request->get('cmbBanco');
                         $dineroViaje->motivo = 'Dinero para viaje';
                         $dineroViaje->monto =  $CantineroViaje;
-                        $dineroViaje->fecha_entrega_monto = date('Y-m-d');
+                        $dineroViaje->fecha_entrega_monto = \Carbon\Carbon::createFromFormat(
+                            'd/m/Y',
+                            $request->get('FechaAplicacionDinero')
+                        )->format('Y-m-d');
                         $dineroViaje->save();
 
 

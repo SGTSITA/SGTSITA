@@ -22,4 +22,9 @@ class PagoPrestamo extends Model
         'referencia' ,
         'fecha_pago'
     ];
+
+    public function prestamo()
+    {
+        return $this->belongsTo(Prestamo::class, 'id_prestamo');
+    }
 }
