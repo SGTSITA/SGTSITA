@@ -538,6 +538,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('liquidaciones/historial', [App\Http\Controllers\LiquidacionesController::class, 'historialPagos'])->name('historial.liquidacion');
 
     Route::post('liquidaciones/historial/data', [App\Http\Controllers\LiquidacionesController::class, 'historialPagosData'])->name('historialdata.liquidacion');
+     Route::post('liquidaciones/historial/delete/{id}', [App\Http\Controllers\LiquidacionesController::class, 'deleteHistorialPago'])->name('historial.delete.liquidacion');
     Route::post('liquidaciones/historial/pagos/comprobante', [App\Http\Controllers\LiquidacionesController::class, 'comprobantePago'])->name('comprobante.liquidacion');
     Route::post('liquidaciones/viajes/pagos-operadores', [App\Http\Controllers\LiquidacionesController::class, 'getpagosOperadoressaldo'])->name('operadores.liquidacion');
     Route::post('liquidaciones/viajes/operador', [App\Http\Controllers\LiquidacionesController::class, 'getViajesOperador'])->name('operador.viajes');
@@ -547,6 +548,10 @@ Route::group(['middleware' => ['auth']], function () {
     Route::post('liquidaciones/viajes/gastos/justificar', [App\Http\Controllers\LiquidacionesController::class, 'justificarGastos'])->name('justifica.gastos');
     Route::post('liquidaciones/viajes/gastos/justificar-multiple', [App\Http\Controllers\LiquidacionesController::class, 'justificarGastosMultiples'])->name('justifica.gastos.multiple');
 
+       Route::post(
+        '/liquidacion/vista-previa',
+        [App\Http\Controllers\LiquidacionesController::class, 'vistaPrevialiqu']
+    )->name('liquidacion.vistaPrevia');
 
 
 
