@@ -1529,7 +1529,10 @@ class CotizacionesController extends Controller
                 $asignacion->id_proveedor = $request->id_proveedor;
                 $asignacion->update();
             }
-            $cotizaciones->id_proveedor = $request->id_proveedor;
+            if ($request->filled('id_proveedor')) {
+                $cotizaciones->id_proveedor = $request->id_proveedor;
+            }
+
             $cotizaciones->update();
 
         }
