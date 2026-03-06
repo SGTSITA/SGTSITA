@@ -20,6 +20,12 @@
             overflow: hidden;
             /* evita scroll interno */
         }
+
+        @media print {
+            .modal-footer {
+                display: none !important;
+            }
+        }
     </style>
     <div class="container-fluid">
         <div class="row">
@@ -95,10 +101,10 @@
                     </div>
                     <div class="card-footer text-end">
                         <a href="{{ route('index.liquidacion') }}" class="btn btn-sn btn-link text-muted">Cancelar</a>
-                        <button class="btn btn-sm bg-gradient-success" id="btnSummaryPayment">
+                        {{-- <button class="btn btn-sm bg-gradient-success" id="btnSummaryPayment">
                             <i class="fa fa-check"></i>
                             Aplicar pago
-                        </button>
+                        </button> --}}
                     </div>
                 </div>
             </div>
@@ -107,29 +113,7 @@
     @include('liquidaciones.modal-pagar')
     @include('liquidaciones.modal-justificar-gasto')
     @include('liquidaciones.modal-justificar-hotable')
-    <div class="modal fade" id="modalPreview" tabindex="-1">
-        <div class="modal-dialog modal-xl">
-            <div class="modal-content">
-
-                <div class="modal-header">
-                    <h5 class="modal-title" id="modalPreviewLabel">Vista Previa Liquidación</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-
-                <div class="modal-body">
-                    <div id="previewContainer"></div>
-                </div>
-
-                <div class="modal-footer">
-                    <button id="btnDescargar" class="btn btn-danger">
-                        Descargar PDF
-                    </button>
-                    <button class="btn btn-success" onclick="confirmarLiquidacion()">Confirmar Pago</button>
-                </div>
-
-            </div>
-        </div>
-    </div>
+    @include('liquidaciones.modal-detalle-pagar')
 @endsection
 
 @push('custom-javascript')

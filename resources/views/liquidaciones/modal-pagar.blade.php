@@ -14,7 +14,7 @@
                         <div class="col-6">
                             <div class="form-group">
                                 <label for="example-text-input" class="form-control-label">Cuenta de retiro</label>
-                                <select name="cmbBankOne" id="cmbBankOne" class="form-control">
+                                <select name="cmbBankOnepago" id="cmbBankOnepago" class="form-control">
                                     <option value="null">Seleccione banco</option>
                                     @foreach ($bancos as $item)
                                         <option value="{{ $item['id'] }}">
@@ -24,13 +24,13 @@
                                 </select>
                             </div>
                             <div class="form-group">
-                                <label for="FechaAplicacionPago">Fecha Aplicación</label>
+                                <label for="FechaAplicacionPagopago">Fecha Aplicación</label>
                                 <div class="input-group">
                                     <span class="input-group-text">
                                         <i class="fa fa-calendar text-danger"></i>
                                     </span>
-                                    <input class="form-control dateInput" name="FechaAplicacionPago"
-                                        id="FechaAplicacionPago" placeholder="Fecha Aplicación" type="text" />
+                                    <input class="form-control dateInput" name="FechaAplicacionPagopago"
+                                        id="FechaAplicacionPagopago" placeholder="Fecha Aplicación" type="text" />
                                 </div>
                             </div>
 

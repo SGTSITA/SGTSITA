@@ -1526,7 +1526,10 @@ class CotizacionesController extends Controller
                 $asignacion->iva = $request->get('iva_proveedor');
                 $asignacion->retencion = $request->get('retencion_proveedor');
                 $asignacion->total_proveedor = $request->get('total_proveedor');
-                $asignacion->id_proveedor = $request->id_proveedor;
+                if ($request->filled('id_proveedor')) {
+                    $asignacion->id_proveedor = $request->id_proveedor;
+                }
+
                 $asignacion->update();
             }
             if ($request->filled('id_proveedor')) {

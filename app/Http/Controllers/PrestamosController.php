@@ -76,6 +76,7 @@ class PrestamosController extends Controller
 
         $data['pagos'] = 0;
         $data['saldo_actual'] = $data['cantidad'];
+        $data['fecha_prestamo'] = Carbon::createFromFormat('d/m/Y', $request->get('FechaAplicacion'))->format('Y-m-d');
         $montoPrestamo = $request->get('cantidad');
         // $bancoAfectado = Bancos::where('id', '=', $request->get('id_banco'));
         // $saldoActualBanco = $bancoAfectado->first()->saldo || 0;
@@ -256,7 +257,7 @@ class PrestamosController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        // 🔹 Totales
+
         $totalPrestamos = $prestamos
             ->where('tipo', Prestamo::TIPO_PRESTAMO)
             ->sum('cantidad');

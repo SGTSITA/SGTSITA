@@ -23,7 +23,8 @@ class Prestamo extends Model
         'cantidad',
         'pagos',
         'saldo_actual',
-         'tipo'
+         'tipo',
+         'fecha_prestamo',
     ];
 
     // Relación: un préstamo pertenece a un operador
