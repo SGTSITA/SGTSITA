@@ -59,12 +59,14 @@
                     </li>
                     <!--end::Tab item-->
                     <!--begin::Tab item-->
-                    <li class="nav-item" role="presentation">
-                        <a id="kt_facturacion_tab" class="nav-link fs-5 fw-bold" data-bs-toggle="tab" role="tab"
-                            href="#kt_facturacion" aria-selected="false" tabindex="-1">
-                            Formato Carta Porte
-                        </a>
-                    </li>
+                    @cannot('mec-ocultar_datos_facturacion')
+                        <li class="nav-item" role="presentation">
+                            <a id="kt_facturacion_tab" class="nav-link fs-5 fw-bold" data-bs-toggle="tab" role="tab"
+                                href="#kt_facturacion" aria-selected="false" tabindex="-1">
+                                Formato Carta Porte
+                            </a>
+                        </li>
+                    @endcan
                     <!--end::Tab item-->
                     <!--begin::Tab item-->
                     <li class="nav-item" role="presentation">
@@ -115,69 +117,72 @@
             <div id="kt_billing_payment_tab_content" class="card-body tab-content">
                 <!--begin::Tab panel-->
                 <div id="kt_billing_creditcard" class="tab-pane fade show active" role="tabpanel" "="" aria-labelledby="kt_billing_creditcard_tab">
-                                    <!--begin::Title-->
-                                    <h3 class="mb-5">Datos Generales</h3>
-                                    <!--end::Title-->
+                                                                                <!--begin::Title-->
+                                                                                <h3 class="mb-5">Datos Generales</h3>
+                                                                                <!--end::Title-->
 
-                                    <!--begin::Row-->
-                                    <div class="row gx-9 gy-6">
-                                    @csrf
-                                    <input type="hidden" value="{{ Auth::User()->id_cliente }}" name="id_cliente" id="id_cliente">
-                                    @include('cotizaciones.externos.datos_generales')
-                                    </div>
-                                    <!--end::Row-->
-                                </div>
-                                <!--end::Tab panel-->
+                                                                                <!--begin::Row-->
+                                                                                <div class="row gx-9 gy-6">
+                                                                                @csrf
+                                                                                <input type="hidden" value="{{ Auth::User()->id_cliente }}" name="id_cliente" id="id_cliente">
+                                                                                @include('cotizaciones.externos.datos_generales')
+                                                                                </div>
+                                                                                <!--end::Row-->
+                                                                            </div>
+                                                                            <!--end::Tab panel-->
 
-                                <!--begin::Tab panel-->
-                                <div id="kt_billing_paypal" class="tab-pane fade" role="tabpanel" aria-labelledby="kt_billing_paypal_tab">
-                                    <!--begin::Title-->
-                                    <h3 class="mb-5">Ubicacion GPS</h3>
-                                    <!--end::Title-->
-                                    <div class="row gx-9 gy-6">
+                                                                            <!--begin::Tab panel-->
+                                                                            <div id="kt_billing_paypal" class="tab-pane fade" role="tabpanel" aria-labelledby="kt_billing_paypal_tab">
+                                                                                <!--begin::Title-->
+                                                                                <h3 class="mb-5">Ubicacion GPS</h3>
+                                                                                <!--end::Title-->
+                                                                                <div class="row gx-9 gy-6">
 
-                                    @include('cotizaciones.externos.datos_ubicacion')
-                                    </div>
-                                </div>
-                                <!--end::Tab panel-->
-                                <!--begin::Tab panel-->
-                                <div id="kt_bloque" class="tab-pane fade" role="tabpanel" aria-labelledby="kt_bloque_tab">
-                                    <!--begin::Title-->
-                                    <h3 class="mb-5">Bloque</h3>
-                                    <!--end::Title-->
-                                    <div class="row gx-9 gy-6">
+                                                                                @include('cotizaciones.externos.datos_ubicacion')
+                                                                                </div>
+                                                                            </div>
+                                                                            <!--end::Tab panel-->
+                                                                            <!--begin::Tab panel-->
+                                                                            <div id="kt_bloque" class="tab-pane fade" role="tabpanel" aria-labelledby="kt_bloque_tab">
+                                                                                <!--begin::Title-->
+                                                                                <h3 class="mb-5">Bloque</h3>
+                                                                                <!--end::Title-->
+                                                                                <div class="row gx-9 gy-6">
 
-                                    @include('cotizaciones.externos.datos_bloque')
-                                    </div>
-                                </div>
-                                <!--end::Tab panel-->
+                                                                                @include('cotizaciones.externos.datos_bloque')
+                                                                                </div>
+                                                                            </div>
+                                                                            <!--end::Tab panel-->
 
-                                <!--begin::Tab panel-->
-                                <div id="kt_documentos" class="tab-pane fade" role="tabpanel" aria-labelledby="kt_documentos_tab">
-                                    <!--begin::Title-->
-                                    <h3 class="mb-5" id="labelDocsViaje">Documentos de viaje </h3>
-                                    <!--end::Title-->
-                                    <div class="row gx-9 gy-6">
+                                                                            <!--begin::Tab panel-->
+                                                                            <div id="kt_documentos" class="tab-pane fade" role="tabpanel" aria-labelledby="kt_documentos_tab">
+                                                                                <!--begin::Title-->
+                                                                                <h3 class="mb-5" id="labelDocsViaje">Documentos de viaje </h3>
+                                                                                <!--end::Title-->
+                                                                                <div class="row gx-9 gy-6">
 
-                                    @include('cotizaciones.externos.datos_fileuploader')
-                                    </div>
-                                </div>
-                                <!--end::Tab panel-->
-                                <!--begin::Tab panel-->
-                                <div id="kt_facturacion" class="tab-pane fade" role="tabpanel" aria-labelledby="kt_facturacion_tab">
-                                    <!--begin::Title-->
-                                    <h3 class="mb-5">Datos para Carta Porte</h3>
-                                    <!--end::Title-->
-                                    <div class="row gx-9 gy-6">
+                                                                                @include('cotizaciones.externos.datos_fileuploader')
+                                                                                </div>
+                                                                            </div>
+                                                                            <!--end::Tab panel-->
+                                                                            <!--begin::Tab panel-->
+                                                                              @cannot('mec-ocultar_datos_facturacion')
+                                                                                            <div id="kt_facturacion" class="tab-pane fade" role="tabpanel" aria-labelledby="kt_facturacion_tab">
+                                                                                                                                                                                <!--begin::Title-->
+                                                                                                                                                                                <h3 class="mb-5">Datos para Carta Porte</h3>
+                                                                                                                                                                                <!--end::Title-->
+                                                                                                                                                                                <div class="row gx-9 gy-6">
 
-                                    @include('cotizaciones.externos.datos_facturacion')
-                                    </div>
-                                </div>
-                                <!--end::Tab panel-->
-                            </div>
-                            <!--end::Tab content-->
-                            <div class="separator separator-dashed mb-8"></div>
-                                    @if ($action == 'editar')
+                                                                                                                                                                                @include('cotizaciones.externos.datos_facturacion')
+                                                                                                                                                                                </div>
+                                                                                                                                                                            </div>
+                                                                        @endcan
+
+                                                                        <!--end::Tab panel-->
+                                                                    </div>
+                                                                    <!--end::Tab content-->
+                                                                    <div class="separator separator-dashed mb-8"></div>
+                                                                                       @if ($action == 'editar')
                     <button type="submit" class="btn btn-success">
                         Actualizar viaje
                     </button>
