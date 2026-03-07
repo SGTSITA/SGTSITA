@@ -671,6 +671,7 @@ class CotizacionesController extends Controller
         $cotizaciones->estatus_pago = '0';
         $cotizaciones->origen_captura = $origen_inicial;
         $cotizaciones->user_id = Auth::User()->id;
+        $cotizaciones->direccion_entrega = $request->direccion_entrega;
         $cotizaciones->save();
 
         $docucotizaciones = new DocumCotizacion();
@@ -680,12 +681,14 @@ class CotizacionesController extends Controller
         // Definir ruta dentro de public
         $path = public_path('cotizaciones/cotizacion'.$docucotizaciones->id.'/formato_carta_porte_' . $numContenedor . '.pdf');
 
-        if ($request->has('uuid')) {
+        $user = Auth::User();
+
+        if ($request->has('uuid') && !$user->can('mec-ocultar_datos_facturacion')) {
 
             $cotizaciones->sat_uso_cfdi_id = $request->id_uso_cfdi;
             $cotizaciones->sat_forma_pago_id = $request->id_forma_pago;
             $cotizaciones->sat_metodo_pago_id = $request->id_metodo_pago;
-            $cotizaciones->direccion_entrega = $request->direccion_entrega;
+
             $cotizaciones->direccion_recinto = $request->direccion_recinto;
             $cotizaciones->uso_recinto = ($request->text_recinto == 'recinto-si') ? 1 : 0;
 
@@ -718,6 +721,13 @@ class CotizacionesController extends Controller
             if ($request->has('id_proveedor')) {
                 $cotizaciones->id_proveedor = $request->id_transportista;
             }
+
+            if (File::exists($path)) {
+                $docucotizaciones->ccp = 'si';
+                $docucotizaciones->doc_ccp = 'formato_carta_porte_' . $numContenedor . '.pdf';
+            }
+
+            $docucotizaciones->update();
         }
 
         $cotizaciones->latitud =  $request->latitud;
@@ -738,12 +748,7 @@ class CotizacionesController extends Controller
 
 
 
-        if (File::exists($path)) {
-            $docucotizaciones->ccp = 'si';
-            $docucotizaciones->doc_ccp = 'formato_carta_porte_' . $numContenedor . '.pdf';
-        }
 
-        $docucotizaciones->update();
 
         if ($idEmpresa != auth()->user()->id_empresa) {
             DB::table('cotizaciones')->where('id', $cotizaciones->id)->update([
@@ -1317,12 +1322,13 @@ class CotizacionesController extends Controller
                 $cotizaciones->id_proveedor = $idTransportistai;
 
             }
+            $cotizaciones->direccion_entrega = $request->direccion_entrega;
             $cotizaciones->save();
 
-
+            $user = Auth::User();
             //cambiar archivo pdf solo si hay cambios en la informacion de carta porte
             $modifico = $request->get('modifico_informacion', 0);
-            if ($modifico == 1) {
+            if ($modifico == 1 && !$user->can('mec-ocultar_datos_facturacion')) {
                 Log::channel('daily')->info('Modifico informacion de carta porte para cotizacion ID: '.$id);
 
                 $docucotizaciones =  DocumCotizacion::where('id_cotizacion', '=', $cotizaciones->id)->first();
@@ -1339,7 +1345,7 @@ class CotizacionesController extends Controller
                     $cotizaciones->sat_uso_cfdi_id = $request->id_uso_cfdi;
                     $cotizaciones->sat_forma_pago_id = $request->id_forma_pago;
                     $cotizaciones->sat_metodo_pago_id = $request->id_metodo_pago;
-                    $cotizaciones->direccion_entrega = $request->direccion_entrega;
+
                     $cotizaciones->direccion_recinto = $request->direccion_recinto;
                     $cotizaciones->uso_recinto = ($request->text_recinto == 'recinto-si') ? 1 : 0;
 

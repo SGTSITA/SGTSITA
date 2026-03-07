@@ -171,6 +171,34 @@ class ExternosController extends Controller
         return view('cotizaciones.externos.viajes_solicitados');
     }
 
+
+    public function removeDocsLocal(Request $request)
+    {
+        $doc = DocumCotizacion::where('num_contenedor', $request->numContenedor)->first();
+
+        if ($doc) {
+            $cotizacion = Cotizaciones::where('id', $doc->id_cotizacion)->first();
+            if ($cotizacion) {
+                $cotizacion->estatus = 'Documentos Faltantes';
+                $cotizacion->save();
+            }
+
+            if ($request->urlRepo == 'Doda') {
+                $doc->doda = null;
+            } elseif ($request->urlRepo == 'BoletaLib') {
+                $doc->boleta_liberacion = null;
+            } elseif ($request->urlRepo     == 'FotoPatio') {
+                $doc->foto_patio = null;
+            } elseif ($request->urlRepo == 'BoletaPatio') {
+                $doc->boleta_patio = null;
+            }
+
+            $doc->save();
+        }
+
+        return response()->json(["success" => true, "message" => "Documento eliminado correctamente"]);
+    }
+
     public function ZipDownload($zipFile)
     {
         return response()->download($zipFile)->deleteFileAfterSend(true);
