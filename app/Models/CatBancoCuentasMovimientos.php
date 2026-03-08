@@ -6,10 +6,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Traits\Auditable;
 
 class CatBancoCuentasMovimientos extends Model
 {
     use HasFactory;
+    use Auditable;
 
     protected $table = 'cat_bancos_cuentas_movimientos';
 

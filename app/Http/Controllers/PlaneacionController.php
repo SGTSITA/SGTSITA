@@ -101,7 +101,7 @@ class PlaneacionController extends Controller
 
                 if (!$cancelarMovimientoBanco) {
 
-                    throw new \Exception('No se pudo crear el movimiento bancario, dinero para viaje ');
+                    throw new \Exception('No se pudo cancelar el movimiento bancario, dinero para viaje ');
                 }
 
 
