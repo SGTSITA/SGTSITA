@@ -229,8 +229,8 @@ class GastosGeneralesController extends Controller
             $gasto_general->id_categoria = $request->get('categoria_movimiento');
             $gasto_general->metodo_pago1 = 'Transferencia';
             $gasto_general->id_banco1 = $request->get('id_banco1');
-            $gasto_general->fecha = $request->fechaInicioSeleccionado;
-            $gasto_general->fecha_operacion = $request->fecha_movimiento;
+            $gasto_general->fecha = $request->get('fecha_aplicacion') ?? $request->fechaInicioSeleccionado;
+            $gasto_general->fecha_operacion =  $request->fecha_movimiento;
             $gasto_general->id_empresa = auth()->user()->id_empresa;
             $gasto_general->is_active = ($request->get('tipoPago') == 1) ? 0 : 1;
             $gasto_general->diferir_gasto = $request->get('tipoPago');
@@ -295,7 +295,8 @@ class GastosGeneralesController extends Controller
                 $banco->id_banco1 = $request->get('id_banco1');
                 $banco->descripcion = $request->get('motivo');
 
-                $banco->fecha_pago = date('Y-m-d');
+                $banco->fecha_pago = $request->get('fecha_aplicacion');
+                ;
                 $banco->tipo = 'Salida';
                 $banco->save();
 
@@ -312,11 +313,11 @@ class GastosGeneralesController extends Controller
                             'fecha_movimiento' =>  $fecha_aplicacion,
 
                             'origen' => null,
-                            'referencia' => '',
+                            'referencia' => 'Gastos Generales',
                             'detalles' => "[]",
                              'referenciaable_id' => $gasto_general->id,
                               'referenciaable_type' => \App\Models\GastosGenerales::class, //para polimorfismo
-                              'observaciones' => 'id banco a proveedor: '. $request->bankProvOne,
+                              'observaciones' => 'GG',
                         ];
 
 
@@ -484,6 +485,16 @@ class GastosGeneralesController extends Controller
                 $banco->fecha_pago = date('Y-m-d');
                 $banco->tipo = 'Entrada';
                 $banco->save();
+
+
+                $movimientoBanco = $this->BancosService->findMovimiento($r->IdGasto, \App\Models\GastosGenerales::class, $gastosGenerales->id_banco1);
+
+                $cancelarMovimientoBanco =  $this->BancosService->cancelarMovimiento($gastosGenerales->id_banco1, $movimientoBanco->id);
+
+                if (!$cancelarMovimientoBanco) {
+
+                    throw new \Exception('No se pudo cancelar el movimiento bancario, gastos  ');
+                }
             }
             $gastosGenerales->delete();
             DB::commit();

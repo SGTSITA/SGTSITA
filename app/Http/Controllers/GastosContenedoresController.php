@@ -113,16 +113,36 @@ class GastosContenedoresController extends Controller
         try {
 
             DB::beginTransaction();
-            $bancos = Bancos::where('id_empresa', Auth::User()->id_empresa)->where('id', $r->bank)->first();
-            $saldoActual = $bancos->saldo;
+            /*  $bancos = Bancos::where('id_empresa', Auth::User()->id_empresa)->where('id', $r->bank)->first();
+             $saldoActual = $bancos->saldo;
 
-            if ($saldoActual < $r->totalPago) {
-                return response()->json(["Titulo" => "Saldo insuficiente en Banco","Mensaje" => "La cuenta bancaria seleccionada no cuenta con saldo suficiente para registrar esta transacción","TMensaje" => "warning"]);
+             if ($saldoActual < $r->totalPago) {
+                 return response()->json(["Titulo" => "Saldo insuficiente en Banco","Mensaje" => "La cuenta bancaria seleccionada no cuenta con saldo suficiente para registrar esta transacción","TMensaje" => "warning"]);
+             } */
+
+            $idEmpresa = auth()->user()->id_empresa;
+
+
+            if ($r->filled('bank') && $r->totalPago > 0) {
+                $fecha_aplicacion = $r->get('fecha_aplicacion');
+
+                $validarSaldos = $this->BancosService->validarsaldoparacargo($idEmpresa, $r->get('bank'), $fecha_aplicacion, $r->totalPago);
+                //  dd($validarSaldos);
+                if ($validarSaldos["saldodisponible"] == false) {
+
+                    return response()->json([
+                                      "TMensaje" => "error",
+                                   "Titulo" => "Saldo bancoso insuficiente",
+                                      "Mensaje" => $validarSaldos["message"],
+                                      'success' => false
+                                     ]);
+
+                }
             }
 
             Bancos::where('id', '=', $r->bank)->update(["saldo" => DB::raw("saldo - ". $r->totalPago)]);
 
-            $idEmpresa = auth()->user()->id_empresa;
+
             $pagando = $r->gastosPagar;
 
             foreach ($pagando as $c) {
@@ -161,6 +181,38 @@ class GastosContenedoresController extends Controller
             $banco->tipo = 'Salida';
             $banco->fecha_pago = date('Y-m-d');
             $banco->save();
+
+
+            //proceso bancos nuevo
+            if ($r->filled('bank') && $r->totalPago > 0) {
+                $fecha_aplicacion = $r->get('fecha_aplicacion');
+
+                $data = [
+                        'cuenta_bancaria_id' => $r->get('bank'),            'tipo' => 'cargo',
+                        'monto' => floatval($r->totalPago),
+                        'concepto' => 'Pago Gastos Contenedores y Generales',
+                        'fecha_movimiento' =>  $fecha_aplicacion,
+
+                        'origen' => null,
+                        'referencia' => 'Gastos Generales ',
+                        'detalles' => $contenedoresAbonosJson,
+                         'referenciaable_id' => 0, //mando 0 porque el movimiento de bancos son varios gastos, no se puede relacionar con un solo gasto general, se puede crear una tabla intermedia para relacionar movimientos con gastos generales pero por ahora se deja asi
+                          'referenciaable_type' => \App\Models\GastosGenerales::class, //para polimorfismo
+                          'observaciones' => 'Gastos generales, pago desde gastos por pagar| ' .  $IdGastos ,
+                    ];
+
+
+
+
+                $movimeintoCrear = $this->BancosService->registrarMovimiento($data);
+                //   dd('no pasar', $movimeintoCrear);
+
+                if (!$movimeintoCrear) {
+                    throw new \Exception('No se pudo crear el movimiento bancario, gastos  ');
+                }
+
+
+            }
 
             DB::commit();
             return response()->json(["Titulo" => "Pago aplicado",
