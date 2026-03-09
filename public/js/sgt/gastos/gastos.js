@@ -1,50 +1,98 @@
 const gastosFormFields = [
-    { field: 'motivo', id: 'motivo', label: 'Descripción', required: true, type: 'text' },
-    { field: 'monto1', id: 'monto1', label: 'Monto', required: true, type: 'money' },
-    { field: 'categoria_movimiento', id: 'categoria_movimiento', label: 'Categoría', required: true, type: 'text' },
-    { field: 'fecha_movimiento', id: 'fecha_movimiento', label: 'Fecha movimiento', required: true, type: 'text' },
-    { field: 'fecha_aplicacion', id: 'fecha_aplicacion', label: 'Fecha aplicación', required: false, type: 'text' },
-    { field: 'id_banco1', id: 'id_banco1', label: 'Fecha aplicación', required: true, type: 'text' },
-    { field: 'tipoPago', id: 'tipoPago', label: 'Tipo de Pago', required: true, type: 'select' },
+    {
+        field: "motivo",
+        id: "motivo",
+        label: "Descripción",
+        required: true,
+        type: "text",
+    },
+    {
+        field: "monto1",
+        id: "monto1",
+        label: "Monto",
+        required: true,
+        type: "money",
+    },
+    {
+        field: "categoria_movimiento",
+        id: "categoria_movimiento",
+        label: "Categoría",
+        required: true,
+        type: "text",
+    },
+    {
+        field: "fecha_movimiento",
+        id: "fecha_movimiento",
+        label: "Fecha movimiento",
+        required: true,
+        type: "text",
+    },
+    {
+        field: "fecha_aplicacion",
+        id: "fecha_aplicacion",
+        label: "Fecha aplicación",
+        required: false,
+        type: "text",
+    },
+    {
+        field: "id_banco1",
+        id: "id_banco1",
+        label: "Fecha aplicación",
+        required: true,
+        type: "text",
+    },
+    {
+        field: "tipoPago",
+        id: "tipoPago",
+        label: "Tipo de Pago",
+        required: true,
+        type: "select",
+    },
 ];
 
 const formFieldsDiferir = [
     {
-        field: 'txtDiferirFechaInicia',
-        id: 'txtDiferirFechaInicia',
-        label: 'Fecha inicio Pago Diferido',
+        field: "txtDiferirFechaInicia",
+        id: "txtDiferirFechaInicia",
+        label: "Fecha inicio Pago Diferido",
         required: false,
-        type: 'text',
-        trigger: 'tipoPago',
+        type: "text",
+        trigger: "tipoPago",
     },
     {
-        field: 'txtDiferirFechaTermina',
-        id: 'txtDiferirFechaTermina',
-        label: 'Fecha Finalización Pago Diferido',
+        field: "txtDiferirFechaTermina",
+        id: "txtDiferirFechaTermina",
+        label: "Fecha Finalización Pago Diferido",
         required: false,
-        type: 'text',
-        trigger: 'tipoPago',
+        type: "text",
+        trigger: "tipoPago",
     },
 ];
 var bancosList = null;
 var data = [];
 
 async function getBancos() {
-    const response = await fetch('/bancos/list');
+    const response = await fetch("/bancos/list");
     const data = await response.json();
 
     let dataBancos = [];
     data.forEach((banco) => {
-        dataBancos.push(formatoConsecutivo(banco.id) + ' - ' + banco.nombre_beneficiario + ' - ' + banco.nombre_banco);
+        dataBancos.push(
+            formatoConsecutivo(banco.id) +
+                " - " +
+                banco.nombre_beneficiario +
+                " - " +
+                banco.nombre_banco,
+        );
     });
 
     bancosList = dataBancos;
     return dataBancos;
 }
 
-document.getElementById('tipoPago').addEventListener('change', function () {
-    const seccion = document.getElementById('seccionDiferido');
-    if (this.value === '1') {
+document.getElementById("tipoPago").addEventListener("change", function () {
+    const seccion = document.getElementById("seccionDiferido");
+    if (this.value === "1") {
         const bsCollapse = new bootstrap.Collapse(seccion, { show: true });
     } else {
         const bsCollapse = bootstrap.Collapse.getInstance(seccion);
@@ -57,12 +105,15 @@ class MissionResultRenderer {
 
     // Optional: Params for rendering. The same params that are passed to the cellRenderer function.
     init(params) {
-        let icon = document.createElement('img');
-        icon.src = `https://www.ag-grid.com/example-assets/icons/${params.value ? 'tick-in-circle' : 'cross-in-circle'}.png`;
-        icon.setAttribute('style', 'width: auto; height: auto;');
+        let icon = document.createElement("img");
+        icon.src = `https://www.ag-grid.com/example-assets/icons/${params.value ? "tick-in-circle" : "cross-in-circle"}.png`;
+        icon.setAttribute("style", "width: auto; height: auto;");
 
-        this.eGui = document.createElement('span');
-        this.eGui.setAttribute('style', 'display: flex; justify-content: center; height: 100%; align-items: center');
+        this.eGui = document.createElement("span");
+        this.eGui.setAttribute(
+            "style",
+            "display: flex; justify-content: center; height: 100%; align-items: center",
+        );
         this.eGui.appendChild(icon);
     }
 
@@ -83,19 +134,19 @@ class CustomButtonComponent {
     eventListener;
 
     init(params) {
-        this.eGui = document.createElement('div');
-        let button = document.createElement('button');
+        this.eGui = document.createElement("div");
+        let button = document.createElement("button");
         button.innerHTML =
             '<span class="svg-icon svg-icon-muted svg-icon-2hx"><svg width="23" height="24" viewBox="0 0 23 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M21 13V13.5C21 16 19 18 16.5 18H5.6V16H16.5C17.9 16 19 14.9 19 13.5V13C19 12.4 19.4 12 20 12C20.6 12 21 12.4 21 13ZM18.4 6H7.5C5 6 3 8 3 10.5V11C3 11.6 3.4 12 4 12C4.6 12 5 11.6 5 11V10.5C5 9.1 6.1 8 7.5 8H18.4V6Z" fill="currentColor"/><path opacity="0.3" d="M21.7 6.29999C22.1 6.69999 22.1 7.30001 21.7 7.70001L18.4 11V3L21.7 6.29999ZM2.3 16.3C1.9 16.7 1.9 17.3 2.3 17.7L5.6 21V13L2.3 16.3Z" fill="currentColor"/></svg></span></span>';
-        button.className = 'btn btn-sm bg-gradient-success';
-        button.style.fontSize = '10px';
-        button.style.padding = '2px 6px';
-        button.style.lineHeight = '1';
+        button.className = "btn btn-sm bg-gradient-success";
+        button.style.fontSize = "10px";
+        button.style.padding = "2px 6px";
+        button.style.lineHeight = "1";
 
         const NumContenedorValue = params.data.NumContenedor;
 
         this.eventListener = () => assignEmpresa(NumContenedorValue);
-        button.addEventListener('click', this.eventListener);
+        button.addEventListener("click", this.eventListener);
         this.eGui.appendChild(button);
     }
 
@@ -109,59 +160,62 @@ class CustomButtonComponent {
 
     destroy() {
         if (button) {
-            button.removeEventListener('click', this.eventListener);
+            button.removeEventListener("click", this.eventListener);
         }
     }
 }
 
 const localeText = {
-    page: 'Página',
-    more: 'Más',
-    to: 'a',
-    of: 'de',
-    next: 'Siguiente',
-    last: 'Último',
-    first: 'Primero',
-    previous: 'Anterior',
-    loadingOoo: 'Cargando...',
-    selectAll: 'Seleccionar todo',
-    searchOoo: 'Buscar...',
-    blanks: 'Vacíos',
-    filterOoo: 'Filtrar...',
-    applyFilter: 'Aplicar filtro...',
-    equals: 'Igual',
-    notEqual: 'Distinto',
-    lessThan: 'Menor que',
-    greaterThan: 'Mayor que',
-    contains: 'Contiene',
-    notContains: 'No contiene',
-    startsWith: 'Empieza con',
-    endsWith: 'Termina con',
-    andCondition: 'Y',
-    orCondition: 'O',
-    group: 'Grupo',
-    columns: 'Columnas',
-    filters: 'Filtros',
-    pivotMode: 'Modo Pivote',
-    groups: 'Grupos',
-    values: 'Valores',
-    noRowsToShow: 'Sin filas para mostrar',
-    pinColumn: 'Fijar columna',
-    autosizeThiscolumn: 'Ajustar columna',
-    copy: 'Copiar',
-    resetColumns: 'Restablecer columnas',
-    blank: 'Vacíos',
-    notBlank: 'No Vacíos',
-    paginationPageSize: 'Registros por página',
+    page: "Página",
+    more: "Más",
+    to: "a",
+    of: "de",
+    next: "Siguiente",
+    last: "Último",
+    first: "Primero",
+    previous: "Anterior",
+    loadingOoo: "Cargando...",
+    selectAll: "Seleccionar todo",
+    searchOoo: "Buscar...",
+    blanks: "Vacíos",
+    filterOoo: "Filtrar...",
+    applyFilter: "Aplicar filtro...",
+    equals: "Igual",
+    notEqual: "Distinto",
+    lessThan: "Menor que",
+    greaterThan: "Mayor que",
+    contains: "Contiene",
+    notContains: "No contiene",
+    startsWith: "Empieza con",
+    endsWith: "Termina con",
+    andCondition: "Y",
+    orCondition: "O",
+    group: "Grupo",
+    columns: "Columnas",
+    filters: "Filtros",
+    pivotMode: "Modo Pivote",
+    groups: "Grupos",
+    values: "Valores",
+    noRowsToShow: "Sin filas para mostrar",
+    pinColumn: "Fijar columna",
+    autosizeThiscolumn: "Ajustar columna",
+    copy: "Copiar",
+    resetColumns: "Restablecer columnas",
+    blank: "Vacíos",
+    notBlank: "No Vacíos",
+    paginationPageSize: "Registros por página",
 };
 
 const currencyFormatter = (value) => {
-    return new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(value);
+    return new Intl.NumberFormat("es-MX", {
+        style: "currency",
+        currency: "MXN",
+    }).format(value);
 };
 
 const formatFecha = (params) => {
-    if (!params) return '';
-    const [year, month, day] = params.split('-'); // Divide YYYY-MM-DD
+    if (!params) return "";
+    const [year, month, day] = params.split("-"); // Divide YYYY-MM-DD
     return `${day}/${month}/${year}`; // Retorna en formato d/m/Y
 };
 
@@ -170,72 +224,80 @@ const gridOptions = {
     paginationPageSize: 10,
     paginationPageSizeSelector: [10, 20, 50, 100],
     rowSelection: {
-        mode: 'multiRow',
+        mode: "multiRow",
         headerCheckbox: true,
     },
     rowClassRules: {
-        'rag-green': (params) => params.data.Diferido === 'Diferido',
+        "rag-green": (params) => params.data.Diferido === "Diferido",
     },
     rowData: [],
 
     columnDefs: [
-        { field: 'IdGasto', hide: true },
-        { field: 'Descripcion' },
+        { field: "IdGasto", hide: true },
+        { field: "Descripcion", filter: true, floatingFilter: true },
         {
-            field: 'Monto',
+            field: "Monto",
+            filter: true,
+            floatingFilter: true,
             width: 150,
             valueFormatter: (params) => currencyFormatter(params.value),
-            cellStyle: { textAlign: 'right' },
+            cellStyle: { textAlign: "right" },
         },
-        { field: 'Categoria', width: 150 },
-        { field: 'CuentaOrigen', filter: true, floatingFilter: true },
+        { field: "Categoria", width: 150, filter: true, floatingFilter: true },
+        { field: "CuentaOrigen", filter: true, floatingFilter: true },
         {
-            field: 'FechaGasto',
+            field: "FechaGasto",
             filter: true,
             floatingFilter: true,
             valueFormatter: (params) => formatFecha(params.value),
         },
         {
-            field: 'FechaContabilizado',
+            field: "FechaContabilizado",
             filter: true,
             floatingFilter: true,
             valueFormatter: (params) => formatFecha(params.value),
         },
-        { field: 'Estatus', cellRenderer: MissionResultRenderer },
-        { field: 'Diferido' },
-        { field: 'GastoAplicado', hide: true },
+        {
+            field: "Estatus",
+            cellRenderer: MissionResultRenderer,
+            filter: true,
+            floatingFilter: true,
+        },
+        { field: "Diferido", filter: true, floatingFilter: true },
+        { field: "GastoAplicado", hide: true },
     ],
 
     localeText: localeText,
 };
 
-const myGridElement = document.querySelector('#myGrid');
+const myGridElement = document.querySelector("#myGrid");
 let apiGrid = agGrid.createGrid(myGridElement, gridOptions);
-let btnDiferir = document.querySelector('#btnDiferir');
-let btnEliminarGasto = document.querySelector('#btnEliminarGasto');
-let monto1 = document.querySelector('#monto1');
-let labelMontoGasto = document.querySelector('#labelMontoGasto');
-let labelGastoDiario = document.querySelector('#labelGastoDiario');
-let labelDiasPeriodo = document.querySelector('#labelDiasPeriodo');
-let labelDescripcionGasto = document.querySelector('#labelDescripcionGasto');
-let btnConfirmacion = document.querySelector('#btnConfirmacion');
+let btnDiferir = document.querySelector("#btnDiferir");
+let btnEliminarGasto = document.querySelector("#btnEliminarGasto");
+let monto1 = document.querySelector("#monto1");
+let labelMontoGasto = document.querySelector("#labelMontoGasto");
+let labelGastoDiario = document.querySelector("#labelGastoDiario");
+let labelDiasPeriodo = document.querySelector("#labelDiasPeriodo");
+let labelDescripcionGasto = document.querySelector("#labelDescripcionGasto");
+let btnConfirmacion = document.querySelector("#btnConfirmacion");
 
 let fromDate = null;
 let toDate = null;
 
 monto1.addEventListener(
-    'input',
-    async (e) => (labelMontoGasto.textContent = await moneyFormat(e.target.value)),
+    "input",
+    async (e) =>
+        (labelMontoGasto.textContent = await moneyFormat(e.target.value)),
     calcDays(),
 );
 
-var paginationTitle = document.querySelector('#ag-32-label');
-paginationTitle.textContent = 'Registros por página';
+var paginationTitle = document.querySelector("#ag-32-label");
+paginationTitle.textContent = "Registros por página";
 
-document.querySelectorAll('.fechasDiferir').forEach((elemento) => {
-    elemento.addEventListener('focus', () => calcDays());
-    elemento.addEventListener('blur', () => calcDays());
-    elemento.addEventListener('change', () => calcDays());
+document.querySelectorAll(".fechasDiferir").forEach((elemento) => {
+    elemento.addEventListener("focus", () => calcDays());
+    elemento.addEventListener("blur", () => calcDays());
+    elemento.addEventListener("change", () => calcDays());
 });
 
 let IdGasto = null;
@@ -244,22 +306,30 @@ function diferenciaEnDias(fecha1, fecha2) {
     fecha1ToTime = new Date(fecha1);
     fecha2Totme = new Date(fecha2);
     const unDia = 1000 * 60 * 60 * 24; // Milisegundos en un día
-    const diferenciaMs = Math.abs(fecha2Totme.getTime() - fecha1ToTime.getTime());
+    const diferenciaMs = Math.abs(
+        fecha2Totme.getTime() - fecha1ToTime.getTime(),
+    );
     return Math.floor(diferenciaMs / unDia);
 }
 
 function diferenciaEnMeses(fecha1, fecha2) {
-    let inicio = new Date(fecha1 + 'T00:00:00');
-    let fin = new Date(fecha2 + 'T00:00:00');
+    let inicio = new Date(fecha1 + "T00:00:00");
+    let fin = new Date(fecha2 + "T00:00:00");
 
     let periodos = 1; // Siempre hay al menos un periodo
 
-    if (inicio.getFullYear() === fin.getFullYear() && inicio.getMonth() === fin.getMonth()) {
+    if (
+        inicio.getFullYear() === fin.getFullYear() &&
+        inicio.getMonth() === fin.getMonth()
+    ) {
         return periodos;
     }
 
     // Mientras no lleguemos al mes y año de la fecha final
-    while (inicio.getFullYear() < fin.getFullYear() || inicio.getMonth() < fin.getMonth()) {
+    while (
+        inicio.getFullYear() < fin.getFullYear() ||
+        inicio.getMonth() < fin.getMonth()
+    ) {
         periodos++;
         inicio.setMonth(inicio.getMonth() + 1);
     }
@@ -268,53 +338,60 @@ function diferenciaEnMeses(fecha1, fecha2) {
 }
 
 function calcDays() {
-    let fechaI = document.getElementById('txtDiferirFechaInicia');
-    let fechaF = document.getElementById('txtDiferirFechaTermina');
+    let fechaI = document.getElementById("txtDiferirFechaInicia");
+    let fechaF = document.getElementById("txtDiferirFechaTermina");
 
     if (fechaI.value.length > 0 && fechaF.value.length > 0) {
         let diasContados = diferenciaEnMeses(fechaI.value, fechaF.value);
         labelDiasPeriodo.textContent = diasContados;
 
-        let amount = monto1.value.length > 0 ? reverseMoneyFormat(monto1.value) : 0;
+        let amount =
+            monto1.value.length > 0 ? reverseMoneyFormat(monto1.value) : 0;
         let dailyAmount = parseFloat(amount) / diasContados;
         labelGastoDiario.textContent = moneyFormat(dailyAmount);
     }
 }
 
-btnEliminarGasto.addEventListener('click', () => {
+btnEliminarGasto.addEventListener("click", () => {
     let gasto = apiGrid.getSelectedRows();
 
     if (gasto.length <= 0 || gasto.length > 1) {
-        Swal.fire('Seleccionar UN Gasto', 'Debe seleccionar el gasto que desea eliminar', 'warning');
+        Swal.fire(
+            "Seleccionar UN Gasto",
+            "Debe seleccionar el gasto que desea eliminar",
+            "warning",
+        );
         return;
     }
 
     IdGasto = gasto[0].IdGasto;
-    var _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    var _token = document
+        .querySelector('meta[name="csrf-token"]')
+        .getAttribute("content");
 
     Swal.fire({
-        title: '¿Desea eliminar este gasto?',
-        text: 'Esta acción no se prodrá deshacer.',
-        icon: 'question',
+        title: "¿Desea eliminar este gasto?",
+        text: "Esta acción no se prodrá deshacer.",
+        icon: "question",
         showCancelButton: true,
-        confirmButtonText: 'Sí, continuar',
-        cancelButtonText: 'Cancelar',
+        confirmButtonText: "Sí, continuar",
+        cancelButtonText: "Cancelar",
         reverseButtons: true,
     }).then((result) => {
         if (result.isConfirmed) {
             $.ajax({
-                url: '/gastos/generales/delete',
-                type: 'post',
+                url: "/gastos/generales/delete",
+                type: "post",
                 data: { IdGasto, _token },
                 beforeSend: () => {},
                 success: (data) => {
                     Swal.fire(data.Titulo, data.Mensaje, data.TMensaje);
-                    if (data.TMensaje == 'success') {
+                    if (data.TMensaje == "success") {
                         getGastos(fromDate, toDate);
                     }
                 },
                 error: () => {
-                    Swal.fire('Error', 'Ha ocurrido un error AJAX', 'error');
+                    Swal.fire("Error", "Ha ocurrido un error AJAX", "error");
                 },
             });
         } else if (result.dismiss === Swal.DismissReason.cancel) {
@@ -328,7 +405,7 @@ btnEliminarGasto.addEventListener('click', () => {
     if(gasto.length <= 0 || gasto.length > 1){
       Swal.fire('Seleccionar UN Gasto','Debe seleccionar el gasto que desea diferir','warning');
       return;
-    } 
+    }
 
     if(gasto[0].GastoAplicado == true){
       Swal.fire('Gasto Previamente aplicado','Lo sentimos, el gastos que está intentado APLICAR, ha sido utilizado previamente','warning');
@@ -348,27 +425,29 @@ btnEliminarGasto.addEventListener('click', () => {
 function getGastos(from, to) {
     fromDate = from;
     toDate = to;
-    var _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    var _token = document
+        .querySelector('meta[name="csrf-token"]')
+        .getAttribute("content");
     $.ajax({
-        url: '/gastos/generales/get',
-        type: 'post',
+        url: "/gastos/generales/get",
+        type: "post",
         data: { _token, from, to },
         beforeSend: () => {},
         success: (response) => {
             let gastosData = response.handsOnTableData;
             let gastosInfo = response.gastosInformacion;
-            apiGrid.setGridOption('rowData', gastosInfo);
+            apiGrid.setGridOption("rowData", gastosInfo);
 
             //llenar select de viajes
-            /* 
+            /*
             document.getElementById('aplicacion-viajeGeneral').innerHTML = `<label class="mt-4 form-label">Seleccione viajes</label><select class="form-control" name="selectViajesGeneral" id="selectViajesGeneral" multiple></select>`
 
         let selectViajes = document.querySelector('#selectViajesGeneral')
 
         gastosData.forEach((fila) => {
     let option = document.createElement('option');
-    option.value = fila[10];  
-    option.text  = fila[0];   
+    option.value = fila[10];
+    option.text  = fila[0];
     selectViajes.appendChild(option);
 });
 
@@ -380,7 +459,7 @@ function getGastos(from, to) {
     });
 }
 
-$('#frmCrearGasto').on('submit', (e) => {
+$("#frmCrearGasto").on("submit", (e) => {
     e.preventDefault();
     var form = $(this);
 
@@ -389,9 +468,10 @@ $('#frmCrearGasto').on('submit', (e) => {
         if (field) {
             if (item.required === true && field.value.length == 0) {
                 Swal.fire(
-                    'El campo ' + item.label + ' es obligatorio',
-                    'Parece que no ha proporcionado información en el campo ' + item.label,
-                    'warning',
+                    "El campo " + item.label + " es obligatorio",
+                    "Parece que no ha proporcionado información en el campo " +
+                        item.label,
+                    "warning",
                 );
                 return false;
             }
@@ -407,8 +487,11 @@ $('#frmCrearGasto').on('submit', (e) => {
         var input = item.field;
         var inputValue = document.getElementById(input);
         if (inputValue) {
-            if (item.type == 'money') {
-                formData[input] = inputValue.value.length > 0 ? parseFloat(reverseMoneyFormat(inputValue.value)) : 0;
+            if (item.type == "money") {
+                formData[input] =
+                    inputValue.value.length > 0
+                        ? parseFloat(reverseMoneyFormat(inputValue.value))
+                        : 0;
             } else {
                 formData[input] = inputValue.value;
             }
@@ -419,13 +502,14 @@ $('#frmCrearGasto').on('submit', (e) => {
         let trigger = item.trigger;
         let field = document.getElementById(item.field);
 
-        if (trigger != 'none') {
+        if (trigger != "none") {
             let primaryField = document.getElementById(trigger);
             if (primaryField.value == 1 && field.value.length == 0) {
                 Swal.fire(
-                    'El campo ' + item.label + ' es obligatorio',
-                    'Parece que no ha proporcionado información en el campo ' + item.label,
-                    'warning',
+                    "El campo " + item.label + " es obligatorio",
+                    "Parece que no ha proporcionado información en el campo " +
+                        item.label,
+                    "warning",
                 );
                 return false;
             }
@@ -434,9 +518,10 @@ $('#frmCrearGasto').on('submit', (e) => {
         if (field) {
             if (item.required === true && field.value.length == 0) {
                 Swal.fire(
-                    'El campo ' + item.label + ' es obligatorio',
-                    'Parece que no ha proporcionado información en el campo ' + item.label,
-                    'warning',
+                    "El campo " + item.label + " es obligatorio",
+                    "Parece que no ha proporcionado información en el campo " +
+                        item.label,
+                    "warning",
                 );
                 return false;
             }
@@ -448,75 +533,87 @@ $('#frmCrearGasto').on('submit', (e) => {
 
     if (!passValidation) return passValidation;
 
-    formData['_token'] = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-    formData['gastoDiario'] = labelGastoDiario.textContent;
-    formData['numPeriodos'] = labelDiasPeriodo.textContent;
+    formData["_token"] = document
+        .querySelector('meta[name="csrf-token"]')
+        .getAttribute("content");
+    formData["gastoDiario"] = labelGastoDiario.textContent;
+    formData["numPeriodos"] = labelDiasPeriodo.textContent;
 
-    const select = document.getElementById('selectUnidadesGeneral');
-    const unidades = Array.from(select.selectedOptions).map((option) => option.value);
-    formData['unidades'] = unidades;
+    const select = document.getElementById("selectUnidadesGeneral");
+    const unidades = Array.from(select.selectedOptions).map(
+        (option) => option.value,
+    );
+    formData["unidades"] = unidades;
 
     let input = document.querySelector('input[name="formasAplicar"]:checked');
-    formData['formasAplicar'] = input.value;
+    formData["formasAplicar"] = input.value;
 
-    formData['fechaInicioSeleccionado'] = $('#daterange').attr('data-start');
-    formData['fechaFinalSeleccionado'] = $('#daterange').attr('data-end');
+    formData["fechaInicioSeleccionado"] = $("#daterange").attr("data-start");
+    formData["fechaFinalSeleccionado"] = $("#daterange").attr("data-end");
 
     $.ajax({
-        url: '/gastos/generales/create',
-        type: 'post',
+        url: "/gastos/generales/create",
+        type: "post",
         data: formData,
         beforeSend: function () {},
         success: function (data) {
-            Swal.fire(data.Titulo, data.Mensaje, data.TMensaje).then(function () {
-                if (data.TMensaje == 'success') {
-                    $('#exampleModal').modal('hide');
-                    getGastos(fromDate, toDate);
+            Swal.fire(data.Titulo, data.Mensaje, data.TMensaje).then(
+                function () {
+                    if (data.TMensaje == "success") {
+                        $("#exampleModal").modal("hide");
+                        getGastos(fromDate, toDate);
 
-                    gastosFormFields.forEach((item) => {
-                        var input = item.field;
-                        var inputValue = document.getElementById(input);
-                        if (inputValue && item.type != 'select') {
-                            inputValue.value = '';
-                        }
-                    });
+                        gastosFormFields.forEach((item) => {
+                            var input = item.field;
+                            var inputValue = document.getElementById(input);
+                            if (inputValue && item.type != "select") {
+                                inputValue.value = "";
+                            }
+                        });
 
-                    formFieldsDiferir.forEach((item) => {
-                        var input = item.field;
-                        var inputValue = document.getElementById(input);
-                        if (inputValue) {
-                            inputValue.value = '';
-                        }
-                    });
-                }
-            });
+                        formFieldsDiferir.forEach((item) => {
+                            var input = item.field;
+                            var inputValue = document.getElementById(input);
+                            if (inputValue) {
+                                inputValue.value = "";
+                            }
+                        });
+                    }
+                },
+            );
         },
         error: function () {
-            Swal.fire('Error', 'Ha ocurrido un error, intentelo nuevamente', 'error');
+            Swal.fire(
+                "Error",
+                "Ha ocurrido un error, intentelo nuevamente",
+                "error",
+            );
         },
     });
 });
 
 function handleSelection(input) {
     // quitar clase selected de todos los labels
-    document.querySelectorAll('.custom-option').forEach((opt) => {
-        opt.classList.remove('selected');
+    document.querySelectorAll(".custom-option").forEach((opt) => {
+        opt.classList.remove("selected");
     });
 
     // marcar el label seleccionado
-    input.parentElement.classList.add('selected');
+    input.parentElement.classList.add("selected");
 
     // ocultar todas las secciones
-    document.querySelectorAll('.aplicacion-gastos').forEach((opt) => {
-        opt.classList.add('d-none');
+    document.querySelectorAll(".aplicacion-gastos").forEach((opt) => {
+        opt.classList.add("d-none");
     });
 
     // mostrar solo la que corresponde
     /*   if (input.value === "Viaje") {
     document.querySelector("#aplicacion-viajeGeneral").classList.remove('d-none');
   } */
-    if (input.value === 'Equipo') {
-        document.querySelector('#aplicacion-equipoGeneral').classList.remove('d-none');
+    if (input.value === "Equipo") {
+        document
+            .querySelector("#aplicacion-equipoGeneral")
+            .classList.remove("d-none");
     }
 }
 
@@ -527,15 +624,19 @@ function diferirGasto() {
     let gastoDiario = labelGastoDiario.textContent
     let diasContados = labelDiasPeriodo.textContent*/
 
-    let _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    let _token = document
+        .querySelector('meta[name="csrf-token"]')
+        .getAttribute("content");
 
     /*if(fechaDesde.value.length == 0 || fechaHasta.value.length == 0){
       Swal.fire('Definir periodo','Por favor seleccione la fecha inicial y final del periodo','warning');
       return false;
     }*/
 
-    const select = document.getElementById('selectUnidades');
-    const unidades = Array.from(select.selectedOptions).map((option) => option.value);
+    const select = document.getElementById("selectUnidades");
+    const unidades = Array.from(select.selectedOptions).map(
+        (option) => option.value,
+    );
 
     /*     const selectViaje = document.getElementById("selectViajes");
     const viajes = Array.from(selectViaje.selectedOptions).map(option => option.value); */
@@ -546,33 +647,33 @@ function diferirGasto() {
     let _IdGasto = IdGasto;
 
     $.ajax({
-        url: '/gastos/diferir',
-        type: 'post',
+        url: "/gastos/diferir",
+        type: "post",
         data: { _token, _IdGasto, unidades, viajes, formasAplicar },
         beforeSend: () => {},
         success: (response) => {
-            if (response.TMensaje == 'success') {
-                $('#modalDiferir').modal('hide');
+            if (response.TMensaje == "success") {
+                $("#modalDiferir").modal("hide");
                 getGastos(fromDate, toDate);
             }
             Swal.fire(response.Titulo, response.Mensaje, response.TMensaje);
         },
         error: () => {
-            Swal.fire('Error', 'Ocurrió un error', 'error');
+            Swal.fire("Error", "Ocurrió un error", "error");
         },
     });
 }
 
-btnConfirmacion.addEventListener('click', () => {
+btnConfirmacion.addEventListener("click", () => {
     diferirGasto();
 });
 
-$('.moneyformat').on('focus', (e) => {
+$(".moneyformat").on("focus", (e) => {
     var val = e.target.value;
     e.target.value = reverseMoneyFormat(val);
 });
 
-$('.moneyformat').on('blur', (e) => {
+$(".moneyformat").on("blur", (e) => {
     var val = e.target.value;
     e.target.value = moneyFormat(val);
 });
