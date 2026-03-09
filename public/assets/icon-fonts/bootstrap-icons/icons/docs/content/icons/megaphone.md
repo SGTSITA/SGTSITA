@@ -1,8 +1,8 @@
 ---
 title: Megaphone
 categories:
-  - Real world
+    - Real world
 tags:
-  - loudspeaker
-  - announcement
+    - loudspeaker
+    - announcement
 ---

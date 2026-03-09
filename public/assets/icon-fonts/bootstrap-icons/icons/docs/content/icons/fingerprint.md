@@ -1,9 +1,9 @@
 ---
 title: Fingerprint
 categories:
-  - Security
+    - Security
 tags:
-  - "touch ID"
-  - secure
-  - biometric
+    - 'touch ID'
+    - secure
+    - biometric
 ---

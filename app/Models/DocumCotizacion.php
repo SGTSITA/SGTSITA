@@ -5,10 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
+use App\Traits\Auditable;
 
 class DocumCotizacion extends Model
 {
     use HasFactory;
+    use Auditable;
     protected $table = 'docum_cotizacion';
 
     protected $fillable = [
@@ -20,6 +22,13 @@ class DocumCotizacion extends Model
         'doda',
         'id_empresa',
         'foto_patio',
+        'boleta_patio',
+        'fecha_boleta_vacio',
+        'num_carta_porte',
+        'num_doda',
+        'num_boleta_liberacion',
+        'ccp',
+        'cima'
 
     ];
 

@@ -1,9 +1,9 @@
 ---
 title: Headset VR
 categories:
-  - Devices
+    - Devices
 tags:
-  - "virual reality"
-  - oculus
-  - hololens
+    - 'virual reality'
+    - oculus
+    - hololens
 ---

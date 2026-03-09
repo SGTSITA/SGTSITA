@@ -11,8 +11,8 @@
 .fileuploader-theme-dragdrop .fileuploader-input .fileuploader-icon-main {
     display: block;
     font-size: 56px;
-	margin: 0 auto;
-	margin-bottom: 26px;
+    margin: 0 auto;
+    margin-bottom: 26px;
 }
 .fileuploader-theme-dragdrop .fileuploader-input h3 {
     margin: 0;
@@ -23,7 +23,7 @@
     border-radius: 0;
     font-size: 18px;
     font-weight: bold;
-    color: #5B5B7B;
+    color: #5b5b7b;
     white-space: normal;
     box-shadow: none;
 }
@@ -37,17 +37,17 @@
 /* dragging state */
 .fileuploader-theme-dragdrop .fileuploader-input .fileuploader-input-inner > * {
     -webkit-transition: 500ms cubic-bezier(0.17, 0.67, 0, 1.01);
-            transition: 500ms cubic-bezier(0.17, 0.67, 0, 1.01);
+    transition: 500ms cubic-bezier(0.17, 0.67, 0, 1.01);
 }
 .fileuploader-theme-dragdrop .fileuploader-input.fileuploader-dragging .fileuploader-input-inner > * {
-	transform: translateY(18px);
-	opacity: 0;
+    transform: translateY(18px);
+    opacity: 0;
 }
 .fileuploader-theme-dragdrop .fileuploader-input.fileuploader-dragging .fileuploader-icon-main {
     transform: translateY(30px) scale(1.2);
-	opacity: 0.6;
+    opacity: 0.6;
 }
 .fileuploader-theme-dragdrop .fileuploader-input.fileuploader-dragging .fileuploader-input-caption {
     transform: translateY(30px);
-	opacity: 0.6;
+    opacity: 0.6;
 }

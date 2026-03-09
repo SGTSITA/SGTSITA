@@ -4,9 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\Auditable;
 
 class coordenadashistorial extends Model
 {
+    use HasFactory;
+    use Auditable;
     protected $table = 'coordenadas_historial';
     public $timestamps = false;
 
@@ -19,10 +22,10 @@ class coordenadashistorial extends Model
         'ubicacionable_type',
         'tipo',
         'id_convoy',
-        
+
     ];
 
-   public function usuario()
+    public function usuario()
     {
         return $this->belongsTo(User::class, 'user_id');
     }
