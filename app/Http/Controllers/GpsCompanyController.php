@@ -124,7 +124,8 @@ class GpsCompanyController extends Controller
             ->toArray();
 
         /* ================= VALIDACIÓN ================= */
-
+        $mensajeError = null;
+        $resp = null;
         switch ((int) $r->gps) {
             case 1: //Global GPS
                 $token = GlobalGpsTrait::getAccessToken(
@@ -157,9 +158,16 @@ class GpsCompanyController extends Controller
                     $credenciales['user'] ?? null,
                     $credenciales['password'] ?? null
                 );
-                $success = $response['success'] ?? false;
+                $resp = $response;
+                //    dd($response);
+                // $success = $response['success'] ?? false;
+                $mensajeError = $response->data['error'] ?? $response->message;
+                if (!$response->success) {
+                    $token  = null; // token null
+                    break;
+                }
                 $message = $response['message'] ?? null;
-                $token =  [$success, $message ];
+                $token = $response->data['token'] ?? null;
 
                 break;
 
@@ -187,9 +195,10 @@ class GpsCompanyController extends Controller
         if (!$token) {
             return response()->json([
                 "Titulo"   => "Credenciales incorrectas",
-                "Mensaje"  => "No se pudo validar el acceso al proveedor GPS",
+                "Mensaje"  => "No se pudo validar el acceso al proveedor GPS ,".   $mensajeError,
                 "TMensaje" => "warning",
-                 "resp"    => $token
+                 "resp"    => $token,
+                "r" => $resp
             ]);
         }
 
@@ -229,7 +238,8 @@ class GpsCompanyController extends Controller
             "Titulo"   => "Correcto",
             "Mensaje"  => "Se guardó la configuración del servicio GPS",
             "TMensaje" => "success",
-            "token"    => $token
+            "token"    => $token,
+             "r" => $resp
         ]);
     }
 
