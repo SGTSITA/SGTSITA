@@ -233,5 +233,24 @@ return [
         ],
      ]
 
+     ,
+
+    'preguntas_coordenadas' => [
+
+        [ 'texto' => "1) ¿ Registro en Puerto ?", 'campo' => 'registro_puerto', 'tooltip' => "Registro en Puerto" ],
+        [ 'texto' => "2) ¿ Dentro de Puerto ?", 'campo' => 'dentro_puerto', 'tooltip' => "Dentro de Puerto" ],
+        [ 'texto' => "3) ¿ Cargado Contenedor ?", 'campo' => 'cargado_contenedor', 'tooltip' => "Cargado Contenedor" ],
+        [ 'texto' => "4) ¿ En Fila Fiscal ?", 'campo' => 'fila_fiscal', 'tooltip' => "En Fila Fiscal" ],
+        [ 'texto' => "5) ¿ Modulado ?", 'campo' => 'modulado_tipo', 'tooltip' => "Modulado" ],
+        [ 'texto' => "6) ¿ Descarga en patio ?", 'campo' => 'descarga_patio', 'tooltip' => "Descarga en patio" ],
+        [ 'texto' => "7) Toma Foto de Boleta de Patio", 'campo' => 'toma_foto_patio', 'tooltip' => "Toma Foto de Boleta de Patio" ],
+        [ 'texto' => "8) ¿Carga en patio?", 'campo' => 'cargado_patio', 'tooltip' => "Carga en patio" ],
+        [ 'texto' => "9) ¿Inicio ruta?", 'campo' => 'en_destino', 'tooltip' => "Inicio ruta" ],
+        [ 'texto' => "10) ¿Inicia carga?", 'campo' => 'inicio_descarga', 'tooltip' => "Inicia carga" ],
+        [ 'texto' => "11) ¿Fin descarga?", 'campo' => 'fin_descarga', 'tooltip' => "Fin descarga" ],
+        [ 'texto' => "12) ¿Recepción Doctos Firmados?", 'campo' => 'recepcion_doc_firmados', 'tooltip' => "Recepción Doctos Firmados" ],
+
+    ]
+
 
 ];

@@ -84,7 +84,7 @@ class GpsController extends Controller
                 // ->toArray();
 
 
-                //   dd($account);
+                //   dd($credenciales);
 
                 switch ($tipoGps) {
                     case 'https://open.iopgps.com': //global
@@ -227,7 +227,7 @@ class GpsController extends Controller
                         $tipoGpsresponse = "Beyond Kajivo";
                         break;
                     case 'https://gpsv7.com/php/wialon_data.php':
-                        $data = WialonGpsTrait::getgetLocation(
+                        $data = WialonGpsTrait::getLocation(
                             $credenciales['username'] ?? null,
                             $credenciales['password'] ?? null,
                             $imei
