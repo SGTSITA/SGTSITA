@@ -316,6 +316,24 @@ class LiquidacionesController extends Controller
 
 ->get();
 
+
+
+        $justificaciones = DB::table('viaticos_operadores as v')
+    ->join('docum_cotizacion as dc', 'v.id_cotizacion', '=', 'dc.id_cotizacion')
+    ->select(
+        'dc.id as id_contenedor',
+        'v.id',
+        'v.descripcion_gasto',
+        'v.monto'
+    )
+    ->get()
+    ->groupBy('id_contenedor');
+
+        $asignaciones->each(function ($a) use ($justificaciones) {
+            $a->justificacion = $justificaciones[$a->id_contenedor] ?? [];
+        });
+
+
         $contenedores = $asignaciones->map(function ($c) {
 
             $contenedor = DocumCotizacion::with('cotizacion')
@@ -380,7 +398,8 @@ class LiquidacionesController extends Controller
             "totalPago" => $totalPago,
             "prestamos" => $prestamos,
             "numViajes" => $numeroViajes,
-            "data" => $asignaciones
+            "data" => $asignaciones,
+           // "justificaciones" => $justificacionesV2
         ]);
     }
 
