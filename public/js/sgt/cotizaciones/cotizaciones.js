@@ -527,6 +527,14 @@ const formFieldsMec = [
         trigger: "none",
     },
     {
+        field: "cp_hora_tentativa_entrega",
+        id: "cp_hora_tentativa_entrega",
+        label: "Hora tentativa Entregra",
+        required: true,
+        type: "text",
+        trigger: "none",
+    },
+    {
         field: "cp_comentarios",
         id: "cp_comentarios",
         label: "Comentarios Carta Porte",
