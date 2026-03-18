@@ -416,6 +416,7 @@ class ExternosController extends Controller
                 "tipo" => $tipo,
                 "id" => $c->id,
                 "transportista" => $c->transportista,
+                 "convertido_local" => $c->tipo_viaje_seleccion === 'local' ? true : false,
             ];
         });
 
