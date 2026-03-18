@@ -2764,6 +2764,17 @@ class CotizacionesController extends Controller
         }
         return response()->json(["Titulo" => "Proceso satisfactorio", "Mensaje" => "Se ha realizado el proceso de conversión a viaje foráneo", "TMensaje" => "success"]);
     }
+
+
+    public function revertirforaneo(Request $request)
+    {
+        $viajes = $request->seleccion;
+
+        for ($x = 0; $x < (sizeof($viajes)); $x++) {
+            Cotizaciones::where('id', $viajes[$x]['id'])->update(["tipo_viaje_seleccion" => "local","en_patio" => 1,"estatus" => "Documentos Faltantes","fecha_entrega" => null]);
+        }
+        return response()->json(["Titulo" => "Proceso satisfactorio", "Mensaje" => "Se ha revertido el proceso a viaje local", "TMensaje" => "success"]);
+    }
     public function storeMultiplelocal(Request $request)
     {
         try {
