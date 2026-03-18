@@ -360,6 +360,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::any('cotizaciones/store-local', [App\Http\Controllers\CotizacionesController::class, 'storelocal'])->name('store.cotizacioneslocal');
     Route::post('cotizaciones/single/update-local/{id}', [App\Http\Controllers\CotizacionesController::class, 'singleUpdatelocal'])->name('update.singlelocal');
     Route::post('/cotizaciones/transformar/foraneo', [App\Http\Controllers\CotizacionesController::class, 'convertirlocalforaneo'])->name('cotizaciones.transform.foraneo');
+    Route::post('/cotizaciones/transformar/revertirforaneo', [App\Http\Controllers\CotizacionesController::class, 'revertirforaneo'])->name('cotizaciones.transform.revertirforaneo');
 
     // sgt busqueda y asignacion de doc boleta patio
     Route::get('/cotizaciones/solicitudes-local', [App\Http\Controllers\CotizacionesController::class, 'solicitudesLocales'])->name('cotizaciones.Solic-locales');
