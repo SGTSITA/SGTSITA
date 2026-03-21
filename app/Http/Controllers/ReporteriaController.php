@@ -101,11 +101,24 @@ class ReporteriaController extends Controller
                 $query->where('estatus', '=', 'Aprobada')
                     ->orWhere('estatus', '=', 'Finalizado');
             })
-           ->where(function ($q) {
+           ->where(function ($q) { //antes
                $q->where('estatus_pago', 0)
                  ->orWhereNull('estatus_pago');
            })
-            ->where('restante', '>', 0);  // Solo cotizaciones con saldo restante
+           // ->where('restante', '>', 0)
+              //ahora
+           ->whereRaw('
+    cotizaciones.total - (
+        SELECT COALESCE(SUM(cpc.monto),0)
+        FROM cobros_pagos_cotizaciones cpc
+        JOIN cobros_pagos cp
+            ON cp.id = cpc.cobro_pago_id
+        WHERE cpc.cotizacion_id = cotizaciones.id
+        AND cp.tipo = "cxc"
+    ) > 0
+')
+
+        ;  // Solo cotizaciones con saldo restante
 
         // Filtrar por cliente si se selecciona uno
         if ($id_client) {
@@ -396,7 +409,18 @@ class ReporteriaController extends Controller
             $query->where('cotizaciones.estatus', 'Aprobada')
                   ->orWhere('cotizaciones.estatus', 'Finalizado');
         })
-        ->where('cotizaciones.prove_restante', '>', 0);
+       // ->where('cotizaciones.prove_restante', '>', 0);
+                //ahora
+           ->whereRaw('
+    asignaciones.total_proveedor - (
+        SELECT COALESCE(SUM(cpc.monto),0)
+        FROM cobros_pagos_cotizaciones cpc
+        JOIN cobros_pagos cp
+            ON cp.id = cpc.cobro_pago_id
+        WHERE cpc.cotizacion_id = cotizaciones.id
+        AND cp.tipo = "cxp"
+    ) > 0
+');
 
         if (!empty($id_proveedor)) {
             $cotizacionesQuery->where('asignaciones.id_proveedor', $id_proveedor);
