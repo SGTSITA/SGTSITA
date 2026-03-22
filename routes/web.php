@@ -594,7 +594,8 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('/admin/auditoria/{id}', [App\Http\Controllers\AuditoriaController::class, 'show']);
 
     Route::get('/admin/auditoria-data/inicial', [App\Http\Controllers\AuditoriaController::class, 'data']);
-
+Route::get('/admin/auditoria/{id}/pdf', [App\Http\Controllers\AuditoriaController::class, 'exportPdf'])
+      ->name('auditoria.pdf');
 });
 
 //Route Hooks - Do not delete//
