@@ -42,6 +42,16 @@ class DocumCotizacion extends Model
         return $this->hasOne(Asignaciones::class, 'id_contenedor');
     }
 
+
+    public function getAuditoriaData($old = [], $new = [])
+    {
+
+
+        return [
+            'referencia' => $this->num_contenendor,
+        ];
+    }
+
     protected static function boot()
     {
         parent::boot();

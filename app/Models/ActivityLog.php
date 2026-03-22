@@ -18,6 +18,10 @@ class ActivityLog extends Model
         'user_id',
         'ip',
         'user_agent',
+         'request_payload',
+         'campos_modificados',
+         'referencia',
+         'empresa_id'
     ];
 
 
@@ -54,5 +58,10 @@ class ActivityLog extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function empresa()
+    {
+        return $this->belongsTo(Empresas::class, 'empresa_id');
     }
 }

@@ -23,6 +23,13 @@ class coordenadashistorial extends Model
         'tipo',
         'id_convoy',
 
+        'status_api',
+        'id_compania_gps' ,
+        'tiempo_respuesta_ms',
+        'valorSolicitado' ,
+        'response_json',
+        'error_message'
+
     ];
 
     public function usuario()

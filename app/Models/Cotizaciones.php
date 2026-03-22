@@ -157,6 +157,16 @@ class Cotizaciones extends Model
         );
     }
 
+    public function getAuditoriaData($old = [], $new = [])
+    {
+        $this->loadMissing('DocCotizacion');
+
+        return [
+            'referencia' => $this->DocCotizacion?->num_contenendor,
+        ];
+    }
+
+
     public function movimientos()
     {
         return $this->hasMany(CobroPagoCotizacion::class, 'cotizacion_id');

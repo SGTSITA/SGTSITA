@@ -11,9 +11,30 @@
                     <p class="text-sm mb-0">Registro de altas, cambios y eliminaciones</p>
 
                     <div class="row mb-3">
+                        <div class="col-md-3">
+                            <label class="form-label">Empresa</label>
+                            <select id="filtroEmpresa" class="form-select">
+                                <option value="">Todas</option>
+                                @foreach ($empresas as $empresa)
+                                    <option value="{{ $empresa->id }}">{{ $empresa->id }}-{{ $empresa->nombre }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Referencia</label>
+                            <input type="text" id="contenedor" class="form-control" placeholder="Ej: ABC123">
+                        </div>
+
                         <div class="col-md-4">
                             <label class="form-label">Rango de fechas</label>
-                            <input type="text" id="auditoriaRange" class="form-control" placeholder="Selecciona un rango">
+                            <input type="text" id="auditoriaRange" class="form-control"
+                                placeholder="Selecciona un rango">
+                        </div>
+
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button class="btn btn-primary w-100" id="btnBuscar">
+                                Buscar
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -91,6 +112,10 @@
             cargarDatos();
         });
 
+        document.getElementById('btnBuscar').addEventListener('click', function() {
+            cargarDatos();
+        });
+
         function cargarDatos(page = 1) {
             const params = new URLSearchParams({
                 page
@@ -100,6 +125,19 @@
                 params.append('fecha_inicio', fechaInicio);
                 params.append('fecha_fin', fechaFin);
             }
+            const contenedor = document.getElementById('contenedor').value;
+
+            if (contenedor) {
+                params.append('referencia', contenedor);
+            }
+
+
+
+            const empresaId = document.getElementById('filtroEmpresa').value;
+            if (empresaId) {
+                params.append('empresa_id', empresaId);
+            }
+
             fetch(`/admin/auditoria-data/inicial?${params}`)
                 .then(r => r.json())
                 .then(resp => {
@@ -122,12 +160,24 @@
                 valueGetter: p => p.data.user?.name ?? 'Sistema'
             },
             {
+                headerName: 'Empresa',
+                valueGetter: p => p.data.empresa?.nombre ?? 'Sistema'
+            },
+            {
                 headerName: 'Modelo',
                 field: 'model'
             },
             {
                 headerName: 'ID Modelo',
                 field: 'model_id'
+            },
+            {
+                headerName: 'Referencia',
+                field: 'referencia'
+            },
+            {
+                headerName: 'Campos modificados',
+                field: 'campos_modificados'
             },
             {
                 headerName: 'Acción',
@@ -177,10 +227,37 @@
             agGrid.createGrid(document.querySelector('#auditoriaGrid'), gridOptions);
         });
 
+        function getColor(action) {
+            return {
+                created: 'success',
+                updated: 'warning',
+                deleted: 'danger'
+            } [action] || 'secondary';
+        }
+
+        function formatValue(val) {
+            if (val === null || val === undefined || val === '') return '<i class="text-muted">—</i>';
+
+            if (typeof val === 'object') {
+                return `<pre>${JSON.stringify(val, null, 2)}</pre>`;
+            }
+
+            return val;
+        }
+
+        function formatField(field) {
+            return field
+                .replace(/_/g, ' ')
+                .replace(/\b\w/g, l => l.toUpperCase());
+        }
+
+        function togglePayload() {
+            const el = document.getElementById('payloadBox');
+            el.style.display = el.style.display === 'none' ? 'block' : 'none';
+        }
 
 
 
-        // 🔍 DETALLE
         function verAuditoria(id) {
             fetch(`/admin/auditoria/${id}`)
                 .then(r => r.json())
@@ -191,18 +268,28 @@
         }
 
         function renderDetalle(data) {
-            let html = `
-        <p><b>Acción:</b> ${data.accion}</p>
-        <p><b>Modelo:</b> ${data.modelo} #${data.modelo_id}</p>
-        <p><b>Usuario:</b> ${data.usuario}</p>
-        <p><b>Fecha:</b> ${data.fecha}</p>
 
-        <table class="table table-bordered table-sm">
-            <thead>
+            let html = `
+        <div class="mb-3">
+            <p><b>Acción:</b>
+                <span class="badge bg-${getColor(data.accion)}">
+                    ${data.accion.toUpperCase()}
+                </span>
+            </p>
+            <p><b>Modelo:</b> ${data.modelo} #${data.modelo_id}</p>
+            <p><b>Usuario:</b> ${data.usuario}</p>
+            <p><b>Empresa:</b> ${data.empresa ?? 'N/A'}</p>
+            <p><b>Referencia:</b> ${data.referencia ?? 'N/A'}</p>
+            <p><b>Fecha:</b> ${data.fecha}</p>
+        </div>
+
+        <div class="table-responsive">
+        <table class="table table-bordered table-sm align-middle">
+            <thead class="table-light">
                 <tr>
-                    <th>Campo</th>
-                    <th>Antes</th>
-                    <th>Después</th>
+                    <th style="width:25%">Campo</th>
+                    <th style="width:35%">Antes</th>
+                    <th style="width:35%">Después</th>
                 </tr>
             </thead>
             <tbody>
@@ -214,16 +301,49 @@
             ]);
 
             keys.forEach(key => {
+
+                const oldVal = formatValue(data.old?.[key]);
+                const newVal = formatValue(data.new?.[key]);
+
+                const changed = oldVal !== newVal;
+
                 html += `
-            <tr>
-                <td>${key}</td>
-                <td>${data.old?.[key] ?? ''}</td>
-                <td>${data.new?.[key] ?? ''}</td>
+            <tr class="${changed ? 'table-warning' : ''}">
+                <td><b>${formatField(key)}</b></td>
+                <td class="text-danger">${oldVal}</td>
+                <td class="text-success">${newVal}</td>
             </tr>
         `;
             });
 
-            html += '</tbody></table>';
+            html += '</tbody></table></div>';
+
+
+            if (data.request_payload) {
+                html += `
+            <hr>
+            <button class="btn btn-sm btn-outline-secondary mb-2" onclick="togglePayload()">
+                Ver request
+            </button>
+            <pre id="payloadBox" style="display:none;max-height:300px;overflow:auto;background:#111;color:#0f0;padding:10px;">
+${JSON.stringify(data.request_payload, null, 2)}
+            </pre>
+        `;
+            }
+
+
+            html += `
+<a href="/admin/auditoria/${data.id}/pdf" target="_blank"
+   class="btn btn-danger btn-sm">
+   Descargar PDF
+</a>
+
+<a href="/admin/auditoria/${data.id}/pdf?payload=1" target="_blank"
+   class="btn btn-secondary btn-sm">
+   PDF con payload
+</a>
+`;
+
             document.getElementById('auditoriaDetalle').innerHTML = html;
         }
     </script>
