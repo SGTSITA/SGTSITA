@@ -45,10 +45,8 @@ class DocumCotizacion extends Model
 
     public function getAuditoriaData($old = [], $new = [])
     {
-
-
         return [
-            'referencia' => $this->num_contenendor,
+            'referencia' => $this->num_contenedor,
         ];
     }
 

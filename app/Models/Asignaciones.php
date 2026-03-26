@@ -96,7 +96,7 @@ class Asignaciones extends Model
         $this->loadMissing('Contenedor');
 
         return [
-            'referencia' => $this->Contenedor?->num_contenendor,
+            'referencia' => $this->Contenedor?->num_contenedor,
         ];
     }
 

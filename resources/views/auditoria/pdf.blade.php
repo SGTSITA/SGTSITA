@@ -110,13 +110,13 @@
 
 <body>
 
-    <!-- HEADER -->
+
     <div class="header">
         <div class="title">Reporte de Auditoría SITA Software</div>
         <div class="subtitle">Sistema de control de cambios</div>
     </div>
 
-    <!-- INFO -->
+
     <table class="info-table">
         <tr>
             <td><b>Acción:</b></td>
@@ -129,6 +129,7 @@
             <td><b>Fecha:</b></td>
             <td>{{ $data['fecha'] }}</td>
         </tr>
+
         <tr>
             <td><b>Modelo:</b></td>
             <td>{{ $data['modelo'] }} #{{ $data['modelo_id'] }}</td>
@@ -136,16 +137,22 @@
             <td><b>Usuario:</b></td>
             <td>{{ $data['usuario'] }}</td>
         </tr>
-        <tr>
-            <td><b>Empresa:</b></td>
-            <td>{{ $data['empresa'] }}</td>
 
+        <tr>
+            <td><b>Correo:</b></td>
+            <td>{{ $data['correo'] }}</td>
+
+            <td><b>Empresa:</b></td>
+            <td>{{ $data['empresa'] ?? 'N/A' }}</td>
+        </tr>
+
+        <tr>
             <td><b>Referencia:</b></td>
-            <td>{{ $data['referencia'] }}</td>
+            <td colspan="3">{{ $data['referencia'] ?? 'N/A' }}</td>
         </tr>
     </table>
 
-    <!-- CAMBIOS -->
+
     <h4>Cambios realizados</h4>
 
     <table>
@@ -172,7 +179,7 @@
         </tbody>
     </table>
 
-    <!-- PAYLOAD -->
+
     @if ($data['payload'])
         <div class="payload">
             <h4>Datos enviados (Request)</h4>

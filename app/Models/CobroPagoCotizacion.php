@@ -35,7 +35,14 @@ class CobroPagoCotizacion extends Model
     {
         return $this->belongsTo(\App\Models\Cotizaciones::class, 'cotizacion_id');
     }
+    public function getAuditoriaData($old = [], $new = [])
+    {
+        $this->loadMissing('cotizacion.DocCotizacion');
 
+        return [
+            'referencia' => $this->cotizacion?->DocCotizacion?->num_contenedor,
+        ];
+    }
 
 
     public function esBancoA()

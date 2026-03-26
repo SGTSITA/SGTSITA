@@ -42,4 +42,15 @@ class Estado_Cuenta_Cotizaciones extends Model
     {
         return $this->belongsTo(User::class, 'assigned_by');
     }
+
+    public function getAuditoriaData($old = [], $new = [])
+    {
+        $this->loadMissing('cotizacion.DocCotizacion');
+
+        return [
+            'referencia' => $this->cotizacion?->DocCotizacion?->num_contenedor,
+        ];
+    }
+
+
 }

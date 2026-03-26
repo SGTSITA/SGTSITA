@@ -3,6 +3,14 @@
 @section('template_title', 'Auditoría del sistema')
 
 @section('content')
+    <style>
+        .break-word {
+            word-break: break-word;
+            white-space: pre-wrap;
+            max-width: 250px;
+
+        }
+    </style>
     <div class="row mt-4">
         <div class="col-12">
             <div class="card">
@@ -219,7 +227,7 @@
             },
             onGridReady: params => {
                 gridApi = params.api;
-                cargarDatos(); // carga inicial
+                // cargarDatos(); // carga inicial ya no porque mejor por filtro
             }
         };
 
@@ -270,30 +278,60 @@
         function renderDetalle(data) {
 
             let html = `
-        <div class="mb-3">
-            <p><b>Acción:</b>
-                <span class="badge bg-${getColor(data.accion)}">
-                    ${data.accion.toUpperCase()}
-                </span>
-            </p>
-            <p><b>Modelo:</b> ${data.modelo} #${data.modelo_id}</p>
-            <p><b>Usuario:</b> ${data.usuario}</p>
-            <p><b>Empresa:</b> ${data.empresa ?? 'N/A'}</p>
-            <p><b>Referencia:</b> ${data.referencia ?? 'N/A'}</p>
-            <p><b>Fecha:</b> ${data.fecha}</p>
+<div class="mb-3">
+    <div class="row g-2 small">
+
+        <div class="col-md-4">
+            <b>Acción:</b>
+            <span class="badge bg-${getColor(data.accion)}">
+                ${data.accion.toUpperCase()}
+            </span>
         </div>
 
-        <div class="table-responsive">
-        <table class="table table-bordered table-sm align-middle">
-            <thead class="table-light">
+        <div class="col-md-4">
+            <b>Modelo:</b> ${data.modelo} #${data.modelo_id}
+        </div>
+
+        <div class="col-md-4">
+            <b>Fecha:</b> ${data.fecha}
+        </div>
+
+        <div class="col-md-4">
+            <b>Usuario:</b> ${data.usuario}
+        </div>
+
+        <div class="col-md-4">
+            <b>Correo:</b> ${data.correo}
+        </div>
+
+        <div class="col-md-4">
+            <b>Empresa:</b> ${data.empresa ?? 'N/A'}
+        </div>
+
+        <div class="col-md-12">
+            <b>Referencia:</b> ${data.referencia ?? 'N/A'}
+        </div>
+
+    </div>
+</div>
+<div class="form-check mb-2">
+    <input class="form-check-input" type="checkbox" id="soloCambios">
+    <label class="form-check-label" for="soloCambios">
+        Mostrar solo cambios
+    </label>
+</div>
+
+    <div class = "table-responsive" >
+        <table class = "table table-bordered table-sm align-middle"  id="tablaAuditoria">
+            <thead class = "table-light" >
                 <tr>
-                    <th style="width:25%">Campo</th>
-                    <th style="width:35%">Antes</th>
-                    <th style="width:35%">Después</th>
+                    <th style = "width:25%" > Campo </th>
+                    <th style = "width:35%" > Antes </th>
+                    <th style = "width:35%" > Después </th>
                 </tr>
             </thead>
-            <tbody>
-    `;
+        <tbody>
+                `;
 
             const keys = new Set([
                 ...Object.keys(data.old || {}),
@@ -310,8 +348,8 @@
                 html += `
             <tr class="${changed ? 'table-warning' : ''}">
                 <td><b>${formatField(key)}</b></td>
-                <td class="text-danger">${oldVal}</td>
-                <td class="text-success">${newVal}</td>
+              <td class="text-danger text-wrap break-word">${oldVal}</td>
+<td class="text-success text-wrap break-word">${newVal}</td>
             </tr>
         `;
             });
@@ -346,5 +384,22 @@ ${JSON.stringify(data.request_payload, null, 2)}
 
             document.getElementById('auditoriaDetalle').innerHTML = html;
         }
+
+        $(document).on('change', '#soloCambios', function() {
+
+            const soloCambios = $(this).is(':checked');
+
+            $('#tablaAuditoria tbody tr').each(function() {
+
+                const esCambio = $(this).hasClass('table-warning');
+
+                if (soloCambios) {
+                    $(this).toggle(esCambio);
+                } else {
+                    $(this).show();
+                }
+
+            });
+        });
     </script>
 @endpush

@@ -162,7 +162,7 @@ class Cotizaciones extends Model
         $this->loadMissing('DocCotizacion');
 
         return [
-            'referencia' => $this->DocCotizacion?->num_contenendor,
+            'referencia' => $this->DocCotizacion?->num_contenedor,
         ];
     }
 
