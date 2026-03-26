@@ -248,8 +248,8 @@
 
     </div>
 
-    @if ($prestamosPagados->count() > 0 && $abonoprestamosLiquidacion->count() > 0)
-        {{-- PRESTAMOS solo si hubo abonos en esta liquidacion --}}
+    {{-- @if ($prestamosPagados->count() > 0 && $abonoprestamosLiquidacion->count() > 0)
+        PRESTAMOS solo si hubo abonos en esta liquidacion
         <div class="section">
 
             <b>Deudas (Préstamos / Adelantos)</b>
@@ -303,7 +303,7 @@
             </table>
 
         </div>
-    @endif
+    @endif --}}
 
 </body>
 

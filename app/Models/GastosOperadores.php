@@ -43,4 +43,13 @@ class GastosOperadores extends Model
     {
         return $this->belongsTo(Cotizaciones::class, 'id_cotizacion');
     }
+
+    public function getAuditoriaData($old = [], $new = [])
+    {
+        $this->loadMissing('Cotizacion.DocCotizacion');
+
+        return [
+            'referencia' => $this->cotizacion?->DocCotizacion?->num_contenedor,
+        ];
+    }
 }

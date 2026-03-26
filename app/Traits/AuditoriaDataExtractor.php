@@ -10,6 +10,7 @@ class AuditoriaDataExtractor
     {
 
         if (method_exists($model, 'getAuditoriaData')) {
+            // dd('existe metodo', $model);
             return $model->getAuditoriaData($old, $new);
         }
 

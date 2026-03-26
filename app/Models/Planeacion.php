@@ -10,7 +10,7 @@ use App\Traits\Auditable;
 class Planeacion extends Model
 {
     use HasFactory;
-    use Auditable;
+    //  use Auditable;
     protected $table = 'planeacion';
 
     protected $fillable = [

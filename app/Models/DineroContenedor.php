@@ -21,4 +21,13 @@ class DineroContenedor extends Model
     {
         return $this->hasOne(DocumCotizacion::class, 'id_cotizacion', 'id_contenedor');
     }
+
+    public function getAuditoriaData($old = [], $new = [])
+    {
+        $this->loadMissing('DocCotizacion');
+
+        return [
+            'referencia' => $this->DocCotizacion?->num_contenedor,
+        ];
+    }
 }

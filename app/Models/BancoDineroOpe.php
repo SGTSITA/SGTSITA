@@ -39,6 +39,15 @@ class BancoDineroOpe extends Model
     {
         return $this->belongsTo(Cotizaciones::class, 'id_cotizacion');
     }
+
+    public function getAuditoriaData($old = [], $new = [])
+    {
+        $this->loadMissing('Cotizacion.DocCotizacion');
+
+        return [
+            'referencia' => $this->Cotizacion?->DocCotizacion?->num_contenedor,
+        ];
+    }
     public function Banco1()
     {
         return $this->belongsTo(Bancos::class, 'id_banco1');

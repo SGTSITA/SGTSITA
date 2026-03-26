@@ -3525,6 +3525,13 @@ function pintarDispositivos(data) {
     const lista = $("#listaDispositivos");
     lista.empty();
 
+    let count = data.length;
+    const elTd = document.getElementById("totalDispositivos");
+
+    if (elTd) {
+        elTd.textContent = count;
+    }
+
     data.forEach((d) => {
         let estadoIcono;
         let estadoTexto;

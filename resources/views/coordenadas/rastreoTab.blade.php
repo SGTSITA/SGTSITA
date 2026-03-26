@@ -199,15 +199,31 @@
                         </div>
 
                         <div class="border rounded p-2" style="max-height: 58vh; overflow-y: auto;">
-                            <h5 class="mb-2 text-center bg-light py-2 rounded shadow-sm">Elementos en Rastreo</h5>
-                            <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" id="toggleTodos">
-                                <label class="form-check-label" for="toggleTodos" id="labelToggle">
-                                    Mostrar todos
-                                </label>
+
+
+                            <div
+                                class="d-flex justify-content-between align-items-center mb-2 bg-light px-2 py-2 rounded shadow-sm">
+
+                                <h6 class="mb-0 fw-bold">
+                                    Dispositivos (<span id="totalDispositivos">0</span>)
+                                </h6>
+
+                                <div class="form-check form-switch m-0">
+                                    <input class="form-check-input" type="checkbox" id="toggleTodos">
+                                    <label class="form-check-label small ms-1" for="toggleTodos" id="labelToggle">
+                                        Mostrar Todos
+                                    </label>
+                                </div>
+
                             </div>
+
+
                             <ul class="list-group" id="listaDispositivos"></ul>
+
                         </div>
+
+
+
                     </div>
                 </div>
             </div>

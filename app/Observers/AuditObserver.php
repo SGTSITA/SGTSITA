@@ -26,6 +26,14 @@ class AuditObserver
         $old = $model->getRelation('__old')?->toArray() ?? [];
         $changes = $model->getChanges();
 
+        $changesFiltrados = collect($changes)
+               ->except($this->exclude)
+               ->toArray();
+
+
+        if (empty($changesFiltrados)) {
+            return;
+        }
         $oldFiltered = collect($old)
             ->only(array_keys($changes))
             ->toArray();
@@ -45,15 +53,20 @@ class AuditObserver
 
     protected function log($action, Model $model, $old, $new)
     {
-        $requestData = request()?->except([
-    '_token',
-    'password',
-    'password_confirmation'
-]) ?? [];
+        //         $requestData = request()?->except([
+        //     '_token',
+        //     'password',
+        //     'password_confirmation'
+        // ]) ?? [];
 
-        // dd($old, $new);
+        $requestData = collect(request()->all())
+    ->except($this->exclude)
+    ->filter(fn ($v, $k) => array_key_exists($k, $model->getAttributes()))
+    ->toArray() ?? [];
 
         $referencia =  AuditoriaDataExtractor::extract($model, $old, $new);
+
+        //dd($referencia);
 
         $old = is_array($old) ? $old : [];
         $new = is_array($new) ? $new : [];
