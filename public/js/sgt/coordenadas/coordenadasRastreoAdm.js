@@ -355,6 +355,11 @@ function actualizarUbicacion(
         }
 
         let colorMarker = $(`li[data-key="${valueSearch}"]`).data("color");
+        if (!colorMarker) {
+            colorMarker = $(`li[data-key-chasis="${valueSearch}"]`).data(
+                "color",
+            );
+        }
         let colorBG = colorMarker;
         t = $(`li[data-key="${valueSearch}"]`).data("tipo");
         if (!t) {
