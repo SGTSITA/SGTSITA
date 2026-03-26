@@ -1,11 +1,5 @@
-<div
-    class="modal modal-lg fade"
-    id="viajeModal"
-    tabindex="-1"
-    role="dialog"
-    aria-labelledby="viajeModalLabel"
-    aria-hidden="true"
->
+<div class="modal modal-lg fade" id="viajeModal" tabindex="-1" role="dialog" aria-labelledby="viajeModalLabel"
+    aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content">
             <div class="modal-header d-flex justify-content-between align-items-center">
@@ -60,11 +54,11 @@
                             <b id="nombreProveedor"></b>
                         </p>
 
-                        {{--
-                            <p class="text-sm">
+
+                        <p class="text-sm">
                             Transportista: <b id="nombreTransportista"></b>
-                            </p>
-                        --}}
+                        </p>
+
 
                         <p class="text-sm">
                             Contacto Entrega:
@@ -83,7 +77,7 @@
                     </div>
                 </div>
                 <div class="">
-                    <h6 class="mt-3">Información Unidad (camion y chasis)</h6>
+                    <h6 class="mt-3">Información Unidad (camión y chasis)</h6>
                     <div>
                         <p class="text-sm">
                             Camion:
@@ -122,10 +116,8 @@
                         </div>
                     </div>
                     <div>
-                        <table
-                            width="100%"
-                            style="width: 100%; table-layout: fixed; text-align: center; border-collapse: collapse"
-                        >
+                        <table width="100%"
+                            style="width: 100%; table-layout: fixed; text-align: center; border-collapse: collapse">
                             <thead>
                                 <tr>
                                     <th>Boleta de Liberación</th>
@@ -176,7 +168,8 @@
                 <button type="button" class="btn btn-sm bg-gradient-danger" id="btnDeshacer">
                     Deshacer planeación
                 </button>
-                <button type="button" class="btn btn-sm bg-gradient-success" id="btnFinalizar">Finalizar viaje</button>
+                <button type="button" class="btn btn-sm bg-gradient-success" id="btnFinalizar">Finalizar
+                    viaje</button>
             </div>
         </div>
     </div>

@@ -10,11 +10,12 @@ class GpsCredentialsService
     public static function getByProveedor(
         string $proveedorRFC,
         int $gpsCompanyId,
-        string $tipo_viaje_contrato
+        string $tipo_viaje_contrato,
+        string  $tipo_camion_rev
     ): array {
         $config = [];
         $desencript = true;
-        if ($tipo_viaje_contrato == 'Propio') {
+        if ($tipo_viaje_contrato == 'Propio' && $tipo_camion_rev != 'camion_proveedor') {
             //buscar en la config anterior por empresa para global y camiones propios nada mas
             $key = config('services.globalGps.appkey');
             $apiid = config('services.globalGps.appid');
@@ -24,6 +25,8 @@ class GpsCredentialsService
              'message' => 'Credenciales obtenidas propias',
              'credentials' => ['key' => $key, 'apiid' => $apiid ]
         ];
+
+
 
             $desencript = false;
 

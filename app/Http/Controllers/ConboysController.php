@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 use App\Models\User;
 use App\Models\coordenadashistorial;
 use Illuminate\Support\Facades\Auth;
+use App\Services\AuditoriaCifrado;
 
 class ConboysController extends Controller
 {
@@ -162,6 +163,7 @@ class ConboysController extends Controller
     public function getConboys()
     {
         $idEmpresa = Auth::User()->id_empresa;
+        $es_admin = (bool) (Auth::user()->es_admin ?? false);
 
         $conboys = DB::table('conboys')
          ->select(
@@ -178,34 +180,44 @@ class ConboysController extends Controller
              'geocerca_lng',
              'geocerca_radio',
          )->where('estatus', '=', 'activo')
-         ->whereIn('conboys.id', function ($query) use ($idEmpresa) {
-             $query->select('conboys_contenedores.conboy_id')
-                 ->from('conboys_contenedores')
-                 ->join('docum_cotizacion', 'docum_cotizacion.id', '=', 'conboys_contenedores.id_contenedor')
-                 ->where('docum_cotizacion.id_empresa', '=', $idEmpresa);
-         })
+        ->when(!$es_admin, function ($query) use ($idEmpresa) {
+            $query->whereIn('conboys.id', function ($q) use ($idEmpresa) {
+                $q->select('conboys_contenedores.conboy_id')
+                    ->from('conboys_contenedores')
+                    ->join('docum_cotizacion', 'docum_cotizacion.id', '=', 'conboys_contenedores.id_contenedor')
+                    ->where('docum_cotizacion.id_empresa', $idEmpresa);
+            });
+        })
          ->get()
-         ->map(function ($conboy) {
-             $conboy->BlockUser = $conboy->user_id !== optional(Auth::user())->id;
+         ->map(function ($conboy) use ($es_admin) {
+             $conboy->BlockUser = $es_admin ? false : $conboy->user_id !== optional(Auth::user())->id;
              return $conboy;
          });
 
 
-        $conboysdetalleC =  DB::table('conboys_contenedores')
-        ->join('docum_cotizacion', 'docum_cotizacion.id', '=', 'conboys_contenedores.id_contenedor')
-        ->join('asignaciones', 'asignaciones.id_contenedor', '=', 'conboys_contenedores.id_contenedor')
-        ->join('equipos', 'equipos.id', '=', 'asignaciones.id_camion')
-        ->select(
-            'conboys_contenedores.conboy_id',
-            'conboys_contenedores.id_contenedor',
-            'docum_cotizacion.num_contenedor',
-            'equipos.imei',
-            'docum_cotizacion.id_empresa'
-        )
-        ->get();
+        $conboysdetalleC = DB::table('conboys_contenedores')
+    ->join('docum_cotizacion', 'docum_cotizacion.id', '=', 'conboys_contenedores.id_contenedor')
+    ->join('asignaciones', 'asignaciones.id_contenedor', '=', 'conboys_contenedores.id_contenedor')
+    ->join('equipos', 'equipos.id', '=', 'asignaciones.id_camion')
+    ->select(
+        'conboys_contenedores.conboy_id',
+        'conboys_contenedores.id_contenedor',
+        'docum_cotizacion.num_contenedor',
+        'equipos.imei',
+        'docum_cotizacion.id_empresa'
+    )
+    ->get();
+        $conboysdetalle = $conboysdetalleC;
 
-        $conboysdetalle = $conboysdetalleC->where('id_empresa', $idEmpresa)->values();
-        ;
+
+        if (!$es_admin) {
+            $conboysdetalle = $conboysdetalleC
+                ->where('id_empresa', $idEmpresa)
+                ->values();
+
+
+        }
+
         return response()->json([
                 'success' => true,
                 'message' => 'lista devuelta.'  ,
@@ -422,6 +434,11 @@ class ConboysController extends Controller
              'tipo' => 'required|string',
          ]);
 
+
+        $responseEncriptado = isset($request->data)
+    ? AuditoriaCifrado::encrypt($request->data)
+    : null;
+
         $coordenada = CoordenadasHistorial::create([
             'latitud' => $request->latitud,
             'longitud' => $request->longitud,
@@ -431,6 +448,16 @@ class ConboysController extends Controller
             'ubicacionable_type' => $request-> tipoRastreo,
             'tipo' => $request->tipo,
             'id_convoy' => $request->idProceso,
+
+              'status_api' =>  $request->status_api ?? 0,
+    'id_compania_gps' =>  $request->new_id ?? null,
+    'tiempo_respuesta_ms' =>  $request->tiempo_respuesta_ms ?? null,
+    'valorSolicitado' =>  $request->valorSolicitado ?? null,
+
+    'response_json' =>   $responseEncriptado,
+
+
+    'error_message' => $request->messageAp ?? null,
         ]);
 
         return response()->json([

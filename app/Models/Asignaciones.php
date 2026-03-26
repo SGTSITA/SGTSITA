@@ -82,6 +82,24 @@ class Asignaciones extends Model
         return $this->hasMany(ViaticosOperador::class, 'id_cotizacion', 'id_contenedor');
     }
 
+    public function movimientosBancarios()
+    {
+        return $this->morphMany(
+            CatBancoCuentasMovimientos::class,
+            'referenciaable'
+        );
+    }
+
+
+    public function getAuditoriaData($old = [], $new = [])
+    {
+        $this->loadMissing('Contenedor');
+
+        return [
+            'referencia' => $this->Contenedor?->num_contenendor,
+        ];
+    }
+
     protected static function boot()
     {
         parent::boot();

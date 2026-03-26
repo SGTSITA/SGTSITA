@@ -22,7 +22,7 @@ trait WialonGpsTrait
         return  true ;
     }
 
-    public static function getLocation($token)
+    public static function getLocation($token, $SID)
     {
         try {
 
@@ -34,6 +34,7 @@ trait WialonGpsTrait
             ])->withOptions([
                 'allow_redirects' => true,
                 'version' => 1.1,
+                'sid' => $SID ,//'520e37eac52b4dd1e338fccec6d7bdea',
                 'verify' => false, // solo para descartar problemas de SSL
             ])->get($endpoint, [
                 'token' => $token,

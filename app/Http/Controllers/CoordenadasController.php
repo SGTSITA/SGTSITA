@@ -10,6 +10,7 @@ use App\Models\Subclientes;
 use App\Models\Proveedor;
 use App\Models\Cotizaciones;
 use App\Models\DocumCotizacion;
+use App\Models\Empresas;
 use App\Models\Equipo;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -537,7 +538,6 @@ class CoordenadasController extends Controller
 
     public function edit(Request $request, $id)
     {
-
         $fecha = Carbon::now();
 
         $coordenadas = Coordenadas::find($id);
@@ -577,27 +577,22 @@ class CoordenadasController extends Controller
         $coordenadas->recepcion_doc_firmados_datatime = $fecha;
 
         $coordenadas->update();
-
         return redirect()->back();
 
     }
 
     public function getEntidadesPC()
     {
-
-
         $proveedores = Proveedor::catalogoPrincipal()
             ->where('id_empresa', auth()->user()->id_empresa)
             ->orderBy('created_at', 'desc')
             ->get(['id', 'nombre']);
-
 
         $clientes = Client::join('client_empresa as ce', 'clients.id', '=', 'ce.id_client')
                         ->where('ce.id_empresa', Auth::User()->id_empresa)
                         ->where('is_active', 1)
                         ->orderBy('nombre')
                         ->get(['clients.id', 'clients.nombre']);
-
 
         return response()->json([
             'proveedor' => $proveedores,
@@ -647,6 +642,7 @@ class CoordenadasController extends Controller
     public function getEquiposGps(Request $request)
     {
 
+        $isAdmin = auth()->user()->es_admin;
         $hoy = Carbon::now()->toDateString();
         $idCliente = 0;
         $cliendID = auth()->user()->id_cliente;
@@ -665,16 +661,21 @@ class CoordenadasController extends Controller
             $idEmpresa = null;
         }
 
+
+
         $filters = [
+            'isAdmin' => $isAdmin,
            'id_empresa' => $idEmpresa,
             'contenedor' => $request->query('contenedor', null),
             'contenedores' => $request->query('contenedores', null),
             'idCliente' => $idCliente
         ];
 
+        //  dd($filters);
+
 
         $baseFiltro = $this->coordenadasService->getContenedoresBase([
-            'fecha' => $hoy
+            'fecha' => $hoy,'isAdmin' => $isAdmin
         ]);
         $datosAll = $baseFiltro->get();
 
@@ -685,10 +686,10 @@ class CoordenadasController extends Controller
 
         $conboys =   $this->coordenadasService->getConboys($filters);
 
-        $conboysdetalle = $this->coordenadasService->getConboysDetalle($conboys);
+        $conboysdetalle = $this->coordenadasService->getConboysDetalle($filters);
 
         //equipos
-        $baseEquiposAll = $this->coordenadasService->getEquiposbase([ 'fecha' => $hoy]);
+        $baseEquiposAll = $this->coordenadasService->getEquiposbase([ 'fecha' => $hoy,'isAdmin' => $isAdmin]);
         $equiposAll = $baseEquiposAll->get();
         $equipos = $this->coordenadasService->getEquiposRastreo($baseEquiposAll, $filters);
 
@@ -948,8 +949,29 @@ class CoordenadasController extends Controller
 
         $intervals = RastreoIntervals::where('task_name', 'rastreo_gps_interval')->first();
 
+        $empresas = Empresas::all();
 
-        return view('coordenadas.rastreoTab', compact('intervals'));
+        $proveedores = Proveedor::catalogoPrincipal()
+
+            ->orderBy('created_at', 'desc')
+            ->get(['id', 'nombre', 'id_empresa']);
+
+
+        $clientes = Client::join('client_empresa as ce', 'clients.id', '=', 'ce.id_client')
+
+                        ->where('is_active', 1)
+                        ->orderBy('nombre')
+                        ->get(['clients.id', 'clients.nombre','ce.id_empresa']);
+
+
+
+
+        $view = 'coordenadas.rastreoTab';
+        if (Auth::user()->es_admin) {
+            $view = 'coordenadas.rastreoTabAdmin';
+        }
+
+        return view($view, compact('intervals', 'empresas', 'proveedores', 'clientes'));
 
     }
 }
