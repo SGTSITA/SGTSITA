@@ -172,6 +172,21 @@ class GpsCompanyController extends Controller
                 break;
 
             case 6: // Wialon GPS
+                $responseWialon =   WialonGpsTrait::getLocation(
+                    $credenciales['token'] ?? null,
+                    $credenciales['SID'] ?? null
+                );
+                $resp = $responseWialon;
+                if (
+                    !$responseWialon->success ||
+                    !is_array($responseWialon->data) ||
+                    count($responseWialon->data) === 0
+                ) {
+                    $mensajeError = "Error al validar las credenciales con Wialon GPS";
+                    $token = null;
+                    break;
+                }
+
                 $token = true;
                 break;
 
@@ -338,7 +353,7 @@ class GpsCompanyController extends Controller
             case 'WialonGps':
                 $credenciales = CommonGpsTrait::getAuthenticationCredentials('AECC890930E41', 6);
                 //    return $credenciales;
-                $data = WialonGpsTrait::getLocation($credenciales['accessAccount']['token']);
+                $data = WialonGpsTrait::getLocation($credenciales['accessAccount']['token'], $credenciales['accessAccount']['SID']);
                 break;
             default:
                 $data = "Bad GPS Config";

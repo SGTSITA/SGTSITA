@@ -142,8 +142,16 @@
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
                         aria-label="Cerrar"></button>
                 </div>
-                <div class="modal-body" id="contenidoModalViaje">
-                    <!-- Aquí se insertará el contenido dinámico -->
+                <div class="modal-body">
+                    <!-- Nav tabs (se generan dinámicamente con los contenedores) -->
+                    <ul class="nav nav-tabs" id="contenedorTabs" role="tablist">
+                        <!-- Aquí se insertan las pestañas por contenedor -->
+                    </ul>
+
+                    <!-- Contenido de cada tab -->
+                    <div class="tab-content mt-3" id="contenedorTabsContent">
+                        <!-- Aquí se insertan los divs de cada contenedor -->
+                    </div>
                 </div>
                 <div class="modal-footer bg-light rounded-bottom-4">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
@@ -159,6 +167,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous">
     </script>
     <script>
+        let equiposSearch = [];
         let map;
         let markers = [];
         let convoyDisuelto = false;
@@ -214,6 +223,99 @@
             }
 
             document.getElementById('tipoSpan').textContent = tipoSpans;
+        }
+
+        function mostrarInfoConvoy(contenedores, equipo, chasis) {
+            const tabs = document.getElementById("contenedorTabs");
+            const content = document.getElementById("contenedorTabsContent");
+
+            tabs.innerHTML = "";
+            content.innerHTML = "";
+            let info = "";
+
+            contenedores.forEach((contenedor, index) => {
+                let tabId = contenedor.num_contenedor;
+                if (!tabId) {
+                    tabId = contenedor.contenedor;
+                }
+
+                // Crear pestaña
+                tabs.innerHTML += `
+      <li class="nav-item" role="presentation">
+        <button class="nav-link ${index === 0 ? "active" : ""}"
+                id="${tabId}-tab"
+                data-bs-toggle="tab"
+                data-bs-target="#${tabId}"
+                type="button"
+                role="tab"
+                aria-controls="${tabId}"
+                aria-selected="${index === 0 ? "true" : "false"}">
+           ${tabId}
+        </button>
+      </li>
+    `;
+
+                info = contenedoresDisponiblesAll.find(
+                    (d) => d.contenedor === contenedor.num_contenedor,
+                );
+                if (!info) {
+                    info = contenedoresDisponiblesAll.find(
+                        (d) => d.contenedor === contenedor.contenedor,
+                    );
+                }
+                // <p><strong>Contenedor:</strong> ${info.contenedor}</p>
+                if (info) {
+                    let filtroEqu = equiposSearch.find(
+                        (equipo) => equipo.id === info.id_equipo_unico,
+                    );
+
+                    let infoContenido = `
+                  <div class="tab-pane fade ${index === 0 ? "show active" : ""}"
+           id="${tabId}"
+           role="tabpanel"
+           aria-labelledby="${tabId}-tab">
+
+                    <p><strong>Cliente:</strong> ${info.cliente}</p>
+
+                    <p><strong>Origen:</strong> ${info.origen}</p>
+                    <p><strong>Destino:</strong> ${info.destino}</p>
+                    <p><strong>Contrato:</strong> ${info.tipo_contrato}</p>
+                    <p><strong>Fecha Inicio:</strong> ${info.fecha_inicio}</p>
+                    <p><strong>Fecha Fin:</strong> ${info.fecha_fin}</p>
+                    <p><strong>Contacto Entrega:</strong> ${info.cp_contacto_entrega}</p>
+                    <p><strong>Operador:</strong> ${info.beneficiario}</p>
+                    <p><strong>Telefono:</strong> ${info.telefono_beneficiario}</p>
+                    <p>
+                        <span style="margin-right: 15px;">
+                            <strong>IMEI:</strong> ${info.imei}
+                        </span>
+                        <strong>Equipo:</strong> ${info.id_equipo}
+                        <strong>Placas:</strong> ${filtroEqu.placas}
+                    </p>
+                    <p>
+                        <span style="margin-right: 15px;">
+                            <strong>IMEI CHASIS:</strong> ${info.imei_chasis}
+                        </span>
+                        <strong>Chasis:</strong> ${info.id_equipo_chasis}
+                    </p>
+                  </div>
+                `;
+
+                    // Crear contenido
+                    content.innerHTML += infoContenido;
+                } else {
+                    Swal.fire({
+                        title: "Información de viaje no disponible",
+                        text: "No se encontró información para el contenedor seleccionado.",
+                        icon: "warning",
+                    });
+                }
+            });
+
+            const modal = new bootstrap.Modal(
+                document.getElementById("modalInfoViaje"),
+            );
+            modal.show();
         }
 
         function actualizarUbicacion(imeis, t) {
@@ -303,60 +405,28 @@
                                     markers.push(newMarker);
 
                                     newMarker.addListener('click', () => {
-                                        const contenedor = item.contenedor;
-                                        let info = contenedoresDisponibles.find((d) => d.contenedor ===
-                                            contenedor);
-                                        if (!info) {
-                                            if (tipoSpans.toLowerCase().includes('convoy')) {
-                                                info = contenedoresDisponiblesAll.find(
-                                                    (d) => d.contenedor === contenedor,
-                                                );
-                                            } else if (t === '#filtro-Equipo') {
-                                                const ahora = new Date();
-                                                info = contenedoresDisponibles.find((d) => {
-                                                    const inicio = new Date(d.fecha_inicio);
-                                                    const fin = new Date(d.fecha_fin);
+                                        const contenedorRes = item.contenedor;
 
-                                                    return ahora >= inicio && ahora <= fin;
-                                                });
-                                                console.log(info);
-                                                if (!info) {
-                                                    alert('Información del viaje no encontrada.');
-                                                    return;
-                                                }
-                                            }
-                                        }
-                                        let extraInfo = '';
-
-                                        if (t === '#filtro-Equipo') {
-                                            extraInfo = `
-                    <p><strong>IMEI CHASIS:</strong> ${info.imei_chasis}</p>
-                           `;
-                                        }
-
-                                        const contenido = `
-                  <div class="p-3">
-                    <h5 class="mb-2">🚚 Información del Viaje</h5>
-                    <p><strong>Cliente:</strong> ${info.cliente}</p>
-                    <p><strong>Contenedor:</strong> ${info.contenedor}</p>
-                    <p><strong>Origen:</strong> ${info.origen}</p>
-                    <p><strong>Destino:</strong> ${info.destino}</p>
-                    <p><strong>Contrato:</strong> ${info.tipo_contrato}</p>
-                    <p><strong>Fecha Inicio:</strong> ${info.fecha_inicio}</p>
-                    <p><strong>IMEI:</strong> ${info.imei}</p>
-
-                                   ${extraInfo}
-                  </div>
-                `;
-
-                                        document.getElementById('contenidoModalViaje').innerHTML =
-                                            contenido;
-
-                                        // Mostrar el modal con Bootstrap 5
-                                        const modal = new bootstrap.Modal(
-                                            document.getElementById('modalInfoViaje'),
+                                        let info = contenedoresDisponibles.find(
+                                            (d) => d.contenedor === contenedorRes,
                                         );
-                                        modal.show();
+
+                                        if (!info && t.toLowerCase().includes("convoy")) {
+                                            info = contenedoresDisponiblesAll.find(
+                                                (d) => d.contenedor === contenedorRes,
+                                            );
+                                        }
+
+                                        if (t === "Convoy") {
+                                            let contenedoresConvoy = detalleConvoys.filter(
+                                                (d) => d.conboy_id === parseInt(id),
+                                            );
+
+                                            mostrarInfoConvoy(contenedoresConvoy, item.EquipoBD, "");
+                                        } else {
+                                            mostrarInfoConvoy(info ? [info] : [], item.EquipoBD, "");
+                                        }
+
                                     });
                                     //} //end mostrar primero
                                     tipo = tipo + ' ' + item.contenedor;
@@ -384,6 +454,14 @@
                                 tipo: tipo,
                                 tipoRastreo: "Seguimiento",
                                 idProceso: 0,
+                                status_api: item.status ?? 0,
+                                new_id: item.new_id ?? null,
+                                tiempo_respuesta_ms: item.tiemporespuesta ?? null,
+
+                                valorSolicitado: item.value ?? null,
+
+                                data: item,
+                                messageAp: item.messageAp ?? null,
                             };
                             if (idConvoyOContenedor != '') {
                                 actualizarUbicacionReal(datasave);
@@ -413,6 +491,8 @@
                     detalleConvoys = data.dataConten;
                     contenedoresDisponiblesAll = data.datosAll;
                     convoysAll = data.conboys;
+
+                    equiposSearch = data.equiposAll;
 
                     detalleConvoysAll = data.dataContenAll;
 

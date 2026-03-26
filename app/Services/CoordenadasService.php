@@ -359,36 +359,41 @@ class CoordenadasService
 
             ->where('c.estatus', 'Aprobada')
 
-            ->when($filters['id_empresa'] ?? null, function ($q, $id_empresa) {
-                $q->where('c.id_empresa', $id_empresa);
+
+            ->when(!($filters['isAdmin'] ?? false), function ($q) use ($filters) {
+
+                $q->when($filters['id_empresa'] ?? null, function ($q, $id_empresa) {
+                    $q->where('c.id_empresa', $id_empresa);
+                })
+
+                ->when($filters['idCliente'] ?? null, function ($q, $idCliente) {
+                    $q->where('cli.id', $idCliente);
+                })
+
+                ->when($filters['proveedor'] ?? null, function ($q, $proveedor) {
+                    $q->whereRaw(
+                        'COALESCE(a.id_proveedor, c.id_proveedor) = ?',
+                        [$proveedor]
+                    );
+                })
+
+                ->when($filters['contenedor'] ?? null, function ($q, $contenedor) {
+                    $q->where('dc.num_contenedor', $contenedor);
+                })
+
+                ->when($filters['contenedores'] ?? null, function ($q, $contenedores) {
+
+                    $list = array_filter(array_map('trim', explode(';', $contenedores)));
+
+                    if (count($list) > 1) {
+                        $q->whereIn('dc.num_contenedor', $list);
+                    } else {
+                        $q->where('dc.num_contenedor', $list[0]);
+                    }
+                });
+
             })
 
-            ->when($filters['idCliente'] ?? null, function ($q, $idCliente) {
-                $q->where('cli.id', $idCliente);
-            })
-
-            ->when($filters['proveedor'] ?? null, function ($q, $proveedor) {
-                $q->whereRaw(
-                    'COALESCE(a.id_proveedor, c.id_proveedor) = ?',
-                    [$proveedor]
-                );
-            })
-
-            ->when($filters['contenedor'] ?? null, function ($q, $contenedor) {
-                $q->where('dc.num_contenedor', $contenedor);
-            })
-
-            ->when($filters['contenedores'] ?? null, function ($q, $contenedores) {
-
-                $list = array_filter(array_map('trim', explode(';', $contenedores)));
-
-                if (count($list) > 1) {
-                    $q->whereIn('dc.num_contenedor', $list);
-                } else {
-                    $q->where('dc.num_contenedor', $list[0]);
-                }
-
-            })
 
           ->when($filters['fecha'] ?? null, function ($q, $fecha) {  // por si despues pongo boton en vista para filtrar con rango de fecha o algo asi.
 
@@ -424,36 +429,47 @@ class CoordenadasService
     public function baseConboysQuery()
     {
 
-
-
         return DB::table('conboys')
 
-            ->join('conboys_contenedores', 'conboys.id', '=', 'conboys_contenedores.conboy_id')
+    ->join('conboys_contenedores', 'conboys.id', '=', 'conboys_contenedores.conboy_id')
 
-            ->join('docum_cotizacion', 'docum_cotizacion.id', '=', 'conboys_contenedores.id_contenedor')
+    ->join('docum_cotizacion', 'docum_cotizacion.id', '=', 'conboys_contenedores.id_contenedor')
 
-            ->join('cotizaciones', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
+    ->join('cotizaciones', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
 
-            ->select(
-                'conboys.id',
-                'conboys.no_conboy',
-                'conboys.nombre',
-                'conboys.fecha_inicio',
-                'conboys.fecha_fin',
-                'conboys.user_id',
-                'conboys.tipo_disolucion',
-                'conboys.estatus',
-                'conboys.fecha_disolucion',
-                'conboys.geocerca_lat',
-                'conboys.geocerca_lng',
-                'conboys.geocerca_radio'
-            )
+    ->select(
+        'conboys.id',
+        'conboys.no_conboy',
+        'conboys.nombre',
+        'conboys.fecha_inicio',
+        'conboys.fecha_fin',
+        'conboys.user_id',
+        'conboys.tipo_disolucion',
+        'conboys.estatus',
+        'conboys.fecha_disolucion',
+        'conboys.geocerca_lat',
+        'conboys.geocerca_lng',
+        'conboys.geocerca_radio',
+        DB::raw('GROUP_CONCAT(DISTINCT cotizaciones.id_empresa) as empresas'),
+        DB::raw('GROUP_CONCAT(DISTINCT cotizaciones.id_cliente) as clientes'),
+        DB::raw('GROUP_CONCAT(DISTINCT cotizaciones.id_proveedor) as lineas')
+    )
 
-            ->where('conboys.estatus', 'Activo')
-
-
-
-            ->distinct();
+    ->where('conboys.estatus', 'Activo')
+    ->groupBy(
+        'conboys.id',
+        'conboys.no_conboy',
+        'conboys.nombre',
+        'conboys.fecha_inicio',
+        'conboys.fecha_fin',
+        'conboys.user_id',
+        'conboys.tipo_disolucion',
+        'conboys.estatus',
+        'conboys.fecha_disolucion',
+        'conboys.geocerca_lat',
+        'conboys.geocerca_lng',
+        'conboys.geocerca_radio'
+    );
     }
 
     public function applyConboysFilters($query, $filters)
@@ -464,21 +480,18 @@ class CoordenadasService
            ->whereDate('conboys.fecha_inicio', '<=', $fecha)
         ->whereDate('conboys.fecha_fin', '>=', $fecha)
 
-            ->when($filters['idCliente'] ?? null, function ($q, $cliente) {
+         ->when(
+             !($filters['isAdmin'] ?? false),
+             function ($q) use ($filters) {
+                 $q->when($filters['id_empresa'] ?? null, function ($q, $id_empresa) {
+                     $q->where('cotizaciones.id_empresa', $id_empresa);
+                 })
 
-                if ($cliente != 0) {
-                    $q->where('cotizaciones.id_cliente', $cliente);
-                }
-
-            })
-
-            ->when($filters['id_empresa'] ?? null, function ($q, $empresa) {
-
-                if ($empresa != 0) {
-                    $q->where('cotizaciones.id_empresa', $empresa);
-                }
-
-            });
+                 ->when($filters['idCliente'] ?? null, function ($q, $idCliente) {
+                     $q->where('cotizaciones.id_cliente', $idCliente);
+                 });
+             }
+         );
 
 
 
@@ -539,21 +552,18 @@ class CoordenadasService
 
             ->where('conboys.estatus', 'Activo')
 
-            ->when($filters['idCliente'] ?? null, function ($q, $cliente) {
+            ->when(
+                !($filters['isAdmin'] ?? false),
+                function ($q) use ($filters) {
+                    $q->when($filters['id_empresa'] ?? null, function ($q, $id_empresa) {
+                        $q->where('cotizaciones.id_empresa', $id_empresa);
+                    })
 
-                if ($cliente != 0) {
-                    $q->where('cotizaciones.id_cliente', $cliente);
+                    ->when($filters['idCliente'] ?? null, function ($q, $idCliente) {
+                        $q->where('cotizaciones.id_cliente', $idCliente);
+                    });
                 }
-
-            })
-
-            ->when($filters['id_empresa'] ?? null, function ($q, $empresa) {
-
-                if ($empresa != 0) {
-                    $q->where('cotizaciones.id_empresa', $empresa);
-                }
-
-            })
+            )
 
             ->when($filters['fecha'] ?? null, function ($q) use ($fecha) {
 
@@ -602,19 +612,14 @@ class CoordenadasService
     {
         return $query
 
-        ->when($filters['id_empresa'] ?? null, function ($q, $empresa) {
+         ->when(!($filters['isAdmin'] ?? false), function ($q) use ($filters) {
 
-            if ($empresa != 0) {
-                $q->where('equipos.id_empresa', $empresa);
-            }
+             $empresa = $filters['id_empresa'] ?? 0;
 
-        })
-
-        ->when(($filters['id_empresa'] ?? 0) == 0, function ($q) {
-
-            $q->where('equipos.user_id', auth()->id());
-
-        });
+             if ($empresa != 0) {
+                 $q->where('equipos.id_empresa', $empresa);
+             }
+         });
 
     }
 
@@ -635,9 +640,5 @@ class CoordenadasService
         return $query->get();
     }
     //end equipos con gps
-
-
-
-
 
 }
