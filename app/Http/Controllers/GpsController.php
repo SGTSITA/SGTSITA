@@ -210,28 +210,47 @@ class GpsController extends Controller
 ];
                             $tipoGpsresponse = "TrackerGps";
                             break;
-                        case 'Beyond Kajivo': //Beyond
+                        case 'Beyond': //Beyond
                             //BeyondGPSTrait::validateOwner($credenciales['appkey'] ?? null);
-                            //dd($credenciales);
+                            // dd($credenciales);
                             $data = BeyondGPSTrait::getLocation(
-                                $credenciales['username'] ?? null,
-                                $credenciales['password'] ?? null
+                                $credenciales['user'] ?? null,
+                                $credenciales['password'] ?? null,
+                                $credenciales['endpoint'] ?? null,
                             );
-                            $ubicacion = [
-    'lat'        =>  0,
-    'lng'        =>  0,
-    'velocidad'  =>  null,
-    'imei'       =>  null,
-    'deviceName' =>  null,
-    'mcType'     =>  null,
-    'datac'      => $data,
-    'esDatoEmp'  => $esDatoEmp ?? false,
-    'tipoEquipo' => $TipoEquipo ?? null,
-];
+
+                            $datasearch = $data?->data['events'] ?? [];
+                            $ubicacionApi = null;
+
+                            foreach ($datasearch as $item) {
+
+                                if (
+                                    isset($item['IMEI']) &&
+                                    (string)$item['IMEI'] === (string)$imei
+                                ) {
+                                    $ubicacionApi = $item;
+                                    break;
+                                }
+
+                            }
+
+                            if ($ubicacionApi) {
+
+                                $ubicacion = [
+                                    'lat'        => $ubicacionApi['Lat'] ?? 0,
+                                    'lng'        => $ubicacionApi['Lon'] ?? 0,
+                                    'velocidad'  => $ubicacionApi['Speed'] ?? null,
+                                    'imei'       =>  $imei ?? $ubicacionApi['IMEI'] ?? null,
+                                    'deviceName' => $ubicacionApi['Alias'] ?? null,
+                                    'mcType'     => $ubicacionApi['Course'] ?? null,
+                                    'datac'      => $ubicacionApi,
+                                    'esDatoEmp'  => $esDatoEmp ?? false,
+                                    'tipoEquipo' => $TipoEquipo ?? null,
+                                ];
+                            }
 
 
-
-                            $tipoGpsresponse = "Beyond Kajivo";
+                            $tipoGpsresponse = "Beyond";
                             break;
                         case 'https://gpsv7.com/php/wialon_data.php':
                             $data = WialonGpsTrait::getLocation(

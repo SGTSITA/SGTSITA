@@ -239,7 +239,7 @@
                     tabId = contenedor.contenedor;
                 }
 
-                // Crear pestaña
+
                 tabs.innerHTML += `
       <li class="nav-item" role="presentation">
         <button class="nav-link ${index === 0 ? "active" : ""}"
@@ -283,8 +283,10 @@
                     <p><strong>Fecha Inicio:</strong> ${info.fecha_inicio}</p>
                     <p><strong>Fecha Fin:</strong> ${info.fecha_fin}</p>
                     <p><strong>Contacto Entrega:</strong> ${info.cp_contacto_entrega}</p>
-                    <p><strong>Operador:</strong> ${info.beneficiario}</p>
-                    <p><strong>Telefono:</strong> ${info.telefono_beneficiario}</p>
+                    <p><strong>Proveedor:</strong> ${info.empresa}</p>
+<p><strong>Transportista:</strong> ${info.transportista_nombre}</p>
+<p><strong>Operador:</strong> ${info.operador}</p>
+<p><strong>Telefono:</strong> ${info.beneficiario_telefono}</p>
                     <p>
                         <span style="margin-right: 15px;">
                             <strong>IMEI:</strong> ${info.imei}
@@ -301,7 +303,7 @@
                   </div>
                 `;
 
-                    // Crear contenido
+
                     content.innerHTML += infoContenido;
                 } else {
                     Swal.fire({
@@ -553,9 +555,9 @@
         let geocercaCircle = null;
         let marcadorActual = null;
 
-        // Función que se llama cada vez que actualizas la posición (intervalo)
+
         function actualizarMapa(lat_actual, lng_actual, datosConvoy) {
-            // Crear el círculo si no existe
+
             let geocerca_lat = 0;
             let geocerca_lng = 0;
             let geocerca_radio = 0;
@@ -565,7 +567,7 @@
             const actualLatLng = new google.maps.LatLng(lat_actual, lng_actual);
             let mesaggeC = '';
             if (datosConvoy.tipo_disolucion === 'geocerca') {
-                //hacemos lo q ya tenemos y disolvemos
+
                 geocerca_lat = parseFloat(datosConvoy.geocerca_lat);
                 geocerca_lng = parseFloat(datosConvoy.geocerca_lng);
                 geocerca_radio = parseFloat(datosConvoy.geocerca_radio);
@@ -590,7 +592,7 @@
                     calcularDistancia = 1;
                 }
             } else if (datosConvoy.tipo_disolucion === 'tiempo') {
-                //validamos la fecha y hora final, con los datos actuales y disolvemos...
+
                 const margenMinutos = 10;
                 let fechaFinalConvoy = new Date(datosConvoy.fecha_fin);
                 let fechaActual = new Date();
@@ -602,7 +604,7 @@
                 const diferenciaMs = fechaFinalConvoy - fechaActual;
 
                 distancia = 100;
-                geocerca_radio = 0; //defaults para q no entre a disolver
+                geocerca_radio = 0;
                 console.log('Fecha actual:', fechaActual);
                 console.log('Fecha fin del convoy:', fechaFinalConvoy);
 
@@ -615,15 +617,15 @@
                 const mensajeTiempo = `${dias} día(s), ${horas} hora(s), ${minutos} minuto(s)`;
 
                 if (fechaActual >= tiempoMinimo && fechaActual <= tiempoMaximo) {
-                    console.log('⏱️ Dentro del rango. Tiempo para disolver:', mensajeTiempo);
+                    console.log('Dentro del rango. Tiempo para disolver:', mensajeTiempo);
 
                     distancia = 1;
-                    geocerca_radio = 10; //cambiamos aki para q se cumpla condision y se disuelva
+                    geocerca_radio = 10;
                 } else {
                     if (fechaActual < tiempoMinimo) {
-                        console.log(`⏳ Aún no llega el momento. Faltan: ${mensajeTiempo}`);
+                        console.log(`Aún no llega el momento. Faltan: ${mensajeTiempo}`);
                     } else {
-                        console.log(`⚠️ Ya pasó el tiempo permitido. Han pasado: ${mensajeTiempo}`);
+                        console.log(`Ya pasó el tiempo permitido. Han pasado: ${mensajeTiempo}`);
                     }
                 }
 
@@ -645,7 +647,7 @@
 
             if (distancia <= geocerca_radio) {
                 if (!convoyDisuelto) {
-                    console.log('✅ Entro a geocerca, se disolverá el convoy...');
+                    console.log('Entro a geocerca, se disolverá el convoy...');
                     convoyDisuelto = true;
 
                     fetch('/coordenadas/conboys/estatus', {
@@ -666,8 +668,8 @@
                             console.log('🚚 Convoy disuelto correctamente', data);
 
                             if (geocercaCircle) {
-                                geocercaCircle.setMap(null); // Esto la elimina visualmente del mapa
-                                geocercaCircle = null; // Opcional: para liberar memoria y evitar referencia
+                                geocercaCircle.setMap(null);
+                                geocercaCircle = null;
                             }
                         })
                         .catch((err) => {
@@ -687,7 +689,7 @@
                 intervalId = null;
 
                 this.innerHTML = '<i class="bi bi-play-circle"></i> Reanudar actualización';
-                console.log('⛔ Actualización detenida.');
+                console.log('Actualización detenida.');
             } else {
                 actualizarUbicacion(ItemsSelects, '');
 
@@ -698,7 +700,7 @@
                 }, 5000);
 
                 this.innerHTML = '<i class="bi bi-pause-circle"></i> Detener actualización';
-                console.log('✅ Reanudando actualización...');
+                console.log('Reanudando actualización...');
             }
         });
 
