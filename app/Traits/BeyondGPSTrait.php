@@ -22,11 +22,14 @@ trait BeyondGPSTrait
         return  true ;
     }
 
-    public static function getLocation($username, $password)
+    public static function getLocation($username, $password, $endpointuser)
     {
         try {
 
             $endpoint = config('services.BeyondGpsCustomized.url_base');
+            if ($endpointuser) {
+                $endpoint = $endpointuser;
+            }
 
             $response = Http::post($endpoint, [
                 'User' => $username,

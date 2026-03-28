@@ -156,18 +156,37 @@ class GpsCompanyController extends Controller
 
                 $response = BeyondGPSTrait::getLocation(
                     $credenciales['user'] ?? null,
-                    $credenciales['password'] ?? null
+                    $credenciales['password'] ?? null,
+                    $credenciales['endpoint'] ?? null
                 );
                 $resp = $response;
-                //    dd($response);
-                // $success = $response['success'] ?? false;
-                $mensajeError = $response->data['error'] ?? $response->message;
                 if (!$response->success) {
-                    $token  = null; // token null
-                    break;
+                    return response()->json([
+                        'success' => false,
+                        'message' => $response->message ?? 'Error en conexión'
+                    ]);
                 }
-                $message = $response['message'] ?? null;
-                $token = $response->data['token'] ?? null;
+
+                $data = $response->data;
+
+                if (!($data['success'] ?? false)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Proveedor GPS respondió sin éxito'
+                    ]);
+                }
+
+
+                if (empty($data['events'])) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Sin eventos / sin datos de ubicación'
+                    ]);
+                }
+
+
+                $token = true;
+
 
                 break;
 
@@ -348,7 +367,7 @@ class GpsCompanyController extends Controller
                 break;
             case 'BeyondGps':
                 $credenciales = CommonGpsTrait::getAuthenticationCredentials('AECC890930E41', 5);
-                $data = BeyondGPSTrait::getLocation($credenciales['accessAccount']['user'], $credenciales['accessAccount']['password']);
+                $data = BeyondGPSTrait::getLocation($credenciales['accessAccount']['user'], $credenciales['accessAccount']['password'], $credenciales['accessAccount']['endpoint']);
                 break;
             case 'WialonGps':
                 $credenciales = CommonGpsTrait::getAuthenticationCredentials('AECC890930E41', 6);

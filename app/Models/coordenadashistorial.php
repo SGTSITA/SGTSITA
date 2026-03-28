@@ -9,7 +9,7 @@ use App\Traits\Auditable;
 class coordenadashistorial extends Model
 {
     use HasFactory;
-    use Auditable;
+    //use Auditable;
     protected $table = 'coordenadas_historial';
     public $timestamps = false;
 

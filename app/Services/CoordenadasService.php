@@ -306,6 +306,8 @@ class CoordenadasService
             ->leftJoin('gps_company as gpsChasis', 'gpsChasis.id', '=', 'eq_chasis.gps_company_id')
             ->LeftJoin('coordenadas', 'coordenadas.id_asignacion', '=', 'a.id')
             ->LeftJoin('proveedores as prov', 'prov.id', '=', 'c.id_proveedor')
+             ->leftjoin('operadores', 'operadores.id', '=', 'a.id_operador')
+
 
             ->select(
                 'c.id as id_cotizacion',
@@ -333,14 +335,9 @@ class CoordenadasService
                 'c.longitud',
                 'c.cp_contacto_entrega',
                 'em.nombre as empresa',
-                DB::raw("
-                    COALESCE(prov.nombre, em.nombre)
-                    as beneficiario
-                "),
-                DB::raw("
-                    COALESCE(prov.telefono, em.telefono)
-                    as telefono_beneficiario
-                "),
+                'operadores.nombre as operador',
+                'prov.nombre as transportista_nombre',
+                DB::raw('COALESCE(prov.telefono, operadores.telefono) as beneficiario_telefono'),
                 DB::raw("
                     COALESCE(a.id_proveedor, c.id_proveedor)
                     as proveedor_id

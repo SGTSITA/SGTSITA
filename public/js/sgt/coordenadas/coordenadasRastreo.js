@@ -3110,8 +3110,10 @@ function mostrarInfoConvoy(contenedores, equipo, chasis) {
                     <p><strong>Fecha Inicio:</strong> ${info.fecha_inicio}</p>
                     <p><strong>Fecha Fin:</strong> ${info.fecha_fin}</p>
                     <p><strong>Contacto Entrega:</strong> ${info.cp_contacto_entrega}</p>
-                    <p><strong>Operador:</strong> ${info.beneficiario}</p>
-                    <p><strong>Telefono:</strong> ${info.telefono_beneficiario}</p>
+                    <p><strong>Proveedor:</strong> ${info.empresa}</p>
+                    <p><strong>Transportista:</strong> ${info.transportista_nombre}</p>
+                    <p><strong>Operador:</strong> ${info.operador}</p>
+                    <p><strong>Telefono:</strong> ${info.beneficiario_telefono}</p>
                     <p>
                         <span style="margin-right: 15px;">
                             <strong>IMEI:</strong> ${info.imei}
