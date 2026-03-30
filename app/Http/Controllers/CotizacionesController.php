@@ -1238,7 +1238,12 @@ class CotizacionesController extends Controller
                         $cotizaciones2 = Cotizaciones::find($id);
 
                         if (!is_null($asignaciones->id_operador)) {
-                            Bancos::where('id', '=', $asignaciones->id_banco1_dinero_viaje)->update(["saldo" => DB::raw("saldo + ". $asignaciones->dinero_viaje)]);
+                            $afectaBanco = false;
+                            if ($asignaciones->id_banco1_dinero_viaje) {
+                                Bancos::where('id', '=', $asignaciones->id_banco1_dinero_viaje)->update(["saldo" => DB::raw("saldo + ". $asignaciones->dinero_viaje)]);
+                                $afectaBanco = true;
+                            }
+
                             $gasto = GastosOperadores::where('id_cotizacion', $id)->get();  //verificar si tuvo un gasto
                             foreach ($gasto as $g) {
                                 if (!is_null($g->id_banco) && $g->cantidad > 0) {//cantidad valida y ya tiene pago
@@ -1272,26 +1277,28 @@ class CotizacionesController extends Controller
                                 $g->delete();
                             }
 
+                            if ($afectaBanco) {
+                                $banco = new BancoDineroOpe();
+                                $banco->id_operador = $asignaciones->id_operador;
 
-                            $banco = new BancoDineroOpe();
-                            $banco->id_operador = $asignaciones->id_operador;
+                                $banco->monto1 = $asignaciones->dinero_viaje;
+                                $banco->metodo_pago1 = 'Devolución';
+                                $banco->descripcion_gasto = "Dinero para Viaje (Devolución)";
+                                $banco->id_banco1 = $asignaciones->id_banco1_dinero_viaje;
 
-                            $banco->monto1 = $asignaciones->dinero_viaje;
-                            $banco->metodo_pago1 = 'Devolución';
-                            $banco->descripcion_gasto = "Dinero para Viaje (Devolución)";
-                            $banco->id_banco1 = $asignaciones->id_banco1_dinero_viaje;
+                                $contenedoresAbonos[] = [
+                                    'num_contenedor' => $request->numContenedor,
+                                    'abono' => $asignaciones->dinero_viaje
+                                ];
+                                $contenedoresAbonosJson = json_encode($contenedoresAbonos);
 
-                            $contenedoresAbonos[] = [
-                                'num_contenedor' => $request->numContenedor,
-                                'abono' => $asignaciones->dinero_viaje
-                            ];
-                            $contenedoresAbonosJson = json_encode($contenedoresAbonos);
+                                $banco->contenedores = $contenedoresAbonosJson;
 
-                            $banco->contenedores = $contenedoresAbonosJson;
+                                $banco->tipo = 'Entrada';
+                                $banco->fecha_pago = date('Y-m-d');
+                                $banco->save();
+                            }
 
-                            $banco->tipo = 'Entrada';
-                            $banco->fecha_pago = date('Y-m-d');
-                            $banco->save();
                         }
 
                         if (!is_null($cotizaciones->referencia_full)) {
