@@ -91,8 +91,9 @@
             <tr>
                 <th>Sueldo</th>
                 <th>Dinero Viaje</th>
-                <th>Justificado</th>
-                <th>Deuda</th>
+                <th>Gastos Justificado</th>
+                <th>Adelantos</th>
+                <th>Abono a Prestamos</th>
                 <th>Pagado</th>
             </tr>
 
@@ -100,6 +101,7 @@
                 <td class="text-end">${{ number_format($totales['sueldo'], 2) }}</td>
                 <td class="text-end">${{ number_format($totales['dinero_viaje'], 2) }}</td>
                 <td class="text-end">${{ number_format($totales['justificado'], 2) }}</td>
+                <td class="text-end">${{ number_format($totales['adelantos'], 2) }}</td>
                 <td class="text-end">
                     ${{ number_format($totales['deudas'], 2) }}
                 </td>
@@ -118,7 +120,7 @@
                     <th>Contenedores</th>
                     <th class="text-end">Sueldo</th>
                     <th class="text-end">Dinero</th>
-                    <th class="text-end">Justificado</th>
+                    <th class="text-end">Gastos Justificado</th>
                     <th class="text-end">Monto Pago</th>
                 </tr>
             </thead>

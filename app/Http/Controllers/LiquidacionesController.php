@@ -1014,7 +1014,8 @@ class LiquidacionesController extends Controller
             'sueldo' => $liquidacionViajes->viajes->sum('sueldo_operador'),
             'dinero_viaje' => $liquidacionViajes->viajes->sum('dinero_viaje'),
             'justificado' => $liquidacionViajes->viajes->sum('dinero_justificado'),
-            'deudas' => $liquidacionViajes->pago_prestamos + $liquidacionViajes->pago_adelantos,
+            'adelantos' => $liquidacionViajes->pago_adelantos,
+            'deudas' => $liquidacionViajes->pago_prestamos ,
             'pagado' => $liquidacionViajes->viajes->sum('total_pagado') - ($liquidacionViajes->pago_prestamos + $liquidacionViajes->pago_adelantos),
         ];
         //dd($liquidacionViajes);
