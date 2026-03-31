@@ -167,11 +167,14 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous">
     </script>
     <script>
+        let directionsService = null;
+        let directionsRenderer = [];
         let equiposSearch = [];
         let map;
         let markers = [];
         let convoyDisuelto = false;
         window.initMap = function() {
+            directionsService = new google.maps.DirectionsService();
             map = new google.maps.Map(document.getElementById('mapaRastreo'), {
                 center: {
                     lat: 0,
@@ -358,6 +361,8 @@
                             lnglocal = parseFloat(item.ubicacion.lng);
                             idConvoyOContenedor = item.id_contenendor;
 
+                            const markerKey = item.ubicacion.imei;
+
                             if (datosGeocerca) {
                                 actualizarMapa(latlocal, lnglocal, datosGeocerca);
                             }
@@ -379,22 +384,65 @@
                                     });
 
                                     const contentC = `
-            <div style="
-                    background-color: #e3f2fd;
-                    padding: 5px;
-                    border-radius: 8px;
-                    font-family: Arial, sans-serif;
-                    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-                    max-width: 240px;
-                  ">
-              <div style="font-weight: bold; font-size: 17px; margin-bottom: 6px;">
-                ${tipoSpans}
-              </div>
-              <div style="font-size: 17px; line-height: 1.5;">
-                <strong>Equipo:</strong> ${item.EquipoBD}<br>
-                <strong>Contenedor:</strong> ${item.contenedor}
-              </div>
-            </div>
+         <div style="
+    background: #ffffff;
+    padding: 12px;
+    border-radius: 12px;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    max-width: 260px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+">
+
+    <!-- HEADER -->
+    <div style="
+        font-weight: 600;
+        font-size: 15px;
+        color: #1976d2;
+    ">
+        ${tipoSpans}
+    </div>
+
+
+    <div style="
+        font-size: 14px;
+        color: #333;
+        line-height: 1.5;
+    ">
+        <div><strong>Equipo:</strong> ${item.EquipoBD}</div>
+        <div><strong>Contenedor:</strong> ${item.contenedor}</div>
+    </div>
+
+
+    <button id="btnRuta_${markerKey}"
+        style="
+            background: linear-gradient(135deg, #1976d2, #42a5f5);
+            color: white;
+            border: none;
+            padding: 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+        ">
+        📍 Mostrar ruta
+    </button>
+
+
+    <div id="infoRuta_${markerKey}" style="
+        background: #f1f8ff;
+        padding: 8px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 500;
+        color: #0d47a1;
+        display: none;
+    ">
+    </div>
+
+</div>
           `;
                                     // const newMarker = L.marker([latlocal, lnglocal]).addTo(map).bindPopup(tipoSpans + ' '+ item.contenedor).openPopup();
                                     const infoWindow = new google.maps.InfoWindow({
@@ -428,6 +476,123 @@
                                         } else {
                                             mostrarInfoConvoy(info ? [info] : [], item.EquipoBD, "");
                                         }
+
+                                        google.maps.event.addListenerOnce(
+                                            infoWindow,
+                                            "domready",
+                                            () => {
+                                                const btn = document.getElementById(
+                                                    `btnRuta_${markerKey}`,
+                                                );
+                                                const infoSpan = document.getElementById(
+                                                    `infoRuta_${markerKey}`,
+                                                );
+                                                btn.addEventListener("click", () => {
+
+                                                    const position = newMarker
+                                                .getPosition();
+                                                    const origin = {
+                                                        lat: position.lat(),
+                                                        lng: position.lng(),
+                                                    };
+
+                                                    let latLlegada = parseFloat(info
+                                                        .latitud);
+                                                    let lngLlegada = parseFloat(info
+                                                        .longitud);
+
+                                                    // 🔥 SI YA EXISTE → toggle
+                                                    if (directionsRenderer[markerKey]) {
+                                                        const isVisible =
+                                                            directionsRenderer[markerKey]
+                                                            .getMap();
+
+                                                        directionsRenderer[markerKey]
+                                                            .setMap(isVisible ? null : map);
+
+                                                        btn.textContent = isVisible ?
+                                                            "Mostrar ruta" : "Ocultar ruta";
+
+                                                        const infoSpanNuevo = document
+                                                            .getElementById(
+                                                                `infoRuta_${markerKey}`);
+
+                                                        if (infoSpanNuevo) {
+                                                            infoSpanNuevo.style.display =
+                                                                isVisible ? "none" :
+                                                                "block";
+                                                        }
+
+                                                        return;
+                                                    }
+
+                                                    // 🔥 LOADING UX
+                                                    btn.textContent = "Calculando...";
+
+                                                    // Crear renderer
+                                                    directionsRenderer[markerKey] =
+                                                        new google.maps.DirectionsRenderer({
+                                                            map: map,
+                                                        });
+
+                                                    const request = {
+                                                        origin: origin,
+                                                        destination: {
+                                                            lat: latLlegada,
+                                                            lng: lngLlegada,
+                                                        },
+                                                        travelMode: google.maps
+                                                            .TravelMode.DRIVING,
+                                                    };
+
+                                                    directionsService.route(request, (
+                                                        result, status) => {
+
+                                                        if (status === "OK") {
+                                                            directionsRenderer[
+                                                                    markerKey]
+                                                                .setDirections(
+                                                                    result);
+
+                                                            btn.textContent =
+                                                                "Ocultar ruta";
+
+                                                            const leg = result
+                                                                .routes[0].legs[0];
+
+                                                            // 🔥 SIEMPRE vuelve a buscar el span
+                                                            const infoSpanNuevo =
+                                                                document
+                                                                .getElementById(
+                                                                    `infoRuta_${markerKey}`
+                                                                    );
+
+                                                            if (infoSpanNuevo) {
+                                                                infoSpanNuevo.style
+                                                                    .display =
+                                                                    "block";
+
+                                                                infoSpanNuevo
+                                                                    .innerHTML = `
+                    🚗 <strong>${leg.distance.text}</strong><br>
+                    ⏱ <strong>${leg.duration.text}</strong>
+                `;
+                                                            }
+
+                                                        } else {
+                                                            btn.textContent =
+                                                                "Mostrar ruta";
+
+                                                            Swal.fire({
+                                                                icon: "error",
+                                                                title: "Error",
+                                                                text: "No se ha configurado direccion del mapa en cotizaciones",
+                                                            });
+                                                        }
+                                                    });
+                                                });
+                                            },
+                                        );
 
                                     });
                                     //} //end mostrar primero

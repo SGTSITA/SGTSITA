@@ -12,6 +12,50 @@ function habilitarBoton(btn) {
     btn.classList.remove("disabled");
     btn.style.pointerEvents = "auto";
 }
+function abrirMapaEnNuevaPestana(numContenedor, tipoS, origenRastreo) {
+    if (numContenedor) {
+        const url = `/coordenadas/mapa_rastreo?contenedor=${numContenedor}&tipoS=${encodeURIComponent(tipoS)}&origenRastreo=${encodeURIComponent(origenRastreo)}`;
+        window.open(url, "_blank");
+    } else {
+        Swal.fire(
+            "Validación",
+            "No se encontró información del contenedor.",
+            "warning",
+        );
+        return;
+    }
+}
+const btnRastreo = document.getElementById("btnRastreo");
+if (btnRastreo) {
+    btnRastreo.onclick = () => {
+        const seleccionados = apiGrid.getSelectedRows();
+
+        if (seleccionados.length === 0) {
+            Swal.fire({
+                icon: "warning",
+                title: "Selecciona un contenedor",
+                text: "Debes seleccionar al menos un registro",
+            });
+            return;
+        }
+
+        if (seleccionados.length > 1) {
+            Swal.fire({
+                icon: "warning",
+                title: "Solo uno",
+                text: "Solo puedes seleccionar un contenedor",
+            });
+            return;
+        }
+
+        const row = seleccionados[0];
+
+        const numContenedor = row.NumContenedor;
+        const tipoS = "Rastreo -> Mis viajes";
+
+        abrirMapaEnNuevaPestana(numContenedor, tipoS);
+    };
+}
 
 $(document).ready(function () {
     let start = moment().subtract(1, "month");

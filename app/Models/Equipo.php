@@ -12,6 +12,7 @@ class Equipo extends Model
     use HasFactory;
     use Auditable;
     protected $table = 'equipos';
+    protected $appends = ['estado_gps','gps_info'];
 
     protected $fillable = [
         'tipo',
@@ -31,6 +32,9 @@ class Equipo extends Model
         'placas',
         'imei',
         'user_id',
+        'gps_company_id',
+        'usar_config_global',
+        'credenciales_gps'
     ];
 
     public function gps()
@@ -49,6 +53,35 @@ class Equipo extends Model
         static::updating(function ($empresa) {
             $empresa->id_empresa = Auth::user()->id_empresa;
         });
+    }
+    public function getEstadoGpsAttribute()
+    {
+        if ($this->usar_config_global) {
+            return 'Global';
+        }
+
+        if (!empty($this->credenciales_gps)) {
+            return 'Configurado';
+        }
+
+        return 'Sin config';
+    }
+    public function getGpsInfoAttribute()
+    {
+        $tipo =  $this->usar_config_global ? 'sistema' : 'personalizado';
+
+        $tieneConfig = false;
+
+        if ($this->usar_config_global) {
+            $tieneConfig = !empty($this->gps_company_id);
+        } else {
+            $tieneConfig = !empty($this->credenciales_gps);
+        }
+
+        return [
+            'tipo' => $tipo,
+            'conectado' => $tieneConfig,
+        ];
     }
 
 }

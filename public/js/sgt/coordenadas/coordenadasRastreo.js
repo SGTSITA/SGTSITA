@@ -2748,61 +2748,102 @@ function actualizarUbicacion(
                 );
 
                 contentC = `
-                <div style="
-                    background-color:${colorBG};
-                    padding:5px;
-                    border-radius:8px;
-                    box-shadow:0 2px 6px rgba(255,255,255,1);
-                ">
-                <div class="text-white">
-                <div><strong>Equipo:</strong> ${filtroEqu?.id_equipo}</div>
-                <div><strong>Marca:</strong> ${filtroEqu?.marca}</div>
-                <div><strong>Placas:</strong> ${filtroEqu?.placas || "sin placas"}</div>
-                </div>
-                </div>
+              <div style="
+    background-color:${colorBG};
+    padding:10px;
+    border-radius:10px;
+    box-shadow:0 2px 6px rgba(0,0,0,0.2);
+    font-family: Arial, sans-serif;
+">
+    <div style="color:white; font-size:13px; line-height:1.5;">
+        <div><strong>Equipo:</strong> ${filtroEqu?.id_equipo}</div>
+        <div><strong>Marca:</strong> ${filtroEqu?.marca}</div>
+        <div><strong>Placas:</strong> ${filtroEqu?.placas || "sin placas"}</div>
+    </div>
+</div>
                 `;
             } else if (t === "Contenedor") {
                 contentC = `
                 <div style="
-                    background-color:${colorBG};
-                    padding:5px;
-                    border-radius:8px;
-                ">
-                <div class="text-white">
-                <div><strong>Equipo:</strong> ${item.EquipoBD}</div>
-                <div><strong>Contenedor:</strong> ${item.contenedor}</div>
-                </div>
+    background-color:${colorBG};
+    padding:10px;
+    border-radius:10px;
+    font-family: Arial, sans-serif;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+">
 
-                <button id="btnRuta_${markerKey}" class="btn btn-primary mt-2">
-                Mostrar ruta
-                </button>
+    <div style="color:white; font-size:13px; line-height:1.5;">
+        <div><strong>Equipo:</strong> ${item.EquipoBD}</div>
+        <div><strong>Contenedor:</strong> ${item.contenedor}</div>
+    </div>
 
-                <span id="infoRuta_${markerKey}" class="text-white"></span>
+    <button id="btnRuta_${markerKey}"
+        style="
+            background: linear-gradient(135deg, #1976d2, #42a5f5);
+            color:white;
+            border:none;
+            padding:6px;
+            border-radius:6px;
+            cursor:pointer;
+            font-size:12px;
+        ">
+        📍 Mostrar ruta
+    </button>
 
-                </div>
+    <div id="infoRuta_${markerKey}" style="
+        display:none;
+        background: rgba(255,255,255,0.2);
+        padding:6px;
+        border-radius:6px;
+        font-size:12px;
+        color:white;
+    "></div>
+
+</div>
                 `;
             } else {
                 contentC = `
                 <div style="
-                    background-color:${colorBG};
-                    padding:5px;
-                    border-radius:8px;
-                ">
-                <div class="text-white">
+    background-color:${colorBG};
+    padding:10px;
+    border-radius:10px;
+    font-family: Arial, sans-serif;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+">
 
-                <div><strong>Convoy:</strong> ${num_convoy}</div>
-                <div><strong>Equipo:</strong> ${item.EquipoBD}</div>
-                <div><strong>Contenedor:</strong> ${item.contenedor}</div>
+    <div style="color:white; font-size:13px; line-height:1.5;">
+        <div><strong>Convoy:</strong> ${num_convoy}</div>
+        <div><strong>Equipo:</strong> ${item.EquipoBD}</div>
+        <div><strong>Contenedor:</strong> ${item.contenedor}</div>
+    </div>
 
-                </div>
+    <button id="btnRuta_${markerKey}"
+        style="
+            background: linear-gradient(135deg, #1976d2, #42a5f5);
+            color:white;
+            border:none;
+            padding:6px;
+            border-radius:6px;
+            cursor:pointer;
+            font-size:12px;
+        ">
+        📍 Mostrar ruta
+    </button>
 
-                <button id="btnRuta_${markerKey}" class="btn btn-primary mt-2">
-                Mostrar ruta
-                </button>
+    <div id="infoRuta_${markerKey}" style="
+        display:none;
+        background: rgba(255,255,255,0.2);
+        padding:6px;
+        border-radius:6px;
+        font-size:12px;
+        color:white;
+    "></div>
 
-                <span id="infoRuta_${markerKey}" class="text-white"></span>
-
-                </div>
+</div>
                 `;
             }
 
@@ -2846,10 +2887,6 @@ function actualizarUbicacion(
                             `infoRuta_${markerKey}`,
                         );
                         btn.addEventListener("click", () => {
-                            directionsRenderer.forEach((renderer) => {
-                                renderer.setMap(renderer.getMap() ? null : map);
-                            });
-
                             const position = newMarker.getPosition();
                             const origin = {
                                 lat: position.lat(),
@@ -2858,23 +2895,38 @@ function actualizarUbicacion(
 
                             let latLlegada = parseFloat(info.latitud);
                             let lngLlegada = parseFloat(info.longitud);
-                            // Si ya existe la ruta, la ocultamos
-                            if (directionsRenderer[`${markerKey}`]) {
-                                directionsRenderer[`${markerKey}`].setMap(
-                                    directionsRenderer[`${markerKey}`].getMap()
-                                        ? null
-                                        : map,
+
+                            // 🔥 SI YA EXISTE → toggle
+                            if (directionsRenderer[markerKey]) {
+                                const isVisible =
+                                    directionsRenderer[markerKey].getMap();
+
+                                directionsRenderer[markerKey].setMap(
+                                    isVisible ? null : map,
                                 );
-                                btn.textContent = directionsRenderer[
-                                    `${markerKey}`
-                                ].getMap()
-                                    ? "Ocultar ruta"
-                                    : "Mostrar ruta";
+
+                                btn.textContent = isVisible
+                                    ? "Mostrar ruta"
+                                    : "Ocultar ruta";
+
+                                const infoSpanNuevo = document.getElementById(
+                                    `infoRuta_${markerKey}`,
+                                );
+
+                                if (infoSpanNuevo) {
+                                    infoSpanNuevo.style.display = isVisible
+                                        ? "none"
+                                        : "block";
+                                }
+
                                 return;
                             }
 
-                            // Creamos el DirectionsRenderer
-                            directionsRenderer[`${markerKey}`] =
+                            // 🔥 LOADING UX
+                            btn.textContent = "Calculando...";
+
+                            // Crear renderer
+                            directionsRenderer[markerKey] =
                                 new google.maps.DirectionsRenderer({
                                     map: map,
                                 });
@@ -2893,13 +2945,31 @@ function actualizarUbicacion(
                                 (result, status) => {
                                     if (status === "OK") {
                                         directionsRenderer[
-                                            `${markerKey}`
+                                            markerKey
                                         ].setDirections(result);
+
                                         btn.textContent = "Ocultar ruta";
 
                                         const leg = result.routes[0].legs[0];
-                                        infoSpan.textContent = `Distancia: ${leg.distance.text}, Tiempo estimado: ${leg.duration.text}`;
+
+                                        // 🔥 SIEMPRE vuelve a buscar el span
+                                        const infoSpanNuevo =
+                                            document.getElementById(
+                                                `infoRuta_${markerKey}`,
+                                            );
+
+                                        if (infoSpanNuevo) {
+                                            infoSpanNuevo.style.display =
+                                                "block";
+
+                                            infoSpanNuevo.innerHTML = `
+                    🚗 <strong>${leg.distance.text}</strong><br>
+                    ⏱ <strong>${leg.duration.text}</strong>
+                `;
+                                        }
                                     } else {
+                                        btn.textContent = "Mostrar ruta";
+
                                         Swal.fire({
                                             icon: "error",
                                             title: "Error",

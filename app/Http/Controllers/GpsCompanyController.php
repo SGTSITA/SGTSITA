@@ -16,6 +16,8 @@ use App\Traits\BeyondGPSTrait;
 use App\Traits\WialonGpsTrait;
 use App\Traits\GlobalGpsTrait;
 use App\Traits\SISGPSTrait;
+use App\Models\Equipo;
+use Illuminate\Support\Facades\Log;
 
 class GpsCompanyController extends Controller
 {
@@ -379,6 +381,163 @@ class GpsCompanyController extends Controller
         }
 
         return $data;
+    }
+
+
+    public function setConfigEquipo(Request $r)
+    {
+        try {
+
+            $equipo = Equipo::findOrFail($r->equipo_id);
+
+
+            $credenciales = collect($r->cuentaConfig)
+                ->pluck('valor', 'field')
+                ->toArray();
+
+
+            //  dd($credenciales, $r->cuentaConfig);
+
+            $mensajeError = null;
+            $resp = null;
+            $token = null;
+
+            /* ================= VALIDACIÓN ================= */
+            switch ((int) $r->gps_company_id) {
+                case 1: // Global GPS
+                    $token = GlobalGpsTrait::getAccessToken(
+                        $credenciales['appkey'] ?? null,
+                        $credenciales['account'] ?? null
+                    );
+                    $resp = $token;
+                    break;
+
+                case 2: // Jimi
+                    $token = JimiGpsTrait::getGpsAccessToken(
+                        auth()->user()->id_empresa,
+                        $credenciales
+                    );
+                    $resp = $token;
+                    break;
+
+                case 3: // Lego
+                    $token = LegoGpsTrait::validateOwner($credenciales);
+                    $resp = $token;
+                    break;
+
+                case 4: // Tracker
+                    $token = GpsTrackerMXTrait::getGpsAccessToken(
+                        auth()->user()->id_empresa,
+                        $credenciales
+                    );
+                    $resp = $token;
+                    break;
+
+
+                case 5: // Beyond GPS
+
+                    $response = BeyondGPSTrait::getLocation(
+                        $credenciales['user'] ?? null,
+                        $credenciales['password'] ?? null,
+                        $credenciales['endpoint'] ?? null
+                    );
+
+                    $resp = $response;
+
+                    if (!$response->success) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => $response->message ?? 'Error en conexión'
+                        ]);
+                    }
+
+                    $data = $response->data;
+
+                    if (!($data['success'] ?? false)) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Proveedor GPS respondió sin éxito'
+                        ]);
+                    }
+
+                    if (empty($data['events'])) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Sin eventos / sin datos de ubicación'
+                        ]);
+                    }
+
+                    $token = true;
+                    break;
+
+                case 6: // Wialon
+
+                    $responseWialon = WialonGpsTrait::getLocation(
+                        $credenciales['token'] ?? null,
+                        $credenciales['SID'] ?? null
+                    );
+
+                    $resp = $responseWialon;
+
+                    if (
+                        !$responseWialon->success ||
+                        !is_array($responseWialon->data) ||
+                        count($responseWialon->data) === 0
+                    ) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Error al validar credenciales con Wialon'
+                        ]);
+                    }
+
+                    $token = true;
+                    break;
+
+                default:
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Proveedor GPS no soportado'
+                    ]);
+            }
+
+
+            if (!$token) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Credenciales inválidas'
+                ]);
+            }
+
+
+
+            // dd($equipo, $credenciales);
+
+            $equipo->update([
+                'gps_company_id'   => $r->gps_company_id,
+                'usar_config_global' => 0,
+                'credenciales_gps' => Crypt::encryptString(
+                    json_encode($credenciales)
+                ),
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Configuración guardada correctamente',
+                'data' => $resp
+            ]);
+
+        } catch (\Throwable $e) {
+
+            Log::error('Error setConfigEquipo', [
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error interno al configurar GPS',
+                'erradmin' => $e->getMessage()
+            ], 500);
+        }
     }
 
 }
