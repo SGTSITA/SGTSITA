@@ -34,6 +34,7 @@ Route::group(["prefix" => "gps"], function () {
     Route::get('setup', [GpsCompanyController::class,'setupGps'])->name('gps.setup');
     Route::get('config', [GpsCompanyController::class,'getConfig'])->name('gps.config');
     Route::post('config/store', [GpsCompanyController::class,'setConfig'])->name('gps.store');
+    Route::post('config/store-equipos', [GpsCompanyController::class,'setConfigEquipo'])->name('gps.equipo.store');
 });
 
 Route::group(["prefix" => "mep"], function () {
@@ -291,6 +292,12 @@ Route::group(['middleware' => ['auth']], function () {
     Route::post('/equipos/asignar-gps/{id}', [App\Http\Controllers\EquiposController::class, 'asignarGps'])->name('equipos.asignarGps');
 
     Route::get('/equipos/data', [App\Http\Controllers\EquiposController::class, 'data'])->name('equipos.data');
+    Route::post('/equipos/update-mep', [App\Http\Controllers\EquiposController::class, 'updateMep'])->name('equipos.updateMep');
+
+    //equipos mep
+
+
+    Route::get('equipos-gps/index', [App\Http\Controllers\EquiposController::class, 'index_gps'])->name('equipos.gps.mep');
 
 
     // ==================== O P E R A D O R E S ====================
