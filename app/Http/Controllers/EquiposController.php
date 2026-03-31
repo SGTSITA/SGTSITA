@@ -7,6 +7,8 @@ use App\Models\Equipo;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Auth;
+use App\Models\User;
+use Illuminate\Support\Facades\Crypt;
 
 class EquiposController extends Controller
 {
@@ -31,7 +33,7 @@ class EquiposController extends Controller
             ->where('activo', true)
             ->orderBy('created_at', 'desc')
             ->get();
-        $gps_companies = GpsCompany::all();
+        $gps_companies  = GpsCompany::all();
 
 
         return view('equipos.index', compact(
@@ -42,6 +44,9 @@ class EquiposController extends Controller
             'gps_companies'
         ));
     }
+
+
+
 
 
     public function store(Request $request)
@@ -238,6 +243,95 @@ class EquiposController extends Controller
             'success' => true,
             'message' => 'Asignación de GPS e IMEI actualizada correctamente.'
         ]);
+    }
+
+
+    public function index_gps()
+    {
+
+        $userProveedores = User::find(auth()->user()->id);
+
+        $proveedorIds = $userProveedores->proveedores()->pluck('proveedor_id');
+
+
+        $usuariosRelacionados = User::whereHas('proveedores', function ($q) use ($proveedorIds) {
+            $q->whereIn('proveedor_id', $proveedorIds);
+        })->pluck('id');
+
+        $equipos = Equipo::whereIn('user_id', $usuariosRelacionados)
+        ->leftjoin('gps_company', 'gps_company.id', '=', 'equipos.gps_company_id')
+         ->where('equipos.activo', true)
+         ->orderBy('equipos.created_at', 'desc')
+         ->select([
+        'equipos.*',
+        'gps_company.nombre as gps_nombre',
+        'gps_company.id as gps_company_id_join'
+    ])
+         ->get();
+
+        $equipos = $equipos->map(function ($e) {
+
+            if ($e->credenciales_gps) {
+                try {
+                    $e->credenciales_gps = json_decode(
+                        Crypt::decryptString($e->credenciales_gps),
+                        true
+                    );
+                } catch (\Exception $ex) {
+                    $e->credenciales_gps = null;
+                }
+            }
+
+            return $e;
+        });
+
+
+        //  dd($equipos);
+
+        $gps_companies = GpsCompany::all();
+
+        return view('equipos.index-gps', compact('equipos', 'gps_companies'));
+    }
+
+
+    public function updateMep(Request $request)
+    {
+        $mesagep = 'Equipo Actualizado con exito';
+
+        if ($request->equipo_id) {
+
+            $equipo = Equipo::find($request->equipo_id);
+
+            $equipo->update([
+                'id_equipo' => $request->numero_equipo,
+                'imei' => $request->imei,
+                'marca' => $request->marca,
+                'placas' => $request->placas,
+                'tipo' => $request->tipo_equipo,
+                'num_serie' => $request->num_serie,
+
+            ]);
+
+        } else {
+            $mesagep = 'Equipo Guardado con exito';
+            Equipo::create([
+                'id_equipo' => $request->numero_equipo,
+                'imei' => $request->imei,
+                'marca' => $request->marca,
+                'placas' => $request->placas,
+                'num_serie' => $request->num_serie,
+                'tipo' => $request->tipo_equipo,
+                'user_id' => auth()->user()->id,
+
+            ]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => $mesagep
+        ]);
+
+
     }
 
 

@@ -147,7 +147,61 @@ class CuentasCobrarController extends Controller
 
         return response()->json(["success" => true,"handsOnTableData" => $handsOnTableData, "cotizacionesPorPagar" => $cotizacionesPorPagar]);
     }
+    private function procesarCotizacion(
+        $cotizacion,
+        $abono,
+        $pagoA,
+        $pagoB,
+        $numContenedor,
+        &$contenedoresAbonos,
+        &$contenedoresAbonos1,
+        &$contenedoresAbonos2,
+        $cobroPago
+    ) {
 
+        $nuevoRestante = max(0, $cotizacion->restante - $abono);
+
+        $cotizacion->restante = $nuevoRestante;
+        $cotizacion->estatus_pago = ($nuevoRestante == 0) ? 1 : 0;
+        $cotizacion->fecha_pago = date('Y-m-d');
+        $cotizacion->update();
+
+        // TOTAL
+        $contenedoresAbonos[] = [
+            'num_contenedor' => $numContenedor,
+            'abono' => $abono
+        ];
+
+        // PAGO A
+        if ($pagoA > 0) {
+            $contenedoresAbonos1[] = [
+                'num_contenedor' => $numContenedor,
+                'abono' => $pagoA
+            ];
+
+            CobroPagoCotizacion::create([
+                'cobro_pago_id' => $cobroPago->id,
+                'cotizacion_id' => $cotizacion->id,
+                'origen' => 'A',
+                'monto' => $pagoA,
+            ]);
+        }
+
+        // PAGO B
+        if ($pagoB > 0) {
+            $contenedoresAbonos2[] = [
+                'num_contenedor' => $numContenedor,
+                'abono' => $pagoB
+            ];
+
+            CobroPagoCotizacion::create([
+                'cobro_pago_id' => $cobroPago->id,
+                'cotizacion_id' => $cotizacion->id,
+                'origen' => 'B',
+                'monto' => $pagoB,
+            ]);
+        }
+    }
     public function aplicar_pagos(Request $request)
     {
         try {
@@ -168,191 +222,156 @@ class CuentasCobrarController extends Controller
             $contenedoresAbonos = [];
             $contenedoresAbonos1 = [];
             $contenedoresAbonos2 = [];
-            $ids = [];
 
-            //guardar cxc en tabla principal para despues guardar el detalle de contenendores
-
+            // Guardar cxc en tabla principal
             $cobroPago = CobroPago::create([
-        'tipo' => 'cxc',
-        'cliente_id' => $request->theClient,
-
-        'bancoA_id' => $request->bankOne,
-        'monto_A' => $request->amountPayOne ?? 0,
-        'fechaAplicacion1' => $request->FechaAplicacionbank1
-            ? \Carbon\Carbon::createFromFormat('d/m/Y', $request->FechaAplicacionbank1)->format('Y-m-d')
-            : null,
-
-        'bancoB_id' => $request->bankTwo,
-        'monto_B' => $request->amountPayTwo ?? 0,
-        'fechaAplicacion2' => $request->FechaAplicacionbank2
-            ? \Carbon\Carbon::createFromFormat('d/m/Y', $request->FechaAplicacionbank2)->format('Y-m-d')
-            : null,
-
-        'user_id' => auth()->id(),
-        'observaciones' => null,
-    ]);
-
-
-            //
+                'tipo' => 'cxc',
+                'cliente_id' => $request->theClient,
+                'bancoA_id' => $request->bankOne,
+                'monto_A' => $request->amountPayOne ?? 0,
+                'fechaAplicacion1' => $request->FechaAplicacionbank1
+                    ? \Carbon\Carbon::createFromFormat('d/m/Y', $request->FechaAplicacionbank1)->format('Y-m-d')
+                    : null,
+                'bancoB_id' => $request->bankTwo,
+                'monto_B' => $request->amountPayTwo ?? 0,
+                'fechaAplicacion2' => $request->FechaAplicacionbank2
+                    ? \Carbon\Carbon::createFromFormat('d/m/Y', $request->FechaAplicacionbank2)->format('Y-m-d')
+                    : null,
+                'user_id' => auth()->id(),
+                'observaciones' => null,
+            ]);
 
             foreach ($cotizaciones as $c) {
-                if ($c[8] > 0) { //Si total cobrado es mayor a cero
-                    $id = $c[9]; //Obtenemos el ID
-                    $cotizacion = Cotizaciones::where('id', '=', $id)->first();
+                if ($c[8] > 0) { // Si total cobrado > 0
+                    $id = $c[9];
+                    $cotizacion = Cotizaciones::with('DocCotizacion')->where('id', $id)->first();
 
-                    // Establecer el abono y calcular el restante
-                    $abono = $c[8];
-                    $nuevoRestante = $cotizacion->restante - $abono;
+                    $abonoTotal = $c[8];
+                    $pagoA = $c[6];
+                    $pagoB = $c[7];
 
-                    if ($nuevoRestante < 0) {
-                        $nuevoRestante = 0;
+                    // Si es FULL, dividimos abonos y pagos
+                    if ($cotizacion->referencia_full != null) {
+
+                        $secundaria = Cotizaciones::with('DocCotizacion')
+                        ->where('referencia_full', $cotizacion->referencia_full)
+                            ->where('jerarquia', 'Secundario')
+                            ->first();
+
+                        $abonoDividido = $abonoTotal / 2;
+                        $pagoADividido = $pagoA / 2;
+                        $pagoBDividido = $pagoB / 2;
+
+
+                        //  dd($secundaria);
+
+                        // Procesar primario
+                        $this->procesarCotizacion(
+                            $cotizacion,
+                            $abonoDividido,
+                            $pagoADividido,
+                            $pagoBDividido,
+                            $cotizacion->DocCotizacion->num_contenedor,
+                            $contenedoresAbonos,
+                            $contenedoresAbonos1,
+                            $contenedoresAbonos2,
+                            $cobroPago
+                        );
+
+                        // Procesar secundario
+                        $this->procesarCotizacion(
+                            $secundaria,
+                            $abonoDividido,
+                            $pagoADividido,
+                            $pagoBDividido,
+                            $secundaria->DocCotizacion->num_contenedor,
+                            $contenedoresAbonos,
+                            $contenedoresAbonos1,
+                            $contenedoresAbonos2,
+                            $cobroPago
+                        );
+
+                        continue; // Saltamos procesamiento normal para no duplicar
                     }
 
-                    $cotizacion->restante = $nuevoRestante;
-                    $cotizacion->estatus_pago = ($nuevoRestante == 0) ? 1 : 0;
-                    $cotizacion->fecha_pago = date('Y-m-d');
-                    $cotizacion->update();
-
-                    // Agregar contenedor y abono al array
-                    $contenedorAbono = [
-                        'num_contenedor' => $c[0],
-                        'abono' => $c[8]
-                    ];
-
-
-
-                    array_push($contenedoresAbonos, $contenedorAbono);
-
-
-
-
-
-                    if ($c[6] > 0) { //validamos si el pago 1 trae cantidad
-                        $contenedorAbono1 = [
-                           'num_contenedor' => $c[0],
-                           'abono' => $c[6]
-                    ];
-                        CobroPagoCotizacion::create([
-                                        'cobro_pago_id' => $cobroPago->id,
-                                        'cotizacion_id' => $id ,
-                                        'origen' => 'A',
-                                        'monto' => $c[6],
-                                    ]);
-                        array_push($contenedoresAbonos1, $contenedorAbono1);
-
-                    }
-
-                    if ($c[7] > 0) { //validamos si el pago 2 trae cantidad
-
-                        $contenedorAbono2 = [
-                         'num_contenedor' => $c[0],
-                         'abono' => $c[7]
-                        ];
-
-                        CobroPagoCotizacion::create([
-                                      'cobro_pago_id' => $cobroPago->id,
-                                      'cotizacion_id' =>  $id ,
-                                      'origen' => 'B',
-                                      'monto' => $c[7],
-                                  ]);
-
-                        array_push($contenedoresAbonos2, $contenedorAbono2);
-
-                    }
+                    // No FULL: procesamos normal
+                    $this->procesarCotizacion(
+                        $cotizacion,
+                        $abonoTotal,
+                        $pagoA,
+                        $pagoB,
+                        $c[0],
+                        $contenedoresAbonos,
+                        $contenedoresAbonos1,
+                        $contenedoresAbonos2,
+                        $cobroPago
+                    );
                 }
-
             }
 
+            // Guardamos registro de bancos old
             $banco = new BancoDinero();
             $banco->contenedores = json_encode($contenedoresAbonos);
             $banco->id_cliente = $request->theClient;
             $banco->monto1 = $request->amountPayOne;
-            $banco->metodo_pago1 = "Transferencia"; //Metodo de pago por default, instrucciones JH
+            $banco->metodo_pago1 = "Transferencia";
             $banco->id_banco1 = $request->bankOne;
-
             $banco->monto2 = $request->amountPayTwo;
-            $banco->metodo_pago2 = "Transferencia"; //Metodo de pago por default, instrucciones JH
+            $banco->metodo_pago2 = "Transferencia";
             $banco->id_banco2 = $request->bankTwo;
-
             $banco->fecha_pago = date('Y-m-d');
             $banco->tipo = 'Entrada';
-
             $banco->save();
 
-            Bancos::where('id', '=', $request->bankOne)->update(["saldo" => DB::raw("COALESCE(saldo, 0) + ". $request->amountPayOne)]);
-            Bancos::where('id', '=', $request->bankTwo)->update(["saldo" => DB::raw("COALESCE(saldo, 0) + ". $request->amountPayTwo)]);
+            // Actualizamos saldo de bancos
+            Bancos::where('id', $request->bankOne)
+                ->update(["saldo" => DB::raw("COALESCE(saldo, 0) + ". $request->amountPayOne)]);
+            Bancos::where('id', $request->bankTwo)
+                ->update(["saldo" => DB::raw("COALESCE(saldo, 0) + ". $request->amountPayTwo)]);
 
-
-            //proceso bancos nuevo
+            // Registrar movimientos bancarios nuevo bancos
             if ($request->filled('bankOne') && $request->amountPayOne > 0) {
                 $FechaAplicacionbank1 = $request->get('FechaAplicacionbank1');
-
                 $cliente = client::find($request->theClient);
 
-
-
-
                 $data = [
-                        'cuenta_bancaria_id' => $request->get('bankOne'),            'tipo' => 'abono',
-                        'monto' => floatval($request->amountPayOne),
-                        'concepto' => 'Cobro viajes: '.'
-                                '.  $cliente?->nombre ??  '',
-                        'fecha_movimiento' => \Carbon\Carbon::createFromFormat(
-                            'd/m/Y',
-                            $FechaAplicacionbank1
-                        )->format('Y-m-d'),
-                        'origen' => null,
-                        'referencia' => 'CXC A',
-                        'detalles' => json_encode($contenedoresAbonos1),
-                         'referenciaable_id' =>   $cobroPago->id,
-                          'referenciaable_type' => \App\Models\CobroPago::class, //para polimorfismo
-                    ];
+                    'cuenta_bancaria_id' => $request->bankOne,
+                    'tipo' => 'abono',
+                    'monto' => floatval($request->amountPayOne),
+                    'concepto' => 'Cobro viajes: ' . ($cliente?->nombre ?? ''),
+                    'fecha_movimiento' => \Carbon\Carbon::createFromFormat('d/m/Y', $FechaAplicacionbank1)->format('Y-m-d'),
+                    'origen' => null,
+                    'referencia' => 'CXC A',
+                    'detalles' => json_encode($contenedoresAbonos1),
+                    'referenciaable_id' => $cobroPago->id,
+                    'referenciaable_type' => \App\Models\CobroPago::class,
+                ];
 
-
-
-
-                $movimeintoCrear = $this->BancosService->registrarMovimiento($data);
-                //   dd('no pasar', $movimeintoCrear);
-
-                if (!$movimeintoCrear) {
-                    throw new \Exception('No se pudo crear el movimiento bancario, dinero para viaje adicional ');
+                if (!$this->BancosService->registrarMovimiento($data)) {
+                    throw new \Exception('No se pudo crear el movimiento bancario para bankOne');
                 }
-
-
             }
-            //proceso bancos nuevo
+
             if ($request->filled('bankTwo') && $request->amountPayTwo > 0) {
                 $FechaAplicacionbank2 = $request->get('FechaAplicacionbank2');
-
                 $cliente = client::find($request->theClient);
 
                 $data = [
-                        'cuenta_bancaria_id' => $request->get('bankTwo'),            'tipo' => 'abono',
-                        'monto' => floatval($request->amountPayTwo),
-                        'concepto' =>  'Cobro viajes: '.'
-                                '.  $cliente?->nombre ??  '',
-                        'fecha_movimiento' => \Carbon\Carbon::createFromFormat(
-                            'd/m/Y',
-                            $FechaAplicacionbank2
-                        )->format('Y-m-d'),
-                        'origen' => null,
-                        'referencia' => 'CXC B',
-                        'detalles' => json_encode($contenedoresAbonos2),
-                         'referenciaable_id' => $cobroPago->id,
-                          'referenciaable_type' => \App\Models\CobroPago::class, //para polimorfismo
-                    ];
+                    'cuenta_bancaria_id' => $request->bankTwo,
+                    'tipo' => 'abono',
+                    'monto' => floatval($request->amountPayTwo),
+                    'concepto' => 'Cobro viajes: ' . ($cliente?->nombre ?? ''),
+                    'fecha_movimiento' => \Carbon\Carbon::createFromFormat('d/m/Y', $FechaAplicacionbank2)->format('Y-m-d'),
+                    'origen' => null,
+                    'referencia' => 'CXC B',
+                    'detalles' => json_encode($contenedoresAbonos2),
+                    'referenciaable_id' => $cobroPago->id,
+                    'referenciaable_type' => \App\Models\CobroPago::class,
+                ];
 
-
-
-
-                $movimeintoCrear = $this->BancosService->registrarMovimiento($data);
-                //   dd('no pasar', $movimeintoCrear);
-
-                if (!$movimeintoCrear) {
-                    throw new \Exception('No se pudo crear el movimiento bancario, dinero para viaje adicional ');
+                if (!$this->BancosService->registrarMovimiento($data)) {
+                    throw new \Exception('No se pudo crear el movimiento bancario para bankTwo');
                 }
-
-
             }
 
 
