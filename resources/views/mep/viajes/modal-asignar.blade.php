@@ -26,12 +26,30 @@
                                 <input type="text" class="form-control form-control-sm ps-3 pe-5 rounded-pill"
                                     placeholder="Nombre completo del operador..." id="txtOperador"
                                     data-mep-operador="0" />
+
+                                <div id="sugerenciasOperador"
+                                    style="
+        position:absolute;
+        top:100%;
+        left:0;
+        right:0;
+        background:white;
+        border-radius:8px;
+        box-shadow:0 4px 10px rgba(0,0,0,0.15);
+        z-index:999;
+        max-height:200px;
+        overflow-y:auto;
+        display:none;
+    ">
+                                </div>
                                 <!-- Icono convertido en botón -->
                                 <button type="button"
                                     class="btn btn-sm position-absolute end-0 top-50 translate-middle-y me-2 p-1 rounded-circle"
                                     onclick="buscarOperador(txtOperador.value)">
                                     <i class="fas fa-search"></i>
                                 </button>
+
+
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -61,6 +79,21 @@
                                 <input type="text"
                                     class="form-control form-control-sm ps-3 pe-5 rounded-pill text-uppercase"
                                     placeholder="Ej. SF001..." id="txtNumUnidad" data-mep-unidad="0" />
+                                <div id="sugerenciasUnidad"
+                                    style="
+        position:absolute;
+        top:100%;
+        left:0;
+        right:0;
+        background:white;
+        border-radius:8px;
+        box-shadow:0 4px 10px rgba(0,0,0,0.15);
+        z-index:999;
+        max-height:200px;
+        overflow-y:auto;
+        display:none;
+    ">
+                                </div>
                                 <!-- Icono convertido en botón -->
                                 <button type="button"
                                     class="btn btn-sm position-absolute end-0 top-50 translate-middle-y me-2 p-1 rounded-circle"
@@ -157,6 +190,22 @@
                                         <input type="text"
                                             class="form-control form-control-sm ps-3 pe-5 rounded-pill text-uppercase"
                                             placeholder="Ej. CH001..." id="txtNumChasisA" data-mep-unidad="0" />
+
+                                        <div id="sugerenciasChasisA"
+                                            style="
+        position:absolute;
+        top:100%;
+        left:0;
+        right:0;
+        background:white;
+        border-radius:8px;
+        box-shadow:0 4px 10px rgba(0,0,0,0.15);
+        z-index:999;
+        max-height:200px;
+        overflow-y:auto;
+        display:none;
+    ">
+                                        </div>
                                         <button type="button"
                                             class="btn btn-sm position-absolute end-0 top-50 translate-middle-y me-2 p-1 rounded-circle"
                                             onclick="buscarUnidad(txtNumChasisA.value, 'ChasisA')">
@@ -222,6 +271,22 @@
                                         <input type="text"
                                             class="form-control form-control-sm ps-3 pe-5 rounded-pill text-uppercase"
                                             placeholder="Ej. CH002..." id="txtNumChasisB" data-mep-unidad="0" />
+
+                                        <div id="sugerenciasChasisB"
+                                            style="
+        position:absolute;
+        top:100%;
+        left:0;
+        right:0;
+        background:white;
+        border-radius:8px;
+        box-shadow:0 4px 10px rgba(0,0,0,0.15);
+        z-index:999;
+        max-height:200px;
+        overflow-y:auto;
+        display:none;
+    ">
+                                        </div>
                                         <button type="button"
                                             class="btn btn-sm position-absolute end-0 top-50 translate-middle-y me-2 p-1 rounded-circle"
                                             onclick="buscarUnidad(txtNumChasisB.value, 'ChasisB')">
