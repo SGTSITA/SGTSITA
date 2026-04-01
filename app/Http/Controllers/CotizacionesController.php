@@ -55,6 +55,20 @@ class CotizacionesController extends Controller
                 ->whereIn('id_proveedor', $userProveedores->proveedores()->pluck('proveedor_id'))
                 ->where('estado', 1)
                 ->pluck('id_gps_company');
+
+
+            $gpsEquipos = Equipo::where('usar_config_global', 0)
+    ->whereNotNull('credenciales_gps')
+    ->pluck('gps_company_id');
+
+            $gpsCompanyIds = $gpsCompanyIds
+            ->merge($gpsEquipos)
+            ->unique()
+            ->values();
+
+
+
+            // dd($gpsEquipos, $gpsCompanyIds);
         }
 
         $gpsCompanies = GpsCompany::whereIn('id', $gpsCompanyIds)->get();
