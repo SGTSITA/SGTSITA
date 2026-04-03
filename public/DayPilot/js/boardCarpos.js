@@ -47,6 +47,9 @@ async function initBoard(fromDate, toDate) {
             //TarifasHilos = resp.TarifasHilo;
             //festivos = resp.festivos;
             let scrollToDate = null;
+            if (resp.scrollDate) {
+                scrollToDate = new DayPilot.Date(resp.scrollDate);
+            }
             if (allEvents != null) {
                 resp.extractor.forEach((i) => {
                     let x = Math.floor(Math.random() * 8) + 1;
@@ -67,13 +70,16 @@ async function initBoard(fromDate, toDate) {
                             complete: 100,
                             tooltip: i.num_contenedor,
                         };
+                        dp.events.list.push(e);
                     }
-                    dp.events.list.push(e);
+
                     // const threads = array1.findIndex(element => element > 10);
                 });
             }
 
-            dp.startDate = scrollToDate.addDays(-2);
+            dp.startDate = scrollToDate?.addDays
+                ? scrollToDate.addDays(-2)
+                : new DayPilot.Date();
 
             if (dpReady) {
                 dp.update();
@@ -82,7 +88,9 @@ async function initBoard(fromDate, toDate) {
                 dpReady = true;
             }
 
-            dp.scrollTo(new DayPilot.Date(fromDate));
+            if (fromDate) {
+                dp.scrollTo(new DayPilot.Date(fromDate));
+            }
         },
         error: (e) => {
             console.log("Ocurrio un error: " + e);
