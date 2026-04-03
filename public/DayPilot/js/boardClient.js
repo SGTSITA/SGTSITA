@@ -47,6 +47,9 @@ async function initBoard(fromDate, toDate) {
             //TarifasHilos = resp.TarifasHilo;
             //festivos = resp.festivos;
             let scrollToDate = null;
+            if (resp.scrollDate) {
+                scrollToDate = new DayPilot.Date(resp.scrollDate);
+            }
             if (allEvents != null) {
                 resp.extractor.forEach((i) => {
                     if (i.fecha_inicio !== null && i.fecha_fin !== null) {
