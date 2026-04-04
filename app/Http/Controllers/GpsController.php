@@ -37,6 +37,8 @@ class GpsController extends Controller
 
         // dd($datos);
 
+        $index = 0;
+
         foreach ($datos as $dato) {
             if (!empty($dato)) {
                 $esDatoEmp = "NO";
@@ -49,6 +51,8 @@ class GpsController extends Controller
                 [$Rfc,$equipo,$empresaIdRastro,$TipoEquipo,$gps_company_id,$tipo_viaje_contrato,$placas,$tipo_camion_rev,$tipoConfig,$id_equipoUnic] = explode('|', $RfcyEquipo);
 
                 // dd($RfcyEquipo);
+
+
 
                 $empresaIdRastro = (int) $empresaIdRastro;
 
@@ -75,9 +79,14 @@ class GpsController extends Controller
                 $result = GpsCredentialsService::getByProveedor($Rfc, $gps_company_id, $tipo_viaje_contrato, $tipo_camion_rev, $tipoConfig, $equipo, $id_equipoUnic);
                 //  dd($result);
 
+                // if ($index == 1) {
+                //     dd($result);
+                // }
+
                 if (!$result['success']) {
                     return $result;
                 }
+
 
                 $credenciales = $result['credentials'];
                 //             $normalized = collect($account)
@@ -85,7 +94,7 @@ class GpsController extends Controller
                 // ->toArray();
 
 
-                //   dd($credenciales);
+                //dd($credenciales);
                 $status = false;
                 $inicio = microtime(true);
                 $messageError = "";
@@ -303,7 +312,7 @@ class GpsController extends Controller
                                 $credenciales['appkey'],
                                 $imei
                             );
-
+                            //  dd($data);
                             $raw =  $data->data['raw']->return ?? null;
 
                             $ubicacionApi = $raw
@@ -365,6 +374,9 @@ class GpsController extends Controller
                 ];
             }
             //  dd($resultados);
+
+            $index = $index + 1;
+            $ubicacion = null;
         }
 
 
@@ -477,6 +489,7 @@ class GpsController extends Controller
                 'eq_chasis.id_equipo as id_equipo_chasis',
                 'eq_chasis.placas as placas_chasis',
                 'eq_chasis.usar_config_global as usar_config_global_chasis',
+                'eq_chasis.gps_company_id as gps_company_id_chasis',
                 DB::raw("CASE WHEN asignaciones.id_proveedor IS NULL THEN asignaciones.id_operador ELSE asignaciones.id_proveedor END as beneficiario_id"),
                 DB::raw("CASE WHEN asignaciones.id_proveedor IS NULL THEN 'Propio' ELSE 'Subcontratado' END as tipo_contrato")
             );
@@ -517,6 +530,7 @@ class GpsController extends Controller
                 'asig.placas_chasis',
                 'asig.usar_config_global_chasis',
                 'asig.gps_company_id',
+                'asig.gps_company_id_chasis',
                 'cotizaciones.id_empresa',
                 'beneficiarios.RFC'
             )
@@ -534,22 +548,7 @@ class GpsController extends Controller
             ->where('asig.num_contenedor', '=', $num_Contenendor)
             ->first();
 
-            if ($imei === $datosAll?->imei) {
-                //corresponde al equipo del contendor
-                $Equipo = $datosAll?->id_equipo;
-                $placas = $datosAll?->placas;
-                $TipoEquipo = 'Camion';
-                $tipoConfig = $datosAll?->usar_config_global;
-                $id_equipoUnic = $datosAll?->id_camion;
-            } elseif ($imei === $datosAll?->imei_chasis) {
-                //corresponde al equipo del chasis
-                $Equipo = $datosAll?->id_equipo_chasis;
-                $TipoEquipo = 'Chasis';
-                $placas = $datosAll?->placas_chasis;
-                $tipoConfig = $datosAll?->usar_config_global_chasis;
-                $id_equipoUnic = $datosAll?->id_chasis;
 
-            }
 
 
             //
@@ -593,9 +592,29 @@ class GpsController extends Controller
             $RFCContenedor = $datosAll?->RFC;
             //  $Equipo = $datosAll?->id_equipo;
             $empresaIdRastreo = $datosAll?->id_empresa;
-            $gps_company_id = $datosAll?->gps_company_id;
+
             $tipoviaje =  $datosAll?->tipo_viaje_contratado;
-            $placas =  $datosAll?->placas;
+            // $placas =  $datosAll?->placas;
+
+            if ($imei === $datosAll?->imei) {
+                //corresponde al equipo del contendor
+                $Equipo = $datosAll?->id_equipo;
+                $placas = $datosAll?->placas;
+                $TipoEquipo = 'Camion';
+                $tipoConfig = $datosAll?->usar_config_global;
+                $id_equipoUnic = $datosAll?->id_camion;
+                $gps_company_id = $datosAll?->gps_company_id;
+            } elseif ($imei === $datosAll?->imei_chasis) {
+                //corresponde al equipo del chasis
+                $Equipo = $datosAll?->id_equipo_chasis;
+                $TipoEquipo = 'Chasis';
+                $placas = $datosAll?->placas_chasis;
+                $tipoConfig = $datosAll?->usar_config_global_chasis;
+                $id_equipoUnic = $datosAll?->id_chasis;
+                $gps_company_id = $datosAll?->gps_company_id_chasis;
+
+
+            }
 
             if ($RFCContenedor === 'buscarEmpresaRFC') {
                 //buscamos el rfc de la empresa pues no tiene asignado un proveedor....

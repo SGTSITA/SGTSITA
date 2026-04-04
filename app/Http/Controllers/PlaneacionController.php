@@ -214,7 +214,8 @@ class PlaneacionController extends Controller
         ->where('cotizaciones.id', $request->id)
         ->Join('docum_cotizacion', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
         ->leftJoin('asignaciones', 'docum_cotizacion.id', '=', 'asignaciones.id_contenedor')
-        ->leftJoin('empresas', 'empresas.id', '=', 'asignaciones.id_empresa')
+        ->leftJoin('empresas as em', 'em.id', '=', 'asignaciones.id_empresa')
+        ->leftJoin('empresas as emc', 'emc.id', '=', 'cotizaciones.id_empresa')
         ->leftJoin('clients', 'cotizaciones.id_cliente', '=', 'clients.id')
         ->leftjoin('equipos', 'asignaciones.id_camion', '=', 'equipos.id')
         ->leftjoin('equipos as chasis', 'asignaciones.id_chasis', '=', 'chasis.id')
@@ -243,7 +244,8 @@ class PlaneacionController extends Controller
             'chasis.id_equipo as id_equipo_chasis',
             'chasis.imei as imei_chasis',
             'asignaciones.tipo_contrato',
-            'empresas.nombre as Empresa',
+            DB::raw("COALESCE(NULLIF(em.nombre, ''), emc.nombre) as Empresa"),
+            //  'empresas.nombre as Empresa',
             'operadores.nombre as operador',
             'proveedores.nombre as transportista_nombre',
             'cotizaciones.cp_contacto_entrega',
@@ -346,7 +348,11 @@ class PlaneacionController extends Controller
                         ->where('asignaciones.fecha_inicio', '>=', $request->fromDate)
                        ->when(!$isAdmin, function ($q) use ($idEmpresa) {
                            $q->when($idEmpresa != 0, function ($q2) use ($idEmpresa) {
-                               $q2->where('asignaciones.id_empresa', $idEmpresa);
+                               // $q2->where('asignaciones.id_empresa', $idEmpresa);
+                               $q2->whereRaw(
+                                   "COALESCE(NULLIF(asignaciones.id_empresa, 0), cotizaciones.id_empresa) = ?",
+                                   [$idEmpresa]
+                               );
                            });
                        })
 
