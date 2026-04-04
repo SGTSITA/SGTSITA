@@ -448,7 +448,9 @@
                         <tr style="background-color: #f1f1f1">
 
                             <td style="padding: 2px; border: 1px solid #ccc">
-                                ##ROW_ALTO##
+                                @if (isset($isExcel))
+                                    ##ROW_ALTO##
+                                @endif
                                 {{ $beneficiarioCuenta1 }}
                                 <br />
                                 {{ $bancoBase1->nombre_banco ?? '-' }}
@@ -529,7 +531,9 @@
                             <tbody style="text-align: center; font-size: 6px">
                                 <tr style="background-color: {{ $index % 2 == 0 ? '#f1f1f1' : '#e0e0e0' }}">
                                     <td style="padding: 2px; border: 1px solid #ccc">
-                                        ##ROW_ALTO##
+                                        @if (isset($isExcel))
+                                            ##ROW_ALTO##
+                                        @endif
                                         {{ $beneficiarioCuenta1 }}
                                         <br />
                                         {{ $cuentaCLABE->nombre_banco ?? '-' }}
@@ -647,7 +651,9 @@
                                             text-align: center;
                                             vertical-align: middle;
                                         ">
-                                    ##ROW_ALTO##
+                                    @if (isset($isExcel))
+                                        ##ROW_ALTO##
+                                    @endif
                                     {{ $cuentaGlobal['beneficiario'] }}
                                     <br />
                                     {{ $cuentaGlobal['banco'] }}
@@ -656,7 +662,9 @@
                                 </td>
                             @elseif (!$bancoGlobal)
                                 <td style="padding: 2px; border: 1px solid #ccc; text-align: center">
-                                    ##ROW_ALTO##
+                                    @if (isset($isExcel))
+                                        ##ROW_ALTO##
+                                    @endif
                                     {{ $cuenta2?->nombre_beneficiario ?? 'No disponible' }}
                                     <br />
                                     {{ $cuenta2?->nombre_banco ?? '-' }}
