@@ -1,10 +1,10 @@
 ---
 title: Cast
 categories:
-  - Media
+    - Media
 tags:
-  - airplay
-  - project
-  - stream
-  - display
+    - airplay
+    - project
+    - stream
+    - display
 ---

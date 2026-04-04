@@ -4,12 +4,11 @@
 
 .breadcrumb-item {
     font-size: $font-size-sm;
-    &.text-white{
-      &::before {
-          color: $white;
-      }
+    &.text-white {
+        &::before {
+            color: $white;
+        }
     }
-
 }
 
 .breadcrumb-dark {
@@ -37,7 +36,6 @@
         }
     }
 }
-
 
 // Links
 

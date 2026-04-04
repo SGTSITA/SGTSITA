@@ -1,10 +1,10 @@
 ---
 title: Window stack
 categories:
-  - Apps
+    - Apps
 tags:
-  - application
-  - desktop
-  - app
-  - windows
+    - application
+    - desktop
+    - app
+    - windows
 ---

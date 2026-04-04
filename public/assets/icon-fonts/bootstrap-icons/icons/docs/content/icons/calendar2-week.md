@@ -1,10 +1,10 @@
 ---
 title: Calendar2 week
 categories:
-  - Date and time
+    - Date and time
 tags:
-  - dates
-  - timeline
-  - duration
-  - week
+    - dates
+    - timeline
+    - duration
+    - week
 ---

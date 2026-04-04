@@ -1,9 +1,9 @@
 ---
 title: Filetype ai
 categories:
-  - Files and folders
+    - Files and folders
 tags:
-  - file
-  - "file type"
-  - extension
+    - file
+    - 'file type'
+    - extension
 ---
