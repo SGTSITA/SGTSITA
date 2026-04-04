@@ -25,16 +25,16 @@
 </style>
 
 @section('content')
-    <div class="container-fluid">
-        <div class="row">
-            <div class="col-sm-12">
-                <div class="card">
+    <div class="container-fluid h-100" style="min-height: 100vh;">
+        <div class="row h-100">
+            <div class="col-sm-12 d-flex">
+                <div class="card w-100 h-100 d-flex flex-column">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h5>Reporte de Cuentas por Cobrar</h5>
                     </div>
-                    <div class="card-body">
+                    <div class="card-body d-flex flex-column">
                         <form id="filtroReporte" method="GET" action="{{ route('reporteria.advance') }}">
-                            <div class="row">
+                            <div class="row align-items-end">
                                 <div class="col-md-3">
                                     <label for="id_client">Cliente</label>
                                     <select name="id_client" id="id_client" class="form-control">
@@ -73,7 +73,7 @@
                                         @endforeach
                                     </select>
                                 </div>
-                                <div class="col-md-2">
+                                <div class="col-md-2 ">
                                     <label for="numero_edo_cuenta">Num. Estado de Cuenta</label>
                                     <select name="numero_edo_cuenta" id="numero_edo_cuenta" class="form-control">
                                         <option value="">Seleccionar numero</option>
@@ -85,11 +85,38 @@
                                         @endforeach
                                     </select>
                                 </div>
-                                <div class="col-md-3">
-                                    <button type="submit" class="btn btn-outline-secondary btn-sm mt-3">Buscar</button>
+                                <div class="col-md-1 d-flex align-items-end">
+                                    <button type="submit"
+                                        class="btn btn-primary btn-sm d-flex align-items-center justify-content-center"
+                                        style="height: 38px; width: 38px; border-radius: 8px;">
+                                        <i class="fas fa-search"></i>
+                                    </button>
                                 </div>
                             </div>
                         </form>
+
+                        <div class="col-md-12 mt-3 d-flex align-items-center gap-3">
+
+
+                            <div class="form-check m-0">
+                                <input class="form-check-input" type="checkbox" id="checkDocumentos">
+                                <label class="form-check-label mb-0">
+                                    Adjuntar documentos
+                                </label>
+                            </div>
+
+
+                            <div id="contenedorDocumentos" style="display:none; min-width: 300px;">
+                                <select name="documentos[]" id="documentos" class="form-control" multiple>
+                                    @foreach ($documentos as $descripcion => $id)
+                                        <option value="{{ $id }}">
+                                            {{ str_replace('-', ' ', $descripcion) }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                        </div>
 
                         <div class="d-flex justify-content-end my-2">
                             <button type="button" id="btnAsignarEdoCuenta" class="btn btn-primary d-none"
@@ -98,7 +125,7 @@
                             </button>
                         </div>
 
-                        <div class="table-responsive">
+                        <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
                             <div class="mb-3"></div>
                             <div class="mb-3">
                                 <button type="button" id="selectAllButton" class="btn btn-outline-secondary btn-sm">
@@ -214,7 +241,7 @@
                                     </tbody>
                                 </table>
                                 <button type="button" id="exportButton" data-filetype="pdf"
-                                    class="btn btn-outline-secondary btn-sm exportButton">
+                                    class="btn btn-outline-secondary btn-sm exportButton" data-mode="preview">
                                     Vista previa
                                 </button>
                                 <div id="warningMessage" class="alert alert-warning d-none" role="alert">
@@ -225,12 +252,13 @@
                                     <canvas id="pdf-canvas"></canvas>
                                     <div class="button-container">
                                         <button type="button" id="exportButtonExcel1" data-filetype="xlsx"
-                                            class="btn btn-outline-secondary btn-sm exportButton">
+                                            class="btn btn-outline-secondary btn-sm exportButton" data-mode="download">
                                             Exportar a Excel
                                         </button>
                                         @if (isset($cotizaciones) && $cotizaciones != null)
                                             <button type="button" id="exportButtonExcel1" data-filetype="xlsx"
-                                                class="btn btn-outline-secondary btn-sm exportButton">
+                                                class="btn btn-outline-secondary btn-sm exportButton"
+                                                data-mode="download">
                                                 Exportar a Excel
                                             </button>
                                             <input type="hidden" id="txtDataCotizaciones"
@@ -238,7 +266,8 @@
                                         @endif
 
                                         <button type="button" id="downloadPdfButton"
-                                            class="btn btn-outline-secondary btn-sm d-none">
+                                            class="btn btn-outline-secondary btn-sm d-none exportButton"
+                                            data-filetype="pdf" data-mode="download">
                                             Exportar a PDF
                                         </button>
                                     </div>
@@ -318,6 +347,12 @@
             $('#id_subcliente').select2();
             $('#id_proveedor').select2();
             $('#numero_edo_cuenta').select2();
+
+            $('#documentos').select2({
+                placeholder: "Selecciona documentos",
+                allowClear: true,
+                width: '100%'
+            });
 
             function initDataTable() {
                 return $('#datatable-search').DataTable({
@@ -429,6 +464,21 @@
 
                 var fileType = $('#' + event.target.id).data('filetype');
 
+                const adjuntarDocs = $('#checkDocumentos').is(':checked');
+
+                let documentosSeleccionados = [];
+
+                if (adjuntarDocs) {
+                    documentosSeleccionados = $('#documentos').val() || [];
+                }
+
+                if (adjuntarDocs && documentosSeleccionados.length === 0) {
+                    alert('Selecciona al menos un documento');
+                    return;
+                }
+
+                var modo = $(this).data('mode');
+
                 // Enviar los IDs seleccionados al controlador por Ajax
                 $.ajax({
                     url: '{{ route('cotizaciones.export') }}',
@@ -437,17 +487,27 @@
                         _token: '{{ csrf_token() }}',
                         selected_ids: selectedIds,
                         fileType: fileType,
+                        adjuntar_docs: adjuntarDocs,
+                        documentos: documentosSeleccionados,
+                        modo: modo,
                     },
                     xhrFields: {
                         responseType: 'blob', // Indicar que esperamos una respuesta tipo blob (archivo)
                     },
                     success: function(response) {
+                        const adjuntarDocs = $('#checkDocumentos').is(':checked');
+                        let mimeType = 'application/' + fileType;
+
+                        if (adjuntarDocs && modo != 'preview') {
+                            mimeType = 'application/zip';
+                            fileType = 'zip';
+                        }
                         var blob = new Blob([response], {
-                            type: 'application/' + fileType,
+                            type: mimeType,
                         });
                         var url = URL.createObjectURL(blob);
 
-                        if (fileType === 'pdf') {
+                        if (fileType === 'pdf' && modo === 'preview') {
                             // Mostrar el contenedor del PDF para vista previa
                             $('#pdf-preview-container').removeClass('d-none');
 
@@ -477,28 +537,28 @@
                             // Mostrar el botón de descarga del PDF
                             $('#downloadPdfButton').removeClass('d-none');
 
-                            // Agregar un evento para descargar el PDF
-                            $('#downloadPdfButton').on('click', function() {
-                                var a = document.createElement('a');
-                                a.href = url;
-                                a.download =
-                                    'cxc_' +
-                                    new Date().toLocaleDateString('es-ES').replaceAll(
-                                        '/', '-') +
-                                    '_' +
-                                    new Date()
-                                    .toLocaleTimeString('es-ES', {
-                                        hour12: false,
-                                    })
-                                    .replaceAll(':', '_') +
-                                    '.pdf';
+                            // // Agregar un evento para descargar el PDF
+                            // $('#downloadPdfButton').on('click', function() {
+                            //     var a = document.createElement('a');
+                            //     a.href = url;
+                            //     a.download =
+                            //         'cxc_' +
+                            //         new Date().toLocaleDateString('es-ES').replaceAll(
+                            //             '/', '-') +
+                            //         '_' +
+                            //         new Date()
+                            //         .toLocaleTimeString('es-ES', {
+                            //             hour12: false,
+                            //         })
+                            //         .replaceAll(':', '_') +
+                            //         '.pdf';
 
-                                document.body.appendChild(a);
-                                a.click();
-                                document.body.removeChild(a);
-                                // No ocultar la vista previa después de la descarga
-                                window.URL.revokeObjectURL(url);
-                            });
+                            //     document.body.appendChild(a);
+                            //     a.click();
+                            //     document.body.removeChild(a);
+                            //     // No ocultar la vista previa después de la descarga
+                            //     window.URL.revokeObjectURL(url);
+                            // });
                         } else if (fileType === 'xlsx') {
                             // Lógica para descargar el archivo Excel (si es necesario)
                             var a = document.createElement('a');
@@ -513,6 +573,23 @@
                                 })
                                 .replaceAll(':', '_') +
                                 '.xlsx';
+
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                        } else if (adjuntarDocs) {
+                            var a = document.createElement('a');
+                            a.href = url;
+                            a.download =
+                                'cxc_' +
+                                new Date().toLocaleDateString('es-ES').replaceAll('/', '-') +
+                                '_' +
+                                new Date()
+                                .toLocaleTimeString('es-ES', {
+                                    hour12: false
+                                })
+                                .replaceAll(':', '_') +
+                                '.zip';
 
                             document.body.appendChild(a);
                             a.click();
@@ -729,7 +806,7 @@
 
             $('#edoCuentaWarning').addClass('d-none');
             $('#opcionesCambio').removeClass('d-none');
-            $('#soloEstaCotizacion').prop('checked', false);
+            $('#soloEstaCotizacion').prop('checked', true);
         }
 
         $('#btnAsignarEdoCuenta').on('click', function() {
@@ -767,11 +844,23 @@
 
             if (modo === 'editar') {
                 $('#opcionesCambio').removeClass('d-none');
+                $('#soloEstaCotizacion').prop('checked', true);
             } else {
                 $('#opcionesCambio').addClass('d-none');
             }
 
             $('#modalAsignarEdoCuenta').modal('show');
         }
+
+
+        document.getElementById('checkDocumentos').addEventListener('change', function() {
+            const contenedor = document.getElementById('contenedorDocumentos');
+
+            contenedor.style.display = this.checked ? 'block' : 'none';
+
+            if (!this.checked) {
+                document.querySelectorAll('.documento-checkbox').forEach(el => el.checked = false);
+            }
+        });
     </script>
 @endsection

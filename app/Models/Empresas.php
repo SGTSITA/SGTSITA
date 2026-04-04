@@ -39,4 +39,11 @@ class Empresas extends Model
             'id_empresa'
         );
     }
+
+    protected static function booted()
+    {
+        static::addGlobalScope('activo', function ($query) {
+            $query->where('estatus', 1);
+        });
+    }
 }

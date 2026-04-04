@@ -29,7 +29,7 @@ return [
         'Doda' => 'doda',
         'Boleta-de-liberacion' => 'boleta_liberacion',
         'Formato-para-Carta-porte' => 'doc_ccp',
-        'eir' => 'doc_eir',
+        'EIR' => 'doc_eir',
         'Foto-patio' => 'foto_patio',
         'Boleta-de-patio' => 'boleta_patio',
         'Pre-Alta' => 'img_boleta',

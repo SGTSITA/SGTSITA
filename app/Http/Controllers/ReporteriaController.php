@@ -34,6 +34,8 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use App\Traits\CommonTrait;
+use Illuminate\Support\Facades\File;
 
 class ReporteriaController extends Controller
 {
@@ -53,7 +55,10 @@ class ReporteriaController extends Controller
 
         $estadosCuentas = Estado_Cuenta::where('id_empresa', '=', auth()->user()->id_empresa)->get();
 
-        return view('reporteria.cxc.index', compact('clientes', 'subclientes', 'proveedores', 'estadosCuentas'));
+
+        $documentos = config('CatAuxiliares.columnsbycode');
+
+        return view('reporteria.cxc.index', compact('clientes', 'subclientes', 'proveedores', 'estadosCuentas', 'documentos'));
     }
 
     public function advance(Request $request)
@@ -77,6 +82,8 @@ class ReporteriaController extends Controller
         $proveedores = Proveedor::where('id_empresa', auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
 
         $estadosCuentas = Estado_Cuenta::where('id_empresa', '=', auth()->user()->id_empresa)->get();
+
+        $documentos = config('CatAuxiliares.columnsbycode');
 
         // Inicializar la consulta de cotizaciones
         $cotizaciones = Cotizaciones::query()
@@ -145,7 +152,7 @@ class ReporteriaController extends Controller
         $cotizaciones = $cotizaciones->get();
 
         // Devolver la vista con los filtros y las cotizaciones
-        return view('reporteria.cxc.index', compact('clientes', 'subclientes', 'proveedores', 'cotizaciones', 'estadosCuentas'));
+        return view('reporteria.cxc.index', compact('clientes', 'subclientes', 'proveedores', 'cotizaciones', 'estadosCuentas', 'documentos'));
     }
 
 
@@ -157,42 +164,397 @@ class ReporteriaController extends Controller
 
     public function export(Request $request)
     {
+
         $fecha = date('Y-m-d');
         $fechaCarbon = Carbon::parse($fecha);
+        $modo = $request->input('modo');
+        $adjuntar = filter_var($request->input('adjuntar_docs'), FILTER_VALIDATE_BOOLEAN);
+        $documentos = $request->input('documentos', []);
 
         $cotizacionIds = $request->input('selected_ids', []);
+
         if (empty($cotizacionIds)) {
             return redirect()->back()->with('error', 'No se seleccionaron cotizaciones.');
         }
 
-        $cotizacion = Cotizaciones::where('id', $cotizacionIds)->first();
-        $user = User::where('id', '=', auth()->user()->id)->first();
+        $cotizaciones = Cotizaciones::with(['estadoCuenta', 'DocCotizacion'])
+            ->whereIn('id', $cotizacionIds)
+            ->get();
+
+        $cotizacion = $cotizaciones->first();
+
+        $user = auth()->user();
         $cuentaGlobal = CuentaGlobal::first();
 
-        $cotizaciones = Cotizaciones::with('estadoCuenta')->whereIn('id', $cotizacionIds)->get();
-        if (in_array($cotizacion->id_empresa, [2,6])) {
-            $bancos_oficiales = Bancos::where('id_empresa', '=', $cotizacion->id_empresa)->get();
-            $bancos_no_oficiales = Bancos::where('id_empresa', '=', $cotizacion->id_empresa)->get();
+
+        if (in_array($cotizacion->id_empresa, [2, 6])) {
+            $bancos_oficiales = Bancos::where('id_empresa', $cotizacion->id_empresa)->get();
+            $bancos_no_oficiales = Bancos::where('id_empresa', $cotizacion->id_empresa)->get();
         } else {
-            $bancos_oficiales = Bancos::where('tipo', '=', 'Oficial')->get();
-            $bancos_no_oficiales = Bancos::where('tipo', '=', 'No Oficial')->get();
+            $bancos_oficiales = Bancos::where('tipo', 'Oficial')->get();
+            $bancos_no_oficiales = Bancos::where('tipo', 'No Oficial')->get();
         }
 
 
-        if ($request->fileType == "xlsx") {
-            Excel::store(new CxcExport($cotizaciones, $fechaCarbon, $bancos_oficiales, $bancos_no_oficiales, $cotizacion, $user), 'cotizaciones_cxc.xlsx', 'public');
-            return Response::download(storage_path('app/public/cotizaciones_cxc.xlsx'), "cxc.xlsx")->deleteFileAfterSend(true);
+        if ($modo === 'preview' || !$adjuntar) {
+
+            if ($request->fileType == "xlsx") {
+
+                Excel::store(
+                    new CxcExport($cotizaciones, $fechaCarbon, $bancos_oficiales, $bancos_no_oficiales, $cotizacion, $user),
+                    'cxc.xlsx',
+                    'public'
+                );
+
+                return response()->download(storage_path('app/public/' . 'cxc.xlsx'))->deleteFileAfterSend(true);
+            }
+
+            $pdf = PDF::loadView('reporteria.cxc.pdf', compact(
+                'cotizaciones',
+                'fechaCarbon',
+                'bancos_oficiales',
+                'bancos_no_oficiales',
+                'cotizacion',
+                'user',
+                'cuentaGlobal'
+            ))->setPaper([0, 0, 595, 1200], 'landscape');
+
+            $fileName = 'cxc.pdf';
+            $pdf->save(public_path($fileName));
+
+            return response()->download(public_path($fileName))->deleteFileAfterSend(true);
+        }
+
+
+        $columns = collect($documentos)
+            ->map(fn ($doc) => ['fileCode' => $doc])
+            ->toArray();
+
+
+        $grupos = $cotizaciones->groupBy(function ($cot) {
+            return optional($cot->estadoCuenta)->numero ?? 'SIN_ESTADO';
+        });
+
+        $zip = new \ZipArchive();
+        $zipName = 'cxc_' . time() . '.zip';
+        $zipPath = public_path($zipName);
+
+        if ($zip->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) === true) {
+
+
+            if ($grupos->count() === 1) {
+
+
+                $numero = $grupos->keys()->first();
+                $items = $grupos->first();
+
+                $nombreGrupo =  preg_replace('/[^A-Za-z0-9_\-]/', '_', $numero);
+                $nombreGrupoDocs = 'Docs_' . $nombreGrupo;
+
+                $reporte = "Estado de cuenta: {$nombreGrupo}\n\n";
+                if ($request->fileType == "xlsx") {
+
+                    $excelName = "cxc_{$nombreGrupo}.xlsx";
+                    // dd($items, $fechaCarbon, $bancos_oficiales, $bancos_no_oficiales, $items->first(), $user);
+                    Excel::store(
+                        new CxcExport($items, $fechaCarbon, $bancos_oficiales, $bancos_no_oficiales, $items->first(), $user),
+                        $excelName,
+                        'public'
+                    );
+
+                    $zip->addFile(storage_path('app/public/' . $excelName), $excelName);
+
+                } else {
+
+                    $pdfName = "cxc_{$nombreGrupo}.pdf";
+
+                    $pdf = PDF::loadView('reporteria.cxc.pdf', [
+                        'cotizaciones' => $items,
+                        'fechaCarbon' => $fechaCarbon,
+                        'bancos_oficiales' => $bancos_oficiales,
+                        'bancos_no_oficiales' => $bancos_no_oficiales,
+                        'cotizacion' => $items->first(),
+                        'user' => $user,
+                        'cuentaGlobal' => $cuentaGlobal
+                    ])->setPaper([0, 0, 595, 1200], 'landscape');
+
+                    $pdf->save(public_path($pdfName));
+
+                    $zip->addFile(public_path($pdfName), $pdfName);
+                }
+
+
+                foreach ($items as $cot) {
+                    $contenedor = optional($cot->DocCotizacion)->num_contenedor ?? 'SIN_CONTENEDOR';
+
+                    $reporte .= "Contenedor: {$contenedor}\n";
+
+                    if (!$cot->DocCotizacion) {
+                        $reporte .= "- Sin información de documentos\n\n";
+                        continue;
+                    }
+
+                    $files = $this->getFilesByColumns($cot->DocCotizacion->id, $columns);
+
+                    // indexar por fileCode para validar fácil
+                    $filesMap = collect($files)->keyBy('fileCode');
+
+
+
+                    foreach ($columns as $col) {
+
+                        $code = $col['fileCode'];
+
+                        if (isset($filesMap[$code])) {
+
+                            $doc = $filesMap[$code];
+                            $folderId = $doc['folder'];
+                            // dd($doc);
+
+                            $filePath = public_path("cotizaciones/cotizacion{$folderId}/{$doc['filePath']}");
+
+                            if (file_exists($filePath)) {
+
+
+                                $zip->addFile(
+                                    $filePath,
+                                    "{$nombreGrupoDocs}/Contenedor_{$contenedor}/" .
+                                    $doc['secondaryFileName'] . '.' . $doc['fileType']
+                                );
+
+                                $reporte .= "- {$code}: OK\n";
+
+                            } else {
+                                $reporte .= "- {$code}: NO EXISTE (archivo no encontrado)\n";
+                            }
+
+                        } else {
+                            $reporte .= "- {$code}: NO EXISTE (sin registro)\n";
+                        }
+                    }
+
+                    $reporte .= "\n";
+                }
+
+            } else {
+
+
+
+                foreach ($grupos as $numero => $items) {
+
+                    $nombreGrupo = 'Docs_' . preg_replace('/[^A-Za-z0-9_\-]/', '_', $numero);
+                    $reporte = "Estado de cuenta: {$numero}\n\n";
+
+
+                    if ($request->fileType == "xlsx") {
+
+                        $excelName = "cxc_{$nombreGrupo}.xlsx";
+
+                        Excel::store(
+                            new CxcExport($items, $fechaCarbon, $bancos_oficiales, $bancos_no_oficiales, $items->first(), $user),
+                            $excelName,
+                            'public'
+                        );
+
+                        $excelPath = storage_path('app/public/' . $excelName);
+
+                        if (file_exists($excelPath)) {
+                            $zip->addFile($excelPath, "{$nombreGrupo}/{$excelName}");
+                        } else {
+                            $reporte .= "❌ Excel no encontrado: {$excelName}\n";
+                            Log::warning("Excel no encontrado: {$excelPath}");
+                        }
+
+                    } else {
+
+                        $pdfName = "cxc_{$nombreGrupo}.pdf";
+                        $pdfPath = public_path($pdfName);
+
+                        $pdf = PDF::loadView('reporteria.cxc.pdf', [
+                            'cotizaciones' => $items,
+                            'fechaCarbon' => $fechaCarbon,
+                            'bancos_oficiales' => $bancos_oficiales,
+                            'bancos_no_oficiales' => $bancos_no_oficiales,
+                            'cotizacion' => $items->first(),
+                            'user' => $user,
+                            'cuentaGlobal' => $cuentaGlobal
+                        ]);
+
+                        $pdf->save($pdfPath);
+
+                        if (file_exists($pdfPath)) {
+                            $zip->addFile($pdfPath, "{$nombreGrupo}/{$pdfName}");
+                        } else {
+                            $reporte .= "❌ PDF no encontrado: {$pdfName}\n";
+                            Log::warning("PDF no encontrado: {$pdfPath}");
+                        }
+                    }
+
+
+                    foreach ($items as $cot) {
+
+                        $contenedor = optional($cot->DocCotizacion)->num_contenedor ?? 'SIN_CONTENEDOR';
+
+                        $reporte .= "Contenedor: {$contenedor}\n";
+
+                        if (!$cot->DocCotizacion) {
+                            $reporte .= "- Sin DocCotizacion\n\n";
+                            continue;
+                        }
+
+                        $files = $this->getFilesByColumns($cot->DocCotizacion->id, $columns);
+
+                        if (empty($files)) {
+                            $reporte .= "- Sin documentos configurados\n\n";
+                            continue;
+                        }
+
+                        foreach ($columns as $col) {
+
+                            $code = is_array($col) ? $col['fileCode'] : $col;
+
+                            $doc = collect($files)->firstWhere('fileCode', $code);
+
+                            if (!$doc) {
+                                $reporte .= "- {$code}: NO EXISTE (sin registro)\n";
+                                continue;
+                            }
+
+                            $filePath = public_path("cotizaciones/cotizacion{$doc['id_cotizacion']}/{$doc['filePath']}");
+
+                            if (file_exists($filePath)) {
+
+                                $zip->addFile(
+                                    $filePath,
+                                    "{$nombreGrupo}/cotizacion_{$doc['id_cotizacion']}/" .
+                                    $doc['secondaryFileName'] . '.' . $doc['fileType']
+                                );
+
+                                $reporte .= "- {$code}: OK\n";
+
+                            } else {
+
+                                $reporte .= "- {$code}: NO EXISTE (archivo físico)\n";
+
+                                Log::warning("Archivo faltante: {$filePath}");
+                            }
+                        }
+
+                        $reporte .= "\n";
+                    }
+
+
+                    $zip->addFromString("{$nombreGrupo}/reporte.txt", $reporte);
+                }
+            }
+
+            $txtName = "reporte_{$nombreGrupo}.txt";
+            $txtPath = public_path($txtName);
+
+            file_put_contents($txtPath, $reporte);
+            $zip->addFile($txtPath, "{$nombreGrupoDocs}/{$txtName}");
+
+            $zip->close();
+        }
+
+        // dd("Archivo ZIP generado: {$zipName}");
+        return response()->download($zipPath)->deleteFileAfterSend(true);
+    }
+    public function getFilesByColumns(int $documentacionId, array $columns)
+    {
+        $documentList = [];
+
+
+        $documentos = DocumCotizacion::where('id', $documentacionId)->first();
+        $cotizacion  = Cotizaciones::find($documentos->id_cotizacion);
+
+        //dd($documentos, $cotizacion);
+
+        if (!$documentos || !$cotizacion) {
+            return [];
+        }
+
+        $columnskey = config('CatAuxiliares.columnsbycode');
+
+        foreach ($columns as $item) {
+            $fileCode = is_array($item)
+        ? ($item['fileCode'] ?? null)
+        : $item;
+
+            $column = $columnskey[$fileCode] ?? $fileCode;
+
+            if (!$column) {
+                $column = $item['fileCode'];
+            }
+
+
+
+            //dd($column);
+            $num_contenendor = $documentos->num_contenedor;
+            // buscar en DocumCotizacion
+            if (isset($documentos->$column) && $documentos->$column) {
+                $file = $documentos->$column;
+
+                $doc = self::fileProperties(
+                    $documentos->id_cotizacion,
+                    $file,
+                    $column,
+                    $num_contenendor
+                );
+
+                if (!empty($doc)) {
+                    $documentList[] = $doc;
+                }
+            }
+
+            // buscar en Cotizaciones
+            if (isset($cotizacion->$column) && $cotizacion->$column) {
+                $file = $cotizacion->$column;
+
+                $doc = self::fileProperties(
+                    $documentos->id_cotizacion,
+                    $file,
+                    $column,
+                    $num_contenendor
+                );
+
+                if (!empty($doc)) {
+                    $documentList[] = $doc;
+                }
+            }
+        }
+
+        return $documentList;
+    }
+
+    public function fileProperties($id, $file, $title, $num_contenendor)
+    {
+
+        $columnsbycode = config('CatAuxiliares.columnsbycode');
+        $clave = array_search($title, $columnsbycode, true);
+        $path = public_path('cotizaciones/cotizacion'.$id.'/'.$file);
+
+        if (File::exists($path)) {
+            $finfo = finfo_open(FILEINFO_MIME_TYPE); // Abrir la base de datos de tipos MIME
+            $mimeType = finfo_file($finfo, $path);
+            finfo_close($finfo);
+
+            return [
+                "filePath" => $file,
+                'fileName' => $title,
+                "folder" => $id,
+                'secondaryFileName' => str_replace('-', ' ', $clave).' '. $num_contenendor ,
+                "fileDate" => CommonTrait::obtenerFechaEnLetra(date("Y-m-d", filemtime($path))),
+                "fileSize" => CommonTrait::calculateFileSize(filesize($path)),
+                "fileSizeBytes" => (filesize($path)),
+                "fileType" => pathinfo($path, PATHINFO_EXTENSION),
+                "mimeType" => $mimeType,
+                "identifier" => $id,
+                "fileCode" => iconv('UTF-8', 'ASCII//TRANSLIT', str_replace(' ', '-', $title))
+                ];
+            //iconv('UTF-8', 'ASCII//TRANSLIT', $cadena);
         } else {
-            $pdf = PDF::loadView('reporteria.cxc.pdf', compact('cotizaciones', 'fechaCarbon', 'bancos_oficiales', 'bancos_no_oficiales', 'cotizacion', 'user', 'cuentaGlobal'))->setPaper([0, 0, 595, 1200], 'landscape');
-
-            // Generar el nombre del archivo
-            $fileName = 'cxc_' . implode('_', $cotizacionIds) . '.pdf';
-            // Guardar el PDF en la carpeta storage
-            $pdf->save(storage_path('app/public/' . $fileName));
-
-            // Devolver el archivo PDF como respuesta
-            $filePath = storage_path('app/public/' . $fileName);
-            return Response::download($filePath, $fileName)->deleteFileAfterSend(true);
+            return [];
         }
     }
 

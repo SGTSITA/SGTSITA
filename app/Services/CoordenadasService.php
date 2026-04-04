@@ -297,6 +297,7 @@ class CoordenadasService
 
             ->join('clients as cli', 'cli.id', '=', 'c.id_cliente')
             ->join('empresas as em', 'em.id', '=', 'a.id_empresa')
+            ->join('empresas as emc', 'emc.id', '=', 'c.id_empresa')
 
             ->leftJoin('equipos as eq', 'eq.id', '=', 'a.id_camion')
 
@@ -331,10 +332,11 @@ class CoordenadasService
                 'eq_chasis.id_equipo as id_equipo_chasis',
                 'gpsChasis.url_conexion as tipoGpsChasis',
                 'c.id_empresa',
+                'a.id_empresa as id_empresa_Asig',
                 'c.latitud',
                 'c.longitud',
                 'c.cp_contacto_entrega',
-                'em.nombre as empresa',
+                DB::raw("COALESCE(NULLIF(em.nombre, ''), emc.nombre) as empresa"),
                 'operadores.nombre as operador',
                 'prov.nombre as transportista_nombre',
                 DB::raw('COALESCE(prov.telefono, operadores.telefono) as beneficiario_telefono'),

@@ -20,7 +20,7 @@ class GpsCredentialsService
         $config = [];
         $desencript = true;
         if ($tipo_viaje_contrato == 'Propio' && $tipo_camion_rev != 'camion_proveedor') {
-            //buscar en la config anterior por empresa para global y camiones propios nada mas
+            //buscar en la config anterior por empresa para global y camiones propios nada mas, si el sistema se renta a otro proveedor o cliente y seran empresas propias verificar esto dinamico
             $key = config('services.globalGps.appkey');
             $apiid = config('services.globalGps.appid');
 
@@ -49,6 +49,15 @@ class GpsCredentialsService
                 $config = (object)[
                     'account_info' => $equipo->credenciales_gps
                 ];
+                $desencript = false;
+
+                $raw = json_decode(
+                    Crypt::decryptString($equipo->credenciales_gps),
+                    true
+                );
+
+                $config =  $raw ;
+
             }
         }
 
@@ -64,6 +73,7 @@ class GpsCredentialsService
                 'credentials' => []
             ];
         }
+
 
         return [
             'success' => true,
@@ -82,8 +92,14 @@ class GpsCredentialsService
             true
         );
 
-        return collect($raw)
-            ->pluck('valor', 'field')
-            ->toArray();
+
+        $desen =  collect($raw)
+             ->pluck('valor', 'field')
+             ->toArray();
+
+        if (!$desen) {
+            $desen = is_array($raw) ? $raw : [];
+        }
+        return $desen;
     }
 }

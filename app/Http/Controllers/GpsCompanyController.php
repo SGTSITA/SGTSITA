@@ -17,6 +17,7 @@ use App\Traits\WialonGpsTrait;
 use App\Traits\GlobalGpsTrait;
 use App\Traits\SISGPSTrait;
 use App\Models\Equipo;
+use App\Models\Proveedor;
 use Illuminate\Support\Facades\Log;
 
 class GpsCompanyController extends Controller
@@ -240,9 +241,11 @@ class GpsCompanyController extends Controller
 
         foreach ($proveedorIds as $proveedorId) {
 
+            $empresaIdProv = Proveedor::find($proveedorId)->empresas()->value('id');
+
             GpsCompanyProveedor::updateOrCreate(
                 [
-                    'id_empresa'     => $empresaId,
+                    'id_empresa'     => $empresaIdProv,
                     'id_proveedor'   => $proveedorId,
                     'id_gps_company' => $r->gps,
                 ],
@@ -492,6 +495,27 @@ class GpsCompanyController extends Controller
 
                     $token = true;
                     break;
+
+
+                case 7: //sis gps
+                    $data = SISGPSTrait::sisGetLastPosition(
+                        $credenciales['account'],
+                        $credenciales['appkey'],
+                        0
+                    );
+                    $resp = $data;
+                    $raw =  $data->data['raw']->return ?? null;
+
+                    $token = true;
+                    if (!$raw) {
+                        $token = false;
+                    }
+
+
+
+                    break;
+
+
 
                 default:
                     return response()->json([
