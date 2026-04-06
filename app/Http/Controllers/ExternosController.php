@@ -263,7 +263,7 @@ class ExternosController extends Controller
                 'nombre',
                 DB::raw("'Empresa' as tipo"),
                 'id as relacion_id'
-            )->where('activo', 1)
+            )->where('estatus', 1)
             ->unionAll(
                 DB::table('proveedores')
                     ->select(
