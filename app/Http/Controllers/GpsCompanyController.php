@@ -45,12 +45,14 @@ class GpsCompanyController extends Controller
             ->value('proveedor_id');
 
         $gpsCompanies = GpsCompany::with([
-            'empresas' => function ($q) use ($empresaId, $proveedorId) {
-                $q->where('id_empresa', $empresaId)
-                  ->where('id_proveedor', $proveedorId)
-                  ->where('estado', 1);
-            }
-        ])->get();
+    'empresas' => function ($q) use ($empresaId, $proveedorId) {
+        $q->when($empresaId != 0, function ($query) use ($empresaId) {
+            return $query->where('id_empresa', $empresaId);
+        })
+          ->where('id_proveedor', $proveedorId)
+          ->where('estado', 1);
+    }
+])->get();
 
         $companies = $gpsCompanies->map(function ($g) {
             $g->estado = $g->empresas->isNotEmpty()
@@ -87,11 +89,14 @@ class GpsCompanyController extends Controller
 
 
         $config = GpsCompanyProveedor::when($empresaId != 0, function ($q) use ($empresaId) {
-            $q->where('id_empresa', $empresaId);
+            return $q->where('id_empresa', $empresaId);
         })
-            ->where('id_proveedor', $proveedorId)
-            ->where('id_gps_company', $r->gps)
-            ->first();
+             ->where('id_proveedor', $proveedorId)
+             ->where('id_gps_company', $r->gps)
+             ->first();
+
+
+        //DD($config);
 
         $account = $config
             ? json_decode(
@@ -226,6 +231,27 @@ class GpsCompanyController extends Controller
                 }
                 break;
 
+
+            case 8: //SkyAngel GPS
+
+
+                $username =    $credenciales['email'] ?? null;
+                $password = $credenciales['password'] ?? null;
+
+                // $username = $credenciales['email'] ?? null;
+                // $password = $credenciales['password'] ?? null;
+
+                // dd($username, $password);
+                $accessToken = SkyAngel::getAccessToken($username, $password);
+                $ubicacion = SkyAngel::getLocation($accessToken);
+                $ubicacionApiResponse = $ubicacion->data;
+                $token = $accessToken;
+                $resp =   $ubicacion;
+
+
+
+                break;
+
             default:
                 $token = false;
         }
@@ -242,7 +268,7 @@ class GpsCompanyController extends Controller
 
         foreach ($proveedorIds as $proveedorId) {
 
-            $empresaIdProv = Proveedor::find($proveedorId)->empresas()->value('id');
+            $empresaIdProv = Proveedor::find($proveedorId)->empresa()->value('id');
 
             GpsCompanyProveedor::updateOrCreate(
                 [
@@ -525,6 +551,7 @@ class GpsCompanyController extends Controller
                     // $username = $credenciales['email'] ?? null;
                     // $password = $credenciales['password'] ?? null;
 
+                    //  dd($username, $password);
                     $accessToken = SkyAngel::getAccessToken($username, $password);
                     $ubicacion = SkyAngel::getLocation($accessToken);
                     $ubicacionApiResponse = $ubicacion->data;
