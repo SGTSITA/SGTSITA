@@ -16,6 +16,7 @@ use App\Traits\BeyondGPSTrait;
 use App\Traits\WialonGpsTrait;
 use App\Traits\GlobalGpsTrait;
 use App\Traits\SISGPSTrait;
+use App\Traits\SkyAngelGpsTrait as SkyAngel;
 use App\Models\Equipo;
 use App\Models\Proveedor;
 use Illuminate\Support\Facades\Log;
@@ -515,7 +516,24 @@ class GpsCompanyController extends Controller
 
                     break;
 
+                case 8: //SkyAngel GPS
 
+
+                    $username =    $credenciales['email'] ?? null;
+                    $password = $credenciales['password'] ?? null;
+
+                    // $username = $credenciales['email'] ?? null;
+                    // $password = $credenciales['password'] ?? null;
+
+                    $accessToken = SkyAngel::getAccessToken($username, $password);
+                    $ubicacion = SkyAngel::getLocation($accessToken);
+                    $ubicacionApiResponse = $ubicacion->data;
+                    $token = $accessToken;
+                    $resp =   $ubicacion;
+
+
+
+                    break;
 
                 default:
                     return response()->json([
