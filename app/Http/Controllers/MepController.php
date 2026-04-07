@@ -205,24 +205,31 @@ class MepController extends Controller
 
 
         $idContenedor = $r->input('idContenedor');
-        $asignacion = Asignaciones::where('id_contenedor', $idContenedor);
-        $fechaI =  date('Y-m-d');
-        $fechaF =  date('Y-m-d');
 
+        $asignacion = Asignaciones::where('id_contenedor', $idContenedor)->first();
 
-        if ($planearViaje == 1) {
-            $fechaI = $formData['txtFechaInicio'];
-            $fechaF = $formData['txtFechaFinal'];
+        $fechaI = $formData['txtFechaInicio'] ?? null;
+        $fechaF = $formData['txtFechaFinal'] ?? null;
 
+        // Resolver fecha inicio
+        if (empty($fechaI)) {
+            $fechaBaseInicio = $asignacion?->fecha_inicio ?? now();
+            $fechaInicio = Carbon::parse($fechaBaseInicio)->startOfDay();
+        } else {
+            $fechaInicio = Carbon::createFromFormat('d/m/Y', $fechaI)->startOfDay();
+        }
 
+        // Resolver fecha fin
+        if (empty($fechaF)) {
+            $fechaBaseFin = $asignacion?->fecha_fin ?? now();
+            $fechaFin = Carbon::parse($fechaBaseFin)->endOfDay();
+        } else {
+            $fechaFin = Carbon::createFromFormat('d/m/Y', $fechaF)->endOfDay();
         }
 
 
-        $fechaInicio = Carbon::createFromFormat('Y-m-d', $fechaI)
-                    ->startOfDay(); // 2026-01-17 00:00:00
-
-        $fechaFin = Carbon::createFromFormat('Y-m-d', $fechaF)
-                        ->setTime(23, 0, 0);
+        // $fechaInicio = Carbon::parse($fechaBaseInicio)->startOfDay(); // 00:00:00
+        //$fechaFin    = Carbon::parse($fechaBaseFin)->endOfDay();      // 23:59:59
 
         //dd($fechaInicio, $fechaFin);
 
@@ -234,20 +241,23 @@ class MepController extends Controller
 
 
 
-        if ($asignacion->exists()) {
-            // $asignacion1 = $asignacion->first();
-            $asignacion->update([
+        if ($asignacion) {
+
+            $asignacionModel = $asignacion;
+
+            $asignacionModel->update([
                 "id_operador" => $idOperador,
                 "id_camion" => $idunidad,
                 "id_chasis" => $idChasisA,
                 "id_chasis2" => $idChasisB,
-                "fecha_inicio" =>    $fechaInicio,
+                "fecha_inicio" => $fechaInicio,
                 "fecha_fin" => $fechaFin,
-                "fehca_inicio_guard" =>    $fechaInicio,
+                "fehca_inicio_guard" => $fechaInicio,
                 "fehca_fin_guard" => $fechaFin,
                 "id_proveedor" => $proveedorid,
-                'tipo_contrato' => 'Subcontratado', //mep siempre sera subcontratado , aun asi tenga unidad , camion y id proveedor
+                'tipo_contrato' => 'Subcontratado',
             ]);
+
 
             $TituloResponse = 'Actualizado correctamente';
             $MessageResponse = 'Los datos fueron modificados con exito';
