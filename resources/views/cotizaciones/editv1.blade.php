@@ -163,13 +163,13 @@
 
                                         <div class="col-6 form-group">
                                             <!--label for="name">Cliente *</label>
-                                                                                    <select class="form-select cliente d-inline-block" data-toggle="select" id="id_cliente" name="id_cliente">
-                                                                                        <option value="{{ $cotizacion->id_cliente }}">{{ $cotizacion->Cliente->nombre }} / {{ $cotizacion->Cliente->telefono }}</option>
-                                                                                        @foreach ($clientes as $item)
+                                                                                                        <select class="form-select cliente d-inline-block" data-toggle="select" id="id_cliente" name="id_cliente">
+                                                                                                            <option value="{{ $cotizacion->id_cliente }}">{{ $cotizacion->Cliente->nombre }} / {{ $cotizacion->Cliente->telefono }}</option>
+                                                                                                            @foreach ($clientes as $item)
     <option value="{{ $item->id }}">{{ $item->nombre }} / {{ $item->telefono }}</option>
     @endforeach
 
-                                                                                    </select-->
+                                                                                                        </select-->
                                             <ul class="list-group">
                                                 <li
                                                     class="list-group-item border-1 border-dashed d-flex p-4 mb-2 bg-gray-100 border-radius-lg">
@@ -210,14 +210,14 @@
 
                                         <div class="col-6 form-group">
                                             <!--label for="name">Subcliente *</label>
-                                                                                    <select class="form-select subcliente d-inline-block" id="id_subcliente" name="id_subcliente">
+                                                                                                        <select class="form-select subcliente d-inline-block" id="id_subcliente" name="id_subcliente">
 
-                                    @if ($cotizacion->id_subcliente != null)
+                                                        @if ($cotizacion->id_subcliente != null)
     <option value="{{ $cotizacion->id_subcliente }}">{{ $cotizacion->Subcliente->nombre }} / {{ $cotizacion->Subcliente->telefono }}</option>
 @else
     <option value="">Seleccionar subcliente</option>
     @endif
-                                                                                    </select-->
+                                                                                                        </select-->
                                             <ul class="list-group">
                                                 <li
                                                     class="list-group-item border-1 border-dashed d-flex p-4 mb-2 bg-gray-100 border-radius-lg">
@@ -1209,6 +1209,9 @@
                                                 <span id="spanContenedor">{{ $documentacion->num_contenedor }}</span>
                                             </label>
                                             <div>
+                                                <button id="btnPagar" type="button" class="btn btn-primary">
+                                                    Pagar
+                                                </button>
                                                 <button type="button" disabled class="btn btn-sm bg-gradient-danger"
                                                     id="btnDelete">
                                                     <i class="fa fa-trash"></i>
@@ -1557,7 +1560,8 @@
                                                                 </div>
                                                             </div>
                                                             <div class="col-4 text-center">
-                                                                <button type="button" class="btn btn-sm bg-gradient-info"
+                                                                <button type="button"
+                                                                    class="btn btn-sm bg-gradient-info d-none"
                                                                     id="btnEdit">
                                                                     <i class="fa fa-fw fa-coins"></i>
                                                                     Editar
@@ -1635,6 +1639,7 @@
     @include('cotizaciones.modal_pagar_gastos_operador')
     @include('cotizaciones.modal_fileuploader')
     @include('cotizaciones.modal_mapa_Direccion')
+    @include('cotizaciones.modal_pagar_gastos_extras_coti')
 @endsection
 
 @section('select2')
@@ -1655,6 +1660,10 @@
             color: inherit;
             /* Heredar color del texto */
             background-color: transparent !important;
+        }
+
+        .row-pagado {
+            background-color: #d4edda;
         }
     </style>
     <script src="https://maps.googleapis.com/maps/api/js?key={{ config('services.googleMapsApi.apikey') }}" async defer>

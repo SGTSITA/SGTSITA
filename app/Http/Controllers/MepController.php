@@ -211,7 +211,7 @@ class MepController extends Controller
         $fechaI = $formData['txtFechaInicio'] ?? null;
         $fechaF = $formData['txtFechaFinal'] ?? null;
 
-        // Resolver fecha inicio
+
         if (empty($fechaI)) {
             $fechaBaseInicio = $asignacion?->fecha_inicio ?? now();
             $fechaInicio = Carbon::parse($fechaBaseInicio)->startOfDay();
@@ -219,7 +219,7 @@ class MepController extends Controller
             $fechaInicio = Carbon::createFromFormat('d/m/Y', $fechaI)->startOfDay();
         }
 
-        // Resolver fecha fin
+
         if (empty($fechaF)) {
             $fechaBaseFin = $asignacion?->fecha_fin ?? now();
             $fechaFin = Carbon::parse($fechaBaseFin)->endOfDay();

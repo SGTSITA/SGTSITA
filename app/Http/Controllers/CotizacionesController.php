@@ -35,12 +35,22 @@ use App\Events\EnvioCorreoCoordenadasEvent;
 use App\Traits\CommonTrait as Common;
 use Illuminate\Support\Facades\Log;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Services\BancosService;
 
 class CotizacionesController extends Controller
 {
+    protected $BancosService;
+
+    public function __construct(BancosService $BancosService)
+    {
+        $this->BancosService = $BancosService;
+    }
+
     public function index()
     {
         $empresas = Empresas::get();
+
+        //dd($empresas);
         $userProveedores = User::find(auth()->user()->id);
         $idempresa = auth()->user()->id_empresa;
         $gpsCompanyIds = GpsCompanyProveedor::where('id_empresa', auth()->user()->id_empresa)
@@ -939,7 +949,7 @@ class CotizacionesController extends Controller
     }
 
 
-    public function edit($id)
+    public function edit($id) //revision para gastos extras
     {
         $cotizacion = Cotizaciones::where('id', '=', $id)->first();
         $documentacion = DocumCotizacion::with('Asignaciones')->where('id_cotizacion', '=', $cotizacion->id)->first();
@@ -962,7 +972,11 @@ class CotizacionesController extends Controller
      //   where('id_empresa', $idEmpresa)
         ->get();
         // dd($documentacion);
-        $bancos = Bancos::where('id_empresa', Auth::User()->id_empresa)->get();
+
+        $fecha = Carbon::now()->format('Y-m-d');
+        $bancos2 = Bancos::where('id_empresa', Auth::User()->id_empresa)->get();
+        $bancos = $this->BancosService->getCuentasOption(auth()->user()->id_empresa, $fecha, $fecha, true);
+
 
         // dd($documentacion);
         return view('cotizaciones.editv1', compact('bancos', 'cotizacion', 'documentacion', 'clientes', 'gastos_extras', 'gastos_ope', 'proveedores'));
@@ -1138,7 +1152,7 @@ class CotizacionesController extends Controller
 
     }
 
-    public function pdf($id)
+    public function pdf($id) //revision para gastos extras
     {
         $cotizacion = Cotizaciones::where('id', '=', $id)->first();
         $documentacion = DocumCotizacion::where('id_cotizacion', '=', $cotizacion->id)->first();
@@ -1615,7 +1629,12 @@ class CotizacionesController extends Controller
 
 
         // dd($contenedor, $numContenedor);
-        $gastosExtra = GastosExtras::where('id_cotizacion', $contenedor->id_cotizacion)->get();
+        $gastosExtra = GastosExtras::with('Bancos.catBanco')
+        ->        where('id_cotizacion', $contenedor->id_cotizacion)
+
+        ->get();
+
+        // dd($gastosExtra);
         $gastosContenedor =
         $gastosExtra->map(function ($g) {
             return [
@@ -1623,7 +1642,10 @@ class CotizacionesController extends Controller
                 "IdGasto" => $g->id,
                 "Gasto" => $g->descripcion,
                 "Monto" => $g->monto,
-                "Fecha" => $g->created_at
+                "Fecha" => $g->created_at,
+                "estatus" => $g->estatus,
+                "fecha_aplicacion" => $g->fecha_aplicacion,
+                "BancoDescripcion" => $g->Bancos?->nombre_beneficiario ?? ''.' / '.$g->Bancos?->nombre ?? '',
             ];
         });
 
@@ -1662,30 +1684,157 @@ class CotizacionesController extends Controller
     }
 
     // Agregar Gastos Operador
+    // public function agregar_gasto_operador(Request $r)
+    // {
+
+    //     try {
+    //         DB::beginTransaction();
+
+    //         $numContenedor = $r->input('numContenedor');
+    //         $idEmpresa = auth()->user()->id_empresa;
+
+    //         $contenedor = DocumCotizacion::where('num_contenedor', $numContenedor)
+    //                                            ->where('id_empresa', $idEmpresa)
+    //                                            ->first();
+
+    //         $asignacion = Asignaciones::where('id_contenedor', $contenedor->id)->first();
+
+    //         if ($r->pagoInmediato != "false") {
+    //             //validar que el banco tenga saldo suficiente para efectuar el pago del gasto
+    //             $bancos = Bancos::where('id_empresa', Auth::User()->id_empresa)->where('id', $r->bancoPago)->first();
+    //             $saldoActual = $bancos->saldo;
+
+    //             if ($saldoActual < $r->montoGasto) {
+    //                 return response()->json(["Titulo" => "Saldo insuficiente en Banco","Mensaje" => "La cuenta bancaria seleccionada no cuenta con saldo suficiente para registrar esta transacción","TMensaje" => "warning"]);
+    //             }
+
+    //             Bancos::where('id', '=', $r->bancoPago)->update(["saldo" => DB::raw("saldo - ". $r->montoGasto)]);
+
+    //             $banco = new BancoDineroOpe();
+    //             $banco->id_operador = $asignacion->id_operador;
+
+    //             $banco->monto1 = $r->montoGasto;
+    //             $banco->metodo_pago1 = 'Transferencia';
+    //             $banco->descripcion_gasto = "Gasto ope: ".$r->descripcion;
+    //             $banco->id_banco1 = $r->bancoPago;
+
+    //             $contenedoresAbonos[] = [
+    //                 'num_contenedor' => $numContenedor,
+    //                 'abono' => $r->montoGasto
+    //             ];
+    //             $contenedoresAbonosJson = json_encode($contenedoresAbonos);
+
+    //             $banco->contenedores = $contenedoresAbonosJson;
+
+    //             $banco->tipo = 'Salida';
+    //             $banco->fecha_pago = date('Y-m-d');
+    //             $banco->save();
+    //         }
+
+    //         $datosGasto = [
+    //                        "id_cotizacion" => $contenedor->id_cotizacion,
+    //                        "id_banco" => $r->pagoInmediato != "false" ? $r->bancoPago : null,
+    //                        "id_asignacion" => $asignacion->id,
+    //                        "id_operador" => $asignacion->id_operador,
+    //                        "cantidad" => $r->montoGasto,
+    //                        "tipo" => $r->descripcion,
+    //                        "estatus" => $r->pagoInmediato != "false" ? 'Pagado' : 'Pago Pendiente',
+    //                        "fecha_pago" => $r->pagoInmediato != "false" ? Carbon::now() : null,
+    //                        "pago_inmediato" => $r->pagoInmediato != "false" ? 1 : 0,
+    //                        "created_at" => Carbon::now()
+    //                       ];
+
+    //         GastosOperadores::insert($datosGasto);
+
+    //         DB::commit();
+    //         return response()->json(["Titulo" => "Gasto agregado","Mensaje" => "Se agregó el gasto: \"{$r->descripcion}\"","TMensaje" => "success", "pagoInmediato" => boolval($r->pagoInmediato)]);
+
+    //     } catch (\Throwable $t) {
+    //         DB::rollback();
+    //         $idError = uniqid();
+    //         Log::channel('daily')->info("$idError : ".$t->getMessage());
+    //         return response()->json([
+    //             "Titulo" => "Ha ocurrido un error",
+    //             "Mensaje" => "Ocurrio un error mientras procesabamos su solicitud. Cod Error $idError",
+    //             "TMensaje" => "warning"
+    //         ]);
+    //     }
+    // }
     public function agregar_gasto_operador(Request $r)
     {
-
         try {
+
             DB::beginTransaction();
 
-            $numContenedor = $r->input('numContenedor');
             $idEmpresa = auth()->user()->id_empresa;
-
+            $pagoInmediato = filter_var($r->pagoInmediato, FILTER_VALIDATE_BOOLEAN);
+            $numContenedor = $r->input('numContenedor');
             $contenedor = DocumCotizacion::where('num_contenedor', $numContenedor)
-                                               ->where('id_empresa', $idEmpresa)
-                                               ->first();
+                ->where('id_empresa', $idEmpresa)
+                ->firstOrFail();
 
-            $asignacion = Asignaciones::where('id_contenedor', $contenedor->id)->first();
+            $asignacion = Asignaciones::where('id_contenedor', $contenedor->id)->firstOrFail();
 
-            if ($r->pagoInmediato != "false") {
-                //validar que el banco tenga saldo suficiente para efectuar el pago del gasto
-                $bancos = Bancos::where('id_empresa', Auth::User()->id_empresa)->where('id', $r->bancoPago)->first();
-                $saldoActual = $bancos->saldo;
 
-                if ($saldoActual < $r->montoGasto) {
-                    return response()->json(["Titulo" => "Saldo insuficiente en Banco","Mensaje" => "La cuenta bancaria seleccionada no cuenta con saldo suficiente para registrar esta transacción","TMensaje" => "warning"]);
+            $gasto = GastosOperadores::create([
+                "id_cotizacion" => $contenedor->id_cotizacion,
+                "id_asignacion" => $asignacion->id,
+                "id_operador" => $asignacion->id_operador,
+                "cantidad" => $r->montoGasto,
+                "tipo" => $r->descripcion,
+                "estatus" => "Pago Pendiente",
+                "pago_inmediato" => $pagoInmediato ? 1 : 0,
+            ]);
+
+
+            if ($pagoInmediato) {
+
+
+                if (!$r->banco || !$r->fechaAplicacion) {
+                    throw new \Exception("Banco y fecha son obligatorios para pago inmediato");
                 }
 
+                $contenedoresAbonos[] = [
+                                   'num_contenedor' => $numContenedor,
+                                   'abono' => $r->montoGasto
+                               ];
+                $contenedoresAbonosJson = json_encode($contenedoresAbonos);
+                $validar = $this->BancosService->validarsaldoparacargo(
+                    $idEmpresa,
+                    $r->banco,
+                    $r->fechaAplicacion,
+                    $gasto->cantidad
+                );
+
+                if (!$validar["saldodisponible"]) {
+                    return response()->json([
+                        "Titulo" => "Saldo insuficiente",
+                        "Mensaje" => $validar["message"],
+                        "TMensaje" => "warning"
+                    ]);
+                }
+
+
+                $data = [
+                    'cuenta_bancaria_id' => $r->banco,
+                    'tipo' => 'cargo',
+                    'monto' => floatval($gasto->cantidad),
+                    'concepto' => 'Pago gasto operador: ' . $gasto->tipo,
+                    'fecha_movimiento' => \Carbon\Carbon::parse($r->fechaAplicacion)->format('Y-m-d'),
+                    'referencia' => 'GOP',
+                    'detalles' => $contenedoresAbonosJson,
+                    'referenciaable_id' => $gasto->id,
+                    'referenciaable_type' => \App\Models\GastosOperadores::class,
+                    'observaciones' => 'Pago inmediato',
+                ];
+
+                $mov = $this->BancosService->registrarMovimiento($data);
+
+                if (!$mov) {
+                    throw new \Exception('Error al registrar movimiento bancario');
+                }
+
+                //proceso viejo bancos
                 Bancos::where('id', '=', $r->bancoPago)->update(["saldo" => DB::raw("saldo - ". $r->montoGasto)]);
 
                 $banco = new BancoDineroOpe();
@@ -1696,45 +1845,38 @@ class CotizacionesController extends Controller
                 $banco->descripcion_gasto = "Gasto ope: ".$r->descripcion;
                 $banco->id_banco1 = $r->bancoPago;
 
-                $contenedoresAbonos[] = [
-                    'num_contenedor' => $numContenedor,
-                    'abono' => $r->montoGasto
-                ];
-                $contenedoresAbonosJson = json_encode($contenedoresAbonos);
-
                 $banco->contenedores = $contenedoresAbonosJson;
 
                 $banco->tipo = 'Salida';
                 $banco->fecha_pago = date('Y-m-d');
                 $banco->save();
+                //termina bancos old
+
+
+                $gasto->update([
+                    "estatus" => "Pagado",
+                    "fecha_pago" => $r->fechaAplicacion,
+                    "id_banco" => $r->banco
+                ]);
             }
 
-            $datosGasto = [
-                           "id_cotizacion" => $contenedor->id_cotizacion,
-                           "id_banco" => $r->pagoInmediato != "false" ? $r->bancoPago : null,
-                           "id_asignacion" => $asignacion->id,
-                           "id_operador" => $asignacion->id_operador,
-                           "cantidad" => $r->montoGasto,
-                           "tipo" => $r->descripcion,
-                           "estatus" => $r->pagoInmediato != "false" ? 'Pagado' : 'Pago Pendiente',
-                           "fecha_pago" => $r->pagoInmediato != "false" ? Carbon::now() : null,
-                           "pago_inmediato" => $r->pagoInmediato != "false" ? 1 : 0,
-                           "created_at" => Carbon::now()
-                          ];
-
-            GastosOperadores::insert($datosGasto);
-
             DB::commit();
-            return response()->json(["Titulo" => "Gasto agregado","Mensaje" => "Se agregó el gasto: \"{$r->descripcion}\"","TMensaje" => "success", "pagoInmediato" => boolval($r->pagoInmediato)]);
+
+            return response()->json([
+                "Titulo" => "Gasto agregado",
+                "Mensaje" => "Se agregó el gasto correctamente",
+                "TMensaje" => "success",
+                "pagoInmediato" => $pagoInmediato
+            ]);
 
         } catch (\Throwable $t) {
-            DB::rollback();
-            $idError = uniqid();
-            Log::channel('daily')->info("$idError : ".$t->getMessage());
+
+            DB::rollBack();
+
             return response()->json([
-                "Titulo" => "Ha ocurrido un error",
-                "Mensaje" => "Ocurrio un error mientras procesabamos su solicitud. Cod Error $idError",
-                "TMensaje" => "warning"
+                "Titulo" => "Error",
+                "Mensaje" => $t->getMessage(),
+                "TMensaje" => "error"
             ]);
         }
     }
@@ -1744,116 +1886,227 @@ class CotizacionesController extends Controller
         try {
 
             DB::beginTransaction();
-            $bancos = Bancos::where('id_empresa', Auth::User()->id_empresa)->where('id', $r->bank)->first();
-            $saldoActual = $bancos->saldo;
-
-            if ($saldoActual < $r->totalPago) {
-                return response()->json(["Titulo" => "Saldo insuficiente en Banco","Mensaje" => "La cuenta bancaria seleccionada no cuenta con saldo suficiente para registrar esta transacción","TMensaje" => "warning"]);
-            }
-
-            Bancos::where('id', '=', $r->bank)->update(["saldo" => DB::raw("saldo - ". $r->totalPago)]);
 
             $idEmpresa = auth()->user()->id_empresa;
 
             $contenedor = DocumCotizacion::where('num_contenedor', $r->numContenedor)
-                                                ->where('id_empresa', $idEmpresa)
-                                                ->first();
+                ->where('id_empresa', $idEmpresa)
+                ->firstOrFail();
 
             $asignacion = Asignaciones::where('id_contenedor', $contenedor->id)->first();
 
+            $pagando = collect($r->gastosPagar);
+
+            if ($pagando->isEmpty()) {
+                throw new \Exception('No hay gastos seleccionados');
+            }
+
+
+            $totalPago = $pagando->sum(function ($g) {
+                return floatval($g['Monto']);
+            });
+
+
+            $validar = $this->BancosService->validarsaldoparacargo(
+                $idEmpresa,
+                $r->bank,
+                $r->fechaAplicacion ?? now()->format('Y-m-d'),
+                $totalPago
+            );
+
+            if (!$validar["saldodisponible"]) {
+                return response()->json([
+                    "Titulo" => "Saldo insuficiente",
+                    "Mensaje" => $validar["message"],
+                    "TMensaje" => "warning"
+                ]);
+            }
+
+            $contenedoresAbonosJson = json_encode($pagando->map(function ($g) use ($r) {
+                return [
+                    'num_contenedor' => $r->numContenedor,
+                    'abono' => $g['Monto']
+                ];
+            })->toArray());
+
+
+            foreach ($pagando as $g) {
+
+                $gasto = GastosOperadores::find($g['IdGasto']);
+
+                if (!$gasto) {
+                    continue;
+                }
+
+
+                if (strtolower($gasto->estatus) === 'pagado') {
+                    continue;
+                }
+                $contenedoresAbonos = [
+    [
+        'num_contenedor' => $r->numContenedor,
+        'abono' => number_format($g['Monto'], 2, '.', '')
+    ]
+];
+
+                $contenedoresAbonosJsonban = json_encode($contenedoresAbonos);
+
+                $data = [
+                    'cuenta_bancaria_id' => $r->bank,
+                    'tipo' => 'cargo',
+                    'monto' => floatval($gasto->cantidad),
+                    'concepto' => 'Pago gasto operador: ' . $gasto->tipo,
+                    'fecha_movimiento' => \Carbon\Carbon::parse($r->fechaAplicacion ?? now())->format('Y-m-d'),
+                    'referencia' => 'GOP',
+                    'referenciaable_id' => $gasto->id,
+                    'detalles' => $contenedoresAbonosJsonban,
+                    'referenciaable_type' => \App\Models\GastosOperadores::class,
+                    'observaciones' => 'Pago individual gasto operador',
+                ];
+
+                $mov = $this->BancosService->registrarMovimiento($data);
+
+                if (!$mov) {
+                    throw new \Exception('Error al registrar movimiento bancario');
+                }
+
+
+                $gasto->update([
+                    "estatus" => "Pagado",
+                    "id_banco" => $r->bank,
+                    "fecha_pago" => \Carbon\Carbon::parse($r->fechaAplicacion ?? now())->format('Y-m-d')
+                ]);
+            }
+
+
+
+            //bancos old
+            $bancos = Bancos::where('id_empresa', Auth::User()->id_empresa)->where('id', $r->bank)->first();
+            $saldoActual = $bancos->saldo;
+
+            if ($saldoActual < $r->totalPago) {
+                return response()->json([
+                    "Titulo" => "Saldo insuficiente en Banco",
+                    "Mensaje" => "La cuenta bancaria seleccionada no cuenta con saldo suficiente",
+                    "TMensaje" => "warning"
+                ]);
+            }
+
+            Bancos::where('id', '=', $r->bank)
+                ->update(["saldo" => DB::raw("saldo - ". $r->totalPago)]);
+
             $banco = new BancoDineroOpe();
             $banco->id_operador = $asignacion->id_operador;
-
             $banco->monto1 = $r->totalPago;
             $banco->metodo_pago1 = 'Transferencia';
             $banco->descripcion_gasto = "Pago Gastos Operador";
             $banco->id_banco1 = $r->bank;
 
-            $pagando = $r->gastosPagar;
-
-            foreach ($pagando as $c) {
-                $contenedoresAbonos[] = [
-                    'num_contenedor' => $r->numContenedor,
-                    'abono' => $c['Monto']
-                ];
 
 
-            }
-
-            $Gastos = Collect($r->gastosPagar);
-            $IdGastos = $Gastos->pluck('IdGasto');
-            $contenedoresAbonosJson = json_encode($contenedoresAbonos);
-            GastosOperadores::whereIn('id', $IdGastos)->update(["estatus" => "Pagado","id_banco" => $r->bank, "fecha_pago" => Carbon::now()->format('Y-m-d')]);
+            GastosOperadores::whereIn('id', $pagando->pluck('IdGasto'))
+                ->update([
+                    "estatus" => "Pagado",
+                    "id_banco" => $r->bank,
+                    "fecha_pago" => \Carbon\Carbon::parse($r->fechaAplicacion ?? now())->format('Y-m-d')
+                ]);
 
             $banco->contenedores = $contenedoresAbonosJson;
-
             $banco->tipo = 'Salida';
-            $banco->fecha_pago = date('Y-m-d');
+            $banco->fecha_pago = \Carbon\Carbon::parse($r->fechaAplicacion ?? now())->format('Y-m-d');
             $banco->save();
 
+
             DB::commit();
-            return response()->json(["Titulo" => "Pago aplicado",
-                                     "Mensaje" => "Se aplicó el pago correctamente. Movimiento registrado en el historial bancario",
-                                     "TMensaje" => "success"
-                                    ]);
-        } catch (\Throwable $t) {
-            DB::rollback();
-            $idError = uniqid();
-            Log::channel('daily')->info("$idError : ".$t->getMessage());
+
             return response()->json([
-                "Titulo" => "Ha ocurrido un error",
-                "Mensaje" => "Ocurrio un error mientras procesabamos su solicitud. Cod Error $idError",
-                "TMensaje" => "error"
+                "Titulo" => "Pago aplicado",
+                "Mensaje" => "Se aplicó el pago correctamente. Movimientos registrados por cada gasto",
+                "TMensaje" => "success"
             ]);
 
+        } catch (\Throwable $t) {
+
+            DB::rollBack();
+
+            $idError = uniqid();
+            Log::channel('daily')->info("$idError : " . $t->getMessage());
+
+            return response()->json([
+                "Titulo" => "Error",
+                "Mensaje" => "Ocurrió un error. Código: $idError",
+                "TMensaje" => "error"
+            ]);
         }
     }
 
     public function eliminar_gasto_operador(Request $r)
     {
         try {
+
             DB::beginTransaction();
-            $gastos = $r->seleccionEliminarPago;
+
+            $gastos = collect($r->seleccionEliminarPago);
+
             foreach ($gastos as $g) {
-                $gasto = GastosOperadores::where('id', $g['IdGasto'])->first();
-                //Devolver el dinero al banco, siempre y cuando el estatus sea "Pagado"
-                if ($gasto->estatus === "Pagado") {
-                    Bancos::where('id', '=', $gasto->id_banco)->update(["saldo" => DB::raw("saldo + ". $gasto->cantidad)]);
 
-                    $asignacion = Asignaciones::where('id_contenedor', $g['IdContenedor'])->first();
+                $gasto = GastosOperadores::find($g['IdGasto']);
 
-                    $banco = new BancoDineroOpe();
-                    $banco->id_operador = $asignacion->id_operador;
-
-                    $banco->monto1 = $gasto->cantidad;
-                    $banco->metodo_pago1 = 'Transferencia';
-                    $banco->descripcion_gasto = "Gasto Anulado: ".$g['Gasto'];
-                    $banco->id_banco1 = $gasto->id_banco;
-
-                    $contenedoresAbonos[] = [
-                        'num_contenedor' => $r->numContenedor,
-                        'abono' => $gasto->cantidad
-                    ];
-                    $contenedoresAbonosJson = json_encode($contenedoresAbonos);
-
-                    $banco->contenedores = $contenedoresAbonosJson;
-
-                    $banco->tipo = 'Entrada';
-                    $banco->fecha_pago = date('Y-m-d');
-                    $banco->save();
-
+                if (!$gasto) {
+                    continue;
                 }
 
-                $gasto->delete();
+
+                if (
+                    strtolower($gasto->estatus) === 'pagado'
+                    && $gasto->id_banco
+                ) {
+
+                    $movimiento = $this->BancosService->findMovimiento(
+                        $gasto->id,
+                        \App\Models\GastosOperadores::class,
+                        $gasto->id_banco,
+                        'GOP'
+                    );
+
+                    if ($movimiento) {
+
+                        $cancelar = $this->BancosService->cancelarMovimiento(
+                            $gasto->id_banco,
+                            $movimiento->id
+                        );
+
+                        if (!$cancelar) {
+                            throw new \Exception(
+                                "No se pudo cancelar el movimiento del gasto ID {$gasto->id}"
+                            );
+                        }
+                    }
+                }
+
+
+                $gasto->update([
+                    'estatus' => 'eliminado'
+                ]);
             }
 
             DB::commit();
-            return response()->json(["Titulo" => "Eliminado Correctamente", "Mensaje" => "El gasto fue eliminado.", "TMensaje" => "success"]);
+
+            return response()->json([
+                "Titulo" => "Eliminado Correctamente",
+                "Mensaje" => "El gasto fue eliminado.",
+                "TMensaje" => "success"
+            ]);
 
         } catch (\Throwable $t) {
-            DB::rollback();
-            return response()->json(["Titulo" => "No pudimos eliminar el gasto", "Mensaje" => "Lo sentimos, ocurrio un error $t->getMessage()", "TMensaje" => "error"]);
 
+            DB::rollBack();
+
+            return response()->json([
+                "Titulo" => "Error",
+                "Mensaje" => $t->getMessage(),
+                "TMensaje" => "error"
+            ]);
         }
     }
 
@@ -1892,32 +2145,175 @@ class CotizacionesController extends Controller
     public function eliminar_gasto_cotizacion(Request $r)
     {
         try {
-            $numContenedor = $r->input('numContenedor');
+
+            $numContenedor = $r->numContenedor;
             $idEmpresa = auth()->user()->id_empresa;
+
             DB::beginTransaction();
+
             $contenedor = DocumCotizacion::where('num_contenedor', $numContenedor)
-                                         ->where('id_empresa', $idEmpresa)
-                                         ->first();
+                ->where('id_empresa', $idEmpresa)
+                ->firstOrFail();
 
-            $gastos = Collect($r->seleccionGastos);
-            $eliminar = $gastos->pluck('IdGasto');
 
-            $gastosContenedor = GastosExtras::where('id_cotizacion', $contenedor->id_cotizacion)->whereIn('id', $eliminar);
-            $totalGastosDescontar = $gastosContenedor->sum('monto');
+            $gastosRequest = collect($r->input('seleccionGastos', []));
+            $ids = $gastosRequest->pluck('IdGasto')->toArray();
 
-            $gastosContenedor->delete();
+            $gastos = GastosExtras::where('id_cotizacion', $contenedor->id_cotizacion)
+                ->whereIn('id', $ids)
+                ->get();
 
-            Cotizaciones::where('id', $contenedor->id_cotizacion)->update(["restante" => DB::raw('restante - '.$totalGastosDescontar)]);
+            foreach ($gastos as $gasto) {
+
+
+                if (strtolower($gasto->estatus) === 'pagado' && $gasto->cuenta_bancaria_id) {
+                    $movimientobuscar = $this->BancosService->findMovimiento(
+                        $gasto->id,
+                        \App\Models\GastosExtras::class,
+                        $gasto->cuenta_bancaria_id,
+                        'GASTOS'
+                    );
+
+                    $cancelar = $this->BancosService->cancelarMovimiento(
+                        $gasto->cuenta_bancaria_id,
+                        $movimientobuscar->id
+                    );
+
+                    if (!$cancelar) {
+                        throw new \Exception("No se pudo cancelar el movimiento del gasto ID {$gasto->id}");
+                    }
+                }
+
+
+                $gasto->update([
+                    "estatus" => "eliminado"
+                ]);
+            }
+
+            $total = $gastos->sum('monto');
+
+            Cotizaciones::where('id', $contenedor->id_cotizacion)
+                ->update([
+                    "restante" => DB::raw("restante - {$total}")
+                ]);
 
             DB::commit();
-            return response()->json(["TMensaje" => "success", "Mensaje" => "Eliminado correctamente", "Titulo" => "Gasto eliminado del contenedor"]);
+
+            return response()->json([
+                "TMensaje" => "success",
+                "Mensaje" => "Eliminado correctamente",
+                "Titulo" => "Gasto eliminado"
+            ]);
+
         } catch (\Throwable $t) {
-            DB::rollback();
-            return response()->json(["TMensaje" => "error", "Mensaje" => $t->getMessage(), "Titulo" => "Error al agregar gasto"]);
 
+            DB::rollBack();
+
+            return response()->json([
+                "TMensaje" => "error",
+                "Mensaje" => $t->getMessage(),
+                "Titulo" => "Error al eliminar"
+            ]);
         }
+    }
+
+    public function pagar_gasto_cotizacion(Request $request)
+    {
+        try {
+
+            $idEmpresa = auth()->user()->id_empresa;
+            $numContenedor = $request->numContenedor;
+
+            DB::beginTransaction();
+
+            $contenedor = DocumCotizacion::where('num_contenedor', $numContenedor)
+                ->where('id_empresa', $idEmpresa)
+                ->firstOrFail();
+
+            $ids = $request->input('ids', []);
+
+            if (empty($ids)) {
+                throw new \Exception("No se recibieron gastos");
+            }
+
+            $gastos = GastosExtras::where('id_cotizacion', $contenedor->id_cotizacion)
+                ->whereIn('id', $ids)
+                ->get();
+
+            $total = $gastos->sum('monto');
 
 
+            if ($total != $request->total) {
+                throw new \Exception("El monto no coincide con los gastos seleccionados");
+            }
+
+
+            $validar = $this->BancosService->validarsaldoparacargo(
+                $idEmpresa,
+                $request->banco,
+                $request->fecha,
+                $request->total
+            );
+
+            if (!$validar["saldodisponible"]) {
+                return response()->json([
+                    "TMensaje" => "error",
+                    "Titulo" => "Saldo insuficiente",
+                    "Mensaje" => $validar["message"],
+                ]);
+            }
+
+
+
+            foreach ($gastos as $gasto) {
+
+                if (strtolower($gasto->estatus) === 'pagado') {
+                    continue;
+                }
+
+                $data = [
+                    'cuenta_bancaria_id' => $request->banco,
+                    'tipo' => 'cargo',
+                    'monto' => floatval($gasto->monto),
+                    'concepto' => 'Pago gasto: ' . $gasto->descripcion,
+                    'fecha_movimiento' => \Carbon\Carbon::parse($request->fecha)->format('Y-m-d'),
+                    'referencia' => 'GASTOS',
+                    'referenciaable_id' =>  $gasto->id,
+                    'referenciaable_type' => \App\Models\GastosExtras::class,
+                    'observaciones' => 'Pago individual de gasto',
+                ];
+
+                $mov = $this->BancosService->registrarMovimiento($data);
+
+                if (!$mov) {
+                    throw new \Exception('Error al registrar movimiento bancario');
+                }
+
+                $gasto->update([
+                    "estatus" => "pagado",
+                    "fecha_aplicacion" => $request->fecha,
+                    "cuenta_bancaria_id" => $request->banco
+                ]);
+            }
+
+            DB::commit();
+
+            return response()->json([
+                "TMensaje" => "success",
+                "Mensaje" => "Pago aplicado correctamente",
+                "Titulo" => "Gastos pagados"
+            ]);
+
+        } catch (\Throwable $t) {
+
+            DB::rollBack();
+
+            return response()->json([
+                "TMensaje" => "error",
+                "Mensaje" => $t->getMessage(),
+                "Titulo" => "Error al pagar"
+            ]);
+        }
     }
 
     public function update_cambio(Request $request, $id)

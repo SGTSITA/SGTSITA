@@ -16,11 +16,19 @@ class GastosExtras extends Model
         'id_cotizacion',
         'descripcion',
         'monto',
+         'estatus',
+    'fecha_aplicacion',
+    'cuenta_bancaria_id',
     ];
 
     public function Cotizacion()
     {
         return $this->belongsTo(Cotizaciones::class, 'id_cotizacion');
+    }
+
+    public function Bancos()
+    {
+        return $this->belongsTo(Bancos::class, 'cuenta_bancaria_id');
     }
 
     public function getAuditoriaData($old = [], $new = [])
@@ -30,5 +38,11 @@ class GastosExtras extends Model
         return [
             'referencia' => $this->cotizacion?->DocCotizacion?->num_contenedor,
         ];
+    }
+    protected static function booted()
+    {
+        static::addGlobalScope('no_eliminados', function ($query) {
+            $query->where('estatus', '!=', 'eliminado');
+        });
     }
 }

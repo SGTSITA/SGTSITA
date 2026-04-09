@@ -229,17 +229,21 @@ class BancosService
     }
 
 
-    public function findMovimiento($idBuscartipo, $modeloType, $cuentaId)
+    public function findMovimiento($idBuscartipo, $modeloType, $cuentaId, $referencia = null)
     {
 
-        $movimiento = CatBancoCuentasMovimientos::where('referenciaable_id', $idBuscartipo)
-           ->where('cancelado', 0)
-           ->where('cuenta_bancaria_id', $cuentaId)
-           ->where('referenciaable_type', $modeloType)
-           ->where('origen', 'sistema')
-           ->firstOrFail();
+        $query = CatBancoCuentasMovimientos::where('referenciaable_id', $idBuscartipo)
+         ->where('cancelado', 0)
+         ->where('cuenta_bancaria_id', $cuentaId)
+         ->where('referenciaable_type', $modeloType)
+         ->where('origen', 'sistema');
 
-        return $movimiento;
+
+        if ($referencia) {
+            $query->where('referencia', $referencia);
+        }
+
+        return $query->first();
     }
     public function cancelarMovimiento(int $cuentaId, int $movimientoId)
     {

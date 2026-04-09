@@ -3,11 +3,12 @@ const gridOptionsOperador = {
     paginationPageSize: 100,
     paginationPageSizeSelector: [100, 200, 500],
     rowSelection: {
-        mode: 'multiRow',
+        mode: "multiRow",
         headerCheckbox: true,
     },
     rowClassRules: {
-        'bg-gradient-warning': (params) => params.data.Estatus === 'Pago Pendiente',
+        "bg-gradient-warning": (params) =>
+            params.data.Estatus === "Pago Pendiente",
     },
     onRowSelected: (event) => {
         btnPaymentStatus();
@@ -15,55 +16,59 @@ const gridOptionsOperador = {
     rowData: [],
 
     columnDefs: [
-        { field: 'IdCotizacion', hide: true },
-        { field: 'IdGasto', hide: true },
-        { field: 'Gasto', width: 210 },
+        { field: "IdCotizacion", hide: true },
+        { field: "IdGasto", hide: true },
+        { field: "Gasto", width: 210 },
         {
-            field: 'Monto',
+            field: "Monto",
             width: 110,
             valueFormatter: (params) => currencyFormatter(params.value),
-            cellStyle: { textAlign: 'right' },
+            cellStyle: { textAlign: "right" },
         },
-        { field: 'Estatus', width: 150 },
-        { field: 'Fecha', filter: true, floatingFilter: true },
-        { field: 'FechaPago', filter: true, floatingFilter: true },
-        { field: 'BancoPago', filter: true, floatingFilter: true },
+        { field: "Estatus", width: 150 },
+        { field: "Fecha", filter: true, floatingFilter: true },
+        { field: "FechaPago", filter: true, floatingFilter: true },
+        { field: "BancoPago", filter: true, floatingFilter: true },
     ],
 
     localeText: localeText,
 };
 
-const gridElementGastosOperador = document.querySelector('#gridGastosOperador');
-const btnElminar = document.querySelector('#btnDelete2');
+const gridElementGastosOperador = document.querySelector("#gridGastosOperador");
+const btnElminar = document.querySelector("#btnDelete2");
 let apiGridGastosOperador = gridElementGastosOperador
     ? agGrid.createGrid(gridElementGastosOperador, gridOptionsOperador)
     : null;
 // const gridInstance = new agGrid.Grid(gridElementGastosOperador, gridOptions);
 
-var paginationTitle = document.querySelector('#ag-32-label');
-paginationTitle.textContent = 'Registros por página';
+var paginationTitle = document.querySelector("#ag-32-label");
+paginationTitle.textContent = "Registros por página";
 
 let IdContenedorViaje = null;
 
 function getGastosOperador() {
-    var _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-    let spanContenedor = document.querySelector('#spanContenedor');
+    var _token = document
+        .querySelector('meta[name="csrf-token"]')
+        .getAttribute("content");
+    let spanContenedor = document.querySelector("#spanContenedor");
     let numContenedor = spanContenedor.textContent;
     $.ajax({
-        url: '/cotizaciones/gastos-operador/get',
-        type: 'post',
+        url: "/cotizaciones/gastos-operador/get",
+        type: "post",
         data: { _token, numContenedor },
         beforeSend: () => {},
         success: (response) => {
             if (gridElementGastosOperador) {
-                apiGridGastosOperador.setGridOption('rowData', response);
+                apiGridGastosOperador.setGridOption("rowData", response);
 
                 let totalGastos = 0;
                 response.forEach((d) => {
                     totalGastos += parseFloat(d.Monto);
                 });
 
-                let totalGastosOperador = document.querySelector('#totalGastosOperador');
+                let totalGastosOperador = document.querySelector(
+                    "#totalGastosOperador",
+                );
                 totalGastosOperador.textContent = moneyFormat(totalGastos);
             }
         },
@@ -72,56 +77,89 @@ function getGastosOperador() {
 }
 
 function putGastosOperador() {
-    let spanContenedor = document.querySelector('#spanContenedor');
+    let spanContenedor = document.querySelector("#spanContenedor");
     let numContenedor = spanContenedor.textContent;
 
-    let textDescripcion = document.querySelector('#txtDescripcionGastoOperador');
-    let textMonto = document.querySelector('#txtMontoGastoOperador');
-    let checkPagoInmediato = document.querySelector('#checkPagoInmediato');
-
-    let bancosGastos = document.querySelector('#bancosGastos');
+    let textDescripcion = document.querySelector(
+        "#txtDescripcionGastoOperador",
+    );
+    let textMonto = document.querySelector("#txtMontoGastoOperador");
+    let checkPagoInmediato = document.querySelector("#checkPagoInmediato");
+    let bancosGastos = document.querySelector("#bancosGastos");
+    let fechaAplicacion = document.querySelector("#txtFechaAplicacion");
 
     let pagoInmediato = checkPagoInmediato.checked;
 
-    if (textMonto.value.length == 0 || textDescripcion.value.length == 0) {
+    if (!textDescripcion.value || !textMonto.value) {
         Swal.fire(
-            'Complete información',
-            'La información del descuento está incompleta, por favor llene todos los campos',
-            'warning',
+            "Complete información",
+            "Debes capturar descripción y monto",
+            "warning",
         );
-        return false;
+        return;
+    }
+
+    if (pagoInmediato) {
+        if (!bancosGastos.value || !fechaAplicacion.value) {
+            Swal.fire(
+                "Datos incompletos",
+                "Para pago inmediato debes seleccionar banco y fecha",
+                "warning",
+            );
+            return;
+        }
     }
 
     let montoGasto = reverseMoneyFormat(textMonto.value);
     let descripcion = textDescripcion.value;
-    let _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
-    let bancoPago = bancosGastos.value;
+    let _token = document
+        .querySelector('meta[name="csrf-token"]')
+        .getAttribute("content");
+
+    Swal.fire({
+        title: "Procesando...",
+        text: "Registrando gasto",
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        },
+    });
 
     $.ajax({
-        url: '/cotizaciones/gastos-operador/registrar',
-        type: 'post',
-        data: { numContenedor, descripcion, montoGasto, pagoInmediato, bancoPago, _token },
-        beforeSend: () => {},
+        url: "/cotizaciones/gastos-operador/registrar",
+        type: "post",
+        data: {
+            numContenedor,
+            descripcion,
+            montoGasto,
+            pagoInmediato,
+            banco: bancosGastos.value,
+            fechaAplicacion: fechaAplicacion.value,
+            _token,
+        },
         success: (response) => {
             Swal.fire(response.Titulo, response.Mensaje, response.TMensaje);
 
-            if (response.TMensaje == 'success') {
+            if (response.TMensaje === "success") {
                 getGastosOperador();
-                $('#modal-gastos-operador').modal('hide');
-                textDescripcion.value = '';
-                textMonto.value = '';
+                $("#modal-gastos-operador").modal("hide");
+
+                // limpiar
+                textDescripcion.value = "";
+                textMonto.value = "";
+                bancosGastos.selectedIndex = 0;
             }
         },
-        error: (err) => {
-            Swal.fire('Ocurrio un error', 'Error', 'error');
+        error: () => {
+            Swal.fire("Error", "No se pudo registrar el gasto", "error");
         },
     });
 }
 
-let btnPayment = document.querySelector('#btnPayment');
+let btnPayment = document.querySelector("#btnPayment");
 if (btnPayment) {
-    btnPayment.addEventListener('click', () => {
+    btnPayment.addEventListener("click", () => {
         paymentGastosOperador();
     });
 }
@@ -135,97 +173,134 @@ function btnPaymentStatus() {
 }
 
 function paymentGastosOperador() {
+    let seleccionPago = [];
+    let totalPago = 0;
+
     if (gridElementGastosOperador) {
-        let seleccionPago = apiGridGastosOperador.getSelectedRows();
-        let totalPago = 0;
+        seleccionPago = apiGridGastosOperador.getSelectedRows();
     }
 
     let validarGastos = seleccionPago.every((gasto) => {
-        if (gasto.Estatus != 'Pago Pendiente') return false;
+        if (gasto.Estatus != "Pago Pendiente") return false;
+
         totalPago += parseFloat(gasto.Monto);
         return true;
     });
 
     if (!validarGastos) {
-        Swal.fire('No es posible pagar', 'Solo se admiten Gastos con estatus "Pago Pendiente"', 'warning');
+        Swal.fire(
+            "No es posible pagar",
+            'Solo se admiten Gastos con estatus "Pago Pendiente"',
+            "warning",
+        );
         return false;
     }
 
-    let totalPagoGastosOperador = document.querySelector('#totalPagoGastosOperador');
+    let totalPagoGastosOperador = document.querySelector(
+        "#totalPagoGastosOperador",
+    );
 
-    if (totalPagoGastosOperador) totalPagoGastosOperador.textContent = moneyFormat(totalPago);
+    if (totalPagoGastosOperador)
+        totalPagoGastosOperador.textContent = moneyFormat(totalPago);
 
-    const modalElement = document.getElementById('modal-pagar-gastos-operador');
+    const modalElement = document.getElementById("modal-pagar-gastos-operador");
     const bootstrapModal = new bootstrap.Modal(modalElement);
     bootstrapModal.show();
 }
 
 function applyPaymentGastosOperador() {
-    let totalPagoGastosOperador = document.querySelector('#totalPagoGastosOperador');
+    let totalPagoGastosOperador = document.querySelector(
+        "#totalPagoGastosOperador",
+    );
 
     let totalPago = reverseMoneyFormat(totalPagoGastosOperador.textContent);
 
-    let bancosPagoGastos = document.querySelector('#bancosPagoGastos');
+    let bancosPagoGastos = document.querySelector("#bancosPagoGastos");
     let bank = bancosPagoGastos.value;
 
-    let spanContenedor = document.querySelector('#spanContenedor');
+    let spanContenedor = document.querySelector("#spanContenedor");
     let numContenedor = spanContenedor.textContent;
 
     let gastosPagar = apiGridGastosOperador.getSelectedRows();
-    let _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+    let fechaApp = document.querySelector("#txtFechaAplicacionOper");
+    let _token = document
+        .querySelector('meta[name="csrf-token"]')
+        .getAttribute("content");
 
     $.ajax({
-        url: '/cotizaciones/gastos-operador/pagar',
-        type: 'post',
-        data: { totalPago, numContenedor, bank, gastosPagar, _token },
+        url: "/cotizaciones/gastos-operador/pagar",
+        type: "post",
+        data: {
+            totalPago,
+            numContenedor,
+            bank,
+            gastosPagar,
+            _token,
+            fechaAplicacion: fechaApp.value,
+        },
         beforeSend: () => {},
         success: (response) => {
             Swal.fire(response.Titulo, response.Mensaje, response.TMensaje);
 
-            if (response.TMensaje == 'success') {
+            if (response.TMensaje == "success") {
                 getGastosOperador();
-                $('#modal-pagar-gastos-operador').modal('hide');
+                $("#modal-pagar-gastos-operador").modal("hide");
             }
         },
         error: () => {
-            Swal.fire('Error inesperado', 'Ocurrio un error mientras procesamos su solicitud', 'error');
+            Swal.fire(
+                "Error inesperado",
+                "Ocurrio un error mientras procesamos su solicitud",
+                "error",
+            );
         },
     });
 }
 
 function eliminarGastoOperador() {
     Swal.fire({
-        title: '¿Desea eliminar el gasto seleccionado?',
+        title: "¿Desea eliminar el gasto seleccionado?",
         text: 'Estas a punto de eliminar un gasto, si se encuentra seguro haga click en "Si, Eliminar"',
-        icon: 'warning',
+        icon: "warning",
         showCancelButton: true,
-        confirmButtonColor: '#3085d6',
-        cancelButtonColor: '#d33',
-        confirmButtonText: 'Si, Eliminar!',
-        cancelButtonText: 'Cancelar',
+        confirmButtonColor: "#3085d6",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Si, Eliminar!",
+        cancelButtonText: "Cancelar",
     }).then((result) => {
         if (result.isConfirmed) {
             //
             let seleccionEliminarPago = apiGridGastosOperador.getSelectedRows();
-            let _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            let _token = document
+                .querySelector('meta[name="csrf-token"]')
+                .getAttribute("content");
 
-            let spanContenedor = document.querySelector('#spanContenedor');
+            let spanContenedor = document.querySelector("#spanContenedor");
             let numContenedor = spanContenedor.textContent;
 
             $.ajax({
-                url: '/cotizaciones/gastos-operador/eliminar',
-                type: 'post',
+                url: "/cotizaciones/gastos-operador/eliminar",
+                type: "post",
                 data: { seleccionEliminarPago, numContenedor, _token },
                 beforeSend: () => {},
                 success: (response) => {
-                    Swal.fire(response.Titulo, response.Mensaje, response.TMensaje);
+                    Swal.fire(
+                        response.Titulo,
+                        response.Mensaje,
+                        response.TMensaje,
+                    );
 
-                    if (response.TMensaje == 'success') {
+                    if (response.TMensaje == "success") {
                         getGastosOperador();
                     }
                 },
                 error: () => {
-                    Swal.fire('Error inesperado', 'Ocurrio un error mientras procesamos su solicitud', 'error');
+                    Swal.fire(
+                        "Error inesperado",
+                        "Ocurrio un error mientras procesamos su solicitud",
+                        "error",
+                    );
                 },
             });
         }
@@ -233,6 +308,6 @@ function eliminarGastoOperador() {
 }
 
 if (btnElminar)
-    btnElminar.addEventListener('click', () => {
+    btnElminar.addEventListener("click", () => {
         eliminarGastoOperador();
     });
