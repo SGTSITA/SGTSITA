@@ -216,7 +216,7 @@ class MepController extends Controller
             $fechaBaseInicio = $asignacion?->fecha_inicio ?? now();
             $fechaInicio = Carbon::parse($fechaBaseInicio)->startOfDay();
         } else {
-            $fechaInicio = Carbon::createFromFormat('d/m/Y', $fechaI)->startOfDay();
+            $fechaInicio = $this->parseFecha($fechaI)->startOfDay();
         }
 
 
@@ -224,7 +224,7 @@ class MepController extends Controller
             $fechaBaseFin = $asignacion?->fecha_fin ?? now();
             $fechaFin = Carbon::parse($fechaBaseFin)->endOfDay();
         } else {
-            $fechaFin = Carbon::createFromFormat('d/m/Y', $fechaF)->endOfDay();
+            $fechaFin = $this->parseFecha($fechaF)->endOfDay();
         }
 
 
@@ -310,5 +310,16 @@ class MepController extends Controller
         ])->where('id_contenedor', $request->idContenedor)->get();
         return $asignacion;
 
+    }
+    public function parseFecha($fecha)
+    {
+        try {
+            if (str_contains($fecha, '/')) {
+                return Carbon::createFromFormat('d/m/Y', $fecha);
+            }
+            return Carbon::createFromFormat('Y-m-d', $fecha);
+        } catch (\Exception $e) {
+            return Carbon::parse($fecha); // fallback
+        }
     }
 }
