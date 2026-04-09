@@ -389,6 +389,8 @@ Route::group(['middleware' => ['auth']], function () {
     Route::post('cotizaciones/gastos/get', [App\Http\Controllers\CotizacionesController::class, 'get_gastos'])->name('gastos.cotizaciones');
     Route::post('cotizaciones/gastos/eliminar', [App\Http\Controllers\CotizacionesController::class, 'eliminar_gasto_cotizacion'])->name('gastos.eliminar');
 
+    Route::post('/cotizaciones/gastosextra/pagar', [App\Http\Controllers\CotizacionesController::class, 'pagar_gasto_cotizacion'])->name('pagar.gastos.cotizacion');
+    
     Route::post('cotizaciones/gastos-operador/registrar', [App\Http\Controllers\CotizacionesController::class, 'agregar_gasto_operador'])->name('gastos.cotizaciones');
     Route::post('cotizaciones/gastos-operador/get', [App\Http\Controllers\CotizacionesController::class, 'get_gastos_operador'])->name('gastos.cotizaciones');
     Route::post('cotizaciones/gastos-operador/pagar', [App\Http\Controllers\CotizacionesController::class, 'pagar_gasto_operador'])->name('pagar.gastos');
