@@ -1197,7 +1197,7 @@ class ReporteriaController extends Controller
         return view('reporteria.utilidad.index', compact('asignaciones', 'clientes', 'subclientes', 'contenedores', 'fechaDe', 'fechaHasta'));
     }
 
-    public function getContenedorUtilidad(Request $r)
+    public function getContenedorUtilidad(Request $r) //revision para gastos extras
     {
         /* */
 

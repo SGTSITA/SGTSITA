@@ -52,4 +52,11 @@ class GastosOperadores extends Model
             'referencia' => $this->cotizacion?->DocCotizacion?->num_contenedor,
         ];
     }
+
+    protected static function booted()
+    {
+        static::addGlobalScope('no_eliminados', function ($query) {
+            $query->where('estatus', '!=', 'eliminado');
+        });
+    }
 }
