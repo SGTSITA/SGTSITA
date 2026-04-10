@@ -140,7 +140,7 @@ class GpsController extends Controller
 
 
                             foreach ($ubicacion->data as $item) {
-                                if ($item['imei'] == $imei) {
+                                if ($item->imei == $imei) {
                                     $ubicacionApiResponse = $item;
                                     break;
                                 }
