@@ -530,15 +530,9 @@ function actualizarUbicacion(
                     (d) => d.contenedor === contenedorRes,
                 );
 
-                if (!info && t.toLowerCase().includes("convoy")) {
-                    info = contenedoresDisponiblesAll.find(
-                        (d) => d.contenedor === contenedorRes,
-                    );
-                }
-
                 if (t === "Convoy") {
                     let contenedoresConvoy = detalleConvoys.filter(
-                        (d) => d.conboy_id === parseInt(id),
+                        (d) => d.no_conboy === num_convoy,
                     );
 
                     mostrarInfoConvoy(contenedoresConvoy, item.EquipoBD, "");
@@ -566,7 +560,6 @@ function actualizarUbicacion(
                             let latLlegada = parseFloat(info.latitud);
                             let lngLlegada = parseFloat(info.longitud);
 
-                            // 🔥 SI YA EXISTE → toggle
                             if (directionsRenderer[markerKey]) {
                                 const isVisible =
                                     directionsRenderer[markerKey].getMap();
@@ -592,10 +585,8 @@ function actualizarUbicacion(
                                 return;
                             }
 
-                            // 🔥 LOADING UX
                             btn.textContent = "Calculando...";
 
-                            // Crear renderer
                             directionsRenderer[markerKey] =
                                 new google.maps.DirectionsRenderer({
                                     map: map,
