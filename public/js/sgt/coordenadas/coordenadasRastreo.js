@@ -2267,7 +2267,7 @@ function actualizarUbicacion(
         📍 Mostrar ruta
     </button>
 
-    <div id="infoRuta_${markerKey}" style="
+    <div class="infoRuta" data-key="${markerKey}" style="
         display:none;
         background: rgba(255,255,255,0.2);
         padding:6px;
@@ -2309,7 +2309,7 @@ function actualizarUbicacion(
         📍 Mostrar ruta
     </button>
 
-    <div id="infoRuta_${markerKey}" style="
+   <div class="infoRuta" data-key="${markerKey}" style="
         display:none;
         background: rgba(255,255,255,0.2);
         padding:6px;
