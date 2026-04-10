@@ -720,8 +720,11 @@ document.addEventListener("click", function (e) {
             lng: position.lng(),
         };
 
-        let info = contenedoresDisponibles.find((d) =>
-            key.includes(d.contenedor),
+        let info = contenedoresDisponibles.find(
+            (d) =>
+                (d.contenedor && key.includes(d.contenedor)) ||
+                (d.imei && key.includes(d.imei)) ||
+                (d.imei_chasis && key.includes(d.imei_chasis)),
         );
 
         if (!info || !info.latitud || !info.longitud) {
