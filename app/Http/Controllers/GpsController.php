@@ -136,7 +136,15 @@ class GpsController extends Controller
 
                             $accessToken = SkyAngel::getAccessToken($username, $password);
                             $ubicacion = SkyAngel::getLocation($accessToken);
-                            $ubicacionApiResponse = $ubicacion->data;
+                            $ubicacionApiResponse = null;
+
+
+                            foreach ($ubicacion->data as $item) {
+                                if ($item['imei'] == $imei) {
+                                    $ubicacionApiResponse = $item;
+                                    break;
+                                }
+                            }
 
                             $tipoGpsresponse = "skyGps";
                             $ubicacion = [
