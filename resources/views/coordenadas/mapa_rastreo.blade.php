@@ -416,7 +416,7 @@
     </div>
 
 
-    <button id="btnRuta_${markerKey}"
+      <button class="btnRuta" data-key="${markerKey}"
         style="
             background: linear-gradient(135deg, #1976d2, #42a5f5);
             color: white;
@@ -469,7 +469,7 @@
 
                                         if (t === "Convoy") {
                                             let contenedoresConvoy = detalleConvoys.filter(
-                                                (d) => d.conboy_id === parseInt(id),
+                                                (d) => d.no_conboy === num_convoy,
                                             );
 
                                             mostrarInfoConvoy(contenedoresConvoy, item.EquipoBD, "");
@@ -477,122 +477,7 @@
                                             mostrarInfoConvoy(info ? [info] : [], item.EquipoBD, "");
                                         }
 
-                                        google.maps.event.addListenerOnce(
-                                            infoWindow,
-                                            "domready",
-                                            () => {
-                                                const btn = document.getElementById(
-                                                    `btnRuta_${markerKey}`,
-                                                );
-                                                const infoSpan = document.getElementById(
-                                                    `infoRuta_${markerKey}`,
-                                                );
-                                                btn.addEventListener("click", () => {
 
-                                                    const position = newMarker
-                                                .getPosition();
-                                                    const origin = {
-                                                        lat: position.lat(),
-                                                        lng: position.lng(),
-                                                    };
-
-                                                    let latLlegada = parseFloat(info
-                                                        .latitud);
-                                                    let lngLlegada = parseFloat(info
-                                                        .longitud);
-
-                                                    // 🔥 SI YA EXISTE → toggle
-                                                    if (directionsRenderer[markerKey]) {
-                                                        const isVisible =
-                                                            directionsRenderer[markerKey]
-                                                            .getMap();
-
-                                                        directionsRenderer[markerKey]
-                                                            .setMap(isVisible ? null : map);
-
-                                                        btn.textContent = isVisible ?
-                                                            "Mostrar ruta" : "Ocultar ruta";
-
-                                                        const infoSpanNuevo = document
-                                                            .getElementById(
-                                                                `infoRuta_${markerKey}`);
-
-                                                        if (infoSpanNuevo) {
-                                                            infoSpanNuevo.style.display =
-                                                                isVisible ? "none" :
-                                                                "block";
-                                                        }
-
-                                                        return;
-                                                    }
-
-                                                    // 🔥 LOADING UX
-                                                    btn.textContent = "Calculando...";
-
-                                                    // Crear renderer
-                                                    directionsRenderer[markerKey] =
-                                                        new google.maps.DirectionsRenderer({
-                                                            map: map,
-                                                        });
-
-                                                    const request = {
-                                                        origin: origin,
-                                                        destination: {
-                                                            lat: latLlegada,
-                                                            lng: lngLlegada,
-                                                        },
-                                                        travelMode: google.maps
-                                                            .TravelMode.DRIVING,
-                                                    };
-
-                                                    directionsService.route(request, (
-                                                        result, status) => {
-
-                                                        if (status === "OK") {
-                                                            directionsRenderer[
-                                                                    markerKey]
-                                                                .setDirections(
-                                                                    result);
-
-                                                            btn.textContent =
-                                                                "Ocultar ruta";
-
-                                                            const leg = result
-                                                                .routes[0].legs[0];
-
-                                                            // 🔥 SIEMPRE vuelve a buscar el span
-                                                            const infoSpanNuevo =
-                                                                document
-                                                                .getElementById(
-                                                                    `infoRuta_${markerKey}`
-                                                                    );
-
-                                                            if (infoSpanNuevo) {
-                                                                infoSpanNuevo.style
-                                                                    .display =
-                                                                    "block";
-
-                                                                infoSpanNuevo
-                                                                    .innerHTML = `
-                    🚗 <strong>${leg.distance.text}</strong><br>
-                    ⏱ <strong>${leg.duration.text}</strong>
-                `;
-                                                            }
-
-                                                        } else {
-                                                            btn.textContent =
-                                                                "Mostrar ruta";
-
-                                                            Swal.fire({
-                                                                icon: "error",
-                                                                title: "Error",
-                                                                text: "No se ha configurado direccion del mapa en cotizaciones",
-                                                            });
-                                                        }
-                                                    });
-                                                });
-                                            },
-                                        );
 
                                     });
                                     //} //end mostrar primero
@@ -876,6 +761,99 @@
                 document.getElementById('btnDetener').style.display = 'none';
             }
         }
+
+
+
+        document.addEventListener("click", function(e) {
+            if (e.target.classList.contains("btnRuta")) {
+                const key = e.target.dataset.key;
+
+                const btn = e.target;
+                const infoSpan = document.querySelector(`.infoRuta[data-key="${key}"]`);
+
+                const marker = markers[key];
+
+                if (!marker) return;
+
+                const position = marker.getPosition();
+
+                const origin = {
+                    lat: position.lat(),
+                    lng: position.lng(),
+                };
+
+                let info = contenedoresDisponibles.find((d) =>
+                    key.includes(d.contenedor),
+                );
+
+                if (!info || !info.latitud || !info.longitud) {
+                    Swal.fire({
+                        icon: "warning",
+                        title: "Sin ubicación",
+                        text: "Este contenedor no tiene coordenadas",
+                    });
+                    return;
+                }
+
+                let latLlegada = parseFloat(info.latitud);
+                let lngLlegada = parseFloat(info.longitud);
+
+                if (directionsRenderer[key]) {
+                    const isVisible = directionsRenderer[key].getMap();
+
+                    directionsRenderer[key].setMap(isVisible ? null : map);
+
+                    btn.textContent = isVisible ? "📍 Mostrar ruta" : "❌ Ocultar ruta";
+
+                    if (infoSpan) {
+                        infoSpan.style.display = isVisible ? "none" : "block";
+                    }
+
+                    return;
+                }
+
+                btn.textContent = "Calculando...";
+
+                directionsRenderer[key] = new google.maps.DirectionsRenderer({
+                    map: map,
+                });
+
+                const request = {
+                    origin: origin,
+                    destination: {
+                        lat: latLlegada,
+                        lng: lngLlegada,
+                    },
+                    travelMode: google.maps.TravelMode.DRIVING,
+                };
+
+                directionsService.route(request, (result, status) => {
+                    if (status === "OK") {
+                        directionsRenderer[key].setDirections(result);
+
+                        btn.textContent = "❌ Ocultar ruta";
+
+                        const leg = result.routes[0].legs[0];
+
+                        if (infoSpan) {
+                            infoSpan.style.display = "block";
+                            infoSpan.innerHTML = `
+                        🚗 <strong>${leg.distance.text}</strong><br>
+                        ⏱ <strong>${leg.duration.text}</strong>
+                    `;
+                        }
+                    } else {
+                        btn.textContent = "📍 Mostrar ruta";
+
+                        Swal.fire({
+                            icon: "error",
+                            title: "Error",
+                            text: "No se pudo calcular la ruta",
+                        });
+                    }
+                });
+            }
+        });
 
         function actualizarUbicacionReal(coordenadaData) {
             fetch('/coordenadas/rastrear/savehistori', {
