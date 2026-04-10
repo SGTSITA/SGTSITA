@@ -431,7 +431,7 @@
     </button>
 
 
-    <div id="infoRuta_${markerKey}" style="
+   <div class="infoRuta" data-key="${markerKey}" style="
         background: #f1f8ff;
         padding: 8px;
         border-radius: 8px;
