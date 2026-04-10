@@ -140,24 +140,28 @@ class GpsController extends Controller
 
 
                             foreach ($ubicacion->data as $item) {
-                                if ($item->imei == $imei) {
+                                if ((string)$item['imei'] === (string)$imei) {
                                     $ubicacionApiResponse = $item;
                                     break;
                                 }
                             }
 
+                            //  dd($ubicacion, $ubicacionApiResponse);
+
                             $tipoGpsresponse = "skyGps";
+                            $track = $ubicacionApiResponse['tracks'][0] ?? null;
+
                             $ubicacion = [
-                               'lat'         => $ubicacionApiResponse['latitude'] ?? 0,
-                               'lng'         => $ubicacionApiResponse['longitude'] ?? 0,
-                               'velocidad'   => 0,
-                               'imei'        => $imei ?? null,
-                               'deviceName'  => $ubicacionApiResponse['economico'] ?? null,
-                               'mcType'      => '',
-                               'datac' =>  $ubicacion,
-                               'esDatoEmp' => $esDatoEmp,
-                               'tipoEquipo' => $TipoEquipo
-                                ];
+                                'lat'         => $track['position']['latitude'] ?? 0,
+                                'lng'         => $track['position']['longitude'] ?? 0,
+                                'velocidad'   => $track['velocity']['groundSpeed'] ?? 0,
+                                'imei'        => $imei ?? null,
+                                'deviceName'  => $ubicacionApiResponse['economico'] ?? null,
+                                'mcType'      => '',
+                                'datac'       => $ubicacionApiResponse,
+                                'esDatoEmp'   => $esDatoEmp,
+                                'tipoEquipo'  => $TipoEquipo
+                            ];
                             break;
 
                         case 'https://www.tracksolidpro.com'://jimi -Concox
