@@ -656,14 +656,6 @@ function actualizarUbicacion(
                 map.fitBounds(bounds);
 
                 mapaAjustado = true;
-
-                google.maps.event.addListenerOnce(
-                    map,
-                    "bounds_changed",
-                    function () {
-                        if (map.getZoom() > 10) map.setZoom(10);
-                    },
-                );
             }
         }
 
@@ -710,6 +702,96 @@ function actualizarUbicacion(
         }
     });
 }
+document.addEventListener("click", function (e) {
+    if (e.target.classList.contains("btnRuta")) {
+        const key = e.target.dataset.key;
+
+        const btn = e.target;
+        const infoSpan = document.querySelector(`.infoRuta[data-key="${key}"]`);
+
+        const marker = markers[key];
+
+        if (!marker) return;
+
+        const position = marker.getPosition();
+
+        const origin = {
+            lat: position.lat(),
+            lng: position.lng(),
+        };
+
+        let info = contenedoresDisponibles.find((d) =>
+            key.includes(d.contenedor),
+        );
+
+        if (!info || !info.latitud || !info.longitud) {
+            Swal.fire({
+                icon: "warning",
+                title: "Sin ubicación",
+                text: "Este contenedor no tiene coordenadas",
+            });
+            return;
+        }
+
+        let latLlegada = parseFloat(info.latitud);
+        let lngLlegada = parseFloat(info.longitud);
+
+        if (directionsRenderer[key]) {
+            const isVisible = directionsRenderer[key].getMap();
+
+            directionsRenderer[key].setMap(isVisible ? null : map);
+
+            btn.textContent = isVisible ? "📍 Mostrar ruta" : "❌ Ocultar ruta";
+
+            if (infoSpan) {
+                infoSpan.style.display = isVisible ? "none" : "block";
+            }
+
+            return;
+        }
+
+        btn.textContent = "Calculando...";
+
+        directionsRenderer[key] = new google.maps.DirectionsRenderer({
+            map: map,
+        });
+
+        const request = {
+            origin: origin,
+            destination: {
+                lat: latLlegada,
+                lng: lngLlegada,
+            },
+            travelMode: google.maps.TravelMode.DRIVING,
+        };
+
+        directionsService.route(request, (result, status) => {
+            if (status === "OK") {
+                directionsRenderer[key].setDirections(result);
+
+                btn.textContent = "❌ Ocultar ruta";
+
+                const leg = result.routes[0].legs[0];
+
+                if (infoSpan) {
+                    infoSpan.style.display = "block";
+                    infoSpan.innerHTML = `
+                        🚗 <strong>${leg.distance.text}</strong><br>
+                        ⏱ <strong>${leg.duration.text}</strong>
+                    `;
+                }
+            } else {
+                btn.textContent = "📍 Mostrar ruta";
+
+                Swal.fire({
+                    icon: "error",
+                    title: "Error",
+                    text: "No se pudo calcular la ruta",
+                });
+            }
+        });
+    }
+});
 function limpiarMapa() {
     for (let key in markers) {
         markers[key].setMap(null);
