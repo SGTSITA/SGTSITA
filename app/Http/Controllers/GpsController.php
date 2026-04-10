@@ -574,6 +574,7 @@ class GpsController extends Controller
             ->leftjoin('proveedores', 'proveedores.id', '=', 'user_proveedores.proveedor_id')
 
               ->select(
+                  'equipos.id as id_camion',
                   'equipos.imei',
                   'equipos.id_equipo',
                   'equipos.placas',
@@ -592,6 +593,12 @@ class GpsController extends Controller
                 "),
                   'gps_company.id as gps_company_id',
                   DB::raw("'Propio' as tipo_viaje_contratado"),
+                  'equipos.usar_config_global',
+                  'equipos.id_equipo as id_equipo_chasis',
+                  'equipos.usar_config_global as usar_config_global_chasis',
+                  'equipos.placas as placas_chasis',
+                  'equipos.id as id_chasis',
+                  'gps_company.id as gps_company_id_chasis'
               )
             ->where('equipos.id', '=', $idKey)->first();
 
