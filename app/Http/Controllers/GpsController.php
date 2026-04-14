@@ -122,6 +122,8 @@ class GpsController extends Controller
                                    'datac' =>  $data,
                                    'esDatoEmp' => $esDatoEmp,
                                    'tipoEquipo' => $TipoEquipo,
+                                   'credenciales' => $credenciales
+
 
                                ];
 
