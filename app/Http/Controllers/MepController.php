@@ -8,6 +8,7 @@ use App\Models\Proveedor;
 use App\Models\Asignaciones;
 use App\Models\Cotizaciones;
 use App\Models\Equipo;
+use App\Models\User;
 use App\Models\Operador;
 use App\Models\GpsCompany;
 use App\Models\DocumCotizacion;
@@ -26,7 +27,20 @@ class MepController extends Controller
 
     public function getCatalogosMep(Request $request)
     {
-        $unidades = Equipo::where('id_empresa', auth()->user()->id_empresa)->get();
+        $userProveedores = User::find(auth()->user()->id);
+
+        $proveedorIds = $userProveedores->proveedores()->pluck('proveedor_id');
+
+
+        $usuariosRelacionados = User::whereHas('proveedores', function ($q) use ($proveedorIds) {
+            $q->whereIn('proveedor_id', $proveedorIds);
+        })->pluck('id');
+
+        $unidades = Equipo::whereIn('user_id', $usuariosRelacionados)
+             ->where('equipos.activo', true)
+         ->orderBy('equipos.created_at', 'desc')
+                 ->get();
+        //$unidades = Equipo::where('id_empresa', auth()->user()->id_empresa)->where('user_id', auth()->user()->id)->get();
         $operadores = Operador::where('id_empresa', auth()->user()->id_empresa)->get();
 
         return response()->json(["TMensaje" => "success", "unidades" => $unidades, "operadores" => $operadores]);
