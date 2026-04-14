@@ -249,7 +249,7 @@ class PlaneacionController extends Controller
             'operadores.nombre as operador',
             'proveedores.nombre as transportista_nombre',
             'cotizaciones.cp_contacto_entrega',
-            DB::raw('COALESCE(proveedores.telefono, operadores.telefono) as beneficiario_telefono')
+            DB::raw('COALESCE(operadores.telefono, proveedores.telefono) as beneficiario_telefono')
         )
         ->get();
 
@@ -769,6 +769,44 @@ class PlaneacionController extends Controller
             Log::channel('daily')->info('No se guardó Reprogramacion viajes: '.$t->getMessage());
             return response()->json(["TMensaje" => "warning","Titulo" => "No se pudo reprogramar", "Mensaje" => "Ocurrio un error mientras procesabamos su solicitud",'success' => true]);
         }
+    }
+
+    public function editar($id)
+    {
+        $idEmpresa = auth()->user()->id_empresa;
+
+        $cotizacion = Cotizaciones::with([
+        'Cliente',
+        'Subcliente',
+        'DocCotizacion.Asignaciones'
+    ])->where('id', $id)->firstOrFail();
+
+        //dd($cotizacion);
+
+        if ($cotizacion->id_empresa != $idEmpresa) {
+            abort(403);
+        }
+
+        $fecha = Carbon::now()->format('Y-m-d');
+        $proveedores = Proveedor::catalogoPrincipal()->where('id_empresa', '=', auth()->user()->id_empresa)
+        ->wherein('tipo', ['servicio de burreo', 'servicio de viaje'])
+        ->get();
+
+        $equipos = Equipo::where('id_empresa', '=', auth()->user()->id_empresa)->get();
+        $operadores = Operador::where('id_empresa', '=', auth()->user()->id_empresa)->get();
+        $bancos2 = Bancos::where('id_empresa', '=', auth()->user()->id_empresa)->where('saldo', '>', '0')->get();
+        $bancos = $this->BancosService->getCuentasOption(auth()->user()->id_empresa, $fecha, $fecha, true);
+
+        return view('planeacion.edit', compact(
+            'cotizacion',
+            'equipos',
+            'operadores',
+            'bancos',
+            'proveedores'
+        ) + [
+    'modoEdicion' => true,
+    'tipo' => optional($cotizacion->DocCotizacion->Asignaciones)->tipo_contrato ?? 'propio'
+]);
     }
 
     public function equipos(Request $request)
