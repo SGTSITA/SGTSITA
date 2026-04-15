@@ -339,7 +339,7 @@ class CoordenadasService
                 DB::raw("COALESCE(NULLIF(em.nombre, ''), emc.nombre) as empresa"),
                 'operadores.nombre as operador',
                 'prov.nombre as transportista_nombre',
-                DB::raw('COALESCE(prov.telefono, operadores.telefono) as beneficiario_telefono'),
+                DB::raw('COALESCE(operadores.telefono,prov.telefono) as beneficiario_telefono'),
                 DB::raw("
                     COALESCE(a.id_proveedor, c.id_proveedor)
                     as proveedor_id

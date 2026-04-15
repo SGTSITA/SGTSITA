@@ -47,6 +47,17 @@ class Proveedor extends Model
         );
     }
 
+    public function operadores()
+    {
+        return $this->belongsToMany(
+            Operador::class,
+            'proveedor_operador',
+            'proveedor_id',
+            'operador_id'
+        )->withPivot('empresa_id', 'estado')
+         ->withTimestamps();
+    }
+
     protected static function boot()
     {
         parent::boot();
