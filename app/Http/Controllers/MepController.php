@@ -14,6 +14,7 @@ use App\Models\GpsCompany;
 use App\Models\DocumCotizacion;
 use App\Traits\CommonTrait as common;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class MepController extends Controller
 {
@@ -41,8 +42,11 @@ class MepController extends Controller
          ->orderBy('equipos.created_at', 'desc')
                  ->get();
         //$unidades = Equipo::where('id_empresa', auth()->user()->id_empresa)->where('user_id', auth()->user()->id)->get();
-        $operadores = Operador::where('id_empresa', auth()->user()->id_empresa)->get();
-
+        // $operadores = Operador::where('id_empresa', auth()->user()->id_empresa)->get();
+        $operadores = Operador::whereHas('proveedores', function ($q) use ($proveedorIds) {
+            $q->whereIn('proveedor_id', $proveedorIds)
+              ->where('proveedor_operador.estado', 1);
+        })->get();
         return response()->json(["TMensaje" => "success", "unidades" => $unidades, "operadores" => $operadores]);
     }
 
@@ -141,7 +145,7 @@ class MepController extends Controller
 
     public function validarEquiposEmpresa($numUnidad, $imei, $placas, $serie, $provGps, $tipoEquipo)
     {
-        $unidad = Equipo::where('id_empresa', auth()->user()->id_empresa)->where('id_equipo', $numUnidad);
+        $unidad = Equipo::where('id_empresa', auth()->user()->id_empresa)->where('id_equipo', $numUnidad)->where('user_id', auth()->user()->id);
         if (!$unidad->exists()) {
             $unidad = new Equipo();
             $unidad->id_equipo = $numUnidad;
@@ -169,24 +173,58 @@ class MepController extends Controller
         $formData = $r->formData;
         $planearViaje = $formData['planear'];
 
-        //Verificar operador
-        $operador = Operador::where('id_empresa', auth()->user()->id_empresa)->where('nombre', $formData['txtOperador']);
-        if (!$operador->exists()) {
+        $idOperador = $formData['mepOperador'] ?? null;
+
+
+        $user = User::find(auth()->user()->id);
+
+        $proveedorIds = $user->proveedores()->pluck('proveedor_id');
+        $id_empresa = auth()->user()->id_empresa;
+        if ($idOperador) {
+
+            $operador = Operador::find($idOperador);
+
+            if ($operador) {
+                $operador->nombre = $formData['txtOperador'];
+                $operador->telefono = $formData['txtTelefono'];
+                $operador->update();
+            }
+        } else {
+
             $operador = new Operador();
             $operador->nombre = $formData['txtOperador'];
             $operador->telefono = $formData['txtTelefono'];
+            $operador->id_empresa = $id_empresa;
             $operador->save();
-        } else {
-            $operador = $operador->first();
-            $operador->telefono = $formData['txtTelefono'];
-            $operador->update();
         }
 
         $idOperador = $operador->id;
+
+
+        foreach ($proveedorIds as $proveedorId) {
+
+            $existeRelacion = DB::table('proveedor_operador')
+                ->where('operador_id', $idOperador)
+                ->where('proveedor_id', $proveedorId)
+                ->exists();
+
+            if (!$existeRelacion) {
+                DB::table('proveedor_operador')->insert([
+                    'operador_id' => $idOperador,
+                    'proveedor_id' => $proveedorId,
+                    'empresa_id' => $id_empresa,
+                    'estado' => 1,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
+        }
+
+
         $numeroUnidad = strtoupper(trim($formData['txtNumUnidad']));
         //TractoCamion
         // $idUnidad = self::validarEquiposEmpresa($formData['txtNumUnidad'], $formData['txtImei'],$formData['txtPlacas'],$formData['txtSerie'],$formData['selectGPS'],'Tractos / Camiones');
-        $unidadQuery = Equipo::where('id_empresa', auth()->user()->id_empresa)->where('id_equipo', $numeroUnidad);
+        $unidadQuery = Equipo::where('id_empresa', auth()->user()->id_empresa)->where('id_equipo', $numeroUnidad)->where('user_id', auth()->user()->id);
 
 
         if (!$unidadQuery->exists()) {

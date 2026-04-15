@@ -35,6 +35,18 @@ class Operador extends Model
         'curp',
     ];
 
+
+    public function proveedores()
+    {
+        return $this->belongsToMany(
+            Proveedor::class,
+            'proveedor_operador',
+            'operador_id',
+            'proveedor_id'
+        )->withPivot('empresa_id', 'estado')
+         ->withTimestamps();
+    }
+
     protected static function boot()
     {
         parent::boot();

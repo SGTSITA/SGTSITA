@@ -69,6 +69,8 @@ class CotizacionesController extends Controller
 
             $gpsEquipos = Equipo::where('usar_config_global', 0)
     ->whereNotNull('credenciales_gps')
+    ->where('id_empresa', auth()->user()->id_empresa)
+    ->where('user_id', auth()->user()->id)
     ->pluck('gps_company_id');
 
             $gpsCompanyIds = $gpsCompanyIds
