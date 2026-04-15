@@ -1,9 +1,9 @@
 ---
 title: Quote
 categories:
-  - Typography
+    - Typography
 tags:
-  - blockquote
-  - quotes
-  - quotation
+    - blockquote
+    - quotes
+    - quotation
 ---

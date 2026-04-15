@@ -3,10 +3,10 @@
 
 <head>
     <base href="/" />
-    <title>Sistema de Gestión de Transporte</title>
+    <title> Sistema de Gestión de Transporte</title>
     <meta charset="utf-8" />
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <meta name="id-cliente" content="{{ Auth::User()->id_cliente }}">
+    <meta name="csrf-token" content="{{ csrf_token() }}" />
+    <meta name="id-cliente" content="{{ Auth::User()->id_cliente }}" />
     <link rel="shortcut icon" href="/assets/metronic/media/logos/favicon.ico" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,400,500,600,700" />
     <link href="/assets/metronic/plugins/custom/datatables/datatables.bundle.css" rel="stylesheet" type="text/css" />
@@ -17,22 +17,22 @@
 
 <body id="kt_body" class="header-fixed">
     <script>
-        var defaultThemeMode = "light";
+        var defaultThemeMode = 'light';
         var themeMode;
         if (document.documentElement) {
-            if (document.documentElement.hasAttribute("data-bs-theme-mode")) {
-                themeMode = document.documentElement.getAttribute("data-bs-theme-mode");
+            if (document.documentElement.hasAttribute('data-bs-theme-mode')) {
+                themeMode = document.documentElement.getAttribute('data-bs-theme-mode');
             } else {
-                if (localStorage.getItem("data-bs-theme") !== null) {
-                    themeMode = localStorage.getItem("data-bs-theme");
+                if (localStorage.getItem('data-bs-theme') !== null) {
+                    themeMode = localStorage.getItem('data-bs-theme');
                 } else {
                     themeMode = defaultThemeMode;
                 }
             }
-            if (themeMode === "system") {
-                themeMode = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+            if (themeMode === 'system') {
+                themeMode = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
             }
-            document.documentElement.setAttribute("data-bs-theme", themeMode);
+            document.documentElement.setAttribute('data-bs-theme', themeMode);
         }
     </script>
     <div class="d-flex flex-column flex-root">
@@ -57,6 +57,14 @@
                         data-kt-scroll-offset="100">
                         <div class="menu menu-column menu-rounded menu-sub-indention menu-active-bg fw-semibold my-auto"
                             id="#kt_aside_menu" data-kt-menu="true">
+                            <div class="menu-item">
+                                <a class="menu-link" href="{{ route('dashboard') }}">
+                                    <span class="menu-icon">
+                                        <i class="ki-duotone ki-black-right fs-2"></i>
+                                    </span>
+                                    <span class="menu-title">Inicio</span>
+                                </a>
+                            </div>
                             <div data-kt-menu-trigger="click" class="menu-item menu-accordion">
                                 <span class="menu-link">
                                     <span class="menu-icon">
@@ -102,6 +110,7 @@
                                             <span class="menu-title">Solicitar Viaje</span>
                                         </a>
                                     </div>
+
                                     <div class="menu-item">
                                         <a href="{{ route('mis.viajes') }}" class="menu-link">
                                             <span class="menu-bullet">
@@ -110,6 +119,34 @@
                                             <span class="menu-title">Mis Viajes</span>
                                         </a>
                                     </div>
+                                    @can('Burrero MEC')
+                                        <div class="menu-item">
+                                            <a href="{{ route('viajes.local') }}" class="menu-link">
+                                                <span class="menu-bullet">
+                                                    <span class="bullet bullet-dot"></span>
+                                                </span>
+                                                <span class="menu-title">Solicitar Local</span>
+                                            </a>
+                                        </div>
+
+                                        <div class="menu-item">
+                                            <a href="{{ route('mis.viajeslocal') }}" class="menu-link">
+                                                <span class="menu-bullet">
+                                                    <span class="bullet bullet-dot"></span>
+                                                </span>
+                                                <span class="menu-title">Viajes Locales</span>
+                                            </a>
+                                        </div>
+
+                                        {{-- <div class="menu-item">
+                                                <a href="{{ route('mis.patiolocal') }}" class="menu-link">
+                                                    <span class="menu-bullet">
+                                                        <span class="bullet bullet-dot"></span>
+                                                    </span>
+                                                    <span class="menu-title">En patio</span>
+                                                </a>
+                                            </div> --}}
+                                    @endcan
                                 </div>
                             </div>
                             <div data-kt-menu-trigger="click" class="menu-item menu-accordion">
@@ -133,69 +170,75 @@
                             </div>
 
                             @can('Coordenadas MEC')
-                            <!--coordenadas -->
-                            <div data-kt-menu-trigger="click" class="menu-item menu-accordion">
-                                <span class="menu-link">
-                                    <span class="menu-icon">
-                                        <i class="ki-duotone ki-black-right fs-2"></i>
+                                <!--coordenadas -->
+                                <div data-kt-menu-trigger="click" class="menu-item menu-accordion">
+                                    <span class="menu-link">
+                                        <span class="menu-icon">
+                                            <i class="ki-duotone ki-black-right fs-2"></i>
+                                        </span>
+                                        <span class="menu-title">Coordenadas</span>
+                                        <span class="menu-arrow"></span>
                                     </span>
-                                    <span class="menu-title">Coordenadas</span>
-                                    <span class="menu-arrow"></span>
-                                </span>
-                                <div class="menu-sub menu-sub-accordion">
-                                    @can('Coordenadas MEC-P-verificacion')
-                                    <div class="menu-item">
-                                        <a href="{{ route('ver.extcoordenadamapa') }}" class="menu-link">
-                                            <span class="menu-bullet">
+                                    <div class="menu-sub menu-sub-accordion">
+                                        @can('Coordenadas MEC-P-verificacion')
+                                            <div class="menu-item">
+                                                <a href="{{ route('ver.extcoordenadamapa') }}" class="menu-link">
+                                                    <span class="menu-bullet">
+                                                        <span class="bullet bullet-dot"></span>
+                                                    </span>
+                                                    <span class="menu-title">Punto de verificación</span>
+                                                </a>
+                                            </div>
+                                        @endcan
+
+                                        @can('Coordenadas MEC-Bitacora-verificacion')
+                                            <div class="menu-item">
+                                                <a href="{{ route('seach.extcoordenadas') }}" class="menu-link">
+                                                    <span class="menu-bullet">
+                                                        <span class="bullet bullet-dot"></span>
+                                                    </span>
+                                                    <span class="menu-title">Bitácora de Verificación</span>
+                                                </a>
+                                            </div>
+                                        @endcan
+
+                                        @can('Coordenadas MEC-B-busqueda Cuestionarios')
+                                            <div class="menu-item">
+                                                <a href="{{ route('extcompartircoor') }}" class="menu-link">
+                                                    <span class="menu-bullet">
+                                                        <span class="bullet bullet-dot"></span>
+                                                    </span>
+                                                    <span class="menu-title">Compartir Cuestionarios</span>
+                                                </a>
+                                            </div>
+                                        @endcan
+
+                                        @can('Coordenadas MEC-Rastrear')
+                                            <div class="menu-item">
+                                                <a href="{{ route('exrastrearContenedor') }}" class="menu-link">
+                                                    <span class="menu-bullet">
+                                                        <span class="bullet bullet-dot"></span>
+                                                    </span>
+                                                    <span class="menu-title">Rastrear</span>
+                                                </a>
+                                            </div>
+                                        @endcan
+
+                                        {{--
+                                                <div class="menu-item">
+                                                <a href="{{ route('exindex.conboys') }}" class="menu-link">
+                                                <span class="menu-bullet">
                                                 <span class="bullet bullet-dot"></span>
-                                            </span>
-                                            <span class="menu-title">Punto de verificación</span>
-                                        </a>
+                                                </span>
+                                                <span class="menu-title">Convoys Virtuales</span>
+                                                </a>
+                                                </div>
+                                            --}}
                                     </div>
-                                    @endcan
-                                    @can('Coordenadas MEC-Bitacora-verificacion')
-                                    <div class="menu-item">
-                                        <a href="{{ route('seach.extcoordenadas') }}" class="menu-link">
-                                            <span class="menu-bullet">
-                                                <span class="bullet bullet-dot"></span>
-                                            </span>
-                                            <span class="menu-title">Bitácora de Verificación</span>
-                                        </a>
-                                    </div>
-                                    @endcan
-                                    @can('Coordenadas MEC-B-busqueda Cuestionarios')
-                                    <div class="menu-item">
-                                        <a href="{{ route('extcompartircoor') }}" class="menu-link">
-                                            <span class="menu-bullet">
-                                                <span class="bullet bullet-dot"></span>
-                                            </span>
-                                            <span class="menu-title">Compartir Cuestionarios</span>
-                                        </a>
-                                    </div>
-                                    @endcan
-                                    @can('Coordenadas MEC-Rastrear')
-                                    <div class="menu-item">
-                                        <a href="{{ route('exrastrearContenedor') }}" class="menu-link">
-                                            <span class="menu-bullet">
-                                            <span class="bullet bullet-dot"></span>
-                                            </span>
-                                            <span class="menu-title">Rastrear</span>
-                                        </a>
-                                        </div>
-                                    @endcan
-                                  {{--       <div class="menu-item">
-                                        <a href="{{ route('exindex.conboys') }}" class="menu-link">
-                                            <span class="menu-bullet">
-                                            <span class="bullet bullet-dot"></span>
-                                            </span>
-                                            <span class="menu-title">Convoys Virtuales</span>
-                                        </a>
-                                        </div> --}}
-                                      
                                 </div>
-                            </div>
-                                 <!--END coordenadas -->
-                           @endcan
+                                <!--END coordenadas -->
+                            @endcan
+
                             <!-- contactos -->
                             <div data-kt-menu-trigger="click" class="menu-item menu-accordion">
                                 <span class="menu-link">
@@ -226,6 +269,36 @@
                             </div>
 
 
+                            <!--Reportes de documentos -->
+                            @can('Reportes MEC')
+                                <div data-kt-menu-trigger="click" class="menu-item menu-accordion">
+                                    <span class="menu-link">
+                                        <span class="menu-icon">
+                                            <i class="ki-duotone ki-black-right fs-2"></i>
+                                        </span>
+                                        <span class="menu-title">Reportes</span>
+                                        <span class="menu-arrow"></span>
+                                    </span>
+                                    <div class="menu-sub menu-sub-accordion">
+                                        <div class="menu-item">
+                                            <a href="{{ route('ext_index_documentos.reporteria') }}" class="menu-link">
+                                                <span class="menu-bullet">
+                                                    <span class="bullet bullet-dot"></span>
+                                                </span>
+                                                <span class="menu-title">Documentos</span>
+                                            </a>
+                                        </div>
+                                        {{-- <div class="menu-item">
+                                            <a href="{{ route('contactos.create') }}" class="menu-link">
+                                                <span class="menu-bullet">
+                                                    <span class="bullet bullet-dot"></span>
+                                                </span>
+                                                <span class="menu-title">Agregar Contacto</span>
+                                            </a>
+                                        </div> --}}
+                                    </div>
+                                </div>
+                            @endcan
                         </div>
                     </div>
                 </div>
@@ -236,9 +309,12 @@
                                 <img src="/img/icon-user.jpg" alt="photo" />
                             </div>
                             <div class="ms-2">
-                                <a href="#"
-                                    class="text-gray-800 text-hover-primary fs-6 fw-bold lh-1">{{ Auth::User()->name }}</a>
-                                <span class="text-muted fw-semibold d-block fs-7 lh-1">{{ Auth::User()->name }}</span>
+                                <a href="#" class="text-gray-800 text-hover-primary fs-6 fw-bold lh-1">
+                                    {{ Auth::User()->name }}
+                                </a>
+                                <span class="text-muted fw-semibold d-block fs-7 lh-1">
+                                    {{ Auth::User()->name }}
+                                </span>
                             </div>
                         </div>
                         <div class="ms-1">
@@ -257,23 +333,24 @@
                                         <div class="d-flex flex-column">
                                             <div class="fw-bold d-flex align-items-center fs-5">
                                                 {{ Auth::User()->name }}
-                                                <span
-                                                    class="badge badge-light-success fw-bold fs-8 px-2 py-1 ms-2">Perfil
-                                                    Cliente</span>
+                                                <span class="badge badge-light-success fw-bold fs-8 px-2 py-1 ms-2">
+                                                    Perfil Cliente
+                                                </span>
                                             </div>
-                                            <a href="#"
-                                                class="fw-semibold text-muted text-hover-primary fs-7">{{ Auth::User()->email }}</a>
+                                            <a href="#" class="fw-semibold text-muted text-hover-primary fs-7">
+                                                {{ Auth::User()->email }}
+                                            </a>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="separator my-2"></div>
                                 <!--div class="menu-item px-5">
-                    <a href="account/overview.html" class="menu-link px-5">My Profile</a>
-                  </div-->
+                        <a href="account/overview.html" class="menu-link px-5">My Profile</a>
+                      </div-->
                                 <!--div class="separator my-2"></div-->
                                 <!--div class="menu-item px-5 my-1">
-                    <a href="account/settings.html" class="menu-link px-5">Account Settings</a>
-                  </div-->
+                        <a href="account/settings.html" class="menu-link px-5">Account Settings</a>
+                      </div-->
                                 <div class="menu-item px-5">
                                     <a href="/signout" class="menu-link px-5">Cerrar sesión</a>
                                 </div>
@@ -289,8 +366,9 @@
                         <div class="page-title d-flex flex-column align-items-start justify-content-center flex-wrap me-lg-2 pb-10 pb-lg-0"
                             data-kt-swapper="true" data-kt-swapper-mode="prepend"
                             data-kt-swapper-parent="{default: '#kt_content_container', lg: '#kt_header_container'}">
-                            <h1 class="d-flex flex-column text-gray-900 fw-bold my-0 fs-1">Hola,
-                                {{ Auth::User()->name }}</h1>
+                            <h1 class="d-flex flex-column text-gray-900 fw-bold my-0 fs-1">
+                                Hola, {{ Auth::User()->name }}
+                            </h1>
                             @yield('BreadCrumb')
                         </div>
                         <div class="d-flex d-lg-none align-items-center ms-n3 me-2">
@@ -301,9 +379,9 @@
                                 </i>
                             </div>
                             <!-- <a href="/" class="d-flex align-items-center">
-                  <img alt="Logo" src="/assets/metronic/media/logos/demo3.svg" class="theme-light-show h-20px" />
-                  <img alt="Logo" src="/assets/metronic/media/logos/demo3-dark.svg" class="theme-dark-show h-20px" />
-                </a> -->
+                      <img alt="Logo" src="/assets/metronic/media/logos/demo3.svg" class="theme-light-show h-20px" />
+                      <img alt="Logo" src="/assets/metronic/media/logos/demo3-dark.svg" class="theme-dark-show h-20px" />
+                    </a> -->
                         </div>
                         <div class="d-flex align-items-center flex-shrink-0 mb-0 mb-lg-0">
                             <div id="kt_header_search" class="header-search d-flex align-items-center w-lg-250px"
@@ -347,7 +425,6 @@
                                 </form>
                             </div>
                             <div class="d-flex align-items-center ms-3 ms-lg-4">
-                                
                                 <a href="#"
                                     class="btn btn-icon btn-color-gray-700 btn-active-color-primary btn-outline w-40px h-40px ml-3"
                                     data-kt-menu-trigger="{default:'click', lg: 'hover'}" data-kt-menu-attach="parent"
@@ -420,10 +497,11 @@
                                 </div>
                             </div>
                             <div class="d-flex align-items-center ms-3 ms-lg-4">
-                            <a href="#" id ="waIconStatus" class="btn  btn-color-gray-700 btn-active-color-primary btn-outline  h-40px" >
-                                    <i class="ki-duotone ki-whatsapp  fs-1">
+                                <a href="#" id="waIconStatus"
+                                    class="btn btn-color-gray-700 btn-active-color-primary btn-outline h-40px">
+                                    <i class="ki-duotone ki-whatsapp fs-1">
                                         <span class="path1"></span>
-                                        <span class="path2"></span> 
+                                        <span class="path2"></span>
                                     </i>
                                     <span class="fs-8 text-dark" id="waTextStatus">...</span>
                                 </a>
@@ -439,16 +517,17 @@
                 <div class="footer py-4 d-flex flex-lg-column" id="kt_footer">
                     <div class="container-fluid d-flex flex-column flex-md-row flex-stack">
                         <div class="text-gray-900 order-2 order-md-1">
-                            <span class="text-gray-500 fw-semibold me-1">SGT - Sistema de Gestión de Transporte</span>
-
+                            <span class="text-gray-500 fw-semibold me-1">
+                                SGT - Sistema de Gestión de Transporte
+                            </span>
                         </div>
                         <ul class="menu menu-gray-600 menu-hover-primary fw-semibold order-1">
                             <!--li class="menu-item">
-                  <a href="#" target="_blank" class="menu-link px-2">Acerca de</a>
-                </li>
-                <li class="menu-item">
-                  <a href="#" target="_blank" class="menu-link px-2">Soporte</a>
-                </li-->
+                      <a href="#" target="_blank" class="menu-link px-2">Acerca de</a>
+                    </li>
+                    <li class="menu-item">
+                      <a href="#" target="_blank" class="menu-link px-2">Soporte</a>
+                    </li-->
                             <li class="menu-item">
                                 <a href="#" target="_blank" class="menu-link px-2">+52 561 068 5796</a>
                             </li>
@@ -459,7 +538,7 @@
         </div>
     </div>
 
-    @include('cotizaciones.externos.modal_whatsapp_login') 
+    @include('cotizaciones.externos.modal_whatsapp_login')
 
     <div id="kt_scrolltop" class="scrolltop" data-kt-scrolltop="true">
         <i class="ki-duotone ki-arrow-up">
@@ -469,10 +548,9 @@
     </div>
 
     <script>
-        var hostUrl = "/assets/metronic/";
-        var waClient = {{auth()->user()->id}}
-        var waHost = "{{env('WHATSAPP_HOST')}}"
-        
+        var hostUrl = '/assets/metronic/';
+        var waClient = {{ auth()->user()->id }};
+        var waHost = '{{ env('WHATSAPP_HOST') }}';
     </script>
     <script src="/assets/metronic/plugins/global/plugins.bundle.js"></script>
     <script src="/assets/metronic/js/scripts.bundle.js"></script>
@@ -488,29 +566,27 @@
                 localStorage.setItem('uuid', genericUUID);
             }
 
-            await getWaQr();
+            // await getWaQr();
 
-            let waElements = document.querySelectorAll('.waElements')
+            let waElements = document.querySelectorAll('.waElements');
 
-            if(waStatus != 'ready'){
-            waElements.forEach((el)=>{
-                el.classList.add('d-none')
-            });
+            // if (waStatus != 'ready') {
+            //     waElements.forEach((el) => {
+            //         el.classList.add('d-none');
+            //     });
 
-            setTimeout(() => {
-                const modalElement = document.getElementById('kt_modal_whatsapp_login');
-                const whastAppModal = new bootstrap.Modal(modalElement);
-                whastAppModal.show();
-            }, 500);
-
-            }else{
-            waReadyComponents()
-            }
-        })
+            //     setTimeout(() => {
+            //         const modalElement = document.getElementById('kt_modal_whatsapp_login');
+            //         const whastAppModal = new bootstrap.Modal(modalElement);
+            //         whastAppModal.show();
+            //     }, 500);
+            // } else {
+            //     waReadyComponents();
+            // }
+        });
     </script>
 
     @stack('javascript')
-
 </body>
 
 </html>

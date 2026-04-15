@@ -1,8 +1,8 @@
 ---
 title: Spellcheck
 categories:
-  - Typography
+    - Typography
 tags:
-  - spelling
-  - grammar
+    - spelling
+    - grammar
 ---

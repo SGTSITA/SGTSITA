@@ -1,9 +1,9 @@
 ---
 title: Symmetry horizontal
 categories:
-  - Graphics
+    - Graphics
 tags:
-  - align
-  - orientation
-  - mirror
+    - align
+    - orientation
+    - mirror
 ---

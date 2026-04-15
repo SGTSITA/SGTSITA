@@ -1,8 +1,8 @@
 ---
 title: Currency euro
 categories:
-  - Commerce
+    - Commerce
 tags:
-  - money
-  - finance
+    - money
+    - finance
 ---

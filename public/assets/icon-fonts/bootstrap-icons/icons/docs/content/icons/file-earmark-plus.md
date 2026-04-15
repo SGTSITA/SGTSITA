@@ -1,10 +1,10 @@
 ---
 title: File earmark plus
 categories:
-  - Files and folders
+    - Files and folders
 tags:
-  - doc
-  - document
-  - add
-  - new
+    - doc
+    - document
+    - add
+    - new
 ---

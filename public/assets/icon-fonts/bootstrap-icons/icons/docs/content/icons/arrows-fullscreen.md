@@ -1,7 +1,7 @@
 ---
 title: Arrows fullscreen
 categories:
-  - Arrows
+    - Arrows
 tags:
-  - arrow
+    - arrow
 ---

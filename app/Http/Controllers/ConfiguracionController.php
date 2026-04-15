@@ -4,19 +4,19 @@ namespace App\Http\Controllers;
 
 use App\Models\Configuracion;
 use Illuminate\Http\Request;
-use DB;
-use Session;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Session;
 
 class ConfiguracionController extends Controller
 {
-    public function index(Request $request ,$id)
+    public function index(Request $request, $id)
     {
         $configuracion = Configuracion::find($id);
 
         return view('configuracion.index', compact('configuracion'));
     }
 
-    public function update(Request $request,$id)
+    public function update(Request $request, $id)
     {
         $this->validate($request, [
             'nombre_sistema' => 'required',
