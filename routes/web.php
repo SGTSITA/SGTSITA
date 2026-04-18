@@ -419,7 +419,7 @@ Route::group(['middleware' => ['auth']], function () {
         Route::get('/programar-viaje', [App\Http\Controllers\PlaneacionController::class, 'programarViaje'])->name('planeacion.programar');
 
         Route::post('viajes/reprogramar', [App\Http\Controllers\PlaneacionController::class, 'reprogramarViajes'])->name('asignacion.reprogramar');
-
+Route::post('viajes/{id}/fechas', [App\Http\Controllers\PlaneacionController::class, 'cambioFechas'])->name('asignacion.cambio_fechas');
     });
 
 
