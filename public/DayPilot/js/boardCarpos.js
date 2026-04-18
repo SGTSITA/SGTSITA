@@ -305,7 +305,8 @@ dp.onEventClick = function (args) {
         args.e.data.id,
     );
 };
-
+let modoEdicion = false;
+let asignacionId = null;
 function abrirMapaEnNuevaPestana(contenedor, tipoS) {
     const url = `/coordenadas/mapa_rastreo?contenedor=${contenedor}&tipoS=${encodeURIComponent(tipoS)}`;
     window.open(url, "_blank");
@@ -379,9 +380,14 @@ function getInfoViaje(startDate, endDate, numContenedor_, idContendor) {
         },
         success: (response) => {
             ocultarLoading();
+            fechaSalida.textContent = formatFecha(
+                response.documentos.fecha_inicio,
+            );
             fechaEntrega.textContent = formatFecha(
                 response.documentos.fecha_fin,
             );
+
+            asignacionId = response.documentos.asignacionId;
             nombreProveedor.textContent = response.documentos.Empresa;
             contactoEntrega.textContent =
                 response.documentos.cp_contacto_entrega ?? "--";
@@ -431,6 +437,14 @@ function getInfoViaje(startDate, endDate, numContenedor_, idContendor) {
             btnRastreo.onclick = () => {
                 abrirMapaEnNuevaPestana(numContenedor_, tipoS);
             };
+            btnEditarViaje.onclick = async () => {
+                if (!modoEdicion) {
+                    activarModoEdicion();
+                } else {
+                    await guardarCambios();
+                }
+            };
+
             let documentosRequeridos = [
                 "boleta_liberacion",
                 "boleta_vacio",
@@ -486,6 +500,73 @@ function getInfoViaje(startDate, endDate, numContenedor_, idContendor) {
     bootstrapModal.show();
 }
 
+function activarModoEdicion() {
+    let contSalida = document.getElementById("contenedorFechaSalida");
+    let contEntrega = document.getElementById("contenedorFechaEntrega");
+
+    let valorInicio = document.getElementById("fechaSalida").textContent.trim();
+    let valorFin = document.getElementById("fechaEntrega").textContent.trim();
+
+    contSalida.innerHTML = `
+        <input type="text" class="form-control form-control-sm dateInput"
+            id="txtFechaInicio" value="${valorInicio}">
+    `;
+
+    contEntrega.innerHTML = `
+        <input type="text" class="form-control form-control-sm dateInput"
+            id="txtFechaFinal" value="${valorFin}">
+    `;
+
+    flatpickr(".dateInput", {
+        dateFormat: "d/m/Y",
+        locale: "es",
+    });
+
+    modoEdicion = true;
+
+    btnEditarViaje.textContent = "Aplicar cambios";
+    btnEditarViaje.classList.remove("btn-primary");
+    btnEditarViaje.classList.add("btn-success");
+}
+async function guardarCambios() {
+    let fechaInicio = document.getElementById("txtFechaInicio").value;
+    let fechaFinal = document.getElementById("txtFechaFinal").value;
+
+    try {
+        let res = await fetch(`/planeaciones/viajes/${asignacionId}/fechas`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRF-TOKEN": document.querySelector(
+                    'meta[name="csrf-token"]',
+                ).content,
+            },
+            body: JSON.stringify({
+                fecha_inicio: fechaInicio,
+                fecha_fin: fechaFinal,
+            }),
+        });
+
+        let data = await res.json();
+
+        volverModoLectura(fechaInicio, fechaFinal);
+    } catch (error) {
+        console.error(error);
+    }
+}
+function volverModoLectura(inicio, fin) {
+    document.getElementById("contenedorFechaSalida").innerHTML =
+        `<b id="fechaSalida">${inicio}</b>`;
+
+    document.getElementById("contenedorFechaEntrega").innerHTML =
+        `<b id="fechaEntrega">${fin}</b>`;
+
+    modoEdicion = false;
+
+    btnEditarViaje.textContent = "Editar Fechas viaje";
+    btnEditarViaje.classList.remove("btn-success");
+    btnEditarViaje.classList.add("btn-primary");
+}
 function confirmarCambiosPlaneacion() {
     var _token = $('input[name="_token"]').val();
     let payload = { _token, ajustes: JSON.stringify(ajustes) };

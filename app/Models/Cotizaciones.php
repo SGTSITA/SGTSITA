@@ -13,6 +13,10 @@ class Cotizaciones extends Model
     use Auditable;
     protected $table = 'cotizaciones';
 
+    protected $casts = [
+    'editing_at' => 'datetime',
+];
+
     protected $fillable = [
         'id_cliente',
         'id_subcliente',
@@ -87,8 +91,9 @@ class Cotizaciones extends Model
         'confirmacion_sello',
         'nuevo_sello',
         'agente_aduanal',
-        'fecha_eir'
-
+        'fecha_eir',
+        'editing_by',
+        'editing_at',
     ];
 
     public function Cliente()

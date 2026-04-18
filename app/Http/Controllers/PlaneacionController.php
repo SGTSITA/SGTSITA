@@ -222,6 +222,7 @@ class PlaneacionController extends Controller
         ->leftjoin('operadores', 'operadores.id', '=', 'asignaciones.id_operador')
         ->leftjoin('proveedores', 'proveedores.id', '=', 'asignaciones.id_proveedor')
         ->select(
+            'asignaciones.id as asignacionId',
             'cotizaciones.id',
             'clients.nombre as cliente',
             'docum_cotizacion.num_contenedor',
@@ -770,6 +771,29 @@ class PlaneacionController extends Controller
             return response()->json(["TMensaje" => "warning","Titulo" => "No se pudo reprogramar", "Mensaje" => "Ocurrio un error mientras procesabamos su solicitud",'success' => true]);
         }
     }
+
+    public function cambioFechas(Request $request, $id)
+    {
+
+
+        $fechaInicio = common::TransformaFecha($request->fecha_inicio);
+        $fechaFinal = common::TransformaFecha($request->fecha_fin);
+
+        $asignaciones = Asignaciones::find($id);
+        $asignaciones->fecha_inicio = $fechaInicio;
+        $asignaciones->fecha_fin = $fechaFinal . ' 23:00:00';
+        $asignaciones->fehca_inicio_guard = $fechaInicio;
+        $asignaciones->fehca_fin_guard = $fechaFinal . ' 23:00:00';
+        $asignaciones->save();
+
+
+        return response()->json(["TMensaje" => "success","Titulo" => "Fechas cambiadas", "Mensaje" => "Se han cambiado las fechas del viaje exitosamente",'success' => true]);
+
+
+    }
+
+
+
 
     public function editar($id)
     {

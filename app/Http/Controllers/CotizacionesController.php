@@ -980,8 +980,39 @@ class CotizacionesController extends Controller
         $bancos = $this->BancosService->getCuentasOption(auth()->user()->id_empresa, $fecha, $fecha, true);
 
 
-        // dd($documentacion);
-        return view('cotizaciones.editv1', compact('bancos', 'cotizacion', 'documentacion', 'clientes', 'gastos_extras', 'gastos_ope', 'proveedores'));
+
+        //nueva validacion para evitar concurrencia en edicion ,
+
+        $bloqueado = false;
+
+
+        if (
+            $cotizacion->editing_by &&
+            $cotizacion->editing_by != auth()->id() &&
+            $cotizacion->editing_at &&
+            $cotizacion->editing_at->gt(now()->subMinutes(10))
+        ) {
+            $bloqueado = true;
+        } else {
+
+            $cotizacion->update([
+                'editing_by' => auth()->id(),
+                'editing_at' => now(),
+            ]);
+        }
+
+        // dd($bloqueado);
+
+        return view('cotizaciones.editv1', compact(
+            'bancos',
+            'cotizacion',
+            'documentacion',
+            'clientes',
+            'gastos_extras',
+            'gastos_ope',
+            'proveedores',
+            'bloqueado'
+        ));
     }
 
     public function cotizacionesFull(Request $request)
@@ -1496,22 +1527,30 @@ class CotizacionesController extends Controller
             $cotizaciones->direccion_entrega = $contenedor['direccion_entrega'];
             $cotizaciones->uso_recinto = ($request->text_recinto == 'recinto-si') ? 1 : 0;
             $cotizaciones->direccion_recinto = $request->direccion_recinto ;
-            $cotizaciones->burreo = $request->burreo;
-            $cotizaciones->estadia = $request->estadia;
+
             $cotizaciones->fecha_modulacion = $contenedor['fecha_modulacion'];
             $cotizaciones->fecha_entrega = $contenedor['fecha_entrega'];
-            $cotizaciones->precio_viaje = $request->precio_viaje;
+
             $cotizaciones->tamano = $contenedor['tamano'];
             $cotizaciones->peso_contenedor = $contenedor['peso_contenedor'];
-            $cotizaciones->maniobra = $request->maniobra;
-            $cotizaciones->otro = $request->otro;
-            $cotizaciones->iva = $request->iva;
-            $cotizaciones->retencion = $request->retencion;
+
             $cotizaciones->bloque = $contenedor['bloque'];
             $cotizaciones->bloque_hora_i = $contenedor['bloque_hora_i'];
             $cotizaciones->bloque_hora_f = $contenedor['bloque_hora_f'];
             $cotizaciones->peso_reglamentario = $request->peso_reglamentario;
             $cotizaciones->fecha_eir = $contenedor['fecha_eir'];
+
+            //validacion nueva de si el usuario tiene editando informacion y otro usuario entra a colocar valores y este usuario guarda, remplaza los valores.
+
+            $verificarCobroAnterior = $cotizaciones->restante;
+
+            $cotizaciones->precio_viaje = $request->precio_viaje;
+            $cotizaciones->maniobra = $request->maniobra;
+            $cotizaciones->otro = $request->otro;
+            $cotizaciones->iva = $request->iva;
+            $cotizaciones->retencion = $request->retencion;
+            $cotizaciones->burreo = $request->burreo;
+            $cotizaciones->estadia = $request->estadia;
             $cotizaciones->base_factura = $request->base_factura;
             $cotizaciones->base_taref = $request->base_taref;
             $cotizaciones->sobrepeso = $contenedor['sobrepeso'];
@@ -1535,7 +1574,7 @@ class CotizacionesController extends Controller
              }
 
 */
-            $verificarCobroAnterior = $cotizaciones->restante;
+
 
             $cobrado = $cotizaciones->cobros()->sum('monto');
             $total =  $request->total;
