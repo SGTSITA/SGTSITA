@@ -291,7 +291,7 @@ class MepController extends Controller
 
         $proveedorid = $formData['cmbProveedor'];
 
-
+        $DocCotizacion = DocumCotizacion::where('id', $idContenedor)->first();
 
         if ($asignacion) {
 
@@ -318,7 +318,7 @@ class MepController extends Controller
         } else {
             $fecha = date('Y-m-d');
             $asignacion = new Asignaciones();
-            $asignacion->id_empresa = auth()->user()->id_empresa;
+            $asignacion->id_empresa = $DocCotizacion?->Cotizacion?->id_empresa ?? auth()->user()->id_empresa;
             $asignacion->id_contenedor = $idContenedor;
             $asignacion->id_camion = $idunidad;
             $asignacion->id_chasis = $idChasisA;

@@ -16,12 +16,17 @@
                             <span id="numContenedorSpan"></span>
                         </h6>
                         <p class="text-sm mb-0">
-                            Fecha salida.
-                            <b id="fechaSalida"></b>
+                            Fecha salida:
+                            <span id="contenedorFechaSalida">
+                                <b id="fechaSalida"></b>
+                            </span>
                         </p>
+
                         <p class="text-sm mb-0">
                             Fecha entrega:
-                            <b id="fechaEntrega"></b>
+                            <span id="contenedorFechaEntrega">
+                                <b id="fechaEntrega"></b>
+                            </span>
                         </p>
                         <p class="text-sm mb-0">
                             Origen:
@@ -164,6 +169,10 @@
                 <button type="button" class="btn btn-sm btn-success" title="Rastrear contenedor" id="btnRastreo">
                     <i class="fa fa-shipping-fast"></i>
                     Rastreo
+                </button>
+                <button type="button" class="btn btn-sm bg-gradient-info" id="btnEditarViaje">
+                    <i class="fa fa-edit"></i>
+                    Editar Fechas viaje
                 </button>
                 <button type="button" class="btn btn-sm bg-gradient-danger" id="btnDeshacer">
                     Deshacer planeación

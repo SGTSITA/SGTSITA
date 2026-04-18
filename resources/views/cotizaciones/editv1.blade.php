@@ -5,11 +5,50 @@
 @endsection
 
 @section('content')
+    @if ($bloqueado)
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                Swal.fire({
+                    title: 'Registro en uso',
+                    text: 'Esta cotización está siendo modificada por otro usuario.',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Modo lectura',
+                    cancelButtonText: 'Regresar',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false
+                }).then((result) => {
+                    if (result.isConfirmed) {
+
+                        document.querySelectorAll('input, select, textarea, button:not(.no-disable)')
+                            .forEach(el => el.disabled = true);
+                    } else {
+
+                        window.history.back();
+                    }
+                });
+            });
+        </script>
+    @endif
     <div class="contaboleta_liberacionr-fluid">
         <div class="row">
             <div class="col-sm-12">
                 <div class="card">
                     <div class="card-header">
+                        @if ($bloqueado)
+                            <div class="alert alert-warning d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>Esta cotización está siendo modificada por otro usuario.</strong><br>
+                                    <span class="badge bg-secondary">Modo lectura</span>
+                                    <span class="ms-2">No puedes realizar cambios en este momento.</span>
+                                </div>
+
+                                <button type="button" class="btn btn-sm btn-outline-dark no-disable"
+                                    onclick="window.history.back()">
+                                    Regresar
+                                </button>
+                            </div>
+                        @endif
                         <div style="display: flex; justify-content: space-between; align-items: center">
                             <h3 class="mb-3">Editar Cotizacion</h3>
                             <div class="col-3 offset-3">
@@ -116,7 +155,7 @@
                                 @endcan
 
                                 @if ($cotizacion->estatus_planeacion == 1)
-                                    @if ($documentacion->Asignaciones->id_proveedor != null)
+                                    @if ($documentacion?->Asignaciones?->id_proveedor != null)
                                         <button class="nav-link custom-tab" id="nav-Proveedor-tab" data-bs-toggle="tab"
                                             data-bs-target="#nav-Proveedor" type="button" role="tab"
                                             aria-controls="nav-Proveedor" aria-selected="false">
@@ -124,7 +163,7 @@
                                                 width="40px" />
                                             Proveedor
                                         </button>
-                                    @elseif ($documentacion->Asignaciones->id_proveedor == null)
+                                    @elseif ($documentacion?->Asignaciones?->id_proveedor == null)
                                         @can('cotizacion-valores')
                                             <button class="nav-link custom-tab" id="nav-GastosOpe-tab" data-bs-toggle="tab"
                                                 data-bs-target="#nav-GastosOpe" type="button" role="tab"
@@ -154,7 +193,7 @@
 
                                     <div class="row">
                                         <h3 class="mb-5 mt5">Datos de cotizacion</h3>
-                                        @if ($documentacion->num_contenedor != null)
+                                        @if ($documentacion?->num_contenedor != null)
                                             <label style="font-size: 20px" class="labelNumContedor"
                                                 id="labelNumContenedor-1">
                                                 Num contenedor: {{ $documentacion->num_contenedor }}
@@ -163,13 +202,13 @@
 
                                         <div class="col-6 form-group">
                                             <!--label for="name">Cliente *</label>
-                                                                                                        <select class="form-select cliente d-inline-block" data-toggle="select" id="id_cliente" name="id_cliente">
-                                                                                                            <option value="{{ $cotizacion->id_cliente }}">{{ $cotizacion->Cliente->nombre }} / {{ $cotizacion->Cliente->telefono }}</option>
-                                                                                                            @foreach ($clientes as $item)
+                                                                                                                                                                            <select class="form-select cliente d-inline-block" data-toggle="select" id="id_cliente" name="id_cliente">
+                                                                                                                                                                                <option value="{{ $cotizacion->id_cliente }}">{{ $cotizacion->Cliente->nombre }} / {{ $cotizacion->Cliente->telefono }}</option>
+                                                                                                                                                                                @foreach ($clientes as $item)
     <option value="{{ $item->id }}">{{ $item->nombre }} / {{ $item->telefono }}</option>
     @endforeach
 
-                                                                                                        </select-->
+                                                                                                                                                                            </select-->
                                             <ul class="list-group">
                                                 <li
                                                     class="list-group-item border-1 border-dashed d-flex p-4 mb-2 bg-gray-100 border-radius-lg">
@@ -210,14 +249,14 @@
 
                                         <div class="col-6 form-group">
                                             <!--label for="name">Subcliente *</label>
-                                                                                                        <select class="form-select subcliente d-inline-block" id="id_subcliente" name="id_subcliente">
+                                                                                                                                                                            <select class="form-select subcliente d-inline-block" id="id_subcliente" name="id_subcliente">
 
-                                                        @if ($cotizacion->id_subcliente != null)
+                                                                                                                            @if ($cotizacion->id_subcliente != null)
     <option value="{{ $cotizacion->id_subcliente }}">{{ $cotizacion->Subcliente->nombre }} / {{ $cotizacion->Subcliente->telefono }}</option>
 @else
     <option value="">Seleccionar subcliente</option>
     @endif
-                                                                                                        </select-->
+                                                                                                                                                                            </select-->
                                             <ul class="list-group">
                                                 <li
                                                     class="list-group-item border-1 border-dashed d-flex p-4 mb-2 bg-gray-100 border-radius-lg">
@@ -1618,12 +1657,13 @@
 
                             <div class="modal-footer">
                                 @can('cotizacion-valores')
-                                    <button type="submit" class="btn btn-primary">Guardar</button>
+                                    <button type="submit" class="btn btn-primary"
+                                        @disabled($bloqueado)>Guardar</button>
                                 @endcan
 
                                 @can('cotizacion-cambiocimamep')
                                     <button type="button" id="btnCambiarCimaOpcion" data-id="{{ $cotizacion->id }}"
-                                        class="btn btn-primary">Guardar</button>
+                                        class="btn btn-primary" @disabled($bloqueado)>Guardar</button>
                                 @endcan
 
                             </div>
