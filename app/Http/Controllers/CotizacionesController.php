@@ -2644,17 +2644,33 @@ class CotizacionesController extends Controller
             DB::beginTransaction();
             $contenedores = json_decode($request->seleccionContenedores);
 
-            foreach ($contenedores as $c) {
-                $cotizaciones = DB::table('cotizaciones')
-                ->where('id', $c->IdContenedor)
-                ->update([
-                    'id_empresa' => $request->empresa,
-                    'estatus' => 'Pendiente'
-                ]);
 
-                $contenedores = DB::table('docum_cotizacion')
-                ->where('id_cotizacion', '=', $c->IdContenedor)
-                ->update(['id_empresa' => $request->empresa]);
+            $request->validate([
+    'empresa' => 'required|exists:empresas,id',
+    'proveedor' => 'nullable|exists:proveedores,id',
+]);
+
+
+            $proveedor = $request->proveedor ?: null;
+
+            foreach ($contenedores as $c) {
+
+                $cotizacion = Cotizaciones::find($c->IdContenedor);
+
+                if ($cotizacion) {
+                    $cotizacion->id_empresa   = $request->empresa;
+                    $cotizacion->id_proveedor = $proveedor;
+                    $cotizacion->estatus      = 'Pendiente';
+                    $cotizacion->save();
+                }
+
+
+                $doc = DocumCotizacion::where('id_cotizacion', $c->IdContenedor)->first();
+
+                if ($doc) {
+                    $doc->id_empresa   = $request->empresa;
+                    $doc->save();
+                }
 
                 //Verificar que el cliente este visible en la empresa a la que se asigna
 
@@ -2673,7 +2689,7 @@ class CotizacionesController extends Controller
             return response()->json(["TMensaje" => "success", "Mensaje" => "Contenedores asignados correctamente","Titulo" => "Proceso satisfactorio"]);
         } catch (\Throwable $t) {
             DB::rollback();
-            return response()->json(["TMensaje" => "error", "Mensaje" => "No fue posible asignar los contenedores. $t->getMessage()","Titulo" => "No asignado"]);
+            return response()->json(["TMensaje" => "error", "Mensaje" => "No fue posible asignar los contenedores. " . $t->getMessage(), "Titulo" => "No asignado"]);
 
         }
 
