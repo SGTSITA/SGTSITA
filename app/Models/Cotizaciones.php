@@ -49,6 +49,10 @@ class Cotizaciones extends Model
         'bloque_hora_i',
         'bloque_hora_f',
         'latitud',
+        'img_boleta',
+        'carta_porte',
+        'carta_porte_xml' ,
+
         'longitud',
         'direccion_mapa',
         'fecha_seleccion_ubicacion',
