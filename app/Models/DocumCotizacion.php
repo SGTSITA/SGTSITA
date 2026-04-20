@@ -14,26 +14,33 @@ class DocumCotizacion extends Model
     protected $table = 'docum_cotizacion';
 
     protected $fillable = [
-        'id_cotizacion',
-        'num_contenedor',
-        'terminal',
-        'num_autorizacion',
-        'boleta_liberacion',
-        'doda',
-        'id_empresa',
-        'foto_patio',
-        'boleta_patio',
-        'fecha_boleta_vacio',
-        'num_carta_porte',
-        'num_doda',
-        'num_boleta_liberacion',
-        'ccp',
-        'cima',
-        'doc_eir',
-        'eir',
-        'doc_ccp'
+     'id_cotizacion',
+     'id_empresa',
+     'num_contenedor',
+     'terminal',
+     'num_autorizacion',
+     'boleta_liberacion',
+     'doda',
 
-    ];
+     'num_boleta_liberacion',
+     'num_doda',
+     'num_carta_porte',
+
+     'boleta_vacio',
+     'fecha_boleta_vacio',
+
+     'eir',
+     'doc_eir',
+
+     'ccp',
+     'doc_ccp',
+
+     'foto_patio',
+     'boleta_patio',
+     'fecha_boleta_patio',
+
+     'cima',
+];
 
     public function Cotizacion()
     {
