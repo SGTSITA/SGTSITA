@@ -990,7 +990,7 @@ class CotizacionesController extends Controller
             $cotizacion->editing_by &&
             $cotizacion->editing_by != auth()->id() &&
             $cotizacion->editing_at &&
-            $cotizacion->editing_at->gt(now()->subMinutes(10))
+            $cotizacion->editing_at->gt(now()->subMinutes(13))
         ) {
             $bloqueado = true;
         } else {
@@ -2561,14 +2561,33 @@ class CotizacionesController extends Controller
 
             }
 
-            ($r->urlRepo != 'PreAlta' && $r->urlRepo != 'CartaPortePDF' && $r->urlRepo != 'CartaPorteXML')
-            ? DocumCotizacion::where('id', $idDocum)->update($update) // id de cotizacion?? no deberia ser de documentos? corregido
-            : Cotizaciones::where('id', $id_cot)->update($update);
+            if (
+                $r->urlRepo != 'PreAlta' &&
+                $r->urlRepo != 'CartaPortePDF' &&
+                $r->urlRepo != 'CartaPorteXML'
+            ) {
+                $doc = DocumCotizacion::find($idDocum);
 
-            if ($r->urlRepo == 'PreAlta') {
-                DocumCotizacion::where('id', $idDocum)->update(['boleta_vacio' => 'si']);
+                if ($doc) {
+                    $doc->update($update);
+                }
+
+            } else {
+                $cot = Cotizaciones::find($id_cot);
+
+                if ($cot) {
+                    $cot->update($update);
+                }
             }
 
+            if ($r->urlRepo == 'PreAlta') {
+                $doc = DocumCotizacion::find($idDocum);
+
+                if ($doc) {
+                    $doc->boleta_vacio = 'si';
+                    $doc->save();
+                }
+            }
 
             if ($tipoViajecontenedor !== 'local') {
                 Log::channel('daily')->info('Maniobra adjuntar documentos foraneo', ['cotizacion' => $id_cot, 'tipoViaje' => $tipoViajecontenedor]);
