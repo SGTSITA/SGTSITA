@@ -28,7 +28,10 @@ class DocumCotizacion extends Model
         'num_doda',
         'num_boleta_liberacion',
         'ccp',
-        'cima'
+        'cima',
+        'doc_eir',
+        'eir',
+        'doc_ccp'
 
     ];
 
