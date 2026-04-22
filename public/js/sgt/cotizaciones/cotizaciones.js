@@ -1749,15 +1749,24 @@ $("#cotizacionCreateMultiple").on("submit", async function (e) {
     formData["sobrePeso"] = sobrePeso;
     formData["precioSobrePeso"] = reverseMoneyFormat(precioSobrePeso);
     //coordenadas para comparacion
-    formData["latitud"] = document.getElementById("latitud")?.value ?? null;
-    formData["longitud"] = document.getElementById("longitud")?.value ?? null;
-    formData["direccion_mapa"] =
-        document.getElementById("direccion_mapa")?.value ?? null;
-    formData["fecha_seleccion"] =
-        document.getElementById("fecha_seleccion")?.value ?? null;
 
-    formData["latitud"] = document.getElementById("latitud")?.value ?? null;
-    formData["longitud"] = document.getElementById("longitud")?.value ?? null;
+    //nueva cvalidacion de sellecion de lat y lng en mapa , si no no dejar guardar la cotizacion
+    let latitud = document.getElementById("latitud")?.value ?? null;
+    let longitud = document.getElementById("longitud")?.value ?? null;
+
+    if ((latitud && !longitud) || (!latitud && longitud)) {
+        Swal.fire(
+            "Coordenadas incompletas",
+            "Parece que ha proporcionado solo una coordenada, por favor asegúrese de seleccionar ambos valores de latitud y longitud en el mapa.",
+            "warning",
+        );
+        return false;
+    }
+
+    //
+
+    formData["latitud"] = latitud;
+    formData["longitud"] = longitud;
     formData["direccion_mapa"] =
         document.getElementById("direccion_mapa")?.value ?? null;
     formData["fecha_seleccion"] =
@@ -1867,18 +1876,73 @@ $("#cotizacionCreate").on("submit", function (e) {
     formData["id_cliente"] = $("#id_cliente").val();
     formData["id_subcliente"] = selectSubClient.value;
 
+    //nueva cvalidacion de sellecion de lat y lng en mapa , si no no dejar guardar la cotizacion
+    let latitud = document.getElementById("latitud")?.value ?? null;
+    let longitud = document.getElementById("longitud")?.value ?? null;
+
+    const latVacia =
+        latitud === null ||
+        latitud === undefined ||
+        latitud.toString().trim() === "";
+
+    const lngVacia =
+        longitud === null ||
+        longitud === undefined ||
+        longitud.toString().trim() === "";
+
+    if (latVacia && lngVacia) {
+        Swal.fire(
+            "Sin coordenadas",
+            "Por favor selecciona un punto en el mapa.",
+            "warning",
+        );
+        return false;
+    }
+
+    if ((latVacia && !lngVacia) || (!latVacia && lngVacia)) {
+        Swal.fire(
+            "Coordenadas incompletas",
+            "Debes seleccionar tanto latitud como longitud.",
+            "warning",
+        );
+        return false;
+    }
+
+    const lat = Number(latitud);
+    const lng = Number(longitud);
+
+    const fueraDeMexico =
+        isNaN(lat) ||
+        isNaN(lng) ||
+        lat < 14 ||
+        lat > 33 ||
+        lng < -118 ||
+        lng > -86;
+
+    if (fueraDeMexico) {
+        Swal.fire(
+            "Coordenadas fuera de rango",
+            "Selecciona un punto dentro de México.",
+            "warning",
+        );
+        return false;
+    }
+
     //
-    formData["latitud"] = document.getElementById("latitud")?.value ?? null;
-    formData["longitud"] = document.getElementById("longitud")?.value ?? null;
+
+    formData["latitud"] = latitud;
+    formData["longitud"] = longitud;
     formData["direccion_mapa"] =
         document.getElementById("direccion_mapa")?.value ?? null;
     formData["fecha_seleccion"] =
         document.getElementById("fecha_seleccion")?.value ?? null;
+
     formData["modifico_informacion"] =
         document.getElementById("modifico_informacion")?.value ?? 0;
 
     //Obtenemos el UUID si es que ya se habia iniciado una cotizacion
     var uuid = localStorage.getItem("uuid");
+
     //Validaciones MEC
     if (uuid != null) {
         formData["uuid"] = uuid;
