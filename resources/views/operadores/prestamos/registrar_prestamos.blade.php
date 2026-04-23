@@ -5,156 +5,137 @@
 @endsection
 
 @section('content')
-<div class="container-fluid">
+    <style>
+        .btn-abonar {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-abonar:hover {
+            background-color: #218838;
+        }
+    </style>
+
+
+    <div class="container-fluid mt-4">
         <div class="row">
             <div class="col-sm-12">
-<!-- Asegúrate de tener en tu <head> -->
-<!-- <meta name="csrf-token" content="{{ csrf_token() }}"> -->
+                <div class="card shadow-sm">
+                    <div class="card-header bg-light text-dark d-flex justify-content-between align-items-center">
 
-<div class="card shadow-sm">
-  <div class="card-header bg-light text-dark">
-    <h5 class="mb-0">Registro de Préstamo</h5>
-  </div>
-  <div class="card-body">
-    <form id="formPrestamo" novalidate>
-      <div class="row g-3">
-        <!-- Nombre de operador -->
-        <div class="col-md-6">
-          <label for="id_operador" class="form-label">Nombre de operador</label>
-          <select id="id_operador" name="id_operador" class="form-select" required>
-            <option value="">Seleccione un operador</option>
-            @foreach($operadores as $o)
-            <option value="{{$o->id}}">{{$o->nombre}}</option>
-            @endforeach
+                        <h5 class="mb-0">
+                            Resumen de prestamos/adelantos por Operador
+                        </h5>
 
-          </select>
-          <div class="invalid-feedback">Debe seleccionar un operador.</div>
-        </div>
+                        <div class="d-flex gap-2">
 
-        <!-- Cantidad de préstamo -->
-        <div class="col-md-6">
-          <label for="cantidad" class="form-label">Cantidad de préstamo</label>
-          <input type="number" name="cantidad" id="cantidad" class="form-control" placeholder="Ingrese la cantidad" required min="0.01" step="0.01">
-          <div class="invalid-feedback">Ingrese una cantidad válida mayor a 0.</div>
-        </div>
+                            <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#modalNuevoPrestamo">
+                                <i class="bi bi-plus-circle me-1"></i>
+                                Nuevo Prestamo/Adelanto
+                            </button>
 
-    
+                            <button class="btn btn-primary btn-sm" id="btnRecargarGrid">
+                                <i class="bi bi-arrow-repeat me-1"></i>
 
-        <div class="col-md-6">
-          <label for="id_banco" class="form-label">Banco de retiro</label>
-          <select id="id_banco" name="id_banco" class="form-select" required>
-            <option value="">Seleccione un banco</option>
-            @foreach($bancos as $b)
-            <option value="{{$b->id}}">{{$b->nombre_banco}}</option>
-            @endforeach
-          </select>
-          <div class="invalid-feedback">Seleccione banco de retiro.</div>
-        </div>
+                            </button>
 
-   
+                        </div>
 
-      <div class="d-flex justify-content-end mt-4">
-        <button type="submit" class="btn btn-success px-4">Guardar</button>
-      </div>
-    </form>
-  </div>
-</div>
-
-
-
+                    </div>
+                    <div class="card-body">
+                        <div id="gridPrestamosActivos" class="ag-theme-alpine" style="height: 650px;  border-radius:8px;">
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-</div>
+    </div>
+
+    @include('operadores.prestamos.modal-registrar-prestamo')
 @endsection
 
+
 @push('custom-javascript')
-<script>
-$(function () {
-  const $form = $("#formPrestamo");
+    <script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.js"></script>
+    <script
+        src="{{ asset('js/sgt/operadores/prestamos.js') }}?v={{ filemtime(public_path('js/sgt/operadores/prestamos.js')) }}">
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
+    <script>
+        flatpickr(".dateInput", {
+            dateFormat: "d/m/Y",
+            locale: "es"
+        });
+        $(function() {
 
-  const csrfToken = $('meta[name="csrf-token"]').attr('content') || '';
+            $('#btnGuardarPrestamoModal').on('click', function() {
 
+                let invalid = false;
 
+                const id_operador = $('#modal_id_operador').val();
+                const id_banco = $('#modal_id_banco').val();
+                const cantidad = $('#modal_cantidad').val();
+                const FechaAplicacion = $('#modal_FechaAplicacion').val();
+                const tipo = $('#modal_tipo').val();
 
-  
+                $('.is-invalid').removeClass('is-invalid');
 
-  // Limpiar errores al cambiar inputs
-  $form.on('input change', 'input, select', function () {
-    $(this).removeClass('is-invalid');
-  });
+                if (!id_operador) {
+                    $('#modal_id_operador').addClass('is-invalid');
+                    invalid = true;
+                }
 
-  $form.on('submit', function (e) {
-    e.preventDefault();
+                if (!id_banco) {
+                    $('#modal_id_banco').addClass('is-invalid');
+                    invalid = true;
+                }
 
-    // Limpiar marcas previas
-    $form.find('.is-invalid').removeClass('is-invalid');
+                if (!cantidad || Number(cantidad) <= 0) {
+                    $('#modal_cantidad').addClass('is-invalid');
+                    invalid = true;
+                }
 
-    // Validación simple en cliente
-    let invalid = false;
+                if (invalid) return;
 
-    const id_operador = $("#id_operador").val();
-    const id_banco = $("#id_banco").val();
+                $.ajax({
+                    url: '/prestamos/store',
+                    method: 'POST',
+                    data: {
+                        id_operador,
+                        id_banco,
+                        cantidad,
+                        FechaAplicacion,
+                        tipo,
+                        _token: $('meta[name="csrf-token"]').attr('content')
+                    },
+                    success: function(resp) {
 
-    const cantidad = $("#cantidad").val();
-    
+                        if (resp.success === false) {
+                            Swal.fire('Error', resp.Mensaje, 'error');
+                            return;
+                        }
 
-    if (!id_operador) {
-      $("#id_operador").addClass('is-invalid'); invalid = true;
-    }
-    if (!id_banco) {
-      $("#id_banco").addClass('is-invalid'); invalid = true;
-    }
-    if (!cantidad || Number(cantidad) <= 0) {
-      $("#cantidad").addClass('is-invalid'); invalid = true;
-    }
+                        Swal.fire('Guardado correctamente', '', 'success');
 
+                        $('#modalNuevoPrestamo').modal('hide');
+                        $('#formPrestamoModal')[0].reset();
 
+                        // Aquí puedes recargar grid
+                        $('#btnRecargarGrid').click();
+                    }
+                });
 
-    if (invalid) {
-      // no enviamos si hay errores cliente
-      return;
-    }
+            });
 
-    // Payload
-    const payload = {
-      id_operador,
-      id_banco,
-      cantidad,
-     
-      _token: csrfToken
-    };
-
-    $.ajax({
-      url: "/prestamos/store",
-      method: "POST",
-      data: payload,
-      success: function (resp) {
-        // éxito
-        Swal.fire('Préstamo guardado correctamente','','success');
-        // opcional: reset form
-        $form[0].reset();
-       
-      },
-      error: function (xhr) {
-        if (xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.errors) {
-          const errors = xhr.responseJSON.errors;
-          // asigna errores a campos
-          Object.keys(errors).forEach(function (field) {
-            // los nombres son iguales a los name/id usados en el form
-            const $el = $("#" + field);
-            if ($el.length) {
-              $el.addClass('is-invalid');
-              // muestra mensaje en el .invalid-feedback (el primero)
-              $el.next('.invalid-feedback').text(errors[field][0]);
-            }
-          });
-        } else {
-          console.error(xhr.responseText);
-          Swal.fire('Ocurrió un error al guardar.','Revisa la consola.','error');
-        }
-      }
-    });
-  });
-});
-</script>
+        });
+    </script>
 @endpush

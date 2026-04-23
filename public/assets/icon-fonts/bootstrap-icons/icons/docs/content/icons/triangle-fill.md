@@ -1,7 +1,7 @@
 ---
 title: Triangle fill
 categories:
-  - Shapes
+    - Shapes
 tags:
-  - shape
+    - shape
 ---

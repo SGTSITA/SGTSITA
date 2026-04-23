@@ -1,11 +1,11 @@
 ---
 title: Cash
 categories:
-  - Commerce
+    - Commerce
 tags:
-  - money
-  - bills
-  - funds
-  - wallet
-  - currency
+    - money
+    - bills
+    - funds
+    - wallet
+    - currency
 ---

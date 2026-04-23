@@ -1,9 +1,9 @@
 ---
 title: Brightness high fill
 categories:
-  - UI and keyboard
+    - UI and keyboard
 tags:
-  - brightness
-  - sun
-  - weather
+    - brightness
+    - sun
+    - weather
 ---

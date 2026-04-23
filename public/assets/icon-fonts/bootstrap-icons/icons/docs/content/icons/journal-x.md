@@ -1,12 +1,12 @@
 ---
 title: Journal x
 categories:
-  - Files and folders
+    - Files and folders
 tags:
-  - file
-  - folder
-  - journal
-  - notebook
-  - remove
-  - delete
+    - file
+    - folder
+    - journal
+    - notebook
+    - remove
+    - delete
 ---

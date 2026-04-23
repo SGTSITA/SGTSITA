@@ -1,9 +1,9 @@
 ---
 title: List columns reverse
 categories:
-  - Typography
+    - Typography
 tags:
-  - text
-  - type
-  - alignment
+    - text
+    - type
+    - alignment
 ---
