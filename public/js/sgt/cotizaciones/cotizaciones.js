@@ -1139,11 +1139,27 @@ document.addEventListener("DOMContentLoaded", function () {
         calcularTotal("proveedores");
     });
 });
-
+let mapClickListener = null;
 function crearurlmapalatitudlongitud(lat, lng) {
     let url = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
     console.log(url);
     return url;
+}
+
+const btnCopiarMapa = document.getElementById("btnCopiarMapa");
+if (btnCopiarMapa) {
+    btnCopiarMapa.addEventListener("click", () => {
+        const url = document.getElementById("linkMapa").href;
+
+        navigator.clipboard.writeText(url);
+
+        const btn = document.getElementById("btnCopiarMapa");
+        btn.innerHTML = '<i class="fas fa-check"></i>';
+
+        setTimeout(() => {
+            btn.innerHTML = '<i class="fas fa-copy"></i>';
+        }, 1200);
+    });
 }
 
 var modal = document.getElementById("mapModal");
@@ -1189,7 +1205,7 @@ if (modal) {
         const lng = parseFloat(document.getElementById("longitud").value);
         const direccion = document.getElementById("direccion_entrega").value;
 
-        if ((!lat || !lng) && direccion) {
+        if ((isNaN(lat) || isNaN(lng)) && direccion) {
             // Geocoding con dirección
             fetch(
                 `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(direccion)}`,
