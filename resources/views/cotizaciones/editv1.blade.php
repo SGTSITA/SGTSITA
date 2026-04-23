@@ -202,13 +202,13 @@
 
                                         <div class="col-6 form-group">
                                             <!--label for="name">Cliente *</label>
-                                                                                                                                                                            <select class="form-select cliente d-inline-block" data-toggle="select" id="id_cliente" name="id_cliente">
-                                                                                                                                                                                <option value="{{ $cotizacion->id_cliente }}">{{ $cotizacion->Cliente->nombre }} / {{ $cotizacion->Cliente->telefono }}</option>
-                                                                                                                                                                                @foreach ($clientes as $item)
+                                                                                                                                                                                                                                <select class="form-select cliente d-inline-block" data-toggle="select" id="id_cliente" name="id_cliente">
+                                                                                                                                                                                                                                    <option value="{{ $cotizacion->id_cliente }}">{{ $cotizacion->Cliente->nombre }} / {{ $cotizacion->Cliente->telefono }}</option>
+                                                                                                                                                                                                                                    @foreach ($clientes as $item)
     <option value="{{ $item->id }}">{{ $item->nombre }} / {{ $item->telefono }}</option>
     @endforeach
 
-                                                                                                                                                                            </select-->
+                                                                                                                                                                                                                                </select-->
                                             <ul class="list-group">
                                                 <li
                                                     class="list-group-item border-1 border-dashed d-flex p-4 mb-2 bg-gray-100 border-radius-lg">
@@ -249,14 +249,14 @@
 
                                         <div class="col-6 form-group">
                                             <!--label for="name">Subcliente *</label>
-                                                                                                                                                                            <select class="form-select subcliente d-inline-block" id="id_subcliente" name="id_subcliente">
+                                                                                                                                                                                                                                <select class="form-select subcliente d-inline-block" id="id_subcliente" name="id_subcliente">
 
-                                                                                                                            @if ($cotizacion->id_subcliente != null)
+                                                                                                                                                                                @if ($cotizacion->id_subcliente != null)
     <option value="{{ $cotizacion->id_subcliente }}">{{ $cotizacion->Subcliente->nombre }} / {{ $cotizacion->Subcliente->telefono }}</option>
 @else
     <option value="">Seleccionar subcliente</option>
     @endif
-                                                                                                                                                                            </select-->
+                                                                                                                                                                                                                                </select-->
                                             <ul class="list-group">
                                                 <li
                                                     class="list-group-item border-1 border-dashed d-flex p-4 mb-2 bg-gray-100 border-radius-lg">
@@ -366,6 +366,39 @@
                                                 <textarea class="form-control" placeholder="Dirección entrega" name="direccion_entrega" id="direccion_entrega"
                                                     aria-label="Dirección Entrega">
     {{ $cotizacion->direccion_entrega }}</textarea>
+
+
+                                                <label class="form-label fw-semibold">Link en mapa</label>
+
+                                                <div class="input-group">
+
+                                                    <a href="@if (isset($cotizacion->latitud, $cotizacion->longitud)) {{ 'https://www.google.com/maps/search/?api=1&query=' . $cotizacion->latitud . ',' . $cotizacion->longitud }}@else# @endif"
+                                                        id="linkMapa" target="_blank"
+                                                        class="form-control text-primary text-truncate text-decoration-none d-flex align-items-center overflow-hidden"
+                                                        style="cursor:pointer;">
+
+                                                        <span id="textoMapa">
+                                                            @if (isset($cotizacion->latitud, $cotizacion->longitud))
+                                                                {{ 'https://www.google.com/maps/search/?api=1&query=' . $cotizacion->latitud . ',' . $cotizacion->longitud }}
+                                                            @else
+                                                                Sin ubicación asignada
+                                                            @endif
+                                                        </span>
+                                                    </a>
+
+                                                    <button type="button" id="btnCopiarMapa"
+                                                        class="btn btn-outline-primary d-flex align-items-center justify-content-center"
+                                                        style="min-width:45px;" title="Copiar enlace">
+                                                        <i class="fas fa-copy"></i>
+                                                    </button>
+
+                                                </div>
+
+
+
+
+
+
 
                                                 <div class="mt-2">
                                                     <button type="button" class="btn btn-outline-primary"
@@ -1178,7 +1211,8 @@
                                                                                         <select
                                                                                             class="form-select bg-transparent cliente d-inline-block"
                                                                                             data-toggle="select"
-                                                                                            id="cima" name="cima">
+                                                                                            id="cima"
+                                                                                            name="cima">
                                                                                             <option value="1"
                                                                                                 @if ($documentacion->cima == 1) selected @endif>
                                                                                                 Si
