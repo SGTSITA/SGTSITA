@@ -443,6 +443,7 @@ class PlaneacionController extends Controller
         // dd($otrosGastos);
         if ($otrosGastos && is_array($otrosGastos)) {
             $validadarSaldos = 'SI';
+            $gastosPorBanco = [];
             $montosPorBanco = [];
 
 
