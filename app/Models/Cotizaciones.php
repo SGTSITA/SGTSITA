@@ -207,6 +207,17 @@ class Cotizaciones extends Model
 
     //final con nuevo modelo
 
+    public function viajes()
+    {
+        return $this->belongsToMany(
+            Viajes::class,
+            'viajes_cotizacion',
+            'cotizacion_id',
+            'viaje_id'
+        )->using(ViajesCotizacion::class);
+    }
+
+
 
     protected static function boot()
     {

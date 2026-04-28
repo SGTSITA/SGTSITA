@@ -40,6 +40,10 @@ class DocumCotizacion extends Model
      'fecha_boleta_patio',
 
      'cima',
+     'cita_at',
+     'eta',
+     'naviera_id',
+     'pedimento_recibido_at',
 ];
 
     public function Cotizacion()
@@ -58,6 +62,11 @@ class DocumCotizacion extends Model
         return [
             'referencia' => $this->num_contenedor,
         ];
+    }
+
+    public function naviera()
+    {
+        return $this->belongsTo(Naviera::class, 'naviera_id');
     }
 
     protected static function boot()
