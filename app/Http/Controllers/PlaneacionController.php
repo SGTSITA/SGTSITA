@@ -984,7 +984,7 @@ class PlaneacionController extends Controller
 
                 $tipoGasto = $descripcionGastosPermitidos[$motivo];
 
-                // Evitar duplicados
+
                 $gastoExistente = GastosOperadores::where('id_cotizacion', $contenedor->id_cotizacion)
                     ->where('tipo', $tipoGasto)
                     ->first();
@@ -996,7 +996,7 @@ class PlaneacionController extends Controller
                     continue;
                 }
 
-                // Registrar gasto operador
+
                 $datosGasto = [
                     "id_cotizacion" => $contenedor->id_cotizacion,
                     "id_banco" => $esPagoInmediato ? $idBanco : null,
@@ -1061,7 +1061,7 @@ class PlaneacionController extends Controller
                     $data = [
                             'cuenta_bancaria_id' => $idBanco,            'tipo' => 'cargo',
                             'monto' => floatval($monto),
-                            'concepto' => "GOP". "{$tipoGasto} {$numContenedor}" ,
+                            'concepto' => "GOP ". "{$tipoGasto} {$numContenedor}" ,
                             'fecha_movimiento' => \Carbon\Carbon::createFromFormat(
                                 'd/m/Y',
                                 $fechaAplicacion
