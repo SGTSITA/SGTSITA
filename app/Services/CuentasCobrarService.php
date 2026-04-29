@@ -31,14 +31,24 @@ class CuentasCobrarService
             );
 
 
-        $cobrosSub = DB::table('cobros_pagos_cotizaciones')
-            ->join('cobros_pagos', 'cobros_pagos.id', '=', 'cobros_pagos_cotizaciones.cobro_pago_id')
-            ->where('cobros_pagos.tipo', 'cxc')
-            ->groupBy('cotizacion_id')
-            ->select(
-                'cotizacion_id',
-                DB::raw('SUM(monto) as total_cobrado')
-            );
+        /*  $cobrosSub = DB::table('cobros_pagos_cotizaciones')
+             ->join('cobros_pagos', 'cobros_pagos.id', '=', 'cobros_pagos_cotizaciones.cobro_pago_id')
+             ->where('cobros_pagos.tipo', 'cxc')
+             ->groupBy('cotizacion_id')
+             ->select(
+                 'cotizacion_id',
+                 DB::raw('SUM(monto) as total_cobrado')
+             ); */
+
+        $cobrosSub = DB::table('cobros_pagos_cotizaciones as cpc')
+    ->join('cobros_pagos as cp', 'cp.id', '=', 'cpc.cobro_pago_id')
+    ->join('cotizaciones as c', 'c.id', '=', 'cpc.cotizacion_id')
+    ->where('cp.tipo', 'cxc')
+    ->groupBy(DB::raw('COALESCE(c.referencia_full, c.id)'))
+    ->select(
+        DB::raw('COALESCE(c.referencia_full, c.id) as grupo'),
+        DB::raw('SUM(cpc.monto) as total_cobrado')
+    );
 
 
         $gastosSub = DB::table('gastos_extras')
@@ -67,9 +77,9 @@ class CuentasCobrarService
                $join->on('cotizaciones.id', '=', 'gastos_ext.id_cotizacion');
            })
 
-           ->leftJoinSub($cobrosSub, 'cobros', function ($join) {
-               $join->on('cotizaciones.id', '=', 'cobros.cotizacion_id');
-           })
+          ->leftJoinSub($cobrosSub, 'cobros', function ($join) {
+              $join->on(DB::raw('COALESCE(cotizaciones.referencia_full, cotizaciones.id)'), '=', 'cobros.grupo');
+          })
            ->leftJoin('asignaciones as a', 'a.id_contenedor', '=', 'docum_cotizacion.id')
            ->whereIn('cotizaciones.estatus', ['Aprobada', 'Finalizado'])
            ->where('cotizaciones.id_empresa', '=', auth()->user()->id_empresa)
@@ -78,33 +88,33 @@ class CuentasCobrarService
          //   ->where('cotizaciones.restante', '>', 0)
 
            ->select([
-               'cotizaciones.id',
-               'cotizaciones.id_cliente',
-               'cotizaciones.origen',
-'cotizaciones.destino',
-'cotizaciones.jerarquia',
-               'clients.nombre as cliente_nombre',
-               'clients.telefono as cliente_telefono',
-               'subclientes.nombre as nombre_subcliente',
-'subclientes.telefono as telefono_subcliente',
-'cotizaciones.id_subcliente',
-'cotizaciones.tipo_viaje',
-'cotizaciones.estatus',
-'cotizaciones.referencia_full',
-               'docum_cotizacion.num_contenedor',
-               'viajes.id as viaje_id',
-               'a.fehca_inicio_guard as fecha_inicio_guard',
+                         'cotizaciones.id',
+                         'cotizaciones.id_cliente',
+                         'cotizaciones.origen',
+          'cotizaciones.destino',
+          'cotizaciones.jerarquia',
+                         'clients.nombre as cliente_nombre',
+                         'clients.telefono as cliente_telefono',
+                         'subclientes.nombre as nombre_subcliente',
+          'subclientes.telefono as telefono_subcliente',
+          'cotizaciones.id_subcliente',
+          'cotizaciones.tipo_viaje',
+          'cotizaciones.estatus',
+          'cotizaciones.referencia_full',
+                         'docum_cotizacion.num_contenedor',
+                         'viajes.id as viaje_id',
+                         'a.fehca_inicio_guard as fecha_inicio_guard',
 
-               DB::raw('COALESCE(costos.total_costos,0) + COALESCE(gastos_ext.gastos_T,0) as total_costos'),
+                         DB::raw('COALESCE(costos.total_costos,0) + COALESCE(gastos_ext.gastos_T,0) as total_costos'),
 
-               DB::raw('COALESCE(cobros.total_cobrado,0) as total_cobrado'),
+                         DB::raw('COALESCE(cobros.total_cobrado,0) as total_cobrado'),
 
-               DB::raw('
+                         DB::raw('
                 (COALESCE(costos.total_costos,0) + COALESCE(gastos_ext.gastos_T,0))
                 - COALESCE(cobros.total_cobrado,0)
                 as total_restante
             ')
-           ]);
+                     ]);
 
         $query = DB::query()->fromSub($base, 't')   ->select('t.*');
 
