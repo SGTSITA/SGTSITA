@@ -3345,7 +3345,10 @@ class CotizacionesController extends Controller
             $doc->num_autorizacion = $request->num_autorizacion;
             $doc->cita_at = $request->cita_at ?? null;
             $doc->eta = $request->eta ?? null;
-            $doc->naviera_id = $request->naviera_id  ?? null;
+            $naviera = $request->naviera_id;
+            $doc->naviera_id = ($naviera === null || $naviera === '' || $naviera === 'null')
+    ? null
+    : (int) $naviera;
             $doc->pedimento_recibido_at = $request->pedimento_recibido_at ?? null;
 
 
