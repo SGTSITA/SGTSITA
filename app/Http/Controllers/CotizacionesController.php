@@ -3343,10 +3343,10 @@ class CotizacionesController extends Controller
             }
             $doc->terminal = $request->terminal_local;
             $doc->num_autorizacion = $request->num_autorizacion;
-            $doc->cita_at = $request->cita_at;
-            $doc->eta = $request->eta;
-            $doc->naviera_id = $request->naviera_id;
-            $doc->pedimento_recibido_at = $request->pedimento_recibido_at;
+            $doc->cita_at = $request->cita_at ?? null;
+            $doc->eta = $request->eta ?? null;
+            $doc->naviera_id = $request->naviera_id  ?? null;
+            $doc->pedimento_recibido_at = $request->pedimento_recibido_at ?? null;
 
 
 
