@@ -1,7 +1,7 @@
 ---
 title: Memory
 categories:
-  - Devices
+    - Devices
 tags:
-  - ram
+    - ram
 ---

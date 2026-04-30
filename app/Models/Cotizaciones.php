@@ -5,11 +5,17 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
+use App\Traits\Auditable;
 
 class Cotizaciones extends Model
 {
     use HasFactory;
+    use Auditable;
     protected $table = 'cotizaciones';
+
+    protected $casts = [
+    'editing_at' => 'datetime',
+];
 
     protected $fillable = [
         'id_cliente',
@@ -39,12 +45,59 @@ class Cotizaciones extends Model
         'prove_restante',
         'id_cuenta_prov',
         'id_cuenta_prov2',
+        'bloque',
+        'bloque_hora_i',
+        'bloque_hora_f',
         'latitud',
+        'img_boleta',
+        'carta_porte',
+        'carta_porte_xml' ,
+
         'longitud',
         'direccion_mapa',
         'fecha_seleccion_ubicacion',
         'fecha_seleccion',
-
+        'puerto',
+        'cp_pedimento',
+        'cp_clase_ped',
+        'fecha_ingreso_puerto',
+        'fecha_salida_puerto',
+        'dias_estadia',
+        'dias_pernocta',
+        'tarifa_estadia',
+        'tarifa_pernocta',
+        'total_estadia',
+        'total_pernocta',
+        'total_general',
+        'motivo_demora',
+        'liberado',
+        'fecha_liberacion',
+        'responsable',
+        'estatus_pago',
+        'observaciones',
+        'tipo_viaje_seleccion',
+        'origen_local',
+        'destino_local',
+        'costo_maniobra_local',
+        'estado_contenedor',
+        'fecha_modulacion_local',
+        'empresa_local',
+        'sub_cliente_local',
+        'transportista_local',
+        'bloque_local',
+        'bloque_hora_i_local',
+        'bloque_hora_f_local',
+        'en_patio',
+        'fecha_en_patio',
+        'origen_captura',
+        'user_id',
+        'estatus_maniobra_id',
+        'confirmacion_sello',
+        'nuevo_sello',
+        'agente_aduanal',
+        'fecha_eir',
+        'editing_by',
+        'editing_at',
     ];
 
     public function Cliente()
@@ -87,6 +140,85 @@ class Cotizaciones extends Model
         return $this->hasOne(Empresas::class, 'id_empresa');
     }
 
+    public function estatusManiobra() //para local y estatus
+    {
+        return $this->belongsTo(EstatusManiobra::class, 'estatus_maniobra_id');
+    }
+
+    public function estadoCuentaCotizacion()
+    {
+        return $this->hasOne(
+            Estado_Cuenta_Cotizaciones::class,
+            'cotizacion_id',
+            'id'
+        );
+    }
+
+    public function estadoCuenta()
+    {
+        return $this->hasOneThrough(
+            Estado_Cuenta::class,
+            Estado_Cuenta_Cotizaciones::class,
+            'cotizacion_id',
+            'id',
+            'id',
+            'estado_cuenta_id'
+        );
+    }
+
+    public function getAuditoriaData($old = [], $new = [])
+    {
+        $this->loadMissing('DocCotizacion');
+
+        return [
+            'referencia' => $this->DocCotizacion?->num_contenedor,
+        ];
+    }
+
+
+    public function movimientos()
+    {
+        return $this->hasMany(CobroPagoCotizacion::class, 'cotizacion_id');
+    }
+    //cxc cliente
+    public function cobros()
+    {
+        return $this->movimientos()->whereHas('cobroPago', function ($q) {
+            $q->where('tipo', 'cxc');
+        });
+    }
+    //cxp proveedor
+    public function pagos()
+    {
+        return $this->movimientos()->whereHas('cobroPago', function ($q) {
+            $q->where('tipo', 'cxp');
+        });
+    }
+
+    public function getTotalCobradoAttribute()
+    {
+        return $this->cobros()->sum('monto');
+    }
+
+    public function getTotalPagadoAttribute()
+    {
+        return $this->pagos()->sum('monto');
+    }
+
+    //final con nuevo modelo
+
+    public function viajes()
+    {
+        return $this->belongsToMany(
+            Viajes::class,
+            'viajes_cotizacion',
+            'cotizacion_id',
+            'viaje_id'
+        )->using(ViajesCotizacion::class);
+    }
+
+
+
     protected static function boot()
     {
         parent::boot();
@@ -95,6 +227,6 @@ class Cotizaciones extends Model
             $empresa->id_empresa = Auth::user()->id_empresa;
         });
 
-        
+
     }
 }

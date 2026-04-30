@@ -1,6 +1,6 @@
 ---
 title: Explicit
 categories:
-  - Badges
+    - Badges
 tags:
 ---

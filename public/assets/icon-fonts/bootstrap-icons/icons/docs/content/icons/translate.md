@@ -1,9 +1,9 @@
 ---
 title: Translate
 categories:
-  - Communications
+    - Communications
 tags:
-  - translation
-  - languages
-  - language
+    - translation
+    - languages
+    - language
 ---

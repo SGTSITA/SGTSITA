@@ -1,8 +1,8 @@
 ---
 title: Search
 categories:
-  - Communications
+    - Communications
 tags:
-  - magnifying-glass
-  - look
+    - magnifying-glass
+    - look
 ---

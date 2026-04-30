@@ -1,8 +1,8 @@
 ---
 title: Camera
 categories:
-  - Devices
+    - Devices
 tags:
-  - photos
-  - photography
+    - photos
+    - photography
 ---

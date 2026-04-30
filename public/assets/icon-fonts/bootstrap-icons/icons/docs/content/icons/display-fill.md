@@ -1,8 +1,8 @@
 ---
 title: Display fill
 categories:
-  - Devices
+    - Devices
 tags:
-  - monitor
-  - external
+    - monitor
+    - external
 ---

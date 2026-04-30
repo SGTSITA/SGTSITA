@@ -1,7 +1,11 @@
 @extends('layouts.app')
 
 @section('template_title')
-    Nuevo Cliente
+    @if (!isset($cliente))
+        Nuevo Cliente
+    @else
+        Editar Cliente
+    @endif
 @endsection
 
 @section('content')
@@ -43,9 +47,9 @@
                             <div class="tab-pane fade show active" id="datos-generales" role="tabpanel"
                                 aria-labelledby="datos-generales-tab">
                                 <form method="POST"
-                                    @if (!isset($cliente)) action="{{ route('store.clients') }}" 
+                                    @if (!isset($cliente)) action="{{ route('store.clientes') }}"
                             @else
-                            action="{{ route('update.client') }}" @endif
+                            action="{{ route('update.cliente') }}" @endif
                                     id="clienteCreate" enctype="multipart/form-data" role="form">
                                     @csrf
                                     <div class="row mb-3">
@@ -119,7 +123,7 @@
                                                     <div class="fs-7 text-gray-700">
                                                         Usted está editando los datos de un cliente existente; si desea
                                                         crear uno nuevo utilice la opción
-                                                        <a class="fw-bold" href="{{ route('create.clients') }}">Nuevo
+                                                        <a class="fw-bold" href="{{ route('create.clientes') }}">Nuevo
                                                             Cliente</a>.
                                                     </div>
                                                 </div>
@@ -144,6 +148,7 @@
                                                                 id="empresa_{{ $empresa->id }}"
                                                                 data-id="{{ $empresa->id }}"
                                                                 data-client-id="{{ $cliente->id }}"
+                                                                data-empresaName="{{ $empresa->nombre }}"
                                                                 @if (in_array($empresa->id, $vinculadas)) checked @endif>
                                                             <label class="form-check-label"
                                                                 for="empresa_{{ $empresa->id }}"></label>
@@ -158,6 +163,8 @@
                         </div>
                     </div>
                     <div class="card-footer text-end">
+                        <button type="button" class="btn btn-sm bg-gradient-secondary align-self-center me-2"
+                            onclick="window.location='{{ route('clientes.index') }}'">Cancelar</button>
                         <button type="submit" class="btn btn-sm bg-gradient-success align-self-center">
                             @if (!isset($cliente))
                                 Guardar
@@ -186,16 +193,20 @@
                 toggle.addEventListener('change', function() {
                     const idEmpresa = this.getAttribute('data-id');
                     const idCliente = this.getAttribute('data-client-id');
+                    const nombreEmpresa = this.getAttribute('data-empresaName');
                     const checked = this.checked;
 
                     // Validar que la empresa 1 nunca se pueda desactivar
                     if (idEmpresa === '1' && !checked) {
-                        alert('La Empresa 1 no puede ser desactivada.');
+                        swal.fire('Validación', 'La Empresa ' + nombreEmpresa +
+                            ' no puede ser desactivada.', 'error');
+                        //
+                        //alert('La Empresa 1 no puede ser desactivada.');
                         this.checked = true; // Restablecer el estado a "activado"
                         return;
                     }
 
-                    fetch('/clients/edit', {
+                    fetch('/clientes/edit', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',

@@ -5,23 +5,46 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
+use App\Traits\Auditable;
 
 class DocumCotizacion extends Model
 {
     use HasFactory;
+    use Auditable;
     protected $table = 'docum_cotizacion';
 
     protected $fillable = [
-        'id_cotizacion',
-        'num_contenedor',
-        'terminal',
-        'num_autorizacion',
-        'boleta_liberacion',
-        'doda',
-        'id_empresa',
-        'foto_patio',
+     'id_cotizacion',
+     'id_empresa',
+     'num_contenedor',
+     'terminal',
+     'num_autorizacion',
+     'boleta_liberacion',
+     'doda',
 
-    ];
+     'num_boleta_liberacion',
+     'num_doda',
+     'num_carta_porte',
+
+     'boleta_vacio',
+     'fecha_boleta_vacio',
+
+     'eir',
+     'doc_eir',
+
+     'ccp',
+     'doc_ccp',
+
+     'foto_patio',
+     'boleta_patio',
+     'fecha_boleta_patio',
+
+     'cima',
+     'cita_at',
+     'eta',
+     'naviera_id',
+     'pedimento_recibido_at',
+];
 
     public function Cotizacion()
     {
@@ -31,6 +54,19 @@ class DocumCotizacion extends Model
     public function Asignaciones()
     {
         return $this->hasOne(Asignaciones::class, 'id_contenedor');
+    }
+
+
+    public function getAuditoriaData($old = [], $new = [])
+    {
+        return [
+            'referencia' => $this->num_contenedor,
+        ];
+    }
+
+    public function naviera()
+    {
+        return $this->belongsTo(Naviera::class, 'naviera_id');
     }
 
     protected static function boot()

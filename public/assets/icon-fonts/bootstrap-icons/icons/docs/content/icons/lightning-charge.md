@@ -1,10 +1,10 @@
 ---
 title: Lightning charge
 categories:
-  - Miscellaneous
+    - Miscellaneous
 tags:
-  - weather
-  - storm
-  - thunder
-  - bolt
+    - weather
+    - storm
+    - thunder
+    - bolt
 ---

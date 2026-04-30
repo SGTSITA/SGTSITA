@@ -1,10 +1,10 @@
 ---
 title: File bar graph fill
 categories:
-  - Files and folders
+    - Files and folders
 tags:
-  - doc
-  - document
-  - data
-  - chart
+    - doc
+    - document
+    - data
+    - chart
 ---

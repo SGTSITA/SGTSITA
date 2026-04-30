@@ -1,7 +1,7 @@
 ---
 title: Badge cc fill
 categories:
-  - Badges
+    - Badges
 tags:
-  - "closed captioning"
+    - 'closed captioning'
 ---
