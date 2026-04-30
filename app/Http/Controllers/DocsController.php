@@ -101,7 +101,7 @@ class DocsController extends Controller
             }
 
 
-            $docId = $doc->id;
+            $docId = $c->id;
 
             $permitidos = collect(
                 $archivosPorDoc[$docId]
