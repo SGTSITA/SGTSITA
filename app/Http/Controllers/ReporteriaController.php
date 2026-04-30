@@ -36,9 +36,16 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use App\Traits\CommonTrait;
 use Illuminate\Support\Facades\File;
+use App\Services\CuentasCobrarService;
 
 class ReporteriaController extends Controller
 {
+    protected $cuentasPorCobrarService;
+    public function __construct(CuentasCobrarService $cuentasPorCobrarService)
+    {
+        $this->cuentasPorCobrarService = $cuentasPorCobrarService;
+    }
+
     public function index()
     {
 
@@ -85,71 +92,80 @@ class ReporteriaController extends Controller
 
         $documentos = config('CatAuxiliares.columnsbycode');
 
-        // Inicializar la consulta de cotizaciones
-        $cotizaciones = Cotizaciones::query()
+        /*    // Inicializar la consulta de cotizaciones
+           $cotizaciones = Cotizaciones::query()
     ->select(
-        'cotizaciones.*',
-        'estado_cuenta.numero as numero_edo_cuenta',
-        'estado_cuenta.id as id_numero_edo_cuenta'
+           'cotizaciones.*',
+           'estado_cuenta.numero as numero_edo_cuenta',
+           'estado_cuenta.id as id_numero_edo_cuenta'
     )
     ->leftJoin(
-        'estado_cuenta_cotizaciones',
-        'estado_cuenta_cotizaciones.cotizacion_id',
-        '=',
-        'cotizaciones.id'
+           'estado_cuenta_cotizaciones',
+           'estado_cuenta_cotizaciones.cotizacion_id',
+           '=',
+           'cotizaciones.id'
     )
     ->leftJoin(
-        'estado_cuenta',
-        'estado_cuenta.id',
-        '=',
-        'estado_cuenta_cotizaciones.estado_cuenta_id'
+           'estado_cuenta',
+           'estado_cuenta.id',
+           '=',
+           'estado_cuenta_cotizaciones.estado_cuenta_id'
     )->where('cotizaciones.id_empresa', auth()->user()->id_empresa)
-            ->where(function ($query) {
-                $query->where('estatus', '=', 'Aprobada')
-                    ->orWhere('estatus', '=', 'Finalizado');
-            })
-           ->where(function ($q) { //antes
-               $q->where('estatus_pago', 0)
-                 ->orWhereNull('estatus_pago');
-           })
-           // ->where('restante', '>', 0)
-              //ahora
-           ->whereRaw('
+               ->where(function ($query) {
+                   $query->where('estatus', '=', 'Aprobada')
+                       ->orWhere('estatus', '=', 'Finalizado');
+               })
+              ->where(function ($q) { //antes
+                  $q->where('estatus_pago', 0)
+                    ->orWhereNull('estatus_pago');
+              })
+              // ->where('restante', '>', 0)
+                 //ahora
+              ->whereRaw('
     cotizaciones.total - (
-        SELECT COALESCE(SUM(cpc.monto),0)
-        FROM cobros_pagos_cotizaciones cpc
-        JOIN cobros_pagos cp
-            ON cp.id = cpc.cobro_pago_id
-        WHERE cpc.cotizacion_id = cotizaciones.id
-        AND cp.tipo = "cxc"
+           SELECT COALESCE(SUM(cpc.monto),0)
+           FROM cobros_pagos_cotizaciones cpc
+           JOIN cobros_pagos cp
+               ON cp.id = cpc.cobro_pago_id
+           WHERE cpc.cotizacion_id = cotizaciones.id
+           AND cp.tipo = "cxc"
     ) > 0
 ')
 
-        ;  // Solo cotizaciones con saldo restante
+           ;  // Solo cotizaciones con saldo restante
 
-        // Filtrar por cliente si se selecciona uno
-        if ($id_client) {
-            $cotizaciones->where('id_cliente', $id_client);
-        }
 
-        // Filtrar por subcliente si se selecciona uno
-        if ($id_subcliente) {
-            $cotizaciones->where('id_subcliente', $id_subcliente);
-        }
+           if ($id_client) {
+               $cotizaciones->where('id_cliente', $id_client);
+           }
 
-        // Filtrar por proveedor si se selecciona uno
-        if ($id_proveedor) {
-            $cotizaciones->whereHas('DocCotizacion.Asignaciones', function ($query) use ($id_proveedor) {
-                $query->where('id_proveedor', $id_proveedor);
-            });
-        }
-        //nuevo para el num edo cuenta x id
-        if ($numeroEdoCuenta) {
-            $cotizaciones->where('estado_cuenta.id', '=', $numeroEdoCuenta);
-        }
 
-        // Ejecutar la consulta
-        $cotizaciones = $cotizaciones->get();
+           if ($id_subcliente) {
+               $cotizaciones->where('id_subcliente', $id_subcliente);
+           }
+
+
+           if ($id_proveedor) {
+               $cotizaciones->whereHas('DocCotizacion.Asignaciones', function ($query) use ($id_proveedor) {
+                   $query->where('id_proveedor', $id_proveedor);
+               });
+           }
+
+           if ($numeroEdoCuenta) {
+               $cotizaciones->where('estado_cuenta.id', '=', $numeroEdoCuenta);
+           }
+
+           // Ejecutar la consulta
+           $cotizaciones = $cotizaciones->get(); */
+
+        $filtros = [
+    'id_cliente' => $request->id_client,
+    'id_subcliente' => $request->id_subcliente,
+    'id_proveedor' => $request->id_proveedor,
+    'numero_edo_cuenta' => $request->numero_edo_cuenta,
+];
+
+        $cotizaciones = $this->cuentasPorCobrarService->getCuentasPorCobrar($filtros);
 
         // Devolver la vista con los filtros y las cotizaciones
         return view('reporteria.cxc.index', compact('clientes', 'subclientes', 'proveedores', 'cotizaciones', 'estadosCuentas', 'documentos'));

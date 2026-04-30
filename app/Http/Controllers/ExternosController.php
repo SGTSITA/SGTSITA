@@ -18,6 +18,7 @@ use App\Models\Subclientes;
 use App\Models\EstatusManiobra;
 use App\Models\BitacoraCotizacionesEstatus;
 use App\Models\GridColumnasUserEstado;
+use App\Models\Naviera;
 use Illuminate\Support\Facades\Mail;
 use App\Traits\CommonTrait;
 use Carbon\Carbon;
@@ -848,6 +849,9 @@ class ExternosController extends Controller
 
         $transportista = Proveedor::CatalogoLocal()->whereIn('id_empresa', $clienteEmpresa)->get();
 
+
+        $navieras = Naviera::all();
+
         return view('cotizaciones.externos.solicitud_simple_local', [
                     "action" => "crear",
                     "formasPago" => $formasPago,
@@ -859,6 +863,7 @@ class ExternosController extends Controller
                         "opcionesColores" => $opcionesColores,
                         'Puertos' => $Puertos,
                         'opcionesPuertos' => $opcionesPuertos,
+                        'navieras' => $navieras
                 ]);
     }
     public function editFormlocal(Request $request)
@@ -868,6 +873,7 @@ class ExternosController extends Controller
         $usoCfdi = SatUsoCfdi::get();
         $clienteEmpresa = ClientEmpresa::where('id_client', auth()->user()->id_cliente)->get()->pluck('id_empresa');
         $empresas = Empresas::whereIn('id', $clienteEmpresa)->get();
+        $navieras = Naviera::all();
 
         $opciones = config('CatAuxiliares.opciones');
         $opcionesColores = config('CatAuxiliares.opcionesColores');
@@ -900,7 +906,9 @@ class ExternosController extends Controller
                                                             "opciones" => $opciones,
                                                             "opcionesColores" => $opcionesColores,
                                                             'Puertos' => $Puertos,
-                                                            'opcionesPuertos' => $opcionesPuertos
+                                                            'opcionesPuertos' => $opcionesPuertos,
+                                                            'navieras' => $navieras
+
 
                                                         ]
         );
@@ -1026,6 +1034,7 @@ class ExternosController extends Controller
            ->join('clients', 'clients.id', '=', 'subclientes.id_cliente')
            ->join('empresas', 'empresas.id', '=', 'cotizaciones.empresa_local')
            ->join('proveedores', 'proveedores.id', '=', 'cotizaciones.transportista_local')
+           ->leftjoin('navieras', 'navieras.id', '=', 'd.naviera_id')
            ->where('cotizaciones.id_cliente', Auth::user()->id_cliente)
            ->where('cotizaciones.estatus_maniobra_id', $condicion, $request->estatus)
            ->when($ocultarforaneo, function ($query) {
@@ -1048,6 +1057,11 @@ class ExternosController extends Controller
                       'd.boleta_patio',
                       'd.terminal',
                       'd.num_autorizacion',
+
+                      'navieras.naviera',
+                      'd.cita_at',
+                      'd.eta',
+                      'd.pedimento_recibido_at',
 
                       // estatus
                       'estat.nombre as estatus_maniobra',
@@ -1117,6 +1131,10 @@ class ExternosController extends Controller
                 "BoletaPatio" => $boleta_patio,
 
                 "FechaSolicitud" => Carbon::parse($c->created_at)->format('Y-m-d'),
+               "naviera" => $c->naviera,
+                "cita_at" => $c->cita_at,
+                "eta" => $c->eta,
+                "pedimento_recibido_at" => $c->pedimento_recibido_at,
                 "tipo" => $tipo,
                 "Observaciones" => (
                     is_null($c->observaciones) ||

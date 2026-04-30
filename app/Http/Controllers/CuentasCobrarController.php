@@ -8,71 +8,83 @@ use App\Models\Client;
 use App\Models\Cotizaciones;
 use App\Models\Estado_Cuenta;
 use App\Models\Estado_Cuenta_Cotizaciones;
-use App\Models\CobroPago;
-use App\Models\CobroPagoCotizacion;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rules\Exists;
 use PhpParser\Node\Stmt\TryCatch;
 use App\Services\BancosService;
+use App\Services\CuentasCobrarService;
 use Carbon\Carbon;
+use Illuminate\Foundation\Auth\ThrottlesLogins;
 
 class CuentasCobrarController extends Controller
 {
     protected $BancosService;
+    protected $CuentasCobrarService;
 
-    public function __construct(BancosService $BancosService)
+    public function __construct(BancosService $BancosService, CuentasCobrarService $CuentasCobrarService)
     {
         $this->BancosService = $BancosService;
+        $this->CuentasCobrarService = $CuentasCobrarService;
     }
 
     public function index()
     {
-        $cotizacionesPorCliente = Cotizaciones::join('docum_cotizacion', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
-        ->where('cotizaciones.estatus_pago', '=', '0')
-        ->where('jerarquia', 'Principal')
-        ->where('cotizaciones.id_empresa', '=', auth()->user()->id_empresa)
-        ->where('cotizaciones.restante', '>', 0)
-        ->where(function ($query) {
-            $query->where('cotizaciones.estatus', '=', 'Aprobada')
-                  ->orWhere('cotizaciones.estatus', '=', 'Finalizado');
-        })
-        ->select(
-            'cotizaciones.id_cliente',
-            DB::raw('COUNT(*) as total_cotizaciones'),
-            DB::raw('SUM(cotizaciones.restante) as total_restante') // Sumar la columna restante
-        )
-        ->groupBy('cotizaciones.id_cliente')
-        ->get();
+        /*   $cotizacionesPorCliente = Cotizaciones::join('docum_cotizacion', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
 
+          ->where('cotizaciones.estatus_pago', '=', '0')
+          ->where('jerarquia', 'Principal')
+          ->where('cotizaciones.id_empresa', '=', auth()->user()->id_empresa)
+          ->where('cotizaciones.restante', '>', 0)
+          ->where(function ($query) {
+              $query->where('cotizaciones.estatus', '=', 'Aprobada')
+                    ->orWhere('cotizaciones.estatus', '=', 'Finalizado');
+          })
+          ->select(
+              'cotizaciones.id_cliente',
+              DB::raw('COUNT(*) as total_cotizaciones'),
+              DB::raw('SUM(cotizaciones.restante) as total_restante') // Sumar la columna restante
+          )
+          ->groupBy('cotizaciones.id_cliente')
+          ->get(); */
+
+        $cotizacionesPorCliente = $this->CuentasCobrarService->obtenerporCliente();
+
+        //  dd($cotizacionesPorCliente);
         return view('cuentas_cobrar.index', compact('cotizacionesPorCliente'));
     }
 
     public function cobranza_v2($id)
     {
-        $cotizacion = Cotizaciones::join('docum_cotizacion', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
-        ->where('cotizaciones.id_empresa', '=', auth()->user()->id_empresa)
-        ->where('cotizaciones.estatus_pago', '=', '0')
-        ->where('jerarquia', 'Principal')
-       // ->where('cotizaciones.restante', '>', 0)
-        ->where(function ($query) {
-            $query->where('cotizaciones.estatus', '=', 'Aprobada')
-                  ->orWhere('cotizaciones.estatus', '=', 'Finalizado');
-        })
-        ->where('cotizaciones.id_cliente', '=', $id)
-        ->select(
-            'cotizaciones.id_cliente',
-            DB::raw('COUNT(*) as total_cotizaciones'),
-            DB::raw('SUM(cotizaciones.restante) as total_restante') // Sumar la columna restante
-        )
-        ->groupBy('cotizaciones.id_cliente') // Agrupa por el ID de cotización
-        ->havingRaw('SUM(cotizaciones.total) - SUM((SELECT COALESCE(SUM(cpc.monto),0)
-                  FROM cobros_pagos_cotizaciones cpc
-                  JOIN cobros_pagos cp
-                    ON cp.id = cpc.cobro_pago_id
-                  WHERE cpc.cotizacion_id = cotizaciones.id
-                    AND cp.tipo = "cxc")) > 0')
-        ->first();
+        /*  $cotizacionold = Cotizaciones::join('docum_cotizacion', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
+         ->where('cotizaciones.id_empresa', '=', auth()->user()->id_empresa)
+         ->where('cotizaciones.estatus_pago', '=', '0')
+         ->where('jerarquia', 'Principal')
+        // ->where('cotizaciones.restante', '>', 0)
+         ->where(function ($query) {
+             $query->where('cotizaciones.estatus', '=', 'Aprobada')
+                   ->orWhere('cotizaciones.estatus', '=', 'Finalizado');
+         })
+         ->where('cotizaciones.id_cliente', '=', $id)
+         ->select(
+             'cotizaciones.id_cliente',
+             DB::raw('COUNT(*) as total_cotizaciones'),
+             DB::raw('SUM(cotizaciones.restante) as total_restante') // Sumar la columna restante
+         )
+         ->groupBy('cotizaciones.id_cliente') // Agrupa por el ID de cotización
+         ->havingRaw('SUM(cotizaciones.total) - SUM((SELECT COALESCE(SUM(cpc.monto),0)
+                   FROM cobros_pagos_cotizaciones cpc
+                   JOIN cobros_pagos cp
+                     ON cp.id = cpc.cobro_pago_id
+                   WHERE cpc.cotizacion_id = cotizaciones.id
+                     AND cp.tipo = "cxc")) > 0')
+         ->first();
+ */
+
+
+        $cotizacion = $this->CuentasCobrarService->obtenerporCliente($id)->first();
+
+        //dd($cotizacion);
 
         $cliente = Client::where('id', '=', $id)->first();
 
@@ -85,303 +97,89 @@ class CuentasCobrarController extends Controller
 
     public function viajes_por_liquidar(Request $request)
     {
-        $querybase = Cotizaciones::join('docum_cotizacion', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
-        ->leftjoin('subclientes', 'subclientes.id', '=', 'cotizaciones.id_subcliente')
-        ->where('cotizaciones.id_empresa', '=', auth()->user()->id_empresa)
-        ->where('cotizaciones.estatus_pago', '=', '0')
-        ->where('jerarquia', 'Principal')
-        ->where('cotizaciones.restante', '>', 0)
-        ->where(function ($query) {
-            $query->where('cotizaciones.estatus', '=', 'Aprobada')
-       ->orWhere('cotizaciones.estatus', '=', 'Finalizado');
-        }) ->where('cotizaciones.id_cliente', '=', $request->client)
-        ->select(
-            'cotizaciones.*',
-            'subclientes.nombre as nombre_subcliente',
-            'subclientes.telefono as telefono_subcliente',
-            'docum_cotizacion.num_contenedor',
-            DB::raw(
-                ' ( SELECT COALESCE(SUM(cpc.monto),0)
-        FROM cobros_pagos_cotizaciones cpc JOIN cobros_pagos cp
-        ON cp.id = cpc.cobro_pago_id
-        WHERE cpc.cotizacion_id = cotizaciones.id
-        AND cp.tipo = "cxc"
-        ) as total_pagado_cxc'
-            )
-        );
-        $cotizacionesPorPagar = DB::query() ->fromSub($querybase, 't') ->whereRaw('(t.total - t.total_pagado_cxc) > 0') ->get();
+        /* old  $querybase = Cotizaciones::join('docum_cotizacion', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
+         ->leftjoin('subclientes', 'subclientes.id', '=', 'cotizaciones.id_subcliente')
+         ->where('cotizaciones.id_empresa', '=', auth()->user()->id_empresa)
+         ->where('cotizaciones.estatus_pago', '=', '0')
+         ->where('jerarquia', 'Principal')
+         ->where('cotizaciones.restante', '>', 0)
+         ->where(function ($query) {
+             $query->where('cotizaciones.estatus', '=', 'Aprobada')
+        ->orWhere('cotizaciones.estatus', '=', 'Finalizado');
+         }) ->where('cotizaciones.id_cliente', '=', $request->client)
+         ->select(
+             'cotizaciones.*',
+             'subclientes.nombre as nombre_subcliente',
+             'subclientes.telefono as telefono_subcliente',
+             'docum_cotizacion.num_contenedor',
+             DB::raw(
+                 ' ( SELECT COALESCE(SUM(cpc.monto),0)
+         FROM cobros_pagos_cotizaciones cpc JOIN cobros_pagos cp
+         ON cp.id = cpc.cobro_pago_id
+         WHERE cpc.cotizacion_id = cotizaciones.id
+         AND cp.tipo = "cxc"
+         ) as total_pagado_cxc'
+             )
+         );
+         $cotizacionesPorPagar = DB::query() ->fromSub($querybase, 't') ->whereRaw('(t.total - t.total_pagado_cxc) > 0') ->get(); */
 
 
+        $cotizacionesPorPagar = $this->CuentasCobrarService->obtenerporClienteId($request->client, true); // true para resolver fulles;
 
+        //dd($cotizacionesPorPagar);
         $handsOnTableData = $cotizacionesPorPagar->map(function ($item) {
-            $subCliente = ($item->id_subcliente != null) ? $item->nombre_subcliente." / ".$item->telefono_subcliente : "";
-            $tipoViaje = ($item->tipo_viaje == null || $item->tipo_viaje == 'Seleccionar Opcion') ? "Subcontratado" : $item->tipo_viaje;
 
-            $numContenedor = $item->num_contenedor;
 
-            if (!is_null($item->referencia_full)) {
-                $secundaria = Cotizaciones::where('referencia_full', $item->referencia_full)
-                        ->where('jerarquia', 'Secundario')
-                        ->with('DocCotizacion.Asignaciones')
-                        ->first();
 
-                if ($secundaria && $secundaria->DocCotizacion) {
-                    $numContenedor .= ' / ' . $secundaria->DocCotizacion->num_contenedor;
-                }
-            }
-            $restante = (float) $item->total - (float)$item->total_pagado_cxc;
             return [
-                $numContenedor,
-                $subCliente,
-                $tipoViaje,
+                $item->num_contenedor,
+                 $item->nombre_subcliente,
+              $item->tipo . ' ( ' . $item->tipo_viaje . ' )',
                 ($item->estatus == 'Aprobada') ? "En Curso" : $item->estatus,
-                  $restante,
-                 $restante,
-                0,
-                0,
-                0,
-                $item->id
 
+                $item->total_restante,
+                $item->total_restante,
+
+                0,
+                0,
+                0,
+
+                $item->id
             ];
         });
 
         return response()->json(["success" => true,"handsOnTableData" => $handsOnTableData, "cotizacionesPorPagar" => $cotizacionesPorPagar]);
     }
-    private function procesarCotizacion(
-        $cotizacion,
-        $abono,
-        $pagoA,
-        $pagoB,
-        $numContenedor,
-        &$contenedoresAbonos,
-        &$contenedoresAbonos1,
-        &$contenedoresAbonos2,
-        $cobroPago
-    ) {
 
-        $nuevoRestante = max(0, $cotizacion->restante - $abono);
-
-        $cotizacion->restante = $nuevoRestante;
-        $cotizacion->estatus_pago = ($nuevoRestante == 0) ? 1 : 0;
-        $cotizacion->fecha_pago = date('Y-m-d');
-        $cotizacion->update();
-
-        // TOTAL
-        $contenedoresAbonos[] = [
-            'num_contenedor' => $numContenedor,
-            'abono' => $abono
-        ];
-
-        // PAGO A
-        if ($pagoA > 0) {
-            $contenedoresAbonos1[] = [
-                'num_contenedor' => $numContenedor,
-                'abono' => $pagoA
-            ];
-
-            CobroPagoCotizacion::create([
-                'cobro_pago_id' => $cobroPago->id,
-                'cotizacion_id' => $cotizacion->id,
-                'origen' => 'A',
-                'monto' => $pagoA,
-            ]);
-        }
-
-        // PAGO B
-        if ($pagoB > 0) {
-            $contenedoresAbonos2[] = [
-                'num_contenedor' => $numContenedor,
-                'abono' => $pagoB
-            ];
-
-            CobroPagoCotizacion::create([
-                'cobro_pago_id' => $cobroPago->id,
-                'cotizacion_id' => $cotizacion->id,
-                'origen' => 'B',
-                'monto' => $pagoB,
-            ]);
-        }
-    }
     public function aplicar_pagos(Request $request)
     {
         try {
-            //Primero validaremos que los pagos/abonos de cada contenedor no sea mayor al saldo pendiente
-            $cotizaciones = json_decode($request->datahotTable);
-            foreach ($cotizaciones as $c) {
-                if ($c[8] > $c[4]) {
-                    return response()->json([
-                                              "success" => false,
-                                              "Titulo" => "Error en el contenedor $c[0]",
-                                              "Mensaje" => "No se puede aplicar el pago para el contenedor porque existe un error monto del pago ó es mayor al Saldo Original",
-                                              "TMensaje" => "warning"
-                                          ]);
-                }
-            }
 
             DB::beginTransaction();
-            $contenedoresAbonos = [];
-            $contenedoresAbonos1 = [];
-            $contenedoresAbonos2 = [];
 
-            // Guardar cxc en tabla principal
-            $cobroPago = CobroPago::create([
-                'tipo' => 'cxc',
-                'cliente_id' => $request->theClient,
-                'bancoA_id' => $request->bankOne,
-                'monto_A' => $request->amountPayOne ?? 0,
-                'fechaAplicacion1' => $request->FechaAplicacionbank1
-                    ? \Carbon\Carbon::createFromFormat('d/m/Y', $request->FechaAplicacionbank1)->format('Y-m-d')
-                    : null,
-                'bancoB_id' => $request->bankTwo,
-                'monto_B' => $request->amountPayTwo ?? 0,
-                'fechaAplicacion2' => $request->FechaAplicacionbank2
-                    ? \Carbon\Carbon::createFromFormat('d/m/Y', $request->FechaAplicacionbank2)->format('Y-m-d')
-                    : null,
-                'user_id' => auth()->id(),
-                'observaciones' => null,
-            ]);
-
-            foreach ($cotizaciones as $c) {
-                if ($c[8] > 0) { // Si total cobrado > 0
-                    $id = $c[9];
-                    $cotizacion = Cotizaciones::with('DocCotizacion')->where('id', $id)->first();
-
-                    $abonoTotal = $c[8];
-                    $pagoA = $c[6];
-                    $pagoB = $c[7];
-
-                    // Si es FULL, dividimos abonos y pagos
-                    if ($cotizacion->referencia_full != null) {
-
-                        $secundaria = Cotizaciones::with('DocCotizacion')
-                        ->where('referencia_full', $cotizacion->referencia_full)
-                            ->where('jerarquia', 'Secundario')
-                            ->first();
-
-                        $abonoDividido = $abonoTotal / 2;
-                        $pagoADividido = $pagoA / 2;
-                        $pagoBDividido = $pagoB / 2;
+            $resultado = $this->CuentasCobrarService->procesarCobro($request);
 
 
-                        //  dd($secundaria);
-
-                        // Procesar primario
-                        $this->procesarCotizacion(
-                            $cotizacion,
-                            $abonoDividido,
-                            $pagoADividido,
-                            $pagoBDividido,
-                            $cotizacion->DocCotizacion->num_contenedor,
-                            $contenedoresAbonos,
-                            $contenedoresAbonos1,
-                            $contenedoresAbonos2,
-                            $cobroPago
-                        );
-
-                        // Procesar secundario
-                        $this->procesarCotizacion(
-                            $secundaria,
-                            $abonoDividido,
-                            $pagoADividido,
-                            $pagoBDividido,
-                            $secundaria->DocCotizacion->num_contenedor,
-                            $contenedoresAbonos,
-                            $contenedoresAbonos1,
-                            $contenedoresAbonos2,
-                            $cobroPago
-                        );
-
-                        continue; // Saltamos procesamiento normal para no duplicar
-                    }
-
-                    // No FULL: procesamos normal
-                    $this->procesarCotizacion(
-                        $cotizacion,
-                        $abonoTotal,
-                        $pagoA,
-                        $pagoB,
-                        $c[0],
-                        $contenedoresAbonos,
-                        $contenedoresAbonos1,
-                        $contenedoresAbonos2,
-                        $cobroPago
-                    );
-                }
-            }
-
-            // Guardamos registro de bancos old
-            $banco = new BancoDinero();
-            $banco->contenedores = json_encode($contenedoresAbonos);
-            $banco->id_cliente = $request->theClient;
-            $banco->monto1 = $request->amountPayOne;
-            $banco->metodo_pago1 = "Transferencia";
-            $banco->id_banco1 = $request->bankOne;
-            $banco->monto2 = $request->amountPayTwo;
-            $banco->metodo_pago2 = "Transferencia";
-            $banco->id_banco2 = $request->bankTwo;
-            $banco->fecha_pago = date('Y-m-d');
-            $banco->tipo = 'Entrada';
-            $banco->save();
-
-            // Actualizamos saldo de bancos
-            Bancos::where('id', $request->bankOne)
-                ->update(["saldo" => DB::raw("COALESCE(saldo, 0) + ". $request->amountPayOne)]);
-            Bancos::where('id', $request->bankTwo)
-                ->update(["saldo" => DB::raw("COALESCE(saldo, 0) + ". $request->amountPayTwo)]);
-
-            // Registrar movimientos bancarios nuevo bancos
-            if ($request->filled('bankOne') && $request->amountPayOne > 0) {
-                $FechaAplicacionbank1 = $request->get('FechaAplicacionbank1');
-                $cliente = client::find($request->theClient);
-
-                $data = [
-                    'cuenta_bancaria_id' => $request->bankOne,
-                    'tipo' => 'abono',
-                    'monto' => floatval($request->amountPayOne),
-                    'concepto' => 'Cobro viajes: ' . ($cliente?->nombre ?? ''),
-                    'fecha_movimiento' => \Carbon\Carbon::createFromFormat('d/m/Y', $FechaAplicacionbank1)->format('Y-m-d'),
-                    'origen' => null,
-                    'referencia' => 'CXC A',
-                    'detalles' => json_encode($contenedoresAbonos1),
-                    'referenciaable_id' => $cobroPago->id,
-                    'referenciaable_type' => \App\Models\CobroPago::class,
-                ];
-
-                if (!$this->BancosService->registrarMovimiento($data)) {
-                    throw new \Exception('No se pudo crear el movimiento bancario para bankOne');
-                }
-            }
-
-            if ($request->filled('bankTwo') && $request->amountPayTwo > 0) {
-                $FechaAplicacionbank2 = $request->get('FechaAplicacionbank2');
-                $cliente = client::find($request->theClient);
-
-                $data = [
-                    'cuenta_bancaria_id' => $request->bankTwo,
-                    'tipo' => 'abono',
-                    'monto' => floatval($request->amountPayTwo),
-                    'concepto' => 'Cobro viajes: ' . ($cliente?->nombre ?? ''),
-                    'fecha_movimiento' => \Carbon\Carbon::createFromFormat('d/m/Y', $FechaAplicacionbank2)->format('Y-m-d'),
-                    'origen' => null,
-                    'referencia' => 'CXC B',
-                    'detalles' => json_encode($contenedoresAbonos2),
-                    'referenciaable_id' => $cobroPago->id,
-                    'referenciaable_type' => \App\Models\CobroPago::class,
-                ];
-
-                if (!$this->BancosService->registrarMovimiento($data)) {
-                    throw new \Exception('No se pudo crear el movimiento bancario para bankTwo');
-                }
-            }
+            $this->BancosService->guardarBancoLegacy($request, $resultado['contenedoresAbonos']); //old
 
 
+            $this->BancosService->procesarIngresosDesdeCobro(
+                $request,
+                $resultado,
+                $resultado['cobroPago']->id
+            );
 
             DB::commit();
+
             return response()->json(["success" => true, "Titulo" => "Cobro exitoso", "Mensaje" => "Hemos aplicado el cobro de los elementos indicados", "TMensaje" => "success"]);
+
         } catch (\Throwable $t) {
             DB::rollback();
 
-            return response()->json(["success" => false,"dataRequest" => $request->all(), "Titulo" => "Error", "Mensaje" => "No pudimos aplicar el cobro, existe un error: ".$t->getMessage(), "TMensaje" => "error"]);
+            return response()->json([
+                "success" => false,
+                "Mensaje" => $t->getMessage()
+            ]);
         }
     }
 

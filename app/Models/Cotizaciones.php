@@ -49,6 +49,10 @@ class Cotizaciones extends Model
         'bloque_hora_i',
         'bloque_hora_f',
         'latitud',
+        'img_boleta',
+        'carta_porte',
+        'carta_porte_xml' ,
+
         'longitud',
         'direccion_mapa',
         'fecha_seleccion_ubicacion',
@@ -202,6 +206,17 @@ class Cotizaciones extends Model
     }
 
     //final con nuevo modelo
+
+    public function viajes()
+    {
+        return $this->belongsToMany(
+            Viajes::class,
+            'viajes_cotizacion',
+            'cotizacion_id',
+            'viaje_id'
+        )->using(ViajesCotizacion::class);
+    }
+
 
 
     protected static function boot()

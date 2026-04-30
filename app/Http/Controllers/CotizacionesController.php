@@ -24,6 +24,7 @@ use App\Models\BancoDineroOpe;
 use App\Models\User;
 use App\Models\GpsCompanyProveedor;
 use App\Models\BitacoraCotizacionesEstatus;
+use App\Models\Viajes;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Carbon\Carbon;
@@ -36,14 +37,17 @@ use App\Traits\CommonTrait as Common;
 use Illuminate\Support\Facades\Log;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Services\BancosService;
+use App\Services\ViajesCostosService;
 
 class CotizacionesController extends Controller
 {
     protected $BancosService;
+    protected $CostosService;
 
-    public function __construct(BancosService $BancosService)
+    public function __construct(BancosService $BancosService, ViajesCostosService $CostosService)
     {
         $this->BancosService = $BancosService;
+        $this->CostosService = $CostosService;
     }
 
     public function index()
@@ -1001,7 +1005,37 @@ class CotizacionesController extends Controller
             ]);
         }
 
+
+        //nuevo refactor costos cotizacion
+
+        $mapaCostos = config('CatAuxiliares.costosViajes');
+
+        $viaje = $cotizacion->viajes()
+    ->where('estado', 'activo')
+    ->with('costos')
+    ->first();
+
+
+        $costosForm = [];
+
+        foreach ($mapaCostos as $input => $config) {
+
+            $concepto = $config['concepto'];
+
+            $costo = $viaje?->costos->firstWhere('concepto', $concepto);
+
+            $costosForm[$input] = $costo?->monto ?? 0;
+        }
+
+        $sobrepeso = $viaje?->costos->firstWhere('concepto', 'sobrepeso');
+
+        $costosForm['precio_sobre_peso'] = $sobrepeso?->meta['precio_sobre_peso'] ?? 0;
+        $costosForm['sobrepeso_viaje'] = $sobrepeso?->meta['peso'] ?? 0;
+        $costosForm['precio_tonelada'] = $sobrepeso?->meta['precio_tonelada'] ?? 0;
+        $costosForm['total_sobrepeso_viaje'] = $sobrepeso?->monto ?? 0;
         // dd($bloqueado);
+
+        // dd($costosForm);
 
         return view('cotizaciones.editv1', compact(
             'bancos',
@@ -1011,7 +1045,8 @@ class CotizacionesController extends Controller
             'gastos_extras',
             'gastos_ope',
             'proveedores',
-            'bloqueado'
+            'bloqueado',
+            'costosForm'
         ));
     }
 
@@ -1476,7 +1511,7 @@ class CotizacionesController extends Controller
         }
     }
 
-    public function update(Request $request, $id)
+    public function update(Request $request, $id) //refactor para full
     {
 
         $idEmpresa = auth()->user()->id_empresa;
@@ -1487,7 +1522,16 @@ class CotizacionesController extends Controller
             $referencia_full = $cotizaciones->referencia_full;
         }
         DB::beginTransaction();
+        // crear priemro el viaje que sera nuestra representacion
+
+        $viaje = $this->resolverViajeDesdeRequest($request, $id);
+
         //Primero validar si el contenedor existe
+
+
+
+
+
 
         foreach ($Contenedores as $contenedor) {
 
@@ -1620,7 +1664,18 @@ class CotizacionesController extends Controller
 
             $cotizaciones->update();
 
+
+
+
+            $viaje->cotizaciones()->syncWithoutDetaching([$cotizaciones->id]);
+
         }
+
+
+
+        $this->CostosService->syncDesdeRequest($viaje, $request);
+
+
         /* if($request->get('id_cliente_clientes') == NULL){
              $gasto_descripcion = $request->input('gasto_descripcion');
              $ticket_ids = $request->input('ticket_id');
@@ -1655,12 +1710,78 @@ class CotizacionesController extends Controller
                                 ]);
     }
 
+
+    private function resolverViajeDesdeRequest($request, $id)
+    {
+        if ($request->TipoCotizacion == "Full") {
+
+            $referencia = Cotizaciones::find($id)->referencia_full;
+
+            $cotizaciones = Cotizaciones::where('referencia_full', $referencia)->get();
+
+            if ($cotizaciones->count() < 2) {
+                throw new \Exception('No es un FULL válido');
+            }
+
+            $viajeExistente = Viajes::where('estado', 'activo')
+                ->where('tipo', 'full')
+                ->whereHas('cotizaciones', function ($q) use ($cotizaciones) {
+                    $q->whereIn('cotizacion_id', $cotizaciones->pluck('id'));
+                })
+                ->first();
+
+            if ($viajeExistente) {
+                return $viajeExistente;
+            }
+
+            $viajesIds = DB::table('viajes_cotizacion')
+                ->whereIn('cotizacion_id', $cotizaciones->pluck('id'))
+                ->pluck('viaje_id')
+                ->unique();
+
+            if ($viajesIds->isNotEmpty()) {
+
+                Viajes::whereIn('id', $viajesIds)->update([
+                    'estado' => 'cancelado'
+                ]);
+            }
+
+            $viaje = Viajes::create([
+                'tipo' => 'full',
+                'estado' => 'activo',
+            ]);
+
+            $viaje->cotizaciones()->attach(
+                $cotizaciones->pluck('id')->toArray()
+            );
+
+            return $viaje;
+
+        } else {
+
+
+            $cotizacion = Cotizaciones::find($id);
+            $viaje = $cotizacion->viajes()->first();
+
+            if ($viaje) {
+                return  $viaje;
+            }
+
+            $viaje = Viajes::create([
+                'tipo' => 'sencillo',
+                'estado' => 'activo',
+            ]);
+
+            return $viaje;
+        }
+    }
+
     //Obtener una lista de gastos del contenedor
 
     public function get_gastos(Request $r)
     {
 
-        // dd($r);
+
         $numContenedor = $r->input('numContenedor');
         $idEmpresa = auth()->user()->id_empresa;
 
@@ -1860,7 +1981,7 @@ class CotizacionesController extends Controller
                     'cuenta_bancaria_id' => $r->banco,
                     'tipo' => 'cargo',
                     'monto' => floatval($gasto->cantidad),
-                    'concepto' => 'Pago gasto operador: ' . $gasto->tipo,
+                    'concepto' => 'Pago gasto : '.$numContenedor .' - '. $gasto->tipo,
                     'fecha_movimiento' => \Carbon\Carbon::parse($r->fechaAplicacion)->format('Y-m-d'),
                     'referencia' => 'GOP',
                     'detalles' => $contenedoresAbonosJson,
@@ -1996,7 +2117,7 @@ class CotizacionesController extends Controller
                     'cuenta_bancaria_id' => $r->bank,
                     'tipo' => 'cargo',
                     'monto' => floatval($gasto->cantidad),
-                    'concepto' => 'Pago gasto operador: ' . $gasto->tipo,
+                    'concepto' => 'Pago gasto: ' . $r->numContenedor . ' - ' . $gasto->tipo,
                     'fecha_movimiento' => \Carbon\Carbon::parse($r->fechaAplicacion ?? now())->format('Y-m-d'),
                     'referencia' => 'GOP',
                     'referenciaable_id' => $gasto->id,
@@ -3087,6 +3208,10 @@ class CotizacionesController extends Controller
                 'boleta_patio'           => $request->boleta_patio,
                 'fecha_boleta_patio'     => $request->fecha_boleta_patio,
                 'cima'                   => $request->cima ?? 0,
+                'cita_at'                => $request->cita_at,
+                'eta'                    => $request->eta,
+                'naviera_id'             => $request->naviera_id,
+                'pedimento_recibido_at'  => $request->pedimento_recibido_at,
             ]);
 
 
@@ -3218,6 +3343,15 @@ class CotizacionesController extends Controller
             }
             $doc->terminal = $request->terminal_local;
             $doc->num_autorizacion = $request->num_autorizacion;
+            $doc->cita_at = $request->cita_at ?? null;
+            $doc->eta = $request->eta ?? null;
+            $naviera = $request->naviera_id;
+            $doc->naviera_id = ($naviera === null || $naviera === '' || $naviera === 'null')
+    ? null
+    : (int) $naviera;
+            $doc->pedimento_recibido_at = $request->pedimento_recibido_at ?? null;
+
+
 
             $doc->save();
 

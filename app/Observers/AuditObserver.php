@@ -16,6 +16,16 @@ class AuditObserver
         'password',
     ];
 
+    private function normalize($data)
+    {
+        return collect($data)->map(function ($value) {
+            if (is_array($value) || is_object($value)) {
+                return json_encode($value);
+            }
+            return $value;
+        })->toArray();
+    }
+
     public function created(Model $model)
     {
         $this->log('created', $model, null, $model->getAttributes());
@@ -71,7 +81,10 @@ class AuditObserver
         $old = is_array($old) ? $old : [];
         $new = is_array($new) ? $new : [];
 
-        $cambios = array_diff_assoc($new, $old);
+        $oldNormalized = $this->normalize($old);
+        $newNormalized = $this->normalize($new);
+
+        $cambios = array_diff_assoc($newNormalized, $oldNormalized);
 
         //dd($cambios);
 

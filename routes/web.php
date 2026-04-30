@@ -34,6 +34,7 @@ Route::group(["prefix" => "gps"], function () {
     Route::get('setup', [GpsCompanyController::class,'setupGps'])->name('gps.setup');
     Route::get('config', [GpsCompanyController::class,'getConfig'])->name('gps.config');
     Route::post('config/store', [GpsCompanyController::class,'setConfig'])->name('gps.store');
+    Route::post('config/store-equipos', [GpsCompanyController::class,'setConfigEquipo'])->name('gps.equipo.store');
 });
 
 Route::group(["prefix" => "mep"], function () {
@@ -61,7 +62,7 @@ Route::group(["prefix" => "prestamos"], function () {
     Route::post("{id}/abonar", [PrestamosController::class,'abonar'])->name('prestamo.abonar');
     Route::get("lista", [PrestamosController::class,'getListaPrestamos'])->name('prestamo.lista');
     Route::get("lista-detalle/{idprestamo}", [PrestamosController::class,'getPrestamosPagos'])->name('prestamo.listadetalle');
-
+    Route::get("operador/{id}", [PrestamosController::class, 'showOperador']) ->name('prestamos.operador.show');
 
 });
 
@@ -291,6 +292,12 @@ Route::group(['middleware' => ['auth']], function () {
     Route::post('/equipos/asignar-gps/{id}', [App\Http\Controllers\EquiposController::class, 'asignarGps'])->name('equipos.asignarGps');
 
     Route::get('/equipos/data', [App\Http\Controllers\EquiposController::class, 'data'])->name('equipos.data');
+    Route::post('/equipos/update-mep', [App\Http\Controllers\EquiposController::class, 'updateMep'])->name('equipos.updateMep');
+
+    //equipos mep
+
+
+    Route::get('equipos-gps/index', [App\Http\Controllers\EquiposController::class, 'index_gps'])->name('equipos.gps.mep');
 
 
     // ==================== O P E R A D O R E S ====================
@@ -360,6 +367,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::any('cotizaciones/store-local', [App\Http\Controllers\CotizacionesController::class, 'storelocal'])->name('store.cotizacioneslocal');
     Route::post('cotizaciones/single/update-local/{id}', [App\Http\Controllers\CotizacionesController::class, 'singleUpdatelocal'])->name('update.singlelocal');
     Route::post('/cotizaciones/transformar/foraneo', [App\Http\Controllers\CotizacionesController::class, 'convertirlocalforaneo'])->name('cotizaciones.transform.foraneo');
+    Route::post('/cotizaciones/transformar/revertirforaneo', [App\Http\Controllers\CotizacionesController::class, 'revertirforaneo'])->name('cotizaciones.transform.revertirforaneo');
 
     // sgt busqueda y asignacion de doc boleta patio
     Route::get('/cotizaciones/solicitudes-local', [App\Http\Controllers\CotizacionesController::class, 'solicitudesLocales'])->name('cotizaciones.Solic-locales');
@@ -381,6 +389,8 @@ Route::group(['middleware' => ['auth']], function () {
     Route::post('cotizaciones/gastos/get', [App\Http\Controllers\CotizacionesController::class, 'get_gastos'])->name('gastos.cotizaciones');
     Route::post('cotizaciones/gastos/eliminar', [App\Http\Controllers\CotizacionesController::class, 'eliminar_gasto_cotizacion'])->name('gastos.eliminar');
 
+    Route::post('/cotizaciones/gastosextra/pagar', [App\Http\Controllers\CotizacionesController::class, 'pagar_gasto_cotizacion'])->name('pagar.gastos.cotizacion');
+    
     Route::post('cotizaciones/gastos-operador/registrar', [App\Http\Controllers\CotizacionesController::class, 'agregar_gasto_operador'])->name('gastos.cotizaciones');
     Route::post('cotizaciones/gastos-operador/get', [App\Http\Controllers\CotizacionesController::class, 'get_gastos_operador'])->name('gastos.cotizaciones');
     Route::post('cotizaciones/gastos-operador/pagar', [App\Http\Controllers\CotizacionesController::class, 'pagar_gasto_operador'])->name('pagar.gastos');
@@ -409,7 +419,7 @@ Route::group(['middleware' => ['auth']], function () {
         Route::get('/programar-viaje', [App\Http\Controllers\PlaneacionController::class, 'programarViaje'])->name('planeacion.programar');
 
         Route::post('viajes/reprogramar', [App\Http\Controllers\PlaneacionController::class, 'reprogramarViajes'])->name('asignacion.reprogramar');
-
+Route::post('viajes/{id}/fechas', [App\Http\Controllers\PlaneacionController::class, 'cambioFechas'])->name('asignacion.cambio_fechas');
     });
 
 
@@ -538,6 +548,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('liquidaciones/historial', [App\Http\Controllers\LiquidacionesController::class, 'historialPagos'])->name('historial.liquidacion');
 
     Route::post('liquidaciones/historial/data', [App\Http\Controllers\LiquidacionesController::class, 'historialPagosData'])->name('historialdata.liquidacion');
+     Route::post('liquidaciones/historial/delete/{id}', [App\Http\Controllers\LiquidacionesController::class, 'deleteHistorialPago'])->name('historial.delete.liquidacion');
     Route::post('liquidaciones/historial/pagos/comprobante', [App\Http\Controllers\LiquidacionesController::class, 'comprobantePago'])->name('comprobante.liquidacion');
     Route::post('liquidaciones/viajes/pagos-operadores', [App\Http\Controllers\LiquidacionesController::class, 'getpagosOperadoressaldo'])->name('operadores.liquidacion');
     Route::post('liquidaciones/viajes/operador', [App\Http\Controllers\LiquidacionesController::class, 'getViajesOperador'])->name('operador.viajes');
@@ -547,6 +558,10 @@ Route::group(['middleware' => ['auth']], function () {
     Route::post('liquidaciones/viajes/gastos/justificar', [App\Http\Controllers\LiquidacionesController::class, 'justificarGastos'])->name('justifica.gastos');
     Route::post('liquidaciones/viajes/gastos/justificar-multiple', [App\Http\Controllers\LiquidacionesController::class, 'justificarGastosMultiples'])->name('justifica.gastos.multiple');
 
+       Route::post(
+        '/liquidacion/vista-previa',
+        [App\Http\Controllers\LiquidacionesController::class, 'vistaPrevialiqu']
+    )->name('liquidacion.vistaPrevia');
 
 
 
@@ -588,7 +603,8 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('/admin/auditoria/{id}', [App\Http\Controllers\AuditoriaController::class, 'show']);
 
     Route::get('/admin/auditoria-data/inicial', [App\Http\Controllers\AuditoriaController::class, 'data']);
-
+Route::get('/admin/auditoria/{id}/pdf', [App\Http\Controllers\AuditoriaController::class, 'exportPdf'])
+      ->name('auditoria.pdf');
 });
 
 //Route Hooks - Do not delete//
