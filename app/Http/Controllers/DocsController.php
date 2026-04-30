@@ -247,11 +247,13 @@ class DocsController extends Controller
 
          Log::info('Datos debug', [
     'docid' => $docId,
-    'archivo' => $archivo
+    'archivo' => $archivo,
+
 ]);
 
 
-        $documento = DocumCotizacion::findOrFail($docId);
+       $coti = Cotizaciones::findOrFail($docId);
+              $documento = DocumCotizacion::where('id_cotizacion', $coti->id)->first();
 
         $path = public_path(
             "cotizaciones/cotizacion{$documento->id_cotizacion}/{$file}"
@@ -268,7 +270,7 @@ class DocsController extends Controller
         return response()->download($path);
 
 
-        return Storage::download("cotizaciones/$archivo");
+
     }
 
 
