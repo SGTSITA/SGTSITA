@@ -245,6 +245,12 @@ class DocsController extends Controller
 
         // }
 
+         Log::info('Datos debug', [
+    'docid' => $docId,
+    'archivo' => $archivo
+]);
+
+
         $documento = DocumCotizacion::findOrFail($docId);
 
         $path = public_path(
