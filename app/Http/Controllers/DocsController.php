@@ -12,6 +12,7 @@ use App\Traits\CommonTrait;
 use Illuminate\Http\Request;
 use ZipArchive;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 
 class DocsController extends Controller
 {
@@ -84,6 +85,11 @@ class DocsController extends Controller
             }
         }
 
+       Log::info('Datos debug', [
+    'doc' => $DocDocumento,
+    'contenedores' => $contenedores,
+    'archivos' => $archivosPorDoc
+]);
 
         $tabs = [];
         foreach ($contenedores as $c) {
@@ -399,6 +405,8 @@ class DocsController extends Controller
         $columnsbycode = config('CatAuxiliares.columnsbycode');
         $clave = array_search($title, $columnsbycode, true);
         $path = public_path('cotizaciones/cotizacion'.$id.'/'.$file);
+
+
 
         if (File::exists($path)) {
             $finfo = finfo_open(FILEINFO_MIME_TYPE); // Abrir la base de datos de tipos MIME
