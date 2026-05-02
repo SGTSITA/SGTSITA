@@ -547,7 +547,7 @@ class PlaneacionController extends Controller
                 DB::beginTransaction();
                 $asignaciones = new Asignaciones();
 
-                $asignaciones->id_contenedor = $contenedor->id_cotizacion;
+                $asignaciones->id_contenedor = $contenedor->id;
                 $asignaciones->fecha_inicio = $fechaInicio;
                 $asignaciones->fecha_fin = $fechaFinal . ' 23:00:00';
                 $asignaciones->fehca_inicio_guard = $fechaInicio;
