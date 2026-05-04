@@ -346,7 +346,14 @@ class PlaneacionController extends Controller
         $idEmpresa = auth()->user()->id_empresa ;
         $planeaciones = Asignaciones::join('docum_cotizacion', 'asignaciones.id_contenedor', '=', 'docum_cotizacion.id')
                         ->join('cotizaciones', 'docum_cotizacion.id_cotizacion', '=', 'cotizaciones.id')
-                        ->where('asignaciones.fecha_inicio', '>=', $request->fromDate)
+                        ->where(function ($q) use ($request) {
+    $q->whereBetween('asignaciones.fecha_inicio', [$request->fromDate, $request->toDate])
+      ->orWhereBetween('asignaciones.fecha_fin', [$request->fromDate, $request->toDate])
+      ->orWhere(function ($q2) use ($request) {
+          $q2->where('asignaciones.fecha_inicio', '<=', $request->fromDate)
+             ->where('asignaciones.fecha_fin', '>=', $request->toDate);
+      });
+})
                        ->when(!$isAdmin, function ($q) use ($idEmpresa) {
                            $q->when($idEmpresa != 0, function ($q2) use ($idEmpresa) {
                                // $q2->where('asignaciones.id_empresa', $idEmpresa);
@@ -388,7 +395,8 @@ class PlaneacionController extends Controller
         $board = [];
         $board[] = ["name" => "Clientes", "id" => "S", "expanded" => true, "children" => $clientesData];
 
-        $fecha = Carbon::now()->subdays(10)->format('Y-m-d');
+        // $fecha = Carbon::now()->subdays(10)->format('Y-m-d');
+       $fecha = $request->fromDate;
         return response()->json(["boardCentros" => $board,"extractor" => $extractor,"scrollDate" => $fecha, "TMensaje" => "success","planeaciones" => $planeaciones]);
     }
 

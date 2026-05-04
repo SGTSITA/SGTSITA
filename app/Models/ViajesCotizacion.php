@@ -7,7 +7,7 @@ use App\Traits\Auditable;
 
 class ViajesCotizacion extends Pivot
 {
-    //    use Auditable;
+     use Auditable;
     protected $table = 'viajes_cotizacion';
 
     public $timestamps = false;

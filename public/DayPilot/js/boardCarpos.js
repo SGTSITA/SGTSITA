@@ -27,7 +27,7 @@ async function initBoard(fromDate, toDate) {
     const result = await $.ajax({
         method: "post",
         url: "/planeaciones/monitor/board",
-        data: { _token: _token, fromDate: fromDate },
+        data: { _token: _token, fromDate: fromDate, toDate: toDate },
         beforeSend: () => {
             if (dpReady) {
                 dp.events.list = []; // Vacía la lista de eventos
@@ -80,6 +80,14 @@ async function initBoard(fromDate, toDate) {
             dp.startDate = scrollToDate?.addDays
                 ? scrollToDate.addDays(-2)
                 : new DayPilot.Date();
+
+            const from = new DayPilot.Date(fromDate).addDays(-10);
+            const to = new DayPilot.Date(toDate).addDays(10);
+
+            const days = DayPilot.DateUtil.daysDiff(from, to) + 1;
+
+            dp.startDate = from;
+            dp.days = days;
 
             if (dpReady) {
                 dp.update();
