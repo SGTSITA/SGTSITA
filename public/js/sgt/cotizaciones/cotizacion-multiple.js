@@ -1,5 +1,5 @@
-var containerMultiple = document.getElementById('cotizacion-multiple');
-var FileName = 'tableroCotizacionMultiple';
+var containerMultiple = document.getElementById("cotizacion-multiple");
+var FileName = "tableroCotizacionMultiple";
 
 var data = [];
 var proveedoresFormateados = [];
@@ -8,12 +8,16 @@ var transportistasFormateados = [];
 // NO BORRAR
 async function getClientes(clienteId) {
     let dataGetClientes = $.ajax({
-        type: 'GET',
-        url: '/subclientes/' + clienteId,
+        type: "GET",
+        url: "/subclientes/" + clienteId,
         success: function (data) {
             let dataClientes = [];
             $.each(data, function (key, subcliente) {
-                dataClientes.push(formatoConsecutivo(subcliente.id) + ' - ' + subcliente.nombre);
+                dataClientes.push(
+                    formatoConsecutivo(subcliente.id) +
+                        " - " +
+                        subcliente.nombre,
+                );
             });
             dataDropDown = dataClientes;
             return dataClientes;
@@ -21,11 +25,15 @@ async function getClientes(clienteId) {
     });
 
     proveedoresLista.forEach((p) => {
-        proveedoresFormateados.push(formatoConsecutivo(p.id) + ' - ' + p.nombre);
+        proveedoresFormateados.push(
+            formatoConsecutivo(p.id) + " - " + p.nombre,
+        );
     });
 
     transportistasLista.forEach((t) => {
-        transportistasFormateados.push(formatoConsecutivo(t.id) + ' - ' + t.nombre);
+        transportistasFormateados.push(
+            formatoConsecutivo(t.id) + " - " + t.nombre,
+        );
     });
 
     return dataGetClientes;
@@ -33,12 +41,33 @@ async function getClientes(clienteId) {
 
 // CAMPOS OBLIGATORIOS
 const formFieldsContenedores = [
-    { field: 'id_subcliente', index: 0, label: 'Sub Cliente', required: true },
-    { field: 'numContenedor', index: 3, label: 'Núm. Contenedor', required: true },
-    { field: 'origen', index: 4, label: 'Origen', required: true },
-    { field: 'destino', index: 5, label: 'Destino', required: true },
-    { field: 'tamContenedor', index: 6, label: 'Tamaño Contenedor', required: true },
-    { field: 'pesoContenedor', index: 7, label: 'Peso Contenedor', required: canElegirProveedor ? true : false },
+    { field: "id_subcliente", index: 0, label: "Sub Cliente", required: true },
+    {
+        field: "numContenedor",
+        index: 3,
+        label: "Núm. Contenedor",
+        required: true,
+    },
+    { field: "origen", index: 4, label: "Origen", required: true },
+    { field: "destino", index: 5, label: "Destino", required: true },
+    {
+        field: "tamContenedor",
+        index: 6,
+        label: "Tamaño Contenedor",
+        required: true,
+    },
+    {
+        field: "pesoContenedor",
+        index: 7,
+        label: "Peso Contenedor",
+        required: canElegirProveedor ? true : false,
+    },
+    {
+        field: "url",
+        index: 18,
+        label: "URL de Google Maps",
+        required: true,
+    },
 ];
 
 function buildHandsOntable() {
@@ -46,30 +75,60 @@ function buildHandsOntable() {
     // 1) LAS COLUMNAS SON FIJAS, SIEMPRE MISMO ORDEN
     //-------------------------------------------------------
     let columnas = [
-        { data: 0, type: 'dropdown', source: dataDropDown, strict: true, width: 150 }, // 0 SUBCLIENTE
-        { data: 1, type: 'dropdown', source: proveedoresFormateados, strict: true, width: 150 }, // 1 PROVEEDOR
-        { data: 2, type: 'dropdown', source: transportistasFormateados, strict: true, width: 150 }, // 2 TRANSPORTISTA
+        {
+            data: 0,
+            type: "dropdown",
+            source: dataDropDown,
+            strict: true,
+            width: 150,
+        }, // 0 SUBCLIENTE
+        {
+            data: 1,
+            type: "dropdown",
+            source: proveedoresFormateados,
+            strict: true,
+            width: 150,
+        }, // 1 PROVEEDOR
+        {
+            data: 2,
+            type: "dropdown",
+            source: transportistasFormateados,
+            strict: true,
+            width: 150,
+        }, // 2 TRANSPORTISTA
         { data: 3, width: 150 }, // 3 CONTENEDOR
         { data: 4, width: 150 }, // 4 ORIGEN
         { data: 5, width: 150 }, // 5 DESTINO
-        { data: 6, type: 'numeric', width: 150 }, // 6 TAMAÑO
-        { data: 7, type: 'numeric', width: 150 }, // 7 PESO
+        { data: 6, type: "numeric", width: 150 }, // 6 TAMAÑO
+        { data: 7, type: "numeric", width: 150 }, // 7 PESO
 
         { data: 8, width: 100 }, // 8 peso reglamentario
         { data: 9, width: 100 }, // 9 sobrepeso
         { data: 10, width: 100 }, // 10 precio sobrepeso
         { data: 11, width: 100 }, // 11 precio tonelada
 
-        { data: 12, type: 'date', dateFormat: 'YYYY-MM-DD', correctFormat: true, width: 155 },
-        { data: 13, type: 'date', dateFormat: 'YYYY-MM-DD', correctFormat: true, width: 140 },
+        {
+            data: 12,
+            type: "date",
+            dateFormat: "YYYY-MM-DD",
+            correctFormat: true,
+            width: 155,
+        },
+        {
+            data: 13,
+            type: "date",
+            dateFormat: "YYYY-MM-DD",
+            correctFormat: true,
+            width: 140,
+        },
 
         { data: 14, width: 130 }, // 14 num bloque
 
         // 15 HORA INICIO
         {
             data: 15,
-            type: 'time',
-            timeFormat: 'HH:mm:ss',
+            type: "time",
+            timeFormat: "HH:mm:ss",
             correctFormat: true,
             width: 100,
         },
@@ -77,36 +136,38 @@ function buildHandsOntable() {
         // 16 HORA FIN
         {
             data: 16,
-            type: 'time',
-            timeFormat: 'HH:mm:ss',
+            type: "time",
+            timeFormat: "HH:mm:ss",
             correctFormat: true,
             width: 100,
         },
 
         { data: 17, width: 200 }, // 17 direccion
-        { data: 18, readOnly: true }, // 18 ID
+        { data: 18, width: 200 }, // 18 url
+        { data: 19, readOnly: true }, // 19 ID
     ];
 
     let headers = [
-        'SUBCLIENTE',
-        'PROVEEDOR',
-        'TRANSPORTISTA',
-        '# CONTENEDOR',
-        'ORIGEN',
-        'DESTINO',
-        'TAMAÑO',
-        'PESO',
-        'PESO REGLAMENTARIO',
-        'SOBREPESO',
-        'PRECIO_SOBREPESO',
-        'PRECIO_TONELADA',
-        'FECHA MODULACIÓN',
-        'FECHA ENTREGA',
-        'NÚM BLOQUE',
-        'HORA INICIO',
-        'HORA FIN',
-        'DIRECCIÓN',
-        'ID',
+        "SUBCLIENTE",
+        "PROVEEDOR",
+        "TRANSPORTISTA",
+        "# CONTENEDOR",
+        "ORIGEN",
+        "DESTINO",
+        "TAMAÑO",
+        "PESO",
+        "PESO REGLAMENTARIO",
+        "SOBREPESO",
+        "PRECIO_SOBREPESO",
+        "PRECIO_TONELADA",
+        "FECHA MODULACIÓN",
+        "FECHA ENTREGA",
+        "NÚM BLOQUE",
+        "HORA INICIO",
+        "HORA FIN",
+        "DIRECCIÓN",
+        "URL",
+        "ID",
     ];
 
     let columnasOcultas = [];
@@ -117,7 +178,7 @@ function buildHandsOntable() {
         fixetcolimns = 2;
     }
 
-    columnasOcultas.push(8, 9, 10, 11, 18);
+    columnasOcultas.push(8, 9, 10, 11, 19);
 
     var config = {
         data: data,
@@ -129,7 +190,7 @@ function buildHandsOntable() {
 
         height: 450,
         minSpareRows: 1,
-        licenseKey: 'non-commercial-and-evaluation',
+        licenseKey: "non-commercial-and-evaluation",
 
         hiddenColumns: {
             columns: columnasOcultas,
@@ -146,24 +207,63 @@ function buildHandsOntable() {
         for (let i = 0; i < rows.length; i++) {
             let r = rows[i];
 
-            let filaVacia = r.every((v) => v === null || v === '');
+            let filaVacia = r.every((v) => v === null || v === "");
 
             if (filaVacia) continue;
 
-            if (r.every((v) => v === null || v === '')) continue;
+            if (r.every((v) => v === null || v === "")) continue;
 
             for (let campo of formFieldsContenedores) {
                 let val = r[campo.index];
-                if (campo.required && (!val || val === '')) {
-                    Swal.fire('Campo faltante', `Falta ${campo.label} en la fila ${i + 1}`, 'warning');
+                if (campo.required && (!val || val === "")) {
+                    Swal.fire(
+                        "Campo faltante",
+                        `Falta ${campo.label} en la fila ${i + 1}`,
+                        "warning",
+                    );
                     return false;
+                }
+
+                if (campo.field === "url" && val) {
+                    let url;
+
+                    try {
+                        url = new URL(val);
+                    } catch (_) {
+                        Swal.fire(
+                            "URL inválida",
+                            `La URL en la fila ${i + 1} no es válida.`,
+                            "warning",
+                        );
+                        return false;
+                    }
+
+                    const dominiosValidos = [
+                        "google.com",
+                        "www.google.com",
+                        "maps.google.com",
+                        "maps.app.goo.gl",
+                    ];
+
+                    const esValido = dominiosValidos.some((d) =>
+                        url.hostname.includes(d),
+                    );
+
+                    if (!esValido) {
+                        Swal.fire(
+                            "URL no válida",
+                            `La URL en la fila ${i + 1} debe ser de Google Maps.`,
+                            "warning",
+                        );
+                        return false;
+                    }
                 }
             }
             filasValidas.push(r);
         }
 
         if (filasValidas.length === 0) {
-            Swal.fire('Sin datos', 'No hay información para guardar.', 'info');
+            Swal.fire("Sin datos", "No hay información para guardar.", "info");
             return false;
         }
 
@@ -173,18 +273,25 @@ function buildHandsOntable() {
 
     function createContenedoresMultiple(contenedores) {
         var _token = document.querySelector('meta[name="csrf-token"]').content;
-        var uuid = localStorage.getItem('uuid');
+        var uuid = localStorage.getItem("uuid");
         var permiso_proveedor = canElegirProveedor ? 1 : 0;
 
-        var origen_captura = document.getElementById('origen_captura').value;
+        var origen_captura = document.getElementById("origen_captura").value;
 
         $.post(
-            '/viajes/solicitud/multiple',
+            "/viajes/solicitud/multiple",
             { _token, contenedores, uuid, permiso_proveedor, origen_captura },
             function (response) {
-                Swal.fire(response.Titulo, response.Mensaje, response.TMensaje).then(() => {
+                Swal.fire(
+                    response.Titulo,
+                    response.Mensaje,
+                    response.TMensaje,
+                ).then(() => {
                     // SOLO recargar si el servidor indica éxito
-                    if (response.TMensaje === 'success' || response.TMensaje === 'ok') {
+                    if (
+                        response.TMensaje === "success" ||
+                        response.TMensaje === "ok"
+                    ) {
                         location.reload();
                     }
                     // Si es warning o error, NO recargar

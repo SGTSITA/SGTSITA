@@ -7,7 +7,7 @@ use App\Traits\Auditable;
 
 class ViajesCostos extends Model
 {
-    // use Auditable;
+     use Auditable;
     protected $table = 'viajes_costos';
 
     protected $fillable = [

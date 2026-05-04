@@ -3,16 +3,16 @@ let waLinkGenerado = null;
 let waPasswordGenerado = null;
 let waArchivosSeleccionados = [];
 
-let tagNumContenedor = document.querySelector('#numContenedor');
+let tagNumContenedor = document.querySelector("#numContenedor");
 let numContenedor = tagNumContenedor.textContent;
 //const safeValue = encodeURIComponent(numContenedor); //agregue porq habia uno que traia // en el num de contenendor , validar en captura..
 
 let urlGetFiles = `/viajes/file-manager/get-file-list/${numContenedor}`;
 let archivosData = [];
-let contendores = '';
-let autorizaciones = '';
-let dt = $('#kt_datatable_example_1')
-    .on('xhr.dt', function (e, settings, json, xhr) {
+let contendores = "";
+let autorizaciones = "";
+let dt = $("#kt_datatable_example_1")
+    .on("xhr.dt", function (e, settings, json, xhr) {
         archivosData = json.documentos;
         contendores = json.numContenedor;
         autorizaciones = json.num_autorizaciones;
@@ -24,41 +24,41 @@ let dt = $('#kt_datatable_example_1')
         },
         searchDelay: 500,
 
-        order: [[5, 'desc']],
+        order: [[5, "desc"]],
         select: {
-            style: 'multi',
+            style: "multi",
             selector: 'td:first-child input[type="checkbox"]',
-            className: 'row-selected',
+            className: "row-selected",
         },
         language: {
             paginate: {
-                first: 'Primero',
-                last: 'Último',
-                next: 'Siguiente',
-                previous: 'Anterior',
+                first: "Primero",
+                last: "Último",
+                next: "Siguiente",
+                previous: "Anterior",
             },
             select: {
                 rows: {
-                    1: '',
-                    _: '',
+                    1: "",
+                    _: "",
                 },
             },
-            decimal: '.',
-            emptyTable: 'No hay datos disponibles en la tabla',
-            zeroRecords: 'No se encontraron coincidencias',
-            info: '_START_ a _END_ de _TOTAL_ entradas',
-            infoFiltered: '(Filtrado de _MAX_ total de entradas)',
-            lengthMenu: 'Mostrar _MENU_ entradas',
-            thousands: ',',
+            decimal: ".",
+            emptyTable: "No hay datos disponibles en la tabla",
+            zeroRecords: "No se encontraron coincidencias",
+            info: "_START_ a _END_ de _TOTAL_ entradas",
+            infoFiltered: "(Filtrado de _MAX_ total de entradas)",
+            lengthMenu: "Mostrar _MENU_ entradas",
+            thousands: ",",
         },
         columns: [
             { data: null },
-            { data: 'secondaryFileName' },
-            { data: 'fileType' },
-            { data: 'fileSize' },
-            { data: 'fileDate' },
+            { data: "secondaryFileName" },
+            { data: "fileType" },
+            { data: "fileSize" },
+            { data: "fileDate" },
             { data: null },
-            { data: 'fileCode' },
+            { data: "fileCode" },
         ],
         columnDefs: [
             {
@@ -92,12 +92,14 @@ let dt = $('#kt_datatable_example_1')
         ],
     });
 
-const filterSearch = document.querySelector('[data-kt-docs-table-filter="search"]');
-filterSearch.addEventListener('keyup', function (e) {
+const filterSearch = document.querySelector(
+    '[data-kt-docs-table-filter="search"]',
+);
+filterSearch.addEventListener("keyup", function (e) {
     dt.search(e.target.value).draw();
 });
 
-dt.on('draw', function () {
+dt.on("draw", function () {
     //
     toggleToolbars();
     //   handleDeleteRows();
@@ -108,16 +110,18 @@ dt.on('draw', function () {
 var initToggleToolbar = function () {
     // Toggle selected action toolbar
     // Select all checkboxes
-    const container = document.querySelector('#kt_datatable_example_1');
+    const container = document.querySelector("#kt_datatable_example_1");
     const checkboxes = container.querySelectorAll('[type="checkbox"]');
 
     // Select elements
-    const deleteSelected = document.querySelector('[data-kt-docs-table-select="delete_selected"]');
+    const deleteSelected = document.querySelector(
+        '[data-kt-docs-table-select="delete_selected"]',
+    );
 
     // Toggle delete selected toolbar
     checkboxes.forEach((c) => {
         // Checkbox on click event
-        c.addEventListener('click', function () {
+        c.addEventListener("click", function () {
             setTimeout(function () {
                 toggleToolbars();
             }, 50);
@@ -126,37 +130,37 @@ var initToggleToolbar = function () {
 
     // Deleted selected rows
     if (deleteSelected) {
-        deleteSelected.addEventListener('click', function () {
+        deleteSelected.addEventListener("click", function () {
             // SweetAlert2 pop up --- official docs reference: https://sweetalert2.github.io/
             Swal.fire({
-                text: '¿Esta seguro que quiere eliminar los archivos seleccionados?',
-                icon: 'question',
+                text: "¿Esta seguro que quiere eliminar los archivos seleccionados?",
+                icon: "question",
                 showCancelButton: true,
                 buttonsStyling: false,
                 showLoaderOnConfirm: true,
-                confirmButtonText: 'Si, Eliminar!',
-                cancelButtonText: 'No',
+                confirmButtonText: "Si, Eliminar!",
+                cancelButtonText: "No",
                 customClass: {
-                    confirmButton: 'btn fw-bold btn-danger',
-                    cancelButton: 'btn fw-bold btn-active-light-primary',
+                    confirmButton: "btn fw-bold btn-danger",
+                    cancelButton: "btn fw-bold btn-active-light-primary",
                 },
             }).then(function (result) {
                 if (result.value) {
                     // Simulate delete request -- for demo purpose only
                     Swal.fire({
-                        text: 'Deleting selected customers',
-                        icon: 'info',
+                        text: "Deleting selected customers",
+                        icon: "info",
                         buttonsStyling: false,
                         showConfirmButton: false,
                         timer: 2000,
                     }).then(function () {
                         Swal.fire({
-                            text: 'You have deleted all selected customers!.',
-                            icon: 'success',
+                            text: "You have deleted all selected customers!.",
+                            icon: "success",
                             buttonsStyling: false,
-                            confirmButtonText: 'Ok, got it!',
+                            confirmButtonText: "Ok, got it!",
                             customClass: {
-                                confirmButton: 'btn fw-bold btn-primary',
+                                confirmButton: "btn fw-bold btn-primary",
                             },
                         }).then(function () {
                             // delete row data from server and re-draw datatable
@@ -164,10 +168,11 @@ var initToggleToolbar = function () {
                         });
 
                         // Remove header checked box
-                        const headerCheckbox = container.querySelectorAll('[type="checkbox"]')[0];
+                        const headerCheckbox =
+                            container.querySelectorAll('[type="checkbox"]')[0];
                         headerCheckbox.checked = false;
                     });
-                } else if (result.dismiss === 'cancel') {
+                } else if (result.dismiss === "cancel") {
                 }
             });
         });
@@ -177,10 +182,16 @@ var initToggleToolbar = function () {
 // Toggle toolbars
 var toggleToolbars = function () {
     // Define variables
-    const container = document.querySelector('#kt_datatable_example_1');
-    const toolbarBase = document.querySelector('[data-kt-docs-table-toolbar="base"]');
-    const toolbarSelected = document.querySelector('[data-kt-docs-table-toolbar="selected"]');
-    const selectedCount = document.querySelector('[data-kt-docs-table-select="selected_count"]');
+    const container = document.querySelector("#kt_datatable_example_1");
+    const toolbarBase = document.querySelector(
+        '[data-kt-docs-table-toolbar="base"]',
+    );
+    const toolbarSelected = document.querySelector(
+        '[data-kt-docs-table-toolbar="selected"]',
+    );
+    const selectedCount = document.querySelector(
+        '[data-kt-docs-table-select="selected_count"]',
+    );
 
     // Select refreshed checkbox DOM elements
     const allCheckboxes = container.querySelectorAll('tbody [type="checkbox"]');
@@ -200,135 +211,145 @@ var toggleToolbars = function () {
     // Toggle toolbars
     if (checkedState) {
         selectedCount.innerHTML = count;
-        toolbarBase.classList.add('d-none');
-        toolbarSelected.classList.remove('d-none');
+        toolbarBase.classList.add("d-none");
+        toolbarSelected.classList.remove("d-none");
     } else {
-        toolbarBase.classList.remove('d-none');
-        toolbarSelected.classList.add('d-none');
+        toolbarBase.classList.remove("d-none");
+        toolbarSelected.classList.add("d-none");
     }
 };
 
-const btnDocumets = document.querySelector('#btnDocs');
-const btnAdjuntos = document.querySelector('#btnAdjuntos');
-const btnWhatsApp = document.querySelector('#btnWhatsApp');
-const buttonSendMail = document.querySelector('[data-kt-inbox-form="sendmail"]');
-const mainEmail = document.querySelector('#compose_to');
-const phoneWhatsApp = document.querySelector('#phone_wa');
-const ccEmail = document.querySelector('#compose_cc');
+const btnDocumets = document.querySelector("#btnDocs");
+const btnAdjuntos = document.querySelector("#btnAdjuntos");
+const btnWhatsApp = document.querySelector("#btnWhatsApp");
+const buttonSendMail = document.querySelector(
+    '[data-kt-inbox-form="sendmail"]',
+);
+const mainEmail = document.querySelector("#compose_to");
+const phoneWhatsApp = document.querySelector("#phone_wa");
+const ccEmail = document.querySelector("#compose_cc");
 const emailCC = document.querySelector('[data-kt-inbox-form="cc"]');
-const subject = document.querySelector('#compose_subject');
-const messageMail = document.querySelector('#kt_inbox_form_editor');
-let selectContenedores = document.querySelector('#selectContenedores');
-const btnEnviarWhatsappv2 = document.querySelector('#btnEnviarWhatsapp');
-const btnCancelarWhatsApp = document.querySelector('#btnCancelarWhatsApp');
-const modalWhatsApp2Element = document.querySelector('#modalWhatsapp');
+const subject = document.querySelector("#compose_subject");
+const messageMail = document.querySelector("#kt_inbox_form_editor");
+let selectContenedores = document.querySelector("#selectContenedores");
+const btnEnviarWhatsappv2 = document.querySelector("#btnEnviarWhatsapp");
+const btnCancelarWhatsApp = document.querySelector("#btnCancelarWhatsApp");
+const modalWhatsApp2Element = document.querySelector("#modalWhatsapp");
 let modalWhatsApp2 = null;
 
-selectContenedores.addEventListener('change', (e) => {
-    localStorage.setItem('numContenedor', e.target.value);
+selectContenedores.addEventListener("change", (e) => {
+    localStorage.setItem("numContenedor", e.target.value);
 });
 
 function goToUploadDocuments() {
-    let titleFileUploader = document.querySelector('#titleFileUploader');
-    let contenedores = numContenedor.replace(/\s+/g, '*');
-    contenedores = contenedores.split('*');
+    let titleFileUploader = document.querySelector("#titleFileUploader");
+    let contenedores = numContenedor.replace(/\s+/g, "*");
+    contenedores = contenedores.split("*");
 
     while (selectContenedores.options.length > 0) {
         selectContenedores.remove(0);
     }
 
     contenedores.forEach((c) => {
-        let option = document.createElement('option');
+        let option = document.createElement("option");
         option.value = c;
         option.text = c;
         selectContenedores.appendChild(option);
     });
 
     titleFileUploader.textContent = contenedores[0].toUpperCase();
-    localStorage.setItem('numContenedor', contenedores[0]);
-    const modalElement = document.getElementById('kt_modal_fileuploader');
+    localStorage.setItem("numContenedor", contenedores[0]);
+    const modalElement = document.getElementById("kt_modal_fileuploader");
     const bootstrapModal = new bootstrap.Modal(modalElement);
     bootstrapModal.show();
 }
 
 function modalEmail() {
     subject.value = `Documentos Contenedor ${numContenedor}`;
-    const tag = document.getElementById('tagEnvioDocumentos');
-    $('#emailAddress').removeClass('d-none');
-    $('#phoneNumber').addClass('d-none');
-    buttonSendMail.setAttribute('data-kt-inbox-form', 'sendmail');
-    tag.textContent = 'Enviar documentos vía Correo Electrónico';
-    const modalElement = document.getElementById('modal-enviar-correo');
+    const tag = document.getElementById("tagEnvioDocumentos");
+    $("#emailAddress").removeClass("d-none");
+    $("#phoneNumber").addClass("d-none");
+    buttonSendMail.setAttribute("data-kt-inbox-form", "sendmail");
+    tag.textContent = "Enviar documentos vía Correo Electrónico";
+    const modalElement = document.getElementById("modal-enviar-correo");
     const bootstrapModal = new bootstrap.Modal(modalElement);
     bootstrapModal.show();
 }
 
-const inputTelefono = document.getElementById('telefono_wa_input');
-const dropdown = document.getElementById('contactos_dropdown');
-const wrapper = document.getElementById('telefono_wa_wrapper');
-const hiddenInput = document.getElementById('telefonos_wa');
+const inputTelefono = document.getElementById("telefono_wa_input");
+const dropdown = document.getElementById("contactos_dropdown");
+const wrapper = document.getElementById("telefono_wa_wrapper");
+const hiddenInput = document.getElementById("telefonos_wa");
 
 let contactosWhatsapp = [];
 let contactosSeleccionados = [];
 
 async function cargarContactosWhatsapp() {
     try {
-        const res = await fetch('/contactos/list'); // usa tu ruta real
+        const res = await fetch("/contactos/list"); // usa tu ruta real
         contactosWhatsapp = await res.json();
-        mostrarDropdown('');
+        mostrarDropdown("");
     } catch (err) {
-        console.error('Error cargando contactos:', err);
+        console.error("Error cargando contactos:", err);
     }
 }
 
 function renderTags() {
     // Elimina todos menos el input
-    [...wrapper.querySelectorAll('.tag')].forEach((el) => el.remove());
+    [...wrapper.querySelectorAll(".tag")].forEach((el) => el.remove());
 
     contactosSeleccionados.forEach((c) => {
-        const tag = document.createElement('div');
+        const tag = document.createElement("div");
         tag.dataset.telefono = c.telefono;
-        tag.className = 'tag d-flex align-items-center bg-light rounded-pill px-2 py-1 gap-2';
+        tag.className =
+            "tag d-flex align-items-center bg-light rounded-pill px-2 py-1 gap-2";
         tag.innerHTML = `
-            <img src="${c.foto ?? '/assets/images/faces/default-avatar.png'}" class="rounded-circle" width="25" height="25" />
+            <img src="${c.foto ?? "/assets/images/faces/default-avatar.png"}" class="rounded-circle" width="25" height="25" />
             <span>${c.nombre}</span>
             <span class="text-danger cursor-pointer" style="font-weight: bold;">&times;</span>
         `;
-        tag.querySelector('span.text-danger').onclick = () => {
-            contactosSeleccionados = contactosSeleccionados.filter((x) => x.telefono !== c.telefono);
+        tag.querySelector("span.text-danger").onclick = () => {
+            contactosSeleccionados = contactosSeleccionados.filter(
+                (x) => x.telefono !== c.telefono,
+            );
             renderTags();
         };
         wrapper.insertBefore(tag, inputTelefono);
     });
 
     // Actualizar input oculto
-    hiddenInput.value = contactosSeleccionados.map((c) => c.telefono).join(',');
+    hiddenInput.value = contactosSeleccionados.map((c) => c.telefono).join(",");
 }
 
 function mostrarDropdown(filtro) {
-    filtro = filtro?.trim().toLowerCase() || ''; // Asegura que sea string sin espacios
+    filtro = filtro?.trim().toLowerCase() || ""; // Asegura que sea string sin espacios
 
     const coincidencias = contactosWhatsapp.filter((c) => {
-        const yaSeleccionado = contactosSeleccionados.some((s) => s.telefono === c.telefono);
-        const nombre = (c.nombre || '').toLowerCase();
-        const telefono = c.telefono || '';
-        const filtroLower = (filtro || '').toLowerCase();
+        const yaSeleccionado = contactosSeleccionados.some(
+            (s) => s.telefono === c.telefono,
+        );
+        const nombre = (c.nombre || "").toLowerCase();
+        const telefono = c.telefono || "";
+        const filtroLower = (filtro || "").toLowerCase();
 
-        return !yaSeleccionado && (nombre.includes(filtroLower) || telefono.includes(filtroLower));
+        return (
+            !yaSeleccionado &&
+            (nombre.includes(filtroLower) || telefono.includes(filtroLower))
+        );
     });
 
-    dropdown.innerHTML = '';
+    dropdown.innerHTML = "";
     if (coincidencias.length === 0) {
-        dropdown.classList.remove('show');
+        dropdown.classList.remove("show");
         return;
     }
 
     coincidencias.forEach((c) => {
-        const item = document.createElement('a');
-        item.className = 'dropdown-item d-flex align-items-center';
-        item.href = '#';
+        const item = document.createElement("a");
+        item.className = "dropdown-item d-flex align-items-center";
+        item.href = "#";
         item.innerHTML = `
-            <img src="${c.foto ?? '/assets/images/faces/default-avatar.png'}" class="rounded-circle me-2" width="30" height="30" />
+            <img src="${c.foto ?? "/assets/images/faces/default-avatar.png"}" class="rounded-circle me-2" width="30" height="30" />
             <div>
                 <div class="fw-semibold">${c.nombre}</div>
                 <small class="text-muted">${c.telefono}</small>
@@ -338,60 +359,64 @@ function mostrarDropdown(filtro) {
             e.preventDefault();
             contactosSeleccionados.push(c);
             renderTags();
-            inputTelefono.value = '';
-            mostrarDropdown(''); //  refresca el dropdown después de agregar
+            inputTelefono.value = "";
+            mostrarDropdown(""); //  refresca el dropdown después de agregar
         };
         dropdown.appendChild(item);
     });
 
-    dropdown.classList.add('show');
+    dropdown.classList.add("show");
 }
 
 // Eventos
-inputTelefono.addEventListener('input', (e) => {
+inputTelefono.addEventListener("input", (e) => {
     mostrarDropdown(e.target.value);
 });
 
-inputTelefono.addEventListener('focus', () => {
+inputTelefono.addEventListener("focus", () => {
     mostrarDropdown(inputTelefono.value);
 });
 
-inputTelefono.addEventListener('blur', () => {
-    setTimeout(() => dropdown.classList.remove('show'), 150);
+inputTelefono.addEventListener("blur", () => {
+    setTimeout(() => dropdown.classList.remove("show"), 150);
 });
 
-$('#modal-enviar-correo').on('shown.bs.modal', () => {
+$("#modal-enviar-correo").on("shown.bs.modal", () => {
     cargarContactosWhatsapp();
 });
 
 function modalWhatsApp() {
-    const tag = document.getElementById('tagEnvioDocumentos');
-    $('#phoneNumber').removeClass('d-none');
-    $('#emailAddress').addClass('d-none');
-    buttonSendMail.setAttribute('data-kt-inbox-form', 'WhatsApp');
+    const tag = document.getElementById("tagEnvioDocumentos");
+    $("#phoneNumber").removeClass("d-none");
+    $("#emailAddress").addClass("d-none");
+    buttonSendMail.setAttribute("data-kt-inbox-form", "WhatsApp");
 
-    tag.textContent = 'Enviar documentos vía WhatsApp';
+    tag.textContent = "Enviar documentos vía WhatsApp";
     subject.value = `Documentos Contenedor ${numContenedor}`;
-    const modalElement = document.getElementById('modal-enviar-correo');
+    const modalElement = document.getElementById("modal-enviar-correo");
     const bootstrapModal = new bootstrap.Modal(modalElement);
     bootstrapModal.show();
 }
 
 function sendEmail() {
-    let channel = buttonSendMail.getAttribute('data-kt-inbox-form');
+    let channel = buttonSendMail.getAttribute("data-kt-inbox-form");
 
-    if (!validarEmail(mainEmail.value) && channel == 'sendmail') {
-        Swal.fire('Dirección invalida', 'Lo sentimos, el dato en el campo Para no es un correo electrónico', 'warning');
+    if (!validarEmail(mainEmail.value) && channel == "sendmail") {
+        Swal.fire(
+            "Dirección invalida",
+            "Lo sentimos, el dato en el campo Para no es un correo electrónico",
+            "warning",
+        );
         return false;
     }
 
     emailCC.classList.forEach((c) => {
-        if (c == 'd-flex') {
+        if (c == "d-flex") {
             if (!validarEmail(ccEmail.value)) {
                 Swal.fire(
-                    'Dirección invalida en Cc (Copiar a)',
-                    'Lo sentimos, el dato en el campo Cc no es un correo electrónico',
-                    'warning',
+                    "Dirección invalida en Cc (Copiar a)",
+                    "Lo sentimos, el dato en el campo Cc no es un correo electrónico",
+                    "warning",
                 );
                 return false;
             }
@@ -399,12 +424,16 @@ function sendEmail() {
     });
 
     if (subject.value.length == 0) {
-        Swal.fire('Escribir Asunto', 'Por favor introduzca asunto', 'warning');
+        Swal.fire("Escribir Asunto", "Por favor introduzca asunto", "warning");
         return false;
     }
 
     if (messageMail.textContent.length == 0) {
-        Swal.fire('Escribir mensaje', 'Por favor escriba un breve mensaje para el receptor', 'warning');
+        Swal.fire(
+            "Escribir mensaje",
+            "Por favor escriba un breve mensaje para el receptor",
+            "warning",
+        );
         return false;
     }
 
@@ -422,24 +451,28 @@ function enviarCorreo() {
             checkedState = true;
             count++;
 
-            const row = c.closest('tr');
-            const labelText = row.querySelector('td:nth-child(2)').textContent.trim();
+            const row = c.closest("tr");
+            const labelText = row
+                .querySelector("td:nth-child(2)")
+                .textContent.trim();
 
             let tmpFile = { file: c.value, documentSubject: labelText };
             attachmentFiles = [...attachmentFiles, tmpFile];
         }
     });
 
-    const tags = document.querySelectorAll('#telefono_wa_wrapper .tag');
+    const tags = document.querySelectorAll("#telefono_wa_wrapper .tag");
     const telefonos = Array.from(tags).map((tag) => tag.dataset.telefono);
 
-    buttonSendMail.setAttribute('data-kt-indicator', 'on');
-    let channel = buttonSendMail.getAttribute('data-kt-inbox-form');
-    let _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-    fetch('/sendfiles', {
-        method: 'POST',
+    buttonSendMail.setAttribute("data-kt-indicator", "on");
+    let channel = buttonSendMail.getAttribute("data-kt-inbox-form");
+    let _token = document
+        .querySelector('meta[name="csrf-token"]')
+        .getAttribute("content");
+    fetch("/sendfiles", {
+        method: "POST",
         headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
         },
         body: JSON.stringify({
             _token: _token,
@@ -457,22 +490,22 @@ function enviarCorreo() {
         .then((data) => {
             Swal.fire(data.Titulo, data.Mensaje, data.TMensaje);
         })
-        .catch((error) => console.error('Error:', error))
+        .catch((error) => console.error("Error:", error))
         .finally(() => {
-            buttonSendMail.removeAttribute('data-kt-indicator');
-            $('#modal-enviar-correo').modal('hide');
-            mainEmail.value = '';
-            ccEmail.value = '';
+            buttonSendMail.removeAttribute("data-kt-indicator");
+            $("#modal-enviar-correo").modal("hide");
+            mainEmail.value = "";
+            ccEmail.value = "";
             if (window.quillEditor) {
-                window.quillEditor.setText(''); // Limpia el contenido sin desactivar el editor
+                window.quillEditor.setText(""); // Limpia el contenido sin desactivar el editor
             }
         });
 }
 
 function mostrarLoading() {
     return Swal.fire({
-        title: 'Generando acceso',
-        text: 'Espere un momento...',
+        title: "Generando acceso",
+        text: "Espere un momento...",
         allowOutsideClick: false,
         didOpen: () => {
             Swal.showLoading();
@@ -481,7 +514,7 @@ function mostrarLoading() {
 }
 
 if (btnEnviarWhatsappv2) {
-    btnEnviarWhatsappv2.addEventListener('click', EnviarWhatsappGenerados);
+    btnEnviarWhatsappv2.addEventListener("click", EnviarWhatsappGenerados);
 }
 
 async function abrirModalWhatsapp() {
@@ -491,7 +524,7 @@ async function abrirModalWhatsapp() {
     waArchivosSeleccionados = obtenerArchivosSeleccionados();
 
     if (waArchivosSeleccionados.length === 0) {
-        alert('Seleccione al menos un archivo');
+        alert("Seleccione al menos un archivo");
         return;
     }
 
@@ -504,10 +537,12 @@ async function abrirModalWhatsapp() {
 
     try {
         const res = await fetch(`/cotizacion/${archivosData.id}/acceso`, {
-            method: 'POST',
+            method: "POST",
             headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                "Content-Type": "application/json",
+                "X-CSRF-TOKEN": document
+                    .querySelector('meta[name="csrf-token"]')
+                    .getAttribute("content"),
             },
             body: JSON.stringify({
                 archivos: waArchivosSeleccionados,
@@ -519,7 +554,7 @@ async function abrirModalWhatsapp() {
 
         if (!data.success) {
             Swal.close();
-            alert('Error al generar acceso');
+            alert("Error al generar acceso");
             return;
         }
 
@@ -534,12 +569,12 @@ async function abrirModalWhatsapp() {
     } catch (error) {
         Swal.close();
         console.error(error);
-        alert('Error de conexión');
+        alert("Error de conexión");
     }
 }
 
 if (btnCancelarWhatsApp) {
-    btnCancelarWhatsApp.addEventListener('click', () => {
+    btnCancelarWhatsApp.addEventListener("click", () => {
         waLinkGenerado = null;
         waPasswordGenerado = null;
         waArchivosSeleccionados = [];
@@ -553,10 +588,11 @@ function EnviarWhatsappGenerados() {
     const autorizacion = wa_no_autorizacion.value;
     const obs = wa_observaciones.value;
 
-    let tieneAutorizacion = autorizacion && autorizacion !== 'null' && autorizacion !== 'undefined';
-    let tieneObservacion = obs && obs !== 'null' && obs !== 'undefined';
-    let messageadd = '';
-    let messageadd2 = '';
+    let tieneAutorizacion =
+        autorizacion && autorizacion !== "null" && autorizacion !== "undefined";
+    let tieneObservacion = obs && obs !== "null" && obs !== "undefined";
+    let messageadd = "";
+    let messageadd2 = "";
     let mensaje = `
 ${esLocal ? `Fecha: ${wa_fecha.value}` : `Fecha entrega: ${wa_fecha.value}`}
 
@@ -566,11 +602,11 @@ Horario: ${wa_hora_inicio.value} - ${wa_hora_fin.value}`.trim();
     messageadd = `
 Terminal: ${wa_terminal.value}
 
-${wa_cambio_sello.checked ? '*CAMBIO DE SELLO*' : ''}
+${wa_cambio_sello.checked ? "*CAMBIO DE SELLO*" : ""}
 
-${tieneAutorizacion ? `No Autorización: ${wa_no_autorizacion.value}` : ''}
+${tieneAutorizacion ? `No Autorización: ${wa_no_autorizacion.value}` : ""}
 
-${tieneObservacion ? `${tieneObservacion}` : ''}
+${tieneObservacion ? `${obs}` : ""}
 `.trim();
 
     messageadd2 = `
@@ -579,53 +615,74 @@ ${waLinkGenerado}
 Contraseña de acceso: ${waPasswordGenerado}
     `.trim();
 
-    let messagefinal = mensaje + '\n\n' + messageadd + '\n\n' + messageadd2;
+    let messagefinal = mensaje + "\n\n" + messageadd + "\n\n" + messageadd2;
     const url = `https://wa.me/?text=${encodeURIComponent(messagefinal)}`;
-    window.open(url, '_blank');
+    window.open(url, "_blank");
 }
 
 function cargarDatosModalWhatsapp() {
     let data = archivosData;
-    let limpiocontenrepl = contendores.replaceAll('*', ' ');
+    let limpiocontenrepl = contendores.replaceAll("*", " ");
 
-    document.getElementById('wa_fecha').value = esLocal
+    document.getElementById("wa_fecha").value = esLocal
         ? data.cotizacion.fecha_modulacion
-        : (data.cotizacion.fecha_entrega ?? '');
-    document.getElementById('wa_referencia').value = `${limpiocontenrepl}`;
+        : (data.cotizacion.fecha_entrega ?? "");
+    document.getElementById("wa_referencia").value = `${limpiocontenrepl}`;
 
-    document.getElementById('wa_hora_inicio').value = data.cotizacion.bloque_hora_i_local ?? '';
-    document.getElementById('wa_hora_fin').value = data.cotizacion.bloque_hora_f_local ?? '';
+    document.getElementById("wa_hora_inicio").value =
+        data.cotizacion.bloque_hora_i_local ?? "";
+    document.getElementById("wa_hora_fin").value =
+        data.cotizacion.bloque_hora_f_local ?? "";
     if (
-        data.cotizacion.tipo_viaje_seleccion == 'local' ||
-        archivosData.cotizacion.tipo_viaje_seleccion == 'local_to_foraneo'
+        data.cotizacion.tipo_viaje_seleccion == "local" ||
+        archivosData.cotizacion.tipo_viaje_seleccion == "local_to_foraneo"
     ) {
-        document.getElementById('div_terminal_whatsapp').classList.remove('d-none');
-        document.getElementById('div_servicios_whatsapp').classList.remove('d-none');
-        document.getElementById('div_observaciones_whatsapp').classList.remove('d-none');
-        document.getElementById('div_no_autorizacion').classList.remove('d-none');
+        document
+            .getElementById("div_terminal_whatsapp")
+            .classList.remove("d-none");
+        document
+            .getElementById("div_servicios_whatsapp")
+            .classList.remove("d-none");
+        document
+            .getElementById("div_observaciones_whatsapp")
+            .classList.remove("d-none");
+        document
+            .getElementById("div_no_autorizacion")
+            .classList.remove("d-none");
     } else {
-        document.getElementById('wa_hora_inicio').value = data.cotizacion.bloque_hora_i ?? '';
-        document.getElementById('wa_hora_fin').value = data.cotizacion.bloque_hora_f ?? '';
-        document.getElementById('div_terminal_whatsapp').classList.add('d-none');
-        document.getElementById('div_servicios_whatsapp').classList.add('d-none');
-        document.getElementById('div_observaciones_whatsapp').classList.add('d-none');
-        document.getElementById('div_no_autorizacion').classList.add('d-none');
-        document.getElementById('wa_fecha').value = data.cotizacion.fecha_entrega;
+        document.getElementById("wa_hora_inicio").value =
+            data.cotizacion.bloque_hora_i ?? "";
+        document.getElementById("wa_hora_fin").value =
+            data.cotizacion.bloque_hora_f ?? "";
+        document
+            .getElementById("div_terminal_whatsapp")
+            .classList.add("d-none");
+        document
+            .getElementById("div_servicios_whatsapp")
+            .classList.add("d-none");
+        document
+            .getElementById("div_observaciones_whatsapp")
+            .classList.add("d-none");
+        document.getElementById("div_no_autorizacion").classList.add("d-none");
+        document.getElementById("wa_fecha").value =
+            data.cotizacion.fecha_entrega;
     }
-    document.getElementById('wa_terminal').value = data.terminal ?? '';
-    document.getElementById('wa_cambio_sello').checked = !!data.cotizacion.confirmacion_sello;
-    document.getElementById('wa_observaciones').value = data.cotizacion.observaciones ?? '';
-    document.getElementById('wa_no_autorizacion').value = autorizaciones ?? '';
+    document.getElementById("wa_terminal").value = data.terminal ?? "";
+    document.getElementById("wa_cambio_sello").checked =
+        !!data.cotizacion.confirmacion_sello;
+    document.getElementById("wa_observaciones").value =
+        data.cotizacion.observaciones ?? "";
+    document.getElementById("wa_no_autorizacion").value = autorizaciones ?? "";
 }
 
 function obtenerArchivosSeleccionados() {
     let archivos = [];
 
-    let table = $('#kt_datatable_example_1').DataTable();
+    let table = $("#kt_datatable_example_1").DataTable();
 
     table.rows().every(function () {
         let row = this.node();
-        let checked = $(row).find('input[type="checkbox"]').is(':checked');
+        let checked = $(row).find('input[type="checkbox"]').is(":checked");
 
         if (checked) {
             let data = this.data();
@@ -639,10 +696,10 @@ function obtenerArchivosSeleccionados() {
 
     return archivos;
 }
-btnDocumets.addEventListener('click', goToUploadDocuments);
-btnAdjuntos.addEventListener('click', modalEmail);
+btnDocumets.addEventListener("click", goToUploadDocuments);
+btnAdjuntos.addEventListener("click", modalEmail);
 if (btnWhatsApp) {
-    btnWhatsApp.addEventListener('click', modalWhatsApp);
+    btnWhatsApp.addEventListener("click", modalWhatsApp);
 }
 
-buttonSendMail.addEventListener('click', sendEmail);
+buttonSendMail.addEventListener("click", sendEmail);

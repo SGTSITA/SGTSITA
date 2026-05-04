@@ -38,6 +38,7 @@ use Illuminate\Support\Facades\Log;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Services\BancosService;
 use App\Services\ViajesCostosService;
+use Illuminate\Support\Facades\Http;
 
 class CotizacionesController extends Controller
 {
@@ -848,6 +849,9 @@ class CotizacionesController extends Controller
                 $sumarIndex = 0;
             }
 
+
+            $service = app(\App\Services\GoogleMapsService::class);
+
             //una vez superada todas las validaciones procedemos a guardar los datos
             foreach ($contenedores as $contenedor) {
 
@@ -855,6 +859,21 @@ class CotizacionesController extends Controller
                 $numSubCliente = substr($contenedor[0], 0, 5);
                 $pesoReglamentario = 22;
                 $numContenedor = str_replace(' ', '', $contenedor[3 + $sumarIndex]);
+
+
+                $url = $contenedor[18 + $sumarIndex];
+
+                  $lat = null;
+                   $lng  = null;
+
+
+if ($url) {
+
+        $coords = $service->resolver($url);
+
+     $lat = $coords['lat'] ?? null;
+        $lng = $coords['lng'] ?? null;
+}
 
 
                 $cotizaciones = new Cotizaciones();
@@ -874,7 +893,10 @@ class CotizacionesController extends Controller
                 $cotizaciones->bloque = $contenedor[14 + $sumarIndex];
                 $cotizaciones->bloque_hora_i = $contenedor[15 + $sumarIndex];
                 $cotizaciones->bloque_hora_f = $contenedor[16 + $sumarIndex];
-                $cotizaciones->direccion_entrega = $contenedor[17 + $sumarIndex];
+                             $cotizaciones->direccion_entrega = $contenedor[17 + $sumarIndex];
+
+                               $cotizaciones->latitud =  $lat;
+        $cotizaciones->longitud = $lng;
 
                 $cotizaciones->otro = 0;
                 $cotizaciones->fecha_modulacion =  $contenedor[12 + $sumarIndex];
