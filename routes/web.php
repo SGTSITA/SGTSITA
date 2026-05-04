@@ -215,7 +215,7 @@ Route::get('/coordenadas/conboys/getconvoy/{numero}', [App\Http\Controllers\Conb
 Route::post('/coordenadas/conboys/agregar', [App\Http\Controllers\ConboysController::class, 'addContenedores'])->name('updateConvoyEmpresas');
 Route::get('/coordenadas/conboys/historialUbi', [App\Http\Controllers\ConboysController::class, 'HistorialUbicaciones'])->name('HistorialUbicaciones');
 
-Route::post('/coordenadas/resolver-link-google', [App\Http\Controllers\GoogleLinkResolverController::class, 'resolver']);
+Route::post('/coordenadas/resolver-link-google', [App\Http\Controllers\GoogleLinkResolverController::class, 'resolver'])->name('resolver.google');
 
 Route::get('/mapa-comparacion', [App\Http\Controllers\ConboysController::class, 'rastreohistorialUbicaciones'])->name('rastreohistorialUbicaciones');
 
