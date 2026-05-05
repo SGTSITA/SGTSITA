@@ -258,7 +258,8 @@ class MepController extends Controller
 
         $idContenedor = $r->input('idContenedor');
 
-        $asignacion = Asignaciones::where('id_contenedor', $idContenedor)->first();
+          $documento= DocumCotizacion::where('id_cotizacion', $idContenedor)->first(); // mandan asi y el valor es cotizacion id
+        $asignacion = Asignaciones::where('id_contenedor', $documento->id)->first();
 
         $fechaI = $formData['txtFechaInicio'] ?? null;
         $fechaF = $formData['txtFechaFinal'] ?? null;
@@ -351,6 +352,9 @@ class MepController extends Controller
 
     public function verAsignacion(Request $request)
     {
+
+    $documento= DocumCotizacion::where('id_cotizacion', $request->idContenedor)->first(); // mandan asi y el valor es cotizacion id
+
         $asignacion = Asignaciones::with(['Camion', 'Chasis', 'Chasis2','Operador',
                 'Contenedor' => function ($q) {
                     $q->select('id', 'id_cotizacion');
@@ -359,7 +363,7 @@ class MepController extends Controller
                 $q->select('id', 'estatus', 'origen', 'destino', 'estatus_planeacion');
             }
 
-        ])->where('id_contenedor', $request->idContenedor)->get();
+        ])->where('id_contenedor', $documento->id)->get();
         return $asignacion;
 
     }
