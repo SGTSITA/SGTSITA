@@ -745,7 +745,7 @@ class LiquidacionesController extends Controller
             // $bancos = Bancos::where('id', '=', $request->bancoId)->first();
             $saldoActual = 0;
             $fechaAplicacionDinero = $request->get('FechaAplicacionPago');
-            $totalPagar = $request->totalMontoPago - $request->totalPagoPrestamo;
+            $totalPagar = $request->totalMontoPago ;//- $request->totalPagoPrestamo;
             if ($request->filled('bancoId') && $totalPagar > 0) {
                 $idEmpresa = auth()->user()->id_empresa;
 
