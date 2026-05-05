@@ -1462,7 +1462,7 @@ if ($url) {
                 $docucotizaciones->doc_ccp = 'formato_carta_porte_' . $numContenedor . '.pdf';
                 $docucotizaciones->save();
                 // Definir ruta dentro de public
-                $path = public_path('cotizaciones/cotizacion'.$docucotizaciones->id.'/formato_carta_porte_' . $numContenedor . '.pdf');
+                $path = public_path('cotizaciones/cotizacion'.$cotizaciones->id.'/formato_carta_porte_' . $numContenedor . '.pdf');
 
                 if ($request->has('uuid')) {
                     Log::channel('daily')->info('si hay uuid: '.$request->get('uuid'));
@@ -1492,7 +1492,7 @@ if ($url) {
 
                     $pdf = PDF::loadView('cotizaciones.carta_porte_pdf', compact('cotizaciones', 'numContenedor', 'subCliente'));
 
-                    $folderPath = public_path('cotizaciones/cotizacion' . $docucotizaciones->id);
+                    $folderPath = public_path('cotizaciones/cotizacion' . $cotizaciones->id);
 
                     Log::channel('daily')->info('path: '.$folderPath);
                     // Crear la carpeta si no existe
