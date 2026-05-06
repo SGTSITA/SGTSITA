@@ -292,7 +292,7 @@ class MepController extends Controller
 
         $proveedorid = $formData['cmbProveedor'];
 
-        $DocCotizacion = DocumCotizacion::where('id', $idContenedor)->first();
+        $DocCotizacion = DocumCotizacion::where('id',$documento->id)->first();
 
         if ($asignacion) {
 
@@ -320,7 +320,7 @@ class MepController extends Controller
             $fecha = date('Y-m-d');
             $asignacion = new Asignaciones();
             $asignacion->id_empresa = $DocCotizacion?->Cotizacion?->id_empresa ?? auth()->user()->id_empresa;
-            $asignacion->id_contenedor = $idContenedor;
+            $asignacion->id_contenedor = $documento->id;
             $asignacion->id_camion = $idunidad;
             $asignacion->id_chasis = $idChasisA;
             $asignacion->id_chasis2 = $idChasisB;
@@ -339,7 +339,7 @@ class MepController extends Controller
 
         if ($planearViaje == 1) { // validar desde el form
             //dd($planearViaje);
-            $contenedor = DocumCotizacion::where('id', $idContenedor)->first(); //buscamos la relacion no siempre sera el mismo id
+            $contenedor = DocumCotizacion::where('id',$documento->id)->first(); //buscamos la relacion no siempre sera el mismo id
             Cotizaciones::where('id', $contenedor->id_cotizacion)->update(['estatus_planeacion' => 1]);
             $TituloResponse = 'Datos guardados correctamente';
             $MessageResponse = 'Viaje planeado con exito';
