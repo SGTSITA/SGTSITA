@@ -211,7 +211,7 @@ class PlaneacionController extends Controller
         $cotizacion = Cotizaciones::where('id', '=', $docCotizacion->id_cotizacion)->first();
 
         $documentos = Cotizaciones::query()
-        ->where('cotizaciones.id', $request->id)
+        ->where('cotizaciones.id', $cotizacion->id)
         ->Join('docum_cotizacion', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
         ->leftJoin('asignaciones', 'docum_cotizacion.id', '=', 'asignaciones.id_contenedor')
         ->leftJoin('empresas as em', 'em.id', '=', 'asignaciones.id_empresa')
