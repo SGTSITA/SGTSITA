@@ -551,6 +551,24 @@ const formFieldsMec = [
         master: false,
         trigger: "none",
     },
+    {
+        field: "numBoleta",
+        id: "numBoleta",
+        label: "Folio Boleta Liberación",
+        required: true,
+        type: "text",
+        master: false,
+        trigger: "none",
+    },
+    {
+        field: "numDoda",
+        id: "numDoda",
+        label: "Folio Doda",
+        required: true,
+        type: "text",
+        master: false,
+        trigger: "none",
+    },
 ];
 
 const formFieldsFacturacion = [
@@ -1382,6 +1400,7 @@ function sobrePesoViaje() {
         'input[name="contenedorTabs"]:checked',
     );
 
+    if (!tabSelected) return;
     initContenedores(tabSelected.value);
 
     let tipoViajeSelected = document.querySelector(

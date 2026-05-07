@@ -9,6 +9,7 @@ let numContenedor = tagNumContenedor.textContent;
 
 let urlGetFiles = `/viajes/file-manager/get-file-list/${numContenedor}`;
 let archivosData = [];
+let docsData = [];
 let contendores = "";
 let autorizaciones = "";
 let dt = $("#kt_datatable_example_1")
@@ -16,6 +17,7 @@ let dt = $("#kt_datatable_example_1")
         archivosData = json.documentos;
         contendores = json.numContenedor;
         autorizaciones = json.num_autorizaciones;
+        docsData = json.data;
     })
     .DataTable({
         select: false,
@@ -54,6 +56,7 @@ let dt = $("#kt_datatable_example_1")
         columns: [
             { data: null },
             { data: "secondaryFileName" },
+            { data: "num_doc" },
             { data: "fileType" },
             { data: "fileSize" },
             { data: "fileDate" },
@@ -72,7 +75,7 @@ let dt = $("#kt_datatable_example_1")
                 },
             },
             {
-                targets: 5,
+                targets: 6,
 
                 orderable: false,
 
@@ -85,7 +88,7 @@ let dt = $("#kt_datatable_example_1")
                 },
             },
             {
-                targets: 6,
+                targets: 7,
                 visible: false,
                 searchable: false,
             },
@@ -262,6 +265,13 @@ function goToUploadDocuments() {
     const modalElement = document.getElementById("kt_modal_fileuploader");
     const bootstrapModal = new bootstrap.Modal(modalElement);
     bootstrapModal.show();
+
+    //aki buscar folio de los cheked paso 1
+
+    let seleccionado = document.querySelector(".CheckTypeFile:checked");
+    if (seleccionado) {
+        actualizarFolio(seleccionado);
+    }
 }
 
 function modalEmail() {
@@ -703,3 +713,79 @@ if (btnWhatsApp) {
 }
 
 buttonSendMail.addEventListener("click", sendEmail);
+
+function obtenerFolioPorTipo(tipo) {
+    if (!docsData || docsData.length === 0) return "";
+
+    let file = docsData.find((f) => f.fileCode === tipo);
+
+    if (!file) return "";
+
+    return file.num_doc || "";
+}
+
+function actualizarFolio(radioSeleccionado) {
+    let container = document.getElementById("containerFolio");
+    let label = document.getElementById("labelFolio");
+    let input = document.getElementById("inputFolio");
+
+    if (!container || !label || !input) return;
+
+    input.value = "";
+
+    if (radioSeleccionado.value === "CartaPorte") {
+        container.classList.add("d-none");
+        return;
+    }
+
+    container.classList.remove("d-none");
+    input.type = "text";
+    let tipoSearchDoc = "";
+    switch (radioSeleccionado.value) {
+        case "BoletaLiberacion":
+            label.innerText = "Folio Boleta de Liberación";
+            input.placeholder = "Ej: BL-12345";
+            tipoSearchDoc = "Boleta-de-liberacion";
+            break;
+
+        case "DODA":
+            label.innerText = "Folio DODA";
+            input.placeholder = "Ej: DODA-98765";
+            tipoSearchDoc = "Doda";
+            break;
+
+        case "Prealta":
+            label.innerText = "Fecha Pre Alta";
+            input.placeholder = "";
+            input.type = "date";
+            tipoSearchDoc = "Pre-Alta";
+            break;
+    }
+
+    let folioExistente = obtenerFolioPorTipo(tipoSearchDoc);
+    if (radioSeleccionado.value === "Prealta") {
+        if (folioExistente) {
+            let fecha = new Date(folioExistente);
+            input.value = fecha.toISOString().split("T")[0];
+        } else {
+            input.value = "";
+        }
+    } else {
+        input.value = folioExistente || "";
+    }
+}
+
+let radios = document.querySelectorAll(".CheckTypeFile");
+
+if (radios.length > 0) {
+    radios.forEach((radio) => {
+        radio.addEventListener("change", function () {
+            actualizarFolio(this);
+        });
+    });
+
+    let seleccionado = document.querySelector(".CheckTypeFile:checked");
+    if (seleccionado) {
+        actualizarFolio(seleccionado);
+    }
+}

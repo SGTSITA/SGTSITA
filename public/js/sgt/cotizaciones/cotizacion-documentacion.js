@@ -882,7 +882,7 @@ function RegresarForaneoLocal() {
         }
     });
 }
-
-document
-    .querySelector("#btnDocs")
-    .addEventListener("click", goToUploadDocuments);
+const btnDocsopciones = document.querySelector("#btnDocs");
+if (btnDocsopciones) {
+    btnDocsopciones.addEventListener("click", goToUploadDocuments);
+}

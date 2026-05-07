@@ -133,6 +133,7 @@ class ExternosController extends Controller
         // where('id_empresa',$cotizacion->id_proveedor)->
         // where('id_empresa',$cotizacion->id_proveedor)->first();
 
+       // dd(  $cotizacion);
         return view(
             'cotizaciones.externos.solicitud_simple',
             ["action" => "editar",
@@ -658,7 +659,7 @@ class ExternosController extends Controller
         }
     }
 
-    public function fileProperties($id, $file, $title, $contenedor)
+    public function fileProperties($id, $file, $title, $contenedor, $folioDoc = null)
     {
         $path = public_path('cotizaciones/cotizacion'.$id.'/'.$file);
 
@@ -678,7 +679,8 @@ class ExternosController extends Controller
                 "fileType" => pathinfo($path, PATHINFO_EXTENSION),
                 "mimeType" => $mimeType,
                 "identifier" => $id,
-                "fileCode" => iconv('UTF-8', 'ASCII//TRANSLIT', str_replace(' ', '-', $title))
+                "fileCode" => iconv('UTF-8', 'ASCII//TRANSLIT', str_replace(' ', '-', $title)),
+                 "num_doc" => $folioDoc ?? ''
                 ];
             //iconv('UTF-8', 'ASCII//TRANSLIT', $cadena);
         } else {
@@ -713,14 +715,14 @@ class ExternosController extends Controller
             $folderId = $documentos->id_cotizacion;  //si se guarda con id cotizacion , buscamos con esa clave
 
             if (!is_null($documentos->doda)) {
-                $doda = self::fileProperties($folderId, $documentos->doda, 'Doda', $cont);
+                $doda = self::fileProperties($folderId, $documentos->doda, 'Doda', $cont,$documentos->num_doda);
                 if (sizeof($doda) > 0) {
                     array_push($documentList, $doda);
                 }
             }
 
             if (!is_null($documentos->boleta_liberacion)) {
-                $boleta_liberacion = self::fileProperties($folderId, $documentos->boleta_liberacion, 'Boleta de liberación', $cont);
+                $boleta_liberacion = self::fileProperties($folderId, $documentos->boleta_liberacion, 'Boleta de liberación', $cont,$documentos->num_boleta_liberacion);
                 if (sizeof($boleta_liberacion) > 0) {
                     array_push($documentList, $boleta_liberacion);
                 }
@@ -758,7 +760,7 @@ class ExternosController extends Controller
             $cotizacion = Cotizaciones::where('id', $documentos->id_cotizacion)->first();
 
             if (!is_null($cotizacion->img_boleta)) {
-                $preAlta = self::fileProperties($folderId, $cotizacion->img_boleta, 'Pre-Alta', $cont);
+                $preAlta = self::fileProperties($folderId, $cotizacion->img_boleta, 'Pre-Alta', $cont,$documentos->fecha_boleta_vacio);
                 if (sizeof($preAlta) > 0) {
                     array_push($documentList, $preAlta);
                 }
@@ -797,6 +799,7 @@ class ExternosController extends Controller
                 "fileType" => pathinfo($path, PATHINFO_EXTENSION),
                 "identifier" => $id,
                 "fileCode" => iconv('UTF-8', 'ASCII//TRANSLIT', str_replace(' ', '-', $title))
+
                 ];
             //iconv('UTF-8', 'ASCII//TRANSLIT', $cadena);
         } else {
