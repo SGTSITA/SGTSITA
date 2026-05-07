@@ -710,7 +710,7 @@ class CotizacionesController extends Controller
         $docucotizaciones->num_contenedor = str_replace(' ', '', $request->get('num_contenedor'));
         $docucotizaciones->save();
         // Definir ruta dentro de public
-        $path = public_path('cotizaciones/cotizacion'.$docucotizaciones->id.'/formato_carta_porte_' . $numContenedor . '.pdf');
+        $path = public_path('cotizaciones/cotizacion'.$cotizaciones->id.'/formato_carta_porte_' . $numContenedor . '.pdf');
 
         $user = Auth::User();
 
@@ -742,8 +742,8 @@ class CotizacionesController extends Controller
             $pdf = PDF::loadView('cotizaciones.carta_porte_pdf', compact('cotizaciones', 'numContenedor', 'subCliente'));
 
             // Crear la carpeta si no existe
-            if (!File::exists(public_path('cotizaciones/cotizacion'.$docucotizaciones->id.''))) {
-                File::makeDirectory(public_path('cotizaciones/cotizacion'.$docucotizaciones->id.''), 0755, true);
+            if (!File::exists(public_path('cotizaciones/cotizacion'.$cotizaciones->id.''))) {
+                File::makeDirectory(public_path('cotizaciones/cotizacion'.$cotizaciones->id.''), 0755, true);
             }
 
             // Guardar PDF
@@ -1293,10 +1293,12 @@ if ($url) {
 
             $doc_cotizaciones = DocumCotizacion::where('id_cotizacion', '=', $id)->first();
             $doc_cotizaciones->num_contenedor = $numContenedor;
+
+
             //$doc_cotizaciones->terminal = $contenedor['terminal'];
             //$doc_cotizaciones->num_autorizacion = $contenedor['num_autorizacion'];
-            //$doc_cotizaciones->num_boleta_liberacion = $contenedor['num_boleta_liberacion'] || '';
-            //$doc_cotizaciones->num_doda = $contenedor['num_doda'];
+            $doc_cotizaciones->num_boleta_liberacion = $request['numBoleta'] ?? '';
+            $doc_cotizaciones->num_doda = $request['numDoda'] ?? '';
             //$doc_cotizaciones->num_carta_porte = $contenedor['num_carta_porte'];
             //$doc_cotizaciones->fecha_boleta_vacio = $contenedor['fecha_boleta_vacio'];
             //$doc_cotizaciones->ccp = $contenedor['ccp'];
@@ -2165,7 +2167,7 @@ if ($url) {
 
 
             //bancos old
-            $bancos = Bancos::where('id_empresa', Auth::User()->id_empresa)->where('id', $r->bank)->first();
+           /*  $bancos = Bancos::where('id_empresa', Auth::User()->id_empresa)->where('id', $r->bank)->first();
             $saldoActual = $bancos->saldo;
 
             if ($saldoActual < $r->totalPago) {
@@ -2174,17 +2176,16 @@ if ($url) {
                     "Mensaje" => "La cuenta bancaria seleccionada no cuenta con saldo suficiente",
                     "TMensaje" => "warning"
                 ]);
-            }
+            } */
 
-            Bancos::where('id', '=', $r->bank)
-                ->update(["saldo" => DB::raw("saldo - ". $r->totalPago)]);
+          //  Bancos::where('id', '=', $r->bank)  ->update(["saldo" => DB::raw("saldo - ". $r->totalPago)]);
 
-            $banco = new BancoDineroOpe();
+           /*  $banco = new BancoDineroOpe();
             $banco->id_operador = $asignacion->id_operador;
             $banco->monto1 = $r->totalPago;
             $banco->metodo_pago1 = 'Transferencia';
             $banco->descripcion_gasto = "Pago Gastos Operador";
-            $banco->id_banco1 = $r->bank;
+            $banco->id_banco1 = $r->bank; */
 
 
 
@@ -2195,10 +2196,10 @@ if ($url) {
                     "fecha_pago" => \Carbon\Carbon::parse($r->fechaAplicacion ?? now())->format('Y-m-d')
                 ]);
 
-            $banco->contenedores = $contenedoresAbonosJson;
+           /*  $banco->contenedores = $contenedoresAbonosJson;
             $banco->tipo = 'Salida';
             $banco->fecha_pago = \Carbon\Carbon::parse($r->fechaAplicacion ?? now())->format('Y-m-d');
-            $banco->save();
+            $banco->save(); */
 
 
             DB::commit();
@@ -2600,6 +2601,16 @@ if ($url) {
         $id_cot = null;
         Log::channel('daily')->info('inicio adjuntar documentos');
 
+        $requiereFolio = in_array($r->urlRepo, ['BoletaLib', 'Doda', 'PreAlta']);
+        $esCliente = auth()->user()->id_cliente != 0;
+
+        if ($requiereFolio && empty($r->folio) && $esCliente) {
+
+    return response()->json([
+        'error' => 'Este documento requiere folio/fecha'
+    ], 422);
+}
+
         include('Fileuploader/class.fileuploader.php');
         $cotizacionQuery = Cotizaciones::join('docum_cotizacion as d', 'cotizaciones.id', '=', 'd.id_cotizacion')
     ->select([
@@ -2674,7 +2685,8 @@ if ($url) {
                     'title' => $item['title'],
                     'type' => $item['type'],
                     'url' => asset($directorio.'/'.$item['name']),
-                    'opcion' => $r->urlRepo
+                    'opcion' => $r->urlRepo,
+                    'num_doc'=> $r->folio
                 );
 
                 //$fileName = uniqid() . $item['name'];
@@ -2682,15 +2694,45 @@ if ($url) {
 
             $json = $upload['files'];
             //   $upload['typeOfDocument'] = $r->urlRepo;
-            switch ($r->urlRepo) {
-                case 'BoletaLib': $update = ["boleta_liberacion" => $item['name']];
-                    break;
-                case 'Doda': $update = ["doda" => $item['name']];
-                    break;
-                case 'CartaPorte': $update = ["doc_ccp" => $item['name'],"ccp" => "si"];
-                    break;
-                case 'PreAlta': $update = ["img_boleta" => $item['name']];
-                    break;
+           switch ($r->urlRepo) {
+
+    case 'BoletaLib':
+        $update = [
+            "boleta_liberacion" => $item['name'],
+        ];
+
+        if ($esCliente && !empty($r->folio)) {
+            $update["num_boleta_liberacion"] = $r->folio;
+        }
+        break;
+
+    case 'Doda':
+        $update = [
+            "doda" => $item['name'],
+        ];
+
+        if ($esCliente && !empty($r->folio)) {
+            $update["num_doda"] = $r->folio;
+        }
+        break;
+
+    case 'CartaPorte':
+        $update = [
+            "doc_ccp" => $item['name'],
+            "ccp" => "si"
+        ];
+        break;
+
+    case 'PreAlta':
+        $update = [
+            "img_boleta" => $item['name'],
+        ];
+
+        if ($esCliente && !empty($r->folio)) {
+             $update["fecha_boleta_vacio"] = $r->folio;
+        }
+        break;
+
                 case 'CartaPortePDF': $update = ["carta_porte" => $item['name']];
                     break;
                 case 'CartaPorteXML': $update = ["carta_porte_xml" => $item['name']];
@@ -2728,6 +2770,7 @@ if ($url) {
 
                 if ($doc) {
                     $doc->boleta_vacio = 'si';
+$doc->fecha_boleta_vacio= $r->folio;
                     $doc->save();
                 }
             }
