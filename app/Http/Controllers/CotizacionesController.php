@@ -1655,7 +1655,7 @@ if ($url) {
             $cotizaciones->motivo_demora = $verificarCobroAnterior; //solo para ir viendo cambien en pruebas
 
 
-            $asignacion = Asignaciones::where('id_contenedor', $id)->first();
+            $asignacion = Asignaciones::where('id_contenedor', $doc_cotizaciones->id)->first();
             if (!is_null($asignacion)) {
                 $pagado = $cotizaciones->pagos()->sum('monto');
                 $totalPagadopro =  $request->get('total_proveedor');
