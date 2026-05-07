@@ -382,7 +382,8 @@ class GpsController extends Controller
                      'tiemporespuesta' => $tiempoRespuesta,
                      'messageAp' => $messageError,
                      'status' =>  $status,
-                     'new_id' => $gps_company_id
+                     'new_id' => $gps_company_id,
+                    // 'cred' => $credenciales,
                 ];
             }
             //  dd($resultados);
@@ -482,6 +483,7 @@ class GpsController extends Controller
 
             ->select(
                 'docum_cotizacion.id as id_contenedor',
+                'docum_cotizacion.id_cotizacion as id_cotizacion_doc',
                 'asignaciones.id',
                 'asignaciones.id_camion',
                 'asignaciones.id_chasis',
@@ -549,7 +551,7 @@ class GpsController extends Controller
             ->join('clients', 'cotizaciones.id_cliente', '=', 'clients.id')
 
             ->joinSub($asignaciones, 'asig', function ($join) {
-                $join->on('asig.id_contenedor', '=', 'cotizaciones.id');
+                $join->on('asig.id_cotizacion_doc', '=', 'cotizaciones.id');
             })
 
             ->joinSub($beneficiarios, 'beneficiarios', function ($join) {
