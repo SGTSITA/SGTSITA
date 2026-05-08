@@ -2604,12 +2604,12 @@ if ($url) {
         $requiereFolio = in_array($r->urlRepo, ['BoletaLib', 'Doda', 'PreAlta']);
         $esCliente = auth()->user()->id_cliente != 0;
 
-        if ($requiereFolio && empty($r->folio) && $esCliente) {
+      /*   if ($requiereFolio && empty($r->folio) && $esCliente) {
 
     return response()->json([
         'error' => 'Este documento requiere folio/fecha'
     ], 422);
-}
+} */
 
         include('Fileuploader/class.fileuploader.php');
         $cotizacionQuery = Cotizaciones::join('docum_cotizacion as d', 'cotizaciones.id', '=', 'd.id_cotizacion')
@@ -2650,6 +2650,8 @@ if ($url) {
         // dd($cotizacion);
 
         $idDocum = $cotizacion->docCotizacion->id;
+
+
 
         $tipoViajecontenedor = $cotizacion->tipo_viaje_seleccion;
 
