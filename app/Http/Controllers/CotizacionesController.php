@@ -1305,7 +1305,52 @@ if ($url) {
             //$doc_cotizaciones->cima = $contenedor['cima'];
             $doc_cotizaciones->update();
 
-            $cotizaciones = Cotizaciones::where('id', '=', $id)->first();
+
+            //cotiacion para actualizar
+               $cotizaciones = Cotizaciones::where('id', '=', $id)->first();
+
+        $file_bolteta_lib=    $request->file('boleta_liberacion_file');
+        if($file_bolteta_lib){
+      $this->procesarDocumento(
+    $file_bolteta_lib,
+    $cotizaciones,
+    $doc_cotizaciones->id,
+    'BoletaLib',
+    $request->numBoleta
+);
+        }
+
+   $file_doda=  $request->file('doda_file');
+    if($file_doda){
+
+
+
+
+  $this->procesarDocumento(
+   $file_doda,
+    $cotizaciones,
+    $doc_cotizaciones->id,
+    'Doda',
+    $request->numDoda
+);
+        }
+
+   $file_ccp=  $request->file('ccp_file');
+    if($file_ccp){
+$this->procesarDocumento(
+    $file_ccp,
+    $cotizaciones,
+    $doc_cotizaciones->id,
+    'CCP'
+);
+        }
+
+
+
+
+
+
+
             $cotizaciones->id_cliente = $request->id_cliente;
             $cotizaciones->id_subcliente = $request->id_subcliente;
             $cotizaciones->origen = $request->origen;
@@ -3329,6 +3374,44 @@ $doc->fecha_boleta_vacio= $r->folio;
             }
 
 
+
+                $file_bolteta_lib=    $request->file('boleta_liberacion_file');
+        if($file_bolteta_lib){
+      $this->procesarDocumento(
+    $file_bolteta_lib,
+    $cot,
+    $doc->id,
+    'BoletaLib',
+    $request->numBoleta
+);
+        }
+
+   $file_doda=  $request->file('doda_file');
+    if($file_doda){
+
+
+
+
+  $this->procesarDocumento(
+   $file_doda,
+   $cot,
+    $doc->id,
+    'Doda',
+    $request->numDoda
+);
+        }
+
+   $file_boltetapatio=  $request->file('BoletaPatio');
+    if($file_boltetapatio){
+$this->procesarDocumento(
+    $file_boltetapatio,
+   $cot,
+    $doc->id,
+    'BoletaPatio'
+);
+        }
+
+
             $pesoReglamentario = 22;
 
             $cot->id_subcliente        = $request->id_subcliente ?? null;
@@ -3408,6 +3491,11 @@ $doc->fecha_boleta_vacio= $r->folio;
             if ($request->num_contenedor != $contenedorOriginal) {
                 $doc->num_contenedor = $contenedorupdate;
             }
+
+
+                 $doc->num_boleta_liberacion = $request['numBoleta'] ?? '';
+            $doc->num_doda = $request['numDoda'] ?? '';
+
             $doc->terminal = $request->terminal_local;
             $doc->num_autorizacion = $request->num_autorizacion;
             $doc->cita_at = $request->cita_at ?? null;
@@ -3454,7 +3542,17 @@ $doc->fecha_boleta_vacio= $r->folio;
                 $estatusA = "Pendiente";
             }
 
-            Cotizaciones::where('id', $viajes[$x]['id'])->update(["tipo_viaje_seleccion" => "local_to_foraneo","en_patio" => 0,"estatus" => $estatusA,"fecha_entrega" => Carbon::now()]);
+          $cotizacion = Cotizaciones::find($viajes[$x]['id']);
+
+if ($cotizacion) {
+
+    $cotizacion->tipo_viaje_seleccion = "local_to_foraneo";
+    $cotizacion->en_patio = 0;
+    $cotizacion->estatus = $estatusA;
+    $cotizacion->fecha_entrega = Carbon::now();
+
+    $cotizacion->save();
+}
         }
         return response()->json(["Titulo" => "Proceso satisfactorio", "Mensaje" => "Se ha realizado el proceso de conversión a viaje foráneo", "TMensaje" => "success"]);
     }
@@ -3465,8 +3563,23 @@ $doc->fecha_boleta_vacio= $r->folio;
         $viajes = $request->seleccion;
 
         for ($x = 0; $x < (sizeof($viajes)); $x++) {
-            Cotizaciones::where('id', $viajes[$x]['id'])->update(["tipo_viaje_seleccion" => "local","en_patio" => 1,"estatus" => "Documentos Faltantes","fecha_entrega" => null]);
-        }
+           // Cotizaciones::where('id', $viajes[$x]['id'])->update(["tipo_viaje_seleccion" => "local","en_patio" => 1,"estatus" => "Documentos Faltantes","fecha_entrega" => null]);
+
+                $cotizacion = Cotizaciones::find($viajes[$x]['id']);
+
+if ($cotizacion) {
+
+    $cotizacion->tipo_viaje_seleccion = "local";
+    $cotizacion->en_patio = 1;
+    $cotizacion->estatus ="Documentos Faltantes";
+    $cotizacion->fecha_entrega = null;
+
+    $cotizacion->save();
+}
+
+
+
+            }
         return response()->json(["Titulo" => "Proceso satisfactorio", "Mensaje" => "Se ha revertido el proceso a viaje local", "TMensaje" => "success"]);
     }
     public function storeMultiplelocal(Request $request)
@@ -3666,4 +3779,228 @@ $doc->fecha_boleta_vacio= $r->folio;
     }
 
 
+
+
+    //nuevo para documentos
+
+
+   private function procesarDocumento(
+    $file,
+    $cotizacion,
+    $id_doc,
+    $urlRepo,
+    $folio = null
+) {
+
+    if (!$file) {
+        return null;
+    }
+
+    $id_cot = $cotizacion->id;
+
+    $estatus = $cotizacion->estatus;
+    $tipoViajecontenedor = $cotizacion->tipo_viaje_seleccion;
+    $esCliente = auth()->user()->id_cliente != 0;
+
+    $directorio = public_path("cotizaciones/cotizacion$id_cot");
+
+    if (!is_dir($directorio)) {
+        mkdir($directorio, 0777, true);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Reutilizar FileUploader
+    |--------------------------------------------------------------------------
+    */
+    //include('Fileuploader/class.fileuploader.php');
+require_once app_path('Http/Controllers/Fileuploader/class.fileuploader.php');
+    /*
+    |--------------------------------------------------------------------------
+    | Simular $_FILES para FileUploader
+    |--------------------------------------------------------------------------
+    */
+    $_FILES['files'] = [
+        'name' => $file->getClientOriginalName(),
+        'type' => $file->getMimeType(),
+        'tmp_name' => $file->getPathname(),
+        'error' => 0,
+        'size' => $file->getSize(),
+    ];
+
+    $FileUploader = new FileUploader('files', [
+        'uploadDir' => $directorio . '/',
+    ]);
+
+    $upload = $FileUploader->upload();
+
+    if (!$upload['isSuccess']) {
+        return null;
+    }
+
+    foreach ($upload['files'] as $item) {
+
+        switch ($urlRepo) {
+
+            case 'BoletaLib':
+
+                $update = [
+                    "boleta_liberacion" => $item['name'],
+                ];
+
+                if ($esCliente && !empty($folio)) {
+                    $update["num_boleta_liberacion"] = $folio;
+                }
+
+            break;
+
+            case 'Doda':
+
+                $update = [
+                    "doda" => $item['name'],
+                ];
+
+                if ($esCliente && !empty($folio)) {
+                    $update["num_doda"] = $folio;
+                }
+
+            break;
+
+            case 'CCP':
+
+                $update = [
+                    "doc_ccp" => $item['name'],
+                    "ccp" => "si"
+                ];
+
+            break;
+
+            case 'PreAlta':
+
+                $update = [
+                    "img_boleta" => $item['name'],
+                ];
+
+                if ($esCliente && !empty($folio)) {
+                    $update["fecha_boleta_vacio"] = $folio;
+                }
+
+            break;
+
+            case 'CartaPortePDF':
+
+                $update = [
+                    "carta_porte" => $item['name']
+                ];
+
+            break;
+
+            case 'CartaPorteXML':
+
+                $update = [
+                    "carta_porte_xml" => $item['name']
+                ];
+
+            break;
+
+            case 'EIR':
+
+                $update = [
+                    "doc_eir" => $item['name'],
+                    'eir' => "si"
+                ];
+
+            break;
+
+            case 'BoletaPatio':
+
+                $update = [
+                    "boleta_patio" => $item['name']
+                ];
+
+            break;
+
+            default:
+                return null;
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Actualizar tabla
+        |--------------------------------------------------------------------------
+        */
+        if (
+            $urlRepo != 'PreAlta' &&
+            $urlRepo != 'CartaPortePDF' &&
+            $urlRepo != 'CartaPorteXML'
+        ) {
+
+            $doc = DocumCotizacion::find($id_doc);
+
+            if ($doc) {
+                $doc->update($update);
+            }
+
+        } else {
+
+            $cot = Cotizaciones::find($id_cot);
+
+            if ($cot) {
+                $cot->update($update);
+            }
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Extra PreAlta
+        |--------------------------------------------------------------------------
+        */
+        if ($urlRepo == 'PreAlta') {
+
+            $doc = DocumCotizacion::find($id_doc);
+
+            if ($doc) {
+                $doc->boleta_vacio = 'si';
+                $doc->fecha_boleta_vacio = $folio;
+                $doc->save();
+            }
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Eventos
+        |--------------------------------------------------------------------------
+        */
+        if ($tipoViajecontenedor !== 'local') {
+
+            if (Auth::user()->id_cliente != 0) {
+
+                event(new \App\Events\GenericNotificationEvent(
+                    [$cotizacion->cliente->correo],
+                    'Se cargó ' . $urlRepo . ': ' . $cotizacion->docCotizacion->num_contenedor,
+                    'Hola, tu transportista cargó el documento "' . $urlRepo . '" del contenedor ' . $cotizacion->docCotizacion->num_contenedor
+                ));
+
+                event(new \App\Events\ConfirmarDocumentosEvent($id_cot));
+            }
+
+            if (
+                $estatus != 'Documentos Faltantes' &&
+                Auth::user()->id_cliente != 0
+            ) {
+
+                event(new \App\Events\NotificaNuevoDocumentoEvent(
+                    $cotizacion,
+                    $urlRepo
+                ));
+            }
+
+        } else {
+
+            self::confirmarDocumentoslocal($id_cot);
+        }
+    }
+
+    return $upload;
+}
 }

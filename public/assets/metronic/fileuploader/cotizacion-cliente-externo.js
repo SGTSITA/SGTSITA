@@ -15,7 +15,7 @@ var [BoletaLib, Doda, CartaPorte, PreAlta] = [
     { opcion: "PreAlta", titulo: "Pre Alta", agGrid: "PreAlta" },
 ];
 
-fileSettings = BoletaLib;
+let fileSettings = BoletaLib;
 
 let fileCartaPorte = document.querySelector("#fileCartaPorte");
 let btnFileCartaPorte = document.querySelector("#btnFileCartaPorte");
@@ -78,7 +78,8 @@ function resetUploadConfig() {
 
     urlRepo = fileSettings.opcion;
     numContenedor = localStorage.getItem("numContenedor");
-
+    console.log("paso aki en reset");
+    debugger;
     api.setOption("upload", {
         url: "/contenedores/files/upload",
         data: {
@@ -98,7 +99,6 @@ function resetUploadConfig() {
             let folioInput = document.getElementById("inputFolio");
             let container = document.getElementById("containerFolio");
 
-            // 🔒 Validar solo si el campo está visible
             if (container && !container.classList.contains("d-none")) {
                 let folio = folioInput?.value?.trim();
 
@@ -106,7 +106,7 @@ function resetUploadConfig() {
                     Swal.fire(
                         "Debe ingresar el folio antes de subir el archivo",
                     );
-                    adjuntarDocumentos();
+                    // adjuntarDocumentos();
                     return false;
                 }
             }
@@ -233,7 +233,7 @@ function resetUploadConfig() {
         },
         onComplete: () => {
             setTimeout(() => {
-                adjuntarDocumentos();
+                //  adjuntarDocumentos();
                 if (
                     typeof dt !== "undefined" &&
                     dt !== null &&
@@ -245,7 +245,6 @@ function resetUploadConfig() {
         },
     });
 }
-
 function adjuntarDocumentos() {
     document.getElementById("content-file-input").innerHTML =
         '<input type="file" name="files" id="fileuploader">';

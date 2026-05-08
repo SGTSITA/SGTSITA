@@ -1911,6 +1911,23 @@ $("#cotizacionCreate").on("submit", function (e) {
     formData["id_cliente"] = $("#id_cliente").val();
     formData["id_subcliente"] = selectSubClient.value;
 
+    //documentos
+    const boletaFile = document.getElementById("BoletaLib")?.files[0];
+    const dodaFile = document.getElementById("Doda")?.files[0];
+    const ccpFile = document.getElementById("CCP")?.files[0];
+
+    if (boletaFile) {
+        formData["boleta_liberacion_file"] = boletaFile;
+    }
+
+    if (dodaFile) {
+        formData["doda_file"] = dodaFile;
+    }
+
+    if (ccpFile) {
+        formData["ccp_file"] = ccpFile;
+    }
+
     //nueva cvalidacion de sellecion de lat y lng en mapa , si no no dejar guardar la cotizacion
     let latitud = document.getElementById("latitud")?.value ?? null;
     let longitud = document.getElementById("longitud")?.value ?? null;
@@ -2097,10 +2114,18 @@ $("#cotizacionCreate").on("submit", function (e) {
         if (!passValidation) return passValidation;
     }
 
+    const multipartData = new FormData();
+
+    Object.keys(formData).forEach((key) => {
+        multipartData.append(key, formData[key]);
+    });
+
     $.ajax({
         url: url,
         type: "post",
-        data: formData,
+        data: multipartData,
+        processData: false,
+        contentType: false,
         beforeSend: function () {},
         success: function (data) {
             Swal.fire(data.Titulo, data.Mensaje, data.TMensaje).then(
@@ -2112,7 +2137,7 @@ $("#cotizacionCreate").on("submit", function (e) {
                         );
                         var uuid = localStorage.getItem("uuid");
                         if (uuid) {
-                            initFileUploader();
+                            //   initFileUploader();
                             setTimeout(() => {
                                 document
                                     .getElementById("noticeFileUploader")
@@ -2132,6 +2157,7 @@ $("#cotizacionCreate").on("submit", function (e) {
                         } else {
                             location.reload();
                         }
+                        limpiarEstadoDocumentos();
                     }
                 },
             );
