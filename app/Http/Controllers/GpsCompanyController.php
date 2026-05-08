@@ -223,7 +223,7 @@ class GpsCompanyController extends Controller
                     $credenciales['account'] ?? '',
                     $credenciales['key'] ?? ''
                 );
-
+ $resp = $response;
                 if ($response->success) {
                     $token = $response->data['token'] ?? null;
                 } else {

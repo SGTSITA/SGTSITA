@@ -368,6 +368,25 @@ const formFields = [
         type: "radio",
         master: false,
     },
+
+    {
+        field: "numBoleta",
+        id: "numBoleta",
+        label: "Folio Boleta Liberación",
+        required: true,
+        type: "text",
+        master: false,
+        trigger: "none",
+    },
+    {
+        field: "numDoda",
+        id: "numDoda",
+        label: "Folio Doda",
+        required: true,
+        type: "text",
+        master: false,
+        trigger: "none",
+    },
 ];
 
 function getClientes(clienteId, subclienteid) {
@@ -483,6 +502,23 @@ function getFormData() {
         data[f.field] = value;
     });
 
+    //documentos
+    const boletaFile = document.getElementById("BoletaLib")?.files[0];
+    const dodaFile = document.getElementById("Doda")?.files[0];
+    const cBoletaPatioFile = document.getElementById("BoletaPatio")?.files[0];
+
+    if (boletaFile) {
+        data["boleta_liberacion_file"] = boletaFile;
+    }
+
+    if (dodaFile) {
+        data["doda_file"] = dodaFile;
+    }
+
+    if (cBoletaPatioFile) {
+        data["BoletaPatio"] = cBoletaPatioFile;
+    }
+
     data["_token"] = document
         .querySelector('meta[name="csrf-token"]')
         .getAttribute("content");
@@ -590,8 +626,8 @@ function updateCotizacion(id) {
                 title: "Actualizado correctamente",
                 text: "Ahora puede adjuntar los documentos.",
             });
-
-            setTimeout(() => initFileUploader(), 300);
+            limpiarEstadoDocumentos();
+            // setTimeout(() => initFileUploader(), 300);
         },
         error: function (err) {
             console.error(err);

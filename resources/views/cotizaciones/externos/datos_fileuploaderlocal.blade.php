@@ -57,12 +57,35 @@
             <!--end::Card header-->
             <!--begin::Card body-->
             <div class="card-body pt-0">
+                <div class="row g-3">
+
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">Folio</label>
+                        <input type="text" name="numBoleta" id="numBoleta" class="form-control"
+                            placeholder="Ej: BL-123456"
+                            @if ($action == 'editar') value="{{ $cotizacion?->DocCotizacion?->num_boleta_liberacion ?? '' }}" @endif>
+                    </div>
+
+                    {{-- <div class="col-12">
+                            <label class="form-label fw-semibold">Fecha</label>
+                            <input type="date" name="fechaBoleta" class="form-control">
+                        </div> --}}
+
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">Archivo</label>
+                        <input type="file" name="fileBoleta" id="BoletaLib" class="form-control">
+                    </div>
+
+                </div>
+            </div>
+            {{--  <div class="card-body pt-0">
                 @if ($action == 'editar')
                 @endif
                 <input type="file" name="files" id="BoletaLib">
-            </div>
+            </div> --}}
             <!--end::Card body-->
         </div>
+
         <div class="card card-flush py-4 flex-row-fluid">
             <!--begin::Card header-->
             <div class="card-header">
@@ -72,10 +95,32 @@
             </div>
             <!--end::Card header-->
             <!--begin::Card body-->
-            <div class="card-body pt-0">
+            {{-- <div class="card-body pt-0">
                 @if ($action == 'editar')
                 @endif
                 <input type="file" name="files" id="Doda">
+            </div> --}}
+            <div class="card-body pt-0">
+                <div class="row g-3">
+
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">Folio</label>
+                        <input type="text" name="numDoda" id="numDoda" class="form-control"
+                            placeholder="Ej: DODA-123456"
+                            @if ($action == 'editar') value="{{ $cotizacion?->DocCotizacion?->num_doda ?? '' }}" @endif>
+                    </div>
+
+                    {{-- <div class="col-12">
+                            <label class="form-label fw-semibold">Fecha</label>
+                            <input type="date" name="fechaDoda" class="form-control">
+                        </div> --}}
+
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">Archivo</label>
+                        <input type="file" name="fileDoda" id="Doda" class="form-control">
+                    </div>
+
+                </div>
             </div>
             <!--end::Card body-->
         </div>
