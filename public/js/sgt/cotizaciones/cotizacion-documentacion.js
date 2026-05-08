@@ -254,6 +254,7 @@ const gridOptions = {
         const rows = event.api.getSelectedRows();
         const btn = document.getElementById("btnRegresarLocal");
 
+        if (!btn) return;
         if (rows.length === 0) {
             motivoBloqueo = "Selecciona al menos un registro";
             bloquearBoton(btn);
