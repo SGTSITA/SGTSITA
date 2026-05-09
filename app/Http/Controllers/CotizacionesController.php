@@ -3320,10 +3320,10 @@ $doc->fecha_boleta_vacio= $r->folio;
                 'boleta_patio'           => $request->boleta_patio,
                 'fecha_boleta_patio'     => $request->fecha_boleta_patio,
                 'cima'                   => $request->cima ?? 0,
-                'cita_at'                => $request->cita_at,
-                'eta'                    => $request->eta,
-                'naviera_id'             => $request->naviera_id,
-                'pedimento_recibido_at'  => $request->pedimento_recibido_at,
+                'cita_at'                => $request->cita_at ?? null,
+                'eta'                    => !empty($request->eta) && $request->eta !== 'null' ? $request->eta  : null,
+                'naviera_id'             => $request->naviera_id ?? null,
+                'pedimento_recibido_at'  => $request->pedimento_recibido_at ?? null,
             ]);
 
 

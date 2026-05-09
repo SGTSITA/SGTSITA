@@ -2056,6 +2056,10 @@ $("#cotizacionCreate").on("submit", function (e) {
             }
 
             if (field) {
+const isHidden = field.closest(".d-none");
+
+        if (field.disabled || field.readOnly || isHidden) continue;
+
                 if (item.required === true && field.value.length == 0) {
                     Swal.fire(
                         "El campo " + item.label + " es obligatorio",
