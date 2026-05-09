@@ -429,7 +429,9 @@ function validateFormFields() {
 
         if (!el) continue;
 
-        if (el.disabled || el.readOnly) continue;
+        const isHidden = el.closest(".d-none");
+
+        if (el.disabled || el.readOnly || isHidden) continue;
 
         let value = el.value?.trim() ?? "";
 
