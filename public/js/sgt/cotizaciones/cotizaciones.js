@@ -2056,9 +2056,9 @@ $("#cotizacionCreate").on("submit", function (e) {
             }
 
             if (field) {
-const isHidden = field.closest(".d-none");
+                const isHidden = field.closest(".d-none");
 
-        if (field.disabled || field.readOnly || isHidden) continue;
+                if (field.disabled || field.readOnly || isHidden) return true;
 
                 if (item.required === true && field.value.length == 0) {
                     Swal.fire(
