@@ -656,7 +656,7 @@ function anularPlaneacion(idCotizacion, numContenedor) {
     });
 }
 
-function finalizarViaje(idCotizacion, numContenedor) {
+function finalizarViaje(idContenendor, numContenedor) {
     if (!canEndTravel) {
         Swal.fire({
             icon: "warning",
@@ -685,14 +685,14 @@ function finalizarViaje(idCotizacion, numContenedor) {
                 },
                 body: JSON.stringify({
                     _token: _token,
-                    idCotizacion: idCotizacion,
+                    idContenendor: idContenendor,
                 }),
             })
                 .then((response) => response.json())
                 .then((data) => {
                     Swal.fire(data.Titulo, data.Mensaje, data.TMensaje);
                     if (data.TMensaje == "success") {
-                        dp.events.remove(idCotizacion); //Eliminar del board
+                        dp.events.remove(idContenendor); //Eliminar del board
                     }
                 })
                 .catch((error) => {

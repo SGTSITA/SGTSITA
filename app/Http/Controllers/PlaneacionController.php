@@ -198,7 +198,9 @@ class PlaneacionController extends Controller
 
     public function finalizarViaje(Request $request)
     {
-        $cotizaciones = Cotizaciones::find($request->idCotizacion);
+
+$contenedor = DocumCotizacion::find($request->idContenendor);
+        $cotizaciones = Cotizaciones::find($contenedor->id_cotizacion);
         $cotizaciones->estatus = 'Finalizado';
         $cotizaciones->update();
         return response()->json(["Titulo" => "Viaje finalizado","Mensaje" => "Has finalizado correctamente el viaje", "TMensaje" => "success"]);
