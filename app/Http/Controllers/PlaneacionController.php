@@ -63,8 +63,10 @@ class PlaneacionController extends Controller
         try {
 
             DB::beginTransaction();
-            $cotizaciones = Cotizaciones::find($request->idCotizacion);
-            $documenCotizacion = DocumCotizacion::where('id_cotizacion', $request->idCotizacion)->first(); //primero buscamos el id contenedor
+
+             $documenCotizacion = DocumCotizacion::find($request->idContenendor)->first();
+            $cotizaciones = Cotizaciones::find($documenCotizacion->id_cotizacion);
+            //primero buscamos el id contenedor
             $asignaciones = Asignaciones::where('id_contenedor', '=', $documenCotizacion->id)->first(); //corregir mandar id contenenedor, y no cotizacion???
 
             if (!is_null($asignaciones->id_operador) && !is_null($asignaciones->id_banco1_dinero_viaje)) {

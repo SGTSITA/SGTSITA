@@ -615,7 +615,7 @@ if (btnGuardarBoard) {
     //btnGuardarBoard.addEventListener('click',confirmarCambiosPlaneacion)
 }
 
-function anularPlaneacion(idCotizacion, numContenedor) {
+function anularPlaneacion(idContenendor, numContenedor) {
     $("#viajeModal").modal("hide");
     var _token = $('input[name="_token"]').val();
     Swal.fire({
@@ -634,7 +634,7 @@ function anularPlaneacion(idCotizacion, numContenedor) {
                 },
                 body: JSON.stringify({
                     _token: _token,
-                    idCotizacion: idCotizacion,
+                    idContenendor: idContenendor,
                     numContenedor: numContenedor,
                 }),
             })
@@ -642,7 +642,7 @@ function anularPlaneacion(idCotizacion, numContenedor) {
                 .then((data) => {
                     Swal.fire(data.Titulo, data.Mensaje, data.TMensaje);
                     if (data.TMensaje == "success") {
-                        dp.events.remove(idCotizacion); //Eliminar del board
+                        dp.events.remove(idContenendor); //Eliminar del board
                     }
                 })
                 .catch((error) => {
