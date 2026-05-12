@@ -182,10 +182,10 @@
                     <td>Domicilio de entrega</td>
                     <td>
                         {{ $cotizaciones->direccion_entrega }}<br>
-                        <span class="small">
-                            Mapa:
-                            https://www.google.com/maps/search/?api=1&query={{ $cotizaciones->latitud }},{{ $cotizaciones->longitud }}
+                        <span class="small" style="word-break: keep-all; white-space: nowrap;">
+                            https://maps.google.com/?q={{ $cotizaciones->latitud }},{{ $cotizaciones->longitud }}
                         </span>
+
                     </td>
                 </tr>
                 <tr>
