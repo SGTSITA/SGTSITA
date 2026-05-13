@@ -203,7 +203,7 @@ function buildHandsOntable() {
     function validateMultiple() {
         let rows = hotTable.getData();
         let filasValidas = [];
-
+        let errores = [];
         for (let i = 0; i < rows.length; i++) {
             let r = rows[i];
 
@@ -259,6 +259,20 @@ function buildHandsOntable() {
                     }
                 }
             }
+
+            let destin = r[5];
+            let direccio = r[17];
+
+            const valido = validarCoincidenciaDestino(destin, direccio);
+
+            if (!valido) {
+                errores.push({
+                    fila: i + 1,
+                    destino: destin,
+                    direccion: direccio,
+                });
+            }
+
             filasValidas.push(r);
         }
 
@@ -267,10 +281,65 @@ function buildHandsOntable() {
             return false;
         }
 
+        if (errores.length > 0) {
+            let html = errores
+                .map(
+                    (e) => `
+        <div style="margin-bottom:15px;">
+            <b>Fila ${e.fila}</b><br>
+
+            <b>Destino:</b><br>
+            ${e.destino}<br><br>
+
+            <b>Dirección:</b><br>
+            ${e.direccion}
+        </div>
+    `,
+                )
+                .join("");
+
+            Swal.fire({
+                icon: "warning",
+                title: "Destinos inválidos",
+                width: 700,
+                html: `
+            <div class="text-start">
+                ${html}
+            </div>
+        `,
+            });
+
+            return false;
+        }
+
         createContenedoresMultiple(filasValidas);
         return true;
     }
+    function normalizarTexto(texto) {
+        return (texto || "")
+            .toLowerCase()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .replace(/\s+/g, " ")
+            .trim();
+    }
 
+    function validarCoincidenciaDestino(destino, direccion) {
+        const stopWords = ["de", "la", "el", "los", "las", "mx", "mexico"];
+
+        destino = normalizarTexto(destino);
+        direccion = normalizarTexto(direccion);
+
+        if (!destino || !direccion) {
+            return false;
+        }
+
+        const palabrasDestino = destino
+            .split(" ")
+            .filter((p) => p.trim() !== "" && !stopWords.includes(p));
+
+        return palabrasDestino.every((palabra) => direccion.includes(palabra));
+    }
     function createContenedoresMultiple(contenedores) {
         var _token = document.querySelector('meta[name="csrf-token"]').content;
         var uuid = localStorage.getItem("uuid");

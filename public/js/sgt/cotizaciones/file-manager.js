@@ -595,6 +595,7 @@ if (btnCancelarWhatsApp) {
 }
 
 function EnviarWhatsappGenerados() {
+    let data = archivosData;
     const autorizacion = wa_no_autorizacion.value;
     const obs = wa_observaciones.value;
 
@@ -617,6 +618,9 @@ ${wa_cambio_sello.checked ? "*CAMBIO DE SELLO*" : ""}
 ${tieneAutorizacion ? `No Autorización: ${wa_no_autorizacion.value}` : ""}
 
 ${tieneObservacion ? `${obs}` : ""}
+
+${esLocal ? "" : `Peso: ${data.cotizacion.peso_contenedor}`}
+${esLocal ? "" : `Destino: ${data.cotizacion.destino ?? ""}`}
 `.trim();
 
     messageadd2 = `
@@ -625,7 +629,7 @@ ${waLinkGenerado}
 Contraseña de acceso: ${waPasswordGenerado}
     `.trim();
 
-    let messagefinal = mensaje + "\n\n" + messageadd + "\n\n" + messageadd2;
+    let messagefinal = mensaje + "\n" + messageadd + "\n\n" + messageadd2;
     const url = `https://wa.me/?text=${encodeURIComponent(messagefinal)}`;
     window.open(url, "_blank");
 }
@@ -635,7 +639,7 @@ function cargarDatosModalWhatsapp() {
     let limpiocontenrepl = contendores.replaceAll("*", " ");
 
     document.getElementById("wa_fecha").value = esLocal
-        ? data.cotizacion.fecha_modulacion
+        ? data.cita_at
         : (data.cotizacion.fecha_entrega ?? "");
     document.getElementById("wa_referencia").value = `${limpiocontenrepl}`;
 
