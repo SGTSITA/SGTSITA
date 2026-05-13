@@ -15,6 +15,8 @@ use App\Models\DocumCotizacion;
 use App\Traits\CommonTrait as common;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use App\Services\UbicacionService;
+use Illuminate\Support\Facades\Crypt;
 
 class MepController extends Controller
 {
@@ -377,5 +379,98 @@ class MepController extends Controller
         } catch (\Exception $e) {
             return Carbon::parse($fecha); // fallback
         }
+    }
+
+
+    public function getUbicacionesPlanear(Request $request,    UbicacionService $ubicacionService){
+$equipos = DB::table('equipos as e')
+    ->join('gps_company','e.gps_company_id','=','gps_company.id')
+    ->select(
+        'e.id',
+        'e.tipo',
+        'e.id_equipo',
+        'e.placas',
+        'e.imei',
+        'e.gps_company_id',
+        'e.usar_config_global',
+        'e.credenciales_gps',
+        'gps_company.url as tipogps'
+    )
+    ->whereIn('e.id', $request->equipos)
+    ->get();
+
+
+
+
+   $resultados = [];
+
+foreach ($equipos as $equipo) {
+
+    try {
+
+        if ($equipo->usar_config_global == 0) {
+            $credenciales = json_decode(
+                Crypt::decryptString($equipo->credenciales_gps),
+                true
+            ) ?? [];
+        } else {
+
+         $credencialesGlobal = DB::table('user_proveedores as up')
+    ->join('gps_company_proveedores as gcp', 'gcp.id_proveedor', '=', 'up.proveedor_id')
+    ->where('up.user_id', auth()->id())
+    ->where('gcp.estado', 1)
+    ->where('gcp.id_gps_company', $equipo->gps_company_id)
+    ->value('gcp.account_info');
+
+
+            $raw = json_decode(
+                Crypt::decryptString($credencialesGlobal),
+                true
+            ) ?? [];
+
+            $credenciales = collect($raw)->pluck('valor', 'field')->toArray();
+        }
+
+        $responseGps = $ubicacionService->consultarGps(
+            $equipo->tipogps,
+            $credenciales,
+            $equipo->imei,
+            $equipo->placas,
+            $equipo->tipo,
+            true
+        );
+
+        $resultados[] = [
+            'id' => $equipo->id,
+            'equipo' => $equipo->id_equipo,
+            'imei' => $equipo->imei,
+            'placas' => $equipo->placas,
+
+            'ubicacion' => $responseGps['ubicacion'],
+
+            'status' => $responseGps['status'],
+            'messageAp' => $responseGps['messageAp'],
+            'tipogps' => $responseGps['tipogps'],
+            'tiemporespuesta' => $responseGps['tiemporespuesta'],
+'cred' =>  $credenciales
+
+        ];
+
+    } catch (\Exception $e) {
+
+        $resultados[] = [
+            'id' => $equipo->id,
+            'equipo' => $equipo->id_equipo,
+            'status' => false,
+            'messageAp' => $e->getMessage(),
+        ];
+
+    }
+
+}
+
+return response()->json($resultados);
+
+
     }
 }

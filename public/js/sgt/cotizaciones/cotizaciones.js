@@ -1180,6 +1180,16 @@ if (btnCopiarMapa) {
     });
 }
 
+function actualizarDireccionInput(direccion) {
+    const inputDireccion = document.getElementById("direccion_entrega");
+
+    inputDireccion.value = direccion;
+
+    inputDireccion.dispatchEvent(new Event("input", { bubbles: true }));
+
+    inputDireccion.dispatchEvent(new Event("change", { bubbles: true }));
+}
+
 var modal = document.getElementById("mapModal");
 if (modal) {
     modal.addEventListener("shown.bs.modal", function () {
@@ -1210,8 +1220,7 @@ if (modal) {
                 .then((res) => res.json())
                 .then((data) => {
                     const direccion = data.display_name;
-                    document.getElementById("direccion_entrega").value =
-                        direccion;
+                    actualizarDireccionInput(direccion);
                     document.getElementById("direccion_mapa").value = direccion;
                 });
             let urlCrearMapa = crearurlmapalatitudlongitud(lat, lng);
@@ -1342,8 +1351,7 @@ function geocodificardireccion(lat, long) {
                     document.getElementById("latitud").value = lat.toFixed(6);
                     document.getElementById("longitud").value = long.toFixed(6);
 
-                    document.getElementById("direccion_entrega").value =
-                        direccion;
+                    actualizarDireccionInput(direccion);
                 } else {
                     console.log("No se encontró dirección");
                 }
