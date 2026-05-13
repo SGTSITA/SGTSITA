@@ -45,6 +45,8 @@ Route::group(["prefix" => "mep"], function () {
     Route::get('viajes/finalizadas', [MepController::class, 'getCotizacionesFinalizadas'])->name('mep.viajes');
     Route::post('viajes/operador/asignar', [MepController::class, 'asignarOperador'])->name('mep.asignaoperdor');
     Route::post('catalogos/operador-unidad', [MepController::class, 'getCatalogosMep'])->name('mep.catalogos');
+
+     Route::post('viajes/ubicaciones', [MepController::class, 'getUbicacionesPlanear'])->name('mep.getUbicacionesPlanear');
 });
 
 
