@@ -320,13 +320,28 @@ function buildHandsOntable() {
             .toLowerCase()
             .normalize("NFD")
             .replace(/[\u0300-\u036f]/g, "")
+            .replace(/[^\w\s]/g, " ")
+            .replace(/\d+/g, " ")
             .replace(/\s+/g, " ")
             .trim();
     }
-
+    const stopWords = [
+        "de",
+        "la",
+        "el",
+        "los",
+        "las",
+        "mx",
+        "mexico",
+        "calle",
+        "col",
+        "colonia",
+        "cp",
+        "c.p",
+        "pue",
+        "puebla",
+    ];
     function validarCoincidenciaDestino(destino, direccion) {
-        const stopWords = ["de", "la", "el", "los", "las", "mx", "mexico"];
-
         destino = normalizarTexto(destino);
         direccion = normalizarTexto(direccion);
 
@@ -336,9 +351,19 @@ function buildHandsOntable() {
 
         const palabrasDestino = destino
             .split(" ")
-            .filter((p) => p.trim() !== "" && !stopWords.includes(p));
+            .filter((p) => p.length > 2 && !stopWords.includes(p));
 
-        return palabrasDestino.every((palabra) => direccion.includes(palabra));
+        let coincidencias = 0;
+
+        palabrasDestino.forEach((palabra) => {
+            if (direccion.includes(palabra)) {
+                coincidencias++;
+            }
+        });
+
+        const porcentaje = coincidencias / palabrasDestino.length;
+
+        return porcentaje >= 0.6;
     }
     function createContenedoresMultiple(contenedores) {
         var _token = document.querySelector('meta[name="csrf-token"]').content;

@@ -132,6 +132,8 @@ function normalizarTexto(texto) {
         .toLowerCase()
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^\w\s]/g, " ")
+        .replace(/\d+/g, " ")
         .replace(/\s+/g, " ")
         .trim();
 }
@@ -139,28 +141,72 @@ function obtenerPalabras(texto) {
     return normalizarTexto(texto).split(/\s+/).filter(Boolean);
 }
 function validarDestinoDireccion() {
-    const stopWords = ["de", "la", "el", "los", "las", "mx", "mexico"];
+    const stopWords = [
+        "de",
+        "la",
+        "el",
+        "los",
+        "las",
+        "mx",
+        "mexico",
+        "calle",
+        "col",
+        "colonia",
+        "cp",
+        "c.p",
+        "pue",
+        "puebla",
+    ];
+
     const destino = normalizarTexto(inputDestino.value);
 
     const direccion = normalizarTexto(inputDireccion.value);
 
+    // destino obligatorio
     if (!destino) {
         btnGuardar.disabled = true;
+
         return false;
     }
 
+    // direccion obligatoria
     if (!direccion) {
         btnGuardar.disabled = true;
+
         return false;
     }
 
-    const palabrasDestino = destino
-        .split(" ")
-        .filter((p) => p.trim() !== "" && !stopWords.includes(p));
+    const palabrasDestino = destino.split(" ").filter((p) => {
+        if (!p.trim()) {
+            return false;
+        }
 
-    const coincide = palabrasDestino.every((palabra) =>
-        direccion.includes(palabra),
-    );
+        if (stopWords.includes(p)) {
+            return false;
+        }
+
+        if (/^\d+$/.test(p)) {
+            return false;
+        }
+
+        if (p.length <= 2) {
+            return false;
+        }
+
+        return true;
+    });
+
+    let coincidencias = 0;
+
+    palabrasDestino.forEach((palabra) => {
+        if (direccion.includes(palabra)) {
+            coincidencias++;
+        }
+    });
+
+    const porcentaje = coincidencias / palabrasDestino.length;
+
+    const coincide = porcentaje >= 0.6;
 
     if (!coincide) {
         btnGuardar.disabled = true;
@@ -173,11 +219,17 @@ function validarDestinoDireccion() {
                 title: "Destino inválido",
                 html: `
                     <div class="text-start">
+
                         <p>
                             El destino capturado no coincide con la dirección seleccionada en el mapa.
                         </p>
 
                         <hr>
+
+                        <b>Coincidencia:</b>
+                        ${Math.round(porcentaje * 100)}%
+
+                        <br><br>
 
                         <b>Destino:</b><br>
                         ${destino}
@@ -186,6 +238,7 @@ function validarDestinoDireccion() {
 
                         <b>Dirección:</b><br>
                         ${direccion}
+
                     </div>
                 `,
                 confirmButtonText: "Entendido",
