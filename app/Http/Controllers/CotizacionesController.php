@@ -803,6 +803,9 @@ class CotizacionesController extends Controller
             $row = 1;
 
             $origen_inicial = $request->origen_captura;
+   $sumarIndex = 0;
+
+             $service = app(\App\Services\GoogleMapsService::class);
             foreach ($contenedores as $cont) {
                 //validaremos que los contenedores no existan
                 $numContenedor = str_replace(' ', '', $cont[3]);
@@ -839,18 +842,42 @@ class CotizacionesController extends Controller
                         return response()->json(["Titulo" => "Transportista NO Valido", "Mensaje" => "El transportista de la fila $row no es un transportista registrado", "TMensaje" => "warning"]);
                     }
                 }
+ $url = $cont[18 + $sumarIndex];
+ $lat = null;
+                   $lng  = null;
 
 
+if ($url) {
+
+        $coords = $service->resolver($url);
+Log::info('Google Maps URL y coor devuelta', [
+                'original' => $url,
+                'final' => $coords
+            ]);
+     $lat = $coords['lat'] ?? null;
+        $lng = $coords['lng'] ?? null;
+
+        if(!$lat && !$lng){
+
+return response()->json(["Titulo" => "Coordenadas no encontradfa", "Mensaje" => "La url de la fila $row  no es una url valida para el sistema y debe tener coordenadas", "TMensaje" => "warning"]);
+
+        }
+
+
+}
+else{
+     return response()->json(["Titulo" => "Url NO Valido", "Mensaje" => "La url de la fila $row  no es una url valida para el sistema y debe tener coordenadas", "TMensaje" => "warning"]);
+}
 
             }
-            $sumarIndex = 0;
+
             if ($request->has('permiso_proveedor') && $request->get('permiso_proveedor') == 1) {
                 //si se requiere validar proveedor y transportista, se ajustan los indices
                 $sumarIndex = 0;
             }
 
 
-            $service = app(\App\Services\GoogleMapsService::class);
+
 
             //una vez superada todas las validaciones procedemos a guardar los datos
             foreach ($contenedores as $contenedor) {

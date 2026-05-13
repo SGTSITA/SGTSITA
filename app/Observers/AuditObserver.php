@@ -71,8 +71,7 @@ class AuditObserver
 
         $requestData = collect(request()->all())
     ->except($this->exclude)
-    ->filter(fn ($v, $k) => array_key_exists($k, $model->getAttributes()))
-    ->toArray() ?? [];
+       ->toArray() ?? [];
 
         $referencia =  AuditoriaDataExtractor::extract($model, $old, $new);
 

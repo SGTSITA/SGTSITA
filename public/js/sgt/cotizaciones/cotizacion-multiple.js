@@ -257,6 +257,22 @@ function buildHandsOntable() {
                         );
                         return false;
                     }
+
+                    const tienePosibleMapa =
+                        val.includes("/maps") ||
+                        val.includes("@") ||
+                        val.includes("q=") ||
+                        val.includes("maps.app.goo.gl");
+
+                    if (!tienePosibleMapa) {
+                        Swal.fire(
+                            "URL inválida",
+                            `La URL en la fila ${i + 1} no parece ser una ubicación válida de Google Maps.`,
+                            "warning",
+                        );
+
+                        return false;
+                    }
                 }
             }
 
