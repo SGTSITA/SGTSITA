@@ -1429,7 +1429,7 @@ $this->procesarDocumento(
                         DB::beginTransaction();
                         $cotizaciones2 = Cotizaciones::find($id);
 
-                        if (!is_null($asignaciones->id_operador)) {
+                        if ($asignaciones && !is_null($asignaciones->id_operador)) {
                             $afectaBanco = false;
                             if ($asignaciones->id_banco1_dinero_viaje) {
                                 Bancos::where('id', '=', $asignaciones->id_banco1_dinero_viaje)->update(["saldo" => DB::raw("saldo + ". $asignaciones->dinero_viaje)]);

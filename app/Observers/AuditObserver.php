@@ -104,6 +104,10 @@ class AuditObserver
     'empresa_id' => $model->empresa_id ?? auth()->user()->id_empresa,
 
     'referencia' =>  $referencia['referencia'] ?? null,
+
+
+    'created_at' => now('America/Mexico_City'),
+    'updated_at' => now('America/Mexico_City'),
         ]);
     }
 }
