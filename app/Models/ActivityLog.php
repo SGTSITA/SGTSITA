@@ -9,6 +9,8 @@ class ActivityLog extends Model
 {
     protected $table = 'activity_log';
 
+    protected $appends = ['created_at_local'];
+
     protected $fillable = [
         'model',
         'model_id',
@@ -64,4 +66,11 @@ class ActivityLog extends Model
     {
         return $this->belongsTo(Empresas::class, 'empresa_id');
     }
+
+    public function getCreatedAtLocalAttribute()
+{
+    return \Carbon\Carbon::parse($this->created_at)
+        ->timezone('America/Mexico_City')
+        ->format('Y-m-d H:i:s');
+}
 }
