@@ -598,6 +598,9 @@ function EnviarWhatsappGenerados() {
     let data = archivosData;
     const autorizacion = wa_no_autorizacion.value;
     const obs = wa_observaciones.value;
+    const addpesoDireccion = !waArchivosSeleccionados.some(
+        (doc) => doc.fileCode === "Pre-Alta",
+    );
 
     let tieneAutorizacion =
         autorizacion && autorizacion !== "null" && autorizacion !== "undefined";
@@ -619,8 +622,8 @@ ${tieneAutorizacion ? `No Autorización: ${wa_no_autorizacion.value}` : ""}
 
 ${tieneObservacion ? `${obs}` : ""}
 
-${esLocal ? "" : `Peso: ${data.cotizacion.peso_contenedor}`}
-${esLocal ? "" : `Destino: ${data.cotizacion.destino ?? ""}`}
+${!esLocal && addpesoDireccion ? `Peso: ${data.cotizacion.peso_contenedor}` : ""}
+${!esLocal && addpesoDireccion ? `Destino: ${data.cotizacion.destino ?? ""}` : ""}
 `.trim();
 
     messageadd2 = `

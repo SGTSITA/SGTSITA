@@ -175,34 +175,46 @@
         <div class="contenido">
             <table class="dl-table">
                 <tr>
-                    <td>Puerto / Lugar de salida</td>
-                    <td>{{ $cotizaciones->origen }}</td>
-                </tr>
-                <tr>
-                    <td>Domicilio de entrega</td>
-                    <td>
-                        {{ $cotizaciones->direccion_entrega }}<br>
-                        <span class="small" style="word-break: keep-all; white-space: nowrap;">
+                    <td style="padding: 10px; line-height: 1.8;">
+
+                        <strong>Puerto / Lugar de salida:</strong>
+                        <span style="font-weight: normal;"> {{ $cotizaciones->origen }} </span>
+
+                        <br>
+
+                        <strong>Domicilio de entrega:</strong>
+                        <span style="font-weight: normal;"> {{ $cotizaciones->direccion_entrega }}</span>
+
+                        <br> <br>
+                        <strong>Link:</strong>
+                        <span style="font-weight: normal;">
                             https://maps.google.com/?q={{ $cotizaciones->latitud }},{{ $cotizaciones->longitud }}
                         </span>
 
+                        <br> <br>
+
+                        <strong>Contacto (entrega):</strong>
+                        <span style="font-weight: normal;"> {{ $cotizaciones->cp_contacto_entrega }}</span>
+
+                        <br>
+
+                        <strong>Fecha tentativa de entrega:</strong>
+                        <span style="font-weight: normal;">
+                            {{ $cotizaciones->cp_fecha_tentativa_entrega
+                                ? \Carbon\Carbon::parse($cotizaciones->cp_fecha_tentativa_entrega)->format('d-m-Y')
+                                : '' }}</span>
+
+                        <br>
+
+                        <strong>Hora tentativa:</strong>
+                        <span style="font-weight: normal;"> {{ $cotizaciones->cp_hora_tentativa_entrega }} hrs </span>
+
+                        <br>
+
+                        <strong>Comentarios:</strong>
+                        <span style="font-weight: normal;"> {{ $cotizaciones->cp_comentarios }} </span>
+
                     </td>
-                </tr>
-                <tr>
-                    <td>Contacto (entrega)</td>
-                    <td>{{ $cotizaciones->cp_contacto_entrega }}</td>
-                </tr>
-                <tr>
-                    <td>Fecha tentativa de entrega</td>
-                    <td>{{ $cotizaciones->cp_fecha_tentativa_entrega }}</td>
-                </tr>
-                <tr>
-                    <td>Hora tentativa</td>
-                    <td>{{ $cotizaciones->cp_hora_tentativa_entrega }}hrs</td>
-                </tr>
-                <tr>
-                    <td>Comentarios</td>
-                    <td>{{ $cotizaciones->cp_comentarios }}</td>
                 </tr>
             </table>
 

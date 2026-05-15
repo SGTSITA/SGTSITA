@@ -323,40 +323,50 @@ public function consultarGps(
 
             case 'https://gpsv7.com/php/wialon_data.php':
 
-                $data = WialonGpsTrait::getLocation(
-                    $credenciales['token'] ?? null,
-                    $credenciales['SID'] ?? null
-                );
+              $data = WialonGpsTrait::getloginLocation(
+    $credenciales['token'] ?? null,
+    $credenciales['SID'] ?? null
+);
 
-                $datasearch = $data?->data ?? [];
+$items = $data?->data['items'] ?? [];
 
-                $ubicacionApi = collect($datasearch)->first(function ($item) use ($placas) {
+$placasBuscar = str_replace('-', '', strtoupper($placas));
 
-                    return (
-                        isset($item['unidad']) &&
-                        str_contains($item['unidad'], $placas)
-                    ) || (
-                        isset($item['placas']) &&
-                        str_contains($item['placas'], $placas)
-                    );
+$ubicacionApi = collect($items)->first(function ($item) use ($placasBuscar) {
 
-                });
+    $unidad = str_replace(
+        '-',
+        '',
+        strtoupper($item['unidad'] ?? '')
+    );
 
-                if ($ubicacionApi) {
+    $placasUnidad = str_replace(
+        '-',
+        '',
+        strtoupper($item['placas'] ?? '')
+    );
 
-                    $ubicacion = [
-                        'lat' => $ubicacionApi['latitud'] ?? 0,
-                        'lng' => $ubicacionApi['longitud'] ?? 0,
-                        'velocidad' => $ubicacionApi['velocidad'] ?? null,
-                        'imei' => $imei,
-                        'deviceName' => $ubicacionApi['unidad'] ?? null,
-                        'mcType' => $ubicacionApi['rumbo'] ?? null,
-                        'datac' => $ubicacionApi,
-                        'esDatoEmp' => $esDatoEmp,
-                        'tipoEquipo' => $TipoEquipo
-                    ];
+    return
+        str_contains($unidad, $placasBuscar)
+        ||
+        str_contains($placasUnidad, $placasBuscar);
+});
 
-                }
+if ($ubicacionApi) {
+
+    $ubicacion = [
+        'lat' => $ubicacionApi['latitud'] ?? 0,
+        'lng' => $ubicacionApi['longitud'] ?? 0,
+        'velocidad' => $ubicacionApi['velocidad'] ?? null,
+        'imei' => $ubicacionApi['imei'] ?? $imei,
+        'deviceName' => $ubicacionApi['unidad'] ?? null,
+        'mcType' => $ubicacionApi['rumbo'] ?? null,
+        'timestamp' => $ubicacionApi['timestamp'] ?? null,
+        'datac' => $data,
+        'esDatoEmp' => $esDatoEmp,
+        'tipoEquipo' => $TipoEquipo
+    ];
+}
 
                 $tipoGpsresponse = "Wialon";
 
@@ -383,7 +393,7 @@ public function consultarGps(
                     'imei' => $ubicacionApi['ID'] ?? null,
                     'deviceName' => $ubicacionApi['UnitType'] ?? null,
                     'mcType' => $ubicacionApi['DataCommType'] ?? null,
-                    'datac' => $ubicacionApi,
+                    'datac' => $ $ubicacionApi,
                     'esDatoEmp' => $esDatoEmp,
                     'tipoEquipo' => $TipoEquipo
                 ];
