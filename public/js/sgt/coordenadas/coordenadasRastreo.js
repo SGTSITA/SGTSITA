@@ -3281,3 +3281,14 @@ function agregarDispositivoDesdeBusqueda(item) {
 
     checkbox.dispatchEvent(new Event("change"));
 }
+
+function limpiarBackdrops() {
+    document.querySelectorAll(".modal-backdrop").forEach((el) => el.remove());
+
+    document.body.classList.remove("modal-open");
+
+    document.body.style.overflow = "";
+    document.body.style.paddingRight = "";
+}
+
+document.addEventListener("hidden.bs.modal", limpiarBackdrops);

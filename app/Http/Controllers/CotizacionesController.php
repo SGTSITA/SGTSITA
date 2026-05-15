@@ -859,7 +859,7 @@ Log::info('Google Maps URL y coor devuelta', [
 
         if(!$lat && !$lng){
 
-return response()->json(["Titulo" => "Coordenadas no encontradfa", "Mensaje" => "La url de la fila $row  no es una url valida para el sistema y debe tener coordenadas", "TMensaje" => "warning"]);
+return response()->json(["Titulo" => "Coordenadas no encontrada", "Mensaje" => "La url de la fila $row  no es una url valida para el sistema y debe tener coordenadas", "TMensaje" => "warning"]);
 
         }
 
@@ -868,6 +868,8 @@ return response()->json(["Titulo" => "Coordenadas no encontradfa", "Mensaje" => 
 else{
      return response()->json(["Titulo" => "Url NO Valido", "Mensaje" => "La url de la fila $row  no es una url valida para el sistema y debe tener coordenadas", "TMensaje" => "warning"]);
 }
+
+ $row +=1;
 
             }
 
@@ -1609,6 +1611,7 @@ $this->procesarDocumento(
 
     public function update(Request $request, $id) //refactor para full
     {
+
 
         $idEmpresa = auth()->user()->id_empresa;
         $Contenedores = $request->Contenedores;
