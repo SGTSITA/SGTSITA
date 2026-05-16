@@ -278,7 +278,34 @@ public function consultarGps(
 
                 $data = GpsTrackerMXTrait::getMutiDevicePosition($credenciales);
 
-                $ubicacion['datac'] = $data;
+               // $ubicacion['datac'] = $data;
+
+                $eventos = $data['data'] ?? $data ?? [];
+
+$ubicacionApi = collect($eventos)->first(function ($item) use ($imei) {
+
+    return isset($item['deviceId']) &&
+        (string)$item['deviceId'] === (string)$imei;
+
+});
+
+if ($ubicacionApi) {
+
+    $ubicacion = [
+        'lat' => $ubicacionApi['latitude'] ?? 0,
+        'lng' => $ubicacionApi['longitude'] ?? 0,
+        'velocidad' => $ubicacionApi['speed'] ?? null,
+        'imei' => $imei,
+        'deviceName' => $ubicacionApi['address'] ?? null,
+        'mcType' => $ubicacionApi['course'] ?? null,
+        'altitud' => $ubicacionApi['altitude'] ?? null,
+        'timestamp' => $ubicacionApi['deviceTime'] ?? null,
+        'datac' => $ubicacionApi,
+        'esDatoEmp' => $esDatoEmp,
+        'tipoEquipo' => $TipoEquipo
+    ];
+
+}
 
                 $tipoGpsresponse = "Tracker GPS";
 
