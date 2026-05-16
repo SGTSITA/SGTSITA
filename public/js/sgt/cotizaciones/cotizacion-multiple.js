@@ -1,211 +1,416 @@
-var containerMultiple = document.getElementById('cotizacion-multiple');
-var FileName = 'tableroCotizacionMultiple';
+var containerMultiple = document.getElementById("cotizacion-multiple");
+var FileName = "tableroCotizacionMultiple";
 
 var data = [];
-var dataDropDown = null;
+var proveedoresFormateados = [];
+var transportistasFormateados = [];
 
+// NO BORRAR
+async function getClientes(clienteId) {
+    let dataGetClientes = $.ajax({
+        type: "GET",
+        url: "/subclientes/" + clienteId,
+        success: function (data) {
+            let dataClientes = [];
+            $.each(data, function (key, subcliente) {
+                dataClientes.push(
+                    formatoConsecutivo(subcliente.id) +
+                        " - " +
+                        subcliente.nombre,
+                );
+            });
+            dataDropDown = dataClientes;
+            return dataClientes;
+        },
+    });
+
+    proveedoresLista.forEach((p) => {
+        proveedoresFormateados.push(
+            formatoConsecutivo(p.id) + " - " + p.nombre,
+        );
+    });
+
+    transportistasLista.forEach((t) => {
+        transportistasFormateados.push(
+            formatoConsecutivo(t.id) + " - " + t.nombre,
+        );
+    });
+
+    return dataGetClientes;
+}
+
+// CAMPOS OBLIGATORIOS
 const formFieldsContenedores = [
-  {'field':'subCliente', 'index':0,'label':'Sub Cliente','required': true, "trigger":"none","type":"text"},
-  {'field':'numContenedor', 'index':1,'label':'Núm. Contenedor','required': true, "trigger":"none","type":"text"},
-  {'field':'origen', 'index':2,'label':'Origen','required': true, "trigger":"none","type":"text"},
-  {'field':'destino', 'index':3,'label':'Destino','required': true, "trigger":"none","type":"text"},
-  {'field':'tamContenedor', 'index':4,'label':'Tamaño Contenedor','required': true, "trigger":"none","type":"numeric"},
-  {'field':'pesoContenedor', 'index':5,'label':'Peso Contenedor','required': true, "trigger":"none","type":"numeric"},
-  {'field':'numBloque', 'index':6,'label':'Núm. Bloque','required': false, "trigger":"none","type":"text"},
-  {'field':'horaInicio', 'index':7,'label':'Hora Inicio','required': false, "trigger":"none","type":"text"},
-  {'field':'horaFinal', 'index':8,'label':'Hora Final','required': false, "trigger":"none","type":"text"},
+    { field: "id_subcliente", index: 0, label: "Sub Cliente", required: true },
+    {
+        field: "numContenedor",
+        index: 3,
+        label: "Núm. Contenedor",
+        required: true,
+    },
+    { field: "origen", index: 4, label: "Origen", required: true },
+    { field: "destino", index: 5, label: "Destino", required: true },
+    {
+        field: "tamContenedor",
+        index: 6,
+        label: "Tamaño Contenedor",
+        required: true,
+    },
+    {
+        field: "pesoContenedor",
+        index: 7,
+        label: "Peso Contenedor",
+        required: canElegirProveedor ? true : false,
+    },
+    {
+        field: "url",
+        index: 18,
+        label: "URL de Google Maps",
+        required: true,
+    },
 ];
 
-async function getClientes(clienteId){
-  let dataGetClientes =
-  $.ajax({
-    type: 'GET',
-    url: '/subclientes/'+clienteId ,
-    success: function(data) {
-        let dataClientes = [];
-        $.each(data, function(key, subcliente) {
-          dataClientes.push(formatoConsecutivo(subcliente.id) + ' - ' + subcliente.nombre);
-          
-        });
-       dataDropDown = dataClientes;
-       return dataClientes;
+function buildHandsOntable() {
+    //-------------------------------------------------------
+    // 1) LAS COLUMNAS SON FIJAS, SIEMPRE MISMO ORDEN
+    //-------------------------------------------------------
+    let columnas = [
+        {
+            data: 0,
+            type: "dropdown",
+            source: dataDropDown,
+            strict: true,
+            width: 150,
+        }, // 0 SUBCLIENTE
+        {
+            data: 1,
+            type: "dropdown",
+            source: proveedoresFormateados,
+            strict: true,
+            width: 150,
+        }, // 1 PROVEEDOR
+        {
+            data: 2,
+            type: "dropdown",
+            source: transportistasFormateados,
+            strict: true,
+            width: 150,
+        }, // 2 TRANSPORTISTA
+        { data: 3, width: 150 }, // 3 CONTENEDOR
+        { data: 4, width: 150 }, // 4 ORIGEN
+        { data: 5, width: 150 }, // 5 DESTINO
+        { data: 6, type: "numeric", width: 150 }, // 6 TAMAÑO
+        { data: 7, type: "numeric", width: 150 }, // 7 PESO
+
+        { data: 8, width: 100 }, // 8 peso reglamentario
+        { data: 9, width: 100 }, // 9 sobrepeso
+        { data: 10, width: 100 }, // 10 precio sobrepeso
+        { data: 11, width: 100 }, // 11 precio tonelada
+
+        {
+            data: 12,
+            type: "date",
+            dateFormat: "YYYY-MM-DD",
+            correctFormat: true,
+            width: 155,
+        },
+        {
+            data: 13,
+            type: "date",
+            dateFormat: "YYYY-MM-DD",
+            correctFormat: true,
+            width: 140,
+        },
+
+        { data: 14, width: 130 }, // 14 num bloque
+
+        // 15 HORA INICIO
+        {
+            data: 15,
+            type: "time",
+            timeFormat: "HH:mm:ss",
+            correctFormat: true,
+            width: 100,
+        },
+
+        // 16 HORA FIN
+        {
+            data: 16,
+            type: "time",
+            timeFormat: "HH:mm:ss",
+            correctFormat: true,
+            width: 100,
+        },
+
+        { data: 17, width: 200 }, // 17 direccion
+        { data: 18, width: 200 }, // 18 url
+        { data: 19, readOnly: true }, // 19 ID
+    ];
+
+    let headers = [
+        "SUBCLIENTE",
+        "PROVEEDOR",
+        "TRANSPORTISTA",
+        "# CONTENEDOR",
+        "ORIGEN",
+        "DESTINO",
+        "TAMAÑO",
+        "PESO",
+        "PESO REGLAMENTARIO",
+        "SOBREPESO",
+        "PRECIO_SOBREPESO",
+        "PRECIO_TONELADA",
+        "FECHA MODULACIÓN",
+        "FECHA ENTREGA",
+        "NÚM BLOQUE",
+        "HORA INICIO",
+        "HORA FIN",
+        "DIRECCIÓN",
+        "URL",
+        "ID",
+    ];
+
+    let columnasOcultas = [];
+    let fixetcolimns = 4;
+    if (!canElegirProveedor) {
+        columnasOcultas.push(1);
+        columnasOcultas.push(2);
+        fixetcolimns = 2;
     }
-});
-return dataGetClientes;
-}
 
+    columnasOcultas.push(8, 9, 10, 11, 19);
 
-function buildHandsOntable(){
-  var config = {
-    data: data,
-    minRows: 0,
-    width: '100%',
-    height: 400,
-    rowHeaders: true,
-    minSpareRows: 1,
-    autoWrapRow: true,
-    colWidths: [230, 180, 200, 200, 150, 150, 150, 150, 150,1],
-    colHeaders: ['SUB CLIENTE','# CONTENEDOR','ORIGEN',  'DESTINO', 'TAMAÑO CONTENEDOR','PESO CONTENEDOR', 'NÚM BLOQUE','HORA INICIO',"HORA FIN","ID"],
-    fixedColumnsLeft: 2,
-    columns:[
-      {type: 'dropdown',source: dataDropDown, strict: true},
-      {readOnly:false },
-      {readOnly:false},
-      {readOnly:false},
-      {readOnly:false, type: 'numeric',numericFormat: {pattern: '0,0.00',culture: 'en-US'}},
-      {readOnly:false, type: 'numeric',numericFormat: {pattern: '0,0.00',culture: 'en-US'}},
-      {readOnly:false},
-      {readOnly:false,type: 'time',timeFormat: 'h:mm a',correctFormat: true},
-      {readOnly:false,type: 'time',timeFormat: 'h:mm a',correctFormat: true},
-      {readOnly:true,}
-    ],
-    hiddenColumns: {columns: [9], indicators: true },
-    filters: false,
-    //dropdownMenu: ['filter_by_value','filter_action_bar'],
-    licenseKey: 'non-commercial-and-evaluation',
-    copyPaste: false,
-    language: 'es-MX',
-    contextMenu: false,
-      outsideClickDeselects :  true
-  }
-  
-  function negativeValueRenderer(instance, td, row, col, prop, value, cellProperties) {
-    Handsontable.renderers.TextRenderer.apply(this, arguments);
-      if (value === 'Finalizado') {
-        td.style.fontStyle = 'italic';
-        td.style.background = '#98e1e6fe';
-      }else if (value==='En Curso'){
-        td.style.background = '#F8BC30';
-      }else if (value==="Cancelado") {
-        td.style.background = "#C21A1A";
-        td.style.color = "#FFFFFF";
-      }
-      
-  }
-  
-  var colorRenderer = function (instance, td, row, col, prop, value, cellProperties) {
-    Handsontable.renderers.TextRenderer.apply(this, arguments);
-    //td.style.background = "#C21A1A";
-      td.style.color = "#C21A1A";
-  };
-  
-  var errorRenderer = function (instance, td, row, col, prop, value, cellProperties) {
-      Handsontable.renderers.NumericRenderer.apply(this, arguments); // Usamos el NumericRenderer base
-      td.style.color = "#C21A1A"; // Cambia el color del texto a rojo
-      td.style.fontWeight = "bold";
-  };
-  
- 
-  Handsontable.renderers.registerRenderer('negativeValueRenderer', negativeValueRenderer);
-  Handsontable.renderers.registerRenderer('colorRenderer', colorRenderer);
-  Handsontable.renderers.registerRenderer('errorRenderer', errorRenderer);
-  
-  
-  var hotTable = new Handsontable(containerMultiple, config);
-  var TableroActivo = 0;
-  var TMenu = 0;
-  
-  hotTable.updateSettings({
-      cells: function(row, col) {
-         /* var cellProperties = {};
-         // var data = this.instance.getData();
-          var cellTotalPayment = hotTable.getDataAtCell(row,6) + hotTable.getDataAtCell(row,7);
-          if(col >= 1 && cellTotalPayment > hotTable.getDataAtCell(row,4) ){
-            this.renderer = errorRenderer;  
-          }else{
-            this.renderer = undefined;
-          }
-          return cellProperties;*/
-      },
-      afterSelection: (FilaSelect) => {
-          Fila = FilaSelect;
-      },
-      afterFilter:()=>{
- 
-      },
-      afterChange: (changes) => {
-          if (changes != null) {
-              Fila = changes[0][0];
-     
-              Columna = changes[0][1];
-              ValAnterior = changes[0][2];
-              ValNuevo = changes[0][3];
-           
-  
-          }
-      }
-  });
+    var config = {
+        data: data,
+        colHeaders: headers,
+        columns: columnas,
+        rowHeaders: true,
 
-  function validateMultiple(){
-    const dataMultiple = (hotTable.getData());
+        fixedColumnsLeft: fixetcolimns,
 
-    let solicitudContenedores = [];
-    var passValidation =
-    dataMultiple.every((i,indiceFila) =>{
+        height: 450,
+        minSpareRows: 1,
+        licenseKey: "non-commercial-and-evaluation",
 
-      let columnsNotNull = 0;
+        hiddenColumns: {
+            columns: columnasOcultas,
+            indicators: false,
+        },
+    };
 
-      i.forEach((element) => {
-        if (element != null) columnsNotNull++;}
-      );
+    var hotTable = new Handsontable(containerMultiple, config);
 
-      //Si todas las columnas de una fila estan vacias, saltaremos las validaciones y continuamos con la proxima fila
-      if(columnsNotNull == 0)  return true;
+    function validateMultiple() {
+        let rows = hotTable.getData();
+        let filasValidas = [];
+        let errores = [];
+        for (let i = 0; i < rows.length; i++) {
+            let r = rows[i];
 
-      var validations = formFieldsContenedores.every((item,index) => {
-        let field = i;
-        let campo = field[index];
-        if(item.required === true && campo == null){
-            Swal.fire(`Falta ${item.label} en la fila ${(indiceFila + 1)}`,"Parece que aún no ha proporcionado información en el campo "+item.label,"warning");
-            return false;
-        }else{
+            let filaVacia = r.every((v) => v === null || v === "");
 
-          return true;
+            if (filaVacia) continue;
+
+            if (r.every((v) => v === null || v === "")) continue;
+
+            for (let campo of formFieldsContenedores) {
+                let val = r[campo.index];
+                if (campo.required && (!val || val === "")) {
+                    Swal.fire(
+                        "Campo faltante",
+                        `Falta ${campo.label} en la fila ${i + 1}`,
+                        "warning",
+                    );
+                    return false;
+                }
+
+                if (campo.field === "url" && val) {
+                    let url;
+
+                    try {
+                        url = new URL(val);
+                    } catch (_) {
+                        Swal.fire(
+                            "URL inválida",
+                            `La URL en la fila ${i + 1} no es válida.`,
+                            "warning",
+                        );
+                        return false;
+                    }
+
+                    const dominiosValidos = [
+                        "google.com",
+                        "www.google.com",
+                        "maps.google.com",
+                        "maps.app.goo.gl",
+                    ];
+
+                    const esValido = dominiosValidos.some((d) =>
+                        url.hostname.includes(d),
+                    );
+
+                    if (!esValido) {
+                        Swal.fire(
+                            "URL no válida",
+                            `La URL en la fila ${i + 1} debe ser de Google Maps.`,
+                            "warning",
+                        );
+                        return false;
+                    }
+
+                    const tienePosibleMapa =
+                        val.includes("/maps") ||
+                        val.includes("@") ||
+                        val.includes("q=") ||
+                        val.includes("maps.app.goo.gl");
+
+                    if (!tienePosibleMapa) {
+                        Swal.fire(
+                            "URL inválida",
+                            `La URL en la fila ${i + 1} no parece ser una ubicación válida de Google Maps.`,
+                            "warning",
+                        );
+
+                        return false;
+                    }
+                }
+            }
+
+            let destin = r[5];
+            let direccio = r[17];
+
+            const valido = validarCoincidenciaDestino(destin, direccio);
+
+            if (!valido) {
+                errores.push({
+                    fila: i + 1,
+                    destino: destin,
+                    direccion: direccio,
+                });
+            }
+
+            filasValidas.push(r);
         }
-      })
 
-      solicitudContenedores.push(i);
-      return  validations ;
+        if (filasValidas.length === 0) {
+            Swal.fire("Sin datos", "No hay información para guardar.", "info");
+            return false;
+        }
 
-    });
+        if (errores.length > 0) {
+            let html = errores
+                .map(
+                    (e) => `
+        <div style="margin-bottom:15px;">
+            <b>Fila ${e.fila}</b><br>
 
-    if(!passValidation) return passValidation;
+            <b>Destino:</b><br>
+            ${e.destino}<br><br>
 
-   // console.table(solicitudContenedores);
+            <b>Dirección:</b><br>
+            ${e.direccion}
+        </div>
+    `,
+                )
+                .join("");
 
-    createContenedoresMultiple(solicitudContenedores);
-  }
+            Swal.fire({
+                icon: "warning",
+                title: "Destinos inválidos",
+                width: 700,
+                html: `
+            <div class="text-start">
+                ${html}
+            </div>
+        `,
+            });
 
-  function createContenedoresMultiple(contenedores){
-    var _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-    var uuid = localStorage.getItem('uuid');
-    $.ajax({
-      url: '/viajes/solicitud/multiple',
-      type:'post',
-      data:{_token, contenedores, uuid},
-      beforeSend:()=>{},
-      success:(response)=>{
-        Swal.fire(response.Titulo,response.Mensaje,response.TMensaje).then(function() {
-          if(response.TMensaje == "success"){
-              var uuid = localStorage.getItem('uuid');
-              if(uuid){
-                  window.location.replace("/viajes/documents");
-              }else{
-                  location.reload();
-              }
-          
-          }
-      });
-      },
-      error:(x,error)=>{
-        console.warn(x.responseText)
-      }
-    });
-  }
+            return false;
+        }
 
-  return {
-    validarSolicitud: validateMultiple // Exponiendo la función interna
-};
-  
+        createContenedoresMultiple(filasValidas);
+        return true;
+    }
+    function normalizarTexto(texto) {
+        return (texto || "")
+            .toLowerCase()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .replace(/[^\w\s]/g, " ")
+            .replace(/\d+/g, " ")
+            .replace(/\s+/g, " ")
+            .trim();
+    }
+    const stopWords = [
+        "de",
+        "la",
+        "el",
+        "los",
+        "las",
+        "mx",
+        "mexico",
+        "calle",
+        "col",
+        "colonia",
+        "cp",
+        "c.p",
+        "pue",
+        "puebla",
+    ];
+    function validarCoincidenciaDestino(destino, direccion) {
+        destino = normalizarTexto(destino);
+        direccion = normalizarTexto(direccion);
+
+        if (!destino || !direccion) {
+            return false;
+        }
+
+        const palabrasDestino = destino
+            .split(" ")
+            .filter((p) => p.length > 2 && !stopWords.includes(p));
+
+        let coincidencias = 0;
+
+        palabrasDestino.forEach((palabra) => {
+            if (direccion.includes(palabra)) {
+                coincidencias++;
+            }
+        });
+
+        const porcentaje = coincidencias / palabrasDestino.length;
+
+        return porcentaje >= 0.6;
+    }
+    function createContenedoresMultiple(contenedores) {
+        var _token = document.querySelector('meta[name="csrf-token"]').content;
+        var uuid = localStorage.getItem("uuid");
+        var permiso_proveedor = canElegirProveedor ? 1 : 0;
+
+        var origen_captura = document.getElementById("origen_captura").value;
+
+        $.post(
+            "/viajes/solicitud/multiple",
+            { _token, contenedores, uuid, permiso_proveedor, origen_captura },
+            function (response) {
+                Swal.fire(
+                    response.Titulo,
+                    response.Mensaje,
+                    response.TMensaje,
+                ).then(() => {
+                    // SOLO recargar si el servidor indica éxito
+                    if (
+                        response.TMensaje === "success" ||
+                        response.TMensaje === "ok"
+                    ) {
+                        location.reload();
+                    }
+                    // Si es warning o error, NO recargar
+                });
+            },
+        );
+    }
+
+    return {
+        validarSolicitud: validateMultiple,
+    };
 }
-

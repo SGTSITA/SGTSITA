@@ -1,8 +1,8 @@
 ---
 title: Modem
 categories:
-  - Devices
+    - Devices
 tags:
-  - internet
-  - cable
+    - internet
+    - cable
 ---

@@ -4,24 +4,50 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\Auditable;
 
 class Prestamo extends Model
 {
     use HasFactory;
+    use Auditable;
 
-    protected $table = 'prestamos'; // opcional, si la tabla se llama distinto
+    protected $table = 'prestamos';
+    protected $appends = ['total_pagado'];
+
+    public const TIPO_PRESTAMO = 'prestamo';
+    public const TIPO_ADELANTO = 'adelanto';
 
     protected $fillable = [
         'id_operador',
         'id_banco',
         'cantidad',
         'pagos',
-        'saldo_actual'
+        'saldo_actual',
+         'tipo',
+         'fecha_prestamo',
     ];
 
     // Relación: un préstamo pertenece a un operador
     public function operador()
     {
         return $this->belongsTo(Operador::class, 'id_operador');
+    }
+
+    public function banco()
+    {
+        return $this->belongsTo(Bancos::class, 'id_banco');
+    }
+    public function pagoprestamos()
+    {
+        return $this->hasMany(PagoPrestamo::class, 'id_prestamo');
+    }
+
+    public function getTotalPagadoAttribute()
+    {
+        return (float) $this->pagoprestamos->sum('monto_pago');
+    }
+    public function getSaldoCalculadoAttribute()
+    {
+        return max($this->cantidad - $this->total_pagado, 0);
     }
 }

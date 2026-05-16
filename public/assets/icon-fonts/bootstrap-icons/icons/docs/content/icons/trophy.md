@@ -1,8 +1,8 @@
 ---
 title: Trophy
 categories:
-  - Real world
+    - Real world
 tags:
-  - prize
-  - winning
+    - prize
+    - winning
 ---

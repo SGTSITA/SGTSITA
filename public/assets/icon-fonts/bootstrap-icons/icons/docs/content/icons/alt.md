@@ -1,9 +1,9 @@
 ---
 title: Alt
 categories:
-  - UI and keyboard
+    - UI and keyboard
 tags:
-  - key
-  - alt
-  - option
+    - key
+    - alt
+    - option
 ---

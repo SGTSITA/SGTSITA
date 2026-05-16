@@ -1,12 +1,12 @@
 ---
 title: App indicator
 categories:
-  - Apps
+    - Apps
 tags:
-  - app
-  - application
-  - ios
-  - android
-  - notification
-  - square
+    - app
+    - application
+    - ios
+    - android
+    - notification
+    - square
 ---
