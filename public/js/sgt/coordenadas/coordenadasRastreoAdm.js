@@ -2673,3 +2673,14 @@ function confirmarEliminacion(idContenedor, idConvoy, boton, idx) {
 }
 
 //termina tab convoys
+
+function limpiarBackdrops() {
+    document.querySelectorAll(".modal-backdrop").forEach((el) => el.remove());
+
+    document.body.classList.remove("modal-open");
+
+    document.body.style.overflow = "";
+    document.body.style.paddingRight = "";
+}
+
+document.addEventListener("hidden.bs.modal", limpiarBackdrops);

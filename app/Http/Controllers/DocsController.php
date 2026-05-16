@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\DocumCotizacionAcceso;
 use App\Models\DocumCotizacion;
 use App\Models\Cotizaciones;
+use App\Models\UserProveedores;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Controllers\Controller;
@@ -12,19 +13,41 @@ use App\Traits\CommonTrait;
 use Illuminate\Http\Request;
 use ZipArchive;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 
 class DocsController extends Controller
 {
+
     private function accesoValido($token)
-    {
-        return DocumCotizacionAcceso::where('token', $token)
-            ->where('activo', true)
-            ->where(function ($q) {
-                $q->whereNull('expires_at')
-                  ->orWhere('expires_at', '>', now());
-            })
-            ->first();
+{
+    $acceso = DocumCotizacionAcceso::where('token', $token)
+        ->where('activo', true)
+        ->where(function ($q) {
+            $q->whereNull('expires_at')
+              ->orWhere('expires_at', '>', now());
+        })
+        ->first();
+
+    if (!$acceso) {
+        return null;
     }
+
+    $id_doc = $acceso->documento_id;
+    $proveedorId = $acceso->proveedor_id;
+
+    $validarUser = UserProveedores::where('proveedor_id', $proveedorId)->exists();
+
+    $estaPlaneado = DocumCotizacionAcceso::where('documento_id', $id_doc)
+        ->whereHas('documento.Asignaciones')
+        ->exists();
+
+    if ($validarUser && !$estaPlaneado) {
+        return 'NO_PLANEADO';
+    }
+
+    return $acceso;
+}
+
 
     public function formPassword($token)
     {
@@ -42,13 +65,26 @@ class DocsController extends Controller
     public function validarPassword($token)
     {
         $acceso = $this->accesoValido($token);
+if (!$acceso) {
 
-        if (!$acceso) {
-            $titmesage = 'Acceso revocado';
-            $messag = 'El acceso a estos documentos ya no es válido.';
-            $submessag = 'La contraseña fue revocada o el enlace ha expirado.';
-            return redirect()->route('externos.acceso.revocado', compact('titmesage', 'messag', 'submessag'));
-        }
+
+      $titmesage ='Acceso revocado';
+        $messag = 'El acceso a estos documentos ya no es válido.';
+       $submessag = 'La contraseña fue revocada o el enlace ha expirado.';
+
+   return    $this->redirecRevocacion(  $titmesage ,$messag, $submessag );
+}
+
+
+if ($acceso === 'NO_PLANEADO') {
+
+      $titmesage ='Viaje no planeado';
+        $messag = 'El acceso a estos documentos no está disponible.';
+       $submessag = 'Debe planear el viaje primero.';
+
+    return   $this->redirecRevocacion(  $titmesage ,$messag, $submessag );
+
+}
 
         if (!Hash::check(request('password'), $acceso->password_hash)) {
             return back()->withErrors(['password' => 'Contraseña incorrecta']);
@@ -84,6 +120,11 @@ class DocsController extends Controller
             }
         }
 
+       Log::info('Datos debug', [
+    'doc' => $DocDocumento,
+    'contenedores' => $contenedores,
+    'archivos' => $archivosPorDoc
+]);
 
         $tabs = [];
         foreach ($contenedores as $c) {
@@ -95,7 +136,7 @@ class DocsController extends Controller
             }
 
 
-            $docId = $doc->id;
+            $docId = $c->id;
 
             $permitidos = collect(
                 $archivosPorDoc[$docId]
@@ -214,6 +255,18 @@ class DocsController extends Controller
         return view('proveedor.documentos', compact('token'));
     }
 
+    public function redirecRevocacion($titmesage, $messag,$submessag){
+
+
+    return redirect()
+    ->route('externos.acceso.revocado')
+    ->with([
+        'titmesage' => $titmesage,
+        'messag' => $messag,
+        'submessag' => $submessag,
+    ]);
+    }
+
     public function download($token, $docId, $archivo)
     {
         $acceso = $this->accesoValido($token);
@@ -221,7 +274,7 @@ class DocsController extends Controller
             $titmesage = 'Acceso revocado';
             $messag = 'El acceso a estos documentos ya no es válido.';
             $submessag = 'La contraseña fue revocada o el enlace ha expirado.';
-            return redirect()->route('externos.acceso.revocado', compact('titmesage', 'messag', 'submessag'));
+    return    $this->redirecRevocacion(  $titmesage ,$messag, $submessag );
         }
 
         $file = $archivo;
@@ -239,7 +292,16 @@ class DocsController extends Controller
 
         // }
 
-        $documento = DocumCotizacion::findOrFail($docId);
+         Log::info('Datos debug', [
+    'docid' => $docId,
+    'archivo' => $archivo,
+
+]);
+
+
+       $coti = Cotizaciones::findOrFail($docId);
+              $documento = DocumCotizacion::where('id_cotizacion', $coti->id)->first();
+
 
         $path = public_path(
             "cotizaciones/cotizacion{$documento->id_cotizacion}/{$file}"
@@ -250,13 +312,13 @@ class DocsController extends Controller
             $titmesage = 'Archivo no encontrado';
             $messag = 'El archivo que intentas descargar no existe.';
             $submessag = '';
-            return redirect()->route('externos.acceso.revocado', compact('titmesage', 'messag', 'submessag'));
+         return   $this->redirecRevocacion(  $titmesage ,$messag, $submessag );
         }
         // dd($path);
         return response()->download($path);
 
 
-        return Storage::download("cotizaciones/$archivo");
+
     }
 
 
@@ -270,7 +332,7 @@ class DocsController extends Controller
             $titmesage = 'Acceso revocado';
             $messag = 'El acceso a estos documentos ya no es válido.';
             $submessag = 'La contraseña fue revocada o el enlace ha expirado.';
-            return redirect()->route('externos.acceso.revocado', compact('titmesage', 'messag', 'submessag'));
+       return   $this->redirecRevocacion(  $titmesage ,$messag, $submessag );
         }
 
         $columns =  $files;
@@ -400,6 +462,8 @@ class DocsController extends Controller
         $clave = array_search($title, $columnsbycode, true);
         $path = public_path('cotizaciones/cotizacion'.$id.'/'.$file);
 
+
+
         if (File::exists($path)) {
             $finfo = finfo_open(FILEINFO_MIME_TYPE); // Abrir la base de datos de tipos MIME
             $mimeType = finfo_file($finfo, $path);
@@ -426,7 +490,7 @@ class DocsController extends Controller
 
     public function accesoRevocado()
     {
-        return view('mep.docs.revocado');
+         return view('mep.docs.revocado');
     }
 
 
@@ -437,7 +501,7 @@ class DocsController extends Controller
             $titmesage = 'Acceso revocado';
             $messag = 'El acceso a estos documentos ya no es válido.';
             $submessag = 'La contraseña fue revocada o el enlace ha expirado.';
-            return redirect()->route('externos.acceso.revocado', compact('titmesage', 'messag', 'submessag'));
+ return  $this->redirecRevocacion(  $titmesage ,$messag, $submessag );
         }
 
         $columns = json_decode($acceso->shared_files, true);
@@ -468,25 +532,25 @@ class DocsController extends Controller
                     continue;
                 }
 
-                // 1️⃣ Obtener columna real
+
                 $column = $columnsKey[$fileCode] ?? null;
                 if (!$column) {
                     continue;
                 }
 
-                // 2️⃣ Obtener documento
+
                 $doc = DocumCotizacion::find($item['docId']);
                 if (!$doc) {
                     continue;
                 }
 
-                // 3️⃣ Obtener nombre REAL del archivo desde BD
+
                 $fileName = $doc->$column ?? null;
                 if (!$fileName) {
                     continue;
                 }
 
-                // 4️⃣ Path correcto
+
                 $path = public_path(
                     "cotizaciones/cotizacion{$doc->id_cotizacion}/{$fileName}"
                 );
@@ -495,10 +559,10 @@ class DocsController extends Controller
                     continue;
                 }
 
-                // 5️⃣ Carpeta por contenedor
+
                 $folder = preg_replace('/[^A-Za-z0-9_\-]/', '_', $doc->num_contenedor);
 
-                // 6️⃣ Agregar al ZIP
+
                 $zip->addFile(
                     $path,
                     "{$folder}/{$fileName}"

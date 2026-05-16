@@ -94,32 +94,32 @@
 
                                 <!--div class="menu-item px-3" data-kt-menu-trigger="hover" data-kt-menu-placement="right-start">
 
-                                                                                                                                        <a href="#" class="menu-link px-3" data-bs-toggle="modal" data-bs-target="#kt_modal_top_up_wallet">
-                                                                                                                                          <span class="menu-title">Ver documentos</span>
-                                                                                                                                          <span class="menu-arrow"></span>
-                                                                                                                                        </a>
+                                                                                                                                                    <a href="#" class="menu-link px-3" data-bs-toggle="modal" data-bs-target="#kt_modal_top_up_wallet">
+                                                                                                                                                      <span class="menu-title">Ver documentos</span>
+                                                                                                                                                      <span class="menu-arrow"></span>
+                                                                                                                                                    </a>
 
 
-                                                                                                                                        <div class="menu-sub menu-sub-dropdown w-175px py-4">
+                                                                                                                                                    <div class="menu-sub menu-sub-dropdown w-175px py-4">
 
-                                                                                                                                          <div class="menu-item px-3">
-                                                                                                                                            <a href="#" class="menu-link px-3"> DODA </a>
-                                                                                                                                          </div>
+                                                                                                                                                      <div class="menu-item px-3">
+                                                                                                                                                        <a href="#" class="menu-link px-3"> DODA </a>
+                                                                                                                                                      </div>
 
-                                                                                                                                          <div class="menu-item px-3">
-                                                                                                                                            <a href="#" class="menu-link px-3"> Pre Alta </a>
-                                                                                                                                          </div>
+                                                                                                                                                      <div class="menu-item px-3">
+                                                                                                                                                        <a href="#" class="menu-link px-3"> Pre Alta </a>
+                                                                                                                                                      </div>
 
-                                                                                                                                          <div class="menu-item px-3">
-                                                                                                                                            <a href="#" class="menu-link px-3"> Boleta de liberación </a>
-                                                                                                                                          </div>
-                                                                                                                                          <div class="menu-item px-3">
-                                                                                                                                            <a href="#" class="menu-link px-3"> Formato Carta Porte </a>
-                                                                                                                                          </div>
+                                                                                                                                                      <div class="menu-item px-3">
+                                                                                                                                                        <a href="#" class="menu-link px-3"> Boleta de liberación </a>
+                                                                                                                                                      </div>
+                                                                                                                                                      <div class="menu-item px-3">
+                                                                                                                                                        <a href="#" class="menu-link px-3"> Formato Carta Porte </a>
+                                                                                                                                                      </div>
 
-                                                                                                                                        </div>
+                                                                                                                                                    </div>
 
-                                                                                                                                      </div-->
+                                                                                                                                                  </div-->
 
                                 <!--begin::Menu separator-->
                                 <div class="separator mt-3 opacity-75"></div>
@@ -130,19 +130,24 @@
                                     <a class="menu-link px-3" onclick="cancelarFull()"> Cancelar viaje Full</a>
 
                                 </div>
-                                <div class="menu-item px-3 disabled" id="btnRegresarLocal">
-                                    <a class="menu-link px-3" onclick="RegresarForaneoLocal()"> Regresar a local</a>
-                                </div>
+                                @can('regresar-Contendorlocal')
+                                    <div class="menu-item px-3 disabled" id="btnRegresarLocal">
+                                        <a class="menu-link px-3" onclick="RegresarForaneoLocal()"> Regresar a local</a>
+                                    </div>
+                                @endcan
+
+
                                 <!--end::Menu separator-->
                                 <!--begin::Menu item-->
-                                <div class="menu-item px-3">
-                                    <div class="menu-content px-3 py-3">
-                                        <button class="btn btn-primary btn-sm px-4" name="btnDocs" id="btnDocs">
-                                            Agregar documentos
-                                        </button>
+                                @can('addDocscliente-acceso')
+                                    <div class="menu-item px-3">
+                                        <div class="menu-content px-3 py-3">
+                                            <button class="btn btn-primary btn-sm px-4" name="btnDocs" id="btnDocs">
+                                                Agregar documentos
+                                            </button>
+                                        </div>
                                     </div>
-                                </div>
-
+                                @endcan
                                 <div class="menu-item px-3">
                                     <div class="menu-content px-3 py-3">
                                         <button type="button" class="btn btn-sm btn-success" title="Rastrear contenedor"

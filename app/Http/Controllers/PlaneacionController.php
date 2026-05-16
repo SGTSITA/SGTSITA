@@ -63,8 +63,10 @@ class PlaneacionController extends Controller
         try {
 
             DB::beginTransaction();
-            $cotizaciones = Cotizaciones::find($request->idCotizacion);
-            $documenCotizacion = DocumCotizacion::where('id_cotizacion', $request->idCotizacion)->first(); //primero buscamos el id contenedor
+
+             $documenCotizacion = DocumCotizacion::find($request->idContenendor)->first();
+            $cotizaciones = Cotizaciones::find($documenCotizacion->id_cotizacion);
+            //primero buscamos el id contenedor
             $asignaciones = Asignaciones::where('id_contenedor', '=', $documenCotizacion->id)->first(); //corregir mandar id contenenedor, y no cotizacion???
 
             if (!is_null($asignaciones->id_operador) && !is_null($asignaciones->id_banco1_dinero_viaje)) {
@@ -198,7 +200,9 @@ class PlaneacionController extends Controller
 
     public function finalizarViaje(Request $request)
     {
-        $cotizaciones = Cotizaciones::find($request->idCotizacion);
+
+$contenedor = DocumCotizacion::find($request->idContenendor);
+        $cotizaciones = Cotizaciones::find($contenedor->id_cotizacion);
         $cotizaciones->estatus = 'Finalizado';
         $cotizaciones->update();
         return response()->json(["Titulo" => "Viaje finalizado","Mensaje" => "Has finalizado correctamente el viaje", "TMensaje" => "success"]);
@@ -211,7 +215,7 @@ class PlaneacionController extends Controller
         $cotizacion = Cotizaciones::where('id', '=', $docCotizacion->id_cotizacion)->first();
 
         $documentos = Cotizaciones::query()
-        ->where('cotizaciones.id', $request->id)
+        ->where('cotizaciones.id', $cotizacion->id)
         ->Join('docum_cotizacion', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
         ->leftJoin('asignaciones', 'docum_cotizacion.id', '=', 'asignaciones.id_contenedor')
         ->leftJoin('empresas as em', 'em.id', '=', 'asignaciones.id_empresa')
@@ -346,7 +350,14 @@ class PlaneacionController extends Controller
         $idEmpresa = auth()->user()->id_empresa ;
         $planeaciones = Asignaciones::join('docum_cotizacion', 'asignaciones.id_contenedor', '=', 'docum_cotizacion.id')
                         ->join('cotizaciones', 'docum_cotizacion.id_cotizacion', '=', 'cotizaciones.id')
-                        ->where('asignaciones.fecha_inicio', '>=', $request->fromDate)
+                        ->where(function ($q) use ($request) {
+    $q->whereBetween('asignaciones.fecha_inicio', [$request->fromDate, $request->toDate])
+      ->orWhereBetween('asignaciones.fecha_fin', [$request->fromDate, $request->toDate])
+      ->orWhere(function ($q2) use ($request) {
+          $q2->where('asignaciones.fecha_inicio', '<=', $request->fromDate)
+             ->where('asignaciones.fecha_fin', '>=', $request->toDate);
+      });
+})
                        ->when(!$isAdmin, function ($q) use ($idEmpresa) {
                            $q->when($idEmpresa != 0, function ($q2) use ($idEmpresa) {
                                // $q2->where('asignaciones.id_empresa', $idEmpresa);
@@ -388,7 +399,8 @@ class PlaneacionController extends Controller
         $board = [];
         $board[] = ["name" => "Clientes", "id" => "S", "expanded" => true, "children" => $clientesData];
 
-        $fecha = Carbon::now()->subdays(10)->format('Y-m-d');
+        // $fecha = Carbon::now()->subdays(10)->format('Y-m-d');
+       $fecha = $request->fromDate;
         return response()->json(["boardCentros" => $board,"extractor" => $extractor,"scrollDate" => $fecha, "TMensaje" => "success","planeaciones" => $planeaciones]);
     }
 
@@ -443,6 +455,7 @@ class PlaneacionController extends Controller
         // dd($otrosGastos);
         if ($otrosGastos && is_array($otrosGastos)) {
             $validadarSaldos = 'SI';
+            $gastosPorBanco = [];
             $montosPorBanco = [];
 
 
@@ -546,7 +559,7 @@ class PlaneacionController extends Controller
                 DB::beginTransaction();
                 $asignaciones = new Asignaciones();
 
-                $asignaciones->id_contenedor = $contenedor->id_cotizacion;
+                $asignaciones->id_contenedor = $contenedor->id;
                 $asignaciones->fecha_inicio = $fechaInicio;
                 $asignaciones->fecha_fin = $fechaFinal . ' 23:00:00';
                 $asignaciones->fehca_inicio_guard = $fechaInicio;
@@ -983,7 +996,7 @@ class PlaneacionController extends Controller
 
                 $tipoGasto = $descripcionGastosPermitidos[$motivo];
 
-                // Evitar duplicados
+
                 $gastoExistente = GastosOperadores::where('id_cotizacion', $contenedor->id_cotizacion)
                     ->where('tipo', $tipoGasto)
                     ->first();
@@ -995,7 +1008,7 @@ class PlaneacionController extends Controller
                     continue;
                 }
 
-                // Registrar gasto operador
+
                 $datosGasto = [
                     "id_cotizacion" => $contenedor->id_cotizacion,
                     "id_banco" => $esPagoInmediato ? $idBanco : null,
@@ -1060,7 +1073,7 @@ class PlaneacionController extends Controller
                     $data = [
                             'cuenta_bancaria_id' => $idBanco,            'tipo' => 'cargo',
                             'monto' => floatval($monto),
-                            'concepto' => "GOP". "{$tipoGasto} {$numContenedor}" ,
+                            'concepto' => "GOP ". "{$tipoGasto} {$numContenedor}" ,
                             'fecha_movimiento' => \Carbon\Carbon::createFromFormat(
                                 'd/m/Y',
                                 $fechaAplicacion

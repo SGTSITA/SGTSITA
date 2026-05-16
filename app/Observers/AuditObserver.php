@@ -16,6 +16,16 @@ class AuditObserver
         'password',
     ];
 
+    private function normalize($data)
+    {
+        return collect($data)->map(function ($value) {
+            if (is_array($value) || is_object($value)) {
+                return json_encode($value);
+            }
+            return $value;
+        })->toArray();
+    }
+
     public function created(Model $model)
     {
         $this->log('created', $model, null, $model->getAttributes());
@@ -61,8 +71,7 @@ class AuditObserver
 
         $requestData = collect(request()->all())
     ->except($this->exclude)
-    ->filter(fn ($v, $k) => array_key_exists($k, $model->getAttributes()))
-    ->toArray() ?? [];
+       ->toArray() ?? [];
 
         $referencia =  AuditoriaDataExtractor::extract($model, $old, $new);
 
@@ -71,7 +80,10 @@ class AuditObserver
         $old = is_array($old) ? $old : [];
         $new = is_array($new) ? $new : [];
 
-        $cambios = array_diff_assoc($new, $old);
+        $oldNormalized = $this->normalize($old);
+        $newNormalized = $this->normalize($new);
+
+        $cambios = array_diff_assoc($newNormalized, $oldNormalized);
 
         //dd($cambios);
 
@@ -92,6 +104,10 @@ class AuditObserver
     'empresa_id' => $model->empresa_id ?? auth()->user()->id_empresa,
 
     'referencia' =>  $referencia['referencia'] ?? null,
+
+
+    'created_at' => now('America/Mexico_City'),
+    'updated_at' => now('America/Mexico_City'),
         ]);
     }
 }

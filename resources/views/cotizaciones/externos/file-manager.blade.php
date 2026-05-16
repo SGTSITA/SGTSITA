@@ -77,6 +77,7 @@
                             </div>
                         </th>
                         <th>Archivo</th>
+                        <th>Folio</th>
                         <th>Tipo</th>
                         <th>Tamaño</th>
                         <th>Fecha documento</th>

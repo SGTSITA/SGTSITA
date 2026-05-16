@@ -27,7 +27,7 @@ async function initBoard(fromDate, toDate) {
     const result = await $.ajax({
         method: "post",
         url: "/planeaciones/monitor/board",
-        data: { _token: _token, fromDate: fromDate },
+        data: { _token: _token, fromDate: fromDate, toDate: toDate },
         beforeSend: () => {
             if (dpReady) {
                 dp.events.list = []; // Vacía la lista de eventos
@@ -80,6 +80,14 @@ async function initBoard(fromDate, toDate) {
             dp.startDate = scrollToDate?.addDays
                 ? scrollToDate.addDays(-2)
                 : new DayPilot.Date();
+
+            const from = new DayPilot.Date(fromDate).addDays(-10);
+            const to = new DayPilot.Date(toDate).addDays(10);
+
+            const days = DayPilot.DateUtil.daysDiff(from, to) + 1;
+
+            dp.startDate = from;
+            dp.days = days;
 
             if (dpReady) {
                 dp.update();
@@ -607,7 +615,7 @@ if (btnGuardarBoard) {
     //btnGuardarBoard.addEventListener('click',confirmarCambiosPlaneacion)
 }
 
-function anularPlaneacion(idCotizacion, numContenedor) {
+function anularPlaneacion(idContenendor, numContenedor) {
     $("#viajeModal").modal("hide");
     var _token = $('input[name="_token"]').val();
     Swal.fire({
@@ -626,7 +634,7 @@ function anularPlaneacion(idCotizacion, numContenedor) {
                 },
                 body: JSON.stringify({
                     _token: _token,
-                    idCotizacion: idCotizacion,
+                    idContenendor: idContenendor,
                     numContenedor: numContenedor,
                 }),
             })
@@ -634,7 +642,7 @@ function anularPlaneacion(idCotizacion, numContenedor) {
                 .then((data) => {
                     Swal.fire(data.Titulo, data.Mensaje, data.TMensaje);
                     if (data.TMensaje == "success") {
-                        dp.events.remove(idCotizacion); //Eliminar del board
+                        dp.events.remove(idContenendor); //Eliminar del board
                     }
                 })
                 .catch((error) => {
@@ -648,7 +656,7 @@ function anularPlaneacion(idCotizacion, numContenedor) {
     });
 }
 
-function finalizarViaje(idCotizacion, numContenedor) {
+function finalizarViaje(idContenendor, numContenedor) {
     if (!canEndTravel) {
         Swal.fire({
             icon: "warning",
@@ -677,14 +685,14 @@ function finalizarViaje(idCotizacion, numContenedor) {
                 },
                 body: JSON.stringify({
                     _token: _token,
-                    idCotizacion: idCotizacion,
+                    idContenendor: idContenendor,
                 }),
             })
                 .then((response) => response.json())
                 .then((data) => {
                     Swal.fire(data.Titulo, data.Mensaje, data.TMensaje);
                     if (data.TMensaje == "success") {
-                        dp.events.remove(idCotizacion); //Eliminar del board
+                        dp.events.remove(idContenendor); //Eliminar del board
                     }
                 })
                 .catch((error) => {

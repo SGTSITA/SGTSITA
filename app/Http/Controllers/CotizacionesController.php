@@ -24,6 +24,7 @@ use App\Models\BancoDineroOpe;
 use App\Models\User;
 use App\Models\GpsCompanyProveedor;
 use App\Models\BitacoraCotizacionesEstatus;
+use App\Models\Viajes;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Carbon\Carbon;
@@ -36,14 +37,18 @@ use App\Traits\CommonTrait as Common;
 use Illuminate\Support\Facades\Log;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Services\BancosService;
+use App\Services\ViajesCostosService;
+use Illuminate\Support\Facades\Http;
 
 class CotizacionesController extends Controller
 {
     protected $BancosService;
+    protected $CostosService;
 
-    public function __construct(BancosService $BancosService)
+    public function __construct(BancosService $BancosService, ViajesCostosService $CostosService)
     {
         $this->BancosService = $BancosService;
+        $this->CostosService = $CostosService;
     }
 
     public function index()
@@ -705,7 +710,7 @@ class CotizacionesController extends Controller
         $docucotizaciones->num_contenedor = str_replace(' ', '', $request->get('num_contenedor'));
         $docucotizaciones->save();
         // Definir ruta dentro de public
-        $path = public_path('cotizaciones/cotizacion'.$docucotizaciones->id.'/formato_carta_porte_' . $numContenedor . '.pdf');
+        $path = public_path('cotizaciones/cotizacion'.$cotizaciones->id.'/formato_carta_porte_' . $numContenedor . '.pdf');
 
         $user = Auth::User();
 
@@ -737,8 +742,8 @@ class CotizacionesController extends Controller
             $pdf = PDF::loadView('cotizaciones.carta_porte_pdf', compact('cotizaciones', 'numContenedor', 'subCliente'));
 
             // Crear la carpeta si no existe
-            if (!File::exists(public_path('cotizaciones/cotizacion'.$docucotizaciones->id.''))) {
-                File::makeDirectory(public_path('cotizaciones/cotizacion'.$docucotizaciones->id.''), 0755, true);
+            if (!File::exists(public_path('cotizaciones/cotizacion'.$cotizaciones->id.''))) {
+                File::makeDirectory(public_path('cotizaciones/cotizacion'.$cotizaciones->id.''), 0755, true);
             }
 
             // Guardar PDF
@@ -798,6 +803,9 @@ class CotizacionesController extends Controller
             $row = 1;
 
             $origen_inicial = $request->origen_captura;
+   $sumarIndex = 0;
+
+             $service = app(\App\Services\GoogleMapsService::class);
             foreach ($contenedores as $cont) {
                 //validaremos que los contenedores no existan
                 $numContenedor = str_replace(' ', '', $cont[3]);
@@ -834,15 +842,44 @@ class CotizacionesController extends Controller
                         return response()->json(["Titulo" => "Transportista NO Valido", "Mensaje" => "El transportista de la fila $row no es un transportista registrado", "TMensaje" => "warning"]);
                     }
                 }
+ $url = $cont[18 + $sumarIndex];
+ $lat = null;
+                   $lng  = null;
 
 
+if ($url) {
+
+        $coords = $service->resolver($url);
+Log::info('Google Maps URL y coor devuelta', [
+                'original' => $url,
+                'final' => $coords
+            ]);
+     $lat = $coords['lat'] ?? null;
+        $lng = $coords['lng'] ?? null;
+
+        if(!$lat && !$lng){
+
+return response()->json(["Titulo" => "Coordenadas no encontrada", "Mensaje" => "La url de la fila $row  no es una url valida para el sistema y debe tener coordenadas", "TMensaje" => "warning"]);
+
+        }
+
+
+}
+else{
+     return response()->json(["Titulo" => "Url NO Valido", "Mensaje" => "La url de la fila $row  no es una url valida para el sistema y debe tener coordenadas", "TMensaje" => "warning"]);
+}
+
+ $row +=1;
 
             }
-            $sumarIndex = 0;
+
             if ($request->has('permiso_proveedor') && $request->get('permiso_proveedor') == 1) {
                 //si se requiere validar proveedor y transportista, se ajustan los indices
                 $sumarIndex = 0;
             }
+
+
+
 
             //una vez superada todas las validaciones procedemos a guardar los datos
             foreach ($contenedores as $contenedor) {
@@ -851,6 +888,21 @@ class CotizacionesController extends Controller
                 $numSubCliente = substr($contenedor[0], 0, 5);
                 $pesoReglamentario = 22;
                 $numContenedor = str_replace(' ', '', $contenedor[3 + $sumarIndex]);
+
+
+                $url = $contenedor[18 + $sumarIndex];
+
+                  $lat = null;
+                   $lng  = null;
+
+
+if ($url) {
+
+        $coords = $service->resolver($url);
+
+     $lat = $coords['lat'] ?? null;
+        $lng = $coords['lng'] ?? null;
+}
 
 
                 $cotizaciones = new Cotizaciones();
@@ -870,7 +922,10 @@ class CotizacionesController extends Controller
                 $cotizaciones->bloque = $contenedor[14 + $sumarIndex];
                 $cotizaciones->bloque_hora_i = $contenedor[15 + $sumarIndex];
                 $cotizaciones->bloque_hora_f = $contenedor[16 + $sumarIndex];
-                $cotizaciones->direccion_entrega = $contenedor[17 + $sumarIndex];
+                             $cotizaciones->direccion_entrega = $contenedor[17 + $sumarIndex];
+
+                               $cotizaciones->latitud =  $lat;
+        $cotizaciones->longitud = $lng;
 
                 $cotizaciones->otro = 0;
                 $cotizaciones->fecha_modulacion =  $contenedor[12 + $sumarIndex];
@@ -1001,7 +1056,37 @@ class CotizacionesController extends Controller
             ]);
         }
 
+
+        //nuevo refactor costos cotizacion
+
+        $mapaCostos = config('CatAuxiliares.costosViajes');
+
+        $viaje = $cotizacion->viajes()
+    ->where('estado', 'activo')
+    ->with('costos')
+    ->first();
+
+
+        $costosForm = [];
+
+        foreach ($mapaCostos as $input => $config) {
+
+            $concepto = $config['concepto'];
+
+            $costo = $viaje?->costos->firstWhere('concepto', $concepto);
+
+            $costosForm[$input] = $costo?->monto ?? 0;
+        }
+
+        $sobrepeso = $viaje?->costos->firstWhere('concepto', 'sobrepeso');
+
+        $costosForm['precio_sobre_peso'] = $sobrepeso?->meta['precio_sobre_peso'] ?? 0;
+        $costosForm['sobrepeso_viaje'] = $sobrepeso?->meta['peso'] ?? 0;
+        $costosForm['precio_tonelada'] = $sobrepeso?->meta['precio_tonelada'] ?? 0;
+        $costosForm['total_sobrepeso_viaje'] = $sobrepeso?->monto ?? 0;
         // dd($bloqueado);
+
+        // dd($costosForm);
 
         return view('cotizaciones.editv1', compact(
             'bancos',
@@ -1011,7 +1096,8 @@ class CotizacionesController extends Controller
             'gastos_extras',
             'gastos_ope',
             'proveedores',
-            'bloqueado'
+            'bloqueado',
+            'costosForm'
         ));
     }
 
@@ -1236,17 +1322,64 @@ class CotizacionesController extends Controller
 
             $doc_cotizaciones = DocumCotizacion::where('id_cotizacion', '=', $id)->first();
             $doc_cotizaciones->num_contenedor = $numContenedor;
+
+
             //$doc_cotizaciones->terminal = $contenedor['terminal'];
             //$doc_cotizaciones->num_autorizacion = $contenedor['num_autorizacion'];
-            //$doc_cotizaciones->num_boleta_liberacion = $contenedor['num_boleta_liberacion'] || '';
-            //$doc_cotizaciones->num_doda = $contenedor['num_doda'];
+            $doc_cotizaciones->num_boleta_liberacion = $request['numBoleta'] ?? '';
+            $doc_cotizaciones->num_doda = $request['numDoda'] ?? '';
             //$doc_cotizaciones->num_carta_porte = $contenedor['num_carta_porte'];
             //$doc_cotizaciones->fecha_boleta_vacio = $contenedor['fecha_boleta_vacio'];
             //$doc_cotizaciones->ccp = $contenedor['ccp'];
             //$doc_cotizaciones->cima = $contenedor['cima'];
             $doc_cotizaciones->update();
 
-            $cotizaciones = Cotizaciones::where('id', '=', $id)->first();
+
+            //cotiacion para actualizar
+               $cotizaciones = Cotizaciones::where('id', '=', $id)->first();
+
+        $file_bolteta_lib=    $request->file('boleta_liberacion_file');
+        if($file_bolteta_lib){
+      $this->procesarDocumento(
+    $file_bolteta_lib,
+    $cotizaciones,
+    $doc_cotizaciones->id,
+    'BoletaLib',
+    $request->numBoleta
+);
+        }
+
+   $file_doda=  $request->file('doda_file');
+    if($file_doda){
+
+
+
+
+  $this->procesarDocumento(
+   $file_doda,
+    $cotizaciones,
+    $doc_cotizaciones->id,
+    'Doda',
+    $request->numDoda
+);
+        }
+
+   $file_ccp=  $request->file('ccp_file');
+    if($file_ccp){
+$this->procesarDocumento(
+    $file_ccp,
+    $cotizaciones,
+    $doc_cotizaciones->id,
+    'CCP'
+);
+        }
+
+
+
+
+
+
+
             $cotizaciones->id_cliente = $request->id_cliente;
             $cotizaciones->id_subcliente = $request->id_subcliente;
             $cotizaciones->origen = $request->origen;
@@ -1298,7 +1431,7 @@ class CotizacionesController extends Controller
                         DB::beginTransaction();
                         $cotizaciones2 = Cotizaciones::find($id);
 
-                        if (!is_null($asignaciones->id_operador)) {
+                        if ($asignaciones && !is_null($asignaciones->id_operador)) {
                             $afectaBanco = false;
                             if ($asignaciones->id_banco1_dinero_viaje) {
                                 Bancos::where('id', '=', $asignaciones->id_banco1_dinero_viaje)->update(["saldo" => DB::raw("saldo + ". $asignaciones->dinero_viaje)]);
@@ -1405,7 +1538,7 @@ class CotizacionesController extends Controller
                 $docucotizaciones->doc_ccp = 'formato_carta_porte_' . $numContenedor . '.pdf';
                 $docucotizaciones->save();
                 // Definir ruta dentro de public
-                $path = public_path('cotizaciones/cotizacion'.$docucotizaciones->id.'/formato_carta_porte_' . $numContenedor . '.pdf');
+                $path = public_path('cotizaciones/cotizacion'.$cotizaciones->id.'/formato_carta_porte_' . $numContenedor . '.pdf');
 
                 if ($request->has('uuid')) {
                     Log::channel('daily')->info('si hay uuid: '.$request->get('uuid'));
@@ -1435,7 +1568,7 @@ class CotizacionesController extends Controller
 
                     $pdf = PDF::loadView('cotizaciones.carta_porte_pdf', compact('cotizaciones', 'numContenedor', 'subCliente'));
 
-                    $folderPath = public_path('cotizaciones/cotizacion' . $docucotizaciones->id);
+                    $folderPath = public_path('cotizaciones/cotizacion' . $cotizaciones->id);
 
                     Log::channel('daily')->info('path: '.$folderPath);
                     // Crear la carpeta si no existe
@@ -1476,8 +1609,9 @@ class CotizacionesController extends Controller
         }
     }
 
-    public function update(Request $request, $id)
+    public function update(Request $request, $id) //refactor para full
     {
+
 
         $idEmpresa = auth()->user()->id_empresa;
         $Contenedores = $request->Contenedores;
@@ -1487,7 +1621,16 @@ class CotizacionesController extends Controller
             $referencia_full = $cotizaciones->referencia_full;
         }
         DB::beginTransaction();
+        // crear priemro el viaje que sera nuestra representacion
+
+        $viaje = $this->resolverViajeDesdeRequest($request, $id);
+
         //Primero validar si el contenedor existe
+
+
+
+
+
 
         foreach ($Contenedores as $contenedor) {
 
@@ -1587,7 +1730,7 @@ class CotizacionesController extends Controller
             $cotizaciones->motivo_demora = $verificarCobroAnterior; //solo para ir viendo cambien en pruebas
 
 
-            $asignacion = Asignaciones::where('id_contenedor', $id)->first();
+            $asignacion = Asignaciones::where('id_contenedor', $doc_cotizaciones->id)->first();
             if (!is_null($asignacion)) {
                 $pagado = $cotizaciones->pagos()->sum('monto');
                 $totalPagadopro =  $request->get('total_proveedor');
@@ -1620,7 +1763,18 @@ class CotizacionesController extends Controller
 
             $cotizaciones->update();
 
+
+
+
+            $viaje->cotizaciones()->syncWithoutDetaching([$cotizaciones->id]);
+
         }
+
+
+
+        $this->CostosService->syncDesdeRequest($viaje, $request);
+
+
         /* if($request->get('id_cliente_clientes') == NULL){
              $gasto_descripcion = $request->input('gasto_descripcion');
              $ticket_ids = $request->input('ticket_id');
@@ -1655,12 +1809,78 @@ class CotizacionesController extends Controller
                                 ]);
     }
 
+
+    private function resolverViajeDesdeRequest($request, $id)
+    {
+        if ($request->TipoCotizacion == "Full") {
+
+            $referencia = Cotizaciones::find($id)->referencia_full;
+
+            $cotizaciones = Cotizaciones::where('referencia_full', $referencia)->get();
+
+            if ($cotizaciones->count() < 2) {
+                throw new \Exception('No es un FULL válido');
+            }
+
+            $viajeExistente = Viajes::where('estado', 'activo')
+                ->where('tipo', 'full')
+                ->whereHas('cotizaciones', function ($q) use ($cotizaciones) {
+                    $q->whereIn('cotizacion_id', $cotizaciones->pluck('id'));
+                })
+                ->first();
+
+            if ($viajeExistente) {
+                return $viajeExistente;
+            }
+
+            $viajesIds = DB::table('viajes_cotizacion')
+                ->whereIn('cotizacion_id', $cotizaciones->pluck('id'))
+                ->pluck('viaje_id')
+                ->unique();
+
+            if ($viajesIds->isNotEmpty()) {
+
+                Viajes::whereIn('id', $viajesIds)->update([
+                    'estado' => 'cancelado'
+                ]);
+            }
+
+            $viaje = Viajes::create([
+                'tipo' => 'full',
+                'estado' => 'activo',
+            ]);
+
+            $viaje->cotizaciones()->attach(
+                $cotizaciones->pluck('id')->toArray()
+            );
+
+            return $viaje;
+
+        } else {
+
+
+            $cotizacion = Cotizaciones::find($id);
+            $viaje = $cotizacion->viajes()->first();
+
+            if ($viaje) {
+                return  $viaje;
+            }
+
+            $viaje = Viajes::create([
+                'tipo' => 'sencillo',
+                'estado' => 'activo',
+            ]);
+
+            return $viaje;
+        }
+    }
+
     //Obtener una lista de gastos del contenedor
 
     public function get_gastos(Request $r)
     {
 
-        // dd($r);
+
         $numContenedor = $r->input('numContenedor');
         $idEmpresa = auth()->user()->id_empresa;
 
@@ -1860,7 +2080,7 @@ class CotizacionesController extends Controller
                     'cuenta_bancaria_id' => $r->banco,
                     'tipo' => 'cargo',
                     'monto' => floatval($gasto->cantidad),
-                    'concepto' => 'Pago gasto operador: ' . $gasto->tipo,
+                    'concepto' => 'Pago gasto : '.$numContenedor .' - '. $gasto->tipo,
                     'fecha_movimiento' => \Carbon\Carbon::parse($r->fechaAplicacion)->format('Y-m-d'),
                     'referencia' => 'GOP',
                     'detalles' => $contenedoresAbonosJson,
@@ -1996,7 +2216,7 @@ class CotizacionesController extends Controller
                     'cuenta_bancaria_id' => $r->bank,
                     'tipo' => 'cargo',
                     'monto' => floatval($gasto->cantidad),
-                    'concepto' => 'Pago gasto operador: ' . $gasto->tipo,
+                    'concepto' => 'Pago gasto: ' . $r->numContenedor . ' - ' . $gasto->tipo,
                     'fecha_movimiento' => \Carbon\Carbon::parse($r->fechaAplicacion ?? now())->format('Y-m-d'),
                     'referencia' => 'GOP',
                     'referenciaable_id' => $gasto->id,
@@ -2022,7 +2242,7 @@ class CotizacionesController extends Controller
 
 
             //bancos old
-            $bancos = Bancos::where('id_empresa', Auth::User()->id_empresa)->where('id', $r->bank)->first();
+           /*  $bancos = Bancos::where('id_empresa', Auth::User()->id_empresa)->where('id', $r->bank)->first();
             $saldoActual = $bancos->saldo;
 
             if ($saldoActual < $r->totalPago) {
@@ -2031,17 +2251,16 @@ class CotizacionesController extends Controller
                     "Mensaje" => "La cuenta bancaria seleccionada no cuenta con saldo suficiente",
                     "TMensaje" => "warning"
                 ]);
-            }
+            } */
 
-            Bancos::where('id', '=', $r->bank)
-                ->update(["saldo" => DB::raw("saldo - ". $r->totalPago)]);
+          //  Bancos::where('id', '=', $r->bank)  ->update(["saldo" => DB::raw("saldo - ". $r->totalPago)]);
 
-            $banco = new BancoDineroOpe();
+           /*  $banco = new BancoDineroOpe();
             $banco->id_operador = $asignacion->id_operador;
             $banco->monto1 = $r->totalPago;
             $banco->metodo_pago1 = 'Transferencia';
             $banco->descripcion_gasto = "Pago Gastos Operador";
-            $banco->id_banco1 = $r->bank;
+            $banco->id_banco1 = $r->bank; */
 
 
 
@@ -2052,10 +2271,10 @@ class CotizacionesController extends Controller
                     "fecha_pago" => \Carbon\Carbon::parse($r->fechaAplicacion ?? now())->format('Y-m-d')
                 ]);
 
-            $banco->contenedores = $contenedoresAbonosJson;
+           /*  $banco->contenedores = $contenedoresAbonosJson;
             $banco->tipo = 'Salida';
             $banco->fecha_pago = \Carbon\Carbon::parse($r->fechaAplicacion ?? now())->format('Y-m-d');
-            $banco->save();
+            $banco->save(); */
 
 
             DB::commit();
@@ -2457,6 +2676,16 @@ class CotizacionesController extends Controller
         $id_cot = null;
         Log::channel('daily')->info('inicio adjuntar documentos');
 
+        $requiereFolio = in_array($r->urlRepo, ['BoletaLib', 'Doda', 'PreAlta']);
+        $esCliente = auth()->user()->id_cliente != 0;
+
+      /*   if ($requiereFolio && empty($r->folio) && $esCliente) {
+
+    return response()->json([
+        'error' => 'Este documento requiere folio/fecha'
+    ], 422);
+} */
+
         include('Fileuploader/class.fileuploader.php');
         $cotizacionQuery = Cotizaciones::join('docum_cotizacion as d', 'cotizaciones.id', '=', 'd.id_cotizacion')
     ->select([
@@ -2497,6 +2726,8 @@ class CotizacionesController extends Controller
 
         $idDocum = $cotizacion->docCotizacion->id;
 
+
+
         $tipoViajecontenedor = $cotizacion->tipo_viaje_seleccion;
 
         if (is_null($cotizacion)) {
@@ -2531,7 +2762,8 @@ class CotizacionesController extends Controller
                     'title' => $item['title'],
                     'type' => $item['type'],
                     'url' => asset($directorio.'/'.$item['name']),
-                    'opcion' => $r->urlRepo
+                    'opcion' => $r->urlRepo,
+                    'num_doc'=> $r->folio
                 );
 
                 //$fileName = uniqid() . $item['name'];
@@ -2539,15 +2771,45 @@ class CotizacionesController extends Controller
 
             $json = $upload['files'];
             //   $upload['typeOfDocument'] = $r->urlRepo;
-            switch ($r->urlRepo) {
-                case 'BoletaLib': $update = ["boleta_liberacion" => $item['name']];
-                    break;
-                case 'Doda': $update = ["doda" => $item['name']];
-                    break;
-                case 'CartaPorte': $update = ["doc_ccp" => $item['name'],"ccp" => "si"];
-                    break;
-                case 'PreAlta': $update = ["img_boleta" => $item['name']];
-                    break;
+           switch ($r->urlRepo) {
+
+    case 'BoletaLib':
+        $update = [
+            "boleta_liberacion" => $item['name'],
+        ];
+
+        if ($esCliente && !empty($r->folio)) {
+            $update["num_boleta_liberacion"] = $r->folio;
+        }
+        break;
+
+    case 'Doda':
+        $update = [
+            "doda" => $item['name'],
+        ];
+
+        if ($esCliente && !empty($r->folio)) {
+            $update["num_doda"] = $r->folio;
+        }
+        break;
+
+    case 'CartaPorte':
+        $update = [
+            "doc_ccp" => $item['name'],
+            "ccp" => "si"
+        ];
+        break;
+
+    case 'PreAlta':
+        $update = [
+            "img_boleta" => $item['name'],
+        ];
+
+        if ($esCliente && !empty($r->folio)) {
+             $update["fecha_boleta_vacio"] = $r->folio;
+        }
+        break;
+
                 case 'CartaPortePDF': $update = ["carta_porte" => $item['name']];
                     break;
                 case 'CartaPorteXML': $update = ["carta_porte_xml" => $item['name']];
@@ -2585,6 +2847,7 @@ class CotizacionesController extends Controller
 
                 if ($doc) {
                     $doc->boleta_vacio = 'si';
+$doc->fecha_boleta_vacio= $r->folio;
                     $doc->save();
                 }
             }
@@ -3087,6 +3350,10 @@ class CotizacionesController extends Controller
                 'boleta_patio'           => $request->boleta_patio,
                 'fecha_boleta_patio'     => $request->fecha_boleta_patio,
                 'cima'                   => $request->cima ?? 0,
+                'cita_at'                => $request->cita_at ?? null,
+                'eta'                    => !empty($request->eta) && $request->eta !== 'null' ? $request->eta  : null,
+                'naviera_id'             => $request->naviera_id ?? null,
+                'pedimento_recibido_at'  => $request->pedimento_recibido_at ?? null,
             ]);
 
 
@@ -3135,6 +3402,44 @@ class CotizacionesController extends Controller
                     return response()->json(["Titulo" => "Contenedor creado previamente", "Mensaje" => "El contenedor ya existe en el sistema y no puede duplicarse", "TMensaje" => "warning"]);
                 }
             }
+
+
+
+                $file_bolteta_lib=    $request->file('boleta_liberacion_file');
+        if($file_bolteta_lib){
+      $this->procesarDocumento(
+    $file_bolteta_lib,
+    $cot,
+    $doc->id,
+    'BoletaLib',
+    $request->numBoleta
+);
+        }
+
+   $file_doda=  $request->file('doda_file');
+    if($file_doda){
+
+
+
+
+  $this->procesarDocumento(
+   $file_doda,
+   $cot,
+    $doc->id,
+    'Doda',
+    $request->numDoda
+);
+        }
+
+   $file_boltetapatio=  $request->file('BoletaPatio');
+    if($file_boltetapatio){
+$this->procesarDocumento(
+    $file_boltetapatio,
+   $cot,
+    $doc->id,
+    'BoletaPatio'
+);
+        }
 
 
             $pesoReglamentario = 22;
@@ -3216,8 +3521,22 @@ class CotizacionesController extends Controller
             if ($request->num_contenedor != $contenedorOriginal) {
                 $doc->num_contenedor = $contenedorupdate;
             }
+
+
+                 $doc->num_boleta_liberacion = $request['numBoleta'] ?? '';
+            $doc->num_doda = $request['numDoda'] ?? '';
+
             $doc->terminal = $request->terminal_local;
             $doc->num_autorizacion = $request->num_autorizacion;
+            $doc->cita_at = $request->cita_at ?? null;
+            $doc->eta = $request->eta ?? null;
+            $naviera = $request->naviera_id;
+            $doc->naviera_id = ($naviera === null || $naviera === '' || $naviera === 'null')
+    ? null
+    : (int) $naviera;
+            $doc->pedimento_recibido_at = $request->pedimento_recibido_at ?? null;
+
+
 
             $doc->save();
 
@@ -3253,7 +3572,17 @@ class CotizacionesController extends Controller
                 $estatusA = "Pendiente";
             }
 
-            Cotizaciones::where('id', $viajes[$x]['id'])->update(["tipo_viaje_seleccion" => "local_to_foraneo","en_patio" => 0,"estatus" => $estatusA,"fecha_entrega" => Carbon::now()]);
+          $cotizacion = Cotizaciones::find($viajes[$x]['id']);
+
+if ($cotizacion) {
+
+    $cotizacion->tipo_viaje_seleccion = "local_to_foraneo";
+    $cotizacion->en_patio = 0;
+    $cotizacion->estatus = $estatusA;
+    $cotizacion->fecha_entrega = Carbon::now();
+
+    $cotizacion->save();
+}
         }
         return response()->json(["Titulo" => "Proceso satisfactorio", "Mensaje" => "Se ha realizado el proceso de conversión a viaje foráneo", "TMensaje" => "success"]);
     }
@@ -3264,8 +3593,23 @@ class CotizacionesController extends Controller
         $viajes = $request->seleccion;
 
         for ($x = 0; $x < (sizeof($viajes)); $x++) {
-            Cotizaciones::where('id', $viajes[$x]['id'])->update(["tipo_viaje_seleccion" => "local","en_patio" => 1,"estatus" => "Documentos Faltantes","fecha_entrega" => null]);
-        }
+           // Cotizaciones::where('id', $viajes[$x]['id'])->update(["tipo_viaje_seleccion" => "local","en_patio" => 1,"estatus" => "Documentos Faltantes","fecha_entrega" => null]);
+
+                $cotizacion = Cotizaciones::find($viajes[$x]['id']);
+
+if ($cotizacion) {
+
+    $cotizacion->tipo_viaje_seleccion = "local";
+    $cotizacion->en_patio = 1;
+    $cotizacion->estatus ="Documentos Faltantes";
+    $cotizacion->fecha_entrega = null;
+
+    $cotizacion->save();
+}
+
+
+
+            }
         return response()->json(["Titulo" => "Proceso satisfactorio", "Mensaje" => "Se ha revertido el proceso a viaje local", "TMensaje" => "success"]);
     }
     public function storeMultiplelocal(Request $request)
@@ -3465,4 +3809,228 @@ class CotizacionesController extends Controller
     }
 
 
+
+
+    //nuevo para documentos
+
+
+   private function procesarDocumento(
+    $file,
+    $cotizacion,
+    $id_doc,
+    $urlRepo,
+    $folio = null
+) {
+
+    if (!$file) {
+        return null;
+    }
+
+    $id_cot = $cotizacion->id;
+
+    $estatus = $cotizacion->estatus;
+    $tipoViajecontenedor = $cotizacion->tipo_viaje_seleccion;
+    $esCliente = auth()->user()->id_cliente != 0;
+
+    $directorio = public_path("cotizaciones/cotizacion$id_cot");
+
+    if (!is_dir($directorio)) {
+        mkdir($directorio, 0777, true);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Reutilizar FileUploader
+    |--------------------------------------------------------------------------
+    */
+    //include('Fileuploader/class.fileuploader.php');
+require_once app_path('Http/Controllers/Fileuploader/class.fileuploader.php');
+    /*
+    |--------------------------------------------------------------------------
+    | Simular $_FILES para FileUploader
+    |--------------------------------------------------------------------------
+    */
+    $_FILES['files'] = [
+        'name' => $file->getClientOriginalName(),
+        'type' => $file->getMimeType(),
+        'tmp_name' => $file->getPathname(),
+        'error' => 0,
+        'size' => $file->getSize(),
+    ];
+
+    $FileUploader = new FileUploader('files', [
+        'uploadDir' => $directorio . '/',
+    ]);
+
+    $upload = $FileUploader->upload();
+
+    if (!$upload['isSuccess']) {
+        return null;
+    }
+
+    foreach ($upload['files'] as $item) {
+
+        switch ($urlRepo) {
+
+            case 'BoletaLib':
+
+                $update = [
+                    "boleta_liberacion" => $item['name'],
+                ];
+
+                if ($esCliente && !empty($folio)) {
+                    $update["num_boleta_liberacion"] = $folio;
+                }
+
+            break;
+
+            case 'Doda':
+
+                $update = [
+                    "doda" => $item['name'],
+                ];
+
+                if ($esCliente && !empty($folio)) {
+                    $update["num_doda"] = $folio;
+                }
+
+            break;
+
+            case 'CCP':
+
+                $update = [
+                    "doc_ccp" => $item['name'],
+                    "ccp" => "si"
+                ];
+
+            break;
+
+            case 'PreAlta':
+
+                $update = [
+                    "img_boleta" => $item['name'],
+                ];
+
+                if ($esCliente && !empty($folio)) {
+                    $update["fecha_boleta_vacio"] = $folio;
+                }
+
+            break;
+
+            case 'CartaPortePDF':
+
+                $update = [
+                    "carta_porte" => $item['name']
+                ];
+
+            break;
+
+            case 'CartaPorteXML':
+
+                $update = [
+                    "carta_porte_xml" => $item['name']
+                ];
+
+            break;
+
+            case 'EIR':
+
+                $update = [
+                    "doc_eir" => $item['name'],
+                    'eir' => "si"
+                ];
+
+            break;
+
+            case 'BoletaPatio':
+
+                $update = [
+                    "boleta_patio" => $item['name']
+                ];
+
+            break;
+
+            default:
+                return null;
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Actualizar tabla
+        |--------------------------------------------------------------------------
+        */
+        if (
+            $urlRepo != 'PreAlta' &&
+            $urlRepo != 'CartaPortePDF' &&
+            $urlRepo != 'CartaPorteXML'
+        ) {
+
+            $doc = DocumCotizacion::find($id_doc);
+
+            if ($doc) {
+                $doc->update($update);
+            }
+
+        } else {
+
+            $cot = Cotizaciones::find($id_cot);
+
+            if ($cot) {
+                $cot->update($update);
+            }
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Extra PreAlta
+        |--------------------------------------------------------------------------
+        */
+        if ($urlRepo == 'PreAlta') {
+
+            $doc = DocumCotizacion::find($id_doc);
+
+            if ($doc) {
+                $doc->boleta_vacio = 'si';
+                $doc->fecha_boleta_vacio = $folio;
+                $doc->save();
+            }
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Eventos
+        |--------------------------------------------------------------------------
+        */
+        if ($tipoViajecontenedor !== 'local') {
+
+            if (Auth::user()->id_cliente != 0) {
+
+                event(new \App\Events\GenericNotificationEvent(
+                    [$cotizacion->cliente->correo],
+                    'Se cargó ' . $urlRepo . ': ' . $cotizacion->docCotizacion->num_contenedor,
+                    'Hola, tu transportista cargó el documento "' . $urlRepo . '" del contenedor ' . $cotizacion->docCotizacion->num_contenedor
+                ));
+
+                event(new \App\Events\ConfirmarDocumentosEvent($id_cot));
+            }
+
+            if (
+                $estatus != 'Documentos Faltantes' &&
+                Auth::user()->id_cliente != 0
+            ) {
+
+                event(new \App\Events\NotificaNuevoDocumentoEvent(
+                    $cotizacion,
+                    $urlRepo
+                ));
+            }
+
+        } else {
+
+            self::confirmarDocumentoslocal($id_cot);
+        }
+    }
+
+    return $upload;
+}
 }
