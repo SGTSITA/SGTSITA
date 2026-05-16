@@ -280,7 +280,8 @@ public function consultarGps(
 
                // $ubicacion['datac'] = $data;
 
-                $eventos = $data['data'] ?? $data ?? [];
+                $eventos =  $data?->data ?? null;
+              //  dd( $data ,$eventos,);
 
 $ubicacionApi = collect($eventos)->first(function ($item) use ($imei) {
 
@@ -300,7 +301,7 @@ if ($ubicacionApi) {
         'mcType' => $ubicacionApi['course'] ?? null,
         'altitud' => $ubicacionApi['altitude'] ?? null,
         'timestamp' => $ubicacionApi['deviceTime'] ?? null,
-        'datac' => $ubicacionApi,
+        'datac' => $data,
         'esDatoEmp' => $esDatoEmp,
         'tipoEquipo' => $TipoEquipo
     ];
