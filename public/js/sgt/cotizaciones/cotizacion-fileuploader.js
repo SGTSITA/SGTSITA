@@ -4,7 +4,16 @@ var _token = document
     .querySelector('meta[name="csrf-token"]')
     .getAttribute("content");
 
-var [BoletaLib, Doda, PreAlta, CartaPortePDF, CartaPorteXML, CCP, EIR] = [
+var [
+    BoletaLib,
+    Doda,
+    PreAlta,
+    CartaPortePDF,
+    CartaPorteXML,
+    CCP,
+    EIR,
+    EvidenciaDescarga,
+] = [
     {
         opcion: "BoletaLib",
         titulo: "Boleta de Liberación",
@@ -24,6 +33,11 @@ var [BoletaLib, Doda, PreAlta, CartaPortePDF, CartaPorteXML, CCP, EIR] = [
     },
     { opcion: "CCP", titulo: "CCP - Carta Porte", agGrid: "CCP" },
     { opcion: "EIR", titulo: "EIR - Comprobante de vacío", agGrid: "EIR" },
+    {
+        opcion: "EvidenciaDescarga",
+        titulo: "Evidencia Descarga",
+        agGrid: "EvidenciaDescarga",
+    },
 ];
 
 let fileSettings = BoletaLib;
@@ -38,6 +52,7 @@ let btnFileBoletaLiberacion = document.querySelector(
 let btnFileccp = document.querySelector("#btnFileFormato-para-Carta-porte");
 let btnFileEir = document.querySelector("#btnFileeir");
 let btnBoletaVacio = document.querySelector("#btnFilePre-Alta");
+let btnFileevidenciaD = document.querySelector("#btnFileevidenciaD");
 
 btnFileDODA.addEventListener("click", () => {
     fileSettings = Doda;
@@ -65,6 +80,10 @@ btnFileCartaPortePDF.addEventListener("click", () => {
 
 btnFileCartaPorteXML.addEventListener("click", () => {
     fileSettings = CartaPorteXML;
+});
+
+btnFileevidenciaD.addEventListener("click", () => {
+    fileSettings = EvidenciaDescarga;
 });
 
 const btnDocumets = document.querySelectorAll(".btnDocs");
@@ -229,6 +248,7 @@ function getFilesContenedor() {
         { fileCode: "Formato-para-Carta-porte" },
         { fileCode: "Pre-Alta" },
         { fileCode: "eir" },
+        { fileCode: "EvidenciaDescarga" },
     ];
     $.ajax({
         url: `/viajes/file-manager/get-file-list/${numContenedor}`,

@@ -18,117 +18,163 @@ trait GlobalGpsTrait
         $signature = md5($step2);                  // md5(md5(secret_key) + time)
         return $signature;
     }
+public static function getAccessToken($apikey, $idUs, bool $forceRefresh = false)
+{
+    $key   = $apikey ?: config('services.globalGps.appkey');
+    $apiid = $idUs ?: config('services.globalGps.appid');
 
-    public static function getAccessToken($apikey, $idUs)
-    {
-        $cacheKey = "api_bearer_token_{$idUs}";
-        try {
+    $cacheKey = 'gps:globalgps:token:' . md5($apiid . '|' . $key);
 
-            return Cache::remember($cacheKey, 115 * 60, function () use ($apikey, $idUs) {
-
-                $endpoint = config('services.globalGps.url_base').'/api/auth';
-
-                $timestamp = time();
-                $key   = $apikey ?: config('services.globalGps.appkey');
-                $apiid = $idUs ?: config('services.globalGps.appid');
-
-                $signature = self::generateSignature($key, $timestamp);
-
-                $response = Http::asJson()
-                    ->acceptJson()
-                    ->timeout(30)
-                    ->post($endpoint, [
-                        'appid'     => $apiid,
-                        'time'      => $timestamp,
-                        'signature' => $signature,
-                    ]);
-
-                if ($response->successful() && $response->json('accessToken')) {
-                    return $response->json('accessToken');
-                }
-
-                Log::error('IOPGPS AUTH ERROR', [
-                    'status' => $response->status(),
-                    'body'   => $response->body(),
-                ]);
-
-                throw new \Exception('No se pudo obtener el token IOPGPS');
-
-            });
-        } catch (\Throwable $e) {
+    try {
+        if ($forceRefresh) {
             Cache::forget($cacheKey);
-            Log::error('IOPGPS AUTH ERROR 2', [
-                  'err' => $e,
 
-              ]);
-            throw $e;
+            return self::fetchAccessToken($key, $apiid);
         }
+
+        return Cache::remember($cacheKey, now()->addMinutes(115), function () use ($key, $apiid) {
+            return self::fetchAccessToken($key, $apiid);
+        });
+
+    } catch (\Throwable $e) {
+        Cache::forget($cacheKey);
+
+        Log::error('GLOBAL GPS AUTH ERROR', [
+            'message' => $e->getMessage(),
+            'appid'   => $apiid,
+        ]);
+
+        throw $e;
+    }
+}
+   private static function fetchAccessToken($key, $apiid)
+{
+    Log::warning('GLOBAL GPS AUTH REAL API HIT', [
+        'appid' => $apiid,
+    ]);
+
+    $endpoint = config('services.globalGps.url_base') . '/api/auth';
+
+    $timestamp = time();
+    $signature = self::generateSignature($key, $timestamp);
+
+    $response = Http::asJson()
+        ->acceptJson()
+        ->connectTimeout(5)
+        ->timeout(10)
+        ->retry(1, 300)
+        ->post($endpoint, [
+            'appid'     => $apiid,
+            'time'      => $timestamp,
+            'signature' => $signature,
+        ]);
+
+    if ($response->successful() && $response->json('accessToken')) {
+        return $response->json('accessToken');
     }
 
-    public static function getDeviceRealTimeLocation($imei, $apikey, $idUs)
-    {
-        try {
+    Log::error('GLOBAL GPS AUTH ERROR', [
+        'status' => $response->status(),
+        'body'   => $response->body(),
+        'appid'  => $apiid,
+    ]);
 
-            $endpoint = config('services.globalGps.url_base').'/api/device/location';
+    throw new \Exception('No se pudo obtener el token Global GPS');
+}
+public static function getDeviceRealTimeLocation($imei, $apikey, $idUs)
+{
+    $key   = $apikey ?: config('services.globalGps.appkey');
+    $apiid = $idUs ?: config('services.globalGps.appid');
 
-            $accessToken = self::getAccessToken($apikey, $idUs);
+    $cacheKey = 'gps:globalgps:location:' . md5($apiid . '|' . $key . '|' . $imei);
+    $lockKey = 'lock:' . $cacheKey;
 
-            $headers = [
+    Log::info('GLOBAL GPS LOCATION CACHE', [
+        'imei' => $imei,
+        'exists' => Cache::has($cacheKey),
+    ]);
+
+    if (Cache::has($cacheKey)) {
+        return Cache::get($cacheKey);
+    }
+
+    return Cache::lock($lockKey, 10)->block(5, function () use ($cacheKey, $imei, $apikey, $idUs) {
+
+        if (Cache::has($cacheKey)) {
+            return Cache::get($cacheKey);
+        }
+
+        Log::warning('GLOBAL GPS LOCATION REAL API HIT', [
+            'imei' => $imei,
+        ]);
+
+        $response = self::fetchDeviceRealTimeLocation($imei, $apikey, $idUs);
+
+        Cache::put($cacheKey, $response, now()->addSeconds(30));
+
+        return $response;
+    });
+}
+ private static function fetchDeviceRealTimeLocation(
+    $imei,
+    $apikey,
+    $idUs
+)
+{
+    $endpoint = config('services.globalGps.url_base') . '/api/device/location';
+
+    try {
+
+        $accessToken = self::getAccessToken($apikey, $idUs);
+
+        $response = Http::withHeaders([
                 'accessToken' => $accessToken,
-            ];
+            ])
+            ->connectTimeout(5)
+            ->timeout(10)
+            ->retry(1, 300)
+            ->get($endpoint, [
+                'imei' => $imei,
+            ]);
 
-            $response = Http::withHeaders($headers)
-                ->get($endpoint, ['imei' => $imei]);
+        if ($response->failed()) {
 
-
-            if ($response->failed()) {
-                Log::error('API request failed', [
-                    'endpoint' => $endpoint,
-                    'status' => $response->status(),
-                    'body' => $response->body(),
-                ]);
-
-                return  new ApiResponse(
-                    success: false,
-                    data: $response->json(),
-                    message: 'Consulta exitosa',
-                    status: $response->status()
-                );
-
-            }
+            Log::error('GLOBAL GPS LOCATION ERROR', [
+                'endpoint' => $endpoint,
+                'imei' => $imei,
+                'status' => $response->status(),
+                'body' => $response->body(),
+            ]);
 
             return new ApiResponse(
-                success: true,
+                success: false,
                 data: $response->json(),
-                message: 'Consulta exitosa',
+                message: 'Error al consultar ubicación Global GPS',
                 status: $response->status()
             );
-
-        } catch (\Throwable $e) {
-            Log::error('HTTP exception', [
-                'endpoint' => $endpoint,
-                'message' => $e->getMessage(),
-            ]);
-
-            return  new ApiResponse(
-                success: false,
-                data: null,
-                message: 'Excepción HTTP: ' .$e->getMessage(),
-                status: 500
-            );
-
-        } catch (\Throwable $e) {
-            Log::critical('Unexpected error ', [
-                'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
-            return   new ApiResponse(
-                success: false,
-                data: null,
-                message: 'Error inesperado::getDeviceRealTimeLocation => ' .$e->getMessage(),
-                status: 500
-            );
-
         }
+
+        return new ApiResponse(
+            success: true,
+            data: $response->json(),
+            message: 'Consulta exitosa',
+            status: $response->status()
+        );
+
+    } catch (\Throwable $e) {
+
+        Log::error('GLOBAL GPS HTTP EXCEPTION', [
+            'endpoint' => $endpoint,
+            'imei' => $imei,
+            'message' => $e->getMessage(),
+        ]);
+
+        return new ApiResponse(
+            success: false,
+            data: null,
+            message: 'Excepción HTTP: ' . $e->getMessage(),
+            status: 500
+        );
     }
+}
 }

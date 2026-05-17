@@ -400,28 +400,22 @@ $equipos = DB::table('equipos as e')
     ->get();
 
 
-
-
-   $resultados = [];
+$itemsGps = [];
 
 foreach ($equipos as $equipo) {
-
     try {
-
         if ($equipo->usar_config_global == 0) {
             $credenciales = json_decode(
                 Crypt::decryptString($equipo->credenciales_gps),
                 true
             ) ?? [];
         } else {
-
-         $credencialesGlobal = DB::table('user_proveedores as up')
-    ->join('gps_company_proveedores as gcp', 'gcp.id_proveedor', '=', 'up.proveedor_id')
-    ->where('up.user_id', auth()->id())
-    ->where('gcp.estado', 1)
-    ->where('gcp.id_gps_company', $equipo->gps_company_id)
-    ->value('gcp.account_info');
-
+            $credencialesGlobal = DB::table('user_proveedores as up')
+                ->join('gps_company_proveedores as gcp', 'gcp.id_proveedor', '=', 'up.proveedor_id')
+                ->where('up.user_id', auth()->id())
+                ->where('gcp.estado', 1)
+                ->where('gcp.id_gps_company', $equipo->gps_company_id)
+                ->value('gcp.account_info');
 
             $raw = json_decode(
                 Crypt::decryptString($credencialesGlobal),
@@ -431,45 +425,30 @@ foreach ($equipos as $equipo) {
             $credenciales = collect($raw)->pluck('valor', 'field')->toArray();
         }
 
-        $responseGps = $ubicacionService->consultarGps(
-            $equipo->tipogps,
-            $credenciales,
-            $equipo->imei,
-            $equipo->placas,
-            $equipo->tipo,
-            true
-        );
-
-        $resultados[] = [
+        $itemsGps[] = [
             'id' => $equipo->id,
             'equipo' => $equipo->id_equipo,
             'imei' => $equipo->imei,
             'placas' => $equipo->placas,
-
-            'ubicacion' => $responseGps['ubicacion'],
-
-            'status' => $responseGps['status'],
-            'messageAp' => $responseGps['messageAp'],
-            'tipogps' => $responseGps['tipogps'],
-            'tiemporespuesta' => $responseGps['tiemporespuesta'],
-'cred' =>  $credenciales
-
+            'tipoGps' => $equipo->tipogps,
+            'tipo' => $equipo->tipo,
+            'gps_company_id' => $equipo->gps_company_id,
+            'credenciales' => $credenciales,
         ];
 
-    } catch (\Exception $e) {
-
+    } catch (\Throwable $e) {
         $resultados[] = [
             'id' => $equipo->id,
             'equipo' => $equipo->id_equipo,
             'status' => false,
             'messageAp' => $e->getMessage(),
         ];
-
     }
-
 }
 
-return response()->json($resultados);
+$responseGps = $ubicacionService->consultarEquiposGps($itemsGps);
+
+return response()->json($responseGps);
 
 
     }

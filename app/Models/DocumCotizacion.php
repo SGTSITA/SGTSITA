@@ -44,6 +44,9 @@ class DocumCotizacion extends Model
      'eta',
      'naviera_id',
      'pedimento_recibido_at',
+
+     'evidencia_descarga',
+     'fecha_evidencia_descarga'
 ];
 
     public function Cotizacion()

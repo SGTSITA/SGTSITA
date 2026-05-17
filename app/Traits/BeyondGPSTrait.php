@@ -13,79 +13,98 @@ use Illuminate\Http\Client\RequestException;
 
 trait BeyondGPSTrait
 {
-    /**
-     * Fn validateOwner
-     * Proposito: No existe capa de seguridad adicional, por lo que se hace una simulacion
-     */
-    public static function validateOwner($appKey)
-    {
-        return  true ;
+    public static function getLocation(
+    $username,
+    $password,
+    $endpointuser = null,
+    bool $forceRefresh = false
+) {
+    $endpoint = $endpointuser ?: config('services.BeyondGpsCustomized.url_base');
+
+    $cacheKey = 'gps:beyond:locations:' . md5(
+        ($username ?? '') . '|' .
+        ($password ?? '') . '|' .
+        ($endpoint ?? '')
+    );
+
+    if ($forceRefresh) {
+        Cache::forget($cacheKey);
+        return self::fetchLocation($username, $password, $endpoint);
     }
 
-    public static function getLocation($username, $password, $endpointuser)
-    {
-        try {
+    if (Cache::has($cacheKey)) {
+        return Cache::get($cacheKey);
+    }
 
-            $endpoint = config('services.BeyondGpsCustomized.url_base');
-            if ($endpointuser) {
-                $endpoint = $endpointuser;
-            }
+    $lockKey = 'lock:' . $cacheKey;
 
-            $response = Http::post($endpoint, [
+    return Cache::lock($lockKey, 10)->block(5, function () use (
+        $cacheKey,
+        $username,
+        $password,
+        $endpoint
+    ) {
+        if (Cache::has($cacheKey)) {
+            return Cache::get($cacheKey);
+        }
+
+        Log::warning('BEYOND GPS LOCATION REAL API HIT');
+
+        $response = self::fetchLocation($username, $password, $endpoint);
+
+        if ($response->success) {
+            Cache::put($cacheKey, $response, now()->addSeconds(30));
+        }
+
+        return $response;
+    });
+}
+
+   private static function fetchLocation($username, $password, $endpoint)
+{
+    try {
+        $response = Http::connectTimeout(5)
+            ->timeout(10)
+            ->retry(1, 300)
+            ->post($endpoint, [
                 'User' => $username,
                 'Password' => $password,
             ]);
 
-            // Puedes validar la respuesta aquí si tu API devuelve un código de error dentro del JSON
-            if ($response->failed()) {
-                Log::error('API request failed Beyond Gps', [
-                    'endpoint' => $endpoint,
-                    'status' => $response->status(),
-                    'body' => $response->body(),
-                ]);
-
-                return new ApiResponse(
-                    success: false,
-                    data: $response->json(),
-                    message: 'Error al consultar Beyond GPS',
-                    status: $response->status()
-                );
-
-            }
+        if ($response->failed()) {
+            Log::error('API request failed Beyond Gps', [
+                'endpoint' => $endpoint,
+                'status' => $response->status(),
+                'body' => $response->body(),
+            ]);
 
             return new ApiResponse(
-                success: true,
+                success: false,
                 data: $response->json(),
-                message: 'Consulta exitosa',
+                message: 'Error al consultar Beyond GPS',
                 status: $response->status()
             );
-
-        } catch (RequestException $e) {
-            Log::error('HTTP exception', [
-                'endpoint' => $endpoint,
-                'message' => $e->getMessage(),
-            ]);
-
-            return new ApiResponse(
-                success: false,
-                data: null,
-                message: 'Excepción HTTP BeyondGps::getLocation => ' .$e->getMessage(),
-                status: 500
-            );
-
-        } catch (\Throwable $e) {
-            Log::critical('Unexpected error ', [
-                'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
-
-            return new ApiResponse(
-                success: false,
-                data: null,
-                message: 'Error inesperado BeyondGps::getLocation => ' .$e->getMessage(),
-                status: 500
-            );
-
         }
+
+        return new ApiResponse(
+            success: true,
+            data: $response->json(),
+            message: 'Consulta exitosa',
+            status: $response->status()
+        );
+
+    } catch (\Throwable $e) {
+        Log::error('BEYOND GPS LOCATION ERROR', [
+            'endpoint' => $endpoint,
+            'message' => $e->getMessage(),
+        ]);
+
+        return new ApiResponse(
+            success: false,
+            data: null,
+            message: 'Error BeyondGps::fetchLocation => ' . $e->getMessage(),
+            status: 500
+        );
     }
+}
 }

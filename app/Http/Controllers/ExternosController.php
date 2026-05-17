@@ -756,6 +756,15 @@ class ExternosController extends Controller
                     array_push($documentList, $doc_boleta_patio);
                 }
             }
+if (!is_null($documentos->evidencia_descarga)) {
+
+                $EvidenciaDescarga = self::fileProperties($folderId, $documentos->evidencia_descarga, 'EvidenciaDescarga', $cont);
+                if (sizeof($EvidenciaDescarga) > 0) {
+                    array_push($documentList, $EvidenciaDescarga);
+                }
+            }
+
+
 
             $cotizacion = Cotizaciones::where('id', $documentos->id_cotizacion)->first();
 

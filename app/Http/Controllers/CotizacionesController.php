@@ -217,6 +217,7 @@ class CotizacionesController extends Controller
             'boleta_vacio' => $cotizacion->DocCotizacion->boleta_vacio ?? null,
             'doc_eir' => $cotizacion->DocCotizacion->doc_eir ?? null,
             'foto_patio' => $cotizacion->DocCotizacion->foto_patio ?? null,
+            'evidencia_descarga' => $cotizacion->DocCotizacion->evidencia_descarga ?? null,
             'data' =>  $cotizacion,
         ]);
     }
@@ -560,6 +561,9 @@ class CotizacionesController extends Controller
 
             $fullUUID = Common::generarUuidV4();
 
+           $retAuto = $request->boolean('retencion_automatica');
+
+      $cotizacionesCreadas = collect();
 
             //Ahora guardamos
             foreach ($Contenedores as $contenedor) {
@@ -602,13 +606,30 @@ class CotizacionesController extends Controller
                 $cotizaciones->estatus_pago = '0';
                 $cotizaciones->origen_captura = $contenedor['origen_captura'];
                 $cotizaciones->user_id = Auth::User()->id;
+                $cotizaciones->retencion_automatica = $retAuto ;
                 $cotizaciones->save();
 
                 $docucotizaciones = new DocumCotizacion();
                 $docucotizaciones->id_cotizacion = $cotizaciones->id;
                 $docucotizaciones->num_contenedor = $contenedor['num_contenedor'];
                 $docucotizaciones->save();
+
+
+                  $cotizacionesCreadas->push($cotizaciones);
             }
+$viaje=null;
+
+foreach ($cotizacionesCreadas as $cotizacion) {
+
+ $viaje=   $this->resolverViajeDesdeRequest($request,$cotizacion->id);
+
+    $viaje->cotizaciones()->syncWithoutDetaching([$cotizacion->id]);
+
+}
+
+ $this->CostosService->syncDesdeRequest($viaje, $request);
+
+
 
             DB::commit();
             return response()->json(["TMensaje" => "success", "Mensaje" =>  "Creado Correctamente","datos" => $request->all()]);
@@ -1629,7 +1650,7 @@ $this->procesarDocumento(
 
 
 
-
+  $retAuto = $request->boolean('retencion_automatica');
 
 
         foreach ($Contenedores as $contenedor) {
@@ -1703,6 +1724,8 @@ $this->procesarDocumento(
             $cotizaciones->latitud =  $request->latitud;
             $cotizaciones->longitud = $request->longitud;
             $cotizaciones->direccion_mapa = $request->direccion_mapa;
+
+            $cotizaciones->retencion_automatica = $retAuto;
 
             /* if ($request->hasFile("carta_porte")) {
                  $file = $request->file('carta_porte');
@@ -1874,6 +1897,73 @@ $this->procesarDocumento(
             return $viaje;
         }
     }
+ private function resolverViajeDesdeRequestCreate($request)
+    {
+        if ($request->TipoCotizacion == "Full") {
+
+            $referencia = Cotizaciones::find($id)->referencia_full;
+
+            $cotizaciones = Cotizaciones::where('referencia_full', $referencia)->get();
+
+            if ($cotizaciones->count() < 2) {
+                throw new \Exception('No es un FULL válido');
+            }
+
+            $viajeExistente = Viajes::where('estado', 'activo')
+                ->where('tipo', 'full')
+                ->whereHas('cotizaciones', function ($q) use ($cotizaciones) {
+                    $q->whereIn('cotizacion_id', $cotizaciones->pluck('id'));
+                })
+                ->first();
+
+            if ($viajeExistente) {
+                return $viajeExistente;
+            }
+
+            $viajesIds = DB::table('viajes_cotizacion')
+                ->whereIn('cotizacion_id', $cotizaciones->pluck('id'))
+                ->pluck('viaje_id')
+                ->unique();
+
+            if ($viajesIds->isNotEmpty()) {
+
+                Viajes::whereIn('id', $viajesIds)->update([
+                    'estado' => 'cancelado'
+                ]);
+            }
+
+            $viaje = Viajes::create([
+                'tipo' => 'full',
+                'estado' => 'activo',
+            ]);
+
+            $viaje->cotizaciones()->attach(
+                $cotizaciones->pluck('id')->toArray()
+            );
+
+            return $viaje;
+
+        } else {
+
+
+            $cotizacion = Cotizaciones::find($id);
+            $viaje = $cotizacion->viajes()->first();
+
+            if ($viaje) {
+                return  $viaje;
+            }
+
+            $viaje = Viajes::create([
+                'tipo' => 'sencillo',
+                'estado' => 'activo',
+            ]);
+
+            return $viaje;
+        }
+    }
+
+
+
 
     //Obtener una lista de gastos del contenedor
 
@@ -2820,6 +2910,7 @@ $this->procesarDocumento(
                     break;
                 case 'BoletaPatio': $update = ["boleta_patio" => $item['name']];
                     break;
+                    case 'EvidenciaDescarga' :  $update = ["evidencia_descarga" => $item['name']];
 
             }
 
