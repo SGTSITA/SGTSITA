@@ -202,13 +202,13 @@
 
                                         <div class="col-6 form-group">
                                             <!--label for="name">Cliente *</label>
-                                                                                                                                                                                                                                                            <select class="form-select cliente d-inline-block" data-toggle="select" id="id_cliente" name="id_cliente">
-                                                                                                                                                                                                                                                                <option value="{{ $cotizacion->id_cliente }}">{{ $cotizacion->Cliente->nombre }} / {{ $cotizacion->Cliente->telefono }}</option>
-                                                                                                                                                                                                                                                                @foreach ($clientes as $item)
+                                                                                                                                                                                                                                                                                            <select class="form-select cliente d-inline-block" data-toggle="select" id="id_cliente" name="id_cliente">
+                                                                                                                                                                                                                                                                                                <option value="{{ $cotizacion->id_cliente }}">{{ $cotizacion->Cliente->nombre }} / {{ $cotizacion->Cliente->telefono }}</option>
+                                                                                                                                                                                                                                                                                                @foreach ($clientes as $item)
     <option value="{{ $item->id }}">{{ $item->nombre }} / {{ $item->telefono }}</option>
     @endforeach
 
-                                                                                                                                                                                                                                                            </select-->
+                                                                                                                                                                                                                                                                                            </select-->
                                             <ul class="list-group">
                                                 <li
                                                     class="list-group-item border-1 border-dashed d-flex p-4 mb-2 bg-gray-100 border-radius-lg">
@@ -249,14 +249,14 @@
 
                                         <div class="col-6 form-group">
                                             <!--label for="name">Subcliente *</label>
-                                                                                                                                                                                                                                                            <select class="form-select subcliente d-inline-block" id="id_subcliente" name="id_subcliente">
+                                                                                                                                                                                                                                                                                            <select class="form-select subcliente d-inline-block" id="id_subcliente" name="id_subcliente">
 
-                                                                                                                                                                                                            @if ($cotizacion->id_subcliente != null)
+                                                                                                                                                                                                                                            @if ($cotizacion->id_subcliente != null)
     <option value="{{ $cotizacion->id_subcliente }}">{{ $cotizacion->Subcliente->nombre }} / {{ $cotizacion->Subcliente->telefono }}</option>
 @else
     <option value="">Seleccionar subcliente</option>
     @endif
-                                                                                                                                                                                                                                                            </select-->
+                                                                                                                                                                                                                                                                                            </select-->
                                             <ul class="list-group">
                                                 <li
                                                     class="list-group-item border-1 border-dashed d-flex p-4 mb-2 bg-gray-100 border-radius-lg">
@@ -566,10 +566,33 @@
                                             </div>
 
                                             <div class="col-4 form-group">
-                                                <label>Retención</label>
-                                                <input name="retencion" id="retencion" type="text" readonly
+
+                                                <div class="d-flex justify-content-between align-items-center mb-1">
+
+                                                    <label class="mb-0">
+                                                        Retención
+                                                    </label>
+
+                                                    <div class="form-check form-switch">
+
+                                                        <input class="form-check-input" type="checkbox"
+                                                            id="retencion_automatica" name="retencion_automatica"
+                                                            value="1"
+                                                            {{ $cotizacion->retencion_automatica ?? true ? 'checked' : '' }}>
+
+                                                        <label class="form-check-label small" for="retencion_automatica">
+                                                            Automática
+                                                        </label>
+
+                                                    </div>
+
+                                                </div>
+
+                                                <input name="retencion" id="retencion" type="text"
                                                     class="form-control moneyformat calculo-cotizacion"
-                                                    value="{{ number_format($costosForm['retencion'] ?? 0, 2, '.', ',') }}">
+                                                    value="{{ number_format($costosForm['retencion'] ?? 0, 2, '.', ',') }}"
+                                                    {{ $cotizacion->retencion_automatica ?? true ? 'readonly' : '' }}>
+
                                             </div>
 
                                             <div class="col-4 form-group">
@@ -1159,6 +1182,69 @@
                                                                     title="Ver Documento"
                                                                     data-bs-original-title="Ver Documento"
                                                                     id="btn-ver-eir">
+                                                                    <i class="fas fa-eye" aria-hidden="true"></i>
+                                                                </a>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+
+                                                    {{-- nuevo documento  EVIDENCIA DE DESCARGA !!! --}}
+                                                    <tr>
+                                                        <td>
+                                                            <div class="d-flex px-3 py-1">
+                                                                <div>
+                                                                    <img src="{{ asset('img/not-file.png') }}"
+                                                                        class="avatar me-3" alt="image"
+                                                                        id="img-EvidenciaDescarga" />
+                                                                </div>
+                                                                <div class="d-flex flex-column justify-content-center">
+
+                                                                    <div class="d-flex flex-column">
+                                                                        <h6 class="mb-0 text-sm">
+                                                                            Evidencia Descarga
+                                                                        </h6>
+                                                                        <p
+                                                                            class="text-sm font-weight-bold text-secondary mb-0">
+                                                                            <span class="text-muted"
+                                                                                id="filSize-EvidenciaDescarga">
+                                                                                0
+                                                                            </span>
+                                                                        </p>
+
+                                                                    </div>
+
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        <td>
+                                                            <p class="text-sm font-weight-bold mb-0">
+
+                                                            </p>
+                                                        </td>
+                                                        <td class="align-middle text-center text-sm">
+                                                            <p class="text-sm font-weight-bold mb-0">
+                                                                <span class="badge bg-gradient-warning badge-sm"
+                                                                    id="badge-EvidenciaDescarga">
+                                                                    Pendiente
+                                                                </span>
+                                                            </p>
+                                                        </td>
+                                                        <td class="align-middle text-end">
+                                                            <div
+                                                                class="d-flex px-3 py-1 justify-content-center align-items-center">
+                                                                <button type="button"
+                                                                    class="btn btn-sm btn-icon-only btnDocs btn-rounded btn-outline-secondary mb-0 ms-2 btn-sm d-flex align-items-center justify-content-center ms-3"
+                                                                    data-bs-toggle="tooltip" id="btnFileevidenciaD"
+                                                                    data-bs-placement="bottom" title="Cargar archivo"
+                                                                    data-bs-original-title="Cargar archivo">
+                                                                    <i class="fas fa-upload" aria-hidden="true"></i>
+                                                                </button>
+                                                                <a href="javasrcipt:void()" target="_blank"
+                                                                    class="openFile btn btn-sm btn-icon-only btn-rounded btn-outline-secondary mb-0 ms-2 btn-sm d-flex align-items-center justify-content-center ms-3"
+                                                                    data-bs-toggle="tooltip" data-bs-placement="bottom"
+                                                                    title="Ver Documento"
+                                                                    data-bs-original-title="Ver Documento"
+                                                                    id="btn-ver-EvidenciaDescarga">
                                                                     <i class="fas fa-eye" aria-hidden="true"></i>
                                                                 </a>
                                                             </div>

@@ -962,6 +962,7 @@ function abrirDocumentos(idCotizacion) {
                 { label: "Boleta Vacio", valor: data.boleta_vacio === "si" },
                 { label: "EIR", valor: data.doc_eir },
                 // { label: 'Foto Patio', valor: data.foto_patio },
+                { label: "Evidencia Descarga", valor: data.evidencia_descarga },
             ];
 
             campos.forEach((item) => {

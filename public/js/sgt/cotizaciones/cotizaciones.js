@@ -209,6 +209,14 @@ const formFields = [
         type: "text",
         master: false,
     },
+    {
+        field: "retencion_automatica",
+        id: "retencion_automatica",
+        label: "retencion_automatica",
+        required: false,
+        type: "checkbox",
+        master: false,
+    },
 ];
 
 const editFormFields = [
@@ -710,7 +718,13 @@ $(".moneyformat").on("blur", (e) => {
 });
 
 function calcularTotal(modulo = "crear") {
-    const fields = modulo == "crear" ? formFields : formFieldsProveedor;
+    const fields =
+        modulo == "crear" || modulo == "edit"
+            ? formFields
+            : formFieldsProveedor;
+
+    const retAuto =
+        document.getElementById("retencion_automatica")?.checked ?? true;
 
     const field_precio_viaje = fields.find((i) => i.field == "precio_viaje");
     const field_burreo = fields.find((i) => i.field == "burreo");
@@ -724,18 +738,22 @@ function calcularTotal(modulo = "crear") {
                 document.getElementById(field_precio_viaje.id).value,
             ),
         ) || 0;
+
     const burreo =
         parseFloat(
             reverseMoneyFormat(document.getElementById(field_burreo.id).value),
         ) || 0;
+
     const otro =
         parseFloat(
             reverseMoneyFormat(document.getElementById(field_otro.id).value),
         ) || 0;
+
     const estadia =
         parseFloat(
             reverseMoneyFormat(document.getElementById(field_estadia.id).value),
         ) || 0;
+
     const maniobra =
         parseFloat(
             reverseMoneyFormat(
@@ -753,22 +771,50 @@ function calcularTotal(modulo = "crear") {
                 document.getElementById(field_base_factura.id).value,
             ),
         ) || 0;
-    const iva = baseFactura * tasa_iva;
-    const retencion = baseFactura * tasa_retencion;
 
+    const iva = baseFactura * tasa_iva;
+
+    /*
+    |--------------------------------------------------------------------------
+    | Retención
+    |--------------------------------------------------------------------------
+    */
     const field_iva = fields.find((i) => i.field == "iva");
+
     const field_retencion = fields.find((i) => i.field == "retencion");
 
     document.getElementById(field_iva.id).value = moneyFormat(iva);
-    document.getElementById(field_retencion.id).value = moneyFormat(retencion);
 
-    // Restar el valor de Retención del total
+    let retencion = 0;
+
+    if (retAuto) {
+        retencion = baseFactura * tasa_retencion;
+
+        document.getElementById(field_retencion.id).value =
+            moneyFormat(retencion);
+
+        document.getElementById(field_retencion.id).readOnly = true;
+    } else {
+        retencion =
+            parseFloat(
+                reverseMoneyFormat(
+                    document.getElementById(field_retencion.id).value,
+                ),
+            ) || 0;
+
+        document.getElementById(field_retencion.id).readOnly = false;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Totales
+    |--------------------------------------------------------------------------
+    */
     const totalSinRetencion =
         precio_viaje + burreo + iva + otro + estadia + maniobra;
+
     const totalConRetencion = totalSinRetencion - retencion;
 
-    // Obtener el valor de Precio Tonelada
-    //const field_precio_tonelada = fields.find( i => i.field == "precio_tonelada");
     const precioTonelada =
         modulo != "proveedores"
             ? parseFloat(
@@ -782,7 +828,6 @@ function calcularTotal(modulo = "crear") {
                   ),
               );
 
-    // Sumar el valor de Precio Tonelada al total
     const totalFinal = totalConRetencion + precioTonelada;
 
     if (modulo != "proveedores" && document.querySelector("#txtSumGastos")) {
@@ -792,7 +837,9 @@ function calcularTotal(modulo = "crear") {
                     document.querySelector("#txtSumGastos").value,
                 ),
             ) || 0;
+
         let txtResultGastos = document.querySelectorAll(".txtResultGastos");
+
         txtResultGastos.forEach(
             (r) => (r.value = moneyFormat(totalFinal + SumGastos)),
         );
@@ -802,21 +849,35 @@ function calcularTotal(modulo = "crear") {
         modulo == "proveedores"
             ? document.querySelectorAll(".total-cotizacion-proveedor")
             : document.querySelectorAll(".total-cotizacion");
+
     totalCotizacion.forEach((r) => {
         r.value = moneyFormat(totalFinal);
     });
-    //baseTaref Corresponde a Base 2
-    const baseTaref = totalFinal - baseFactura - iva + retencion;
-    // Mostrar el resultado en el input de base_taref
-    const field_base_taref = fields.find((i) => i.field == "base_taref");
-    console.log(field_base_taref.id);
-    document.getElementById(field_base_taref.id).value = moneyFormat(baseTaref);
 
-    // Formatear el total con comas
-    //const totalFormateado = moneyFormat(totalFinal);
-    //const field_total = fields.find( i => i.field == "total");
-    // document.getElementById(field_total.id).value = totalFormateado;
-    //  console.log(totalFormateado)
+    /*
+    |--------------------------------------------------------------------------
+    | Base Taref
+    |--------------------------------------------------------------------------
+    */
+    const baseTaref = totalFinal - baseFactura - iva + retencion;
+
+    const field_base_taref = fields.find((i) => i.field == "base_taref");
+
+    document.getElementById(field_base_taref.id).value = moneyFormat(baseTaref);
+}
+const chkRetencionAuto = document.getElementById("retencion_automatica");
+const inputRetencion = document.getElementById("retencion");
+
+if (chkRetencionAuto) {
+    chkRetencionAuto.addEventListener("change", function () {
+        if (this.checked) {
+            inputRetencion.readOnly = true;
+            calcularTotal(frmMode);
+        } else {
+            inputRetencion.readOnly = false;
+            //inputRetencion.value = 0;
+        }
+    });
 }
 
 function getClientes(clienteId, subclienteid) {
