@@ -60,8 +60,8 @@ public static function getAccessToken($apikey, $idUs, bool $forceRefresh = false
 
     $response = Http::asJson()
         ->acceptJson()
-        ->connectTimeout(5)
-        ->timeout(10)
+        ->connectTimeout(10)
+        ->timeout(20)
         ->retry(1, 300)
         ->post($endpoint, [
             'appid'     => $apiid,
@@ -130,8 +130,8 @@ public static function getDeviceRealTimeLocation($imei, $apikey, $idUs)
         $response = Http::withHeaders([
                 'accessToken' => $accessToken,
             ])
-            ->connectTimeout(5)
-            ->timeout(10)
+            ->connectTimeout(10)
+            ->timeout(20)
             ->retry(1, 300)
             ->get($endpoint, [
                 'imei' => $imei,
