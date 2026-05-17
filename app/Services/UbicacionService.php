@@ -20,115 +20,793 @@ use App\Traits\SISGPSTrait as SISGPSTrait;
 
 class UbicacionService
 {
- public function obtenerUbicacionByImei($datos)
-    {
-
-
-        if (!is_array($datos)) {
-            $datos = explode(';', $datos);
-        }
-        $ubicaciones = [];
-$resultados = [];
-        $ubicacion = null;
-        $tipoGpsresponse = "";
-
-        // dd($datos);
-
-        $index = 0;
-
-        foreach ($datos as $dato) {
-            if (!empty($dato)) {
-                $esDatoEmp = "NO";
-
-                [ $contenedor ,$imei,$id_contenendor,$tipoGps] = explode('|', $dato);
-                // dd($imei);
-                $RfcyEquipo = $this->buscartipoProveedor($contenedor, $id_contenendor, $imei);
-                // dd($RfcyEquipo);
-
-                [$Rfc,$equipo,$empresaIdRastro,$TipoEquipo,$gps_company_id,$tipo_viaje_contrato,$placas,$tipo_camion_rev,$tipoConfig,$id_equipoUnic] = explode('|', $RfcyEquipo);
-
-                // dd($RfcyEquipo);
-
-
-
-                $empresaIdRastro = (int) $empresaIdRastro;
-
-
-                if ($empresaIdRastro === Auth::User()->id_empresa) {
-
-                    $esDatoEmp = "SI";
-                }
-                //             $config = GpsCompanyProveedor::with('proveedor', 'empresa', 'gpsCompany')
-                //     ->whereHas('proveedor', function ($q) use ($Rfc) {
-                //         $q->where('RFC', $Rfc);
-                //     })->where('id_gps_company', $gps_company_id)
-                //     ->first();
-
-
-                //             $account = $config
-                //                    ? json_decode(
-                //                        Crypt::decryptString($config->account_info),
-                //                        true
-                //                    )
-                //                    : [];
-                //dd($contenedor, $imei, $id_contenendor, $tipoGps);
-                // dd($Rfc, $gps_company_id);
-                $result = GpsCredentialsService::getByProveedor($Rfc, $gps_company_id, $tipo_viaje_contrato, $tipo_camion_rev, $tipoConfig, $equipo, $id_equipoUnic);
-                //  dd($result);
-
-                // if ($index == 1) {
-                //     dd($result);
-                // }
-
-                if (!$result['success']) {
-                    return $result;
-                }
-
-
-                $credenciales = $result['credentials'];
-                //             $normalized = collect($account)
-                // ->pluck('valor', 'field')
-                // ->toArray();
-
-
-                //dd($credenciales);
-
-
-                $responseGps = $this->consultarGps(
-    $tipoGps,
-    $credenciales,
-    $imei,
-    $placas,
-    $TipoEquipo,
-    $esDatoEmp
-);
-
-$resultados[] = [
-    'contenedor' => $contenedor,
-    'ubicacion' => $responseGps['ubicacion'],
-    'id_contenendor' => $id_contenendor,
-    'tipogps' => $responseGps['tipogps'],
-    'EquipoBD' => $equipo,
-    'value' => $dato,
-    'tiemporespuesta' => $responseGps['tiemporespuesta'],
-    'messageAp' => $responseGps['messageAp'],
-    'status' => $responseGps['status'],
-    'new_id' => $gps_company_id,
-];
-
-            }
-            //  dd($resultados);
-
-            $index = $index + 1;
-
-        }
-
-
-        return $resultados;
-
-
+public function obtenerUbicacionByImei($datos)
+{
+    if (!is_array($datos)) {
+        $datos = explode(';', $datos);
     }
 
+    $grupos = [];
+    $itemsOriginales = [];
+
+    foreach ($datos as $dato) {
+        if (empty($dato)) {
+            continue;
+        }
+
+        $esDatoEmp = "NO";
+
+        [$contenedor, $imei, $id_contenendor, $tipoGps] = explode('|', $dato);
+
+        $RfcyEquipo = $this->buscartipoProveedor(
+            $contenedor,
+            $id_contenendor,
+            $imei
+        );
+
+        [
+            $Rfc,
+            $equipo,
+            $empresaIdRastro,
+            $TipoEquipo,
+            $gps_company_id,
+            $tipo_viaje_contrato,
+            $placas,
+            $tipo_camion_rev,
+            $tipoConfig,
+            $id_equipoUnic
+        ] = explode('|', $RfcyEquipo);
+
+        $empresaIdRastro = (int) $empresaIdRastro;
+
+        if ($empresaIdRastro === Auth::user()->id_empresa) {
+            $esDatoEmp = "SI";
+        }
+
+        $result = GpsCredentialsService::getByProveedor(
+            $Rfc,
+            $gps_company_id,
+            $tipo_viaje_contrato,
+            $tipo_camion_rev,
+            $tipoConfig,
+            $equipo,
+            $id_equipoUnic
+        );
+
+        if (!$result['success']) {
+            return $result;
+        }
+
+        $credenciales = $result['credentials'];
+
+        $grupoKey = md5(json_encode([
+            'tipoGps' => $tipoGps,
+            'credenciales' => $credenciales,
+        ]));
+
+        $item = [
+            'contenedor' => $contenedor,
+            'imei' => $imei,
+            'id_contenendor' => $id_contenendor,
+            'tipoGps' => $tipoGps,
+            'credenciales' => $credenciales,
+            'placas' => $placas,
+            'TipoEquipo' => $TipoEquipo,
+            'esDatoEmp' => $esDatoEmp,
+            'equipo' => $equipo,
+            'value' => $dato,
+            'gps_company_id' => $gps_company_id,
+        ];
+
+        $grupos[$grupoKey]['tipoGps'] = $tipoGps;
+        $grupos[$grupoKey]['credenciales'] = $credenciales;
+        $grupos[$grupoKey]['items'][] = $item;
+    }
+
+    return $this->consultarGpsPorGrupos($grupos);
+}
+
+
+private function consultarGpsPorGrupos(array $grupos): array
+{
+    $resultados = [];
+
+    foreach ($grupos as $grupo) {
+        $tipoGps = $grupo['tipoGps'];
+        $credenciales = $grupo['credenciales'];
+        $items = $grupo['items'];
+
+     switch ($tipoGps) {
+    case 'https://open.iopgps.com':
+        $resultados = array_merge(
+            $resultados,
+            $this->consultarGlobalGpsGrupo($items, $credenciales)
+        );
+        break;
+
+    case 'http://sta.skyangel.com.mx:8085/api/tracks/v1':
+
+        $resultados = array_merge(
+            $resultados,
+            $this->consultarSkyAngelGrupo($items, $credenciales)
+        );
+
+    break;
+
+    case 'https://gpsv7.com/php/wialon_data.php':
+
+        $resultados = array_merge(
+            $resultados,
+            $this->consultarWialonGrupo($items, $credenciales)
+        );
+
+    break;
+
+    case 'https://www.tracksolidpro.com':
+
+        $resultados = array_merge(
+            $resultados,
+            $this->consultarJimiGrupo($items, $credenciales)
+        );
+
+    break;
+
+case 'https://alxdevelopments.com':
+
+    $resultados = array_merge(
+        $resultados,
+        $this->consultarLegoGrupo($items, $credenciales)
+    );
+
+break;
+
+            case 'https://gpstracker.mx':
+                $resultados = array_merge($resultados, $this->consultarGpsTrackerMxGrupo($items, $credenciales));
+                break;
+
+            case 'Beyond':
+                $resultados = array_merge($resultados, $this->consultarBeyondGrupo($items, $credenciales));
+                break;
+
+            case 'https://www.rastreogps.com/':
+                $resultados = array_merge($resultados, $this->consultarSisGpsGrupo($items, $credenciales));
+                break;
+
+
+    default:
+        foreach ($items as $item) {
+            $responseGps = $this->consultarGps(
+                $tipoGps,
+                $credenciales,
+                $item['imei'],
+                $item['placas'],
+                $item['TipoEquipo'],
+                $item['esDatoEmp']
+            );
+
+            $resultados[] = $this->formatearResultadoGps($item, $responseGps);
+        }
+        break;
+}
+    }
+
+    return $resultados;
+}
+
+private function consultarGlobalGpsGrupo(array $items, array $credenciales): array
+{
+    $resultados = [];
+    $inicio = microtime(true);
+
+    foreach ($items as $item) {
+
+        try {
+
+            $data = GlobalGps::getDeviceRealTimeLocation(
+                $item['imei'],
+                $credenciales['appkey'] ?? null,
+                $credenciales['account'] ?? null
+            );
+
+            $ubicacionApiResponse = $data->data ?? [];
+
+            $ubicacion = [
+                'lat' => $ubicacionApiResponse['lat'] ?? 0,
+                'lng' => $ubicacionApiResponse['lng'] ?? 0,
+                'velocidad' => $ubicacionApiResponse['speed'] ?? 0,
+                'imei' => $item['imei'],
+                'deviceName' => $ubicacionApiResponse['deviceName'] ?? '',
+                'mcType' => $ubicacionApiResponse['mcType'] ?? '',
+                'datac' => $ubicacionApiResponse,
+                'esDatoEmp' => $item['esDatoEmp'],
+                'tipoEquipo' => $item['TipoEquipo'],
+            ];
+
+            $status = (
+                floatval($ubicacion['lat']) != 0 &&
+                floatval($ubicacion['lng']) != 0
+            );
+
+            $responseGps = [
+                'ubicacion' => $ubicacion,
+                'tipogps' => 'Global GPS',
+                'status' => $status,
+                'messageAp' => $status
+                    ? 'Sin error'
+                    : 'Sin ubicación para mostrar',
+                'tiemporespuesta' => round(
+                    (microtime(true) - $inicio) * 1000,
+                    2
+                ),
+            ];
+
+            $resultados[] = $this->formatearResultadoGps(
+                $item,
+                $responseGps
+            );
+
+        } catch (\Throwable $e) {
+
+            $resultados[] = $this->formatearResultadoGps(
+                $item,
+                $this->gpsErrorResponse(
+                    $item,
+                    'Global GPS',
+                    $e,
+                    $inicio
+                )
+            );
+        }
+    }
+
+    return $resultados;
+}
+
+private function consultarSkyAngelGrupo(array $items, array $credenciales): array
+{
+    $resultados = [];
+    $inicio = microtime(true);
+
+    try {
+        $accessToken = SkyAngel::getAccessToken(
+            $credenciales['email'] ?? null,
+            $credenciales['password'] ?? null
+        );
+
+        $response = SkyAngel::getLocation($accessToken);
+
+        $data = $response->data ?? [];
+
+        $indexado = collect($data)->keyBy(function ($item) {
+            return (string)($item['imei'] ?? '');
+        });
+
+        foreach ($items as $item) {
+            $imei = (string)$item['imei'];
+
+            $ubicacionApiResponse = $indexado->get($imei);
+
+            $track = $ubicacionApiResponse['tracks'][0] ?? null;
+
+            $ubicacion = [
+                'lat' => $track['position']['latitude'] ?? 0,
+                'lng' => $track['position']['longitude'] ?? 0,
+                'velocidad' => $track['velocity']['groundSpeed'] ?? 0,
+                'imei' => $imei,
+                'deviceName' => $ubicacionApiResponse['economico'] ?? null,
+                'mcType' => '',
+                'datac' => $ubicacionApiResponse,
+                'esDatoEmp' => $item['esDatoEmp'],
+                'tipoEquipo' => $item['TipoEquipo'],
+            ];
+
+            $status = (
+                floatval($ubicacion['lat']) != 0 &&
+                floatval($ubicacion['lng']) != 0
+            );
+
+            $responseGps = [
+                'ubicacion' => $ubicacion,
+                'tipogps' => 'SkyAngel',
+                'status' => $status,
+                'messageAp' => $status
+                    ? 'Sin error'
+                    : 'Sin ubicación para mostrar',
+                'tiemporespuesta' => round((microtime(true) - $inicio) * 1000, 2),
+            ];
+
+            $resultados[] = $this->formatearResultadoGps($item, $responseGps);
+        }
+
+    } catch (\Throwable $e) {
+         foreach ($items as $item) {
+            $resultados[] = $this->formatearResultadoGps($item, $this->gpsErrorResponse($item, 'SkyAngel', $e, $inicio));
+        }
+    }
+
+    return $resultados;
+}
+
+private function consultarWialonGrupo(
+    array $items,
+    array $credenciales
+    ): array {
+
+    $resultados = [];
+    $inicio = microtime(true);
+
+    try {
+
+        $data = WialonGpsTrait::getloginLocation(
+            $credenciales['token'] ?? null,
+            $credenciales['SID'] ?? null
+        );
+
+        $itemsWialon = $data?->data['items'] ?? [];
+
+
+        $indexado = collect($itemsWialon)->mapWithKeys(function ($item) {
+
+            $unidad = str_replace(
+                '-',
+                '',
+                strtoupper($item['unidad'] ?? '')
+            );
+
+            $placas = str_replace(
+                '-',
+                '',
+                strtoupper($item['placas'] ?? '')
+            );
+
+            return [
+                $unidad => $item,
+                $placas => $item,
+            ];
+        });
+
+      //  dd($indexado, $itemsWialon);
+
+        foreach ($items as $item) {
+
+            $placasBuscar = str_replace(
+                '-',
+                '',
+                strtoupper($item['placas'] ?? '')
+            );
+
+           $unidadBuscar = str_replace('-',   '',    strtoupper($item['equipo'] ?? '') );
+
+    $ubicacionApi =
+    $indexado->get($placasBuscar)
+    ??
+    $indexado->get($unidadBuscar);
+
+
+    if (!$ubicacionApi && $placasBuscar !== '') {
+    $ubicacionApi = collect($itemsWialon)->first(function ($wialonItem) use ($placasBuscar) {
+
+        $unidad = str_replace(
+            '-',
+            '',
+            strtoupper($wialonItem['unidad'] ?? '')
+        );
+
+        $placasUnidad = str_replace(
+            '-',
+            '',
+            strtoupper($wialonItem['placas'] ?? '')
+        );
+
+        return str_contains($unidad, $placasBuscar)
+            || str_contains($placasUnidad, $placasBuscar);
+    });
+    }
+
+            $ubicacion = [
+                'lat' => $ubicacionApi['latitud'] ?? 0,
+                'lng' => $ubicacionApi['longitud'] ?? 0,
+                'velocidad' => $ubicacionApi['velocidad'] ?? null,
+                'imei' => $ubicacionApi['imei'] ?? $item['imei'],
+                'deviceName' => $ubicacionApi['unidad'] ?? null,
+                'mcType' => $ubicacionApi['rumbo'] ?? null,
+                'timestamp' => $ubicacionApi['timestamp'] ?? null,
+                'datac' => $ubicacionApi,
+                'esDatoEmp' => $item['esDatoEmp'],
+                'tipoEquipo' => $item['TipoEquipo'],
+            ];
+
+            $status = (
+                floatval($ubicacion['lat']) != 0 &&
+                floatval($ubicacion['lng']) != 0
+            );
+
+            $responseGps = [
+                'ubicacion' => $ubicacion,
+                'tipogps' => 'Wialon',
+                'status' => $status,
+                'messageAp' => $status
+                    ? 'Sin error'
+                    : 'Sin ubicación para mostrar',
+                'tiemporespuesta' => round(
+                    (microtime(true) - $inicio) * 1000,
+                    2
+                ),
+            ];
+
+            $resultados[] = $this->formatearResultadoGps(
+                $item,
+                $responseGps
+            );
+        }
+
+    } catch (\Throwable $e) {
+
+          foreach ($items as $item) {
+            $resultados[] = $this->formatearResultadoGps($item, $this->gpsErrorResponse($item, 'Wialon', $e, $inicio));
+        }
+    }
+
+    return $resultados;
+}
+
+private function consultarJimiGrupo(array $items, array $credenciales): array
+{
+    $resultados = [];
+    $inicio = microtime(true);
+
+    try {
+        $imeis = collect($items)
+            ->pluck('imei')
+            ->filter()
+            ->unique()
+            ->implode(',');
+
+        $data = JimiGpsTrait::callGpsApi(
+            'jimi.device.location.get',
+            $credenciales,
+            [
+                'imeis' => $imeis,
+            ]
+        );
+
+        $indexado = collect($data['result'] ?? [])
+            ->keyBy(fn ($item) => (string)($item['imei'] ?? ''));
+
+        foreach ($items as $item) {
+            $imei = (string)$item['imei'];
+
+            $ubicacionApi = $indexado->get($imei);
+
+            $ubicacion = [
+                'lat' => $ubicacionApi['lat'] ?? 0,
+                'lng' => $ubicacionApi['lng'] ?? 0,
+                'velocidad' => $ubicacionApi['speed'] ?? null,
+                'imei' => $ubicacionApi['imei'] ?? $imei,
+                'deviceName' => $ubicacionApi['deviceName'] ?? null,
+                'mcType' => $ubicacionApi['mcType'] ?? null,
+                'datac' => $ubicacionApi ?: $data,
+                'esDatoEmp' => $item['esDatoEmp'],
+                'tipoEquipo' => $item['TipoEquipo'],
+            ];
+
+            $status = floatval($ubicacion['lat']) != 0
+                && floatval($ubicacion['lng']) != 0;
+
+            $responseGps = [
+                'ubicacion' => $ubicacion,
+                'tipogps' => 'Jimi',
+                'status' => $status,
+                'messageAp' => $status ? 'Sin error' : 'Sin ubicación para mostrar',
+                'tiemporespuesta' => round((microtime(true) - $inicio) * 1000, 2),
+            ];
+
+            $resultados[] = $this->formatearResultadoGps($item, $responseGps);
+        }
+
+    } catch (\Throwable $e) {
+          foreach ($items as $item) {
+            $resultados[] = $this->formatearResultadoGps($item, $this->gpsErrorResponse($item, 'Jimi', $e, $inicio));
+        }
+    }
+
+    return $resultados;
+}
+private function consultarLegoGrupo(array $items, array $credenciales): array
+{
+    $resultados = [];
+    $inicio = microtime(true);
+
+    try {
+        $data = LegoGps::getLocation($credenciales);
+
+        $eventos = $data?->data ?? [];
+
+        $indexado = collect($eventos)
+            ->keyBy(fn ($x) => (string)($x['imei'] ?? ''));
+
+        foreach ($items as $item) {
+            $imei = (string)$item['imei'];
+
+            $ubicacionApi = $indexado->get($imei);
+
+            $ubicacion = [
+                'lat' => $ubicacionApi['latitud'] ?? 0,
+                'lng' => $ubicacionApi['longitud'] ?? 0,
+                'velocidad' => $ubicacionApi['velocidad'] ?? null,
+                'imei' => $ubicacionApi['imei'] ?? $imei,
+                'deviceName' => $ubicacionApi['unidad'] ?? null,
+                'mcType' => '',
+                'datac' => $ubicacionApi ?: $data,
+                'esDatoEmp' => $item['esDatoEmp'],
+                'tipoEquipo' => $item['TipoEquipo'],
+            ];
+
+            $status = floatval($ubicacion['lat']) != 0
+                && floatval($ubicacion['lng']) != 0;
+
+            $responseGps = [
+                'ubicacion' => $ubicacion,
+                'tipogps' => 'Lego GPS',
+                'status' => $status,
+                'messageAp' => $status ? 'Sin error' : 'Sin ubicación para mostrar',
+                'tiemporespuesta' => round((microtime(true) - $inicio) * 1000, 2),
+            ];
+
+            $resultados[] = $this->formatearResultadoGps($item, $responseGps);
+        }
+
+    } catch (\Throwable $e) {
+         foreach ($items as $item) {
+            $resultados[] = $this->formatearResultadoGps($item, $this->gpsErrorResponse($item, 'Lego GPS', $e, $inicio));
+        }
+    }
+
+    return $resultados;
+}
+
+private function consultarGpsTrackerMxGrupo(array $items, array $credenciales): array
+{
+    $resultados = [];
+    $inicio = microtime(true);
+
+    try {
+        $data = GpsTrackerMXTrait::getMutiDevicePosition($credenciales);
+        $eventos = $data?->data ?? [];
+
+        $indexado = collect($eventos)->keyBy(fn ($x) => (string)($x['deviceId'] ?? ''));
+
+        foreach ($items as $item) {
+            $imei = (string) $item['imei'];
+            $ubicacionApi = $indexado->get($imei);
+
+            $ubicacion = [
+                'lat' => $ubicacionApi['latitude'] ?? 0,
+                'lng' => $ubicacionApi['longitude'] ?? 0,
+                'velocidad' => $ubicacionApi['speed'] ?? null,
+                'imei' => $imei,
+                'deviceName' => $ubicacionApi['address'] ?? null,
+                'mcType' => $ubicacionApi['course'] ?? null,
+                'altitud' => $ubicacionApi['altitude'] ?? null,
+                'timestamp' => $ubicacionApi['deviceTime'] ?? null,
+                'datac' => $ubicacionApi ?: $data,
+                'esDatoEmp' => $item['esDatoEmp'],
+                'tipoEquipo' => $item['TipoEquipo'],
+            ];
+
+            $status = floatval($ubicacion['lat']) != 0 && floatval($ubicacion['lng']) != 0;
+
+            $resultados[] = $this->formatearResultadoGps($item, [
+                'ubicacion' => $ubicacion,
+                'tipogps' => 'Tracker GPS',
+                'status' => $status,
+                'messageAp' => $status ? 'Sin error' : 'Sin ubicación para mostrar',
+                'tiemporespuesta' => round((microtime(true) - $inicio) * 1000, 2),
+            ]);
+        }
+    } catch (\Throwable $e) {
+        foreach ($items as $item) {
+            $resultados[] = $this->formatearResultadoGps($item, $this->gpsErrorResponse($item, 'Tracker GPS', $e, $inicio));
+        }
+    }
+
+    return $resultados;
+}
+
+private function consultarBeyondGrupo(array $items, array $credenciales): array
+{
+    $resultados = [];
+    $inicio = microtime(true);
+
+    try {
+        $data = BeyondGPSTrait::getLocation(
+            $credenciales['user'] ?? null,
+            $credenciales['password'] ?? null,
+            $credenciales['endpoint'] ?? null
+        );
+
+        $eventos = $data?->data['events'] ?? [];
+
+        $indexado = collect($eventos)->keyBy(fn ($x) => (string)($x['IMEI'] ?? ''));
+
+        foreach ($items as $item) {
+            $imei = (string) $item['imei'];
+            $ubicacionApi = $indexado->get($imei);
+
+            $ubicacion = [
+                'lat' => $ubicacionApi['Lat'] ?? 0,
+                'lng' => $ubicacionApi['Lon'] ?? 0,
+                'velocidad' => $ubicacionApi['Speed'] ?? null,
+                'imei' => $imei,
+                'deviceName' => $ubicacionApi['Alias'] ?? null,
+                'mcType' => $ubicacionApi['Course'] ?? null,
+                'datac' => $ubicacionApi ?: $data,
+                'esDatoEmp' => $item['esDatoEmp'],
+                'tipoEquipo' => $item['TipoEquipo'],
+            ];
+
+            $status = floatval($ubicacion['lat']) != 0 && floatval($ubicacion['lng']) != 0;
+
+            $resultados[] = $this->formatearResultadoGps($item, [
+                'ubicacion' => $ubicacion,
+                'tipogps' => 'Beyond',
+                'status' => $status,
+                'messageAp' => $status ? 'Sin error' : 'Sin ubicación para mostrar',
+                'tiemporespuesta' => round((microtime(true) - $inicio) * 1000, 2),
+            ]);
+        }
+    } catch (\Throwable $e) {
+        foreach ($items as $item) {
+            $resultados[] = $this->formatearResultadoGps($item, $this->gpsErrorResponse($item, 'Beyond', $e, $inicio));
+        }
+    }
+
+    return $resultados;
+}
+private function consultarSisGpsGrupo(array $items, array $credenciales): array
+{
+    $resultados = [];
+    $inicio = microtime(true);
+
+    foreach ($items as $item) {
+
+        try {
+
+            $data = SISGPSTrait::sisGetLastPosition(
+                $credenciales['account'] ?? null,
+                $credenciales['appkey'] ?? null,
+                $item['imei']
+            );
+
+            $raw = $data->data['raw']->return ?? null;
+
+            $ubicacionApi = $raw
+                ? json_decode($raw, true)
+                : [];
+
+            $ubicacion = [
+                'lat' => $ubicacionApi['Latitude'] ?? 0,
+                'lng' => $ubicacionApi['Longitude'] ?? 0,
+                'velocidad' => $ubicacionApi['Speed'] ?? null,
+                'imei' => $ubicacionApi['ID'] ?? $item['imei'],
+                'deviceName' => $ubicacionApi['UnitType'] ?? null,
+                'mcType' => $ubicacionApi['DataCommType'] ?? null,
+                'datac' => $ubicacionApi,
+                'esDatoEmp' => $item['esDatoEmp'],
+                'tipoEquipo' => $item['TipoEquipo'],
+            ];
+
+            $status = (
+                floatval($ubicacion['lat']) != 0 &&
+                floatval($ubicacion['lng']) != 0
+            );
+
+            $responseGps = [
+                'ubicacion' => $ubicacion,
+                'tipogps' => 'SIS GPS',
+                'status' => $status,
+                'messageAp' => $status
+                    ? 'Sin error'
+                    : 'Sin ubicación para mostrar',
+                'tiemporespuesta' => round(
+                    (microtime(true) - $inicio) * 1000,
+                    2
+                ),
+            ];
+
+            $resultados[] = $this->formatearResultadoGps(
+                $item,
+                $responseGps
+            );
+
+        } catch (\Throwable $e) {
+
+            foreach ($items as $item) {
+
+                $resultados[] = $this->formatearResultadoGps(
+                    $item,
+                    $this->gpsErrorResponse(
+                        $item,
+                        'SIS GPS',
+                        $e,
+                        $inicio
+                    )
+                );
+            }
+        }
+    }
+
+    return $resultados;
+}
+private function gpsErrorResponse(array $item, string $nombreGps, \Throwable $e, float $inicio): array
+{
+    return [
+        'ubicacion' => [
+            'lat' => 0,
+            'lng' => 0,
+            'velocidad' => null,
+            'imei' => $item['imei'],
+            'deviceName' => null,
+            'mcType' => null,
+            'datac' => null,
+            'esDatoEmp' => $item['esDatoEmp'],
+            'tipoEquipo' => $item['TipoEquipo'],
+        ],
+        'tipogps' => $nombreGps,
+        'status' => false,
+        'messageAp' => $e->getMessage(),
+        'tiemporespuesta' => round((microtime(true) - $inicio) * 1000, 2),
+    ];
+}
+private function formatearResultadoGps(array $item, array $responseGps): array
+{
+    return [
+        'contenedor' => $item['contenedor'],
+        'ubicacion' => $responseGps['ubicacion'],
+        'id_contenendor' => $item['id_contenendor'],
+        'tipogps' => $responseGps['tipogps'],
+        'EquipoBD' => $item['equipo'],
+        'value' => $item['value'],
+        'tiemporespuesta' => $responseGps['tiemporespuesta'],
+        'messageAp' => $responseGps['messageAp'],
+        'status' => $responseGps['status'],
+        'new_id' => $item['gps_company_id'],
+    ];
+}
+
+
+
+public function consultarEquiposGps(array $items): array
+{
+    $grupos = [];
+
+    foreach ($items as $item) {
+        ksort($item['credenciales']);
+
+        $grupoKey = md5(json_encode([
+            'tipoGps' => $item['tipoGps'],
+            'credenciales' => $item['credenciales'],
+        ]));
+
+        $grupos[$grupoKey]['tipoGps'] = $item['tipoGps'];
+        $grupos[$grupoKey]['credenciales'] = $item['credenciales'];
+        $grupos[$grupoKey]['items'][] = [
+            'contenedor' => null,
+            'imei' => $item['imei'],
+            'id_contenendor' => $item['id'],
+            'tipoGps' => $item['tipoGps'],
+            'credenciales' => $item['credenciales'],
+            'placas' => $item['placas'],
+            'TipoEquipo' => $item['tipo'],
+            'esDatoEmp' => true,
+            'equipo' => $item['equipo'],
+            'value' => null,
+            'gps_company_id' => $item['gps_company_id'],
+        ];
+    }
+
+    return $this->consultarGpsPorGrupos($grupos);
+}
 
 public function consultarGps(
     $tipoGps,
@@ -161,7 +839,7 @@ public function consultarGps(
 
         switch ($tipoGps) {
 
-            case 'https://open.iopgps.com':
+            case 'https://open.iopgps.com': // ok refactor grupo
 
                 $data = GlobalGps::getDeviceRealTimeLocation(
                     $imei,
@@ -188,7 +866,7 @@ public function consultarGps(
 
             break;
 
-            case 'http://sta.skyangel.com.mx:8085/api/tracks/v1':
+            case 'http://sta.skyangel.com.mx:8085/api/tracks/v1': // ok refactor grupo
 
                 $accessToken = SkyAngel::getAccessToken(
                     $credenciales['email'] ?? null,
@@ -226,7 +904,7 @@ public function consultarGps(
 
             break;
 
-            case 'https://www.tracksolidpro.com':
+            case 'https://www.tracksolidpro.com': // ok refactor grupo
 
                 $data = JimiGpsTrait::callGpsApi(
                     'jimi.device.location.get',
@@ -281,7 +959,7 @@ public function consultarGps(
                // $ubicacion['datac'] = $data;
 
                 $eventos =  $data?->data ?? null;
-              //  dd( $data ,$eventos,);
+               dd( $data ,$eventos,);
 
 $ubicacionApi = collect($eventos)->first(function ($item) use ($imei) {
 
@@ -349,7 +1027,7 @@ if ($ubicacionApi) {
 
             break;
 
-            case 'https://gpsv7.com/php/wialon_data.php':
+            case 'https://gpsv7.com/php/wialon_data.php': // ok refactor grupo
 
               $data = WialonGpsTrait::getloginLocation(
     $credenciales['token'] ?? null,
@@ -682,7 +1360,7 @@ if ($ubicacionApi) {
                 $RFCContenedor =   $cotizaciones->rfc; //minusculas
                 //dd($RFCContenedor);
             }
-            // dd($datosAll, $cotizaciones);
+           //  dd($datosAll, $imei);
 
             return   $RFCContenedor . '|'. $Equipo . '|'.  $empresaIdRastreo .'|'. $TipoEquipo.'|'. $gps_company_id.'|'.$tipoviaje.'|'.$placas.'|'.$tipo_camion_rev.'|'.$tipoConfig.'|'.$id_equipoUnic;
 

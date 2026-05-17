@@ -21,9 +21,56 @@ trait WialonGpsTrait
     {
         return  true ;
     }
+public static function getloginLocation(
+    $token,
+    $SID = null,
+    bool $forceRefresh = false
+) {
+    $cacheKey = 'gps:wialon:locations:' . md5($token);
 
+    try {
+        if ($forceRefresh) {
+            Cache::forget($cacheKey);
 
-    public static function getloginLocation($token, $SID = null)
+            return self::fetchLoginLocation($token, $SID);
+        }
+
+        if (Cache::has($cacheKey)) {
+            return Cache::get($cacheKey);
+        }
+
+        $lockKey = 'lock:' . $cacheKey;
+
+        return Cache::lock($lockKey, 10)->block(5, function () use (
+            $cacheKey,
+            $token,
+            $SID
+        ) {
+            if (Cache::has($cacheKey)) {
+                return Cache::get($cacheKey);
+            }
+
+            Log::warning('WIALON LOCATION REAL API HIT');
+
+            $response = self::fetchLoginLocation($token, $SID);
+
+            if ($response->success) {
+                Cache::put($cacheKey, $response, now()->addSeconds(30));
+            }
+
+            return $response;
+        });
+
+    } catch (\Throwable $e) {
+        Log::error('WIALON LOCATION CACHE WRAPPER ERROR', [
+            'message' => $e->getMessage(),
+        ]);
+
+        return self::fetchLoginLocation($token, $SID);
+    }
+}
+
+    public static function fetchLoginLocation($token, $SID = null)
 {
     $endpoint = 'https://hst-api.wialon.com/wialon/ajax.html';
 
@@ -166,7 +213,7 @@ trait WialonGpsTrait
             'rumbo' => $item['pos']['c'] ?? null,
             'timestamp' => $item['pos']['t'] ?? null,
 
-            // RAW original por si luego ocupas algo
+
             'raw' => $item,
         ];
     })
