@@ -116,64 +116,48 @@ Log::info('RASTREO PREPARACION ITEMS', [
 
 private function consultarGpsPorGrupos(array $grupos): array
 {
-     $inicioTotal = microtime(true);
+    $inicioTotal = microtime(true);
     $resultados = [];
- Log::info('GPS GRUPOS INICIO', [
-        'total_grupos' => count($grupos),
-        'grupos' => collect($grupos)->map(fn($g) => [
-            'tipoGps' => $g['tipoGps'],
-            'items' => count($g['items']),
-        ])->values()->toArray(),
-    ]);
+
+    $gruposGlobal = [];
+    $gruposOtros = [];
 
     foreach ($grupos as $grupo) {
+        if ($grupo['tipoGps'] === 'https://open.iopgps.com') {
+            $gruposGlobal[] = $grupo;
+        } else {
+            $gruposOtros[] = $grupo;
+        }
+    }
+
+    if (!empty($gruposGlobal)) {
+        $resultados = array_merge(
+            $resultados,
+            $this->consultarGlobalGpsGruposParalelo($gruposGlobal)
+        );
+    }
+
+    foreach ($gruposOtros as $grupo) {
         $tipoGps = $grupo['tipoGps'];
         $credenciales = $grupo['credenciales'];
         $items = $grupo['items'];
 
-     switch ($tipoGps) {
-    case 'https://open.iopgps.com':
-        $resultados = array_merge(
-            $resultados,
-            $this->consultarGlobalGpsGrupo($items, $credenciales)
-        );
-        break;
+        switch ($tipoGps) {
+            case 'http://sta.skyangel.com.mx:8085/api/tracks/v1':
+                $resultados = array_merge($resultados, $this->consultarSkyAngelGrupo($items, $credenciales));
+                break;
 
-    case 'http://sta.skyangel.com.mx:8085/api/tracks/v1':
+            case 'https://gpsv7.com/php/wialon_data.php':
+                $resultados = array_merge($resultados, $this->consultarWialonGrupo($items, $credenciales));
+                break;
 
-        $resultados = array_merge(
-            $resultados,
-            $this->consultarSkyAngelGrupo($items, $credenciales)
-        );
+            case 'https://www.tracksolidpro.com':
+                $resultados = array_merge($resultados, $this->consultarJimiGrupo($items, $credenciales));
+                break;
 
-    break;
-
-    case 'https://gpsv7.com/php/wialon_data.php':
-
-        $resultados = array_merge(
-            $resultados,
-            $this->consultarWialonGrupo($items, $credenciales)
-        );
-
-    break;
-
-    case 'https://www.tracksolidpro.com':
-
-        $resultados = array_merge(
-            $resultados,
-            $this->consultarJimiGrupo($items, $credenciales)
-        );
-
-    break;
-
-case 'https://alxdevelopments.com':
-
-    $resultados = array_merge(
-        $resultados,
-        $this->consultarLegoGrupo($items, $credenciales)
-    );
-
-break;
+            case 'https://alxdevelopments.com':
+                $resultados = array_merge($resultados, $this->consultarLegoGrupo($items, $credenciales));
+                break;
 
             case 'https://gpstracker.mx':
                 $resultados = array_merge($resultados, $this->consultarGpsTrackerMxGrupo($items, $credenciales));
@@ -186,33 +170,61 @@ break;
             case 'https://www.rastreogps.com/':
                 $resultados = array_merge($resultados, $this->consultarSisGpsGrupo($items, $credenciales));
                 break;
-
-
-    default:
-        foreach ($items as $item) {
-            $responseGps = $this->consultarGps(
-                $tipoGps,
-                $credenciales,
-                $item['imei'],
-                $item['placas'],
-                $item['TipoEquipo'],
-                $item['esDatoEmp']
-            );
-
-            $resultados[] = $this->formatearResultadoGps($item, $responseGps);
         }
-        break;
-}
     }
 
-     Log::info('GPS TODOS LOS GRUPOS FIN', [
+    Log::info('GPS TODOS LOS GRUPOS FIN', [
         'ms' => round((microtime(true) - $inicioTotal) * 1000, 2),
         'segundos' => round(microtime(true) - $inicioTotal, 2),
     ]);
 
     return $resultados;
 }
+private function consultarGlobalGpsGruposParalelo(array $gruposGlobal): array
+{
+    $resultados = [];
+    $inicio = microtime(true);
 
+    $respuestas = GlobalGps::getManyByCredentialGroups($gruposGlobal);
+
+    foreach ($gruposGlobal as $index => $grupo) {
+        foreach ($grupo['items'] as $item) {
+            $imei = (string) $item['imei'];
+
+            $data = $respuestas[$index][$imei] ?? null;
+            $ubicacionApiResponse = $data?->data ?? [];
+
+            $ubicacion = [
+                'lat' => $ubicacionApiResponse['lat'] ?? 0,
+                'lng' => $ubicacionApiResponse['lng'] ?? 0,
+                'velocidad' => $ubicacionApiResponse['speed'] ?? 0,
+                'imei' => $imei,
+                'deviceName' => $ubicacionApiResponse['deviceName'] ?? '',
+                'mcType' => $ubicacionApiResponse['mcType'] ?? '',
+                'datac' => $data,
+                'esDatoEmp' => $item['esDatoEmp'],
+                'tipoEquipo' => $item['TipoEquipo'],
+            ];
+
+            $status = floatval($ubicacion['lat']) != 0
+                && floatval($ubicacion['lng']) != 0;
+
+            $responseGps = [
+                'ubicacion' => $ubicacion,
+                'tipogps' => 'Global GPS',
+                'status' => $status,
+                'messageAp' => $status
+                    ? 'Sin error'
+                    : ($data?->message ?? 'Sin ubicación para mostrar'),
+                'tiemporespuesta' => round((microtime(true) - $inicio) * 1000, 2),
+            ];
+
+            $resultados[] = $this->formatearResultadoGps($item, $responseGps);
+        }
+    }
+
+    return $resultados;
+}
 private function consultarGlobalGpsGrupo(array $items, array $credenciales): array
 {
    $resultados = [];
@@ -225,6 +237,9 @@ private function consultarGlobalGpsGrupo(array $items, array $credenciales): arr
             ->unique()
             ->values()
             ->toArray();
+
+
+
 
         $respuestasPorImei = GlobalGps::getManyDeviceRealTimeLocations(
             $imeis,
