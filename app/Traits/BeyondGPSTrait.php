@@ -63,8 +63,8 @@ trait BeyondGPSTrait
    private static function fetchLocation($username, $password, $endpoint)
 {
     try {
-        $response = Http::connectTimeout(10)
-            ->timeout(20)
+        $response = Http::connectTimeout(5)
+            ->timeout(10)
             ->retry(1, 300)
             ->post($endpoint, [
                 'User' => $username,

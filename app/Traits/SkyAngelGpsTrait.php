@@ -67,8 +67,8 @@ public static function getAccessToken(
 
     $endpoint = config('services.SkyAngelGps.url_base') . '/token';
 
-    $response = Http::connectTimeout(10)
-        ->timeout(20)
+    $response = Http::connectTimeout(5)
+        ->timeout(10)
         ->retry(1, 300)
         ->post($endpoint, [
             'username' => $username,
@@ -130,8 +130,8 @@ private static function fetchLocation($accessToken)
         $response = Http::withHeaders([
                 'Authorization' => $accessToken,
             ])
-            ->connectTimeout(10)
-            ->timeout(20)
+            ->connectTimeout(5)
+            ->timeout(10)
             ->retry(1, 300)
             ->get($endpoint);
 
