@@ -388,6 +388,14 @@ const editFormFields = [
         type: "text",
         master: false,
     },
+    {
+        field: "retencion_automatica",
+        id: "retencion_automatica",
+        label: "retencion_automatica",
+        required: false,
+        type: "checkbox",
+        master: false,
+    },
 ];
 
 let Contenedores = [];
