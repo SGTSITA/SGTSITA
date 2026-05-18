@@ -58,8 +58,8 @@ public static function getManyByCredentialGroups(array $gruposGlobal): array
                     ->as((string) $index)
                     ->asJson()
                     ->acceptJson()
-                    ->connectTimeout(3)
-                    ->timeout(8)
+                    ->connectTimeout(5)
+                    ->timeout(10)
                     ->post($endpointAuth, [
                         'appid'     => $auth['apiid'],
                         'time'      => $timestamp,

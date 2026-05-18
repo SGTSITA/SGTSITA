@@ -64,8 +64,8 @@ private static function fetchGpsAccessToken($accessAccount)
     );
 
     $response = Http::asForm()
-        ->connectTimeout(5)
-        ->timeout(10)
+        ->connectTimeout(10)
+        ->timeout(20)
         ->retry(1, 300)
         ->post(config('services.JimiGps.url_base'), $params);
 
@@ -115,7 +115,7 @@ private static function fetchGpsAccessToken($accessAccount)
 
     $response = Http::asForm()
         ->connectTimeout(5)
-        ->timeout(10)
+        ->timeout(12)
         ->retry(1, 300)
         ->post(config('services.JimiGps.url_base'), $params);
 
