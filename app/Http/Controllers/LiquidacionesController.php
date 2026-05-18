@@ -971,9 +971,13 @@ class LiquidacionesController extends Controller
 
         $user = Auth::user();
 
-        $idViajes = $liquidacionViajes->viajes->pluck('id_contenedor'); //deberia ser id_cotizacion pero la relacion esta con esa columna en liquidacioneconenedor checar eso despues
+        $idViajes = $liquidacionViajes->viajes->pluck('id_contenedor'); //quedo con la relacion correcta  del contendor id , y se agrego el cotizaciones para saber los viaticos
+        //correccion de fk column es contenendor apunta a id de doc cotizacion entonces  el array no puedo usarlo para cotizacion sera enytonces asi y funciona
 
-        $viaticos = ViaticosOperador::whereIn('id_cotizacion', $idViajes)->get();
+        $cotizaciones = DocumCotizacion::whereIn('id', $idViajes)->get()->pluck('id_cotizacion');
+
+
+        $viaticos = ViaticosOperador::whereIn('id_cotizacion', $cotizaciones)->get();
 
         $dineroViaje = DineroContenedor::whereIn('id_contenedor', $idViajes)
                         ->orderBy('id_contenedor')
