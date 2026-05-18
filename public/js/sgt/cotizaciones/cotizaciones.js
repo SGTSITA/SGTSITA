@@ -1884,6 +1884,9 @@ $("#cotizacionCreateMultiple").on("submit", async function (e) {
     formData["fecha_seleccion"] =
         document.getElementById("fecha_seleccion")?.value ?? null;
 
+    formData["retencion_automatica"] =
+        document.getElementById("retencion_automatica")?.checked ?? null;
+
     $.ajax({
         url: url,
         type: "post",
