@@ -18,6 +18,108 @@ trait GlobalGpsTrait
         $signature = md5($step2);                  // md5(md5(secret_key) + time)
         return $signature;
     }
+    public static function getManyDeviceRealTimeLocations(array $imeis, $apikey, $idUs): array
+{
+    $key   = $apikey ?: config('services.globalGps.appkey');
+    $apiid = $idUs ?: config('services.globalGps.appid');
+
+    $resultados = [];
+    $pendientes = [];
+
+    foreach ($imeis as $imei) {
+        $imei = trim($imei);
+
+        if (!$imei) {
+            continue;
+        }
+
+        $cacheKey = 'gps:globalgps:location:' . md5($apiid . '|' . $key . '|' . $imei);
+
+        if (Cache::has($cacheKey)) {
+            $resultados[$imei] = Cache::get($cacheKey);
+        } else {
+            $pendientes[$imei] = $cacheKey;
+        }
+    }
+
+    if (empty($pendientes)) {
+        return $resultados;
+    }
+
+    $accessToken = self::getAccessToken($key, $apiid);
+
+    if (!$accessToken) {
+        foreach ($pendientes as $imei => $cacheKey) {
+            $resultados[$imei] = new ApiResponse(
+                success: false,
+                data: null,
+                message: 'No se pudo obtener token Global GPS',
+                status: 401
+            );
+        }
+
+        return $resultados;
+    }
+
+    $endpoint = config('services.globalGps.url_base') . '/api/device/location';
+
+   $responses = Http::pool(function ($pool) use ($pendientes, $endpoint, $accessToken) {
+    $requests = [];
+
+    foreach ($pendientes as $imei => $cacheKey) {
+        $requests[$imei] = $pool
+            ->as($imei)
+            ->withHeaders([
+                'accessToken' => $accessToken,
+                'Accept' => 'application/json',
+            ])
+            ->connectTimeout(10)
+            ->timeout(15)
+            ->get($endpoint, [
+                'imei' => $imei,
+            ]);
+    }
+
+    return $requests;
+});
+
+    foreach ($pendientes as $imei => $cacheKey) {
+        $response = $responses[$imei] ?? null;
+
+        if (!$response || $response->failed()) {
+            $apiResponse = new ApiResponse(
+                success: false,
+                data: $response?->json(),
+                message: 'Error al consultar ubicación Global GPS',
+                status: $response?->status() ?? 500
+            );
+        } else {
+            $apiResponse = new ApiResponse(
+                success: true,
+                data: $response->json(),
+                message: 'Consulta exitosa',
+                status: $response->status()
+            );
+
+
+
+            Cache::put($cacheKey, $apiResponse, now()->addSeconds(30));
+        }
+
+        if (!$response || $response->failed()) {
+    Log::error('GLOBAL GPS POOL LOCATION ERROR', [
+        'imei' => $imei,
+        'has_response' => !is_null($response),
+        'status' => $response?->status(),
+        'body' => $response?->body(),
+    ]);
+}
+
+        $resultados[$imei] = $apiResponse;
+    }
+
+    return $resultados;
+}
 public static function getAccessToken($apikey, $idUs, bool $forceRefresh = false)
 {
     $key   = $apikey ?: config('services.globalGps.appkey');

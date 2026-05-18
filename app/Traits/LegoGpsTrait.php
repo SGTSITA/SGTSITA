@@ -97,8 +97,8 @@ public static function getLocation(
 
         $endpoint = config('services.LegoGps.url_base');
 
-        $response = Http::connectTimeout(5)
-            ->timeout(10)
+        $response = Http::connectTimeout(10)
+            ->timeout(20)
             ->retry(1, 300)
             ->get($endpoint);
 

@@ -23,6 +23,12 @@ let userBloqueo = false;
 const seleccionados = [];
 const ItemsSelects = [];
 
+let rastreoActivo = false;
+let requestEnCurso = false;
+let timeoutRastreo = null;
+
+const INTERVALO_RASTREO = 30000;
+
 let inicio = "";
 let fin = "";
 let catalogoBusquedaOriginal = [];
@@ -2830,10 +2836,10 @@ function buscarUbicaciones() {
     const imeis = obtenerImeisSeleccionados();
 
     if (!imeis.length) {
-        return;
+        return Promise.resolve();
     }
 
-    fetch("/coordenadas/ubicacion-vehiculo", {
+    return fetch("/coordenadas/ubicacion-vehiculo", {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
@@ -2846,12 +2852,14 @@ function buscarUbicaciones() {
         .then((res) => res.json())
         .then((data) => {
             actualizarEstadosPanel(data);
-
-            const randomColor = getRandomColor();
-
             actualizarUbicacion(data, "Equipo", "all", 0, map, 0, 0);
+
+            return data;
         })
-        .catch((err) => console.error(err));
+        .catch((err) => {
+            console.error(err);
+            throw err;
+        });
 }
 function actualizarPanelConvoy(idConvoy, noConvoy, ubicaciones) {
     imeis = obtenerImeisPorConvoyId(idConvoy);
@@ -3034,14 +3042,57 @@ function actualizarEstadosPanel(respuesta) {
 }
 
 $(document).on("change", ".checkDispositivo", function () {
-    if (intervaloRastreo) {
-        clearInterval(intervaloRastreo);
+    if ($(".checkDispositivo:checked").length === 0) {
+        detenerRastreo();
+        return;
     }
 
-    intervaloRastreo = setInterval(buscarUbicaciones, 8000);
-
-    buscarUbicaciones();
+    iniciarRastreo();
 });
+
+function iniciarRastreo() {
+    if (rastreoActivo) return;
+
+    rastreoActivo = true;
+
+    ejecutarRastreo();
+}
+
+function detenerRastreo() {
+    rastreoActivo = false;
+
+    if (timeoutRastreo) {
+        clearTimeout(timeoutRastreo);
+        timeoutRastreo = null;
+    }
+
+    requestEnCurso = false;
+}
+
+async function ejecutarRastreo() {
+    if (!rastreoActivo) return;
+
+    if (requestEnCurso) {
+        console.warn("Rastreo omitido: request en curso");
+        return;
+    }
+
+    requestEnCurso = true;
+
+    try {
+        await buscarUbicaciones();
+    } catch (e) {
+        console.error("Error rastreo:", e);
+    } finally {
+        requestEnCurso = false;
+
+        if (rastreoActivo) {
+            timeoutRastreo = setTimeout(() => {
+                ejecutarRastreo();
+            }, INTERVALO_RASTREO);
+        }
+    }
+}
 function pintarDispositivos(data) {
     const lista = $("#listaDispositivos");
     lista.empty();

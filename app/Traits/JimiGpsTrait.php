@@ -19,14 +19,26 @@ trait JimiGpsTrait
         ($accessAccount['appsecret'] ?? '')
     );
 
-    if ($forceRefresh) {
-        Cache::forget($cacheKey);
-        return self::fetchGpsAccessToken($accessAccount);
-    }
+    try {
+        if ($forceRefresh) {
+            Cache::forget($cacheKey);
+            return self::fetchGpsAccessToken($accessAccount);
+        }
 
-    return Cache::remember($cacheKey, now()->addMinutes(115), function () use ($accessAccount) {
-        return self::fetchGpsAccessToken($accessAccount);
-    });
+        return Cache::remember($cacheKey, now()->addMinutes(115), function () use ($accessAccount) {
+            return self::fetchGpsAccessToken($accessAccount);
+        });
+
+    } catch (\Throwable $e) {
+         Cache::forget($cacheKey);
+
+    Log::error('JIMI TOKEN ERROR', [
+        'message' => $e->getMessage(),
+        'account' => $accessAccount['account'] ?? null,
+    ]);
+
+    return false;
+    }
 }
 
 private static function fetchGpsAccessToken($accessAccount)
@@ -52,8 +64,8 @@ private static function fetchGpsAccessToken($accessAccount)
     );
 
     $response = Http::asForm()
-        ->connectTimeout(5)
-        ->timeout(10)
+        ->connectTimeout(10)
+        ->timeout(20)
         ->retry(1, 300)
         ->post(config('services.JimiGps.url_base'), $params);
 
@@ -81,6 +93,7 @@ private static function fetchGpsAccessToken($accessAccount)
 
     $accessToken = self::getGpsAccessToken($accessAccount);
 
+
     if (!$accessToken) {
         return ['error' => 'No se pudo obtener access_token'];
     }
@@ -101,8 +114,8 @@ private static function fetchGpsAccessToken($accessAccount)
     );
 
     $response = Http::asForm()
-        ->connectTimeout(5)
-        ->timeout(10)
+        ->connectTimeout(10)
+        ->timeout(20)
         ->retry(1, 300)
         ->post(config('services.JimiGps.url_base'), $params);
 
