@@ -37,8 +37,8 @@ private static function fetchGpsAccessToken(array $accessAccount)
 
     try {
         $response = Http::asForm()
-            ->connectTimeout(5)
-            ->timeout(10)
+            ->connectTimeout(10)
+            ->timeout(20)
             ->retry(1, 300)
             ->post($endpoint, $accessAccount);
 
@@ -96,8 +96,8 @@ private static function fetchGpsAccessToken(array $accessAccount)
         $response = Http::withHeaders([
                 'Cookie' => "JSESSIONID=$jsessionid",
             ])
-            ->connectTimeout(5)
-            ->timeout(10)
+            ->connectTimeout(10)
+            ->timeout(20)
             ->retry(1, 300)
             ->get($endpoint);
 

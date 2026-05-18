@@ -20,17 +20,23 @@ use App\Services\GpsCredentialsService;
 use App\Traits\BeyondGPSTrait;
 use App\Traits\WialonGpsTrait;
 use App\Services\UbicacionService;
+use Illuminate\Support\Facades\Log;
 
 class GpsController extends Controller
 {
     public function obtenerUbicacionByImei(Request $request,    UbicacionService $ubicacionService)
     {
+$inicioTotal = microtime(true);
 
         $datos = $request->input('imeis');
 
 
       $result =   $ubicacionService->obtenerUbicacionByImei(  $datos );
-
+Log::info('RASTREO TOTAL REQUEST', [
+    'total_items' => count($result),
+    'ms' => round((microtime(true) - $inicioTotal) * 1000, 2),
+    'segundos' => round(microtime(true) - $inicioTotal, 2),
+]);
         return response()->json($result);
 
 

@@ -15,6 +15,7 @@ use App\Models\Empresas;
 use App\Services\GpsCredentialsService;
 use App\Traits\BeyondGPSTrait;
 use App\Traits\WialonGpsTrait;
+use Illuminate\Support\Facades\Log;
 
 use App\Traits\SISGPSTrait as SISGPSTrait;
 
@@ -25,6 +26,8 @@ public function obtenerUbicacionByImei($datos)
     if (!is_array($datos)) {
         $datos = explode(';', $datos);
     }
+$inicioPrep = microtime(true);
+
 
     $grupos = [];
     $itemsOriginales = [];
@@ -102,14 +105,26 @@ public function obtenerUbicacionByImei($datos)
         $grupos[$grupoKey]['credenciales'] = $credenciales;
         $grupos[$grupoKey]['items'][] = $item;
     }
-
+Log::info('RASTREO PREPARACION ITEMS', [
+    'items' => count($grupos),
+    'ms' => round((microtime(true) - $inicioPrep) * 1000, 2),
+    'segundos' => round(microtime(true) - $inicioPrep, 2),
+]);
     return $this->consultarGpsPorGrupos($grupos);
 }
 
 
 private function consultarGpsPorGrupos(array $grupos): array
 {
+     $inicioTotal = microtime(true);
     $resultados = [];
+ Log::info('GPS GRUPOS INICIO', [
+        'total_grupos' => count($grupos),
+        'grupos' => collect($grupos)->map(fn($g) => [
+            'tipoGps' => $g['tipoGps'],
+            'items' => count($g['items']),
+        ])->values()->toArray(),
+    ]);
 
     foreach ($grupos as $grupo) {
         $tipoGps = $grupo['tipoGps'];
@@ -190,42 +205,54 @@ break;
 }
     }
 
+     Log::info('GPS TODOS LOS GRUPOS FIN', [
+        'ms' => round((microtime(true) - $inicioTotal) * 1000, 2),
+        'segundos' => round(microtime(true) - $inicioTotal, 2),
+    ]);
+
     return $resultados;
 }
 
 private function consultarGlobalGpsGrupo(array $items, array $credenciales): array
 {
-    $resultados = [];
+   $resultados = [];
     $inicio = microtime(true);
 
-    foreach ($items as $item) {
+    try {
+        $imeis = collect($items)
+            ->pluck('imei')
+            ->filter()
+            ->unique()
+            ->values()
+            ->toArray();
 
-        try {
+        $respuestasPorImei = GlobalGps::getManyDeviceRealTimeLocations(
+            $imeis,
+            $credenciales['appkey'] ?? null,
+            $credenciales['account'] ?? null
+        );
 
-            $data = GlobalGps::getDeviceRealTimeLocation(
-                $item['imei'],
-                $credenciales['appkey'] ?? null,
-                $credenciales['account'] ?? null
-            );
+        foreach ($items as $item) {
+            $imei = (string) $item['imei'];
 
-            $ubicacionApiResponse = $data->data ?? [];
+            $data = $respuestasPorImei[$imei] ?? null;
+
+            $ubicacionApiResponse = $data?->data ?? [];
 
             $ubicacion = [
                 'lat' => $ubicacionApiResponse['lat'] ?? 0,
                 'lng' => $ubicacionApiResponse['lng'] ?? 0,
                 'velocidad' => $ubicacionApiResponse['speed'] ?? 0,
-                'imei' => $item['imei'],
+                'imei' => $imei,
                 'deviceName' => $ubicacionApiResponse['deviceName'] ?? '',
                 'mcType' => $ubicacionApiResponse['mcType'] ?? '',
-                'datac' => $ubicacionApiResponse,
+                'datac' => $data,
                 'esDatoEmp' => $item['esDatoEmp'],
                 'tipoEquipo' => $item['TipoEquipo'],
             ];
 
-            $status = (
-                floatval($ubicacion['lat']) != 0 &&
-                floatval($ubicacion['lng']) != 0
-            );
+            $status = floatval($ubicacion['lat']) != 0
+                && floatval($ubicacion['lng']) != 0;
 
             $responseGps = [
                 'ubicacion' => $ubicacion,
@@ -233,33 +260,24 @@ private function consultarGlobalGpsGrupo(array $items, array $credenciales): arr
                 'status' => $status,
                 'messageAp' => $status
                     ? 'Sin error'
-                    : 'Sin ubicación para mostrar',
-                'tiemporespuesta' => round(
-                    (microtime(true) - $inicio) * 1000,
-                    2
-                ),
+                    : ($data?->message ?? 'Sin ubicación para mostrar'),
+                'tiemporespuesta' => round((microtime(true) - $inicio) * 1000, 2),
             ];
 
+            $resultados[] = $this->formatearResultadoGps($item, $responseGps);
+        }
+
+    } catch (\Throwable $e) {
+        foreach ($items as $item) {
             $resultados[] = $this->formatearResultadoGps(
                 $item,
-                $responseGps
-            );
-
-        } catch (\Throwable $e) {
-
-            $resultados[] = $this->formatearResultadoGps(
-                $item,
-                $this->gpsErrorResponse(
-                    $item,
-                    'Global GPS',
-                    $e,
-                    $inicio
-                )
+                $this->gpsErrorResponse($item, 'Global GPS', $e, $inicio)
             );
         }
     }
 
     return $resultados;
+
 }
 
 private function consultarSkyAngelGrupo(array $items, array $credenciales): array
@@ -461,6 +479,9 @@ private function consultarJimiGrupo(array $items, array $credenciales): array
             ->filter()
             ->unique()
             ->implode(',');
+
+
+
 
         $data = JimiGpsTrait::callGpsApi(
             'jimi.device.location.get',

@@ -17,6 +17,11 @@ let directionsRenderer = [];
 let ItemsSelectsID = {};
 let intervalIdsID = {};
 let mostrarTodos = false;
+let rastreoActivo = false;
+let requestEnCurso = false;
+let timeoutRastreo = null;
+
+const INTERVALO_RASTREO = 30000;
 
 let intervaloRastreo = null;
 
@@ -852,15 +857,59 @@ function toggleTodos(estado) {
         iniciarRastreo();
     }
 }
-$(document).on("change", ".checkDispositivo", function () {
-    const algunoActivo = $(".checkDispositivo:checked").length > 0;
 
-    if (algunoActivo) {
-        iniciarRastreo();
-    } else {
-        limpiarMapa();
+$(document).on("change", ".checkDispositivo", function () {
+    if ($(".checkDispositivo:checked").length === 0) {
+        detenerRastreo();
+        return;
     }
+
+    iniciarRastreo();
 });
+
+function iniciarRastreo() {
+    if (rastreoActivo) return;
+
+    rastreoActivo = true;
+
+    ejecutarRastreo();
+}
+
+function detenerRastreo() {
+    rastreoActivo = false;
+
+    if (timeoutRastreo) {
+        clearTimeout(timeoutRastreo);
+        timeoutRastreo = null;
+    }
+
+    requestEnCurso = false;
+}
+
+async function ejecutarRastreo() {
+    if (!rastreoActivo) return;
+
+    if (requestEnCurso) {
+        console.warn("Rastreo omitido: request en curso");
+        return;
+    }
+
+    requestEnCurso = true;
+
+    try {
+        await buscarUbicaciones();
+    } catch (e) {
+        console.error("Error rastreo:", e);
+    } finally {
+        requestEnCurso = false;
+
+        if (rastreoActivo) {
+            timeoutRastreo = setTimeout(() => {
+                ejecutarRastreo();
+            }, INTERVALO_RASTREO);
+        }
+    }
+}
 function detener(keyInterval) {
     if (intervalIdsID[keyInterval]) {
         clearInterval(intervalIdsID[keyInterval]);
