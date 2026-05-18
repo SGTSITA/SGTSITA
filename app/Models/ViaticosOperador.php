@@ -17,10 +17,8 @@ class ViaticosOperador extends Model
     {
         /* $contenedor = DocumCotizacion::where('id_cotizacion', $this->id_cotizacion)->first();
         return (!is_null($contenedor)) ? $contenedor->num_contenedor : 'S/N'; */
-         return $this->Cotizacion
-        ?->documCotizacion
-        ?->first()
-        ?->num_contenedor ?? 'S/N';
+
+         return $this->Cotizacion?->DocCotizacion?->num_contenedor ?? 'S/N';
     }
 
     public function Cotizacion()

@@ -979,6 +979,8 @@ class LiquidacionesController extends Controller
 
         $viaticos = ViaticosOperador::whereIn('id_cotizacion', $cotizaciones)->get();
 
+
+
         $dineroViaje = DineroContenedor::whereIn('id_contenedor', $idViajes)
                         ->orderBy('id_contenedor')
                         ->get();
