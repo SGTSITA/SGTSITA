@@ -41,23 +41,6 @@ const input = document.getElementById("buscadorGeneral");
 const resultados = document.getElementById("resultadosBusqueda");
 const chipContainer = document.getElementById("chipsBusqueda");
 
-function googleMapsReady() {
-    initMap();
-}
-function initMap() {
-    directionsService = new google.maps.DirectionsService();
-
-    map = new google.maps.Map(document.getElementById("map"), {
-        center: { lat: 0, lng: 0 },
-        zoom: 2,
-    });
-
-    const marker = new google.maps.Marker({
-        position: { lat: 0, lng: 0 },
-        map: map,
-    });
-}
-
 function cargaConboys2(fecha_inicio, fecha_fin) {
     const overlay = document.getElementById("gridLoadingOverlay");
     overlay.style.display = "flex";
@@ -299,24 +282,6 @@ function darkenColor(rgb, amount = 40) {
     const ng = Math.max(0, g - amount);
     const nb = Math.max(0, b - amount);
     return `rgb(${nr},${ng},${nb})`;
-}
-
-function createMarkerIcon(color = "#FF0000", size = 40) {
-    const svg = `
-    <svg width="${size}" height="${size}" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-      <!-- Pin principal -->
-      <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"
-            fill="${color}" stroke="white" stroke-width="2"/>
-      <!-- Círculo animado central -->
-      <circle cx="12" cy="9" r="3" fill="white">
-        <animate attributeName="r" values="3;6;3" dur="1s" repeatCount="indefinite" />
-      </circle>
-    </svg>
-  `;
-    return {
-        url: "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(svg),
-        scaledSize: new google.maps.Size(size, size),
-    };
 }
 
 function validarTipo(items) {
@@ -2031,13 +1996,8 @@ function initMap() {
     directionsService = new google.maps.DirectionsService();
 
     map = new google.maps.Map(document.getElementById("map"), {
-        center: { lat: 0, lng: 0 },
-        zoom: 2,
-    });
-
-    const marker = new google.maps.Marker({
-        position: { lat: 0, lng: 0 },
-        map: map,
+        center: { lat: 23.7066, lng: -102.3907 },
+        zoom: 7,
     });
 }
 
@@ -2086,21 +2046,70 @@ function darkenColor(rgb, amount = 40) {
     return `rgb(${nr},${ng},${nb})`;
 }
 
-function createMarkerIcon(color = "#FF0000", size = 40) {
+function createMarkerIconByStatus(
+    status,
+    label = "GPS",
+    containerColor = "#FF0000",
+    size = 44,
+) {
+    label = String(label ?? "GPS")
+        .replace(/[^\w\s\-]/g, "")
+        .substring(0, 12);
+
+    const estados = {
+        moving: {
+            color: "#198754",
+            bg: "#198754",
+            text: "EN RUTA",
+            icon: "🚚",
+        },
+        parked: {
+            color: "#f59f00",
+            bg: "#fff3cd",
+            text: "DETENIDO",
+            icon: "P",
+        },
+        offline: {
+            color: "#6c757d",
+            bg: "#e9ecef",
+            text: "SIN SEÑAL",
+            icon: "?",
+        },
+    };
+
+    const e = estados[status] || estados.offline;
+
     const svg = `
-    <svg width="${size}" height="${size}" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-      <!-- Pin principal -->
-      <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"
-            fill="${color}" stroke="white" stroke-width="2"/>
-      <!-- Círculo animado central -->
-      <circle cx="12" cy="9" r="3" fill="white">
-        <animate attributeName="r" values="3;6;3" dur="1s" repeatCount="indefinite" />
-      </circle>
-    </svg>
-  `;
+    <svg width="170" height="82" viewBox="0 0 170 82" xmlns="http://www.w3.org/2000/svg">
+
+        ${
+            status === "moving"
+                ? `
+        <circle cx="85" cy="40" r="22" fill="${e.color}" opacity="0.25">
+            <animate attributeName="r" values="22;38;22" dur="1.2s" repeatCount="indefinite"/>
+            <animate attributeName="opacity" values="0.35;0;0.35" dur="1.2s" repeatCount="indefinite"/>
+        </circle>`
+                : ""
+        }
+
+        <rect x="8" y="10" width="154" height="46" rx="23"
+              fill="${containerColor}" stroke="${e.color}" stroke-width="5"/>
+
+        <circle cx="34" cy="33" r="17" fill="${e.bg}" stroke="${e.color}" stroke-width="4"/>
+        <text x="34" y="39" text-anchor="middle" font-size="18" font-weight="bold" fill="${e.color}">${e.icon}</text>
+
+        <rect x="92" y="17" width="60" height="18" rx="9" fill="${e.color}"/>
+        <text x="122" y="30" text-anchor="middle" font-size="9" font-weight="bold" fill="white">${e.text}</text>
+
+        <text x="58" y="47" font-size="11" font-weight="bold" fill="white">${label}</text>
+
+        <path d="M85 76 L73 56 H97 Z" fill="${containerColor}" stroke="${e.color}" stroke-width="5"/>
+    </svg>`;
+
     return {
         url: "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(svg),
-        scaledSize: new google.maps.Size(size, size),
+        scaledSize: new google.maps.Size(170, 82),
+        anchor: new google.maps.Point(85, 76),
     };
 }
 
@@ -2197,11 +2206,51 @@ function actualizarUbicacion(
         const markerKey =
             KEYITEM + "|" + item.contenedor + "|" + item.ubicacion.tipoEquipo;
 
+        const velocidad = Number(item.ubicacion.velocidad ?? 0);
+
+        let estadoMarker = "offline";
+
+        if (latlocal && lnglocal) {
+            let moviendo = false;
+
+            if (velocidad > 5) {
+                moviendo = true;
+            } else if (markers[markerKey]) {
+                const posicionAnterior = markers[markerKey].getPosition();
+
+                if (posicionAnterior) {
+                    const latAnterior = posicionAnterior.lat();
+                    const lngAnterior = posicionAnterior.lng();
+
+                    const diffLat = Math.abs(latlocal - latAnterior);
+                    const diffLng = Math.abs(lnglocal - lngAnterior);
+
+                    if (diffLat > 0.0001 || diffLng > 0.0001) {
+                        moviendo = true;
+                    }
+                }
+            }
+
+            estadoMarker = moviendo ? "moving" : "parked";
+        }
+
+        const labelMarker = String(
+            item.contenedor ?? item.ubicacion?.imei ?? item.tipogps,
+        );
         if (markers[markerKey]) {
             markers[markerKey].setPosition({
                 lat: latlocal,
                 lng: lnglocal,
             });
+
+            markers[markerKey].setIcon(
+                createMarkerIconByStatus(
+                    estadoMarker,
+                    labelMarker,
+                    colorMarker,
+                    40,
+                ),
+            );
         } else {
             if (!latlocal || !lnglocal) return;
 
@@ -2214,7 +2263,12 @@ function actualizarUbicacion(
             const newMarker = new google.maps.Marker({
                 position: { lat: latlocal, lng: lnglocal },
                 map: map,
-                icon: createMarkerIcon(colorMarker, 40),
+                icon: createMarkerIconByStatus(
+                    estadoMarker,
+                    labelMarker,
+                    colorMarker,
+                    40,
+                ),
             });
 
             newMarker.keyItem = markerKey;
@@ -2979,11 +3033,13 @@ function actualizarEstadosPanel(respuesta) {
             });
 
             actualizarEstadoDispositivo(li, dataFinal);
+            actualizarClickMapaPanel(li, dataFinal);
             return;
         } else {
             imei = partes[1].replace(/-/g, "");
             const data = ubicaciones[imei];
             actualizarEstadoDispositivo(li, data);
+            actualizarClickMapaPanel(li, data);
         }
 
         /* if (!data || !data.lat || !data.lng) {
@@ -3039,6 +3095,44 @@ function actualizarEstadosPanel(respuesta) {
             icono.text("🅿️");
         } */
     });
+}
+$(document).on("click", ".dispositivoClickable", function (e) {
+    if ($(e.target).is("input")) {
+        return;
+    }
+
+    const lat = Number($(this).attr("data-lat"));
+    const lng = Number($(this).attr("data-lng"));
+
+    if (!lat || !lng) {
+        return;
+    }
+
+    map.panTo({
+        lat: lat,
+        lng: lng,
+    });
+
+    map.setZoom(15);
+});
+function actualizarClickMapaPanel(li, data) {
+    const lat = Number(data?.lat ?? 0);
+    const lng = Number(data?.lng ?? 0);
+
+    const tieneCoordenadas = lat !== 0 && lng !== 0;
+
+    li.attr("data-lat", lat);
+    li.attr("data-lng", lng);
+
+    if (tieneCoordenadas) {
+        li.addClass("dispositivoClickable");
+        li.css("cursor", "pointer");
+        li.attr("title", "Ver en mapa");
+    } else {
+        li.removeClass("dispositivoClickable");
+        li.css("cursor", "default");
+        li.removeAttr("title");
+    }
 }
 
 $(document).on("change", ".checkDispositivo", function () {
@@ -3134,7 +3228,7 @@ data-lat="${0}"
 data-lng="${0}"
 data-tipo="${d.tipo}"
 data-id="${d.id}"
-style="background-color:${color}; color:white;">
+style="background-color:${color}; color:white; cursor:default;">
 
 <div>
 <input type="checkbox"

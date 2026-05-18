@@ -88,7 +88,7 @@ public static function getloginLocation(
                     CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
                 ],
             ])
-            ->timeout(30)
+            ->timeout(5)
             ->connectTimeout(10)
             ->post($endpoint, [
                 'svc' => 'token/login',
@@ -137,7 +137,7 @@ public static function getloginLocation(
                     CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
                 ],
             ])
-            ->timeout(60)
+            ->timeout(5)
             ->connectTimeout(10)
             ->post($endpoint, [
                 'svc' => 'core/search_items',

@@ -603,50 +603,131 @@ private function consultarLegoGrupo(array $items, array $credenciales): array
 
 private function consultarGpsTrackerMxGrupo(array $items, array $credenciales): array
 {
-    $resultados = [];
+      $resultados = [];
     $inicio = microtime(true);
 
     try {
-        $data = GpsTrackerMXTrait::getMutiDevicePosition($credenciales);
-        $eventos = $data?->data ?? [];
+        $data = GpsTrackerMXTrait::getDevicesWithPositions($credenciales);
 
-        $indexado = collect($eventos)->keyBy(fn ($x) => (string)($x['deviceId'] ?? ''));
+        if (!$data?->success) {
+            foreach ($items as $item) {
+                $resultados[] = $this->formatearResultadoGps($item, [
+                    'ubicacion' => [
+                        'lat' => 0,
+                        'lng' => 0,
+                        'velocidad' => null,
+                        'imei' => $item['imei'] ?? null,
+                        'deviceName' => null,
+                        'mcType' => null,
+                        'altitud' => null,
+                        'timestamp' => null,
+                        'datac' => $data,
+                        'esDatoEmp' => $item['esDatoEmp'] ?? null,
+                        'tipoEquipo' => $item['TipoEquipo'] ?? null,
+                    ],
+                    'tipogps' => 'Tracker GPS',
+                    'status' => false,
+                    'messageAp' => $data?->message ?? 'Error al consultar GpsTrackerMX',
+                    'tiemporespuesta' => round((microtime(true) - $inicio) * 1000, 2),
+                ]);
+            }
+
+            return $resultados;
+        }
+
+        $devices = $data->data['devices'] ?? [];
+        $positions = $data->data['positions'] ?? [];
+
+        $devicesPorImei = collect($devices)->keyBy(function ($device) {
+            return (string) ($device['uniqueId'] ?? '');
+        });
+
+        $positionsPorId = collect($positions)->keyBy(function ($position) {
+            return (string) ($position['id'] ?? '');
+        });
+
+        log::info('Devices and Positions Data', [
+            'imeis' => collect($items)->pluck('imei'),
+            'devices' => $devices,
+            'positions' => $positions,
+        ]);
 
         foreach ($items as $item) {
             $imei = (string) $item['imei'];
-            $ubicacionApi = $indexado->get($imei);
+
+            $device = $devicesPorImei->get($imei);
+
+            $positionId = $device['positionId'] ?? null;
+
+            $position = $positionId
+                ? $positionsPorId->get((string) $positionId)
+                : null;
 
             $ubicacion = [
-                'lat' => $ubicacionApi['latitude'] ?? 0,
-                'lng' => $ubicacionApi['longitude'] ?? 0,
-                'velocidad' => $ubicacionApi['speed'] ?? null,
+                'lat' => $position['latitude'] ?? 0,
+                'lng' => $position['longitude'] ?? 0,
+                'velocidad' => $position['speed'] ?? null,
                 'imei' => $imei,
-                'deviceName' => $ubicacionApi['address'] ?? null,
-                'mcType' => $ubicacionApi['course'] ?? null,
-                'altitud' => $ubicacionApi['altitude'] ?? null,
-                'timestamp' => $ubicacionApi['deviceTime'] ?? null,
-                'datac' => $ubicacionApi ?: $data,
-                'esDatoEmp' => $item['esDatoEmp'],
-                'tipoEquipo' => $item['TipoEquipo'],
+
+
+                'deviceName' => $device['name'] ?? null,
+                'uniqueId' => $device['uniqueId'] ?? null,
+                'phone' => $device['phone'] ?? null,
+                'model' => $device['model'] ?? null,
+                'contact' => $device['contact'] ?? null,
+                'category' => $device['category'] ?? null,
+                'statusDevice' => $device['status'] ?? null,
+
+
+                'mcType' => $position['course'] ?? null,
+                'altitud' => $position['altitude'] ?? null,
+                'timestamp' => $position['deviceTime'] ?? $device['lastUpdate'] ?? null,
+                'address' => $position['address'] ?? null,
+
+                'datac' => [
+                    'device' => $device,
+                    'position' => $position,
+                ],
+
+                'esDatoEmp' => $item['esDatoEmp'] ?? null,
+                'tipoEquipo' => $item['TipoEquipo'] ?? null,
             ];
 
-            $status = floatval($ubicacion['lat']) != 0 && floatval($ubicacion['lng']) != 0;
+            $tieneDevice = !empty($device);
+            $tienePosition = !empty($position);
+
+            $status = $tieneDevice
+                && $tienePosition
+                && floatval($ubicacion['lat']) != 0
+                && floatval($ubicacion['lng']) != 0;
+
+            $message = match (true) {
+                !$tieneDevice => 'Dispositivo no encontrado en GpsTrackerMX',
+                !$tienePosition => 'Dispositivo encontrado, pero sin posición para mostrar',
+                !$status => 'Posición encontrada, pero sin coordenadas válidas',
+                default => 'Sin error',
+            };
 
             $resultados[] = $this->formatearResultadoGps($item, [
                 'ubicacion' => $ubicacion,
                 'tipogps' => 'Tracker GPS',
                 'status' => $status,
-                'messageAp' => $status ? 'Sin error' : 'Sin ubicación para mostrar',
+                'messageAp' => $message,
                 'tiemporespuesta' => round((microtime(true) - $inicio) * 1000, 2),
             ]);
         }
+
     } catch (\Throwable $e) {
         foreach ($items as $item) {
-            $resultados[] = $this->formatearResultadoGps($item, $this->gpsErrorResponse($item, 'Tracker GPS', $e, $inicio));
+            $resultados[] = $this->formatearResultadoGps(
+                $item,
+                $this->gpsErrorResponse($item, 'Tracker GPS', $e, $inicio)
+            );
         }
     }
 
     return $resultados;
+
 }
 
 private function consultarBeyondGrupo(array $items, array $credenciales): array
