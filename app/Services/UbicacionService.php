@@ -164,6 +164,7 @@ private function consultarGpsPorGrupos(array $grupos): array
                 break;
 
             case 'Beyond':
+            case 'Beyond Kajivo y h1':
                 $resultados = array_merge($resultados, $this->consultarBeyondGrupo($items, $credenciales));
                 break;
 
@@ -732,6 +733,10 @@ private function consultarGpsTrackerMxGrupo(array $items, array $credenciales): 
 
 private function consultarBeyondGrupo(array $items, array $credenciales): array
 {
+    log::info('Consultando grupo Beyond GPS', [
+        'credenciales' => $credenciales,
+        'items' => $items,
+    ]);
     $resultados = [];
     $inicio = microtime(true);
 
@@ -742,6 +747,10 @@ private function consultarBeyondGrupo(array $items, array $credenciales): array
             $credenciales['endpoint'] ?? null
         );
 
+
+        log::info('Respuesta de Beyond GPS', [
+            'data' => $data,
+        ]);
         $eventos = $data?->data['events'] ?? [];
 
         $indexado = collect($eventos)->keyBy(fn ($x) => (string)($x['IMEI'] ?? ''));
@@ -895,6 +904,10 @@ private function formatearResultadoGps(array $item, array $responseGps): array
 
 public function consultarEquiposGps(array $items): array
 {
+
+log::info('Preparando grupos para consulta GPS', [
+    'items' => $items,
+]);
     $grupos = [];
 
     foreach ($items as $item) {
@@ -921,6 +934,10 @@ public function consultarEquiposGps(array $items): array
             'gps_company_id' => $item['gps_company_id'],
         ];
     }
+
+    log::info('Grupos preparados para consulta GPS', [
+        'grupos' => $grupos,
+    ]);
 
     return $this->consultarGpsPorGrupos($grupos);
 }

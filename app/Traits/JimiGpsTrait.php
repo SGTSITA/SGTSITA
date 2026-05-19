@@ -119,6 +119,14 @@ private static function fetchGpsAccessToken($accessAccount)
         ->retry(1, 300)
         ->post(config('services.JimiGps.url_base'), $params);
 
+
+        log::info('JIMI API RESPONSE', [
+            'method' => $method,
+            'status' => $response->status(),
+            'body' => $response->body(),
+            'params' => $params,
+        ]);
+
     return $response->json();
 }
 
