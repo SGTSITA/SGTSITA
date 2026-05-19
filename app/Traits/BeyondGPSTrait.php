@@ -33,6 +33,9 @@ trait BeyondGPSTrait
     }
 
     if (Cache::has($cacheKey)) {
+          Log::info('BEYOND GPS LOCATION CACHE HIT', [
+            'user' => $username,
+        ]);
         return Cache::get($cacheKey);
     }
 
@@ -63,13 +66,18 @@ trait BeyondGPSTrait
    private static function fetchLocation($username, $password, $endpoint)
 {
     try {
-        $response = Http::connectTimeout(5)
+        $response = Http::connectTimeout(6)
             ->timeout(10)
-            ->retry(1, 300)
+            ->retry(2, 700)
             ->post($endpoint, [
                 'User' => $username,
                 'Password' => $password,
             ]);
+
+              Log::info('BEYOND GPS LOCATION API RESPONSE', [
+            'endpoint' => $endpoint,
+            'status' => $response->status(),
+        ]);
 
         if ($response->failed()) {
             Log::error('API request failed Beyond Gps', [
