@@ -661,6 +661,7 @@ Route::delete('/notificaciones/reglas/{regla}/usuarios/{usuario}', [App\Http\Con
     Route::post('/usuario/marcar-todas-leidas', [App\Http\Controllers\NotificacionesController::class, 'marcarTodasLeidasUsuario'])
         ->name('usuario.marcar-todas-leidas');
 });
+});
 
 //Route Hooks - Do not delete//
 Route::view('/especialists', 'livewire.especialists.index')->middleware('auth');
