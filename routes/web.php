@@ -66,6 +66,9 @@ Route::group(["prefix" => "prestamos"], function () {
     Route::get("lista-detalle/{idprestamo}", [PrestamosController::class,'getPrestamosPagos'])->name('prestamo.listadetalle');
     Route::get("operador/{id}", [PrestamosController::class, 'showOperador']) ->name('prestamos.operador.show');
 
+    Route::get('/operadores/{id}/prestamos/reporte-pdf', [PrestamosController::class, 'reportePrestamosPdf'])
+    ->name('operadores.prestamos.reporte.pdf');
+
 });
 
 
