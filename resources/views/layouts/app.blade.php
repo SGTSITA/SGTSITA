@@ -141,6 +141,10 @@
 
     <script type="text/javascript" src="{{ asset('assets/js/sweetalert2.all.min.js') }}"></script>
 
+    @auth
+        <script src="{{ asset('js/sgt/notificaciones/notificaciones_navbar.js') }}"></script>
+    @endauth
+
     <script>
         var token = $('meta[name="csrf-token"]').attr('content');
     </script>

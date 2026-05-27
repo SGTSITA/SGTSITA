@@ -228,6 +228,15 @@ function applyPaymentGastosOperador() {
         .querySelector('meta[name="csrf-token"]')
         .getAttribute("content");
 
+    Swal.fire({
+        title: "Procesando...",
+        text: "Aplicando pago gasto",
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        },
+    });
+
     $.ajax({
         url: "/cotizaciones/gastos-operador/pagar",
         type: "post",
@@ -259,18 +268,50 @@ function applyPaymentGastosOperador() {
 }
 
 function eliminarGastoOperador() {
-    Swal.fire({
+    let gastosselec = null;
+    if (gridElementGastosOperador) {
+        gastosselec = apiGridGastosOperador.getSelectedRows();
+    }
+    let pagado = gastosselec.every((gasto) => {
+        if (gasto.Estatus != "Pago Pendiente") return false;
+    });
+
+    let fechaMovi = gastosselec[0].FechaPago;
+
+    let swalOptions = {
         title: "¿Desea eliminar el gasto seleccionado?",
         text: 'Estas a punto de eliminar un gasto, si se encuentra seguro haga click en "Si, Eliminar"',
         icon: "warning",
+
         showCancelButton: true,
         confirmButtonColor: "#3085d6",
         cancelButtonColor: "#d33",
         confirmButtonText: "Si, Eliminar!",
         cancelButtonText: "Cancelar",
-    }).then((result) => {
+    };
+
+    if (fechaMovi) {
+        swalOptions.input = "text";
+        swalOptions.inputLabel = "Fecha Cancelación";
+        swalOptions.inputValue = fechaMovi;
+
+        swalOptions.didOpen = () => {
+            const input = Swal.getInput();
+
+            input.type = "date";
+            input.required = true;
+        };
+
+        swalOptions.inputValidator = (value) => {
+            if (!value) {
+                return "La fecha es obligatoria";
+            }
+        };
+    }
+
+    Swal.fire(swalOptions).then((result) => {
         if (result.isConfirmed) {
-            //
+            const fechaCancelacion = fechaMovi ? result.value : null;
             let seleccionEliminarPago = apiGridGastosOperador.getSelectedRows();
             let _token = document
                 .querySelector('meta[name="csrf-token"]')
@@ -282,7 +323,12 @@ function eliminarGastoOperador() {
             $.ajax({
                 url: "/cotizaciones/gastos-operador/eliminar",
                 type: "post",
-                data: { seleccionEliminarPago, numContenedor, _token },
+                data: {
+                    seleccionEliminarPago,
+                    fechacancelacion: fechaCancelacion,
+                    numContenedor,
+                    _token,
+                },
                 beforeSend: () => {},
                 success: (response) => {
                     Swal.fire(

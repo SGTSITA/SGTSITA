@@ -42,7 +42,7 @@
                 data-kt-drawer-width="{default:'200px', '300px': '250px'}" data-kt-drawer-direction="start"
                 data-kt-drawer-toggle="#kt_aside_toggle">
                 <div class="aside-logo flex-column-auto px-9 mb-9" id="kt_aside_logo">
-                    <a href="/home">
+                    <a href="{{ route('dashboard') }}">
                         <img alt="Logo" src="/assets/metronic/logo-color-sgt.png"
                             class="h-25px logo theme-light-show" />
                         <img alt="Logo" src="/assets/metronic/logo-gris-sgt.png"
@@ -305,6 +305,49 @@
                 <div class="aside-footer flex-column-auto px-9" id="kt_aside_footer">
                     <div class="d-flex flex-stack">
                         <div class="d-flex align-items-center">
+                            <div class="dropdown me-3" id="notificacionesDropdownContainer">
+                                <button class="btn btn-icon btn-light position-relative" type="button"
+                                    id="dropdownNotificacionesButton" data-bs-toggle="dropdown" aria-expanded="false"
+                                    title="Notificaciones">
+                                    <i class="fas fa-bell"></i>
+
+                                    <span id="badgeNotificaciones"
+                                        class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none"
+                                        style="font-size: 10px;">
+                                        0
+                                    </span>
+                                </button>
+
+                                <div class="dropdown-menu dropdown-menu-end p-0 shadow"
+                                    aria-labelledby="dropdownNotificacionesButton"
+                                    style="width: 380px; max-width: 90vw;">
+                                    <div
+                                        class="px-3 py-2 border-bottom d-flex justify-content-between align-items-center">
+                                        <strong class="text-dark">
+                                            <i class="fas fa-bell me-1"></i>
+                                            Notificaciones
+                                        </strong>
+
+                                        <button type="button" class="btn btn-link btn-sm p-0"
+                                            id="btnMarcarTodasNotificaciones">
+                                            Marcar todas
+                                        </button>
+                                    </div>
+
+                                    <div id="listaNotificacionesNavbar" style="max-height: 420px; overflow-y: auto;">
+                                        <div class="p-3 text-center text-muted">
+                                            Cargando notificaciones...
+                                        </div>
+                                    </div>
+
+                                    <div class="border-top text-center p-2">
+                                        <a href="{{ route('notificaciones.mis-notificaciones-clientes') }}"
+                                            class="small">
+                                            Ver todas
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
                             <div class="symbol symbol-circle symbol-40px">
                                 <img src="/img/icon-user.jpg" alt="photo" />
                             </div>
@@ -558,6 +601,9 @@
     <script src="/assets/metronic/js/widgets.bundle.js"></script>
     <script src="/assets/metronic/js/custom/widgets.js"></script>
     <script src="/js/sgt/common/whatsAppClient.js"></script>
+    @auth
+        <script src="{{ asset('js/sgt/notificaciones/notificaciones_navbar.js') }}"></script>
+    @endauth
     <script>
         $(document).ready(async () => {
             var genericUUID = localStorage.getItem('uuid');

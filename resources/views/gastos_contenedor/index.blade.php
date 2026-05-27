@@ -112,6 +112,8 @@
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
 
     <script>
+        window.mesinicio = null;
+        window.mesfin = null;
         $(document).ready(() => {
             getGxp(); // Este método ya contiene lógica para el filtro de fechas
 

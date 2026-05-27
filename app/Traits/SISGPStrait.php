@@ -115,6 +115,11 @@ private static function fetchSisLastPosition(
             ]]
         );
 
+        Log::info('SIS getLastPosition response', [
+            'device_id' => $deviceId,
+            'response' => $response,
+        ]);
+
         return new ApiResponse(
             success: true,
             data: [

@@ -46,6 +46,11 @@
                 <h5 class="mb-0">
                     Movimientos de {{ $operador->nombre }}
                 </h5>
+                <a href="{{ route('operadores.prestamos.reporte.pdf', $operador->id) }}" target="_blank"
+                    class="btn btn-danger btn-sm">
+                    <i class="bi bi-file-earmark-pdf me-1"></i>
+                    Reporte PDF
+                </a>
 
                 <a href="{{ route('operadores.prestamo') }}" class="btn btn-secondary btn-sm">
                     ← Volver

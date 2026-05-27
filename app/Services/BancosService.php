@@ -245,14 +245,14 @@ class BancosService
 
         return $query->first();
     }
-    public function cancelarMovimiento(int $cuentaId, int $movimientoId)
+    public function cancelarMovimiento(int $cuentaId, int $movimientoId,string $fecha_cancelacionmovi )
     {
-        return DB::transaction(function () use ($cuentaId, $movimientoId) {
+        return DB::transaction(function () use ($cuentaId, $movimientoId,$fecha_cancelacionmovi) {
 
             $movimiento = CatBancoCuentasMovimientos::where('id', $movimientoId)
                 ->where('cuenta_bancaria_id', $cuentaId)
                 ->firstOrFail();
-
+ $fechaCancelacion = $this->parseFecha($fecha_cancelacionmovi);
 
             if ($movimiento->cancelado) {
                 return [
@@ -272,7 +272,7 @@ class BancosService
                 'tipo'               => $tipoInverso,
                 'monto'              => $movimiento->monto,
                 'concepto'           => 'Devolución - ' . $movimiento->concepto,
-                'fecha_movimiento'   => now(),
+                'fecha_movimiento'   => $fechaCancelacion ?? now(),
                 'origen'             => 'sistema',
                 'referencia'         => 'cancelación'. $movimiento->referencia ? ' - ' . $movimiento->referencia : null,
                 'referenciaable_type'         => $movimiento->referenciaable_type ?? null,

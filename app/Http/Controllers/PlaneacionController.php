@@ -95,18 +95,16 @@ class PlaneacionController extends Controller
                 $banco->save();
 
                 //anular nuevo movimiento devolucion
-
+//$fechacancelacion = $request->fechacancelacion;
 
                 $movimientoBanco = $this->BancosService->findMovimiento($asignaciones->id, \App\Models\Asignaciones::class, $asignaciones->id_banco1_dinero_viaje);
 
-                $cancelarMovimientoBanco =  $this->BancosService->cancelarMovimiento($asignaciones->id_banco1_dinero_viaje, $movimientoBanco->id);
+                $cancelarMovimientoBanco =  $this->BancosService->cancelarMovimiento($asignaciones->id_banco1_dinero_viaje, $movimientoBanco->id,$movimientoBanco->fecha_movimiento);
 
                 if (!$cancelarMovimientoBanco) {
 
                     throw new \Exception('No se pudo cancelar el movimiento bancario, dinero para viaje ');
                 }
-
-
 
 
             }
@@ -158,7 +156,8 @@ class PlaneacionController extends Controller
 
                 $movimientoBancoGasto = $this->BancosService->findMovimiento($gasto->id, \App\Models\GastosOperadores::class, $gasto->id_banco);
                 log::info('Regresando movimiento banco nuevo', ["movi encontrado" => $movimientoBancoGasto]);
-                $cancelarMovimientoBanco =  $this->BancosService->cancelarMovimiento($gasto->id_banco, $movimientoBancoGasto->id);
+                $fechacancelacion = $request->fechacancelacion;
+                $cancelarMovimientoBanco =  $this->BancosService->cancelarMovimiento($gasto->id_banco, $movimientoBancoGasto->id,$movimientoBancoGasto->fecha_movimiento);
                 log::info('Regresando movimiento banco nuevo', ["movicancel" => $cancelarMovimientoBanco]);
                 if (!$movimientoBancoGasto) {
 
@@ -255,6 +254,7 @@ $contenedor = DocumCotizacion::find($request->idContenendor);
             'proveedores.nombre as transportista_nombre',
             'cotizaciones.cp_contacto_entrega',
             DB::raw('COALESCE(operadores.telefono, proveedores.telefono) as beneficiario_telefono')
+
         )
         ->get();
 

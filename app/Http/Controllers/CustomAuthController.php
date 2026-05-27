@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Client;
+use App\Models\Cotizaciones;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Session;
@@ -97,6 +98,16 @@ class CustomAuthController extends Controller
     {
 
         $user = auth()->user();
+
+
+
+         Cotizaciones::where('editing_by', auth()->id())
+        ->update([
+            'editing_by' => null,
+            'editing_at' => null,
+        ]);
+
+
 
         Session::flush();
         Auth::logout();

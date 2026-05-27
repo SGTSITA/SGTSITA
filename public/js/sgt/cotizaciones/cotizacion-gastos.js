@@ -192,7 +192,7 @@ let btnPagar = document.querySelector("#btnPagar");
 const btnPagGastoExtra = document.querySelector("#btnConfirmarPago");
 
 btnDelete.addEventListener("click", () => {
-    deleteGastos();
+    deleteGastosExt();
 });
 
 btnPagar.addEventListener("click", () => {
@@ -297,6 +297,15 @@ function putGastosContenedor() {
         .querySelector('meta[name="csrf-token"]')
         .getAttribute("content");
 
+    Swal.fire({
+        title: "Procesando...",
+        text: "Registrando gasto",
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        },
+    });
+
     $.ajax({
         url: "/cotizaciones/gastos/registrar",
         type: "post",
@@ -315,28 +324,79 @@ function putGastosContenedor() {
     });
 }
 
-function deleteGastos() {
+function deleteGastosExt() {
+    let seleccionGastos = apiGrid.getSelectedRows();
+    let fechaMovi = seleccionGastos[0].fecha_aplicacion;
+    let estatus = seleccionGastos[0].estatus;
+    //pagado mostrar fecha cancelacion
+    let fechaInput = fechaMovi ? String(fechaMovi).substring(0, 10) : "";
     let spanContenedor = document.querySelector("#spanContenedor");
     let numContenedor = spanContenedor.textContent;
     let _token = document
         .querySelector('meta[name="csrf-token"]')
         .getAttribute("content");
-    let seleccionGastos = apiGrid.getSelectedRows();
 
-    $.ajax({
-        url: "/cotizaciones/gastos/eliminar",
-        type: "post",
-        data: { numContenedor, _token, seleccionGastos },
-        beforeSend: () => {},
-        success: (response) => {
-            Swal.fire(response.Titulo, response.Mensaje, response.TMensaje);
+    let swalOptions = {
+        title: "¿Desea eliminar el gasto seleccionado?",
+        text: 'Estas a punto de eliminar un gasto, si se encuentra seguro haga click en "Si, Eliminar"',
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#3085d6",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Si, Eliminar!",
+        cancelButtonText: "Cancelar",
+    };
 
-            getGastosContenedor();
-        },
-        error: (err) => {
-            console.error(err);
-            Swal.fire("Ocurrio un error", "Error", "error");
-        },
+    if (fechaMovi && String(estatus).toLowerCase() == "pagado") {
+        swalOptions.input = "text";
+        swalOptions.inputLabel = "Fecha Cancelación";
+        swalOptions.inputValue = fechaInput;
+
+        swalOptions.didOpen = () => {
+            const input = Swal.getInput();
+            input.type = "date";
+            input.required = true;
+        };
+
+        swalOptions.inputValidator = (value) => {
+            if (!value) {
+                return "La fecha es obligatoria";
+            }
+        };
+    }
+    Swal.fire(swalOptions).then((result) => {
+        if (!result.isConfirmed) {
+            return;
+        }
+
+        Swal.fire({
+            title: "Procesando...",
+            text: "Registrando cancelación gasto",
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+            },
+        });
+
+        const fechaCancelacion = fechaMovi ? result.value : null;
+
+        $.ajax({
+            url: "/cotizaciones/gastos/eliminar",
+            type: "post",
+            data: {
+                numContenedor,
+                seleccionGastos,
+                fechacancelacion: fechaCancelacion,
+                _token,
+            },
+            success: (data) => {
+                Swal.fire(data.Titulo, data.Mensaje, data.TMensaje);
+
+                if (data.TMensaje == "success") {
+                    getGastosContenedor();
+                }
+            },
+        });
     });
 }
 
@@ -361,6 +421,15 @@ btnPagGastoExtra.addEventListener("click", () => {
         .getAttribute("content");
 
     let total = seleccion.reduce((sum, g) => sum + parseFloat(g.Monto), 0);
+
+    Swal.fire({
+        title: "Procesando...",
+        text: "Registrando pago gasto",
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        },
+    });
 
     $.ajax({
         url: "/cotizaciones/gastosextra/pagar",

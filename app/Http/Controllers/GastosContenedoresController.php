@@ -140,7 +140,7 @@ class GastosContenedoresController extends Controller
                 }
             }
 
-            Bancos::where('id', '=', $r->bank)->update(["saldo" => DB::raw("saldo - ". $r->totalPago)]);
+           // Bancos::where('id', '=', $r->bank)->update(["saldo" => DB::raw("saldo - ". $r->totalPago)]);
 
 
             $pagando = $r->gastosPagar;
@@ -158,29 +158,29 @@ class GastosContenedoresController extends Controller
 
              $asignacion = Asignaciones::where('id_contenedor', $contenedor->id)->first();*/
 
-            $banco = new BancoDinero();
+           /*  $banco = new BancoDinero();
             //$banco->id_operador = $asignacion->id_operador;
 
             $banco->monto1 = $r->totalPago;
             $banco->metodo_pago1 = 'Transferencia';
             $banco->descripcion = "Pago Gastos Contenedor";
-            $banco->id_banco1 = $r->bank;
+            $banco->id_banco1 = $r->bank; */
 
             $Gastos = Collect($r->gastosPagar);
             $IdGastos = $Gastos->pluck('IdGasto');
             $contenedoresAbonosJson = json_encode($contenedoresAbonos);
             GastosOperadores::whereIn('id', $IdGastos)->update(["estatus" => "Pagado","id_banco" => $r->bank, "fecha_pago" => Carbon::now()->format('Y-m-d')]);
             //gastos generales
-            $gastogral =  GastosGenerales::whereIn('id', $IdGastos)->update(["pago_realizado" => 1,"id_banco2" => $r->bank, "fecha_operacion" => Carbon::now()->format('Y-m-d'),"is_active" => 0]);
-            if ($gastogral) {
+            $gastogral =  GastosGenerales::whereIn('id', $IdGastos)->update(["pago_realizado" => 1,"id_banco2" => $r->bank, "fecha_operacion" =>  $fecha_aplicacion ,"is_active" => 0]);
+           /*  if ($gastogral) {
                 $banco->descripcion = "Pago Gastos Generales";
-            }
+            } */
 
-            $banco->contenedores = $contenedoresAbonosJson;
+           /*  $banco->contenedores = $contenedoresAbonosJson;
 
             $banco->tipo = 'Salida';
             $banco->fecha_pago = date('Y-m-d');
-            $banco->save();
+            $banco->save(); */
 
 
             //proceso bancos nuevo

@@ -140,6 +140,8 @@
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
     <script src="https://demos.creative-tim.com/argon-dashboard-pro/assets/js/plugins/choices.min.js"></script>
     <script>
+        window.mesinicio = null;
+        window.mesfin = null;
         $(document).ready(function() {
             flatpickr('.fechas', {
                 locale: 'es',
@@ -208,7 +210,7 @@
                             moment().subtract(1, 'month').endOf('month'),
                         ],
                     },
-                    maxDate: moment(),
+                    maxDate: moment().endOf('year'),
                 },
                 function(start, end, label) {
                     //  getUtilidadesViajes();
@@ -216,6 +218,9 @@
                         'YYYY-MM-DD'));
                     $('#daterange').attr('data-start', start.format('YYYY-MM-DD'));
                     $('#daterange').attr('data-end', end.format('YYYY-MM-DD'));
+                    window.mesinicio = moment(start).format('YYYY-MM-DD');
+                    window.mesfin = moment(end).format('YYYY-MM-DD');
+
                 },
             );
 
@@ -226,6 +231,8 @@
 
             document.getElementById('daterange').value =
                 `${formatDate(firstDayOfMonth)} AL ${formatDate(today)}`;
+            window.mesinicio = moment(firstDayOfMonth).format('YYYY-MM-DD');
+            window.mesfin = moment(today).format('YYYY-MM-DD');
 
             gastosHandsOnTable.fillDataHTGastos(formatDate(firstDayOfMonth), formatDate(today));
 

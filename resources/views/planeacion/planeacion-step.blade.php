@@ -397,13 +397,6 @@
 
             moneyformatInput.forEach((r) => r.value = moneyFormat(r.value))
 
-
-
-
-
-
-
-
         });
 
         const botonGastos = document.getElementById('btnAddGasto');

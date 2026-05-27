@@ -25,7 +25,7 @@ trait JimiGpsTrait
             return self::fetchGpsAccessToken($accessAccount);
         }
 
-        return Cache::remember($cacheKey, now()->addMinutes(115), function () use ($accessAccount) {
+        return Cache::remember($cacheKey, now()->addMinutes(60), function () use ($accessAccount) {
             return self::fetchGpsAccessToken($accessAccount);
         });
 
@@ -77,9 +77,110 @@ private static function fetchGpsAccessToken($accessAccount)
 
     throw new \Exception('No se pudo obtener el token JIMI.');
 }
+public static function callGpsApi($method, $accessAccount, array $additionalParams = [])
+{
+    $response = self::callGpsApiOnce($method, $accessAccount, $additionalParams, false);
 
+    if (self::tokenExpiradoOInvalido($response)) {
+        Log::warning('JIMI token vencido/inválido, reintentando con token nuevo', [
+            'method' => $method,
+            'code' => $response['code'] ?? null,
+            'message' => $response['message'] ?? null,
+            'imeis' => $additionalParams['imeis'] ?? null,
+        ]);
 
-    public static function callGpsApi($method, $accessAccount, array $additionalParams = [])
+        $response = self::callGpsApiOnce($method, $accessAccount, $additionalParams, true);
+    }
+
+    return $response;
+}
+
+private static function tokenExpiradoOInvalido(array $response): bool
+{
+    $code = $response['code'] ?? null;
+    $message = strtolower((string) ($response['message'] ?? ''));
+
+    if (($response['success'] ?? null) === false) {
+        return true;
+    }
+
+    return $code !== 0 && (
+        str_contains($message, 'token') ||
+        str_contains($message, 'access') ||
+        str_contains($message, 'expired') ||
+        str_contains($message, 'invalid') ||
+        str_contains($message, 'session') ||
+        str_contains($message, 'auth')
+    );
+}
+private static function callGpsApiOnce($method, $accessAccount, array $additionalParams = [], bool $forceRefresh = false)
+{
+    $timestamp = gmdate('Y-m-d H:i:s');
+
+    $accessToken = self::getGpsAccessToken($accessAccount, $forceRefresh);
+
+    if (!$accessToken) {
+        return [
+            'code' => -1,
+            'message' => 'No se pudo obtener access_token',
+            'result' => [],
+            'data' => null,
+        ];
+    }
+
+    $params = array_merge([
+        'method'       => $method,
+        'access_token' => $accessToken,
+        'app_key'      => $accessAccount['appkey'],
+        'timestamp'    => $timestamp,
+        'format'       => 'json',
+        'v'            => '1.0',
+        'sign_method'  => 'md5',
+    ], $additionalParams);
+
+    $params['sign'] = self::generateGpsSign(
+        $params,
+        $accessAccount['appsecret']
+    );
+
+    try {
+        $response = Http::asForm()
+            ->connectTimeout(8)
+            ->timeout(20)
+            ->retry(1, 500)
+            ->post(config('services.JimiGps.url_base'), $params);
+
+        $json = $response->json() ?? [];
+
+        Log::info('JIMI API RESPONSE', [
+            'method' => $method,
+            'http_status' => $response->status(),
+            'api_code' => $json['code'] ?? null,
+            'api_message' => $json['message'] ?? null,
+            'result_count' => is_array($json['result'] ?? null) ? count($json['result']) : null,
+            'imei' => $additionalParams['imeis'] ?? null,
+            'force_refresh' => $forceRefresh,
+        ]);
+
+        return $json;
+
+    } catch (\Throwable $e) {
+        Log::error('JIMI API EXCEPTION', [
+            'method' => $method,
+            'imei' => $additionalParams['imeis'] ?? null,
+            'force_refresh' => $forceRefresh,
+            'message' => $e->getMessage(),
+        ]);
+
+        return [
+            'code' => -1,
+            'message' => 'Error JimiGps::callGpsApi => ' . $e->getMessage(),
+            'result' => [],
+            'data' => null,
+        ];
+    }
+}
+/*     public static function callGpsApi($method, $accessAccount, array $additionalParams = [])
 {
     $timestamp = gmdate('Y-m-d H:i:s');
 
@@ -128,7 +229,7 @@ private static function fetchGpsAccessToken($accessAccount)
         ]);
 
     return $response->json();
-}
+} */
 
     private static function generateGpsSign(array $params, $appSecret)
     {

@@ -319,11 +319,36 @@ function applyPaymentGastos() {
     let bank = bancosPagoGastos.value;
     let fecha_aplicacion = document.querySelector("#fecha_aplicacion").value;
 
+    if (
+        fecha_aplicacion < window.mesinicio ||
+        fecha_aplicacion > window.mesfin
+    ) {
+        const inputFecha = document.querySelector('[name="fecha_aplicacion"]');
+
+        if (inputFecha) {
+            inputFecha.blur();
+
+            inputFecha.type = "text";
+
+            setTimeout(() => {
+                inputFecha.type = "date";
+            }, 300);
+        }
+
+        setTimeout(() => {
+            Swal.fire(
+                "Fecha inválida",
+                "La fecha de aplicación debe estar dentro del periodo seleccionado.",
+                "warning",
+            );
+        }, 150);
+        return;
+    }
+
     let _token = document
         .querySelector('meta[name="csrf-token"]')
         .getAttribute("content");
 
-    // 🔁 Solo seleccionados visibles
     let gastosPagar = [];
     apiGrid.forEachNodeAfterFilterAndSort((node) => {
         if (node.isSelected()) {
@@ -342,6 +367,15 @@ function applyPaymentGastos() {
             });
             // gastosPagar.push(node.data);
         }
+    });
+
+    Swal.fire({
+        title: "Procesando...",
+        text: "Registrando pago",
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        },
     });
 
     $.ajax({
@@ -408,7 +442,6 @@ function getGxp() {
                 });
             });
 
-            // 🔽 Aplica filtro de últimos 7 días después de cargar
             const hoy = moment().endOf("day");
             const hace7Dias = moment().subtract(6, "days").startOf("day");
             filtrarPorFechas(
@@ -434,8 +467,6 @@ function filtrarPorFechas(inicio, fin) {
 
         if (!fi || !ff || !fi.isValid() || !ff.isValid()) return false;
 
-        // ✅ Solo incluir si ambos están dentro del rango
-        // return fi.isSameOrAfter(fechaInicio) && ff.isSameOrBefore(fechaFin);
         return fi.isBetween(fechaInicio, fechaFin, "day", "[]");
     });
 
@@ -500,6 +531,11 @@ $(function () {
                 start.format("YYYY-MM-DD"),
                 end.format("YYYY-MM-DD"),
             );
+
+            window.mesinicio = moment(start).format("YYYY-MM-DD");
+            window.mesfin = moment(end).format("YYYY-MM-DD");
+            window.mesinicio = moment(start).format("YYYY-MM-DD");
+            window.mesfin = moment(end).format("YYYY-MM-DD");
         },
     );
 
@@ -507,6 +543,9 @@ $(function () {
     $("#daterange").val(
         `${hace7Dias.format("YYYY-MM-DD")} - ${hoy.format("YYYY-MM-DD")}`,
     );
+
+    window.mesinicio = moment(hace7Dias).format("YYYY-MM-DD");
+    window.mesfin = moment(hoy).format("YYYY-MM-DD");
 
     // ✅ Filtrar tabla desde el inicio
     filtrarPorFechas(hace7Dias.format("YYYY-MM-DD"), hoy.format("YYYY-MM-DD"));

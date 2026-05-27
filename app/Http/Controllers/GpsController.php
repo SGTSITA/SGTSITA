@@ -24,24 +24,48 @@ use Illuminate\Support\Facades\Log;
 
 class GpsController extends Controller
 {
-    public function obtenerUbicacionByImei(Request $request,    UbicacionService $ubicacionService)
-    {
-$inicioTotal = microtime(true);
+public function obtenerUbicacionByImei(Request $request, UbicacionService $ubicacionService)
+{
+    $inicioTotal = microtime(true);
 
-        $datos = $request->input('imeis');
+    $items = $request->input('items', []);
 
+    if (is_array($items) && count($items) > 0) {
+        $result = $ubicacionService->obtenerUbicacionPorItems($items);
 
-      $result =   $ubicacionService->obtenerUbicacionByImei(  $datos );
-Log::info('RASTREO TOTAL REQUEST', [
-    'total_items' => count($result),
-    'ms' => round((microtime(true) - $inicioTotal) * 1000, 2),
-    'segundos' => round(microtime(true) - $inicioTotal, 2),
-]);
+        Log::info('RASTREO TOTAL REQUEST ITEMS', [
+            'items_recibidos' => count($items),
+            'total_resultado' => is_countable($result) ? count($result) : 0,
+            'ms' => round((microtime(true) - $inicioTotal) * 1000, 2),
+            'segundos' => round(microtime(true) - $inicioTotal, 2),
+        ]);
+
         return response()->json($result);
-
-
     }
 
+    $imeis = $request->input('imeis', []);
+
+    if (!empty($imeis)) {
+        $result = $ubicacionService->obtenerUbicacionByImei($imeis);
+
+        Log::info('RASTREO TOTAL REQUEST IMEIS LEGACY', [
+            'imeis_recibidos' => is_countable($imeis) ? count($imeis) : 0,
+            'total_resultado' => is_countable($result) ? count($result) : 0,
+            'ms' => round((microtime(true) - $inicioTotal) * 1000, 2),
+            'segundos' => round(microtime(true) - $inicioTotal, 2),
+        ]);
+
+        return response()->json($result);
+    }
+
+    return response()->json([
+        'success' => false,
+        'message' => 'No se recibieron items ni imeis para consultar ubicación.',
+        'debug' => [
+            'request' => $request->all(),
+        ],
+    ], 422);
+}
 
 
     public function getLocationSkyAngel()
