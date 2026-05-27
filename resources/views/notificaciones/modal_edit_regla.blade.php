@@ -54,7 +54,7 @@
                 <hr>
 
                 <div class="row">
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <div class="border rounded-4 p-3 bg-light h-100">
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" name="notificar_empresa" value="1"
@@ -70,7 +70,7 @@
                         </div>
                     </div>
 
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <div class="border rounded-4 p-3 bg-light h-100">
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" name="notificar_cliente" value="1"
@@ -86,7 +86,7 @@
                         </div>
                     </div>
 
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <div class="border rounded-4 p-3 bg-light h-100">
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" name="notificar_proveedor"
@@ -99,6 +99,24 @@
                             </div>
                             <small class="text-muted">
                                 Usuarios relacionados con proveedor.
+                            </small>
+                        </div>
+                    </div>
+
+                    <div class="col-md-3">
+                        <div class="border rounded-4 p-3 bg-light h-100">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="incluir_url_documento"
+                                    value="1" id="incluir_url_documento_edit_{{ $regla->id }}"
+                                    @checked(old('incluir_url_documento', $regla->incluir_url_documento))>
+                                <label class="form-check-label fw-bold"
+                                    for="incluir_url_documento_edit_{{ $regla->id }}">
+                                    Incluir url documento al enviar notificacion
+                                </label>
+                            </div>
+                            <small class="text-muted">
+                                En las notificaciones se adjunta la url del docuemento si esta habilitado, si no solo
+                                llega la notificacion.
                             </small>
                         </div>
                     </div>

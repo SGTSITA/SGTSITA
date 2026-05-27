@@ -343,6 +343,12 @@ function iniciarGridReglasNotificacion() {
             cellRenderer: (params) => badgeSiNo(params.value),
         },
         {
+            headerName: "incluir Doc",
+            field: "incluir_url_documento",
+            width: 120,
+            cellRenderer: (params) => badgeSiNo(params.value),
+        },
+        {
             headerName: "Usuarios",
             field: "usuarios_count",
             width: 120,
