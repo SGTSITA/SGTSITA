@@ -610,6 +610,56 @@ Route::post('viajes/{id}/fechas', [App\Http\Controllers\PlaneacionController::cl
     Route::get('/admin/auditoria-data/inicial', [App\Http\Controllers\AuditoriaController::class, 'data']);
 Route::get('/admin/auditoria/{id}/pdf', [App\Http\Controllers\AuditoriaController::class, 'exportPdf'])
       ->name('auditoria.pdf');
+
+     //nmotificacones
+      Route::get('/notificaciones', [App\Http\Controllers\NotificacionesController::class, 'index'])->name('notificaciones.index');
+
+      Route::post('/notificaciones/tipos', [App\Http\Controllers\NotificacionesController::class, 'storeTipo'])
+    ->name('notificaciones.tipos.store');
+
+Route::put('/notificaciones/tipos/{tipo}', [App\Http\Controllers\NotificacionesController::class, 'updateTipo'])
+    ->name('notificaciones.tipos.update');
+
+Route::delete('/notificaciones/tipos/{tipo}', [App\Http\Controllers\NotificacionesController::class, 'destroyTipo'])
+    ->name('notificaciones.tipos.destroy');
+
+Route::post('/notificaciones/reglas', [App\Http\Controllers\NotificacionesController::class, 'storeRegla'])
+    ->name('notificaciones.reglas.store');
+
+Route::put('/notificaciones/reglas/{regla}', [App\Http\Controllers\NotificacionesController::class, 'updateRegla'])
+    ->name('notificaciones.reglas.update');
+
+Route::delete('/notificaciones/reglas/{regla}', [App\Http\Controllers\NotificacionesController::class, 'destroyRegla'])
+    ->name('notificaciones.reglas.destroy');
+
+Route::post('/notificaciones/reglas/usuarios', [App\Http\Controllers\NotificacionesController::class, 'storeUsuarioRegla'])
+    ->name('notificaciones.reglas.usuarios.store');
+
+Route::delete('/notificaciones/reglas/{regla}/usuarios/{usuario}', [App\Http\Controllers\NotificacionesController::class, 'destroyUsuarioRegla'])
+    ->name('notificaciones.reglas.usuarios.destroy');
+
+
+
+    //usuarios
+    Route::prefix('notificaciones')->name('notificaciones.')->middleware(['auth'])->group(function () {
+
+    Route::get('/mis-notificaciones', [App\Http\Controllers\NotificacionesController::class, 'misNotificaciones'])
+        ->name('mis-notificaciones');
+
+         Route::get('/mis-notificaciones-clientes', [App\Http\Controllers\NotificacionesController::class, 'misNotificacionesClientes'])
+        ->name('mis-notificaciones-clientes');
+
+    Route::get('/usuario/listar', [App\Http\Controllers\NotificacionesController::class, 'listarUsuario'])
+        ->name('usuario.listar');
+
+    Route::get('/usuario/contador', [App\Http\Controllers\NotificacionesController::class, 'contadorUsuario'])
+        ->name('usuario.contador');
+
+    Route::post('/usuario/{notificacion}/leer', [App\Http\Controllers\NotificacionesController::class, 'marcarLeidaUsuario'])
+        ->name('usuario.leer');
+
+    Route::post('/usuario/marcar-todas-leidas', [App\Http\Controllers\NotificacionesController::class, 'marcarTodasLeidasUsuario'])
+        ->name('usuario.marcar-todas-leidas');
 });
 
 //Route Hooks - Do not delete//
