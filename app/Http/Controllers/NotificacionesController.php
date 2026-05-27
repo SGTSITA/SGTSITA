@@ -189,6 +189,10 @@ class NotificacionesController extends Controller
                 'nullable',
                 'boolean',
             ],
+            'incluir_url_documento'=> [
+                'nullable',
+                'boolean',
+            ],
             'activo' => [
                 'required',
                 'boolean',
@@ -235,6 +239,10 @@ class NotificacionesController extends Controller
                 'boolean',
             ],
             'notificar_proveedor' => [
+                'nullable',
+                'boolean',
+            ],
+           'incluir_url_documento'=> [
                 'nullable',
                 'boolean',
             ],

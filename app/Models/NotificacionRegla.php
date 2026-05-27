@@ -14,6 +14,7 @@ class NotificacionRegla extends Model
         'notificar_empresa',
         'notificar_cliente',
         'notificar_proveedor',
+        'incluir_url_documento',
         'activo',
     ];
 
@@ -21,6 +22,7 @@ class NotificacionRegla extends Model
         'notificar_empresa' => 'boolean',
         'notificar_cliente' => 'boolean',
         'notificar_proveedor' => 'boolean',
+        'incluir_url_documento'=> 'boolean',
         'activo' => 'boolean',
     ];
 

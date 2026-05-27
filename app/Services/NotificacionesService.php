@@ -139,6 +139,7 @@ class NotificacionesService
                 'notificar_empresa' => !empty($data['notificar_empresa']),
                 'notificar_cliente' => !empty($data['notificar_cliente']),
                 'notificar_proveedor' => !empty($data['notificar_proveedor']),
+                 'incluir_url_documento' => !empty($data['incluir_url_documento']),
                 'activo' => $data['activo'] ?? true,
             ]);
         });
@@ -153,6 +154,7 @@ class NotificacionesService
                 'notificar_empresa' => !empty($data['notificar_empresa']),
                 'notificar_cliente' => !empty($data['notificar_cliente']),
                 'notificar_proveedor' => !empty($data['notificar_proveedor']),
+                'incluir_url_documento' => !empty($data['incluir_url_documento']),
                 'activo' => $data['activo'] ?? true,
             ]);
 
@@ -316,6 +318,19 @@ class NotificacionesService
         if ($usuarios->isEmpty()) {
             return collect();
         }
+
+        //validaremos el nuevo campo de enviar url del doc si aplica
+
+
+
+                $reglasUrldoc = NotificacionRegla::where('notificacion_tipo_id', $tipo->id)
+            ->where('activo', true)
+            ->select("incluir_url_documento")
+            ->first();
+if(!$reglasUrldoc->incluir_url_documento) {
+     $url= null;
+}
+
 
         return DB::transaction(function () use (
             $usuarios,
