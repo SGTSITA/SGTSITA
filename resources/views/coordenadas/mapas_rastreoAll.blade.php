@@ -115,6 +115,22 @@
 
             let ItemsSelectsCompuesto = [];
             let ItemsSelects = [];
+
+            function crearItemConvoy(conboy) {
+                return {
+                    tipo: "Convoy",
+                    id: Number(conboy.id),
+                    value: conboy.no_conboy,
+                };
+            }
+
+            function obtenerContenedoresTextoConvoy(idConvoy) {
+                return detalleConvoysAll
+                    .filter(d => Number(d.conboy_id) === Number(idConvoy))
+                    .map(d => d.num_contenedor ?? d.contenedor ?? "")
+                    .filter(Boolean)
+                    .join(" / ");
+            }
             detalleConvoysAll.forEach(infoc => {
                 const convoyId = parseInt(infoc.conboy_id);
                 const idContenedor = parseInt(infoc.id_contenedor);
@@ -171,21 +187,25 @@
 
 
 
-                    let convoyLocal{{ $conboy->id }} = ItemsSelectsCompuesto.filter(c => c.convoy_id ===
-                        {{ $conboy->id }});
+                    let convoySeleccionado{{ $conboy->id }} = convoysAll.find(
+                        c => Number(c.id) === Number({{ $conboy->id }})
+                    );
 
-                    if (convoyLocal{{ $conboy->id }}) {
-                        let rawsStrings{{ $conboy->id }} = convoyLocal{{ $conboy->id }}.map(c => c.imeisPeticion);
-                        ItemsSelectsPorConvoy[{{ $conboy->id }}].push(...rawsStrings{{ $conboy->id }});
-                        //  ItemsSelects.push(...rawsStrings{{ $conboy->id }});
-                        let convoySeleccionado{{ $conboy->id }} = convoysAll.find(c => c.id === {{ $conboy->id }});
+                    if (convoySeleccionado{{ $conboy->id }}) {
+                        ItemsSelectsPorConvoy[{{ $conboy->id }}] = [
+                            crearItemConvoy(convoySeleccionado{{ $conboy->id }})
+                        ];
+
                         let tipoDisolucion{{ $conboy->id }} = convoySeleccionado{{ $conboy->id }}.tipo_disolucion;
 
-
-
-                        actualizarUbicacion(ItemsSelectsPorConvoy[{{ $conboy->id }}], "", {{ $conboy->id }},
-                            tipoDisolucion{{ $conboy->id }}, convoySeleccionado{{ $conboy->id }}.no_conboy,
-                            map{{ $conboy->id }});
+                        actualizarUbicacion(
+                            ItemsSelectsPorConvoy[{{ $conboy->id }}],
+                            "",
+                            {{ $conboy->id }},
+                            tipoDisolucion{{ $conboy->id }},
+                            convoySeleccionado{{ $conboy->id }}.no_conboy,
+                            map{{ $conboy->id }}
+                        );
 
 
                         document.getElementById('btnDetener-{{ $conboy->id }}').style.display = 'inline-block';
@@ -259,7 +279,7 @@
                 document.getElementById('tipoSpan-' + idConvoy).textContent = "Convoy :" + num_convoy;
             }
 
-            function actualizarUbicacion(imeis, t, idConvoy, disolucion, num_convoy, map) {
+            function actualizarUbicacion(items, t, idConvoy, disolucion, num_convoy, map) {
                 console.log('obteniendo ubicacion convoy :', idConvoy);
                 let tipoSpans = document.getElementById('tipoSpan-' + idConvoy);
                 let contenedorLocal = ItemsSelectsCompuesto.filter(c => c.convoy_id === idConvoy);
@@ -278,7 +298,7 @@
                             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                         },
                         body: JSON.stringify({
-                            imeis: imeis
+                            items: items
                         })
                     })
                     .then(res => res.json())
@@ -607,6 +627,201 @@
                 }
 
 
+            }
+
+
+            function createMarkerIconLive(status, item, containerColor = "#0d6efd") {
+                const estadoMarker = getEstadoMarker(status);
+
+                const TIPOS = {
+                    Camion: {
+                        icon: "T",
+                        text: "TRACTO"
+                    },
+                    ChasisA: {
+                        icon: "A",
+                        text: "CHASIS A"
+                    },
+                    ChasisB: {
+                        icon: "B",
+                        text: "CHASIS B"
+                    },
+                    GPS: {
+                        icon: "G",
+                        text: "GPS"
+                    },
+                };
+
+                const tipoNormalizado = normalizarTipoEquipoMarker(
+                    item?.TipoEquipo || item?.ubicacion?.tipoEquipo || "GPS",
+                );
+
+                const tipo = TIPOS[tipoNormalizado] || TIPOS.GPS;
+                const texto = construirTextoMarker(item);
+
+                const estadoTextoCorto =
+                    status === "moving" ?
+                    "EN RUTA" :
+                    status === "parked" ?
+                    "DETENIDO" :
+                    "SIN SEÑAL";
+
+                const mostrarAnimacion = status === "moving";
+
+                const svg = `
+<svg width="360" height="138" viewBox="0 0 360 138" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <filter id="liveShadow" x="-30%" y="-30%" width="180%" height="200%">
+            <feDropShadow dx="0" dy="8" stdDeviation="6" flood-color="rgba(0,0,0,0.35)" flood-opacity="0.55"/>
+        </filter>
+
+        <linearGradient id="liveMain" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="${containerColor}" stop-opacity="1"/>
+            <stop offset="100%" stop-color="#0f172a" stop-opacity="0.96"/>
+        </linearGradient>
+
+        <linearGradient id="liveBadge" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="${containerColor}" stop-opacity="0.98"/>
+            <stop offset="60%" stop-color="${containerColor}" stop-opacity="0.90"/>
+            <stop offset="100%" stop-color="${containerColor}" stop-opacity="0.74"/>
+        </linearGradient>
+
+        <linearGradient id="liveShine" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#ffffff" stop-opacity="0.24"/>
+            <stop offset="45%" stop-color="#ffffff" stop-opacity="0.08"/>
+            <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+        </linearGradient>
+
+        <clipPath id="textClipLive">
+            <rect x="100" y="22" width="228" height="88" rx="6"/>
+        </clipPath>
+
+        <clipPath id="badgeClipLive">
+            <rect x="88" y="18" width="248" height="92" rx="18"/>
+        </clipPath>
+    </defs>
+
+    ${
+        mostrarAnimacion
+            ? `
+            <circle cx="58" cy="52" r="24" fill="${estadoMarker.color}" opacity="0.20">
+                <animate attributeName="r" values="24;44;24" dur="1.25s" repeatCount="indefinite"/>
+                <animate attributeName="opacity" values="0.22;0;0.22" dur="1.25s" repeatCount="indefinite"/>
+            </circle>
+
+            <circle cx="58" cy="52" r="34" fill="none" stroke="${estadoMarker.color}" stroke-width="2" opacity="0.28">
+                <animate attributeName="r" values="30;52;30" dur="1.55s" repeatCount="indefinite"/>
+                <animate attributeName="opacity" values="0.35;0;0.35" dur="1.55s" repeatCount="indefinite"/>
+            </circle>
+            `
+            : ""
+    }
+
+    <g filter="url(#liveShadow)">
+        <!-- línea conectora -->
+        <path d="M78 52 H93" stroke="${estadoMarker.color}" stroke-width="4" stroke-linecap="round"/>
+
+        <!-- círculo principal -->
+        <circle cx="58" cy="52" r="30" fill="url(#liveMain)"/>
+        <circle cx="58" cy="52" r="24" fill="rgba(255,255,255,0.10)" stroke="rgba(255,255,255,0.35)" stroke-width="1.5"/>
+        <circle cx="58" cy="52" r="19" fill="${estadoMarker.soft}" stroke="${estadoMarker.color}" stroke-width="3"/>
+
+        <text x="58" y="59"
+            text-anchor="middle"
+            font-size="18"
+            font-family="Arial, sans-serif"
+            font-weight="900"
+            fill="${estadoMarker.color}">
+            ${tipo.icon}
+        </text>
+
+        <!-- punto status -->
+        <circle cx="79" cy="30" r="8" fill="${estadoMarker.color}" stroke="#ffffff" stroke-width="3"/>
+
+        <!-- estado debajo del círculo, sin tapar datos -->
+        <rect x="25" y="82" width="66" height="17" rx="8.5" fill="${estadoMarker.color}"/>
+        <text x="58" y="93.5"
+            text-anchor="middle"
+            font-size="7.5"
+            font-family="Arial, sans-serif"
+            font-weight="900"
+            fill="#ffffff">
+            ${estadoTextoCorto}
+        </text>
+
+        <!-- caja derecha color del marker -->
+        <rect x="88" y="18" width="248" height="92" rx="18" fill="url(#liveBadge)"/>
+        <rect x="88" y="18" width="248" height="92" rx="18" fill="rgba(0,0,0,0.14)"/>
+
+        <g clip-path="url(#badgeClipLive)">
+            <rect x="88" y="18" width="248" height="30" fill="url(#liveShine)"/>
+            <circle cx="312" cy="12" r="54" fill="#ffffff" opacity="0.10"/>
+        </g>
+
+        <rect x="88.5" y="18.5" width="247" height="91" rx="17.5" fill="none" stroke="rgba(255,255,255,0.22)"/>
+
+        <g clip-path="url(#textClipLive)">
+            <!-- título / contenedor -->
+            <text x="102" y="40"
+                font-size="14"
+                font-family="Arial, sans-serif"
+                font-weight="900"
+                fill="#ffffff">
+                ${escapeSvgText(texto.titulo)}
+            </text>
+
+            <!-- subtítulo / equipo -->
+            <text x="102" y="58"
+                font-size="11.3"
+                font-family="Arial, sans-serif"
+                font-weight="800"
+                fill="#ffffff"
+                opacity="0.90">
+                ${escapeSvgText(texto.subtitulo)}
+            </text>
+
+            ${
+                texto.detalle
+                    ? `
+                    <!-- detalle -->
+                    <text x="102" y="75"
+                        font-size="10.2"
+                        font-family="Arial, sans-serif"
+                        font-weight="800"
+                        fill="#ffffff"
+                        opacity="0.78">
+                        ${escapeSvgText(texto.detalle)}
+                    </text>`
+                    : ""
+            }
+        </g>
+
+        ${
+            texto.transportista
+                ? `
+                <!-- LT / transportista ancho completo -->
+                <rect x="102" y="84" width="224" height="17" rx="8.5" fill="rgba(0,0,0,0.26)"/>
+                <text x="110" y="95.5"
+                    font-size="9.2"
+                    font-family="Arial, sans-serif"
+                    font-weight="900"
+                    fill="#ffffff">
+                    LT: ${escapeSvgText(texto.transportista)}
+                </text>`
+                : ""
+        }
+
+        <!-- punta -->
+        <path d="M58 132 L45 104 H71 Z" fill="url(#liveMain)"/>
+        <path d="M58 132 L45 104 H71 Z" fill="none" stroke="${estadoMarker.color}" stroke-width="2.5"/>
+    </g>
+</svg>`;
+
+                return {
+                    url: "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(svg),
+                    scaledSize: new google.maps.Size(360, 138),
+                    anchor: new google.maps.Point(58, 132),
+                };
             }
 
             function actualizarUbicacionReal(coordenadaData) {

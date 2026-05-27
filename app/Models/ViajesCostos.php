@@ -75,4 +75,11 @@ class ViajesCostos extends Model
     {
         return $this->monto_cobrado >= $this->monto;
     }
+    public function scopeTieneValores($query)
+{
+    return $query->where(function ($q) {
+        $q->whereNotNull('monto')
+            ->where('monto', '>', 0);
+    });
+}
 }

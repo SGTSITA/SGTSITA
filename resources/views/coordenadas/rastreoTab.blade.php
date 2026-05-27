@@ -122,6 +122,47 @@
             background-color: #e9ecef;
             border-radius: 0.5rem 0.5rem 0 0;
         }
+
+        #filtroTipo {
+            height: 48px;
+        }
+
+        #btnOpcionesVistaMapa.btnConfigVistaMapa {
+            width: 52px;
+            height: 48px;
+            min-height: 48px;
+            padding: 0;
+            margin: 0;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            background: linear-gradient(135deg, #eef5ff, #ffffff);
+            border: 1px solid #ced4da;
+            border-left: 0;
+            color: #0d6efd;
+
+            border-top-right-radius: .375rem;
+            border-bottom-right-radius: .375rem;
+        }
+
+        #btnOpcionesVistaMapa.btnConfigVistaMapa i {
+            font-size: 15px;
+            line-height: 1;
+        }
+
+        #btnOpcionesVistaMapa.btnConfigVistaMapa:hover {
+            background: linear-gradient(135deg, #dbeafe, #ffffff);
+            color: #0a58ca;
+            border-color: #86b7fe;
+        }
+
+        #btnOpcionesVistaMapa.btnConfigVistaMapa:focus,
+        #btnOpcionesVistaMapa.btnConfigVistaMapa.show {
+            box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, .18);
+            border-color: #86b7fe;
+        }
     </style>
     <div class="container-fluid bg-white">
         <h3 class="mb-3 text-center">📍 Módulo de Rastreo y Gestión</h3>
@@ -175,12 +216,99 @@
                     <div class="col-md-3 bg-white p-3 rounded shadow-sm">
                         <div class="mb-2">
                             <label class="form-label">Tipo</label>
-                            <select id="filtroTipo" class="form-select">
-                                <option value="">Todos</option>
-                                <option value="Equipo">Equipos</option>
-                                <option value="Convoy">Convoys</option>
-                                <option value="Contenedor">Contenedores</option>
-                            </select>
+
+                            <div class="input-group">
+                                <select id="filtroTipo" class="form-select">
+                                    <option value="">Todos</option>
+                                    <option value="Equipo">Equipos</option>
+                                    <option value="Convoy">Convoys</option>
+                                    <option value="Contenedor">Contenedores</option>
+                                </select>
+
+                                <button class="btn btnConfigVistaMapa" type="button" id="btnOpcionesVistaMapa"
+                                    data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false"
+                                    title="Configurar vista del mapa">
+                                    <i class="fas fa-sliders-h"></i>
+                                </button>
+
+                                <div class="dropdown-menu dropdown-menu-end p-3 shadow" style="width: 230px;">
+                                    <div class="fw-bold small text-dark mb-2">
+                                        <i class="fas fa-eye me-1"></i>
+                                        Mostrar en mapa
+                                    </div>
+
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input filtroVistaMapaCheck" type="checkbox" value="todos"
+                                            id="vistaCheckTodos" checked>
+                                        <label class="form-check-label small" for="vistaCheckTodos">
+                                            Todos
+                                        </label>
+                                    </div>
+
+                                    <hr class="my-2">
+
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input filtroVistaMapaCheck filtroVistaMapaTipo"
+                                            type="checkbox" value="Camion" id="vistaCheckCamion" checked>
+                                        <label class="form-check-label small" for="vistaCheckCamion">
+                                            Tracto
+                                        </label>
+                                    </div>
+
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input filtroVistaMapaCheck filtroVistaMapaTipo"
+                                            type="checkbox" value="ChasisA" id="vistaCheckChasisA" checked>
+                                        <label class="form-check-label small" for="vistaCheckChasisA">
+                                            Chasis A
+                                        </label>
+                                    </div>
+
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input filtroVistaMapaCheck filtroVistaMapaTipo"
+                                            type="checkbox" value="ChasisB" id="vistaCheckChasisB" checked>
+                                        <label class="form-check-label small" for="vistaCheckChasisB">
+                                            Chasis B
+                                        </label>
+                                    </div>
+
+                                    <div class="pt-2 border-top">
+                                        <span class="badge bg-light text-dark border" id="lblFiltroVistaMapa">
+                                            Todos
+                                        </span>
+                                    </div>
+                                    <hr class="my-2">
+
+                                    <div class="fw-bold small text-dark mb-2">
+                                        <i class="fas fa-map-marker-alt me-1"></i>
+                                        Estilo marcador
+                                    </div>
+
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input radioVistaMarker" type="radio"
+                                            name="vistaMarker" id="vistaMarkerDefault" value="default" checked>
+                                        <label class="form-check-label small" for="vistaMarkerDefault">
+                                            Default
+                                        </label>
+                                    </div>
+
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input radioVistaMarker" type="radio"
+                                            name="vistaMarker" id="vistaMarkertransparente" value="transparente">
+                                        <label class="form-check-label small" for="vistaMarkertransparente">
+                                            Transparente
+                                        </label>
+                                    </div>
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input radioVistaMarker" type="radio"
+                                            name="vistaMarker" id="vistaMarkerlive" value="live">
+                                        <label class="form-check-label small" for="vistaMarkerlive">
+                                            Clasico
+                                        </label>
+                                    </div>
+
+
+                                </div>
+                            </div>
                         </div>
                         <!-- Bloque de buscador y botón -->
                         <div class="d-flex align-items-start gap-2 mb-3">
@@ -198,7 +326,13 @@
                             </div>
                         </div>
 
-                        <div class="border rounded p-2" style="max-height: 58vh; overflow-y: auto;">
+                        <div class="panelDispositivos"
+                            style="
+        max-height: 58vh;
+        min-height: 200px;
+        overflow-y: auto;
+        overflow-x: visible;
+    ">
 
 
                             <div
@@ -218,7 +352,7 @@
                             </div>
 
 
-                            <ul class="list-group" id="listaDispositivos"></ul>
+                            <ul class="list-group" id="listaDispositivos" style="padding-bottom: 120px;"></ul>
 
                         </div>
 

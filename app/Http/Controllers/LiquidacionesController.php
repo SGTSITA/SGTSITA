@@ -801,8 +801,8 @@ class LiquidacionesController extends Controller
                         'monto_pago' => ($pagoPrestamos > $p->saldo_actual) ? $p->saldo_actual : $pagoPrestamos,
                          // NUEVOS CAMPOS para tener los abonos por pago directo
                         'tipo_origen'     => 'liquidacion',
-                        'id_banco'        => null,     // no aplica en liquidación
-                        'referencia'      => null,     // no aplica en liquidación
+                        'id_banco'        => $request->bancoId,     // para mantener la relacion unicamente no se ejecuta en bancos
+                        'referencia'      => 'liq #'. $liquidacion->id,     // no aplica en liquidación
                         'fecha_pago'      => \Carbon\Carbon::createFromFormat(
                             'd/m/Y',
                             $fechaAplicacionDinero
@@ -835,8 +835,8 @@ class LiquidacionesController extends Controller
                         'monto_pago' => ($pagoAdelanto > $p->saldo_actual) ? $p->saldo_actual : $pagoAdelanto,
                          // NUEVOS CAMPOS para tener los abonos por pago directo
                         'tipo_origen'     => 'liquidacion',
-                        'id_banco'        => null,     // no aplica en liquidación
-                        'referencia'      => null,     // no aplica en liquidación
+                        'id_banco'        => $request->bancoId,    // para mantener la relacion unicamente no se ejecuta en bancos
+                        'referencia'      => 'liq #'. $liquidacion->id,     // no aplica en liquidación
                         'fecha_pago'      => \Carbon\Carbon::createFromFormat(
                             'd/m/Y',
                             $fechaAplicacionDinero
@@ -892,7 +892,7 @@ class LiquidacionesController extends Controller
 
             }
 
-            $banco = new BancoDineroOpe();
+          /*   $banco = new BancoDineroOpe();
             $banco->id_operador = $request->_IdOperador;
 
             $banco->monto1 = $totalPagar;
@@ -906,9 +906,9 @@ class LiquidacionesController extends Controller
                 'd/m/Y',
                 $fechaAplicacionDinero
             )->format('Y-m-d');
-            $banco->save();
+            $banco->save(); */
 
-            Bancos::where('id', '=', $request->bancoId)->update(["saldo" => DB::raw("saldo - ". $request->totalMontoPago)]);
+           // Bancos::where('id', '=', $request->bancoId)->update(["saldo" => DB::raw("saldo - ". $request->totalMontoPago)]);
 
 
             //bancos nuevo registrar movi

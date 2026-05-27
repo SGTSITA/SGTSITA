@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Models\Cotizaciones;
+use App\Models\DocumCotizacion;
 use Illuminate\Support\Facades\Http;
 use App\Traits\GlobalGpsTrait as GlobalGps;
 use App\Traits\SkyAngelGpsTrait as SkyAngel;
@@ -21,6 +23,507 @@ use App\Traits\SISGPSTrait as SISGPSTrait;
 
 class UbicacionService
 {
+
+public function obtenerUbicacionPorItems(array $items)
+{
+    $inicio = microtime(true);
+
+    $dispositivos = [];
+
+    log::info('RASTREO OBTENER UBICACION POR ITEMS INICIO', [
+        'items_recibidos' => count($items),
+    ]);
+
+    foreach ($items as $item) {
+        $tipo = $item['tipo'] ?? null;
+        $id = $item['id'] ?? null;
+
+        if (!$tipo || !$id) {
+            continue;
+        }
+        log::info('RASTREO OBTENER UBICACION POR ITEM', [
+            'tipo' => $tipo,
+            'id' => $id,
+        ]);
+
+        if ($tipo === 'Contenedor') {
+            $dispositivos = array_merge(
+                $dispositivos,
+                $this->resolverDispositivosPorContenedor((int) $id,$tipo, (int) $id)
+            );
+        }
+
+        if ($tipo === 'Convoy') {
+            $dispositivos = array_merge(
+                $dispositivos,
+                $this->resolverDispositivosPorConvoy((int) $id,$tipo)
+            );
+        }
+
+        if ($tipo === 'Equipo') {
+            $dispositivos = array_merge(
+                $dispositivos,
+                $this->resolverDispositivoEquipo((int) $id,$tipo)
+            );
+        }
+    }
+
+    Log::info('RASTREO OBTENER UBICACION POR ITEMS', [
+        'items_recibidos' => count($items),
+        'dispositivos_resueltos' => count($dispositivos),
+        'ms' => round((microtime(true) - $inicio) * 1000, 2),
+    ]);
+
+    if (empty($dispositivos)) {
+        return [];
+    }
+
+    return $this->obtenerUbicacionByDispositivos($dispositivos);
+}
+public function obtenerUbicacionByDispositivos(array $dispositivos)
+{
+    $inicioPrep = microtime(true);
+
+    $grupos = [];
+
+    foreach ($dispositivos as $dispositivo) {
+        if (empty($dispositivo['imei'])) {
+            continue;
+        }
+
+        $esDatoEmp = ((int) $dispositivo['empresaIdRastro'] === (int) Auth::user()->id_empresa)
+            ? 'SI'
+            : 'NO';
+
+            log::info('RASTREO RESOLVER CREDENCIALES GPS', [
+                'dispositivo' => $dispositivo,
+            ]);
+        $result = GpsCredentialsService::getByProveedor(
+            $dispositivo['Rfc'],
+            $dispositivo['gps_company_id'],
+            $dispositivo['tipo_viaje_contrato'],
+            $dispositivo['tipo_camion_rev'] ?? '',
+            $dispositivo['tipoConfig'],
+            $dispositivo['equipo'],
+            $dispositivo['id_equipoUnic']
+        );
+
+        if (!$result['success']) {
+            return $result;
+        }
+
+        $credenciales = $result['credentials'];
+
+        $grupoKey = md5(json_encode([
+            'tipoGps' => $dispositivo['tipoGps'],
+            'credenciales' => $credenciales,
+        ]));
+
+        $item = [
+            'contenedor' => $dispositivo['contenedor'],
+             'contenedorB' => $dispositivo['contenedorB'] ?? null,
+            'imei' => $dispositivo['imei'],
+            'id_contenendor' => $dispositivo['id_contenendor'],
+            'id_grupo' => $dispositivo['id_grupo'] ?? null,
+            'tipoGps' => $dispositivo['tipoGps'],
+            'credenciales' => $credenciales,
+            'placas' => $dispositivo['placas'],
+            'TipoEquipo' => $dispositivo['TipoEquipo'],
+            'esDatoEmp' => $esDatoEmp,
+            'equipo' => $dispositivo['equipo'],
+            'value' => $dispositivo['value'],
+            'gps_company_id' => $dispositivo['gps_company_id'],
+
+            'grupo_tipo' => $dispositivo['grupo_tipo'] ?? null,
+            'grupo_id' => $dispositivo['grupo_id'] ?? null,
+            'dispositivo_tipo' => $dispositivo['TipoEquipo'],
+            'transportista_nombre' => $dispositivo['transportista_nombre'] ?? null,
+        ];
+
+        $grupos[$grupoKey]['tipoGps'] = $dispositivo['tipoGps'];
+        $grupos[$grupoKey]['credenciales'] = $credenciales;
+        $grupos[$grupoKey]['items'][] = $item;
+    }
+
+    Log::info('RASTREO PREPARACION DISPOSITIVOS', [
+        'dispositivos' => count($dispositivos),
+        'grupos' => count($grupos),
+        'ms' => round((microtime(true) - $inicioPrep) * 1000, 2),
+    ]);
+
+    return $this->consultarGpsPorGrupos($grupos);
+}
+
+private function resolverDispositivosPorContenedor(int $idContenedor, string $tipo, int $idgrupo): array
+{
+    $datosAll = $this->obtenerAsignacionContenedor($idContenedor);
+
+    if (!$datosAll) {
+        Log::warning('RASTREO SIN PLANEACION PARA CONTENEDOR', [
+            'id_contenedor' => $idContenedor,
+        ]);
+
+        return [];
+    }
+
+    $PosibleSecudaria= Cotizaciones::
+        join('docum_cotizacion', 'docum_cotizacion.id_cotizacion', '=', 'cotizaciones.id')
+        ->where('docum_cotizacion.id', '=', $idContenedor)
+        ->first();
+
+        $referenciaFull = $PosibleSecudaria?->referencia_full ?? null;
+        $contenedorB= '';
+       if (
+    $PosibleSecudaria &&
+      !empty($referenciaFull)
+) {
+
+log::info('RASTREO BUSCANDO SECUNDARIA PARA CONTENEDOR', [
+            'id_contenedor' => $idContenedor,
+            'referencia_full' => $referenciaFull,
+        ]);
+             $secundariaB = DocumCotizacion::with('Cotizacion')
+           ->whereHas('Cotizacion', function ($query) use ($referenciaFull) {
+            $query->where('referencia_full', $referenciaFull)
+                ->whereNotNull('referencia_full')
+                                ->where('jerarquia', 'Secundario');
+        })
+        ->first();
+
+//        dd($secundariaB);
+
+    $contenedorB = $secundariaB?->num_contenedor;
+        }
+
+   // dd($datosAll);
+
+    return $this->resolverDispositivosDesdeAsignacion($datosAll,$contenedorB,$tipo,$idgrupo);
+}
+private function resolverDispositivosDesdeAsignacion($datosAll, $contenedorB, string $tipo, int $idgrupo): array
+{
+    $dispositivos = [];
+
+
+    $transportista_nombre = $datosAll->transportista_nombre ?? $datosAll->Empresa ?? null;
+
+    if (!empty($datosAll->imei)) {
+        $dispositivos[] = [
+            'contenedor' => $datosAll->contenedor,
+            'contenedorB' => $contenedorB,
+            'imei' => $datosAll->imei,
+            'id_contenendor' => $datosAll->id_contenedor,
+            'tipoGps' => $datosAll->tipoGps,
+            'equipo' => $datosAll->id_equipo,
+            'placas' => $datosAll->placas,
+            'TipoEquipo' => 'Camion',
+            'gps_company_id' => $datosAll->gps_company_id,
+            'tipoConfig' => $datosAll->usar_config_global,
+            'id_equipoUnic' => $datosAll->id_camion,
+            'Rfc' => $datosAll->RFC,
+            'empresaIdRastro' => $datosAll->id_empresa,
+            'tipo_viaje_contrato' => $datosAll->tipo_viaje_contratado,
+            'tipo_camion_rev' => $datosAll->tipo_camion_rev ?? null,
+            'value' => "{$datosAll->contenedor}|{$datosAll->imei}|{$datosAll->id_contenedor}|{$datosAll->tipoGps}",
+            'transportista_nombre' => $transportista_nombre,
+            'grupo_tipo' => $tipo,
+            'id_grupo' => $idgrupo,
+        ];
+    }
+
+    if (!empty($datosAll->imei_chasis)) {
+        $dispositivos[] = [
+            'contenedor' => $datosAll->contenedor,
+             'contenedorB' => $contenedorB,
+            'imei' => $datosAll->imei_chasis,
+            'id_contenendor' => $datosAll->id_contenedor,
+            'tipoGps' => $datosAll->tipoGps_chasis,
+            'equipo' => $datosAll->id_equipo_chasis,
+            'placas' => $datosAll->placas_chasis,
+            'TipoEquipo' => 'ChasisA',
+            'gps_company_id' => $datosAll->gps_company_id_chasis,
+            'tipoConfig' => $datosAll->usar_config_global_chasis,
+            'id_equipoUnic' => $datosAll->id_chasis,
+            'Rfc' => $datosAll->RFC,
+            'empresaIdRastro' => $datosAll->id_empresa,
+            'tipo_viaje_contrato' => $datosAll->tipo_viaje_contratado,
+            'tipo_camion_rev' => $datosAll->tipo_camion_rev ?? null,
+            'value' => "{$datosAll->contenedor}|{$datosAll->imei_chasis}|{$datosAll->id_contenedor}|{$datosAll->tipoGps_chasis}",
+             'transportista_nombre' => $transportista_nombre,
+             'grupo_tipo' => $tipo,
+             'id_grupo' => $idgrupo,
+        ];
+    }
+
+    if (!empty($datosAll->imei_chasis_b)) {
+        $dispositivos[] = [
+            'contenedor' => $datosAll->contenedor,
+             'contenedorB' => $contenedorB,
+            'imei' => $datosAll->imei_chasis_b,
+            'id_contenendor' => $datosAll->id_contenedor,
+            'tipoGps' => $datosAll->tipoGps_chasis_b,
+            'equipo' => $datosAll->id_equipo_chasis_b,
+            'placas' => $datosAll->placas_chasis_b,
+            'TipoEquipo' => 'ChasisB',
+            'gps_company_id' => $datosAll->gps_company_id_chasis_b,
+            'tipoConfig' => $datosAll->usar_config_global_chasis_b,
+            'id_equipoUnic' => $datosAll->id_chasis2,
+            'Rfc' => $datosAll->RFC,
+            'empresaIdRastro' => $datosAll->id_empresa,
+            'tipo_viaje_contrato' => $datosAll->tipo_viaje_contratado,
+            'tipo_camion_rev' => $datosAll->tipo_camion_rev ?? null,
+            'value' => "{$datosAll->contenedor}|{$datosAll->imei_chasis_b}|{$datosAll->id_contenedor}|{$datosAll->tipoGps_chasis_b}",
+             'transportista_nombre' => $transportista_nombre,
+                'grupo_tipo' => $tipo,
+                'id_grupo' => $idgrupo,
+        ];
+    }
+
+    return $dispositivos;
+}
+private function resolverDispositivosPorConvoy(int $convoyId, string $tipo): array
+{
+    $contenedoresIds = DB::table('conboys_contenedores')
+        ->where('conboy_id', $convoyId)
+        ->pluck('id_contenedor');
+
+    $dispositivos = [];
+
+    foreach ($contenedoresIds as $idContenedor) {
+        $dispositivos = array_merge(
+            $dispositivos,
+            $this->resolverDispositivosPorContenedor((int) $idContenedor, $tipo, (int) $convoyId)
+        );
+    }
+
+   // dd($dispositivos);
+
+    return $dispositivos;
+}
+private function resolverDispositivoEquipo(int $idEquipo, string $tipo): array
+{
+    $equipo = DB::table('equipos')
+        ->join('gps_company', 'gps_company.id', '=', 'equipos.gps_company_id')
+        ->join('empresas', 'empresas.id', '=', 'equipos.id_empresa')
+        ->leftJoin('user_proveedores', 'user_proveedores.user_id', '=', 'equipos.user_id')
+        ->leftJoin('proveedores', 'proveedores.id', '=', 'user_proveedores.proveedor_id')
+        ->select(
+            'equipos.id as id_equipo_unico',
+            'equipos.imei',
+            'equipos.id_equipo',
+            'equipos.placas',
+            'equipos.usar_config_global',
+            'equipos.gps_company_id',
+            'gps_company.url_conexion as tipoGps',
+            'equipos.id_empresa',
+            DB::raw("COALESCE(proveedores.rfc, empresas.rfc) as RFC"),
+            DB::raw("
+                CASE
+                    WHEN proveedores.rfc IS NOT NULL AND proveedores.rfc <> ''
+                    THEN 'camion_proveedor'
+                    ELSE 'camion_propio'
+                END as tipo_camion_rev
+            ")
+        )
+        ->where('equipos.id', $idEquipo)
+        ->first();
+
+    if (!$equipo || empty($equipo->imei)) {
+        return [];
+    }
+
+    return [
+        [
+            'contenedor' => $equipo->id_equipo,
+            'imei' => $equipo->imei,
+            'id_contenendor' => $equipo->id_equipo_unico,
+            'tipoGps' => $equipo->tipoGps,
+            'Rfc' => $equipo->RFC,
+            'equipo' => $equipo->id_equipo,
+            'empresaIdRastro' => $equipo->id_empresa,
+            'TipoEquipo' => 'Camion',
+            'gps_company_id' => $equipo->gps_company_id,
+            'tipo_viaje_contrato' => 'Propio',
+            'placas' => $equipo->placas,
+            'tipo_camion_rev' => $equipo->tipo_camion_rev,
+            'tipoConfig' => $equipo->usar_config_global,
+            'id_equipoUnic' => $equipo->id_equipo_unico,
+            'grupo_tipo' => 'Equipo',
+            'grupo_id' => $equipo->id_equipo_unico,
+            'value' => "{$equipo->id_equipo}|{$equipo->imei}|{$equipo->id_equipo_unico}|{$equipo->tipoGps}",
+                'transportista_nombre' => $equipo->tipo_camion_rev === 'camion_proveedor' ? $equipo->RFC : null,
+                'grupo_tipo' => $tipo,
+                'id_grupo' => $equipo->id_equipo_unico
+        ],
+    ];
+}
+
+private function obtenerAsignacionContenedor(int $idContenedor): ?object
+{
+
+
+    $asignaciones = DB::table('asignaciones')
+        ->join('docum_cotizacion', 'docum_cotizacion.id', '=', 'asignaciones.id_contenedor')
+
+        // Camión
+        ->join('equipos', 'equipos.id', '=', 'asignaciones.id_camion')
+        ->join('gps_company', 'gps_company.id', '=', 'equipos.gps_company_id')
+
+        // Chasis A
+        ->leftJoin('equipos as eq_chasis', 'eq_chasis.id', '=', 'asignaciones.id_chasis')
+        ->leftJoin('gps_company as gps_company_chasis', 'gps_company_chasis.id', '=', 'eq_chasis.gps_company_id')
+
+        // Chasis B
+        ->leftJoin('equipos as eq_chasis_b', 'eq_chasis_b.id', '=', 'asignaciones.id_chasis2')
+        ->leftJoin('gps_company as gps_company_chasis_b', 'gps_company_chasis_b.id', '=', 'eq_chasis_b.gps_company_id')
+
+        ->select(
+            'docum_cotizacion.id as id_contenedor',
+            'docum_cotizacion.id_cotizacion as id_cotizacion_doc',
+
+            'asignaciones.id_proveedor',
+            'asignaciones.id_empresa',
+
+            'asignaciones.id',
+            'asignaciones.id_camion',
+            'asignaciones.id_chasis',
+            'asignaciones.id_chasis2',
+
+            'docum_cotizacion.num_contenedor',
+            'asignaciones.fecha_inicio',
+            'asignaciones.fecha_fin',
+            'asignaciones.tipo_contrato as tipo_viaje_contratado',
+
+            // Camión
+            'equipos.imei',
+            'equipos.id_equipo',
+            'equipos.marca',
+            'equipos.modelo',
+            'equipos.placas',
+            'equipos.usar_config_global',
+            'gps_company.url_conexion as tipoGps',
+            'gps_company.id as gps_company_id',
+
+            // Chasis A
+            'eq_chasis.imei as imei_chasis',
+            'eq_chasis.id_equipo as id_equipo_chasis',
+            'eq_chasis.placas as placas_chasis',
+            'eq_chasis.usar_config_global as usar_config_global_chasis',
+            'eq_chasis.gps_company_id as gps_company_id_chasis',
+            'gps_company_chasis.url_conexion as tipoGps_chasis',
+
+            // Chasis B
+            'eq_chasis_b.imei as imei_chasis_b',
+            'eq_chasis_b.id_equipo as id_equipo_chasis_b',
+            'eq_chasis_b.placas as placas_chasis_b',
+            'eq_chasis_b.usar_config_global as usar_config_global_chasis_b',
+            'eq_chasis_b.gps_company_id as gps_company_id_chasis_b',
+            'gps_company_chasis_b.url_conexion as tipoGps_chasis_b',
+
+            DB::raw("CASE WHEN asignaciones.id_proveedor IS NULL THEN asignaciones.id_operador ELSE asignaciones.id_proveedor END as beneficiario_id"),
+            DB::raw("CASE WHEN asignaciones.id_proveedor IS NULL THEN 'Propio' ELSE 'Subcontratado' END as tipo_contrato")
+        );
+
+    $beneficiarios = DB::table(function ($query) {
+        $query->select(
+                'id',
+                'nombre',
+                'telefono',
+                DB::raw("'buscarEmpresaRFC' as RFC"),
+                DB::raw("'Propio' as tipo_contrato"),
+                'id_empresa'
+            )
+            ->from('operadores')
+            ->union(
+                DB::table('proveedores')
+                    ->select(
+                        'id',
+                        'nombre',
+                        'telefono',
+                        'RFC',
+                        DB::raw("'Subcontratado' as tipo_contrato"),
+                        'id_empresa'
+                    )
+            );
+    }, 'beneficiarios');
+
+    return DB::table('cotizaciones')
+        ->select(
+            'cotizaciones.id as id_cotizacion',
+            'asig.id as id_asignacion',
+            'clients.nombre as cliente',
+            'cotizaciones.origen',
+            'cotizaciones.destino',
+            'asig.num_contenedor as contenedor',
+            'cotizaciones.estatus',
+            'asig.tipo_viaje_contratado',
+
+            'asig.id_camion',
+            'asig.id_chasis',
+            'asig.id_chasis2',
+
+            'asig.imei',
+            'asig.id_equipo',
+            'asig.placas',
+            'asig.usar_config_global',
+            'asig.id_contenedor',
+            'asig.tipo_contrato',
+            'asig.fecha_inicio',
+            'asig.fecha_fin',
+            'asig.tipoGps',
+            'asig.gps_company_id',
+
+            // Chasis A
+            'asig.imei_chasis',
+            'asig.id_equipo_chasis',
+            'asig.placas_chasis',
+            'asig.usar_config_global_chasis',
+            'asig.gps_company_id_chasis',
+            'asig.tipoGps_chasis',
+
+            // Chasis B
+            'asig.imei_chasis_b',
+            'asig.id_equipo_chasis_b',
+            'asig.placas_chasis_b',
+            'asig.usar_config_global_chasis_b',
+            'asig.gps_company_id_chasis_b',
+            'asig.tipoGps_chasis_b',
+
+            'cotizaciones.id_empresa',
+            'beneficiarios.RFC',
+              DB::raw("COALESCE(NULLIF(em.nombre, ''), emc.nombre) as Empresa"),
+              'proveedores.nombre as transportista_nombre',
+        )
+        ->join('clients', 'cotizaciones.id_cliente', '=', 'clients.id')
+        ->joinSub($asignaciones, 'asig', function ($join) {
+            $join->on('asig.id_cotizacion_doc', '=', 'cotizaciones.id');
+        })
+        ->joinSub($beneficiarios, 'beneficiarios', function ($join) {
+            $join->on('asig.beneficiario_id', '=', 'beneficiarios.id')
+                ->on('asig.tipo_contrato', '=', 'beneficiarios.tipo_contrato');
+        })
+         ->leftJoin('empresas as em', 'em.id', '=', 'asig.id_empresa')
+        ->leftJoin('empresas as emc', 'emc.id', '=', 'cotizaciones.id_empresa')
+          ->leftjoin('proveedores', 'proveedores.id', '=', 'asig.id_proveedor')
+        ->where('cotizaciones.estatus', '=', 'Aprobada')
+        ->where('asig.id_contenedor', '=', $idContenedor)
+        ->first();
+
+}
+private function armarDatoGps(
+    string $contenedor,
+    string $imei,
+    int $idContenedor,
+    string $tipoGps,
+    string $tipoEquipo
+): string {
+    /*
+     * Mantengo el formato viejo:
+     * contenedor|imei|id_contenendor|tipoGps
+     *
+     * Pero si quieres meter tipoEquipo sin romper, puedes hacerlo en un arreglo aparte.
+     */
+    return $contenedor . '|' . $imei . '|' . $idContenedor . '|' . $tipoGps;
+}
 public function obtenerUbicacionByImei($datos)
 {
     if (!is_array($datos)) {
@@ -28,7 +531,9 @@ public function obtenerUbicacionByImei($datos)
     }
 $inicioPrep = microtime(true);
 
-
+log::info('RASTREO OBTENER UBICACION POR IMEI INICIO', [
+    'items_recibidos' => count($datos),
+]);
     $grupos = [];
     $itemsOriginales = [];
 
@@ -122,12 +627,24 @@ private function consultarGpsPorGrupos(array $grupos): array
     $gruposGlobal = [];
     $gruposOtros = [];
 
+
+    log::info('RASTREO CONSULTAR GPS POR GRUPOS INICIO', [
+        'grupos_recibidos' => count($grupos),
+    ]);
+
     foreach ($grupos as $grupo) {
         if ($grupo['tipoGps'] === 'https://open.iopgps.com') {
             $gruposGlobal[] = $grupo;
+            log::info('RASTREO GRUPO GLOBAL GPS fff', [
+                'grupo' => $grupo,
+            ]);
         } else {
             $gruposOtros[] = $grupo;
         }
+
+         log::info('grupo item', [
+                'grupo' => $grupo,
+            ]);
     }
 
     if (!empty($gruposGlobal)) {
@@ -226,75 +743,7 @@ private function consultarGlobalGpsGruposParalelo(array $gruposGlobal): array
 
     return $resultados;
 }
-private function consultarGlobalGpsGrupo(array $items, array $credenciales): array
-{
-   $resultados = [];
-    $inicio = microtime(true);
 
-    try {
-        $imeis = collect($items)
-            ->pluck('imei')
-            ->filter()
-            ->unique()
-            ->values()
-            ->toArray();
-
-
-
-
-        $respuestasPorImei = GlobalGps::getManyDeviceRealTimeLocations(
-            $imeis,
-            $credenciales['appkey'] ?? null,
-            $credenciales['account'] ?? null
-        );
-
-        foreach ($items as $item) {
-            $imei = (string) $item['imei'];
-
-            $data = $respuestasPorImei[$imei] ?? null;
-
-            $ubicacionApiResponse = $data?->data ?? [];
-
-            $ubicacion = [
-                'lat' => $ubicacionApiResponse['lat'] ?? 0,
-                'lng' => $ubicacionApiResponse['lng'] ?? 0,
-                'velocidad' => $ubicacionApiResponse['speed'] ?? 0,
-                'imei' => $imei,
-                'deviceName' => $ubicacionApiResponse['deviceName'] ?? '',
-                'mcType' => $ubicacionApiResponse['mcType'] ?? '',
-                'datac' => $data,
-                'esDatoEmp' => $item['esDatoEmp'],
-                'tipoEquipo' => $item['TipoEquipo'],
-            ];
-
-            $status = floatval($ubicacion['lat']) != 0
-                && floatval($ubicacion['lng']) != 0;
-
-            $responseGps = [
-                'ubicacion' => $ubicacion,
-                'tipogps' => 'Global GPS',
-                'status' => $status,
-                'messageAp' => $status
-                    ? 'Sin error'
-                    : ($data?->message ?? 'Sin ubicación para mostrar'),
-                'tiemporespuesta' => round((microtime(true) - $inicio) * 1000, 2),
-            ];
-
-            $resultados[] = $this->formatearResultadoGps($item, $responseGps);
-        }
-
-    } catch (\Throwable $e) {
-        foreach ($items as $item) {
-            $resultados[] = $this->formatearResultadoGps(
-                $item,
-                $this->gpsErrorResponse($item, 'Global GPS', $e, $inicio)
-            );
-        }
-    }
-
-    return $resultados;
-
-}
 
 private function consultarSkyAngelGrupo(array $items, array $credenciales): array
 {
@@ -888,8 +1337,10 @@ private function formatearResultadoGps(array $item, array $responseGps): array
 {
     return [
         'contenedor' => $item['contenedor'],
+        'contenedorB' => $item['contenedorB'] ?? null,
         'ubicacion' => $responseGps['ubicacion'],
         'id_contenendor' => $item['id_contenendor'],
+        'id_grupo' => $item['id_grupo'] ?? null,
         'tipogps' => $responseGps['tipogps'],
         'EquipoBD' => $item['equipo'],
         'value' => $item['value'],
@@ -897,6 +1348,10 @@ private function formatearResultadoGps(array $item, array $responseGps): array
         'messageAp' => $responseGps['messageAp'],
         'status' => $responseGps['status'],
         'new_id' => $item['gps_company_id'],
+        'TipoEquipo' => $item['TipoEquipo'],
+        'transportista_nombre' => $item['transportista_nombre'] ?? null,
+        'grupo_tipo' => $item['grupo_tipo'] ?? null,
+
     ];
 }
 
@@ -922,6 +1377,7 @@ log::info('Preparando grupos para consulta GPS', [
         $grupos[$grupoKey]['credenciales'] = $item['credenciales'];
         $grupos[$grupoKey]['items'][] = [
             'contenedor' => null,
+            'contenedorB' => null,
             'imei' => $item['imei'],
             'id_contenendor' => $item['id'],
             'tipoGps' => $item['tipoGps'],
@@ -1278,22 +1734,6 @@ if ($ubicacionApi) {
     ];
 }
 
-    public function getLocationSkyAngel()
-    {
-        //Sustituir por valores de BD cuando se tenga la implementacion
-        $username = config('services.SkyAngelGps.username');
-        $password = config('services.SkyAngelGps.password');
-
-        $accessToken = SkyAngel::getAccessToken($username, $password);
-        $location = SkyAngel::getLocation($accessToken);
-
-        return $location;
-    }
-
-
-
-
-
 
     public function buscartipoProveedor($num_Contenendor, $idKey, $imei)
     {
@@ -1315,6 +1755,7 @@ if ($ubicacionApi) {
             ->join('equipos', 'equipos.id', '=', 'asignaciones.id_camion')
             ->join('gps_company', 'gps_company.id', '=', 'equipos.gps_company_id')
             ->leftjoin('equipos as eq_chasis', 'eq_chasis.id', '=', 'asignaciones.id_chasis')
+            ->leftJoin('equipos as eq_chasis_b', 'eq_chasis_b.id', '=', 'asignaciones.id_chasis2')
 
             ->select(
                 'docum_cotizacion.id as id_contenedor',
@@ -1322,10 +1763,12 @@ if ($ubicacionApi) {
                 'asignaciones.id',
                 'asignaciones.id_camion',
                 'asignaciones.id_chasis',
+                'asignaciones.id_chasis2',
                 'docum_cotizacion.num_contenedor',
                 'asignaciones.fecha_inicio',
                 'asignaciones.fecha_fin',
                 'asignaciones.tipo_contrato as tipo_viaje_contratado',
+
                 'equipos.imei',
                 'equipos.id_equipo',
                 'equipos.marca',
@@ -1334,11 +1777,19 @@ if ($ubicacionApi) {
                 'equipos.usar_config_global',
                 'gps_company.url_conexion as tipoGps',
                 'gps_company.id as gps_company_id',
+
                 'eq_chasis.imei as imei_chasis',
                 'eq_chasis.id_equipo as id_equipo_chasis',
                 'eq_chasis.placas as placas_chasis',
                 'eq_chasis.usar_config_global as usar_config_global_chasis',
                 'eq_chasis.gps_company_id as gps_company_id_chasis',
+
+                'eq_chasis_b.imei as imei_chasis_b',
+                'eq_chasis_b.id_equipo as id_equipo_chasis_b',
+                'eq_chasis_b.placas as placas_chasis_b',
+                'eq_chasis_b.usar_config_global as usar_config_global_chasis_b',
+                'eq_chasis_b.gps_company_id as gps_company_id_chasis_b',
+
                 DB::raw("CASE WHEN asignaciones.id_proveedor IS NULL THEN asignaciones.id_operador ELSE asignaciones.id_proveedor END as beneficiario_id"),
                 DB::raw("CASE WHEN asignaciones.id_proveedor IS NULL THEN 'Propio' ELSE 'Subcontratado' END as tipo_contrato")
             );
@@ -1380,6 +1831,13 @@ if ($ubicacionApi) {
                 'asig.usar_config_global_chasis',
                 'asig.gps_company_id',
                 'asig.gps_company_id_chasis',
+
+                'asig.imei_chasis_b',
+                'asig.id_equipo_chasis_b',
+                'asig.placas_chasis_b',
+                'asig.usar_config_global_chasis_b',
+                'asig.gps_company_id_chasis_b',
+
                 'cotizaciones.id_empresa',
                 'beneficiarios.RFC'
             )
@@ -1463,13 +1921,21 @@ if ($ubicacionApi) {
             } elseif ($imei === $datosAll?->imei_chasis) {
                 //corresponde al equipo del chasis
                 $Equipo = $datosAll?->id_equipo_chasis;
-                $TipoEquipo = 'Chasis';
+                $TipoEquipo = 'Chasis A';
                 $placas = $datosAll?->placas_chasis;
                 $tipoConfig = $datosAll?->usar_config_global_chasis;
                 $id_equipoUnic = $datosAll?->id_chasis;
                 $gps_company_id = $datosAll?->gps_company_id_chasis;
 
 
+            } elseif ($imei === $datosAll?->imei_chasis_b) {
+                // Chasis B
+                $Equipo = $datosAll?->id_equipo_chasis_b;
+                $TipoEquipo = 'Chasis B';
+                $placas = $datosAll?->placas_chasis_b;
+                $tipoConfig = $datosAll?->usar_config_global_chasis_b;
+                $id_equipoUnic = $datosAll?->id_chasis2;
+                $gps_company_id = $datosAll?->gps_company_id_chasis_b;
             }
 
             if ($RFCContenedor === 'buscarEmpresaRFC') {
@@ -1502,5 +1968,8 @@ if ($ubicacionApi) {
         }
 
     }
+
+
+
 
 }

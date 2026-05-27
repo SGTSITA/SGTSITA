@@ -147,6 +147,8 @@
     <script src="https://demos.creative-tim.com/argon-dashboard-pro/assets/js/plugins/choices.min.js"></script>
 
     <script>
+        window.mesinicio = null;
+        window.mesfin = null;
         $(document).ready(() => {
             getGastos('{{ $initDay }}', '{{ $now }}');
 
@@ -199,11 +201,13 @@
                             moment().subtract(1, 'month').endOf('month'),
                         ],
                     },
-                    maxDate: moment(),
+                    maxDate: moment().endOf('year'),
                 },
                 function(start, end, label) {
                     let spanPeriodoc = document.getElementById('periodo');
                     spanPeriodoc.textContent = ` ${start.format('DD-MM-YYYY')} AL ${end.format('DD-MM-YYYY')}`;
+                    window.mesinicio = moment(start).format('YYYY-MM-DD');
+                    window.mesfin = moment(end).format('YYYY-MM-DD');
 
                     //  getUtilidadesViajes();
                     getGastos(start.format('YYYY-MM-DD'), end.format('YYYY-MM-DD'));
@@ -226,6 +230,9 @@
             let spanPeriodo = document.getElementById('periodo');
             spanPeriodo.textContent =
                 `${moment(firstDayOfMonth).format('DD-MM-YYYY')} AL ${moment(today).format('DD-MM-YYYY')}`;
+
+            window.mesinicio = moment(firstDayOfMonth).format('YYYY-MM-DD');
+            window.mesfin = moment(today).format('YYYY-MM-DD');
 
             if (document.getElementById('selectUnidadesGeneral')) {
                 var element = document.getElementById('selectUnidadesGeneral');
