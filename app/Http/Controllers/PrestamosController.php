@@ -14,6 +14,8 @@ use Carbon\Carbon;
 use App\Services\BancosService;
 use Illuminate\Support\Facades\Log;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Exports\OperadorPrestamosExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class PrestamosController extends Controller
 {
@@ -468,4 +470,55 @@ class PrestamosController extends Controller
     return $pdf->stream('reporte-prestamos-' . $operador->id . '.pdf');
 
     }
+
+    public function reportePrestamosexcel($id)
+{
+   $operador = Operador::when(!auth()->user()->is_admin, function ($q) {
+            $q->where('id_empresa', auth()->user()->id_empresa);
+        })
+        ->findOrFail($id);
+
+    $prestamos = Prestamo::with([
+            'operador',
+            'banco.catBanco',
+            'pagoprestamos.liquidacion.Viajes.Contenedores'
+        ])
+        ->where('id_operador', $id)
+        ->when(!auth()->user()->is_admin, function ($q) {
+            $q->whereHas('operador', function ($q2) {
+                $q2->where('id_empresa', auth()->user()->id_empresa);
+            });
+        })
+        ->orderBy('created_at', 'desc')
+        ->get();
+
+    $totalPrestamos = $prestamos
+        ->where('tipo', Prestamo::TIPO_PRESTAMO)
+        ->sum('cantidad');
+
+    $totalAdelantos = $prestamos
+        ->where('tipo', Prestamo::TIPO_ADELANTO)
+        ->sum('cantidad');
+
+    $totalDeuda = $totalPrestamos + $totalAdelantos;
+
+    $totalAbonos = $prestamos
+        ->flatMap(fn ($p) => $p->pagoprestamos)
+        ->sum('monto_pago');
+
+    $saldoFinal = $totalDeuda - $totalAbonos;
+
+    return Excel::download(
+        new OperadorPrestamosExport(
+            $operador,
+            $prestamos,
+            $totalPrestamos,
+            $totalAdelantos,
+            $totalDeuda,
+            $totalAbonos,
+            $saldoFinal
+        ),
+        'reporte-prestamos-' . $operador->id . '.xlsx'
+    );
+}
 }

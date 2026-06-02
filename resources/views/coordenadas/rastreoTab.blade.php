@@ -1,136 +1,95 @@
 {{-- resources/views/coordenadas/dashboard.blade.php --}}
 @extends('layouts.app')
+@section('template_title')
+    Rastreo
+@endsection
 
 @section('content')
     <style>
-        .switch {
-            position: relative;
-            display: inline-block;
-            width: 200px;
-            /* Ancho mayor para incluir el texto */
-            height: 30px;
+        html,
+        body {
+            overflow-x: hidden;
         }
 
-        .switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
+        /* Contenedor principal */
+        .container-fluid.bg-white {
+            max-width: 100%;
+            overflow-x: hidden;
         }
 
-        .slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: #ccc;
-            transition: 0.4s;
-            border-radius: 34px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: bold;
+        /* Tabs */
+        #rastreoTabsContent {
+            max-width: 100%;
+            overflow-x: hidden;
         }
 
-        .slider span {
-            position: absolute;
-            transition: 0.4s;
-            font-size: 14px;
+        /* Pestaña de rastreo */
+        #rastreo {
+            max-width: 100%;
+            overflow-x: hidden;
         }
 
-        .slider:before {
-            position: absolute;
-            content: '';
-            height: 22px;
-            width: 22px;
-            border-radius: 50%;
-            background-color: white;
-            transition: 0.4s;
-            left: 4px;
-        }
-
-        input:checked+.slider {
-            background-color: #4caf50;
-        }
-
-        input:checked+.slider:before {
-            transform: translateX(170px);
-        }
-
-        input:checked+.slider #ubicacion-texto {
-            transform: translateX(80px);
-        }
-
-        input:not(:checked)+.slider #ubicacion-texto {
-            transform: translateX(-80px);
-        }
-
-        .btn-close {
-            filter: invert(1);
-        }
-
-        #contenedoreseditar {
-            font-size: 0.85rem;
-        }
-
-        #contenedoreseditar th,
-        #contenedoreseditar td {
-            padding: 0.3rem 0.5rem;
-            vertical-align: middle;
-        }
-
-        #contenedoreseditar thead {
-            background-color: #f0f0f0;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.03em;
-        }
-
-        .input-alto {
-            height: 38px;
-            /* o lo que tú necesites */
-        }
-
-        .loading-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            z-index: 10;
-            /* asegúrate que esté por encima del grid */
+        /*
+                                                               Layout principal del mapa y panel.
+                                                               g-0 en el Blade elimina gutters.
+                                                            */
+        .rastreo-layout {
+            height: calc(100vh - 190px);
+            min-height: 600px;
             width: 100%;
+            max-width: 100%;
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+            overflow-x: hidden;
+        }
+
+        /* Permite que las columnas no empujen el ancho */
+        .rastreo-layout>[class*="col-"] {
+            min-width: 0;
+        }
+
+        /* Columna del mapa */
+        .rastreo-mapa {
             height: 100%;
-            background-color: rgba(255, 255, 255, 0.6);
-            /* opcional para desenfoque */
+            min-width: 0;
+            overflow: hidden;
+        }
+
+        /* Mapa */
+        #map {
+            width: 100%;
+            height: 100% !important;
+            min-height: 500px;
+        }
+
+        /* Columna derecha */
+        .rastreo-panel {
+            height: 100%;
             display: flex;
-            justify-content: center;
-            align-items: center;
+            flex-direction: column;
+            overflow: hidden;
+            min-width: 0;
+            max-width: 100%;
         }
 
-        .nav-tabs .nav-link.active {
-            background-color: #0d6efd;
-            /* Azul Bootstrap */
-            color: #fff !important;
-            font-weight: bold;
-            border-radius: 0.5rem 0.5rem 0 0;
-            /* esquinas redondeadas arriba */
+        /* Todos los hijos del panel pueden encogerse */
+        .rastreo-panel * {
+            min-width: 0;
         }
 
-        /* Hover */
-        .nav-tabs .nav-link:hover {
-            background-color: #e9ecef;
-            border-radius: 0.5rem 0.5rem 0 0;
+        /* Filtros / inputs */
+        .rastreo-panel .form-control,
+        .rastreo-panel .form-select,
+        .rastreo-panel .input-group {
+            max-width: 100%;
         }
 
-        #filtroTipo {
-            height: 48px;
-        }
-
+        /* Botón de configuración del mapa */
         #btnOpcionesVistaMapa.btnConfigVistaMapa {
             width: 52px;
             height: 48px;
             min-height: 48px;
+            flex: 0 0 52px;
             padding: 0;
             margin: 0;
 
@@ -163,8 +122,85 @@
             box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, .18);
             border-color: #86b7fe;
         }
+
+        /* Select tipo */
+        #filtroTipo {
+            height: 48px;
+        }
+
+        /* Buscador */
+        #buscadorGeneral {
+            width: 100%;
+            max-width: 100%;
+        }
+
+        /* Chips */
+        #chipsBusqueda {
+            max-width: 100%;
+            overflow-x: hidden;
+        }
+
+        /* Resultados buscador */
+        #resultadosBusqueda {
+            max-height: 200px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            width: 100%;
+            max-width: 100%;
+        }
+
+        /* Panel de dispositivos: aquí debe aparecer el scroll */
+        .panelDispositivos {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding-right: 2px;
+        }
+
+        /* Header de dispositivos */
+        .panelDispositivos .dispositivos-header {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+
+        /* Lista interna */
+        #listaDispositivos {
+            padding-bottom: 20px !important;
+            margin-bottom: 0;
+        }
+
+        /* Evita que textos largos revienten el panel */
+        #listaDispositivos,
+        #listaDispositivos * {
+            max-width: 100%;
+            overflow-wrap: anywhere;
+        }
+
+        /* Responsive */
+        @media (max-width: 767.98px) {
+            .rastreo-layout {
+                height: auto;
+                min-height: auto;
+            }
+
+            .rastreo-mapa {
+                height: 450px;
+                margin-bottom: 1rem;
+            }
+
+            #map {
+                height: 450px !important;
+                min-height: 450px;
+            }
+
+            .rastreo-panel {
+                height: 600px;
+            }
+        }
     </style>
-    <div class="container-fluid bg-white">
+    <div class="bg-white w-100 overflow-hidden px-3 py-3 rounded">
         <h3 class="mb-3 text-center">📍 Módulo de Rastreo y Gestión</h3>
 
         {{-- Tabs --}}
@@ -208,12 +244,63 @@
 
         <div class="tab-content p-3 border border-top-0" id="rastreoTabsContent">
             {{-- Pestaña Rastreo --}}
+
             <div class="tab-pane fade show active" id="rastreo" role="tabpanel">
-                <div class="row">
-                    <div class="col-md-9">
-                        <div id="map" style="width: 100%; height: 700px"></div>
+                <div class="row rastreo-layout g-0">
+
+                    {{-- MAPA --}}
+                    <div class="col-md-9 rastreo-mapa pe-md-2">
+                        <div id="map"></div>
                     </div>
-                    <div class="col-md-3 bg-white p-3 rounded shadow-sm">
+
+                    {{-- PANEL DERECHO --}}
+                    <div class="col-md-3 bg-white p-3 rounded shadow-sm rastreo-panel">
+
+                        {{-- FILTROS COLAPSABLES --}}
+                        <div class="mb-2">
+                            <button
+                                class="btn btn-outline-secondary w-100 d-flex align-items-center justify-content-between"
+                                type="button" data-bs-toggle="collapse" data-bs-target="#filtrosRastreoPanel"
+                                aria-expanded="false" aria-controls="filtrosRastreoPanel">
+                                <span>
+                                    <i class="fas fa-filter me-1"></i>
+                                    Filtros
+                                </span>
+                                <i class="fas fa-chevron-down small"></i>
+                            </button>
+
+                            <div class="collapse mt-2" id="filtrosRastreoPanel">
+                                <div class="border rounded bg-light p-2">
+                                    <div class="mb-2">
+                                        <label class="form-label mb-1">Linea Transporte</label>
+                                        <select id="filtroLineaT" class="form-select">
+                                            <option value="">Todos</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="mb-2">
+                                        <label class="form-label mb-1">Cliente</label>
+                                        <select id="filtrocliente" class="form-select">
+                                            <option value="">Todos</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-2">
+                                        <label class="form-label mb-1">Fecha salida</label>
+
+                                        <div class="input-group">
+                                            <input type="date" id="filtroFechaSalida" class="form-control">
+
+                                            <button type="button" class="btn btn-outline-secondary"
+                                                id="btnLimpiarFechaSalida">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- TIPO + CONFIG --}}
                         <div class="mb-2">
                             <label class="form-label">Tipo</label>
 
@@ -231,21 +318,22 @@
                                     <i class="fas fa-sliders-h"></i>
                                 </button>
 
-                                <div class="dropdown-menu dropdown-menu-end p-3 shadow" style="width: 230px;">
+                                <div class="dropdown-menu dropdown-menu-end p-3 shadow" style="width: 230px;z-index:9855">
                                     <div class="fw-bold small text-dark mb-2">
                                         <i class="fas fa-eye me-1"></i>
                                         Mostrar en mapa
                                     </div>
 
                                     <div class="form-check mb-2">
-                                        <input class="form-check-input filtroVistaMapaCheck" type="checkbox" value="todos"
-                                            id="vistaCheckTodos" checked>
+                                        <input class="form-check-input filtroVistaMapaCheck" type="checkbox"
+                                            value="todos" id="vistaCheckTodos" checked>
                                         <label class="form-check-label small" for="vistaCheckTodos">
                                             Todos
                                         </label>
+
                                     </div>
 
-                                    <hr class="my-2">
+
 
                                     <div class="form-check mb-2">
                                         <input class="form-check-input filtroVistaMapaCheck filtroVistaMapaTipo"
@@ -276,6 +364,7 @@
                                             Todos
                                         </span>
                                     </div>
+
                                     <hr class="my-2">
 
                                     <div class="fw-bold small text-dark mb-2">
@@ -298,6 +387,7 @@
                                             Transparente
                                         </label>
                                     </div>
+
                                     <div class="form-check mb-2">
                                         <input class="form-check-input radioVistaMarker" type="radio"
                                             name="vistaMarker" id="vistaMarkerlive" value="live">
@@ -305,39 +395,30 @@
                                             Clasico
                                         </label>
                                     </div>
-
-
                                 </div>
                             </div>
                         </div>
-                        <!-- Bloque de buscador y botón -->
-                        <div class="d-flex align-items-start gap-2 mb-3">
 
-                            <!-- Buscador -->
-                            <div class="flex-grow-1">
+                        {{-- BUSCADOR --}}
+                        <div class="mb-3">
+                            <div class="w-100">
                                 <div class="position-relative">
                                     <input type="text" id="buscadorGeneral"
                                         placeholder="Buscar convoy, contenedor o equipo..."
-                                        class="form-control bg-light shadow-sm" style="min-width: 250px" />
+                                        class="form-control bg-light shadow-sm w-100" />
+
                                     <div id="chipsBusqueda" class="d-flex flex-wrap gap-2 mt-2"></div>
-                                    <div id="resultadosBusqueda" class="dropdown-menu show mt-1"
-                                        style="max-height: 200px; overflow-y: auto; width: 100%"></div>
+
+                                    <div id="resultadosBusqueda" class="dropdown-menu show mt-1">
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="panelDispositivos"
-                            style="
-        max-height: 58vh;
-        min-height: 200px;
-        overflow-y: auto;
-        overflow-x: visible;
-    ">
-
-
+                        {{-- DISPOSITIVOS CON SCROLL --}}
+                        <div class="panelDispositivos">
                             <div
-                                class="d-flex justify-content-between align-items-center mb-2 bg-light px-2 py-2 rounded shadow-sm">
-
+                                class="dispositivos-header d-flex justify-content-between align-items-center mb-2 bg-light px-2 py-2 rounded shadow-sm">
                                 <h6 class="mb-0 fw-bold">
                                     Dispositivos (<span id="totalDispositivos">0</span>)
                                 </h6>
@@ -348,20 +429,14 @@
                                         Mostrar Todos
                                     </label>
                                 </div>
-
                             </div>
 
-
-                            <ul class="list-group" id="listaDispositivos" style="padding-bottom: 120px;"></ul>
-
+                            <ul class="list-group" id="listaDispositivos"></ul>
                         </div>
-
-
 
                     </div>
                 </div>
             </div>
-
             {{-- Pestaña Convoys --}}
             <div class="tab-pane fade" id="convoys" role="tabpanel">
                 <div class="container-fluid py-4 px-3 bg-gray-100 min-h-screen">
@@ -556,7 +631,8 @@
                             <ul class="nav nav-tabs mb-3">
                                 <li class="nav-item">
                                     <a class="nav-link active" href="#"
-                                        onclick="mostrarTab('mail', event, this)">📧 Mail</a>
+                                        onclick="mostrarTab('mail', event, this)">📧
+                                        Mail</a>
                                 </li>
                                 <li class="nav-item">
                                     <a class="nav-link" href="#" onclick="mostrarTab('whatsapp', event, this)">📲
@@ -776,6 +852,10 @@
 @push('custom-javascript')
     <!-- AG Grid -->
     <script src="https://unpkg.com/ag-grid-community/dist/ag-grid-community.min.js"></script>
+    <script>
+        const proveedores = @json($proveedores);
+        const clientes = @json($clientes);
+    </script>
     <script
         src="{{ asset('js/sgt/coordenadas/coordenadasRastreo.js') }}?v={{ filemtime(public_path('js/sgt/coordenadas/coordenadasRastreo.js')) }}">
     </script>
@@ -789,4 +869,8 @@
     <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
     <script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+
+    <script>
+        window.escliente = 0;
+    </script>
 @endpush

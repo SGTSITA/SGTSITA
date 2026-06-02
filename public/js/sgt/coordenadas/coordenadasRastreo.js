@@ -8,6 +8,8 @@ let catalogoBusqueda = [];
 let contenedoresDisponiblesAll = [];
 let mapaAjustado = false;
 
+let valorAnteriorFiltro;
+
 let detalleConvoys;
 let contenedoresDisponibles = [];
 let directionsService = null;
@@ -90,93 +92,127 @@ function cargarEquiposEnSelect(dataequipos) {
         select.appendChild(option);
     });
 }
-function cargarinicial() {
-    fetch(`/coordenadas/contenedor/searchEquGps?`)
-        .then((response) => response.json())
-        .then((data) => {
-            catalogoBusquedaOriginal.length = 0;
-            contenedoresDisponibles = data.datos;
+let cargandoRastreo = false;
+async function cargarinicial() {
+    if (cargandoRastreo) return;
 
-            detalleConvoys = data.dataConten;
+    cargandoRastreo = true;
 
-            contenedoresDisponiblesAll = data.datosAll;
+    try {
+        const params = new URLSearchParams();
 
-            equiposSearch = data.equiposAll;
-            // Convoys detalle
-            data.conboys.forEach((c) => {
-                catalogoBusquedaOriginal.push({
-                    tipo: "Convoy",
-                    label: c.no_conboy + " " + c.nombre,
-                    value: c.no_conboy,
-                    id: c.id,
-                    value_chasis: `NO DISPONIBLE|`,
-                    llegada:
-                        c.geocerca_lat +
-                        "|" +
-                        c.geocerca_long +
-                        "|" +
-                        c.geocerca_radio,
-                    empresas: c.empresas.split(",").map(Number),
-                    clientes: c.clientes.split(",").map(Number),
-                    lineas: c.lineas.split(",").map(Number),
-                });
+        const fechaSalida = $("#filtroFechaSalida").val();
+
+        if (fechaSalida) {
+            params.append("fecha_salida", fechaSalida);
+        }
+
+        const response = await fetch(
+            `/coordenadas/contenedor/searchEquGps?${params.toString()}`,
+        );
+
+        if (!response.ok) {
+            throw new Error("Error al consultar rastreo");
+        }
+
+        const data = await response.json();
+
+        catalogoBusquedaOriginal.length = 0;
+
+        contenedoresDisponibles = data.datos ?? [];
+        detalleConvoys = data.dataConten ?? [];
+        contenedoresDisponiblesAll = data.datosAll ?? [];
+        equiposSearch = data.equiposAll ?? [];
+
+        // Convoys
+        (data.conboys ?? []).forEach((c) => {
+            catalogoBusquedaOriginal.push({
+                tipo: "Convoy",
+                label: c.no_conboy + " " + c.nombre,
+                value: c.no_conboy,
+                id: c.id,
+                value_chasis: `NO DISPONIBLE|`,
+                llegada:
+                    c.geocerca_lat +
+                    "|" +
+                    c.geocerca_long +
+                    "|" +
+                    c.geocerca_radio,
+                empresas: c.empresas ? c.empresas.split(",").map(Number) : [],
+                clientes: c.clientes ? c.clientes.split(",").map(Number) : [],
+                lineas: c.lineas ? c.lineas.split(",").map(Number) : [],
             });
-            // Contenedores (desde convoysDetalle)
-            contenedoresDisponibles.forEach((cd) => {
-                catalogoBusquedaOriginal.push({
-                    tipo: "Contenedor",
-                    label: cd.contenedor + " Eq: " + cd.id_equipo,
-                    value:
-                        cd.contenedor +
-                        "|" +
-                        cd.imei +
-                        "|" +
-                        cd.id_contenedor +
-                        "|" +
-                        cd.tipoGps,
-                    id: cd.id_contenedor,
-                    value_chasis:
-                        cd.contenedor +
-                        "|" +
-                        cd.imei_chasis +
-                        "|" +
-                        cd.id_contenedor +
-                        "|" +
-                        cd.tipoGpsChasis,
-                    llegada: cd.latitud + "|" + cd.longitud + "|0",
-
-                    empresas: [cd.id_empresa],
-                    lineas: [cd.proveedor_id],
-                    clientes: [cd.id_cliente],
-                });
-            });
-
-            // Equipos (si tienes un array separado)
-            data.equipos.forEach((eq) => {
-                const textoPlaca = eq.placas?.trim() ? eq.placas : "";
-                const textomarca = eq.marca?.trim() ? eq.marca : "";
-                const textotipo = eq.tipo?.trim() ? eq.tipo : "";
-                catalogoBusquedaOriginal.push({
-                    tipo: "Equipo",
-
-                    label: `${eq.id_equipo} - ${textomarca} - ${textotipo} - ${textoPlaca}`,
-                    value: `${eq.id_equipo}|${eq.imei}|${eq.id}|${eq.tipoGps}`,
-                    id: eq.id,
-                    value_chasis: `NO DISPONIBLE|`,
-                    llegada: `0|0|0`,
-                    empresas: [eq.id_empresa],
-                    lineas: [],
-                    clientes: [],
-                });
-            });
-
-            catalogoBusqueda = [...catalogoBusquedaOriginal];
-        })
-        .catch((error) => {
-            console.error("Error al traer coordenadas:", error);
         });
-}
 
+        // Contenedores
+        contenedoresDisponibles.forEach((cd) => {
+            catalogoBusquedaOriginal.push({
+                tipo: "Contenedor",
+                label: cd.contenedor + " Eq: " + cd.id_equipo,
+                value:
+                    cd.contenedor +
+                    "|" +
+                    cd.imei +
+                    "|" +
+                    cd.id_contenedor +
+                    "|" +
+                    cd.tipoGps,
+                id: cd.id_contenedor,
+                value_chasis:
+                    cd.contenedor +
+                    "|" +
+                    cd.imei_chasis +
+                    "|" +
+                    cd.id_contenedor +
+                    "|" +
+                    cd.tipoGpsChasis,
+                llegada: cd.latitud + "|" + cd.longitud + "|0",
+                empresas: [cd.id_empresa],
+                lineas: [cd.proveedor_id],
+                clientes: [cd.id_cliente],
+            });
+        });
+
+        // Equipos
+        (data.equipos ?? []).forEach((eq) => {
+            const textoPlaca = eq.placas?.trim() ? eq.placas : "";
+            const textomarca = eq.marca?.trim() ? eq.marca : "";
+            const textotipo = eq.tipo?.trim() ? eq.tipo : "";
+
+            catalogoBusquedaOriginal.push({
+                tipo: "Equipo",
+                label: `${eq.id_equipo} - ${textomarca} - ${textotipo} - ${textoPlaca}`,
+                value: `${eq.id_equipo}|${eq.imei}|${eq.id}|${eq.tipoGps}`,
+                id: eq.id,
+                value_chasis: `NO DISPONIBLE|`,
+                llegada: `0|0|0`,
+                empresas: [eq.id_empresa],
+                lineas: [],
+                clientes: [],
+            });
+        });
+
+        catalogoBusqueda = [...catalogoBusquedaOriginal];
+
+        cargarLineasDesdeRastreo(contenedoresDisponibles);
+    } catch (error) {
+        console.error("Error al traer coordenadas:", error);
+    } finally {
+        cargandoRastreo = false;
+    }
+}
+$("#filtroFechaSalida").on("change", async function () {
+    await cargarinicial();
+    aplicarFiltrosPanel();
+    limpiarMapa();
+});
+$("#btnLimpiarFechaSalida").on("click", async function () {
+    $("#filtroFechaSalida").val("");
+
+    await cargarinicial();
+    aplicarFiltrosPanel();
+    limpiarMapa();
+});
 function obtenerImeisPorConvoyId(convoyId) {
     let itemFiltrado = detalleConvoys
         .filter(
@@ -3874,6 +3910,7 @@ max-width: 100%;
             Contrato:
         </div>
 
+
         <div style="
             display:flex;
             align-items:center;
@@ -3881,19 +3918,25 @@ max-width: 100%;
             flex-wrap:nowrap;
             min-width:0;
         ">
-            <span style="
-                display:inline-block;
-                background:#e7f1ff;
-                border:1px solid #b6d4fe;
-                color:#0d6efd;
-                border-radius:999px;
-                padding:3px 9px;
-                font-size:12px;
-                font-weight:900;
-                white-space:nowrap;
-            ">
-                ${valor(info.tipo_contrato)}
-            </span>
+         ${
+             Number(window.escliente || 0) === 0
+                 ? `
+    <span style="
+        display:inline-block;
+        background:#e7f1ff;
+        border:1px solid #b6d4fe;
+        color:#0d6efd;
+        border-radius:999px;
+        padding:3px 9px;
+        font-size:12px;
+        font-weight:900;
+        white-space:nowrap;
+    ">
+        ${valor(info.tipo_contrato)}
+    </span>
+`
+                 : ""
+         }
 
             <span style="
                 display:inline-block;
@@ -4128,7 +4171,7 @@ max-width: 100%;
         })}
 
         ${bloqueEquipoGps({
-            titulo: "Chasis 1",
+            titulo: "Chasis A",
             icono: "🧱",
             imei: info.imei_chasis,
             equipo: info.id_equipo_chasis,
@@ -4140,7 +4183,7 @@ max-width: 100%;
         ${
             tieneDato(info.id_equipo_chasis2)
                 ? bloqueEquipoGps({
-                      titulo: "Chasis 2 / Full",
+                      titulo: "Chasis B / Full",
                       icono: "🧱",
                       imei: info.imei_chasis2,
                       equipo: info.id_equipo_chasis2,
@@ -4264,6 +4307,10 @@ function abrirMapaEnNuevaPestana(contenedor, tipoS) {
 function llenarSelect(select, data, placeholder = "Todos") {
     const el = document.getElementById(select);
 
+    if (!el) {
+        return;
+    }
+
     el.innerHTML = `<option value="">${placeholder}</option>`;
 
     data.forEach((item) => {
@@ -4275,18 +4322,71 @@ ${item.nombre}
     });
 }
 
+function obtenerCatalogoLineasDesdeRastreo(datos = []) {
+    const lineasMap = new Map();
+
+    datos.forEach((item) => {
+        const id = item.proveedor_id;
+
+        if (!id) {
+            return;
+        }
+
+        const nombre = item.transportista_nombre || `Linea ${id}`;
+
+        if (!lineasMap.has(String(id))) {
+            lineasMap.set(String(id), {
+                id: id,
+                nombre: nombre,
+            });
+        }
+    });
+
+    return Array.from(lineasMap.values()).sort((a, b) =>
+        String(a.nombre).localeCompare(String(b.nombre)),
+    );
+}
+
+function cargarLineasDesdeRastreo(datos = []) {
+    const proveedoresDisponibles =
+        typeof proveedores !== "undefined" ? proveedores : [];
+
+    if (proveedoresDisponibles.length) {
+        return;
+    }
+
+    llenarSelect("filtroLineaT", obtenerCatalogoLineasDesdeRastreo(datos));
+}
+
+function cargarFiltrosInicialesPanel() {
+    const proveedoresDisponibles =
+        typeof proveedores !== "undefined" ? proveedores : [];
+    const clientesDisponibles = typeof clientes !== "undefined" ? clientes : [];
+
+    llenarSelect("filtroLineaT", proveedoresDisponibles);
+    llenarSelect("filtrocliente", clientesDisponibles);
+}
+
+document.addEventListener("DOMContentLoaded", cargarFiltrosInicialesPanel);
+
 $("#filtroEmpresa").on("change", function () {
     const empresaId = $(this).val();
 
-    let proveedoresFiltrados = proveedores;
-    let clientesFiltrados = clientes;
+    const proveedoresDisponibles =
+        typeof proveedores !== "undefined" ? proveedores : [];
+    const clientesDisponibles = typeof clientes !== "undefined" ? clientes : [];
+
+    let proveedoresFiltrados = proveedoresDisponibles;
+    let clientesFiltrados = clientesDisponibles;
 
     if (empresaId) {
-        proveedoresFiltrados = proveedores.filter(
+        proveedoresFiltrados = proveedoresDisponibles.filter(
             (p) => p.id_empresa == empresaId,
         );
 
-        clientesFiltrados = clientes.filter((c) => c.id_empresa == empresaId);
+        clientesFiltrados = clientesDisponibles.filter(
+            (c) => c.id_empresa == empresaId,
+        );
     }
 
     llenarSelect("filtroLineaT", proveedoresFiltrados);
@@ -4295,16 +4395,19 @@ $("#filtroEmpresa").on("change", function () {
     aplicarFiltrosPanel();
 });
 
-$("#filtroLineaT,#filtrocliente,#buscarDispositivo").on(
+$("#filtroTipo,#filtroLineaT,#filtrocliente,#buscadorGeneral").on(
     "change keyup",
     function () {
-        aplicarFiltrosPanel();
+        let selector = "#" + $(this).attr("id");
+        let valor = $(this).val();
+        cambiofiltros(selector, valor);
+        //aplicarFiltrosPanel();
     },
 );
 
 function obtenerFiltros() {
     return {
-        empresa: $("#filtroEmpresa").val(),
+        empresa: $("#filtroEmpresa").val() || "",
 
         linea: $("#filtroLineaT").val(),
 
@@ -4984,9 +5087,13 @@ function pintarDispositivos(data) {
         lista.append(item);
     });
 }
-$("#filtroTipo").on("focus", function () {
-    valorAnteriorTipo = $(this).val();
-});
+
+$("#filtroTipo, #filtroLineaT, #filtrocliente, #buscadorGeneral").on(
+    "focus",
+    function () {
+        valorAnteriorFiltro = $(this).val();
+    },
+);
 function obtenerColorYTipo(item) {
     const idContenedor = String(item.id_grupo ?? "");
     const contenedor = String(item.grupo_tipo ?? "");
@@ -5087,9 +5194,7 @@ function aplicarFiltrosPanel() {
     pintarDispositivos(dataFiltrada);
 }
 
-$("#filtroTipo").on("change", function () {
-    const nuevoValor = $(this).val();
-
+function cambiofiltros(input, valorAnterior) {
     if (hayRastreoActivo()) {
         Swal.fire({
             title: "Cambiar tipo de rastreo",
@@ -5104,13 +5209,13 @@ $("#filtroTipo").on("change", function () {
                 limpiarMapa();
                 aplicarFiltrosPanel();
             } else {
-                $("#filtroTipo").val(valorAnteriorTipo);
+                $(input).val(valorAnterior);
             }
         });
     } else {
         aplicarFiltrosPanel();
     }
-});
+}
 
 input.addEventListener("input", function () {
     const query = this.value.trim().toLowerCase();

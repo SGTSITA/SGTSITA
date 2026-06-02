@@ -3,11 +3,34 @@
 
 @section('content')
     <style>
+        .btn-close {
+            filter: invert(1);
+        }
+
+        .input-alto {
+            height: 38px;
+        }
+
+        .loading-overlay {
+            position: absolute;
+            inset: 0;
+            z-index: 10;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* ==============================
+       SWITCH UBICACIÓN
+       ============================== */
+
         .switch {
             position: relative;
             display: inline-block;
             width: 200px;
-            /* Ancho mayor para incluir el texto */
             height: 30px;
         }
 
@@ -20,10 +43,7 @@
         .slider {
             position: absolute;
             cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
+            inset: 0;
             background-color: #ccc;
             transition: 0.4s;
             border-radius: 34px;
@@ -45,10 +65,10 @@
             content: '';
             height: 22px;
             width: 22px;
+            left: 4px;
             border-radius: 50%;
             background-color: white;
             transition: 0.4s;
-            left: 4px;
         }
 
         input:checked+.slider {
@@ -67,9 +87,273 @@
             transform: translateX(-80px);
         }
 
-        .btn-close {
-            filter: invert(1);
+        /* ==============================
+       TABS
+       ============================== */
+
+        .nav-tabs .nav-link.active {
+            background-color: #0d6efd;
+            color: #fff !important;
+            font-weight: bold;
+            border-radius: 0.5rem 0.5rem 0 0;
         }
+
+        .nav-tabs .nav-link:hover {
+            background-color: #e9ecef;
+            border-radius: 0.5rem 0.5rem 0 0;
+        }
+
+        /* ==============================
+       FILTROS ADMIN
+       ============================== */
+
+        .rastreo-page {
+            width: 100%;
+            max-width: 100%;
+            overflow: hidden;
+        }
+
+        .rastreo-filtros-card {
+            margin-bottom: .75rem;
+            overflow: visible;
+        }
+
+        .rastreo-filtros-card .card-body {
+            padding: .85rem;
+            overflow: visible;
+        }
+
+        .btn-toggle-filtros {
+            text-decoration: none;
+            font-size: 15px;
+            font-weight: 700;
+            color: #344767;
+        }
+
+        .btn-toggle-filtros:hover {
+            color: #0d6efd;
+        }
+
+        /* Labels iguales */
+        .rastreo-filtros-card .form-label {
+            display: block;
+            height: 18px;
+            line-height: 18px;
+            margin-bottom: 6px;
+            font-size: .78rem;
+            font-weight: 700;
+            color: #344767;
+        }
+
+        /* Altura común */
+        .rastreo-filtros-card .form-select,
+        .rastreo-filtros-card .form-control,
+        .rastreo-filtros-card .input-group .btn,
+        .rastreo-filtros-card .btnOpcionesMapaExtra {
+            height: 42px;
+            min-height: 42px;
+        }
+
+        /* Selects */
+        .rastreo-filtros-card .form-select {
+            padding-top: .375rem;
+            padding-bottom: .375rem;
+        }
+
+        /* Input group fecha */
+        .filtro-fecha-salida .input-group {
+            height: 42px;
+            min-height: 42px;
+            display: flex;
+            align-items: stretch;
+        }
+
+        /* Input date */
+        .filtro-fecha-salida #filtroFechaSalida {
+            height: 42px;
+            min-height: 42px;
+            line-height: normal;
+            padding-top: .375rem;
+            padding-bottom: .375rem;
+        }
+
+        /* Icono calendario */
+        .filtro-fecha-salida #filtroFechaSalida::-webkit-calendar-picker-indicator {
+            cursor: pointer;
+            margin: 0;
+            padding: 0;
+            transform: translateY(0);
+        }
+
+        /* Botón limpiar fecha */
+        .filtro-fecha-salida #btnLimpiarFechaSalida {
+            width: 42px;
+            height: 42px;
+            min-height: 42px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .filtro-fecha-salida #btnLimpiarFechaSalida i {
+            font-size: 13px;
+            line-height: 1;
+        }
+
+        /* Opciones mapa */
+        .filtro-opciones-mapa .dropdown {
+            height: 42px;
+            overflow: visible;
+        }
+
+        .filtro-opciones-mapa .btnOpcionesMapaExtra {
+            height: 42px;
+            min-height: 42px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            font-size: 12px;
+            font-weight: 700;
+            background: #f8fbff;
+            border-color: #b6d4fe;
+        }
+
+        .filtro-opciones-mapa .btnOpcionesMapaExtra i {
+            font-size: 14px;
+            line-height: 1;
+        }
+
+        .btnOpcionesMapaExtra:hover,
+        .btnOpcionesMapaExtra.show {
+            background: #e7f1ff;
+            border-color: #86b7fe;
+            color: #0a58ca;
+        }
+
+        .opcionesMapaDropdown {
+            width: 260px;
+            border-radius: 14px;
+            z-index: 1055;
+        }
+
+        /* ==============================
+       CONTENEDOR TABS
+       ============================== */
+
+        #rastreoTabsContent {
+            width: 100%;
+            max-width: 100%;
+            overflow: hidden;
+        }
+
+        #rastreo {
+            width: 100%;
+            max-width: 100%;
+            overflow: hidden;
+        }
+
+        /* ==============================
+       MAPA + PANEL AUTO
+       ============================== */
+
+        .rastreo-auto-layout {
+            width: 100%;
+            max-width: 100%;
+            height: 600px;
+            max-height: 600px;
+            overflow: hidden;
+        }
+
+        .rastreo-auto-mapa,
+        .rastreo-auto-panel {
+            height: 100%;
+            min-width: 0;
+        }
+
+        .rastreo-auto-mapa {
+            overflow: hidden;
+        }
+
+        #map {
+            width: 100%;
+            height: 100% !important;
+            min-height: 300px;
+        }
+
+        .rastreo-auto-panel {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            min-height: 0;
+        }
+
+        .rastreo-auto-panel * {
+            min-width: 0;
+        }
+
+        .rastreo-auto-panel .form-control,
+        .rastreo-auto-panel .form-select,
+        .rastreo-auto-panel .input-group {
+            max-width: 100%;
+        }
+
+        /* ==============================
+       BUSCADOR PANEL
+       ============================== */
+
+        #buscadorGeneral {
+            width: 100%;
+            max-width: 100%;
+        }
+
+        #chipsBusqueda {
+            max-width: 100%;
+            overflow-x: hidden;
+        }
+
+        #resultadosBusqueda {
+            max-height: 200px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            width: 100%;
+            max-width: 100%;
+        }
+
+        /* ==============================
+       PANEL DISPOSITIVOS
+       ÚNICO CON SCROLL
+       ============================== */
+
+        .panelDispositivosAuto {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        .panelDispositivosAuto .dispositivos-header {
+            position: sticky;
+            top: 0;
+            z-index: 3;
+        }
+
+        #listaDispositivos {
+            margin-bottom: 0;
+            padding-bottom: 20px;
+        }
+
+        #listaDispositivos,
+        #listaDispositivos * {
+            max-width: 100%;
+            overflow-wrap: anywhere;
+        }
+
+        /* ==============================
+       GRID / TABLAS
+       ============================== */
 
         #contenedoreseditar {
             font-size: 0.85rem;
@@ -88,96 +372,181 @@
             letter-spacing: 0.03em;
         }
 
-        .input-alto {
-            height: 38px;
-            /* o lo que tú necesites */
-        }
+        /* ==============================
+       RESPONSIVE
+       ============================== */
 
-        .loading-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            z-index: 10;
-            /* asegúrate que esté por encima del grid */
-            width: 100%;
-            height: 100%;
-            background-color: rgba(255, 255, 255, 0.6);
-            /* opcional para desenfoque */
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
+        @media (max-width: 767.98px) {
+            .rastreo-auto-layout {
+                height: auto !important;
+                max-height: none !important;
+                overflow: visible;
+            }
 
-        .nav-tabs .nav-link.active {
-            background-color: #0d6efd;
-            /* Azul Bootstrap */
-            color: #fff !important;
-            font-weight: bold;
-            border-radius: 0.5rem 0.5rem 0 0;
-            /* esquinas redondeadas arriba */
-        }
+            .rastreo-auto-mapa {
+                height: 420px;
+                margin-bottom: 1rem;
+            }
 
-        /* Hover */
-        .nav-tabs .nav-link:hover {
-            background-color: #e9ecef;
-            border-radius: 0.5rem 0.5rem 0 0;
+            #map {
+                height: 420px !important;
+            }
+
+            .rastreo-auto-panel {
+                height: 600px;
+            }
         }
     </style>
-    <div class="container-fluid bg-white">
-        <div class="card shadow-sm mb-3">
-            <div class="d-flex justify-content-end mb-1">
-                <a data-bs-toggle="collapse" href="#filtrosCollapse" role="button"
-                    style="text-decoration:none; font-size:18px;">
-                    ⚙️Filtros
+    <div class="rastreo-page bg-white w-100 overflow-hidden px-2 py-2 rounded">
+        <div class="card shadow-sm rastreo-filtros-card">
+            <div class="d-flex justify-content-end px-3 pt-2">
+                <a data-bs-toggle="collapse" href="#filtrosCollapse" role="button" class="btn-toggle-filtros">
+                    <i class="fas fa-filter me-1"></i> Filtros
                 </a>
             </div>
+
             <div class="collapse show" id="filtrosCollapse">
-                <div class="card shadow-sm mb-3">
-                    <div class="card-body">
+                <div class="card-body">
 
-                        <div class="row g-2 align-items-end">
+                    <div class="row g-2 align-items-end">
 
-                            <div class="col-md-3">
-                                <label class="form-label">Empresa</label>
-                                <select id="filtroEmpresa" class="form-select">
-                                    <option value="">Todas</option>
-                                    @foreach ($empresas as $empresa)
-                                        <option value="{{ $empresa->id }}">{{ $empresa->id }}-{{ $empresa->nombre }}
-                                        </option>
-                                    @endforeach
-                                </select>
+                        <div class="col-xl-3 col-lg-4 col-md-6">
+                            <label class="form-label">Empresa</label>
+                            <select id="filtroEmpresa" class="form-select">
+                                <option value="">Todas</option>
+                                @foreach ($empresas as $empresa)
+                                    <option value="{{ $empresa->id }}">
+                                        {{ $empresa->id }}-{{ $empresa->nombre }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="col-xl-2 col-lg-4 col-md-6">
+                            <label class="form-label">Línea Transporte</label>
+                            <select id="filtroLineaT" class="form-select">
+                                <option value="">Todos</option>
+                            </select>
+                        </div>
+
+                        <div class="col-xl-2 col-lg-4 col-md-6">
+                            <label class="form-label">Cliente</label>
+                            <select id="filtrocliente" class="form-select">
+                                <option value="">Todos</option>
+                            </select>
+                        </div>
+
+                        <div class="col-xl-2 col-lg-4 col-md-6">
+                            <label class="form-label">Tipo</label>
+                            <select id="filtroTipo" class="form-select">
+                                <option value="">Todos</option>
+                                <option value="Equipo">Equipos</option>
+                                <option value="Convoy">Convoys</option>
+                                <option value="Contenedor">Contenedores</option>
+                            </select>
+                        </div>
+
+                        <div class="col-xl-2 col-lg-4 col-md-6 filtro-fecha-salida">
+                            <label class="form-label">Fecha salida</label>
+
+                            <div class="input-group">
+                                <input type="date" id="filtroFechaSalida" class="form-control">
+
+                                <button type="button" class="btn btn-outline-secondary" id="btnLimpiarFechaSalida"
+                                    title="Limpiar fecha">
+                                    <i class="fas fa-times"></i>
+                                </button>
                             </div>
+                        </div>
 
-                            <div class="col-md-3">
-                                <label class="form-label">Linea Transporte</label>
-                                <select id="filtroLineaT" class="form-select">
-                                    <option value="">Todos</option>
-                                </select>
+                        <div class="col-xl-1 col-lg-4 col-md-6 filtro-opciones-mapa">
+                            <label class="form-label invisible">Opciones</label>
+
+                            <div class="dropdown w-100">
+                                <button type="button" class="btn btn-outline-primary w-100 btnOpcionesMapaExtra"
+                                    id="btnOpcionesVistaMapa" data-bs-toggle="dropdown" data-bs-auto-close="outside"
+                                    aria-expanded="false" title="Más opciones del mapa">
+                                    <i class="fas fa-map-location-dot"></i>
+                                </button>
+
+                                <div class="dropdown-menu dropdown-menu-end p-3 shadow opcionesMapaDropdown">
+                                    <div class="fw-bold small text-dark mb-2">
+                                        <i class="fas fa-layer-group me-1 text-primary"></i>
+                                        Mostrar equipos en mapa
+                                    </div>
+
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input filtroVistaMapaCheck" type="checkbox" value="todos"
+                                            id="vistaCheckTodos" checked>
+                                        <label class="form-check-label small" for="vistaCheckTodos">
+                                            Todos
+                                        </label>
+                                    </div>
+
+                                    <hr class="my-2">
+
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input filtroVistaMapaCheck filtroVistaMapaTipo"
+                                            type="checkbox" value="Camion" id="vistaCheckCamion" checked>
+                                        <label class="form-check-label small" for="vistaCheckCamion">
+                                            Tracto
+                                        </label>
+                                    </div>
+
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input filtroVistaMapaCheck filtroVistaMapaTipo"
+                                            type="checkbox" value="ChasisA" id="vistaCheckChasisA" checked>
+                                        <label class="form-check-label small" for="vistaCheckChasisA">
+                                            Chasis A
+                                        </label>
+                                    </div>
+
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input filtroVistaMapaCheck filtroVistaMapaTipo"
+                                            type="checkbox" value="ChasisB" id="vistaCheckChasisB" checked>
+                                        <label class="form-check-label small" for="vistaCheckChasisB">
+                                            Chasis B
+                                        </label>
+                                    </div>
+
+                                    <div class="pt-2 border-top">
+                                        <span class="badge bg-light text-dark border" id="lblFiltroVistaMapa">
+                                            Todos
+                                        </span>
+                                    </div>
+
+                                    <hr class="my-2">
+
+                                    <div class="fw-bold small text-dark mb-2">
+                                        <i class="fas fa-map-marker-alt me-1 text-primary"></i>
+                                        Diseño del marcador
+                                    </div>
+
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input radioVistaMarker" type="radio" name="vistaMarker"
+                                            id="vistaMarkerDefault" value="default" checked>
+                                        <label class="form-check-label small" for="vistaMarkerDefault">
+                                            Default
+                                        </label>
+                                    </div>
+
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input radioVistaMarker" type="radio"
+                                            name="vistaMarker" id="vistaMarkertransparente" value="transparente">
+                                        <label class="form-check-label small" for="vistaMarkertransparente">
+                                            Transparente
+                                        </label>
+                                    </div>
+
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input radioVistaMarker" type="radio"
+                                            name="vistaMarker" id="vistaMarkerlive" value="live">
+                                        <label class="form-check-label small" for="vistaMarkerlive">
+                                            Clásico
+                                        </label>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="col-md-3">
-                                <label class="form-label">Cliente</label>
-                                <select id="filtrocliente" class="form-select">
-                                    <option value="">Todos</option>
-                                </select>
-                            </div>
-
-                            <div class="col-md-2">
-                                <label class="form-label">Tipo</label>
-                                <select id="filtroTipo" class="form-select">
-
-                                    <option value="">Todos</option>
-                                    <option value="Equipo">Equipos</option>
-                                    <option value="Convoy">Convoys</option>
-                                    <option value="Contenedor">Contenedores</option>
-
-                                </select>
-                            </div>
-
-
-                            <div class="flex-grow-1">
-
-                            </div>
-
                         </div>
 
                     </div>
@@ -208,8 +577,8 @@
 
             @can('Coordenadas-Historial-Reportes')
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="tab-historial" data-bs-toggle="tab" data-bs-target="#historial" type="button"
-                        role="tab">
+                    <button class="nav-link" id="tab-historial" data-bs-toggle="tab" data-bs-target="#historial"
+                        type="button" role="tab">
                         Historial / Reportes
                     </button>
                 </li>
@@ -228,34 +597,33 @@
         <div class="tab-content p-3 border border-top-0" id="rastreoTabsContent">
             {{-- Pestaña Rastreo --}}
             <div class="tab-pane fade show active" id="rastreo" role="tabpanel">
-                <div class="row">
-                    <div class="col-md-9">
-                        <div id="map" style="width: 100%; height: 700px"></div>
+                <div class="row rastreo-auto-layout g-0">
+
+                    <div class="col-md-9 rastreo-auto-mapa pe-md-2">
+                        <div id="map"></div>
                     </div>
 
+                    <div class="col-md-3 bg-white p-3 rounded shadow-sm rastreo-auto-panel">
 
-                    <div class="col-md-3 bg-white p-3 rounded shadow-sm">
+                        <label class="form-label fw-bold small">Buscar</label>
 
-                        <label class="form-label">Buscar</label>
                         <div class="position-relative mb-3">
-                            <input type="text" id="buscadorGeneral" placeholder="Buscar convoy, contenedor o equipo..."
-                                class="form-control bg-light shadow-sm" style="min-width: 250px" />
+                            <input type="text" id="buscadorGeneral"
+                                placeholder="Buscar convoy, contenedor o equipo..."
+                                class="form-control bg-light shadow-sm w-100" />
+
                             <div id="chipsBusqueda" class="d-flex flex-wrap gap-2 mt-2"></div>
-                            <div id="resultadosBusqueda" class="dropdown-menu show mt-1"
-                                style="max-height: 200px; overflow-y: auto; width: 100%"></div>
+
+                            <div id="resultadosBusqueda" class="dropdown-menu show mt-1"></div>
                         </div>
 
-
-                        <div class="border rounded p-2" style="max-height: 58vh;">
+                        <div class="panelDispositivosAuto border rounded p-2">
 
                             <div
-                                class="d-flex justify-content-between align-items-center mb-2 bg-light px-2 py-2 rounded shadow-sm">
-
-
+                                class="dispositivos-header d-flex justify-content-between align-items-center mb-2 bg-light px-2 py-2 rounded shadow-sm">
                                 <h6 class="mb-0 fw-bold">
                                     Dispositivos (<span id="totalDispositivos">0</span>)
                                 </h6>
-
 
                                 <div class="form-check form-switch m-0 d-flex align-items-center">
                                     <input class="form-check-input me-1" type="checkbox" id="toggleTodos">
@@ -263,14 +631,9 @@
                                         Mostrar todos
                                     </label>
                                 </div>
-
                             </div>
 
-                            <ul class="list-group" id="listaDispositivos" style="overflow-y: auto;">
-
-
-
-                            </ul>
+                            <ul class="list-group" id="listaDispositivos"></ul>
 
                         </div>
 
@@ -708,5 +1071,51 @@
     <script>
         const proveedores = @json($proveedores);
         const clientes = @json($clientes);
+    </script>
+    <script>
+        function ajustarAltoRastreoAuto() {
+            const layout = document.querySelector(".rastreo-auto-layout");
+
+            if (!layout) return;
+
+            const rect = layout.getBoundingClientRect();
+            const margenInferior = 10;
+
+            let altoDisponible = window.innerHeight - rect.top - margenInferior;
+
+            if (altoDisponible < 420) {
+                altoDisponible = 420;
+            }
+
+            layout.style.height = altoDisponible + "px";
+            layout.style.maxHeight = altoDisponible + "px";
+
+            const mapa = document.getElementById("map");
+
+            if (mapa) {
+                mapa.style.height = "100%";
+            }
+
+            if (window.google && window.google.maps && window.map) {
+                google.maps.event.trigger(window.map, "resize");
+            }
+        }
+
+        window.addEventListener("load", ajustarAltoRastreoAuto);
+        window.addEventListener("resize", ajustarAltoRastreoAuto);
+
+        document.addEventListener("shown.bs.tab", function() {
+            setTimeout(ajustarAltoRastreoAuto, 100);
+        });
+
+        document.addEventListener("shown.bs.collapse", function() {
+            setTimeout(ajustarAltoRastreoAuto, 100);
+        });
+
+        document.addEventListener("hidden.bs.collapse", function() {
+            setTimeout(ajustarAltoRastreoAuto, 100);
+        });
+
+        window.escliente = 0;
     </script>
 @endpush

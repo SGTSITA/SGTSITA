@@ -532,7 +532,10 @@ class ExternosController extends Controller
             return response()->json(["Titulo" => "Previamente Cancelado","Mensaje" => "El contenedor $request->numContenedor fue cancelado previamente","TMensaje" => "info"]);
         }
 
-        Cotizaciones::where('id', $cotizacion->id)->update(['estatus' => 'Cancelada']);
+        $cotizacion = Cotizaciones::findOrFail($cotizacion->id);
+
+        $cotizacion->estatus = 'Cancelada';
+        $cotizacion->save();
 
         $emailList = [env('MAIL_NOTIFICATIONS'),Auth::User()->email];
         $cotizacionCancelar = Cotizaciones::where('id', $cotizacion->id)->first();

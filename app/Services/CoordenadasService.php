@@ -434,10 +434,18 @@ class CoordenadasService
             })
 
 
-          ->when($filters['fecha'] ?? null, function ($q, $fecha) {  // por si despues pongo boton en vista para filtrar con rango de fecha o algo asi.
+          ->when($filters['fecha'] ?? null, function ($q, $fecha) {
 
               $q->whereDate('a.fecha_inicio', '<=', $fecha)
                 ->whereDate('a.fecha_fin', '>=', $fecha);
+
+          })
+           ->when($filters['fecha_salida'] ?? null, function ($q, $fecha_salida) {
+
+             $inicioDia = Carbon::parse($fecha_salida)->startOfDay();
+                $finDia = Carbon::parse($fecha_salida)->endOfDay();
+
+                $q->whereBetween('a.fecha_inicio', [$inicioDia, $finDia]);
 
           });
     }
@@ -520,7 +528,11 @@ class CoordenadasService
         ->whereDate('conboys.fecha_fin', '>=', $fecha)
         ->when($filters['id_convoys'] ?? null, function ($q, $ids) {
             $q->whereIn('conboys.id', $ids);
-        })
+        })->when($filters['fecha_salida'] ?? null, function ($q, $fecha_salida) {
+
+              $q->whereDate('conboys.fecha_inicio', '>=', $fecha_salida);
+
+          })
 
 
          ->when(
@@ -591,6 +603,7 @@ class CoordenadasService
 
         $fecha = $filters['fecha'] ?? Carbon::today()->toDateString();
 
+
         return $query
 
             ->where('conboys.estatus', 'Activo')
@@ -615,6 +628,10 @@ class CoordenadasService
 
                 $q->whereDate('conboys.fecha_inicio', '<=', $fecha)
                   ->whereDate('conboys.fecha_fin', '>=', $fecha);
+
+            })->when($filters['fecha_salida'] ?? null, function ($q, $fecha_salida) {
+
+                $q->whereDate('conboys.fecha_inicio', '>=', $fecha_salida);
 
             });
 
@@ -656,6 +673,17 @@ class CoordenadasService
 
     public function applyFiltersEquipos($query, $filters)
     {
+
+
+    $fecha = $filters['fecha']
+        ?? $filters['fecha']
+        ?? Carbon::now()->toDateString();
+
+  $fechaSalida = $filters['fecha_salida']
+        ?? $filters['fecha_salida']
+        ?? null;
+
+
         return $query
 
          ->when(!($filters['isAdmin'] ?? false), function ($q) use ($filters) {
@@ -665,7 +693,46 @@ class CoordenadasService
              if ($empresa != 0) {
                  $q->where('equipos.id_empresa', $empresa);
              }
-         });
+         })
+
+                 ->whereExists(function ($sub) use ($filters,$fecha, $fechaSalida) {
+
+            $sub->select(DB::raw(1))
+                ->from('asignaciones as a')
+                ->join('docum_cotizacion as dc', 'dc.id', '=', 'a.id_contenedor')
+                ->join('cotizaciones as c', 'c.id', '=', 'dc.id_cotizacion')
+
+                // El equipo puede estar como tracto, chasis A o chasis B
+                ->where(function ($q) {
+                    $q->whereColumn('a.id_camion', 'equipos.id')
+                        ->orWhereColumn('a.id_chasis', 'equipos.id')
+                        ->orWhereColumn('a.id_chasis2', 'equipos.id');
+                })
+
+               ->when($fecha ?? null, function ($q) use ($fecha) {
+
+    $q->whereDate('fecha_inicio', '<=', $fecha)
+      ->whereDate('fecha_fin', '>=', $fecha);
+})
+->when($fechaSalida ?? null, function ($q) use ($fechaSalida) {
+    $q->whereDate('fecha_inicio', '>=', $fechaSalida);
+})
+
+                // Si no es admin, también valida empresa en asignaciones
+                ->when(!($filters['isAdmin'] ?? false), function ($q) use ($filters) {
+
+                    $empresa = $filters['id_empresa'] ?? 0;
+
+                    if ($empresa != 0) {
+                        $q->where('a.id_empresa', $empresa);
+                    }
+                })
+
+                // Si es cliente externo o usuario con cliente asignado
+                ->when(!empty($filters['idCliente']), function ($q) use ($filters) {
+                    $q->where('c.id_cliente', $filters['idCliente']);
+                });
+        });
 
     }
 
