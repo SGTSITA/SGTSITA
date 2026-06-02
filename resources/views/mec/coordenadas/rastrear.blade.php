@@ -2,11 +2,14 @@
 
 @section('WorkSpace')
     <style>
+        /* ==============================
+                                       SWITCH UBICACIÓN
+                                       ============================== */
+
         .switch {
             position: relative;
             display: inline-block;
             width: 200px;
-            /* Ancho mayor para incluir el texto */
             height: 30px;
         }
 
@@ -19,10 +22,7 @@
         .slider {
             position: absolute;
             cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
+            inset: 0;
             background-color: #ccc;
             transition: 0.4s;
             border-radius: 34px;
@@ -44,10 +44,10 @@
             content: '';
             height: 22px;
             width: 22px;
+            left: 4px;
             border-radius: 50%;
             background-color: white;
             transition: 0.4s;
-            left: 4px;
         }
 
         input:checked+.slider {
@@ -66,9 +66,33 @@
             transform: translateX(-80px);
         }
 
+        /* ==============================
+                                       GENERALES
+                                       ============================== */
+
         .btn-close {
             filter: invert(1);
         }
+
+        .input-alto {
+            height: 38px;
+        }
+
+        .loading-overlay {
+            position: absolute;
+            inset: 0;
+            z-index: 10;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* ==============================
+                                       TABLA CONTENEDORES EDITAR
+                                       ============================== */
 
         #contenedoreseditar {
             font-size: 0.85rem;
@@ -87,42 +111,210 @@
             letter-spacing: 0.03em;
         }
 
-        .input-alto {
-            height: 38px;
-            /* o lo que tú necesites */
-        }
-
-        .loading-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            z-index: 10;
-            /* asegúrate que esté por encima del grid */
-            width: 100%;
-            height: 100%;
-            background-color: rgba(255, 255, 255, 0.6);
-            /* opcional para desenfoque */
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
+        /* ==============================
+                                       TABS
+                                       ============================== */
 
         .nav-tabs .nav-link.active {
             background-color: #0d6efd;
-            /* Azul Bootstrap */
             color: #fff !important;
             font-weight: bold;
             border-radius: 0.5rem 0.5rem 0 0;
-            /* esquinas redondeadas arriba */
         }
 
-        /* Hover */
         .nav-tabs .nav-link:hover {
             background-color: #e9ecef;
             border-radius: 0.5rem 0.5rem 0 0;
         }
+
+        /* ==============================
+                                       CONTENEDOR GENERAL
+                                       ============================== */
+
+        .rastreo-page {
+            width: 100%;
+            max-width: 100%;
+            overflow: hidden;
+        }
+
+        #rastreoTabsContent {
+            width: 100%;
+            max-width: 100%;
+            overflow: hidden;
+        }
+
+        #rastreo {
+            width: 100%;
+            max-width: 100%;
+            overflow: hidden;
+        }
+
+        /* ==============================
+                                       MAPA + PANEL
+                                       ============================== */
+
+        .rastreo-auto-layout {
+            width: 100%;
+            max-width: 100%;
+            height: 600px;
+            max-height: 600px;
+            overflow: hidden;
+        }
+
+        .rastreo-auto-mapa,
+        .rastreo-auto-panel {
+            height: 100%;
+            min-width: 0;
+        }
+
+        .rastreo-auto-mapa {
+            overflow: hidden;
+        }
+
+        #map {
+            width: 100%;
+            height: 100% !important;
+            min-height: 300px;
+        }
+
+        .rastreo-auto-panel {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            min-height: 0;
+        }
+
+        .rastreo-auto-panel * {
+            min-width: 0;
+        }
+
+        .rastreo-auto-panel .form-control,
+        .rastreo-auto-panel .form-select,
+        .rastreo-auto-panel .input-group {
+            max-width: 100%;
+        }
+
+        /* ==============================
+                                       FILTRO TIPO + BOTÓN CONFIG
+                                       ============================== */
+
+        #filtroTipo {
+            height: 48px;
+        }
+
+        #btnOpcionesVistaMapa.btnConfigVistaMapa {
+            width: 52px;
+            height: 48px;
+            min-height: 48px;
+            flex: 0 0 52px;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #eef5ff, #ffffff);
+            border: 1px solid #ced4da;
+            border-left: 0;
+            color: #0d6efd;
+            border-top-right-radius: .375rem;
+            border-bottom-right-radius: .375rem;
+        }
+
+        #btnOpcionesVistaMapa.btnConfigVistaMapa i {
+            font-size: 15px;
+            line-height: 1;
+        }
+
+        #btnOpcionesVistaMapa.btnConfigVistaMapa:hover {
+            background: linear-gradient(135deg, #dbeafe, #ffffff);
+            color: #0a58ca;
+            border-color: #86b7fe;
+        }
+
+        #btnOpcionesVistaMapa.btnConfigVistaMapa:focus,
+        #btnOpcionesVistaMapa.btnConfigVistaMapa.show {
+            box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, .18);
+            border-color: #86b7fe;
+        }
+
+        /* ==============================
+                                       BUSCADOR
+                                       ============================== */
+
+        #buscadorGeneral {
+            width: 100%;
+            max-width: 100%;
+        }
+
+        #chipsBusqueda {
+            max-width: 100%;
+            overflow-x: hidden;
+        }
+
+        #resultadosBusqueda {
+            max-height: 200px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            width: 100%;
+            max-width: 100%;
+        }
+
+        /* ==============================
+                                       PANEL DISPOSITIVOS
+                                       ESTE ES EL ÚNICO QUE SCROLLEA
+                                       ============================== */
+
+        .panelDispositivosAuto {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        .panelDispositivosAuto .dispositivos-header {
+            position: sticky;
+            top: 0;
+            z-index: 3;
+        }
+
+        #listaDispositivos {
+            margin-bottom: 0;
+            padding-bottom: 20px;
+        }
+
+        #listaDispositivos,
+        #listaDispositivos * {
+            max-width: 100%;
+            overflow-wrap: anywhere;
+        }
+
+        /* ==============================
+                                       RESPONSIVE
+                                       ============================== */
+
+        @media (max-width: 767.98px) {
+            .rastreo-auto-layout {
+                height: auto !important;
+                max-height: none !important;
+                overflow: visible;
+            }
+
+            .rastreo-auto-mapa {
+                height: 420px;
+                margin-bottom: 1rem;
+            }
+
+            #map {
+                height: 420px !important;
+            }
+
+            .rastreo-auto-panel {
+                height: 600px;
+            }
+        }
     </style>
-    <div class="container-fluid bg-white">
+
+    <div class="rastreo-page bg-white w-100 overflow-hidden px-2 py-2 rounded">
         <h3 class="mb-3 text-center">📍 Módulo de Rastreo y Gestión</h3>
 
         {{-- Tabs --}}
@@ -155,14 +347,45 @@
             @endcan
         </ul>
 
-        <div class="tab-content p-3 border border-top-0" id="rastreoTabsContent">
+        <div class="tab-content p-2 border border-top-0" id="rastreoTabsContent">
+
             {{-- Pestaña Rastreo --}}
             <div class="tab-pane fade show active" id="rastreo" role="tabpanel">
-                <div class="row">
-                    <div class="col-md-9">
-                        <div id="map" style="width: 100%; height: 700px"></div>
+
+                <div class="row rastreo-auto-layout g-0">
+
+                    {{-- MAPA --}}
+                    <div class="col-md-9 rastreo-auto-mapa pe-md-2">
+                        <div id="map"></div>
                     </div>
-                    <div class="col-md-3 bg-white p-3 rounded shadow-sm">
+
+                    {{-- PANEL DERECHO --}}
+                    <div class="col-md-3 bg-white p-3 rounded shadow-sm rastreo-auto-panel">
+
+                        {{-- FILTROS --}}
+                        <div class="mb-2">
+                            <button
+                                class="btn btn-outline-secondary w-100 d-flex align-items-center justify-content-between"
+                                type="button" data-bs-toggle="collapse" data-bs-target="#filtrosRastreoMecPanel"
+                                aria-expanded="false" aria-controls="filtrosRastreoMecPanel">
+                                <span>
+                                    <i class="fas fa-filter me-1"></i>
+                                    Filtros
+                                </span>
+                                <i class="fas fa-chevron-down small"></i>
+                            </button>
+
+                            <div class="collapse mt-2" id="filtrosRastreoMecPanel">
+                                <div class="border rounded bg-light p-2">
+                                    <label class="form-label mb-1">Linea Transporte</label>
+                                    <select id="filtroLineaT" class="form-select">
+                                        <option value="">Todos</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- TIPO --}}
                         <div class="mb-2">
                             <label class="form-label">Tipo</label>
 
@@ -173,9 +396,6 @@
                                     <option value="Convoy">Convoys</option>
                                     <option value="Contenedor">Contenedores</option>
                                 </select>
-
-
-
 
                                 <button class="btn btnConfigVistaMapa" type="button" id="btnOpcionesVistaMapa"
                                     data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false"
@@ -228,6 +448,7 @@
                                             Todos
                                         </span>
                                     </div>
+
                                     <hr class="my-2">
 
                                     <div class="fw-bold small text-dark mb-2">
@@ -236,8 +457,8 @@
                                     </div>
 
                                     <div class="form-check mb-2">
-                                        <input class="form-check-input radioVistaMarker" type="radio" name="vistaMarker"
-                                            id="vistaMarkerDefault" value="default" checked>
+                                        <input class="form-check-input radioVistaMarker" type="radio"
+                                            name="vistaMarker" id="vistaMarkerDefault" value="default" checked>
                                         <label class="form-check-label small" for="vistaMarkerDefault">
                                             Default
                                         </label>
@@ -250,6 +471,7 @@
                                             Transparente
                                         </label>
                                     </div>
+
                                     <div class="form-check mb-2">
                                         <input class="form-check-input radioVistaMarker" type="radio"
                                             name="vistaMarker" id="vistaMarkerlive" value="live">
@@ -257,33 +479,28 @@
                                             live prueba
                                         </label>
                                     </div>
-
-
-                                </div>
-                            </div>
-                        </div>
-                        <!-- Bloque de buscador y botón -->
-                        <div class="d-flex align-items-start gap-2 mb-3">
-
-                            <!-- Buscador -->
-                            <div class="flex-grow-1">
-                                <div class="position-relative">
-                                    <input type="text" id="buscadorGeneral"
-                                        placeholder="Buscar convoy, contenedor o equipo..."
-                                        class="form-control bg-light shadow-sm" style="min-width: 250px" />
-                                    <div id="chipsBusqueda" class="d-flex flex-wrap gap-2 mt-2"></div>
-                                    <div id="resultadosBusqueda" class="dropdown-menu show mt-1"
-                                        style="max-height: 200px; overflow-y: auto; width: 100%"></div>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="border rounded p-2" style="max-height: 58vh; overflow-y: auto;">
+                        {{-- BUSCADOR --}}
+                        <div class="mb-3">
+                            <div class="position-relative">
+                                <input type="text" id="buscadorGeneral"
+                                    placeholder="Buscar convoy, contenedor o equipo..."
+                                    class="form-control bg-light shadow-sm w-100" />
 
+                                <div id="chipsBusqueda" class="d-flex flex-wrap gap-2 mt-2"></div>
+
+                                <div id="resultadosBusqueda" class="dropdown-menu show mt-1"></div>
+                            </div>
+                        </div>
+
+                        {{-- PANEL DISPOSITIVOS --}}
+                        <div class="panelDispositivosAuto border rounded p-2">
 
                             <div
-                                class="d-flex justify-content-between align-items-center mb-2 bg-light px-2 py-2 rounded shadow-sm">
-
+                                class="dispositivos-header d-flex justify-content-between align-items-center mb-2 bg-light px-2 py-2 rounded shadow-sm">
                                 <h6 class="mb-0 fw-bold">
                                     Dispositivos (<span id="totalDispositivos">0</span>)
                                 </h6>
@@ -294,15 +511,10 @@
                                         Mostrar Todos
                                     </label>
                                 </div>
-
                             </div>
 
-
                             <ul class="list-group" id="listaDispositivos"></ul>
-
                         </div>
-
-
 
                     </div>
                 </div>
@@ -693,4 +905,59 @@
     <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
     <script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+
+    <script>
+        function ajustarAltoRastreoAuto() {
+            const layout = document.querySelector(".rastreo-auto-layout");
+
+            if (!layout) return;
+
+            const rect = layout.getBoundingClientRect();
+
+
+            const margenInferior = 16;
+
+            let altoDisponible = window.innerHeight - rect.top - margenInferior;
+
+
+            if (altoDisponible < 420) {
+                altoDisponible = 420;
+            }
+
+            layout.style.height = altoDisponible + "px";
+            layout.style.maxHeight = altoDisponible + "px";
+
+            const mapa = document.getElementById("map");
+
+            if (mapa) {
+                mapa.style.height = "100%";
+            }
+
+
+            if (window.google && window.google.maps && window.map) {
+                google.maps.event.trigger(window.map, "resize");
+            }
+        }
+
+        window.addEventListener("load", ajustarAltoRastreoAuto);
+        window.addEventListener("resize", ajustarAltoRastreoAuto);
+
+        document.addEventListener("shown.bs.tab", function() {
+            setTimeout(ajustarAltoRastreoAuto, 100);
+        });
+
+        /*
+         * Recalcula cuando se abre/cierra el collapse de filtros,
+         * porque cambia la altura disponible para la lista.
+         */
+        document.addEventListener("shown.bs.collapse", function() {
+            setTimeout(ajustarAltoRastreoAuto, 100);
+        });
+
+        document.addEventListener("hidden.bs.collapse", function() {
+            setTimeout(ajustarAltoRastreoAuto, 100);
+        });
+
+        window.escliente = 1;
+    </script>
 @endpush

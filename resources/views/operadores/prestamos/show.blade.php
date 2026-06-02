@@ -42,19 +42,28 @@
 
         {{-- 🔹 Tabla detallada --}}
         <div class="card shadow-sm">
-            <div class="card-header bg-light d-flex justify-content-between">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">
                     Movimientos de {{ $operador->nombre }}
                 </h5>
-                <a href="{{ route('operadores.prestamos.reporte.pdf', $operador->id) }}" target="_blank"
-                    class="btn btn-danger btn-sm">
-                    <i class="bi bi-file-earmark-pdf me-1"></i>
-                    Reporte PDF
-                </a>
 
-                <a href="{{ route('operadores.prestamo') }}" class="btn btn-secondary btn-sm">
-                    ← Volver
-                </a>
+                <div class="d-flex gap-2">
+                    <a href="{{ route('operadores.prestamos.reporte.pdf', $operador->id) }}" target="_blank"
+                        class="btn btn-danger btn-sm">
+                        <i class="bi bi-file-earmark-pdf me-1"></i>
+                        Reporte PDF
+                    </a>
+
+                    <a href="{{ route('operadores.prestamos.reporte.excel', $operador->id) }}"
+                        class="btn btn-success btn-sm">
+                        <i class="bi bi-file-earmark-excel me-1"></i>
+                        Exportar Excel
+                    </a>
+
+                    <a href="{{ route('operadores.prestamo') }}" class="btn btn-secondary btn-sm">
+                        ← Volver
+                    </a>
+                </div>
             </div>
 
             <div class="card-body table-responsive">
