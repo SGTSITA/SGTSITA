@@ -1217,7 +1217,7 @@ class ReporteriaController extends Controller
     {
         /* */
 
-        $contadorPeriodos = Common::contadorPeriodos($r->startDate, $r->endDate);
+      /*   $contadorPeriodos = Common::contadorPeriodos($r->startDate, $r->endDate);
         // $datos = Collect();
 
         // $datos = $datos->merge($viajes);
@@ -1355,12 +1355,291 @@ class ReporteriaController extends Controller
             $fechaIniciaPeriodo = $finalMes->addDay()->toDateString();
 
         }
+ */
 
-        return json_encode(["Info" => $Info,"contadorPeriodos" => $contadorPeriodos, "Diferidos" => $Diferidos]);
-        return $Info;
+ $contadorPeriodos = Common::contadorPeriodos($r->startDate, $r->endDate);
 
+    $fechaIniciaPeriodo = $r->startDate;
+    $fechaHasta = $r->endDate;
+
+    $Info = [];
+    $Diferidos = [];
+
+    for ($periodo = 1; $periodo <= $contadorPeriodos; $periodo++) {
+        $inicioPeriodo = Carbon::parse($fechaIniciaPeriodo)->startOfDay();
+
+        $finMes = Carbon::parse($fechaIniciaPeriodo)->endOfMonth()->endOfDay();
+        $finFiltro = Carbon::parse($fechaHasta)->endOfDay();
+
+        $finPeriodo = $finMes->greaterThan($finFiltro)
+            ? $finFiltro
+            : $finMes;
+
+        $asignaciones = Asignaciones::query()
+            ->with([
+                'Contenedor.Cotizacion.Cliente',
+                'Contenedor.Cotizacion.viajes.costosReporte',
+                'Operador',
+                'Proveedor',
+
+            ])
+            ->whereBetween('fecha_inicio', [$inicioPeriodo, $finPeriodo])
+            ->whereNotNull('id_camion')
+            ->whereHas('Contenedor.Cotizacion', function ($q) {
+                $q->where('estatus', '!=', 'Cancelada')
+                    ->where('id_empresa', auth()->user()->id_empresa);
+            })
+            ->get();
+
+        if ($asignaciones->isEmpty()) {
+            $fechaIniciaPeriodo = Carbon::parse($finPeriodo)->addDay()->toDateString();
+            continue;
+        }
+
+
+        $cotizacionIds = $asignaciones
+            ->map(function ($asignacion) {
+                return optional(optional($asignacion->Contenedor)->Cotizacion)->id;
+            })
+            ->filter()
+            ->unique()
+            ->values();
+
+
+        $gastosExtrasAgrupados = GastosExtras::query()
+            ->whereIn('id_cotizacion', $cotizacionIds)
+            ->get()
+            ->groupBy('id_cotizacion');
+
+        $gastosOperadorAgrupados = GastosOperadores::query()
+            ->whereIn('id_cotizacion', $cotizacionIds)
+            ->get()
+            ->groupBy('id_cotizacion');
+
+
+        $dineroViajeAgrupado = DineroContenedor::query()
+            ->whereIn('id_contenedor', $cotizacionIds)
+            ->selectRaw('id_contenedor, SUM(monto) as total')
+            ->groupBy('id_contenedor')
+            ->pluck('total', 'id_contenedor');
+
+        $dineroJustificadoAgrupado = ViaticosOperador::query()
+            ->whereIn('id_cotizacion', $cotizacionIds)
+            ->selectRaw('id_cotizacion, SUM(monto) as total')
+            ->groupBy('id_cotizacion')
+            ->pluck('total', 'id_cotizacion');
+
+
+        $gastosDiferidosPorUnidad = $this->obtenerGastosDiferidosPorUnidad(
+            $inicioPeriodo,
+            $finPeriodo
+        );
+
+
+        $referenciasFull = $asignaciones
+            ->map(function ($asignacion) {
+                return optional(optional($asignacion->Contenedor)->Cotizacion)->referencia_full;
+            })
+            ->filter()
+            ->unique()
+            ->values();
+
+        $cotizacionesSecundariasFull = Cotizaciones::query()
+            ->whereIn('referencia_full', $referenciasFull)
+            ->where('jerarquia', 'Secundario')
+            ->with('DocCotizacion')
+            ->get()
+            ->keyBy('referencia_full');
+
+
+        foreach ($asignaciones as $asignacion) {
+            $contenedor = $asignacion->Contenedor;
+            $cotizacion = optional($contenedor)->Cotizacion;
+
+            if (!$cotizacion) {
+                continue;
+            }
+
+            $idCotizacion = $cotizacion->id;
+
+            $gastosExtra = $gastosExtrasAgrupados->get($idCotizacion, collect());
+            $gastosOperador = $gastosOperadorAgrupados->get($idCotizacion, collect());
+
+            $gastosExtraTotal = (float) $gastosExtra->sum('monto');
+            $gastosOperadorTotal = (float) $gastosOperador->sum('cantidad');
+
+
+            $precioViajeBase = $this->calcularPrecioViajeDesdeCostos($cotizacion);
+$precioViajeTotal = $precioViajeBase + $gastosExtraTotal;
+
+            $dineroViaje = (float) ($dineroViajeAgrupado[$idCotizacion] ?? 0);
+            $dineroJustificado = (float) ($dineroJustificadoAgrupado[$idCotizacion] ?? 0);
+            $sinJustificar = abs($dineroViaje - $dineroJustificado);
+
+
+            $pagoOperacion = $asignacion->id_proveedor
+                ? (float) ($asignacion->total_proveedor ?? 0)
+                : (float) ($asignacion->sueldo_viaje ?? 0);
+
+
+            $gastosDiferidosUnidad = $gastosDiferidosPorUnidad
+                ->get($asignacion->id_camion, collect());
+
+            $gastosDiferidos = round(
+                (float) $gastosDiferidosUnidad->sum('gasto_por_viaje'),
+                2
+            );
+
+
+            $detalleGastos = [];
+
+            foreach ($gastosDiferidosUnidad as $gd) {
+                $detalleGastos[] = [
+                    'fecha_gasto' => $inicioPeriodo->toDateString(),
+                    'monto_gasto' => round((float) $gd->gasto_por_viaje, 2),
+                    'tipo_gasto' => 'DIFERIDO',
+                    'motivo_gasto' => $gd->motivo,
+                ];
+            }
+
+            foreach ($gastosExtra as $ge) {
+                $detalleGastos[] = [
+                    'fecha_gasto' => $ge->created_at,
+                    'monto_gasto' => round((float) $ge->monto, 2),
+                    'tipo_gasto' => 'Gasto Extra',
+                    'motivo_gasto' => $ge->descripcion,
+                ];
+            }
+
+            foreach ($gastosOperador as $go) {
+                $detalleGastos[] = [
+                    'fecha_gasto' => $go->fecha_pago,
+                    'monto_gasto' => round((float) $go->cantidad, 2),
+                    'tipo_gasto' => 'Gastos Viaje',
+                    'motivo_gasto' => $go->tipo,
+                ];
+            }
+
+
+            $numContenedor = $contenedor->num_contenedor ?? 'S/N';
+
+            if (!is_null($cotizacion->referencia_full)) {
+                $secundaria = $cotizacionesSecundariasFull->get($cotizacion->referencia_full);
+
+                if ($secundaria && $secundaria->DocCotizacion) {
+                    $numContenedor .= ' / ' . $secundaria->DocCotizacion->num_contenedor;
+                }
+            }
+
+
+           $utilidad = $precioViajeTotal
+    - $pagoOperacion
+    - $gastosDiferidos
+    - $gastosOperadorTotal
+    - $sinJustificar;
+
+            $Info[] = [
+                'numContenedor' => $numContenedor,
+                'cliente' => optional($cotizacion->Cliente)->nombre ?? 'S/N',
+
+
+                'precioViaje' => round($precioViajeTotal, 2),
+
+
+                'gastosExtra' => round($gastosExtraTotal, 2),
+
+                'transportadoPor' => $asignacion->id_proveedor ? 'Proveedor' : 'Operador',
+                'operadorOrProveedor' => $asignacion->id_proveedor
+                    ? (optional($asignacion->Proveedor)->nombre ?? 'S/N')
+                    : (optional($asignacion->Operador)->nombre ?? 'S/N'),
+
+
+                'pagoOperacion' => round($pagoOperacion , 2),
+
+                'dineroViajeSinJustificar' => round($sinJustificar, 2),
+                'gastosViaje' => round($gastosOperadorTotal, 2),
+                'gastosDiferidos' => round($gastosDiferidos, 2),
+
+                'viajeInicia' => $asignacion->fecha_inicio,
+                'viajeTermina' => $asignacion->fecha_fin,
+
+                'estatusViaje' => $cotizacion->estatus,
+                'estatusPago' => $cotizacion->estatus_pago == 1 ? 'Pagado' : 'Por Cobrar',
+
+                'detalleGastos' => $detalleGastos,
+                'utilidad' => round($utilidad, 2),
+            ];
+        }
+
+        $fechaIniciaPeriodo = Carbon::parse($finPeriodo)->addDay()->toDateString();
     }
 
+        return json_encode(["Info" => $Info,"contadorPeriodos" => $contadorPeriodos, "Diferidos" => $Diferidos]);
+
+    }
+private function calcularPrecioViajeDesdeCostos($cotizacion): float
+{
+    if (!$cotizacion || !$cotizacion->relationLoaded('viajes')) {
+        return 0;
+    }
+
+    return (float) $cotizacion->viajes->sum(function ($viaje) {
+        if (!$viaje->relationLoaded('costosReporte')) {
+            return 0;
+        }
+
+        return $viaje->costosReporte->sum(function ($costo) {
+            $monto = (float) $costo->monto;
+
+            return $costo->tipo_operacion === 'descuento'
+                ? -$monto
+                : $monto;
+        });
+    });
+}
+
+private function obtenerGastosDiferidosPorUnidad($inicioPeriodo, $finPeriodo)
+{
+    $query = "
+        SELECT
+            a.id_camion,
+            gg.motivo,
+            COUNT(DISTINCT a.id) AS total_asignaciones,
+            COALESCE(
+                SUM(
+                    gg.monto1 / JSON_LENGTH(JSON_EXTRACT(gg.aplicacion_gasto, '$.elementos'))
+                ),
+                0
+            ) AS total_gastos_periodo,
+            COALESCE(
+                SUM(
+                    gg.monto1 / JSON_LENGTH(JSON_EXTRACT(gg.aplicacion_gasto, '$.elementos'))
+                ),
+                0
+            ) / COUNT(DISTINCT a.id) AS gasto_por_viaje
+        FROM asignaciones a
+        LEFT JOIN gastos_generales gg
+            ON gg.aplicacion_gasto IS NOT NULL
+            AND JSON_VALID(gg.aplicacion_gasto) = 1
+            AND JSON_UNQUOTE(JSON_EXTRACT(gg.aplicacion_gasto, '$.aplicacion')) = 'equipos'
+            AND JSON_CONTAINS(
+                JSON_EXTRACT(gg.aplicacion_gasto, '$.elementos'),
+                JSON_OBJECT('equipo', CAST(a.id_camion AS CHAR)),
+                '$'
+            )
+            AND gg.fecha BETWEEN ? AND ?
+        WHERE a.fecha_inicio BETWEEN ? AND ?
+        AND a.id_camion IS NOT NULL
+        GROUP BY a.id_camion, gg.motivo
+    ";
+
+    return collect(DB::select($query, [
+        $inicioPeriodo,
+        $finPeriodo,
+        $inicioPeriodo,
+        $finPeriodo,
+    ]))->groupBy('id_camion');
+}
     public function export_utilidad(Request $request)
     {
         $fechaInicio = $request->input('fechaInicio');

@@ -24,8 +24,8 @@
         }
 
         /* ==============================
-       SWITCH UBICACIÓN
-       ============================== */
+           SWITCH UBICACIÓN
+           ============================== */
 
         .switch {
             position: relative;
@@ -88,8 +88,8 @@
         }
 
         /* ==============================
-       TABS
-       ============================== */
+           TABS
+           ============================== */
 
         .nav-tabs .nav-link.active {
             background-color: #0d6efd;
@@ -104,8 +104,8 @@
         }
 
         /* ==============================
-       FILTROS ADMIN
-       ============================== */
+           FILTROS ADMIN
+           ============================== */
 
         .rastreo-page {
             width: 100%;
@@ -240,8 +240,8 @@
         }
 
         /* ==============================
-       CONTENEDOR TABS
-       ============================== */
+           CONTENEDOR TABS
+           ============================== */
 
         #rastreoTabsContent {
             width: 100%;
@@ -256,8 +256,8 @@
         }
 
         /* ==============================
-       MAPA + PANEL AUTO
-       ============================== */
+           MAPA + PANEL AUTO
+           ============================== */
 
         .rastreo-auto-layout {
             width: 100%;
@@ -301,8 +301,8 @@
         }
 
         /* ==============================
-       BUSCADOR PANEL
-       ============================== */
+           BUSCADOR PANEL
+           ============================== */
 
         #buscadorGeneral {
             width: 100%;
@@ -323,9 +323,9 @@
         }
 
         /* ==============================
-       PANEL DISPOSITIVOS
-       ÚNICO CON SCROLL
-       ============================== */
+           PANEL DISPOSITIVOS
+           ÚNICO CON SCROLL
+           ============================== */
 
         .panelDispositivosAuto {
             flex: 1 1 auto;
@@ -352,8 +352,8 @@
         }
 
         /* ==============================
-       GRID / TABLAS
-       ============================== */
+           GRID / TABLAS
+           ============================== */
 
         #contenedoreseditar {
             font-size: 0.85rem;
@@ -373,8 +373,8 @@
         }
 
         /* ==============================
-       RESPONSIVE
-       ============================== */
+           RESPONSIVE
+           ============================== */
 
         @media (max-width: 767.98px) {
             .rastreo-auto-layout {
@@ -1071,6 +1071,7 @@
     <script>
         const proveedores = @json($proveedores);
         const clientes = @json($clientes);
+        const empresas = @json($empresas);
     </script>
     <script>
         function ajustarAltoRastreoAuto() {

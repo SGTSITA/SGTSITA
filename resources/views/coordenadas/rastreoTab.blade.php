@@ -30,17 +30,17 @@
         }
 
         /*
-                                                               Layout principal del mapa y panel.
-                                                               g-0 en el Blade elimina gutters.
-                                                            */
+                                                                                               Layout principal del mapa y panel.
+                                                                                               g-0 en el Blade elimina gutters.
+                                                                                            */
         .rastreo-layout {
-            height: calc(100vh - 190px);
-            min-height: 600px;
+            height: calc(100vh - 235px);
+            min-height: 430px;
             width: 100%;
             max-width: 100%;
             margin-left: 0 !important;
             margin-right: 0 !important;
-            overflow-x: hidden;
+            overflow: hidden;
         }
 
         /* Permite que las columnas no empujen el ancho */
@@ -59,12 +59,13 @@
         #map {
             width: 100%;
             height: 100% !important;
-            min-height: 500px;
+            min-height: 430px;
         }
 
         /* Columna derecha */
         .rastreo-panel {
             height: 100%;
+            max-height: 100%;
             display: flex;
             flex-direction: column;
             overflow: hidden;
@@ -872,5 +873,49 @@
 
     <script>
         window.escliente = 0;
+    </script>
+    <script>
+        function ajustarAltoRastreoAuto() {
+            const layout = document.querySelector(".rastreo-layout");
+
+            if (!layout) return;
+
+            const rect = layout.getBoundingClientRect();
+            const margenInferior = 10;
+
+            let altoDisponible = window.innerHeight - rect.top - margenInferior;
+
+            if (altoDisponible < 420) {
+                altoDisponible = 420;
+            }
+
+            layout.style.height = altoDisponible + "px";
+            layout.style.maxHeight = altoDisponible + "px";
+
+            const mapa = document.getElementById("map");
+
+            if (mapa) {
+                mapa.style.height = "100%";
+            }
+
+            if (window.google && window.google.maps && window.map) {
+                google.maps.event.trigger(window.map, "resize");
+            }
+        }
+
+        window.addEventListener("load", ajustarAltoRastreoAuto);
+        window.addEventListener("resize", ajustarAltoRastreoAuto);
+
+        document.addEventListener("shown.bs.tab", function() {
+            setTimeout(ajustarAltoRastreoAuto, 100);
+        });
+
+        document.addEventListener("shown.bs.collapse", function() {
+            setTimeout(ajustarAltoRastreoAuto, 100);
+        });
+
+        document.addEventListener("hidden.bs.collapse", function() {
+            setTimeout(ajustarAltoRastreoAuto, 100);
+        });
     </script>
 @endpush

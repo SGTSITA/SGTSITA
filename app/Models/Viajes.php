@@ -75,4 +75,15 @@ class Viajes extends Model
     {
         return $this->costos->where('tipo_operacion', 'descuento')->sum('monto');
     }
+
+    public function costosReporte()
+{
+    return $this->hasMany(ViajesCostos::class, 'viaje_id')
+        ->whereIn('concepto', [
+            'base_factura',
+            'base_taref',
+            'iva',
+            'retencion',
+        ]);
+}
 }

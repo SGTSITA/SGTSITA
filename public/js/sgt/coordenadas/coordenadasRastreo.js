@@ -1,4 +1,4 @@
-let equiposSearch = [];
+﻿let equiposSearch = [];
 let rastreosActivos = {};
 let map;
 const estadosLi = {};
@@ -194,7 +194,7 @@ async function cargarinicial() {
 
         catalogoBusqueda = [...catalogoBusquedaOriginal];
 
-        cargarLineasDesdeRastreo(contenedoresDisponibles);
+        actualizarFiltrosDisponiblesPanel();
     } catch (error) {
         console.error("Error al traer coordenadas:", error);
     } finally {
@@ -2141,6 +2141,8 @@ function initMap() {
     map = new google.maps.Map(document.getElementById("map"), {
         center: { lat: 23.7066, lng: -102.3907 },
         zoom: 7,
+        gestureHandling: "greedy",
+        scrollwheel: true,
     });
 }
 
@@ -3465,9 +3467,11 @@ function sincronizarBotonRuta(key) {
 
     document.querySelectorAll(`.btnRuta[data-key="${key}"]`).forEach((btn) => {
         btn.disabled = false;
+        const label = btn.dataset.label ? " " + btn.dataset.label : "";
 
-        btn.textContent = rutaVisible ? "❌ Ocultar ruta" : "📍 Mostrar ruta";
-
+        btn.textContent = rutaVisible
+            ? "Ocultar ruta" + label
+            : "Mostrar ruta" + label;
         if (btn.dataset.opcion === "panel") {
             btn.style.background = "white";
             btn.style.color = "#333";
@@ -4322,6 +4326,111 @@ ${item.nombre}
     });
 }
 
+function existeOpcionSelect(selectId, value) {
+    if (!value) {
+        return true;
+    }
+
+    const el = document.getElementById(selectId);
+
+    if (!el) {
+        return false;
+    }
+
+    return Array.from(el.options).some((option) => option.value == value);
+}
+
+function restaurarValorSelect(selectId, value) {
+    const el = document.getElementById(selectId);
+
+    if (!el) {
+        return "";
+    }
+
+    el.value = existeOpcionSelect(selectId, value) ? value : "";
+
+    return el.value;
+}
+
+function obtenerCatalogoDesdeIds(ids = [], fuente = [], prefijo = "Item") {
+    const idsUnicos = [
+        ...new Set(
+            ids
+                .flat()
+                .filter((id) => id !== null && id !== undefined && id !== "")
+                .map((id) => String(id)),
+        ),
+    ];
+
+    return idsUnicos
+        .map((id) => {
+            const itemFuente = fuente.find((item) => String(item.id) === id);
+
+            return {
+                id: id,
+                nombre: itemFuente?.nombre ?? `${prefijo} ${id}`,
+            };
+        })
+        .sort((a, b) => String(a.nombre).localeCompare(String(b.nombre)));
+}
+
+function obtenerCatalogoLineasDesdeCatalogo(datos = []) {
+    const proveedoresDisponibles =
+        typeof proveedores !== "undefined" ? proveedores : [];
+
+    return obtenerCatalogoDesdeIds(
+        datos.flatMap((item) => item.lineas ?? []),
+        proveedoresDisponibles,
+        "Linea",
+    );
+}
+
+function obtenerCatalogoClientesDesdeCatalogo(datos = []) {
+    const clientesDisponibles = typeof clientes !== "undefined" ? clientes : [];
+
+    return obtenerCatalogoDesdeIds(
+        datos.flatMap((item) => item.clientes ?? []),
+        clientesDisponibles,
+        "Cliente",
+    );
+}
+
+function obtenerCatalogoBaseFiltros() {
+    return catalogoBusquedaOriginal.length
+        ? catalogoBusquedaOriginal
+        : catalogoBusqueda;
+}
+
+function actualizarFiltrosDisponiblesPanel() {
+    const lineaActual = $("#filtroLineaT").val() || "";
+    const clienteActual = $("#filtrocliente").val() || "";
+    const empresaSeleccionada = $("#filtroEmpresa").val() || "";
+    const catalogoBase = obtenerCatalogoBaseFiltros();
+
+    const catalogoPorEmpresa = empresaSeleccionada
+        ? catalogoBase.filter((item) =>
+              item.empresas?.includes(Number(empresaSeleccionada)),
+          )
+        : catalogoBase;
+
+    let lineasDisponibles =
+        obtenerCatalogoLineasDesdeCatalogo(catalogoPorEmpresa);
+    let clientesDisponibles =
+        obtenerCatalogoClientesDesdeCatalogo(catalogoPorEmpresa);
+
+    if (!catalogoBase.length) {
+        lineasDisponibles =
+            typeof proveedores !== "undefined" ? proveedores : [];
+        clientesDisponibles = typeof clientes !== "undefined" ? clientes : [];
+    }
+
+    llenarSelect("filtroLineaT", lineasDisponibles);
+    llenarSelect("filtrocliente", clientesDisponibles);
+
+    restaurarValorSelect("filtroLineaT", lineaActual);
+    restaurarValorSelect("filtrocliente", clienteActual);
+}
+
 function obtenerCatalogoLineasDesdeRastreo(datos = []) {
     const lineasMap = new Map();
 
@@ -4359,39 +4468,13 @@ function cargarLineasDesdeRastreo(datos = []) {
 }
 
 function cargarFiltrosInicialesPanel() {
-    const proveedoresDisponibles =
-        typeof proveedores !== "undefined" ? proveedores : [];
-    const clientesDisponibles = typeof clientes !== "undefined" ? clientes : [];
-
-    llenarSelect("filtroLineaT", proveedoresDisponibles);
-    llenarSelect("filtrocliente", clientesDisponibles);
+    actualizarFiltrosDisponiblesPanel();
 }
 
 document.addEventListener("DOMContentLoaded", cargarFiltrosInicialesPanel);
 
 $("#filtroEmpresa").on("change", function () {
-    const empresaId = $(this).val();
-
-    const proveedoresDisponibles =
-        typeof proveedores !== "undefined" ? proveedores : [];
-    const clientesDisponibles = typeof clientes !== "undefined" ? clientes : [];
-
-    let proveedoresFiltrados = proveedoresDisponibles;
-    let clientesFiltrados = clientesDisponibles;
-
-    if (empresaId) {
-        proveedoresFiltrados = proveedoresDisponibles.filter(
-            (p) => p.id_empresa == empresaId,
-        );
-
-        clientesFiltrados = clientesDisponibles.filter(
-            (c) => c.id_empresa == empresaId,
-        );
-    }
-
-    llenarSelect("filtroLineaT", proveedoresFiltrados);
-    llenarSelect("filtrocliente", clientesFiltrados);
-
+    actualizarFiltrosDisponiblesPanel();
     aplicarFiltrosPanel();
 });
 
@@ -4540,7 +4623,7 @@ function actualizarEstadoDispositivo(li, data) {
 }
 function actualizarEstadosPanel(respuesta) {
     if (!Array.isArray(respuesta)) {
-        console.warn("Respuesta inválida para actualizar panel:", respuesta);
+        console.warn("Respuesta invalida para actualizar panel:", respuesta);
         return;
     }
 
@@ -4585,65 +4668,235 @@ function actualizarEstadosPanel(respuesta) {
 
         actualizarEstadoDispositivo(li, dataFinal);
         actualizarClickMapaPanel(li, dataFinal);
-        const btnRuta = li.find(".btnRuta");
-        const infoRuta = li.find(".infoRuta");
-        const btnOpciones = li.find(".btnOpcionesDispositivo");
 
-        if (
-            dataFinal &&
-            dataFinal?.ubicacion &&
-            dataFinal?.ubicacion?.lat &&
-            dataFinal?.ubicacion?.lng
-        ) {
-            const markerKey = [
-                dataFinal.id_contenendor,
-                dataFinal.contenedor,
-                dataFinal.TipoEquipo,
-                dataFinal.ubicacion?.imei,
-            ].join("|");
+        const ubicacionesPanel = obtenerUbicacionesPanel(
+            respuesta,
+            tipoPanel,
+            idPanel,
+            contenedorPanel,
+            valuePanel,
+        );
 
-            if (
-                markerKey &&
-                dataFinal?.ubicacion?.lat &&
-                dataFinal?.ubicacion?.lng
-            ) {
-                li.attr("data-marker-key", markerKey);
-
-                btnRuta.attr("data-key", markerKey);
-                btnRuta.prop("disabled", false);
-
-                btnOpciones.attr("data-key", markerKey);
-
-                if (infoRuta.length) {
-                    infoRuta.attr("data-key", markerKey);
-                }
-
-                sincronizarBotonRuta(markerKey);
-            }
+        if (ubicacionesPanel.length) {
+            actualizarOpcionesRutaPanel(li, ubicacionesPanel);
         } else {
-            if (btnRuta.length) {
-                btnRuta.prop("disabled", true);
-                btnRuta.attr("data-key", "");
-                btnRuta.text("📍 Ruta no disponible");
-                btnRuta.css({
-                    background: "#f5f5f5",
-                    color: "#999",
-                    cursor: "not-allowed",
-                });
-
-                console.log(
-                    "No hay coordenadas válidas para el dispositivo en el panel:",
-                    {
-                        tipoPanel,
-                        idPanel,
-                        valuePanel,
-                        contenedorPanel,
-                        btnRuta,
-                    },
-                );
-            }
+            limpiarOpcionesRutaPanel(li);
         }
     });
+}
+
+function obtenerUbicacionesPanel(
+    respuesta,
+    tipoPanel,
+    idPanel,
+    contenedorPanel,
+    valuePanel,
+) {
+    const idBuscado = String(idPanel ?? "");
+    const contenedorBuscado = normalizarTextoSimple(contenedorPanel);
+    const valueNormalizado = normalizarTextoSimple(valuePanel);
+
+    return respuesta.filter((item) => {
+        if (!tieneCoordenadasValidas(item?.ubicacion)) {
+            return false;
+        }
+
+        const idResp = String(item.id_contenendor ?? "");
+        const grupoTipo = String(item.grupo_tipo ?? "");
+        const grupoId = String(item.id_grupo ?? "");
+        const contenedorResp = normalizarTextoSimple(item.contenedor);
+        const imeiResp = normalizarTextoSimple(item.ubicacion?.imei);
+
+        if (tipoPanel === "Contenedor") {
+            return (
+                (idBuscado && idResp === idBuscado) ||
+                (contenedorBuscado && contenedorResp === contenedorBuscado) ||
+                (valueNormalizado &&
+                    (valueNormalizado.includes(contenedorResp) ||
+                        valueNormalizado.includes(imeiResp)))
+            );
+        }
+
+        if (tipoPanel === "Convoy") {
+            return (
+                (grupoTipo === "Convoy" && grupoId === idBuscado) ||
+                (valueNormalizado &&
+                    (valueNormalizado.includes(contenedorResp) ||
+                        valueNormalizado.includes(imeiResp)))
+            );
+        }
+
+        if (tipoPanel === "Equipo") {
+            return (
+                (idBuscado && idResp === idBuscado) ||
+                (valueNormalizado && valueNormalizado.includes(imeiResp))
+            );
+        }
+
+        return (
+            (idBuscado && idResp === idBuscado) ||
+            (contenedorBuscado && contenedorResp === contenedorBuscado) ||
+            (valueNormalizado &&
+                (valueNormalizado.includes(contenedorResp) ||
+                    valueNormalizado.includes(imeiResp)))
+        );
+    });
+}
+
+function construirMarkerKeyDesdeUbicacion(item) {
+    return [
+        item.id_contenendor,
+        item.contenedor,
+        normalizarTipoEquipoMapa(
+            item.TipoEquipo || item.ubicacion?.tipoEquipo || "Desconocido",
+        ),
+        item.ubicacion?.imei,
+    ].join("|");
+}
+
+function obtenerLabelTipoRuta(item) {
+    const tipoEquipo = normalizarTipoEquipoMapa(
+        item.TipoEquipo || item.ubicacion?.tipoEquipo || "Desconocido",
+    );
+
+    if (tipoEquipo === "Camion") {
+        return "Tracto";
+    }
+
+    if (tipoEquipo === "ChasisA") {
+        return "Chasis A";
+    }
+
+    if (tipoEquipo === "ChasisB") {
+        return "Chasis B";
+    }
+
+    return "GPS";
+}
+
+function actualizarOpcionesRutaPanel(li, ubicacionesPanel) {
+    const menu = li.find(".menuOpcionesDispositivo");
+    const infoRuta = li.find(".infoRuta").first();
+    const btnOpciones = li.find(".btnOpcionesDispositivo");
+    const panelKey = String(li.data("panel-key") ?? "");
+    const keysAgregadas = new Set();
+    const opciones = [];
+
+    ubicacionesPanel.forEach((item) => {
+        const markerKey = construirMarkerKeyDesdeUbicacion(item);
+
+        if (!markerKey || keysAgregadas.has(markerKey)) {
+            return;
+        }
+
+        keysAgregadas.add(markerKey);
+        opciones.push({
+            key: markerKey,
+            label: obtenerLabelTipoRuta(item),
+        });
+    });
+
+    if (!opciones.length) {
+        limpiarOpcionesRutaPanel(li);
+        return;
+    }
+
+    li.attr("data-marker-key", opciones.map((opcion) => opcion.key).join(";"));
+    btnOpciones.attr("data-key", opciones[0].key);
+
+    if (menu.length) {
+        const botonesRuta = opciones
+            .map(
+                (opcion) => `
+        <button type="button"
+            class="opcionMenuDispositivo btnRuta"
+            data-panel-key="${panelKey}"
+            data-opcion="panel"
+            data-key="${opcion.key}"
+            data-label="${opcion.label}"
+            style="
+                width:100%;
+                border:none;
+                background:white;
+                padding:9px 12px;
+                text-align:left;
+                cursor:pointer;
+                color:#333;
+            ">
+            Mostrar ruta ${opcion.label}
+        </button>
+        <div class="infoRuta"
+            data-key="${opcion.key}"
+            style="
+                display:none;
+                background:#f8f9fa;
+                color:#333;
+                padding:6px 12px;
+                font-size:12px;
+                border-top:1px solid #e9ecef;
+            "></div>`,
+            )
+            .join("");
+
+        menu.html(`
+            ${botonesRuta}
+
+            <button type="button" class="d-none" disabled
+                style="width:100%; border:none; background:#f5f5f5; padding:9px 12px; text-align:left; color:#999; cursor:not-allowed;">
+                Detalle GPS / equipo
+            </button>
+
+            <button type="button" disabled
+                style="width:100%; border:none; background:#f5f5f5; padding:9px 12px; text-align:left; color:#999; cursor:not-allowed;">
+                Historial
+            </button>
+        `);
+    }
+
+    if (infoRuta.length) {
+        infoRuta.attr(
+            "data-key",
+            opciones.map((opcion) => opcion.key).join(";"),
+        );
+    }
+
+    opciones.forEach((opcion) => sincronizarBotonRuta(opcion.key));
+}
+
+function limpiarOpcionesRutaPanel(li) {
+    const menu = li.find(".menuOpcionesDispositivo");
+    const infoRuta = li.find(".infoRuta");
+    const btnOpciones = li.find(".btnOpcionesDispositivo");
+    const panelKey = String(li.data("panel-key") ?? "");
+
+    li.attr("data-marker-key", "");
+    btnOpciones.attr("data-key", "");
+
+    if (menu.length) {
+        menu.html(`
+            <button type="button"
+                class="opcionMenuDispositivo btnRuta"
+                data-panel-key="${panelKey}"
+                data-opcion="panel"
+                data-key=""
+                disabled
+                style="
+                    width:100%;
+                    border:none;
+                    background:#f5f5f5;
+                    padding:9px 12px;
+                    text-align:left;
+                    cursor:not-allowed;
+                    color:#999;
+                ">
+                Ruta no disponible
+            </button>
+        `);
+    }
+
+    infoRuta.attr("data-key", "");
+    infoRuta.hide();
+    infoRuta.empty();
 }
 function tieneCoordenadasValidas(data) {
     if (!data) {
@@ -4935,6 +5188,7 @@ function pintarDispositivos(data) {
 <li class="list-group-item dispositivoItem position-relative"
     data-panel-key="${panelKey}"
     data-marker-key=""
+    data-key="${d.value ?? ""}"
     data-contenedor="${d.contenedor ?? d.label}"
     data-color="${color}"
     data-lat="0"
@@ -4965,6 +5219,7 @@ function pintarDispositivos(data) {
     <input type="checkbox"
         class="checkDispositivo me-2 flex-shrink-0"
         data-id="${d.id}"
+        data-value="${d.value ?? ""}"
         data-panel-key="${panelKey}"
         data-contenedor="${d.contenedor ?? d.label}">
 
