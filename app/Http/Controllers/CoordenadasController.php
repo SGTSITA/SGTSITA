@@ -125,12 +125,15 @@ class CoordenadasController extends Controller
         }
     }
 
-
-
     public function exrastrearIndex()
     {
+         $proveedoresQuery = Proveedor::catalogoPrincipal()
+            ->orderBy('created_at', 'desc');
 
-        return view('mec.coordenadas.rastrear');
+
+        $proveedores = $proveedoresQuery->get(['id', 'nombre', 'id_empresa']);
+
+        return view('mec.coordenadas.rastrear', compact('proveedores'));
     }
 
 
