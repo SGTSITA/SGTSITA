@@ -3,8 +3,8 @@
 @section('WorkSpace')
     <style>
         /* ==============================
-                                           SWITCH UBICACIÓN
-                                           ============================== */
+                                                           SWITCH UBICACIÓN
+                                                           ============================== */
 
         .switch {
             position: relative;
@@ -67,8 +67,8 @@
         }
 
         /* ==============================
-                                           GENERALES
-                                           ============================== */
+                                                           GENERALES
+                                                           ============================== */
 
         .btn-close {
             filter: invert(1);
@@ -91,8 +91,8 @@
         }
 
         /* ==============================
-                                           TABLA CONTENEDORES EDITAR
-                                           ============================== */
+                                                           TABLA CONTENEDORES EDITAR
+                                                           ============================== */
 
         #contenedoreseditar {
             font-size: 0.85rem;
@@ -112,8 +112,8 @@
         }
 
         /* ==============================
-                                           TABS
-                                           ============================== */
+                                                           TABS
+                                                           ============================== */
 
         .nav-tabs .nav-link.active {
             background-color: #0d6efd;
@@ -128,8 +128,8 @@
         }
 
         /* ==============================
-                                           CONTENEDOR GENERAL
-                                           ============================== */
+                                                           CONTENEDOR GENERAL
+                                                           ============================== */
 
         .rastreo-page {
             width: 100%;
@@ -150,8 +150,8 @@
         }
 
         /* ==============================
-                                           MAPA + PANEL
-                                           ============================== */
+                                                           MAPA + PANEL
+                                                           ============================== */
 
         .rastreo-auto-layout {
             width: 100%;
@@ -195,8 +195,8 @@
         }
 
         /* ==============================
-                                           FILTRO TIPO + BOTÓN CONFIG
-                                           ============================== */
+                                                           FILTRO TIPO + BOTÓN CONFIG
+                                                           ============================== */
 
         #filtroTipo {
             height: 48px;
@@ -238,8 +238,8 @@
         }
 
         /* ==============================
-                                           BUSCADOR
-                                           ============================== */
+                                                           BUSCADOR
+                                                           ============================== */
 
         #buscadorGeneral {
             width: 100%;
@@ -260,9 +260,9 @@
         }
 
         /* ==============================
-                                           PANEL DISPOSITIVOS
-                                           ESTE ES EL ÚNICO QUE SCROLLEA
-                                           ============================== */
+                                                           PANEL DISPOSITIVOS
+                                                           ESTE ES EL ÚNICO QUE SCROLLEA
+                                                           ============================== */
 
         .panelDispositivosAuto {
             flex: 1 1 auto;
@@ -289,8 +289,8 @@
         }
 
         /* ==============================
-                                           RESPONSIVE
-                                           ============================== */
+                                                           RESPONSIVE
+                                                           ============================== */
 
         @media (max-width: 767.98px) {
             .rastreo-auto-layout {
@@ -311,6 +311,8 @@
             .rastreo-auto-panel {
                 height: 600px;
             }
+
+
         }
     </style>
 
@@ -382,7 +384,20 @@
                                         <option value="">Todos</option>
                                     </select>
                                 </div>
+                                <div class="border rounded bg-light p-2">
+                                    <label class="form-label">Fecha salida</label>
+
+                                    <div class="input-group">
+                                        <input type="date" id="filtroFechaSalida" class="form-control">
+
+                                        <button type="button" class="btn btn-outline-secondary" id="btnLimpiarFechaSalida"
+                                            title="Limpiar fecha">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
+
                         </div>
 
                         {{-- TIPO --}}
