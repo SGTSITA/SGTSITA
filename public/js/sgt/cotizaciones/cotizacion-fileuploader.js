@@ -54,37 +54,52 @@ let btnFileEir = document.querySelector("#btnFileeir");
 let btnBoletaVacio = document.querySelector("#btnFilePre-Alta");
 let btnFileevidenciaD = document.querySelector("#btnFileevidenciaD");
 
-btnFileDODA.addEventListener("click", () => {
-    fileSettings = Doda;
-});
+if (btnFileDODA) {
+    btnFileDODA.addEventListener("click", () => {
+        fileSettings = Doda;
+    });
+}
+if (btnBoletaVacio) {
+    btnBoletaVacio.addEventListener("click", () => {
+        fileSettings = PreAlta;
+    });
+}
 
-btnBoletaVacio.addEventListener("click", () => {
-    fileSettings = PreAlta;
-});
+if (btnFileccp) {
+    btnFileccp.addEventListener("click", () => {
+        fileSettings = CCP;
+    });
+}
 
-btnFileccp.addEventListener("click", () => {
-    fileSettings = CCP;
-});
+if (btnFileEir) {
+    btnFileEir.addEventListener("click", () => {
+        fileSettings = EIR;
+    });
+}
 
-btnFileEir.addEventListener("click", () => {
-    fileSettings = EIR;
-});
+if (btnFileBoletaLiberacion) {
+    btnFileBoletaLiberacion.addEventListener("click", () => {
+        fileSettings = BoletaLib;
+    });
+}
 
-btnFileBoletaLiberacion.addEventListener("click", () => {
-    fileSettings = BoletaLib;
-});
+if (btnFileCartaPortePDF) {
+    btnFileCartaPortePDF.addEventListener("click", () => {
+        fileSettings = CartaPortePDF;
+    });
+}
 
-btnFileCartaPortePDF.addEventListener("click", () => {
-    fileSettings = CartaPortePDF;
-});
+if (btnFileCartaPorteXML) {
+    btnFileCartaPorteXML.addEventListener("click", () => {
+        fileSettings = CartaPorteXML;
+    });
+}
 
-btnFileCartaPorteXML.addEventListener("click", () => {
-    fileSettings = CartaPorteXML;
-});
-
-btnFileevidenciaD.addEventListener("click", () => {
-    fileSettings = EvidenciaDescarga;
-});
+if (btnFileevidenciaD) {
+    btnFileevidenciaD.addEventListener("click", () => {
+        fileSettings = EvidenciaDescarga;
+    });
+}
 
 const btnDocumets = document.querySelectorAll(".btnDocs");
 btnDocumets.forEach((e) => {
