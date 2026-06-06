@@ -1550,8 +1550,7 @@ $precioViajeTotal = $precioViajeBase + $gastosExtraTotal;
     - $pagoOperacion
     - $gastosDiferidos
     -$gastosExtraTotal
-    - $gastosOperadorTotal
-    - $sinJustificar;
+    - $gastosOperadorTotal;
 
             $Info[] = [
                 'numContenedor' => $numContenedor,

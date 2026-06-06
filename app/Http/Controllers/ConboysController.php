@@ -438,46 +438,128 @@ private $coordenadasService;
 
     public function guardarCoordenadasseguimintos(Request $request)
     {
-        $request->validate([
-             'latitud' => 'required|numeric',
-             'longitud' => 'required|numeric',
-             'ubicacionable_id' => 'required|integer',
-             'tipo' => 'required|string',
-         ]);
+         $request->validate([
+        'latitud' => 'required|numeric',
+        'longitud' => 'required|numeric',
+        'ubicacionable_id' => 'required|integer',
+        'tipo' => 'required|string',
+    ]);
+
+    $latitud = (float) $request->latitud;
+    $longitud = (float) $request->longitud;
+
+    $ubicacionableType = $request->tipoRastreo;
+    $ubicacionableId = (int) $request->ubicacionable_id;
+    $tipo = $request->tipo;
+    $idConvoy = $request->idProceso;
+    $valorSolicitado = $request->valorSolicitado;
+    $idCompaniaGps = $request->new_id ?? null;
 
 
-        $responseEncriptado = isset($request->data)
-    ? AuditoriaCifrado::encrypt($request->data)
-    : null;
+    $metrosMinimosCambio = 10;
+    $minutosMaximosSinGuardar = 10;
 
-        $coordenada = CoordenadasHistorial::create([
-            'latitud' => $request->latitud,
-            'longitud' => $request->longitud,
-            'registrado_en' => now(),
-            'user_id' => auth()->id(),
-            'ubicacionable_id' => $request->ubicacionable_id,
-            'ubicacionable_type' => $request-> tipoRastreo,
-            'tipo' => $request->tipo,
-            'id_convoy' => $request->idProceso,
+    $ultimoRegistro = CoordenadasHistorial::query()
+        ->where('ubicacionable_id', $ubicacionableId)
+        ->where('ubicacionable_type', $ubicacionableType)
+        ->where('tipo', $tipo)
+        ->when($idConvoy, function ($q) use ($idConvoy) {
+            $q->where('id_convoy', $idConvoy);
+        })
+        ->when($valorSolicitado, function ($q) use ($valorSolicitado) {
+            $q->where('valorSolicitado', $valorSolicitado);
+        })
+        ->when($idCompaniaGps, function ($q) use ($idCompaniaGps) {
+            $q->where('id_compania_gps', $idCompaniaGps);
+        })
+        ->latest('registrado_en')
+        ->first();
 
-              'status_api' =>  $request->status_api ?? 0,
-    'id_compania_gps' =>  $request->new_id ?? null,
-    'tiempo_respuesta_ms' =>  $request->tiempo_respuesta_ms ?? null,
-    'valorSolicitado' =>  $request->valorSolicitado ?? null,
+    if ($ultimoRegistro) {
+        $distanciaMetros = $this->calcularDistanciaMetros(
+            (float) $ultimoRegistro->latitud,
+            (float) $ultimoRegistro->longitud,
+            $latitud,
+            $longitud
+        );
 
-    'response_json' =>   $responseEncriptado,
+        $mismoStatus = (string) ($ultimoRegistro->status_api ?? 0) === (string) ($request->status_api ?? 0);
 
+        $mismoError = (string) ($ultimoRegistro->error_message ?? '') === (string) ($request->messageAp ?? '');
 
-    'error_message' => $request->messageAp ?? null,
-        ]);
+        $minutosDesdeUltimo = $ultimoRegistro->registrado_en
+            ? now()->diffInMinutes($ultimoRegistro->registrado_en)
+            : $minutosMaximosSinGuardar + 1;
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Coordenada registrada correctamente.',
-            'data' => $coordenada
-        ]);
+        $esDuplicado =
+            $distanciaMetros < $metrosMinimosCambio &&
+            $mismoStatus &&
+            $mismoError &&
+            $minutosDesdeUltimo < $minutosMaximosSinGuardar;
+
+        if ($esDuplicado) {
+            return response()->json([
+                'success' => true,
+                'skipped' => true,
+                'message' => 'Coordenada duplicada, no se guardó nuevamente.',
+                'distancia_metros' => round($distanciaMetros, 2),
+                'ultimo_registro_id' => $ultimoRegistro->id,
+                'data' => $ultimoRegistro,
+            ]);
+        }
+    }
+
+    $responseEncriptado = isset($request->data)
+        ? AuditoriaCifrado::encrypt($request->data)
+        : null;
+
+    $coordenada = CoordenadasHistorial::create([
+        'latitud' => $latitud,
+        'longitud' => $longitud,
+        'registrado_en' => now(),
+        'user_id' => auth()->id(),
+
+        'ubicacionable_id' => $ubicacionableId,
+        'ubicacionable_type' => $ubicacionableType,
+        'tipo' => $tipo,
+        'id_convoy' => $idConvoy,
+
+        'status_api' => $request->status_api ?? 0,
+        'id_compania_gps' => $idCompaniaGps,
+        'tiempo_respuesta_ms' => $request->tiempo_respuesta_ms ?? null,
+        'valorSolicitado' => $valorSolicitado,
+
+        'response_json' => $responseEncriptado,
+        'error_message' => $request->messageAp ?? null,
+    ]);
+
+    return response()->json([
+        'success' => true,
+        'skipped' => false,
+        'message' => 'Coordenada registrada correctamente.',
+        'data' => $coordenada,
+    ]);
 
     }
+
+    private function calcularDistanciaMetros(float $lat1, float $lon1, float $lat2, float $lon2): float
+{
+    $radioTierra = 6371000; // metros
+
+    $lat1Rad = deg2rad($lat1);
+    $lat2Rad = deg2rad($lat2);
+
+    $deltaLat = deg2rad($lat2 - $lat1);
+    $deltaLon = deg2rad($lon2 - $lon1);
+
+    $a = sin($deltaLat / 2) * sin($deltaLat / 2) +
+        cos($lat1Rad) * cos($lat2Rad) *
+        sin($deltaLon / 2) * sin($deltaLon / 2);
+
+    $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+
+    return $radioTierra * $c;
+}
     public function rastreohistorialUbicaciones(Request $request)
     {
         $idSearch = $request->query('idSearch');

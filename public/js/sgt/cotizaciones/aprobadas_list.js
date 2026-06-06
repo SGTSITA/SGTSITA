@@ -45,7 +45,7 @@ document.addEventListener("DOMContentLoaded", function () {
         typeof agGrid.createGrid === "undefined"
     ) {
         console.error(
-            "🚨 Error: AG Grid no está cargado o está usando una versión incorrecta.",
+            "Error: AG Grid no está cargado o está usando una versión incorrecta.",
         );
         return;
     }
@@ -53,7 +53,7 @@ document.addEventListener("DOMContentLoaded", function () {
     var gridDiv = document.querySelector("#gridAprobadas");
     if (!gridDiv) {
         console.error(
-            "🚨 Error: No se encontró el contenedor de la tabla (#gridAprobadas).",
+            "Error: No se encontró el contenedor de la tabla (#gridAprobadas).",
         );
         return;
     }
@@ -94,7 +94,6 @@ document.addEventListener("DOMContentLoaded", function () {
                         "line-height": "1.5",
                     };
 
-                    // Si la cotización es tipo "Full", aplicar fondo
                     if (params.data.tipo === "Full") {
                         styles["background-color"] = "#ffe5b4";
                     }
@@ -387,6 +386,14 @@ const formFieldsPlaneacion = [
         type: "date",
         trigger: "none",
     },
+    {
+        field: "litros_diesel",
+        id: "litros_diesel",
+        label: "Litros Diesel",
+        required: true,
+        type: "number",
+        trigger: "none",
+    },
 ];
 
 const formFieldsProveedor = [
@@ -601,7 +608,7 @@ async function programarViaje() {
                 );
                 return false;
             }
-            if (item.field === "txtSueldoOperador") {
+            if (tipoViaje == "propio" && item.field === "txtSueldoOperador") {
                 let value = field.value.replace(/[$,]/g, "").trim();
                 let sueldo = parseFloat(value);
 

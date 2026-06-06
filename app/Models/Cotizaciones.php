@@ -98,6 +98,8 @@ class Cotizaciones extends Model
         'fecha_eir',
         'editing_by',
         'editing_at',
+        'litros_diesel',
+        'km_recorridos',
     ];
 
     public function Cliente()

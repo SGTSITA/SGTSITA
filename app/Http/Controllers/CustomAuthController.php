@@ -39,6 +39,19 @@ class CustomAuthController extends Controller
 
 
             }
+    $user = Auth::user();
+           if (!$user->can('SGT-Acceso')) {
+        Auth::logout();
+
+        $request->session()->regenerateToken();
+
+        return response()->json([
+            'success' => false,
+            'code' => 'without_sgt_access',
+            'mensaje' => 'Tu usuario no tiene acceso al sistema SGT. Verifica que estés entrando al sistema correcto.',
+        ], 403);
+    }
+
 
             // dd('las credenciales son incorrectas');
             //  return redirect("login")->withSuccess('Login details are not valid');

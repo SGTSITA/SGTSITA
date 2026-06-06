@@ -64,15 +64,15 @@ class PlaneacionController extends Controller
 
             DB::beginTransaction();
 
-             $documenCotizacion = DocumCotizacion::find($request->idContenendor)->first();
-            $cotizaciones = Cotizaciones::find($documenCotizacion->id_cotizacion);
+              $documenCotizacion = DocumCotizacion::findOrFail($request->idContenendor);
+           $cotizaciones = Cotizaciones::findOrFail($documenCotizacion->id_cotizacion);
             //primero buscamos el id contenedor
             $asignaciones = Asignaciones::where('id_contenedor', '=', $documenCotizacion->id)->first(); //corregir mandar id contenenedor, y no cotizacion???
-
+//dd($asignaciones, $cotizaciones, $documenCotizacion, "ID CONTENEDOR: ".$request->idContenendor);
             if (!is_null($asignaciones->id_operador) && !is_null($asignaciones->id_banco1_dinero_viaje)) {
 
-
-                Bancos::where('id', '=', $asignaciones->id_banco1_dinero_viaje)->update(["saldo" => DB::raw("saldo + ". $asignaciones->dinero_viaje)]);
+//dd("Regresando movimiento banco nuevo", ["asignaciones" => $asignaciones]);
+               /*  Bancos::where('id', '=', $asignaciones->id_banco1_dinero_viaje)->update(["saldo" => DB::raw("saldo + ". $asignaciones->dinero_viaje)]);
 
                 $banco = new BancoDineroOpe();
                 $banco->id_operador = $asignaciones->id_operador;
@@ -92,7 +92,7 @@ class PlaneacionController extends Controller
 
                 $banco->tipo = 'Entrada';
                 $banco->fecha_pago = date('Y-m-d');
-                $banco->save();
+                $banco->save(); */
 
                 //anular nuevo movimiento devolucion
 //$fechacancelacion = $request->fechacancelacion;
@@ -130,7 +130,7 @@ class PlaneacionController extends Controller
 
             //recorrer los gastos pagados para hacer devolucion
             foreach ($gastosOperador as $gasto) {
-                Bancos::where('id', '=', $gasto->id_banco)->update(["saldo" => DB::raw("saldo + ". $gasto->cantidad)]);
+             /*    Bancos::where('id', '=', $gasto->id_banco)->update(["saldo" => DB::raw("saldo + ". $gasto->cantidad)]);
 
                 $banco = new BancoDineroOpe();
                 $banco->id_operador = $asignaciones->id_operador;
@@ -150,7 +150,7 @@ class PlaneacionController extends Controller
 
                 $banco->tipo = 'Entrada';
                 $banco->fecha_pago = date('Y-m-d');
-                $banco->save();
+                $banco->save(); */
 
                 log::info('Regresando movimiento banco nuevo', ["gasto" => $gasto]);
 
@@ -690,10 +690,10 @@ $contenedor = DocumCotizacion::find($request->idContenendor);
 
 
                  */
-
+            $litrosDiesel = $request->get('litros_diesel') ?? 0;
 
                 $asignaciones->update();
-
+                $cotizacion->litros_diesel = $litrosDiesel;
                 $cotizacion->estatus_planeacion = 1;
                 $cotizacion->tipo_viaje = $request->get('cmbTipoUnidad');
                 $cotizacion->update();

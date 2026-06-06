@@ -202,13 +202,13 @@
 
                                         <div class="col-6 form-group">
                                             <!--label for="name">Cliente *</label>
-                                                                                                                                                                                                                                                                                            <select class="form-select cliente d-inline-block" data-toggle="select" id="id_cliente" name="id_cliente">
-                                                                                                                                                                                                                                                                                                <option value="{{ $cotizacion->id_cliente }}">{{ $cotizacion->Cliente->nombre }} / {{ $cotizacion->Cliente->telefono }}</option>
-                                                                                                                                                                                                                                                                                                @foreach ($clientes as $item)
+                                                                                                                                                                                                                                                                                                                                    <select class="form-select cliente d-inline-block" data-toggle="select" id="id_cliente" name="id_cliente">
+                                                                                                                                                                                                                                                                                                                                        <option value="{{ $cotizacion->id_cliente }}">{{ $cotizacion->Cliente->nombre }} / {{ $cotizacion->Cliente->telefono }}</option>
+                                                                                                                                                                                                                                                                                                                                        @foreach ($clientes as $item)
     <option value="{{ $item->id }}">{{ $item->nombre }} / {{ $item->telefono }}</option>
     @endforeach
 
-                                                                                                                                                                                                                                                                                            </select-->
+                                                                                                                                                                                                                                                                                                                                    </select-->
                                             <ul class="list-group">
                                                 <li
                                                     class="list-group-item border-1 border-dashed d-flex p-4 mb-2 bg-gray-100 border-radius-lg">
@@ -249,14 +249,14 @@
 
                                         <div class="col-6 form-group">
                                             <!--label for="name">Subcliente *</label>
-                                                                                                                                                                                                                                                                                            <select class="form-select subcliente d-inline-block" id="id_subcliente" name="id_subcliente">
+                                                                                                                                                                                                                                                                                                                                    <select class="form-select subcliente d-inline-block" id="id_subcliente" name="id_subcliente">
 
-                                                                                                                                                                                                                                            @if ($cotizacion->id_subcliente != null)
+                                                                                                                                                                                                                                                                                    @if ($cotizacion->id_subcliente != null)
     <option value="{{ $cotizacion->id_subcliente }}">{{ $cotizacion->Subcliente->nombre }} / {{ $cotizacion->Subcliente->telefono }}</option>
 @else
     <option value="">Seleccionar subcliente</option>
     @endif
-                                                                                                                                                                                                                                                                                            </select-->
+                                                                                                                                                                                                                                                                                                                                    </select-->
                                             <ul class="list-group">
                                                 <li
                                                     class="list-group-item border-1 border-dashed d-flex p-4 mb-2 bg-gray-100 border-radius-lg">
@@ -805,14 +805,16 @@
                                                         <td class="align-middle text-end">
                                                             <div
                                                                 class="d-flex px-3 py-1 justify-content-center align-items-center">
-                                                                <button type="button"
-                                                                    class="btn btn-sm btn-icon-only btnDocs btn-rounded btn-outline-secondary mb-0 ms-2 btn-sm d-flex align-items-center justify-content-center ms-3"
-                                                                    data-bs-toggle="tooltip"
-                                                                    id="btnFileFormato-para-Carta-porte"
-                                                                    data-bs-placement="bottom" title="Cargar archivo"
-                                                                    data-bs-original-title="Cargar archivo">
-                                                                    <i class="fas fa-upload" aria-hidden="true"></i>
-                                                                </button>
+                                                                @can('upload-docum-ccp')
+                                                                    <button type="button"
+                                                                        class="btn btn-sm btn-icon-only btnDocs btn-rounded btn-outline-secondary mb-0 ms-2 btn-sm d-flex align-items-center justify-content-center ms-3"
+                                                                        data-bs-toggle="tooltip"
+                                                                        id="btnFileFormato-para-Carta-porte"
+                                                                        data-bs-placement="bottom" title="Cargar archivo"
+                                                                        data-bs-original-title="Cargar archivo">
+                                                                        <i class="fas fa-upload" aria-hidden="true"></i>
+                                                                    </button>
+                                                                @endcan
                                                                 <a href="javasrcipt:void()" target="_blank"
                                                                     class="openFile btn btn-sm btn-icon-only btn-rounded btn-outline-secondary mb-0 ms-2 btn-sm d-flex align-items-center justify-content-center ms-3"
                                                                     data-bs-toggle="tooltip" data-bs-placement="bottom"
@@ -863,13 +865,15 @@
                                                         <td class="align-middle text-end">
                                                             <div
                                                                 class="d-flex px-3 py-1 justify-content-center align-items-center">
-                                                                <button type="button"
-                                                                    class="btn btn-sm btn-icon-only btnDocs btn-rounded btn-outline-secondary mb-0 ms-2 btn-sm d-flex align-items-center justify-content-center ms-3"
-                                                                    data-bs-toggle="tooltip" id="btnFileBoletaLiberacion"
-                                                                    data-bs-placement="bottom" title="Cargar archivo"
-                                                                    data-bs-original-title="Cargar archivo">
-                                                                    <i class="fas fa-upload" aria-hidden="true"></i>
-                                                                </button>
+                                                                @can('upload-docum-bolliberacion')
+                                                                    <button type="button"
+                                                                        class="btn btn-sm btn-icon-only btnDocs btn-rounded btn-outline-secondary mb-0 ms-2 btn-sm d-flex align-items-center justify-content-center ms-3"
+                                                                        data-bs-toggle="tooltip" id="btnFileBoletaLiberacion"
+                                                                        data-bs-placement="bottom" title="Cargar archivo"
+                                                                        data-bs-original-title="Cargar archivo">
+                                                                        <i class="fas fa-upload" aria-hidden="true"></i>
+                                                                    </button>
+                                                                @endcan
                                                                 <a href="javasrcipt:void()" target="_blank"
                                                                     class="openFile btn btn-sm btn-icon-only btn-rounded btn-outline-secondary mb-0 ms-2 btn-sm d-flex align-items-center justify-content-center ms-3"
                                                                     data-bs-toggle="tooltip" data-bs-placement="bottom"
@@ -918,13 +922,15 @@
                                                         <td class="align-middle text-end">
                                                             <div
                                                                 class="d-flex px-3 py-1 justify-content-center align-items-center">
-                                                                <button type="button" id="btnFileDODA"
-                                                                    class="btnDocs btn btn-sm btn-icon-only btn-rounded btn-outline-secondary mb-0 ms-2 btn-sm d-flex align-items-center justify-content-center ms-3"
-                                                                    data-bs-toggle="tooltip" data-bs-placement="bottom"
-                                                                    title="Cargar archivo"
-                                                                    data-bs-original-title="Cargar archivo">
-                                                                    <i class="fas fa-upload" aria-hidden="true"></i>
-                                                                </button>
+                                                                @can('upload-docum-doda')
+                                                                    <button type="button" id="btnFileDODA"
+                                                                        class="btnDocs btn btn-sm btn-icon-only btn-rounded btn-outline-secondary mb-0 ms-2 btn-sm d-flex align-items-center justify-content-center ms-3"
+                                                                        data-bs-toggle="tooltip" data-bs-placement="bottom"
+                                                                        title="Cargar archivo"
+                                                                        data-bs-original-title="Cargar archivo">
+                                                                        <i class="fas fa-upload" aria-hidden="true"></i>
+                                                                    </button>
+                                                                @endcan
                                                                 <a href="javasrcipt:void()" target="_blank"
                                                                     id="btn-ver-Doda"
                                                                     class="openFile btn btn-sm btn-icon-only btn-rounded btn-outline-secondary mb-0 ms-2 btn-sm d-flex align-items-center justify-content-center ms-3"
@@ -1084,13 +1090,15 @@
                                                         <td class="align-middle text-end">
                                                             <div
                                                                 class="d-flex px-3 py-1 justify-content-center align-items-center">
-                                                                <button type="button"
-                                                                    class="btn btn-sm btn-icon-only btnDocs btn-rounded btn-outline-secondary mb-0 ms-2 btn-sm d-flex align-items-center justify-content-center ms-3"
-                                                                    data-bs-toggle="tooltip" id="btnFilePre-Alta"
-                                                                    data-bs-placement="bottom" title="Cargar archivo"
-                                                                    data-bs-original-title="Cargar archivo">
-                                                                    <i class="fas fa-upload" aria-hidden="true"></i>
-                                                                </button>
+                                                                @can('upload-docum-prealta')
+                                                                    <button type="button"
+                                                                        class="btn btn-sm btn-icon-only btnDocs btn-rounded btn-outline-secondary mb-0 ms-2 btn-sm d-flex align-items-center justify-content-center ms-3"
+                                                                        data-bs-toggle="tooltip" id="btnFilePre-Alta"
+                                                                        data-bs-placement="bottom" title="Cargar archivo"
+                                                                        data-bs-original-title="Cargar archivo">
+                                                                        <i class="fas fa-upload" aria-hidden="true"></i>
+                                                                    </button>
+                                                                @endcan
                                                                 <a href="javasrcipt:void()" target="_blank"
                                                                     class="openFile btn btn-sm btn-icon-only btn-rounded btn-outline-secondary mb-0 ms-2 btn-sm d-flex align-items-center justify-content-center ms-3"
                                                                     data-bs-toggle="tooltip" data-bs-placement="bottom"
@@ -1597,16 +1605,21 @@
                                         @can('cotizacion-valores')
                                             <div class="tab-pane fade" id="nav-GastosOpe" role="tabpanel"
                                                 aria-labelledby="nav-GastosOpe-tab" tabindex="0">
+
+
+
                                                 <div class="col-sm-12">
                                                     <div class="card card-body" id="profile">
                                                         <div class="row justify-content-between align-items-center">
-                                                            <div class="row">
+
+                                                            <div class="col-12 mb-2">
                                                                 <label style="font-size: 20px">
                                                                     Num contenedor:
                                                                     {{ $documentacion?->num_contenedor }}
                                                                 </label>
                                                             </div>
-                                                            <div class="col-sm-auto col-8 my-auto">
+
+                                                            <div class="col-md-3 col-12 my-auto">
                                                                 <div class="h-100">
                                                                     <h5 class="mb-1 font-weight-bolder">
                                                                         {{ $documentacion->Asignaciones->Operador->nombre }}
@@ -1616,23 +1629,72 @@
                                                                     </p>
                                                                 </div>
                                                             </div>
-                                                            <div class="col-4 text-center">
+
+                                                            <div class="col-md-5 col-12 my-2">
+                                                                <div class="border rounded-3 px-3 py-2 bg-light">
+                                                                    <input type="hidden" id="cotizacion_km_diesel_id"
+                                                                        value="{{ $documentacion?->id_cotizacion ?? $documentacion?->Cotizacion?->id }}">
+
+                                                                    <div class="row g-2 align-items-end">
+                                                                        <div class="col-md-5 col-6">
+                                                                            <label class="form-label mb-1 small fw-bold">
+                                                                                KM recorridos
+                                                                            </label>
+                                                                            <input type="number"
+                                                                                class="form-control form-control-sm text-end"
+                                                                                id="km_recorridos" step="0.01"
+                                                                                min="0"
+                                                                                value="{{ old('km_recorridos', $documentacion?->Cotizacion?->km_recorridos ?? '0.00') }}"
+                                                                                placeholder="0.00">
+                                                                        </div>
+
+                                                                        <div class="col-md-5 col-6">
+                                                                            <label class="form-label mb-1 small fw-bold">
+                                                                                Litros diesel
+                                                                            </label>
+                                                                            <input type="number"
+                                                                                class="form-control form-control-sm text-end"
+                                                                                id="litros_diesel" step="0.001"
+                                                                                min="0"
+                                                                                value="{{ old('litros_diesel', $documentacion?->Cotizacion?->litros_diesel ?? '0.000') }}"
+                                                                                placeholder="0.000">
+                                                                        </div>
+
+                                                                        <div class="col-md-2 col-12">
+                                                                            <button type="button"
+                                                                                class="btn btn-sm bg-gradient-primary w-100 mb-0"
+                                                                                id="btnGuardarKmDiesel">
+                                                                                <i class="fas fa-save"></i>
+                                                                            </button>
+                                                                        </div>
+                                                                    </div>
+
+                                                                    <small class="text-muted d-block mt-1">
+                                                                        Puedes actualizar los datos de rendimiento del viaje.
+                                                                    </small>
+                                                                </div>
+                                                            </div>
+
+                                                            <div class="col-md-4 col-12 text-center text-md-end">
                                                                 <button type="button"
                                                                     class="btn btn-sm bg-gradient-info d-none"
                                                                     id="btnEdit">
                                                                     <i class="fa fa-fw fa-coins"></i>
                                                                     Editar
                                                                 </button>
+
                                                                 <button type="button" class="btn btn-sm bg-gradient-danger"
                                                                     id="btnDelete2">
                                                                     <i class="fa fa-fw fa-trash"></i>
                                                                     Eliminar
                                                                 </button>
+
                                                                 <button type="button"
                                                                     class="btn btn-sm bg-gradient-warning" id="btnPayment">
                                                                     <i class="fa fa-fw fa-coins"></i>
                                                                     Pagar
                                                                 </button>
+
                                                                 <button type="button" data-bs-toggle="modal"
                                                                     data-bs-target="#modal-gastos-operador"
                                                                     class="btn btn-sm bg-gradient-success"
@@ -1642,33 +1704,32 @@
                                                             </div>
                                                         </div>
                                                     </div>
-                                                </div>
 
-                                                <div class="row">
-                                                    <div id="gridGastosOperador" class="col-12 ag-theme-quartz"
-                                                        style="height: 500px"></div>
-                                                </div>
+                                                    <div class="row">
+                                                        <div id="gridGastosOperador" class="col-12 ag-theme-quartz"
+                                                            style="height: 500px"></div>
+                                                    </div>
 
-                                                <div class="row">
-                                                    <div class="card card-body" id="profile">
-                                                        <div class="row justify-content-between align-items-center">
-                                                            <div class="col-sm-auto col-8 my-auto"></div>
-                                                            <div class="col-3 text-center">
-                                                                <div
-                                                                    class="border-dashed border-1 border-secondary border-radius-md py-3">
-                                                                    <h6 class="text-primary mb-0">Total Gastos</h6>
-                                                                    <h4 class="font-weight-bolder">
-                                                                        <span class="small" id="totalGastosOperador">
-                                                                            $ 0.00
-                                                                        </span>
-                                                                    </h4>
+                                                    <div class="row">
+                                                        <div class="card card-body" id="profile">
+                                                            <div class="row justify-content-between align-items-center">
+                                                                <div class="col-sm-auto col-8 my-auto"></div>
+                                                                <div class="col-3 text-center">
+                                                                    <div
+                                                                        class="border-dashed border-1 border-secondary border-radius-md py-3">
+                                                                        <h6 class="text-primary mb-0">Total Gastos</h6>
+                                                                        <h4 class="font-weight-bolder">
+                                                                            <span class="small" id="totalGastosOperador">
+                                                                                $ 0.00
+                                                                            </span>
+                                                                        </h4>
+                                                                    </div>
                                                                 </div>
                                                             </div>
                                                         </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        @endcan
+                                            @endcan
                                     @endif
                                 @endif
                             </div>
