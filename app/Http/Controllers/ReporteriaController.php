@@ -1535,6 +1535,7 @@ $precioViajeTotal = $precioViajeBase + $gastosExtraTotal;
            $utilidad = $precioViajeTotal
     - $pagoOperacion
     - $gastosDiferidos
+    -$gastosExtraTotal
     - $gastosOperadorTotal
     - $sinJustificar;
 
@@ -1554,7 +1555,7 @@ $precioViajeTotal = $precioViajeBase + $gastosExtraTotal;
                     : (optional($asignacion->Operador)->nombre ?? 'S/N'),
 
 
-                'pagoOperacion' => round($pagoOperacion , 2),
+                'pagoOperacion' => round($pagoOperacion , 2) - abs($sinJustificar),
 
                 'dineroViajeSinJustificar' => round($sinJustificar, 2),
                 'gastosViaje' => round($gastosOperadorTotal, 2),
@@ -2416,7 +2417,146 @@ private function obtenerGastosDiferidosPorUnidad($inicioPeriodo, $finPeriodo)
     }
 
 
+public function indexRendimiento()
+{
+    $isAdmin = auth()->user()->es_admin;
 
+    $equiposConViajes = Asignaciones::query()
+        ->select('id_camion')
+        ->whereNotNull('id_camion')
+        ->distinct();
+
+    $equipos = Equipo::query()
+        ->whereIn('id', $equiposConViajes)
+        ->when(!$isAdmin, function ($query) {
+            $query->where('id_empresa', auth()->user()->id_empresa);
+        })
+        ->where('tipo', 'Tractos / Camiones')
+        ->orderBy('id_equipo')
+        ->get();
+
+    return view('reporteria.rendimiento.index', compact('equipos'));
+}
+
+    public function dataRendimiento(Request $request)
+    {
+        $data = $request->validate([
+            'unidad_id' => ['required', 'integer'],
+            'fecha_inicio' => ['required', 'date'],
+            'fecha_fin' => ['required', 'date', 'after_or_equal:fecha_inicio'],
+        ]);
+
+        $unidadId = $data['unidad_id'];
+        $fechaInicio = $data['fecha_inicio'];
+        $fechaFin = $data['fecha_fin'];
+
+        $asignaciones = Asignaciones::query()
+            ->with([
+                'Contenedor.Cotizacion',
+                'Operador',
+                'Camion',
+            ])
+            ->where('id_camion', $unidadId)
+            ->whereDate('fecha_inicio', '>=', $fechaInicio)
+            ->whereDate('fecha_inicio', '<=', $fechaFin)
+             ->whereHas('Contenedor.Cotizacion', function ($q) {
+        $q->where('jerarquia', '!=', 'Secundario');
+    })
+
+            ->orderBy('fecha_inicio')
+            ->orderBy('id')
+            ->get();
+
+           // dd($asignaciones);
+
+        $rows = $asignaciones->map(function ($asignacion) {
+            $contenedor = $asignacion->Contenedor;
+            $cotizacion = $contenedor?->Cotizacion;
+
+            $num_contenendor = $contenedor?->num_contenedor ?? 'S/N';
+
+            if($cotizacion?->referencia_full) {
+                $cotizacionSecundaria = Cotizaciones::where('referencia_full', $cotizacion->referencia_full)
+                    ->where('jerarquia', 'Secundario')
+                    ->first();
+
+                if ($cotizacionSecundaria) {
+                       $num_contenendor .= ' / ' . ($cotizacionSecundaria->DocCotizacion->num_contenedor ?? 'S/N');
+                }
+            }
+
+            $km = (float) ($cotizacion?->km_recorridos ?? 0);
+            $litros = (float) ($cotizacion?->litros_diesel ?? 0);
+
+            $rendimiento = $litros > 0
+                ? round($km / $litros, 3)
+                : null;
+
+            $observacion = null;
+
+            if ($km <= 0 && $litros <= 0) {
+                $observacion = 'Sin KM y sin litros capturados';
+            } elseif ($km <= 0) {
+                $observacion = 'Sin KM capturados';
+            } elseif ($litros <= 0) {
+                $observacion = 'Sin litros capturados';
+            }
+
+            return [
+                'asignacion_id' => $asignacion->id,
+                'cotizacion_id' => $cotizacion?->id,
+                'contenedor_id' => $contenedor?->id,
+
+                'fecha_inicio' => $asignacion->fecha_inicio
+    ? Carbon::parse($asignacion->fecha_inicio)->format('d/m/Y')
+    : 'S/N',
+
+'fecha_fin' => $asignacion->fecha_fin
+    ? Carbon::parse($asignacion->fecha_fin)->format('d/m/Y')
+    : 'S/N',
+
+                'contenedor' => $num_contenendor  ?? 'S/N',
+                'operador' => $asignacion->Operador?->nombre ?? 'S/N',
+
+                'km_recorridos' => round($km, 2),
+                'litros_diesel' => round($litros, 3),
+                'rendimiento_km_litro' => $rendimiento,
+
+                'observacion' => $observacion,
+
+                'origen' => $cotizacion ? $cotizacion->origen : 'S/N',
+                'destino' => $cotizacion ? $cotizacion->destino : 'S/N'
+            ];
+        });
+
+        $totalKm = round($rows->sum('km_recorridos'), 2);
+        $totalLitros = round($rows->sum('litros_diesel'), 3);
+
+        $rendimientoPromedio = $totalLitros > 0
+            ? round($totalKm / $totalLitros, 3)
+            : null;
+
+        $viajesConDatos = $rows->filter(function ($row) {
+            return $row['km_recorridos'] > 0 && $row['litros_diesel'] > 0;
+        })->count();
+
+        $viajesSinDatos = $rows->filter(function ($row) {
+            return $row['km_recorridos'] <= 0 || $row['litros_diesel'] <= 0;
+        })->count();
+
+        return response()->json([
+            'success' => true,
+            'resumen' => [
+                'total_viajes' => $rows->count(),
+                'viajes_con_datos' => $viajesConDatos,
+                'viajes_sin_datos' => $viajesSinDatos,
+                'total_km' => $totalKm,
+                'total_litros' => $totalLitros,
+                'rendimiento_promedio' => $rendimientoPromedio,
+            ],
+            'rows' => $rows->values(),
+        ]);
+    }
 
 
 }
