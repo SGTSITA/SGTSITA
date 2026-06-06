@@ -365,6 +365,15 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('cotizaciones/edit/{id}', [App\Http\Controllers\CotizacionesController::class, 'edit'])->name('edit.cotizaciones');
     Route::post('cotizaciones/update/{id}', [App\Http\Controllers\CotizacionesController::class, 'update'])->name('update.cotizaciones');
     Route::post('cotizaciones/single/update/{id}', [App\Http\Controllers\CotizacionesController::class, 'singleUpdate'])->name('update.single');
+ Route::patch('/cotizaciones/{cotizacion}/km-diesel', [App\Http\Controllers\CotizacionesController::class, 'updateKmDiesel'])
+    ->name('cotizaciones.update-km-diesel');
+
+    Route::get('/reporteria/consumo-unidades', [App\Http\Controllers\ReporteriaController::class, 'indexRendimiento'])
+    ->name('reporteria.consumo-unidades.index');
+
+Route::get('/reporteria/consumo-unidades/data', [App\Http\Controllers\ReporteriaController::class, 'dataRendimiento'])
+    ->name('reporteria.consumo-unidades.data');
+    
 
     Route::post('cotizaciones/updateMep/{id}', [App\Http\Controllers\CotizacionesController::class, 'updateMep'])->name('updatemep.cotizaciones');
 
@@ -735,3 +744,241 @@ Route::post('/costos/mep/cambios/{id}/reenviar', [App\Http\Controllers\MEP\Costo
 Route::get('reporteria/viajes-por-cobrar', [App\Http\Controllers\ReporteriaController::class, 'indexVXC'])->name('index_vxc.reporteria');
 Route::get('/reporteria/viajes-por-cobrar/data', [App\Http\Controllers\ReporteriaController::class, 'dataVXC'])->name('reporteria.vxc.data');
 Route::post('/reporteria/viajes-por-cobrar/exportar', [App\Http\Controllers\ReporteriaController::class, 'exportarVXC']);
+
+
+
+
+
+
+
+
+
+
+
+
+//sistema control bancario
+
+use App\Http\Controllers\ScbAuthController;
+use App\Http\Controllers\ScbDashboardController;
+use App\Http\Controllers\ScbBancoController;
+use App\Http\Controllers\ScbCuentaController;
+use App\Http\Controllers\ScbUnidadController;
+use App\Http\Controllers\ScbMovimientoController;
+use App\Http\Controllers\ScbReporteController;
+
+Route::prefix('scb')->name('scb.')->group(function () {
+
+    /*
+    |--------------------------------------------------------------------------
+    | Login SCB
+    |--------------------------------------------------------------------------
+    */
+    Route::get('/login', [ScbAuthController::class, 'showLogin'])
+        ->name('login');
+
+    Route::post('/login', [ScbAuthController::class, 'login'])
+        ->name('login.post');
+
+    Route::post('/logout', [ScbAuthController::class, 'logout'])
+        ->name('logout')
+        ->middleware('auth');
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Módulo SCB protegido
+    |--------------------------------------------------------------------------
+    */
+    Route::middleware(['auth', 'permission:SCB-Acceso'])->group(function () {
+
+        /*
+        |--------------------------------------------------------------------------
+        | Dashboard
+        |--------------------------------------------------------------------------
+        */
+        Route::get('/', [ScbDashboardController::class, 'index'])
+            ->name('dashboard')
+            ->middleware('permission:SCB-Dashboard');
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Bancos
+        |--------------------------------------------------------------------------
+        */
+        Route::get('/bancos', [ScbBancoController::class, 'index'])
+            ->name('bancos.index')
+            ->middleware('permission:SCB-Bancos-Index');
+
+        Route::get('/bancos/create', [ScbBancoController::class, 'create'])
+            ->name('bancos.create')
+            ->middleware('permission:SCB-Bancos-Create');
+
+        Route::post('/bancos', [ScbBancoController::class, 'store'])
+            ->name('bancos.store')
+            ->middleware('permission:SCB-Bancos-Create');
+
+        Route::get('/bancos/{banco}', [ScbBancoController::class, 'show'])
+            ->name('bancos.show')
+            ->middleware('permission:SCB-Bancos-Index');
+
+        Route::get('/bancos/{banco}/edit', [ScbBancoController::class, 'edit'])
+            ->name('bancos.edit')
+            ->middleware('permission:SCB-Bancos-Edit');
+
+        Route::put('/bancos/{banco}', [ScbBancoController::class, 'update'])
+            ->name('bancos.update')
+            ->middleware('permission:SCB-Bancos-Edit');
+
+        Route::patch('/bancos/{banco}', [ScbBancoController::class, 'update'])
+            ->name('bancos.patch')
+            ->middleware('permission:SCB-Bancos-Edit');
+
+        Route::delete('/bancos/{banco}', [ScbBancoController::class, 'destroy'])
+            ->name('bancos.destroy')
+            ->middleware('permission:SCB-Bancos-Delete');
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Cuentas bancarias
+        |--------------------------------------------------------------------------
+        */
+        Route::get('/cuentas', [ScbCuentaController::class, 'index'])
+            ->name('cuentas.index')
+            ->middleware('permission:SCB-Cuentas-Index');
+
+        Route::get('/cuentas/create', [ScbCuentaController::class, 'create'])
+            ->name('cuentas.create')
+            ->middleware('permission:SCB-Cuentas-Create');
+
+        Route::post('/cuentas', [ScbCuentaController::class, 'store'])
+            ->name('cuentas.store')
+            ->middleware('permission:SCB-Cuentas-Create');
+
+        Route::get('/cuentas/{cuenta}', [ScbCuentaController::class, 'show'])
+            ->name('cuentas.show')
+            ->middleware('permission:SCB-Cuentas-Index');
+
+        Route::get('/cuentas/{cuenta}/edit', [ScbCuentaController::class, 'edit'])
+            ->name('cuentas.edit')
+            ->middleware('permission:SCB-Cuentas-Edit');
+
+        Route::put('/cuentas/{cuenta}', [ScbCuentaController::class, 'update'])
+            ->name('cuentas.update')
+            ->middleware('permission:SCB-Cuentas-Edit');
+
+        Route::patch('/cuentas/{cuenta}', [ScbCuentaController::class, 'update'])
+            ->name('cuentas.patch')
+            ->middleware('permission:SCB-Cuentas-Edit');
+
+        Route::delete('/cuentas/{cuenta}', [ScbCuentaController::class, 'destroy'])
+            ->name('cuentas.destroy')
+            ->middleware('permission:SCB-Cuentas-Delete');
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Unidades
+        |--------------------------------------------------------------------------
+        */
+        Route::get('/unidades', [ScbUnidadController::class, 'index'])
+            ->name('unidades.index')
+            ->middleware('permission:SCB-Unidades-Index');
+
+        Route::get('/unidades/create', [ScbUnidadController::class, 'create'])
+            ->name('unidades.create')
+            ->middleware('permission:SCB-Unidades-Create');
+
+        Route::post('/unidades', [ScbUnidadController::class, 'store'])
+            ->name('unidades.store')
+            ->middleware('permission:SCB-Unidades-Create');
+
+        Route::get('/unidades/{unidad}', [ScbUnidadController::class, 'show'])
+            ->name('unidades.show')
+            ->middleware('permission:SCB-Unidades-Index');
+
+        Route::get('/unidades/{unidad}/edit', [ScbUnidadController::class, 'edit'])
+            ->name('unidades.edit')
+            ->middleware('permission:SCB-Unidades-Edit');
+
+        Route::put('/unidades/{unidad}', [ScbUnidadController::class, 'update'])
+            ->name('unidades.update')
+            ->middleware('permission:SCB-Unidades-Edit');
+
+        Route::patch('/unidades/{unidad}', [ScbUnidadController::class, 'update'])
+            ->name('unidades.patch')
+            ->middleware('permission:SCB-Unidades-Edit');
+
+        Route::delete('/unidades/{unidad}', [ScbUnidadController::class, 'destroy'])
+            ->name('unidades.destroy')
+            ->middleware('permission:SCB-Unidades-Delete');
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Movimientos bancarios
+        |--------------------------------------------------------------------------
+        | Importante:
+        | estado-cuenta va antes de /movimientos/{movimiento}
+        |--------------------------------------------------------------------------
+        */
+        Route::get('/movimientos/estado-cuenta', [ScbMovimientoController::class, 'estadoCuenta'])
+            ->name('movimientos.estado-cuenta')
+            ->middleware('permission:SCB-Movimientos-Index');
+
+        Route::get('/movimientos', [ScbMovimientoController::class, 'index'])
+            ->name('movimientos.index')
+            ->middleware('permission:SCB-Movimientos-Index');
+
+        Route::get('/movimientos/create', [ScbMovimientoController::class, 'create'])
+            ->name('movimientos.create')
+            ->middleware('permission:SCB-Movimientos-Create');
+
+        Route::post('/movimientos', [ScbMovimientoController::class, 'store'])
+            ->name('movimientos.store')
+            ->middleware('permission:SCB-Movimientos-Create');
+
+        Route::get('/movimientos/{movimiento}', [ScbMovimientoController::class, 'show'])
+            ->name('movimientos.show')
+            ->middleware('permission:SCB-Movimientos-Show');
+
+        Route::get('/movimientos/{movimiento}/edit', [ScbMovimientoController::class, 'edit'])
+            ->name('movimientos.edit')
+            ->middleware('permission:SCB-Movimientos-Edit');
+
+        Route::put('/movimientos/{movimiento}', [ScbMovimientoController::class, 'update'])
+            ->name('movimientos.update')
+            ->middleware('permission:SCB-Movimientos-Edit');
+
+        Route::patch('/movimientos/{movimiento}', [ScbMovimientoController::class, 'update'])
+            ->name('movimientos.patch')
+            ->middleware('permission:SCB-Movimientos-Edit');
+
+        Route::delete('/movimientos/{movimiento}', [ScbMovimientoController::class, 'destroy'])
+            ->name('movimientos.destroy')
+            ->middleware('permission:SCB-Movimientos-Delete');
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Reportes
+        |--------------------------------------------------------------------------
+        */
+        Route::get('/reportes', [ScbReporteController::class, 'index'])
+            ->name('reportes.index')
+            ->middleware('permission:SCB-Reportes-Index');
+
+        Route::get('/reportes/consultar', [ScbReporteController::class, 'consultar'])
+            ->name('reportes.consultar')
+            ->middleware('permission:SCB-Reportes-Index');
+
+        Route::get('/reportes/pdf', [ScbReporteController::class, 'pdf'])
+            ->name('reportes.pdf')
+            ->middleware('permission:SCB-Reportes-Export');
+
+        Route::get('/reportes/excel', [ScbReporteController::class, 'excel'])
+            ->name('reportes.excel')
+            ->middleware('permission:SCB-Reportes-Export');
+    });
+});
