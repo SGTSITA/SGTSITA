@@ -1406,21 +1406,31 @@ class ReporteriaController extends Controller
             ->values();
 
 
+             $docCotizacionIds = $asignaciones
+            ->map(function ($asignacion) {
+                return $asignacion->id_contenedor;
+            })
+            ->filter()
+            ->unique()
+            ->values();
+
+
         $gastosExtrasAgrupados = GastosExtras::query()
             ->whereIn('id_cotizacion', $cotizacionIds)
-            ->where('estatus', 'eliminado')
+            ->where('estatus','!=', 'eliminado')
             ->get()
             ->groupBy('id_cotizacion');
+           // dd($gastosExtrasAgrupados, $cotizacionIds);
 
         $gastosOperadorAgrupados = GastosOperadores::query()
             ->whereIn('id_cotizacion', $cotizacionIds)
-             ->where('estatus', 'eliminado')
+             ->where('estatus','!=', 'eliminado')
             ->get()
             ->groupBy('id_cotizacion');
 
 
         $dineroViajeAgrupado = DineroContenedor::query()
-            ->whereIn('id_contenedor', $cotizacionIds)
+            ->whereIn('id_contenedor', $docCotizacionIds)
             ->selectRaw('id_contenedor, SUM(monto) as total')
             ->groupBy('id_contenedor')
             ->pluck('total', 'id_contenedor');
@@ -1463,6 +1473,7 @@ class ReporteriaController extends Controller
             }
 
             $idCotizacion = $cotizacion->id;
+            $idDocCotizacion = $contenedor->id;
 
             $gastosExtra = $gastosExtrasAgrupados->get($idCotizacion, collect());
             $gastosOperador = $gastosOperadorAgrupados->get($idCotizacion, collect());
@@ -1474,9 +1485,10 @@ class ReporteriaController extends Controller
             $precioViajeBase = $this->calcularPrecioViajeDesdeCostos($cotizacion);
 $precioViajeTotal = $precioViajeBase + $gastosExtraTotal;
 
-            $dineroViaje = (float) ($dineroViajeAgrupado[$idCotizacion] ?? 0);
+            $dineroViaje = (float) ($dineroViajeAgrupado[$idDocCotizacion] ?? 0);
             $dineroJustificado = (float) ($dineroJustificadoAgrupado[$idCotizacion] ?? 0);
-            $sinJustificar = abs($dineroViaje - $dineroJustificado);
+            $sinJustificar = $dineroViaje - $dineroJustificado;
+
 
 
             $pagoOperacion = $asignacion->id_proveedor
