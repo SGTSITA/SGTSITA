@@ -1408,11 +1408,13 @@ class ReporteriaController extends Controller
 
         $gastosExtrasAgrupados = GastosExtras::query()
             ->whereIn('id_cotizacion', $cotizacionIds)
+            ->where('estatus', 'eliminado')
             ->get()
             ->groupBy('id_cotizacion');
 
         $gastosOperadorAgrupados = GastosOperadores::query()
             ->whereIn('id_cotizacion', $cotizacionIds)
+             ->where('estatus', 'eliminado')
             ->get()
             ->groupBy('id_cotizacion');
 
