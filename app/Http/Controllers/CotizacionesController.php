@@ -1313,7 +1313,34 @@ if ($url) {
         //return $pdf->stream();
         return $pdf->download('cotizacion'.$cotizacion->Cliente->nombre.'_#'.$cotizacion->id.'.pdf');
     }
+public function updateKmDiesel(Request $request, Cotizaciones $cotizacion)
+{
+    $data = $request->validate([
+        'km_recorridos' => ['nullable', 'numeric', 'min:0'],
+        'litros_diesel' => [
+            'nullable',
+            'numeric',
+            'min:0',
+            'regex:/^\d+(\.\d{1,3})?$/',
+        ],
+    ], [
+        'litros_diesel.regex' => 'Los litros diesel solo pueden tener hasta 3 decimales.',
+    ]);
 
+    $cotizacion->update([
+        'km_recorridos' => $data['km_recorridos'] ?? null,
+        'litros_diesel' => $data['litros_diesel'] ?? null,
+    ]);
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Kilómetros y litros diesel actualizados correctamente.',
+        'data' => [
+            'km_recorridos' => $cotizacion->km_recorridos,
+            'litros_diesel' => $cotizacion->litros_diesel,
+        ],
+    ]);
+}
     public function singleUpdate(Request $request, $id)
     {
         try {

@@ -445,6 +445,10 @@
                   </div>
                 </div>
 
+
+
+
+
                 <div class="col-md-1">
                   <label class="form-label mb-1 d-block">Pago inmediato</label>
                   <label class="toggle-switch">
@@ -522,7 +526,7 @@
             }
         });
 
-        // Función principal: sincroniza selects
+
         function actualizarDisponibles() {
             const selects = Array.from(container.querySelectorAll('select[name="gasto_nombre[]"]'));
             const seleccionados = selects.map(s => s.value).filter(v => v !== '');
@@ -539,10 +543,10 @@
                     );
                 });
 
-                // reemplazamos el contenido del select
+
                 select.innerHTML = opciones.join('');
 
-                // mantenemos su valor si sigue siendo válido
+
                 if (valorActual && [...select.options].some(o => o.value === valorActual && !o.disabled)) {
                     select.value = valorActual;
                 } else {

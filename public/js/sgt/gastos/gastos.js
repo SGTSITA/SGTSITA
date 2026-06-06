@@ -554,14 +554,14 @@ $("#frmCrearGasto").on("submit", (e) => {
     });
 
     if (!passValidation) return passValidation;
-
+    let input = document.querySelector('input[name="formasAplicar"]:checked');
     let fechaAplicacion = formData["fecha_aplicacion"];
-
+    const inputFecha = document.querySelector('[name="fecha_aplicacion"]');
+    // debugger;
     if (
         input.value == "Periodo" &&
         (fechaAplicacion < window.mesinicio || fechaAplicacion > window.mesfin)
     ) {
-        const inputFecha = document.querySelector('[name="fecha_aplicacion"]');
         if (inputFecha) {
             inputFecha.blur();
             inputFecha.disabled = true;
@@ -572,9 +572,18 @@ $("#frmCrearGasto").on("submit", (e) => {
             "La fecha de aplicación debe estar dentro del periodo seleccionado.",
             "warning",
         );
-
+        inputFecha.disabled = false;
         return;
     }
+
+    Swal.fire({
+        title: "Procesando...",
+        text: "Registrando gasto, por favor espere.",
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        },
+    });
 
     inputFecha.disabled = false;
     // inputFecha.focus();
@@ -590,7 +599,6 @@ $("#frmCrearGasto").on("submit", (e) => {
     );
     formData["unidades"] = unidades;
 
-    let input = document.querySelector('input[name="formasAplicar"]:checked');
     formData["formasAplicar"] = input.value;
 
     formData["fechaInicioSeleccionado"] = $("#daterange").attr("data-start");

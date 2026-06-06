@@ -46,6 +46,65 @@ paginationTitle.textContent = "Registros por página";
 
 let IdContenedorViaje = null;
 
+$(document).on("click", "#btnGuardarKmDiesel", function () {
+    const cotizacionId = $("#cotizacion_km_diesel_id").val();
+    const kmRecorridos = $("#km_recorridos").val();
+    const litrosDiesel = $("#litros_diesel").val();
+
+    if (!cotizacionId) {
+        Swal.fire({
+            icon: "warning",
+            title: "Cotización no encontrada",
+            text: "No se encontró el ID de la cotización.",
+        });
+        return;
+    }
+
+    $.ajax({
+        url: `/cotizaciones/${cotizacionId}/km-diesel`,
+        method: "PATCH",
+        data: {
+            _token: $('meta[name="csrf-token"]').attr("content"),
+            km_recorridos: kmRecorridos,
+            litros_diesel: litrosDiesel,
+        },
+        beforeSend: function () {
+            $("#btnGuardarKmDiesel")
+                .prop("disabled", true)
+                .html('<i class="fas fa-spinner fa-spin"></i>');
+        },
+        success: function (response) {
+            Swal.fire({
+                icon: "success",
+                title: "Actualizado",
+                text: response.message || "Datos actualizados correctamente.",
+                timer: 1400,
+                showConfirmButton: false,
+            });
+
+            $("#km_recorridos").val(response.data.km_recorridos ?? "");
+            $("#litros_diesel").val(response.data.litros_diesel ?? "");
+        },
+        error: function (xhr) {
+            const msg =
+                xhr.responseJSON?.message ||
+                Object.values(xhr.responseJSON?.errors || {})?.[0]?.[0] ||
+                "No se pudieron actualizar los datos.";
+
+            Swal.fire({
+                icon: "error",
+                title: "Error",
+                text: msg,
+            });
+        },
+        complete: function () {
+            $("#btnGuardarKmDiesel")
+                .prop("disabled", false)
+                .html('<i class="fas fa-save"></i>');
+        },
+    });
+});
+
 function getGastosOperador() {
     var _token = document
         .querySelector('meta[name="csrf-token"]')

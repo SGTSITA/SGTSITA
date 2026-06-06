@@ -1,0 +1,129 @@
+.estado-card {
+    border-radius: 18px;
+    padding: 16px;
+    border: 1px solid #e5e7eb;
+    background: #ffffff;
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+    height: 100%;
+}
+
+.estado-card small {
+    display: block;
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin-bottom: 6px;
+}
+
+.estado-card h5 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 900;
+}
+
+.estado-card i {
+    font-size: 22px;
+    opacity: 0.9;
+}
+
+.estado-card-saldo-inicial {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+    color: #0f172a;
+}
+
+.estado-card-saldo-inicial small,
+.estado-card-saldo-inicial i {
+    color: #475569;
+}
+
+.estado-card-cargos {
+    background: #fff1f2;
+    border-color: #fecdd3;
+    color: #991b1b;
+}
+
+.estado-card-cargos small,
+.estado-card-cargos h5,
+.estado-card-cargos i {
+    color: #991b1b !important;
+}
+
+.estado-card-abonos {
+    background: #ecfdf5;
+    border-color: #bbf7d0;
+    color: #166534;
+}
+
+.estado-card-abonos small,
+.estado-card-abonos h5,
+.estado-card-abonos i {
+    color: #166534 !important;
+}
+
+.estado-card-saldo-final {
+    background: #eff6ff;
+    border-color: #bfdbfe;
+    color: #1d4ed8;
+}
+
+.estado-card-saldo-final small,
+.estado-card-saldo-final h5,
+.estado-card-saldo-final i {
+    color: #1d4ed8 !important;
+}
+
+.estado-cuenta-table thead th {
+    background: #f8fafc;
+    color: #334155;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.estado-cuenta-table tbody td {
+    color: #1f2937;
+    vertical-align: middle;
+}
+
+.monto-cargo {
+    color: #b91c1c !important;
+    font-weight: 800;
+}
+
+.monto-abono {
+    color: #15803d !important;
+    font-weight: 800;
+}
+
+.monto-saldo-positivo {
+    color: #1d4ed8 !important;
+    font-weight: 900;
+}
+
+.monto-saldo-negativo {
+    color: #b91c1c !important;
+    font-weight: 900;
+}
+
+.estado-detalle-card {
+    background: #f8fafc;
+    border: 1px solid #e5e7eb;
+    border-radius: 18px;
+    padding: 14px;
+}
+
+.estado-detalle-card small {
+    color: #64748b;
+    font-weight: 800;
+    text-transform: uppercase;
+    font-size: 12px;
+}
+
+.estado-detalle-card .valor {
+    color: #0f172a;
+    font-size: 18px;
+    font-weight: 900;
+}
