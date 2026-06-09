@@ -3,7 +3,251 @@ document.addEventListener("DOMContentLoaded", function () {
     const fechaInicio = document.getElementById("fecha_inicio");
     const fechaFin = document.getElementById("fecha_fin");
     const btnConsultar = document.getElementById("btnConsultarConsumo");
-    const tbody = document.getElementById("tbodyConsumoUnidad");
+    const gridDiv = document.getElementById("gridConsumoUnidad");
+
+    let gridConsumoApi = null;
+
+    const columnDefsConsumo = [
+        {
+            headerName: "Fecha",
+            field: "fecha_inicio",
+            filter: "agTextColumnFilter",
+            floatingFilter: true,
+            width: 105,
+            minWidth: 105,
+            valueFormatter: (params) => params.value || "S/N",
+        },
+        {
+            headerName: "Contenedor",
+            field: "contenedor",
+            filter: "agTextColumnFilter",
+            floatingFilter: true,
+            width: 190,
+            minWidth: 190,
+            valueGetter: (params) => {
+                const row = params.data || {};
+                return `${row.contenedor || ""} ${row.peso_contenedor || ""}`;
+            },
+            cellRenderer: (params) => {
+                const row = params.data || {};
+
+                return `
+                    <div class="consumo-contenedor">
+                        <div class="fw-bold">${escapeHtml(row.contenedor || "S/N")}</div>
+                        <div class="small text-muted">
+                            <strong>Peso:</strong> ${escapeHtml(row.peso_contenedor || "S/N")}
+                        </div>
+                    </div>
+                `;
+            },
+        },
+        {
+            headerName: "Operador",
+            field: "operador",
+            filter: "agTextColumnFilter",
+            floatingFilter: true,
+            width: 200,
+            valueFormatter: (params) => params.value || "S/N",
+        },
+        {
+            headerName: "Ruta",
+            field: "ruta",
+            filter: "agTextColumnFilter",
+            floatingFilter: true,
+            width: 350,
+            minWidth: 350,
+            flex: 1,
+            valueGetter: (params) => {
+                const row = params.data || {};
+                return `${row.origen || ""} ${row.destino || ""}`;
+            },
+            cellRenderer: (params) => {
+                const row = params.data || {};
+                const origen = row.origen || "S/N";
+                const destino = row.destino || "S/N";
+
+                return `
+                    <div class="ruta-box">
+                        <div class="ruta-item">
+                            <span class="ruta-label">Origen:</span>
+                            <span class="ruta-text">${escapeHtml(origen)}</span>
+                        </div>
+
+                        <div class="ruta-divider"></div>
+
+                        <div class="ruta-item">
+                            <span class="ruta-label">Destino:</span>
+                            <span class="ruta-text">${escapeHtml(destino)}</span>
+                        </div>
+                    </div>
+                `;
+            },
+        },
+        {
+            headerName: "KM",
+            field: "km_recorridos",
+            filter: "agNumberColumnFilter",
+            floatingFilter: true,
+            width: 110,
+            minWidth: 110,
+            type: "numericColumn",
+            cellClass: "text-end fw-bold",
+            valueGetter: (params) => Number(params.data?.km_recorridos || 0),
+            valueFormatter: (params) => numberFormat(params.value, 2),
+        },
+        {
+            headerName: "Litros capturados",
+            field: "litros_capturados_viaje",
+            filter: "agNumberColumnFilter",
+            floatingFilter: true,
+            width: 160,
+            minWidth: 160,
+            type: "numericColumn",
+            cellClass: "text-end",
+            valueGetter: (params) =>
+                Number(params.data?.litros_capturados_viaje || 0),
+            cellRenderer: (params) => {
+                const litrosCapturados = Number(params.value || 0);
+
+                return `
+                    <div>
+                        <div class="fw-bold">${numberFormat(litrosCapturados, 3)}</div>
+                        <div class="small text-muted">Guardado en este viaje</div>
+                    </div>
+                `;
+            },
+        },
+        {
+            headerName: "Litros cálculo",
+            field: "litros_calculo_consumo",
+            filter: "agNumberColumnFilter",
+            floatingFilter: true,
+            width: 160,
+            minWidth: 160,
+            type: "numericColumn",
+            cellClass: "text-end",
+            valueGetter: (params) =>
+                Number(params.data?.litros_calculo_consumo || 0),
+            cellRenderer: (params) => {
+                const row = params.data || {};
+                const litrosCalculo = Number(row.litros_calculo_consumo || 0);
+
+                if (litrosCalculo > 0) {
+                    return `
+                        <div>
+                            <div class="fw-bold">${numberFormat(litrosCalculo, 3)}</div>
+                            <div class="small text-muted">
+                                <strong>Tomado de:</strong> ${escapeHtml(row.litros_tomados_de_contenedor || "S/N")}
+                            </div>
+                        </div>
+                    `;
+                }
+
+                return `
+                    <div>
+                        <div class="text-muted fw-bold">0.000</div>
+                        <div class="small text-muted">
+                            Pendiente de siguiente carga
+                        </div>
+                    </div>
+                `;
+            },
+        },
+        {
+            headerName: "Rendimiento",
+            field: "rendimiento_km_litro",
+            filter: "agNumberColumnFilter",
+            floatingFilter: true,
+            width: 135,
+            minWidth: 135,
+            type: "numericColumn",
+            cellClass: "text-end",
+            valueGetter: (params) => {
+                const value = params.data?.rendimiento_km_litro;
+
+                return value !== null && value !== undefined
+                    ? Number(value)
+                    : null;
+            },
+            cellRenderer: (params) => {
+                const rendimiento = params.value;
+
+                if (rendimiento !== null && rendimiento !== undefined) {
+                    return `
+                        <span class="${claseRendimiento(rendimiento)}">
+                            ${numberFormat(rendimiento, 3)}
+                            KM/L
+                        </span>
+                    `;
+                }
+
+                return `<span class="text-muted">S/N</span>`;
+            },
+        },
+        {
+            headerName: "Estado",
+            field: "observacion",
+            filter: "agTextColumnFilter",
+            floatingFilter: true,
+            minWidth: 160,
+            valueGetter: (params) => params.data?.observacion || "Completo",
+            cellRenderer: (params) => {
+                const row = params.data || {};
+
+                if (row.observacion) {
+                    return `
+            <span class="badge bg-warning text-dark badge-observacion-grid">
+                <strong>Observación:</strong><br>
+                ${escapeHtml(row.observacion)}
+            </span>
+        `;
+                }
+
+                return `<span class="badge bg-success">Completo</span>`;
+            },
+        },
+    ];
+
+    const gridOptionsConsumo = {
+        columnDefs: columnDefsConsumo,
+        rowData: [],
+        animateRows: true,
+        pagination: true,
+        paginationPageSize: 20,
+        rowHeight: 82,
+        headerHeight: 42,
+        floatingFiltersHeight: 38,
+
+        defaultColDef: {
+            sortable: true,
+            filter: true,
+            resizable: true,
+            floatingFilter: true,
+            suppressHeaderMenuButton: false,
+        },
+
+        overlayLoadingTemplate: `
+            <div class="text-center text-muted py-4">
+                <div class="spinner-border spinner-border-sm me-2"></div>
+                Consultando consumo...
+            </div>
+        `,
+
+        overlayNoRowsTemplate: `
+            <div class="text-center text-muted py-4">
+                No hay viajes para la unidad y periodo seleccionado.
+            </div>
+        `,
+    };
+
+    if (gridDiv) {
+        if (typeof agGrid.createGrid === "function") {
+            gridConsumoApi = agGrid.createGrid(gridDiv, gridOptionsConsumo);
+        } else {
+            new agGrid.Grid(gridDiv, gridOptionsConsumo);
+            gridConsumoApi = gridOptionsConsumo.api;
+        }
+    }
 
     inicializarFechas();
 
@@ -39,7 +283,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     text: data.message || "No se pudo consultar el reporte.",
                 });
 
-                pintarVacio("No se pudo consultar el reporte.");
+                pintarVacio();
                 return;
             }
 
@@ -54,7 +298,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 text: "No se pudo consultar el reporte.",
             });
 
-            pintarVacio("No se pudo consultar el reporte.");
+            pintarVacio();
         }
     }
 
@@ -83,6 +327,8 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function pintarResumen(resumen) {
+        resumen = resumen || {};
+
         document
             .getElementById("resumenConsumoUnidad")
             .classList.remove("d-none");
@@ -92,18 +338,11 @@ document.addEventListener("DOMContentLoaded", function () {
         setText("lblViajesSinDatos", resumen.viajes_sin_datos || 0);
         setText("lblTotalKm", numberFormat(resumen.total_km, 2));
 
-        /*
-         * Este debe ser el total usado para rendimiento.
-         */
         setText(
             "lblTotalLitros",
             numberFormat(resumen.total_litros_calculo, 3),
         );
 
-        /*
-         * Si agregas un label nuevo en tu resumen:
-         * <span id="lblTotalLitrosCapturados"></span>
-         */
         setText(
             "lblTotalLitrosCapturados",
             numberFormat(resumen.total_litros_capturados, 3),
@@ -111,126 +350,55 @@ document.addEventListener("DOMContentLoaded", function () {
 
         setText(
             "lblRendimientoPromedio",
-            resumen.rendimiento_promedio !== null
+            resumen.rendimiento_promedio !== null &&
+                resumen.rendimiento_promedio !== undefined
                 ? numberFormat(resumen.rendimiento_promedio, 3)
                 : "S/N",
         );
     }
 
     function pintarTabla(rows) {
-        tbody.innerHTML = "";
+        const data = rows || [];
 
-        if (!rows || !rows.length) {
-            pintarVacio("No hay viajes para la unidad y periodo seleccionado.");
+        setGridRows(data);
+
+        if (!data.length) {
+            pintarVacio();
             return;
         }
 
-        rows.forEach((row) => {
-            const rendimiento = row.rendimiento_km_litro;
-
-            const rendimientoHtml =
-                rendimiento !== null
-                    ? `<span class="${claseRendimiento(rendimiento)}">${numberFormat(rendimiento, 3)}</span>`
-                    : `<span class="text-muted">S/N</span>`;
-
-            const origen = row.origen || "S/N";
-            const destino = row.destino || "S/N";
-
-            const litrosCapturados = Number(row.litros_capturados_viaje || 0);
-            const litrosCalculo = Number(row.litros_calculo_consumo || 0);
-
-            const litrosCalculoHtml =
-                litrosCalculo > 0
-                    ? `
-                    <div class="fw-bold">${numberFormat(litrosCalculo, 3)}</div>
-                    <div class="small text-muted">
-                        Tomado de: ${escapeHtml(row.litros_tomados_de_contenedor || "S/N")}
-                    </div>
-                `
-                    : `
-                    <div class="text-muted fw-bold">0.000</div>
-                    <div class="small text-muted">
-                        Pendiente de siguiente carga
-                    </div>
-                `;
-
-            tbody.insertAdjacentHTML(
-                "beforeend",
-                `
-            <tr>
-                <td>${escapeHtml(row.fecha_inicio || "S/N")}</td>
-
-                <td>
-                    <div class="fw-bold">${escapeHtml(row.contenedor || "S/N")}</div>
-                </td>
-
-                <td>${escapeHtml(row.operador || "S/N")}</td>
-
-                <td class="ruta-cell">
-                    <div class="ruta-box">
-                        <div class="ruta-item">
-                            <span class="ruta-label">Origen</span>
-                            <span class="ruta-text">${escapeHtml(origen)}</span>
-                        </div>
-
-                        <div class="ruta-divider"></div>
-
-                        <div class="ruta-item">
-                            <span class="ruta-label">Destino</span>
-                            <span class="ruta-text">${escapeHtml(destino)}</span>
-                        </div>
-                    </div>
-                </td>
-
-                <td class="text-end fw-bold">
-                    ${numberFormat(row.km_recorridos, 2)}
-                </td>
-
-                <td class="text-end">
-                    <div class="fw-bold">${numberFormat(litrosCapturados, 3)}</div>
-                    <div class="small text-muted">Guardado en este viaje</div>
-                </td>
-
-                <td class="text-end">
-                    ${litrosCalculoHtml}
-                </td>
-
-                <td class="text-end">
-                    ${rendimientoHtml}
-                </td>
-
-                <td>
-                    ${
-                        row.observacion
-                            ? `<span class="badge bg-warning text-dark">${escapeHtml(row.observacion)}</span>`
-                            : `<span class="badge bg-success">Completo</span>`
-                    }
-                </td>
-            </tr>
-        `,
-            );
-        });
+        if (gridConsumoApi?.hideOverlay) {
+            gridConsumoApi.hideOverlay();
+        }
     }
 
     function pintarLoading() {
-        tbody.innerHTML = `
-        <tr>
-            <td colspan="9" class="text-center text-muted py-4">
-                <div class="spinner-border spinner-border-sm me-2"></div>
-                Consultando consumo...
-            </td>
-        </tr>
-    `;
+        setGridRows([]);
+
+        if (gridConsumoApi?.showLoadingOverlay) {
+            gridConsumoApi.showLoadingOverlay();
+        }
     }
 
-    function pintarVacio(message) {
-        tbody.innerHTML = `
-        <tr>
-            <td colspan="9" class="text-center text-muted py-4">
-                ${escapeHtml(message)}
-            </td>
-        </tr>
-    `;
+    function pintarVacio() {
+        setGridRows([]);
+
+        if (gridConsumoApi?.showNoRowsOverlay) {
+            gridConsumoApi.showNoRowsOverlay();
+        }
+    }
+
+    function setGridRows(rows) {
+        if (!gridConsumoApi) return;
+
+        if (typeof gridConsumoApi.setGridOption === "function") {
+            gridConsumoApi.setGridOption("rowData", rows);
+            return;
+        }
+
+        if (typeof gridConsumoApi.setRowData === "function") {
+            gridConsumoApi.setRowData(rows);
+        }
     }
 
     function claseRendimiento(value) {
