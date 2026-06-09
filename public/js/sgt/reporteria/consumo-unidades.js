@@ -91,7 +91,24 @@ document.addEventListener("DOMContentLoaded", function () {
         setText("lblViajesConDatos", resumen.viajes_con_datos || 0);
         setText("lblViajesSinDatos", resumen.viajes_sin_datos || 0);
         setText("lblTotalKm", numberFormat(resumen.total_km, 2));
-        setText("lblTotalLitros", numberFormat(resumen.total_litros, 3));
+
+        /*
+         * Este debe ser el total usado para rendimiento.
+         */
+        setText(
+            "lblTotalLitros",
+            numberFormat(resumen.total_litros_calculo, 3),
+        );
+
+        /*
+         * Si agregas un label nuevo en tu resumen:
+         * <span id="lblTotalLitrosCapturados"></span>
+         */
+        setText(
+            "lblTotalLitrosCapturados",
+            numberFormat(resumen.total_litros_capturados, 3),
+        );
+
         setText(
             "lblRendimientoPromedio",
             resumen.rendimiento_promedio !== null
@@ -110,89 +127,110 @@ document.addEventListener("DOMContentLoaded", function () {
 
         rows.forEach((row) => {
             const rendimiento = row.rendimiento_km_litro;
+
             const rendimientoHtml =
                 rendimiento !== null
                     ? `<span class="${claseRendimiento(rendimiento)}">${numberFormat(rendimiento, 3)}</span>`
                     : `<span class="text-muted">S/N</span>`;
 
-            //  console.log(row);
-
             const origen = row.origen || "S/N";
             const destino = row.destino || "S/N";
+
+            const litrosCapturados = Number(row.litros_capturados_viaje || 0);
+            const litrosCalculo = Number(row.litros_calculo_consumo || 0);
+
+            const litrosCalculoHtml =
+                litrosCalculo > 0
+                    ? `
+                    <div class="fw-bold">${numberFormat(litrosCalculo, 3)}</div>
+                    <div class="small text-muted">
+                        Tomado de: ${escapeHtml(row.litros_tomados_de_contenedor || "S/N")}
+                    </div>
+                `
+                    : `
+                    <div class="text-muted fw-bold">0.000</div>
+                    <div class="small text-muted">
+                        Pendiente de siguiente carga
+                    </div>
+                `;
 
             tbody.insertAdjacentHTML(
                 "beforeend",
                 `
-                <tr>
-                    <td>${escapeHtml(row.fecha_inicio || "S/N")}</td>
+            <tr>
+                <td>${escapeHtml(row.fecha_inicio || "S/N")}</td>
 
-                    <td>
-                        <div class="fw-bold">${escapeHtml(row.contenedor || "S/N")}</div>
+                <td>
+                    <div class="fw-bold">${escapeHtml(row.contenedor || "S/N")}</div>
+                </td>
 
-                    </td>
+                <td>${escapeHtml(row.operador || "S/N")}</td>
 
-                    <td>${escapeHtml(row.operador || "S/N")}</td>
-                      <td class="ruta-cell">
-    <div class="ruta-box">
-        <div class="ruta-item">
-            <span class="ruta-label">Origen</span>
-            <span class="ruta-text">${escapeHtml(origen)}</span>
-        </div>
+                <td class="ruta-cell">
+                    <div class="ruta-box">
+                        <div class="ruta-item">
+                            <span class="ruta-label">Origen</span>
+                            <span class="ruta-text">${escapeHtml(origen)}</span>
+                        </div>
 
-        <div class="ruta-divider"></div>
+                        <div class="ruta-divider"></div>
 
-        <div class="ruta-item">
-            <span class="ruta-label">Destino</span>
-            <span class="ruta-text">${escapeHtml(destino)}</span>
-        </div>
-    </div>
-</td>
+                        <div class="ruta-item">
+                            <span class="ruta-label">Destino</span>
+                            <span class="ruta-text">${escapeHtml(destino)}</span>
+                        </div>
+                    </div>
+                </td>
 
-                    <td class="text-end fw-bold">
-                        ${numberFormat(row.km_recorridos, 2)}
-                    </td>
+                <td class="text-end fw-bold">
+                    ${numberFormat(row.km_recorridos, 2)}
+                </td>
 
-                    <td class="text-end fw-bold">
-                        ${numberFormat(row.litros_diesel, 3)}
-                    </td>
+                <td class="text-end">
+                    <div class="fw-bold">${numberFormat(litrosCapturados, 3)}</div>
+                    <div class="small text-muted">Guardado en este viaje</div>
+                </td>
 
-                    <td class="text-end">
-                        ${rendimientoHtml}
+                <td class="text-end">
+                    ${litrosCalculoHtml}
+                </td>
 
-                    </td>
+                <td class="text-end">
+                    ${rendimientoHtml}
+                </td>
 
-                    <td>
-                        ${
-                            row.observacion
-                                ? `<span class="badge bg-warning text-dark">${escapeHtml(row.observacion)}</span>`
-                                : `<span class="badge bg-success">Completo</span>`
-                        }
-                    </td>
-                </tr>
-            `,
+                <td>
+                    ${
+                        row.observacion
+                            ? `<span class="badge bg-warning text-dark">${escapeHtml(row.observacion)}</span>`
+                            : `<span class="badge bg-success">Completo</span>`
+                    }
+                </td>
+            </tr>
+        `,
             );
         });
     }
 
     function pintarLoading() {
         tbody.innerHTML = `
-            <tr>
-                <td colspan="7" class="text-center text-muted py-4">
-                    <div class="spinner-border spinner-border-sm me-2"></div>
-                    Consultando consumo...
-                </td>
-            </tr>
-        `;
+        <tr>
+            <td colspan="9" class="text-center text-muted py-4">
+                <div class="spinner-border spinner-border-sm me-2"></div>
+                Consultando consumo...
+            </td>
+        </tr>
+    `;
     }
 
     function pintarVacio(message) {
         tbody.innerHTML = `
-            <tr>
-                <td colspan="7" class="text-center text-muted py-4">
-                    ${escapeHtml(message)}
-                </td>
-            </tr>
-        `;
+        <tr>
+            <td colspan="9" class="text-center text-muted py-4">
+                ${escapeHtml(message)}
+            </td>
+        </tr>
+    `;
     }
 
     function claseRendimiento(value) {

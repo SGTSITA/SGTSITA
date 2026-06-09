@@ -211,13 +211,14 @@
                 <table class="table consumo-table align-items-center mb-0">
                     <thead>
                         <tr>
-                            <th>Fecha salida</th>
+                            <th>Fecha</th>
                             <th>Contenedor</th>
                             <th>Operador</th>
                             <th>Ruta</th>
                             <th class="text-end">KM</th>
-                            <th class="text-end">Litros</th>
-                            <th class="text-end">KM/L</th>
+                            <th class="text-end">L capturados</th>
+                            <th class="text-end">L cálculo</th>
+                            <th class="text-end">Rendimiento</th>
                             <th>Observación</th>
                         </tr>
                     </thead>

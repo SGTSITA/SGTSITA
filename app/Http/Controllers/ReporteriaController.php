@@ -2453,122 +2453,239 @@ public function indexRendimiento()
 
     public function dataRendimiento(Request $request)
     {
-        $data = $request->validate([
-            'unidad_id' => ['required', 'integer'],
-            'fecha_inicio' => ['required', 'date'],
-            'fecha_fin' => ['required', 'date', 'after_or_equal:fecha_inicio'],
-        ]);
+          $data = $request->validate([
+        'unidad_id' => ['required', 'integer'],
+        'fecha_inicio' => ['required', 'date'],
+        'fecha_fin' => ['required', 'date', 'after_or_equal:fecha_inicio'],
+    ]);
 
-        $unidadId = $data['unidad_id'];
-        $fechaInicio = $data['fecha_inicio'];
-        $fechaFin = $data['fecha_fin'];
+    $unidadId = $data['unidad_id'];
+    $fechaInicio = $data['fecha_inicio'];
+    $fechaFin = $data['fecha_fin'];
 
-        $asignaciones = Asignaciones::query()
+    $filtroPrincipal = function ($q) {
+        $q->where(function ($q2) {
+            $q2->where('jerarquia', '!=', 'Secundario')
+                ->orWhereNull('jerarquia');
+        });
+    };
+
+    $asignacionesBase = Asignaciones::query()
+        ->with([
+            'Contenedor.Cotizacion',
+            'Operador',
+            'Camion',
+        ])
+        ->where('id_camion', $unidadId)
+        ->whereDate('fecha_inicio', '>=', $fechaInicio)
+        ->whereDate('fecha_inicio', '<=', $fechaFin)
+        ->whereHas('Contenedor.Cotizacion', $filtroPrincipal)
+        ->orderBy('fecha_inicio')
+        ->orderBy('id')
+        ->get()
+        ->values();
+
+    $ultimoViaje = $asignacionesBase->last();
+
+    $asignacionExtra = null;
+
+    if ($ultimoViaje) {
+        $asignacionExtra = Asignaciones::query()
             ->with([
                 'Contenedor.Cotizacion',
                 'Operador',
                 'Camion',
             ])
             ->where('id_camion', $unidadId)
-            ->whereDate('fecha_inicio', '>=', $fechaInicio)
-            ->whereDate('fecha_inicio', '<=', $fechaFin)
-             ->whereHas('Contenedor.Cotizacion', function ($q) {
-        $q->where('jerarquia', '!=', 'Secundario');
-    })
-
+            ->whereHas('Contenedor.Cotizacion', $filtroPrincipal)
+            ->where(function ($q) use ($ultimoViaje) {
+                $q->where('fecha_inicio', '>', $ultimoViaje->fecha_inicio)
+                    ->orWhere(function ($q2) use ($ultimoViaje) {
+                        $q2->where('fecha_inicio', $ultimoViaje->fecha_inicio)
+                            ->where('id', '>', $ultimoViaje->id);
+                    });
+            })
             ->orderBy('fecha_inicio')
             ->orderBy('id')
-            ->get();
+            ->first();
+    }
 
-           // dd($asignaciones);
+    /*
+     * Esta colección incluye el viaje extra solo para poder tomar
+     * los litros del siguiente viaje.
+     */
+    $asignacionesParaCalculo = $asignacionExtra
+        ? $asignacionesBase->concat([$asignacionExtra])->values()
+        : $asignacionesBase->values();
 
-        $rows = $asignaciones->map(function ($asignacion) {
-            $contenedor = $asignacion->Contenedor;
-            $cotizacion = $contenedor?->Cotizacion;
+    $obtenerTextoContenedor = function ($asignacion) {
+        $contenedor = $asignacion?->Contenedor;
+        $cotizacion = $contenedor?->Cotizacion;
 
-            $num_contenendor = $contenedor?->num_contenedor ?? 'S/N';
+        $numContenedor = $contenedor?->num_contenedor ?? 'S/N';
 
-            if($cotizacion?->referencia_full) {
-                $cotizacionSecundaria = Cotizaciones::where('referencia_full', $cotizacion->referencia_full)
-                    ->where('jerarquia', 'Secundario')
-                    ->first();
+        if ($cotizacion?->referencia_full) {
+            $cotizacionSecundaria = Cotizaciones::query()
+                ->with('DocCotizacion')
+                ->where('referencia_full', $cotizacion->referencia_full)
+                ->where('jerarquia', 'Secundario')
+                ->first();
 
-                if ($cotizacionSecundaria) {
-                       $num_contenendor .= ' / ' . ($cotizacionSecundaria->DocCotizacion->num_contenedor ?? 'S/N');
+            if ($cotizacionSecundaria) {
+                $docSecundario = $cotizacionSecundaria->DocCotizacion;
+
+                if ($docSecundario instanceof \Illuminate\Support\Collection) {
+                    $numSecundario = $docSecundario->first()?->num_contenedor;
+                } else {
+                    $numSecundario = $docSecundario?->num_contenedor;
                 }
+
+                $numContenedor .= ' / ' . ($numSecundario ?? 'S/N');
             }
+        }
 
-            $km = (float) ($cotizacion?->km_recorridos ?? 0);
-            $litros = (float) ($cotizacion?->litros_diesel ?? 0);
+        return $numContenedor;
+    };
 
-            $rendimiento = $litros > 0
-                ? round($km / $litros, 3)
-                : null;
+    $rows = $asignacionesBase->map(function ($asignacion, $index) use ($asignacionesParaCalculo, $obtenerTextoContenedor) {
+        $contenedor = $asignacion->Contenedor;
+        $cotizacion = $contenedor?->Cotizacion;
 
-            $observacion = null;
+        $siguienteAsignacion = $asignacionesParaCalculo->get($index + 1);
+        $cotizacionSiguiente = $siguienteAsignacion?->Contenedor?->Cotizacion;
 
-            if ($km <= 0 && $litros <= 0) {
-                $observacion = 'Sin KM y sin litros capturados';
-            } elseif ($km <= 0) {
-                $observacion = 'Sin KM capturados';
-            } elseif ($litros <= 0) {
-                $observacion = 'Sin litros capturados';
-            }
+        /*
+         * Datos propios del viaje actual.
+         */
+        $km = (float) ($cotizacion?->km_recorridos ?? 0);
+        $litrosCapturadosViaje = (float) ($cotizacion?->litros_diesel ?? 0);
 
-            return [
-                'asignacion_id' => $asignacion->id,
-                'cotizacion_id' => $cotizacion?->id,
-                'contenedor_id' => $contenedor?->id,
+        /*
+         * Fórmula correcta:
+         * El consumo del viaje actual se toma de la carga del siguiente viaje.
+         */
+        $litrosCalculoConsumo = (float) ($cotizacionSiguiente?->litros_diesel ?? 0);
 
-                'fecha_inicio' => $asignacion->fecha_inicio
-    ? Carbon::parse($asignacion->fecha_inicio)->format('d/m/Y')
-    : 'S/N',
-
-'fecha_fin' => $asignacion->fecha_fin
-    ? Carbon::parse($asignacion->fecha_fin)->format('d/m/Y')
-    : 'S/N',
-
-                'contenedor' => $num_contenendor  ?? 'S/N',
-                'operador' => $asignacion->Operador?->nombre ?? 'S/N',
-
-                'km_recorridos' => round($km, 2),
-                'litros_diesel' => round($litros, 3),
-                'rendimiento_km_litro' => $rendimiento,
-
-                'observacion' => $observacion,
-
-                'origen' => $cotizacion ? $cotizacion->origen : 'S/N',
-                'destino' => $cotizacion ? $cotizacion->destino : 'S/N'
-            ];
-        });
-
-        $totalKm = round($rows->sum('km_recorridos'), 2);
-        $totalLitros = round($rows->sum('litros_diesel'), 3);
-
-        $rendimientoPromedio = $totalLitros > 0
-            ? round($totalKm / $totalLitros, 3)
+        $rendimiento = $litrosCalculoConsumo > 0
+            ? round($km / $litrosCalculoConsumo, 3)
             : null;
 
-        $viajesConDatos = $rows->filter(function ($row) {
-            return $row['km_recorridos'] > 0 && $row['litros_diesel'] > 0;
-        })->count();
+        $consumoLitrosPor100Km = $km > 0 && $litrosCalculoConsumo > 0
+            ? round(($litrosCalculoConsumo / $km) * 100, 3)
+            : null;
 
-        $viajesSinDatos = $rows->filter(function ($row) {
-            return $row['km_recorridos'] <= 0 || $row['litros_diesel'] <= 0;
-        })->count();
+        $observacion = null;
 
-        return response()->json([
-            'success' => true,
-            'resumen' => [
-                'total_viajes' => $rows->count(),
-                'viajes_con_datos' => $viajesConDatos,
-                'viajes_sin_datos' => $viajesSinDatos,
-                'total_km' => $totalKm,
-                'total_litros' => $totalLitros,
-                'rendimiento_promedio' => $rendimientoPromedio,
-            ],
-            'rows' => $rows->values(),
-        ]);
+        if (!$siguienteAsignacion) {
+            $observacion = 'Pendiente de siguiente carga para calcular consumo';
+        } elseif ($km <= 0 && $litrosCalculoConsumo <= 0) {
+            $observacion = 'Sin KM y sin litros para cálculo';
+        } elseif ($km <= 0) {
+            $observacion = 'Sin KM capturados';
+        } elseif ($litrosCalculoConsumo <= 0) {
+            $observacion = 'El siguiente viaje no tiene litros capturados';
+        }
+
+        return [
+            'asignacion_id' => $asignacion->id,
+            'cotizacion_id' => $cotizacion?->id,
+            'contenedor_id' => $contenedor?->id,
+
+            'fecha_inicio' => $asignacion->fecha_inicio
+                ? Carbon::parse($asignacion->fecha_inicio)->format('d/m/Y')
+                : 'S/N',
+
+            'fecha_fin' => $asignacion->fecha_fin
+                ? Carbon::parse($asignacion->fecha_fin)->format('d/m/Y')
+                : 'S/N',
+
+            'contenedor' => $obtenerTextoContenedor($asignacion),
+            'operador' => $asignacion->Operador?->nombre ?? 'S/N',
+
+            'origen' => $cotizacion ? $cotizacion->origen : 'S/N',
+            'destino' => $cotizacion ? $cotizacion->destino : 'S/N',
+
+            /*
+             * KM del viaje actual.
+             */
+            'km_recorridos' => round($km, 2),
+
+            /*
+             * Litros guardados realmente en este viaje.
+             * Esto evita la confusión de que "no se guardó".
+             */
+            'litros_capturados_viaje' => round($litrosCapturadosViaje, 3),
+
+            /*
+             * Litros que se usan para calcular el consumo de este viaje.
+             * Vienen del siguiente viaje.
+             */
+            'litros_calculo_consumo' => round($litrosCalculoConsumo, 3),
+
+            /*
+             * Mantengo este alias por compatibilidad, pero ya no lo uses en front.
+             */
+            'litros_diesel' => round($litrosCapturadosViaje, 3),
+
+            'rendimiento_km_litro' => $rendimiento,
+            'consumo_litros_100_km' => $consumoLitrosPor100Km,
+
+            'litros_tomados_de_asignacion_id' => $siguienteAsignacion?->id,
+            'litros_tomados_de_cotizacion_id' => $cotizacionSiguiente?->id,
+            'litros_tomados_de_contenedor' => $siguienteAsignacion
+                ? $obtenerTextoContenedor($siguienteAsignacion)
+                : null,
+
+            'observacion' => $observacion,
+        ];
+    });
+
+    $totalKm = round($rows->sum('km_recorridos'), 2);
+
+    /*
+     * Total capturado: suma de litros guardados en los viajes visibles.
+     * Total cálculo: suma de litros realmente usados para rendimiento.
+     */
+    $totalLitrosCapturados = round($rows->sum('litros_capturados_viaje'), 3);
+    $totalLitrosCalculo = round($rows->sum('litros_calculo_consumo'), 3);
+
+    $rendimientoPromedio = $totalLitrosCalculo > 0
+        ? round($totalKm / $totalLitrosCalculo, 3)
+        : null;
+
+    $consumoPromedioLitros100Km = $totalKm > 0 && $totalLitrosCalculo > 0
+        ? round(($totalLitrosCalculo / $totalKm) * 100, 3)
+        : null;
+
+    $viajesConDatos = $rows->filter(function ($row) {
+        return $row['km_recorridos'] > 0 && $row['litros_calculo_consumo'] > 0;
+    })->count();
+
+    $viajesSinDatos = $rows->filter(function ($row) {
+        return $row['km_recorridos'] <= 0 || $row['litros_calculo_consumo'] <= 0;
+    })->count();
+
+    return response()->json([
+        'success' => true,
+        'resumen' => [
+            'total_viajes' => $rows->count(),
+            'viajes_con_datos' => $viajesConDatos,
+            'viajes_sin_datos' => $viajesSinDatos,
+            'total_km' => $totalKm,
+
+
+            'total_litros' => $totalLitrosCalculo,
+
+
+            'total_litros_capturados' => $totalLitrosCapturados,
+            'total_litros_calculo' => $totalLitrosCalculo,
+
+            'rendimiento_promedio' => $rendimientoPromedio,
+            'consumo_promedio_litros_100_km' => $consumoPromedioLitros100Km,
+        ],
+        'rows' => $rows->values(),
+    ]);
+
     }
 
 
