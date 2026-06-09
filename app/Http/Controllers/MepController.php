@@ -147,7 +147,13 @@ class MepController extends Controller
 
     public function validarEquiposEmpresa($numUnidad, $imei, $placas, $serie, $provGps, $tipoEquipo)
     {
+        if (empty($numUnidad)) {
+            return null; // Si no se proporciona número de unidad, no hacemos nada
+        }
+
         $unidad = Equipo::where('id_empresa', auth()->user()->id_empresa)->where('id_equipo', $numUnidad)->where('user_id', auth()->user()->id);
+
+
         if (!$unidad->exists()) {
             $unidad = new Equipo();
             $unidad->id_equipo = $numUnidad;
@@ -255,6 +261,7 @@ class MepController extends Controller
         $idunidad = $unidad->id;
         //Chasis / Plataforma
         $idChasisA = self::validarEquiposEmpresa($formData['txtNumChasisA'], $formData['txtImeiChasisA'], $formData['txtPlacasA'], '', $formData['selectChasisAGPS'], 'Chasis / Plataforma');
+
         $idChasisB = self::validarEquiposEmpresa($formData['txtNumChasisB'], $formData['txtImeiChasisB'], $formData['txtPlacasB'], '', $formData['selectChasisBGPS'], 'Chasis / Plataforma');
 
 

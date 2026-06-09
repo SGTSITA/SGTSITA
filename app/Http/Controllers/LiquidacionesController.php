@@ -495,28 +495,42 @@ class LiquidacionesController extends Controller
                     continue;
                 }
 
-                if (!empty($item['idviatico'])) { // Actualizar registro existente
-                    $viaticoAntes = ViaticosOperador::where('id', $item['idviatico'])->first();
-                    $montoAntes = $viaticoAntes->monto;
-                    ViaticosOperador::where('id', $item['idviatico'])
-                        ->update([
-                            "descripcion_gasto" => $item['motivo'],
-                            "monto" => $item['monto'],
-                        ]);
+                $viaticoEntidad= null;
 
-                    $diferencia = $item['monto'] - $montoAntes;
-                    Asignaciones::where('id_contenedor', $documCotizacion->id)
-                        ->update([
-                            "restante_pago_operador" => DB::raw('restante_pago_operador + ' . $diferencia)
-                        ]);
+                if (!empty($item['idviatico'])) { // Actualizar registro existente
+                       $viaticoAntes = ViaticosOperador::where('id', $item['idviatico'])
+        ->lockForUpdate()
+        ->firstOrFail();
+
+    $montoAntes = (float) $viaticoAntes->monto;
+    $montoNuevo = (float) $item['monto'];
+
+    $diferencia = $montoNuevo - $montoAntes;
+
+    $viaticoAntes->update([
+        "descripcion_gasto" => $item['motivo'],
+        "monto" => $montoNuevo,
+    ]);
+
+    $viaticoEntidad = $viaticoAntes->fresh();
+
+    if ($diferencia != 0) {
+        Asignaciones::where('id_contenedor', $documCotizacion->id)
+            ->update([
+                "restante_pago_operador" => DB::raw(
+                    'COALESCE(restante_pago_operador, 0) + ' . number_format($diferencia, 2, '.', '')
+                )
+            ]);
+    }
 
                 } else {
                     // Nuevo registro
-                    ViaticosOperador::insert([
-                "id_cotizacion" => $documCotizacion->id_cotizacion,
-                "descripcion_gasto" => $item['motivo'],
-                "monto" => $item['monto'],
-                    ]);
+                  $viaticoEntidad = ViaticosOperador::create([
+    "id_cotizacion" => $documCotizacion->id_cotizacion,
+    "descripcion_gasto" => $item['motivo'],
+    "monto" => $item['monto'],
+]);
+
                     Asignaciones::where('id_contenedor', $documCotizacion->id)
                         ->update([
                             "restante_pago_operador" => DB::raw('restante_pago_operador + '.$item['monto'])
@@ -524,14 +538,26 @@ class LiquidacionesController extends Controller
 
                 }
 
-
+//dd($viaticoEntidad);
 
                 $asignacion = Asignaciones::where('id_contenedor', $documCotizacion->id)->first();
 
                 $montoJustificacion = $item['monto'];
                 $sinJustificar = $asignacion->restante_pago_operador ?? 0;
 
-                $datosGasto = [
+                $gastoOp = GastosOperadores::where('id_gasto_origen', $viaticoEntidad->id)->first();
+
+                if($gastoOp){
+
+                    $gastoOp->update([
+                        "cantidad" => ($montoJustificacion > $sinJustificar) ? $sinJustificar : $montoJustificacion,
+                        "tipo" => $item['motivo'],
+                        "estatus" => 'Pagado',
+                        "pago_inmediato" => 1,
+                    ]);
+
+                } else {
+                      $datosGasto = [
                     "id_cotizacion" => $documCotizacion->id_cotizacion,
                     "id_banco" => null,
                     "id_asignacion" => $asignacion->id,
@@ -542,9 +568,13 @@ class LiquidacionesController extends Controller
                     "fecha_pago" => null,
                     "pago_inmediato" => 1,
                     "created_at" => Carbon::now(),
+                    "id_gasto_origen" =>  $viaticoEntidad->id ?? null,
                 ];
 
                 GastosOperadores::insert($datosGasto);
+                }
+
+
 
                 // Si excede
                 if ($montoJustificacion > $sinJustificar) {
@@ -559,6 +589,7 @@ class LiquidacionesController extends Controller
                         "fecha_pago" => null,
                         "pago_inmediato" => 0,
                         "created_at" => Carbon::now(),
+                        "id_gasto_origen" =>  $viaticoEntidad->id ?? null,
                     ];
 
                     GastosOperadores::insert($excedente);

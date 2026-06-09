@@ -601,7 +601,7 @@ $contenedor = DocumCotizacion::find($request->idContenendor);
 
                         array_push($contenedoresAbonos, $contenedorAbono);
 
-                        Bancos::where('id', '=', $request->get('cmbBanco'))->update(["saldo" => DB::raw("saldo - ". $CantineroViaje)]);
+                     /*        Bancos::where('id', '=', $request->get('cmbBanco'))->update(["saldo" => DB::raw("saldo - ". $CantineroViaje)]);
                         BancoDineroOpe::insert([[
                                                 'id_operador' => $request->get('cmbOperador'),
                                                 'id_banco1' => $request->get('cmbBanco'),
@@ -611,7 +611,7 @@ $contenedor = DocumCotizacion::find($request->idContenendor);
                                                 'id_empresa' => auth()->user()->id_empresa,
                                                 'contenedores' => json_encode($contenedoresAbonos),
                                                 'descripcion_gasto' => 'Dinero para viaje'
-                                            ]]);
+                                            ]]); */
 
                         $dineroViaje = new DineroContenedor();
                         $dineroViaje->id_contenedor = $asignaciones->id_contenedor;
@@ -959,7 +959,15 @@ $contenedor = DocumCotizacion::find($request->idContenendor);
                 $monto = floatval($gasto['monto'] ?? 0);
                 $esPagoInmediato = !empty($gasto['pagoInmediato']);
                 $idBanco = !empty($gasto['banco']) ? intval($gasto['banco']) : null;
-                $fechaAplicacion = !empty($gasto['fechaAplicacion']) ? $gasto['fechaAplicacion'] : null;
+              $fechaAplicacionInput = $gasto['fechaAplicacion'] ?? null;
+
+                $fechaAplicacion = null;
+
+                if (!empty($fechaAplicacionInput)) {
+                    $fechaAplicacion = Carbon::createFromFormat('d/m/Y', trim($fechaAplicacionInput))->format('Y-m-d');
+                }
+
+
                 $numContenedor = $num_Contenedor;
 
                 //  dd($fechaAplicacion);
@@ -1017,7 +1025,7 @@ $contenedor = DocumCotizacion::find($request->idContenendor);
                     "cantidad" => $monto,
                     "tipo" => $tipoGasto,
                     "estatus" => $esPagoInmediato ? 'Pagado' : 'Pago Pendiente',
-                    "fecha_pago" => $esPagoInmediato ? Carbon::now() : null,
+                    "fecha_pago" => $esPagoInmediato ? $fechaAplicacion : null,
                     "pago_inmediato" => $esPagoInmediato,
                     "created_at" => Carbon::now()
                 ];
@@ -1050,7 +1058,7 @@ $contenedor = DocumCotizacion::find($request->idContenendor);
                         ['num_contenedor' => $numContenedor, 'abono' => $monto]
                     ]);
 
-                    $bancoDinero[] = [
+                   /*  $bancoDinero[] = [
                         "monto1" => $monto,
                         "metodo_pago1" => 'Transferencia',
                         "descripcion" => "{$tipoGasto} {$numContenedor}",
@@ -1058,14 +1066,14 @@ $contenedor = DocumCotizacion::find($request->idContenendor);
                         "contenedores" => $contenedoresAbonosJson,
                         "tipo" => 'Salida',
                         "fecha_pago" => date('Y-m-d'),
-                    ];
+                    ]; */
                     $gastosNuevo  = null;
                     if (!empty($datosGasto)) {
                         Log::info('Insertando gastos operadores:', $datosGasto);
                         $gastosNuevo =   GastosOperadores::create($datosGasto);
                     }
 
-                    Log::info('Armar data paa nuevo gasto:', $datosGasto);
+                    //Log::info('Armar data paa nuevo gasto:', $datosGasto);
                     Log::info('inserto en bd:', ['registro' => $gastosNuevo]);
 
 
@@ -1074,10 +1082,7 @@ $contenedor = DocumCotizacion::find($request->idContenendor);
                             'cuenta_bancaria_id' => $idBanco,            'tipo' => 'cargo',
                             'monto' => floatval($monto),
                             'concepto' => "GOP ". "{$tipoGasto} {$numContenedor}" ,
-                            'fecha_movimiento' => \Carbon\Carbon::createFromFormat(
-                                'd/m/Y',
-                                $fechaAplicacion
-                            )->format('Y-m-d'),
+                            'fecha_movimiento' => $fechaAplicacion,
                             'origen' => null,
                             'referencia' => 'Gastos' ,
                             'detalles' => $contenedoresAbonosJson,
@@ -1096,10 +1101,10 @@ $contenedor = DocumCotizacion::find($request->idContenendor);
                         throw new \Exception('No se pudo crear el movimiento bancario, gasto ');
                     }
 
-                    //Descontar saldo de inmediato, mal echo xd
+                  /*   //Descontar saldo de inmediato, mal echo xd
                     Bancos::where('id', $idBanco)->update([
                         "saldo" => DB::raw("saldo - {$monto}")
-                    ]);
+                    ]); */
                 } else {
                     if (!empty($datosGasto)) {
                         Log::info('Insertando gastos operadores pendientes:', $datosGasto);
@@ -1110,10 +1115,10 @@ $contenedor = DocumCotizacion::find($request->idContenendor);
 
 
 
-            if (!empty($bancoDinero)) {
+           /*  if (!empty($bancoDinero)) {
                 Log::info('Insertando movimientos bancarios:', $bancoDinero);
                 BancoDinero::insert($bancoDinero);
-            }
+            } */
 
             DB::commit();
 

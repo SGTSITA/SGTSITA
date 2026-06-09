@@ -1,118 +1,75 @@
 @extends('layouts.app')
 
-@section('content')
+@section('css')
     <style>
-        .consumo-card {
-            border-radius: 18px;
-            padding: 16px;
-            border: 1px solid #e5e7eb;
-            background: #ffffff;
-            box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
-            height: 100%;
+        .header-center .ag-header-cell-label {
+            justify-content: center;
+            text-align: center;
         }
 
-        .consumo-card small {
-            display: block;
-            font-size: 12px;
-            font-weight: 800;
-            text-transform: uppercase;
-            color: #64748b;
-            margin-bottom: 6px;
+        .header-center .ag-header-cell-text {
+            white-space: normal;
+            line-height: 1.3;
         }
 
-        .consumo-card h5 {
-            margin: 0;
-            font-weight: 900;
-            color: #0f172a;
-        }
-
-        .consumo-card-primary {
-            background: #eff6ff;
-            border-color: #bfdbfe;
-        }
-
-        .consumo-card-success {
-            background: #ecfdf5;
-            border-color: #bbf7d0;
-        }
-
-        .consumo-card-warning {
-            background: #fffbeb;
-            border-color: #fde68a;
-        }
-
-        .consumo-card-danger {
-            background: #fff1f2;
-            border-color: #fecdd3;
-        }
-
-        .consumo-table thead th {
-            background: #f8fafc;
-            color: #334155;
-            font-size: 12px;
-            text-transform: uppercase;
-            letter-spacing: .04em;
-        }
-
-        .rendimiento-bueno {
-            color: #15803d !important;
-            font-weight: 800;
-        }
-
-        .rendimiento-medio {
-            color: #ca8a04 !important;
-            font-weight: 800;
-        }
-
-        .rendimiento-bajo {
-            color: #b91c1c !important;
-            font-weight: 800;
-        }
-
-
-        .ruta-cell {
-            min-width: 260px;
-            max-width: 340px;
-            white-space: normal !important;
-        }
-
-        .ruta-box {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            max-width: 340px;
-        }
-
-        .ruta-item {
-            display: flex;
-            flex-direction: column;
+        .cell-two-lines {
+            width: 100%;
+            overflow: hidden;
             line-height: 1.25;
         }
 
-        .ruta-label {
-            font-size: 10px;
-            font-weight: 800;
-            text-transform: uppercase;
-            color: #64748b;
-            letter-spacing: .04em;
-        }
-
-        .ruta-text {
-            font-size: 12px;
+        .cell-main {
             font-weight: 600;
-            color: #111827;
-            white-space: normal;
-            overflow-wrap: anywhere;
-            word-break: break-word;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
-        .ruta-divider {
-            height: 1px;
-            background: #e5e7eb;
+        .cell-sub {
+            font-size: 11px;
+            color: #6c757d;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .cell-truncate {
             width: 100%;
+            display: block;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .rendimiento-bueno {
+            color: #198754;
+            font-weight: 700;
+        }
+
+        .rendimiento-medio {
+            color: #b7791f;
+            font-weight: 700;
+        }
+
+        .rendimiento-bajo {
+            color: #dc3545;
+            font-weight: 700;
+        }
+
+        .badge-observacion-grid {
+            display: block;
+            max-width: 100%;
+            white-space: normal !important;
+            word-break: break-word;
+            overflow-wrap: anywhere;
+            line-height: 1.3;
+            text-align: left;
         }
     </style>
+@endsection
 
+
+@section('content')
     <div class="card mb-4">
         <div class="card-header pb-0">
             <h5>Reporte de consumo por unidad</h5>
@@ -207,31 +164,7 @@
         </div>
 
         <div class="card-body">
-            <div class="table-responsive">
-                <table class="table consumo-table align-items-center mb-0">
-                    <thead>
-                        <tr>
-                            <th>Fecha</th>
-                            <th>Contenedor</th>
-                            <th>Operador</th>
-                            <th>Ruta</th>
-                            <th class="text-end">KM</th>
-                            <th class="text-end">L capturados</th>
-                            <th class="text-end">L cálculo</th>
-                            <th class="text-end">Rendimiento</th>
-                            <th>Observación</th>
-                        </tr>
-                    </thead>
-
-                    <tbody id="tbodyConsumoUnidad">
-                        <tr>
-                            <td colspan="7" class="text-center text-muted py-4">
-                                Selecciona unidad y rango de fechas para consultar.
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+            <div id="gridConsumoUnidad" class="col-12 ag-theme-quartz mb-6" style="height: 610px"></div>
         </div>
     </div>
 @endsection
@@ -240,6 +173,8 @@
     <script>
         const URL_CONSUMO_UNIDADES = "{{ route('reporteria.consumo-unidades.data') }}";
     </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.js"></script>
 
     <script
         src="{{ asset('js/sgt/reporteria/consumo-unidades.js') }}?v={{ filemtime(public_path('js/sgt/reporteria/consumo-unidades.js')) }}">

@@ -13,6 +13,14 @@ class ViaticosOperador extends Model
     protected $table = "viaticos_operadores";
     protected $appends = ['contenedor'];
 
+      protected $fillable = [
+        'id_cotizacion',
+        'descripcion_gasto',
+        'monto',
+        'fecha_comprobante',
+        'comprobante',
+    ];
+
     public function getContenedorAttribute()
     {
         /* $contenedor = DocumCotizacion::where('id_cotizacion', $this->id_cotizacion)->first();

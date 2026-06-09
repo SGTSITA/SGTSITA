@@ -2590,6 +2590,7 @@ public function indexRendimiento()
             'asignacion_id' => $asignacion->id,
             'cotizacion_id' => $cotizacion?->id,
             'contenedor_id' => $contenedor?->id,
+            'peso_contenedor' => $cotizacion?->peso_contenedor ?? 0,
 
             'fecha_inicio' => $asignacion->fecha_inicio
                 ? Carbon::parse($asignacion->fecha_inicio)->format('d/m/Y')

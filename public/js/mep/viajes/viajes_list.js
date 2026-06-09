@@ -334,6 +334,35 @@ function asignarOperador2(planear = 0) {
 
         return true;
     });
+
+    let fecha_inicio = formData["txtFechaInicio"]
+        ? new Date(formData["txtFechaInicio"])
+        : null;
+    let fecha_final = formData["txtFechaFinal"]
+        ? new Date(formData["txtFechaFinal"])
+        : null;
+
+    if (fecha_inicio && fecha_final && fecha_inicio > fecha_final) {
+        Swal.fire(
+            "Fechas incorrectas",
+            "La fecha de inicio no puede ser mayor a la fecha final. Por favor verifique las fechas proporcionadas.",
+            "warning",
+        );
+        return false;
+    }
+
+    let ChasisA = formData["txtNumChasisA"] ? formData["txtNumChasisA"] : null;
+    let ChasisB = formData["txtNumChasisB"] ? formData["txtNumChasisB"] : null;
+
+    if (ChasisA && ChasisB && ChasisA === ChasisB) {
+        Swal.fire(
+            "Chasis duplicados",
+            "No se pueden asignar dos chasis con el mismo número.",
+            "warning",
+        );
+        return false;
+    }
+
     formData["planear"] = planear;
 
     if (!passValidation) return passValidation;
