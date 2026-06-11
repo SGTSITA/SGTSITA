@@ -330,8 +330,8 @@
                 </td>
 
                 <td>
-                    <input type="number" class="form-control detalle-monto text-end" step=".01" min="0.01"
-                        value="0.00" required>
+                    <input type="number" class="form-control detalle-monto text-end" step=".01" value="0.00"
+                        required>
                 </td>
 
 

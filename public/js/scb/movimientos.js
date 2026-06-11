@@ -380,7 +380,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
             return false;
         }
-
+        /*
         const detalleInvalido = detalles.find(
             (detalle) => !detalle.descripcion || Number(detalle.monto) <= 0,
         );
@@ -397,7 +397,7 @@ document.addEventListener("DOMContentLoaded", function () {
             });
 
             return false;
-        }
+        } */
 
         if (totalDetalle > totalCapturado) {
             mostrarErrorDetalles(
