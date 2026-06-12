@@ -347,7 +347,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 row.querySelector(".detalle-monto").value || 0,
             );
 
-            if (!descripcion || monto <= 0) {
+            if (!descripcion || !unidadId) {
                 return;
             }
 
