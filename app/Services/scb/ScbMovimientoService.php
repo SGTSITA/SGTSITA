@@ -254,18 +254,18 @@ class ScbMovimientoService
         $totalMovimiento = round((float) ($data['total_movimiento'] ?? 0), 2);
         $totalDetalles = $this->calcularTotalDetalles($data['detalles'] ?? []);
 
-        if ($totalMovimiento <= 0) {
+       /*  if ($totalMovimiento <= 0) {
             throw ValidationException::withMessages([
                 'total_movimiento' => [
                     'El total del movimiento debe ser mayor a cero.',
                 ],
             ]);
-        }
+        } */
 
-        if (empty($data['detalles']) || $totalDetalles <= 0) {
+        if (empty($data['detalles'])) {
             throw ValidationException::withMessages([
                 'detalles' => [
-                    'Agrega al menos un detalle con monto mayor a cero.',
+                    'Agrega al menos un detalle.',
                 ],
             ]);
         }
