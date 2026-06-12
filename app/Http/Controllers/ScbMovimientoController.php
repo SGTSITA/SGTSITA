@@ -152,13 +152,13 @@ class ScbMovimientoController extends Controller
         'concepto' => ['required', 'string', 'max:255'],
         'referencia_bancaria' => ['nullable', 'string', 'max:150'],
         'observaciones' => ['nullable', 'string'],
-        'total_movimiento' => ['required', 'numeric', 'min:0.01'],
+        'total_movimiento' => ['required', 'numeric'],
 
         'detalles' => ['required', 'array', 'min:1'],
         'detalles.*.unidad_id' => ['nullable', 'exists:scb_bancos_unidades_modulo,id'],
         'detalles.*.descripcion' => ['required', 'string', 'max:255'],
         'detalles.*.referencia' => ['nullable', 'string', 'max:150'],
-        'detalles.*.monto' => ['required', 'numeric', 'gt:0'],
+        'detalles.*.monto' => ['required', 'numeric'],
         'detalles.*.observaciones' => ['nullable', 'string'],
     ]);
 
