@@ -1,8 +1,8 @@
 ---
 title: Webcam
 categories:
-  - Devices
+    - Devices
 tags:
-  - camera
-  - video
+    - camera
+    - video
 ---

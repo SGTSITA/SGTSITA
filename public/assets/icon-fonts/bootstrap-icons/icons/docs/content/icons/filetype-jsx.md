@@ -1,12 +1,12 @@
 ---
 title: Filetype jsx
 categories:
-  - Files and folders
+    - Files and folders
 tags:
-  - file
-  - "file type"
-  - extension
-  - code
-  - javascript
-  - react
+    - file
+    - 'file type'
+    - extension
+    - code
+    - javascript
+    - react
 ---

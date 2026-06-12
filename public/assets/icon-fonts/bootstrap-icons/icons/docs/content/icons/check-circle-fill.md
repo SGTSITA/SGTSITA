@@ -1,9 +1,9 @@
 ---
 title: Check circle fill
 categories:
-  - Alerts, warnings, and signs
+    - Alerts, warnings, and signs
 tags:
-  - checkmark
-  - confirm
-  - done
+    - checkmark
+    - confirm
+    - done
 ---

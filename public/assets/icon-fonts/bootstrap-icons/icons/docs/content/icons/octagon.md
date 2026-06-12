@@ -1,8 +1,8 @@
 ---
 title: Octagon
 categories:
-  - Shapes
+    - Shapes
 tags:
-  - shape
-  - polygon
+    - shape
+    - polygon
 ---

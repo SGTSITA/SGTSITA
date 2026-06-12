@@ -1,8 +1,8 @@
 ---
 title: Window
 categories:
-  - Layout
+    - Layout
 tags:
-  - app
-  - application
+    - app
+    - application
 ---

@@ -1,13 +1,13 @@
 ---
 title: Person plus
 categories:
-  - People
+    - People
 tags:
-  - human
-  - individual
-  - avatar
-  - user
-  - new
-  - add
-  - account
+    - human
+    - individual
+    - avatar
+    - user
+    - new
+    - add
+    - account
 ---

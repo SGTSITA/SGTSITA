@@ -1,8 +1,8 @@
 ---
 title: Braces asterisk
 categories:
-  - Typography
+    - Typography
 tags:
-  - code
-  - css
+    - code
+    - css
 ---

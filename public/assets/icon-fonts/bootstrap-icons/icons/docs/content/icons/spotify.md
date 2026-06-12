@@ -1,7 +1,7 @@
 ---
 title: Spotify
 categories:
-  - Brand
+    - Brand
 tags:
-  - social
+    - social
 ---

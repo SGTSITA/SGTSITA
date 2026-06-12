@@ -2,89 +2,80 @@ let urlRepo = '';
 
 var _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
-var [BoletaLib, Doda, PreAlta,CartaPortePDF,CartaPorteXML,CCP, EIR] = [
-    {"opcion":"BoletaLib","titulo":"Boleta de Liberación","agGrid": "BoletaLiberacion"},
-    {"opcion":"Doda","titulo":"DODA","agGrid": "DODA"},
-    {"opcion":"PreAlta","titulo":"Pre Alta","agGrid": "PreAlta"},
-    {"opcion":"CartaPortePDF","titulo":"Carta Porte PDF","agGrid": "CartaPorte"},
-    {"opcion":"CartaPorteXML","titulo":"Carta Porte XML","agGrid": "CartaPorteXML"},
-    {"opcion":"CCP","titulo":"CCP - Carta Porte","agGrid": "CCP"},
-    {"opcion":"EIR","titulo":"EIR - Comprobante de vacío","agGrid": "EIR"},
-    
+var [BoletaLib, Doda, PreAlta, CartaPortePDF, CartaPorteXML, CCP, EIR] = [
+    { opcion: 'BoletaLib', titulo: 'Boleta de Liberación', agGrid: 'BoletaLiberacion' },
+    { opcion: 'Doda', titulo: 'DODA', agGrid: 'DODA' },
+    { opcion: 'PreAlta', titulo: 'Pre Alta', agGrid: 'PreAlta' },
+    { opcion: 'CartaPortePDF', titulo: 'Carta Porte PDF', agGrid: 'CartaPorte' },
+    { opcion: 'CartaPorteXML', titulo: 'Carta Porte XML', agGrid: 'CartaPorteXML' },
+    { opcion: 'CCP', titulo: 'CCP - Carta Porte', agGrid: 'CCP' },
+    { opcion: 'EIR', titulo: 'EIR - Comprobante de vacío', agGrid: 'EIR' },
 ];
 
 let fileSettings = CartaPorteXML;
 
-
-
 let btnFileCartaPortePDF = document.querySelector('#btnFileCartaPortePDF');
 let btnFileCartaPorteXML = document.querySelector('#btnFileCartaPorteXML');
 
-
-
-btnFileCartaPortePDF.addEventListener('click',()=>{
+btnFileCartaPortePDF.addEventListener('click', () => {
     fileSettings = CartaPortePDF;
-})
+});
 
-btnFileCartaPorteXML.addEventListener('click',()=>{
+btnFileCartaPorteXML.addEventListener('click', () => {
     fileSettings = CartaPorteXML;
-})
-
+});
 
 const btnDocumets = document.querySelectorAll('.btnDocs');
 btnDocumets.forEach((e) => {
-    e.addEventListener('click',goToUploadDocuments)
-})
+    e.addEventListener('click', goToUploadDocuments);
+});
 
 var uploadConfig = null;
 
-function goToUploadDocuments(){
-  
-    let labelTitleDoc = document.querySelector('#labelTitleDoc')
-    labelTitleDoc.textContent = fileSettings.titulo
-    let numContenedorLabel = document.querySelector("#numContenedorLabel")
-    numContenedorLabel.textContent = localStorage.getItem('numContenedor'); 
+function goToUploadDocuments() {
+    let labelTitleDoc = document.querySelector('#labelTitleDoc');
+    labelTitleDoc.textContent = fileSettings.titulo;
+    let numContenedorLabel = document.querySelector('#numContenedorLabel');
+    numContenedorLabel.textContent = localStorage.getItem('numContenedor');
     const modalElement = document.getElementById('kt_modal_fileuploader');
     const bootstrapModal = new bootstrap.Modal(modalElement);
     bootstrapModal.show();
 }
 
-function resetUploadConfig(){
+function resetUploadConfig() {
     var fileInputElement = document.getElementById('fileuploader');
     // Obtener la instancia de Fileuploader asociada a este campo de carga
     var api = $.fileuploader.getInstance(fileInputElement);
 
-   urlRepo = fileSettings.opcion;   
-   numContenedor = localStorage.getItem('numContenedor'); 
-   
+    urlRepo = fileSettings.opcion;
+    numContenedor = localStorage.getItem('numContenedor');
+
     api.setOption('upload', {
         url: '/contenedores/files/upload',
         data: {
-            urlRepo:urlRepo,
+            urlRepo: urlRepo,
             numContenedor: numContenedor,
-            _token: _token
+            _token: _token,
         },
         type: 'POST',
         enctype: 'multipart/form-data',
         start: true,
         synchron: true,
-        onBeforeSend: (xhr, settings) => {
-
-        },
-        onSuccess: function(result, item) {
-
+        onBeforeSend: (xhr, settings) => {},
+        onSuccess: function (result, item) {
             var data = {};
 
             // get data
-            if (result && result.files)
-                data = result;
-            else
-                data.hasWarnings = true;
+            if (result && result.files) data = result;
+            else data.hasWarnings = true;
 
             // if success
             if (data.isSuccess && data.files[0]) {
                 item.name = data.files[0].name;
-                item.html.find('.column-title > div:first-child').text(data.files[0].old_name).attr('title', data.files[0].old_name);
+                item.html
+                    .find('.column-title > div:first-child')
+                    .text(data.files[0].old_name)
+                    .attr('title', data.files[0].old_name);
             }
 
             // if warnings
@@ -101,15 +92,15 @@ function resetUploadConfig(){
             }
 
             item.html.find('.fileuploader-action-remove').addClass('fileuploader-action-success');
-            setTimeout(function() {
+            setTimeout(function () {
                 item.html.find('.progress-bar2').fadeOut(400);
             }, 400);
 
-          //  const gridApi = gridOptions.api;
-            if(apiGrid){
+            //  const gridApi = gridOptions.api;
+            if (apiGrid) {
                 let dataGrid = apiGrid.getGridOption('rowData');
-                var rowIndex = dataGrid.findIndex(d => d.NumContenedor == numContenedor)
-                
+                var rowIndex = dataGrid.findIndex((d) => d.NumContenedor == numContenedor);
+
                 const colId = fileSettings.agGrid;
 
                 // Obtener el nodo de la fila
@@ -120,7 +111,6 @@ function resetUploadConfig(){
                     rowNode.setDataValue(colId, true);
                 }
             }
-            
 
             /*toastr.options = {
                 "closeButton": true,
@@ -141,120 +131,121 @@ function resetUploadConfig(){
               };
               
               toastr.success( `Se cargó el archivo correctamente en el contenedor ${fileSettings.titulo}`,`${fileSettings.titulo}: Carga Exitosa`);*/
-
         },
-        onError: function(item) {
+        onError: function (item) {
             var progressBar = item.html.find('.progress-bar2');
 
             if (progressBar.length) {
-                progressBar.find('span').html(0 + "%");
-                progressBar.find('.fileuploader-progressbar .bar').width(0 + "%");
+                progressBar.find('span').html(0 + '%');
+                progressBar.find('.fileuploader-progressbar .bar').width(0 + '%');
                 item.html.find('.progress-bar2').fadeOut(400);
             }
 
-            item.upload.status != 'cancelled' && item.html.find('.fileuploader-action-retry').length == 0 ? item.html.find('.column-actions').prepend(
-                '<button type="button" class="fileuploader-action fileuploader-action-retry" title="Retry"><i class="fileuploader-icon-retry"></i></button>'
-            ) : null;
+            item.upload.status != 'cancelled' && item.html.find('.fileuploader-action-retry').length == 0
+                ? item.html
+                      .find('.column-actions')
+                      .prepend(
+                          '<button type="button" class="fileuploader-action fileuploader-action-retry" title="Retry"><i class="fileuploader-icon-retry"></i></button>',
+                      )
+                : null;
         },
-        onProgress: function(data, item) {
+        onProgress: function (data, item) {
             var progressBar = item.html.find('.progress-bar2');
 
             if (progressBar.length > 0) {
                 progressBar.show();
-                progressBar.find('span').html(data.percentage + "%");
-                progressBar.find('.fileuploader-progressbar .bar').width(data.percentage + "%");
+                progressBar.find('span').html(data.percentage + '%');
+                progressBar.find('.fileuploader-progressbar .bar').width(data.percentage + '%');
             }
         },
-        onComplete: ()=>{
-            getFilesContenedor()
-           
-            setTimeout(()=> {
-               
-               adjuntarDocumentos()
-            },2500)
-            
+        onComplete: () => {
+            getFilesContenedor();
+
+            setTimeout(() => {
+                adjuntarDocumentos();
+            }, 2500);
         },
     });
 }
 
-function getFilesContenedor(){
-    let numContenedor = localStorage.getItem('numContenedor')
+function getFilesContenedor() {
+    let numContenedor = localStorage.getItem('numContenedor');
     let requiredFiles = [
-                            {"fileCode" : "Boleta-de-liberacion"},
-                            {"fileCode" : "Doda"},
-                            {"fileCode":"Carta-Porte"},
-                            {'fileCode': 'Carta-Porte-XML'},
-                            {"fileCode" : "Formato-para-Carta-porte"},
-                            {"fileCode":"Pre-Alta"},
-                            {"fileCode" : "eir"}
-                        ]
+        { fileCode: 'Boleta-de-liberacion' },
+        { fileCode: 'Doda' },
+        { fileCode: 'Carta-Porte' },
+        { fileCode: 'Carta-Porte-XML' },
+        { fileCode: 'Formato-para-Carta-porte' },
+        { fileCode: 'Pre-Alta' },
+        { fileCode: 'eir' },
+    ];
     $.ajax({
-        url:`/viajes/file-manager/get-file-list/${numContenedor}`,
-        type:'get',
-        beforeSend:()=>{},
-        success:(response)=>{
-            let documentos = response.data
+        url: `/viajes/file-manager/get-file-list/${numContenedor}`,
+        type: 'get',
+        beforeSend: () => {},
+        success: (response) => {
+            let documentos = response.data;
             let badge = null;
             let btnVer = null;
             let fileSize = 0;
             let fileType = null;
             let iconImg = null;
 
-            requiredFiles.forEach((f)=>{
-                iconImg = `img-${f.fileCode}`
-                let imgFile = document.querySelector("#"+iconImg)
-                imgFile.src = `/img/not-file.png`
-                $(`#filSize-${f.fileCode}`).text('0 KB')
-                $(`#badge-${f.fileCode}` ).addClass('bg-gradient-warning').removeClass('bg-gradient-success').text('Pendiente')
-                document.querySelector(`#btn-ver-${f.fileCode}`).href = `javascipt:void()`
-            })
-            documentos.forEach((d)=>{
-                badge = `badge-${d.fileCode}` 
-                btnVer = `btn-ver-${d.fileCode}`
-                fileSize = `filSize-${d.fileCode}`
-                iconImg = `img-${d.fileCode}`
+            requiredFiles.forEach((f) => {
+                iconImg = `img-${f.fileCode}`;
+                let imgFile = document.querySelector('#' + iconImg);
+                imgFile.src = `/img/not-file.png`;
+                $(`#filSize-${f.fileCode}`).text('0 KB');
+                $(`#badge-${f.fileCode}`)
+                    .addClass('bg-gradient-warning')
+                    .removeClass('bg-gradient-success')
+                    .text('Pendiente');
+                document.querySelector(`#btn-ver-${f.fileCode}`).href = `javascipt:void()`;
+            });
+            documentos.forEach((d) => {
+                badge = `badge-${d.fileCode}`;
+                btnVer = `btn-ver-${d.fileCode}`;
+                fileSize = `filSize-${d.fileCode}`;
+                iconImg = `img-${d.fileCode}`;
 
-                let imgFile = document.querySelector("#"+iconImg)
+                let imgFile = document.querySelector('#' + iconImg);
 
-                if(imgFile){
-                    $("#"+fileSize).text(d.fileSize)
-                    $("#"+badge).removeClass('bg-gradient-warning').addClass('bg-gradient-success').text('Cargado')
-                    document.querySelector("#"+btnVer).href = `/cotizaciones/cotizacion${d.identifier}/${d.filePath}`
-                    
-                    switch(d.fileType){
+                if (imgFile) {
+                    $('#' + fileSize).text(d.fileSize);
+                    $('#' + badge)
+                        .removeClass('bg-gradient-warning')
+                        .addClass('bg-gradient-success')
+                        .text('Cargado');
+                    document.querySelector('#' + btnVer).href = `/cotizaciones/cotizacion${d.identifier}/${d.filePath}`;
+
+                    switch (d.fileType) {
                         case 'docx':
                         case 'doc':
-                            fileType = 'word-logo.png'
+                            fileType = 'word-logo.png';
                             break;
                         case 'xlsx':
                         case 'xls':
-                        fileType = 'excel-logo.png'
+                            fileType = 'excel-logo.png';
                             break;
                         case 'jpeg':
                         case 'png':
                         case 'jpg':
-                        fileType = 'image-logo.png'
-                        break;
+                            fileType = 'image-logo.png';
+                            break;
                         case 'pdf':
-                        fileType = 'pdf-logo.png'
-                        break;
+                            fileType = 'pdf-logo.png';
+                            break;
                         default:
-                        fileType = '/icon/catalogo.webp'
-                        break;
-
+                            fileType = '/icon/catalogo.webp';
+                            break;
                     }
 
-                    imgFile.src = `/img/${fileType}`
+                    imgFile.src = `/img/${fileType}`;
                 }
-
-                
-                
             });
         },
-        error:()=>{
-
-        }
-    })
+        error: () => {},
+    });
 }
 
 function adjuntarDocumentos() {
@@ -263,7 +254,8 @@ function adjuntarDocumentos() {
         captions: 'es',
         enableApi: true,
         start: true,
-        changeInput: '<div class="fileuploader-input">' +
+        changeInput:
+            '<div class="fileuploader-input">' +
             '<div class="fileuploader-input-inner">' +
             '<div class="fileuploader-icon-main"></div>' +
             '<h3 class="fileuploader-input-caption"><span>${captions.feedback}</span></h3>' +
@@ -273,14 +265,14 @@ function adjuntarDocumentos() {
             '</div>',
         theme: 'dragdrop',
         upload: uploadConfig,
-        beforeSelect: function(listEl, parentEl, newInputEl, inputEl) {
+        beforeSelect: function (listEl, parentEl, newInputEl, inputEl) {
             resetUploadConfig();
         },
-        onRemove: function(item) {
+        onRemove: function (item) {
             $.post('remove', {
                 _token: _token,
                 _Folio: _Folio,
-                file: item.name
+                file: item.name,
             });
         },
         captions: $.extend(true, {}, $.fn.fileuploader.languages['es'], {
@@ -292,8 +284,5 @@ function adjuntarDocumentos() {
         }),
     });
 
-   
-   // api.uploadStart(); // Iniciar la carga manualmente
-
+    // api.uploadStart(); // Iniciar la carga manualmente
 }
-

@@ -1,10 +1,10 @@
 ---
 title: File earmark bar graph
 categories:
-  - Files and folders
+    - Files and folders
 tags:
-  - doc
-  - document
-  - data
-  - chart
+    - doc
+    - document
+    - data
+    - chart
 ---

@@ -1,8 +1,8 @@
 ---
 title: Bug
 categories:
-  - Real world
+    - Real world
 tags:
-  - insect
-  - error
+    - insect
+    - error
 ---

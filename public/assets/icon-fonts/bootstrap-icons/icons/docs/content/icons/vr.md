@@ -1,8 +1,8 @@
 ---
 title: VR
 categories:
-  - Typography
+    - Typography
 tags:
-  - divider
-  - vertical-rule
+    - divider
+    - vertical-rule
 ---

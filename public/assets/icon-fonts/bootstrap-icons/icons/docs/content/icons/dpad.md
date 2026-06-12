@@ -1,9 +1,9 @@
 ---
 title: Dpad
 categories:
-  - Entertainment
+    - Entertainment
 tags:
-  - gaming
-  - controller
-  - direction
+    - gaming
+    - controller
+    - direction
 ---

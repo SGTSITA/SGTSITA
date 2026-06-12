@@ -1,8 +1,8 @@
 ---
 title: Eyedropper
 categories:
-  - Graphics
+    - Graphics
 tags:
-  - color
-  - picker
+    - color
+    - picker
 ---

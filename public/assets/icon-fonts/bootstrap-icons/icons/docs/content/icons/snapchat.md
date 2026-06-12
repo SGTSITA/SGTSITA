@@ -1,7 +1,7 @@
 ---
 title: Snapchat
 categories:
-  - Brand
+    - Brand
 tags:
-  - social
+    - social
 ---

@@ -20,13 +20,13 @@
 
                     </div>
                     <div class="card-body">
-                        <!-- Mostrar advertencia si no se ha seleccionado proveedor -->
-                        @if (isset($showWarning) && $showWarning)
+                        <!-- Mostrar advertencia si no se ha seleccionado proveedor , se hizo opcional a tener el nu edo cuenta-->
+                        {{-- @if (isset($showWarning) && $showWarning)
                             <div class="alert alert-warning">
                                 <strong>Advertencia!</strong> No se ha seleccionado un proveedor. Por favor, elija un
                                 proveedor para realizar la búsqueda.
                             </div>
-                        @endif
+                        @endif --}}
                         <form action="{{ route('ruta_advance_cxp') }}" method="GET">
                             <div class="card-body" style="padding-left: 1.5rem; padding-top: 1rem;">
                                 <div class="row">
@@ -72,6 +72,20 @@
                                         </select>
                                     </div>
 
+                                    <div class="col-md-2">
+                                        <label for="numero_edo_cuenta">Numero de Estado de Cuenta</label>
+                                        <select name="numero_edo_cuenta" id="numero_edo_cuenta"
+                                            class="form-control numero_edo_cuenta">
+                                            <option value="">Seleccionar numero</option>
+                                            @foreach ($estadosCuentas as $edoCuenta)
+                                                <option value="{{ $edoCuenta->id }}"
+                                                    {{ request('numero_edo_cuenta') == $edoCuenta->id ? 'selected' : '' }}>
+                                                    {{ $edoCuenta->numero }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+
                                     <div class="col-3">
                                         <br>
                                         <button class="btn btn-sm mb-0 mt-sm-0 mt-1" type="submit"
@@ -99,6 +113,7 @@
                                         <tr>
                                             <th></th>
                                             <th>#</th>
+                                            <th>Edo. Cuenta</th>
                                             <th><img src="{{ asset('img/icon/gps.webp') }}" alt=""
                                                     width="25px">Origen</th>
                                             <th><img src="{{ asset('img/icon/origen.png') }}" alt=""
@@ -117,6 +132,7 @@
                                                             value="{{ $cotizacion->id }}"
                                                             class="select-checkbox visually-hidden"></td>
                                                     <td>{{ $cotizacion->id }}</td>
+                                                    <td>{{ $cotizacion->numero_edo_cuenta ?? 'NA' }}</td>
                                                     <td>{{ $cotizacion->origen }}</td>
                                                     <td>{{ $cotizacion->destino }}</td>
                                                     @php
@@ -218,6 +234,8 @@
         $(document).ready(function() {
             // Inicializar select2 para el campo de proveedor
             $('.cliente').select2();
+            $('.proveedor').select2();
+            $('.numero_edo_cuenta').select2();
 
             // Inicializar la tabla con DataTable
             const table = $('#datatable-search').DataTable({
