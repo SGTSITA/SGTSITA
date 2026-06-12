@@ -329,6 +329,8 @@
 
 @push('custom-javascript')
     <!-- AG Grid -->
+
+
     <script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
@@ -341,6 +343,9 @@
     </script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key={{ config('services.googleMapsApi.apikey') }}" async defer
+        onload="googleMapsReady()"></script>
+
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             flatpickr(".dateInput", {

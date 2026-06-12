@@ -221,7 +221,7 @@ class GastosGeneralesController extends Controller
                 }
             }
 
-
+    $pagorealizado =(intval($request->get('tipoPago')) == 0) ? 1 : 0;
             $fechaActual = date('Y-m-d');
             $gasto_general = new GastosGenerales();
             $gasto_general->motivo = $request->get('motivo');
@@ -234,7 +234,7 @@ class GastosGeneralesController extends Controller
             $gasto_general->id_empresa = auth()->user()->id_empresa;
             $gasto_general->is_active = ($request->get('tipoPago') == 1) ? 0 : 1;
             $gasto_general->diferir_gasto = $request->get('tipoPago');
-            $gasto_general->pago_realizado = (intval($request->get('tipoPago')) == 0) ? 1 : 0;
+            $gasto_general->pago_realizado =$pagorealizado;
 
             $gasto_general->save();
 
@@ -284,7 +284,7 @@ class GastosGeneralesController extends Controller
 
                 GastosGenerales::insert($Daily);
             } else {
-                Bancos::where('id', '=', $request->get('id_banco1'))->update(["saldo" => DB::raw("saldo - ". $montoGasto)]);
+              /*   Bancos::where('id', '=', $request->get('id_banco1'))->update(["saldo" => DB::raw("saldo - ". $montoGasto)]);
 
                 $banco = new BancoDinero();
 
@@ -298,7 +298,7 @@ class GastosGeneralesController extends Controller
                 $banco->fecha_pago = $request->get('fecha_aplicacion');
                 ;
                 $banco->tipo = 'Salida';
-                $banco->save();
+                $banco->save(); */
 
 
 
@@ -307,7 +307,8 @@ class GastosGeneralesController extends Controller
                     $fecha_aplicacion = $request->get('fecha_aplicacion');
 
                     $data = [
-                            'cuenta_bancaria_id' => $request->get('id_banco1'),            'tipo' => 'cargo',
+                            'cuenta_bancaria_id' => $request->get('id_banco1'),
+                                     'tipo' => 'cargo',
                             'monto' => floatval($montoGasto),
                             'concepto' => $request->get('motivo'),
                             'fecha_movimiento' =>  $fecha_aplicacion,
@@ -472,7 +473,7 @@ class GastosGeneralesController extends Controller
             GastosOperadores::where('id_gasto_origen', $r->IdGasto)->delete();
             //Devolver el dinero al banco, siempre y cuando el estatus sea "Pagado"
             if ($gastosGenerales->pago_realizado === 1) {
-                Bancos::where('id', '=', $gastosGenerales->id_banco1)->update(["saldo" => DB::raw("saldo + ". $gastosGenerales->monto1)]);
+           /*      Bancos::where('id', '=', $gastosGenerales->id_banco1)->update(["saldo" => DB::raw("saldo + ". $gastosGenerales->monto1)]);
                 $banco = new BancoDinero();
 
                 $banco->contenedores = "[]";
@@ -484,12 +485,15 @@ class GastosGeneralesController extends Controller
 
                 $banco->fecha_pago = date('Y-m-d');
                 $banco->tipo = 'Entrada';
-                $banco->save();
+                $banco->save(); */
+
+                $fechacancelacion = $r->fechacancelacion;
 
 
                 $movimientoBanco = $this->BancosService->findMovimiento($r->IdGasto, \App\Models\GastosGenerales::class, $gastosGenerales->id_banco1);
 
-                $cancelarMovimientoBanco =  $this->BancosService->cancelarMovimiento($gastosGenerales->id_banco1, $movimientoBanco->id);
+
+                $cancelarMovimientoBanco =  $this->BancosService->cancelarMovimiento($gastosGenerales->id_banco1, $movimientoBanco->id, $fechacancelacion);
 
                 if (!$cancelarMovimientoBanco) {
 
@@ -508,7 +512,7 @@ class GastosGeneralesController extends Controller
 
             DB::rollback();
             Log::channel('daily')->info("Error: GastosGeneralesController->eliminarGasto->".$t->getMessage());
-            return response()->json(["Titulo" => "Gasto no aplicado","Mensaje" => "Ha ocurrido un error, no se puede aplicar el gasto", "TMensaje" => "error"]);
+            return response()->json(["Titulo" => "Gasto no aplicado","Mensaje" => "Ha ocurrido un error, no se puede aplicar el gasto " . $t->getMessage(), "TMensaje" => "error"]);
 
         }
     }

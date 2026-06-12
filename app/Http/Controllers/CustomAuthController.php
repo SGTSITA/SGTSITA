@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Client;
+use App\Models\Cotizaciones;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Session;
@@ -38,6 +39,19 @@ class CustomAuthController extends Controller
 
 
             }
+    $user = Auth::user();
+           if (!$user->can('SGT-Acceso')) {
+        Auth::logout();
+
+        $request->session()->regenerateToken();
+
+        return response()->json([
+            'success' => false,
+            'code' => 'without_sgt_access',
+            'mensaje' => 'Tu usuario no tiene acceso al sistema SGT. Verifica que estés entrando al sistema correcto.',
+        ], 403);
+    }
+
 
             // dd('las credenciales son incorrectas');
             //  return redirect("login")->withSuccess('Login details are not valid');
@@ -97,6 +111,16 @@ class CustomAuthController extends Controller
     {
 
         $user = auth()->user();
+
+
+
+         Cotizaciones::where('editing_by', auth()->id())
+        ->update([
+            'editing_by' => null,
+            'editing_at' => null,
+        ]);
+
+
 
         Session::flush();
         Auth::logout();

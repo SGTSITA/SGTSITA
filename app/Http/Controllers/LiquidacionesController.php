@@ -495,28 +495,42 @@ class LiquidacionesController extends Controller
                     continue;
                 }
 
-                if (!empty($item['idviatico'])) { // Actualizar registro existente
-                    $viaticoAntes = ViaticosOperador::where('id', $item['idviatico'])->first();
-                    $montoAntes = $viaticoAntes->monto;
-                    ViaticosOperador::where('id', $item['idviatico'])
-                        ->update([
-                            "descripcion_gasto" => $item['motivo'],
-                            "monto" => $item['monto'],
-                        ]);
+                $viaticoEntidad= null;
 
-                    $diferencia = $item['monto'] - $montoAntes;
-                    Asignaciones::where('id_contenedor', $documCotizacion->id)
-                        ->update([
-                            "restante_pago_operador" => DB::raw('restante_pago_operador + ' . $diferencia)
-                        ]);
+                if (!empty($item['idviatico'])) { // Actualizar registro existente
+                       $viaticoAntes = ViaticosOperador::where('id', $item['idviatico'])
+        ->lockForUpdate()
+        ->firstOrFail();
+
+    $montoAntes = (float) $viaticoAntes->monto;
+    $montoNuevo = (float) $item['monto'];
+
+    $diferencia = $montoNuevo - $montoAntes;
+
+    $viaticoAntes->update([
+        "descripcion_gasto" => $item['motivo'],
+        "monto" => $montoNuevo,
+    ]);
+
+    $viaticoEntidad = $viaticoAntes->fresh();
+
+    if ($diferencia != 0) {
+        Asignaciones::where('id_contenedor', $documCotizacion->id)
+            ->update([
+                "restante_pago_operador" => DB::raw(
+                    'COALESCE(restante_pago_operador, 0) + ' . number_format($diferencia, 2, '.', '')
+                )
+            ]);
+    }
 
                 } else {
                     // Nuevo registro
-                    ViaticosOperador::insert([
-                "id_cotizacion" => $documCotizacion->id_cotizacion,
-                "descripcion_gasto" => $item['motivo'],
-                "monto" => $item['monto'],
-                    ]);
+                  $viaticoEntidad = ViaticosOperador::create([
+    "id_cotizacion" => $documCotizacion->id_cotizacion,
+    "descripcion_gasto" => $item['motivo'],
+    "monto" => $item['monto'],
+]);
+
                     Asignaciones::where('id_contenedor', $documCotizacion->id)
                         ->update([
                             "restante_pago_operador" => DB::raw('restante_pago_operador + '.$item['monto'])
@@ -524,14 +538,26 @@ class LiquidacionesController extends Controller
 
                 }
 
-
+//dd($viaticoEntidad);
 
                 $asignacion = Asignaciones::where('id_contenedor', $documCotizacion->id)->first();
 
                 $montoJustificacion = $item['monto'];
                 $sinJustificar = $asignacion->restante_pago_operador ?? 0;
 
-                $datosGasto = [
+                $gastoOp = GastosOperadores::where('id_gasto_origen', $viaticoEntidad->id)->first();
+
+                if($gastoOp){
+
+                    $gastoOp->update([
+                        "cantidad" => ($montoJustificacion > $sinJustificar) ? $sinJustificar : $montoJustificacion,
+                        "tipo" => $item['motivo'],
+                        "estatus" => 'Pagado',
+                        "pago_inmediato" => 1,
+                    ]);
+
+                } else {
+                      $datosGasto = [
                     "id_cotizacion" => $documCotizacion->id_cotizacion,
                     "id_banco" => null,
                     "id_asignacion" => $asignacion->id,
@@ -542,9 +568,13 @@ class LiquidacionesController extends Controller
                     "fecha_pago" => null,
                     "pago_inmediato" => 1,
                     "created_at" => Carbon::now(),
+                    "id_gasto_origen" =>  $viaticoEntidad->id ?? null,
                 ];
 
                 GastosOperadores::insert($datosGasto);
+                }
+
+
 
                 // Si excede
                 if ($montoJustificacion > $sinJustificar) {
@@ -559,6 +589,7 @@ class LiquidacionesController extends Controller
                         "fecha_pago" => null,
                         "pago_inmediato" => 0,
                         "created_at" => Carbon::now(),
+                        "id_gasto_origen" =>  $viaticoEntidad->id ?? null,
                     ];
 
                     GastosOperadores::insert($excedente);
@@ -745,7 +776,7 @@ class LiquidacionesController extends Controller
             // $bancos = Bancos::where('id', '=', $request->bancoId)->first();
             $saldoActual = 0;
             $fechaAplicacionDinero = $request->get('FechaAplicacionPago');
-            $totalPagar = $request->totalMontoPago - $request->totalPagoPrestamo;
+            $totalPagar = $request->totalMontoPago ;//- $request->totalPagoPrestamo;
             if ($request->filled('bancoId') && $totalPagar > 0) {
                 $idEmpresa = auth()->user()->id_empresa;
 
@@ -801,8 +832,8 @@ class LiquidacionesController extends Controller
                         'monto_pago' => ($pagoPrestamos > $p->saldo_actual) ? $p->saldo_actual : $pagoPrestamos,
                          // NUEVOS CAMPOS para tener los abonos por pago directo
                         'tipo_origen'     => 'liquidacion',
-                        'id_banco'        => null,     // no aplica en liquidación
-                        'referencia'      => null,     // no aplica en liquidación
+                        'id_banco'        => $request->bancoId,     // para mantener la relacion unicamente no se ejecuta en bancos
+                        'referencia'      => 'liq #'. $liquidacion->id,     // no aplica en liquidación
                         'fecha_pago'      => \Carbon\Carbon::createFromFormat(
                             'd/m/Y',
                             $fechaAplicacionDinero
@@ -835,8 +866,8 @@ class LiquidacionesController extends Controller
                         'monto_pago' => ($pagoAdelanto > $p->saldo_actual) ? $p->saldo_actual : $pagoAdelanto,
                          // NUEVOS CAMPOS para tener los abonos por pago directo
                         'tipo_origen'     => 'liquidacion',
-                        'id_banco'        => null,     // no aplica en liquidación
-                        'referencia'      => null,     // no aplica en liquidación
+                        'id_banco'        => $request->bancoId,    // para mantener la relacion unicamente no se ejecuta en bancos
+                        'referencia'      => 'liq #'. $liquidacion->id,     // no aplica en liquidación
                         'fecha_pago'      => \Carbon\Carbon::createFromFormat(
                             'd/m/Y',
                             $fechaAplicacionDinero
@@ -892,7 +923,7 @@ class LiquidacionesController extends Controller
 
             }
 
-            $banco = new BancoDineroOpe();
+          /*   $banco = new BancoDineroOpe();
             $banco->id_operador = $request->_IdOperador;
 
             $banco->monto1 = $totalPagar;
@@ -906,9 +937,9 @@ class LiquidacionesController extends Controller
                 'd/m/Y',
                 $fechaAplicacionDinero
             )->format('Y-m-d');
-            $banco->save();
+            $banco->save(); */
 
-            Bancos::where('id', '=', $request->bancoId)->update(["saldo" => DB::raw("saldo - ". $request->totalMontoPago)]);
+           // Bancos::where('id', '=', $request->bancoId)->update(["saldo" => DB::raw("saldo - ". $request->totalMontoPago)]);
 
 
             //bancos nuevo registrar movi
@@ -971,9 +1002,15 @@ class LiquidacionesController extends Controller
 
         $user = Auth::user();
 
-        $idViajes = $liquidacionViajes->viajes->pluck('id_contenedor'); //deberia ser id_cotizacion pero la relacion esta con esa columna en liquidacioneconenedor checar eso despues
+        $idViajes = $liquidacionViajes->viajes->pluck('id_contenedor'); //quedo con la relacion correcta  del contendor id , y se agrego el cotizaciones para saber los viaticos
+        //correccion de fk column es contenendor apunta a id de doc cotizacion entonces  el array no puedo usarlo para cotizacion sera enytonces asi y funciona
 
-        $viaticos = ViaticosOperador::whereIn('id_cotizacion', $idViajes)->get();
+        $cotizaciones = DocumCotizacion::whereIn('id', $idViajes)->get()->pluck('id_cotizacion');
+
+
+        $viaticos = ViaticosOperador::whereIn('id_cotizacion', $cotizaciones)->get();
+
+
 
         $dineroViaje = DineroContenedor::whereIn('id_contenedor', $idViajes)
                         ->orderBy('id_contenedor')

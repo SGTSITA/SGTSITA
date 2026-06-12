@@ -9,7 +9,7 @@
             </div>
             <!-- Cuerpo -->
             <div class="modal-body">
-                <form>
+                <form id="formPlaneacion">
                     <div class="row">
                         <h6>
                             Datos del Operador
@@ -81,18 +81,18 @@
                                     placeholder="Ej. SF001..." id="txtNumUnidad" data-mep-unidad="0" />
                                 <div id="sugerenciasUnidad"
                                     style="
-        position:absolute;
-        top:100%;
-        left:0;
-        right:0;
-        background:white;
-        border-radius:8px;
-        box-shadow:0 4px 10px rgba(0,0,0,0.15);
-        z-index:999;
-        max-height:200px;
-        overflow-y:auto;
-        display:none;
-    ">
+                                    position:absolute;
+                                    top:100%;
+                                    left:0;
+                                    right:0;
+                                    background:white;
+                                    border-radius:8px;
+                                    box-shadow:0 4px 10px rgba(0,0,0,0.15);
+                                    z-index:999;
+                                    max-height:200px;
+                                    overflow-y:auto;
+                                    display:none;
+                                ">
                                 </div>
                                 <!-- Icono convertido en botón -->
                                 <button type="button"
@@ -155,6 +155,55 @@
                             </div>
                         </div>
                     </div>
+
+                    <div class="row mt-4">
+
+                        <div class="col-md-4">
+                            <div id="gpsStatusUnidad" class="small fw-bold text-muted">
+
+                                Sin asignar GPS
+
+                            </div>
+                        </div>
+
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end">
+
+                        <div class="border rounded-4 px-3 py-3 bg-light d-none w-100 shadow-sm" id="cardGpsMapa">
+
+                            <div class="d-flex justify-content-between align-items-center">
+
+                                <div>
+
+                                    <div class="fw-bold small text-dark d-flex align-items-center gap-2">
+
+                                        <i class="fas fa-satellite-dish text-primary"></i>
+
+                                        <span>Monitoreo GPS</span>
+
+                                    </div>
+
+                                    <div id="lblDistanciaEquipos" class="small text-muted mt-1">
+
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        Sin datos GPS
+
+                                    </div>
+
+                                </div>
+
+                                <button type="button" class="btn btn-sm btn-primary rounded-pill px-3 shadow-sm"
+                                    id="btnMapaUnidad">
+
+                                    <i class="fas fa-map-marker-alt"></i>
+
+                                </button>
+
+                            </div>
+
+                        </div>
+
+                    </div>
                     <hr class="horizontal dark mt-4 mb-4" />
 
                     <h6>
@@ -193,18 +242,18 @@
 
                                         <div id="sugerenciasChasisA"
                                             style="
-        position:absolute;
-        top:100%;
-        left:0;
-        right:0;
-        background:white;
-        border-radius:8px;
-        box-shadow:0 4px 10px rgba(0,0,0,0.15);
-        z-index:999;
-        max-height:200px;
-        overflow-y:auto;
-        display:none;
-    ">
+                                            position:absolute;
+                                            top:100%;
+                                            left:0;
+                                            right:0;
+                                            background:white;
+                                            border-radius:8px;
+                                            box-shadow:0 4px 10px rgba(0,0,0,0.15);
+                                            z-index:999;
+                                            max-height:200px;
+                                            overflow-y:auto;
+                                            display:none;
+                                        ">
                                         </div>
                                         <button type="button"
                                             class="btn btn-sm position-absolute end-0 top-50 translate-middle-y me-2 p-1 rounded-circle"
@@ -259,6 +308,17 @@
                                         </span>
                                     </div>
                                 </div>
+                                <div class="row mt-2">
+
+                                    <div class="col-md-4">
+                                        <div id="gpsStatusChasisA" class="small fw-bold text-muted">
+
+                                            Sin asignar GPS
+
+                                        </div>
+                                    </div>
+
+                                </div>
                             </div>
                         </div>
 
@@ -274,18 +334,18 @@
 
                                         <div id="sugerenciasChasisB"
                                             style="
-        position:absolute;
-        top:100%;
-        left:0;
-        right:0;
-        background:white;
-        border-radius:8px;
-        box-shadow:0 4px 10px rgba(0,0,0,0.15);
-        z-index:999;
-        max-height:200px;
-        overflow-y:auto;
-        display:none;
-    ">
+                                                position:absolute;
+                                                top:100%;
+                                                left:0;
+                                                right:0;
+                                                background:white;
+                                                border-radius:8px;
+                                                box-shadow:0 4px 10px rgba(0,0,0,0.15);
+                                                z-index:999;
+                                                max-height:200px;
+                                                overflow-y:auto;
+                                                display:none;
+                                            ">
                                         </div>
                                         <button type="button"
                                             class="btn btn-sm position-absolute end-0 top-50 translate-middle-y me-2 p-1 rounded-circle"
@@ -340,6 +400,17 @@
                                             <i class="fas fa-microchip"></i>
                                         </span>
                                     </div>
+                                </div>
+                                <div class="row mt-2">
+
+                                    <div class="col-md-4">
+                                        <div id="gpsStatusChasisB" class="small fw-bold text-muted">
+
+                                            Sin asignar GPS
+
+                                        </div>
+                                    </div>
+
                                 </div>
                             </div>
                         </div>
@@ -421,6 +492,19 @@
                         </div>
                     </div>
                 </form>
+                <div id="seccionMapa" class="d-none">
+
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="mb-0">Mapa de Equipos</h6>
+
+                        <button type="button" class="btn btn-sm btn-secondary" id="btnRegresarPlaneacion">
+                            <i class="fa fa-arrow-left"></i> Regresar
+                        </button>
+                    </div>
+
+                    <div id="mapaEquipos" style="height:70vh;"></div>
+
+                </div>
             </div>
             <!-- Pie de modal -->
             <div class="modal-footer bg-light border-top">

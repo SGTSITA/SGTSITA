@@ -49,6 +49,10 @@ class Cotizaciones extends Model
         'bloque_hora_i',
         'bloque_hora_f',
         'latitud',
+        'img_boleta',
+        'carta_porte',
+        'carta_porte_xml' ,
+'retencion_automatica',
         'longitud',
         'direccion_mapa',
         'fecha_seleccion_ubicacion',
@@ -94,6 +98,8 @@ class Cotizaciones extends Model
         'fecha_eir',
         'editing_by',
         'editing_at',
+        'litros_diesel',
+        'km_recorridos',
     ];
 
     public function Cliente()
@@ -203,6 +209,27 @@ class Cotizaciones extends Model
 
     //final con nuevo modelo
 
+    public function viajes()
+    {
+        return $this->belongsToMany(
+            Viajes::class,
+            'viajes_cotizacion',
+            'cotizacion_id',
+            'viaje_id'
+        )->using(ViajesCotizacion::class);
+    }
+
+public function costosViajes()
+{
+    return $this->hasManyThrough(
+        ViajesCostos::class,
+        ViajesCotizacion::class,
+        'cotizacion_id', // FK en viajes_cotizacion hacia cotizaciones
+        'viaje_id',      // FK en viaje_costos hacia viajes_cotizacion
+        'id',            // PK en cotizaciones
+        'viaje_id'       // campo en viajes_cotizacion que conecta con viaje_costos.viaje_id
+    );
+}
 
     protected static function boot()
     {

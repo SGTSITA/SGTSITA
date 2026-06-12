@@ -125,12 +125,15 @@ class CoordenadasController extends Controller
         }
     }
 
-
-
     public function exrastrearIndex()
     {
+         $proveedoresQuery = Proveedor::catalogoPrincipal()
+            ->orderBy('created_at', 'desc');
 
-        return view('mec.coordenadas.rastrear');
+
+        $proveedores = $proveedoresQuery->get(['id', 'nombre', 'id_empresa']);
+
+        return view('mec.coordenadas.rastrear', compact('proveedores'));
     }
 
 
@@ -642,56 +645,65 @@ class CoordenadasController extends Controller
     public function getEquiposGps(Request $request)
     {
 
-        $isAdmin = auth()->user()->es_admin;
-        $hoy = Carbon::now()->toDateString();
-        $idCliente = 0;
-        $cliendID = auth()->user()->id_cliente;
-        $idEmpresa = auth()->user()->id_empresa;
-        if ($cliendID !== 0) {
-            $idCliente = $cliendID;
-        }
+      $isAdmin = auth()->user()->es_admin;
+$hoy = Carbon::now()->toDateString();
+$fecha = $request->query('fecha', $hoy);
 
-        if (!is_null($idEmpresa) && $idCliente == 0 && $idEmpresa !== 0) {
-            // $datos = $datosAll->where('id_empresa', $idEmpresa);
-            $cliendID = null;
-        }
-
-        if (!is_null($idCliente) && $idCliente !== 0) {
-            // $datos = $datos->where('id_cliente', $idCliente);
-            $idEmpresa = null;
-        }
+$fechaSalida = $request->query('fecha_salida', null);
 
 
+$idCliente = 0;
+$cliendID = auth()->user()->id_cliente;
+$idEmpresa = auth()->user()->id_empresa;
 
-        $filters = [
-            'isAdmin' => $isAdmin,
-           'id_empresa' => $idEmpresa,
-            'contenedor' => $request->query('contenedor', null),
-            'contenedores' => $request->query('contenedores', null),
-            'idCliente' => $idCliente
-        ];
+if ($cliendID !== 0) {
+    $idCliente = $cliendID;
+}
 
+if (!is_null($idEmpresa) && $idCliente == 0 && $idEmpresa !== 0) {
+    $cliendID = null;
+}
+
+if (!is_null($idCliente) && $idCliente !== 0) {
+    $idEmpresa = null;
+}
+
+$filters = [
+    'isAdmin' => $isAdmin,
+    'id_empresa' => $idEmpresa,
+    'contenedor' => $request->query('contenedor', null),
+    'contenedores' => $request->query('contenedores', null),
+    'idCliente' => $idCliente,
+
+    // Fecha para viajes activos
+    'fecha' => $fecha,
+
+    // Fecha para salidas desde cierta fecha
+    'fecha_salida' => $fechaSalida,
+];
         //  dd($filters);
 
-
-        $baseFiltro = $this->coordenadasService->getContenedoresBase([
+$baseFiltro = $this->coordenadasService->getContenedoresBase([
             'fecha' => $hoy,'isAdmin' => $isAdmin
         ]);
-        $datosAll = $baseFiltro->get();
 
-        $datos = $this->coordenadasService->getContenedoresRastreo($baseFiltro, $filters);
+$datosAll = $baseFiltro->get();
+
+$datos = $this->coordenadasService->getContenedoresRastreo($baseFiltro, $filters);
 
 
-        //conboys
+// Convoys
+$conboys = $this->coordenadasService->getConboys($filters);
 
-        $conboys =   $this->coordenadasService->getConboys($filters);
+$conboysdetalle = $this->coordenadasService->getConboysDetalle($filters);
 
-        $conboysdetalle = $this->coordenadasService->getConboysDetalle($filters);
 
-        //equipos
-        $baseEquiposAll = $this->coordenadasService->getEquiposbase([ 'fecha' => $hoy,'isAdmin' => $isAdmin]);
-        $equiposAll = $baseEquiposAll->get();
-        $equipos = $this->coordenadasService->getEquiposRastreo($baseEquiposAll, $filters);
+// Equipos
+$baseEquiposAll = $this->coordenadasService->getEquiposbase($filters);
+
+$equiposAll = $baseEquiposAll->get();
+
+$equipos = $this->coordenadasService->getEquiposRastreo($baseEquiposAll, $filters);
 
 
         return response()->json([
@@ -949,25 +961,35 @@ class CoordenadasController extends Controller
 
         $intervals = RastreoIntervals::where('task_name', 'rastreo_gps_interval')->first();
 
+        $usuario = Auth::user();
+        $esAdmin = $usuario->es_admin;
+        $empresaId = $usuario->id_empresa;
+
         $empresas = Empresas::all();
 
-        $proveedores = Proveedor::catalogoPrincipal()
+        $proveedoresQuery = Proveedor::catalogoPrincipal()
+            ->orderBy('created_at', 'desc');
 
-            ->orderBy('created_at', 'desc')
-            ->get(['id', 'nombre', 'id_empresa']);
+        if (!$esAdmin) {
+            $proveedoresQuery->where('id_empresa', $empresaId);
+        }
 
+        $proveedores = $proveedoresQuery->get(['id', 'nombre', 'id_empresa']);
 
-        $clientes = Client::join('client_empresa as ce', 'clients.id', '=', 'ce.id_client')
+        $clientesQuery = Client::join('client_empresa as ce', 'clients.id', '=', 'ce.id_client')
+            ->where('is_active', 1)
+            ->orderBy('nombre');
 
-                        ->where('is_active', 1)
-                        ->orderBy('nombre')
-                        ->get(['clients.id', 'clients.nombre','ce.id_empresa']);
+        if (!$esAdmin) {
+            $clientesQuery->where('ce.id_empresa', $empresaId);
+        }
 
+        $clientes = $clientesQuery->get(['clients.id', 'clients.nombre','ce.id_empresa']);
 
 
 
         $view = 'coordenadas.rastreoTab';
-        if (Auth::user()->es_admin) {
+        if ($esAdmin) {
             $view = 'coordenadas.rastreoTabAdmin';
         }
 

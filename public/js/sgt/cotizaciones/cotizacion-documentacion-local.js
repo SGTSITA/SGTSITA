@@ -3,12 +3,15 @@ class MissionResultRenderer {
 
     // Optional: Params for rendering. The same params that are passed to the cellRenderer function.
     init(params) {
-        let icon = document.createElement('img');
-        icon.src = `https://www.ag-grid.com/example-assets/icons/${params.value ? 'tick-in-circle' : 'cross-in-circle'}.png`;
-        icon.setAttribute('style', 'width: auto; height: auto;');
+        let icon = document.createElement("img");
+        icon.src = `https://www.ag-grid.com/example-assets/icons/${params.value ? "tick-in-circle" : "cross-in-circle"}.png`;
+        icon.setAttribute("style", "width: auto; height: auto;");
 
-        this.eGui = document.createElement('span');
-        this.eGui.setAttribute('style', 'display: flex; justify-content: center; height: 100%; align-items: center');
+        this.eGui = document.createElement("span");
+        this.eGui.setAttribute(
+            "style",
+            "display: flex; justify-content: center; height: 100%; align-items: center",
+        );
         this.eGui.appendChild(icon);
     }
 
@@ -29,19 +32,19 @@ class CustomButtonComponent {
     eventListener;
 
     init(params) {
-        this.eGui = document.createElement('div');
-        let button = document.createElement('button');
+        this.eGui = document.createElement("div");
+        let button = document.createElement("button");
         button.innerHTML =
             '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path opacity="0.3" d="M5 16C3.3 16 2 14.7 2 13C2 11.3 3.3 10 5 10H5.1C5 9.7 5 9.3 5 9C5 6.2 7.2 4 10 4C11.9 4 13.5 5 14.3 6.5C14.8 6.2 15.4 6 16 6C17.7 6 19 7.3 19 9C19 9.4 18.9 9.7 18.8 10C18.9 10 18.9 10 19 10C20.7 10 22 11.3 22 13C22 14.7 20.7 16 19 16H5ZM8 13.6H16L12.7 10.3C12.3 9.89999 11.7 9.89999 11.3 10.3L8 13.6Z" fill="currentColor" /><path d="M11 13.6V19C11 19.6 11.4 20 12 20C12.6 20 13 19.6 13 19V13.6H11Z" fill="currentColor" /></svg>';
-        button.className = 'btn btn-sm btn-primary';
-        button.style.fontSize = '10px';
-        button.style.padding = '2px 6px';
-        button.style.lineHeight = '1';
+        button.className = "btn btn-sm btn-primary";
+        button.style.fontSize = "10px";
+        button.style.padding = "2px 6px";
+        button.style.lineHeight = "1";
 
         const NumContenedorValue = params.data.NumContenedor;
 
         this.eventListener = () => goToUploadDocuments(NumContenedorValue);
-        button.addEventListener('click', this.eventListener);
+        button.addEventListener("click", this.eventListener);
         this.eGui.appendChild(button);
     }
 
@@ -55,7 +58,7 @@ class CustomButtonComponent {
 
     destroy() {
         if (button) {
-            button.removeEventListener('click', this.eventListener);
+            button.removeEventListener("click", this.eventListener);
         }
     }
 }
@@ -64,8 +67,8 @@ function verHistorialEstatus(maniobraId, contenedor) {
     fetch(`/viajes/maniobras/${maniobraId}/historial-estatus`)
         .then((res) => res.json())
         .then((data) => {
-            let html = '';
-            let title = `Historial de estatus - ${contenedor || ''}`;
+            let html = "";
+            let title = `Historial de estatus - ${contenedor || ""}`;
 
             if (data.length === 0) {
                 html = '<p class="text-muted text-center">Sin historial</p>';
@@ -78,90 +81,97 @@ function verHistorialEstatus(maniobraId, contenedor) {
                         <small class="text-muted">
                           Fecha Creado:  ${item.created_at}
                         </small>
-                        <p class="mb-0">${item.nota ?? ''}</p>
+                        <p class="mb-0">${item.nota ?? ""}</p>
                     </div>
                 `;
             });
 
-            document.getElementById('historialEstatusContenido').innerHTML = html;
-            document.getElementById('modalHistorialEstatusTitle').innerText = title;
+            document.getElementById("historialEstatusContenido").innerHTML =
+                html;
+            document.getElementById("modalHistorialEstatusTitle").innerText =
+                title;
 
-            new bootstrap.Modal(document.getElementById('modalHistorialEstatus')).show();
+            new bootstrap.Modal(
+                document.getElementById("modalHistorialEstatus"),
+            ).show();
         });
 }
 
 const localeText = {
-    page: 'Página',
-    more: 'Más',
-    to: 'a',
-    of: 'de',
-    next: 'Siguiente',
-    last: 'Último',
-    first: 'Primero',
-    previous: 'Anterior',
-    loadingOoo: 'Cargando...',
-    selectAll: 'Seleccionar todo',
-    searchOoo: 'Buscar...',
-    blanks: 'Vacíos',
-    filterOoo: 'Filtrar...',
-    applyFilter: 'Aplicar filtro...',
-    equals: 'Igual',
-    notEqual: 'Distinto',
-    lessThan: 'Menor que',
-    greaterThan: 'Mayor que',
-    contains: 'Contiene',
-    notContains: 'No contiene',
-    startsWith: 'Empieza con',
-    endsWith: 'Termina con',
-    andCondition: 'Y',
-    orCondition: 'O',
-    group: 'Grupo',
-    columns: 'Columnas',
-    filters: 'Filtros',
-    pivotMode: 'Modo Pivote',
-    groups: 'Grupos',
-    values: 'Valores',
-    noRowsToShow: 'Sin filas para mostrar',
-    pinColumn: 'Fijar columna',
-    autosizeThiscolumn: 'Ajustar columna',
-    copy: 'Copiar',
-    resetColumns: 'Restablecer columnas',
-    blank: 'Vacíos',
-    notBlank: 'No Vacíos',
-    paginationPageSize: 'Registros por página',
+    page: "Página",
+    more: "Más",
+    to: "a",
+    of: "de",
+    next: "Siguiente",
+    last: "Último",
+    first: "Primero",
+    previous: "Anterior",
+    loadingOoo: "Cargando...",
+    selectAll: "Seleccionar todo",
+    searchOoo: "Buscar...",
+    blanks: "Vacíos",
+    filterOoo: "Filtrar...",
+    applyFilter: "Aplicar filtro...",
+    equals: "Igual",
+    notEqual: "Distinto",
+    lessThan: "Menor que",
+    greaterThan: "Mayor que",
+    contains: "Contiene",
+    notContains: "No contiene",
+    startsWith: "Empieza con",
+    endsWith: "Termina con",
+    andCondition: "Y",
+    orCondition: "O",
+    group: "Grupo",
+    columns: "Columnas",
+    filters: "Filtros",
+    pivotMode: "Modo Pivote",
+    groups: "Grupos",
+    values: "Valores",
+    noRowsToShow: "Sin filas para mostrar",
+    pinColumn: "Fijar columna",
+    autosizeThiscolumn: "Ajustar columna",
+    copy: "Copiar",
+    resetColumns: "Restablecer columnas",
+    blank: "Vacíos",
+    notBlank: "No Vacíos",
+    paginationPageSize: "Registros por página",
 };
 
 const estatusColorMap = {
-    1: 'badge-light-info', // Local solicitado
-    2: 'badge-light-success', // En patio
-    3: 'badge-light-info', // En revisión
-    4: 'badge-light-warning', // En proceso doc
-    5: 'badge-light-success', // Docs liberados
-    6: 'badge-light-warning', // Para liberación
-    7: 'badge-light-success', // Liberado
-    8: 'badge-light-warning', // Listo para salir
-    9: 'badge-light-success', // Fuera de patio
-    10: 'badge-light-info', // En espera
-    11: 'badge-light-danger', // Incidencia
-    12: 'badge-light-danger', // Cancelado
+    1: "badge-light-info", // Local solicitado
+    2: "badge-light-success", // En patio
+    3: "badge-light-info", // En revisión
+    4: "badge-light-warning", // En proceso doc
+    5: "badge-light-success", // Docs liberados
+    6: "badge-light-warning", // Para liberación
+    7: "badge-light-success", // Liberado
+    8: "badge-light-warning", // Listo para salir
+    9: "badge-light-success", // Fuera de patio
+    10: "badge-light-info", // En espera
+    11: "badge-light-danger", // Incidencia
+    12: "badge-light-danger", // Cancelado
 };
 
 const agCellClassRules = {
-    'badge fs-base': () => true,
+    "badge fs-base": () => true,
     ...Object.fromEntries(
-        Object.entries(estatusColorMap).map(([id, clase]) => [clase, (p) => p.data?.estatus_maniobra_id == id]),
+        Object.entries(estatusColorMap).map(([id, clase]) => [
+            clase,
+            (p) => p.data?.estatus_maniobra_id == id,
+        ]),
     ),
 };
-let motivoBloqueo = 'Selecciona al menos un registro';
+let motivoBloqueo = "Selecciona al menos un registro";
 
 function bloquearBoton(btn) {
-    btn.classList.add('disabled');
-    btn.style.pointerEvents = 'auto'; // IMPORTANTE: permitir click
+    btn.classList.add("disabled");
+    btn.style.pointerEvents = "auto";
 }
 
 function habilitarBoton(btn) {
-    btn.classList.remove('disabled');
-    btn.style.pointerEvents = 'auto';
+    btn.classList.remove("disabled");
+    btn.style.pointerEvents = "auto";
 }
 
 const gridOptions = {
@@ -170,16 +180,16 @@ const gridOptions = {
     paginationPageSizeSelector: [200, 500, 1000],
 
     rowSelection: {
-        mode: 'multiRow',
+        mode: "multiRow",
         headerCheckbox: true,
     },
 
     onSelectionChanged: (event) => {
         const rows = event.api.getSelectedRows();
-        const btn = document.getElementById('btnConvertirForaneo');
+        const btn = document.getElementById("btnConvertirForaneo");
 
         if (rows.length === 0) {
-            motivoBloqueo = 'Selecciona al menos un registro';
+            motivoBloqueo = "Selecciona al menos un registro";
             bloquearBoton(btn);
             return;
         }
@@ -187,10 +197,10 @@ const gridOptions = {
         const hayForaneos = rows.some((r) => r.convertido_foraneo);
 
         if (hayForaneos) {
-            motivoBloqueo = 'No puedes convertir registros que ya son foráneos';
+            motivoBloqueo = "No puedes convertir registros que ya son foráneos";
             bloquearBoton(btn);
         } else {
-            motivoBloqueo = '';
+            motivoBloqueo = "";
             habilitarBoton(btn);
         }
     },
@@ -203,25 +213,25 @@ const gridOptions = {
 
     columnDefs: [
         // ===== OCULTOS / CONTROL =====
-        { field: 'id', hide: true },
-        { field: 'estatus_maniobra_id', hide: true },
-        { field: 'tipo', hide: true },
-        { field: 'NUM_CONTENEDOR_REFER', hide: true },
-        { field: 'convertido_foraneo', hide: true },
+        { field: "id", hide: true },
+        { field: "estatus_maniobra_id", hide: true },
+        { field: "tipo", hide: true },
+        { field: "NUM_CONTENEDOR_REFER", hide: true },
+        { field: "convertido_foraneo", hide: true },
 
         // ===== DOCUMENTOS =====
         {
-            field: 'BoletaLiberacion',
-            headerName: 'Boleta Liberación',
+            field: "BoletaLiberacion",
+            headerName: "Boleta Liberación",
             width: 120,
             cellRenderer: MissionResultRenderer,
-            valueFormatter: (p) => (p.value ? 'SI' : 'NO'),
+            valueFormatter: (p) => (p.value ? "SI" : "NO"),
         },
         {
-            field: 'DODA',
+            field: "DODA",
             width: 90,
             cellRenderer: MissionResultRenderer,
-            valueFormatter: (p) => (p.value ? 'SI' : 'NO'),
+            valueFormatter: (p) => (p.value ? "SI" : "NO"),
         },
         // {
         //     field: 'FormatoCartaPorte',
@@ -242,50 +252,55 @@ const gridOptions = {
         //     cellRenderer: MissionResultRenderer,
         // },
         {
-            field: 'BoletaPatio',
-            headerName: 'Boleta Patio',
+            field: "BoletaPatio",
+            headerName: "Boleta Patio",
             width: 110,
             cellRenderer: MissionResultRenderer,
-            valueFormatter: (p) => (p.value ? 'SI' : 'NO'),
+            valueFormatter: (p) => (p.value ? "SI" : "NO"),
         },
 
         {
-            field: 'NumContenedor',
-            headerName: 'Contenedor',
+            field: "NumContenedor",
+            headerName: "Contenedor",
             minWidth: 180,
             autoHeight: true,
             cellStyle: (params) => {
                 const styles = {
-                    whiteSpace: 'normal',
-                    lineHeight: '1.5',
+                    whiteSpace: "normal",
+                    lineHeight: "1.5",
                 };
 
-                if (params.data.tipo === 'Full') {
-                    styles.backgroundColor = '#ffe5b4';
+                if (params.data.tipo === "Full") {
+                    styles.backgroundColor = "#ffe5b4";
                 }
 
                 return styles;
             },
         },
-        { field: 'Referencia', headerName: 'Referencia', minWidth: 150, autoHeight: true },
         {
-            field: 'estado_contenedor',
-            headerName: 'Estado Contenedor',
+            field: "Referencia",
+            headerName: "Referencia",
+            minWidth: 150,
+            autoHeight: true,
+        },
+        {
+            field: "estado_contenedor",
+            headerName: "Estado Contenedor",
             width: 130,
             cellRenderer: (p) => {
-                if (p.value === 'Ninguno') {
+                if (p.value === "Ninguno") {
                     return `<span class="text-muted">Ninguno</span>`;
                 }
 
                 const colors = {
-                    VERDE: '#198754',
-                    AMARILLO: '#ffc107',
-                    ROJO: '#dc3545',
-                    OVT: '#0d6efd',
+                    VERDE: "#198754",
+                    AMARILLO: "#ffc107",
+                    ROJO: "#dc3545",
+                    OVT: "#0d6efd",
                 };
 
                 return `
-        <span style="font-weight:bold; color:${colors[p.value] || '#000'}">
+        <span style="font-weight:bold; color:${colors[p.value] || "#000"}">
             ${p.value}
         </span>
     `;
@@ -293,13 +308,13 @@ const gridOptions = {
         },
 
         {
-            field: 'EstatusManiobra',
-            headerName: 'Estatus',
+            field: "EstatusManiobra",
+            headerName: "Estatus",
 
             cellClassRules: agCellClassRules,
             minWidth: 180,
             cellRenderer: (p) => {
-                if (!p.value) return '';
+                if (!p.value) return "";
 
                 return `
             <span
@@ -313,37 +328,49 @@ const gridOptions = {
             },
         },
 
-        { field: 'Origen', minWidth: 120 },
-        { field: 'Destino', minWidth: 120 },
-        { field: 'FechaModulacion', headerName: 'Fecha Modulación', width: 140 },
+        { field: "Origen", minWidth: 120 },
+        { field: "Destino", minWidth: 120 },
+        {
+            field: "FechaModulacion",
+            headerName: "Fecha Modulación",
+            width: 140,
+        },
 
-        { field: 'Peso', width: 80 },
-        { field: 'Tamano', headerName: 'Tamaño', width: 70 },
+        { field: "Peso", width: 80 },
+        { field: "Tamano", headerName: "Tamaño", width: 70 },
 
-        { field: 'Terminal', width: 120 },
-        { field: 'Puerto', width: 100 },
-        { field: 'NAutorizacion', headerName: 'N° Autorización', width: 150 },
-        { field: 'FechaSolicitud', headerName: 'Fecha Solicitud', width: 140 },
+        { field: "Terminal", width: 120 },
+        { field: "Puerto", width: 100 },
+        { field: "NAutorizacion", headerName: "N° Autorización", width: 150 },
+        { field: "FechaSolicitud", headerName: "Fecha Solicitud", width: 140 },
+        { field: "naviera", headerName: "Naviera", width: 150 },
+        { field: "cita_at", headerName: "Fecha Cita", width: 140 },
+        { field: "eta", headerName: "ETA", width: 140 },
+        {
+            field: "pedimento_recibido_at",
+            headerName: "Fecha Pedimento",
+            width: 180,
+        },
 
-        { field: 'cp_pedimento', headerName: 'Pedimento', width: 120 },
-        { field: 'cp_clase_ped', headerName: 'Clase Pedimento', width: 120 },
-        { field: 'dias_estadia', headerName: 'Días Estadía', width: 120 },
-        { field: 'dias_pernocta', headerName: 'Días Pernocta', width: 120 },
-        { field: 'tarifa_estadia', headerName: 'Tarifa Estadía', width: 120 },
-        { field: 'tarifa_pernocta', headerName: 'Tarifa Pernocta', width: 120 },
-        { field: 'total_estadia', headerName: 'Total Estadía', width: 120 },
-        { field: 'total_pernocta', headerName: 'Total Pernocta', width: 120 },
-        { field: 'costo_maniobra_local', headerName: 'Maniobra', width: 120 },
-        { field: 'total_general', headerName: 'Total General', width: 120 },
-        { field: 'agente_aduanal', minWidth: 180 },
+        { field: "cp_pedimento", headerName: "Pedimento", width: 120 },
+        { field: "cp_clase_ped", headerName: "Clase Pedimento", width: 120 },
+        { field: "dias_estadia", headerName: "Días Estadía", width: 120 },
+        { field: "dias_pernocta", headerName: "Días Pernocta", width: 120 },
+        { field: "tarifa_estadia", headerName: "Tarifa Estadía", width: 120 },
+        { field: "tarifa_pernocta", headerName: "Tarifa Pernocta", width: 120 },
+        { field: "total_estadia", headerName: "Total Estadía", width: 120 },
+        { field: "total_pernocta", headerName: "Total Pernocta", width: 120 },
+        { field: "costo_maniobra_local", headerName: "Maniobra", width: 120 },
+        { field: "total_general", headerName: "Total General", width: 120 },
+        { field: "agente_aduanal", minWidth: 180 },
 
-        { field: 'Empresa', minWidth: 180 },
-        { field: 'Proveedor', minWidth: 180 },
-        { field: 'Cliente', minWidth: 180 },
-        { field: 'Subcliente', minWidth: 180 },
+        { field: "Empresa", minWidth: 180 },
+        { field: "Proveedor", minWidth: 180 },
+        { field: "Cliente", minWidth: 180 },
+        { field: "Subcliente", minWidth: 180 },
 
         {
-            field: 'Observaciones',
+            field: "Observaciones",
             minWidth: 220,
             wrapText: true,
             autoHeight: true,
@@ -353,20 +380,20 @@ const gridOptions = {
     localeText: localeText,
 };
 
-const myGridElement = document.querySelector('#myGrid');
+const myGridElement = document.querySelector("#myGrid");
 let apiGrid = agGrid.createGrid(myGridElement, gridOptions);
 // const gridInstance = createGrid(myGridElement, gridOptions)//new agGrid.Grid(myGridElement, gridOptions);
 
-var paginationTitle = document.querySelector('#ag-32-label');
-paginationTitle.textContent = 'Registros por página';
+var paginationTitle = document.querySelector("#ag-32-label");
+paginationTitle.textContent = "Registros por página";
 
-const btnDocumets = document.querySelectorAll('.btnDocs');
+const btnDocumets = document.querySelectorAll(".btnDocs");
 //const api = createGrid(gridDiv, gridOptions)
 let columnsCache = [];
 
 function toggleColumns() {
-    const container = document.getElementById('columnsCheckboxes');
-    container.innerHTML = '';
+    const container = document.getElementById("columnsCheckboxes");
+    container.innerHTML = "";
     columnsCache = [];
 
     gridOptions.columnDefs.forEach((col) => {
@@ -391,7 +418,7 @@ function toggleColumns() {
                     <input
                         class="form-check-input"
                         type="checkbox"
-                        ${checked ? 'checked' : ''}
+                        ${checked ? "checked" : ""}
                         onchange="toggleColumn('${col.field}', this.checked)"
                     >
                 </div>
@@ -401,17 +428,17 @@ function toggleColumns() {
 `;
     });
 
-    new bootstrap.Modal(document.getElementById('columnsModal')).show();
+    new bootstrap.Modal(document.getElementById("columnsModal")).show();
 
-    new Sortable(document.getElementById('columnsCheckboxes'), {
+    new Sortable(document.getElementById("columnsCheckboxes"), {
         animation: 150,
-        ghostClass: 'bg-light',
+        ghostClass: "bg-light",
     });
 }
 
-let btnAplicarcambiosmodal = document.getElementById('btnAplicarCambios');
+let btnAplicarcambiosmodal = document.getElementById("btnAplicarCambios");
 function applyColumnsOrderFromModal() {
-    const items = document.querySelectorAll('.column-item');
+    const items = document.querySelectorAll(".column-item");
 
     const state = [];
     let order = 0;
@@ -435,7 +462,7 @@ function applyColumnsOrderFromModal() {
     saveColumnsState();
 }
 
-btnAplicarcambiosmodal.addEventListener('click', applyColumnsOrderFromModal);
+btnAplicarcambiosmodal.addEventListener("click", applyColumnsOrderFromModal);
 
 function toggleColumn(field, visible) {
     apiGrid.applyColumnState({
@@ -444,22 +471,24 @@ function toggleColumn(field, visible) {
 }
 function filterColumns(text) {
     text = text.toLowerCase();
-    document.querySelectorAll('.column-item').forEach((el) => {
-        el.style.display = el.dataset.name.includes(text) ? '' : 'none';
+    document.querySelectorAll(".column-item").forEach((el) => {
+        el.style.display = el.dataset.name.includes(text) ? "" : "none";
     });
 }
 function formatBool($value) {
-    return $value ? 'SI' : 'NO';
+    return $value ? "SI" : "NO";
 }
 function exportExcel() {
     apiGrid.exportDataAsCsv({
-        fileName: 'maniobras.csv',
+        fileName: "maniobras.csv",
     });
 }
 function updateColumnSwitches(visible) {
-    document.querySelectorAll('#columnsCheckboxes input[type="checkbox"]').forEach((checkbox) => {
-        checkbox.checked = visible;
-    });
+    document
+        .querySelectorAll('#columnsCheckboxes input[type="checkbox"]')
+        .forEach((checkbox) => {
+            checkbox.checked = visible;
+        });
 }
 
 function showAllColumns() {
@@ -484,12 +513,19 @@ function hideAllColumns() {
 function exportPDF() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({
-        orientation: 'landscape',
-        unit: 'mm',
+        orientation: "landscape",
+        unit: "mm",
         format: [216, 356],
     });
 
-    const booleanFields = ['BoletaLiberacion', 'DODA', 'BoletaPatio', 'FormatoCartaPorte', 'PreAlta', 'foto_patio'];
+    const booleanFields = [
+        "BoletaLiberacion",
+        "DODA",
+        "BoletaPatio",
+        "FormatoCartaPorte",
+        "PreAlta",
+        "foto_patio",
+    ];
 
     const columns = apiGrid
         .getColumnDefs()
@@ -510,7 +546,7 @@ function exportPDF() {
         styles: { fontSize: 8 },
 
         didParseCell: function (hookData) {
-            if (hookData.section !== 'body') return;
+            if (hookData.section !== "body") return;
 
             const { cell, column, row } = hookData;
             const field = column.dataKey;
@@ -519,82 +555,102 @@ function exportPDF() {
                 const value = row.raw[field];
 
                 if (value) {
-                    cell.text = ['SI'];
+                    cell.text = ["SI"];
                     cell.styles.fillColor = [212, 237, 218]; // verde
                     cell.styles.textColor = [40, 167, 69];
                 } else {
-                    cell.text = ['NO'];
+                    cell.text = ["NO"];
                     cell.styles.fillColor = [248, 215, 218]; // rojo
                     cell.styles.textColor = [220, 53, 69];
                 }
 
-                cell.styles.fontStyle = 'bold';
-                cell.styles.halign = 'center';
+                cell.styles.fontStyle = "bold";
+                cell.styles.halign = "center";
             }
         },
     });
 
-    doc.save('maniobras.pdf');
+    doc.save("maniobras.pdf");
 }
 
 function saveColumnsState() {
-    localStorage.setItem('maniobras_columns', JSON.stringify(apiGrid.getColumnState()));
-    let gridNamebydata = document.getElementById('myGrid').getAttribute('data-name');
+    localStorage.setItem(
+        "maniobras_columns",
+        JSON.stringify(apiGrid.getColumnState()),
+    );
+    let gridNamebydata = document
+        .getElementById("myGrid")
+        .getAttribute("data-name");
     //grid_viajes_solicitados_local
 
-    var _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    var _token = document
+        .querySelector('meta[name="csrf-token"]')
+        .getAttribute("content");
     $.ajax({
-        url: 'viajes/columnas-estado/store',
-        type: 'post',
-        data: { _token, grid_key: gridNamebydata, stateColumns: JSON.stringify(apiGrid.getColumnState()) },
+        url: "viajes/columnas-estado/store",
+        type: "post",
+        data: {
+            _token,
+            grid_key: gridNamebydata,
+            stateColumns: JSON.stringify(apiGrid.getColumnState()),
+        },
         beforeSend: () => {},
         success: (response) => {
             //console.log('Columnas guardadas en el servidor');
             if (!response.ok) {
                 Swal.fire({
-                    icon: 'Error',
-                    message: 'No se pudo guardar el orden de columnas por usuario.',
-                    title: 'Error',
+                    icon: "Error",
+                    message:
+                        "No se pudo guardar el orden de columnas por usuario.",
+                    title: "Error",
                 });
             }
 
             //aqui paso ok true y mandamos alerta para informar
-            Swal.fire({ icon: 'success', message: 'Datos guardaos correctamente', title: 'Guardado' });
+            Swal.fire({
+                icon: "success",
+                message: "Datos guardaos correctamente",
+                title: "Guardado",
+            });
         },
         error: () => {},
     });
 }
 
-function getContenedoresPendientes(estatus = 'Local') {
-    var _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+function getContenedoresPendientes(estatus = "Local") {
+    var _token = document
+        .querySelector('meta[name="csrf-token"]')
+        .getAttribute("content");
 
-    let OcultarForaneos = document.getElementById('validar_foraneos').value;
+    let OcultarForaneos = document.getElementById("validar_foraneos").value;
     $.ajax({
-        url: '/viajes/documents/pending-local',
-        type: 'post',
+        url: "/viajes/documents/pending-local",
+        type: "post",
         data: { _token, estatus, OcultarForaneos },
         beforeSend: () => {},
         success: (response) => {
             if (response.length > 0) {
                 btnDocumets.forEach((btn) => (btn.disabled = false));
             }
-            apiGrid.setGridOption('rowData', response);
+            apiGrid.setGridOption("rowData", response);
         },
         error: () => {},
     });
 }
-function getContenedoresPendientesPatio(estatus = 'Local') {
-    var _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+function getContenedoresPendientesPatio(estatus = "Local") {
+    var _token = document
+        .querySelector('meta[name="csrf-token"]')
+        .getAttribute("content");
     $.ajax({
-        url: '/viajes/documents/pending-local-patio',
-        type: 'post',
+        url: "/viajes/documents/pending-local-patio",
+        type: "post",
         data: { _token, estatus },
         beforeSend: () => {},
         success: (response) => {
             if (response.length > 0) {
                 btnDocumets.forEach((btn) => (btn.disabled = false));
             }
-            apiGrid.setGridOption('rowData', response);
+            apiGrid.setGridOption("rowData", response);
         },
         error: () => {},
     });
@@ -608,29 +664,31 @@ function goToUploadDocuments() {
             debug: false,
             newestOnTop: false,
             progressBar: true,
-            positionClass: 'toastr-top-center',
+            positionClass: "toastr-top-center",
             preventDuplicates: false,
             onclick: null,
-            showDuration: '1500',
-            hideDuration: '1000',
-            timeOut: '5000',
-            extendedTimeOut: '1000',
-            showEasing: 'swing',
-            hideEasing: 'linear',
-            showMethod: 'fadeIn',
-            hideMethod: 'fadeOut',
+            showDuration: "1500",
+            hideDuration: "1000",
+            timeOut: "5000",
+            extendedTimeOut: "1000",
+            showEasing: "swing",
+            hideEasing: "linear",
+            showMethod: "fadeIn",
+            hideMethod: "fadeOut",
         };
 
-        toastr.error(`Debe seleccionar unicamente un contenedor para esta opción`);
+        toastr.error(
+            `Debe seleccionar unicamente un contenedor para esta opción`,
+        );
         return false;
     }
     let numContenedor = null;
     contenedor.forEach((c) => (numContenedor = c.NumContenedor));
 
-    let titleFileUploader = document.querySelector('#titleFileUploader');
+    let titleFileUploader = document.querySelector("#titleFileUploader");
     titleFileUploader.textContent = numContenedor.toUpperCase();
-    localStorage.setItem('numContenedor', numContenedor);
-    const modalElement = document.getElementById('kt_modal_fileuploader');
+    localStorage.setItem("numContenedor", numContenedor);
+    const modalElement = document.getElementById("kt_modal_fileuploader");
     const bootstrapModal = new bootstrap.Modal(modalElement);
     bootstrapModal.show();
 }
@@ -643,28 +701,30 @@ function cancelarViajeQuestion() {
             debug: false,
             newestOnTop: false,
             progressBar: true,
-            positionClass: 'toastr-top-center',
+            positionClass: "toastr-top-center",
             preventDuplicates: false,
             onclick: null,
-            showDuration: '1500',
-            hideDuration: '1000',
-            timeOut: '5000',
-            extendedTimeOut: '1000',
-            showEasing: 'swing',
-            hideEasing: 'linear',
-            showMethod: 'fadeIn',
-            hideMethod: 'fadeOut',
+            showDuration: "1500",
+            hideDuration: "1000",
+            timeOut: "5000",
+            extendedTimeOut: "1000",
+            showEasing: "swing",
+            hideEasing: "linear",
+            showMethod: "fadeIn",
+            hideMethod: "fadeOut",
         };
 
-        toastr.error(`Debe seleccionar unicamente un contenedor para esta opción`);
+        toastr.error(
+            `Debe seleccionar unicamente un contenedor para esta opción`,
+        );
         return false;
     }
     Swal.fire({
-        title: '¿Desea cancelar el viaje seleccionado?',
+        title: "¿Desea cancelar el viaje seleccionado?",
         text: 'Está a punto de cancelar el viaje, si está seguro haga click en "Si, Cancelar"',
-        icon: 'question',
-        confirmButtonText: 'Si, Cancelar',
-        cancelButtonText: 'No quiero cancelarlo',
+        icon: "question",
+        confirmButtonText: "Si, Cancelar",
+        cancelButtonText: "No quiero cancelarlo",
         showCancelButton: true,
     }).then((respuesta) => {
         if (respuesta.isConfirmed) {
@@ -680,18 +740,24 @@ function cancelarViajeConfirm() {
     let numContenedor = null;
     contenedor.forEach((c) => (numContenedor = c.NumContenedor));
 
-    let _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    let _token = document
+        .querySelector('meta[name="csrf-token"]')
+        .getAttribute("content");
 
     $.ajax({
-        url: '/viajes/cancelar',
-        type: 'post',
+        url: "/viajes/cancelar",
+        type: "post",
         data: { _token, numContenedor },
         beforeSend: () => {},
         success: (response) => {
             Swal.fire(response.Titulo, response.Mensaje, response.TMensaje);
         },
         error: (err) => {
-            Swal.fire('Ocurrio un error', 'No se pudo procesar la solicitud', 'error');
+            Swal.fire(
+                "Ocurrio un error",
+                "No se pudo procesar la solicitud",
+                "error",
+            );
         },
     });
 }
@@ -701,32 +767,38 @@ function viajeFull() {
 
     if (seleccion.length > 2) {
         Swal.fire(
-            'Maximo 2 contenedores',
-            'Lo sentimos, solo puede seleccionar maximo 2 contenedores, estos deben ser de un mismo cliente',
-            'warning',
+            "Maximo 2 contenedores",
+            "Lo sentimos, solo puede seleccionar maximo 2 contenedores, estos deben ser de un mismo cliente",
+            "warning",
         );
         return false;
     }
 
     Swal.fire({
-        title: '¿Estás seguro?',
-        text: 'Quiere unir los contenedores seleccionados en un viaje Full.',
-        icon: 'question',
+        title: "¿Estás seguro?",
+        text: "Quiere unir los contenedores seleccionados en un viaje Full.",
+        icon: "question",
         showCancelButton: true,
-        confirmButtonText: 'Sí, continuar',
-        cancelButtonText: 'No, cancelar',
+        confirmButtonText: "Sí, continuar",
+        cancelButtonText: "No, cancelar",
         reverseButtons: true, // Opcional: invierte el orden de los botones
     }).then((result) => {
         if (result.isConfirmed) {
-            let _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            let _token = document
+                .querySelector('meta[name="csrf-token"]')
+                .getAttribute("content");
             $.ajax({
-                url: '/cotizaciones/transformar/full',
-                type: 'post',
+                url: "/cotizaciones/transformar/full",
+                type: "post",
                 data: { _token, seleccion },
                 beforeSend: () => {},
                 success: (response) => {
-                    Swal.fire(response.Titulo, response.Mensaje, response.TMensaje);
-                    if (response.TMensaje == 'success') {
+                    Swal.fire(
+                        response.Titulo,
+                        response.Mensaje,
+                        response.TMensaje,
+                    );
+                    if (response.TMensaje == "success") {
                         getCotizacionesList();
                     }
                 },
@@ -734,58 +806,67 @@ function viajeFull() {
             });
         } else if (result.dismiss === Swal.DismissReason.cancel) {
             // Acción si el usuario canceló
-            console.log('El usuario canceló');
+            console.log("El usuario canceló");
         }
     });
 }
 
 function convertirForaneo() {
     let seleccion = apiGrid.getSelectedRows();
-    let btnforaneo = document.getElementById('btnConvertirForaneo');
-    if (btnforaneo.classList.contains('disabled')) {
+    let btnforaneo = document.getElementById("btnConvertirForaneo");
+    if (btnforaneo.classList.contains("disabled")) {
         Swal.fire({
-            icon: 'warning',
-            title: 'Acción no permitida',
+            icon: "warning",
+            title: "Acción no permitida",
             text: motivoBloqueo,
-            confirmButtonText: 'Entendido',
+            confirmButtonText: "Entendido",
         });
         return;
     }
 
     Swal.fire({
-        title: '¿Estás seguro?',
-        text: 'Esta accion convertirá los contenedores seleccionados a viaje foráneo.',
-        icon: 'question',
+        title: "¿Estás seguro?",
+        text: "Esta accion convertirá los contenedores seleccionados a viaje foráneo.",
+        icon: "question",
         showCancelButton: true,
-        confirmButtonText: 'Sí, continuar',
-        cancelButtonText: 'No, cancelar',
+        confirmButtonText: "Sí, continuar",
+        cancelButtonText: "No, cancelar",
         reverseButtons: true, // Opcional: invierte el orden de los botones
     }).then((result) => {
         if (result.isConfirmed) {
-            let _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            let _token = document
+                .querySelector('meta[name="csrf-token"]')
+                .getAttribute("content");
             $.ajax({
-                url: '/cotizaciones/transformar/foraneo',
-                type: 'post',
+                url: "/cotizaciones/transformar/foraneo",
+                type: "post",
                 data: { _token, seleccion },
                 beforeSend: () => {},
                 success: (response) => {
-                    Swal.fire(response.Titulo, response.Mensaje, response.TMensaje);
-                    if (response.TMensaje == 'success') {
-                        let estat = document.getElementById('estatus_maniobra').value;
+                    Swal.fire(
+                        response.Titulo,
+                        response.Mensaje,
+                        response.TMensaje,
+                    );
+                    if (response.TMensaje == "success") {
+                        let estat =
+                            document.getElementById("estatus_maniobra").value;
                         getContenedoresPendientes(estat);
                     }
                 },
                 error: () => {},
             });
         } else if (result.dismiss === Swal.DismissReason.cancel) {
-            console.log('El usuario canceló');
+            console.log("El usuario canceló");
         }
     });
 }
 
 function fileManager() {
-    var _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-    var url = '/viajes/file-manager-local';
+    var _token = document
+        .querySelector('meta[name="csrf-token"]')
+        .getAttribute("content");
+    var url = "/viajes/file-manager-local";
 
     let contenedor = apiGrid.getSelectedRows();
 
@@ -795,20 +876,22 @@ function fileManager() {
             debug: false,
             newestOnTop: false,
             progressBar: true,
-            positionClass: 'toastr-top-center',
+            positionClass: "toastr-top-center",
             preventDuplicates: false,
             onclick: null,
-            showDuration: '1500',
-            hideDuration: '1000',
-            timeOut: '5000',
-            extendedTimeOut: '1000',
-            showEasing: 'swing',
-            hideEasing: 'linear',
-            showMethod: 'fadeIn',
-            hideMethod: 'fadeOut',
+            showDuration: "1500",
+            hideDuration: "1000",
+            timeOut: "5000",
+            extendedTimeOut: "1000",
+            showEasing: "swing",
+            hideEasing: "linear",
+            showMethod: "fadeIn",
+            hideMethod: "fadeOut",
         };
 
-        toastr.error(`Debe seleccionar unicamente un contenedor para esta opción`);
+        toastr.error(
+            `Debe seleccionar unicamente un contenedor para esta opción`,
+        );
         return false;
     }
 
@@ -825,10 +908,10 @@ function fileManager() {
             '<input type="hidden" name="_token" value="' +
             _token +
             '" />' +
-            '</form>',
+            "</form>",
     );
 
-    $('body').append(form);
+    $("body").append(form);
     form.submit();
 
     setTimeout(() => {
@@ -839,8 +922,10 @@ function fileManager() {
 }
 
 function editarViaje() {
-    const _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-    const url = '/viajes/editar-local';
+    const _token = document
+        .querySelector('meta[name="csrf-token"]')
+        .getAttribute("content");
+    const url = "/viajes/editar-local";
 
     let seleccionados = apiGrid.getSelectedRows();
 
@@ -850,37 +935,40 @@ function editarViaje() {
             debug: false,
             newestOnTop: false,
             progressBar: true,
-            positionClass: 'toastr-top-center',
+            positionClass: "toastr-top-center",
             preventDuplicates: false,
             onclick: null,
-            showDuration: '1500',
-            hideDuration: '1000',
-            timeOut: '5000',
-            extendedTimeOut: '1000',
-            showEasing: 'swing',
-            hideEasing: 'linear',
-            showMethod: 'fadeIn',
-            hideMethod: 'fadeOut',
+            showDuration: "1500",
+            hideDuration: "1000",
+            timeOut: "5000",
+            extendedTimeOut: "1000",
+            showEasing: "swing",
+            hideEasing: "linear",
+            showMethod: "fadeIn",
+            hideMethod: "fadeOut",
         };
 
-        toastr.error(`Debe seleccionar unicamente un contenedor para esta opción`);
+        toastr.error(
+            `Debe seleccionar unicamente un contenedor para esta opción`,
+        );
         return false;
     }
 
     const viaje = seleccionados[0];
 
     // Si es FULL y tiene más de un viaje asociado, mostrar modal
-    const contenedores = viaje.NumContenedor?.split(' ')
+    const contenedores = viaje.NumContenedor?.split(" ")
         .map((c) => c.trim())
         .filter(Boolean);
 
     if (contenedores.length > 1) {
-        const contenedorOpciones = document.getElementById('contenedorOpciones');
-        contenedorOpciones.innerHTML = ''; // Limpia opciones anteriores
+        const contenedorOpciones =
+            document.getElementById("contenedorOpciones");
+        contenedorOpciones.innerHTML = ""; // Limpia opciones anteriores
 
         contenedores.forEach((numContenedor) => {
-            const btn = document.createElement('button');
-            btn.classList.add('btn', 'btn-outline-primary', 'mb-2', 'w-100');
+            const btn = document.createElement("button");
+            btn.classList.add("btn", "btn-outline-primary", "mb-2", "w-100");
             btn.textContent = `Editar contenedor: ${numContenedor}`;
             btn.onclick = () => {
                 const form = $(
@@ -893,9 +981,9 @@ function editarViaje() {
                         '<input type="hidden" name="_token" value="' +
                         _token +
                         '" />' +
-                        '</form>',
+                        "</form>",
                 );
-                $('body').append(form);
+                $("body").append(form);
                 form.submit();
 
                 setTimeout(() => {
@@ -905,7 +993,9 @@ function editarViaje() {
             contenedorOpciones.appendChild(btn);
         });
 
-        const modal = new bootstrap.Modal(document.getElementById('modalSeleccionContenedor'));
+        const modal = new bootstrap.Modal(
+            document.getElementById("modalSeleccionContenedor"),
+        );
         modal.show();
         return;
     }
@@ -924,10 +1014,10 @@ function editarViaje() {
             '<input type="hidden" name="_token" value="' +
             _token +
             '" />' +
-            '</form>',
+            "</form>",
     );
 
-    $('body').append(form);
+    $("body").append(form);
     form.submit();
 
     setTimeout(() => {
@@ -938,8 +1028,10 @@ function editarViaje() {
 }
 
 function getFilesCFDI() {
-    var _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-    var url = '/viajes/file-manager/cfdi-files';
+    var _token = document
+        .querySelector('meta[name="csrf-token"]')
+        .getAttribute("content");
+    var url = "/viajes/file-manager/cfdi-files";
 
     let contenedores = apiGrid.getSelectedRows();
     if (contenedores.length <= 0) {
@@ -948,17 +1040,17 @@ function getFilesCFDI() {
             debug: false,
             newestOnTop: false,
             progressBar: true,
-            positionClass: 'toastr-top-center',
+            positionClass: "toastr-top-center",
             preventDuplicates: false,
             onclick: null,
-            showDuration: '1500',
-            hideDuration: '1000',
-            timeOut: '5000',
-            extendedTimeOut: '1000',
-            showEasing: 'swing',
-            hideEasing: 'linear',
-            showMethod: 'fadeIn',
-            hideMethod: 'fadeOut',
+            showDuration: "1500",
+            hideDuration: "1000",
+            timeOut: "5000",
+            extendedTimeOut: "1000",
+            showEasing: "swing",
+            hideEasing: "linear",
+            showMethod: "fadeIn",
+            hideMethod: "fadeOut",
         };
 
         toastr.info(`Debe seleccionar al menos un contenedor`);
@@ -967,20 +1059,24 @@ function getFilesCFDI() {
 
     $.ajax({
         url: url,
-        type: 'post',
+        type: "post",
         data: { _token, contenedores },
         beforeSend: () => {},
         success: (response) => {
             if (response.success) {
                 const fileURL = `viajes/file-manager/cfdi-files/${response.zipUrl}`;
-                const link = document.createElement('a');
+                const link = document.createElement("a");
                 link.href = fileURL;
                 document.body.appendChild(link);
                 link.click();
 
                 document.body.removeChild(link);
             } else {
-                Swal.fire('Ha ocurrido un error', 'No se pudo descargar el archivo', 'warning');
+                Swal.fire(
+                    "Ha ocurrido un error",
+                    "No se pudo descargar el archivo",
+                    "warning",
+                );
             }
         },
         error: () => {},
@@ -990,46 +1086,54 @@ function mostrarDescripcionEstatus(select) {
     const opcion = select.options[select.selectedIndex];
     const descripcion = opcion.dataset.descripcion;
 
-    document.getElementById('descripcionEstatus').innerText =
-        descripcion || 'Seleccione un estatus para ver la descripción';
+    document.getElementById("descripcionEstatus").innerText =
+        descripcion || "Seleccione un estatus para ver la descripción";
 }
 function ModalCambiarEstatus() {
     let contenedores = apiGrid.getSelectedRows();
 
     if (contenedores.length == 0) {
-        Swal.fire('Validacion', 'Seleccione al menos un contenedor de la tabla...', 'warning');
+        Swal.fire(
+            "Validacion",
+            "Seleccione al menos un contenedor de la tabla...",
+            "warning",
+        );
         return false;
     }
 
     let maniobraId = contenedores[0].id;
     let statusActual = contenedores[0].estatus_maniobra_id;
 
-    document.getElementById('nota_estatus').value = '';
+    document.getElementById("nota_estatus").value = "";
 
-    document.getElementById('estatus_id').value = statusActual;
+    document.getElementById("estatus_id").value = statusActual;
 
-    document.getElementById('maniobra_id').value = maniobraId;
+    document.getElementById("maniobra_id").value = maniobraId;
 
-    const modal = new bootstrap.Modal(document.getElementById('modalCambiarEstatus'));
+    const modal = new bootstrap.Modal(
+        document.getElementById("modalCambiarEstatus"),
+    );
     modal.show();
 }
 
 function guardarCambioEstatus() {
-    const maniobraId = document.getElementById('maniobra_id').value;
-    const estatusId = document.getElementById('estatus_id').value;
-    const notaEstatus = document.getElementById('nota_estatus').value;
-    var _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    const maniobraId = document.getElementById("maniobra_id").value;
+    const estatusId = document.getElementById("estatus_id").value;
+    const notaEstatus = document.getElementById("nota_estatus").value;
+    var _token = document
+        .querySelector('meta[name="csrf-token"]')
+        .getAttribute("content");
 
     if (!estatusId) {
-        alert('Seleccione un estatus');
+        alert("Seleccione un estatus");
         return;
     }
     try {
         fetch(`viajes/maniobras/cambiar-estatus`, {
-            method: 'POST',
+            method: "POST",
             headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': _token,
+                "Content-Type": "application/json",
+                "X-CSRF-TOKEN": _token,
             },
             body: JSON.stringify({
                 estatus_id: estatusId,
@@ -1039,20 +1143,22 @@ function guardarCambioEstatus() {
         })
             .then((r) => r.json())
             .then((resp) => {
-                if (resp.TMensaje === 'success') {
-                    Swal.fire(resp.Titulo, resp.Mensaje, 'success').then(() => {
-                        getContenedoresPendientes('all');
+                if (resp.TMensaje === "success") {
+                    Swal.fire(resp.Titulo, resp.Mensaje, "success").then(() => {
+                        getContenedoresPendientes("all");
                     });
 
                     //cerramos modal
-                    const modalElement = document.getElementById('modalCambiarEstatus');
+                    const modalElement = document.getElementById(
+                        "modalCambiarEstatus",
+                    );
                     const modal = bootstrap.Modal.getInstance(modalElement);
                     modal.hide();
                 }
             });
     } catch (e) {
-        console.error('Error al cambiar estatus:', e);
-        Swal.fire('Error', e.Mensaje, 'error');
+        console.error("Error al cambiar estatus:", e);
+        Swal.fire("Error", e.Mensaje, "error");
     }
 }
 

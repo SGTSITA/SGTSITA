@@ -73,4 +73,35 @@ class User extends Authenticatable
         );
     }
 
+    public function clientes()
+    {
+        return $this->belongsToMany(
+            Client::class,
+            'user_clientes',
+            'user_id',
+            'cliente_id'
+        );
+    }
+
+    public function notificaciones()
+{
+    return $this->hasMany(Notificacion::class, 'user_id');
+}
+
+public function notificacionesNoLeidas()
+{
+    return $this->hasMany(Notificacion::class, 'user_id')
+        ->whereNull('leida_at');
+}
+
+public function reglasNotificacion()
+{
+    return $this->belongsToMany(
+        NotificacionRegla::class,
+        'notificacion_regla_usuarios',
+        'user_id',
+        'notificacion_regla_id'
+    )->withTimestamps();
+}
+
 }

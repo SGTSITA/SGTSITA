@@ -46,6 +46,65 @@ paginationTitle.textContent = "Registros por página";
 
 let IdContenedorViaje = null;
 
+$(document).on("click", "#btnGuardarKmDiesel", function () {
+    const cotizacionId = $("#cotizacion_km_diesel_id").val();
+    const kmRecorridos = $("#km_recorridos").val();
+    const litrosDiesel = $("#litros_diesel").val();
+
+    if (!cotizacionId) {
+        Swal.fire({
+            icon: "warning",
+            title: "Cotización no encontrada",
+            text: "No se encontró el ID de la cotización.",
+        });
+        return;
+    }
+
+    $.ajax({
+        url: `/cotizaciones/${cotizacionId}/km-diesel`,
+        method: "PATCH",
+        data: {
+            _token: $('meta[name="csrf-token"]').attr("content"),
+            km_recorridos: kmRecorridos,
+            litros_diesel: litrosDiesel,
+        },
+        beforeSend: function () {
+            $("#btnGuardarKmDiesel")
+                .prop("disabled", true)
+                .html('<i class="fas fa-spinner fa-spin"></i>');
+        },
+        success: function (response) {
+            Swal.fire({
+                icon: "success",
+                title: "Actualizado",
+                text: response.message || "Datos actualizados correctamente.",
+                timer: 1400,
+                showConfirmButton: false,
+            });
+
+            $("#km_recorridos").val(response.data.km_recorridos ?? "");
+            $("#litros_diesel").val(response.data.litros_diesel ?? "");
+        },
+        error: function (xhr) {
+            const msg =
+                xhr.responseJSON?.message ||
+                Object.values(xhr.responseJSON?.errors || {})?.[0]?.[0] ||
+                "No se pudieron actualizar los datos.";
+
+            Swal.fire({
+                icon: "error",
+                title: "Error",
+                text: msg,
+            });
+        },
+        complete: function () {
+            $("#btnGuardarKmDiesel")
+                .prop("disabled", false)
+                .html('<i class="fas fa-save"></i>');
+        },
+    });
+});
+
 function getGastosOperador() {
     var _token = document
         .querySelector('meta[name="csrf-token"]')
@@ -228,6 +287,15 @@ function applyPaymentGastosOperador() {
         .querySelector('meta[name="csrf-token"]')
         .getAttribute("content");
 
+    Swal.fire({
+        title: "Procesando...",
+        text: "Aplicando pago gasto",
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        },
+    });
+
     $.ajax({
         url: "/cotizaciones/gastos-operador/pagar",
         type: "post",
@@ -259,18 +327,50 @@ function applyPaymentGastosOperador() {
 }
 
 function eliminarGastoOperador() {
-    Swal.fire({
+    let gastosselec = null;
+    if (gridElementGastosOperador) {
+        gastosselec = apiGridGastosOperador.getSelectedRows();
+    }
+    let pagado = gastosselec.every((gasto) => {
+        if (gasto.Estatus != "Pago Pendiente") return false;
+    });
+
+    let fechaMovi = gastosselec[0].FechaPago;
+
+    let swalOptions = {
         title: "¿Desea eliminar el gasto seleccionado?",
         text: 'Estas a punto de eliminar un gasto, si se encuentra seguro haga click en "Si, Eliminar"',
         icon: "warning",
+
         showCancelButton: true,
         confirmButtonColor: "#3085d6",
         cancelButtonColor: "#d33",
         confirmButtonText: "Si, Eliminar!",
         cancelButtonText: "Cancelar",
-    }).then((result) => {
+    };
+
+    if (fechaMovi) {
+        swalOptions.input = "text";
+        swalOptions.inputLabel = "Fecha Cancelación";
+        swalOptions.inputValue = fechaMovi;
+
+        swalOptions.didOpen = () => {
+            const input = Swal.getInput();
+
+            input.type = "date";
+            input.required = true;
+        };
+
+        swalOptions.inputValidator = (value) => {
+            if (!value) {
+                return "La fecha es obligatoria";
+            }
+        };
+    }
+
+    Swal.fire(swalOptions).then((result) => {
         if (result.isConfirmed) {
-            //
+            const fechaCancelacion = fechaMovi ? result.value : null;
             let seleccionEliminarPago = apiGridGastosOperador.getSelectedRows();
             let _token = document
                 .querySelector('meta[name="csrf-token"]')
@@ -282,7 +382,12 @@ function eliminarGastoOperador() {
             $.ajax({
                 url: "/cotizaciones/gastos-operador/eliminar",
                 type: "post",
-                data: { seleccionEliminarPago, numContenedor, _token },
+                data: {
+                    seleccionEliminarPago,
+                    fechacancelacion: fechaCancelacion,
+                    numContenedor,
+                    _token,
+                },
                 beforeSend: () => {},
                 success: (response) => {
                     Swal.fire(

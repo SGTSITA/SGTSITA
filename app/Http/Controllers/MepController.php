@@ -15,6 +15,8 @@ use App\Models\DocumCotizacion;
 use App\Traits\CommonTrait as common;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use App\Services\UbicacionService;
+use Illuminate\Support\Facades\Crypt;
 
 class MepController extends Controller
 {
@@ -145,7 +147,13 @@ class MepController extends Controller
 
     public function validarEquiposEmpresa($numUnidad, $imei, $placas, $serie, $provGps, $tipoEquipo)
     {
+        if (empty($numUnidad)) {
+            return null; // Si no se proporciona número de unidad, no hacemos nada
+        }
+
         $unidad = Equipo::where('id_empresa', auth()->user()->id_empresa)->where('id_equipo', $numUnidad)->where('user_id', auth()->user()->id);
+
+
         if (!$unidad->exists()) {
             $unidad = new Equipo();
             $unidad->id_equipo = $numUnidad;
@@ -253,12 +261,14 @@ class MepController extends Controller
         $idunidad = $unidad->id;
         //Chasis / Plataforma
         $idChasisA = self::validarEquiposEmpresa($formData['txtNumChasisA'], $formData['txtImeiChasisA'], $formData['txtPlacasA'], '', $formData['selectChasisAGPS'], 'Chasis / Plataforma');
+
         $idChasisB = self::validarEquiposEmpresa($formData['txtNumChasisB'], $formData['txtImeiChasisB'], $formData['txtPlacasB'], '', $formData['selectChasisBGPS'], 'Chasis / Plataforma');
 
 
         $idContenedor = $r->input('idContenedor');
 
-        $asignacion = Asignaciones::where('id_contenedor', $idContenedor)->first();
+          $documento= DocumCotizacion::where('id_cotizacion', $idContenedor)->first(); // mandan asi y el valor es cotizacion id
+        $asignacion = Asignaciones::where('id_contenedor', $documento->id)->first();
 
         $fechaI = $formData['txtFechaInicio'] ?? null;
         $fechaF = $formData['txtFechaFinal'] ?? null;
@@ -291,7 +301,7 @@ class MepController extends Controller
 
         $proveedorid = $formData['cmbProveedor'];
 
-        $DocCotizacion = DocumCotizacion::where('id', $idContenedor)->first();
+        $DocCotizacion = DocumCotizacion::where('id',$documento->id)->first();
 
         if ($asignacion) {
 
@@ -319,7 +329,7 @@ class MepController extends Controller
             $fecha = date('Y-m-d');
             $asignacion = new Asignaciones();
             $asignacion->id_empresa = $DocCotizacion?->Cotizacion?->id_empresa ?? auth()->user()->id_empresa;
-            $asignacion->id_contenedor = $idContenedor;
+            $asignacion->id_contenedor = $documento->id;
             $asignacion->id_camion = $idunidad;
             $asignacion->id_chasis = $idChasisA;
             $asignacion->id_chasis2 = $idChasisB;
@@ -338,7 +348,7 @@ class MepController extends Controller
 
         if ($planearViaje == 1) { // validar desde el form
             //dd($planearViaje);
-            $contenedor = DocumCotizacion::where('id', $idContenedor)->first(); //buscamos la relacion no siempre sera el mismo id
+            $contenedor = DocumCotizacion::where('id',$documento->id)->first(); //buscamos la relacion no siempre sera el mismo id
             Cotizaciones::where('id', $contenedor->id_cotizacion)->update(['estatus_planeacion' => 1]);
             $TituloResponse = 'Datos guardados correctamente';
             $MessageResponse = 'Viaje planeado con exito';
@@ -351,6 +361,9 @@ class MepController extends Controller
 
     public function verAsignacion(Request $request)
     {
+
+    $documento= DocumCotizacion::where('id_cotizacion', $request->idContenedor)->first(); // mandan asi y el valor es cotizacion id
+
         $asignacion = Asignaciones::with(['Camion', 'Chasis', 'Chasis2','Operador',
                 'Contenedor' => function ($q) {
                     $q->select('id', 'id_cotizacion');
@@ -359,7 +372,7 @@ class MepController extends Controller
                 $q->select('id', 'estatus', 'origen', 'destino', 'estatus_planeacion');
             }
 
-        ])->where('id_contenedor', $request->idContenedor)->get();
+        ])->where('id_contenedor', $documento->id)->get();
         return $asignacion;
 
     }
@@ -373,5 +386,77 @@ class MepController extends Controller
         } catch (\Exception $e) {
             return Carbon::parse($fecha); // fallback
         }
+    }
+
+
+    public function getUbicacionesPlanear(Request $request,    UbicacionService $ubicacionService){
+$equipos = DB::table('equipos as e')
+    ->join('gps_company','e.gps_company_id','=','gps_company.id')
+    ->select(
+        'e.id',
+        'e.tipo',
+        'e.id_equipo',
+        'e.placas',
+        'e.imei',
+        'e.gps_company_id',
+        'e.usar_config_global',
+        'e.credenciales_gps',
+        'gps_company.url as tipogps'
+    )
+    ->whereIn('e.id', $request->equipos)
+    ->get();
+
+
+$itemsGps = [];
+
+foreach ($equipos as $equipo) {
+    try {
+        if ($equipo->usar_config_global == 0) {
+            $credenciales = json_decode(
+                Crypt::decryptString($equipo->credenciales_gps),
+                true
+            ) ?? [];
+        } else {
+            $credencialesGlobal = DB::table('user_proveedores as up')
+                ->join('gps_company_proveedores as gcp', 'gcp.id_proveedor', '=', 'up.proveedor_id')
+                ->where('up.user_id', auth()->id())
+                ->where('gcp.estado', 1)
+                ->where('gcp.id_gps_company', $equipo->gps_company_id)
+                ->value('gcp.account_info');
+
+            $raw = json_decode(
+                Crypt::decryptString($credencialesGlobal),
+                true
+            ) ?? [];
+
+            $credenciales = collect($raw)->pluck('valor', 'field')->toArray();
+        }
+
+        $itemsGps[] = [
+            'id' => $equipo->id,
+            'equipo' => $equipo->id_equipo,
+            'imei' => $equipo->imei,
+            'placas' => $equipo->placas,
+            'tipoGps' => $equipo->tipogps,
+            'tipo' => $equipo->tipo,
+            'gps_company_id' => $equipo->gps_company_id,
+            'credenciales' => $credenciales,
+        ];
+
+    } catch (\Throwable $e) {
+        $resultados[] = [
+            'id' => $equipo->id,
+            'equipo' => $equipo->id_equipo,
+            'status' => false,
+            'messageAp' => $e->getMessage(),
+        ];
+    }
+}
+
+$responseGps = $ubicacionService->consultarEquiposGps($itemsGps);
+
+return response()->json($responseGps);
+
+
     }
 }

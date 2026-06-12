@@ -1,6 +1,11 @@
 @extends('layouts.usuario_externo')
 
 @section('WorkSpace')
+
+    <div id="docsPendingAlert" class="alert alert-warning d-none mt-5">
+        Tiene cambios pendientes en documentos.
+        Debe guardar para aplicar los cambios.
+    </div>
     <div class="modal fade" id="mapModal" tabindex="-1" aria-labelledby="mapModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered modal-fullscreen-md-down">
             <div class="modal-content">
@@ -117,81 +122,83 @@
             <div id="kt_billing_payment_tab_content" class="card-body tab-content">
                 <!--begin::Tab panel-->
                 <div id="kt_billing_creditcard" class="tab-pane fade show active" role="tabpanel" "="" aria-labelledby="kt_billing_creditcard_tab">
-                                                                                <!--begin::Title-->
-                                                                                <h3 class="mb-5">Datos Generales</h3>
-                                                                                <!--end::Title-->
+                                                                                                                                        <!--begin::Title-->
+                                                                                                                                        <h3 class="mb-5">Datos Generales</h3>
+                                                                                                                                        <!--end::Title-->
 
-                                                                                <!--begin::Row-->
-                                                                                <div class="row gx-9 gy-6">
-                                                                                @csrf
-                                                                                <input type="hidden" value="{{ Auth::User()->id_cliente }}" name="id_cliente" id="id_cliente">
-                                                                                @include('cotizaciones.externos.datos_generales')
-                                                                                </div>
-                                                                                <!--end::Row-->
-                                                                            </div>
-                                                                            <!--end::Tab panel-->
+                                                                                                                                        <!--begin::Row-->
+                                                                                                                                        <div class="row gx-9 gy-6">
+                                                                                                                                        @csrf
+                                                                                                                                        <input type="hidden" value="{{ Auth::User()->id_cliente }}" name="id_cliente" id="id_cliente">
+                                                                                                                                        @include('cotizaciones.externos.datos_generales')
+                                                                                                                                        </div>
+                                                                                                                                        <!--end::Row-->
+                                                                                                                                    </div>
+                                                                                                                                    <!--end::Tab panel-->
 
-                                                                            <!--begin::Tab panel-->
-                                                                            <div id="kt_billing_paypal" class="tab-pane fade" role="tabpanel" aria-labelledby="kt_billing_paypal_tab">
-                                                                                <!--begin::Title-->
-                                                                                <h3 class="mb-5">Ubicacion GPS</h3>
-                                                                                <!--end::Title-->
-                                                                                <div class="row gx-9 gy-6">
+                                                                                                                                    <!--begin::Tab panel-->
+                                                                                                                                    <div id="kt_billing_paypal" class="tab-pane fade" role="tabpanel" aria-labelledby="kt_billing_paypal_tab">
+                                                                                                                                        <!--begin::Title-->
+                                                                                                                                        <h3 class="mb-5">Ubicacion GPS</h3>
+                                                                                                                                        <!--end::Title-->
+                                                                                                                                        <div class="row gx-9 gy-6">
 
-                                                                                @include('cotizaciones.externos.datos_ubicacion')
-                                                                                </div>
-                                                                            </div>
-                                                                            <!--end::Tab panel-->
-                                                                            <!--begin::Tab panel-->
-                                                                            <div id="kt_bloque" class="tab-pane fade" role="tabpanel" aria-labelledby="kt_bloque_tab">
-                                                                                <!--begin::Title-->
-                                                                                <h3 class="mb-5">Bloque</h3>
-                                                                                <!--end::Title-->
-                                                                                <div class="row gx-9 gy-6">
+                                                                                                                                        @include('cotizaciones.externos.datos_ubicacion')
+                                                                                                                                        </div>
+                                                                                                                                    </div>
+                                                                                                                                    <!--end::Tab panel-->
+                                                                                                                                    <!--begin::Tab panel-->
+                                                                                                                                    <div id="kt_bloque" class="tab-pane fade" role="tabpanel" aria-labelledby="kt_bloque_tab">
+                                                                                                                                        <!--begin::Title-->
+                                                                                                                                        <h3 class="mb-5">Bloque</h3>
+                                                                                                                                        <!--end::Title-->
+                                                                                                                                        <div class="row gx-9 gy-6">
 
-                                                                                @include('cotizaciones.externos.datos_bloque')
-                                                                                </div>
-                                                                            </div>
-                                                                            <!--end::Tab panel-->
+                                                                                                                                        @include('cotizaciones.externos.datos_bloque')
+                                                                                                                                        </div>
+                                                                                                                                    </div>
+                                                                                                                                    <!--end::Tab panel-->
 
-                                                                            <!--begin::Tab panel-->
-                                                                            <div id="kt_documentos" class="tab-pane fade" role="tabpanel" aria-labelledby="kt_documentos_tab">
-                                                                                <!--begin::Title-->
-                                                                                <h3 class="mb-5" id="labelDocsViaje">Documentos de viaje </h3>
-                                                                                <!--end::Title-->
-                                                                                <div class="row gx-9 gy-6">
+                                                                                                                                    <!--begin::Tab panel-->
+                                                                                                                                    <div id="kt_documentos" class="tab-pane fade" role="tabpanel" aria-labelledby="kt_documentos_tab">
+                                                                                                                                        <!--begin::Title-->
+                                                                                                                                        <h3 class="mb-5" id="labelDocsViaje">Documentos de viaje </h3>
+                                                                                                                                        <!--end::Title-->
+                                                                                                                                        <div class="row gx-9 gy-6">
 
-                                                                                @include('cotizaciones.externos.datos_fileuploader')
-                                                                                </div>
-                                                                            </div>
-                                                                            <!--end::Tab panel-->
-                                                                            <!--begin::Tab panel-->
-                                                                              @cannot('mec-ocultar_datos_facturacion')
-                                                                                            <div id="kt_facturacion" class="tab-pane fade" role="tabpanel" aria-labelledby="kt_facturacion_tab">
-                                                                                                                                                                                <!--begin::Title-->
-                                                                                                                                                                                <h3 class="mb-5">Datos para Carta Porte</h3>
-                                                                                                                                                                                <!--end::Title-->
-                                                                                                                                                                                <div class="row gx-9 gy-6">
+                                                                                                                                        @include('cotizaciones.externos.datos_fileuploader')
+                                                                                                                                        </div>
+                                                                                                                                    </div>
+                                                                                                                                    <!--end::Tab panel-->
+                                                                                                                                    <!--begin::Tab panel-->
+                                                                                                                                      @cannot('mec-ocultar_datos_facturacion')
+                                                                                                                                                                                                            <div id="kt_facturacion" class="tab-pane fade" role="tabpanel" aria-labelledby="kt_facturacion_tab">
+                                                                                                                                                                                                                                                                                                <!--begin::Title-->
+                                                                                                                                                                                                                                                                                                <h3 class="mb-5">Datos para Carta Porte</h3>
+                                                                                                                                                                                                                                                                                                <!--end::Title-->
+                                                                                                                                                                                                                                                                                                <div class="row gx-9 gy-6">
 
-                                                                                                                                                                                @include('cotizaciones.externos.datos_facturacion')
-                                                                                                                                                                                </div>
-                                                                                                                                                                            </div>
-                                                                        @endcan
+                                                                                                                                                                                                                                                                                                @include('cotizaciones.externos.datos_facturacion')
+                                                                                                                                                                                                                                                                                                </div>
+                                                                                                                                                                                                                                                                                            </div>
+                                                                                                                                @endcan
 
-                                                                        <!--end::Tab panel-->
-                                                                    </div>
-                                                                    <!--end::Tab content-->
-                                                                    <div class="separator separator-dashed mb-8"></div>
-                                                                                       @if ($action == 'editar')
-                    <button type="submit" class="btn btn-success">
+                                                                                                                                <!--end::Tab panel-->
+                                                                                                                            </div>
+                                                                                                                            <!--end::Tab content-->
+                                                                                                                            <div class="separator separator-dashed mb-8"></div>
+
+                                                                               @if ($action == 'editar')
+                    <button type="submit" id="btnGuardarViaje" class="btn btn-success">
                         Actualizar viaje
                     </button>
                 @else
-                    <button type="submit" class="btn btn-primary">
+                    <button type="submit" id="btnGuardarViaje" class="btn btn-primary">
                         Solicitar servicio
                     </button>
                     @endif
         </form>
+        <div id="errorDestino" class="text-danger fw-bold mt-2 d-none"></div>
     </div>
 
 
@@ -211,10 +218,11 @@
     <link href="/assets/metronic/fileuploader/jquery.fileuploader.min.css" media="all" rel="stylesheet">
     <link href="/assets/metronic/fileuploader/jquery.fileuploader-theme-dragdrop.css" media="all" rel="stylesheet">
     <script src="/assets/metronic/fileuploader/jquery.fileuploader.min.js" type="text/javascript"></script>
+
+    <script src="{{ asset('js/sgt/common/tagify.js') }}?v={{ filemtime(public_path('js/sgt/common/tagify.js')) }}">
+    </script>
     <script
         src="{{ asset('js/sgt/cotizaciones/cotizacion-fileuploader-preload.js') }}?v={{ filemtime(public_path('js/sgt/cotizaciones/cotizacion-fileuploader-preload.js')) }}">
-    </script>
-    <script src="{{ asset('js/sgt/common/tagify.js') }}?v={{ filemtime(public_path('js/sgt/common/tagify.js')) }}">
     </script>
     <script
         src="{{ asset('assets/metronic/fileuploader/cotizacion-cliente-externo.js') }}?v={{ filemtime(public_path('js/sgt/cotizaciones/cotizaciones.js')) }}"

@@ -254,6 +254,7 @@ const gridOptions = {
         const rows = event.api.getSelectedRows();
         const btn = document.getElementById("btnRegresarLocal");
 
+        if (!btn) return;
         if (rows.length === 0) {
             motivoBloqueo = "Selecciona al menos un registro";
             bloquearBoton(btn);
@@ -882,7 +883,7 @@ function RegresarForaneoLocal() {
         }
     });
 }
-
-document
-    .querySelector("#btnDocs")
-    .addEventListener("click", goToUploadDocuments);
+const btnDocsopciones = document.querySelector("#btnDocs");
+if (btnDocsopciones) {
+    btnDocsopciones.addEventListener("click", goToUploadDocuments);
+}

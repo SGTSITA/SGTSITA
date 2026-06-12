@@ -34,6 +34,7 @@ Route::group(["prefix" => "gps"], function () {
     Route::get('setup', [GpsCompanyController::class,'setupGps'])->name('gps.setup');
     Route::get('config', [GpsCompanyController::class,'getConfig'])->name('gps.config');
     Route::post('config/store', [GpsCompanyController::class,'setConfig'])->name('gps.store');
+    Route::post('config/store-equipos', [GpsCompanyController::class,'setConfigEquipo'])->name('gps.equipo.store');
 });
 
 Route::group(["prefix" => "mep"], function () {
@@ -44,6 +45,8 @@ Route::group(["prefix" => "mep"], function () {
     Route::get('viajes/finalizadas', [MepController::class, 'getCotizacionesFinalizadas'])->name('mep.viajes');
     Route::post('viajes/operador/asignar', [MepController::class, 'asignarOperador'])->name('mep.asignaoperdor');
     Route::post('catalogos/operador-unidad', [MepController::class, 'getCatalogosMep'])->name('mep.catalogos');
+
+     Route::post('viajes/ubicaciones', [MepController::class, 'getUbicacionesPlanear'])->name('mep.getUbicacionesPlanear');
 });
 
 
@@ -61,7 +64,10 @@ Route::group(["prefix" => "prestamos"], function () {
     Route::post("{id}/abonar", [PrestamosController::class,'abonar'])->name('prestamo.abonar');
     Route::get("lista", [PrestamosController::class,'getListaPrestamos'])->name('prestamo.lista');
     Route::get("lista-detalle/{idprestamo}", [PrestamosController::class,'getPrestamosPagos'])->name('prestamo.listadetalle');
+    Route::get("operador/{id}", [PrestamosController::class, 'showOperador']) ->name('prestamos.operador.show');
 
+    Route::get('/operadores/{id}/prestamos/reporte-pdf', [PrestamosController::class, 'reportePrestamosPdf'])
+    ->name('operadores.prestamos.reporte.pdf');
 
 });
 
@@ -214,7 +220,7 @@ Route::get('/coordenadas/conboys/getconvoy/{numero}', [App\Http\Controllers\Conb
 Route::post('/coordenadas/conboys/agregar', [App\Http\Controllers\ConboysController::class, 'addContenedores'])->name('updateConvoyEmpresas');
 Route::get('/coordenadas/conboys/historialUbi', [App\Http\Controllers\ConboysController::class, 'HistorialUbicaciones'])->name('HistorialUbicaciones');
 
-Route::post('/coordenadas/resolver-link-google', [App\Http\Controllers\GoogleLinkResolverController::class, 'resolver']);
+Route::post('/coordenadas/resolver-link-google', [App\Http\Controllers\GoogleLinkResolverController::class, 'resolver'])->name('resolver.google');
 
 Route::get('/mapa-comparacion', [App\Http\Controllers\ConboysController::class, 'rastreohistorialUbicaciones'])->name('rastreohistorialUbicaciones');
 
@@ -291,6 +297,12 @@ Route::group(['middleware' => ['auth']], function () {
     Route::post('/equipos/asignar-gps/{id}', [App\Http\Controllers\EquiposController::class, 'asignarGps'])->name('equipos.asignarGps');
 
     Route::get('/equipos/data', [App\Http\Controllers\EquiposController::class, 'data'])->name('equipos.data');
+    Route::post('/equipos/update-mep', [App\Http\Controllers\EquiposController::class, 'updateMep'])->name('equipos.updateMep');
+
+    //equipos mep
+
+
+    Route::get('equipos-gps/index', [App\Http\Controllers\EquiposController::class, 'index_gps'])->name('equipos.gps.mep');
 
 
     // ==================== O P E R A D O R E S ====================
@@ -353,6 +365,15 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('cotizaciones/edit/{id}', [App\Http\Controllers\CotizacionesController::class, 'edit'])->name('edit.cotizaciones');
     Route::post('cotizaciones/update/{id}', [App\Http\Controllers\CotizacionesController::class, 'update'])->name('update.cotizaciones');
     Route::post('cotizaciones/single/update/{id}', [App\Http\Controllers\CotizacionesController::class, 'singleUpdate'])->name('update.single');
+ Route::patch('/cotizaciones/{cotizacion}/km-diesel', [App\Http\Controllers\CotizacionesController::class, 'updateKmDiesel'])
+    ->name('cotizaciones.update-km-diesel');
+
+    Route::get('/reporteria/consumo-unidades', [App\Http\Controllers\ReporteriaController::class, 'indexRendimiento'])
+    ->name('reporteria.consumo-unidades.index');
+
+Route::get('/reporteria/consumo-unidades/data', [App\Http\Controllers\ReporteriaController::class, 'dataRendimiento'])
+    ->name('reporteria.consumo-unidades.data');
+    
 
     Route::post('cotizaciones/updateMep/{id}', [App\Http\Controllers\CotizacionesController::class, 'updateMep'])->name('updatemep.cotizaciones');
 
@@ -360,6 +381,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::any('cotizaciones/store-local', [App\Http\Controllers\CotizacionesController::class, 'storelocal'])->name('store.cotizacioneslocal');
     Route::post('cotizaciones/single/update-local/{id}', [App\Http\Controllers\CotizacionesController::class, 'singleUpdatelocal'])->name('update.singlelocal');
     Route::post('/cotizaciones/transformar/foraneo', [App\Http\Controllers\CotizacionesController::class, 'convertirlocalforaneo'])->name('cotizaciones.transform.foraneo');
+    Route::post('/cotizaciones/transformar/revertirforaneo', [App\Http\Controllers\CotizacionesController::class, 'revertirforaneo'])->name('cotizaciones.transform.revertirforaneo');
 
     // sgt busqueda y asignacion de doc boleta patio
     Route::get('/cotizaciones/solicitudes-local', [App\Http\Controllers\CotizacionesController::class, 'solicitudesLocales'])->name('cotizaciones.Solic-locales');
@@ -381,6 +403,8 @@ Route::group(['middleware' => ['auth']], function () {
     Route::post('cotizaciones/gastos/get', [App\Http\Controllers\CotizacionesController::class, 'get_gastos'])->name('gastos.cotizaciones');
     Route::post('cotizaciones/gastos/eliminar', [App\Http\Controllers\CotizacionesController::class, 'eliminar_gasto_cotizacion'])->name('gastos.eliminar');
 
+    Route::post('/cotizaciones/gastosextra/pagar', [App\Http\Controllers\CotizacionesController::class, 'pagar_gasto_cotizacion'])->name('pagar.gastos.cotizacion');
+    
     Route::post('cotizaciones/gastos-operador/registrar', [App\Http\Controllers\CotizacionesController::class, 'agregar_gasto_operador'])->name('gastos.cotizaciones');
     Route::post('cotizaciones/gastos-operador/get', [App\Http\Controllers\CotizacionesController::class, 'get_gastos_operador'])->name('gastos.cotizaciones');
     Route::post('cotizaciones/gastos-operador/pagar', [App\Http\Controllers\CotizacionesController::class, 'pagar_gasto_operador'])->name('pagar.gastos');
@@ -409,7 +433,7 @@ Route::group(['middleware' => ['auth']], function () {
         Route::get('/programar-viaje', [App\Http\Controllers\PlaneacionController::class, 'programarViaje'])->name('planeacion.programar');
 
         Route::post('viajes/reprogramar', [App\Http\Controllers\PlaneacionController::class, 'reprogramarViajes'])->name('asignacion.reprogramar');
-
+Route::post('viajes/{id}/fechas', [App\Http\Controllers\PlaneacionController::class, 'cambioFechas'])->name('asignacion.cambio_fechas');
     });
 
 
@@ -538,6 +562,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('liquidaciones/historial', [App\Http\Controllers\LiquidacionesController::class, 'historialPagos'])->name('historial.liquidacion');
 
     Route::post('liquidaciones/historial/data', [App\Http\Controllers\LiquidacionesController::class, 'historialPagosData'])->name('historialdata.liquidacion');
+     Route::post('liquidaciones/historial/delete/{id}', [App\Http\Controllers\LiquidacionesController::class, 'deleteHistorialPago'])->name('historial.delete.liquidacion');
     Route::post('liquidaciones/historial/pagos/comprobante', [App\Http\Controllers\LiquidacionesController::class, 'comprobantePago'])->name('comprobante.liquidacion');
     Route::post('liquidaciones/viajes/pagos-operadores', [App\Http\Controllers\LiquidacionesController::class, 'getpagosOperadoressaldo'])->name('operadores.liquidacion');
     Route::post('liquidaciones/viajes/operador', [App\Http\Controllers\LiquidacionesController::class, 'getViajesOperador'])->name('operador.viajes');
@@ -547,6 +572,10 @@ Route::group(['middleware' => ['auth']], function () {
     Route::post('liquidaciones/viajes/gastos/justificar', [App\Http\Controllers\LiquidacionesController::class, 'justificarGastos'])->name('justifica.gastos');
     Route::post('liquidaciones/viajes/gastos/justificar-multiple', [App\Http\Controllers\LiquidacionesController::class, 'justificarGastosMultiples'])->name('justifica.gastos.multiple');
 
+       Route::post(
+        '/liquidacion/vista-previa',
+        [App\Http\Controllers\LiquidacionesController::class, 'vistaPrevialiqu']
+    )->name('liquidacion.vistaPrevia');
 
 
 
@@ -588,7 +617,59 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('/admin/auditoria/{id}', [App\Http\Controllers\AuditoriaController::class, 'show']);
 
     Route::get('/admin/auditoria-data/inicial', [App\Http\Controllers\AuditoriaController::class, 'data']);
+Route::get('/admin/auditoria/{id}/pdf', [App\Http\Controllers\AuditoriaController::class, 'exportPdf'])
+      ->name('auditoria.pdf');
 
+     //nmotificacones
+      Route::get('/notificaciones', [App\Http\Controllers\NotificacionesController::class, 'index'])->name('notificaciones.index');
+
+      Route::post('/notificaciones/tipos', [App\Http\Controllers\NotificacionesController::class, 'storeTipo'])
+    ->name('notificaciones.tipos.store');
+
+Route::put('/notificaciones/tipos/{tipo}', [App\Http\Controllers\NotificacionesController::class, 'updateTipo'])
+    ->name('notificaciones.tipos.update');
+
+Route::delete('/notificaciones/tipos/{tipo}', [App\Http\Controllers\NotificacionesController::class, 'destroyTipo'])
+    ->name('notificaciones.tipos.destroy');
+
+Route::post('/notificaciones/reglas', [App\Http\Controllers\NotificacionesController::class, 'storeRegla'])
+    ->name('notificaciones.reglas.store');
+
+Route::put('/notificaciones/reglas/{regla}', [App\Http\Controllers\NotificacionesController::class, 'updateRegla'])
+    ->name('notificaciones.reglas.update');
+
+Route::delete('/notificaciones/reglas/{regla}', [App\Http\Controllers\NotificacionesController::class, 'destroyRegla'])
+    ->name('notificaciones.reglas.destroy');
+
+Route::post('/notificaciones/reglas/usuarios', [App\Http\Controllers\NotificacionesController::class, 'storeUsuarioRegla'])
+    ->name('notificaciones.reglas.usuarios.store');
+
+Route::delete('/notificaciones/reglas/{regla}/usuarios/{usuario}', [App\Http\Controllers\NotificacionesController::class, 'destroyUsuarioRegla'])
+    ->name('notificaciones.reglas.usuarios.destroy');
+
+
+
+    //usuarios
+    Route::prefix('notificaciones')->name('notificaciones.')->middleware(['auth'])->group(function () {
+
+    Route::get('/mis-notificaciones', [App\Http\Controllers\NotificacionesController::class, 'misNotificaciones'])
+        ->name('mis-notificaciones');
+
+         Route::get('/mis-notificaciones-clientes', [App\Http\Controllers\NotificacionesController::class, 'misNotificacionesClientes'])
+        ->name('mis-notificaciones-clientes');
+
+    Route::get('/usuario/listar', [App\Http\Controllers\NotificacionesController::class, 'listarUsuario'])
+        ->name('usuario.listar');
+
+    Route::get('/usuario/contador', [App\Http\Controllers\NotificacionesController::class, 'contadorUsuario'])
+        ->name('usuario.contador');
+
+    Route::post('/usuario/{notificacion}/leer', [App\Http\Controllers\NotificacionesController::class, 'marcarLeidaUsuario'])
+        ->name('usuario.leer');
+
+    Route::post('/usuario/marcar-todas-leidas', [App\Http\Controllers\NotificacionesController::class, 'marcarTodasLeidasUsuario'])
+        ->name('usuario.marcar-todas-leidas');
+});
 });
 
 //Route Hooks - Do not delete//
@@ -603,7 +684,6 @@ Route::patch('/configuracion/update/{id}', [App\Http\Controllers\ConfiguracionCo
 // En routes/web.php
 Route::get('/descargar-db', [App\Http\Controllers\DatabaseController::class, 'descargarBaseDeDatos'])->name('descargar.db');
 
-use App\Http\Controllers\CorreoController;
 
 // Ruta para la vista principal de correos
 Route::get('/correo', [App\Http\Controllers\CorreoController::class, 'index'])->name('correo.index');
@@ -664,3 +744,241 @@ Route::post('/costos/mep/cambios/{id}/reenviar', [App\Http\Controllers\MEP\Costo
 Route::get('reporteria/viajes-por-cobrar', [App\Http\Controllers\ReporteriaController::class, 'indexVXC'])->name('index_vxc.reporteria');
 Route::get('/reporteria/viajes-por-cobrar/data', [App\Http\Controllers\ReporteriaController::class, 'dataVXC'])->name('reporteria.vxc.data');
 Route::post('/reporteria/viajes-por-cobrar/exportar', [App\Http\Controllers\ReporteriaController::class, 'exportarVXC']);
+
+
+
+
+
+
+
+
+
+
+
+
+//sistema control bancario
+
+use App\Http\Controllers\ScbAuthController;
+use App\Http\Controllers\ScbDashboardController;
+use App\Http\Controllers\ScbBancoController;
+use App\Http\Controllers\ScbCuentaController;
+use App\Http\Controllers\ScbUnidadController;
+use App\Http\Controllers\ScbMovimientoController;
+use App\Http\Controllers\ScbReporteController;
+
+Route::prefix('scb')->name('scb.')->group(function () {
+
+    /*
+    |--------------------------------------------------------------------------
+    | Login SCB
+    |--------------------------------------------------------------------------
+    */
+    Route::get('/login', [ScbAuthController::class, 'showLogin'])
+        ->name('login');
+
+    Route::post('/login', [ScbAuthController::class, 'login'])
+        ->name('login.post');
+
+    Route::post('/logout', [ScbAuthController::class, 'logout'])
+        ->name('logout')
+        ->middleware('auth');
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Módulo SCB protegido
+    |--------------------------------------------------------------------------
+    */
+    Route::middleware(['auth', 'permission:SCB-Acceso'])->group(function () {
+
+        /*
+        |--------------------------------------------------------------------------
+        | Dashboard
+        |--------------------------------------------------------------------------
+        */
+        Route::get('/', [ScbDashboardController::class, 'index'])
+            ->name('dashboard')
+            ->middleware('permission:SCB-Dashboard');
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Bancos
+        |--------------------------------------------------------------------------
+        */
+        Route::get('/bancos', [ScbBancoController::class, 'index'])
+            ->name('bancos.index')
+            ->middleware('permission:SCB-Bancos-Index');
+
+        Route::get('/bancos/create', [ScbBancoController::class, 'create'])
+            ->name('bancos.create')
+            ->middleware('permission:SCB-Bancos-Create');
+
+        Route::post('/bancos', [ScbBancoController::class, 'store'])
+            ->name('bancos.store')
+            ->middleware('permission:SCB-Bancos-Create');
+
+        Route::get('/bancos/{banco}', [ScbBancoController::class, 'show'])
+            ->name('bancos.show')
+            ->middleware('permission:SCB-Bancos-Index');
+
+        Route::get('/bancos/{banco}/edit', [ScbBancoController::class, 'edit'])
+            ->name('bancos.edit')
+            ->middleware('permission:SCB-Bancos-Edit');
+
+        Route::put('/bancos/{banco}', [ScbBancoController::class, 'update'])
+            ->name('bancos.update')
+            ->middleware('permission:SCB-Bancos-Edit');
+
+        Route::patch('/bancos/{banco}', [ScbBancoController::class, 'update'])
+            ->name('bancos.patch')
+            ->middleware('permission:SCB-Bancos-Edit');
+
+        Route::delete('/bancos/{banco}', [ScbBancoController::class, 'destroy'])
+            ->name('bancos.destroy')
+            ->middleware('permission:SCB-Bancos-Delete');
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Cuentas bancarias
+        |--------------------------------------------------------------------------
+        */
+        Route::get('/cuentas', [ScbCuentaController::class, 'index'])
+            ->name('cuentas.index')
+            ->middleware('permission:SCB-Cuentas-Index');
+
+        Route::get('/cuentas/create', [ScbCuentaController::class, 'create'])
+            ->name('cuentas.create')
+            ->middleware('permission:SCB-Cuentas-Create');
+
+        Route::post('/cuentas', [ScbCuentaController::class, 'store'])
+            ->name('cuentas.store')
+            ->middleware('permission:SCB-Cuentas-Create');
+
+        Route::get('/cuentas/{cuenta}', [ScbCuentaController::class, 'show'])
+            ->name('cuentas.show')
+            ->middleware('permission:SCB-Cuentas-Index');
+
+        Route::get('/cuentas/{cuenta}/edit', [ScbCuentaController::class, 'edit'])
+            ->name('cuentas.edit')
+            ->middleware('permission:SCB-Cuentas-Edit');
+
+        Route::put('/cuentas/{cuenta}', [ScbCuentaController::class, 'update'])
+            ->name('cuentas.update')
+            ->middleware('permission:SCB-Cuentas-Edit');
+
+        Route::patch('/cuentas/{cuenta}', [ScbCuentaController::class, 'update'])
+            ->name('cuentas.patch')
+            ->middleware('permission:SCB-Cuentas-Edit');
+
+        Route::delete('/cuentas/{cuenta}', [ScbCuentaController::class, 'destroy'])
+            ->name('cuentas.destroy')
+            ->middleware('permission:SCB-Cuentas-Delete');
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Unidades
+        |--------------------------------------------------------------------------
+        */
+        Route::get('/unidades', [ScbUnidadController::class, 'index'])
+            ->name('unidades.index')
+            ->middleware('permission:SCB-Unidades-Index');
+
+        Route::get('/unidades/create', [ScbUnidadController::class, 'create'])
+            ->name('unidades.create')
+            ->middleware('permission:SCB-Unidades-Create');
+
+        Route::post('/unidades', [ScbUnidadController::class, 'store'])
+            ->name('unidades.store')
+            ->middleware('permission:SCB-Unidades-Create');
+
+        Route::get('/unidades/{unidad}', [ScbUnidadController::class, 'show'])
+            ->name('unidades.show')
+            ->middleware('permission:SCB-Unidades-Index');
+
+        Route::get('/unidades/{unidad}/edit', [ScbUnidadController::class, 'edit'])
+            ->name('unidades.edit')
+            ->middleware('permission:SCB-Unidades-Edit');
+
+        Route::put('/unidades/{unidad}', [ScbUnidadController::class, 'update'])
+            ->name('unidades.update')
+            ->middleware('permission:SCB-Unidades-Edit');
+
+        Route::patch('/unidades/{unidad}', [ScbUnidadController::class, 'update'])
+            ->name('unidades.patch')
+            ->middleware('permission:SCB-Unidades-Edit');
+
+        Route::delete('/unidades/{unidad}', [ScbUnidadController::class, 'destroy'])
+            ->name('unidades.destroy')
+            ->middleware('permission:SCB-Unidades-Delete');
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Movimientos bancarios
+        |--------------------------------------------------------------------------
+        | Importante:
+        | estado-cuenta va antes de /movimientos/{movimiento}
+        |--------------------------------------------------------------------------
+        */
+        Route::get('/movimientos/estado-cuenta', [ScbMovimientoController::class, 'estadoCuenta'])
+            ->name('movimientos.estado-cuenta')
+            ->middleware('permission:SCB-Movimientos-Index');
+
+        Route::get('/movimientos', [ScbMovimientoController::class, 'index'])
+            ->name('movimientos.index')
+            ->middleware('permission:SCB-Movimientos-Index');
+
+        Route::get('/movimientos/create', [ScbMovimientoController::class, 'create'])
+            ->name('movimientos.create')
+            ->middleware('permission:SCB-Movimientos-Create');
+
+        Route::post('/movimientos', [ScbMovimientoController::class, 'store'])
+            ->name('movimientos.store')
+            ->middleware('permission:SCB-Movimientos-Create');
+
+        Route::get('/movimientos/{movimiento}', [ScbMovimientoController::class, 'show'])
+            ->name('movimientos.show')
+            ->middleware('permission:SCB-Movimientos-Show');
+
+        Route::get('/movimientos/{movimiento}/edit', [ScbMovimientoController::class, 'edit'])
+            ->name('movimientos.edit')
+            ->middleware('permission:SCB-Movimientos-Edit');
+
+        Route::put('/movimientos/{movimiento}', [ScbMovimientoController::class, 'update'])
+            ->name('movimientos.update')
+            ->middleware('permission:SCB-Movimientos-Edit');
+
+        Route::patch('/movimientos/{movimiento}', [ScbMovimientoController::class, 'update'])
+            ->name('movimientos.patch')
+            ->middleware('permission:SCB-Movimientos-Edit');
+
+        Route::delete('/movimientos/{movimiento}', [ScbMovimientoController::class, 'destroy'])
+            ->name('movimientos.destroy')
+            ->middleware('permission:SCB-Movimientos-Delete');
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Reportes
+        |--------------------------------------------------------------------------
+        */
+        Route::get('/reportes', [ScbReporteController::class, 'index'])
+            ->name('reportes.index')
+            ->middleware('permission:SCB-Reportes-Index');
+
+        Route::get('/reportes/consultar', [ScbReporteController::class, 'consultar'])
+            ->name('reportes.consultar')
+            ->middleware('permission:SCB-Reportes-Index');
+
+        Route::get('/reportes/pdf', [ScbReporteController::class, 'pdf'])
+            ->name('reportes.pdf')
+            ->middleware('permission:SCB-Reportes-Export');
+
+        Route::get('/reportes/excel', [ScbReporteController::class, 'excel'])
+            ->name('reportes.excel')
+            ->middleware('permission:SCB-Reportes-Export');
+    });
+});
