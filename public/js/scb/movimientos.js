@@ -419,10 +419,10 @@ document.addEventListener("DOMContentLoaded", function () {
         const detalles = obtenerDetalles();
         const totalDetalle = calcularTotalDetallesMovimiento();
 
-        if (!totalCapturado || totalCapturado <= 0) {
+        if (!totalCapturado) {
             marcarCampoInvalido(
                 "total_movimiento",
-                "El total del movimiento debe ser mayor a cero.",
+                "El total del movimiento debe ser diferente de cero.",
             );
 
             Swal.fire({
