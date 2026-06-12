@@ -3,7 +3,7 @@
 namespace App\Services\scb;
 
 use App\Models\ScbBancoModuloCuenta;
-use App\Services\Scb\ScbMovimientoService;
+use App\Services\scb\ScbMovimientoService;
 
 class ScbReporteService
 {
