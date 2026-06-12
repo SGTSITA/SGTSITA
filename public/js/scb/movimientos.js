@@ -3,10 +3,6 @@ document.addEventListener("DOMContentLoaded", function () {
         document.getElementById("modalMovimiento"),
     );
 
-    const modalVerMovimiento = new bootstrap.Modal(
-        document.getElementById("modalVerMovimiento"),
-    );
-
     const form = document.getElementById("formMovimiento");
     const movimientoId = document.getElementById("movimiento_id");
     const modalTitulo = document.getElementById("modalMovimientoTitulo");
@@ -29,8 +25,19 @@ document.addEventListener("DOMContentLoaded", function () {
     );
 
     const filtroCuenta = document.getElementById("filtro_cuenta_id");
+    const filtroUnidad = document.getElementById("filtro_unidad_id");
     const filtroFechaInicio = document.getElementById("filtro_fecha_inicio");
     const filtroFechaFin = document.getElementById("filtro_fecha_fin");
+
+    const buscarTablaMovimientos = document.getElementById(
+        "buscarTablaMovimientos",
+    );
+    const btnLimpiarBusquedaTabla = document.getElementById(
+        "btnLimpiarBusquedaTabla",
+    );
+
+    let movimientosEstadoCuentaActual = [];
+    let debounceBusquedaTabla = null;
 
     inicializarFechasFiltro();
 
@@ -52,19 +59,42 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
+    if (buscarTablaMovimientos) {
+        buscarTablaMovimientos.addEventListener("input", function () {
+            clearTimeout(debounceBusquedaTabla);
+
+            debounceBusquedaTabla = setTimeout(() => {
+                buscarEnTablaMovimientos();
+
+                if (btnLimpiarBusquedaTabla) {
+                    btnLimpiarBusquedaTabla.classList.toggle(
+                        "d-none",
+                        !buscarTablaMovimientos.value.trim(),
+                    );
+                }
+            }, 250);
+        });
+    }
+
+    if (btnLimpiarBusquedaTabla) {
+        btnLimpiarBusquedaTabla.addEventListener("click", function () {
+            if (buscarTablaMovimientos) {
+                buscarTablaMovimientos.value = "";
+                buscarTablaMovimientos.focus();
+            }
+
+            btnLimpiarBusquedaTabla.classList.add("d-none");
+
+            pintarTablaEstadoCuenta(movimientosEstadoCuentaActual);
+        });
+    }
+
     document.addEventListener("click", async function (e) {
         const btnDetalle = e.target.closest(".btnEliminarDetalle");
 
         if (btnDetalle) {
             btnDetalle.closest("tr").remove();
             actualizarResumenDetallesMovimiento();
-            return;
-        }
-
-        const btnVer = e.target.closest(".btnVerMovimiento");
-
-        if (btnVer) {
-            await verMovimiento(btnVer.dataset.id);
             return;
         }
 
@@ -79,6 +109,16 @@ document.addEventListener("DOMContentLoaded", function () {
 
         if (btnEliminar) {
             await eliminarMovimiento(btnEliminar.dataset.id);
+        }
+
+        const rowMovimiento = e.target.closest(".movimiento-master-row");
+
+        if (
+            rowMovimiento &&
+            !e.target.closest("button, a, input, select, textarea")
+        ) {
+            toggleDetalleMovimiento(rowMovimiento);
+            return;
         }
     });
 
@@ -112,7 +152,9 @@ document.addEventListener("DOMContentLoaded", function () {
             referencia_bancaria: document.getElementById("referencia_bancaria")
                 .value,
             observaciones: document.getElementById("observaciones").value,
-            total_movimiento: obtenerTotalMovimientoCapturado(),
+            total_movimiento: Number(
+                obtenerTotalMovimientoCapturado().toFixed(2),
+            ),
             detalles: obtenerDetalles(),
         };
 
@@ -184,7 +226,30 @@ document.addEventListener("DOMContentLoaded", function () {
             });
         }
     });
+    function toggleDetalleMovimiento(row) {
+        const collapseId = row.dataset.collapseId;
 
+        if (!collapseId) return;
+
+        const collapseElement = document.getElementById(collapseId);
+
+        if (!collapseElement) return;
+
+        const collapse = bootstrap.Collapse.getOrCreateInstance(
+            collapseElement,
+            {
+                toggle: false,
+            },
+        );
+
+        if (collapseElement.classList.contains("show")) {
+            collapse.hide();
+            row.classList.remove("detalle-abierto");
+        } else {
+            collapse.show();
+            row.classList.add("detalle-abierto");
+        }
+    }
     function abrirModalNuevoMovimiento() {
         limpiarFormulario();
 
@@ -209,7 +274,7 @@ document.addEventListener("DOMContentLoaded", function () {
         const totalCapturado = obtenerTotalMovimientoCapturado();
         const totalDetallesActual = calcularTotalDetallesMovimiento();
 
-        if (!totalCapturado || totalCapturado <= 0) {
+        if (!totalCapturado) {
             Swal.fire({
                 icon: "warning",
                 title: "Total requerido",
@@ -282,7 +347,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 row.querySelector(".detalle-monto").value || 0,
             );
 
-            if (!descripcion && monto <= 0) {
+            if (!descripcion || monto <= 0) {
                 return;
             }
 
@@ -290,7 +355,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 unidad_id: unidadId || null,
                 descripcion: descripcion,
                 referencia: referencia || null,
-                monto: monto,
+                monto: Number(monto.toFixed(2)),
             });
         });
 
@@ -437,6 +502,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     async function cargarEstadoCuenta() {
         const cuentaId = filtroCuenta?.value || "";
+        const unidadId = filtroUnidad?.value || "";
         const fechaInicio = filtroFechaInicio?.value || "";
         const fechaFin = filtroFechaFin?.value || "";
 
@@ -465,6 +531,7 @@ document.addEventListener("DOMContentLoaded", function () {
         try {
             const params = new URLSearchParams({
                 cuenta_id: cuentaId,
+                unidad_id: unidadId,
                 fecha_inicio: fechaInicio,
                 fecha_fin: fechaFin,
             });
@@ -498,11 +565,21 @@ document.addEventListener("DOMContentLoaded", function () {
                 ?.classList.remove("d-none");
 
             setText("lblSaldoInicial", money(data.saldo_inicial));
-            setText("lblTotalCargos", money(data.total_cargos));
-            setText("lblTotalAbonos", money(data.total_abonos));
+            setText("lblTotalCargos", `+${money(data.total_cargos)}`);
+            setText("lblTotalAbonos", `-${money(data.total_abonos)}`);
             setText("lblSaldoFinal", money(data.saldo_final));
 
-            pintarTablaEstadoCuenta(data.movimientos || []);
+            movimientosEstadoCuentaActual = data.movimientos || [];
+
+            if (buscarTablaMovimientos) {
+                buscarTablaMovimientos.value = "";
+            }
+
+            if (btnLimpiarBusquedaTabla) {
+                btnLimpiarBusquedaTabla.classList.add("d-none");
+            }
+
+            pintarTablaEstadoCuenta(movimientosEstadoCuentaActual);
         } catch (error) {
             console.error(error);
 
@@ -515,39 +592,93 @@ document.addEventListener("DOMContentLoaded", function () {
             mostrarMensajeInicialTabla();
         }
     }
+    function buscarEnTablaMovimientos() {
+        const termino = normalizarTexto(buscarTablaMovimientos?.value || "");
 
-    function pintarTablaEstadoCuenta(movimientos) {
+        if (!termino) {
+            pintarTablaEstadoCuenta(movimientosEstadoCuentaActual);
+            return;
+        }
+
+        const movimientosFiltrados = movimientosEstadoCuentaActual.filter(
+            (mov) => {
+                const textoMovimiento = [
+                    mov.fecha,
+                    mov.concepto,
+                    mov.referencia,
+                    mov.cargo,
+                    mov.abono,
+                    mov.saldo,
+                ].join(" ");
+
+                const textoDetalles = (mov.detalles || [])
+                    .map((detalle) => {
+                        return [
+                            detalle.unidad?.descripcion,
+                            detalle.unidad?.placas,
+                            detalle.descripcion,
+                            detalle.referencia,
+                            detalle.monto,
+                        ].join(" ");
+                    })
+                    .join(" ");
+
+                const textoCompleto = normalizarTexto(
+                    `${textoMovimiento} ${textoDetalles}`,
+                );
+
+                return textoCompleto.includes(termino);
+            },
+        );
+
+        pintarTablaEstadoCuenta(movimientosFiltrados, termino);
+    }
+    function pintarTablaEstadoCuenta(movimientos, terminoBusqueda = "") {
         const tbody = document.getElementById("tbodyMovimientos");
 
         if (!tbody) return;
 
         tbody.innerHTML = "";
 
+        setText(
+            "lblConteoMovimientos",
+            terminoBusqueda
+                ? `${movimientos.length} resultado(s) encontrados.`
+                : `${movimientos.length} movimiento(s) cargados.`,
+        );
+
         if (!movimientos.length) {
             tbody.innerHTML = `
-                <tr>
-                    <td colspan="7" class="text-center text-muted py-4">
-                        No hay movimientos en el periodo seleccionado.
-                    </td>
-                </tr>
-            `;
+        <tr>
+            <td colspan="7" class="text-center text-muted py-4">
+                ${
+                    terminoBusqueda
+                        ? "No se encontraron coincidencias en la tabla."
+                        : "No hay movimientos en el periodo seleccionado."
+                }
+            </td>
+        </tr>
+    `;
 
             return;
         }
 
         movimientos.forEach((mov) => {
-            const cargo = Number(mov.cargo || 0);
-            const abono = Number(mov.abono || 0);
+            const cargo = Math.abs(Number(mov.cargo || 0));
+            const abono = Math.abs(Number(mov.abono || 0));
             const saldo = Number(mov.saldo || 0);
+            const detalles = Array.isArray(mov.detalles) ? mov.detalles : [];
+
+            const collapseId = `detalle-movimiento-${mov.id}`;
 
             const cargoHtml =
                 cargo > 0
-                    ? `<span class="monto-cargo">-${money(cargo)}</span>`
+                    ? `<span class="monto-cargo">+${money(cargo)}</span>`
                     : `<span class="text-muted">-</span>`;
 
             const abonoHtml =
                 abono > 0
-                    ? `<span class="monto-abono">+${money(abono)}</span>`
+                    ? `<span class="monto-abono">-${money(abono)}</span>`
                     : `<span class="text-muted">-</span>`;
 
             const saldoClass =
@@ -556,53 +687,141 @@ document.addEventListener("DOMContentLoaded", function () {
             tbody.insertAdjacentHTML(
                 "beforeend",
                 `
-                <tr id="movimiento-row-${mov.id}">
-                    <td>${escapeHtml(mov.fecha || "S/N")}</td>
+            <tr id="movimiento-row-${mov.id}"
+                class="movimiento-master-row"
+                data-collapse-id="${collapseId}">
 
-                    <td>
-                        <div class="fw-bold">${escapeHtml(mov.concepto || "")}</div>
-                        ${
-                            Number(mov.detalles_count || 0) > 0
-                                ? `<small class="text-muted">${mov.detalles_count} detalle(s)</small>`
-                                : ""
-                        }
-                    </td>
+                <td>
+                    <i class="fas fa-chevron-right movimiento-chevron me-2"></i>
+                    ${escapeHtml(mov.fecha || "S/N")}
+                </td>
 
-                    <td>${escapeHtml(mov.referencia || "S/N")}</td>
+                <td>
+                    <div class="fw-bold">${escapeHtml(mov.concepto || "")}</div>
+                    ${
+                        Number(mov.detalles_count || 0) > 0
+                            ? `<small class="text-muted">${mov.detalles_count} detalle(s). Click para ver unidades.</small>`
+                            : `<small class="text-muted">Sin detalles.</small>`
+                    }
+                </td>
 
-                    <td class="text-end">${cargoHtml}</td>
+                <td>${escapeHtml(mov.referencia || "S/N")}</td>
 
-                    <td class="text-end">${abonoHtml}</td>
+                <td class="text-end">${cargoHtml}</td>
 
-                   <td class="text-end ${saldoClass}">
-                        ${money(saldo)}
-                    </td>
+                <td class="text-end">${abonoHtml}</td>
 
-                    <td class="text-end">
-                        <button type="button"
-                            class="btn btn-sm btn-outline-info btnVerMovimiento"
-                            data-id="${mov.id}">
-                            <i class="fas fa-eye"></i>
-                        </button>
+                <td class="text-end ${saldoClass}">
+                    ${money(saldo)}
+                </td>
 
-                        <button type="button"
-                            class="btn btn-sm btn-outline-primary btnEditarMovimiento"
-                            data-id="${mov.id}">
-                            <i class="fas fa-edit"></i>
-                        </button>
+                <td class="text-end">
+                    <button type="button"
+                        class="btn btn-sm btn-outline-primary btnEditarMovimiento"
+                        data-id="${mov.id}">
+                        <i class="fas fa-edit"></i>
+                    </button>
 
-                        <button type="button"
-                            class="btn btn-sm btn-outline-danger btnEliminarMovimiento"
-                            data-id="${mov.id}">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </td>
-                </tr>
-            `,
+                    <button type="button"
+                        class="btn btn-sm btn-outline-danger btnEliminarMovimiento"
+                        data-id="${mov.id}">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+
+            <tr class="detalle-collapse-row">
+                <td colspan="7" class="p-0 border-0">
+                    <div class="collapse" id="${collapseId}">
+                        ${renderDetalleMovimientoCollapse(detalles, cargo || abono)}
+                    </div>
+                </td>
+            </tr>
+        `,
             );
         });
     }
+    function renderDetalleMovimientoCollapse(detalles, totalMovimiento) {
+        if (!detalles.length) {
+            return `
+            <div class="detalle-collapse-box detalle-collapse-compact">
+                <div class="text-center text-muted py-2 small">
+                    Este movimiento no tiene detalles registrados.
+                </div>
+            </div>
+        `;
+        }
 
+        const filas = detalles
+            .map((detalle) => {
+                const unidadDescripcion =
+                    detalle.unidad?.descripcion || "Sin unidad";
+
+                const placas = detalle.unidad?.placas
+                    ? ` - ${detalle.unidad.placas}`
+                    : "";
+
+                return `
+                <tr>
+                    <td>
+                        <div class="detalle-unidad-text">
+                            ${escapeHtml(unidadDescripcion)}${escapeHtml(placas)}
+                        </div>
+                    </td>
+
+                    <td>${escapeHtml(detalle.descripcion || "")}</td>
+
+                    <td>${escapeHtml(detalle.referencia || "S/N")}</td>
+
+                    <td class="text-end fw-semibold">
+                        ${money(detalle.monto || 0)}
+                    </td>
+                </tr>
+            `;
+            })
+            .join("");
+
+        const totalDetalles = detalles.reduce((acc, detalle) => {
+            return acc + Number(detalle.monto || 0);
+        }, 0);
+
+        return `
+        <div class="detalle-collapse-box detalle-collapse-compact">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-1">
+                <div>
+                    <div class="detalle-collapse-title">
+                        Detalle por unidad
+                    </div>
+                    <small class="text-muted">
+                        Desglose capturado del movimiento.
+                    </small>
+                </div>
+
+                <div class="text-end">
+                    <small class="text-muted d-block">Total detalle</small>
+                    <span class="detalle-total">${money(totalDetalles)}</span>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-sm mb-0 detalle-table-compact">
+                    <thead>
+                        <tr>
+                            <th>Unidad</th>
+                            <th>Descripción</th>
+                            <th>Referencia</th>
+                            <th class="text-end">Importe</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        ${filas}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+    }
     function pintarLoadingEstadoCuenta() {
         const tbody = document.getElementById("tbodyMovimientos");
 
@@ -655,113 +874,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
         modalTitulo.textContent = "Editar movimiento";
         modalMovimiento.show();
-    }
-
-    async function verMovimiento(id) {
-        const movimiento = await obtenerMovimiento(id);
-
-        if (!movimiento) return;
-
-        const detallesHtml = (movimiento.detalles || [])
-            .map(
-                (detalle) => `
-                    <tr>
-                        <td>${escapeHtml(detalle.unidad?.descripcion || "S/N")}</td>
-                        <td>${escapeHtml(detalle.descripcion || "")}</td>
-                        <td>${escapeHtml(detalle.referencia || "S/N")}</td>
-                        <td class="text-end">${money(detalle.monto)}</td>
-                    </tr>
-                `,
-            )
-            .join("");
-
-        const tipoBadge =
-            movimiento.tipo === "abono"
-                ? `<span class="badge bg-success">Abono</span>`
-                : `<span class="badge bg-danger">Cargo</span>`;
-
-        document.getElementById("contenidoVerMovimiento").innerHTML = `
-            <div class="mb-3">
-                <div class="fw-bold fs-6">${escapeHtml(movimiento.concepto)}</div>
-                <div class="text-muted small">
-                    ${formatDate(movimiento.fecha_movimiento)} ·
-                    ${tipoBadge} ·
-                    ${escapeHtml(movimiento.referencia_bancaria || "S/N")}
-                </div>
-            </div>
-
-            <div class="row g-2 mb-3">
-                <div class="col-md-6">
-                    <div class="border rounded-4 p-3 bg-light h-100">
-                        <small class="text-muted fw-bold">Banco</small>
-                        <div class="fw-bold">
-                            ${escapeHtml(movimiento.cuenta?.banco?.nombre || "S/N")}
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-6">
-                    <div class="border rounded-4 p-3 bg-light h-100">
-                        <small class="text-muted fw-bold">Cuenta</small>
-                        <div class="fw-bold">
-                            ${escapeHtml(movimiento.cuenta?.beneficiario || "S/N")}
-                        </div>
-                        <small>
-                            ${escapeHtml(movimiento.cuenta?.numero_cuenta || "Sin cuenta")}
-                        </small>
-                    </div>
-                </div>
-            </div>
-
-            <div class="border rounded-4 p-3 mb-3">
-                <div class="row g-2">
-                    <div class="col-md-6">
-                        <small class="text-muted fw-bold">Total movimiento</small>
-                        <div class="fs-5 fw-bold">${money(movimiento.total || 0)}</div>
-                    </div>
-
-                    <div class="col-md-6">
-                        <small class="text-muted fw-bold">Observaciones</small>
-                        <div>${escapeHtml(movimiento.observaciones || "S/N")}</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="table-responsive">
-                <table class="table table-sm">
-                    <thead>
-                        <tr>
-                            <th>Unidad</th>
-                            <th>Descripción</th>
-                            <th>Referencia</th>
-                            <th class="text-end">Monto</th>
-                        </tr>
-                    </thead>
-
-                    <tbody>
-                        ${
-                            detallesHtml ||
-                            `
-                            <tr>
-                                <td colspan="4" class="text-center text-muted">
-                                    Sin detalles.
-                                </td>
-                            </tr>
-                        `
-                        }
-                    </tbody>
-
-                    <tfoot>
-                        <tr>
-                            <th colspan="3" class="text-end">Total</th>
-                            <th class="text-end">${money(movimiento.total || 0)}</th>
-                        </tr>
-                    </tfoot>
-                </table>
-            </div>
-        `;
-
-        modalVerMovimiento.show();
     }
 
     async function obtenerMovimiento(id) {
@@ -1042,5 +1154,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function getCsrfToken() {
         return document.querySelector('meta[name="csrf-token"]').content;
+    }
+    function normalizarTexto(value) {
+        return String(value ?? "")
+            .toLowerCase()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .trim();
     }
 });

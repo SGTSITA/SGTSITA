@@ -5,6 +5,141 @@
 @section('page_subtitle', 'Registro de cargos, abonos y detalles por unidad')
 
 @section('content')
+    <style>
+        .scb-table-toolbar {
+            border: 1px solid #edf0f4;
+            background: #ffffff;
+            border-radius: 14px;
+            padding: 0.65rem 0.85rem;
+        }
+
+        .scb-search-table {
+            max-width: 360px;
+        }
+
+        .scb-search-table .form-control,
+        .scb-search-table .input-group-text,
+        .scb-search-table .btn {
+            height: 34px;
+            font-size: 0.8rem;
+        }
+
+        .scb-search-table .form-control:focus {
+            box-shadow: none;
+            border-color: #ced4da;
+        }
+
+        @media (max-width: 768px) {
+            .scb-search-table {
+                max-width: 100%;
+                width: 100%;
+            }
+        }
+
+        .scb-table-scroll {
+            max-height: 62vh;
+            overflow: auto;
+            border: 1px solid #edf0f4;
+            border-radius: 14px;
+        }
+
+        .scb-table-scroll table {
+            min-width: 980px;
+        }
+
+        .scb-table-scroll thead th {
+            position: sticky;
+            top: 0;
+            z-index: 5;
+            background: #ffffff;
+            box-shadow: 0 1px 0 #edf0f4;
+        }
+
+        .scb-table-scroll tbody td {
+            vertical-align: middle;
+        }
+
+        .movimiento-master-row {
+            cursor: pointer;
+            transition: background-color 0.15s ease;
+        }
+
+        .movimiento-master-row:hover {
+            background-color: #f8f9fa;
+        }
+
+        .movimiento-chevron {
+            transition: transform 0.2s ease;
+            color: #6c757d;
+            font-size: 0.72rem;
+        }
+
+        .movimiento-master-row.detalle-abierto .movimiento-chevron {
+            transform: rotate(90deg);
+        }
+
+        .detalle-collapse-row td {
+            background-color: #fbfcfe;
+        }
+
+        .detalle-collapse-box.detalle-collapse-compact {
+            padding: 0.55rem 0.75rem;
+            background: #fbfcfe;
+            border-left: 3px solid #0d6efd;
+            border-bottom: 1px solid #edf0f4;
+        }
+
+        .detalle-collapse-title {
+            font-size: 0.78rem;
+            font-weight: 700;
+            line-height: 1.1;
+        }
+
+        .detalle-collapse-box small {
+            font-size: 0.68rem;
+        }
+
+        .detalle-total {
+            font-size: 0.78rem;
+            font-weight: 700;
+        }
+
+        .detalle-table-compact {
+            font-size: 0.74rem;
+        }
+
+        .detalle-table-compact thead th {
+            font-size: 0.67rem;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            color: #6c757d;
+            background-color: #ffffff;
+            padding: 0.32rem 0.45rem;
+        }
+
+        .detalle-table-compact tbody td {
+            padding: 0.32rem 0.45rem;
+            line-height: 1.15;
+            background-color: #ffffff;
+        }
+
+        .detalle-unidad-text {
+            font-weight: 700;
+            font-size: 0.74rem;
+            line-height: 1.15;
+        }
+
+        @media (max-width: 768px) {
+            .scb-search-table {
+                max-width: 100%;
+                width: 100%;
+            }
+
+            .scb-table-scroll {
+                max-height: 58vh;
+            }
+        }
+    </style>
     <div class="scb-card">
         <div class="scb-card">
             <div class="scb-card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
@@ -26,7 +161,7 @@
                 {{-- FILTROS --}}
                 <div class="border rounded-4 p-3 bg-light mb-4">
                     <div class="row g-3 align-items-end">
-                        <div class="col-md-5">
+                        <div class="col-12 col-lg-3">
                             <label class="form-label fw-bold">Cuenta bancaria</label>
                             <select id="filtro_cuenta_id" class="form-select">
                                 <option value="">Seleccione cuenta</option>
@@ -40,17 +175,29 @@
                             </select>
                         </div>
 
-                        <div class="col-md-2">
+                        <div class="col-12 col-lg-3">
+                            <label class="form-label fw-bold">Unidad</label>
+                            <select id="filtro_unidad_id" class="form-select">
+                                <option value="">Todas</option>
+                                @foreach ($unidades as $unidad)
+                                    <option value="{{ $unidad->id }}">
+                                        {{ $unidad->descripcion }} {{ $unidad->placas ? '- ' . $unidad->placas : '' }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="col-6 col-lg-2">
                             <label class="form-label fw-bold">Fecha inicio</label>
                             <input type="date" id="filtro_fecha_inicio" class="form-control">
                         </div>
 
-                        <div class="col-md-2">
+                        <div class="col-6 col-lg-2">
                             <label class="form-label fw-bold">Fecha fin</label>
                             <input type="date" id="filtro_fecha_fin" class="form-control">
                         </div>
 
-                        <div class="col-md-3">
+                        <div class="col-12 col-lg-2">
                             <button type="button" class="btn scb-btn-primary w-100" id="btnBuscarEstadoCuenta">
                                 <i class="fas fa-search me-1"></i>
                                 Buscar estado
@@ -80,7 +227,7 @@
                                     <small>Cargos</small>
                                     <h5 id="lblTotalCargos">$0.00</h5>
                                 </div>
-                                <i class="fas fa-arrow-down"></i>
+                                <i class="fas fa-arrow-up"></i>
                             </div>
                         </div>
                     </div>
@@ -92,7 +239,8 @@
                                     <small>Abonos</small>
                                     <h5 id="lblTotalAbonos">$0.00</h5>
                                 </div>
-                                <i class="fas fa-arrow-up"></i>
+
+                                <i class="fas fa-arrow-down"></i>
                             </div>
                         </div>
                     </div>
@@ -112,7 +260,30 @@
 
 
                 {{-- TABLA ESTADO DE CUENTA --}}
-                <div class="table-responsive">
+                <div class="scb-table-toolbar d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+                    <div>
+                        <h6 class="mb-0 fw-bold">Movimientos</h6>
+                        <small class="text-muted" id="lblConteoMovimientos">
+                            Sin resultados cargados.
+                        </small>
+                    </div>
+
+                    <div class="input-group input-group-sm scb-search-table">
+                        <span class="input-group-text bg-white">
+                            <i class="fas fa-search text-muted"></i>
+                        </span>
+
+                        <input type="text" class="form-control" id="buscarTablaMovimientos"
+                            placeholder="Buscar movimiento, unidad, referencia...">
+
+                        <button type="button" class="btn btn-light border d-none" id="btnLimpiarBusquedaTabla"
+                            title="Limpiar búsqueda">
+                            <i class="fas fa-times text-muted"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="table-responsive scb-table-scroll">
                     <table class="table align-items-center mb-0" id="tablaMovimientos">
                         <thead>
                             <tr>
@@ -190,8 +361,7 @@
                                     <div class="input-group">
                                         <span class="input-group-text">$</span>
                                         <input type="number" name="total_movimiento" id="total_movimiento"
-                                            class="form-control text-end" step="0.01" min="0.01"
-                                            placeholder="0.00" required>
+                                            class="form-control text-end" step="0.01" placeholder="0.00" required>
                                     </div>
                                     <small class="text-muted">Debe coincidir con el total de detalles.</small>
                                     <div class="invalid-feedback" id="error_total_movimiento"></div>
@@ -330,7 +500,7 @@
                 </td>
 
                 <td>
-                    <input type="number" class="form-control detalle-monto text-end" step=".01" value="0.00"
+                    <input type="number" class="form-control detalle-monto text-end" step=".01" placeholder="0.00"
                         required>
                 </td>
 

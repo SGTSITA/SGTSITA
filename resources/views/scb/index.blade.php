@@ -216,6 +216,7 @@
 
 
         {{-- KPIS FINANCIEROS --}}
+
         <div class="col-xl-4 col-md-6">
             <div class="scb-stat-card">
                 <div class="scb-stat-topline"></div>
@@ -224,20 +225,20 @@
                         <div>
                             <div class="scb-stat-label">Ingresos del mes</div>
                             <div class="scb-stat-value scb-kpi-positive">
-                                ${{ number_format($totalAbonosMes ?? 0, 2) }}
+                                ${{ number_format($totalCargosMes ?? 0, 2) }}
                             </div>
                             <div class="scb-stat-sub">
-                                Total de abonos registrados este mes
+                                Total de cargos registrados este mes
                             </div>
                         </div>
                         <div class="scb-stat-icon">
                             <i class="fas fa-arrow-trend-up"></i>
+
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-
         <div class="col-xl-4 col-md-6">
             <div class="scb-stat-card">
                 <div class="scb-stat-topline"></div>
@@ -246,10 +247,10 @@
                         <div>
                             <div class="scb-stat-label">Egresos del mes</div>
                             <div class="scb-stat-value scb-kpi-negative">
-                                ${{ number_format($totalCargosMes ?? 0, 2) }}
+                                ${{ number_format($totalAbonosMes ?? 0, 2) }}
                             </div>
                             <div class="scb-stat-sub">
-                                Total de cargos registrados este mes
+                                Total de abonos registrados este mes
                             </div>
                         </div>
                         <div class="scb-stat-icon">
@@ -259,6 +260,8 @@
                 </div>
             </div>
         </div>
+
+
 
         <div class="col-xl-4 col-md-12">
             <div class="scb-stat-card">
