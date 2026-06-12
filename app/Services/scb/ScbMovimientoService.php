@@ -32,7 +32,7 @@ class ScbMovimientoService
     {
         return DB::transaction(function () use ($data) {
             $this->validarTotalMovimientoContraDetalles($data);
-            $this->validarSaldoParaCargo($data);
+            $this->validarSaldoParaAbono($data);
 
             $movimiento = ScbBancoModuloCuentaMovimiento::create([
                 'cuenta_id' => $data['cuenta_id'],
@@ -54,7 +54,7 @@ class ScbMovimientoService
     {
         return DB::transaction(function () use ($id, $data) {
             $this->validarTotalMovimientoContraDetalles($data);
-            $this->validarSaldoParaCargo($data, $id);
+            $this->validarSaldoParaAbono($data, $id);
 
             $movimiento = ScbBancoModuloCuentaMovimiento::findOrFail($id);
 
@@ -83,80 +83,116 @@ class ScbMovimientoService
         });
     }
 
-    public function estadoCuenta(int $cuentaId, string $fechaInicio, string $fechaFin): array
+    public function estadoCuenta(int $cuentaId,?int $unidadId = null, string $fechaInicio, string $fechaFin): array
     {
         $cuenta = ScbBancoModuloCuenta::findOrFail($cuentaId);
 
-        $saldoInicial = (float) ($cuenta->saldo_inicial ?? 0);
+    $saldoInicial = $unidadId === null
+        ? (float) ($cuenta->saldo_inicial ?? 0)
+        : 0;
 
-        $movimientosAntes = ScbBancoModuloCuentaMovimiento::query()
-            ->where('cuenta_id', $cuentaId)
-            ->whereDate('fecha_movimiento', '<', $fechaInicio)
-            ->withSum('detalles as total', 'monto')
-            ->orderBy('fecha_movimiento')
-            ->orderBy('id')
-            ->get();
-
-        foreach ($movimientosAntes as $movimiento) {
-            $total = (float) ($movimiento->total ?? 0);
-
-            if ($movimiento->tipo === 'abono') {
-                $saldoInicial += $total;
-            } else {
-                $saldoInicial -= $total;
-            }
+    $filtrarDetalles = function ($query) use ($unidadId) {
+        if ($unidadId !== null) {
+            $query->where('unidad_id', $unidadId);
         }
+    };
 
-        $movimientos = ScbBancoModuloCuentaMovimiento::query()
-            ->where('cuenta_id', $cuentaId)
-            ->whereDate('fecha_movimiento', '>=', $fechaInicio)
-            ->whereDate('fecha_movimiento', '<=', $fechaFin)
-            ->withCount('detalles')
-            ->withSum('detalles as total', 'monto')
-            ->orderBy('fecha_movimiento')
-            ->orderBy('id')
-            ->get();
+    $movimientosAntes = ScbBancoModuloCuentaMovimiento::query()
+        ->where('cuenta_id', $cuentaId)
+        ->whereDate('fecha_movimiento', '<', $fechaInicio)
+        ->when($unidadId !== null, function ($query) use ($filtrarDetalles) {
+            $query->whereHas('detalles', $filtrarDetalles);
+        })
+        ->with(['detalles' => $filtrarDetalles])
+        ->orderBy('fecha_movimiento')
+        ->orderBy('id')
+        ->get();
 
-        $saldo = $saldoInicial;
-        $totalCargos = 0;
-        $totalAbonos = 0;
+   foreach ($movimientosAntes as $movimiento) {
+    $totalNeto = (float) $movimiento->detalles->sum('monto');
 
-        $rows = $movimientos->map(function ($movimiento) use (&$saldo, &$totalCargos, &$totalAbonos) {
-            $total = (float) ($movimiento->total ?? 0);
+    if ($movimiento->tipo === 'cargo') {
+        $saldoInicial += $totalNeto;
+    } else {
+        $saldoInicial -= $totalNeto;
+    }
+}
 
-            $cargo = 0;
-            $abono = 0;
+    $movimientos = ScbBancoModuloCuentaMovimiento::query()
+        ->where('cuenta_id', $cuentaId)
+        ->whereDate('fecha_movimiento', '>=', $fechaInicio)
+        ->whereDate('fecha_movimiento', '<=', $fechaFin)
+        ->when($unidadId !== null, function ($query) use ($filtrarDetalles) {
+            $query->whereHas('detalles', $filtrarDetalles);
+        })
+        ->with([
+            'detalles' => $filtrarDetalles,
+            'detalles.unidad',
+        ])
+        ->orderBy('fecha_movimiento')
+        ->orderBy('id')
+        ->get();
 
-            if ($movimiento->tipo === 'abono') {
-                $abono = $total;
-                $saldo += $abono;
-                $totalAbonos += $abono;
-            } else {
-                $cargo = $total;
-                $saldo -= $cargo;
-                $totalCargos += $cargo;
-            }
+    $saldo = $saldoInicial;
+    $totalCargos = 0;
+    $totalAbonos = 0;
 
+    $rows = $movimientos->map(function ($movimiento) use (&$saldo, &$totalCargos, &$totalAbonos) {
+    $totalNeto = (float) $movimiento->detalles->sum('monto');
+    $importe = abs($totalNeto);
+
+    $cargo = 0;
+    $abono = 0;
+
+    if ($movimiento->tipo === 'cargo') {
+        $cargo = $importe;
+        $saldo += $totalNeto;
+        $totalCargos += $importe;
+    } else {
+        $abono = $importe;
+        $saldo -= $totalNeto;
+        $totalAbonos += $importe;
+    }
+
+    return [
+        'id' => $movimiento->id,
+        'fecha' => $this->formatearFecha($movimiento->fecha_movimiento),
+        'concepto' => $movimiento->concepto,
+        'referencia' => $movimiento->referencia_bancaria,
+        'cargo' => round($cargo, 2),
+        'abono' => round($abono, 2),
+        'saldo' => round($saldo, 2),
+        'detalles_count' => $movimiento->detalles->count(),
+
+        'detalles' => $movimiento->detalles->map(function ($detalle) {
             return [
-                'id' => $movimiento->id,
-                'fecha' => $this->formatearFecha($movimiento->fecha_movimiento),
-                'concepto' => $movimiento->concepto,
-                'referencia' => $movimiento->referencia_bancaria,
-                'cargo' => round($cargo, 2),
-                'abono' => round($abono, 2),
-                'saldo' => round($saldo, 2),
-                'detalles_count' => $movimiento->detalles_count,
+                'id' => $detalle->id,
+                'unidad_id' => $detalle->unidad_id,
+                'unidad' => [
+                    'id' => $detalle->unidad?->id,
+                    'descripcion' => $detalle->unidad?->descripcion,
+                    'placas' => $detalle->unidad?->placas,
+                ],
+                'descripcion' => $detalle->descripcion,
+                'referencia' => $detalle->referencia,
+                'monto' => round((float) $detalle->monto, 2),
+                'importe' => round(abs((float) $detalle->monto), 2),
             ];
-        });
+        })->values(),
+    ];
+})->values();
 
-        return [
-            'success' => true,
-            'saldo_inicial' => round($saldoInicial, 2),
-            'total_cargos' => round($totalCargos, 2),
-            'total_abonos' => round($totalAbonos, 2),
-            'saldo_final' => round($saldo, 2),
-            'movimientos' => $rows,
-        ];
+    return [
+        'success' => true,
+        'cuenta_id' => $cuentaId,
+        'unidad_id' => $unidadId,
+        'saldo_inicial' => round($saldoInicial, 2),
+        'total_cargos' => round($totalCargos, 2),
+        'total_abonos' => round($totalAbonos, 2),
+        'saldo_final' => round($saldo, 2),
+        'movimientos' => $rows,
+    ];
+
     }
 
     public function calcularSaldoCuenta(int $cuentaId, ?int $excluirMovimientoId = null): float
@@ -178,7 +214,7 @@ class ScbMovimientoService
         foreach ($movimientos as $movimiento) {
             $total = (float) ($movimiento->total ?? 0);
 
-            if ($movimiento->tipo === 'abono') {
+            if ($movimiento->tipo === 'cargo') {
                 $saldo += $total;
             } else {
                 $saldo -= $total;
@@ -188,9 +224,9 @@ class ScbMovimientoService
         return round($saldo, 2);
     }
 
-    public function validarSaldoParaCargo(array $data, ?int $excluirMovimientoId = null): void
+    public function validarSaldoParaAbono(array $data, ?int $excluirMovimientoId = null): void
     {
-        if (($data['tipo'] ?? null) !== 'cargo') {
+        if (($data['tipo'] ?? null) !== 'abono') {
             return;
         }
 

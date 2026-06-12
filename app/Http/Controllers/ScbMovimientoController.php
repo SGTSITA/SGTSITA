@@ -145,37 +145,81 @@ class ScbMovimientoController extends Controller
 
     private function validateData(Request $request): array
     {
-        return $request->validate([
-            'cuenta_id' => ['required', 'exists:scb_bancos_modulo_cuentas,id'],
-            'tipo' => ['required', 'in:cargo,abono'],
-            'fecha_movimiento' => ['required', 'date'],
-            'concepto' => ['required', 'string', 'max:255'],
-            'referencia_bancaria' => ['nullable', 'string', 'max:150'],
-            'observaciones' => ['nullable', 'string'],
-            'total_movimiento' => ['required', 'numeric'],
+        $data = $request->validate([
+        'cuenta_id' => ['required', 'exists:scb_bancos_modulo_cuentas,id'],
+        'tipo' => ['required', 'in:cargo,abono'],
+        'fecha_movimiento' => ['required', 'date'],
+        'concepto' => ['required', 'string', 'max:255'],
+        'referencia_bancaria' => ['nullable', 'string', 'max:150'],
+        'observaciones' => ['nullable', 'string'],
+        'total_movimiento' => ['required', 'numeric', 'min:0.01'],
 
-            'detalles' => ['required', 'array', 'min:1'],
-            'detalles.*.unidad_id' => ['nullable', 'exists:scb_bancos_unidades_modulo,id'],
-            'detalles.*.descripcion' => ['required', 'string', 'max:255'],
-            'detalles.*.referencia' => ['nullable', 'string', 'max:150'],
-            'detalles.*.monto' => ['required', 'numeric'],
-            'detalles.*.observaciones' => ['nullable', 'string'],
+        'detalles' => ['required', 'array', 'min:1'],
+        'detalles.*.unidad_id' => ['nullable', 'exists:scb_bancos_unidades_modulo,id'],
+        'detalles.*.descripcion' => ['required', 'string', 'max:255'],
+        'detalles.*.referencia' => ['nullable', 'string', 'max:150'],
+        'detalles.*.monto' => ['required', 'numeric', 'gt:0'],
+        'detalles.*.observaciones' => ['nullable', 'string'],
+    ]);
+
+    $totalMovimientoCentavos = $this->moneyToCents($data['total_movimiento']);
+
+    $totalDetallesCentavos = collect($data['detalles'])
+        ->sum(fn ($detalle) => $this->moneyToCents($detalle['monto']));
+
+    if ($totalMovimientoCentavos !== $totalDetallesCentavos) {
+        $diferencia = ($totalMovimientoCentavos - $totalDetallesCentavos) / 100;
+
+        throw ValidationException::withMessages([
+            'total_movimiento' => [
+                'Debe coincidir con el total de detalles. Diferencia: $' . number_format($diferencia, 2, '.', ','),
+            ],
         ]);
     }
 
+
+    $data['total_movimiento'] = number_format($totalMovimientoCentavos / 100, 2, '.', '');
+
+    $data['detalles'] = collect($data['detalles'])
+        ->map(function ($detalle) {
+            $detalle['monto'] = number_format($this->moneyToCents($detalle['monto']) / 100, 2, '.', '');
+
+            return $detalle;
+        })
+        ->values()
+        ->toArray();
+
+    return $data;
+    }
+private function moneyToCents($value): int
+{
+    $value = str_replace(',', '', (string) $value);
+
+    return (int) round(((float) $value) * 100);
+}
     public function estadoCuenta(Request $request)
 {
     $data = $request->validate([
         'cuenta_id' => ['required', 'exists:scb_bancos_modulo_cuentas,id'],
+         'unidad_id' => ['nullable','exists:scb_bancos_unidades_modulo,id'],
         'fecha_inicio' => ['required', 'date'],
         'fecha_fin' => ['required', 'date', 'after_or_equal:fecha_inicio'],
     ]);
 
+
+   // dd($request->all());
+
+    $unidadId = $request->filled('unidad_id')
+        ? (int) $request->input('unidad_id')
+        : null;
+
     return response()->json(
         $this->movimientoService->estadoCuenta(
             cuentaId: (int) $data['cuenta_id'],
+            unidadId: $unidadId,
             fechaInicio: $data['fecha_inicio'],
             fechaFin: $data['fecha_fin'],
+
         )
     );
 }

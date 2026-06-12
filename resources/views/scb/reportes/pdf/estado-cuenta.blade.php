@@ -110,6 +110,15 @@
         <div class="subtitle">
             Periodo: {{ $reporte['fecha_inicio'] }} al {{ $reporte['fecha_fin'] }}
         </div>
+        @if (!empty($reporte['unidad']))
+            <div>
+                <strong>Unidad:</strong> {{ $reporte['unidad']['nombre'] }}
+            </div>
+        @else
+            <div>
+                <strong>Unidad:</strong> Todas las unidades
+            </div>
+        @endif
     </div>
 
     <table class="summary">
