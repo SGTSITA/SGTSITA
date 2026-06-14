@@ -80,8 +80,8 @@ class DocumCotizacion extends Model
             $empresa->id_empresa = Auth::user()->id_empresa;
         });
 
-        static::updating(function ($empresa) {
+       /*  static::updating(function ($empresa) {   ?? seriva este cambio para algo en algun momento el contenedor vuelve a su origen? o deberian cambiarlo desde sgt
             $empresa->id_empresa = Auth::user()->id_empresa;
-        });
+        }); */
     }
 }

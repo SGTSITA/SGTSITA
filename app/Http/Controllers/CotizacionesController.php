@@ -2009,10 +2009,19 @@ $this->procesarDocumento(
                                             ->where('id_empresa', $idEmpresa)
                                             ->first();
 
+        if(!$contenedor){
+
+        return [
+            "succes"=> false,
+            "Titulo" => "Verificar cambio empresa",
+            "message" => "Posiblemente fuera de la empresa"
+            ];
+        }
+
 
         // dd($contenedor, $numContenedor);
         $gastosExtra = GastosExtras::with('Bancos.catBanco')
-        ->        where('id_cotizacion', $contenedor->id_cotizacion)
+        ->where('id_cotizacion', $contenedor->id_cotizacion)
 
         ->get();
 
@@ -3113,9 +3122,9 @@ $urlDocumento = asset("cotizaciones/cotizacion{$id_cot}/{$nameArchivo}");
 
 
             $request->validate([
-    'empresa' => 'required|exists:empresas,id',
-    'proveedor' => 'nullable|exists:proveedores,id',
-]);
+                'empresa' => 'required|exists:empresas,id',
+                'proveedor' => 'nullable|exists:proveedores,id',
+            ]);
 
 
             $proveedor = $request->proveedor ?: null;
