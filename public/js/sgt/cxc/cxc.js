@@ -11,28 +11,28 @@ var cliente = -1;
 
 var data = [];
 
-var containerPagos = document.getElementById('pendientes');
-var FileName = 'tableroPendientes';
+var containerPagos = document.getElementById("pendientes");
+var FileName = "tableroPendientes";
 
 var config = {
     data: data,
     minRows: 0,
-    width: '100%',
+    width: "100%",
     height: 400,
     rowHeaders: true,
     minSpareRows: 0,
     autoWrapRow: true,
     colHeaders: [
-        '# CONTENEDOR',
-        'SUBCLIENTE',
-        'TIPO VIAJE',
-        'ESTATUS',
-        'SALDO ORIGINAL',
-        'SALDO ACTUAL',
-        'COBRO 1',
-        'COBRO 2',
-        'TOTAL COBRADO',
-        'ID',
+        "# CONTENEDOR",
+        "SUBCLIENTE",
+        "TIPO VIAJE",
+        "ESTATUS",
+        "SALDO ORIGINAL",
+        "SALDO ACTUAL",
+        "COBRO 1",
+        "COBRO 2",
+        "TOTAL COBRADO",
+        "ID",
     ],
     fixedColumnsLeft: 1,
     columns: [
@@ -42,41 +42,41 @@ var config = {
         { readOnly: true },
         {
             readOnly: true,
-            type: 'numeric',
+            type: "numeric",
             numericFormat: {
-                pattern: '$ 0,0.00',
-                culture: 'en-US',
+                pattern: "$ 0,0.00",
+                culture: "en-US",
             },
         },
         {
-            type: 'numeric',
+            type: "numeric",
             numericFormat: {
-                pattern: '$ 0,0.00',
-                culture: 'en-US',
+                pattern: "$ 0,0.00",
+                culture: "en-US",
             },
         },
         {
-            type: 'numeric',
+            type: "numeric",
             numericFormat: {
-                pattern: '$ 0,0.00',
-                culture: 'en-US',
+                pattern: "$ 0,0.00",
+                culture: "en-US",
             },
         },
         {
             readOnly: false,
-            type: 'numeric',
+            type: "numeric",
             numericFormat: {
-                pattern: '$ 0,0.00',
-                culture: 'en-US',
+                pattern: "$ 0,0.00",
+                culture: "en-US",
             },
             render: errorRenderer,
         },
         {
             readOnly: true,
-            type: 'numeric',
+            type: "numeric",
             numericFormat: {
-                pattern: '$ 0,0.00',
-                culture: 'en-US',
+                pattern: "$ 0,0.00",
+                culture: "en-US",
             },
         },
         {
@@ -85,44 +85,71 @@ var config = {
     ],
     hiddenColumns: { columns: [9], indicators: true },
     filters: true,
-    dropdownMenu: ['filter_by_value', 'filter_action_bar'],
-    licenseKey: 'non-commercial-and-evaluation',
+    dropdownMenu: ["filter_by_value", "filter_action_bar"],
+    licenseKey: "non-commercial-and-evaluation",
     copyPaste: true,
-    language: 'es-MX',
+    language: "es-MX",
     columnSorting: true, // Habilita la ordenación de columnas
     sortIndicator: true,
 };
 
-function negativeValueRenderer(instance, td, row, col, prop, value, cellProperties) {
+function negativeValueRenderer(
+    instance,
+    td,
+    row,
+    col,
+    prop,
+    value,
+    cellProperties,
+) {
     Handsontable.renderers.TextRenderer.apply(this, arguments);
-    if (value === 'Finalizado') {
-        td.style.fontStyle = 'italic';
-        td.style.background = '#98e1e6fe';
-    } else if (value === 'En Curso') {
-        td.style.background = '#F8BC30';
-    } else if (value === 'Cancelado') {
-        td.style.background = '#C21A1A';
-        td.style.color = '#FFFFFF';
+    if (value === "Finalizado") {
+        td.style.fontStyle = "italic";
+        td.style.background = "#98e1e6fe";
+    } else if (value === "En Curso") {
+        td.style.background = "#F8BC30";
+    } else if (value === "Cancelado") {
+        td.style.background = "#C21A1A";
+        td.style.color = "#FFFFFF";
     }
 }
 
-var colorRenderer = function (instance, td, row, col, prop, value, cellProperties) {
+var colorRenderer = function (
+    instance,
+    td,
+    row,
+    col,
+    prop,
+    value,
+    cellProperties,
+) {
     Handsontable.renderers.TextRenderer.apply(this, arguments);
     //td.style.background = "#C21A1A";
-    td.style.color = '#C21A1A';
+    td.style.color = "#C21A1A";
 };
 
-var errorRenderer = function (instance, td, row, col, prop, value, cellProperties) {
+var errorRenderer = function (
+    instance,
+    td,
+    row,
+    col,
+    prop,
+    value,
+    cellProperties,
+) {
     Handsontable.renderers.NumericRenderer.apply(this, arguments); // Usamos el NumericRenderer base
-    td.style.color = '#C21A1A'; // Cambia el color del texto a rojo
-    td.style.fontWeight = 'bold';
+    td.style.color = "#C21A1A"; // Cambia el color del texto a rojo
+    td.style.fontWeight = "bold";
 };
 
-var btnAplicarPago = document.querySelector('#btnAplicarPago');
+var btnAplicarPago = document.querySelector("#btnAplicarPago");
 
-Handsontable.renderers.registerRenderer('negativeValueRenderer', negativeValueRenderer);
-Handsontable.renderers.registerRenderer('colorRenderer', colorRenderer);
-Handsontable.renderers.registerRenderer('errorRenderer', errorRenderer);
+Handsontable.renderers.registerRenderer(
+    "negativeValueRenderer",
+    negativeValueRenderer,
+);
+Handsontable.renderers.registerRenderer("colorRenderer", colorRenderer);
+Handsontable.renderers.registerRenderer("errorRenderer", errorRenderer);
 
 var hotTable = new Handsontable(containerPagos, config);
 var TableroActivo = 0;
@@ -132,7 +159,8 @@ hotTable.updateSettings({
     cells: function (row, col) {
         var cellProperties = {};
         // var data = this.instance.getData();
-        var cellTotalPayment = hotTable.getDataAtCell(row, 6) + hotTable.getDataAtCell(row, 7);
+        var cellTotalPayment =
+            hotTable.getDataAtCell(row, 6) + hotTable.getDataAtCell(row, 7);
         if (col >= 1 && cellTotalPayment > hotTable.getDataAtCell(row, 4)) {
             this.renderer = errorRenderer;
             btnAplicarPago.disabled = true;
@@ -153,7 +181,9 @@ hotTable.updateSettings({
         filteredData.forEach((row, index) => {
             // Ejemplo: actualizando una celda específica
             hotTable.setDataAtRowProp(index, 8, 1);
-            totalPayment = hotTable.getDataAtCell(index, 6) + hotTable.getDataAtCell(index, 7);
+            totalPayment =
+                hotTable.getDataAtCell(index, 6) +
+                hotTable.getDataAtCell(index, 7);
             var rowSaldoOriginal = hotTable.getDataAtCell(index, 4);
             var rowSaldoActual = rowSaldoOriginal - totalPayment;
             hotTable.setDataAtCell(index, 5, rowSaldoActual);
@@ -179,7 +209,9 @@ hotTable.updateSettings({
                 filteredData.forEach((row, index) => {
                     // Ejemplo: actualizando una celda específica
                     hotTable.setDataAtRowProp(index, 8, 1);
-                    totalPayment = hotTable.getDataAtCell(index, 6) + hotTable.getDataAtCell(index, 7);
+                    totalPayment =
+                        hotTable.getDataAtCell(index, 6) +
+                        hotTable.getDataAtCell(index, 7);
                     var rowSaldoOriginal = hotTable.getDataAtCell(index, 4);
                     var rowSaldoActual = rowSaldoOriginal - totalPayment;
                     hotTable.setDataAtCell(index, 5, rowSaldoActual);
@@ -191,9 +223,9 @@ hotTable.updateSettings({
 });
 
 function moneyFormat(moneyValue) {
-    const $formatMoneda = new Intl.NumberFormat('es-MX', {
-        style: 'currency',
-        currency: 'MXN',
+    const $formatMoneda = new Intl.NumberFormat("es-MX", {
+        style: "currency",
+        currency: "MXN",
         minimumFractionDigits: 2,
     }).format(moneyValue);
 
@@ -203,27 +235,29 @@ function moneyFormat(moneyValue) {
 /*================================================================ */
 
 function getViajesSinLiquidar(client) {
-    var _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    var _token = document
+        .querySelector('meta[name="csrf-token"]')
+        .getAttribute("content");
     cliente = client;
 
     $.ajax({
-        url: '/cuentas/cobrar/por_liquidar',
-        type: 'post',
+        url: "/cuentas/cobrar/por_liquidar",
+        type: "post",
         data: { _token, client },
         beforeSend: function () {},
         success: function (data) {
             hotTable.loadData(data.handsOnTableData);
             getCurrentBalance(4);
             var formatCurrentBalance = moneyFormat(currentBalance);
-            $('#currentBalance').text(formatCurrentBalance);
-            $('#finalBalance').text(formatCurrentBalance);
+            $("#currentBalance").text(formatCurrentBalance);
+            $("#finalBalance").text(formatCurrentBalance);
             sumPayment(6, 7);
         },
         error: function (data) {
             swal(
-                'Error 500',
-                'Ha ocurrido un error y no se pudo procesar su solicitud, por favor intentelo nuevamente',
-                'error',
+                "Error 500",
+                "Ha ocurrido un error y no se pudo procesar su solicitud, por favor intentelo nuevamente",
+                "error",
             );
         },
     });
@@ -233,7 +267,7 @@ function getCurrentBalance(colBalance = 4) {
     var data = hotTable.getDataAtCol(colBalance); // Obtiene los datos de la columna específica
     currentBalance = data.reduce(function (accumulator, currentValue) {
         // Verifica si el valor es un número válido antes de sumarlo
-        if (typeof currentValue === 'number' && !isNaN(currentValue)) {
+        if (typeof currentValue === "number" && !isNaN(currentValue)) {
             return accumulator + currentValue;
         }
         return accumulator;
@@ -246,7 +280,7 @@ function sumPayment(colPayOne, colPayTwo) {
     var data = hotTable.getDataAtCol(colPayOne); // Obtiene los datos de la columna específica
     sumPayOne = data.reduce(function (accumulator, currentValue) {
         // Verifica si el valor es un número válido antes de sumarlo
-        if (typeof currentValue === 'number' && !isNaN(currentValue)) {
+        if (typeof currentValue === "number" && !isNaN(currentValue)) {
             return accumulator + currentValue;
         }
         return accumulator;
@@ -255,7 +289,7 @@ function sumPayment(colPayOne, colPayTwo) {
     data = hotTable.getDataAtCol(colPayTwo);
     sumPayTwo = data.reduce(function (accumulator, currentValue) {
         // Verifica si el valor es un número válido antes de sumarlo
-        if (typeof currentValue === 'number' && !isNaN(currentValue)) {
+        if (typeof currentValue === "number" && !isNaN(currentValue)) {
             return accumulator + currentValue;
         }
         return accumulator;
@@ -264,83 +298,105 @@ function sumPayment(colPayOne, colPayTwo) {
     var sumPay = sumPayOne + sumPayTwo;
     finalBalance = currentBalance - sumPay;
     applyPayments = sumPay;
-    $('#finalBalance').text(moneyFormat(finalBalance));
-    $('#sumPago1').text(moneyFormat(sumPayOne));
-    $('#sumPago2').text(moneyFormat(sumPayTwo));
+    $("#finalBalance").text(moneyFormat(finalBalance));
+    $("#sumPago1").text(moneyFormat(sumPayOne));
+    $("#sumPago2").text(moneyFormat(sumPayTwo));
     if (finalBalance < 0) {
-        $('#finalBalance').addClass('text-danger');
-        $('#borderBalance').removeClass('border-success').addClass('border-danger');
+        $("#finalBalance").addClass("text-danger");
+        $("#borderBalance")
+            .removeClass("border-success")
+            .addClass("border-danger");
     } else {
-        $('#finalBalance').removeClass('text-danger');
-        $('#borderBalance').addClass('border-success').removeClass('border-danger');
+        $("#finalBalance").removeClass("text-danger");
+        $("#borderBalance")
+            .addClass("border-success")
+            .removeClass("border-danger");
     }
 
     sumPay = moneyFormat(sumPay);
-    $('#payment').text(sumPay);
+    $("#payment").text(sumPay);
 }
 /*================================================================ */
 
-$(btnAplicarPago).on('click', () => {
+$(btnAplicarPago).on("click", () => {
     applyPayment();
 });
 
 function applyPayment() {
-    var _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    btnAplicarPago.enabled = false;
+    var _token = document
+        .querySelector('meta[name="csrf-token"]')
+        .getAttribute("content");
 
     if (finalBalance < 0) {
         Swal.fire(
-            'No se puede aplicar el pago',
-            'Al menos uno de los pagos ingresados superan el monto de la deuda, por favor corrobore su información',
-            'warning',
+            "No se puede aplicar el pago",
+            "Al menos uno de los pagos ingresados superan el monto de la deuda, por favor corrobore su información",
+            "warning",
         );
+        btnAplicarPago.enabled = true;
+
         return false;
     }
 
     if (applyPayments == 0) {
         Swal.fire(
-            'Debe ingresar pagos',
-            'Aún no ha ingresado pagos, por favor ingrese al menos uno e intentelo nuevamente',
-            'warning',
+            "Debe ingresar pagos",
+            "Aún no ha ingresado pagos, por favor ingrese al menos uno e intentelo nuevamente",
+            "warning",
         );
+        btnAplicarPago.enabled = true;
         return false;
     }
 
-    var bankOne = $('#cmbBankOne').val();
-    var FechaAplicacionbank1 = $('#FechaAplicacionbank1').val();
-    var bankTwo = $('#cmbBankTwo').val();
-    var FechaAplicacionbank2 = $('#FechaAplicacionbank2').val();
+    var bankOne = $("#cmbBankOne").val();
+    var FechaAplicacionbank1 = $("#FechaAplicacionbank1").val();
+    var bankTwo = $("#cmbBankTwo").val();
+    var FechaAplicacionbank2 = $("#FechaAplicacionbank2").val();
 
-    if (bankOne == 'null' || bankTwo == 'null') {
+    if (bankOne == "null" || bankTwo == "null") {
         Swal.fire({
             customClass: {
-                confirmButton: 'btn btn-success',
-                cancelButton: 'btn btn-danger',
+                confirmButton: "btn btn-success",
+                cancelButton: "btn btn-danger",
             },
             buttonsStyling: true,
             showConfirmButton: true,
-            confirmButtonText: 'Entendido!',
-            title: 'Seleccione bancos',
-            text: 'Falta seleccionar al menos uno de los bancos',
-            icon: 'warning',
+            confirmButtonText: "Entendido!",
+            title: "Seleccione bancos",
+            text: "Falta seleccionar al menos uno de los bancos",
+            icon: "warning",
         });
+        btnAplicarPago.enabled = true;
         return false;
     }
 
     if (!FechaAplicacionbank1 || !FechaAplicacionbank2) {
         Swal.fire({
             customClass: {
-                confirmButton: 'btn btn-success',
-                cancelButton: 'btn btn-danger',
+                confirmButton: "btn btn-success",
+                cancelButton: "btn btn-danger",
             },
             buttonsStyling: true,
             showConfirmButton: true,
-            confirmButtonText: 'Entendido!',
-            title: 'Seleccione fechas',
-            text: 'Falta seleccionar fecha de aplicacion para movimiento en bancos',
-            icon: 'warning',
+            confirmButtonText: "Entendido!",
+            title: "Seleccione fechas",
+            text: "Falta seleccionar fecha de aplicacion para movimiento en bancos",
+            icon: "warning",
         });
+        btnAplicarPago.enabled = true;
         return false;
     }
+
+    Swal.fire({
+        title: "Guardando ...",
+        text: "Por favor espera",
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        didOpen: () => {
+            Swal.showLoading();
+        },
+    });
 
     var datahotTable = JSON.stringify(hotTable.getData());
     var amountPayOne = sumPayOne;
@@ -348,8 +404,8 @@ function applyPayment() {
     var theClient = cliente;
 
     $.ajax({
-        url: '/cuentas/cobrar/confirmar_pagos',
-        type: 'post',
+        url: "/cuentas/cobrar/confirmar_pagos",
+        type: "post",
         data: {
             _token,
             theClient,
@@ -364,11 +420,24 @@ function applyPayment() {
         },
         beforeSend: function () {},
         success: function (response) {
+            Swal.close();
             Swal.fire(response.Titulo, response.Mensaje, response.TMensaje);
-            if (response.TMensaje == 'success') btnAplicarPago.disabled = true;
+            getViajesSinLiquidar(cliente);
+            if (response.TMensaje == "success") {
+                $("#cmbBankOne").val("");
+                $("#FechaAplicacionbank1").val("");
+                $("#cmbBankTwo").val("");
+                $("#FechaAplicacionbank2").val("");
+                btnAplicarPago.disabled = true;
+            }
         },
         error: function () {
-            Swal.fire('Error 500', 'Error inesperado, por favor intentelo nuevamente', 'error');
+            Swal.fire(
+                "Error 500",
+                "Error inesperado, por favor intentelo nuevamente",
+                "error",
+            );
+            btnAplicarPago.enabled = true;
         },
     });
 }

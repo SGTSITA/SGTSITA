@@ -19,30 +19,47 @@
             --sgt-aside-width: 250px;
             --sgt-page-bg: #f5f6fa;
             --sgt-aside-bg: #f1f2f7;
+            --sgt-content-max-width: 1600px;
+            --sgt-content-padding: 24px;
         }
 
         html,
         body {
-            min-height: 100%;
-            overflow-x: hidden;
-            background: var(--sgt-page-bg);
+            width: 100%;
+            min-width: 0;
+            height: 100%;
+            margin: 0;
+            overflow: hidden;
         }
 
         body.header-fixed {
             background: var(--sgt-page-bg);
         }
 
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+        }
+
         .sgt-root {
-            min-height: 100vh;
+            width: 100%;
+            max-width: 100vw;
+            height: 100vh;
+            height: 100dvh;
+            min-width: 0;
+            overflow: hidden;
             background: var(--sgt-page-bg);
         }
 
         .sgt-page {
-            min-height: 100vh;
             width: 100%;
+            max-width: 100vw;
+            height: 100%;
+            min-width: 0;
+            overflow: hidden;
             display: flex;
             align-items: stretch;
-            overflow-x: hidden;
         }
 
         .sgt-aside {
@@ -54,20 +71,23 @@
         }
 
         .sgt-main {
+            height: 100%;
             min-width: 0;
             flex: 1 1 auto;
+            overflow: hidden;
             display: flex;
             flex-direction: column;
-            background: var(--sgt-page-bg);
         }
 
         .sgt-header {
             min-width: 0;
+            flex: 0 0 auto;
             background: #ffffff;
             border-bottom: 1px solid #edf0f5;
         }
 
         .sgt-header-inner {
+            width: 100%;
             min-width: 0;
             min-height: 78px;
             display: flex;
@@ -96,27 +116,56 @@
         }
 
         .sgt-header-actions {
-            flex: 0 0 auto;
+            min-width: 0;
+            flex: 0 1 auto;
             display: flex;
             align-items: center;
-            gap: 12px;
-            min-width: 0;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+            gap: 10px;
         }
 
         .sgt-content {
-            min-width: 0;
             flex: 1 1 auto;
-            padding: 24px;
-            overflow-x: hidden;
+            min-height: 0;
+            min-width: 0;
+            padding: var(--sgt-content-padding);
+            overflow: auto;
+            overscroll-behavior: contain;
         }
 
         .sgt-content-container {
             width: 100%;
+            max-width: min(100%, var(--sgt-content-max-width));
+            min-width: 0;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Evita que tablas, datatables, grids o mapas empujen todo el layout.
+           Si una vista necesita más ancho, el scroll se queda dentro del área de contenido. */
+        .sgt-content-container>*,
+        .sgt-content-container .card,
+        .sgt-content-container .row,
+        .sgt-content-container .container,
+        .sgt-content-container .container-fluid,
+        .sgt-content-container .dataTables_wrapper,
+        .sgt-content-container .ag-theme-quartz,
+        .sgt-content-container .ag-theme-alpine,
+        .sgt-content-container .ag-root-wrapper {
             max-width: 100%;
             min-width: 0;
         }
 
+        .sgt-content-container .table-responsive,
+        .sgt-content-container .dataTables_wrapper,
+        .sgt-content-container .ag-root-wrapper,
+        .sgt-content-container .overflow-auto {
+            overflow-x: auto;
+        }
+
         .sgt-footer {
+            flex: 0 0 auto;
             padding: 14px 24px;
             background: transparent;
         }
@@ -212,13 +261,14 @@
         .sgt-search-wrapper {
             width: 250px;
             max-width: 250px;
+            min-width: 0;
         }
 
         @media (min-width: 992px) {
             .sgt-aside {
                 position: sticky !important;
                 top: 0;
-                height: 100vh;
+                height: 100%;
                 width: var(--sgt-aside-width) !important;
                 min-width: var(--sgt-aside-width) !important;
                 max-width: var(--sgt-aside-width) !important;
@@ -230,12 +280,32 @@
             }
 
             .sgt-main {
-                width: calc(100% - var(--sgt-aside-width));
-                max-width: calc(100% - var(--sgt-aside-width));
+                width: auto;
+                max-width: calc(100vw - var(--sgt-aside-width));
+            }
+        }
+
+        @media (max-width: 1199.98px) {
+            .sgt-header-inner {
+                align-items: flex-start;
+                flex-wrap: wrap;
+            }
+
+            .sgt-header-actions {
+                flex: 1 1 auto;
             }
         }
 
         @media (max-width: 991.98px) {
+            :root {
+                --sgt-content-padding: 12px;
+            }
+
+            html,
+            body {
+                overflow: hidden;
+            }
+
             .sgt-page {
                 display: block;
             }
@@ -276,12 +346,18 @@
                 max-width: 100%;
             }
 
-            .sgt-content {
-                padding: 12px;
-            }
-
             .sgt-footer {
                 padding: 12px;
+            }
+        }
+
+        @media (max-width: 575.98px) {
+            .sgt-header-actions {
+                width: 100%;
+            }
+
+            #waIconStatus .fs-8 {
+                display: none;
             }
         }
     </style>
@@ -829,6 +905,15 @@
             <span class="path2"></span>
         </i>
     </div>
+    @auth
+        <script>
+            window.SGT_SESSION_TIMEOUT_MS = {{ config('session.lifetime') * 60 * 1000 }};
+            window.SGT_LOGOUT_URL = "{{ route('logout') }}";
+            window.SGT_LOGIN_URL = "{{ url('login') }}";
+        </script>
+
+        <script src="{{ asset('js/sgt/common/sessionAutoLogout.js') }}"></script>
+    @endauth
 
     <script>
         var hostUrl = '/assets/metronic/';

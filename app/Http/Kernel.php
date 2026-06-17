@@ -68,5 +68,6 @@ class Kernel extends HttpKernel
         'permission' => \Spatie\Permission\Middlewares\PermissionMiddleware::class,
         'role_or_permission' => \Spatie\Permission\Middlewares\RoleOrPermissionMiddleware::class,
         'finanzas' => \App\Http\Middleware\FinanzasMiddleware::class,
+        'idle.timeout' => \App\Http\Middleware\CheckUserSessionTimeout::class,
     ];
 }

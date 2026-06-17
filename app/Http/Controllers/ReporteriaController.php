@@ -38,6 +38,12 @@ use App\Traits\CommonTrait;
 use Illuminate\Support\Facades\File;
 use App\Services\CuentasCobrarService;
 
+
+use App\Exports\ConsumoUnidadesExport;
+use App\Services\ConsumoUnidadesService;
+
+
+
 class ReporteriaController extends Controller
 {
     protected $cuentasPorCobrarService;
@@ -2451,242 +2457,308 @@ public function indexRendimiento()
     return view('reporteria.rendimiento.index', compact('equipos'));
 }
 
-    public function dataRendimiento(Request $request)
+    // public function dataRendimiento(Request $request)
+    // {
+    //       $data = $request->validate([
+    //     'unidad_id' => ['required', 'integer'],
+    //     'fecha_inicio' => ['required', 'date'],
+    //     'fecha_fin' => ['required', 'date', 'after_or_equal:fecha_inicio'],
+    // ]);
+
+    // $unidadId = $data['unidad_id'];
+    // $fechaInicio = $data['fecha_inicio'];
+    // $fechaFin = $data['fecha_fin'];
+
+    // $filtroPrincipal = function ($q) {
+    //     $q->where(function ($q2) {
+    //         $q2->where('jerarquia', '!=', 'Secundario')
+    //             ->orWhereNull('jerarquia');
+    //     });
+    // };
+
+    // $asignacionesBase = Asignaciones::query()
+    //     ->with([
+    //         'Contenedor.Cotizacion',
+    //         'Operador',
+    //         'Camion',
+    //     ])
+    //     ->where('id_camion', $unidadId)
+    //     ->whereDate('fecha_inicio', '>=', $fechaInicio)
+    //     ->whereDate('fecha_inicio', '<=', $fechaFin)
+    //     ->whereHas('Contenedor.Cotizacion', $filtroPrincipal)
+    //     ->orderBy('fecha_inicio')
+    //     ->orderBy('id')
+    //     ->get()
+    //     ->values();
+
+    // $ultimoViaje = $asignacionesBase->last();
+
+    // $asignacionExtra = null;
+
+    // if ($ultimoViaje) {
+    //     $asignacionExtra = Asignaciones::query()
+    //         ->with([
+    //             'Contenedor.Cotizacion',
+    //             'Operador',
+    //             'Camion',
+    //         ])
+    //         ->where('id_camion', $unidadId)
+    //         ->whereHas('Contenedor.Cotizacion', $filtroPrincipal)
+    //         ->where(function ($q) use ($ultimoViaje) {
+    //             $q->where('fecha_inicio', '>', $ultimoViaje->fecha_inicio)
+    //                 ->orWhere(function ($q2) use ($ultimoViaje) {
+    //                     $q2->where('fecha_inicio', $ultimoViaje->fecha_inicio)
+    //                         ->where('id', '>', $ultimoViaje->id);
+    //                 });
+    //         })
+    //         ->orderBy('fecha_inicio')
+    //         ->orderBy('id')
+    //         ->first();
+    // }
+
+    // /*
+    //  * Esta colección incluye el viaje extra solo para poder tomar
+    //  * los litros del siguiente viaje.
+    //  */
+    // $asignacionesParaCalculo = $asignacionExtra
+    //     ? $asignacionesBase->concat([$asignacionExtra])->values()
+    //     : $asignacionesBase->values();
+
+    // $obtenerTextoContenedor = function ($asignacion) {
+    //     $contenedor = $asignacion?->Contenedor;
+    //     $cotizacion = $contenedor?->Cotizacion;
+
+    //     $numContenedor = $contenedor?->num_contenedor ?? 'S/N';
+
+    //     if ($cotizacion?->referencia_full) {
+    //         $cotizacionSecundaria = Cotizaciones::query()
+    //             ->with('DocCotizacion')
+    //             ->where('referencia_full', $cotizacion->referencia_full)
+    //             ->where('jerarquia', 'Secundario')
+    //             ->first();
+
+    //         if ($cotizacionSecundaria) {
+    //             $docSecundario = $cotizacionSecundaria->DocCotizacion;
+
+    //             if ($docSecundario instanceof \Illuminate\Support\Collection) {
+    //                 $numSecundario = $docSecundario->first()?->num_contenedor;
+    //             } else {
+    //                 $numSecundario = $docSecundario?->num_contenedor;
+    //             }
+
+    //             $numContenedor .= ' / ' . ($numSecundario ?? 'S/N');
+    //         }
+    //     }
+
+    //     return $numContenedor;
+    // };
+
+    // $rows = $asignacionesBase->map(function ($asignacion, $index) use ($asignacionesParaCalculo, $obtenerTextoContenedor) {
+    //     $contenedor = $asignacion->Contenedor;
+    //     $cotizacion = $contenedor?->Cotizacion;
+
+    //     $siguienteAsignacion = $asignacionesParaCalculo->get($index + 1);
+    //     $cotizacionSiguiente = $siguienteAsignacion?->Contenedor?->Cotizacion;
+
+    //     /*
+    //      * Datos propios del viaje actual.
+    //      */
+    //     $km = (float) ($cotizacion?->km_recorridos ?? 0);
+    //     $litrosCapturadosViaje = (float) ($cotizacion?->litros_diesel ?? 0);
+
+    //     /*
+    //      * Fórmula correcta:
+    //      * El consumo del viaje actual se toma de la carga del siguiente viaje.
+    //      */
+    //     $litrosCalculoConsumo = (float) ($cotizacionSiguiente?->litros_diesel ?? 0);
+
+    //     $rendimiento = $litrosCalculoConsumo > 0
+    //         ? round($km / $litrosCalculoConsumo, 3)
+    //         : null;
+
+    //     $consumoLitrosPor100Km = $km > 0 && $litrosCalculoConsumo > 0
+    //         ? round(($litrosCalculoConsumo / $km) * 100, 3)
+    //         : null;
+
+    //     $observacion = null;
+
+    //     if (!$siguienteAsignacion) {
+    //         $observacion = 'Pendiente de siguiente carga para calcular consumo';
+    //     } elseif ($km <= 0 && $litrosCalculoConsumo <= 0) {
+    //         $observacion = 'Sin KM y sin litros para cálculo';
+    //     } elseif ($km <= 0) {
+    //         $observacion = 'Sin KM capturados';
+    //     } elseif ($litrosCalculoConsumo <= 0) {
+    //         $observacion = 'El siguiente viaje no tiene litros capturados';
+    //     }
+
+    //     return [
+    //         'asignacion_id' => $asignacion->id,
+    //         'cotizacion_id' => $cotizacion?->id,
+    //         'contenedor_id' => $contenedor?->id,
+    //         'peso_contenedor' => $cotizacion?->peso_contenedor ?? 0,
+
+    //         'fecha_inicio' => $asignacion->fecha_inicio
+    //             ? Carbon::parse($asignacion->fecha_inicio)->format('d/m/Y')
+    //             : 'S/N',
+
+    //         'fecha_fin' => $asignacion->fecha_fin
+    //             ? Carbon::parse($asignacion->fecha_fin)->format('d/m/Y')
+    //             : 'S/N',
+
+    //         'contenedor' => $obtenerTextoContenedor($asignacion),
+    //         'operador' => $asignacion->Operador?->nombre ?? 'S/N',
+
+    //         'origen' => $cotizacion ? $cotizacion->origen : 'S/N',
+    //         'destino' => $cotizacion ? $cotizacion->destino : 'S/N',
+
+    //         /*
+    //          * KM del viaje actual.
+    //          */
+    //         'km_recorridos' => round($km, 2),
+
+    //         /*
+    //          * Litros guardados realmente en este viaje.
+    //          * Esto evita la confusión de que "no se guardó".
+    //          */
+    //         'litros_capturados_viaje' => round($litrosCapturadosViaje, 3),
+
+    //         /*
+    //          * Litros que se usan para calcular el consumo de este viaje.
+    //          * Vienen del siguiente viaje.
+    //          */
+    //         'litros_calculo_consumo' => round($litrosCalculoConsumo, 3),
+
+    //         /*
+    //          * Mantengo este alias por compatibilidad, pero ya no lo uses en front.
+    //          */
+    //         'litros_diesel' => round($litrosCapturadosViaje, 3),
+
+    //         'rendimiento_km_litro' => $rendimiento,
+    //         'consumo_litros_100_km' => $consumoLitrosPor100Km,
+
+    //         'litros_tomados_de_asignacion_id' => $siguienteAsignacion?->id,
+    //         'litros_tomados_de_cotizacion_id' => $cotizacionSiguiente?->id,
+    //         'litros_tomados_de_contenedor' => $siguienteAsignacion
+    //             ? $obtenerTextoContenedor($siguienteAsignacion)
+    //             : null,
+
+    //         'observacion' => $observacion,
+    //     ];
+    // });
+
+    // $totalKm = round($rows->sum('km_recorridos'), 2);
+
+    // /*
+    //  * Total capturado: suma de litros guardados en los viajes visibles.
+    //  * Total cálculo: suma de litros realmente usados para rendimiento.
+    //  */
+    // $totalLitrosCapturados = round($rows->sum('litros_capturados_viaje'), 3);
+    // $totalLitrosCalculo = round($rows->sum('litros_calculo_consumo'), 3);
+
+    // $rendimientoPromedio = $totalLitrosCalculo > 0
+    //     ? round($totalKm / $totalLitrosCalculo, 3)
+    //     : null;
+
+    // $consumoPromedioLitros100Km = $totalKm > 0 && $totalLitrosCalculo > 0
+    //     ? round(($totalLitrosCalculo / $totalKm) * 100, 3)
+    //     : null;
+
+    // $viajesConDatos = $rows->filter(function ($row) {
+    //     return $row['km_recorridos'] > 0 && $row['litros_calculo_consumo'] > 0;
+    // })->count();
+
+    // $viajesSinDatos = $rows->filter(function ($row) {
+    //     return $row['km_recorridos'] <= 0 || $row['litros_calculo_consumo'] <= 0;
+    // })->count();
+
+    // return response()->json([
+    //     'success' => true,
+    //     'resumen' => [
+    //         'total_viajes' => $rows->count(),
+    //         'viajes_con_datos' => $viajesConDatos,
+    //         'viajes_sin_datos' => $viajesSinDatos,
+    //         'total_km' => $totalKm,
+
+
+    //         'total_litros' => $totalLitrosCalculo,
+
+
+    //         'total_litros_capturados' => $totalLitrosCapturados,
+    //         'total_litros_calculo' => $totalLitrosCalculo,
+
+    //         'rendimiento_promedio' => $rendimientoPromedio,
+    //         'consumo_promedio_litros_100_km' => $consumoPromedioLitros100Km,
+    //     ],
+    //     'rows' => $rows->values(),
+    // ]);
+
+    // }
+
+
+
+
+    public function dataRendimiento(Request $request, ConsumoUnidadesService $service)
     {
-          $data = $request->validate([
-        'unidad_id' => ['required', 'integer'],
-        'fecha_inicio' => ['required', 'date'],
-        'fecha_fin' => ['required', 'date', 'after_or_equal:fecha_inicio'],
-    ]);
+        $data = $request->validate([
+            'unidad_id' => ['required', 'integer'],
+            'fecha_inicio' => ['required', 'date'],
+            'fecha_fin' => ['required', 'date', 'after_or_equal:fecha_inicio'],
+        ]);
 
-    $unidadId = $data['unidad_id'];
-    $fechaInicio = $data['fecha_inicio'];
-    $fechaFin = $data['fecha_fin'];
-
-    $filtroPrincipal = function ($q) {
-        $q->where(function ($q2) {
-            $q2->where('jerarquia', '!=', 'Secundario')
-                ->orWhereNull('jerarquia');
-        });
-    };
-
-    $asignacionesBase = Asignaciones::query()
-        ->with([
-            'Contenedor.Cotizacion',
-            'Operador',
-            'Camion',
-        ])
-        ->where('id_camion', $unidadId)
-        ->whereDate('fecha_inicio', '>=', $fechaInicio)
-        ->whereDate('fecha_inicio', '<=', $fechaFin)
-        ->whereHas('Contenedor.Cotizacion', $filtroPrincipal)
-        ->orderBy('fecha_inicio')
-        ->orderBy('id')
-        ->get()
-        ->values();
-
-    $ultimoViaje = $asignacionesBase->last();
-
-    $asignacionExtra = null;
-
-    if ($ultimoViaje) {
-        $asignacionExtra = Asignaciones::query()
-            ->with([
-                'Contenedor.Cotizacion',
-                'Operador',
-                'Camion',
-            ])
-            ->where('id_camion', $unidadId)
-            ->whereHas('Contenedor.Cotizacion', $filtroPrincipal)
-            ->where(function ($q) use ($ultimoViaje) {
-                $q->where('fecha_inicio', '>', $ultimoViaje->fecha_inicio)
-                    ->orWhere(function ($q2) use ($ultimoViaje) {
-                        $q2->where('fecha_inicio', $ultimoViaje->fecha_inicio)
-                            ->where('id', '>', $ultimoViaje->id);
-                    });
-            })
-            ->orderBy('fecha_inicio')
-            ->orderBy('id')
-            ->first();
+        return response()->json(
+            $service->generar($data)
+        );
     }
 
-    /*
-     * Esta colección incluye el viaje extra solo para poder tomar
-     * los litros del siguiente viaje.
-     */
-    $asignacionesParaCalculo = $asignacionExtra
-        ? $asignacionesBase->concat([$asignacionExtra])->values()
-        : $asignacionesBase->values();
+    public function exportarunidadesconsumo(Request $request, string $tipo, ConsumoUnidadesService $service)
+    {
+        $data = $request->validate([
+            'unidad_id' => ['required', 'integer'],
+            'fecha_inicio' => ['required', 'date'],
+            'fecha_fin' => ['required', 'date', 'after_or_equal:fecha_inicio'],
+        ]);
 
-    $obtenerTextoContenedor = function ($asignacion) {
-        $contenedor = $asignacion?->Contenedor;
-        $cotizacion = $contenedor?->Cotizacion;
-
-        $numContenedor = $contenedor?->num_contenedor ?? 'S/N';
-
-        if ($cotizacion?->referencia_full) {
-            $cotizacionSecundaria = Cotizaciones::query()
-                ->with('DocCotizacion')
-                ->where('referencia_full', $cotizacion->referencia_full)
-                ->where('jerarquia', 'Secundario')
-                ->first();
-
-            if ($cotizacionSecundaria) {
-                $docSecundario = $cotizacionSecundaria->DocCotizacion;
-
-                if ($docSecundario instanceof \Illuminate\Support\Collection) {
-                    $numSecundario = $docSecundario->first()?->num_contenedor;
-                } else {
-                    $numSecundario = $docSecundario?->num_contenedor;
-                }
-
-                $numContenedor .= ' / ' . ($numSecundario ?? 'S/N');
-            }
+        if (!in_array($tipo, ['pdf', 'excel'], true)) {
+            abort(404);
         }
 
-        return $numContenedor;
-    };
+        $reporte = $service->generar($data);
+        $filtros = $this->obtenerFiltrosExportacion($data);
 
-    $rows = $asignacionesBase->map(function ($asignacion, $index) use ($asignacionesParaCalculo, $obtenerTextoContenedor) {
-        $contenedor = $asignacion->Contenedor;
-        $cotizacion = $contenedor?->Cotizacion;
+        $nombreArchivo = 'reporte_consumo_unidad_' . now()->format('Ymd_His');
 
-        $siguienteAsignacion = $asignacionesParaCalculo->get($index + 1);
-        $cotizacionSiguiente = $siguienteAsignacion?->Contenedor?->Cotizacion;
+        if ($tipo === 'pdf') {
+            $pdf = Pdf::loadView('reporteria.rendimiento.pdf', [
+                'reporte' => $reporte,
+                'filtros' => $filtros,
+            ])->setPaper('letter', 'landscape');
 
-        /*
-         * Datos propios del viaje actual.
-         */
-        $km = (float) ($cotizacion?->km_recorridos ?? 0);
-        $litrosCapturadosViaje = (float) ($cotizacion?->litros_diesel ?? 0);
-
-        /*
-         * Fórmula correcta:
-         * El consumo del viaje actual se toma de la carga del siguiente viaje.
-         */
-        $litrosCalculoConsumo = (float) ($cotizacionSiguiente?->litros_diesel ?? 0);
-
-        $rendimiento = $litrosCalculoConsumo > 0
-            ? round($km / $litrosCalculoConsumo, 3)
-            : null;
-
-        $consumoLitrosPor100Km = $km > 0 && $litrosCalculoConsumo > 0
-            ? round(($litrosCalculoConsumo / $km) * 100, 3)
-            : null;
-
-        $observacion = null;
-
-        if (!$siguienteAsignacion) {
-            $observacion = 'Pendiente de siguiente carga para calcular consumo';
-        } elseif ($km <= 0 && $litrosCalculoConsumo <= 0) {
-            $observacion = 'Sin KM y sin litros para cálculo';
-        } elseif ($km <= 0) {
-            $observacion = 'Sin KM capturados';
-        } elseif ($litrosCalculoConsumo <= 0) {
-            $observacion = 'El siguiente viaje no tiene litros capturados';
+            return $pdf->download($nombreArchivo . '.pdf');
         }
+
+        return Excel::download(
+            new ConsumoUnidadesExport($reporte, $filtros),
+            $nombreArchivo . '.xlsx'
+        );
+    }
+
+    private function obtenerFiltrosExportacion(array $data): array
+    {
+        $unidad = Equipo::find($data['unidad_id']);
 
         return [
-            'asignacion_id' => $asignacion->id,
-            'cotizacion_id' => $cotizacion?->id,
-            'contenedor_id' => $contenedor?->id,
-            'peso_contenedor' => $cotizacion?->peso_contenedor ?? 0,
-
-            'fecha_inicio' => $asignacion->fecha_inicio
-                ? Carbon::parse($asignacion->fecha_inicio)->format('d/m/Y')
+            'unidad' => $unidad
+                ? trim(
+                    ($unidad->id_equipo ?? 'S/N') .
+                    ($unidad->marca ? ' - ' . $unidad->marca : '') .
+                    ($unidad->placas ? ' - ' . $unidad->placas : '')
+                )
                 : 'S/N',
 
-            'fecha_fin' => $asignacion->fecha_fin
-                ? Carbon::parse($asignacion->fecha_fin)->format('d/m/Y')
-                : 'S/N',
-
-            'contenedor' => $obtenerTextoContenedor($asignacion),
-            'operador' => $asignacion->Operador?->nombre ?? 'S/N',
-
-            'origen' => $cotizacion ? $cotizacion->origen : 'S/N',
-            'destino' => $cotizacion ? $cotizacion->destino : 'S/N',
-
-            /*
-             * KM del viaje actual.
-             */
-            'km_recorridos' => round($km, 2),
-
-            /*
-             * Litros guardados realmente en este viaje.
-             * Esto evita la confusión de que "no se guardó".
-             */
-            'litros_capturados_viaje' => round($litrosCapturadosViaje, 3),
-
-            /*
-             * Litros que se usan para calcular el consumo de este viaje.
-             * Vienen del siguiente viaje.
-             */
-            'litros_calculo_consumo' => round($litrosCalculoConsumo, 3),
-
-            /*
-             * Mantengo este alias por compatibilidad, pero ya no lo uses en front.
-             */
-            'litros_diesel' => round($litrosCapturadosViaje, 3),
-
-            'rendimiento_km_litro' => $rendimiento,
-            'consumo_litros_100_km' => $consumoLitrosPor100Km,
-
-            'litros_tomados_de_asignacion_id' => $siguienteAsignacion?->id,
-            'litros_tomados_de_cotizacion_id' => $cotizacionSiguiente?->id,
-            'litros_tomados_de_contenedor' => $siguienteAsignacion
-                ? $obtenerTextoContenedor($siguienteAsignacion)
-                : null,
-
-            'observacion' => $observacion,
+            'fecha_inicio' => Carbon::parse($data['fecha_inicio'])->format('d/m/Y'),
+            'fecha_fin' => Carbon::parse($data['fecha_fin'])->format('d/m/Y'),
         ];
-    });
-
-    $totalKm = round($rows->sum('km_recorridos'), 2);
-
-    /*
-     * Total capturado: suma de litros guardados en los viajes visibles.
-     * Total cálculo: suma de litros realmente usados para rendimiento.
-     */
-    $totalLitrosCapturados = round($rows->sum('litros_capturados_viaje'), 3);
-    $totalLitrosCalculo = round($rows->sum('litros_calculo_consumo'), 3);
-
-    $rendimientoPromedio = $totalLitrosCalculo > 0
-        ? round($totalKm / $totalLitrosCalculo, 3)
-        : null;
-
-    $consumoPromedioLitros100Km = $totalKm > 0 && $totalLitrosCalculo > 0
-        ? round(($totalLitrosCalculo / $totalKm) * 100, 3)
-        : null;
-
-    $viajesConDatos = $rows->filter(function ($row) {
-        return $row['km_recorridos'] > 0 && $row['litros_calculo_consumo'] > 0;
-    })->count();
-
-    $viajesSinDatos = $rows->filter(function ($row) {
-        return $row['km_recorridos'] <= 0 || $row['litros_calculo_consumo'] <= 0;
-    })->count();
-
-    return response()->json([
-        'success' => true,
-        'resumen' => [
-            'total_viajes' => $rows->count(),
-            'viajes_con_datos' => $viajesConDatos,
-            'viajes_sin_datos' => $viajesSinDatos,
-            'total_km' => $totalKm,
-
-
-            'total_litros' => $totalLitrosCalculo,
-
-
-            'total_litros_capturados' => $totalLitrosCapturados,
-            'total_litros_calculo' => $totalLitrosCalculo,
-
-            'rendimiento_promedio' => $rendimientoPromedio,
-            'consumo_promedio_litros_100_km' => $consumoPromedioLitros100Km,
-        ],
-        'rows' => $rows->values(),
-    ]);
-
     }
 
 

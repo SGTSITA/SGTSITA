@@ -195,6 +195,16 @@
         </div>
     </main>
 
+    @auth
+        <script>
+            window.SGT_SESSION_TIMEOUT_MS = {{ config('session.lifetime') * 60 * 1000 }};
+            window.SGT_LOGOUT_URL = "{{ route('logout') }}";
+            window.SGT_LOGIN_URL = "{{ url('login') }}";
+        </script>
+
+        <script src="{{ asset('js/sgt/common/sessionAutoLogout.js') }}"></script>
+    @endauth
+
     <script src="{{ asset('js/sgt/common.js') }}"></script>
     @yield('js_custom')
 
@@ -232,6 +242,7 @@
     @yield('alerta')
 
     @yield('select2')
+
     @stack('custom-javascript')
     @stack('scripts')
 </body>

@@ -177,18 +177,43 @@ function resetUploadConfig() {
             //  const gridApi = gridOptions.api;
             if (apiGrid) {
                 let dataGrid = apiGrid.getGridOption("rowData");
-                var rowIndex = dataGrid.findIndex(
+                if (!Array.isArray(dataGrid) || dataGrid.length === 0) {
+                    console.warn("El grid no tiene registros cargados");
+                    return; // No rompe el ciclo de tu función
+                }
+
+                let rowIndex = dataGrid.findIndex(
                     (d) => d.NumContenedor == numContenedor,
                 );
 
-                const colId = fileSettings.agGrid;
+                if (
+                    rowIndex === null ||
+                    rowIndex === undefined ||
+                    rowIndex < 0
+                ) {
+                    rowIndex = -14;
+                }
 
-                // Obtener el nodo de la fila
-                const rowNode = apiGrid.getDisplayedRowAtIndex(rowIndex);
+                const colId = fileSettings?.agGrid;
 
-                // Establecer un nuevo valor en la celda
-                if (rowNode) {
-                    rowNode.setDataValue(colId, true);
+                if (!colId) {
+                    console.warn(
+                        "No se encontró configuración de columna agGrid",
+                    );
+                    return;
+                }
+
+                if (rowIndex >= 0) {
+                    const rowNode = apiGrid.getDisplayedRowAtIndex(rowIndex);
+
+                    if (rowNode) {
+                        rowNode.setDataValue(colId, true);
+                    }
+                } else {
+                    console.warn(
+                        "No se encontró el contenedor en el grid:",
+                        numContenedor,
+                    );
                 }
             }
 

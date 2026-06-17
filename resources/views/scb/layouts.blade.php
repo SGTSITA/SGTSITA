@@ -612,6 +612,15 @@
     @yield('js_custom')
     @yield('datatable')
     @yield('alerta')
+    @auth
+        <script>
+            window.SGT_SESSION_TIMEOUT_MS = {{ config('session.lifetime') * 60 * 1000 }};
+            window.SGT_LOGOUT_URL = "{{ route('scb.logout') }}";
+            window.SGT_LOGIN_URL = "{{ route('scb.login') }}";
+        </script>
+
+        <script src="{{ asset('js/sgt/common/sessionAutoLogout.js') }}"></script>
+    @endauth
     @stack('custom-javascript')
     @stack('scripts')
 

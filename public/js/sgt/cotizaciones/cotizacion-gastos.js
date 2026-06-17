@@ -252,9 +252,11 @@ function getGastosContenedor() {
         success: (response) => {
             apiGrid.setGridOption("rowData", response);
             let total = 0;
-            response.forEach((d) => {
-                total += d.Monto;
-            });
+            if (Array.isArray(response) && response.length > 0) {
+                response.forEach((d) => {
+                    total += Number(d.Monto ?? 0);
+                });
+            }
 
             let txtSumGastos = document.querySelectorAll(".txtSumGastos");
             let txtTotalCotizacion = document.querySelector(
