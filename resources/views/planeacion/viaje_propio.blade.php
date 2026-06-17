@@ -21,6 +21,7 @@
     <div class="col-12 col-md-4  mt-2 text-start">
         <label>Chasis</label>
         <select class="form-control" name="cmbChasis" id="cmbChasis">
+
             @foreach ($equipos as $item)
                 @if ($item->tipo == 'Chasis / Plataforma')
                     <option value="{{ $item->id }}">{{ $item->id_equipo }}</option>
@@ -30,7 +31,8 @@
     </div>
     <div class="col-12 col-md-4  mt-2 text-start">
         <label>Chasis 2</label>
-        <select class="form-control" name="cmbChasis2" id="cmbChasis2" disabled>
+        <select class="form-control" name="cmbChasis2" id="cmbChasis2">
+            <option value="">Seleccionar</option>
             @foreach ($equipos as $item)
                 @if ($item->tipo == 'Chasis / Plataforma')
                     <option value="{{ $item->id }}">{{ $item->id_equipo }}</option>
@@ -39,8 +41,9 @@
         </select>
     </div>
     <div class="col-12 col-md-4  mt-2 text-start">
-        <label>Doly</label>
-        <select class="form-control" name="cmbDoly" id="cmbDoly" disabled>
+        <label>Dolys</label>
+        <select class="form-control" name="cmbDoly" id="cmbDoly">
+            <option value="">Seleccionar</option>
             @foreach ($equipos as $item)
                 @if ($item->tipo == 'Chasis / Plataforma')
                     <option value="{{ $item->id }}">{{ $item->id_equipo }}</option>

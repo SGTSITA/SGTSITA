@@ -3,6 +3,8 @@ document.addEventListener("DOMContentLoaded", function () {
     const fechaInicio = document.getElementById("fecha_inicio");
     const fechaFin = document.getElementById("fecha_fin");
     const btnConsultar = document.getElementById("btnConsultarConsumo");
+    const btnExportarPdf = document.getElementById("btnExportarPdfConsumo");
+    const btnExportarExcel = document.getElementById("btnExportarExcelConsumo");
     const gridDiv = document.getElementById("gridConsumoUnidad");
 
     let gridConsumoApi = null;
@@ -251,7 +253,21 @@ document.addEventListener("DOMContentLoaded", function () {
 
     inicializarFechas();
 
-    btnConsultar.addEventListener("click", consultarConsumo);
+    if (btnConsultar) {
+        btnConsultar.addEventListener("click", consultarConsumo);
+    }
+
+    if (btnExportarPdf) {
+        btnExportarPdf.addEventListener("click", function () {
+            exportarConsumo("pdf");
+        });
+    }
+
+    if (btnExportarExcel) {
+        btnExportarExcel.addEventListener("click", function () {
+            exportarConsumo("excel");
+        });
+    }
 
     async function consultarConsumo() {
         if (!validarFiltros()) return;
@@ -301,7 +317,19 @@ document.addEventListener("DOMContentLoaded", function () {
             pintarVacio();
         }
     }
+    function exportarConsumo(tipo) {
+        if (!validarFiltros()) return;
 
+        const params = new URLSearchParams({
+            unidad_id: unidad.value,
+            fecha_inicio: fechaInicio.value,
+            fecha_fin: fechaFin.value,
+        });
+
+        const url = URL_CONSUMO_UNIDADES_EXPORTAR.replace("__TIPO__", tipo);
+
+        window.open(`${url}?${params.toString()}`, "_blank");
+    }
     function validarFiltros() {
         if (!unidad.value || !fechaInicio.value || !fechaFin.value) {
             Swal.fire({

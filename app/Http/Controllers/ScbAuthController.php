@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Services\scb\ScbAuthService;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 
 
 class ScbAuthController extends Controller
@@ -14,10 +15,19 @@ class ScbAuthController extends Controller
     ) {
     }
 
-    public function showLogin()
+    public function showLogin(Request $request)
     {
-        if ($this->authService->check()) {
-            return redirect()->route('scb.dashboard');
+
+       if ($this->authService->check()) {
+             return redirect()->route('scb.dashboard');
+        }
+
+        if (Auth::check()) {
+            Auth::logout();
+
+            $request->session()->forget('sistema_actual');
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
         }
 
         return view('scb.login');
@@ -36,35 +46,39 @@ class ScbAuthController extends Controller
             remember: $request->boolean('remember')
         );
 
-          if (!$login['success']) {
-        if (($login['code'] ?? null) === 'without_access') {
-            $request->session()->regenerateToken();
-        }
+        if (!$login['success']) {
 
-        return back()
-            ->withInput($request->only('email'))
-            ->withErrors([
-                'email' => $login['message'],
-            ]);
-    }
+            if (($login['code'] ?? null) === 'without_access') {
+                Auth::logout();
+
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+            }
+
+            return back()
+                ->withInput($request->only('email'))
+                ->withErrors([
+                    'email' => $login['message'],
+                ]);
+        }
 
         $request->session()->regenerate();
 
-        return redirect()->intended(route('scb.dashboard'));
+               return redirect()->intended(route('scb.dashboard'));
     }
 
-   public function logout(Request $request)
-{
-    $this->authService->logout($request);
+    public function logout(Request $request)
+    {
+        $this->authService->logout($request);
 
-    if ($request->expectsJson()) {
-        return response()->json([
-            'success' => true,
-            'message' => 'Sesión cerrada correctamente.',
-            'redirect' => route('scb.login'),
-        ]);
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Sesión cerrada correctamente.',
+                'redirect' => route('scb.login'),
+            ]);
+        }
+
+        return redirect()->route('scb.login');
     }
-
-    return redirect()->route('scb.login');
-}
 }

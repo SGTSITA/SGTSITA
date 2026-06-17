@@ -9,7 +9,9 @@ class ScbAuthService
 {
     public function check(): bool
     {
-        return Auth::check();
+        return Auth::check()
+            && session('sistema_actual') === 'scb'
+            && Auth::user()?->can('SCB-Acceso');
     }
 
     public function login(string $email, string $password, bool $remember = false): array
@@ -26,17 +28,22 @@ class ScbAuthService
             ];
         }
 
-         $user = Auth::user();
+        $user = Auth::user();
 
-    if (!$user->can('SCB-Acceso')) {
-        Auth::logout();
+        if (!$user->can('SCB-Acceso')) {
+            Auth::logout();
 
-        return [
-            'success' => false,
-            'code' => 'without_access',
-            'message' => 'Tu usuario no tiene acceso a este sistema.',
-        ];
-    }
+            return [
+                'success' => false,
+                'code' => 'without_access',
+                'message' => 'Tu usuario no tiene acceso a este sistema.',
+            ];
+        }
+
+       session([
+    'sistema_actual' => 'scb',
+    'last_user_activity_at' => time(),
+]);
 
         return [
             'success' => true,
@@ -44,13 +51,17 @@ class ScbAuthService
         ];
     }
 
-   public function logout(Request $request): void
-{
-    Auth::logout();
+    public function logout(Request $request): void
+    {
+        Auth::logout();
 
-    $request->session()->invalidate();
-    $request->session()->regenerateToken();
-}
+        $request->session()->forget([
+    'sistema_actual',
+    'last_user_activity_at',
+]);
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+    }
 
 
 }

@@ -334,7 +334,7 @@ const formFieldsPlaneacion = [
         field: "cmbChasis2",
         id: "cmbChasis2",
         label: "Chasis 2",
-        required: true,
+        required: false,
         type: "text",
         trigger: "none",
     },
@@ -342,7 +342,7 @@ const formFieldsPlaneacion = [
         field: "cmbDoly",
         id: "cmbDoly",
         label: "Doly",
-        required: true,
+        required: false,
         type: "text",
         trigger: "none",
     },
@@ -592,9 +592,76 @@ function setTipoViaje(valTipoViaje) {
             $("#viaje-proveedor").addClass("d-none"));
 }
 
+function validarUnidadesPlanear(stipoViaje) {
+    let viajeFull = cmbTipoUnidad.value == "Sencillo" ? false : true;
+    let valorchasis = cmbChasis.value;
+    let valorchasis2 = cmbChasis2.value;
+    let valordoly = cmbDoly.value;
+
+    let totalChasisSeleccionados = [
+        valorchasis,
+        valorchasis2,
+        valordoly,
+    ].filter((valor) => valor && valor.trim() !== "").length;
+
+    if (!valorchasis && !valorchasis2 && !valordoly) {
+        Swal.fire(
+            "Validacion equipos",
+            "Debe seleccionar al menos un chasis",
+            "warning",
+        );
+
+        return false;
+    }
+
+    if (!viajeFull && totalChasisSeleccionados > 1) {
+        Swal.fire(
+            "Validacion Chasis",
+            "En viaje sencillo, no se permite seleccionar mas de 1 chasis",
+            "warning",
+        );
+
+        return false;
+    }
+
+    if (viajeFull && totalChasisSeleccionados < 2) {
+        Swal.fire(
+            "Validacion Chasis",
+            "En viaje full, debe seleccionar al menos dos chasis",
+            "warning",
+        );
+
+        return false;
+    }
+
+    if (
+        valorchasis == valorchasis2 ||
+        valorchasis == cmbDoly ||
+        valorchasis2 == cmbDoly
+    ) {
+        Swal.fire(
+            "Validacion equipos",
+            "No puede seleccionar el mismo chasis en las opciones",
+            "warning",
+        );
+        return false;
+    }
+
+    return true;
+}
+/* cmbTipoUnidad.addEventListener("change", (e) => {
+    let isActive = e.target.value == "Sencillo" ? true : false;
+
+    cmbChasis2.disabled = isActive;
+    cmbDoly.disabled = isActive;
+}); */
 async function programarViaje() {
     let fieldsViaje =
         tipoViaje == "propio" ? formFieldsPlaneacion : formFieldsProveedor;
+
+    if (tipoViaje == "propio" && !validarUnidadesPlanear(tipoViaje)) {
+        return false;
+    }
 
     let passValidation = fieldsViaje.every((item) => {
         let field = document.getElementById(item.field);
@@ -809,11 +876,11 @@ $(".moneyformat").on("blur", (e) => {
     e.target.value = moneyFormat(val);
 });
 
-cmbTipoUnidad.addEventListener("change", (e) => {
+/* cmbTipoUnidad.addEventListener("change", (e) => {
     let isActive = e.target.value == "Sencillo" ? true : false;
 
     cmbChasis2.disabled = isActive;
     cmbDoly.disabled = isActive;
-});
+}); */
 
 btnProgramar.addEventListener("click", programarViaje);

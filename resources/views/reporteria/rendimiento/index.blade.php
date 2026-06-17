@@ -105,10 +105,24 @@
                 </div>
 
                 <div class="col-md-3">
-                    <button type="button" class="btn bg-gradient-primary w-100" id="btnConsultarConsumo">
-                        <i class="fas fa-search me-1"></i>
-                        Consultar
-                    </button>
+                    <label class="form-label fw-bold d-block">&nbsp;</label>
+
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn bg-gradient-primary flex-fill" id="btnConsultarConsumo">
+                            <i class="fas fa-search me-1"></i>
+                            Consultar
+                        </button>
+
+                        <button type="button" class="btn btn-outline-danger" id="btnExportarPdfConsumo"
+                            title="Exportar PDF">
+                            <i class="fas fa-file-pdf"></i>
+                        </button>
+
+                        <button type="button" class="btn btn-outline-success" id="btnExportarExcelConsumo"
+                            title="Exportar Excel">
+                            <i class="fas fa-file-excel"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -172,6 +186,7 @@
 @push('custom-javascript')
     <script>
         const URL_CONSUMO_UNIDADES = "{{ route('reporteria.consumo-unidades.data') }}";
+        const URL_CONSUMO_UNIDADES_EXPORTAR = "{{ route('reporteria.consumo-unidades.exportar', ['tipo' => '__TIPO__']) }}";
     </script>
 
     <script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.js"></script>
