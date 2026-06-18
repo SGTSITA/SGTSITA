@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\DocumCotizacionAcceso;
 use App\Models\DocumCotizacion;
+use App\Models\Proveedor;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
@@ -14,6 +15,16 @@ class CotizacionAccesoController extends Controller
 {
     public function generar(Request $request, $documento_id)
     {
+        $eslocal = $request->eslocal;
+        $documCotizacion = DocumCotizacion::with('cotizacion')->findorfail($documento_id);
+
+       $validacionProveedor = $this->validateprovempresa($documCotizacion, $eslocal);
+
+if ($validacionProveedor !== true) {
+    return $validacionProveedor;
+}
+
+
 
         DocumCotizacionAcceso::where('documento_id', $documento_id)
             ->update(['activo' => false]);
@@ -37,7 +48,45 @@ class CotizacionAccesoController extends Controller
         return response()->json([
             'link' => url("/externos/ver-documentos/{$acceso->token}"),
             'password' => $password,
+            'message' => 'Enlace generado correctamente.',
+            'titulo' => 'link generado',
             'success' => true,
         ]);
     }
+
+
+     function validateprovempresa(DocumCotizacion $documCotizacion, $eslocal)  {
+
+        $empresaCoti = $documCotizacion->Cotizacion->id_empresa;
+        $proveedorIdcoti = $documCotizacion->Cotizacion->id_proveedor;
+     $proveedor_local = Proveedor::where('id', $proveedorIdcoti)
+    ->where('tipo_viaje', 'local')
+    ->exists();
+
+
+
+
+
+        if(!$eslocal && $empresaCoti && !$proveedorIdcoti ){
+            $mesajeadd='';
+         /*    if( $proveedor_local){
+   $mesajeadd='Proveedor tiene asignado de local';
+            } */
+
+            return response()->json([
+                        'link' => "",
+                        'password' => null,
+                        'message' => 'Viaje aun sin asignar Linea de transporte. Edite el viaje foraneo , asigne LT y posteriormente comparta estos documentos'  .  $mesajeadd,
+                        'titulo' => 'link no generado',
+                        'success' => false,
+                    ]);
+
+        }
+
+
+       return true;
+
+
+
+     }
 }
