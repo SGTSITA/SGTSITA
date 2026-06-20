@@ -120,83 +120,192 @@
             font-weight: 900;
             color: #0f172a;
         }
+
+        .scb-reporte-toolbar {
+            border: 1px solid #edf0f4;
+            background: #ffffff;
+            border-radius: 14px;
+            padding: 0.65rem 0.85rem;
+            margin-bottom: 0.85rem;
+        }
+
+        .scb-reporte-toolbar-title {
+            min-width: 220px;
+        }
+
+        .scb-reporte-actions {
+            flex: 1;
+            justify-content: flex-end;
+        }
+
+        .scb-select-orden-reporte {
+            min-width: 300px;
+            max-width: 380px;
+        }
+
+        .scb-search-reporte {
+            min-width: 340px;
+            max-width: 430px;
+        }
+
+        .scb-search-reporte .form-control,
+        .scb-search-reporte .input-group-text,
+        .scb-search-reporte .btn,
+        .scb-select-orden-reporte {
+            height: 34px;
+            font-size: 0.8rem;
+        }
+
+        .scb-search-reporte .form-control:focus,
+        .scb-select-orden-reporte:focus {
+            box-shadow: none;
+            border-color: #ced4da;
+        }
+
+        @media (max-width: 768px) {
+            .scb-reporte-toolbar {
+                align-items: stretch !important;
+            }
+
+            .scb-reporte-toolbar-title,
+            .scb-reporte-actions,
+            .scb-search-reporte,
+            .scb-select-orden-reporte {
+                width: 100%;
+                max-width: 100%;
+            }
+
+            .scb-reporte-actions {
+                justify-content: flex-start;
+            }
+
+            .scb-reporte-actions>div {
+                width: 100%;
+            }
+        }
+
+        .scb-filtros-collapse-btn {
+            border: 1px solid #e5e7eb;
+            background: #ffffff;
+            color: #334155;
+            border-radius: 999px;
+            padding: 0.35rem 0.75rem;
+            font-size: 0.8rem;
+            font-weight: 800;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .scb-filtros-collapse-btn:hover {
+            background: #f8fafc;
+            color: #0f172a;
+        }
+
+        .scb-filtros-collapse-btn .fa-chevron-up {
+            transition: transform 0.18s ease;
+        }
+
+        .scb-filtros-collapse-btn.collapsed .fa-chevron-up {
+            transform: rotate(180deg);
+        }
+
+        .scb-filtros-body {
+            padding-top: 0.85rem;
+        }
+
+        .scb-filtros-resumen {
+            font-size: 0.78rem;
+            color: #64748b;
+        }
     </style>
 
     <div class="scb-card">
-        <div class="scb-card-header">
+        <div class="scb-card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
             <div>
                 <h5 class="mb-0">Filtros del reporte</h5>
-                <small class="text-muted">Selecciona cuenta, periodo y tipo de reporte.</small>
+                <small class="text-muted">
+                    Selecciona cuenta, periodo y tipo de reporte.
+                </small>
             </div>
+
+            <button class="scb-filtros-collapse-btn" type="button" data-bs-toggle="collapse"
+                data-bs-target="#collapseFiltrosReporte" aria-expanded="true" aria-controls="collapseFiltrosReporte">
+                <i class="fas fa-filter"></i>
+                <span>Mostrar / ocultar filtros</span>
+                <i class="fas fa-chevron-up"></i>
+            </button>
         </div>
 
-        <div class="scb-card-body">
-            <div class="row g-3 align-items-end">
-                <div class="col-12 col-lg-4">
-                    <label class="form-label fw-bold">Cuenta bancaria</label>
-                    <select id="cuenta_id" class="form-select">
-                        <option value="">Seleccione cuenta</option>
-                        @foreach ($cuentas as $cuenta)
-                            <option value="{{ $cuenta->id }}">
-                                {{ $cuenta->banco?->nombre }} -
-                                {{ $cuenta->beneficiario ?? 'S/N' }} -
-                                {{ $cuenta->numero_cuenta ?? 'Sin cuenta' }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
+        <div id="collapseFiltrosReporte" class="collapse show">
+            <div class="scb-card-body scb-filtros-body">
+                <div class="row g-3 align-items-end">
+                    <div class="col-12 col-lg-4">
+                        <label class="form-label fw-bold">Cuenta bancaria</label>
+                        <select id="cuenta_id" class="form-select">
+                            <option value="">Seleccione cuenta</option>
+                            @foreach ($cuentas as $cuenta)
+                                <option value="{{ $cuenta->id }}">
+                                    {{ $cuenta->banco?->nombre }} -
+                                    {{ $cuenta->beneficiario ?? 'S/N' }} -
+                                    {{ $cuenta->numero_cuenta ?? 'Sin cuenta' }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
 
-                <div class="col-12 col-lg-4">
-                    <label class="form-label fw-bold">Unidad</label>
-                    <select id="unidad_id" class="form-select">
-                        <option value="">Todas las unidades</option>
-                        @foreach ($unidades as $unidad)
-                            <option value="{{ $unidad->id }}">
-                                {{ $unidad->descripcion ?? 'S/N' }}
-                                @if (!empty($unidad->placas))
-                                    - {{ $unidad->placas }}
-                                @endif
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
+                    <div class="col-12 col-lg-4">
+                        <label class="form-label fw-bold">Unidad</label>
+                        <select id="unidad_id" class="form-select">
+                            <option value="">Todas las unidades</option>
+                            @foreach ($unidades as $unidad)
+                                <option value="{{ $unidad->id }}">
+                                    {{ $unidad->descripcion ?? 'S/N' }}
+                                    @if (!empty($unidad->placas))
+                                        - {{ $unidad->placas }}
+                                    @endif
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
 
-                <div class="col-12 col-lg-4">
-                    <label class="form-label fw-bold">Tipo reporte</label>
-                    <select id="tipo_reporte" class="form-select">
-                        <option value="estado_cuenta">Estado de cuenta</option>
-                        <option value="detallado">Detallado</option>
-                    </select>
-                </div>
+                    <div class="col-12 col-lg-4">
+                        <label class="form-label fw-bold">Tipo reporte</label>
+                        <select id="tipo_reporte" class="form-select">
+                            <option value="estado_cuenta">Estado de cuenta</option>
+                            <option value="detallado">Detallado</option>
+                        </select>
+                    </div>
 
-                <div class="col-12 col-md-6 col-lg-3">
-                    <label class="form-label fw-bold">Fecha inicio</label>
-                    <input type="date" id="fecha_inicio" class="form-control">
-                </div>
+                    <div class="col-12 col-md-6 col-lg-3">
+                        <label class="form-label fw-bold">Fecha inicio</label>
+                        <input type="date" id="fecha_inicio" class="form-control">
+                    </div>
 
-                <div class="col-12 col-md-6 col-lg-3">
-                    <label class="form-label fw-bold">Fecha fin</label>
-                    <input type="date" id="fecha_fin" class="form-control">
-                </div>
+                    <div class="col-12 col-md-6 col-lg-3">
+                        <label class="form-label fw-bold">Fecha fin</label>
+                        <input type="date" id="fecha_fin" class="form-control">
+                    </div>
 
-                <div class="col-12 col-lg-6">
-                    <label class="form-label fw-bold d-none d-lg-block">&nbsp;</label>
+                    <div class="col-12 col-lg-6">
+                        <label class="form-label fw-bold d-none d-lg-block">&nbsp;</label>
 
-                    <div class="d-flex flex-column flex-md-row justify-content-lg-end gap-2">
-                        <button type="button" class="btn scb-btn-primary px-4" id="btnConsultarReporte">
-                            <i class="fas fa-search me-1"></i>
-                            Consultar
-                        </button>
+                        <div class="d-flex flex-column flex-md-row justify-content-lg-end gap-2">
+                            <button type="button" class="btn scb-btn-primary px-4" id="btnConsultarReporte">
+                                <i class="fas fa-search me-1"></i>
+                                Consultar
+                            </button>
 
-                        <button type="button" class="btn btn-outline-danger px-4" id="btnReportePdf">
-                            <i class="fas fa-file-pdf me-1"></i>
-                            PDF
-                        </button>
+                            <button type="button" class="btn btn-outline-danger px-4" id="btnReportePdf">
+                                <i class="fas fa-file-pdf me-1"></i>
+                                PDF
+                            </button>
 
-                        <button type="button" class="btn btn-outline-success px-4" id="btnReporteExcel">
-                            <i class="fas fa-file-excel me-1"></i>
-                            Excel
-                        </button>
+                            <button type="button" class="btn btn-outline-success px-4" id="btnReporteExcel">
+                                <i class="fas fa-file-excel me-1"></i>
+                                Excel
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -260,6 +369,52 @@
         </div>
 
         <div class="scb-card-body">
+            <div class="scb-reporte-toolbar d-flex justify-content-between align-items-center flex-wrap gap-3">
+                <div class="scb-reporte-toolbar-title">
+                    <h6 class="mb-0 fw-bold">Movimientos</h6>
+                    <small class="text-muted" id="lblConteoReporte">
+                        Sin resultados cargados.
+                    </small>
+                </div>
+
+                <div class="scb-reporte-actions d-flex align-items-center flex-wrap gap-2">
+                    <div class="d-flex align-items-center gap-2">
+                        <label for="ordenReporteTabla" class="form-label mb-0 small text-muted fw-semibold text-nowrap">
+                            Ordenar por:
+                        </label>
+
+                        <select id="ordenReporteTabla" class="form-select form-select-sm scb-select-orden-reporte">
+                            <option value="fecha_asc">Fecha: antigua a reciente</option>
+                            <option value="fecha_desc">Fecha: reciente a antigua</option>
+                            <option value="cargo_desc">Cargo: mayor a menor</option>
+                            <option value="cargo_asc">Cargo: menor a mayor</option>
+                            <option value="abono_desc">Abono: mayor a menor</option>
+                            <option value="abono_asc">Abono: menor a mayor</option>
+                            <option value="saldo_desc">Saldo: mayor a menor</option>
+                            <option value="saldo_asc">Saldo: menor a mayor</option>
+                            <option value="concepto_asc">Concepto: A-Z</option>
+                            <option value="concepto_desc">Concepto: Z-A</option>
+                            <option value="referencia_asc">Referencia: A-Z</option>
+                            <option value="referencia_desc">Referencia: Z-A</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group input-group-sm scb-search-reporte">
+                        <span class="input-group-text bg-white">
+                            <i class="fas fa-search text-muted"></i>
+                        </span>
+
+                        <input type="text" class="form-control" id="buscarTablaReporte"
+                            placeholder="Buscar movimiento, unidad, referencia...">
+
+                        <button type="button" class="btn btn-light border d-none" id="btnLimpiarBusquedaReporte"
+                            title="Limpiar búsqueda">
+                            <i class="fas fa-times text-muted"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             <div class="table-responsive">
                 <table class="table reporte-table align-items-center mb-0" id="tablaReporte">
                     <thead id="theadReporte">

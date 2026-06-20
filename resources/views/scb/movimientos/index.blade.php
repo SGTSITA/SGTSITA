@@ -6,11 +6,25 @@
 
 @section('content')
     <style>
-        .scb-table-toolbar {
-            border: 1px solid #edf0f4;
-            background: #ffffff;
-            border-radius: 14px;
-            padding: 0.65rem 0.85rem;
+        .scb-table-title {
+            min-width: 220px;
+        }
+
+        .scb-table-actions {
+            flex: 1;
+            justify-content: flex-end;
+        }
+
+        .scb-select-orden {
+            min-width: 300px;
+            max-width: 360px;
+            height: 34px;
+            font-size: 0.8rem;
+        }
+
+        .scb-search-table {
+            min-width: 340px;
+            max-width: 420px;
         }
 
         .scb-search-table {
@@ -19,7 +33,8 @@
 
         .scb-search-table .form-control,
         .scb-search-table .input-group-text,
-        .scb-search-table .btn {
+        .scb-search-table .btn,
+        .scb-select-orden {
             height: 34px;
             font-size: 0.8rem;
         }
@@ -29,12 +44,7 @@
             border-color: #ced4da;
         }
 
-        @media (max-width: 768px) {
-            .scb-search-table {
-                max-width: 100%;
-                width: 100%;
-            }
-        }
+
 
         .scb-table-scroll {
             max-height: 62vh;
@@ -130,8 +140,23 @@
         }
 
         @media (max-width: 768px) {
-            .scb-search-table {
+            .scb-table-toolbar {
+                align-items: stretch !important;
+            }
+
+            .scb-table-title,
+            .scb-table-actions,
+            .scb-search-table,
+            .scb-select-orden {
+                width: 100%;
                 max-width: 100%;
+            }
+
+            .scb-table-actions {
+                justify-content: flex-start;
+            }
+
+            .scb-table-actions>div {
                 width: 100%;
             }
 
@@ -260,26 +285,47 @@
 
 
                 {{-- TABLA ESTADO DE CUENTA --}}
-                <div class="scb-table-toolbar d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
-                    <div>
+                <div class="scb-table-toolbar d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3">
+                    <div class="scb-table-title">
                         <h6 class="mb-0 fw-bold">Movimientos</h6>
                         <small class="text-muted" id="lblConteoMovimientos">
                             Sin resultados cargados.
                         </small>
                     </div>
 
-                    <div class="input-group input-group-sm scb-search-table">
-                        <span class="input-group-text bg-white">
-                            <i class="fas fa-search text-muted"></i>
-                        </span>
+                    <div class="scb-table-actions d-flex align-items-center flex-wrap gap-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <label for="ordenEstadoCuenta" class="form-label mb-0 small text-muted fw-semibold text-nowrap">
+                                Ordenar por:
+                            </label>
 
-                        <input type="text" class="form-control" id="buscarTablaMovimientos"
-                            placeholder="Buscar movimiento, unidad, referencia...">
+                            <select id="ordenEstadoCuenta" class="form-select form-select-sm scb-select-orden">
+                                <option value="fecha_asc">Fecha: antigua a reciente</option>
+                                <option value="fecha_desc">Fecha: reciente a antigua</option>
+                                <option value="cargo_desc">Cargo: mayor a menor</option>
+                                <option value="cargo_asc">Cargo: menor a mayor</option>
+                                <option value="abono_desc">Abono: mayor a menor</option>
+                                <option value="abono_asc">Abono: menor a mayor</option>
+                                <option value="saldo_desc">Saldo: mayor a menor</option>
+                                <option value="saldo_asc">Saldo: menor a mayor</option>
+                                <option value="concepto_asc">Concepto: A-Z</option>
+                                <option value="concepto_desc">Concepto: Z-A</option>
+                            </select>
+                        </div>
 
-                        <button type="button" class="btn btn-light border d-none" id="btnLimpiarBusquedaTabla"
-                            title="Limpiar búsqueda">
-                            <i class="fas fa-times text-muted"></i>
-                        </button>
+                        <div class="input-group input-group-sm scb-search-table">
+                            <span class="input-group-text bg-white">
+                                <i class="fas fa-search text-muted"></i>
+                            </span>
+
+                            <input type="text" class="form-control" id="buscarTablaMovimientos"
+                                placeholder="Buscar movimiento, unidad, referencia...">
+
+                            <button type="button" class="btn btn-light border d-none" id="btnLimpiarBusquedaTabla"
+                                title="Limpiar búsqueda">
+                                <i class="fas fa-times text-muted"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
 

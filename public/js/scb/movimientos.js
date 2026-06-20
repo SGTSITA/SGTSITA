@@ -36,7 +36,10 @@ document.addEventListener("DOMContentLoaded", function () {
         "btnLimpiarBusquedaTabla",
     );
 
+    const ordenEstadoCuenta = document.getElementById("ordenEstadoCuenta");
+
     let movimientosEstadoCuentaActual = [];
+    let terminoBusquedaEstadoCuentaActual = "";
     let debounceBusquedaTabla = null;
 
     inicializarFechasFiltro();
@@ -64,12 +67,15 @@ document.addEventListener("DOMContentLoaded", function () {
             clearTimeout(debounceBusquedaTabla);
 
             debounceBusquedaTabla = setTimeout(() => {
-                buscarEnTablaMovimientos();
+                terminoBusquedaEstadoCuentaActual =
+                    buscarTablaMovimientos.value.trim();
+
+                refrescarTablaEstadoCuenta();
 
                 if (btnLimpiarBusquedaTabla) {
                     btnLimpiarBusquedaTabla.classList.toggle(
                         "d-none",
-                        !buscarTablaMovimientos.value.trim(),
+                        !terminoBusquedaEstadoCuentaActual,
                     );
                 }
             }, 250);
@@ -78,6 +84,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (btnLimpiarBusquedaTabla) {
         btnLimpiarBusquedaTabla.addEventListener("click", function () {
+            terminoBusquedaEstadoCuentaActual = "";
+
             if (buscarTablaMovimientos) {
                 buscarTablaMovimientos.value = "";
                 buscarTablaMovimientos.focus();
@@ -85,10 +93,15 @@ document.addEventListener("DOMContentLoaded", function () {
 
             btnLimpiarBusquedaTabla.classList.add("d-none");
 
-            pintarTablaEstadoCuenta(movimientosEstadoCuentaActual);
+            refrescarTablaEstadoCuenta();
         });
     }
 
+    if (ordenEstadoCuenta) {
+        ordenEstadoCuenta.addEventListener("change", function () {
+            refrescarTablaEstadoCuenta();
+        });
+    }
     document.addEventListener("click", async function (e) {
         const btnDetalle = e.target.closest(".btnEliminarDetalle");
 
@@ -570,6 +583,7 @@ document.addEventListener("DOMContentLoaded", function () {
             setText("lblSaldoFinal", money(data.saldo_final));
 
             movimientosEstadoCuentaActual = data.movimientos || [];
+            terminoBusquedaEstadoCuentaActual = "";
 
             if (buscarTablaMovimientos) {
                 buscarTablaMovimientos.value = "";
@@ -579,7 +593,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 btnLimpiarBusquedaTabla.classList.add("d-none");
             }
 
-            pintarTablaEstadoCuenta(movimientosEstadoCuentaActual);
+            refrescarTablaEstadoCuenta();
         } catch (error) {
             console.error(error);
 
@@ -592,16 +606,14 @@ document.addEventListener("DOMContentLoaded", function () {
             mostrarMensajeInicialTabla();
         }
     }
-    function buscarEnTablaMovimientos() {
-        const termino = normalizarTexto(buscarTablaMovimientos?.value || "");
 
-        if (!termino) {
-            pintarTablaEstadoCuenta(movimientosEstadoCuentaActual);
-            return;
-        }
+    function refrescarTablaEstadoCuenta() {
+        const termino = normalizarTexto(terminoBusquedaEstadoCuentaActual);
 
-        const movimientosFiltrados = movimientosEstadoCuentaActual.filter(
-            (mov) => {
+        let movimientos = movimientosEstadoCuentaActual;
+
+        if (termino) {
+            movimientos = movimientosEstadoCuentaActual.filter((mov) => {
                 const textoMovimiento = [
                     mov.fecha,
                     mov.concepto,
@@ -628,10 +640,74 @@ document.addEventListener("DOMContentLoaded", function () {
                 );
 
                 return textoCompleto.includes(termino);
-            },
-        );
+            });
+        }
 
-        pintarTablaEstadoCuenta(movimientosFiltrados, termino);
+        pintarTablaEstadoCuenta(
+            ordenarMovimientosEstadoCuenta(movimientos),
+            termino,
+        );
+    }
+
+    function buscarEnTablaMovimientos() {
+        terminoBusquedaEstadoCuentaActual =
+            buscarTablaMovimientos?.value.trim() || "";
+
+        refrescarTablaEstadoCuenta();
+    }
+
+    function ordenarMovimientosEstadoCuenta(movimientos) {
+        const selectOrden = document.getElementById("ordenEstadoCuenta");
+        const orden = selectOrden?.value || "fecha_asc";
+
+        const [campo, direccion] = orden.split("_");
+
+        const lista = [...movimientos];
+
+        const getValor = (mov) => {
+            switch (campo) {
+                case "fecha":
+                    return Date.parse(mov.fecha || "") || 0;
+
+                case "cargo":
+                    return Math.abs(Number(mov.cargo || 0));
+
+                case "abono":
+                    return Math.abs(Number(mov.abono || 0));
+
+                case "saldo":
+                    return Number(mov.saldo || 0);
+
+                case "concepto":
+                    return String(mov.concepto || "").toLowerCase();
+
+                default:
+                    return Date.parse(mov.fecha || "") || 0;
+            }
+        };
+
+        lista.sort((a, b) => {
+            const valorA = getValor(a);
+            const valorB = getValor(b);
+
+            let resultado = 0;
+
+            if (typeof valorA === "string" || typeof valorB === "string") {
+                resultado = String(valorA).localeCompare(String(valorB), "es", {
+                    sensitivity: "base",
+                });
+            } else {
+                resultado = valorA - valorB;
+            }
+
+            if (resultado === 0) {
+                resultado = Number(a.id || 0) - Number(b.id || 0);
+            }
+
+            return direccion === "desc" ? resultado * -1 : resultado;
+        });
+
+        return lista;
     }
     function pintarTablaEstadoCuenta(movimientos, terminoBusqueda = "") {
         const tbody = document.getElementById("tbodyMovimientos");

@@ -8,6 +8,16 @@ document.addEventListener("DOMContentLoaded", function () {
     const btnConsultar = document.getElementById("btnConsultarReporte");
     const btnPdf = document.getElementById("btnReportePdf");
     const btnExcel = document.getElementById("btnReporteExcel");
+    const ordenReporteTabla = document.getElementById("ordenReporteTabla");
+    const buscarTablaReporte = document.getElementById("buscarTablaReporte");
+    const btnLimpiarBusquedaReporte = document.getElementById(
+        "btnLimpiarBusquedaReporte",
+    );
+
+    let reporteActual = null;
+    let rowsReporteActuales = [];
+    let terminoBusquedaReporteActual = "";
+    let debounceBusquedaReporte = null;
 
     inicializarFechas();
 
@@ -20,6 +30,46 @@ document.addEventListener("DOMContentLoaded", function () {
     btnExcel.addEventListener("click", function () {
         abrirExportacion(SCB_REPORTE_URLS.excel);
     });
+
+    if (buscarTablaReporte) {
+        buscarTablaReporte.addEventListener("input", function () {
+            clearTimeout(debounceBusquedaReporte);
+
+            debounceBusquedaReporte = setTimeout(() => {
+                terminoBusquedaReporteActual = buscarTablaReporte.value.trim();
+
+                refrescarTablaReporte();
+
+                if (btnLimpiarBusquedaReporte) {
+                    btnLimpiarBusquedaReporte.classList.toggle(
+                        "d-none",
+                        !terminoBusquedaReporteActual,
+                    );
+                }
+            }, 250);
+        });
+    }
+
+    if (btnLimpiarBusquedaReporte) {
+        btnLimpiarBusquedaReporte.addEventListener("click", function () {
+            terminoBusquedaReporteActual = "";
+
+            if (buscarTablaReporte) {
+                buscarTablaReporte.value = "";
+                buscarTablaReporte.focus();
+            }
+
+            btnLimpiarBusquedaReporte.classList.add("d-none");
+
+            refrescarTablaReporte();
+        });
+    }
+
+    if (ordenReporteTabla) {
+        ordenReporteTabla.addEventListener("change", function () {
+            refrescarTablaReporte();
+        });
+    }
 
     document.addEventListener("click", function (e) {
         const rowReporte = e.target.closest(".reporte-master-row");
@@ -163,14 +213,151 @@ document.addEventListener("DOMContentLoaded", function () {
             `${reporte.cuenta.banco} - ${reporte.cuenta.beneficiario} - ${reporte.cuenta.numero_cuenta} | ${reporte.fecha_inicio} al ${reporte.fecha_fin}${textoUnidad}`,
         );
 
-        if (reporte.tipo_reporte === "detallado") {
-            pintarDetallado(reporte.rows || []);
+        reporteActual = reporte;
+        rowsReporteActuales = reporte.rows || [];
+        terminoBusquedaReporteActual = "";
+
+        if (buscarTablaReporte) {
+            buscarTablaReporte.value = "";
+        }
+
+        if (btnLimpiarBusquedaReporte) {
+            btnLimpiarBusquedaReporte.classList.add("d-none");
+        }
+
+        refrescarTablaReporte();
+    }
+    function refrescarTablaReporte() {
+        if (!reporteActual) return;
+
+        const rowsFiltrados = filtrarRowsReporte(rowsReporteActuales);
+        const rowsOrdenados = ordenarRowsReporte(rowsFiltrados);
+
+        const termino = normalizarTexto(terminoBusquedaReporteActual);
+
+        setText(
+            "lblConteoReporte",
+            termino
+                ? `${rowsOrdenados.length} resultado(s) encontrados.`
+                : `${rowsOrdenados.length} movimiento(s) cargados.`,
+        );
+
+        if (reporteActual.tipo_reporte === "detallado") {
+            pintarDetallado(rowsOrdenados);
             return;
         }
 
-        pintarEstadoCuenta(reporte.rows || []);
+        pintarEstadoCuenta(rowsOrdenados);
     }
 
+    function filtrarRowsReporte(rows) {
+        const termino = normalizarTexto(terminoBusquedaReporteActual);
+
+        if (!termino) {
+            return rows;
+        }
+
+        return rows.filter((row) => {
+            const textoMovimiento = [
+                row.fecha,
+                row.concepto,
+                row.referencia,
+                row.referencia_bancaria,
+                row.cargo,
+                row.abono,
+                row.saldo,
+                row.id,
+            ].join(" ");
+
+            const textoDetalles = (row.detalles || [])
+                .map((detalle) => {
+                    return [
+                        obtenerTextoUnidadDetalle(detalle),
+                        detalle.descripcion,
+                        detalle.referencia,
+                        detalle.monto,
+                    ].join(" ");
+                })
+                .join(" ");
+
+            const textoCompleto = normalizarTexto(
+                `${textoMovimiento} ${textoDetalles}`,
+            );
+
+            return textoCompleto.includes(termino);
+        });
+    }
+
+    function ordenarRowsReporte(rows) {
+        const orden = ordenReporteTabla?.value || "fecha_asc";
+        const [campo, direccion] = orden.split("_");
+
+        const lista = [...rows];
+
+        const getValor = (row) => {
+            switch (campo) {
+                case "fecha":
+                    return Date.parse(row.fecha || "") || 0;
+
+                case "cargo":
+                    return Math.abs(Number(row.cargo || 0));
+
+                case "abono":
+                    return Math.abs(Number(row.abono || 0));
+
+                case "saldo":
+                    return Number(row.saldo || 0);
+
+                case "concepto":
+                    return String(row.concepto || "").toLowerCase();
+
+                case "referencia":
+                    return String(
+                        row.referencia || row.referencia_bancaria || "",
+                    ).toLowerCase();
+
+                default:
+                    return Date.parse(row.fecha || "") || 0;
+            }
+        };
+
+        lista.sort((a, b) => {
+            const valorA = getValor(a);
+            const valorB = getValor(b);
+
+            let resultado = 0;
+
+            if (typeof valorA === "string" || typeof valorB === "string") {
+                resultado = String(valorA).localeCompare(String(valorB), "es", {
+                    sensitivity: "base",
+                });
+            } else {
+                resultado = valorA - valorB;
+            }
+
+            if (resultado === 0) {
+                resultado = Number(a.id || 0) - Number(b.id || 0);
+            }
+
+            return direccion === "desc" ? resultado * -1 : resultado;
+        });
+
+        return lista;
+    }
+
+    function obtenerTextoUnidadDetalle(detalle) {
+        if (!detalle) return "";
+
+        if (typeof detalle.unidad === "string") {
+            return detalle.unidad;
+        }
+
+        return [
+            detalle.unidad?.descripcion,
+            detalle.unidad?.placas,
+            detalle.unidad?.nombre,
+        ].join(" ");
+    }
     function pintarEstadoCuenta(rows) {
         document.getElementById("theadReporte").innerHTML = `
             <tr>
@@ -565,5 +752,12 @@ document.addEventListener("DOMContentLoaded", function () {
             .replaceAll(">", "&gt;")
             .replaceAll('"', "&quot;")
             .replaceAll("'", "&#039;");
+    }
+    function normalizarTexto(value) {
+        return String(value ?? "")
+            .toLowerCase()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .trim();
     }
 });
