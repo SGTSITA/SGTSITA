@@ -41,6 +41,9 @@ class DocsController extends Controller
         ->whereHas('documento.Asignaciones')
         ->exists();
 
+
+      //  dd($id_doc, $proveedorId , $validarUser, $estaPlaneado );
+
     if ($validarUser && !$estaPlaneado) {
         return 'NO_PLANEADO';
     }
@@ -65,26 +68,27 @@ class DocsController extends Controller
     public function validarPassword($token)
     {
         $acceso = $this->accesoValido($token);
-if (!$acceso) {
+        if (!$acceso) {
 
 
-      $titmesage ='Acceso revocado';
-        $messag = 'El acceso a estos documentos ya no es válido.';
-       $submessag = 'La contraseña fue revocada o el enlace ha expirado.';
+            $titmesage ='Acceso revocado';
+                $messag = 'El acceso a estos documentos ya no es válido.';
+            $submessag = 'La contraseña fue revocada o el enlace ha expirado.';
 
-   return    $this->redirecRevocacion(  $titmesage ,$messag, $submessag );
-}
+        return    $this->redirecRevocacion(  $titmesage ,$messag, $submessag );
+        }
 
+//dd(  $acceso );
 
-if ($acceso === 'NO_PLANEADO') {
+        if ($acceso === 'NO_PLANEADO') {
 
-      $titmesage ='Viaje no planeado';
-        $messag = 'El acceso a estos documentos no está disponible.';
-       $submessag = 'Debe planear el viaje primero.';
+            $titmesage ='Viaje no planeado';
+                $messag = 'El acceso a estos documentos no está disponible.';
+            $submessag = 'Debe planear el viaje primero.';
 
-    return   $this->redirecRevocacion(  $titmesage ,$messag, $submessag );
+            return   $this->redirecRevocacion(  $titmesage ,$messag, $submessag );
 
-}
+        }
 
         if (!Hash::check(request('password'), $acceso->password_hash)) {
             return back()->withErrors(['password' => 'Contraseña incorrecta']);
@@ -120,11 +124,11 @@ if ($acceso === 'NO_PLANEADO') {
             }
         }
 
-       Log::info('Datos debug', [
-    'doc' => $DocDocumento,
-    'contenedores' => $contenedores,
-    'archivos' => $archivosPorDoc
-]);
+            Log::info('Datos debug', [
+            'doc' => $DocDocumento,
+            'contenedores' => $contenedores,
+            'archivos' => $archivosPorDoc
+        ]);
 
         $tabs = [];
         foreach ($contenedores as $c) {

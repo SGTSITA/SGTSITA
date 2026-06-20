@@ -52,6 +52,7 @@ class Cotizaciones extends Model
         'img_boleta',
         'carta_porte',
         'carta_porte_xml' ,
+        'id_proveedor',
 'retencion_automatica',
         'longitud',
         'direccion_mapa',

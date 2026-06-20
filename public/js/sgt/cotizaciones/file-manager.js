@@ -557,6 +557,7 @@ async function abrirModalWhatsapp() {
             body: JSON.stringify({
                 archivos: waArchivosSeleccionados,
                 proveedor_id: id_proveedor,
+                eslocal: esLocal,
             }),
         });
 
@@ -564,7 +565,11 @@ async function abrirModalWhatsapp() {
 
         if (!data.success) {
             Swal.close();
-            alert("Error al generar acceso");
+            Swal.fire(
+                data.titulo,
+                data.message ?? "Error al generar link",
+                "warning",
+            );
             return;
         }
 
