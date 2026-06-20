@@ -287,7 +287,40 @@ document.addEventListener("DOMContentLoaded", function () {
             return textoCompleto.includes(termino);
         });
     }
+    function parseFechaMovimiento(value) {
+        const fecha = String(value ?? "").trim();
 
+        if (!fecha) return 0;
+
+        // Por si viene con hora: "19/06/2026 10:30" o "2026-06-19T10:30"
+        const soloFecha = fecha.split(" ")[0].split("T")[0];
+
+        // Formato dd/mm/yyyy
+        let match = soloFecha.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+
+        if (match) {
+            const dia = Number(match[1]);
+            const mes = Number(match[2]);
+            const anio = Number(match[3]);
+
+            return new Date(anio, mes - 1, dia).getTime();
+        }
+
+        // Formato yyyy-mm-dd
+        match = soloFecha.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+
+        if (match) {
+            const anio = Number(match[1]);
+            const mes = Number(match[2]);
+            const dia = Number(match[3]);
+
+            return new Date(anio, mes - 1, dia).getTime();
+        }
+
+        const parsed = Date.parse(fecha);
+
+        return Number.isNaN(parsed) ? 0 : parsed;
+    }
     function ordenarRowsReporte(rows) {
         const orden = ordenReporteTabla?.value || "fecha_asc";
         const [campo, direccion] = orden.split("_");
@@ -297,7 +330,7 @@ document.addEventListener("DOMContentLoaded", function () {
         const getValor = (row) => {
             switch (campo) {
                 case "fecha":
-                    return Date.parse(row.fecha || "") || 0;
+                    return parseFechaMovimiento(row.fecha);
 
                 case "cargo":
                     return Math.abs(Number(row.cargo || 0));
@@ -317,7 +350,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     ).toLowerCase();
 
                 default:
-                    return Date.parse(row.fecha || "") || 0;
+                    return parseFechaMovimiento(row.fecha);
             }
         };
 
