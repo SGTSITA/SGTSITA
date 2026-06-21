@@ -106,63 +106,57 @@ $(document).on("click", "#btnGuardarKmDiesel", function () {
 });
 
 function getGastosOperador() {
-    function getGastosOperador() {
-        const metaToken = document.querySelector('meta[name="csrf-token"]');
-        const spanContenedor = document.querySelector("#spanContenedor");
+    const metaToken = document.querySelector('meta[name="csrf-token"]');
+    const spanContenedor = document.querySelector("#spanContenedor");
 
-        if (!metaToken || !spanContenedor) {
-            console.warn("No se encontró token CSRF o spanContenedor");
-            return;
-        }
-
-        const _token = metaToken.getAttribute("content");
-        const numContenedor = spanContenedor.textContent?.trim();
-
-        if (!numContenedor) {
-            console.warn("No hay número de contenedor");
-            return;
-        }
-
-        $.ajax({
-            url: "/cotizaciones/gastos-operador/get",
-            type: "post",
-            data: { _token, numContenedor },
-
-            beforeSend: () => {},
-
-            success: (response) => {
-                try {
-                    const data = Array.isArray(response) ? response : [];
-
-                    if (gridElementGastosOperador && apiGridGastosOperador) {
-                        apiGridGastosOperador.setGridOption("rowData", data);
-                    }
-
-                    const totalGastos = data.reduce((total, d) => {
-                        return total + Number(d.Monto ?? 0);
-                    }, 0);
-
-                    const totalGastosOperador = document.querySelector(
-                        "#totalGastosOperador",
-                    );
-
-                    if (totalGastosOperador) {
-                        totalGastosOperador.textContent =
-                            moneyFormat(totalGastos);
-                    }
-                } catch (error) {
-                    console.warn(
-                        "Error controlado en getGastosOperador:",
-                        error,
-                    );
-                }
-            },
-
-            error: (xhr) => {
-                console.warn("Error al obtener gastos operador:", xhr);
-            },
-        });
+    if (!metaToken || !spanContenedor) {
+        console.warn("No se encontró token CSRF o spanContenedor");
+        return;
     }
+
+    const _token = metaToken.getAttribute("content");
+    const numContenedor = spanContenedor.textContent?.trim();
+
+    if (!numContenedor) {
+        console.warn("No hay número de contenedor");
+        return;
+    }
+
+    $.ajax({
+        url: "/cotizaciones/gastos-operador/get",
+        type: "post",
+        data: { _token, numContenedor },
+
+        beforeSend: () => {},
+
+        success: (response) => {
+            try {
+                const data = Array.isArray(response) ? response : [];
+
+                if (gridElementGastosOperador && apiGridGastosOperador) {
+                    apiGridGastosOperador.setGridOption("rowData", data);
+                }
+
+                const totalGastos = data.reduce((total, d) => {
+                    return total + Number(d.Monto ?? 0);
+                }, 0);
+
+                const totalGastosOperador = document.querySelector(
+                    "#totalGastosOperador",
+                );
+
+                if (totalGastosOperador) {
+                    totalGastosOperador.textContent = moneyFormat(totalGastos);
+                }
+            } catch (error) {
+                console.warn("Error controlado en getGastosOperador:", error);
+            }
+        },
+
+        error: (xhr) => {
+            console.warn("Error al obtener gastos operador:", xhr);
+        },
+    });
 }
 
 function putGastosOperador() {
