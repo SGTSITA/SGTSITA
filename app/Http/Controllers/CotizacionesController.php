@@ -1460,6 +1460,8 @@ $this->procesarDocumento(
 
             if ($request->has('id_proveedor') && $request->id_proveedor !== $cotizaciones->id_empresa) { //checar si se cambio de empresa
                 $cotizaciones->id_empresa = $request->id_proveedor;
+                $doc_cotizaciones->id_empresa =$request->id_proveedor;
+                $doc_cotizaciones->update();
             }
 
 
