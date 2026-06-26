@@ -385,9 +385,13 @@ let apiGrid = agGrid.createGrid(myGridElement, gridOptions);
 // const gridInstance = createGrid(myGridElement, gridOptions)//new agGrid.Grid(myGridElement, gridOptions);
 
 var paginationTitle = document.querySelector("#ag-32-label");
-paginationTitle.textContent = "Registros por página";
+if (paginationTitle) {
+    paginationTitle.textContent = "Registros por página";
+}
+/* if (!btnDocumets) {
+    const btnDocumets = document.querySelectorAll(".btnDocs");
+} */
 
-const btnDocumets = document.querySelectorAll(".btnDocs");
 //const api = createGrid(gridDiv, gridOptions)
 let columnsCache = [];
 
@@ -462,7 +466,12 @@ function applyColumnsOrderFromModal() {
     saveColumnsState();
 }
 
-btnAplicarcambiosmodal.addEventListener("click", applyColumnsOrderFromModal);
+if (btnAplicarcambiosmodal) {
+    btnAplicarcambiosmodal.addEventListener(
+        "click",
+        applyColumnsOrderFromModal,
+    );
+}
 
 function toggleColumn(field, visible) {
     apiGrid.applyColumnState({
@@ -622,14 +631,18 @@ function getContenedoresPendientes(estatus = "Local") {
         .querySelector('meta[name="csrf-token"]')
         .getAttribute("content");
 
-    let OcultarForaneos = document.getElementById("validar_foraneos").value;
+    const validarForaneos = document.getElementById("validar_foraneos");
+    const OcultarForaneos = validarForaneos ? validarForaneos.value : 0;
     $.ajax({
         url: "/viajes/documents/pending-local",
         type: "post",
         data: { _token, estatus, OcultarForaneos },
         beforeSend: () => {},
         success: (response) => {
-            if (response.length > 0) {
+            console.log(response);
+            console.log(response.length);
+
+            if (response.length > 0 && btnDocumets) {
                 btnDocumets.forEach((btn) => (btn.disabled = false));
             }
             apiGrid.setGridOption("rowData", response);
