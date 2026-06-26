@@ -56,32 +56,32 @@
 
                                 <!--div class="menu-item px-3" data-kt-menu-trigger="hover" data-kt-menu-placement="right-start">
 
-                                                                                                                                                                                                                                                                                                                <a href="#" class="menu-link px-3" data-bs-toggle="modal" data-bs-target="#kt_modal_top_up_wallet">
-                                                                                                                                                                                                                                                                                                                  <span class="menu-title">Ver documentos</span>
-                                                                                                                                                                                                                                                                                                                  <span class="menu-arrow"></span>
-                                                                                                                                                                                                                                                                                                                </a>
+                                                                                                                                                                                                                                                                                                                    <a href="#" class="menu-link px-3" data-bs-toggle="modal" data-bs-target="#kt_modal_top_up_wallet">
+                                                                                                                                                                                                                                                                                                                      <span class="menu-title">Ver documentos</span>
+                                                                                                                                                                                                                                                                                                                      <span class="menu-arrow"></span>
+                                                                                                                                                                                                                                                                                                                    </a>
 
 
-                                                                                                                                                                                                                                                                                                                <div class="menu-sub menu-sub-dropdown w-175px py-4">
+                                                                                                                                                                                                                                                                                                                    <div class="menu-sub menu-sub-dropdown w-175px py-4">
 
-                                                                                                                                                                                                                                                                                                                  <div class="menu-item px-3">
-                                                                                                                                                                                                                                                                                                                    <a href="#" class="menu-link px-3"> DODA </a>
-                                                                                                                                                                                                                                                                                                                  </div>
+                                                                                                                                                                                                                                                                                                                      <div class="menu-item px-3">
+                                                                                                                                                                                                                                                                                                                        <a href="#" class="menu-link px-3"> DODA </a>
+                                                                                                                                                                                                                                                                                                                      </div>
 
-                                                                                                                                                                                                                                                                                                                  <div class="menu-item px-3">
-                                                                                                                                                                                                                                                                                                                    <a href="#" class="menu-link px-3"> Pre Alta </a>
-                                                                                                                                                                                                                                                                                                                  </div>
+                                                                                                                                                                                                                                                                                                                      <div class="menu-item px-3">
+                                                                                                                                                                                                                                                                                                                        <a href="#" class="menu-link px-3"> Pre Alta </a>
+                                                                                                                                                                                                                                                                                                                      </div>
 
-                                                                                                                                                                                                                                                                                                                  <div class="menu-item px-3">
-                                                                                                                                                                                                                                                                                                                    <a href="#" class="menu-link px-3"> Boleta de liberación </a>
-                                                                                                                                                                                                                                                                                                                  </div>
-                                                                                                                                                                                                                                                                                                                  <div class="menu-item px-3">
-                                                                                                                                                                                                                                                                                                                    <a href="#" class="menu-link px-3"> Formato Carta Porte </a>
-                                                                                                                                                                                                                                                                                                                  </div>
+                                                                                                                                                                                                                                                                                                                      <div class="menu-item px-3">
+                                                                                                                                                                                                                                                                                                                        <a href="#" class="menu-link px-3"> Boleta de liberación </a>
+                                                                                                                                                                                                                                                                                                                      </div>
+                                                                                                                                                                                                                                                                                                                      <div class="menu-item px-3">
+                                                                                                                                                                                                                                                                                                                        <a href="#" class="menu-link px-3"> Formato Carta Porte </a>
+                                                                                                                                                                                                                                                                                                                      </div>
 
-                                                                                                                                                                                                                                                                                                                </div>
+                                                                                                                                                                                                                                                                                                                    </div>
 
-                                                                                                                                                                                                                                                                                                              </div-->
+                                                                                                                                                                                                                                                                                                                  </div-->
 
                                 <!--begin::Menu separator-->
                                 <div class="separator mt-3 opacity-75"></div>
@@ -333,17 +333,17 @@
                 });
             }
 
-            /* const savedState = @json($stateGridColumns);
-            console.log('savedState:', savedState);
-            console.log('Tipo:', typeof savedState);
-            console.log('Es arreglo:', Array.isArray(savedState));
+            const savedState = @json($stateGridColumns);
+            /*   console.log('savedState:', savedState);
+              console.log('Tipo:', typeof savedState);
+              console.log('Es arreglo:', Array.isArray(savedState)); */
 
             if (Array.isArray(savedState) && savedState.length > 0) {
                 apiGrid.applyColumnState({
                     state: savedState,
                     applyOrder: true
                 });
-            } */
+            }
 
         });
     </script>
