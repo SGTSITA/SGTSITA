@@ -958,7 +958,12 @@ if (!is_null($documentos->evidencia_descarga)) {
     ->where('grid_key', 'grid_viajes_solicitados_local')
     ->first();
 
-        $stateGridColumns = $stateColumnsGrid?->state_json ?? [];
+
+    $stateGridColumns = [];
+
+    if (!blank($stateColumnsGrid?->state_json)) {
+        $stateGridColumns = json_decode($stateColumnsGrid->state_json, true) ?? [];
+    }
         return view('cotizaciones.externos.viajes_solicitados-local', compact('estatusManiobras', 'stateGridColumns'));
     }
 
