@@ -7,6 +7,7 @@ use App\Models\RastreoIntervals;
 use App\Services\UbicacionService;
 use App\Models\coordenadashistorial;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class cmdRastreoInterval extends Command
 {
@@ -103,15 +104,20 @@ class cmdRastreoInterval extends Command
         ->get();
     
         if($datos){
-        foreach ($datos as $dato) {
-
+            Log::info("[Rastreo Automático] Iniciando escaneo de contenedores activos. Total encontrados: " . count($datos));
+            foreach ($datos as $dato) {
                 $imei = $dato->contenedor .'|'.$dato->imei.'|'. $dato->id_contenedor.'|'. $dato->tipoGps; 
 
-                $ubicacion = $this->ubiService->obtenerUbicacionByImeiString($imei);
-                if ($ubicacion && isset($ubicacion['lat']) && $ubicacion['lat'] !== null) {
-                        $this->info("Ubicación encontrada: " . json_encode($ubicacion));
+                try {
+                    $resultadoGps = $this->ubiService->obtenerUbicacionByImei($imei);
+                    $res = !empty($resultadoGps) ? $resultadoGps[0] : null;
+                    $ubicacion = $res['ubicacion'] ?? null;
+
+                    if ($ubicacion && isset($ubicacion['lat']) && floatval($ubicacion['lat']) !== 0.0) {
+                        $this->info("Ubicación encontrada para {$dato->contenedor}: " . json_encode($ubicacion));
+                        Log::info("[Rastreo Automático] Contenedor {$dato->contenedor}: Ubicación encontrada Lat: {$ubicacion['lat']}, Lng: {$ubicacion['lng']}");
                         
-                              CoordenadasHistorial::create([
+                        CoordenadasHistorial::create([
                             'latitud' => $ubicacion['lat'],
                             'longitud' => $ubicacion['lng'],
                             'registrado_en' => now(),
@@ -120,17 +126,18 @@ class cmdRastreoInterval extends Command
                             'ubicacionable_type' => 'rastreo service',
                             'tipo' => $ubicacion['tipoGPS'] ?? 'desconocido',
                         ]);
-                   
-                     
                     } else {
                         $this->warn("No se encontró ubicación para IMEI: $imei");
+                        Log::warning("[Rastreo Automático] Contenedor {$dato->contenedor}: No se encontró ubicación o sin señal de GPS.");
                     }
+                } catch (\Exception $e) {
+                    $this->error("Error al consultar/guardar ubicación para IMEI: $imei. Detalle: " . $e->getMessage());
+                    Log::error("[Rastreo Automático] Contenedor {$dato->contenedor}: Error en la consulta. Detalle: " . $e->getMessage());
                 }
-
+            }
         }
         
 
 
     }
 }
-

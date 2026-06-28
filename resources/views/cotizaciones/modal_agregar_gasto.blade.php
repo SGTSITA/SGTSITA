@@ -4,7 +4,7 @@
         <div class="modal-body p-0">
             <div class="card card-plain">
             <div class="card-header pb-0 text-left">
-                <h3 class="font-weight-bolder text-info text-gradient">Agregar Gasto</h3>
+                <h3 class="font-weight-bolder text-info text-gradient" id="modalGastoTitulo">Agregar Gasto</h3>
                 <p class="mb-0">Por favor introduza la Información solicitada a continuación:</p>
             </div>
             <div class="card-body">
@@ -17,9 +17,37 @@
                 <div class="input-group mb-3">
                     <input type="text" class="form-control moneyformat" id="txtMonto" placeholder="$ 0.00" aria-label="$ 0.00" oninput="allowOnlyDecimals(event)" />
                 </div>
+
+                <!-- Campos adicionales para operador/viaje -->
+                <div id="divCamposOperador" style="display: none;">
+                    <div class="form-check form-switch ps-0 mb-3">
+                        <input class="form-check-input bd-gradient-success ms-0" type="checkbox" id="checkPagoInmediato" checked="">
+                        <label class="form-check-label text-body ms-3 text-truncate w-80 mb-0" for="checkPagoInmediato">Pago Inmediato</label>
+                    </div>
+
+                    <label>Fecha aplicación</label>
+                    <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1">
+                            <img src="{{ asset('img/icon/calendar-dar.webp') }}" alt="" width="25px" />
+                        </span>
+                        <input name="txtFechaAplicacion" id="txtFechaAplicacion" type="date" class="form-control" value="{{ now()->format('Y-m-d') }}" />
+                    </div>
+
+                    <div id="divBancoSeleccion">
+                        <label>Banco</label>
+                        <select class="form-control mb-3" name="bancosGastos" id="bancosGastos">
+                            @foreach ($bancos as $item)
+                                <option value="{{ $item['id'] }}">
+                                    {{ $item['display'] }} :
+                                    ${{ number_format($item['saldo_actual'], 2) }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
                
                 <div class="text-center">
-                    <button type="button" id="btnAgregar" onclick ="putGastosContenedor()" class="btn btn-round bg-gradient-info btn-lg w-100 mt-4 mb-0">Agregar</button>
+                    <button type="button" id="btnAgregarGastoUnificado" class="btn btn-round bg-gradient-info btn-lg w-100 mt-4 mb-0">Agregar</button>
                 </div>
                
             </div>

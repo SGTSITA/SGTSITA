@@ -246,11 +246,11 @@
             <tbody>
                 @foreach ($gastosGenerales as $gasto)
                     <tr>
-                        <td style="padding: 5px">{{ \Carbon\Carbon::parse($gasto->fecha)->format('d-m-Y') }}</td>
-                        <td style="padding: 5px">{{ $gasto->motivo }}</td>
-                        <td style="padding: 5px">{{ $gasto->Categoria->categoria ?? 'N/A' }}</td>
-                        <td style="padding: 5px">{{ $gasto->metodo_pago1 }}</td>
-                        <td style="padding: 5px">$ {{ number_format($gasto->monto1, 2) }}</td>
+                        <td style="padding: 5px">{{ \Carbon\Carbon::parse($gasto->fecha_aplicada)->format('d-m-Y') }}</td>
+                        <td style="padding: 5px">{{ $gasto->concepto }}</td>
+                        <td style="padding: 5px">{{ $gasto->categoria->categoria ?? 'N/A' }}</td>
+                        <td style="padding: 5px">{{ $gasto->pagos->first()->metodo_pago ?? 'N/A' }}</td>
+                        <td style="padding: 5px">$ {{ number_format($gasto->monto_aplicado, 2) }}</td>
                     </tr>
                 @endforeach
 

@@ -597,6 +597,36 @@ Route::middleware(['auth', 'idle.timeout'])->group(function () {
         Route::post('liquidaciones/update/varios', [App\Http\Controllers\LiquidacionesController::class, 'update_varios'])->name('update_varios.liquidacion');
 
         // ==================== G A S T O S  ====================
+        Route::middleware('permission:gastos')
+                ->prefix('gastos')
+                ->name('gastos.')
+                ->group(function () {
+
+                    Route::get('/', [App\Http\Controllers\GastosController::class, 'index'])
+                        ->name('index');
+
+                    Route::get('/data', [App\Http\Controllers\GastosController::class, 'data'])
+                        ->name('data');
+
+                    Route::post('/', [App\Http\Controllers\GastosController::class, 'store'])
+                        ->name('store');
+
+                    Route::put('/{gasto}', [App\Http\Controllers\GastosController::class, 'update'])
+                        ->name('update');
+
+                    Route::post('/{gasto}/pagar', [App\Http\Controllers\GastosController::class, 'pay'])
+                        ->name('pay');
+
+                    Route::post('/pagar-multiple', [App\Http\Controllers\GastosController::class, 'payMultiple'])
+                        ->name('pay_multiple');
+
+                    Route::get('/{gasto}/historial-pagos', [App\Http\Controllers\GastosController::class, 'historialPagos'])
+                        ->name('historial-pagos');
+
+                    Route::post('/pagos/{pago}/cancelar', [App\Http\Controllers\GastosController::class, 'cancelarPago'])
+                        ->name('cancelar-pago');
+        });
+
         Route::get('gastos/generales', [App\Http\Controllers\GastosGeneralesController::class, 'index'])->name('index.gastos_generales');
         Route::get('gastos/viajes', [App\Http\Controllers\GastosContenedoresController::class, 'indexGastosViaje'])->name('index.gastos_viajes');
         Route::post('gastos/viajes/list', [App\Http\Controllers\GastosContenedoresController::class, 'gastosViajesList']);

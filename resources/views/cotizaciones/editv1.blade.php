@@ -1282,8 +1282,7 @@
                                                     <i class="fa fa-trash"></i>
                                                     Eliminar
                                                 </button>
-                                                <button type="button" data-bs-toggle="modal"
-                                                    data-bs-target="#modal-form" class="btn btn-sm bg-gradient-info">
+                                                <button type="button" data-bs-toggle="modal" data-bs-target="#modal-form" data-origen="cotizacion" class="btn btn-sm bg-gradient-info btnAgregarGastoTrigger">
                                                     Agregar gasto
                                                 </button>
                                             </div>
@@ -1696,8 +1695,8 @@
                                                                 </button>
 
                                                                 <button type="button" data-bs-toggle="modal"
-                                                                    data-bs-target="#modal-gastos-operador"
-                                                                    class="btn btn-sm bg-gradient-success"
+                                                                    data-bs-target="#modal-form" data-origen="viaje"
+                                                                    class="btn btn-sm bg-gradient-success btnAgregarGastoTrigger"
                                                                     id="btnNuevoGasto">
                                                                     Registrar Gasto
                                                                 </button>

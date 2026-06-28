@@ -1,5 +1,5 @@
 <!-- Modal Detalles del Viaje -->
-<div class="modal fade" id="viajeModal" tabindex="-1" aria-labelledby="viajeModalLabel" aria-hidden="true">
+<div class="modal fade" id="viajeModal" aria-labelledby="viajeModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content shadow rounded-4 border-0">
             <!-- Encabezado -->
@@ -74,40 +74,24 @@
                         </h6>
 
                         <div class="col-md-4">
-                            <label for="operadorSelect" class="form-label">Núm Eco/ Núm Unidad / Identificador</label>
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <label for="txtNumUnidad" class="form-label mb-0">Núm Eco/ Núm Unidad / Identificador</label>
+                                <a href="/equipos-gps/index" target="_blank" class="btn btn-xs btn-outline-primary px-2 py-0" style="font-size: 10px; margin-bottom: 2px;">
+                                    <i class="fas fa-plus"></i> Anexar Unidad
+                                </a>
+                            </div>
                             <div class="position-relative w-100">
-                                <input type="text"
-                                    class="form-control form-control-sm ps-3 pe-5 rounded-pill text-uppercase"
-                                    placeholder="Ej. SF001..." id="txtNumUnidad" data-mep-unidad="0" />
-                                <div id="sugerenciasUnidad"
-                                    style="
-                                    position:absolute;
-                                    top:100%;
-                                    left:0;
-                                    right:0;
-                                    background:white;
-                                    border-radius:8px;
-                                    box-shadow:0 4px 10px rgba(0,0,0,0.15);
-                                    z-index:999;
-                                    max-height:200px;
-                                    overflow-y:auto;
-                                    display:none;
-                                ">
-                                </div>
-                                <!-- Icono convertido en botón -->
-                                <button type="button"
-                                    class="btn btn-sm position-absolute end-0 top-50 translate-middle-y me-2 p-1 rounded-circle"
-                                    onclick="buscarUnidad(txtNumUnidad.value, 'Unidad')">
-                                    <i class="fas fa-search"></i>
-                                </button>
+                                <select class="form-select form-select-sm rounded-pill text-uppercase" id="txtNumUnidad" data-mep-unidad="0">
+                                    <option value="" disabled selected>Selecciona Unidad...</option>
+                                </select>
                             </div>
                         </div>
                         <div class="col-md-3">
-                            <label for="operadorSelect" class="form-label">Placas</label>
+                            <label for="txtPlacas" class="form-label">Placas</label>
                             <div class="position-relative w-100" style="max-width: 300px">
                                 <input type="text"
                                     class="form-control form-control-sm ps-3 pe-5 rounded-pill text-uppercase"
-                                    id="txtPlacas" placeholder="Placas..." />
+                                    id="txtPlacas" placeholder="Placas..." readonly />
                                 <span class="position-absolute end-0 top-50 translate-middle-y pe-3 text-muted">
                                     <i class="fas fa-barcode"></i>
                                 </span>
@@ -115,11 +99,11 @@
                         </div>
 
                         <div class="col-md-3">
-                            <label for="operadorSelect" class="form-label">Núm Serie / VIN</label>
+                            <label for="txtSerie" class="form-label">Núm Serie / VIN</label>
                             <div class="position-relative w-100" style="max-width: 300px">
                                 <input type="text"
                                     class="form-control form-control-sm ps-3 pe-5 rounded-pill text-uppercase"
-                                    id="txtSerie" placeholder="Serie de la unidad" />
+                                    id="txtSerie" placeholder="Serie de la unidad" readonly />
                                 <span class="position-absolute end-0 top-50 translate-middle-y pe-3 text-muted">
                                     <i class="fas fa-qrcode"></i>
                                 </span>
@@ -132,7 +116,7 @@
                             <label for="selectGPS" class="form-label">Compañia GPS</label>
                             <div class="position-relative w-100" style="max-width: 300px">
                                 <select id="selectGPS"
-                                    class="form-select form-select-sm ps-3 pe-5 rounded-pill text-uppercase">
+                                    class="form-select form-select-sm ps-3 pe-5 rounded-pill text-uppercase" style="pointer-events: none; background: #e9ecef; opacity: 0.8;">
                                     <option value="" disabled selected>Selecciona compañia GPS...</option>
                                     @foreach ($gpsCompanies as $gps)
                                         <option value="{{ $gps->id }}">{{ $gps->nombre }}</option>
@@ -144,28 +128,36 @@
                             </div>
                         </div>
                         <div class="col-md-3">
-                            <label for="operadorSelect" class="form-label">IMEI</label>
+                            <label for="txtImei" class="form-label">IMEI</label>
                             <div class="position-relative w-100" style="max-width: 300px">
                                 <input type="text"
                                     class="form-control form-control-sm ps-3 pe-5 rounded-pill text-uppercase"
-                                    id="txtImei" placeholder="Imei GPS..." />
+                                    id="txtImei" placeholder="Imei GPS..." readonly />
                                 <span class="position-absolute end-0 top-50 translate-middle-y pe-3 text-muted">
                                     <i class="fas fa-microchip"></i>
                                 </span>
                             </div>
                         </div>
                     </div>
+                    <div class="row mt-2">
+                        <div class="col-12">
+                            <span class="form-text text-muted text-xs ms-1">
+                                <i class="fas fa-info-circle text-info me-1"></i> Para modificar los datos de esta unidad, realiza la edición desde el <a href="/equipos-gps/index" target="_blank" class="text-primary fw-bold text-decoration-underline">Catálogo de Equipos</a>.
+                            </span>
+                        </div>
+                    </div>
 
                     <div class="row mt-4">
-
-                        <div class="col-md-4">
-                            <div id="gpsStatusUnidad" class="small fw-bold text-muted">
-
-                                Sin asignar GPS
-
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center gap-2">
+                                <div id="gpsStatusUnidad" class="small fw-bold text-muted">
+                                    Sin asignar GPS
+                                </div>
+                                <button type="button" class="btn btn-xs btn-outline-primary py-1 px-2 btn-actualizar-gps shadow-sm" data-gps-tipo="Unidad" style="font-size:10px; display:none;" id="btnActualizarGPSUnidad">
+                                    <i class="fas fa-sync-alt"></i> Actualizar GPS
+                                </button>
                             </div>
                         </div>
-
                     </div>
                     <div class="col-md-4 d-flex align-items-end">
 
@@ -234,32 +226,16 @@
                         <div class="tab-pane fade show active" id="chasisA" role="tabpanel">
                             <div class="row mt-3">
                                 <div class="col-md-4">
-                                    <label class="form-label">Núm Eco / Núm Chasis / Identificador</label>
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <label for="txtNumChasisA" class="form-label mb-0">Núm Eco / Núm Chasis / Identificador</label>
+                                        <a href="/equipos-gps/index" target="_blank" class="btn btn-xs btn-outline-primary px-2 py-0" style="font-size: 10px; margin-bottom: 2px;">
+                                            <i class="fas fa-plus"></i> Anexar Chasis
+                                        </a>
+                                    </div>
                                     <div class="position-relative w-100">
-                                        <input type="text"
-                                            class="form-control form-control-sm ps-3 pe-5 rounded-pill text-uppercase"
-                                            placeholder="Ej. CH001..." id="txtNumChasisA" data-mep-unidad="0" />
-
-                                        <div id="sugerenciasChasisA"
-                                            style="
-                                            position:absolute;
-                                            top:100%;
-                                            left:0;
-                                            right:0;
-                                            background:white;
-                                            border-radius:8px;
-                                            box-shadow:0 4px 10px rgba(0,0,0,0.15);
-                                            z-index:999;
-                                            max-height:200px;
-                                            overflow-y:auto;
-                                            display:none;
-                                        ">
-                                        </div>
-                                        <button type="button"
-                                            class="btn btn-sm position-absolute end-0 top-50 translate-middle-y me-2 p-1 rounded-circle"
-                                            onclick="buscarUnidad(txtNumChasisA.value, 'ChasisA')">
-                                            <i class="fas fa-search"></i>
-                                        </button>
+                                        <select class="form-select form-select-sm rounded-pill text-uppercase" id="txtNumChasisA" data-mep-unidad="0">
+                                            <option value="" disabled selected>Selecciona Chasis A...</option>
+                                        </select>
                                     </div>
                                 </div>
 
@@ -268,7 +244,7 @@
                                     <div class="position-relative w-100">
                                         <input type="text"
                                             class="form-control form-control-sm ps-3 pe-5 rounded-pill text-uppercase"
-                                            id="txtPlacasA" placeholder="Placas..." />
+                                            id="txtPlacasA" placeholder="Placas..." readonly />
                                         <span
                                             class="position-absolute end-0 top-50 translate-middle-y pe-3 text-muted">
                                             <i class="fas fa-barcode"></i>
@@ -282,7 +258,7 @@
                                     <label class="form-label">Compañía GPS</label>
                                     <div class="position-relative w-100">
                                         <select id="selectChasisAGPS"
-                                            class="form-select form-select-sm ps-3 pe-5 rounded-pill text-uppercase">
+                                            class="form-select form-select-sm ps-3 pe-5 rounded-pill text-uppercase" style="pointer-events: none; background: #e9ecef; opacity: 0.8;">
                                             <option value="" disabled selected>Selecciona compañia GPS...
                                             </option>
                                             @foreach ($gpsCompanies as $gps)
@@ -301,7 +277,7 @@
                                     <div class="position-relative w-100">
                                         <input type="text"
                                             class="form-control form-control-sm ps-3 pe-5 rounded-pill text-uppercase"
-                                            id="txtImeiChasisA" placeholder="Imei GPS..." />
+                                            id="txtImeiChasisA" placeholder="Imei GPS..." readonly />
                                         <span
                                             class="position-absolute end-0 top-50 translate-middle-y pe-3 text-muted">
                                             <i class="fas fa-microchip"></i>
@@ -310,14 +286,24 @@
                                 </div>
                                 <div class="row mt-2">
 
-                                    <div class="col-md-4">
-                                        <div id="gpsStatusChasisA" class="small fw-bold text-muted">
-
-                                            Sin asignar GPS
-
+                                    <div class="col-md-6">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div id="gpsStatusChasisA" class="small fw-bold text-muted">
+                                                Sin asignar GPS
+                                            </div>
+                                            <button type="button" class="btn btn-xs btn-outline-primary py-1 px-2 btn-actualizar-gps shadow-sm" data-gps-tipo="ChasisA" style="font-size:10px; display:none;" id="btnActualizarGPSChasisA">
+                                                <i class="fas fa-sync-alt"></i> Actualizar GPS
+                                            </button>
                                         </div>
                                     </div>
 
+                                </div>
+                            </div>
+                            <div class="row mt-2">
+                                <div class="col-12">
+                                    <span class="form-text text-muted text-xs ms-1">
+                                        <i class="fas fa-info-circle text-info me-1"></i> Para modificar los datos de este chasis, realiza la edición desde el <a href="/equipos-gps/index" target="_blank" class="text-primary fw-bold text-decoration-underline">Catálogo de Equipos</a>.
+                                    </span>
                                 </div>
                             </div>
                         </div>
@@ -326,32 +312,16 @@
                         <div class="tab-pane fade" id="chasisB" role="tabpanel">
                             <div class="row mt-3">
                                 <div class="col-md-4">
-                                    <label class="form-label">Núm Eco / Núm Chasis B / Identificador</label>
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <label class="form-label mb-0">Núm Eco / Núm Chasis B / Identificador</label>
+                                        <a href="/equipos-gps/index" target="_blank" class="btn btn-xs btn-outline-primary px-2 py-0" style="font-size: 10px; margin-bottom: 2px;">
+                                            <i class="fas fa-plus"></i> Anexar Chasis
+                                        </a>
+                                    </div>
                                     <div class="position-relative w-100">
-                                        <input type="text"
-                                            class="form-control form-control-sm ps-3 pe-5 rounded-pill text-uppercase"
-                                            placeholder="Ej. CH002..." id="txtNumChasisB" data-mep-unidad="0" />
-
-                                        <div id="sugerenciasChasisB"
-                                            style="
-                                                position:absolute;
-                                                top:100%;
-                                                left:0;
-                                                right:0;
-                                                background:white;
-                                                border-radius:8px;
-                                                box-shadow:0 4px 10px rgba(0,0,0,0.15);
-                                                z-index:999;
-                                                max-height:200px;
-                                                overflow-y:auto;
-                                                display:none;
-                                            ">
-                                        </div>
-                                        <button type="button"
-                                            class="btn btn-sm position-absolute end-0 top-50 translate-middle-y me-2 p-1 rounded-circle"
-                                            onclick="buscarUnidad(txtNumChasisB.value, 'ChasisB')">
-                                            <i class="fas fa-search"></i>
-                                        </button>
+                                        <select class="form-select form-select-sm rounded-pill text-uppercase" id="txtNumChasisB" data-mep-unidad="0">
+                                            <option value="" disabled selected>Selecciona Chasis B...</option>
+                                        </select>
                                     </div>
                                 </div>
 
@@ -360,7 +330,7 @@
                                     <div class="position-relative w-100">
                                         <input type="text"
                                             class="form-control form-control-sm ps-3 pe-5 rounded-pill text-uppercase"
-                                            id="txtPlacasB" placeholder="Placas..." />
+                                            id="txtPlacasB" placeholder="Placas..." readonly />
                                         <span
                                             class="position-absolute end-0 top-50 translate-middle-y pe-3 text-muted">
                                             <i class="fas fa-barcode"></i>
@@ -374,7 +344,7 @@
                                     <label class="form-label">Compañía GPS</label>
                                     <div class="position-relative w-100">
                                         <select id="selectChasisBGPS"
-                                            class="form-select form-select-sm ps-3 pe-5 rounded-pill text-uppercase">
+                                            class="form-select form-select-sm ps-3 pe-5 rounded-pill text-uppercase" style="pointer-events: none; background: #e9ecef; opacity: 0.8;">
                                             <option value="" disabled selected>Selecciona compañia GPS...
                                             </option>
                                             @foreach ($gpsCompanies as $gps)
@@ -394,7 +364,7 @@
                                     <div class="position-relative w-100">
                                         <input type="text"
                                             class="form-control form-control-sm ps-3 pe-5 rounded-pill text-uppercase"
-                                            id="txtImeiChasisB" placeholder="Imei GPS..." />
+                                            id="txtImeiChasisB" placeholder="Imei GPS..." readonly />
                                         <span
                                             class="position-absolute end-0 top-50 translate-middle-y pe-3 text-muted">
                                             <i class="fas fa-microchip"></i>
@@ -403,14 +373,24 @@
                                 </div>
                                 <div class="row mt-2">
 
-                                    <div class="col-md-4">
-                                        <div id="gpsStatusChasisB" class="small fw-bold text-muted">
-
-                                            Sin asignar GPS
-
+                                    <div class="col-md-6">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div id="gpsStatusChasisB" class="small fw-bold text-muted">
+                                                Sin asignar GPS
+                                            </div>
+                                            <button type="button" class="btn btn-xs btn-outline-primary py-1 px-2 btn-actualizar-gps shadow-sm" data-gps-tipo="ChasisB" style="font-size:10px; display:none;" id="btnActualizarGPSChasisB">
+                                                <i class="fas fa-sync-alt"></i> Actualizar GPS
+                                            </button>
                                         </div>
                                     </div>
 
+                                </div>
+                            </div>
+                            <div class="row mt-2">
+                                <div class="col-12">
+                                    <span class="form-text text-muted text-xs ms-1">
+                                        <i class="fas fa-info-circle text-info me-1"></i> Para modificar los datos de este chasis, realiza la edición desde el <a href="/equipos-gps/index" target="_blank" class="text-primary fw-bold text-decoration-underline">Catálogo de Equipos</a>.
+                                    </span>
                                 </div>
                             </div>
                         </div>

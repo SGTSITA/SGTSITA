@@ -327,6 +327,10 @@
     @endcan
 @endsection
 
+@section('select2')
+    <script src="{{ asset('assets/vendor/select2/dist/js/select2.min.js') }}"></script>
+@endsection
+
 @push('custom-javascript')
     <!-- AG Grid -->
 

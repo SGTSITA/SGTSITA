@@ -458,7 +458,7 @@
                 html += `
         <div class="p-3">
             <div class="fw-semibold mb-2 text-secondary">
-                Contenedores y Abonos
+                Detalles del Gasto / Contenedores
             </div>
             <ul class="detalle-list mb-2">
     `;
@@ -467,25 +467,40 @@
 
                     let contenedor = '';
                     let monto = 0;
+                    let extraInfo = '';
 
-                    Object.entries(obj).forEach(([key, value]) => {
-
-                        if (key.toLowerCase().includes('contenedor')) {
-                            contenedor = value;
+                    // If it comes from unified gastos module
+                    if (obj.gasto_id) {
+                        contenedor = obj.concepto;
+                        monto = Number(obj.monto || 0);
+                        totalMonto += monto;
+                        if (obj.vinculos && obj.vinculos.length > 0) {
+                            extraInfo = '<div style="font-size: 10px; color: #666; margin-left: 10px;">' + 
+                                obj.vinculos.map(v => `<strong>${v.tipo.toUpperCase()}:</strong> ${v.referencia}`).join(' | ') + 
+                                '</div>';
                         }
-
-                        if (!isNaN(value) && value !== '' && value !== null) {
-                            monto = Number(value);
-                            totalMonto += monto;
-                        }
-                    });
+                    } else {
+                        // Legacy parser loop
+                        Object.entries(obj).forEach(([key, value]) => {
+                            if (key.toLowerCase().includes('contenedor')) {
+                                contenedor = value;
+                            }
+                            if (!isNaN(value) && value !== '' && value !== null && key.toLowerCase() !== 'id') {
+                                monto = Number(value);
+                                totalMonto += monto;
+                            }
+                        });
+                    }
 
                     html += `
-            <li class="detalle-item">
-                <span>${contenedor}</span>
-                <span class="monto">
-                    ${formatearmoneda(monto)}
-                </span>
+            <li class="detalle-item d-flex flex-column align-items-start py-1 border-bottom" style="gap: 2px;">
+                <div class="d-flex justify-content-between w-100">
+                    <span>${contenedor}</span>
+                    <span class="monto fw-bold text-dark">
+                        ${formatearmoneda(monto)}
+                    </span>
+                </div>
+                ${extraInfo}
             </li>
         `;
                 });
@@ -493,7 +508,7 @@
                 html += `
             </ul>
 
-            <div class="detalle-total-line">
+            <div class="detalle-total-line d-flex justify-content-between pt-2 border-top fw-bold">
                 <span>Total</span>
                 <span class="monto-total">
                     ${formatearmoneda(totalMonto)}

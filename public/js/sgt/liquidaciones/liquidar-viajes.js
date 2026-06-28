@@ -270,34 +270,38 @@ function mostrarViajesOperador(operador) {
             let dataCContenedores = response.data;
 
             if (dataCContenedores.length > 0) {
-                let saved =
-                    JSON.parse(localStorage.getItem("justificaciones")) || {};
-
-                saved = [];
-
+                let saved = [];
+                let maxJustificaciones = 0;
                 dataCContenedores.forEach((contenedor) => {
-                    if (
-                        contenedor.justificacion &&
-                        contenedor.justificacion.length > 0
-                    ) {
-                        contenedor.justificacion.forEach((c) => {
-                            saved.push({
-                                [`id_registro|${contenedor.id_contenedor}`]:
-                                    c.id,
-                                [`motivo|${contenedor.id_contenedor}`]:
-                                    c.descripcion_gasto,
-                                [`monto|${contenedor.id_contenedor}`]:
-                                    parseFloat(c.monto).toFixed(2),
-                            });
-                        });
-                    } else {
-                        saved.push({
-                            [`id_registro|${contenedor.id_contenedor}`]: null,
-                            [`motivo|${contenedor.id_contenedor}`]: "",
-                            [`monto|${contenedor.id_contenedor}`]: "",
-                        });
-                    }
+                    let len =
+                        (contenedor.justificacion &&
+                            contenedor.justificacion.length) ||
+                        0;
+                    if (len > maxJustificaciones) maxJustificaciones = len;
                 });
+
+                for (let i = 0; i < Math.max(maxJustificaciones, 10); i++) {
+                    let fila = {};
+                    dataCContenedores.forEach((contenedor) => {
+                        let id = contenedor.id_contenedor;
+                        let c =
+                            (contenedor.justificacion &&
+                                contenedor.justificacion[i]) ||
+                            null;
+                        if (c) {
+                            fila[`id_registro|${id}`] = c.id;
+                            fila[`motivo|${id}`] = c.descripcion_gasto;
+                            fila[`monto|${id}`] = parseFloat(c.monto).toFixed(
+                                2,
+                            );
+                        } else {
+                            fila[`id_registro|${id}`] = null;
+                            fila[`motivo|${id}`] = "";
+                            fila[`monto|${id}`] = "";
+                        }
+                    });
+                    saved.push(fila);
+                }
 
                 console.log("Justificaciones cargadas desde backend:", saved);
                 localStorage.setItem("justificaciones", JSON.stringify(saved));

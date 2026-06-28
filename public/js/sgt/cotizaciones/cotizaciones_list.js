@@ -411,7 +411,12 @@ document.addEventListener("DOMContentLoaded", function () {
                         txtTelefono.value = data.operador?.telefono ?? "";
 
                         // ----- CAMIÓN -----
-                        txtNumUnidad.value = data.camion?.id_equipo ?? "";
+                        if (typeof jQuery !== 'undefined' && typeof jQuery.fn.select2 !== 'undefined') {
+                            jQuery(txtNumUnidad).val(data.camion?.id_equipo ?? "").trigger('change');
+                        } else {
+                            txtNumUnidad.value = data.camion?.id_equipo ?? "";
+                        }
+                        txtNumUnidad.dataset.mepUnidad = data.camion?.id ?? "0";
                         txtPlacas.value = data.camion?.placas ?? "";
                         txtSerie.value = data.camion?.num_serie ?? "";
                         txtImei.value = data.camion?.imei ?? "";
@@ -420,14 +425,24 @@ document.addEventListener("DOMContentLoaded", function () {
                             data.camion?.gps_company_id ?? "";
 
                         // ----- CHASIS A -----
-                        txtNumChasisA.value = data.chasis?.id_equipo ?? "";
+                        if (typeof jQuery !== 'undefined' && typeof jQuery.fn.select2 !== 'undefined') {
+                            jQuery(txtNumChasisA).val(data.chasis?.id_equipo ?? "").trigger('change');
+                        } else {
+                            txtNumChasisA.value = data.chasis?.id_equipo ?? "";
+                        }
+                        txtNumChasisA.dataset.mepUnidad = data.chasis?.id ?? "0";
                         txtPlacasA.value = data.chasis?.placas ?? "";
                         txtImeiChasisA.value = data.chasis?.imei ?? "";
                         document.getElementById("selectChasisAGPS").value =
                             data.chasis?.gps_company_id ?? "";
 
                         // ----- CHASIS B -----
-                        txtNumChasisB.value = data.chasis2?.id_equipo ?? "";
+                        if (typeof jQuery !== 'undefined' && typeof jQuery.fn.select2 !== 'undefined') {
+                            jQuery(txtNumChasisB).val(data.chasis2?.id_equipo ?? "").trigger('change');
+                        } else {
+                            txtNumChasisB.value = data.chasis2?.id_equipo ?? "";
+                        }
+                        txtNumChasisB.dataset.mepUnidad = data.chasis2?.id ?? "0";
                         txtPlacasB.value = data.chasis2?.placas ?? "";
                         txtImeiChasisB.value = data.chasis2?.imei ?? "";
                         document.getElementById("selectChasisBGPS").value =

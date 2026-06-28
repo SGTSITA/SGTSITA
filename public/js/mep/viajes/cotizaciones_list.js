@@ -660,6 +660,7 @@ function getCatalogoOperadorUnidad() {
         success: (response) => {
             operadores = response.operadores;
             unidades = response.unidades;
+            populateUnidadesSelects();
         },
         error: () => {
             console.error(
@@ -751,3 +752,316 @@ function cambiarTab(tabId) {
         console.error(`No se encontró el tab: tab-${tabId}`);
     }
 }
+
+function populateUnidadesSelects() {
+    const selectUnidad = document.getElementById("txtNumUnidad");
+    const selectChasisA = document.getElementById("txtNumChasisA");
+    const selectChasisB = document.getElementById("txtNumChasisB");
+
+    if (selectUnidad) {
+        const valActual = selectUnidad.value;
+        const mepUnidadActual = selectUnidad.dataset.mepUnidad;
+        selectUnidad.innerHTML = '<option value="" disabled selected>Selecciona Unidad...</option>';
+        unidades.filter(u => u.tipo === "Tractos / Camiones").forEach(u => {
+            const opt = document.createElement("option");
+            opt.value = u.id_equipo;
+            opt.textContent = `${u.id_equipo} ${u.placas ? '('+u.placas+')' : ''}`;
+            opt.dataset.unitId = u.id;
+            selectUnidad.appendChild(opt);
+        });
+        if (valActual) {
+            selectUnidad.value = valActual;
+        }
+        if (mepUnidadActual) {
+            selectUnidad.dataset.mepUnidad = mepUnidadActual;
+        }
+    }
+
+    if (selectChasisA) {
+        const valActual = selectChasisA.value;
+        const mepUnidadActual = selectChasisA.dataset.mepUnidad;
+        selectChasisA.innerHTML = '<option value="" disabled selected>Selecciona Chasis A...</option>';
+        unidades.filter(u => u.tipo === "Chasis / Plataforma").forEach(u => {
+            const opt = document.createElement("option");
+            opt.value = u.id_equipo;
+            opt.textContent = `${u.id_equipo} ${u.placas ? '('+u.placas+')' : ''}`;
+            opt.dataset.unitId = u.id;
+            selectChasisA.appendChild(opt);
+        });
+        if (valActual) {
+            selectChasisA.value = valActual;
+        }
+        if (mepUnidadActual) {
+            selectChasisA.dataset.mepUnidad = mepUnidadActual;
+        }
+    }
+
+    if (selectChasisB) {
+        const valActual = selectChasisB.value;
+        const mepUnidadActual = selectChasisB.dataset.mepUnidad;
+        selectChasisB.innerHTML = '<option value="" disabled selected>Selecciona Chasis B...</option>';
+        unidades.filter(u => u.tipo === "Chasis / Plataforma").forEach(u => {
+            const opt = document.createElement("option");
+            opt.value = u.id_equipo;
+            opt.textContent = `${u.id_equipo} ${u.placas ? '('+u.placas+')' : ''}`;
+            opt.dataset.unitId = u.id;
+            selectChasisB.appendChild(opt);
+        });
+        if (valActual) {
+            selectChasisB.value = valActual;
+        }
+        if (mepUnidadActual) {
+            selectChasisB.dataset.mepUnidad = mepUnidadActual;
+        }
+     }
+
+    // Inicializar o actualizar Select2
+    if (typeof jQuery !== 'undefined' && typeof jQuery.fn.select2 !== 'undefined') {
+        const select2Options = {
+            width: '100%'
+        };
+        if (selectUnidad) jQuery(selectUnidad).select2(select2Options);
+        if (selectChasisA) jQuery(selectChasisA).select2(select2Options);
+        if (selectChasisB) jQuery(selectChasisB).select2(select2Options);
+    }
+}
+
+const mapInputs = {
+    Unidad: {
+        input: "txtNumUnidad",
+        box: "sugerenciasUnidad",
+        tipoFiltro: "Tractos / Camiones",
+        placas: "txtPlacas",
+        serie: "txtSerie",
+        imei: "txtImei",
+        gps: "selectGPS",
+        statusGps: "gpsStatusUnidad",
+        latitud: null,
+        longitud: null,
+    },
+    ChasisA: {
+        input: "txtNumChasisA",
+        box: "sugerenciasChasisA",
+        tipoFiltro: "Chasis / Plataforma",
+        placas: "txtPlacasA",
+        serie: null,
+        imei: "txtImeiChasisA",
+        gps: "selectChasisAGPS",
+        statusGps: "gpsStatusChasisA",
+        latitud: null,
+        longitud: null,
+    },
+    ChasisB: {
+        input: "txtNumChasisB",
+        box: "sugerenciasChasisB",
+        tipoFiltro: "Chasis / Plataforma",
+        placas: "txtPlacasB",
+        serie: null,
+        imei: "txtImeiChasisB",
+        gps: "selectChasisBGPS",
+        statusGps: "gpsStatusChasisB",
+        latitud: null,
+        longitud: null,
+    },
+};
+
+function coordenadasValidas(lat, lng) {
+    lat = parseFloat(lat);
+    lng = parseFloat(lng);
+    return !isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0;
+}
+
+function esEquipoValido(config) {
+    const input = document.getElementById(config.input);
+    const imei = document.getElementById(config.imei);
+    const gps = document.getElementById(config.gps);
+
+    const lat = config.latitud;
+    const lng = config.longitud;
+
+    const tieneInput = input && input.value.trim() !== "";
+    const tieneImei = imei && imei.value.trim() !== "";
+    const tieneGps = gps && gps.value !== "";
+    if (tieneInput && tieneImei && tieneGps) {
+        const coordsOk = coordenadasValidas(lat, lng);
+        return coordsOk;
+    }
+    return true;
+}
+
+function actualizarEstadoGPS(id, tipo, texto) {
+    const clases = {
+        success: "text-success",
+        danger: "text-danger",
+        warning: "text-warning",
+        muted: "text-muted",
+        secondary: "text-secondary"
+    };
+
+    const iconos = {
+        success: "fa-circle",
+        danger: "fa-triangle-exclamation",
+        warning: "fa-spinner fa-spin",
+        muted: "fa-minus-circle",
+        secondary: "fa-minus-circle"
+    };
+
+    const element = $("#" + id);
+    if (element.length) {
+        element
+            .removeClass()
+            .addClass(`small fw-bold ${clases[tipo] || "text-secondary"}`).html(`
+                <i class="fas ${iconos[tipo] || "fa-minus-circle"}"></i>
+                ${texto}
+            `);
+    }
+}
+
+async function validarConexionGPS(tipoKey, imei, gpsCompanyId, equipos = []) {
+    const config = mapInputs[tipoKey];
+    if (!config) return false;
+    const btnActualizar = document.getElementById(`btnActualizarGPS${tipoKey}`);
+
+    if (!imei || !gpsCompanyId) {
+        if (btnActualizar) btnActualizar.style.display = "none";
+        actualizarEstadoGPS(config.statusGps, "secondary", "Sin GPS");
+        config.latitud = null;
+        config.longitud = null;
+        return false;
+    }
+    if (btnActualizar) btnActualizar.style.display = "inline-block";
+    actualizarEstadoGPS(config.statusGps, "warning", "Conectando GPS...");
+
+    try {
+        const response = await fetch("/mep/viajes/ubicaciones", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRF-TOKEN": document
+                    .querySelector('meta[name="csrf-token"]')
+                    .getAttribute("content"),
+            },
+            body: JSON.stringify({
+                equipos: equipos,
+            }),
+        });
+
+        const data = await response.json();
+        const ubi = data[0]?.ubicacion ?? null;
+
+        if (ubi && ubi.lat && ubi.lng) {
+            actualizarEstadoGPS(config.statusGps, "success", "Equipo en línea");
+            config.latitud = parseFloat(ubi.lat);
+            config.longitud = parseFloat(ubi.lng);
+            return true;
+        } else {
+            actualizarEstadoGPS(config.statusGps, "danger", "GPS sin señal");
+            config.latitud = null;
+            config.longitud = null;
+            return false;
+        }
+    } catch (e) {
+        actualizarEstadoGPS(config.statusGps, "danger", "Error conexión GPS");
+        config.latitud = null;
+        config.longitud = null;
+        console.error(e);
+        return false;
+    }
+}
+
+function initSelectsListeners() {
+    Object.keys(mapInputs).forEach(tipoKey => {
+        const config = mapInputs[tipoKey];
+        const select = document.getElementById(config.input);
+        if (!select) return;
+
+        jQuery(select).on("change", function () {
+            const val = this.value;
+            const selectedOpt = this.options[this.selectedIndex];
+            const unitId = selectedOpt ? selectedOpt.dataset.unitId : null;
+            const btnActualizar = document.getElementById(`btnActualizarGPS${tipoKey}`);
+
+            config.latitud = null;
+            config.longitud = null;
+            actualizarEstadoGPS(config.statusGps, "secondary", "Sin validar");
+
+            if (config.placas) document.getElementById(config.placas).value = "";
+            if (config.serie) document.getElementById(config.serie).value = "";
+            if (config.imei) document.getElementById(config.imei).value = "";
+            if (config.gps) document.getElementById(config.gps).selectedIndex = 0;
+
+            if (!val || !unitId) {
+                this.dataset.mepUnidad = 0;
+                if (btnActualizar) btnActualizar.style.display = "none";
+                return;
+            }
+
+            const u = unidades.find(unit => String(unit.id) === String(unitId));
+            if (u) {
+                this.dataset.mepUnidad = u.id;
+
+                if (config.placas)
+                    document.getElementById(config.placas).value = u.placas ?? "";
+
+                if (config.serie)
+                    document.getElementById(config.serie).value = u.num_serie ?? "";
+
+                if (config.imei)
+                    document.getElementById(config.imei).value = u.imei ?? "";
+
+                if (config.gps) {
+                    let selectGps = document.getElementById(config.gps);
+                    for (let i = 0; i < selectGps.options.length; i++) {
+                        if (
+                            String(selectGps.options[i].value) ===
+                            String(u.gps_company_id)
+                        ) {
+                            selectGps.selectedIndex = i;
+                            break;
+                        }
+                    }
+                }
+                
+                if (u.imei && u.gps_company_id) {
+                    if (btnActualizar) btnActualizar.style.display = "inline-block";
+                    actualizarEstadoGPS(config.statusGps, "warning", "GPS listo para consultar");
+                    validarConexionGPS(tipoKey, u.imei, u.gps_company_id, [u.id]);
+                } else {
+                    if (btnActualizar) btnActualizar.style.display = "none";
+                    actualizarEstadoGPS(config.statusGps, "danger", "Equipo sin IMEI configurado");
+                }
+                
+                toastr.success("Equipo seleccionado");
+            } else {
+                this.dataset.mepUnidad = 0;
+                if (btnActualizar) btnActualizar.style.display = "none";
+            }
+        });
+    });
+}
+
+jQuery(document).on("click", ".btn-actualizar-gps", async function() {
+    const tipoKey = this.dataset.gpsTipo;
+    const config = mapInputs[tipoKey];
+    if (!config) return;
+
+    const select = document.getElementById(config.input);
+    const unitId = select ? select.options[select.selectedIndex]?.dataset.unitId : null;
+    const imei = document.getElementById(config.imei)?.value;
+    const gpsCompanyId = document.getElementById(config.gps)?.value;
+
+    if (imei && gpsCompanyId) {
+        const btn = jQuery(this);
+        const originalHtml = btn.html();
+        btn.prop("disabled", true).html('<i class="fas fa-spinner fa-spin"></i> Consultando...');
+        try {
+            await validarConexionGPS(tipoKey, imei, gpsCompanyId, unitId ? [unitId] : []);
+        } catch (e) {
+            console.error(e);
+        } finally {
+            btn.prop("disabled", false).html(originalHtml);
+        }
+    }
+});
+
+initSelectsListeners();

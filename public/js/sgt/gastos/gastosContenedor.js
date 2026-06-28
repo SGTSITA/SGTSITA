@@ -259,12 +259,11 @@ const gridOptions = {
     onRowSelected: (event) => {
         seleccionGastosContenedor();
     },
-    // ✅ Selección manual
+
     onRowSelected: () => {
         seleccionGastosContenedor();
     },
 
-    // ✅ Limpieza automática al filtrar o paginar
     onFilterChanged: () => {
         limpiarSeleccionNoVisible();
     },
@@ -484,7 +483,7 @@ $(function () {
         {
             startDate: hace7Dias,
             endDate: hoy,
-            maxDate: hoy, //  bloquear fechas futuras
+            // maxDate: hoy, //  bloquear fechas futuras
             locale: {
                 format: "YYYY-MM-DD",
                 separator: " - ",
@@ -534,12 +533,9 @@ $(function () {
 
             window.mesinicio = moment(start).format("YYYY-MM-DD");
             window.mesfin = moment(end).format("YYYY-MM-DD");
-            window.mesinicio = moment(start).format("YYYY-MM-DD");
-            window.mesfin = moment(end).format("YYYY-MM-DD");
         },
     );
 
-    // ✅ Mostrar visualmente las fechas iniciales
     $("#daterange").val(
         `${hace7Dias.format("YYYY-MM-DD")} - ${hoy.format("YYYY-MM-DD")}`,
     );
@@ -547,7 +543,6 @@ $(function () {
     window.mesinicio = moment(hace7Dias).format("YYYY-MM-DD");
     window.mesfin = moment(hoy).format("YYYY-MM-DD");
 
-    // ✅ Filtrar tabla desde el inicio
     filtrarPorFechas(hace7Dias.format("YYYY-MM-DD"), hoy.format("YYYY-MM-DD"));
 });
 
