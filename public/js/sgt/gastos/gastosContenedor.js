@@ -276,7 +276,11 @@ const gridOptions = {
 const myGridElement = document.querySelector("#myGrid");
 let apiGrid = agGrid.createGrid(myGridElement, gridOptions);
 
-document.querySelector("#ag-32-label")?.textContent = "Registros por página";
+const paginationTitle = document.querySelector("#ag-32-label");
+
+if (paginationTitle) {
+    paginationTitle.textContent = "Registros por página";
+}
 
 document.querySelectorAll(".fechasDiferir").forEach((elemento) => {
     elemento.addEventListener("focus", () => calcDays());

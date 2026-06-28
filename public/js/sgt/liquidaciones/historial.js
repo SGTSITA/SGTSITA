@@ -224,7 +224,11 @@ const myGridElement = document.querySelector("#gridHistorial");
 let apiGrid = agGrid.createGrid(myGridElement, gridOptions);
 // const gridInstance = new agGrid.Grid(myGridElement, gridOptions);
 
-document.querySelector("#ag-32-label")?.textContent = "Registros por página";
+const paginationTitle = document.querySelector("#ag-32-label");
+
+if (paginationTitle) {
+    paginationTitle.textContent = "Registros por página";
+}
 
 function getHistorial(startDate, endDate) {
     let _token = document
