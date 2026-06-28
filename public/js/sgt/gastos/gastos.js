@@ -291,8 +291,7 @@ monto1.addEventListener(
     calcDays(),
 );
 
-var paginationTitle = document.querySelector("#ag-32-label");
-paginationTitle.textContent = "Registros por página";
+document.querySelector("#ag-32-label")?.textContent = "Registros por página";
 
 document.querySelectorAll(".fechasDiferir").forEach((elemento) => {
     elemento.addEventListener("focus", () => calcDays());
