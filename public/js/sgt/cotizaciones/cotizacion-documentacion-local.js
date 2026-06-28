@@ -384,7 +384,11 @@ const myGridElement = document.querySelector("#myGrid");
 let apiGrid = agGrid.createGrid(myGridElement, gridOptions);
 // const gridInstance = createGrid(myGridElement, gridOptions)//new agGrid.Grid(myGridElement, gridOptions);
 
-document.querySelector("#ag-32-label")?.textContent = "Registros por página";
+const paginationTitle = document.querySelector("#ag-32-label");
+
+if (paginationTitle) {
+    paginationTitle.textContent = "Registros por página";
+}
 /* if (!btnDocumets) {
     const btnDocumets = document.querySelectorAll(".btnDocs");
 } */
