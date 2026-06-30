@@ -6,15 +6,7 @@ class MissionResultRenderer {
         let icon = document.createElement("img");
         icon.src = `https://www.ag-grid.com/example-assets/icons/${params.value ? "tick-in-circle" : "cross-in-circle"}.png`;
         icon.setAttribute("style", "width: auto; height: auto;");
-        let icon = document.createElement("img");
-        icon.src = `https://www.ag-grid.com/example-assets/icons/${params.value ? "tick-in-circle" : "cross-in-circle"}.png`;
-        icon.setAttribute("style", "width: auto; height: auto;");
 
-        this.eGui = document.createElement("span");
-        this.eGui.setAttribute(
-            "style",
-            "display: flex; justify-content: center; height: 100%; align-items: center",
-        );
         this.eGui = document.createElement("span");
         this.eGui.setAttribute(
             "style",
@@ -42,14 +34,8 @@ class CustomButtonComponent {
     init(params) {
         this.eGui = document.createElement("div");
         let button = document.createElement("button");
-        this.eGui = document.createElement("div");
-        let button = document.createElement("button");
         button.innerHTML =
             '<span class="svg-icon svg-icon-muted svg-icon-2hx"><svg width="23" height="24" viewBox="0 0 23 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M21 13V13.5C21 16 19 18 16.5 18H5.6V16H16.5C17.9 16 19 14.9 19 13.5V13C19 12.4 19.4 12 20 12C20.6 12 21 12.4 21 13ZM18.4 6H7.5C5 6 3 8 3 10.5V11C3 11.6 3.4 12 4 12C4.6 12 5 11.6 5 11V10.5C5 9.1 6.1 8 7.5 8H18.4V6Z" fill="currentColor"/><path opacity="0.3" d="M21.7 6.29999C22.1 6.69999 22.1 7.30001 21.7 7.70001L18.4 11V3L21.7 6.29999ZM2.3 16.3C1.9 16.7 1.9 17.3 2.3 17.7L5.6 21V13L2.3 16.3Z" fill="currentColor"/></svg></span></span>';
-        button.className = "btn btn-sm bg-gradient-success";
-        button.style.fontSize = "10px";
-        button.style.padding = "2px 6px";
-        button.style.lineHeight = "1";
         button.className = "btn btn-sm bg-gradient-success";
         button.style.fontSize = "10px";
         button.style.padding = "2px 6px";
@@ -58,7 +44,6 @@ class CustomButtonComponent {
         const NumContenedorValue = params.data.NumContenedor;
 
         this.eventListener = () => assignEmpresa(NumContenedorValue);
-        button.addEventListener("click", this.eventListener);
         button.addEventListener("click", this.eventListener);
         this.eGui.appendChild(button);
     }
@@ -74,50 +59,11 @@ class CustomButtonComponent {
     destroy() {
         if (button) {
             button.removeEventListener("click", this.eventListener);
-            button.removeEventListener("click", this.eventListener);
         }
     }
 }
 
 const localeText = {
-    page: "Página",
-    more: "Más",
-    to: "a",
-    of: "de",
-    next: "Siguiente",
-    last: "Último",
-    first: "Primero",
-    previous: "Anterior",
-    loadingOoo: "Cargando...",
-    selectAll: "Seleccionar todo",
-    searchOoo: "Buscar...",
-    blanks: "Vacíos",
-    filterOoo: "Filtrar...",
-    applyFilter: "Aplicar filtro...",
-    equals: "Igual",
-    notEqual: "Distinto",
-    lessThan: "Menor que",
-    greaterThan: "Mayor que",
-    contains: "Contiene",
-    notContains: "No contiene",
-    startsWith: "Empieza con",
-    endsWith: "Termina con",
-    andCondition: "Y",
-    orCondition: "O",
-    group: "Grupo",
-    columns: "Columnas",
-    filters: "Filtros",
-    pivotMode: "Modo Pivote",
-    groups: "Grupos",
-    values: "Valores",
-    noRowsToShow: "Sin filas para mostrar",
-    pinColumn: "Fijar columna",
-    autosizeThiscolumn: "Ajustar columna",
-    copy: "Copiar",
-    resetColumns: "Restablecer columnas",
-    blank: "Vacíos",
-    notBlank: "No Vacíos",
-    paginationPageSize: "Registros por página",
     page: "Página",
     more: "Más",
     to: "a",
@@ -163,15 +109,9 @@ const currencyFormatter = (value) => {
         style: "currency",
         currency: "MXN",
     }).format(value);
-    return new Intl.NumberFormat("es-MX", {
-        style: "currency",
-        currency: "MXN",
-    }).format(value);
 };
 
 const formatFecha = (params) => {
-    if (!params) return "";
-    const [year, month, day] = params.split("-"); // Divide YYYY-MM-DD
     if (!params) return "";
     const [year, month, day] = params.split("-"); // Divide YYYY-MM-DD
     return `${day}/${month}/${year}`; // Retorna en formato d/m/Y
@@ -183,11 +123,9 @@ const gridOptions = {
     paginationPageSizeSelector: [10, 20, 50, 100],
     rowSelection: {
         mode: "multiRow",
-        mode: "multiRow",
         headerCheckbox: true,
     },
     rowClassRules: {
-        "bg-gradient-danger": (params) => params.data.utilidad < 0,
         "bg-gradient-danger": (params) => params.data.utilidad < 0,
     },
     rowData: [],
@@ -195,69 +133,43 @@ const gridOptions = {
     columnDefs: [
         { field: "numContenedor", filter: true, floatingFilter: true },
         { field: "cliente", filter: true, floatingFilter: true },
-        { field: "numContenedor", filter: true, floatingFilter: true },
-        { field: "cliente", filter: true, floatingFilter: true },
         {
-            field: "precioViaje",
             field: "precioViaje",
             width: 150,
             valueFormatter: (params) => currencyFormatter(params.value),
-            cellStyle: { textAlign: "right" },
             cellStyle: { textAlign: "right" },
         },
         {
             field: "pagoOperacion",
-            field: "pagoOperacion",
             width: 150,
             valueFormatter: (params) => currencyFormatter(params.value),
-            cellStyle: { textAlign: "right" },
             cellStyle: { textAlign: "right" },
         },
         {
             field: "gastosExtra",
-            field: "gastosExtra",
             valueFormatter: (params) => currencyFormatter(params.value),
-            cellStyle: { textAlign: "right" },
             cellStyle: { textAlign: "right" },
         },
         {
             field: "dineroViajeSinJustificar",
-            field: "dineroViajeSinJustificar",
             valueFormatter: (params) => currencyFormatter(params.value),
-            cellStyle: { textAlign: "right" },
             cellStyle: { textAlign: "right" },
         },
         {
             field: "gastosViaje",
-            field: "gastosViaje",
             valueFormatter: (params) => currencyFormatter(params.value),
-            cellStyle: { textAlign: "right" },
             cellStyle: { textAlign: "right" },
         },
         {
             field: "gastosDiferidos",
-            field: "gastosDiferidos",
             valueFormatter: (params) => currencyFormatter(params.value),
-            cellStyle: { textAlign: "right" },
             cellStyle: { textAlign: "right" },
         },
         {
             field: "utilidad",
-            field: "utilidad",
             valueFormatter: (params) => currencyFormatter(params.value),
             cellStyle: { textAlign: "right" },
-            cellStyle: { textAlign: "right" },
         },
-        {
-            field: "transportadoPor",
-            width: 150,
-            filter: true,
-            floatingFilter: true,
-        },
-        { field: "operadorOrProveedor", filter: true, floatingFilter: true },
-        { field: "estatusViaje", filter: true, floatingFilter: true },
-        { field: "estatusPago", filter: true, floatingFilter: true },
-        { field: "detalleGastos", hide: true },
         {
             field: "transportadoPor",
             width: 150,
@@ -274,11 +186,10 @@ const gridOptions = {
 };
 
 const myGridElement = document.querySelector("#myGrid");
-const myGridElement = document.querySelector("#myGrid");
 let apiGrid = agGrid.createGrid(myGridElement, gridOptions);
 // const gridInstance = new agGrid.Grid(myGridElement, gridOptions);
 
-var paginationTitle = document.querySelector("#ag-32-label");
+const paginationTitle = document.querySelector("#ag-32-label");
 
 if (paginationTitle) {
     paginationTitle.textContent = "Registros por página";
@@ -286,21 +197,14 @@ if (paginationTitle) {
 
 let IdContenedor = null;
 let btnVerDetalle = document.querySelector("#btnVerDetalle");
-let btnVerDetalle = document.querySelector("#btnVerDetalle");
 
 function exportUtilidades() {
     Swal.fire({
         title: "Exportar Reporte",
         text: "¿Cómo deseas exportar el reporte?",
         icon: "question",
-        title: "Exportar Reporte",
-        text: "¿Cómo deseas exportar el reporte?",
-        icon: "question",
         showDenyButton: true,
         showCancelButton: true,
-        confirmButtonText: "Excel",
-        denyButtonText: "PDF",
-        cancelButtonText: "Cancelar",
         confirmButtonText: "Excel",
         denyButtonText: "PDF",
         cancelButtonText: "Cancelar",
@@ -321,25 +225,11 @@ function ejecutarExportacion(fileType) {
         .querySelector('meta[name="csrf-token"]')
         .getAttribute("content");
     const rowData = JSON.stringify(apiGrid.getSelectedRows());
-    var _token = document
-        .querySelector('meta[name="csrf-token"]')
-        .getAttribute("content");
-
-    // Map selected rows to only send numContenedor to decrease payload size
-    const selectedRows = apiGrid.getSelectedRows();
-    const rowData = JSON.stringify(
-        selectedRows.map((row) => ({ numContenedor: row.numContenedor })),
-    );
-
     const totalRows = apiGrid.paginationGetRowCount();
-    let fechaInicio = $("#daterange").attr("data-start");
-    let fechaFin = $("#daterange").attr("data-end");
     let fechaInicio = $("#daterange").attr("data-start");
     let fechaFin = $("#daterange").attr("data-end");
 
     $.ajax({
-        url: "/reporteria/utilidad/export",
-        method: "POST",
         url: "/reporteria/utilidad/export",
         method: "POST",
         data: {
@@ -352,10 +242,8 @@ function ejecutarExportacion(fileType) {
         },
         xhrFields: {
             responseType: "blob",
-            responseType: "blob",
         },
         beforeSend: () => {
-            mostrarLoading("Preparando reporte... espere un momento");
             mostrarLoading("Preparando reporte... espere un momento");
         },
         success: function (response) {
@@ -364,9 +252,6 @@ function ejecutarExportacion(fileType) {
                 // Crear Blob dependiendo del tipo de archivo
                 var blob = new Blob([response], {
                     type:
-                        fileType === "xlsx"
-                            ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                            : "application/pdf",
                         fileType === "xlsx"
                             ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                             : "application/pdf",
@@ -379,15 +264,8 @@ function ejecutarExportacion(fileType) {
                     "Resultados_" +
                     timestamp +
                     (fileType === "xlsx" ? ".xlsx" : ".pdf");
-                var timestamp = moment().format("YYYY-MM-DD_HH-mm-ss");
-                var fileName =
-                    "Resultados_" +
-                    timestamp +
-                    (fileType === "xlsx" ? ".xlsx" : ".pdf");
 
                 // Crear enlace de descarga
-                var a = document.createElement("a");
-                a.style.display = "none";
                 var a = document.createElement("a");
                 a.style.display = "none";
                 a.href = url;
@@ -402,12 +280,10 @@ function ejecutarExportacion(fileType) {
                 document.body.removeChild(a);
             } else {
                 console.error("La respuesta no es un Blob válido:", response);
-                console.error("La respuesta no es un Blob válido:", response);
             }
         },
         error: function (xhr, status, error) {
             ocultarLoading();
-            alert("Ocurrió un error al exportar los datos.");
             alert("Ocurrió un error al exportar los datos.");
         },
     });
@@ -417,23 +293,16 @@ function getUtilidadesViajes(startDate, endDate) {
     var _token = document
         .querySelector('meta[name="csrf-token"]')
         .getAttribute("content");
-    var _token = document
-        .querySelector('meta[name="csrf-token"]')
-        .getAttribute("content");
     $.ajax({
-        url: "/reporteria/utilidad/ver-utilidad",
-        type: "post",
         url: "/reporteria/utilidad/ver-utilidad",
         type: "post",
         data: { _token, startDate, endDate },
         beforeSend: () => {
             mostrarLoading("Consultando viajes...");
-            mostrarLoading("Consultando viajes...");
         },
         success: (response) => {
             ocultarLoading();
             let data = JSON.parse(response);
-            apiGrid.setGridOption("rowData", data.Info);
             apiGrid.setGridOption("rowData", data.Info);
         },
         error: () => {
@@ -445,11 +314,6 @@ function getUtilidadesViajes(startDate, endDate) {
 function verDetalleGastos() {
     let contenedor = apiGrid.getSelectedRows();
     if (contenedor.length <= 0) {
-        Swal.fire(
-            "Seleccione un contenedor",
-            "Debe seleccionar un contenedor de la lista",
-            "warning",
-        );
         Swal.fire(
             "Seleccione un contenedor",
             "Debe seleccionar un contenedor de la lista",
@@ -484,17 +348,14 @@ function verDetalleGastos() {
 }
 
 btnVerDetalle.addEventListener("click", () => {
-btnVerDetalle.addEventListener("click", () => {
     verDetalleGastos();
 });
 
-$(".moneyformat").on("focus", (e) => {
 $(".moneyformat").on("focus", (e) => {
     var val = e.target.value;
     e.target.value = reverseMoneyFormat(val);
 });
 
-$(".moneyformat").on("blur", (e) => {
 $(".moneyformat").on("blur", (e) => {
     var val = e.target.value;
     e.target.value = moneyFormat(val);
