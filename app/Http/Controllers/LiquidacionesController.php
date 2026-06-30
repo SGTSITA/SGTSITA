@@ -827,8 +827,7 @@ class LiquidacionesController extends Controller
                 $data = [
                         'cuenta_bancaria_id' => $request->get('bank'),            'tipo' => 'cargo',
                         'monto' => floatval($request->montoJustificacion),
-                        'concepto' => 'Dinero para viaje: '.$request->txtDescripcion .' - ' .'
-                                '.  $operadorN?->nombre ??  '',
+                        'concepto' => \App\Services\BancosService::generarConcepto('viaje', 'Dinero para viaje: '.$request->txtDescripcion, $request->numContenedor, $operadorN?->nombre ?? null),
                         'fecha_movimiento' => \Carbon\Carbon::createFromFormat(
                             'd/m/Y',
                             $fechaAplicacionDinero
@@ -1086,8 +1085,7 @@ class LiquidacionesController extends Controller
                         'cuenta_bancaria_id' => $request->get('bancoId'),
                         'tipo' => 'cargo',
                         'monto' => floatval($totalPagar),
-                        'concepto' => 'Pago Operador: ' .'
-                                '.  $operadorN?->nombre ??  '',
+                        'concepto' => \App\Services\BancosService::generarConcepto('viaje', 'Pago Operador / Liquidación', null, $operadorN?->nombre ?? null),
                         'fecha_movimiento' => \Carbon\Carbon::createFromFormat(
                             'd/m/Y',
                             $FechaAplicacionPago

@@ -374,7 +374,7 @@ class GastosController extends Controller
                                 'metodo_pago' => 'Transferencia',
                                 'referencia' => $ref,
                                 'referencia_banco' => $ref,
-                                'concepto_banco' => 'Pago ' . $gasto->concepto . ' - Cat: ' . $categoryName . ' - Unidad: ' . ($equipo->id_equipo ?: $equipo->placas),
+                                'concepto_banco' => BancosService::generarConcepto('gasto', $gasto->concepto, null, 'Unidad: ' . ($equipo->id_equipo ?: $equipo->placas)),
                             ]);
                         }
                     }
@@ -396,7 +396,7 @@ class GastosController extends Controller
                                 'metodo_pago' => 'Transferencia',
                                 'referencia' => $ref,
                                 'referencia_banco' => $ref,
-                                'concepto_banco' => 'Pago ' . $gasto->concepto . ' - Cat: ' . $categoryName . ' - Contenedor: ' . $numContenedor,
+                                'concepto_banco' => BancosService::generarConcepto('gasto', $gasto->concepto, $numContenedor, null),
                             ]);
                         }
                     }
@@ -409,7 +409,7 @@ class GastosController extends Controller
                         'metodo_pago' => 'Transferencia',
                         'referencia' => 'Pago automático al registrar',
                         'referencia_banco' => 'GASTO',
-                        'concepto_banco' => 'Pago ' . $gasto->concepto . ' - Cat: ' . $categoryName,
+                        'concepto_banco' => BancosService::generarConcepto('gasto', $gasto->concepto, null, null),
                     ]);
                 }
             }
@@ -446,7 +446,7 @@ class GastosController extends Controller
         ]);
 
         $categoryName = $gasto->categoria?->categoria ?: 'Gasto';
-        $data['concepto_banco'] = 'Pago ' . $gasto->concepto . ' - Cat: ' . $categoryName;
+        $data['concepto_banco'] = BancosService::generarConcepto('gasto', $gasto->concepto, null, null);
         $data['referencia_banco'] = $data['referencia'] ?? 'PAGO GASTO';
 
         $pago = $this->gastosService->pagar($gasto, $data);
@@ -517,7 +517,7 @@ class GastosController extends Controller
                     'fecha_pago' => $data['fecha_pago'],
                     'monto' => $gasto->saldo_pendiente,
                     'referencia' => $data['referencia'] ?? 'Pago múltiple',
-                    'concepto_banco' => 'Pago ' . $gasto->concepto . ' - Cat: ' . $categoryName,
+                    'concepto_banco' => BancosService::generarConcepto('gasto', $gasto->concepto, null, null),
                     'referencia_banco' => $data['referencia'] ?? 'PAGO MULTIPLE GASTO',
                 ]);
             }
@@ -804,5 +804,15 @@ class GastosController extends Controller
                 'Mensaje' => 'Ocurrió un error al actualizar el gasto: ' . $e->getMessage(),
             ]);
         }
+    }
+
+    public function getConceptosByCategoria($categoriaId)
+    {
+        $conceptos = \App\Models\GastoConcepto::where('categoria_gasto_id', $categoriaId)
+            ->where('is_active', 1)
+            ->orderBy('nombre')
+            ->get();
+            
+        return response()->json($conceptos);
     }
 }

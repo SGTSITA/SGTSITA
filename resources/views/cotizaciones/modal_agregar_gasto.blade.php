@@ -9,6 +9,21 @@
             </div>
             <div class="card-body">
                
+                <label>Categoría</label>
+                <select class="form-control mb-3" id="cmbCategoriaGasto">
+                    <option value="">Seleccione Categoría</option>
+                    @if (isset($categorias))
+                        @foreach ($categorias as $cat)
+                            <option value="{{ $cat->id }}">{{ $cat->categoria }}</option>
+                        @endforeach
+                    @endif
+                </select>
+
+                <label>Concepto (Subcategoría)</label>
+                <select class="form-control mb-3" id="cmbConceptoGasto">
+                    <option value="">Seleccione Concepto</option>
+                </select>
+
                 <label>Descripción</label>
                 <div class="input-group mb-3">
                     <input type="text" class="form-control" id="txtDescripcion" placeholder="Descripción del gasto" aria-label="Descripción del gasto" />
@@ -16,6 +31,23 @@
                 <label>Monto</label>
                 <div class="input-group mb-3">
                     <input type="text" class="form-control moneyformat" id="txtMonto" placeholder="$ 0.00" aria-label="$ 0.00" oninput="allowOnlyDecimals(event)" />
+                </div>
+
+                @php
+                    $defaultDate = '';
+                    if (isset($documentacion) && $documentacion && $documentacion->Asignaciones && $documentacion->Asignaciones->fecha_inicio) {
+                        $defaultDate = \Carbon\Carbon::parse($documentacion->Asignaciones->fecha_inicio)->format('Y-m-d');
+                    } elseif (isset($cotizacion) && $cotizacion && $cotizacion->fecha_modulacion) {
+                        $defaultDate = \Carbon\Carbon::parse($cotizacion->fecha_modulacion)->format('Y-m-d');
+                    }
+                @endphp
+
+                <label>Fecha</label>
+                <div class="input-group mb-3">
+                    <span class="input-group-text" id="basic-addon-fecha-gasto">
+                        <img src="{{ asset('img/icon/calendar-dar.webp') }}" alt="" width="25px" />
+                    </span>
+                    <input name="txtFechaGasto" id="txtFechaGasto" type="date" class="form-control" value="{{ $defaultDate }}" />
                 </div>
 
                 <!-- Campos adicionales para operador/viaje -->

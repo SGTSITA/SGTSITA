@@ -1027,7 +1027,7 @@ $contenedor = DocumCotizacion::find($request->idContenendor);
                         'cuenta_bancaria_id' => $idBanco,
                         'monto' => $monto,
                         'fecha_pago' => $fechaAplicacion ?? now()->format('Y-m-d'),
-                        'concepto_banco' => "GOP {$tipoGasto} {$numContenedor}",
+                        'concepto_banco' => \App\Services\BancosService::generarConcepto('gop', $tipoGasto, $numContenedor, $asignacion->Operador?->nombre ?? ($asignacion->id_operador ? \App\Models\Operador::find($asignacion->id_operador)?->nombre : null)),
                         'referencia_banco' => 'GASTO_PLANEACION_VIAJE',
                     ]);
                 }

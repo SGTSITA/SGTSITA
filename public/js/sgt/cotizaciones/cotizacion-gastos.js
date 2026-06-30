@@ -261,12 +261,54 @@ $(document).on('show.bs.modal', '#modal-form', function (event) {
     // Limpiar campos del modal
     $('#txtDescripcion').val('');
     $('#txtMonto').val('');
+    $('#cmbCategoriaGasto').val('');
+    $('#cmbConceptoGasto').html('<option value="">Seleccione Concepto</option>').val('');
+});
+
+$(document).on('change', '#cmbCategoriaGasto', function () {
+    let categoriaId = $(this).val();
+    let cmbConcepto = $('#cmbConceptoGasto');
+    cmbConcepto.html('<option value="">Cargando conceptos...</option>');
+    
+    if (!categoriaId) {
+        cmbConcepto.html('<option value="">Seleccione Concepto</option>');
+        return;
+    }
+    
+    $.ajax({
+        url: `/gastos/categorias/${categoriaId}/conceptos`,
+        type: 'get',
+        success: function (data) {
+            let html = '<option value="">Seleccione Concepto</option>';
+            data.forEach(item => {
+                html += `<option value="${item.id}">${item.nombre}</option>`;
+            });
+            cmbConcepto.html(html);
+        },
+        error: function () {
+            cmbConcepto.html('<option value="">Error al cargar</option>');
+        }
+    });
+});
+
+$(document).on('change', '#cmbConceptoGasto', function () {
+    let conceptoText = $('#cmbConceptoGasto option:selected').text();
+    if ($(this).val()) {
+        $('#txtDescripcion').val(conceptoText);
+    }
 });
 
 $(document).on('click', '#btnAgregarGastoUnificado', function () {
     let cotizacionId = document.querySelector("#cotizacion_km_diesel_id")?.value;
     let textDescripcion = document.querySelector("#txtDescripcion");
     let textMonto = document.querySelector("#txtMonto");
+    let categoriaId = document.querySelector("#cmbCategoriaGasto")?.value;
+    let conceptoId = document.querySelector("#cmbConceptoGasto")?.value;
+    
+    if (!categoriaId || !conceptoId) {
+        Swal.fire("Complete información", "Debes seleccionar categoría y concepto", "warning");
+        return;
+    }
     
     if (!textMonto.value || !textDescripcion.value) {
         Swal.fire("Complete información", "Debes capturar descripción y monto", "warning");
@@ -280,10 +322,12 @@ $(document).on('click', '#btnAgregarGastoUnificado', function () {
     let postData = {
         _token,
         cotizacion_id: cotizacionId,
+        categoria_gasto_id: categoriaId,
+        gasto_concepto_id: conceptoId,
         concepto: descripcion,
         monto_total: montoGasto,
         metodo_imputacion: 'directo',
-        fecha_gasto: new Date().toISOString().slice(0, 10),
+        fecha_gasto: document.querySelector("#txtFechaGasto")?.value || new Date().toISOString().slice(0, 10),
     };
     
     if (currentGastoOrigen === 'cotizacion') {
@@ -362,12 +406,12 @@ function getGastosContenedor() {
             const data = (response.gastos ?? []).map(g => {
                 total += Number(g.monto_total ?? 0);
                 let bancoDesc = '';
-                let fechaAplic = g.fecha_gasto;
+                let fechaAplic = '';
                 if (g.pagos && g.pagos.length > 0) {
                     const pago = g.pagos[0];
                     const bancoNombre = (pago.cuenta_bancaria && (pago.cuenta_bancaria.nombre || pago.cuenta_bancaria.nombre_banco)) ? (pago.cuenta_bancaria.nombre || pago.cuenta_bancaria.nombre_banco) : '';
                     bancoDesc = bancoNombre || pago.referencia || 'Transferencia';
-                    fechaAplic = pago.fecha_pago || g.fecha_gasto;
+                    fechaAplic = pago.fecha_pago || '';
                 }
                 return {
                     IdContenedor: cotizacionId,

@@ -375,4 +375,15 @@ class BancosService
 
         $banco->save();
     }
+
+    public static function generarConcepto(string $tipo, string $concepto, ?string $contenedor = null, ?string $operador = null): string
+    {
+        $tipoStr = strtoupper(trim($tipo));
+        $conceptoStr = trim($concepto);
+        
+        $refContenedor = !empty($contenedor) ? " - Cont: " . trim($contenedor) : "";
+        $refOperador = !empty($operador) ? " - Ope: " . trim($operador) : "";
+        
+        return sprintf("[%s] %s%s%s", $tipoStr, $conceptoStr, $refContenedor, $refOperador);
+    }
 }

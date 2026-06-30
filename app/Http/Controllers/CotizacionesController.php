@@ -1147,7 +1147,7 @@ else{
         $costosForm['total_sobrepeso_viaje'] = $sobrepeso?->monto ?? 0;
         // dd($bloqueado);
 
-        // dd($costosForm);
+        $categorias = \App\Models\CategoriasGastos::orderBy('categoria')->get();
 
         return view('cotizaciones.editv1', compact(
             'bancos',
@@ -1158,7 +1158,8 @@ else{
             'gastos_ope',
             'proveedores',
             'bloqueado',
-            'costosForm'
+            'costosForm',
+            'categorias'
         ));
     }
 

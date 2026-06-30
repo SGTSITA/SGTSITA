@@ -118,7 +118,7 @@
         </div>
     </div>
 
-    <div class="modal fade" id="modalGastoNew" tabindex="-1" aria-hidden="true" data-bs-backdrop="static"
+    {{-- <div class="modal fade" id="modalGastoNew" tabindex="-1" aria-hidden="true" data-bs-backdrop="static"
         data-bs-keyboard="false">
         <div class="modal-dialog modal-lg">
             <form class="modal-content" id="formGastoNew">
@@ -223,6 +223,12 @@
                                 @endforeach
                             </select>
                         </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Concepto (Subcategoría) *</label>
+                            <select class="form-select" name="gasto_concepto_id" id="gasto_concepto_idNew" required>
+                                <option value="">-- Seleccionar Concepto --</option>
+                            </select>
+                        </div>
 
                         <!-- Condición de Pago y Fecha de Gasto -->
                         <div class="col-md-6">
@@ -312,6 +318,381 @@
                 </div>
             </form>
         </div>
+    </div> --}}
+    <div class="modal fade" id="modalGastoNew" tabindex="-1" aria-hidden="true" data-bs-backdrop="static"
+        data-bs-keyboard="false">
+        <div class="modal-dialog modal-lg">
+            <form class="modal-content" id="formGastoNew">
+                @csrf
+
+                <div class="modal-header">
+                    <h5 class="modal-title">Registrar gasto</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="row g-3">
+
+                        <input type="hidden" name="id" id="gastoIdNew" value="">
+                        <input type="hidden" name="tipo_gasto" id="tipo_gasto" value="periodo">
+                        <input type="hidden" name="metodo_imputacion" id="metodo_imputacion" value="directo">
+
+                        {{-- =======================
+                        1. APLICAR GASTO A
+                    ======================== --}}
+                        <div class="col-12">
+                            <h6 class="mb-3">Aplicar gasto a</h6>
+
+                            <div class="option-group">
+
+                                <label class="custom-option selected">
+                                    <input type="radio" checked name="formasAplicar" value="Periodo"
+                                        onchange="handleSelectionNew(this)" />
+
+                                    <i class="fas fa-clock icon"></i>
+
+                                    <div class="text-group">
+                                        <div class="text">Periodo</div>
+                                        <div class="text text-xs text-muted" id="periodoGastoNewInfo"
+                                            style="font-size:11px;">
+                                            -
+                                        </div>
+                                    </div>
+
+                                    <i class="fas fa-check check-icon"></i>
+                                </label>
+
+                                <label class="custom-option">
+                                    <input type="radio" name="formasAplicar" value="Equipo"
+                                        onchange="handleSelectionNew(this)" />
+
+                                    <i class="fas fa-truck-moving icon"></i>
+
+                                    <span class="text">
+                                        Unidad (Equipo)
+                                    </span>
+
+                                    <i class="fas fa-check check-icon"></i>
+                                </label>
+
+                                <label class="custom-option">
+                                    <input type="radio" name="formasAplicar" value="Viaje"
+                                        onchange="handleSelectionNew(this)" />
+
+                                    <i class="fas fa-compass icon"></i>
+
+                                    <span class="text">
+                                        Contenedor (Viaje)
+                                    </span>
+
+                                    <i class="fas fa-check check-icon"></i>
+                                </label>
+
+                            </div>
+                        </div>
+
+                        {{-- UNIDADES --}}
+                        <div class="col-12 d-none aplicacion-gastos-new" id="aplicacion-equipoNew">
+
+                            <label class="form-label fw-bold text-info">
+                                Seleccione Unidades (Equipo)
+                            </label>
+
+                            <select class="form-control" name="unidades[]" id="selectUnidadesNew" multiple>
+
+                                @foreach ($equipos as $e)
+                                    <option value="{{ $e->id }}">
+                                        {{ $e->marca }} -
+                                        {{ $e->id_equipo ?: $e->placas }}
+                                    </option>
+                                @endforeach
+
+                            </select>
+
+                        </div>
+
+                        {{-- VIAJES --}}
+                        <div class="col-12 d-none aplicacion-gastos-new" id="aplicacion-viajeNew">
+
+                            <label class="form-label fw-bold text-info">
+                                Seleccione Viajes (Contenedor)
+                            </label>
+
+                            <select class="form-control" name="viajes[]" id="selectViajesNew" multiple>
+
+                                @foreach ($viajes as $v)
+                                    <option value="{{ $v->id }}">
+                                        Contenedor:
+                                        {{ $v->Contenedor?->num_contenedor ?: 'S/N' }}
+                                        (Inicio:
+                                        {{ $v->fecha_inicio }})
+                                    </option>
+                                @endforeach
+
+                            </select>
+
+                        </div>
+
+                        {{-- =======================
+                        2. IMPACTO
+                    ======================== --}}
+
+                        <div class="col-12">
+                            <label class="form-label fw-bold text-info">
+                                ¿Dónde debe impactar este gasto?
+                            </label>
+
+                            <select name="impacto" id="impacto" class="form-select" required>
+
+                                <option value="">Seleccione</option>
+
+                                <option value="periodo">
+                                    Gasto Administrativo / Periodo
+                                </option>
+
+                                <option value="viaje">
+                                    Gasto Operativo del Viaje
+                                </option>
+
+                                <option value="cotizacion">
+                                    Gastos + Costo de Cotización
+                                </option>
+
+                            </select>
+
+                        </div>
+
+                        {{-- =======================
+                        3. CLASIFICACIÓN
+                    ======================== --}}
+
+                        <div class="col-md-6">
+
+                            <label class="form-label">
+                                Categoría *
+                            </label>
+
+                            <select class="form-select" name="categoria_gasto_id" id="categoria_gasto_idNew" required>
+
+                                <option value="">
+                                    -- Seleccionar Categoría --
+                                </option>
+
+                                @foreach ($categorias as $categoria)
+                                    <option value="{{ $categoria->id }}">
+                                        {{ $categoria->categoria }}
+                                    </option>
+                                @endforeach
+
+                            </select>
+
+                        </div>
+
+                        <div class="col-md-6">
+
+                            <label class="form-label">
+                                Concepto (Subcategoría) *
+                            </label>
+
+                            <select class="form-select" name="gasto_concepto_id" id="gasto_concepto_idNew" required>
+
+                                <option value="">
+                                    -- Seleccionar Concepto --
+                                </option>
+
+                            </select>
+
+                        </div>
+
+                        {{-- =======================
+                        4. INFORMACIÓN DEL GASTO
+                    ======================== --}}
+
+                        <div class="col-md-6">
+
+                            <label class="form-label">
+                                Concepto / Motivo *
+                            </label>
+
+                            <input type="text" name="concepto" id="conceptoNew" class="form-control"
+                                placeholder="Escriba el concepto del gasto" required>
+
+                        </div>
+
+                        <div class="col-md-6">
+
+                            <label class="form-label">
+                                Monto total *
+                            </label>
+
+                            <input type="number" step="0.01" min="0.01" name="monto_total" id="monto_totalNew"
+                                class="form-control" placeholder="0.00" required>
+
+                        </div>
+
+                        {{-- =======================
+                        5. FECHA Y PAGO
+                    ======================== --}}
+
+                        <div class="col-md-6">
+
+                            <label class="form-label">
+                                Fecha de aplicación *
+                            </label>
+
+                            <input type="date" name="fecha_gasto" id="fecha_gastoNew" class="form-control"
+                                value="{{ now()->format('Y-m-d') }}" required>
+
+                        </div>
+
+                        <div class="col-md-6">
+
+                            <label class="form-label">
+                                Condición de pago
+                            </label>
+
+                            <select class="form-select" id="tipoPagoNew" name="tipoPago" required>
+
+                                <option value="0">
+                                    Contado
+                                </option>
+
+                                <option value="1">
+                                    Diferido
+                                </option>
+
+                            </select>
+
+                        </div>
+
+                        {{-- PAGO DIFERIDO --}}
+                        <div class="col-12 collapse" id="seccionDiferidoNew">
+
+                            <div class="p-3 border rounded bg-light">
+
+                                <h6 class="mb-1">
+                                    Configuración de pago diferido
+                                </h6>
+
+                                <small class="text-muted d-block mb-3">
+                                    Determine el rango de fechas para distribuir
+                                    el pago mensualmente.
+                                </small>
+
+                                <div class="row">
+
+                                    <div class="col-md-6">
+
+                                        <div class="mb-2">
+
+                                            <label class="form-label text-xs">
+                                                Fecha de inicio
+                                            </label>
+
+                                            <input type="date" name="txtDiferirFechaInicia"
+                                                id="txtDiferirFechaIniciaNew"
+                                                class="form-control form-control-sm fechasDiferirNew">
+
+                                        </div>
+
+                                        <div>
+
+                                            <label class="form-label text-xs">
+                                                Fecha de finalización
+                                            </label>
+
+                                            <input type="date" name="txtDiferirFechaTermina"
+                                                id="txtDiferirFechaTerminaNew"
+                                                class="form-control form-control-sm fechasDiferirNew">
+
+                                        </div>
+
+                                    </div>
+
+                                    <div class="col-md-6">
+
+                                        <label class="form-label text-xs">
+                                            Resumen
+                                        </label>
+
+                                        <table class="table table-sm table-bordered mb-0">
+
+                                            <tbody>
+
+                                                <tr>
+                                                    <th>Número de periodos</th>
+                                                    <td class="text-end">
+                                                        <strong id="labelDiasPeriodoNew">0</strong>
+                                                    </td>
+                                                </tr>
+
+                                                <tr>
+                                                    <th>Monto por periodo</th>
+                                                    <td class="text-end">
+                                                        <strong id="labelGastoDiarioNew">$0.00</strong>
+                                                    </td>
+                                                </tr>
+
+                                                <tr>
+                                                    <th>Total del gasto</th>
+                                                    <td class="text-end">
+                                                        <strong id="labelMontoGastoNew">$0.00</strong>
+                                                    </td>
+                                                </tr>
+
+                                            </tbody>
+
+                                        </table>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                        {{-- =======================
+                        6. CUENTA BANCARIA
+                    ======================== --}}
+
+                        <div class="col-12" id="divCuentaRetiroNew">
+
+                            <label class="form-label">
+                                Cuenta de retiro (Banco) *
+                            </label>
+
+                            <select class="form-select" id="id_banco1New" name="id_banco1" required>
+
+                                <option value="">
+                                    -- Seleccionar Cuenta --
+                                </option>
+
+                                @foreach ($bancos as $b)
+                                    <option value="{{ $b['id'] }}">
+                                        {{ $b['display'] }}
+                                    </option>
+                                @endforeach
+
+                            </select>
+
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal">
+                        Cerrar
+                    </button>
+
+                    <button type="submit" class="btn btn-sm btn-info">
+                        Guardar
+                    </button>
+                </div>
+
+            </form>
+        </div>
     </div>
 
     <div class="modal fade" id="modalHistorialPagos" tabindex="-1">
@@ -346,10 +727,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
-    <script>
-        console.log('jquery', typeof $);
-        console.log('daterangepicker', typeof $.fn.daterangepicker);
-    </script>
+
 
 
     <!-- AG Grid Community y estilos -->
@@ -797,6 +1175,9 @@
                 labelPeriodo.textContent = `${from} AL ${to}`;
             }
 
+
+            document.getElementById('impacto').value = 'periodo';
+
         }
 
 
@@ -961,7 +1342,7 @@
             const gastoId = document.getElementById('gastoIdNew').value;
             const isEdit = !!gastoId;
             const urlSubmit = isEdit ? `/gastos/${gastoId}` : gastosRoutes.store;
-            
+
             // For Laravel PUT requests with FormData, we can append _method = PUT
             if (isEdit) {
                 formData.append('_method', 'PUT');
@@ -1032,6 +1413,7 @@
             document.getElementById('conceptoNew').value = gasto.concepto;
             document.getElementById('monto_totalNew').value = gasto.monto_total;
             document.getElementById('categoria_gasto_idNew').value = gasto.categoria_gasto_id || '';
+            cargarConceptosPorCategoria(gasto.categoria_gasto_id, gasto.gasto_concepto_id);
             document.getElementById('fecha_gastoNew').value = gasto.fecha_gasto;
 
             // Determinar tipo de imputación y configurar radios
@@ -1054,15 +1436,17 @@
                 const mappedUnidades = vinculos.filter(v => v.tipo === 'unidad').map(v => {
                     // Try to match value from option list
                     const select = document.getElementById('selectUnidadesNew');
-                    const opt = Array.from(select.options).find(o => o.text.includes(v.detalle.replace('Unidad: ', '')));
+                    const opt = Array.from(select.options).find(o => o.text.includes(v.detalle.replace('Unidad: ',
+                        '')));
                     return opt ? opt.value : null;
                 }).filter(val => val !== null);
-                
+
                 choicesUnidades.setChoiceByValue(mappedUnidades);
             } else if (formasAplicarVal === 'Viaje' && choicesViajes) {
                 const mappedViajes = vinculos.filter(v => v.tipo === 'asignacion' || v.tipo === 'contenedor').map(v => {
                     const select = document.getElementById('selectViajesNew');
-                    const opt = Array.from(select.options).find(o => o.text.includes(v.detalle.replace('Contenedor: ', '').replace('Viaje (Contenedor): ', '')));
+                    const opt = Array.from(select.options).find(o => o.text.includes(v.detalle.replace(
+                        'Contenedor: ', '').replace('Viaje (Contenedor): ', '')));
                     return opt ? opt.value : null;
                 }).filter(val => val !== null);
 
@@ -1102,6 +1486,44 @@
             if (choicesViajes) choicesViajes.removeActiveItems();
             document.getElementById('tipoPagoNew').value = '0';
             document.getElementById('tipoPagoNew').dispatchEvent(new Event('change'));
+            document.getElementById('gasto_concepto_idNew').innerHTML =
+                '<option value="">-- Seleccionar Concepto --</option>';
+        });
+
+        // Carga dinámica de conceptos por categoría
+        function cargarConceptosPorCategoria(categoriaId, conceptoSeleccionadoId = null) {
+            const selectConcepto = document.getElementById('gasto_concepto_idNew');
+            selectConcepto.innerHTML = '<option value="">-- Cargando Conceptos --</option>';
+
+            if (!categoriaId) {
+                selectConcepto.innerHTML = '<option value="">-- Seleccionar Concepto --</option>';
+                return;
+            }
+
+            fetch(`/gastos/categorias/${categoriaId}/conceptos`)
+                .then(res => res.json())
+                .then(data => {
+                    let html = '<option value="">-- Seleccionar Concepto --</option>';
+                    data.forEach(item => {
+                        html +=
+                            `<option value="${item.id}" ${item.id == conceptoSeleccionadoId ? 'selected' : ''}>${item.nombre}</option>`;
+                    });
+                    selectConcepto.innerHTML = html;
+                })
+                .catch(() => {
+                    selectConcepto.innerHTML = '<option value="">-- Error al cargar conceptos --</option>';
+                });
+        }
+
+        document.getElementById('categoria_gasto_idNew').addEventListener('change', function() {
+            cargarConceptosPorCategoria(this.value);
+        });
+
+        document.getElementById('gasto_concepto_idNew').addEventListener('change', function() {
+            const selectedText = this.options[this.selectedIndex]?.text;
+            if (this.value) {
+                document.getElementById('conceptoNew').value = selectedText;
+            }
         });
 
         // Lógica de Pago Individual

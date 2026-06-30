@@ -153,6 +153,7 @@ class GastosService
             'concepto' => $gasto->concepto,
             'categoria' => $gasto->categoria?->categoria,
             'categoria_gasto_id' => $gasto->categoria_gasto_id,
+            'gasto_concepto_id' => $gasto->gasto_concepto_id,
 
             'tipo_gasto' => $gasto->tipo_gasto,
             'metodo_imputacion' => $gasto->metodo_imputacion,

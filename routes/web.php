@@ -608,6 +608,9 @@ Route::middleware(['auth', 'idle.timeout'])->group(function () {
                     Route::get('/data', [App\Http\Controllers\GastosController::class, 'data'])
                         ->name('data');
 
+                    Route::get('/categorias/{categoria}/conceptos', [App\Http\Controllers\GastosController::class, 'getConceptosByCategoria'])
+                        ->name('conceptos');
+
                     Route::post('/', [App\Http\Controllers\GastosController::class, 'store'])
                         ->name('store');
 

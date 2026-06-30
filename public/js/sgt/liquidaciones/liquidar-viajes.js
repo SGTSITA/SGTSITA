@@ -467,10 +467,10 @@ function recalcularTotales() {
     let adelantoRestante = adelantoPendiente - abonoAdelanto;
     document.getElementById("adelantoLabel").innerText =
         "Adelantos (Abono: " + currencyFormatter(abonoAdelanto) + ")";
-    document.getElementById("totalFinalLabel").innerText =
-        currencyFormatter(totalFinal);
-    document.getElementById("prestamoRestanteLabel").innerText =
-        currencyFormatter(prestamoRestante);
+    if (document.getElementById("adelantoRestanteLabel")) {
+        document.getElementById("adelantoRestanteLabel").innerText =
+            currencyFormatter(adelantoRestante);
+    }
 }
 function renderResumen(selectedRows, data) {
     const resumen = calcularResumen(selectedRows);
@@ -487,129 +487,95 @@ function renderResumen(selectedRows, data) {
     let totalFinal = base - prestamo - adelanto;
 
     let html = `
-    <table class="table table-bordered align-middle text-center">
-
-        <tbody>
-
-        <!-- ENCABEZADOS -->
-        <tr class="table-light fw-bold">
-
-            <td id="baseLabel">
-                Base: ${currencyFormatter(base)}
-            </td>
-
-            <td id="prestamoLabel">
-                Préstamos (Abono: ${currencyFormatter(prestamo)})
-            </td>
-
-            <td id="adelantoLabel">
-                Adelantos (Abono: ${currencyFormatter(adelanto)})
-            </td>
-
-            <td rowspan="4" class="align-middle table-success">
-
-                <div>Total a Pagar</div>
-
-                <div id="totalFinalLabel" class="fs-4">
-                    ${currencyFormatter(totalFinal)}
+    <div class="card shadow-none border bg-light p-3 mb-4">
+        <div class="row">
+            <!-- Columna Percepciones -->
+            <div class="col-md-6 border-end">
+                <h6 class="text-uppercase text-secondary font-weight-bolder text-xs mb-3">Percepciones (Ingresos)</h6>
+                
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-sm">Total Sueldo Viajes:</span>
+                    <span class="text-dark font-weight-bold">${currencyFormatter(resumen.totalSueldo)}</span>
                 </div>
-
-            </td>
-
-        </tr>
-
-        <!-- FILA 1 -->
-        <tr>
-
-            <td class="text-end">
-                Sueldo : ${currencyFormatter(resumen.totalSueldo)}
-            </td>
-
-            <td class="text-end">
-                Pendiente: ${currencyFormatter(prestamoPendiente)}
-            </td>
-
-            <td class="text-end">
-                Pendiente: ${currencyFormatter(adelantoPendiente)}
-            </td>
-
-        </tr>
-
-        <!-- FILA 2 -->
-        <tr>
-
-            <td class="text-end text-danger">
-                (-) Dinero Viaje: - ${currencyFormatter(resumen.totalDinero)}
-            </td>
-
-            <td>
-
-                <div class="d-flex justify-content-between align-items-center">
-
-                    <span>Abono Prestamo:</span>
-
-                    <input
-                        type="number"
-                        id="inputPrestamo"
-                        class="form-control form-control-sm text-end w-auto"
-                        value="${prestamo}"
-                        min="0"
-                        max="${prestamoPendiente}"
-                        style="max-width:120px;"
-                    >
-
+                
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-sm text-success">(+) Gastos Justificados:</span>
+                    <span class="text-success font-weight-bold">+ ${currencyFormatter(resumen.totalJustificado)}</span>
                 </div>
-
-            </td>
-
-            <td>
-
-                <div class="d-flex justify-content-between align-items-center">
-
-                    <span>Abono Adelanto:</span>
-
-                    <input
-                        type="number"
-                        id="inputAdelanto"
-                        class="form-control form-control-sm text-end w-auto"
-                        value="${adelanto}"
-                        min="0"
-                        max="${adelantoPendiente}"
-                        style="max-width:120px;"
-                    >
-
+                
+                <hr class="horizontal dark my-2">
+                
+                <div class="d-flex justify-content-between">
+                    <span class="text-sm font-weight-bold text-primary" id="baseLabel">Base: ${currencyFormatter(base)}</span>
+                    <span class="text-dark font-weight-bold">${currencyFormatter(resumen.totalSueldo + resumen.totalJustificado)}</span>
                 </div>
-
-            </td>
-
-        </tr>
-
-        <!-- FILA 3 -->
-        <tr>
-
-            <td class="text-end text-success">
-                (+) Justificado: + ${currencyFormatter(resumen.totalJustificado)}
-            </td>
-
-            <td class="text-end">
-                Restante:
-                <span id="prestamoRestanteLabel">
-                    ${currencyFormatter(prestamoPendiente - prestamo)}
-                </span>
-            </td>
-
-            <td class="text-end">
-                Restante:
-                <span id="adelantoRestanteLabel">
-                    ${currencyFormatter(adelantoPendiente - adelanto)}
-                </span>
-            </td>
-
-        </tr>
-
-        </tbody>
-
-    </table>
+            </div>
+            
+            <!-- Columna Deducciones -->
+            <div class="col-md-6">
+                <h6 class="text-uppercase text-secondary font-weight-bolder text-xs mb-3">Deducciones (Descuentos)</h6>
+                
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-sm text-danger">(-) Dinero Viaje (Entregado):</span>
+                    <span class="text-danger font-weight-bold">- ${currencyFormatter(resumen.totalDinero)}</span>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-sm fw-semibold" id="prestamoLabel">Préstamos (Abono: ${currencyFormatter(prestamo)})</span>
+                        <input
+                            type="number"
+                            id="inputPrestamo"
+                            class="form-control form-control-sm text-end w-auto ms-2"
+                            value="${prestamo}"
+                            min="0"
+                            max="${prestamoPendiente}"
+                            style="max-width:120px;"
+                        >
+                    </div>
+                    <div class="d-flex justify-content-between text-xs text-muted mt-1 px-1">
+                        <span>Pendiente: ${currencyFormatter(prestamoPendiente)}</span>
+                        <span>Restante: <span id="prestamoRestanteLabel">${currencyFormatter(prestamoPendiente - prestamo)}</span></span>
+                    </div>
+                </div>
+                
+                <div class="mb-2">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-sm fw-semibold" id="adelantoLabel">Adelantos (Abono: ${currencyFormatter(adelanto)})</span>
+                        <input
+                            type="number"
+                            id="inputAdelanto"
+                            class="form-control form-control-sm text-end w-auto ms-2"
+                            value="${adelanto}"
+                            min="0"
+                            max="${adelantoPendiente}"
+                            style="max-width:120px;"
+                        >
+                    </div>
+                    <div class="d-flex justify-content-between text-xs text-muted mt-1 px-1">
+                        <span>Pendiente: ${currencyFormatter(adelantoPendiente)}</span>
+                        <span>Restante: <span id="adelantoRestanteLabel">${currencyFormatter(adelantoPendiente - adelanto)}</span></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <hr class="horizontal dark my-3">
+        
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <span class="text-xs text-muted">Operador: <strong>${operadorNombre}</strong></span>
+            </div>
+            <div class="col-md-6 text-end">
+                <div class="d-flex justify-content-end align-items-baseline">
+                    <span class="text-sm me-3 font-weight-bold text-uppercase text-dark">Total Neto a Pagar:</span>
+                    <span class="text-success font-weight-bolder h4 mb-0" id="totalFinalLabel">
+                        ${currencyFormatter(totalFinal)}
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
     `;
 
     document.getElementById("previewResumen").innerHTML = html;
@@ -706,12 +672,7 @@ function renderDineroViaje(data) {
 function renderDeudas(data) {
     const tbody = document.querySelector("#tablaDeudas tbody");
 
-    if (!data.length) {
-        document.getElementById("sectionDeudas").style.display = "none";
-        return;
-    }
-
-    document.getElementById("sectionDeudas").style.display = "block";
+    document.getElementById("sectionDeudas").style.display = "none";
 
     tbody.innerHTML = data
         .map(
@@ -741,6 +702,7 @@ function renderVistaPrevia(selectedRows, data) {
     document.getElementById("modalPreviewLabel").innerText =
         "Vista Previa Liquidación " + operadorNombre;
 
+    btnConfirmaPagov2.disabled = false;
     new bootstrap.Modal(document.getElementById("modalPreview")).show();
 }
 document.getElementById("btnPreview").addEventListener("click", () => {
@@ -842,6 +804,17 @@ function aplicarPago() {
 
     let _IdOperador = IdOperador.value;
 
+    btnConfirmaPagov2.disabled = true;
+
+    Swal.fire({
+        title: "Procesando...",
+        text: "Registrando pago y liquidación. Por favor espere...",
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        },
+    });
+
     $.ajax({
         url: "/liquidaciones/viajes/aplicar-pago",
         type: "post",
@@ -861,11 +834,18 @@ function aplicarPago() {
 
             if (response.TMensaje == "success") {
                 $("#btnDescargar").attr("data-id", response.IdLiquidacion);
+                if (typeof mostrarViajesOperador === "function") {
+                    mostrarViajesOperador(IdOperador.value);
+                }
+                btnConfirmaPagov2.disabled = true; // Permanecer bloqueado tras éxito
+            } else {
+                btnConfirmaPagov2.disabled = false; // Habilitar si la lógica de negocio falló
             }
         },
 
         error: () => {
-            Swal.fire("Error", "Ha ocurrido un error", "error");
+            Swal.fire("Error", "Ha ocurrido un error al procesar el pago", "error");
+            btnConfirmaPagov2.disabled = false;
         },
     });
 }

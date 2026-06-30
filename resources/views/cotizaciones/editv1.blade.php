@@ -1632,7 +1632,7 @@
                                                             <div class="col-md-5 col-12 my-2">
                                                                 <div class="border rounded-3 px-3 py-2 bg-light">
                                                                     <input type="hidden" id="cotizacion_km_diesel_id"
-                                                                        value="{{ $documentacion?->id_cotizacion ?? $documentacion?->Cotizacion?->id }}">
+                                                                        value="{{ $cotizacion->id }}">
 
                                                                     <div class="row g-2 align-items-end">
                                                                         <div class="col-md-5 col-6">

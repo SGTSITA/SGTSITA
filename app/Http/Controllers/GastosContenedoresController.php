@@ -162,11 +162,17 @@ class GastosContenedoresController extends Controller
                 if (($item['Origen'] ?? null) === 'Operador') {
                     $gasto = \App\Models\Gasto::find($item['IdGasto']);
                     if ($gasto) {
+                        $contenedorVinculo = $gasto->vinculos()->where('tipo_vinculo', 'contenedor')->first();
+                        $numContenedor = $contenedorVinculo ? $contenedorVinculo->observaciones : null;
+                        
+                        $operadorVinculo = $gasto->vinculos()->where('tipo_vinculo', 'operador')->first();
+                        $operadorNombre = $operadorVinculo ? str_replace('Operador: ', '', $operadorVinculo->observaciones) : null;
+
                         $this->GastosService->pagar($gasto, [
                             'cuenta_bancaria_id' => $r->bank,
                             'monto' => $item['Monto'],
                             'fecha_pago' => $fecha_aplicacion,
-                            'concepto_banco' => 'Pago Gasto Contenedor: ' . $gasto->concepto,
+                            'concepto_banco' => \App\Services\BancosService::generarConcepto('gasto', $gasto->concepto, $numContenedor, $operadorNombre),
                             'referencia_banco' => 'GASTO_CONTENEDOR'
                         ]);
                     }
