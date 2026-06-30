@@ -150,8 +150,11 @@ document.addEventListener("DOMContentLoaded", function () {
             seleccionContenedor();
         },
         onGridReady: function (params) {
-            var paginationTitle = document.querySelector("#ag-32-label");
-            paginationTitle.textContent = "Registros por página";
+            const paginationTitle = document.querySelector("#ag-32-label");
+
+            if (paginationTitle) {
+                paginationTitle.textContent = "Registros por página";
+            }
 
             window.gridApi = params.api;
 

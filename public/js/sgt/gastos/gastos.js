@@ -290,9 +290,11 @@ monto1.addEventListener(
         (labelMontoGasto.textContent = await moneyFormat(e.target.value)),
     calcDays(),
 );
+const paginationTitle = document.querySelector("#ag-32-label");
 
-var paginationTitle = document.querySelector("#ag-32-label");
-paginationTitle.textContent = "Registros por página";
+if (paginationTitle) {
+    paginationTitle.textContent = "Registros por página";
+}
 
 document.querySelectorAll(".fechasDiferir").forEach((elemento) => {
     elemento.addEventListener("focus", () => calcDays());

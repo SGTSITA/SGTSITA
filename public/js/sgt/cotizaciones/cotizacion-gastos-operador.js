@@ -43,8 +43,11 @@ let apiGridGastosOperador = gridElementGastosOperador
     : null;
 // const gridInstance = new agGrid.Grid(gridElementGastosOperador, gridOptions);
 
-var paginationTitle = document.querySelector("#ag-32-label");
-paginationTitle.textContent = "Registros por página";
+const paginationTitle = document.querySelector("#ag-32-label");
+
+if (paginationTitle) {
+    paginationTitle.textContent = "Registros por página";
+}
 
 let IdContenedorViaje = null;
 

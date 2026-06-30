@@ -202,9 +202,11 @@ const gridOptions = {
 const myGridElement = document.querySelector("#myGrid");
 let apiGrid = agGrid.createGrid(myGridElement, gridOptions);
 // const gridInstance = new agGrid.Grid(myGridElement, gridOptions);
+const paginationTitle = document.querySelector("#ag-32-label");
 
-var paginationTitle = document.querySelector("#ag-32-label");
-paginationTitle.textContent = "Registros por página";
+if (paginationTitle) {
+    paginationTitle.textContent = "Registros por página";
+}
 
 let IdContenedor = null;
 let btnVerDetalle = document.querySelector("#openPay");
