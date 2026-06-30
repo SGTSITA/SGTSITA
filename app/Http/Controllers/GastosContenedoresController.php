@@ -73,6 +73,7 @@ class GastosContenedoresController extends Controller
             ];
         });
 
+        /*
         $gastosGenerales = DB::table('gastos_generales')
         ->join('categorias_gastos', 'categorias_gastos.id', '=', 'gastos_generales.id_categoria')
         ->select(
@@ -91,6 +92,28 @@ class GastosContenedoresController extends Controller
         ->where('pago_realizado', 0)
         //->whereNotNull('gasto_origen_id')
         ->get();
+        */
+        $gastosGenerales = DB::table('gasto_imputaciones')
+            ->join('gastos', 'gastos.id', '=', 'gasto_imputaciones.gasto_id')
+            ->leftJoin('categorias_gastos', 'categorias_gastos.id', '=', 'gastos.categoria_gasto_id')
+            ->leftJoin('gasto_programaciones', 'gasto_programaciones.gasto_imputacion_id', '=', 'gasto_imputaciones.id')
+            ->whereNull('gastos.deleted_at')
+            ->where('gastos.estatus', '!=', 'cancelado')
+            ->where('gastos.estatus', '!=', 'pagado')
+            ->where('gastos.id_empresa', auth()->user()->id_empresa)
+            ->whereIn('gasto_imputaciones.tipo_imputacion', ['periodo', 'empresa'])
+            ->select(
+                'gasto_imputaciones.id as IdGasto',
+                'gastos.concepto as NumContenedor',
+                'categorias_gastos.categoria as Descripcion',
+                'gasto_imputaciones.monto_imputado as Monto',
+                DB::raw("DATE(gasto_imputaciones.fecha_imputacion) as FechaGasto"),
+                'gasto_imputaciones.fecha_imputacion as FechaPago',
+                DB::raw('gasto_programaciones.fecha_programada as fecha_inicio'),
+                DB::raw('gasto_programaciones.fecha_vencimiento as fecha_fin'),
+                DB::raw("'General' as Origen")
+            )
+            ->get();
 
 
         $data = $gastosOperadores->merge($gastosGenerales);
@@ -238,6 +261,7 @@ class GastosContenedoresController extends Controller
         $fechaFin = $r->to;
 
         //Obtener los gastos de las unidades (vehiculos)
+        /*
         $gastosUnidadQuery = "SELECT
         a.id_camion,
         gg.motivo,
@@ -258,6 +282,25 @@ class GastosContenedoresController extends Controller
         WHERE a.fecha_inicio BETWEEN '$fechaInicio' AND '$fechaFin'
         AND a.id_camion IS NOT NULL AND gg.is_active = 1
         GROUP BY a.id_camion, gg.motivo;";
+        */
+        $gastosUnidadQuery = "SELECT
+        a.id_camion,
+        g.concepto as motivo,
+        COUNT(DISTINCT a.id) AS total_asignaciones,
+        COALESCE(SUM(gi.monto_imputado), 0) AS total_gastos_periodo,
+        COALESCE(SUM(gi.monto_imputado), 0) / COUNT(DISTINCT a.id) AS gasto_por_viaje
+        FROM asignaciones a
+        LEFT JOIN gasto_imputaciones gi
+            ON gi.tipo_imputacion = 'unidad'
+            AND gi.imputable_id = a.id_camion
+            AND gi.fecha_imputacion BETWEEN '$fechaInicio' AND '$fechaFin'
+        LEFT JOIN gastos g
+            ON g.id = gi.gasto_id
+            AND g.deleted_at IS NULL
+            AND g.estatus != 'cancelado'
+        WHERE a.fecha_inicio BETWEEN '$fechaInicio' AND '$fechaFin'
+        AND a.id_camion IS NOT NULL
+        GROUP BY a.id_camion, g.concepto;";
 
         $gastosUnidad = Collect(DB::select($gastosUnidadQuery));
 
@@ -325,7 +368,24 @@ class GastosContenedoresController extends Controller
                 }
             }
 
+            /*
             $gastos = GastosOperadores::where('id_cotizacion', $cotizacion->id)->get();
+            */
+            $gastos = \App\Models\GastoImputacion::join('gastos', 'gastos.id', '=', 'gasto_imputaciones.gasto_id')
+                ->join('gasto_vinculos', 'gasto_vinculos.gasto_id', '=', 'gastos.id')
+                ->whereNull('gastos.deleted_at')
+                ->where('gastos.estatus', '!=', 'cancelado')
+                ->where('gasto_vinculos.tipo_vinculo', '=', 'cotizacion')
+                ->where('gasto_vinculos.vinculable_type', '=', \App\Models\Cotizaciones::class)
+                ->where('gasto_vinculos.vinculable_id', '=', $cotizacion->id)
+                ->where('gasto_imputaciones.tipo_imputacion', '=', 'operador')
+                ->select(
+                    'gasto_imputaciones.*',
+                    'gasto_imputaciones.monto_imputado as cantidad',
+                    'gastos.concepto as tipo',
+                    DB::raw("CASE WHEN gastos.estatus = 'pagado' THEN 'Pagado' ELSE gastos.estatus END as estatus")
+                )
+                ->get();
 
             $comision = $gastos->first(fn ($g) => str_contains($g->tipo, 'GCM01'));
             $diesel   = $gastos->first(fn ($g) => str_contains($g->tipo, 'GDI02'));
@@ -391,7 +451,19 @@ class GastosContenedoresController extends Controller
                          $esPagoInmediato = $gasto[$camposGastoInmediato[$e]];
                          $bank = trim(substr($gasto[9], 0, 5));
 
+                         /*
                          $gastoViaje = GastosOperadores::where('id_cotizacion', $contenedor->id_cotizacion)->where('tipo', $descripcionGastos[$e]);
+                         */
+                         $gastoViaje = \App\Models\GastoImputacion::join('gastos', 'gastos.id', '=', 'gasto_imputaciones.gasto_id')
+                             ->join('gasto_vinculos', 'gasto_vinculos.gasto_id', '=', 'gastos.id')
+                             ->whereNull('gastos.deleted_at')
+                             ->where('gastos.estatus', '!=', 'cancelado')
+                             ->where('gasto_vinculos.tipo_vinculo', '=', 'cotizacion')
+                             ->where('gasto_vinculos.vinculable_type', '=', \App\Models\Cotizaciones::class)
+                             ->where('gasto_vinculos.vinculable_id', '=', $contenedor->id_cotizacion)
+                             ->where('gasto_imputaciones.tipo_imputacion', '=', 'operador')
+                             ->where('gastos.concepto', '=', $descripcionGastos[$e])
+                             ->select('gasto_imputaciones.*', 'gasto_imputaciones.monto_imputado as cantidad', 'gastos.concepto as tipo', 'gastos.estatus as estatus');
                          $existeGasto = $gastoViaje->exists();
 
                          //Una vez superada la validacion proceder a guardar
@@ -564,9 +636,22 @@ class GastosContenedoresController extends Controller
                         ]);
                     }
 
+                    /*
                     $existeGasto = GastosOperadores::where('id_cotizacion', $contenedor->id_cotizacion)
                                         ->where('tipo', $tipo['codigo'])
                                         ->first();
+                    */
+                    $existeGasto = \App\Models\GastoImputacion::join('gastos', 'gastos.id', '=', 'gasto_imputaciones.gasto_id')
+                        ->join('gasto_vinculos', 'gasto_vinculos.gasto_id', '=', 'gastos.id')
+                        ->whereNull('gastos.deleted_at')
+                        ->where('gastos.estatus', '!=', 'cancelado')
+                        ->where('gasto_vinculos.tipo_vinculo', '=', 'cotizacion')
+                        ->where('gasto_vinculos.vinculable_type', '=', \App\Models\Cotizaciones::class)
+                        ->where('gasto_vinculos.vinculable_id', '=', $contenedor->id_cotizacion)
+                        ->where('gasto_imputaciones.tipo_imputacion', '=', 'operador')
+                        ->where('gastos.concepto', '=', $tipo['codigo'])
+                        ->select('gasto_imputaciones.*', 'gasto_imputaciones.monto_imputado as cantidad', 'gastos.concepto as tipo', 'gastos.estatus as estatus')
+                        ->first();
 
                     if (!$existeGasto) {
 

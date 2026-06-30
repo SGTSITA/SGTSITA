@@ -1033,13 +1033,28 @@ else{
         return redirect()->route('index.cotizaciones')
             ->with('success', 'Estatus actualizado correctamente.');
     }
-
-
     public function edit($id) //revision para gastos extras
     {
         $cotizacion = Cotizaciones::where('id', '=', $id)->first();
         $documentacion = DocumCotizacion::with('Asignaciones')->where('id_cotizacion', '=', $cotizacion->id)->first();
+        /*
         $gastos_extras = GastosExtras::where('id_cotizacion', '=', $cotizacion->id)->get();
+        */
+        $gastos_extras = \App\Models\GastoImputacion::join('gastos', 'gastos.id', '=', 'gasto_imputaciones.gasto_id')
+            ->whereNull('gastos.deleted_at')
+            ->where('gastos.estatus', '!=', 'cancelado')
+            ->where('gasto_imputaciones.tipo_imputacion', '=', 'cotizacion')
+            ->where('gasto_imputaciones.imputable_type', '=', \App\Models\Cotizaciones::class)
+            ->where('gasto_imputaciones.imputable_id', '=', $cotizacion->id)
+            ->select(
+                'gasto_imputaciones.*',
+                'gasto_imputaciones.monto_imputado as monto',
+                'gasto_imputaciones.fecha_imputacion as fecha_aplicacion',
+                'gasto_imputaciones.fecha_imputacion as created_at',
+                'gastos.concepto as descripcion',
+                'gastos.estatus as estatus'
+            )
+            ->get();
         //$clientes = Client::where('id_empresa' ,'=',auth()->user()->id_empresa)->get();
         $idEmpresa = auth()->user()->id_empresa;
         $clientes = Client::join('client_empresa as ce', 'clients.id', '=', 'ce.id_client')
@@ -1050,7 +1065,24 @@ else{
                             ->where('is_active', 1)
                             ->orderBy('nombre')->get();
 
+        /*
         $gastos_ope = GastosOperadores::where('id_cotizacion', '=', $cotizacion->id)->get();
+        */
+        $gastos_ope = \App\Models\GastoImputacion::join('gastos', 'gastos.id', '=', 'gasto_imputaciones.gasto_id')
+            ->join('gasto_vinculos', 'gasto_vinculos.gasto_id', '=', 'gastos.id')
+            ->whereNull('gastos.deleted_at')
+            ->where('gastos.estatus', '!=', 'cancelado')
+            ->where('gasto_vinculos.tipo_vinculo', '=', 'cotizacion')
+            ->where('gasto_vinculos.vinculable_type', '=', \App\Models\Cotizaciones::class)
+            ->where('gasto_vinculos.vinculable_id', '=', $cotizacion->id)
+            ->where('gasto_imputaciones.tipo_imputacion', '=', 'operador')
+            ->select(
+                'gasto_imputaciones.*',
+                'gasto_imputaciones.monto_imputado as cantidad',
+                'gastos.concepto as tipo',
+                'gastos.estatus as estatus'
+            )
+            ->get();
 
         $proveedores = Proveedor::catalogoPrincipal()->when($idEmpresa != 0, function ($query) use ($idEmpresa) {
             $query->where('id_empresa', $idEmpresa);
@@ -1207,9 +1239,43 @@ else{
     {
         $cotizacion = Cotizaciones::where('id', '=', $id)->first();
         $documentacion = DocumCotizacion::where('id_cotizacion', '=', $cotizacion->id)->first();
+        /*
         $gastos_extras = GastosExtras::where('id_cotizacion', '=', $cotizacion->id)->get();
+        */
+        $gastos_extras = \App\Models\GastoImputacion::join('gastos', 'gastos.id', '=', 'gasto_imputaciones.gasto_id')
+            ->whereNull('gastos.deleted_at')
+            ->where('gastos.estatus', '!=', 'cancelado')
+            ->where('gasto_imputaciones.tipo_imputacion', '=', 'cotizacion')
+            ->where('gasto_imputaciones.imputable_type', '=', \App\Models\Cotizaciones::class)
+            ->where('gasto_imputaciones.imputable_id', '=', $cotizacion->id)
+            ->select(
+                'gasto_imputaciones.*',
+                'gasto_imputaciones.monto_imputado as monto',
+                'gasto_imputaciones.fecha_imputacion as fecha_aplicacion',
+                'gasto_imputaciones.fecha_imputacion as created_at',
+                'gastos.concepto as descripcion',
+                'gastos.estatus as estatus'
+            )
+            ->get();
         $clientes = Client::where('id_empresa', '=', auth()->user()->id_empresa)->get();
+        /*
         $gastos_ope = GastosOperadores::where('id_cotizacion', '=', $cotizacion->id)->get();
+        */
+        $gastos_ope = \App\Models\GastoImputacion::join('gastos', 'gastos.id', '=', 'gasto_imputaciones.gasto_id')
+            ->join('gasto_vinculos', 'gasto_vinculos.gasto_id', '=', 'gastos.id')
+            ->whereNull('gastos.deleted_at')
+            ->where('gastos.estatus', '!=', 'cancelado')
+            ->where('gasto_vinculos.tipo_vinculo', '=', 'cotizacion')
+            ->where('gasto_vinculos.vinculable_type', '=', \App\Models\Cotizaciones::class)
+            ->where('gasto_vinculos.vinculable_id', '=', $cotizacion->id)
+            ->where('gasto_imputaciones.tipo_imputacion', '=', 'operador')
+            ->select(
+                'gasto_imputaciones.*',
+                'gasto_imputaciones.monto_imputado as cantidad',
+                'gastos.concepto as tipo',
+                'gastos.estatus as estatus'
+            )
+            ->get();
         $subclientes = Subclientes::where('id_cliente', '=', auth()->user()->id_cliente)->get();
 
 
@@ -1304,7 +1370,24 @@ else{
     {
         $cotizacion = Cotizaciones::where('id', '=', $id)->first();
         $documentacion = DocumCotizacion::where('id_cotizacion', '=', $cotizacion->id)->first();
+        /*
         $gastos_extras = GastosExtras::where('id_cotizacion', '=', $cotizacion->id)->get();
+        */
+        $gastos_extras = \App\Models\GastoImputacion::join('gastos', 'gastos.id', '=', 'gasto_imputaciones.gasto_id')
+            ->whereNull('gastos.deleted_at')
+            ->where('gastos.estatus', '!=', 'cancelado')
+            ->where('gasto_imputaciones.tipo_imputacion', '=', 'cotizacion')
+            ->where('gasto_imputaciones.imputable_type', '=', \App\Models\Cotizaciones::class)
+            ->where('gasto_imputaciones.imputable_id', '=', $cotizacion->id)
+            ->select(
+                'gasto_imputaciones.*',
+                'gasto_imputaciones.monto_imputado as monto',
+                'gasto_imputaciones.fecha_imputacion as fecha_aplicacion',
+                'gasto_imputaciones.fecha_imputacion as created_at',
+                'gastos.concepto as descripcion',
+                'gastos.estatus as estatus'
+            )
+            ->get();
         $clientes = Client::get();
         $configuracion = Configuracion::first();
         $bancos_oficiales = Bancos::where('tipo', '=', 'Oficial')->get();
@@ -1496,7 +1579,25 @@ $this->procesarDocumento(
                                 $afectaBanco = true;
                             }
 
+                            /*
                             $gasto = GastosOperadores::where('id_cotizacion', $id)->get();  //verificar si tuvo un gasto
+                            */
+                            $gasto = \App\Models\GastoImputacion::join('gastos', 'gastos.id', '=', 'gasto_imputaciones.gasto_id')
+                                ->join('gasto_vinculos', 'gasto_vinculos.gasto_id', '=', 'gastos.id')
+                                ->leftJoin('gasto_pagos', 'gasto_pagos.gasto_id', '=', 'gastos.id')
+                                ->whereNull('gastos.deleted_at')
+                                ->where('gastos.estatus', '!=', 'cancelado')
+                                ->where('gasto_vinculos.tipo_vinculo', '=', 'cotizacion')
+                                ->where('gasto_vinculos.vinculable_type', '=', \App\Models\Cotizaciones::class)
+                                ->where('gasto_vinculos.vinculable_id', '=', $id)
+                                ->where('gasto_imputaciones.tipo_imputacion', '=', 'operador')
+                                ->select(
+                                    'gasto_imputaciones.*',
+                                    'gasto_imputaciones.monto_imputado as cantidad',
+                                    'gastos.concepto as tipo',
+                                    'gasto_pagos.cuenta_bancaria_id as id_banco'
+                                )
+                                ->get();
                             foreach ($gasto as $g) {
                                 if (!is_null($g->id_banco) && $g->cantidad > 0) {//cantidad valida y ya tiene pago
 

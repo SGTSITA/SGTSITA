@@ -1791,6 +1791,7 @@ class ReporteriaController extends Controller
 
     public function index_gxp(Request $request)
     {
+        /*
         $gastos = GastosOperadores::with([
             'Asignaciones.Proveedor',
             'Asignaciones.Contenedor.Cotizacion.Cliente',
@@ -1799,22 +1800,42 @@ class ReporteriaController extends Controller
         ->whereHas('Asignaciones', fn ($q) => $q->where('id_empresa', auth()->user()->id_empresa))
         ->where('estatus', '!=', 'Pagado')
         ->get();
+        */
+        $gastos = \App\Models\GastoImputacion::join('gastos', 'gastos.id', '=', 'gasto_imputaciones.gasto_id')
+            ->whereNull('gastos.deleted_at')
+            ->where('gastos.estatus', '!=', 'cancelado')
+            ->where('gastos.id_empresa', auth()->user()->id_empresa)
+            ->where('gasto_imputaciones.tipo_imputacion', '=', 'operador')
+            ->where('gastos.estatus', '!=', 'pagado')
+            ->select('gasto_imputaciones.*', 'gastos.concepto as motivo_gasto', 'gastos.estatus as gasto_estatus')
+            ->get();
+
+        $gastos->load([
+            'imputable', // Operador
+            'gasto.vinculos' => function ($q) {
+                $q->where('tipo_vinculo', 'asignacion');
+            },
+            'gasto.vinculos.vinculable.Proveedor',
+            'gasto.vinculos.vinculable.Contenedor.Cotizacion.Cliente',
+            'gasto.vinculos.vinculable.Contenedor.Cotizacion.Subcliente'
+        ]);
 
         $data = $gastos->map(function ($g) {
-            $asignacion = $g->Asignaciones;
+            $vinculoAsignacion = $g->gasto?->vinculos?->first();
+            $asignacion = $vinculoAsignacion ? $vinculoAsignacion->vinculable : null;
 
             return [
                 'id' => $g->id,
-                'operador' => optional($g->Operador)->nombre ?? '-',
-                'cliente' => optional($asignacion->Contenedor->Cotizacion->Cliente)->nombre ?? '-',
-                'subcliente' => optional($asignacion->Contenedor->Cotizacion->Subcliente)->nombre ?? '-',
-                'num_contenedor' => optional($asignacion->Contenedor)->num_contenedor ?? '-',
-                'monto' => $g->cantidad ?? 0,
-                'motivo' => $g->tipo ?? 'Gasto pendiente',
+                'operador' => $g->imputable?->nombre ?? '-',
+                'cliente' => optional($asignacion?->Contenedor?->Cotizacion?->Cliente)->nombre ?? '-',
+                'subcliente' => optional($asignacion?->Contenedor?->Cotizacion?->Subcliente)->nombre ?? '-',
+                'num_contenedor' => optional($asignacion?->Contenedor)->num_contenedor ?? '-',
+                'monto' => $g->monto_imputado ?? 0,
+                'motivo' => $g->motivo_gasto ?? 'Gasto pendiente',
                 'fecha_inicio' => $asignacion?->fecha_inicio,
                 'fecha_fin' => $asignacion?->fecha_fin,
                 'fecha_movimiento' => $g->created_at,
-                'fecha_aplicacion' => $g->fecha_pago,
+                'fecha_aplicacion' => $g->fecha_imputacion,
             ];
         });
 
@@ -1827,6 +1848,7 @@ class ReporteriaController extends Controller
     {
         $idEmpresa = auth()->user()->id_empresa;
 
+        /*
         $gastos = GastosOperadores::with([
             'Asignaciones.Contenedor.Cotizacion.Cliente',
             'Asignaciones.Contenedor.Cotizacion.Subcliente'
@@ -1836,9 +1858,28 @@ class ReporteriaController extends Controller
         })
         ->where('estatus', '!=', 'Pagado')
         ->get();
+        */
+        $gastos = \App\Models\GastoImputacion::join('gastos', 'gastos.id', '=', 'gasto_imputaciones.gasto_id')
+            ->whereNull('gastos.deleted_at')
+            ->where('gastos.estatus', '!=', 'cancelado')
+            ->where('gastos.id_empresa', $idEmpresa)
+            ->where('gasto_imputaciones.tipo_imputacion', '=', 'operador')
+            ->where('gastos.estatus', '!=', 'pagado')
+            ->select('gasto_imputaciones.*', 'gastos.concepto as motivo_gasto')
+            ->get();
+
+        $gastos->load([
+            'imputable', // Operador
+            'gasto.vinculos' => function ($q) {
+                $q->where('tipo_vinculo', 'asignacion');
+            },
+            'gasto.vinculos.vinculable.Contenedor.Cotizacion.Cliente',
+            'gasto.vinculos.vinculable.Contenedor.Cotizacion.Subcliente'
+        ]);
 
         $data = $gastos->map(function ($g) {
-            $asignacion = $g->Asignaciones;
+            $vinculoAsignacion = $g->gasto?->vinculos?->first();
+            $asignacion = $vinculoAsignacion ? $vinculoAsignacion->vinculable : null;
 
             $proveedorNombre = '-';
             if ($asignacion && $asignacion->id_proveedor) {
@@ -1848,16 +1889,17 @@ class ReporteriaController extends Controller
 
             return [
                 'id' => $g->id,
-                'operador' => optional($g->Operador)->nombre ?? '-',
+                'operador' => $g->imputable?->nombre ?? '-',
                 'cliente' => optional($asignacion?->Contenedor?->Cotizacion?->Cliente)->nombre ?? '-',
                 'subcliente' => optional($asignacion?->Contenedor?->Cotizacion?->Subcliente)->nombre ?? '-',
                 'num_contenedor' => optional($asignacion?->Contenedor)->num_contenedor ?? '-',
-                'monto' => $g->cantidad ?? 0,
-                'motivo' => $g->tipo ?? 'Gasto pendiente',
+                'monto' => $g->monto_imputado ?? 0,
+                'motivo' => $g->motivo_gasto ?? 'Gasto pendiente',
                 'fecha_movimiento' => $g->created_at ? Carbon::parse($g->created_at)->format('Y-m-d') : null,
-                'fecha_aplicacion' => $g->fecha_pago ? Carbon::parse($g->fecha_pago)->format('Y-m-d') : null,
+                'fecha_aplicacion' => $g->fecha_imputacion ? Carbon::parse($g->fecha_imputacion)->format('Y-m-d') : null,
                 'fecha_inicio' => $asignacion?->fecha_inicio ? Carbon::parse($asignacion->fecha_inicio)->format('Y-m-d') : null,
                 'fecha_fin' => $asignacion?->fecha_fin ? Carbon::parse($asignacion->fecha_fin)->format('Y-m-d') : null,
+                'proveedor' => $proveedorNombre,
             ];
         });
 
