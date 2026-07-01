@@ -149,6 +149,12 @@ const gridOptions = {
     onRowSelected: (event) => {
         btnDeleteStatus();
     },
+    rowClassRules: {
+        "bg-gradient-warning": (params) => {
+            const estatus = (params.data.estatus || "").toLowerCase();
+            return estatus !== "pagado" && estatus !== "cancelado";
+        },
+    },
     rowData: [],
     columnDefs: [
         { field: "IdContenedor", hide: true },
@@ -237,68 +243,120 @@ function btnDeleteStatus() {
     btnDelete.disabled = seleccion.length == 0;
     btnPagar.disabled = seleccion.length == 0;
 }
+let currentGastoOrigen = 'cotizacion';
 
-function getGastosContenedor() {
-    var _token = document
-        .querySelector('meta[name="csrf-token"]')
-        .getAttribute("content");
-    let spanContenedor = document.querySelector("#spanContenedor");
-    let numContenedor = spanContenedor.textContent;
+$(document).on('show.bs.modal', '#modal-form', function (event) {
+    let button = $(event.relatedTarget);
+    currentGastoOrigen = button.data('origen') || 'cotizacion';
+    
+    // Configurar modal según origen
+    if (currentGastoOrigen === 'cotizacion') {
+        $('#modalGastoTitulo').text('Agregar Gasto Extra');
+        $('#divCamposOperador').hide();
+    } else {
+        $('#modalGastoTitulo').text('Agregar Gasto Operador');
+        $('#divCamposOperador').show();
+    }
+    
+    // Limpiar campos del modal
+    $('#txtDescripcion').val('');
+    $('#txtMonto').val('');
+    $('#cmbCategoriaGasto').val('');
+    $('#cmbConceptoGasto').html('<option value="">Seleccione Concepto</option>').val('');
+});
+
+$(document).on('change', '#cmbCategoriaGasto', function () {
+    let categoriaId = $(this).val();
+    let cmbConcepto = $('#cmbConceptoGasto');
+    cmbConcepto.html('<option value="">Cargando conceptos...</option>');
+    
+    if (!categoriaId) {
+        cmbConcepto.html('<option value="">Seleccione Concepto</option>');
+        return;
+    }
+    
     $.ajax({
-        url: "/cotizaciones/gastos/get",
-        type: "post",
-        data: { _token, numContenedor },
-        beforeSend: () => {},
-        success: (response) => {
-            apiGrid.setGridOption("rowData", response);
-            let total = 0;
-            if (Array.isArray(response) && response.length > 0) {
-                response.forEach((d) => {
-                    total += Number(d.Monto ?? 0);
-                });
-            }
-
-            let txtSumGastos = document.querySelectorAll(".txtSumGastos");
-            let txtTotalCotizacion = document.querySelector(
-                "#txtTotalCotizacion",
-            );
-            let txtResultGastos = document.querySelectorAll(".txtResultGastos");
-            let valorCotizacion = reverseMoneyFormat(txtTotalCotizacion.value);
-            valorCotizacion = parseFloat(valorCotizacion);
-
-            txtSumGastos.forEach((i) => (i.value = moneyFormat(total)));
-
-            txtTotalCotizacion.value = moneyFormat(valorCotizacion);
-            txtResultGastos.forEach(
-                (r) => (r.value = moneyFormat(valorCotizacion + total)),
-            );
+        url: `/gastos/categorias/${categoriaId}/conceptos`,
+        type: 'get',
+        success: function (data) {
+            let html = '<option value="">Seleccione Concepto</option>';
+            data.forEach(item => {
+                html += `<option value="${item.id}">${item.nombre}</option>`;
+            });
+            cmbConcepto.html(html);
         },
-        error: () => {},
+        error: function () {
+            cmbConcepto.html('<option value="">Error al cargar</option>');
+        }
     });
-}
+});
 
-function putGastosContenedor() {
-    let spanContenedor = document.querySelector("#spanContenedor");
-    let numContenedor = spanContenedor.textContent;
+$(document).on('change', '#cmbConceptoGasto', function () {
+    let conceptoText = $('#cmbConceptoGasto option:selected').text();
+    if ($(this).val()) {
+        $('#txtDescripcion').val(conceptoText);
+    }
+});
 
+$(document).on('click', '#btnAgregarGastoUnificado', function () {
+    let cotizacionId = document.querySelector("#cotizacion_km_diesel_id")?.value;
     let textDescripcion = document.querySelector("#txtDescripcion");
     let textMonto = document.querySelector("#txtMonto");
-
-    if (textMonto.value.length == 0 || textDescripcion.value.length == 0) {
-        Swal.fire(
-            "Complete información",
-            "La información del descuento está incompleta, por favor llene todos los campos",
-            "warning",
-        );
-        return false;
+    let categoriaId = document.querySelector("#cmbCategoriaGasto")?.value;
+    let conceptoId = document.querySelector("#cmbConceptoGasto")?.value;
+    
+    if (!categoriaId || !conceptoId) {
+        Swal.fire("Complete información", "Debes seleccionar categoría y concepto", "warning");
+        return;
     }
-
+    
+    if (!textMonto.value || !textDescripcion.value) {
+        Swal.fire("Complete información", "Debes capturar descripción y monto", "warning");
+        return;
+    }
+    
     let montoGasto = reverseMoneyFormat(textMonto.value);
     let descripcion = textDescripcion.value;
-    let _token = document
-        .querySelector('meta[name="csrf-token"]')
-        .getAttribute("content");
-
+    let _token = document.querySelector('meta[name="csrf-token"]').getAttribute("content");
+    
+    let postData = {
+        _token,
+        cotizacion_id: cotizacionId,
+        categoria_gasto_id: categoriaId,
+        gasto_concepto_id: conceptoId,
+        concepto: descripcion,
+        monto_total: montoGasto,
+        metodo_imputacion: 'directo',
+        fecha_gasto: document.querySelector("#txtFechaGasto")?.value || new Date().toISOString().slice(0, 10),
+    };
+    
+    if (currentGastoOrigen === 'cotizacion') {
+        postData.tipo_gasto = 'cotizacion';
+        postData.impacto = 'cotizacion';
+        postData.tipoPago = 0; // contado
+    } else {
+        postData.tipo_gasto = 'operador';
+        postData.impacto = 'viaje';
+        
+        let checkPagoInmediato = document.querySelector("#checkPagoInmediato");
+        let bancosGastos = document.querySelector("#bancosGastos");
+        let fechaAplicacion = document.querySelector("#txtFechaAplicacion");
+        
+        let pagoInmediato = checkPagoInmediato.checked;
+        if (pagoInmediato) {
+            if (!bancosGastos.value || !fechaAplicacion.value) {
+                Swal.fire("Datos incompletos", "Para pago inmediato debes seleccionar banco y fecha", "warning");
+                return;
+            }
+            postData.tipoPago = 0; // contado
+            postData.id_banco1 = bancosGastos.value;
+            postData.fecha_gasto = fechaAplicacion.value;
+        } else {
+            postData.tipoPago = 1; // diferido / crédito
+            postData.fecha_gasto = fechaAplicacion.value || postData.fecha_gasto;
+        }
+    }
+    
     Swal.fire({
         title: "Procesando...",
         text: "Registrando gasto",
@@ -307,25 +365,81 @@ function putGastosContenedor() {
             Swal.showLoading();
         },
     });
+    
+    $.ajax({
+        url: "/gastos",
+        type: "post",
+        data: postData,
+        success: (response) => {
+            if (response.TMensaje === "success") {
+                Swal.fire(response.Titulo, response.Mensaje, "success");
+                $("#modal-form").modal("hide");
+                textDescripcion.value = "";
+                textMonto.value = "";
+                
+                // Recargar grids
+                getGastosContenedor();
+                if (typeof getGastosOperador === 'function') {
+                    getGastosOperador();
+                }
+            } else {
+                Swal.fire(response.Titulo || "Error", response.Mensaje || "Ocurrió un error", "error");
+            }
+        },
+        error: (xhr) => {
+            Swal.fire("Error", "No se pudo registrar el gasto", "error");
+        }
+    });
+});
+
+function getGastosContenedor() {
+    var _token = document.querySelector('meta[name="csrf-token"]').getAttribute("content");
+    let cotizacionId = document.querySelector("#cotizacion_km_diesel_id")?.value;
+    if (!cotizacionId) return;
 
     $.ajax({
-        url: "/cotizaciones/gastos/registrar",
-        type: "post",
-        data: { numContenedor, descripcion, montoGasto, _token },
-        beforeSend: () => {},
+        url: "/gastos/data",
+        type: "get",
+        data: { _token, cotizacion_id: cotizacionId, tipo_gasto: 'cotizacion' },
         success: (response) => {
-            Swal.fire(response.Titulo, response.Mensaje, response.TMensaje);
-            $("#modal-form").modal("hide");
-            textDescripcion.value = "";
-            textMonto.value = "";
-            getGastosContenedor();
+            let total = 0;
+            const data = (response.gastos ?? []).map(g => {
+                total += Number(g.monto_total ?? 0);
+                let bancoDesc = '';
+                let fechaAplic = '';
+                if (g.pagos && g.pagos.length > 0) {
+                    const pago = g.pagos[0];
+                    const bancoNombre = (pago.cuenta_bancaria && (pago.cuenta_bancaria.nombre || pago.cuenta_bancaria.nombre_banco)) ? (pago.cuenta_bancaria.nombre || pago.cuenta_bancaria.nombre_banco) : '';
+                    bancoDesc = bancoNombre || pago.referencia || 'Transferencia';
+                    fechaAplic = pago.fecha_pago || '';
+                }
+                return {
+                    IdContenedor: cotizacionId,
+                    IdGasto: g.id,
+                    Gasto: g.concepto,
+                    Monto: g.monto_total,
+                    Fecha: g.fecha_gasto,
+                    estatus: g.estatus,
+                    fecha_aplicacion: fechaAplic,
+                    BancoDescripcion: bancoDesc
+                };
+            });
+            
+            apiGrid.setGridOption("rowData", data);
+
+            let txtSumGastos = document.querySelectorAll(".txtSumGastos");
+            let txtTotalCotizacion = document.querySelector("#txtTotalCotizacion");
+            let txtResultGastos = document.querySelectorAll(".txtResultGastos");
+            let valorCotizacion = reverseMoneyFormat(txtTotalCotizacion.value);
+            valorCotizacion = parseFloat(valorCotizacion);
+
+            txtSumGastos.forEach((i) => (i.value = moneyFormat(total)));
+            txtTotalCotizacion.value = moneyFormat(valorCotizacion);
+            txtResultGastos.forEach((r) => (r.value = moneyFormat(valorCotizacion + total)));
         },
-        error: (err) => {
-            Swal.fire("Ocurrio un error", "Error", "error");
-        },
+        error: () => {},
     });
 }
-
 function deleteGastosExt() {
     let seleccionGastos = apiGrid.getSelectedRows();
     let fechaMovi = seleccionGastos[0].fecha_aplicacion;
@@ -434,15 +548,14 @@ btnPagGastoExtra.addEventListener("click", () => {
     });
 
     $.ajax({
-        url: "/cotizaciones/gastosextra/pagar",
+        url: "/gastos/pagar-multiple",
         type: "post",
         data: {
             _token,
             ids,
-            numContenedor,
-            banco,
-            fecha,
-            total,
+            cuenta_bancaria_id: banco,
+            fecha_pago: fecha,
+            referencia: 'Pago de gastos extras',
         },
         success: (response) => {
             if (response.TMensaje !== "success") {

@@ -7,8 +7,10 @@ const gridOptionsOperador = {
         headerCheckbox: true,
     },
     rowClassRules: {
-        "bg-gradient-warning": (params) =>
-            params.data.Estatus === "Pago Pendiente",
+        "bg-gradient-warning": (params) => {
+            const estatus = (params.data.Estatus || "").toLowerCase();
+            return estatus !== "pagado" && estatus !== "cancelado";
+        },
     },
     onRowSelected: (event) => {
         btnPaymentStatus();
@@ -110,138 +112,76 @@ $(document).on("click", "#btnGuardarKmDiesel", function () {
 
 function getGastosOperador() {
     const metaToken = document.querySelector('meta[name="csrf-token"]');
-    const spanContenedor = document.querySelector("#spanContenedor");
+    const cotizacionId = document.querySelector(
+        "#cotizacion_km_diesel_id",
+    )?.value;
 
-    if (!metaToken || !spanContenedor) {
-        console.warn("No se encontró token CSRF o spanContenedor");
+    if (!metaToken || !cotizacionId) {
+        console.warn("No se encontró token CSRF o cotizacionId");
         return;
     }
 
     const _token = metaToken.getAttribute("content");
-    const numContenedor = spanContenedor.textContent?.trim();
-
-    if (!numContenedor) {
-        console.warn("No hay número de contenedor");
-        return;
-    }
 
     $.ajax({
-        url: "/cotizaciones/gastos-operador/get",
-        type: "post",
-        data: { _token, numContenedor },
-
-        beforeSend: () => {},
-
+        url: "/gastos/data",
+        type: "get",
+        data: { _token, cotizacion_id: cotizacionId, tipo_gasto: "operador" },
         success: (response) => {
             try {
-                const data = Array.isArray(response) ? response : [];
+                let totalGastos = 0;
+                const data = (response.gastos ?? []).map((g) => {
+                    totalGastos += Number(g.monto_total ?? 0);
+                    let bancoPago = "";
+                    let fechaPago = "";
+                    if (g.pagos && g.pagos.length > 0) {
+                        const pago = g.pagos[0];
+                        const bancoNombre =
+                            pago.cuenta_bancaria &&
+                            (pago.cuenta_bancaria.nombre ||
+                                pago.cuenta_bancaria.nombre_banco)
+                                ? pago.cuenta_bancaria.nombre ||
+                                  pago.cuenta_bancaria.nombre_banco
+                                : "";
+                        bancoPago =
+                            bancoNombre || pago.referencia || "Transferencia";
+                        fechaPago = pago.fecha_pago || "";
+                    }
+                    return {
+                        IdCotizacion: cotizacionId,
+                        IdGasto: g.id,
+                        Gasto: g.concepto,
+                        Monto: g.monto_total,
+                        Estatus: g.estatus,
+                        Fecha: g.fecha_gasto,
+                        FechaPago: fechaPago,
+                        BancoPago: bancoPago,
+                    };
+                });
 
                 if (gridElementGastosOperador && apiGridGastosOperador) {
                     apiGridGastosOperador.setGridOption("rowData", data);
                 }
 
-                const totalGastos = data.reduce((total, d) => {
-                    return total + Number(d.Monto ?? 0);
-                }, 0);
-
-                const totalGastosOperador = document.querySelector(
+                const totalGastosOperadorElement = document.querySelector(
                     "#totalGastosOperador",
                 );
 
-                if (totalGastosOperador) {
-                    totalGastosOperador.textContent = moneyFormat(totalGastos);
+                if (totalGastosOperadorElement) {
+                    totalGastosOperadorElement.textContent =
+                        moneyFormat(totalGastos);
                 }
             } catch (error) {
                 console.warn("Error controlado en getGastosOperador:", error);
             }
         },
-
         error: (xhr) => {
             console.warn("Error al obtener gastos operador:", xhr);
         },
     });
 }
 
-function putGastosOperador() {
-    let spanContenedor = document.querySelector("#spanContenedor");
-    let numContenedor = spanContenedor.textContent;
-
-    let textDescripcion = document.querySelector(
-        "#txtDescripcionGastoOperador",
-    );
-    let textMonto = document.querySelector("#txtMontoGastoOperador");
-    let checkPagoInmediato = document.querySelector("#checkPagoInmediato");
-    let bancosGastos = document.querySelector("#bancosGastos");
-    let fechaAplicacion = document.querySelector("#txtFechaAplicacion");
-
-    let pagoInmediato = checkPagoInmediato.checked;
-
-    if (!textDescripcion.value || !textMonto.value) {
-        Swal.fire(
-            "Complete información",
-            "Debes capturar descripción y monto",
-            "warning",
-        );
-        return;
-    }
-
-    if (pagoInmediato) {
-        if (!bancosGastos.value || !fechaAplicacion.value) {
-            Swal.fire(
-                "Datos incompletos",
-                "Para pago inmediato debes seleccionar banco y fecha",
-                "warning",
-            );
-            return;
-        }
-    }
-
-    let montoGasto = reverseMoneyFormat(textMonto.value);
-    let descripcion = textDescripcion.value;
-
-    let _token = document
-        .querySelector('meta[name="csrf-token"]')
-        .getAttribute("content");
-
-    Swal.fire({
-        title: "Procesando...",
-        text: "Registrando gasto",
-        allowOutsideClick: false,
-        didOpen: () => {
-            Swal.showLoading();
-        },
-    });
-
-    $.ajax({
-        url: "/cotizaciones/gastos-operador/registrar",
-        type: "post",
-        data: {
-            numContenedor,
-            descripcion,
-            montoGasto,
-            pagoInmediato,
-            banco: bancosGastos.value,
-            fechaAplicacion: fechaAplicacion.value,
-            _token,
-        },
-        success: (response) => {
-            Swal.fire(response.Titulo, response.Mensaje, response.TMensaje);
-
-            if (response.TMensaje === "success") {
-                getGastosOperador();
-                $("#modal-gastos-operador").modal("hide");
-
-                // limpiar
-                textDescripcion.value = "";
-                textMonto.value = "";
-                bancosGastos.selectedIndex = 0;
-            }
-        },
-        error: () => {
-            Swal.fire("Error", "No se pudo registrar el gasto", "error");
-        },
-    });
-}
+// Unified registration is used via btnAgregarGastoUnificado in cotizacion-gastos.js
 
 let btnPayment = document.querySelector("#btnPayment");
 if (btnPayment) {
@@ -267,7 +207,7 @@ function paymentGastosOperador() {
     }
 
     let validarGastos = seleccionPago.every((gasto) => {
-        if (gasto.Estatus != "Pago Pendiente") return false;
+        if (gasto.Estatus != "pendiente_pago") return false;
 
         totalPago += parseFloat(gasto.Monto);
         return true;
@@ -276,7 +216,7 @@ function paymentGastosOperador() {
     if (!validarGastos) {
         Swal.fire(
             "No es posible pagar",
-            'Solo se admiten Gastos con estatus "Pago Pendiente"',
+            'Solo se admiten Gastos con estatus "Pendiente Pago"',
             "warning",
         );
         return false;
@@ -323,16 +263,16 @@ function applyPaymentGastosOperador() {
         },
     });
 
+    let ids = gastosPagar.map((g) => g.IdGasto);
     $.ajax({
-        url: "/cotizaciones/gastos-operador/pagar",
+        url: "/gastos/pagar-multiple",
         type: "post",
         data: {
-            totalPago,
-            numContenedor,
-            bank,
-            gastosPagar,
             _token,
-            fechaAplicacion: fechaApp.value,
+            ids: ids,
+            cuenta_bancaria_id: bank,
+            fecha_pago: fechaApp.value,
+            referencia: "Pago de gastos operador",
         },
         beforeSend: () => {},
         success: (response) => {

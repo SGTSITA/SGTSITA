@@ -182,7 +182,7 @@ document.addEventListener("DOMContentLoaded", function () {
         if (gridDiv) {
             let seleccion = apiGridAprobadas.getSelectedRows();
 
-            let algunaSinValores = seleccion.some((row) => !row.tiene_costos);
+            let algunaSinValores = seleccion.some((row) => !row.valores);
 
             if (algunaSinValores) {
                 Swal.fire(

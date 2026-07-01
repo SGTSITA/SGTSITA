@@ -13,6 +13,7 @@ use App\Models\DocumCotizacion;
 use App\Models\Empresas;
 use App\Models\Equipo;
 use App\Models\GastosExtras;
+use App\Models\Gasto;
 use App\Models\GastosOperadores;
 use App\Models\Operador;
 use App\Models\Proveedor;
@@ -37,6 +38,7 @@ use App\Traits\CommonTrait as Common;
 use Illuminate\Support\Facades\Log;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Services\BancosService;
+use App\Services\GastosService;
 use App\Services\ViajesCostosService;
 use Illuminate\Support\Facades\Http;
 
@@ -44,11 +46,13 @@ class CotizacionesController extends Controller
 {
     protected $BancosService;
     protected $CostosService;
+    protected $GastosService;
 
-    public function __construct(BancosService $BancosService, ViajesCostosService $CostosService)
+    public function __construct(BancosService $BancosService, ViajesCostosService $CostosService, GastosService $GastosService)
     {
         $this->BancosService = $BancosService;
         $this->CostosService = $CostosService;
+        $this->GastosService = $GastosService;
     }
 
     public function index()
@@ -921,13 +925,13 @@ else{
                    $lng  = null;
 
 
-if ($url) {
+        if ($url) {
 
-        $coords = $service->resolver($url);
+                $coords = $service->resolver($url);
 
-     $lat = $coords['lat'] ?? null;
-        $lng = $coords['lng'] ?? null;
-}
+            $lat = $coords['lat'] ?? null;
+                $lng = $coords['lng'] ?? null;
+        }
 
 
                 $cotizaciones = new Cotizaciones();
@@ -1029,13 +1033,28 @@ if ($url) {
         return redirect()->route('index.cotizaciones')
             ->with('success', 'Estatus actualizado correctamente.');
     }
-
-
     public function edit($id) //revision para gastos extras
     {
         $cotizacion = Cotizaciones::where('id', '=', $id)->first();
         $documentacion = DocumCotizacion::with('Asignaciones')->where('id_cotizacion', '=', $cotizacion->id)->first();
+        /*
         $gastos_extras = GastosExtras::where('id_cotizacion', '=', $cotizacion->id)->get();
+        */
+        $gastos_extras = \App\Models\GastoImputacion::join('gastos', 'gastos.id', '=', 'gasto_imputaciones.gasto_id')
+            ->whereNull('gastos.deleted_at')
+            ->where('gastos.estatus', '!=', 'cancelado')
+            ->where('gasto_imputaciones.tipo_imputacion', '=', 'cotizacion')
+            ->where('gasto_imputaciones.imputable_type', '=', \App\Models\Cotizaciones::class)
+            ->where('gasto_imputaciones.imputable_id', '=', $cotizacion->id)
+            ->select(
+                'gasto_imputaciones.*',
+                'gasto_imputaciones.monto_imputado as monto',
+                'gasto_imputaciones.fecha_imputacion as fecha_aplicacion',
+                'gasto_imputaciones.fecha_imputacion as created_at',
+                'gastos.concepto as descripcion',
+                'gastos.estatus as estatus'
+            )
+            ->get();
         //$clientes = Client::where('id_empresa' ,'=',auth()->user()->id_empresa)->get();
         $idEmpresa = auth()->user()->id_empresa;
         $clientes = Client::join('client_empresa as ce', 'clients.id', '=', 'ce.id_client')
@@ -1046,7 +1065,24 @@ if ($url) {
                             ->where('is_active', 1)
                             ->orderBy('nombre')->get();
 
+        /*
         $gastos_ope = GastosOperadores::where('id_cotizacion', '=', $cotizacion->id)->get();
+        */
+        $gastos_ope = \App\Models\GastoImputacion::join('gastos', 'gastos.id', '=', 'gasto_imputaciones.gasto_id')
+            ->join('gasto_vinculos', 'gasto_vinculos.gasto_id', '=', 'gastos.id')
+            ->whereNull('gastos.deleted_at')
+            ->where('gastos.estatus', '!=', 'cancelado')
+            ->where('gasto_vinculos.tipo_vinculo', '=', 'cotizacion')
+            ->where('gasto_vinculos.vinculable_type', '=', \App\Models\Cotizaciones::class)
+            ->where('gasto_vinculos.vinculable_id', '=', $cotizacion->id)
+            ->where('gasto_imputaciones.tipo_imputacion', '=', 'operador')
+            ->select(
+                'gasto_imputaciones.*',
+                'gasto_imputaciones.monto_imputado as cantidad',
+                'gastos.concepto as tipo',
+                'gastos.estatus as estatus'
+            )
+            ->get();
 
         $proveedores = Proveedor::catalogoPrincipal()->when($idEmpresa != 0, function ($query) use ($idEmpresa) {
             $query->where('id_empresa', $idEmpresa);
@@ -1111,7 +1147,7 @@ if ($url) {
         $costosForm['total_sobrepeso_viaje'] = $sobrepeso?->monto ?? 0;
         // dd($bloqueado);
 
-        // dd($costosForm);
+        $categorias = \App\Models\CategoriasGastos::orderBy('categoria')->get();
 
         return view('cotizaciones.editv1', compact(
             'bancos',
@@ -1122,7 +1158,8 @@ if ($url) {
             'gastos_ope',
             'proveedores',
             'bloqueado',
-            'costosForm'
+            'costosForm',
+            'categorias'
         ));
     }
 
@@ -1203,9 +1240,43 @@ if ($url) {
     {
         $cotizacion = Cotizaciones::where('id', '=', $id)->first();
         $documentacion = DocumCotizacion::where('id_cotizacion', '=', $cotizacion->id)->first();
+        /*
         $gastos_extras = GastosExtras::where('id_cotizacion', '=', $cotizacion->id)->get();
+        */
+        $gastos_extras = \App\Models\GastoImputacion::join('gastos', 'gastos.id', '=', 'gasto_imputaciones.gasto_id')
+            ->whereNull('gastos.deleted_at')
+            ->where('gastos.estatus', '!=', 'cancelado')
+            ->where('gasto_imputaciones.tipo_imputacion', '=', 'cotizacion')
+            ->where('gasto_imputaciones.imputable_type', '=', \App\Models\Cotizaciones::class)
+            ->where('gasto_imputaciones.imputable_id', '=', $cotizacion->id)
+            ->select(
+                'gasto_imputaciones.*',
+                'gasto_imputaciones.monto_imputado as monto',
+                'gasto_imputaciones.fecha_imputacion as fecha_aplicacion',
+                'gasto_imputaciones.fecha_imputacion as created_at',
+                'gastos.concepto as descripcion',
+                'gastos.estatus as estatus'
+            )
+            ->get();
         $clientes = Client::where('id_empresa', '=', auth()->user()->id_empresa)->get();
+        /*
         $gastos_ope = GastosOperadores::where('id_cotizacion', '=', $cotizacion->id)->get();
+        */
+        $gastos_ope = \App\Models\GastoImputacion::join('gastos', 'gastos.id', '=', 'gasto_imputaciones.gasto_id')
+            ->join('gasto_vinculos', 'gasto_vinculos.gasto_id', '=', 'gastos.id')
+            ->whereNull('gastos.deleted_at')
+            ->where('gastos.estatus', '!=', 'cancelado')
+            ->where('gasto_vinculos.tipo_vinculo', '=', 'cotizacion')
+            ->where('gasto_vinculos.vinculable_type', '=', \App\Models\Cotizaciones::class)
+            ->where('gasto_vinculos.vinculable_id', '=', $cotizacion->id)
+            ->where('gasto_imputaciones.tipo_imputacion', '=', 'operador')
+            ->select(
+                'gasto_imputaciones.*',
+                'gasto_imputaciones.monto_imputado as cantidad',
+                'gastos.concepto as tipo',
+                'gastos.estatus as estatus'
+            )
+            ->get();
         $subclientes = Subclientes::where('id_cliente', '=', auth()->user()->id_cliente)->get();
 
 
@@ -1300,7 +1371,24 @@ if ($url) {
     {
         $cotizacion = Cotizaciones::where('id', '=', $id)->first();
         $documentacion = DocumCotizacion::where('id_cotizacion', '=', $cotizacion->id)->first();
+        /*
         $gastos_extras = GastosExtras::where('id_cotizacion', '=', $cotizacion->id)->get();
+        */
+        $gastos_extras = \App\Models\GastoImputacion::join('gastos', 'gastos.id', '=', 'gasto_imputaciones.gasto_id')
+            ->whereNull('gastos.deleted_at')
+            ->where('gastos.estatus', '!=', 'cancelado')
+            ->where('gasto_imputaciones.tipo_imputacion', '=', 'cotizacion')
+            ->where('gasto_imputaciones.imputable_type', '=', \App\Models\Cotizaciones::class)
+            ->where('gasto_imputaciones.imputable_id', '=', $cotizacion->id)
+            ->select(
+                'gasto_imputaciones.*',
+                'gasto_imputaciones.monto_imputado as monto',
+                'gasto_imputaciones.fecha_imputacion as fecha_aplicacion',
+                'gasto_imputaciones.fecha_imputacion as created_at',
+                'gastos.concepto as descripcion',
+                'gastos.estatus as estatus'
+            )
+            ->get();
         $clientes = Client::get();
         $configuracion = Configuracion::first();
         $bancos_oficiales = Bancos::where('tipo', '=', 'Oficial')->get();
@@ -1492,7 +1580,25 @@ $this->procesarDocumento(
                                 $afectaBanco = true;
                             }
 
+                            /*
                             $gasto = GastosOperadores::where('id_cotizacion', $id)->get();  //verificar si tuvo un gasto
+                            */
+                            $gasto = \App\Models\GastoImputacion::join('gastos', 'gastos.id', '=', 'gasto_imputaciones.gasto_id')
+                                ->join('gasto_vinculos', 'gasto_vinculos.gasto_id', '=', 'gastos.id')
+                                ->leftJoin('gasto_pagos', 'gasto_pagos.gasto_id', '=', 'gastos.id')
+                                ->whereNull('gastos.deleted_at')
+                                ->where('gastos.estatus', '!=', 'cancelado')
+                                ->where('gasto_vinculos.tipo_vinculo', '=', 'cotizacion')
+                                ->where('gasto_vinculos.vinculable_type', '=', \App\Models\Cotizaciones::class)
+                                ->where('gasto_vinculos.vinculable_id', '=', $id)
+                                ->where('gasto_imputaciones.tipo_imputacion', '=', 'operador')
+                                ->select(
+                                    'gasto_imputaciones.*',
+                                    'gasto_imputaciones.monto_imputado as cantidad',
+                                    'gastos.concepto as tipo',
+                                    'gasto_pagos.cuenta_bancaria_id as id_banco'
+                                )
+                                ->get();
                             foreach ($gasto as $g) {
                                 if (!is_null($g->id_banco) && $g->cantidad > 0) {//cantidad valida y ya tiene pago
 
@@ -2017,30 +2123,33 @@ $this->procesarDocumento(
             "succes"=> false,
             "Titulo" => "Verificar cambio empresa",
             "message" => "Posiblemente fuera de la empresa"
-            ];
+                 // dd($contenedor, $numContenedor);
+
+        ];
         }
+        $gastosUnificados = app(\App\Services\GastosService::class)->listar([
+            'id_empresa' => $idEmpresa,
+            'cotizacion_id' => $contenedor->id_cotizacion
+         ]);
 
-
-        // dd($contenedor, $numContenedor);
-        $gastosExtra = GastosExtras::with('Bancos.catBanco')
-        ->where('id_cotizacion', $contenedor->id_cotizacion)
-
-        ->get();
+        $gastosExtra = $gastosUnificados->filter(function ($g) {
+            return $g['tipo_gasto'] === 'cotizacion';
+        });
 
         // dd($gastosExtra);
         $gastosContenedor =
         $gastosExtra->map(function ($g) {
             return [
-                "IdContenedor" => $g->id_cotizacion,
-                "IdGasto" => $g->id,
-                "Gasto" => $g->descripcion,
-                "Monto" => $g->monto,
-                "Fecha" => $g->created_at,
-                "estatus" => $g->estatus,
-                "fecha_aplicacion" => $g->fecha_aplicacion,
-                "BancoDescripcion" => $g->Bancos?->nombre_beneficiario ?? ''.' / '.$g->Bancos?->nombre ?? '',
+                "IdContenedor" => $g['cotizacion_id'] ?? null,
+                "IdGasto" => $g['id'],
+                "Gasto" => $g['concepto'],
+                "Monto" => $g['monto_total'],
+                "Fecha" => $g['fecha_gasto'],
+                "estatus" => $g['estatus'],
+                "fecha_aplicacion" => $g['pagos'][0]['fecha_pago'] ?? null,
+                "BancoDescripcion" => isset($g['pagos'][0]['cuenta_bancaria']) ? ($g['pagos'][0]['cuenta_bancaria']['nombre_beneficiario'] . ' / ' . $g['pagos'][0]['cuenta_bancaria']['nombre']) : '',
             ];
-        });
+        })->values();
 
         return $gastosContenedor;
     }
@@ -2055,24 +2164,28 @@ $this->procesarDocumento(
                                             ->where('id_empresa', $idEmpresa)
                                             ->first();
         // dd($contenedor, $numContenedor);
-        $gastosOperador = GastosOperadores::leftJoin('bancos', 'gastos_operadores.id_banco', '=', 'bancos.id')
-        ->where('id_cotizacion', $contenedor->id_cotizacion)
-        ->select('bancos.nombre_banco', 'bancos.nombre_beneficiario', 'gastos_operadores.*')
-        ->get();
+        $gastosUnificados = app(\App\Services\GastosService::class)->listar([
+            'id_empresa' => $idEmpresa,
+            'cotizacion_id' => $contenedor->id_cotizacion
+        ]);
+
+        $gastosOperador = $gastosUnificados->filter(function ($g) {
+            return $g['tipo_gasto'] === 'operador';
+        });
+
         $gastosContenedor =
         $gastosOperador->map(function ($g) {
             return [
-                "IdContenedor" => $g->id_cotizacion,
-                "IdGasto" => $g->id,
-                "Gasto" => $g->tipo,
-                "Monto" => $g->cantidad,
-                "Estatus" => $g->estatus,
-                "Fecha" => Carbon::parse($g->created_at)->format('Y-m-d'),
-                "FechaPago" => $g->fecha_pago,
-                "BancoPago" => (!is_null($g->nombre_banco)) ? $g->nombre_banco.' / '.$g->nombre_beneficiario : '',
+                "IdContenedor" => $g['cotizacion_id'] ?? null,
+                "IdGasto" => $g['id'],
+                "Gasto" => $g['concepto'],
+                "Monto" => $g['monto_total'],
+                "Estatus" => $g['estatus'],
+                "Fecha" => Carbon::parse($g['fecha_gasto'])->format('Y-m-d'),
+                "FechaPago" => $g['pagos'][0]['fecha_pago'] ?? null,
+                "BancoPago" => isset($g['pagos'][0]['cuenta_bancaria']) ? ($g['pagos'][0]['cuenta_bancaria']['nombre'] . ' / ' . $g['pagos'][0]['cuenta_bancaria']['nombre_beneficiario']) : '',
             ];
-        });
-
+        })->values();
         return $gastosContenedor;
     }
 
@@ -2179,6 +2292,8 @@ $this->procesarDocumento(
                 "pago_inmediato" => $pagoInmediato ? 1 : 0,
             ]);
 
+            $this->sincronizarGastoOperadorNew($gasto);
+
 
             if ($pagoInmediato) {
 
@@ -2251,6 +2366,8 @@ $this->procesarDocumento(
                     "fecha_pago" => $r->fechaAplicacion,
                     "id_banco" => $r->banco
                 ]);
+
+                $this->sincronizarGastoOperadorNew($gasto->fresh());
             }
 
             DB::commit();
@@ -2369,6 +2486,8 @@ $this->procesarDocumento(
                     "id_banco" => $r->bank,
                     "fecha_pago" => \Carbon\Carbon::parse($r->fechaAplicacion ?? now())->format('Y-m-d')
                 ]);
+
+                $this->sincronizarGastoOperadorNew($gasto->fresh());
             }
 
 
@@ -2441,8 +2560,26 @@ $this->procesarDocumento(
             $gastos = collect($r->seleccionEliminarPago);
 
             foreach ($gastos as $g) {
+                $idGasto = $g['IdGasto'];
+                $idEmpresa = auth()->user()->id_empresa;
 
-                $gasto = GastosOperadores::find($g['IdGasto']);
+                // 1. Intentar con el modelo nuevo Gasto
+                $nuevoGasto = Gasto::where('id', $idGasto)
+                    ->where('id_empresa', $idEmpresa)
+                    ->first();
+
+                if ($nuevoGasto) {
+                    $fechacancelacion = $r->fechacancelacion ?? now()->format('Y-m-d');
+                    foreach ($nuevoGasto->pagos()->where('estatus', '!=', 'cancelado')->get() as $pago) {
+                        $this->GastosService->cancelarPago($pago, $fechacancelacion);
+                    }
+                    $nuevoGasto->update(['estatus' => 'cancelado']);
+                    $nuevoGasto->delete();
+                    continue;
+                }
+
+                // 2. Fallback legado
+                $gasto = GastosOperadores::find($idGasto);
 
                 if (!$gasto) {
                     continue;
@@ -2484,6 +2621,8 @@ $this->procesarDocumento(
                 $gasto->update([
                     'estatus' => 'eliminado'
                 ]);
+
+                $this->cancelarGastoNew('gastos_operadores', $gasto->id);
             }
 
             DB::commit();
@@ -2518,11 +2657,13 @@ $this->procesarDocumento(
                     ->where('id_empresa', $idEmpresa)
                     ->firstOrFail();
 
-                GastosExtras::create([
+                $gastoExtra = GastosExtras::create([
                     'id_cotizacion' => $contenedor->id_cotizacion,
                     'descripcion' => $r->descripcion,
                     'monto' => $r->montoGasto,
                 ]);
+
+                $this->sincronizarGastoExtraNew($gastoExtra);
 
                 Cotizaciones::where('id', $contenedor->id_cotizacion)
                     ->increment('restante', $r->montoGasto);
@@ -2561,10 +2702,25 @@ $this->procesarDocumento(
             $gastosRequest = collect($r->input('seleccionGastos', []));
             $ids = $gastosRequest->pluck('IdGasto')->toArray();
 
+            // 1. Procesar nuevos Gastos
+            $newGastos = Gasto::whereIn('id', $ids)
+                ->where('id_empresa', $idEmpresa)
+                ->get();
+
+            $fechacancelacion = $r->fechacancelacion ?? now()->format('Y-m-d');
+            foreach ($newGastos as $gasto) {
+                foreach ($gasto->pagos()->where('estatus', '!=', 'cancelado')->get() as $pago) {
+                    $this->GastosService->cancelarPago($pago, $fechacancelacion);
+                }
+                $gasto->update(['estatus' => 'cancelado']);
+                $gasto->delete();
+            }
+
+            // 2. Fallback legado GastosExtras
             $gastos = GastosExtras::where('id_cotizacion', $contenedor->id_cotizacion)
                 ->whereIn('id', $ids)
                 ->get();
-    $fechacancelacion = $r->fechacancelacion;
+
             foreach ($gastos as $gasto) {
 
 
@@ -2594,14 +2750,19 @@ $this->procesarDocumento(
                 $gasto->update([
                     "estatus" => "eliminado"
                 ]);
+
+                $this->cancelarGastoNew('gastos_extras', $gasto->id);
             }
 
-            $total = $gastos->sum('monto');
+            $totalNew = $newGastos->sum('monto_total');
+            $total = $gastos->sum('monto') + $totalNew;
 
-            Cotizaciones::where('id', $contenedor->id_cotizacion)
-                ->update([
-                    "restante" => DB::raw("restante - {$total}")
-                ]);
+            if ($total > 0) {
+                Cotizaciones::where('id', $contenedor->id_cotizacion)
+                    ->update([
+                        "restante" => DB::raw("restante - {$total}")
+                    ]);
+            }
 
             DB::commit();
 
@@ -2642,24 +2803,48 @@ $this->procesarDocumento(
                 throw new \Exception("No se recibieron gastos");
             }
 
+            $gastosExtras = collect();
+            $gastosUnificados = collect();
+            $total = 0;
 
-            $gastos = GastosExtras::where('id_cotizacion', $contenedor->id_cotizacion)
-                ->whereIn('id', $ids)
-                ->get();
-
-            $total = $gastos->sum('monto');
- $contenedoresAbonos = [];
-                        $contenedorAbono = [
-                            'num_contenedor' => $contenedor->num_contenedor,
-                            'abono' =>  $total
-                        ];
-
-                        array_push($contenedoresAbonos, $contenedorAbono);
-
-            if ($total != $request->total) {
-                throw new \Exception("El monto no coincide con los gastos seleccionados");
+            foreach ($ids as $id) {
+                // Intentar buscar como gasto unificado primero
+                $uGasto = Gasto::find($id);
+                if ($uGasto) {
+                    if ($uGasto->origen_legacy === 'gastos_extras' && $uGasto->origen_legacy_id) {
+                        $lGasto = GastosExtras::find($uGasto->origen_legacy_id);
+                        if ($lGasto) {
+                            $gastosExtras->push($lGasto);
+                            $total += (float) $lGasto->monto;
+                        }
+                    } else {
+                        $gastosUnificados->push($uGasto);
+                        $total += (float) $uGasto->monto_total;
+                    }
+                } else {
+                    // Si no es unificado, buscar directamente en el legacy
+                    $lGasto = GastosExtras::find($id);
+                    if ($lGasto) {
+                        $gastosExtras->push($lGasto);
+                        $total += (float) $lGasto->monto;
+                    }
+                }
             }
 
+            $total = round($total, 2);
+            $reqTotal = round((float) $request->total, 2);
+
+            $contenedoresAbonos = [];
+            $contenedorAbono = [
+                'num_contenedor' => $contenedor->num_contenedor,
+                'abono' =>  $total
+            ];
+
+            array_push($contenedoresAbonos, $contenedorAbono);
+
+            if ($total != $reqTotal) {
+                throw new \Exception("El monto no coincide con los gastos seleccionados (Calculado: $total vs Recibido: $reqTotal)");
+            }
 
             $validar = $this->BancosService->validarsaldoparacargo(
                 $idEmpresa,
@@ -2676,10 +2861,8 @@ $this->procesarDocumento(
                 ]);
             }
 
-
-
-            foreach ($gastos as $gasto) {
-
+            // Procesar gastos legacy
+            foreach ($gastosExtras as $gasto) {
                 if (strtolower($gasto->estatus) === 'pagado') {
                     continue;
                 }
@@ -2693,7 +2876,7 @@ $this->procesarDocumento(
                     'referencia' => 'GASTOS',
                     'referenciaable_id' =>  $gasto->id,
                     'referenciaable_type' => \App\Models\GastosExtras::class,
-                     'detalles' => json_encode($contenedoresAbonos),
+                    'detalles' => json_encode($contenedoresAbonos),
                     'observaciones' => 'Pago individual de gasto',
                 ];
 
@@ -2707,6 +2890,22 @@ $this->procesarDocumento(
                     "estatus" => "pagado",
                     "fecha_aplicacion" => $request->fecha,
                     "cuenta_bancaria_id" => $request->banco
+                ]);
+
+                $this->sincronizarGastoExtraNew($gasto->fresh());
+            }
+
+            // Procesar gastos unificados
+            foreach ($gastosUnificados as $gasto) {
+                if ($gasto->estatus === 'pagado') {
+                    continue;
+                }
+
+                $this->GastosService->pagar($gasto, [
+                    'cuenta_bancaria_id' => $request->banco,
+                    'fecha_pago' => $request->fecha,
+                    'monto' => $gasto->monto_total,
+                    'referencia' => 'Pago de gasto extra: ' . $gasto->concepto,
                 ]);
             }
 
@@ -2726,6 +2925,43 @@ $this->procesarDocumento(
                 "TMensaje" => "error",
                 "Mensaje" => $t->getMessage(),
                 "Titulo" => "Error al pagar"
+            ]);
+        }
+    }
+
+    private function sincronizarGastoExtraNew(GastosExtras $gasto): void
+    {
+        try {
+            $this->GastosService->registrarDesdeGastoExtra($gasto->fresh());
+        } catch (\Throwable $t) {
+            Log::channel('daily')->warning('No se pudo sincronizar gastos_extras con gastos new', [
+                'gasto_extra_id' => $gasto->id,
+                'error' => $t->getMessage(),
+            ]);
+        }
+    }
+
+    private function sincronizarGastoOperadorNew(GastosOperadores $gasto): void
+    {
+        try {
+            $this->GastosService->registrarDesdeGastoOperador($gasto->fresh());
+        } catch (\Throwable $t) {
+            Log::channel('daily')->warning('No se pudo sincronizar gastos_operadores con gastos new', [
+                'gasto_operador_id' => $gasto->id,
+                'error' => $t->getMessage(),
+            ]);
+        }
+    }
+
+    private function cancelarGastoNew(string $origenLegacy, int $origenLegacyId): void
+    {
+        try {
+            $this->GastosService->cancelarDesdeLegacy($origenLegacy, $origenLegacyId);
+        } catch (\Throwable $t) {
+            Log::channel('daily')->warning('No se pudo cancelar gasto new desde legacy', [
+                'origen_legacy' => $origenLegacy,
+                'origen_legacy_id' => $origenLegacyId,
+                'error' => $t->getMessage(),
             ]);
         }
     }

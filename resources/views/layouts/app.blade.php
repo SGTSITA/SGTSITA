@@ -204,7 +204,7 @@
 
         <script src="{{ asset('js/sgt/common/sessionAutoLogout.js') }}"></script>
     @endauth
-
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="{{ asset('js/sgt/common.js') }}"></script>
     @yield('js_custom')
 
@@ -220,7 +220,7 @@
     <script src="{{ asset('assets/js/core/bootstrap.min.js') }}"></script>
     <script src="{{ asset('assets/js/plugins/perfect-scrollbar.min.js') }}"></script>
     <script src="{{ asset('assets/js/plugins/smooth-scrollbar.min.js') }}"></script>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    {{-- <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script> --}}
 
     <script src="{{ asset('assets/js/plugins/datatables.js') }}"></script>
 

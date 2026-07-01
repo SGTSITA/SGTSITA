@@ -101,7 +101,7 @@ class AuditObserver
         ? json_encode(array_keys($cambios))
         : null,
 
-    'empresa_id' => $model->empresa_id ?? auth()->user()->id_empresa,
+    'empresa_id' => $model->empresa_id ?? $model->id_empresa ?? auth()->user()?->id_empresa ?? null,
 
     'referencia' =>  $referencia['referencia'] ?? null,
 

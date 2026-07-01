@@ -1,0 +1,593 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\User;
+use App\Models\Operador;
+use App\Models\Equipo;
+use App\Models\DocumCotizacion;
+use App\Models\Asignaciones;
+use App\Models\Cotizaciones;
+use App\Models\Client;
+use App\Models\Proveedor;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use  Illuminate\Support\Facades\DB;
+
+class ApiValidationController extends Controller
+{
+    /**
+     * Helper to return standard JSON structure.
+     */
+    private function apiResponse($success, $message, $data = [], $status = 200)
+    {
+        return response()->json([
+            'success' => $success,
+            'mensaje' => $message,
+            'data'    => $data
+        ], $status);
+    }
+
+    /**
+     * API Login for SGT system.
+     */
+    public function login(Request $request)
+    {
+        $request->validate([
+            'email'    => 'required|email',
+            'password' => 'required',
+        ]);
+
+        $credentials = $request->only('email', 'password');
+
+        if (!Auth::attempt($credentials)) {
+            return $this->apiResponse(false, 'Las credenciales de acceso son incorrectas.', [], 401);
+        }
+
+        $user = Auth::user();
+
+        if (!$user->can('SGT-Acceso')) {
+            Auth::logout();
+            return $this->apiResponse(false, 'Tu usuario no tiene acceso al sistema SGT.', [], 403);
+        }
+
+        // Return user info and basic token
+        $token = $user->createToken('sgt-api-token')->plainTextToken;
+
+        return $this->apiResponse(true, 'Inicio de sesión exitoso.', [
+            'token' => $token,
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'id_empresa' => $user->id_empresa
+            ]
+        ]);
+    }
+
+    /**
+     * Validate Operator, Trip and Unit details all in a single payload.
+     */
+    public function validateOperador(Request $request)
+    {
+        $request->validate([
+            'nombre'     => 'required|string',
+            'telefono'   => 'required|string',
+            'unidad'     => 'required|string',
+            'contenedor' => 'required|string',
+        ]);
+
+        // 1. Validate container exists
+        $contenedor = DocumCotizacion::where('num_contenedor', $request->contenedor)->first();
+        if (!$contenedor) {
+            return $this->apiResponse(false, 'Contenedor no registrado en cotizaciones.', [], 404);
+        }
+
+        // 2. Validate Assignment (Trip) exists for this container
+        $asignacion = Asignaciones::with(['Operador', 'Camion'])
+            ->where('id_contenedor', $contenedor->id)
+            ->first();
+
+        if (!$asignacion) {
+            return $this->apiResponse(false, 'El viaje/asignación no existe para este contenedor.', [
+                'id_contenedor' => $contenedor->id
+            ], 404);
+        }
+
+        // 3. Validate Unit (Camion) matches the assignment
+        $camion = $asignacion->Camion;
+        if (!$camion || strtolower(trim($camion->id_equipo)) !== strtolower(trim($request->unidad))) {
+            return $this->apiResponse(false, 'La unidad no coincide con el viaje asignado.', [
+                'id_contenedor' => $contenedor->id,
+                'unidad_asignada' => $camion ? $camion->id_equipo : 'Ninguna'
+            ], 400);
+        }
+
+        // 4. Validate Operator matches the assignment
+        $operador = $asignacion->Operador;
+        if (!$operador) {
+            return $this->apiResponse(false, 'No hay operador asignado a este viaje.', [
+                'id_contenedor' => $contenedor->id
+            ], 400);
+        }
+
+        // Check name (soft match)
+        if (stripos($operador->nombre, trim($request->nombre)) === false && stripos(trim($request->nombre), $operador->nombre) === false) {
+            return $this->apiResponse(false, 'El nombre del operador no coincide con el viaje asignado.', [
+                'id_contenedor' => $contenedor->id
+            ], 400);
+        }
+
+        // Check phone
+        $reqTelefono = preg_replace('/\D/', '', $request->telefono);
+        $dbTelefono = preg_replace('/\D/', '', $operador->telefono);
+        if ($reqTelefono !== $dbTelefono) {
+            return $this->apiResponse(false, 'El teléfono no coincide con el operador asignado.', [
+                'id_contenedor' => $contenedor->id
+            ], 400);
+        }
+
+        // All details validated successfully!
+        return $this->apiResponse(true, 'Operador y viaje validados correctamente para ingresar operador.', [
+            'id_contenedor' => $contenedor->id,
+            'id_operador'   => $operador->id,
+            'id_asignacion' => $asignacion->id,
+            'nombre'        => $operador->nombre,
+            'num_contenedor' => $contenedor->num_contenedor,
+            'unidad'        => $camion->id_equipo
+        ]);
+    }
+
+    public function getOperacionActiva(Request $request)
+    {
+        $user = $request->user();
+        $empresaId = $user->id_empresa;
+
+        // Cargar cotizaciones de la empresa correspondiente
+        $cotizaciones = Cotizaciones::where('id_empresa', $empresaId)
+            ->where('jerarquia', '!=', 'Secundario')
+            ->with(['Cliente', 'DocCotizacion.Asignaciones.Operador', 'DocCotizacion.Asignaciones.Camion', 'viajes.costos'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $mapaCostos = config('CatAuxiliares.costosViajes') ?? [];
+
+        $data = $cotizaciones->map(function ($cotizacion) use ($mapaCostos, $empresaId) {
+            // Obtener viaje activo
+            $viaje = $cotizacion->viajes->firstWhere('estado', 'activo');
+
+            $costosForm = [];
+            $totalCostosViaje = 0;
+
+            if ($viaje) {
+                // Llenar el mapa de costos base para visualización con normalización de acentos y mayúsculas
+                foreach ($mapaCostos as $input => $config) {
+                    $concepto = $config['concepto'];
+                    $conceptoBuscado = trim(strtolower($concepto));
+                    $conceptoBuscado = str_replace(['á', 'é', 'í', 'ó', 'ú'], ['a', 'e', 'i', 'o', 'u'], $conceptoBuscado);
+
+                    $costo = $viaje->costos->first(function ($c) use ($conceptoBuscado) {
+                        $cNorm = trim(strtolower($c->concepto));
+                        $cNorm = str_replace(['á', 'é', 'í', 'ó', 'ú'], ['a', 'e', 'i', 'o', 'u'], $cNorm);
+                        return $cNorm === $conceptoBuscado;
+                    });
+
+                    $montoCosto = $costo?->monto ?? 0;
+                    $costosForm[$input] = $montoCosto;
+                }
+
+                $sobrepeso = $viaje->costos->first(function ($c) {
+                    $cNorm = trim(strtolower($c->concepto));
+                    $cNorm = str_replace(['á', 'é', 'í', 'ó', 'ú'], ['a', 'e', 'i', 'o', 'u'], $cNorm);
+                    return $cNorm === 'sobrepeso';
+                });
+                if ($sobrepeso) {
+                    $costosForm['precio_sobre_peso'] = $sobrepeso->meta['precio_sobre_peso'] ?? 0;
+                    $costosForm['sobrepeso_viaje'] = $sobrepeso->meta['peso'] ?? 0;
+                    $costosForm['precio_tonelada'] = $sobrepeso->meta['precio_tonelada'] ?? 0;
+                    $costosForm['total_sobrepeso_viaje'] = $sobrepeso->monto;
+                }
+
+                // Calcular total de costos específicos del viaje: base_factura, base_taref, iva, retencion
+                $tieneRetencionCost = false;
+                foreach ($viaje->costos as $costo) {
+                    $conceptoNorm = trim(strtolower($costo->concepto));
+                    $conceptoNorm = str_replace(['á', 'é', 'í', 'ó', 'ú'], ['a', 'e', 'i', 'o', 'u'], $conceptoNorm);
+
+                    if (in_array($conceptoNorm, ['base_factura', 'base_taref', 'iva', 'retencion'])) {
+                        $monto = (float) $costo->monto;
+                        if (str_contains($conceptoNorm, 'retencion')) {
+                            $totalCostosViaje -= $monto; // Retencion siempre resta
+                            $tieneRetencionCost = true;
+                        } elseif ($costo->tipo_operacion === 'descuento') {
+                            $totalCostosViaje -= $monto;
+                        } else {
+                            $totalCostosViaje += $monto;
+                        }
+                    }
+                }
+
+                // Determinar el monto de la retención de la cotización
+                $retMonto = 0;
+                if (!empty($cotizacion->retencion) && (float) $cotizacion->retencion > 0) {
+                    $retMonto = (float) $cotizacion->retencion;
+                } elseif ($cotizacion->retencion_automatica == 1 && !empty($cotizacion->base_factura)) {
+                    $retMonto = (float) $cotizacion->base_factura * 0.04;
+                }
+
+                // Si el viaje no tiene costo de retención, pero la cotización sí tiene (o es automática), lo restamos y mostramos
+                if (!$tieneRetencionCost && $retMonto > 0) {
+                    $totalCostosViaje -= $retMonto;
+                    $costosForm['retencion'] = $retMonto;
+                }
+            } else {
+                // Si no hay viaje, pero la cotización tiene retención configurada o automática, la asignamos
+                $retMonto = 0;
+                if (!empty($cotizacion->retencion) && (float) $cotizacion->retencion > 0) {
+                    $retMonto = (float) $cotizacion->retencion;
+                } elseif ($cotizacion->retencion_automatica == 1 && !empty($cotizacion->base_factura)) {
+                    $retMonto = (float) $cotizacion->base_factura * 0.04;
+                }
+                if ($retMonto > 0) {
+                    $costosForm['retencion'] = $retMonto;
+                }
+            }
+
+            // Consultar los gastos extras del nuevo módulo refacturado de gastos
+            $gastosTotal = 0;
+            $gastosDetalle = [];
+            try {
+                $gastosService = app(\App\Services\GastosService::class);
+                $gastosList = $gastosService->listar([
+                    'id_empresa' => $empresaId,
+                    'cotizacion_id' => $cotizacion->id,
+                    'tipo_gasto' => 'cotizacion'
+                ]);
+                foreach ($gastosList as $gasto) {
+                    $montoG = (float) $gasto['monto_total'];
+                    $gastosTotal += $montoG;
+                    $gastosDetalle[] = [
+                        'folio' => $gasto['folio'] ?? 'S/F',
+                        'concepto' => $gasto['concepto'] ?? 'Gastos Extra',
+                        'categoria' => $gasto['categoria'] ?? 'N/A',
+                        'monto' => $montoG,
+                        'fecha' => $gasto['fecha_gasto'] ?? ''
+                    ];
+                }
+            } catch (\Exception $e) {
+                // Omitir si falla el servicio
+            }
+
+            $costoTotalCalculado = $totalCostosViaje + $gastosTotal;
+
+            // Concatenar contenedor primario y secundario si es Full
+            $contenedor = $cotizacion->DocCotizacion ? $cotizacion->DocCotizacion->num_contenedor : 'N/A';
+            if (!is_null($cotizacion->referencia_full)) {
+                $secundaria = Cotizaciones::where('referencia_full', $cotizacion->referencia_full)
+                    ->where('jerarquia', 'Secundario')
+                    ->with('DocCotizacion')
+                    ->first();
+
+                if ($secundaria && $secundaria->DocCotizacion) {
+                    $contenedor .= ' / ' . $secundaria->DocCotizacion->num_contenedor;
+                }
+            }
+
+            $asignacion = $cotizacion->DocCotizacion?->Asignaciones;
+
+
+            $estatus =$cotizacion->estatus;
+
+            if($cotizacion->estatus_planeacion ==1 && $estatus =='Aprobada'){
+                 $estatus='Planeada';
+            }
+
+            $url_llegada =  $cotizacion->latitud . $cotizacion->longitud;
+
+            // Debugging log to storage/logs/laravel.log
+            \Log::info("Debug Operacion ID {$cotizacion->id}:", [
+                'retencion_col' => $cotizacion->retencion,
+                'viaje_costos' => $viaje ? $viaje->costos->map(fn($c) => [$c->concepto => $c->monto])->toArray() : 'sin viaje'
+            ]);
+
+            return [
+                'id' => $cotizacion->id,
+                'contenedor_id' => $cotizacion->DocCotizacion?->id,
+                'cliente' => $cotizacion->Cliente ? $cotizacion->Cliente->nombre : 'N/A',
+                'contenedor' => $contenedor,
+                'origen' => $cotizacion->origen,
+                'destino' => $cotizacion->destino,
+                'url_llegada' => $url_llegada,
+                'estatus' => $estatus,
+                'est_plane'=> $cotizacion->estatus_planeacion?? null,
+                'total' => $cotizacion->total, // Total base de cotización
+                'total_costos_viaje' => $totalCostosViaje,
+                'gastos_total' => $gastosTotal,
+                'gastos_detalle' => $gastosDetalle,
+                'costo_total_calculado' => $costoTotalCalculado,
+                'debug_viaje_costos' => $viaje ? $viaje->costos->map(fn($c) => ['concepto' => $c->concepto, 'monto' => $c->monto, 'tipo_operacion' => $c->tipo_operacion]) : [],
+                'debug_cotizacion_retencion' => $cotizacion->retencion,
+
+                // Detalle del operador y unidad (Viaje)
+                'operador' => $asignacion?->Operador?->nombre ?? 'Sin Asignar',
+                'unidad' => $asignacion?->Camion?->id_equipo ?? 'Ninguna',
+
+                // Detalles del contenedor y terminal
+                'terminal' => $cotizacion->DocCotizacion?->terminal ?? 'N/A',
+                'naviera' => $cotizacion->DocCotizacion?->naviera_id ?? 'N/A',
+                'boleta_liberacion' => $cotizacion->DocCotizacion?->boleta_liberacion ?? '',
+                'num_boleta_liberacion' => $cotizacion->DocCotizacion?->num_boleta_liberacion ?? '',
+
+                // Costos detallados extraídos del mapa de costos
+                'costos_detalle' => empty($costosForm) ? (object)[] : $costosForm
+            ];
+        });
+
+        return $this->apiResponse(true, 'Operaciones activas de la empresa obtenidas con éxito.', [
+            'data' => $data
+        ]);
+    }
+
+    public function getCotizaciones(Request $request)
+    {
+        $user = $request->user();
+        $empresaId = $user->id_empresa;
+
+        // Consultar cotizaciones uniendo con clientes y documentos de cotización para retornar los datos correctos
+        $cotizaciones = DB::table('cotizaciones')
+            ->leftJoin('clients', 'cotizaciones.id_cliente', '=', 'clients.id')
+            ->leftJoin('docum_cotizacion', 'docum_cotizacion.id_cotizacion', '=', 'cotizaciones.id')
+            ->where('cotizaciones.id_empresa', $empresaId)
+            ->where('cotizaciones.jerarquia', '!=', 'Secundario')
+            ->select(
+                'cotizaciones.id',
+                'clients.nombre as cliente',
+                'docum_cotizacion.num_contenedor as contenedor',
+                'cotizaciones.total',
+                'cotizaciones.estatus'
+            )
+            ->get();
+
+               return $this->apiResponse(true, 'Cotizaciones obtenidas con éxito.', [
+            'data'        => $cotizaciones
+        ]);
+    }
+
+    /**
+     * Obtener viajes filtrados por la empresa del usuario
+     */
+    public function getViajes(Request $request)
+    {
+        $user = $request->user();
+        $empresaId = $user->id_empresa;
+
+        $viajes = DB::table('asignaciones')
+            ->leftJoin('docum_cotizacion', 'asignaciones.id_contenedor', '=', 'docum_cotizacion.id')
+            ->leftJoin('cotizaciones', 'docum_cotizacion.id_cotizacion', '=', 'cotizaciones.id')
+            ->leftJoin('operadores', 'asignaciones.id_operador', '=', 'operadores.id')
+            ->where('asignaciones.id_empresa', $empresaId)
+            ->select(
+                'asignaciones.id',
+                'cotizaciones.origen',
+                'cotizaciones.destino',
+                'operadores.nombre as operador',
+                'asignaciones.total_viaje as costo',
+                'asignaciones.estatus_viaje as estatus'
+            )
+            ->get();
+
+          return $this->apiResponse(true, 'Viajes obtenidos con éxito.', [
+            'data'        => $viajes
+        ]);
+
+    }
+
+    /**
+     * Obtener contenedores filtrados por la empresa del usuario
+     */
+    public function getContenedores(Request $request)
+    {
+        $user = $request->user();
+        $empresaId = $user->id_empresa;
+
+        $contenedores = DB::table('docum_cotizacion')
+            ->leftJoin('cotizaciones', 'docum_cotizacion.id_cotizacion', '=', 'cotizaciones.id')
+            ->where('docum_cotizacion.id_empresa', $empresaId)
+            ->select(
+                'docum_cotizacion.id',
+                'docum_cotizacion.num_contenedor as numero',
+                'cotizaciones.referencia_full as tipo',
+                'cotizaciones.tamano',
+                'docum_cotizacion.terminal as ubicacion',
+                'cotizaciones.estatus'
+            )
+            ->get();
+
+              return $this->apiResponse(true, 'Contenedores obtenidos con éxito.', [
+            'data'        => $contenedores
+        ]);
+
+        }
+
+    /**
+     * Obtener estadísticas y reportes filtrados por la empresa del usuario
+     */
+    public function getReportes(Request $request)
+    {
+        $user = $request->user();
+        $empresaId = $user->id_empresa;
+
+        $totales = [
+            'total_cotizaciones' => DB::table('cotizaciones')->where('id_empresa', $empresaId)->count(),
+            'total_viajes_activos' => DB::table('asignaciones')->where('id_empresa', $empresaId)->count(),
+            'total_contenedores' => DB::table('docum_cotizacion')->where('id_empresa', $empresaId)->count(),
+            'cotizaciones_aprobadas' => DB::table('cotizaciones')
+                ->where('id_empresa', $empresaId)
+                ->where('estatus', 'Aprobada')
+                ->count(),
+            'cotizaciones_pendientes' => DB::table('cotizaciones')
+                ->where('id_empresa', $empresaId)
+                ->where('estatus', 'Pendiente')
+                ->count(),
+        ];
+            return $this->apiResponse(true, 'Estadísticas y reportes de operación por empresa.', [
+                    'data'        => $totales
+                ]);
+
+    }
+
+    public function getMonitoreo(Request $request)
+    {
+        $coordenadasController = app(CoordenadasController::class);
+        $response = $coordenadasController->getEquiposGps($request);
+        
+        return $this->apiResponse(true, 'Datos de monitoreo obtenidos con éxito.', $response->getData());
+    }
+
+    public function finalizarViaje(Request $request)
+    {
+        $idContenedor = $request->idContenedor ?? $request->idContenendor;
+        if (empty($idContenedor)) {
+            return $this->apiResponse(false, 'El ID de contenedor es requerido.', [], 400);
+        }
+
+        $contenedor = DocumCotizacion::find($idContenedor);
+        if (!$contenedor) {
+            return $this->apiResponse(false, 'Contenedor no encontrado.', [], 404);
+        }
+
+        $cotizacion = Cotizaciones::find($contenedor->id_cotizacion);
+        if ($cotizacion) {
+            $cotizacion->estatus = 'Finalizado';
+            $cotizacion->update();
+        }
+
+        return $this->apiResponse(true, 'Viaje finalizado con éxito.', [
+            'titulo' => 'Viaje finalizado',
+            'mensaje' => 'Has finalizado correctamente el viaje'
+        ]);
+    }
+
+    public function infoViaje(Request $request)
+    {
+        $request->validate([
+            'id' => 'required'
+        ]);
+
+        $docCotizacion = DocumCotizacion::where('id', '=', $request->id)->first();
+        if (!$docCotizacion) {
+            return $this->apiResponse(false, 'Contenedor no encontrado.', [], 404);
+        }
+
+        $asignaciones = Asignaciones::where('id_contenedor', '=', $request->id)->first();
+        $cotizacion = Cotizaciones::where('id', '=', $docCotizacion->id_cotizacion)->first();
+
+        $documentos = Cotizaciones::query()
+            ->where('cotizaciones.id', $cotizacion->id)
+            ->join('docum_cotizacion', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
+            ->leftJoin('asignaciones', 'docum_cotizacion.id', '=', 'asignaciones.id_contenedor')
+            ->leftJoin('empresas as em', 'em.id', '=', 'asignaciones.id_empresa')
+            ->leftJoin('empresas as emc', 'emc.id', '=', 'cotizaciones.id_empresa')
+            ->leftJoin('clients', 'cotizaciones.id_cliente', '=', 'clients.id')
+            ->leftjoin('equipos', 'asignaciones.id_camion', '=', 'equipos.id')
+            ->leftjoin('equipos as chasis', 'asignaciones.id_chasis', '=', 'chasis.id')
+            ->leftjoin('operadores', 'operadores.id', '=', 'asignaciones.id_operador')
+            ->leftjoin('proveedores', 'proveedores.id', '=', 'asignaciones.id_proveedor')
+            ->select(
+                'asignaciones.id as asignacionId',
+                'cotizaciones.id',
+                'clients.nombre as cliente',
+                'docum_cotizacion.num_contenedor',
+                'docum_cotizacion.doc_ccp',
+                'docum_cotizacion.cima',
+                'docum_cotizacion.boleta_liberacion',
+                'docum_cotizacion.doda',
+                'cotizaciones.referencia_full',
+                'cotizaciones.carta_porte',
+                'cotizaciones.carta_porte_xml',
+                'cotizaciones.img_boleta AS boleta_vacio',
+                'docum_cotizacion.doc_eir',
+                'asignaciones.id_proveedor',
+                'asignaciones.fecha_inicio',
+                'asignaciones.fecha_fin',
+                'equipos.placas as placas_camion',
+                'equipos.id_equipo as id_equipo_camion',
+                'equipos.marca as marca_camion',
+                'equipos.imei as imei_camion',
+                'chasis.id_equipo as id_equipo_chasis',
+                'chasis.imei as imei_chasis',
+                'asignaciones.tipo_contrato',
+                DB::raw("COALESCE(NULLIF(em.nombre, ''), emc.nombre) as Empresa"),
+                'operadores.nombre as operador',
+                'proveedores.nombre as transportista_nombre',
+                'cotizaciones.cp_contacto_entrega',
+                DB::raw('COALESCE(operadores.telefono, proveedores.telefono) as beneficiario_telefono')
+            )
+            ->get();
+
+        $misDocumentos = $documentos->map(function ($cot) {
+            $numContenedor = $cot->num_contenedor;
+            $docCCP = $cot->doc_ccp;
+            $doda = $cot->doda;
+            $boletaLiberacion = $cot->boleta_liberacion;
+            $cartaPorte = $cot->carta_porte;
+            $cartaPorteXml = $cot->carta_porte_xml;
+            $boletaVacio = $cot->boleta_vacio;
+            $docEir = $cot->doc_eir;
+            $tipo = "--";
+
+            if (!is_null($cot->referencia_full)) {
+                $secundaria = Cotizaciones::where('referencia_full', $cot->referencia_full)
+                    ->where('jerarquia', 'Secundario')
+                    ->with('DocCotizacion.Asignaciones')
+                    ->first();
+
+                if ($secundaria && $secundaria->DocCotizacion) {
+                    $docCCP = ($docCCP && $secundaria->DocCotizacion->doc_ccp) ? true : false;
+                    $doda = ($doda && $secundaria->DocCotizacion->doda) ? true : false;
+                    $docEir = (!is_null($docEir) && !is_null($secundaria->DocCotizacion->doc_eir)) ? true : false;
+
+                    $boletaLiberacion = ($boletaLiberacion && $secundaria->DocCotizacion->boleta_liberacion) ? true : false;
+                    $cartaPorte = ($cartaPorte && $secundaria->carta_porte) ? true : false;
+                    $cartaPorteXml = ($cartaPorteXml && $secundaria->carta_porte_xml) ? true : false;
+
+                    $boletaVacio = ($boletaVacio && $secundaria->img_boleta) ? true : false;
+
+                    $numContenedor .= ' / ' . $secundaria->DocCotizacion->num_contenedor;
+                }
+                $tipo = "Full";
+            }
+
+            return [
+                "id" => $cot->id,
+                "cliente" => $cot->cliente,
+                "num_contenedor" => $numContenedor,
+                "doc_ccp" => $docCCP,
+                "boleta_liberacion" => $boletaLiberacion,
+                "doda" => $doda,
+                "cima" => $cot->cima,
+                "carta_porte" => $cartaPorte,
+                "carta_porte_xml" => $cartaPorteXml,
+                "boleta_vacio" => $boletaVacio,
+                "doc_eir" => $docEir,
+                "id_proveedor" => $cot->id_proveedor,
+                "fecha_inicio" => $cot->fecha_inicio,
+                "fecha_fin" => $cot->fecha_fin,
+                "tipo" => $tipo
+            ];
+        });
+
+        $documentosFirst = $documentos->first();
+
+        return $this->apiResponse(true, 'Información del viaje obtenida con éxito.', [
+            "nombre" => $asignaciones?->Operador?->nombre ?? $documentosFirst?->transportista_nombre ?? '',
+            "tipo" => "Viaje " . ($documentosFirst?->tipo_contrato ?? ''),
+            "cotizacion" => $cotizacion,
+            "cliente" => $cotizacion->Cliente,
+            "subcliente" => $cotizacion->Subcliente,
+            "documentos" => $documentosFirst,
+            "documents" => $misDocumentos->first()
+        ]);
+    }
+}

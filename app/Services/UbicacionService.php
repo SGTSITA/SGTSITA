@@ -91,7 +91,7 @@ public function obtenerUbicacionByDispositivos(array $dispositivos)
             continue;
         }
 
-        $esDatoEmp = ((int) $dispositivo['empresaIdRastro'] === (int) Auth::user()->id_empresa)
+        $esDatoEmp = (Auth::user() && (int) $dispositivo['empresaIdRastro'] === (int) Auth::user()->id_empresa)
             ? 'SI'
             : 'NO';
 
@@ -552,6 +552,11 @@ log::info('RASTREO OBTENER UBICACION POR IMEI INICIO', [
             $imei
         );
 
+        if (empty($RfcyEquipo) || strpos($RfcyEquipo, '|') === false) {
+            log::warning("No se pudo obtener la información de RFC y Equipo para el contenedor: $contenedor");
+            continue;
+        }
+
         [
             $Rfc,
             $equipo,
@@ -567,7 +572,7 @@ log::info('RASTREO OBTENER UBICACION POR IMEI INICIO', [
 
         $empresaIdRastro = (int) $empresaIdRastro;
 
-        if ($empresaIdRastro === Auth::user()->id_empresa) {
+        if (Auth::user() && $empresaIdRastro === Auth::user()->id_empresa) {
             $esDatoEmp = "SI";
         }
 
@@ -1939,26 +1944,16 @@ if ($ubicacionApi) {
             }
 
             if ($RFCContenedor === 'buscarEmpresaRFC') {
-                //buscamos el rfc de la empresa pues no tiene asignado un proveedor....
-                // $empresas = Empresas::where('id', '=', auth()->user()->Empresa->id)->orderBy('created_at', 'desc')->first();
+                //buscamos el rfc de la empresa o del proveedor de forma segura
+                $cotizaciones = DB::table('cotizaciones')
+                    ->join('docum_cotizacion', 'docum_cotizacion.id_cotizacion', '=', 'cotizaciones.id')
+                    ->leftJoin('proveedores', 'proveedores.id', '=', 'cotizaciones.id_proveedor')
+                    ->leftJoin('empresas', 'empresas.id', '=', 'cotizaciones.id_empresa')
+                    ->select(DB::raw('COALESCE(proveedores.rfc, empresas.rfc) as rfc'))
+                    ->where('docum_cotizacion.num_contenedor', '=', $num_Contenendor)
+                    ->first();
 
-                $cotizaciones = DB::table('cotizaciones')->join(
-                    'docum_cotizacion',
-                    'docum_cotizacion.id_cotizacion',
-                    '=',
-                    'cotizaciones.id'
-                )->join('proveedores', 'proveedores.id', '=', 'cotizaciones.id_proveedor')
-                ->where(
-                    'docum_cotizacion.num_contenedor',
-                    '=',
-                    $num_Contenendor
-                )->first();
-
-
-
-                // dd($empresas);
-                $RFCContenedor =   $cotizaciones->rfc; //minusculas
-                //dd($RFCContenedor);
+                $RFCContenedor = $cotizaciones?->rfc ?? 'desconocido';
             }
            //  dd($datosAll, $imei);
 

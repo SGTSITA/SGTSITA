@@ -1282,8 +1282,7 @@
                                                     <i class="fa fa-trash"></i>
                                                     Eliminar
                                                 </button>
-                                                <button type="button" data-bs-toggle="modal"
-                                                    data-bs-target="#modal-form" class="btn btn-sm bg-gradient-info">
+                                                <button type="button" data-bs-toggle="modal" data-bs-target="#modal-form" data-origen="cotizacion" class="btn btn-sm bg-gradient-info btnAgregarGastoTrigger">
                                                     Agregar gasto
                                                 </button>
                                             </div>
@@ -1633,7 +1632,7 @@
                                                             <div class="col-md-5 col-12 my-2">
                                                                 <div class="border rounded-3 px-3 py-2 bg-light">
                                                                     <input type="hidden" id="cotizacion_km_diesel_id"
-                                                                        value="{{ $documentacion?->id_cotizacion ?? $documentacion?->Cotizacion?->id }}">
+                                                                        value="{{ $cotizacion->id }}">
 
                                                                     <div class="row g-2 align-items-end">
                                                                         <div class="col-md-5 col-6">
@@ -1696,8 +1695,8 @@
                                                                 </button>
 
                                                                 <button type="button" data-bs-toggle="modal"
-                                                                    data-bs-target="#modal-gastos-operador"
-                                                                    class="btn btn-sm bg-gradient-success"
+                                                                    data-bs-target="#modal-form" data-origen="viaje"
+                                                                    class="btn btn-sm bg-gradient-success btnAgregarGastoTrigger"
                                                                     id="btnNuevoGasto">
                                                                     Registrar Gasto
                                                                 </button>

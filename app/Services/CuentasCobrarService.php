@@ -51,12 +51,24 @@ class CuentasCobrarService
     );
 
 
+        /*
         $gastosSub = DB::table('gastos_extras')
             ->groupBy('id_cotizacion')
             ->where('estatus', '!=', 'eliminado')
             ->select(
                 'id_cotizacion',
                 DB::raw('SUM(monto) as gastos_T')
+            );
+        */
+        $gastosSub = DB::table('gasto_imputaciones')
+            ->join('gastos', 'gastos.id', '=', 'gasto_imputaciones.gasto_id')
+            ->whereNull('gastos.deleted_at')
+            ->where('gastos.estatus', '!=', 'cancelado')
+            ->where('gasto_imputaciones.tipo_imputacion', '=', 'cotizacion')
+            ->groupBy('gasto_imputaciones.imputable_id')
+            ->select(
+                'gasto_imputaciones.imputable_id as id_cotizacion',
+                DB::raw('SUM(gasto_imputaciones.monto_imputado) as gastos_T')
             );
 
         $base = DB::table('cotizaciones')

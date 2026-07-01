@@ -18,15 +18,18 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Services\BancosService;
+use App\Services\GastosService;
 use Illuminate\Support\Facades\Log;
 
 class GastosGeneralesController extends Controller
 {
     protected $BancosService;
+    protected $GastosService;
 
-    public function __construct(BancosService $BancosService)
+    public function __construct(BancosService $BancosService, GastosService $GastosService)
     {
         $this->BancosService = $BancosService;
+        $this->GastosService = $GastosService;
     }
     public function index()
     {
@@ -347,6 +350,16 @@ class GastosGeneralesController extends Controller
             if ($aplicarGasto["TMensaje"] == "success") {
                 GastosGenerales::where('gasto_origen_id', $gasto_general->id)->update(["aplicacion_gasto" => $aplicarGasto["Aplicacion"]]);
             }
+
+            $this->sincronizarGastoGeneralNew($gasto_general->fresh());
+            GastosGenerales::where('gasto_origen_id', $gasto_general->id)
+                ->get()
+                ->each(fn ($gastoDiferido) => $this->sincronizarGastoGeneralNew($gastoDiferido));
+
+            GastosOperadores::where('id_gasto_origen', $gasto_general->id)
+                ->get()
+                ->each(fn ($gastoOperador) => $this->sincronizarGastoOperadorNew($gastoOperador));
+
             $bancos = Bancos::where('id_empresa', auth()->user()->id_empresa)->get();
 
             return response()->json([
@@ -469,6 +482,7 @@ class GastosGeneralesController extends Controller
         try {
             DB::beginTransaction();
             $gastosGenerales = GastosGenerales::where('id', $r->IdGasto)->first();
+            $gastosOperadoresOrigen = GastosOperadores::where('id_gasto_origen', $r->IdGasto)->pluck('id');
 
             GastosOperadores::where('id_gasto_origen', $r->IdGasto)->delete();
             //Devolver el dinero al banco, siempre y cuando el estatus sea "Pagado"
@@ -501,6 +515,10 @@ class GastosGeneralesController extends Controller
                 }
             }
             $gastosGenerales->delete();
+
+            $this->cancelarGastoNew('gastos_generales', $gastosGenerales->id);
+            $gastosOperadoresOrigen->each(fn ($gastoOperadorId) => $this->cancelarGastoNew('gastos_operadores', $gastoOperadorId));
+
             DB::commit();
 
             return response()->json([
@@ -514,6 +532,43 @@ class GastosGeneralesController extends Controller
             Log::channel('daily')->info("Error: GastosGeneralesController->eliminarGasto->".$t->getMessage());
             return response()->json(["Titulo" => "Gasto no aplicado","Mensaje" => "Ha ocurrido un error, no se puede aplicar el gasto " . $t->getMessage(), "TMensaje" => "error"]);
 
+        }
+    }
+
+    private function sincronizarGastoGeneralNew(GastosGenerales $gasto): void
+    {
+        try {
+            $this->GastosService->registrarDesdeGastoGeneral($gasto->fresh());
+        } catch (\Throwable $t) {
+            Log::channel('daily')->warning('No se pudo sincronizar gastos_generales con gastos new', [
+                'gasto_general_id' => $gasto->id,
+                'error' => $t->getMessage(),
+            ]);
+        }
+    }
+
+    private function sincronizarGastoOperadorNew(GastosOperadores $gasto): void
+    {
+        try {
+            $this->GastosService->registrarDesdeGastoOperador($gasto->fresh());
+        } catch (\Throwable $t) {
+            Log::channel('daily')->warning('No se pudo sincronizar gasto operador generado por gasto general con gastos new', [
+                'gasto_operador_id' => $gasto->id,
+                'error' => $t->getMessage(),
+            ]);
+        }
+    }
+
+    private function cancelarGastoNew(string $origenLegacy, int $origenLegacyId): void
+    {
+        try {
+            $this->GastosService->cancelarDesdeLegacy($origenLegacy, $origenLegacyId);
+        } catch (\Throwable $t) {
+            Log::channel('daily')->warning('No se pudo cancelar gasto new desde gastos generales legacy', [
+                'origen_legacy' => $origenLegacy,
+                'origen_legacy_id' => $origenLegacyId,
+                'error' => $t->getMessage(),
+            ]);
         }
     }
 }
