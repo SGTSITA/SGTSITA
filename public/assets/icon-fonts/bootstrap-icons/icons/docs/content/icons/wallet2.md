@@ -1,11 +1,11 @@
 ---
 title: Wallet2
 categories:
-  - Commerce
+    - Commerce
 tags:
-  - cards
-  - money
-  - funds
-  - cash
-  - payment
+    - cards
+    - money
+    - funds
+    - cash
+    - payment
 ---

@@ -1,10 +1,10 @@
 ---
 title: Music note
 categories:
-  - Media
+    - Media
 tags:
-  - music
-  - notes
-  - audio
-  - sound
+    - music
+    - notes
+    - audio
+    - sound
 ---

@@ -1,7 +1,7 @@
 ---
 title: Diamond fill
 categories:
-  - Shapes
+    - Shapes
 tags:
-  - shape
+    - shape
 ---

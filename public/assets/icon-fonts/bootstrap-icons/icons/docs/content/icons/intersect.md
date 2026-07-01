@@ -1,10 +1,10 @@
 ---
 title: Intersect
 categories:
-  - Graphics
+    - Graphics
 tags:
-  - graphics
-  - vector
-  - merge
-  - layers
+    - graphics
+    - vector
+    - merge
+    - layers
 ---

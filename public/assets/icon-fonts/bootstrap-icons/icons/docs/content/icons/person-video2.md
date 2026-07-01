@@ -1,11 +1,11 @@
 ---
 title: Person video2
 categories:
-  - People
+    - People
 tags:
-  - human
-  - individual
-  - avatar
-  - user
-  - wfh
+    - human
+    - individual
+    - avatar
+    - user
+    - wfh
 ---

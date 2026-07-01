@@ -1,7 +1,7 @@
 ---
 title: Body text
 categories:
-  - Typography
+    - Typography
 tags:
-  - content
+    - content
 ---

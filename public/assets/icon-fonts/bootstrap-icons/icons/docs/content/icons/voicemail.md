@@ -1,9 +1,9 @@
 ---
 title: Voicemail
 categories:
-  - Communications
+    - Communications
 tags:
-  - voicemail
-  - message
-  - telephone
+    - voicemail
+    - message
+    - telephone
 ---

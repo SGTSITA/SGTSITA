@@ -1,9 +1,9 @@
 ---
 title: Stoplights fill
 categories:
-  - Real world
+    - Real world
 tags:
-  - traffic
-  - lights
-  - intersection
+    - traffic
+    - lights
+    - intersection
 ---

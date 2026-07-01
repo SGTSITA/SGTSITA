@@ -1,13 +1,22 @@
-<div class="modal fade" id="cuentasBancariasModal" tabindex="-1" aria-labelledby="cuentasBancariasLabel" aria-hidden="true">
+<div
+    class="modal fade"
+    id="cuentasBancariasModal"
+    tabindex="-1"
+    aria-labelledby="cuentasBancariasLabel"
+    aria-hidden="true"
+>
     <div class="modal-dialog modal-lg">
         <div class="modal-content shadow-lg">
-            <div class="modal-header  text-white">
+            <div class="modal-header text-white">
                 <h5 class="modal-title" id="cuentasBancariasLabel">Cuentas Bancarias del Proveedor</h5>
                 <button type="button" class="btn-close text-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
 
             <div class="modal-body">
-                <h6>Proveedor: <span id="cuentasProveedorNombre" class="text-info"></span></h6>
+                <h6>
+                    Proveedor:
+                    <span id="cuentasProveedorNombre" class="text-info"></span>
+                </h6>
 
                 <div class="table-responsive mt-3">
                     <table class="table table-striped table-hover">

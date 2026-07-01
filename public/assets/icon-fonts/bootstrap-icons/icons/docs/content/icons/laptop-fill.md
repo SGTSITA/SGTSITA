@@ -1,7 +1,7 @@
 ---
 title: Laptop fill
 categories:
-  - Devices
+    - Devices
 tags:
-  - computer
+    - computer
 ---

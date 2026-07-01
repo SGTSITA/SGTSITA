@@ -1,8 +1,8 @@
 ---
 title: Hypnotize
 categories:
-  - Real World
+    - Real World
 tags:
-  - hypnosis
-  - sleepy
+    - hypnosis
+    - sleepy
 ---

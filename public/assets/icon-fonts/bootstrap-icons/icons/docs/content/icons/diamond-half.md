@@ -1,7 +1,7 @@
 ---
 title: Diamond half fill
 categories:
-  - Shapes
+    - Shapes
 tags:
-  - shape
+    - shape
 ---

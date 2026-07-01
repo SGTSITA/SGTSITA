@@ -1,12 +1,12 @@
 ---
 title: File person fill
 categories:
-  - Files and folders
+    - Files and folders
 tags:
-  - doc
-  - document
-  - personal
-  - cv
-  - resume
-  - about
+    - doc
+    - document
+    - personal
+    - cv
+    - resume
+    - about
 ---

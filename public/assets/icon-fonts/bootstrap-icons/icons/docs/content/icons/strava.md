@@ -1,7 +1,7 @@
 ---
 title: Strava
 categories:
-  - Brand
+    - Brand
 tags:
-  - social
+    - social
 ---

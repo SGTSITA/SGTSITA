@@ -1,10 +1,10 @@
 ---
 title: Chat right quote
 categories:
-  - Communications
+    - Communications
 tags:
-  - chat bubble
-  - text
-  - message
-  - quote
+    - chat bubble
+    - text
+    - message
+    - quote
 ---

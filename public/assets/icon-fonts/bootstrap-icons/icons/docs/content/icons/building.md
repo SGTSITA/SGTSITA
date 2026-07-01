@@ -1,11 +1,11 @@
 ---
 title: Building
 categories:
-  - People
+    - People
 tags:
-  - company
-  - enterprise
-  - organization
-  - office
-  - business
+    - company
+    - enterprise
+    - organization
+    - office
+    - business
 ---

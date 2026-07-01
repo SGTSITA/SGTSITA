@@ -1,12 +1,12 @@
 ---
 title: List checked
 categories:
-  - Typography
+    - Typography
 tags:
-  - text
-  - type
-  - justify
-  - alignment
-  - checklist
-  - done
+    - text
+    - type
+    - justify
+    - alignment
+    - checklist
+    - done
 ---

@@ -1,8 +1,8 @@
 ---
 title: Smartwatch
 categories:
-  - Devices
+    - Devices
 tags:
-  - watch
-  - wearables
+    - watch
+    - wearables
 ---

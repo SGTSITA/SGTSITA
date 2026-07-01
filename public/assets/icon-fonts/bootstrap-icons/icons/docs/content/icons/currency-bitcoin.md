@@ -1,9 +1,9 @@
 ---
 title: Currency bitcoin
 categories:
-  - Commerce
+    - Commerce
 tags:
-  - money
-  - finance
-  - crypto
+    - money
+    - finance
+    - crypto
 ---
