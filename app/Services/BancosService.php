@@ -245,14 +245,14 @@ class BancosService
 
         return $query->first();
     }
-    public function cancelarMovimiento(int $cuentaId, int $movimientoId)
+    public function cancelarMovimiento(int $cuentaId, int $movimientoId,string $fecha_cancelacionmovi )
     {
-        return DB::transaction(function () use ($cuentaId, $movimientoId) {
+        return DB::transaction(function () use ($cuentaId, $movimientoId,$fecha_cancelacionmovi) {
 
             $movimiento = CatBancoCuentasMovimientos::where('id', $movimientoId)
                 ->where('cuenta_bancaria_id', $cuentaId)
                 ->firstOrFail();
-
+ $fechaCancelacion = $this->parseFecha($fecha_cancelacionmovi);
 
             if ($movimiento->cancelado) {
                 return [
@@ -272,7 +272,7 @@ class BancosService
                 'tipo'               => $tipoInverso,
                 'monto'              => $movimiento->monto,
                 'concepto'           => 'Devolución - ' . $movimiento->concepto,
-                'fecha_movimiento'   => now(),
+                'fecha_movimiento'   => $fechaCancelacion ?? now(),
                 'origen'             => 'sistema',
                 'referencia'         => 'cancelación'. $movimiento->referencia ? ' - ' . $movimiento->referencia : null,
                 'referenciaable_type'         => $movimiento->referenciaable_type ?? null,
@@ -294,5 +294,96 @@ class BancosService
                 'data' => $cancelacion
             ];
         });
+    }
+
+    public function procesarIngresosDesdeCobro($request, $resultado, $cobroPagoId)
+    {
+        $contenedoresA = $resultado['contenedoresAbonos1'] ?? [];
+        $contenedoresB = $resultado['contenedoresAbonos2'] ?? [];
+
+        $cliente = \App\Models\Client::find($request->theClient);
+
+        // =========================
+        // BANCO A
+        // =========================
+        if ($request->filled('bankOne') && $request->amountPayOne > 0) {
+
+
+            Bancos::where('id', $request->bankOne)
+                ->update([
+                    "saldo" => DB::raw("COALESCE(saldo, 0) + " . floatval($request->amountPayOne))
+                ]);
+
+
+            $this->registrarMovimiento([
+                'cuenta_bancaria_id' => $request->bankOne,
+                'tipo' => 'abono',
+                'monto' => floatval($request->amountPayOne),
+                'concepto' => 'Cobro viajes: ' . ($cliente?->nombre ?? ''),
+                'fecha_movimiento' => $this->parseFecha($request->FechaAplicacionbank1),
+                'referencia' => 'CXC A',
+                'detalles' => $contenedoresA,
+                'referenciaable_id' => $cobroPagoId,
+                'referenciaable_type' => \App\Models\CobroPago::class,
+            ]);
+        }
+
+        // =========================
+        // BANCO B
+        // =========================
+        if ($request->filled('bankTwo') && $request->amountPayTwo > 0) {
+
+
+            Bancos::where('id', $request->bankTwo)
+                ->update([
+                    "saldo" => DB::raw("COALESCE(saldo, 0) + " . floatval($request->amountPayTwo))
+                ]);
+
+
+            $this->registrarMovimiento([
+                'cuenta_bancaria_id' => $request->bankTwo,
+                'tipo' => 'abono',
+                'monto' => floatval($request->amountPayTwo),
+                'concepto' => 'Cobro viajes: ' . ($cliente?->nombre ?? ''),
+                'fecha_movimiento' => $this->parseFecha($request->FechaAplicacionbank2),
+                'referencia' => 'CXC B',
+                'detalles' => $contenedoresB,
+                'referenciaable_id' => $cobroPagoId,
+                'referenciaable_type' => \App\Models\CobroPago::class,
+            ]);
+        }
+    }
+
+
+    public function guardarBancoLegacy($request, $contenedoresAbonos) //checar si podemos eliminar completo este bancos old
+    {
+        $banco = new BancoDinero();
+
+        $banco->contenedores = json_encode($contenedoresAbonos);
+        $banco->id_cliente = $request->theClient;
+
+        $banco->monto1 = $request->amountPayOne;
+        $banco->metodo_pago1 = "Transferencia";
+        $banco->id_banco1 = $request->bankOne;
+
+        $banco->monto2 = $request->amountPayTwo;
+        $banco->metodo_pago2 = "Transferencia";
+        $banco->id_banco2 = $request->bankTwo;
+
+        $banco->fecha_pago = now();
+        $banco->tipo = 'Entrada';
+
+        $banco->save();
+    }
+
+    public static function generarConcepto(string $tipo, string $concepto, ?string $contenedor = null, ?string $operador = null): string
+    {
+        $tipoStr = strtoupper(trim($tipo));
+        $conceptoStr = trim($concepto);
+        
+        $refContenedor = !empty($contenedor) ? " - Cont: " . trim($contenedor) : "";
+        $refOperador = !empty($operador) ? " - Ope: " . trim($operador) : "";
+        
+        return sprintf("[%s] %s%s%s", $tipoStr, $conceptoStr, $refContenedor, $refOperador);
     }
 }

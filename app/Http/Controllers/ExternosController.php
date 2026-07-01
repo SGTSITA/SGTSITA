@@ -18,6 +18,7 @@ use App\Models\Subclientes;
 use App\Models\EstatusManiobra;
 use App\Models\BitacoraCotizacionesEstatus;
 use App\Models\GridColumnasUserEstado;
+use App\Models\Naviera;
 use Illuminate\Support\Facades\Mail;
 use App\Traits\CommonTrait;
 use Carbon\Carbon;
@@ -132,6 +133,7 @@ class ExternosController extends Controller
         // where('id_empresa',$cotizacion->id_proveedor)->
         // where('id_empresa',$cotizacion->id_proveedor)->first();
 
+       // dd(  $cotizacion);
         return view(
             'cotizaciones.externos.solicitud_simple',
             ["action" => "editar",
@@ -530,7 +532,10 @@ class ExternosController extends Controller
             return response()->json(["Titulo" => "Previamente Cancelado","Mensaje" => "El contenedor $request->numContenedor fue cancelado previamente","TMensaje" => "info"]);
         }
 
-        Cotizaciones::where('id', $cotizacion->id)->update(['estatus' => 'Cancelada']);
+        $cotizacion = Cotizaciones::findOrFail($cotizacion->id);
+
+        $cotizacion->estatus = 'Cancelada';
+        $cotizacion->save();
 
         $emailList = [env('MAIL_NOTIFICATIONS'),Auth::User()->email];
         $cotizacionCancelar = Cotizaciones::where('id', $cotizacion->id)->first();
@@ -657,7 +662,7 @@ class ExternosController extends Controller
         }
     }
 
-    public function fileProperties($id, $file, $title, $contenedor)
+    public function fileProperties($id, $file, $title, $contenedor, $folioDoc = null)
     {
         $path = public_path('cotizaciones/cotizacion'.$id.'/'.$file);
 
@@ -677,7 +682,8 @@ class ExternosController extends Controller
                 "fileType" => pathinfo($path, PATHINFO_EXTENSION),
                 "mimeType" => $mimeType,
                 "identifier" => $id,
-                "fileCode" => iconv('UTF-8', 'ASCII//TRANSLIT', str_replace(' ', '-', $title))
+                "fileCode" => iconv('UTF-8', 'ASCII//TRANSLIT', str_replace(' ', '-', $title)),
+                 "num_doc" => $folioDoc ?? ''
                 ];
             //iconv('UTF-8', 'ASCII//TRANSLIT', $cadena);
         } else {
@@ -712,14 +718,14 @@ class ExternosController extends Controller
             $folderId = $documentos->id_cotizacion;  //si se guarda con id cotizacion , buscamos con esa clave
 
             if (!is_null($documentos->doda)) {
-                $doda = self::fileProperties($folderId, $documentos->doda, 'Doda', $cont);
+                $doda = self::fileProperties($folderId, $documentos->doda, 'Doda', $cont,$documentos->num_doda);
                 if (sizeof($doda) > 0) {
                     array_push($documentList, $doda);
                 }
             }
 
             if (!is_null($documentos->boleta_liberacion)) {
-                $boleta_liberacion = self::fileProperties($folderId, $documentos->boleta_liberacion, 'Boleta de liberación', $cont);
+                $boleta_liberacion = self::fileProperties($folderId, $documentos->boleta_liberacion, 'Boleta de liberación', $cont,$documentos->num_boleta_liberacion);
                 if (sizeof($boleta_liberacion) > 0) {
                     array_push($documentList, $boleta_liberacion);
                 }
@@ -753,11 +759,20 @@ class ExternosController extends Controller
                     array_push($documentList, $doc_boleta_patio);
                 }
             }
+if (!is_null($documentos->evidencia_descarga)) {
+
+                $EvidenciaDescarga = self::fileProperties($folderId, $documentos->evidencia_descarga, 'EvidenciaDescarga', $cont);
+                if (sizeof($EvidenciaDescarga) > 0) {
+                    array_push($documentList, $EvidenciaDescarga);
+                }
+            }
+
+
 
             $cotizacion = Cotizaciones::where('id', $documentos->id_cotizacion)->first();
 
             if (!is_null($cotizacion->img_boleta)) {
-                $preAlta = self::fileProperties($folderId, $cotizacion->img_boleta, 'Pre-Alta', $cont);
+                $preAlta = self::fileProperties($folderId, $cotizacion->img_boleta, 'Pre-Alta', $cont,$documentos->fecha_boleta_vacio);
                 if (sizeof($preAlta) > 0) {
                     array_push($documentList, $preAlta);
                 }
@@ -796,6 +811,7 @@ class ExternosController extends Controller
                 "fileType" => pathinfo($path, PATHINFO_EXTENSION),
                 "identifier" => $id,
                 "fileCode" => iconv('UTF-8', 'ASCII//TRANSLIT', str_replace(' ', '-', $title))
+
                 ];
             //iconv('UTF-8', 'ASCII//TRANSLIT', $cadena);
         } else {
@@ -848,6 +864,9 @@ class ExternosController extends Controller
 
         $transportista = Proveedor::CatalogoLocal()->whereIn('id_empresa', $clienteEmpresa)->get();
 
+
+        $navieras = Naviera::all();
+
         return view('cotizaciones.externos.solicitud_simple_local', [
                     "action" => "crear",
                     "formasPago" => $formasPago,
@@ -859,6 +878,7 @@ class ExternosController extends Controller
                         "opcionesColores" => $opcionesColores,
                         'Puertos' => $Puertos,
                         'opcionesPuertos' => $opcionesPuertos,
+                        'navieras' => $navieras
                 ]);
     }
     public function editFormlocal(Request $request)
@@ -868,6 +888,7 @@ class ExternosController extends Controller
         $usoCfdi = SatUsoCfdi::get();
         $clienteEmpresa = ClientEmpresa::where('id_client', auth()->user()->id_cliente)->get()->pluck('id_empresa');
         $empresas = Empresas::whereIn('id', $clienteEmpresa)->get();
+        $navieras = Naviera::all();
 
         $opciones = config('CatAuxiliares.opciones');
         $opcionesColores = config('CatAuxiliares.opcionesColores');
@@ -900,7 +921,9 @@ class ExternosController extends Controller
                                                             "opciones" => $opciones,
                                                             "opcionesColores" => $opcionesColores,
                                                             'Puertos' => $Puertos,
-                                                            'opcionesPuertos' => $opcionesPuertos
+                                                            'opcionesPuertos' => $opcionesPuertos,
+                                                            'navieras' => $navieras
+
 
                                                         ]
         );
@@ -935,7 +958,12 @@ class ExternosController extends Controller
     ->where('grid_key', 'grid_viajes_solicitados_local')
     ->first();
 
-        $stateGridColumns = $stateColumnsGrid?->state_json ?? [];
+
+    $stateGridColumns = [];
+
+    if (!blank($stateColumnsGrid?->state_json)) {
+        $stateGridColumns = json_decode($stateColumnsGrid->state_json, true) ?? [];
+    }
         return view('cotizaciones.externos.viajes_solicitados-local', compact('estatusManiobras', 'stateGridColumns'));
     }
 
@@ -1026,6 +1054,7 @@ class ExternosController extends Controller
            ->join('clients', 'clients.id', '=', 'subclientes.id_cliente')
            ->join('empresas', 'empresas.id', '=', 'cotizaciones.empresa_local')
            ->join('proveedores', 'proveedores.id', '=', 'cotizaciones.transportista_local')
+           ->leftjoin('navieras', 'navieras.id', '=', 'd.naviera_id')
            ->where('cotizaciones.id_cliente', Auth::user()->id_cliente)
            ->where('cotizaciones.estatus_maniobra_id', $condicion, $request->estatus)
            ->when($ocultarforaneo, function ($query) {
@@ -1048,6 +1077,11 @@ class ExternosController extends Controller
                       'd.boleta_patio',
                       'd.terminal',
                       'd.num_autorizacion',
+
+                      'navieras.naviera',
+                      'd.cita_at',
+                      'd.eta',
+                      'd.pedimento_recibido_at',
 
                       // estatus
                       'estat.nombre as estatus_maniobra',
@@ -1117,6 +1151,10 @@ class ExternosController extends Controller
                 "BoletaPatio" => $boleta_patio,
 
                 "FechaSolicitud" => Carbon::parse($c->created_at)->format('Y-m-d'),
+               "naviera" => $c->naviera,
+                "cita_at" => $c->cita_at,
+                "eta" => $c->eta,
+                "pedimento_recibido_at" => $c->pedimento_recibido_at,
                 "tipo" => $tipo,
                 "Observaciones" => (
                     is_null($c->observaciones) ||

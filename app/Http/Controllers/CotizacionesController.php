@@ -13,6 +13,7 @@ use App\Models\DocumCotizacion;
 use App\Models\Empresas;
 use App\Models\Equipo;
 use App\Models\GastosExtras;
+use App\Models\Gasto;
 use App\Models\GastosOperadores;
 use App\Models\Operador;
 use App\Models\Proveedor;
@@ -24,6 +25,7 @@ use App\Models\BancoDineroOpe;
 use App\Models\User;
 use App\Models\GpsCompanyProveedor;
 use App\Models\BitacoraCotizacionesEstatus;
+use App\Models\Viajes;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Carbon\Carbon;
@@ -36,14 +38,21 @@ use App\Traits\CommonTrait as Common;
 use Illuminate\Support\Facades\Log;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Services\BancosService;
+use App\Services\GastosService;
+use App\Services\ViajesCostosService;
+use Illuminate\Support\Facades\Http;
 
 class CotizacionesController extends Controller
 {
     protected $BancosService;
+    protected $CostosService;
+    protected $GastosService;
 
-    public function __construct(BancosService $BancosService)
+    public function __construct(BancosService $BancosService, ViajesCostosService $CostosService, GastosService $GastosService)
     {
         $this->BancosService = $BancosService;
+        $this->CostosService = $CostosService;
+        $this->GastosService = $GastosService;
     }
 
     public function index()
@@ -124,7 +133,10 @@ class CotizacionesController extends Controller
           })
         ->where('jerarquia', '!=', 'Secundario')
         ->orderBy('created_at', 'desc')
-        ->with(['cliente', 'DocCotizacion.Asignaciones']);
+        ->with(['cliente', 'DocCotizacion.Asignaciones'])
+        ->withExists([
+    'costosViajes as tiene_costos' => fn ($query) => $query->tieneValores()
+]);
 
         $userProveedores = User::find(auth()->user()->id);
 
@@ -187,6 +199,7 @@ class CotizacionesController extends Controller
                     'direccion_entrega' => $cotizacion->direccion_entrega,
                     'total' => $cotizacion->total,
                     'estatus_planeacion' => $cotizacion->estatus_planeacion,
+                    'valores' => $cotizacion->tiene_costos,
                ];
             });
 
@@ -212,6 +225,7 @@ class CotizacionesController extends Controller
             'boleta_vacio' => $cotizacion->DocCotizacion->boleta_vacio ?? null,
             'doc_eir' => $cotizacion->DocCotizacion->doc_eir ?? null,
             'foto_patio' => $cotizacion->DocCotizacion->foto_patio ?? null,
+            'evidencia_descarga' => $cotizacion->DocCotizacion->evidencia_descarga ?? null,
             'data' =>  $cotizacion,
         ]);
     }
@@ -555,6 +569,9 @@ class CotizacionesController extends Controller
 
             $fullUUID = Common::generarUuidV4();
 
+           $retAuto = $request->boolean('retencion_automatica');
+
+      $cotizacionesCreadas = collect();
 
             //Ahora guardamos
             foreach ($Contenedores as $contenedor) {
@@ -597,13 +614,30 @@ class CotizacionesController extends Controller
                 $cotizaciones->estatus_pago = '0';
                 $cotizaciones->origen_captura = $contenedor['origen_captura'];
                 $cotizaciones->user_id = Auth::User()->id;
+                $cotizaciones->retencion_automatica = $retAuto ;
                 $cotizaciones->save();
 
                 $docucotizaciones = new DocumCotizacion();
                 $docucotizaciones->id_cotizacion = $cotizaciones->id;
                 $docucotizaciones->num_contenedor = $contenedor['num_contenedor'];
                 $docucotizaciones->save();
+
+
+                  $cotizacionesCreadas->push($cotizaciones);
             }
+$viaje=null;
+
+foreach ($cotizacionesCreadas as $cotizacion) {
+
+ $viaje=   $this->resolverViajeDesdeRequest($request,$cotizacion->id);
+
+    $viaje->cotizaciones()->syncWithoutDetaching([$cotizacion->id]);
+
+}
+
+ $this->CostosService->syncDesdeRequest($viaje, $request);
+
+
 
             DB::commit();
             return response()->json(["TMensaje" => "success", "Mensaje" =>  "Creado Correctamente","datos" => $request->all()]);
@@ -705,7 +739,7 @@ class CotizacionesController extends Controller
         $docucotizaciones->num_contenedor = str_replace(' ', '', $request->get('num_contenedor'));
         $docucotizaciones->save();
         // Definir ruta dentro de public
-        $path = public_path('cotizaciones/cotizacion'.$docucotizaciones->id.'/formato_carta_porte_' . $numContenedor . '.pdf');
+        $path = public_path('cotizaciones/cotizacion'.$cotizaciones->id.'/formato_carta_porte_' . $numContenedor . '.pdf');
 
         $user = Auth::User();
 
@@ -737,8 +771,8 @@ class CotizacionesController extends Controller
             $pdf = PDF::loadView('cotizaciones.carta_porte_pdf', compact('cotizaciones', 'numContenedor', 'subCliente'));
 
             // Crear la carpeta si no existe
-            if (!File::exists(public_path('cotizaciones/cotizacion'.$docucotizaciones->id.''))) {
-                File::makeDirectory(public_path('cotizaciones/cotizacion'.$docucotizaciones->id.''), 0755, true);
+            if (!File::exists(public_path('cotizaciones/cotizacion'.$cotizaciones->id.''))) {
+                File::makeDirectory(public_path('cotizaciones/cotizacion'.$cotizaciones->id.''), 0755, true);
             }
 
             // Guardar PDF
@@ -798,6 +832,9 @@ class CotizacionesController extends Controller
             $row = 1;
 
             $origen_inicial = $request->origen_captura;
+   $sumarIndex = 0;
+
+             $service = app(\App\Services\GoogleMapsService::class);
             foreach ($contenedores as $cont) {
                 //validaremos que los contenedores no existan
                 $numContenedor = str_replace(' ', '', $cont[3]);
@@ -834,15 +871,44 @@ class CotizacionesController extends Controller
                         return response()->json(["Titulo" => "Transportista NO Valido", "Mensaje" => "El transportista de la fila $row no es un transportista registrado", "TMensaje" => "warning"]);
                     }
                 }
+ $url = $cont[18 + $sumarIndex];
+ $lat = null;
+                   $lng  = null;
 
 
+if ($url) {
+
+        $coords = $service->resolver($url);
+Log::info('Google Maps URL y coor devuelta', [
+                'original' => $url,
+                'final' => $coords
+            ]);
+     $lat = $coords['lat'] ?? null;
+        $lng = $coords['lng'] ?? null;
+
+        if(!$lat && !$lng){
+
+return response()->json(["Titulo" => "Coordenadas no encontrada", "Mensaje" => "La url de la fila $row  no es una url valida para el sistema y debe tener coordenadas", "TMensaje" => "warning"]);
+
+        }
+
+
+}
+else{
+     return response()->json(["Titulo" => "Url NO Valido", "Mensaje" => "La url de la fila $row  no es una url valida para el sistema y debe tener coordenadas", "TMensaje" => "warning"]);
+}
+
+ $row +=1;
 
             }
-            $sumarIndex = 0;
+
             if ($request->has('permiso_proveedor') && $request->get('permiso_proveedor') == 1) {
                 //si se requiere validar proveedor y transportista, se ajustan los indices
                 $sumarIndex = 0;
             }
+
+
+
 
             //una vez superada todas las validaciones procedemos a guardar los datos
             foreach ($contenedores as $contenedor) {
@@ -851,6 +917,21 @@ class CotizacionesController extends Controller
                 $numSubCliente = substr($contenedor[0], 0, 5);
                 $pesoReglamentario = 22;
                 $numContenedor = str_replace(' ', '', $contenedor[3 + $sumarIndex]);
+
+
+                $url = $contenedor[18 + $sumarIndex];
+
+                  $lat = null;
+                   $lng  = null;
+
+
+        if ($url) {
+
+                $coords = $service->resolver($url);
+
+            $lat = $coords['lat'] ?? null;
+                $lng = $coords['lng'] ?? null;
+        }
 
 
                 $cotizaciones = new Cotizaciones();
@@ -870,7 +951,10 @@ class CotizacionesController extends Controller
                 $cotizaciones->bloque = $contenedor[14 + $sumarIndex];
                 $cotizaciones->bloque_hora_i = $contenedor[15 + $sumarIndex];
                 $cotizaciones->bloque_hora_f = $contenedor[16 + $sumarIndex];
-                $cotizaciones->direccion_entrega = $contenedor[17 + $sumarIndex];
+                             $cotizaciones->direccion_entrega = $contenedor[17 + $sumarIndex];
+
+                               $cotizaciones->latitud =  $lat;
+        $cotizaciones->longitud = $lng;
 
                 $cotizaciones->otro = 0;
                 $cotizaciones->fecha_modulacion =  $contenedor[12 + $sumarIndex];
@@ -949,13 +1033,28 @@ class CotizacionesController extends Controller
         return redirect()->route('index.cotizaciones')
             ->with('success', 'Estatus actualizado correctamente.');
     }
-
-
     public function edit($id) //revision para gastos extras
     {
         $cotizacion = Cotizaciones::where('id', '=', $id)->first();
         $documentacion = DocumCotizacion::with('Asignaciones')->where('id_cotizacion', '=', $cotizacion->id)->first();
+        /*
         $gastos_extras = GastosExtras::where('id_cotizacion', '=', $cotizacion->id)->get();
+        */
+        $gastos_extras = \App\Models\GastoImputacion::join('gastos', 'gastos.id', '=', 'gasto_imputaciones.gasto_id')
+            ->whereNull('gastos.deleted_at')
+            ->where('gastos.estatus', '!=', 'cancelado')
+            ->where('gasto_imputaciones.tipo_imputacion', '=', 'cotizacion')
+            ->where('gasto_imputaciones.imputable_type', '=', \App\Models\Cotizaciones::class)
+            ->where('gasto_imputaciones.imputable_id', '=', $cotizacion->id)
+            ->select(
+                'gasto_imputaciones.*',
+                'gasto_imputaciones.monto_imputado as monto',
+                'gasto_imputaciones.fecha_imputacion as fecha_aplicacion',
+                'gasto_imputaciones.fecha_imputacion as created_at',
+                'gastos.concepto as descripcion',
+                'gastos.estatus as estatus'
+            )
+            ->get();
         //$clientes = Client::where('id_empresa' ,'=',auth()->user()->id_empresa)->get();
         $idEmpresa = auth()->user()->id_empresa;
         $clientes = Client::join('client_empresa as ce', 'clients.id', '=', 'ce.id_client')
@@ -966,7 +1065,24 @@ class CotizacionesController extends Controller
                             ->where('is_active', 1)
                             ->orderBy('nombre')->get();
 
+        /*
         $gastos_ope = GastosOperadores::where('id_cotizacion', '=', $cotizacion->id)->get();
+        */
+        $gastos_ope = \App\Models\GastoImputacion::join('gastos', 'gastos.id', '=', 'gasto_imputaciones.gasto_id')
+            ->join('gasto_vinculos', 'gasto_vinculos.gasto_id', '=', 'gastos.id')
+            ->whereNull('gastos.deleted_at')
+            ->where('gastos.estatus', '!=', 'cancelado')
+            ->where('gasto_vinculos.tipo_vinculo', '=', 'cotizacion')
+            ->where('gasto_vinculos.vinculable_type', '=', \App\Models\Cotizaciones::class)
+            ->where('gasto_vinculos.vinculable_id', '=', $cotizacion->id)
+            ->where('gasto_imputaciones.tipo_imputacion', '=', 'operador')
+            ->select(
+                'gasto_imputaciones.*',
+                'gasto_imputaciones.monto_imputado as cantidad',
+                'gastos.concepto as tipo',
+                'gastos.estatus as estatus'
+            )
+            ->get();
 
         $proveedores = Proveedor::catalogoPrincipal()->when($idEmpresa != 0, function ($query) use ($idEmpresa) {
             $query->where('id_empresa', $idEmpresa);
@@ -1001,7 +1117,37 @@ class CotizacionesController extends Controller
             ]);
         }
 
+
+        //nuevo refactor costos cotizacion
+
+        $mapaCostos = config('CatAuxiliares.costosViajes');
+
+        $viaje = $cotizacion->viajes()
+    ->where('estado', 'activo')
+    ->with('costos')
+    ->first();
+
+
+        $costosForm = [];
+
+        foreach ($mapaCostos as $input => $config) {
+
+            $concepto = $config['concepto'];
+
+            $costo = $viaje?->costos->firstWhere('concepto', $concepto);
+
+            $costosForm[$input] = $costo?->monto ?? 0;
+        }
+
+        $sobrepeso = $viaje?->costos->firstWhere('concepto', 'sobrepeso');
+
+        $costosForm['precio_sobre_peso'] = $sobrepeso?->meta['precio_sobre_peso'] ?? 0;
+        $costosForm['sobrepeso_viaje'] = $sobrepeso?->meta['peso'] ?? 0;
+        $costosForm['precio_tonelada'] = $sobrepeso?->meta['precio_tonelada'] ?? 0;
+        $costosForm['total_sobrepeso_viaje'] = $sobrepeso?->monto ?? 0;
         // dd($bloqueado);
+
+        $categorias = \App\Models\CategoriasGastos::orderBy('categoria')->get();
 
         return view('cotizaciones.editv1', compact(
             'bancos',
@@ -1011,7 +1157,9 @@ class CotizacionesController extends Controller
             'gastos_extras',
             'gastos_ope',
             'proveedores',
-            'bloqueado'
+            'bloqueado',
+            'costosForm',
+            'categorias'
         ));
     }
 
@@ -1092,9 +1240,43 @@ class CotizacionesController extends Controller
     {
         $cotizacion = Cotizaciones::where('id', '=', $id)->first();
         $documentacion = DocumCotizacion::where('id_cotizacion', '=', $cotizacion->id)->first();
+        /*
         $gastos_extras = GastosExtras::where('id_cotizacion', '=', $cotizacion->id)->get();
+        */
+        $gastos_extras = \App\Models\GastoImputacion::join('gastos', 'gastos.id', '=', 'gasto_imputaciones.gasto_id')
+            ->whereNull('gastos.deleted_at')
+            ->where('gastos.estatus', '!=', 'cancelado')
+            ->where('gasto_imputaciones.tipo_imputacion', '=', 'cotizacion')
+            ->where('gasto_imputaciones.imputable_type', '=', \App\Models\Cotizaciones::class)
+            ->where('gasto_imputaciones.imputable_id', '=', $cotizacion->id)
+            ->select(
+                'gasto_imputaciones.*',
+                'gasto_imputaciones.monto_imputado as monto',
+                'gasto_imputaciones.fecha_imputacion as fecha_aplicacion',
+                'gasto_imputaciones.fecha_imputacion as created_at',
+                'gastos.concepto as descripcion',
+                'gastos.estatus as estatus'
+            )
+            ->get();
         $clientes = Client::where('id_empresa', '=', auth()->user()->id_empresa)->get();
+        /*
         $gastos_ope = GastosOperadores::where('id_cotizacion', '=', $cotizacion->id)->get();
+        */
+        $gastos_ope = \App\Models\GastoImputacion::join('gastos', 'gastos.id', '=', 'gasto_imputaciones.gasto_id')
+            ->join('gasto_vinculos', 'gasto_vinculos.gasto_id', '=', 'gastos.id')
+            ->whereNull('gastos.deleted_at')
+            ->where('gastos.estatus', '!=', 'cancelado')
+            ->where('gasto_vinculos.tipo_vinculo', '=', 'cotizacion')
+            ->where('gasto_vinculos.vinculable_type', '=', \App\Models\Cotizaciones::class)
+            ->where('gasto_vinculos.vinculable_id', '=', $cotizacion->id)
+            ->where('gasto_imputaciones.tipo_imputacion', '=', 'operador')
+            ->select(
+                'gasto_imputaciones.*',
+                'gasto_imputaciones.monto_imputado as cantidad',
+                'gastos.concepto as tipo',
+                'gastos.estatus as estatus'
+            )
+            ->get();
         $subclientes = Subclientes::where('id_cliente', '=', auth()->user()->id_cliente)->get();
 
 
@@ -1189,7 +1371,24 @@ class CotizacionesController extends Controller
     {
         $cotizacion = Cotizaciones::where('id', '=', $id)->first();
         $documentacion = DocumCotizacion::where('id_cotizacion', '=', $cotizacion->id)->first();
+        /*
         $gastos_extras = GastosExtras::where('id_cotizacion', '=', $cotizacion->id)->get();
+        */
+        $gastos_extras = \App\Models\GastoImputacion::join('gastos', 'gastos.id', '=', 'gasto_imputaciones.gasto_id')
+            ->whereNull('gastos.deleted_at')
+            ->where('gastos.estatus', '!=', 'cancelado')
+            ->where('gasto_imputaciones.tipo_imputacion', '=', 'cotizacion')
+            ->where('gasto_imputaciones.imputable_type', '=', \App\Models\Cotizaciones::class)
+            ->where('gasto_imputaciones.imputable_id', '=', $cotizacion->id)
+            ->select(
+                'gasto_imputaciones.*',
+                'gasto_imputaciones.monto_imputado as monto',
+                'gasto_imputaciones.fecha_imputacion as fecha_aplicacion',
+                'gasto_imputaciones.fecha_imputacion as created_at',
+                'gastos.concepto as descripcion',
+                'gastos.estatus as estatus'
+            )
+            ->get();
         $clientes = Client::get();
         $configuracion = Configuracion::first();
         $bancos_oficiales = Bancos::where('tipo', '=', 'Oficial')->get();
@@ -1202,7 +1401,34 @@ class CotizacionesController extends Controller
         //return $pdf->stream();
         return $pdf->download('cotizacion'.$cotizacion->Cliente->nombre.'_#'.$cotizacion->id.'.pdf');
     }
+public function updateKmDiesel(Request $request, Cotizaciones $cotizacion)
+{
+    $data = $request->validate([
+        'km_recorridos' => ['nullable', 'numeric', 'min:0'],
+        'litros_diesel' => [
+            'nullable',
+            'numeric',
+            'min:0',
+            'regex:/^\d+(\.\d{1,3})?$/',
+        ],
+    ], [
+        'litros_diesel.regex' => 'Los litros diesel solo pueden tener hasta 3 decimales.',
+    ]);
 
+    $cotizacion->update([
+        'km_recorridos' => $data['km_recorridos'] ?? null,
+        'litros_diesel' => $data['litros_diesel'] ?? null,
+    ]);
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Kilómetros y litros diesel actualizados correctamente.',
+        'data' => [
+            'km_recorridos' => $cotizacion->km_recorridos,
+            'litros_diesel' => $cotizacion->litros_diesel,
+        ],
+    ]);
+}
     public function singleUpdate(Request $request, $id)
     {
         try {
@@ -1236,17 +1462,64 @@ class CotizacionesController extends Controller
 
             $doc_cotizaciones = DocumCotizacion::where('id_cotizacion', '=', $id)->first();
             $doc_cotizaciones->num_contenedor = $numContenedor;
+
+
             //$doc_cotizaciones->terminal = $contenedor['terminal'];
             //$doc_cotizaciones->num_autorizacion = $contenedor['num_autorizacion'];
-            //$doc_cotizaciones->num_boleta_liberacion = $contenedor['num_boleta_liberacion'] || '';
-            //$doc_cotizaciones->num_doda = $contenedor['num_doda'];
+            $doc_cotizaciones->num_boleta_liberacion = $request['numBoleta'] ?? '';
+            $doc_cotizaciones->num_doda = $request['numDoda'] ?? '';
             //$doc_cotizaciones->num_carta_porte = $contenedor['num_carta_porte'];
             //$doc_cotizaciones->fecha_boleta_vacio = $contenedor['fecha_boleta_vacio'];
             //$doc_cotizaciones->ccp = $contenedor['ccp'];
             //$doc_cotizaciones->cima = $contenedor['cima'];
             $doc_cotizaciones->update();
 
-            $cotizaciones = Cotizaciones::where('id', '=', $id)->first();
+
+            //cotiacion para actualizar
+               $cotizaciones = Cotizaciones::where('id', '=', $id)->first();
+
+        $file_bolteta_lib=    $request->file('boleta_liberacion_file');
+        if($file_bolteta_lib){
+      $this->procesarDocumento(
+    $file_bolteta_lib,
+    $cotizaciones,
+    $doc_cotizaciones->id,
+    'BoletaLib',
+    $request->numBoleta
+);
+        }
+
+   $file_doda=  $request->file('doda_file');
+    if($file_doda){
+
+
+
+
+  $this->procesarDocumento(
+   $file_doda,
+    $cotizaciones,
+    $doc_cotizaciones->id,
+    'Doda',
+    $request->numDoda
+);
+        }
+
+   $file_ccp=  $request->file('ccp_file');
+    if($file_ccp){
+$this->procesarDocumento(
+    $file_ccp,
+    $cotizaciones,
+    $doc_cotizaciones->id,
+    'CCP'
+);
+        }
+
+
+
+
+
+
+
             $cotizaciones->id_cliente = $request->id_cliente;
             $cotizaciones->id_subcliente = $request->id_subcliente;
             $cotizaciones->origen = $request->origen;
@@ -1275,6 +1548,8 @@ class CotizacionesController extends Controller
 
             if ($request->has('id_proveedor') && $request->id_proveedor !== $cotizaciones->id_empresa) { //checar si se cambio de empresa
                 $cotizaciones->id_empresa = $request->id_proveedor;
+                $doc_cotizaciones->id_empresa =$request->id_proveedor;
+                $doc_cotizaciones->update();
             }
 
 
@@ -1298,14 +1573,32 @@ class CotizacionesController extends Controller
                         DB::beginTransaction();
                         $cotizaciones2 = Cotizaciones::find($id);
 
-                        if (!is_null($asignaciones->id_operador)) {
+                        if ($asignaciones && !is_null($asignaciones->id_operador)) {
                             $afectaBanco = false;
                             if ($asignaciones->id_banco1_dinero_viaje) {
                                 Bancos::where('id', '=', $asignaciones->id_banco1_dinero_viaje)->update(["saldo" => DB::raw("saldo + ". $asignaciones->dinero_viaje)]);
                                 $afectaBanco = true;
                             }
 
+                            /*
                             $gasto = GastosOperadores::where('id_cotizacion', $id)->get();  //verificar si tuvo un gasto
+                            */
+                            $gasto = \App\Models\GastoImputacion::join('gastos', 'gastos.id', '=', 'gasto_imputaciones.gasto_id')
+                                ->join('gasto_vinculos', 'gasto_vinculos.gasto_id', '=', 'gastos.id')
+                                ->leftJoin('gasto_pagos', 'gasto_pagos.gasto_id', '=', 'gastos.id')
+                                ->whereNull('gastos.deleted_at')
+                                ->where('gastos.estatus', '!=', 'cancelado')
+                                ->where('gasto_vinculos.tipo_vinculo', '=', 'cotizacion')
+                                ->where('gasto_vinculos.vinculable_type', '=', \App\Models\Cotizaciones::class)
+                                ->where('gasto_vinculos.vinculable_id', '=', $id)
+                                ->where('gasto_imputaciones.tipo_imputacion', '=', 'operador')
+                                ->select(
+                                    'gasto_imputaciones.*',
+                                    'gasto_imputaciones.monto_imputado as cantidad',
+                                    'gastos.concepto as tipo',
+                                    'gasto_pagos.cuenta_bancaria_id as id_banco'
+                                )
+                                ->get();
                             foreach ($gasto as $g) {
                                 if (!is_null($g->id_banco) && $g->cantidad > 0) {//cantidad valida y ya tiene pago
 
@@ -1405,7 +1698,7 @@ class CotizacionesController extends Controller
                 $docucotizaciones->doc_ccp = 'formato_carta_porte_' . $numContenedor . '.pdf';
                 $docucotizaciones->save();
                 // Definir ruta dentro de public
-                $path = public_path('cotizaciones/cotizacion'.$docucotizaciones->id.'/formato_carta_porte_' . $numContenedor . '.pdf');
+                $path = public_path('cotizaciones/cotizacion'.$cotizaciones->id.'/formato_carta_porte_' . $numContenedor . '.pdf');
 
                 if ($request->has('uuid')) {
                     Log::channel('daily')->info('si hay uuid: '.$request->get('uuid'));
@@ -1435,7 +1728,7 @@ class CotizacionesController extends Controller
 
                     $pdf = PDF::loadView('cotizaciones.carta_porte_pdf', compact('cotizaciones', 'numContenedor', 'subCliente'));
 
-                    $folderPath = public_path('cotizaciones/cotizacion' . $docucotizaciones->id);
+                    $folderPath = public_path('cotizaciones/cotizacion' . $cotizaciones->id);
 
                     Log::channel('daily')->info('path: '.$folderPath);
                     // Crear la carpeta si no existe
@@ -1476,8 +1769,9 @@ class CotizacionesController extends Controller
         }
     }
 
-    public function update(Request $request, $id)
+    public function update(Request $request, $id) //refactor para full
     {
+
 
         $idEmpresa = auth()->user()->id_empresa;
         $Contenedores = $request->Contenedores;
@@ -1487,7 +1781,16 @@ class CotizacionesController extends Controller
             $referencia_full = $cotizaciones->referencia_full;
         }
         DB::beginTransaction();
+        // crear priemro el viaje que sera nuestra representacion
+
+        $viaje = $this->resolverViajeDesdeRequest($request, $id);
+
         //Primero validar si el contenedor existe
+
+
+
+  $retAuto = $request->boolean('retencion_automatica');
+
 
         foreach ($Contenedores as $contenedor) {
 
@@ -1561,6 +1864,8 @@ class CotizacionesController extends Controller
             $cotizaciones->longitud = $request->longitud;
             $cotizaciones->direccion_mapa = $request->direccion_mapa;
 
+            $cotizaciones->retencion_automatica = $retAuto;
+
             /* if ($request->hasFile("carta_porte")) {
                  $file = $request->file('carta_porte');
                  $path = public_path() . '/cotizaciones/cotizacion'. $id;
@@ -1587,7 +1892,7 @@ class CotizacionesController extends Controller
             $cotizaciones->motivo_demora = $verificarCobroAnterior; //solo para ir viendo cambien en pruebas
 
 
-            $asignacion = Asignaciones::where('id_contenedor', $id)->first();
+            $asignacion = Asignaciones::where('id_contenedor', $doc_cotizaciones->id)->first();
             if (!is_null($asignacion)) {
                 $pagado = $cotizaciones->pagos()->sum('monto');
                 $totalPagadopro =  $request->get('total_proveedor');
@@ -1620,7 +1925,18 @@ class CotizacionesController extends Controller
 
             $cotizaciones->update();
 
+
+
+
+            $viaje->cotizaciones()->syncWithoutDetaching([$cotizaciones->id]);
+
         }
+
+
+
+        $this->CostosService->syncDesdeRequest($viaje, $request);
+
+
         /* if($request->get('id_cliente_clientes') == NULL){
              $gasto_descripcion = $request->input('gasto_descripcion');
              $ticket_ids = $request->input('ticket_id');
@@ -1655,12 +1971,145 @@ class CotizacionesController extends Controller
                                 ]);
     }
 
+
+    private function resolverViajeDesdeRequest($request, $id)
+    {
+        if ($request->TipoCotizacion == "Full") {
+
+            $referencia = Cotizaciones::find($id)->referencia_full;
+
+            $cotizaciones = Cotizaciones::where('referencia_full', $referencia)->get();
+
+            if ($cotizaciones->count() < 2) {
+                throw new \Exception('No es un FULL válido');
+            }
+
+            $viajeExistente = Viajes::where('estado', 'activo')
+                ->where('tipo', 'full')
+                ->whereHas('cotizaciones', function ($q) use ($cotizaciones) {
+                    $q->whereIn('cotizacion_id', $cotizaciones->pluck('id'));
+                })
+                ->first();
+
+            if ($viajeExistente) {
+                return $viajeExistente;
+            }
+
+            $viajesIds = DB::table('viajes_cotizacion')
+                ->whereIn('cotizacion_id', $cotizaciones->pluck('id'))
+                ->pluck('viaje_id')
+                ->unique();
+
+            if ($viajesIds->isNotEmpty()) {
+
+                Viajes::whereIn('id', $viajesIds)->update([
+                    'estado' => 'cancelado'
+                ]);
+            }
+
+            $viaje = Viajes::create([
+                'tipo' => 'full',
+                'estado' => 'activo',
+            ]);
+
+            $viaje->cotizaciones()->attach(
+                $cotizaciones->pluck('id')->toArray()
+            );
+
+            return $viaje;
+
+        } else {
+
+
+            $cotizacion = Cotizaciones::find($id);
+            $viaje = $cotizacion->viajes()->first();
+
+            if ($viaje) {
+                return  $viaje;
+            }
+
+            $viaje = Viajes::create([
+                'tipo' => 'sencillo',
+                'estado' => 'activo',
+            ]);
+
+            return $viaje;
+        }
+    }
+ private function resolverViajeDesdeRequestCreate($request)
+    {
+        if ($request->TipoCotizacion == "Full") {
+
+            $referencia = Cotizaciones::find($id)->referencia_full;
+
+            $cotizaciones = Cotizaciones::where('referencia_full', $referencia)->get();
+
+            if ($cotizaciones->count() < 2) {
+                throw new \Exception('No es un FULL válido');
+            }
+
+            $viajeExistente = Viajes::where('estado', 'activo')
+                ->where('tipo', 'full')
+                ->whereHas('cotizaciones', function ($q) use ($cotizaciones) {
+                    $q->whereIn('cotizacion_id', $cotizaciones->pluck('id'));
+                })
+                ->first();
+
+            if ($viajeExistente) {
+                return $viajeExistente;
+            }
+
+            $viajesIds = DB::table('viajes_cotizacion')
+                ->whereIn('cotizacion_id', $cotizaciones->pluck('id'))
+                ->pluck('viaje_id')
+                ->unique();
+
+            if ($viajesIds->isNotEmpty()) {
+
+                Viajes::whereIn('id', $viajesIds)->update([
+                    'estado' => 'cancelado'
+                ]);
+            }
+
+            $viaje = Viajes::create([
+                'tipo' => 'full',
+                'estado' => 'activo',
+            ]);
+
+            $viaje->cotizaciones()->attach(
+                $cotizaciones->pluck('id')->toArray()
+            );
+
+            return $viaje;
+
+        } else {
+
+
+            $cotizacion = Cotizaciones::find($id);
+            $viaje = $cotizacion->viajes()->first();
+
+            if ($viaje) {
+                return  $viaje;
+            }
+
+            $viaje = Viajes::create([
+                'tipo' => 'sencillo',
+                'estado' => 'activo',
+            ]);
+
+            return $viaje;
+        }
+    }
+
+
+
+
     //Obtener una lista de gastos del contenedor
 
     public function get_gastos(Request $r)
     {
 
-        // dd($r);
+
         $numContenedor = $r->input('numContenedor');
         $idEmpresa = auth()->user()->id_empresa;
 
@@ -1668,27 +2117,39 @@ class CotizacionesController extends Controller
                                             ->where('id_empresa', $idEmpresa)
                                             ->first();
 
+        if(!$contenedor){
 
-        // dd($contenedor, $numContenedor);
-        $gastosExtra = GastosExtras::with('Bancos.catBanco')
-        ->        where('id_cotizacion', $contenedor->id_cotizacion)
+        return [
+            "succes"=> false,
+            "Titulo" => "Verificar cambio empresa",
+            "message" => "Posiblemente fuera de la empresa"
+                 // dd($contenedor, $numContenedor);
 
-        ->get();
+        ];
+        }
+        $gastosUnificados = app(\App\Services\GastosService::class)->listar([
+            'id_empresa' => $idEmpresa,
+            'cotizacion_id' => $contenedor->id_cotizacion
+         ]);
+
+        $gastosExtra = $gastosUnificados->filter(function ($g) {
+            return $g['tipo_gasto'] === 'cotizacion';
+        });
 
         // dd($gastosExtra);
         $gastosContenedor =
         $gastosExtra->map(function ($g) {
             return [
-                "IdContenedor" => $g->id_cotizacion,
-                "IdGasto" => $g->id,
-                "Gasto" => $g->descripcion,
-                "Monto" => $g->monto,
-                "Fecha" => $g->created_at,
-                "estatus" => $g->estatus,
-                "fecha_aplicacion" => $g->fecha_aplicacion,
-                "BancoDescripcion" => $g->Bancos?->nombre_beneficiario ?? ''.' / '.$g->Bancos?->nombre ?? '',
+                "IdContenedor" => $g['cotizacion_id'] ?? null,
+                "IdGasto" => $g['id'],
+                "Gasto" => $g['concepto'],
+                "Monto" => $g['monto_total'],
+                "Fecha" => $g['fecha_gasto'],
+                "estatus" => $g['estatus'],
+                "fecha_aplicacion" => $g['pagos'][0]['fecha_pago'] ?? null,
+                "BancoDescripcion" => isset($g['pagos'][0]['cuenta_bancaria']) ? ($g['pagos'][0]['cuenta_bancaria']['nombre_beneficiario'] . ' / ' . $g['pagos'][0]['cuenta_bancaria']['nombre']) : '',
             ];
-        });
+        })->values();
 
         return $gastosContenedor;
     }
@@ -1703,24 +2164,28 @@ class CotizacionesController extends Controller
                                             ->where('id_empresa', $idEmpresa)
                                             ->first();
         // dd($contenedor, $numContenedor);
-        $gastosOperador = GastosOperadores::leftJoin('bancos', 'gastos_operadores.id_banco', '=', 'bancos.id')
-        ->where('id_cotizacion', $contenedor->id_cotizacion)
-        ->select('bancos.nombre_banco', 'bancos.nombre_beneficiario', 'gastos_operadores.*')
-        ->get();
+        $gastosUnificados = app(\App\Services\GastosService::class)->listar([
+            'id_empresa' => $idEmpresa,
+            'cotizacion_id' => $contenedor->id_cotizacion
+        ]);
+
+        $gastosOperador = $gastosUnificados->filter(function ($g) {
+            return $g['tipo_gasto'] === 'operador';
+        });
+
         $gastosContenedor =
         $gastosOperador->map(function ($g) {
             return [
-                "IdContenedor" => $g->id_cotizacion,
-                "IdGasto" => $g->id,
-                "Gasto" => $g->tipo,
-                "Monto" => $g->cantidad,
-                "Estatus" => $g->estatus,
-                "Fecha" => Carbon::parse($g->created_at)->format('Y-m-d'),
-                "FechaPago" => $g->fecha_pago,
-                "BancoPago" => (!is_null($g->nombre_banco)) ? $g->nombre_banco.' / '.$g->nombre_beneficiario : '',
+                "IdContenedor" => $g['cotizacion_id'] ?? null,
+                "IdGasto" => $g['id'],
+                "Gasto" => $g['concepto'],
+                "Monto" => $g['monto_total'],
+                "Estatus" => $g['estatus'],
+                "Fecha" => Carbon::parse($g['fecha_gasto'])->format('Y-m-d'),
+                "FechaPago" => $g['pagos'][0]['fecha_pago'] ?? null,
+                "BancoPago" => isset($g['pagos'][0]['cuenta_bancaria']) ? ($g['pagos'][0]['cuenta_bancaria']['nombre'] . ' / ' . $g['pagos'][0]['cuenta_bancaria']['nombre_beneficiario']) : '',
             ];
-        });
-
+        })->values();
         return $gastosContenedor;
     }
 
@@ -1827,6 +2292,8 @@ class CotizacionesController extends Controller
                 "pago_inmediato" => $pagoInmediato ? 1 : 0,
             ]);
 
+            $this->sincronizarGastoOperadorNew($gasto);
+
 
             if ($pagoInmediato) {
 
@@ -1860,7 +2327,7 @@ class CotizacionesController extends Controller
                     'cuenta_bancaria_id' => $r->banco,
                     'tipo' => 'cargo',
                     'monto' => floatval($gasto->cantidad),
-                    'concepto' => 'Pago gasto operador: ' . $gasto->tipo,
+                    'concepto' => 'Pago gasto : '.$numContenedor .' - '. $gasto->tipo,
                     'fecha_movimiento' => \Carbon\Carbon::parse($r->fechaAplicacion)->format('Y-m-d'),
                     'referencia' => 'GOP',
                     'detalles' => $contenedoresAbonosJson,
@@ -1899,6 +2366,8 @@ class CotizacionesController extends Controller
                     "fecha_pago" => $r->fechaAplicacion,
                     "id_banco" => $r->banco
                 ]);
+
+                $this->sincronizarGastoOperadorNew($gasto->fresh());
             }
 
             DB::commit();
@@ -1996,7 +2465,7 @@ class CotizacionesController extends Controller
                     'cuenta_bancaria_id' => $r->bank,
                     'tipo' => 'cargo',
                     'monto' => floatval($gasto->cantidad),
-                    'concepto' => 'Pago gasto operador: ' . $gasto->tipo,
+                    'concepto' => 'Pago gasto: ' . $r->numContenedor . ' - ' . $gasto->tipo,
                     'fecha_movimiento' => \Carbon\Carbon::parse($r->fechaAplicacion ?? now())->format('Y-m-d'),
                     'referencia' => 'GOP',
                     'referenciaable_id' => $gasto->id,
@@ -2017,12 +2486,14 @@ class CotizacionesController extends Controller
                     "id_banco" => $r->bank,
                     "fecha_pago" => \Carbon\Carbon::parse($r->fechaAplicacion ?? now())->format('Y-m-d')
                 ]);
+
+                $this->sincronizarGastoOperadorNew($gasto->fresh());
             }
 
 
 
             //bancos old
-            $bancos = Bancos::where('id_empresa', Auth::User()->id_empresa)->where('id', $r->bank)->first();
+           /*  $bancos = Bancos::where('id_empresa', Auth::User()->id_empresa)->where('id', $r->bank)->first();
             $saldoActual = $bancos->saldo;
 
             if ($saldoActual < $r->totalPago) {
@@ -2031,17 +2502,16 @@ class CotizacionesController extends Controller
                     "Mensaje" => "La cuenta bancaria seleccionada no cuenta con saldo suficiente",
                     "TMensaje" => "warning"
                 ]);
-            }
+            } */
 
-            Bancos::where('id', '=', $r->bank)
-                ->update(["saldo" => DB::raw("saldo - ". $r->totalPago)]);
+          //  Bancos::where('id', '=', $r->bank)  ->update(["saldo" => DB::raw("saldo - ". $r->totalPago)]);
 
-            $banco = new BancoDineroOpe();
+           /*  $banco = new BancoDineroOpe();
             $banco->id_operador = $asignacion->id_operador;
             $banco->monto1 = $r->totalPago;
             $banco->metodo_pago1 = 'Transferencia';
             $banco->descripcion_gasto = "Pago Gastos Operador";
-            $banco->id_banco1 = $r->bank;
+            $banco->id_banco1 = $r->bank; */
 
 
 
@@ -2052,10 +2522,10 @@ class CotizacionesController extends Controller
                     "fecha_pago" => \Carbon\Carbon::parse($r->fechaAplicacion ?? now())->format('Y-m-d')
                 ]);
 
-            $banco->contenedores = $contenedoresAbonosJson;
+           /*  $banco->contenedores = $contenedoresAbonosJson;
             $banco->tipo = 'Salida';
             $banco->fecha_pago = \Carbon\Carbon::parse($r->fechaAplicacion ?? now())->format('Y-m-d');
-            $banco->save();
+            $banco->save(); */
 
 
             DB::commit();
@@ -2090,8 +2560,26 @@ class CotizacionesController extends Controller
             $gastos = collect($r->seleccionEliminarPago);
 
             foreach ($gastos as $g) {
+                $idGasto = $g['IdGasto'];
+                $idEmpresa = auth()->user()->id_empresa;
 
-                $gasto = GastosOperadores::find($g['IdGasto']);
+                // 1. Intentar con el modelo nuevo Gasto
+                $nuevoGasto = Gasto::where('id', $idGasto)
+                    ->where('id_empresa', $idEmpresa)
+                    ->first();
+
+                if ($nuevoGasto) {
+                    $fechacancelacion = $r->fechacancelacion ?? now()->format('Y-m-d');
+                    foreach ($nuevoGasto->pagos()->where('estatus', '!=', 'cancelado')->get() as $pago) {
+                        $this->GastosService->cancelarPago($pago, $fechacancelacion);
+                    }
+                    $nuevoGasto->update(['estatus' => 'cancelado']);
+                    $nuevoGasto->delete();
+                    continue;
+                }
+
+                // 2. Fallback legado
+                $gasto = GastosOperadores::find($idGasto);
 
                 if (!$gasto) {
                     continue;
@@ -2112,9 +2600,13 @@ class CotizacionesController extends Controller
 
                     if ($movimiento) {
 
+
+                                    $fechacancelacion = $r->fechacancelacion;
+
+
                         $cancelar = $this->BancosService->cancelarMovimiento(
                             $gasto->id_banco,
-                            $movimiento->id
+                            $movimiento->id,$fechacancelacion
                         );
 
                         if (!$cancelar) {
@@ -2129,6 +2621,8 @@ class CotizacionesController extends Controller
                 $gasto->update([
                     'estatus' => 'eliminado'
                 ]);
+
+                $this->cancelarGastoNew('gastos_operadores', $gasto->id);
             }
 
             DB::commit();
@@ -2154,31 +2648,39 @@ class CotizacionesController extends Controller
     //Agregar gastos a cotizacion
     public function agregar_gasto_cotizacion(Request $r)
     {
-        try {
-            $numContenedor = $r->input('numContenedor');
-            $idEmpresa = auth()->user()->id_empresa;
-            DB::beginTransaction();
-            $contenedor = DocumCotizacion::where('num_contenedor', $numContenedor)
-                                                ->where('id_empresa', $idEmpresa)
-                                                ->first();
-            $data = array(
-                'id_cotizacion' => $contenedor->id_cotizacion,
-                'descripcion' => $r->descripcion,
-                'monto' => $r->montoGasto,
-            );
+      try {
+            DB::transaction(function () use ($r) {
+                $numContenedor = $r->input('numContenedor');
+                $idEmpresa = auth()->user()->id_empresa;
 
-            GastosExtras::create($data);
+                $contenedor = DocumCotizacion::where('num_contenedor', $numContenedor)
+                    ->where('id_empresa', $idEmpresa)
+                    ->firstOrFail();
 
-            // $gastosContenedor = GastosExtras::where('id_cotizacion',$contenedor->id_cotizacion)->get();
-            // $totalGastos = $gastosContenedor->sum('monto');
+                $gastoExtra = GastosExtras::create([
+                    'id_cotizacion' => $contenedor->id_cotizacion,
+                    'descripcion' => $r->descripcion,
+                    'monto' => $r->montoGasto,
+                ]);
 
-            Cotizaciones::where('id', $contenedor->id_cotizacion)->update(["restante" => DB::raw('restante + '.$r->montoGasto)]);
-            DB::commit();
-            return response()->json(["TMensaje" => "success", "Mensaje" => "Agregado correctamente", "Titulo" => "Gasto agregado"]);
+                $this->sincronizarGastoExtraNew($gastoExtra);
+
+                Cotizaciones::where('id', $contenedor->id_cotizacion)
+                    ->increment('restante', $r->montoGasto);
+            }, 3);
+
+            return response()->json([
+                "TMensaje" => "success",
+                "Mensaje" => "Agregado correctamente",
+                "Titulo" => "Gasto agregado"
+            ]);
+
         } catch (\Throwable $t) {
-            DB::rollback();
-            return response()->json(["TMensaje" => "error", "Mensaje" => $t->getMessage(), "Titulo" => "Error al agregar gasto"]);
-
+            return response()->json([
+                "TMensaje" => "error",
+                "Mensaje" => $t->getMessage(),
+                "Titulo" => "Error al agregar gasto"
+            ]);
         }
 
     }
@@ -2200,6 +2702,21 @@ class CotizacionesController extends Controller
             $gastosRequest = collect($r->input('seleccionGastos', []));
             $ids = $gastosRequest->pluck('IdGasto')->toArray();
 
+            // 1. Procesar nuevos Gastos
+            $newGastos = Gasto::whereIn('id', $ids)
+                ->where('id_empresa', $idEmpresa)
+                ->get();
+
+            $fechacancelacion = $r->fechacancelacion ?? now()->format('Y-m-d');
+            foreach ($newGastos as $gasto) {
+                foreach ($gasto->pagos()->where('estatus', '!=', 'cancelado')->get() as $pago) {
+                    $this->GastosService->cancelarPago($pago, $fechacancelacion);
+                }
+                $gasto->update(['estatus' => 'cancelado']);
+                $gasto->delete();
+            }
+
+            // 2. Fallback legado GastosExtras
             $gastos = GastosExtras::where('id_cotizacion', $contenedor->id_cotizacion)
                 ->whereIn('id', $ids)
                 ->get();
@@ -2208,16 +2725,20 @@ class CotizacionesController extends Controller
 
 
                 if (strtolower($gasto->estatus) === 'pagado' && $gasto->cuenta_bancaria_id) {
-                    $movimientobuscar = $this->BancosService->findMovimiento(
+                    $movimientobuscar  = $this->BancosService->findMovimiento(
                         $gasto->id,
                         \App\Models\GastosExtras::class,
                         $gasto->cuenta_bancaria_id,
                         'GASTOS'
                     );
 
+
+//dd($movimientobuscar ,$fechacancelacion);
+
+
                     $cancelar = $this->BancosService->cancelarMovimiento(
                         $gasto->cuenta_bancaria_id,
-                        $movimientobuscar->id
+                        $movimientobuscar->id,$fechacancelacion
                     );
 
                     if (!$cancelar) {
@@ -2229,14 +2750,19 @@ class CotizacionesController extends Controller
                 $gasto->update([
                     "estatus" => "eliminado"
                 ]);
+
+                $this->cancelarGastoNew('gastos_extras', $gasto->id);
             }
 
-            $total = $gastos->sum('monto');
+            $totalNew = $newGastos->sum('monto_total');
+            $total = $gastos->sum('monto') + $totalNew;
 
-            Cotizaciones::where('id', $contenedor->id_cotizacion)
-                ->update([
-                    "restante" => DB::raw("restante - {$total}")
-                ]);
+            if ($total > 0) {
+                Cotizaciones::where('id', $contenedor->id_cotizacion)
+                    ->update([
+                        "restante" => DB::raw("restante - {$total}")
+                    ]);
+            }
 
             DB::commit();
 
@@ -2277,17 +2803,48 @@ class CotizacionesController extends Controller
                 throw new \Exception("No se recibieron gastos");
             }
 
-            $gastos = GastosExtras::where('id_cotizacion', $contenedor->id_cotizacion)
-                ->whereIn('id', $ids)
-                ->get();
+            $gastosExtras = collect();
+            $gastosUnificados = collect();
+            $total = 0;
 
-            $total = $gastos->sum('monto');
-
-
-            if ($total != $request->total) {
-                throw new \Exception("El monto no coincide con los gastos seleccionados");
+            foreach ($ids as $id) {
+                // Intentar buscar como gasto unificado primero
+                $uGasto = Gasto::find($id);
+                if ($uGasto) {
+                    if ($uGasto->origen_legacy === 'gastos_extras' && $uGasto->origen_legacy_id) {
+                        $lGasto = GastosExtras::find($uGasto->origen_legacy_id);
+                        if ($lGasto) {
+                            $gastosExtras->push($lGasto);
+                            $total += (float) $lGasto->monto;
+                        }
+                    } else {
+                        $gastosUnificados->push($uGasto);
+                        $total += (float) $uGasto->monto_total;
+                    }
+                } else {
+                    // Si no es unificado, buscar directamente en el legacy
+                    $lGasto = GastosExtras::find($id);
+                    if ($lGasto) {
+                        $gastosExtras->push($lGasto);
+                        $total += (float) $lGasto->monto;
+                    }
+                }
             }
 
+            $total = round($total, 2);
+            $reqTotal = round((float) $request->total, 2);
+
+            $contenedoresAbonos = [];
+            $contenedorAbono = [
+                'num_contenedor' => $contenedor->num_contenedor,
+                'abono' =>  $total
+            ];
+
+            array_push($contenedoresAbonos, $contenedorAbono);
+
+            if ($total != $reqTotal) {
+                throw new \Exception("El monto no coincide con los gastos seleccionados (Calculado: $total vs Recibido: $reqTotal)");
+            }
 
             $validar = $this->BancosService->validarsaldoparacargo(
                 $idEmpresa,
@@ -2304,10 +2861,8 @@ class CotizacionesController extends Controller
                 ]);
             }
 
-
-
-            foreach ($gastos as $gasto) {
-
+            // Procesar gastos legacy
+            foreach ($gastosExtras as $gasto) {
                 if (strtolower($gasto->estatus) === 'pagado') {
                     continue;
                 }
@@ -2321,6 +2876,7 @@ class CotizacionesController extends Controller
                     'referencia' => 'GASTOS',
                     'referenciaable_id' =>  $gasto->id,
                     'referenciaable_type' => \App\Models\GastosExtras::class,
+                    'detalles' => json_encode($contenedoresAbonos),
                     'observaciones' => 'Pago individual de gasto',
                 ];
 
@@ -2334,6 +2890,22 @@ class CotizacionesController extends Controller
                     "estatus" => "pagado",
                     "fecha_aplicacion" => $request->fecha,
                     "cuenta_bancaria_id" => $request->banco
+                ]);
+
+                $this->sincronizarGastoExtraNew($gasto->fresh());
+            }
+
+            // Procesar gastos unificados
+            foreach ($gastosUnificados as $gasto) {
+                if ($gasto->estatus === 'pagado') {
+                    continue;
+                }
+
+                $this->GastosService->pagar($gasto, [
+                    'cuenta_bancaria_id' => $request->banco,
+                    'fecha_pago' => $request->fecha,
+                    'monto' => $gasto->monto_total,
+                    'referencia' => 'Pago de gasto extra: ' . $gasto->concepto,
                 ]);
             }
 
@@ -2353,6 +2925,43 @@ class CotizacionesController extends Controller
                 "TMensaje" => "error",
                 "Mensaje" => $t->getMessage(),
                 "Titulo" => "Error al pagar"
+            ]);
+        }
+    }
+
+    private function sincronizarGastoExtraNew(GastosExtras $gasto): void
+    {
+        try {
+            $this->GastosService->registrarDesdeGastoExtra($gasto->fresh());
+        } catch (\Throwable $t) {
+            Log::channel('daily')->warning('No se pudo sincronizar gastos_extras con gastos new', [
+                'gasto_extra_id' => $gasto->id,
+                'error' => $t->getMessage(),
+            ]);
+        }
+    }
+
+    private function sincronizarGastoOperadorNew(GastosOperadores $gasto): void
+    {
+        try {
+            $this->GastosService->registrarDesdeGastoOperador($gasto->fresh());
+        } catch (\Throwable $t) {
+            Log::channel('daily')->warning('No se pudo sincronizar gastos_operadores con gastos new', [
+                'gasto_operador_id' => $gasto->id,
+                'error' => $t->getMessage(),
+            ]);
+        }
+    }
+
+    private function cancelarGastoNew(string $origenLegacy, int $origenLegacyId): void
+    {
+        try {
+            $this->GastosService->cancelarDesdeLegacy($origenLegacy, $origenLegacyId);
+        } catch (\Throwable $t) {
+            Log::channel('daily')->warning('No se pudo cancelar gasto new desde legacy', [
+                'origen_legacy' => $origenLegacy,
+                'origen_legacy_id' => $origenLegacyId,
+                'error' => $t->getMessage(),
             ]);
         }
     }
@@ -2457,6 +3066,16 @@ class CotizacionesController extends Controller
         $id_cot = null;
         Log::channel('daily')->info('inicio adjuntar documentos');
 
+        $requiereFolio = in_array($r->urlRepo, ['BoletaLib', 'Doda', 'PreAlta']);
+        $esCliente = auth()->user()->id_cliente != 0;
+
+      /*   if ($requiereFolio && empty($r->folio) && $esCliente) {
+
+    return response()->json([
+        'error' => 'Este documento requiere folio/fecha'
+    ], 422);
+} */
+
         include('Fileuploader/class.fileuploader.php');
         $cotizacionQuery = Cotizaciones::join('docum_cotizacion as d', 'cotizaciones.id', '=', 'd.id_cotizacion')
     ->select([
@@ -2497,6 +3116,8 @@ class CotizacionesController extends Controller
 
         $idDocum = $cotizacion->docCotizacion->id;
 
+
+
         $tipoViajecontenedor = $cotizacion->tipo_viaje_seleccion;
 
         if (is_null($cotizacion)) {
@@ -2531,23 +3152,56 @@ class CotizacionesController extends Controller
                     'title' => $item['title'],
                     'type' => $item['type'],
                     'url' => asset($directorio.'/'.$item['name']),
-                    'opcion' => $r->urlRepo
+                    'opcion' => $r->urlRepo,
+                    'num_doc'=> $r->folio
                 );
 
                 //$fileName = uniqid() . $item['name'];
-            }
+
+
+                } //end foreach
 
             $json = $upload['files'];
             //   $upload['typeOfDocument'] = $r->urlRepo;
-            switch ($r->urlRepo) {
-                case 'BoletaLib': $update = ["boleta_liberacion" => $item['name']];
-                    break;
-                case 'Doda': $update = ["doda" => $item['name']];
-                    break;
-                case 'CartaPorte': $update = ["doc_ccp" => $item['name'],"ccp" => "si"];
-                    break;
-                case 'PreAlta': $update = ["img_boleta" => $item['name']];
-                    break;
+           switch ($r->urlRepo) {
+
+    case 'BoletaLib':
+        $update = [
+            "boleta_liberacion" => $item['name'],
+        ];
+
+        if ($esCliente && !empty($r->folio)) {
+            $update["num_boleta_liberacion"] = $r->folio;
+        }
+        break;
+
+    case 'Doda':
+        $update = [
+            "doda" => $item['name'],
+        ];
+
+        if ($esCliente && !empty($r->folio)) {
+            $update["num_doda"] = $r->folio;
+        }
+        break;
+
+    case 'CartaPorte':
+        $update = [
+            "doc_ccp" => $item['name'],
+            "ccp" => "si"
+        ];
+        break;
+
+    case 'PreAlta':
+        $update = [
+            "img_boleta" => $item['name'],
+        ];
+
+        if ($esCliente && !empty($r->folio)) {
+             $update["fecha_boleta_vacio"] = $r->folio;
+        }
+        break;
+
                 case 'CartaPortePDF': $update = ["carta_porte" => $item['name']];
                     break;
                 case 'CartaPorteXML': $update = ["carta_porte_xml" => $item['name']];
@@ -2558,6 +3212,7 @@ class CotizacionesController extends Controller
                     break;
                 case 'BoletaPatio': $update = ["boleta_patio" => $item['name']];
                     break;
+                    case 'EvidenciaDescarga' :  $update = ["evidencia_descarga" => $item['name']];
 
             }
 
@@ -2585,6 +3240,7 @@ class CotizacionesController extends Controller
 
                 if ($doc) {
                     $doc->boleta_vacio = 'si';
+$doc->fecha_boleta_vacio= $r->folio;
                     $doc->save();
                 }
             }
@@ -2617,11 +3273,50 @@ class CotizacionesController extends Controller
             }
 
 
+            //enviar notificacio segun tipo de documento en base a reglas
+            if (!empty($update)) {
+                $this->sendNotificacionDocs(
+                    idDocum: $idDocum,
+                    id_cot: $id_cot,
+                    nameArchivo: $item['name'],
+                    esCliente: $esCliente,
+                    folio: $r->folio ?? null,
+                    urlRepo: $r->urlRepo
+                );
+            }
+
+            //final envio notificacion
+
         }
         return response()->json($upload);
         exit;
     }
 
+    private function sendNotificacionDocs($idDocum, $id_cot, $nameArchivo, $esCliente, $folio,$urlRepo)
+    {
+                      $docActualizado = DocumCotizacion::with('cotizacion')
+                    ->where('id', $idDocum)
+                    ->first();
+$urlDocumento = asset("cotizaciones/cotizacion{$id_cot}/{$nameArchivo}");
+                if ($docActualizado) {
+                    app(\App\Services\NotificacionesService::class)->notificarDocumentoSubido(
+                        urlRepo: $urlRepo,
+                        empresaId: $docActualizado->cotizacion->id_empresa ?? null,
+                        id_cliente: $docActualizado->cotizacion->id_cliente ?? null,
+                        id_proveedor: $docActualizado->cotizacion->id_proveedor ?? null,
+                        nombreArchivo: $nameArchivo,
+                        modelo: $docActualizado,
+                        url: $urlDocumento,
+                        data: [
+                            'docum_cotizacion_id' => $docActualizado->id,
+                            'cotizacion_id' => $docActualizado->id_cotizacion,
+                            'contenedor' => $docActualizado->num_contenedor ?? null,
+                            'folio' => $folio ?? null,
+                            'es_cliente' => $esCliente ?? false,
+                        ]
+                    );
+                }
+    }
 
     public static function confirmarDocumentos($cotizacion)
     {
@@ -2665,16 +3360,16 @@ class CotizacionesController extends Controller
 
 
             $request->validate([
-    'empresa' => 'required|exists:empresas,id',
-    'proveedor' => 'nullable|exists:proveedores,id',
-]);
+                'empresa' => 'required|exists:empresas,id',
+                'proveedor' => 'nullable|exists:proveedores,id',
+            ]);
 
 
             $proveedor = $request->proveedor ?: null;
 
             foreach ($contenedores as $c) {
 
-                $cotizacion = Cotizaciones::find($c->IdContenedor);
+                $cotizacion = Cotizaciones::find($c->IdContenedor); //se envia id cotizacion en el valor, variable request mal
 
                 if ($cotizacion) {
                     $cotizacion->id_empresa   = $request->empresa;
@@ -3087,6 +3782,10 @@ class CotizacionesController extends Controller
                 'boleta_patio'           => $request->boleta_patio,
                 'fecha_boleta_patio'     => $request->fecha_boleta_patio,
                 'cima'                   => $request->cima ?? 0,
+                'cita_at'                => $request->cita_at ?? null,
+                'eta'                    => !empty($request->eta) && $request->eta !== 'null' ? $request->eta  : null,
+                'naviera_id'             => $request->naviera_id ?? null,
+                'pedimento_recibido_at'  => $request->pedimento_recibido_at ?? null,
             ]);
 
 
@@ -3135,6 +3834,44 @@ class CotizacionesController extends Controller
                     return response()->json(["Titulo" => "Contenedor creado previamente", "Mensaje" => "El contenedor ya existe en el sistema y no puede duplicarse", "TMensaje" => "warning"]);
                 }
             }
+
+
+
+                $file_bolteta_lib=    $request->file('boleta_liberacion_file');
+        if($file_bolteta_lib){
+      $this->procesarDocumento(
+    $file_bolteta_lib,
+    $cot,
+    $doc->id,
+    'BoletaLib',
+    $request->numBoleta
+);
+        }
+
+   $file_doda=  $request->file('doda_file');
+    if($file_doda){
+
+
+
+
+  $this->procesarDocumento(
+   $file_doda,
+   $cot,
+    $doc->id,
+    'Doda',
+    $request->numDoda
+);
+        }
+
+   $file_boltetapatio=  $request->file('BoletaPatio');
+    if($file_boltetapatio){
+$this->procesarDocumento(
+    $file_boltetapatio,
+   $cot,
+    $doc->id,
+    'BoletaPatio'
+);
+        }
 
 
             $pesoReglamentario = 22;
@@ -3216,8 +3953,22 @@ class CotizacionesController extends Controller
             if ($request->num_contenedor != $contenedorOriginal) {
                 $doc->num_contenedor = $contenedorupdate;
             }
+
+
+                 $doc->num_boleta_liberacion = $request['numBoleta'] ?? '';
+            $doc->num_doda = $request['numDoda'] ?? '';
+
             $doc->terminal = $request->terminal_local;
             $doc->num_autorizacion = $request->num_autorizacion;
+            $doc->cita_at = $request->cita_at ?? null;
+            $doc->eta = $request->eta ?? null;
+            $naviera = $request->naviera_id;
+            $doc->naviera_id = ($naviera === null || $naviera === '' || $naviera === 'null')
+    ? null
+    : (int) $naviera;
+            $doc->pedimento_recibido_at = $request->pedimento_recibido_at ?? null;
+
+
 
             $doc->save();
 
@@ -3253,7 +4004,17 @@ class CotizacionesController extends Controller
                 $estatusA = "Pendiente";
             }
 
-            Cotizaciones::where('id', $viajes[$x]['id'])->update(["tipo_viaje_seleccion" => "local_to_foraneo","en_patio" => 0,"estatus" => $estatusA,"fecha_entrega" => Carbon::now()]);
+          $cotizacion = Cotizaciones::find($viajes[$x]['id']);
+
+if ($cotizacion) {
+
+    $cotizacion->tipo_viaje_seleccion = "local_to_foraneo";
+    $cotizacion->en_patio = 0;
+    $cotizacion->estatus = $estatusA;
+    $cotizacion->fecha_entrega = Carbon::now();
+
+    $cotizacion->save();
+}
         }
         return response()->json(["Titulo" => "Proceso satisfactorio", "Mensaje" => "Se ha realizado el proceso de conversión a viaje foráneo", "TMensaje" => "success"]);
     }
@@ -3264,8 +4025,23 @@ class CotizacionesController extends Controller
         $viajes = $request->seleccion;
 
         for ($x = 0; $x < (sizeof($viajes)); $x++) {
-            Cotizaciones::where('id', $viajes[$x]['id'])->update(["tipo_viaje_seleccion" => "local","en_patio" => 1,"estatus" => "Documentos Faltantes","fecha_entrega" => null]);
-        }
+           // Cotizaciones::where('id', $viajes[$x]['id'])->update(["tipo_viaje_seleccion" => "local","en_patio" => 1,"estatus" => "Documentos Faltantes","fecha_entrega" => null]);
+
+                $cotizacion = Cotizaciones::find($viajes[$x]['id']);
+
+if ($cotizacion) {
+
+    $cotizacion->tipo_viaje_seleccion = "local";
+    $cotizacion->en_patio = 1;
+    $cotizacion->estatus ="Documentos Faltantes";
+    $cotizacion->fecha_entrega = null;
+
+    $cotizacion->save();
+}
+
+
+
+            }
         return response()->json(["Titulo" => "Proceso satisfactorio", "Mensaje" => "Se ha revertido el proceso a viaje local", "TMensaje" => "success"]);
     }
     public function storeMultiplelocal(Request $request)
@@ -3465,4 +4241,244 @@ class CotizacionesController extends Controller
     }
 
 
+
+
+    //nuevo para documentos
+
+
+   private function procesarDocumento(
+    $file,
+    $cotizacion,
+    $id_doc,
+    $urlRepo,
+    $folio = null
+) {
+
+    if (!$file) {
+        return null;
+    }
+
+    $id_cot = $cotizacion->id;
+
+    $estatus = $cotizacion->estatus;
+    $tipoViajecontenedor = $cotizacion->tipo_viaje_seleccion;
+    $esCliente = auth()->user()->id_cliente != 0;
+
+    $directorio = public_path("cotizaciones/cotizacion$id_cot");
+
+    if (!is_dir($directorio)) {
+        mkdir($directorio, 0777, true);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Reutilizar FileUploader
+    |--------------------------------------------------------------------------
+    */
+    //include('Fileuploader/class.fileuploader.php');
+require_once app_path('Http/Controllers/Fileuploader/class.fileuploader.php');
+    /*
+    |--------------------------------------------------------------------------
+    | Simular $_FILES para FileUploader
+    |--------------------------------------------------------------------------
+    */
+    $_FILES['files'] = [
+        'name' => $file->getClientOriginalName(),
+        'type' => $file->getMimeType(),
+        'tmp_name' => $file->getPathname(),
+        'error' => 0,
+        'size' => $file->getSize(),
+    ];
+
+    $FileUploader = new FileUploader('files', [
+        'uploadDir' => $directorio . '/',
+    ]);
+
+    $upload = $FileUploader->upload();
+
+    if (!$upload['isSuccess']) {
+        return null;
+    }
+
+    foreach ($upload['files'] as $item) {
+
+        switch ($urlRepo) {
+
+            case 'BoletaLib':
+
+                $update = [
+                    "boleta_liberacion" => $item['name'],
+                ];
+
+                if ($esCliente && !empty($folio)) {
+                    $update["num_boleta_liberacion"] = $folio;
+                }
+
+            break;
+
+            case 'Doda':
+
+                $update = [
+                    "doda" => $item['name'],
+                ];
+
+                if ($esCliente && !empty($folio)) {
+                    $update["num_doda"] = $folio;
+                }
+
+            break;
+
+            case 'CCP':
+
+                $update = [
+                    "doc_ccp" => $item['name'],
+                    "ccp" => "si"
+                ];
+
+            break;
+
+            case 'PreAlta':
+
+                $update = [
+                    "img_boleta" => $item['name'],
+                ];
+
+                if ($esCliente && !empty($folio)) {
+                    $update["fecha_boleta_vacio"] = $folio;
+                }
+
+            break;
+
+            case 'CartaPortePDF':
+
+                $update = [
+                    "carta_porte" => $item['name']
+                ];
+
+            break;
+
+            case 'CartaPorteXML':
+
+                $update = [
+                    "carta_porte_xml" => $item['name']
+                ];
+
+            break;
+
+            case 'EIR':
+
+                $update = [
+                    "doc_eir" => $item['name'],
+                    'eir' => "si"
+                ];
+
+            break;
+
+            case 'BoletaPatio':
+
+                $update = [
+                    "boleta_patio" => $item['name']
+                ];
+
+            break;
+
+            default:
+                return null;
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Actualizar tabla
+        |--------------------------------------------------------------------------
+        */
+        if (
+            $urlRepo != 'PreAlta' &&
+            $urlRepo != 'CartaPortePDF' &&
+            $urlRepo != 'CartaPorteXML'
+        ) {
+
+            $doc = DocumCotizacion::find($id_doc);
+
+            if ($doc) {
+                $doc->update($update);
+            }
+
+        } else {
+
+            $cot = Cotizaciones::find($id_cot);
+
+            if ($cot) {
+                $cot->update($update);
+            }
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Extra PreAlta
+        |--------------------------------------------------------------------------
+        */
+        if ($urlRepo == 'PreAlta') {
+
+            $doc = DocumCotizacion::find($id_doc);
+
+            if ($doc) {
+                $doc->boleta_vacio = 'si';
+                $doc->fecha_boleta_vacio = $folio;
+                $doc->save();
+            }
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Eventos
+        |--------------------------------------------------------------------------
+        */
+        if ($tipoViajecontenedor !== 'local') {
+
+            if (Auth::user()->id_cliente != 0) {
+
+                event(new \App\Events\GenericNotificationEvent(
+                    [$cotizacion->cliente->correo],
+                    'Se cargó ' . $urlRepo . ': ' . $cotizacion->docCotizacion->num_contenedor,
+                    'Hola, tu transportista cargó el documento "' . $urlRepo . '" del contenedor ' . $cotizacion->docCotizacion->num_contenedor
+                ));
+
+                event(new \App\Events\ConfirmarDocumentosEvent($id_cot));
+            }
+
+            if (
+                $estatus != 'Documentos Faltantes' &&
+                Auth::user()->id_cliente != 0
+            ) {
+
+                event(new \App\Events\NotificaNuevoDocumentoEvent(
+                    $cotizacion,
+                    $urlRepo
+                ));
+            }
+
+        } else {
+
+            self::confirmarDocumentoslocal($id_cot);
+        }
+
+
+         if (!empty($update)) {
+                $this->sendNotificacionDocs(
+                    idDocum: $id_doc,
+                    id_cot: $id_cot,
+                    nameArchivo: $item['name'],
+                    esCliente: $esCliente,
+                    folio: $folio ?? null,
+                    urlRepo: $urlRepo
+                );
+            }
+    }
+
+
+
+
+
+    return $upload;
+}
 }

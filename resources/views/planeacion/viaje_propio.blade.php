@@ -21,6 +21,7 @@
     <div class="col-12 col-md-4  mt-2 text-start">
         <label>Chasis</label>
         <select class="form-control" name="cmbChasis" id="cmbChasis">
+
             @foreach ($equipos as $item)
                 @if ($item->tipo == 'Chasis / Plataforma')
                     <option value="{{ $item->id }}">{{ $item->id_equipo }}</option>
@@ -30,7 +31,8 @@
     </div>
     <div class="col-12 col-md-4  mt-2 text-start">
         <label>Chasis 2</label>
-        <select class="form-control" name="cmbChasis2" id="cmbChasis2" disabled>
+        <select class="form-control" name="cmbChasis2" id="cmbChasis2">
+            <option value="">Seleccionar</option>
             @foreach ($equipos as $item)
                 @if ($item->tipo == 'Chasis / Plataforma')
                     <option value="{{ $item->id }}">{{ $item->id_equipo }}</option>
@@ -39,8 +41,9 @@
         </select>
     </div>
     <div class="col-12 col-md-4  mt-2 text-start">
-        <label>Doly</label>
-        <select class="form-control" name="cmbDoly" id="cmbDoly" disabled>
+        <label>Dolys</label>
+        <select class="form-control" name="cmbDoly" id="cmbDoly">
+            <option value="">Seleccionar</option>
             @foreach ($equipos as $item)
                 @if ($item->tipo == 'Chasis / Plataforma')
                     <option value="{{ $item->id }}">{{ $item->id_equipo }}</option>
@@ -195,9 +198,17 @@
                         </div>
                     </div>
                 </div>
-
+                <div class="col-md-4 mt-3">
+                    <label class="form-label mb-1 small fw-bold">
+                        Litros diesel
+                    </label>
+                    <input type="number" class="form-control form-control-sm text-end" id="litros_diesel"
+                        step="0.001" min="0" name="gasto_litros_diesel" placeholder="0.000">
+                </div>
 
             </div>
+
+
 
         </div> <!-- Cierra col-lg-7 col-12 mt-4 mt-lg-0 -->
     </div> <!-- Cierra row mt-4 (Cotización + Gastos, Peso contenedor, Dirección entrega) -->

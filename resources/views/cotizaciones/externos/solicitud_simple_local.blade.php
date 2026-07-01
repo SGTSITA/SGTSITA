@@ -75,6 +75,11 @@
             background-color: #a883ff !important;
         }
     </style>
+
+    <div id="docsPendingAlert" class="alert alert-warning d-none mt-5">
+        Tiene cambios pendientes en documentos.
+        Debe guardar para aplicar los cambios.
+    </div>
     <div class="modal fade" id="mapModal" tabindex="-1" aria-labelledby="mapModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered modal-fullscreen-md-down">
             <div class="modal-content">

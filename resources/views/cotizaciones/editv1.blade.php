@@ -107,23 +107,23 @@
                     <div class="card-body">
                         <nav class="mx-auto">
                             <div class="nav nav-tabs custom-tabs" id="nav-tab" role="tablist">
-                                <button class="nav-link custom-tab active" id="nav-cotizacion-tab" data-bs-toggle="tab"
-                                    data-bs-target="#nav-cotizacion" type="button" role="tab"
+                                <button class="nav-link custom-tab active no-disable" id="nav-cotizacion-tab"
+                                    data-bs-toggle="tab" data-bs-target="#nav-cotizacion" type="button" role="tab"
                                     aria-controls="nav-planeadas" aria-selected="false">
                                     <img src="{{ asset('img/icon/validando-billete.webp') }}" alt=""
                                         width="40px" />
                                     Cotización
                                 </button>
 
-                                <button class="nav-link custom-tab" id="nav-Contenedor-tab" data-bs-toggle="tab"
+                                <button class="nav-link custom-tab no-disable" id="nav-Contenedor-tab" data-bs-toggle="tab"
                                     data-bs-target="#nav-Contenedor" type="button" role="tab"
                                     aria-controls="nav-Contenedor" aria-selected="false">
                                     <img src="{{ asset('img/icon/contenedor.png') }}" alt="" width="40px" />
                                     Contenedor
                                 </button>
                                 @unless ($cotizacion->estatus_planeacion != 1 && auth()->user()->can('cotizaciones-ocultar-planeacion'))
-                                    <button class="nav-link custom-tab" id="nav-Documentacion-tab" data-bs-toggle="tab"
-                                        data-bs-target="#nav-Documentacion" type="button" role="tab"
+                                    <button class="nav-link custom-tab no-disable" id="nav-Documentacion-tab"
+                                        data-bs-toggle="tab" data-bs-target="#nav-Documentacion" type="button" role="tab"
                                         aria-controls="nav-Documentacion" aria-selected="false">
                                         <img src="{{ asset('img/icon/pdf.webp') }}" alt="" width="40px" />
                                         Documentación
@@ -137,7 +137,7 @@
                                     Documentación
                                 </button> --}}
 
-                                <button class="nav-link custom-tab" id="nav-Bloque-tab" data-bs-toggle="tab"
+                                <button class="nav-link custom-tab no-disable" id="nav-Bloque-tab" data-bs-toggle="tab"
                                     data-bs-target="#nav-Bloque" type="button" role="tab" aria-controls="nav-Bloque"
                                     aria-selected="true">
                                     <img src="{{ asset('img/icon/contenedores.png') }}" alt="" width="40px" />
@@ -145,7 +145,7 @@
                                 </button>
 
                                 @can('cotizacion-valores')
-                                    <button class="nav-link custom-tab" id="nav-Gastos-tab" data-bs-toggle="tab"
+                                    <button class="nav-link custom-tab no-disable" id="nav-Gastos-tab" data-bs-toggle="tab"
                                         data-bs-target="#nav-Gastos" type="button" role="tab"
                                         aria-controls="nav-Gastos" aria-selected="false">
                                         <img src="{{ asset('img/icon/bolsa-de-dinero.webp') }}" alt=""
@@ -156,18 +156,18 @@
 
                                 @if ($cotizacion->estatus_planeacion == 1)
                                     @if ($documentacion?->Asignaciones?->id_proveedor != null)
-                                        <button class="nav-link custom-tab" id="nav-Proveedor-tab" data-bs-toggle="tab"
-                                            data-bs-target="#nav-Proveedor" type="button" role="tab"
-                                            aria-controls="nav-Proveedor" aria-selected="false">
+                                        <button class="nav-link custom-tab no-disable" id="nav-Proveedor-tab"
+                                            data-bs-toggle="tab" data-bs-target="#nav-Proveedor" type="button"
+                                            role="tab" aria-controls="nav-Proveedor" aria-selected="false">
                                             <img src="{{ asset('img/icon/efectivo.webp') }}" alt=""
                                                 width="40px" />
                                             Proveedor
                                         </button>
                                     @elseif ($documentacion?->Asignaciones?->id_proveedor == null)
                                         @can('cotizacion-valores')
-                                            <button class="nav-link custom-tab" id="nav-GastosOpe-tab" data-bs-toggle="tab"
-                                                data-bs-target="#nav-GastosOpe" type="button" role="tab"
-                                                aria-controls="nav-GastosOpe" aria-selected="false">
+                                            <button class="nav-link custom-tab no-disable" id="nav-GastosOpe-tab"
+                                                data-bs-toggle="tab" data-bs-target="#nav-GastosOpe" type="button"
+                                                role="tab" aria-controls="nav-GastosOpe" aria-selected="false">
                                                 <img src="{{ asset('img/icon/efectivo.webp') }}" alt=""
                                                     width="40px" />
                                                 Gastos Viaje
@@ -202,13 +202,13 @@
 
                                         <div class="col-6 form-group">
                                             <!--label for="name">Cliente *</label>
-                                                                                                                                                                            <select class="form-select cliente d-inline-block" data-toggle="select" id="id_cliente" name="id_cliente">
-                                                                                                                                                                                <option value="{{ $cotizacion->id_cliente }}">{{ $cotizacion->Cliente->nombre }} / {{ $cotizacion->Cliente->telefono }}</option>
-                                                                                                                                                                                @foreach ($clientes as $item)
+                                                                                                                                                                                                                                                                                                                                    <select class="form-select cliente d-inline-block" data-toggle="select" id="id_cliente" name="id_cliente">
+                                                                                                                                                                                                                                                                                                                                        <option value="{{ $cotizacion->id_cliente }}">{{ $cotizacion->Cliente->nombre }} / {{ $cotizacion->Cliente->telefono }}</option>
+                                                                                                                                                                                                                                                                                                                                        @foreach ($clientes as $item)
     <option value="{{ $item->id }}">{{ $item->nombre }} / {{ $item->telefono }}</option>
     @endforeach
 
-                                                                                                                                                                            </select-->
+                                                                                                                                                                                                                                                                                                                                    </select-->
                                             <ul class="list-group">
                                                 <li
                                                     class="list-group-item border-1 border-dashed d-flex p-4 mb-2 bg-gray-100 border-radius-lg">
@@ -249,14 +249,14 @@
 
                                         <div class="col-6 form-group">
                                             <!--label for="name">Subcliente *</label>
-                                                                                                                                                                            <select class="form-select subcliente d-inline-block" id="id_subcliente" name="id_subcliente">
+                                                                                                                                                                                                                                                                                                                                    <select class="form-select subcliente d-inline-block" id="id_subcliente" name="id_subcliente">
 
-                                                                                                                            @if ($cotizacion->id_subcliente != null)
+                                                                                                                                                                                                                                                                                    @if ($cotizacion->id_subcliente != null)
     <option value="{{ $cotizacion->id_subcliente }}">{{ $cotizacion->Subcliente->nombre }} / {{ $cotizacion->Subcliente->telefono }}</option>
 @else
     <option value="">Seleccionar subcliente</option>
     @endif
-                                                                                                                                                                            </select-->
+                                                                                                                                                                                                                                                                                                                                    </select-->
                                             <ul class="list-group">
                                                 <li
                                                     class="list-group-item border-1 border-dashed d-flex p-4 mb-2 bg-gray-100 border-radius-lg">
@@ -367,6 +367,39 @@
                                                     aria-label="Dirección Entrega">
     {{ $cotizacion->direccion_entrega }}</textarea>
 
+
+                                                <label class="form-label fw-semibold">Link en mapa</label>
+
+                                                <div class="input-group">
+
+                                                    <a href="@if (isset($cotizacion->latitud, $cotizacion->longitud)) {{ 'https://www.google.com/maps/search/?api=1&query=' . $cotizacion->latitud . ',' . $cotizacion->longitud }}@else# @endif"
+                                                        id="linkMapa" target="_blank"
+                                                        class="form-control text-primary text-truncate text-decoration-none d-flex align-items-center overflow-hidden"
+                                                        style="cursor:pointer;">
+
+                                                        <span id="textoMapa">
+                                                            @if (isset($cotizacion->latitud, $cotizacion->longitud))
+                                                                {{ 'https://www.google.com/maps/search/?api=1&query=' . $cotizacion->latitud . ',' . $cotizacion->longitud }}
+                                                            @else
+                                                                Sin ubicación asignada
+                                                            @endif
+                                                        </span>
+                                                    </a>
+
+                                                    <button type="button" id="btnCopiarMapa"
+                                                        class="btn btn-outline-primary d-flex align-items-center justify-content-center"
+                                                        style="min-width:45px;" title="Copiar enlace">
+                                                        <i class="fas fa-copy"></i>
+                                                    </button>
+
+                                                </div>
+
+
+
+
+
+
+
                                                 <div class="mt-2">
                                                     <button type="button" class="btn btn-outline-primary"
                                                         data-bs-toggle="modal" data-bs-target="#mapModal">
@@ -464,216 +497,138 @@
                                         </div>
                                         @can('cotizacion-valores')
                                             <div class="col-3 form-group">
-                                                <label for="name">Precio Sobre Peso</label>
-                                                <div class="input-group mb-3">
-                                                    <span class="input-group-text" id="basic-addon1">
-                                                        <img src="{{ asset('img/icon/tonelada.png') }}" alt=""
-                                                            width="25px" />
-                                                    </span>
-                                                    <input name="precio_sobre_peso" id="precio_sobre_peso" type="text"
-                                                        autocomplete="off" oninput="allowOnlyDecimals(event)"
-                                                        class="form-control moneyformat calculo-cotizacion"
-                                                        value="{{ number_format($cotizacion->precio_sobre_peso, 2, '.', ',') }}" />
-                                                </div>
+                                                <label>Precio Sobre Peso</label>
+                                                <input name="precio_sobre_peso" id="precio_sobre_peso" type="text"
+                                                    class="form-control moneyformat calculo-cotizacion"
+                                                    value="{{ number_format($costosForm['precio_sobre_peso'] ?? 0, 2, '.', ',') }}">
                                             </div>
 
                                             <div class="col-3 form-group">
-                                                <label for="name">Sobre Peso Viaje</label>
-                                                <div class="input-group mb-3">
-                                                    <span class="input-group-text" id="basic-addon1">
-                                                        <img src="{{ asset('img/icon/peso.png') }}" alt=""
-                                                            width="25px" />
-                                                    </span>
-                                                    <input name="sobrepeso_viaje" id="sobrepeso_viaje" readonly
-                                                        type="text" autocomplete="off"
-                                                        class="form-control moneyformat calculo-cotizacion"
-                                                        oninput="allowOnlyDecimals(event)" />
-                                                </div>
+                                                <label>Sobre Peso Viaje</label>
+                                                <input name="sobrepeso_viaje" id="sobrepeso_viaje" type="text" readonly
+                                                    class="form-control moneyformat calculo-cotizacion">
                                             </div>
 
                                             <div class="col-3 form-group">
-                                                <label for="name">Total Sobre Peso Viaje</label>
-                                                <div class="input-group mb-3">
-                                                    <span class="input-group-text" id="basic-addon1">
-                                                        <img src="{{ asset('img/icon/peso.png') }}" alt=""
-                                                            width="25px" />
-                                                    </span>
-                                                    <input name="total_sobrepeso_viaje" id="total_sobrepeso_viaje" readonly
-                                                        type="text" autocomplete="off"
-                                                        class="form-control moneyformat calculo-cotizacion"
-                                                        oninput="allowOnlyDecimals(event)" />
-                                                </div>
+                                                <label>Total Sobre Peso Viaje</label>
+                                                <input name="total_sobrepeso_viaje" id="total_sobrepeso_viaje" type="text"
+                                                    readonly class="form-control moneyformat calculo-cotizacion"
+                                                    value="{{ number_format($costosForm['total_sobrepeso_viaje'] ?? 0, 2, '.', ',') }}">
                                             </div>
 
                                             <div class="col-3 form-group">
-                                                <label for="name">Precio Tonelada</label>
-                                                <div class="input-group mb-3">
-                                                    <span class="input-group-text" id="basic-addon1">
-                                                        <img src="{{ asset('img/icon/tonelada.png') }}" alt=""
-                                                            width="25px" />
-                                                    </span>
-                                                    <input name="precio_tonelada" id="precio_tonelada" type="text"
-                                                        class="form-control moneyformat calculo-cotizacion"
-                                                        oninput="allowOnlyDecimals(event)" autocomplete="off"
-                                                        value="{{ $cotizacion->precio_tonelada }}" readonly />
-                                                </div>
+                                                <label>Precio Tonelada</label>
+                                                <input name="precio_tonelada" id="precio_tonelada" type="text" readonly
+                                                    class="form-control moneyformat calculo-cotizacion"
+                                                    value="{{ number_format($costosForm['precio_tonelada'] ?? 0, 2, '.', ',') }}">
                                             </div>
 
                                             <div class="col-3 form-group">
-                                                <label for="name">Precio Viaje</label>
-                                                <div class="input-group mb-3">
-                                                    <span class="input-group-text" id="basic-addon1">
-                                                        <img src="{{ asset('img/icon/bolsa-de-dinero.webp') }}"
-                                                            alt="" width="25px" />
-                                                    </span>
-                                                    <input name="precio_viaje" id="precio_viaje" type="text"
-                                                        class="form-control moneyformat calculo-cotizacion"
-                                                        oninput="allowOnlyDecimals(event)" autocomplete="off"
-                                                        value="{{ $cotizacion->precio_viaje }}" />
-                                                </div>
+                                                <label>Precio Viaje</label>
+                                                <input name="precio_viaje" id="precio_viaje" type="text"
+                                                    class="form-control moneyformat calculo-cotizacion"
+                                                    value="{{ number_format($costosForm['precio_viaje'] ?? 0, 2, '.', ',') }}">
                                             </div>
 
                                             <div class="col-3 form-group">
-                                                <label for="name">Burreo</label>
-                                                <div class="input-group mb-3">
-                                                    <span class="input-group-text" id="basic-addon1">
-                                                        <img src="{{ asset('img/icon/burro.png') }}" alt=""
-                                                            width="25px" />
-                                                    </span>
-                                                    <input name="burreo" id="burreo" type="float"
-                                                        class="form-control moneyformat calculo-cotizacion" autocomplete="off"
-                                                        oninput="allowOnlyDecimals(event)"
-                                                        value="{{ $cotizacion->burreo }}" />
-                                                </div>
+                                                <label>Burreo</label>
+                                                <input name="burreo" id="burreo" type="text"
+                                                    class="form-control moneyformat calculo-cotizacion"
+                                                    value="{{ number_format($costosForm['burreo'] ?? 0, 2, '.', ',') }}">
                                             </div>
 
                                             <div class="col-3 form-group">
-                                                <label for="name">Maniobra</label>
-                                                <div class="input-group mb-3">
-                                                    <span class="input-group-text" id="basic-addon1">
-                                                        <img src="{{ asset('img/icon/logistica.png') }}" alt=""
-                                                            width="25px" />
-                                                    </span>
-                                                    <input name="maniobra" id="maniobra" type="float"
-                                                        class="form-control moneyformat calculo-cotizacion" autocomplete="off"
-                                                        oninput="allowOnlyDecimals(event)"
-                                                        value="{{ $cotizacion->maniobra }}" />
-                                                </div>
+                                                <label>Maniobra</label>
+                                                <input name="maniobra" id="maniobra" type="text"
+                                                    class="form-control moneyformat calculo-cotizacion"
+                                                    value="{{ number_format($costosForm['maniobra'] ?? 0, 2, '.', ',') }}">
                                             </div>
 
                                             <div class="col-3 form-group">
-                                                <label for="name">Estadia</label>
-                                                <div class="input-group mb-3">
-                                                    <span class="input-group-text" id="basic-addon1">
-                                                        <img src="{{ asset('img/icon/servidor-en-la-nube.png') }}"
-                                                            alt="" width="25px" />
-                                                    </span>
-                                                    <input name="estadia" id="estadia" type="float"
-                                                        class="form-control moneyformat calculo-cotizacion" autocomplete="off"
-                                                        oninput="allowOnlyDecimals(event)"
-                                                        value="{{ $cotizacion->estadia }}" />
-                                                </div>
+                                                <label>Estadia</label>
+                                                <input name="estadia" id="estadia" type="text"
+                                                    class="form-control moneyformat calculo-cotizacion"
+                                                    value="{{ number_format($costosForm['estadia'] ?? 0, 2, '.', ',') }}">
                                             </div>
 
                                             <div class="col-4 form-group">
-                                                <label for="name">Otros</label>
-                                                <div class="input-group mb-3">
-                                                    <span class="input-group-text" id="basic-addon1">
-                                                        <img src="{{ asset('img/icon/inventario.png.webp') }}" alt=""
-                                                            width="25px" />
-                                                    </span>
-                                                    <input name="otro" id="otro" type="float"
-                                                        class="form-control moneyformat calculo-cotizacion" autocomplete="off"
-                                                        oninput="allowOnlyDecimals(event)" value="{{ $cotizacion->otro }}" />
-                                                </div>
+                                                <label>Otros</label>
+                                                <input name="otro" id="otro" type="text"
+                                                    class="form-control moneyformat calculo-cotizacion"
+                                                    value="{{ number_format($costosForm['otro'] ?? 0, 2, '.', ',') }}">
                                             </div>
 
                                             <div class="col-4 form-group">
-                                                <label for="name">IVA</label>
-                                                <div class="input-group mb-3">
-                                                    <span class="input-group-text" id="basic-addon1">
-                                                        <img src="{{ asset('img/icon/impuesto.png') }}" alt=""
-                                                            width="25px" />
-                                                    </span>
-                                                    <input name="iva" id="iva" type="text"
-                                                        class="form-control moneyformat calculo-cotizacion" autocomplete="off"
-                                                        readonly value="{{ $cotizacion->iva }}" />
-                                                </div>
+                                                <label>IVA</label>
+                                                <input name="iva" id="iva" type="text" readonly
+                                                    class="form-control moneyformat calculo-cotizacion"
+                                                    value="{{ number_format($costosForm['iva'] ?? 0, 2, '.', ',') }}">
                                             </div>
 
                                             <div class="col-4 form-group">
-                                                <label for="name">Retención</label>
-                                                <div class="input-group mb-3">
-                                                    <span class="input-group-text" id="basic-addon1">
-                                                        <img src="{{ asset('img/icon/monedas.webp') }}" alt=""
-                                                            width="25px" />
-                                                    </span>
-                                                    <input name="retencion" id="retencion" type="float"
-                                                        class="form-control moneyformat calculo-cotizacion" autocomplete="off"
-                                                        readonly value="{{ $cotizacion->retencion }}" />
+
+                                                <div class="d-flex justify-content-between align-items-center mb-1">
+
+                                                    <label class="mb-0">
+                                                        Retención
+                                                    </label>
+
+                                                    <div class="form-check form-switch">
+
+                                                        <input class="form-check-input" type="checkbox"
+                                                            id="retencion_automatica" name="retencion_automatica"
+                                                            value="1"
+                                                            {{ $cotizacion->retencion_automatica ?? true ? 'checked' : '' }}>
+
+                                                        <label class="form-check-label small" for="retencion_automatica">
+                                                            Automática
+                                                        </label>
+
+                                                    </div>
+
                                                 </div>
+
+                                                <input name="retencion" id="retencion" type="text"
+                                                    class="form-control moneyformat calculo-cotizacion"
+                                                    value="{{ number_format($costosForm['retencion'] ?? 0, 2, '.', ',') }}"
+                                                    {{ $cotizacion->retencion_automatica ?? true ? 'readonly' : '' }}>
+
                                             </div>
 
                                             <div class="col-4 form-group">
-                                                <label for="name">Base 1</label>
-                                                <div class="input-group mb-3">
-                                                    <span class="input-group-text" id="basic-addon1">
-                                                        <img src="{{ asset('img/icon/factura.png') }}" alt=""
-                                                            width="25px" />
-                                                    </span>
-                                                    <input name="base_factura" id="base_factura" type="float"
-                                                        class="form-control moneyformat calculo-cotizacion"
-                                                        oninput="allowOnlyDecimals(event)" autocomplete="off"
-                                                        value="{{ $cotizacion->base_factura }}" />
-                                                </div>
+                                                <label>Base 1</label>
+                                                <input name="base_factura" id="base_factura" type="text"
+                                                    class="form-control moneyformat calculo-cotizacion"
+                                                    value="{{ number_format($costosForm['base_factura'] ?? 0, 2, '.', ',') }}">
                                             </div>
 
                                             <div class="col-4 form-group">
-                                                <label for="name">Base 2</label>
-                                                <div class="input-group mb-3">
-                                                    <span class="input-group-text" id="basic-addon1">
-                                                        <img src="{{ asset('img/icon/factura.png.webp') }}" alt=""
-                                                            width="25px" />
-                                                    </span>
-                                                    <input name="base_taref" id="base_taref" type="float"
-                                                        class="form-control moneyformat calculo-cotizacion" readonly
-                                                        value="{{ $cotizacion->base_taref }}" />
-                                                </div>
+                                                <label>Base 2</label>
+                                                <input name="base_taref" id="base_taref" type="text" readonly
+                                                    class="form-control moneyformat calculo-cotizacion"
+                                                    value="{{ number_format($costosForm['base_taref'] ?? 0, 2, '.', ',') }}">
                                             </div>
-                                            <div class="col-4"></div>
+
+                                            {{-- IMPORTANTES PARA JS --}}
                                             <div class="col-4 form-group">
-                                                <label for="name">Total Gastos</label>
-                                                <div class="input-group mb-3">
-                                                    <span class="input-group-text" id="basic-addon1">
-                                                        <img src="{{ asset('img/icon/monedas.webp') }}" alt=""
-                                                            width="25px" />
-                                                    </span>
-                                                    <input type="text" class="form-control txtSumGastos" id="txtSumGastos"
-                                                        value="0" readonly />
-                                                </div>
+                                                <label>Total Gastos</label>
+                                                <input type="text" id="txtSumGastos" class="form-control txtSumGastos"
+                                                    value="{{ number_format($costosForm['total_gastos'] ?? 0, 2, '.', ',') }}"
+                                                    readonly>
                                             </div>
+
                                             <div class="col-4 form-group">
-                                                <label for="name">Total Cotización</label>
-                                                <div class="input-group mb-3">
-                                                    <span class="input-group-text" id="basic-addon1">
-                                                        <img src="{{ asset('img/icon/monedas.webp') }}" alt=""
-                                                            width="25px" />
-                                                    </span>
-                                                    <input name="total1" id="total1" type="float"
-                                                        class="form-control moneyformat calculo-cotizacion total-cotizacion"
-                                                        readonly />
-                                                </div>
+                                                <label>Total Cotización</label>
+                                                <input name="total1" id="total1" type="text" readonly
+                                                    class="form-control moneyformat calculo-cotizacion total-cotizacion"
+                                                    value="{{ number_format($costosForm['total'] ?? 0, 2, '.', ',') }}">
                                             </div>
+
                                             <div class="col-4 form-group">
-                                                <h5 class="fs-14">Cotización + Gastos</h5>
-                                                <div class="input-group mb-3">
-                                                    <span class="input-group-text" id="basic-addon1">
-                                                        <img src="{{ asset('img/icon/monedas.webp') }}" alt=""
-                                                            width="25px" />
-                                                    </span>
-                                                    <input type="text" class="form-control txtResultGastos" id="total"
-                                                        value="{{ $cotizacion->total }}" readonly />
-                                                </div>
+                                                <label>Cotización + Gastos</label>
+                                                <input type="text" id="total" class="form-control txtResultGastos"
+                                                    value="{{ number_format(($costosForm['total'] ?? 0) + ($costosForm['total_gastos'] ?? 0), 2, '.', ',') }}"
+                                                    readonly>
                                             </div>
                                         @endcan
                                     </div>
@@ -850,14 +805,16 @@
                                                         <td class="align-middle text-end">
                                                             <div
                                                                 class="d-flex px-3 py-1 justify-content-center align-items-center">
-                                                                <button type="button"
-                                                                    class="btn btn-sm btn-icon-only btnDocs btn-rounded btn-outline-secondary mb-0 ms-2 btn-sm d-flex align-items-center justify-content-center ms-3"
-                                                                    data-bs-toggle="tooltip"
-                                                                    id="btnFileFormato-para-Carta-porte"
-                                                                    data-bs-placement="bottom" title="Cargar archivo"
-                                                                    data-bs-original-title="Cargar archivo">
-                                                                    <i class="fas fa-upload" aria-hidden="true"></i>
-                                                                </button>
+                                                                @can('upload-docum-ccp')
+                                                                    <button type="button"
+                                                                        class="btn btn-sm btn-icon-only btnDocs btn-rounded btn-outline-secondary mb-0 ms-2 btn-sm d-flex align-items-center justify-content-center ms-3"
+                                                                        data-bs-toggle="tooltip"
+                                                                        id="btnFileFormato-para-Carta-porte"
+                                                                        data-bs-placement="bottom" title="Cargar archivo"
+                                                                        data-bs-original-title="Cargar archivo">
+                                                                        <i class="fas fa-upload" aria-hidden="true"></i>
+                                                                    </button>
+                                                                @endcan
                                                                 <a href="javasrcipt:void()" target="_blank"
                                                                     class="openFile btn btn-sm btn-icon-only btn-rounded btn-outline-secondary mb-0 ms-2 btn-sm d-flex align-items-center justify-content-center ms-3"
                                                                     data-bs-toggle="tooltip" data-bs-placement="bottom"
@@ -908,13 +865,15 @@
                                                         <td class="align-middle text-end">
                                                             <div
                                                                 class="d-flex px-3 py-1 justify-content-center align-items-center">
-                                                                <button type="button"
-                                                                    class="btn btn-sm btn-icon-only btnDocs btn-rounded btn-outline-secondary mb-0 ms-2 btn-sm d-flex align-items-center justify-content-center ms-3"
-                                                                    data-bs-toggle="tooltip" id="btnFileBoletaLiberacion"
-                                                                    data-bs-placement="bottom" title="Cargar archivo"
-                                                                    data-bs-original-title="Cargar archivo">
-                                                                    <i class="fas fa-upload" aria-hidden="true"></i>
-                                                                </button>
+                                                                @can('upload-docum-bolliberacion')
+                                                                    <button type="button"
+                                                                        class="btn btn-sm btn-icon-only btnDocs btn-rounded btn-outline-secondary mb-0 ms-2 btn-sm d-flex align-items-center justify-content-center ms-3"
+                                                                        data-bs-toggle="tooltip" id="btnFileBoletaLiberacion"
+                                                                        data-bs-placement="bottom" title="Cargar archivo"
+                                                                        data-bs-original-title="Cargar archivo">
+                                                                        <i class="fas fa-upload" aria-hidden="true"></i>
+                                                                    </button>
+                                                                @endcan
                                                                 <a href="javasrcipt:void()" target="_blank"
                                                                     class="openFile btn btn-sm btn-icon-only btn-rounded btn-outline-secondary mb-0 ms-2 btn-sm d-flex align-items-center justify-content-center ms-3"
                                                                     data-bs-toggle="tooltip" data-bs-placement="bottom"
@@ -963,13 +922,15 @@
                                                         <td class="align-middle text-end">
                                                             <div
                                                                 class="d-flex px-3 py-1 justify-content-center align-items-center">
-                                                                <button type="button" id="btnFileDODA"
-                                                                    class="btnDocs btn btn-sm btn-icon-only btn-rounded btn-outline-secondary mb-0 ms-2 btn-sm d-flex align-items-center justify-content-center ms-3"
-                                                                    data-bs-toggle="tooltip" data-bs-placement="bottom"
-                                                                    title="Cargar archivo"
-                                                                    data-bs-original-title="Cargar archivo">
-                                                                    <i class="fas fa-upload" aria-hidden="true"></i>
-                                                                </button>
+                                                                @can('upload-docum-doda')
+                                                                    <button type="button" id="btnFileDODA"
+                                                                        class="btnDocs btn btn-sm btn-icon-only btn-rounded btn-outline-secondary mb-0 ms-2 btn-sm d-flex align-items-center justify-content-center ms-3"
+                                                                        data-bs-toggle="tooltip" data-bs-placement="bottom"
+                                                                        title="Cargar archivo"
+                                                                        data-bs-original-title="Cargar archivo">
+                                                                        <i class="fas fa-upload" aria-hidden="true"></i>
+                                                                    </button>
+                                                                @endcan
                                                                 <a href="javasrcipt:void()" target="_blank"
                                                                     id="btn-ver-Doda"
                                                                     class="openFile btn btn-sm btn-icon-only btn-rounded btn-outline-secondary mb-0 ms-2 btn-sm d-flex align-items-center justify-content-center ms-3"
@@ -1129,13 +1090,15 @@
                                                         <td class="align-middle text-end">
                                                             <div
                                                                 class="d-flex px-3 py-1 justify-content-center align-items-center">
-                                                                <button type="button"
-                                                                    class="btn btn-sm btn-icon-only btnDocs btn-rounded btn-outline-secondary mb-0 ms-2 btn-sm d-flex align-items-center justify-content-center ms-3"
-                                                                    data-bs-toggle="tooltip" id="btnFilePre-Alta"
-                                                                    data-bs-placement="bottom" title="Cargar archivo"
-                                                                    data-bs-original-title="Cargar archivo">
-                                                                    <i class="fas fa-upload" aria-hidden="true"></i>
-                                                                </button>
+                                                                @can('upload-docum-prealta')
+                                                                    <button type="button"
+                                                                        class="btn btn-sm btn-icon-only btnDocs btn-rounded btn-outline-secondary mb-0 ms-2 btn-sm d-flex align-items-center justify-content-center ms-3"
+                                                                        data-bs-toggle="tooltip" id="btnFilePre-Alta"
+                                                                        data-bs-placement="bottom" title="Cargar archivo"
+                                                                        data-bs-original-title="Cargar archivo">
+                                                                        <i class="fas fa-upload" aria-hidden="true"></i>
+                                                                    </button>
+                                                                @endcan
                                                                 <a href="javasrcipt:void()" target="_blank"
                                                                     class="openFile btn btn-sm btn-icon-only btn-rounded btn-outline-secondary mb-0 ms-2 btn-sm d-flex align-items-center justify-content-center ms-3"
                                                                     data-bs-toggle="tooltip" data-bs-placement="bottom"
@@ -1232,6 +1195,69 @@
                                                             </div>
                                                         </td>
                                                     </tr>
+
+                                                    {{-- nuevo documento  EVIDENCIA DE DESCARGA !!! --}}
+                                                    <tr>
+                                                        <td>
+                                                            <div class="d-flex px-3 py-1">
+                                                                <div>
+                                                                    <img src="{{ asset('img/not-file.png') }}"
+                                                                        class="avatar me-3" alt="image"
+                                                                        id="img-EvidenciaDescarga" />
+                                                                </div>
+                                                                <div class="d-flex flex-column justify-content-center">
+
+                                                                    <div class="d-flex flex-column">
+                                                                        <h6 class="mb-0 text-sm">
+                                                                            Evidencia Descarga
+                                                                        </h6>
+                                                                        <p
+                                                                            class="text-sm font-weight-bold text-secondary mb-0">
+                                                                            <span class="text-muted"
+                                                                                id="filSize-EvidenciaDescarga">
+                                                                                0
+                                                                            </span>
+                                                                        </p>
+
+                                                                    </div>
+
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        <td>
+                                                            <p class="text-sm font-weight-bold mb-0">
+
+                                                            </p>
+                                                        </td>
+                                                        <td class="align-middle text-center text-sm">
+                                                            <p class="text-sm font-weight-bold mb-0">
+                                                                <span class="badge bg-gradient-warning badge-sm"
+                                                                    id="badge-EvidenciaDescarga">
+                                                                    Pendiente
+                                                                </span>
+                                                            </p>
+                                                        </td>
+                                                        <td class="align-middle text-end">
+                                                            <div
+                                                                class="d-flex px-3 py-1 justify-content-center align-items-center">
+                                                                <button type="button"
+                                                                    class="btn btn-sm btn-icon-only btnDocs btn-rounded btn-outline-secondary mb-0 ms-2 btn-sm d-flex align-items-center justify-content-center ms-3"
+                                                                    data-bs-toggle="tooltip" id="btnFileevidenciaD"
+                                                                    data-bs-placement="bottom" title="Cargar archivo"
+                                                                    data-bs-original-title="Cargar archivo">
+                                                                    <i class="fas fa-upload" aria-hidden="true"></i>
+                                                                </button>
+                                                                <a href="javasrcipt:void()" target="_blank"
+                                                                    class="openFile btn btn-sm btn-icon-only btn-rounded btn-outline-secondary mb-0 ms-2 btn-sm d-flex align-items-center justify-content-center ms-3"
+                                                                    data-bs-toggle="tooltip" data-bs-placement="bottom"
+                                                                    title="Ver Documento"
+                                                                    data-bs-original-title="Ver Documento"
+                                                                    id="btn-ver-EvidenciaDescarga">
+                                                                    <i class="fas fa-eye" aria-hidden="true"></i>
+                                                                </a>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
                                                 </tbody>
                                             </table>
                                         </div>
@@ -1256,8 +1282,7 @@
                                                     <i class="fa fa-trash"></i>
                                                     Eliminar
                                                 </button>
-                                                <button type="button" data-bs-toggle="modal"
-                                                    data-bs-target="#modal-form" class="btn btn-sm bg-gradient-info">
+                                                <button type="button" data-bs-toggle="modal" data-bs-target="#modal-form" data-origen="cotizacion" class="btn btn-sm bg-gradient-info btnAgregarGastoTrigger">
                                                     Agregar gasto
                                                 </button>
                                             </div>
@@ -1275,8 +1300,8 @@
                                                     <img src="{{ asset('img/icon/monedas.webp') }}" alt=""
                                                         width="25px" />
                                                 </span>
-                                                <input type="text" id="txtSumGastos"
-                                                    class="form-control txtSumGastos" value="0" readonly />
+                                                <input type="text" id="txtSumGastos" class="form-control txtSumGastos"
+                                                    value="0" readonly />
                                             </div>
                                         </div>
                                         <div class="col-4 form-group">
@@ -1579,16 +1604,21 @@
                                         @can('cotizacion-valores')
                                             <div class="tab-pane fade" id="nav-GastosOpe" role="tabpanel"
                                                 aria-labelledby="nav-GastosOpe-tab" tabindex="0">
+
+
+
                                                 <div class="col-sm-12">
                                                     <div class="card card-body" id="profile">
                                                         <div class="row justify-content-between align-items-center">
-                                                            <div class="row">
+
+                                                            <div class="col-12 mb-2">
                                                                 <label style="font-size: 20px">
                                                                     Num contenedor:
                                                                     {{ $documentacion?->num_contenedor }}
                                                                 </label>
                                                             </div>
-                                                            <div class="col-sm-auto col-8 my-auto">
+
+                                                            <div class="col-md-3 col-12 my-auto">
                                                                 <div class="h-100">
                                                                     <h5 class="mb-1 font-weight-bolder">
                                                                         {{ $documentacion->Asignaciones->Operador->nombre }}
@@ -1598,59 +1628,107 @@
                                                                     </p>
                                                                 </div>
                                                             </div>
-                                                            <div class="col-4 text-center">
+
+                                                            <div class="col-md-5 col-12 my-2">
+                                                                <div class="border rounded-3 px-3 py-2 bg-light">
+                                                                    <input type="hidden" id="cotizacion_km_diesel_id"
+                                                                        value="{{ $cotizacion->id }}">
+
+                                                                    <div class="row g-2 align-items-end">
+                                                                        <div class="col-md-5 col-6">
+                                                                            <label class="form-label mb-1 small fw-bold">
+                                                                                KM recorridos
+                                                                            </label>
+                                                                            <input type="number"
+                                                                                class="form-control form-control-sm text-end"
+                                                                                id="km_recorridos" step="0.01"
+                                                                                min="0"
+                                                                                value="{{ old('km_recorridos', $documentacion?->Cotizacion?->km_recorridos ?? '0.00') }}"
+                                                                                placeholder="0.00">
+                                                                        </div>
+
+                                                                        <div class="col-md-5 col-6">
+                                                                            <label class="form-label mb-1 small fw-bold">
+                                                                                Litros diesel
+                                                                            </label>
+                                                                            <input type="number"
+                                                                                class="form-control form-control-sm text-end"
+                                                                                id="litros_diesel" step="0.001"
+                                                                                min="0"
+                                                                                value="{{ old('litros_diesel', $documentacion?->Cotizacion?->litros_diesel ?? '0.000') }}"
+                                                                                placeholder="0.000">
+                                                                        </div>
+
+                                                                        <div class="col-md-2 col-12">
+                                                                            <button type="button"
+                                                                                class="btn btn-sm bg-gradient-primary w-100 mb-0"
+                                                                                id="btnGuardarKmDiesel">
+                                                                                <i class="fas fa-save"></i>
+                                                                            </button>
+                                                                        </div>
+                                                                    </div>
+
+                                                                    <small class="text-muted d-block mt-1">
+                                                                        Puedes actualizar los datos de rendimiento del viaje.
+                                                                    </small>
+                                                                </div>
+                                                            </div>
+
+                                                            <div class="col-md-4 col-12 text-center text-md-end">
                                                                 <button type="button"
                                                                     class="btn btn-sm bg-gradient-info d-none"
                                                                     id="btnEdit">
                                                                     <i class="fa fa-fw fa-coins"></i>
                                                                     Editar
                                                                 </button>
+
                                                                 <button type="button" class="btn btn-sm bg-gradient-danger"
                                                                     id="btnDelete2">
                                                                     <i class="fa fa-fw fa-trash"></i>
                                                                     Eliminar
                                                                 </button>
+
                                                                 <button type="button"
                                                                     class="btn btn-sm bg-gradient-warning" id="btnPayment">
                                                                     <i class="fa fa-fw fa-coins"></i>
                                                                     Pagar
                                                                 </button>
+
                                                                 <button type="button" data-bs-toggle="modal"
-                                                                    data-bs-target="#modal-gastos-operador"
-                                                                    class="btn btn-sm bg-gradient-success"
+                                                                    data-bs-target="#modal-form" data-origen="viaje"
+                                                                    class="btn btn-sm bg-gradient-success btnAgregarGastoTrigger"
                                                                     id="btnNuevoGasto">
                                                                     Registrar Gasto
                                                                 </button>
                                                             </div>
                                                         </div>
                                                     </div>
-                                                </div>
 
-                                                <div class="row">
-                                                    <div id="gridGastosOperador" class="col-12 ag-theme-quartz"
-                                                        style="height: 500px"></div>
-                                                </div>
+                                                    <div class="row">
+                                                        <div id="gridGastosOperador" class="col-12 ag-theme-quartz"
+                                                            style="height: 500px"></div>
+                                                    </div>
 
-                                                <div class="row">
-                                                    <div class="card card-body" id="profile">
-                                                        <div class="row justify-content-between align-items-center">
-                                                            <div class="col-sm-auto col-8 my-auto"></div>
-                                                            <div class="col-3 text-center">
-                                                                <div
-                                                                    class="border-dashed border-1 border-secondary border-radius-md py-3">
-                                                                    <h6 class="text-primary mb-0">Total Gastos</h6>
-                                                                    <h4 class="font-weight-bolder">
-                                                                        <span class="small" id="totalGastosOperador">
-                                                                            $ 0.00
-                                                                        </span>
-                                                                    </h4>
+                                                    <div class="row">
+                                                        <div class="card card-body" id="profile">
+                                                            <div class="row justify-content-between align-items-center">
+                                                                <div class="col-sm-auto col-8 my-auto"></div>
+                                                                <div class="col-3 text-center">
+                                                                    <div
+                                                                        class="border-dashed border-1 border-secondary border-radius-md py-3">
+                                                                        <h6 class="text-primary mb-0">Total Gastos</h6>
+                                                                        <h4 class="font-weight-bolder">
+                                                                            <span class="small" id="totalGastosOperador">
+                                                                                $ 0.00
+                                                                            </span>
+                                                                        </h4>
+                                                                    </div>
                                                                 </div>
                                                             </div>
                                                         </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        @endcan
+                                            @endcan
                                     @endif
                                 @endif
                             </div>

@@ -290,9 +290,11 @@ monto1.addEventListener(
         (labelMontoGasto.textContent = await moneyFormat(e.target.value)),
     calcDays(),
 );
+const paginationTitle = document.querySelector("#ag-32-label");
 
-var paginationTitle = document.querySelector("#ag-32-label");
-paginationTitle.textContent = "Registros por página";
+if (paginationTitle) {
+    paginationTitle.textContent = "Registros por página";
+}
 
 document.querySelectorAll(".fechasDiferir").forEach((elemento) => {
     elemento.addEventListener("focus", () => calcDays());
@@ -357,7 +359,7 @@ btnEliminarGasto.addEventListener("click", () => {
 
     if (gasto.length <= 0 || gasto.length > 1) {
         Swal.fire(
-            "Seleccionar UN Gasto",
+            "Seleccionar al menos un Gasto",
             "Debe seleccionar el gasto que desea eliminar",
             "warning",
         );
@@ -365,36 +367,58 @@ btnEliminarGasto.addEventListener("click", () => {
     }
 
     IdGasto = gasto[0].IdGasto;
+    let fechaMovi = gasto[0].FechaContabilizado;
     var _token = document
         .querySelector('meta[name="csrf-token"]')
         .getAttribute("content");
 
     Swal.fire({
         title: "¿Desea eliminar este gasto?",
-        text: "Esta acción no se prodrá deshacer.",
+        text: "Esta acción no se podrá deshacer.",
         icon: "question",
+
+        input: "text",
+        inputLabel: "Fecha Cancelación",
+        inputValue: moment(fechaMovi).format("YYYY-MM-DD"),
+
         showCancelButton: true,
         confirmButtonText: "Sí, continuar",
         cancelButtonText: "Cancelar",
         reverseButtons: true,
+
+        didOpen: () => {
+            const input = Swal.getInput();
+
+            input.type = "date";
+            input.max = moment().format("YYYY-MM-DD");
+            input.required = true;
+        },
+
+        inputValidator: (value) => {
+            if (!value) {
+                return "La fecha es obligatoria";
+            }
+        },
     }).then((result) => {
         if (result.isConfirmed) {
+            const fechacancelacion = result.value;
+
             $.ajax({
                 url: "/gastos/generales/delete",
                 type: "post",
-                data: { IdGasto, _token },
-                beforeSend: () => {},
+                data: {
+                    IdGasto,
+                    fechacancelacion,
+                    _token,
+                },
                 success: (data) => {
                     Swal.fire(data.Titulo, data.Mensaje, data.TMensaje);
+
                     if (data.TMensaje == "success") {
                         getGastos(fromDate, toDate);
                     }
                 },
-                error: () => {
-                    Swal.fire("Error", "Ha ocurrido un error AJAX", "error");
-                },
             });
-        } else if (result.dismiss === Swal.DismissReason.cancel) {
         }
     });
 });
@@ -532,7 +556,39 @@ $("#frmCrearGasto").on("submit", (e) => {
     });
 
     if (!passValidation) return passValidation;
+    let input = document.querySelector('input[name="formasAplicar"]:checked');
+    let fechaAplicacion = formData["fecha_aplicacion"];
+    const inputFecha = document.querySelector('[name="fecha_aplicacion"]');
+    // debugger;
+    if (
+        input.value == "Periodo" &&
+        (fechaAplicacion < window.mesinicio || fechaAplicacion > window.mesfin)
+    ) {
+        if (inputFecha) {
+            inputFecha.blur();
+            inputFecha.disabled = true;
+        }
 
+        Swal.fire(
+            "Fecha inválida",
+            "La fecha de aplicación debe estar dentro del periodo seleccionado.",
+            "warning",
+        );
+        inputFecha.disabled = false;
+        return;
+    }
+
+    Swal.fire({
+        title: "Procesando...",
+        text: "Registrando gasto, por favor espere.",
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        },
+    });
+
+    inputFecha.disabled = false;
+    // inputFecha.focus();
     formData["_token"] = document
         .querySelector('meta[name="csrf-token"]')
         .getAttribute("content");
@@ -545,7 +601,6 @@ $("#frmCrearGasto").on("submit", (e) => {
     );
     formData["unidades"] = unidades;
 
-    let input = document.querySelector('input[name="formasAplicar"]:checked');
     formData["formasAplicar"] = input.value;
 
     formData["fechaInicioSeleccionado"] = $("#daterange").attr("data-start");

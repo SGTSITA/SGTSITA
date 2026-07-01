@@ -254,6 +254,7 @@ const gridOptions = {
         const rows = event.api.getSelectedRows();
         const btn = document.getElementById("btnRegresarLocal");
 
+        if (!btn) return;
         if (rows.length === 0) {
             motivoBloqueo = "Selecciona al menos un registro";
             bloquearBoton(btn);
@@ -376,8 +377,11 @@ const myGridElement = document.querySelector("#myGrid");
 let apiGrid = agGrid.createGrid(myGridElement, gridOptions);
 // const gridInstance = createGrid(myGridElement, gridOptions)//new agGrid.Grid(myGridElement, gridOptions);
 
-var paginationTitle = document.querySelector("#ag-32-label");
-paginationTitle.textContent = "Registros por página";
+const paginationTitle = document.querySelector("#ag-32-label");
+
+if (paginationTitle) {
+    paginationTitle.textContent = "Registros por página";
+}
 
 const btnDocumets = document.querySelectorAll(".btnDocs");
 //const api = createGrid(gridDiv, gridOptions)
@@ -882,7 +886,7 @@ function RegresarForaneoLocal() {
         }
     });
 }
-
-document
-    .querySelector("#btnDocs")
-    .addEventListener("click", goToUploadDocuments);
+const btnDocsopciones = document.querySelector("#btnDocs");
+if (btnDocsopciones) {
+    btnDocsopciones.addEventListener("click", goToUploadDocuments);
+}
