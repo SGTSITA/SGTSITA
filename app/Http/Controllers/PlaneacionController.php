@@ -975,9 +975,45 @@ $contenedor = DocumCotizacion::find($request->idContenendor);
 
                 $tipoGasto = $descripcionGastosPermitidos[$motivo];
 
+                // Resolver categoria_gasto_id y gasto_concepto_id de manera dinámica
+                $categoriaId = null;
+                $conceptoId = null;
+
+                if ($motivo === 'GDI02') {
+                    // Diesel -> Combustible
+                    $cat = DB::table('categorias_gastos')->where('categoria', 'like', '%Combustible%')->first();
+                    $categoriaId = $cat?->id ?? 1;
+                    $con = DB::table('gasto_conceptos')->where('clave', 'DSL')->first();
+                    $conceptoId = $con?->id;
+                } elseif ($motivo === 'GCM01') {
+                    // Comisión -> Comisiones de venta
+                    $cat = DB::table('categorias_gastos')->where('categoria', 'like', '%Comisiones de venta%')->first();
+                    $categoriaId = $cat?->id ?? 5;
+                    $con = DB::table('gasto_conceptos')->where('clave', 'COM_VTA')->first();
+                    $conceptoId = $con?->id;
+                } elseif ($motivo === 'GBV01') {
+                    // Burrero Vacio -> Otros
+                    $cat = DB::table('categorias_gastos')->where('categoria', 'like', '%Otros%')->first();
+                    $categoriaId = $cat?->id ?? 12;
+                    // Buscar o registrar concepto para Burrero Vacío
+                    $con = \App\Models\GastoConcepto::where('clave', 'OTR_BV')->first();
+                    if (!$con) {
+                        $con = new \App\Models\GastoConcepto();
+                        $con->categoria_gasto_id = $categoriaId;
+                        $con->clave = 'OTR_BV';
+                        $con->nombre = 'Burrero Vacio';
+                        $con->tipo_default = 'viaje';
+                        $con->afecta_utilidad = true;
+                        $con->is_active = true;
+                        $con->save();
+                    }
+                    $conceptoId = $con->id;
+                }
 
                 $gasto = app(\App\Services\GastosService::class)->registrar([
                     'id_empresa' => $idEmpresa,
+                    'categoria_gasto_id' => $categoriaId,
+                    'gasto_concepto_id' => $conceptoId,
                     'concepto' => $tipoGasto,
                     'monto_total' => $monto,
                     'tipo_gasto' => 'operador',
