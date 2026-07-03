@@ -964,7 +964,9 @@ class ReporteriaController extends Controller
             'Proveedor',
             'Operador'
         ])
-        ->where('id_empresa', auth()->user()->id_empresa)
+        ->whereHas('Contenedor.Cotizacion', function ($query) {
+            $query->where('id_empresa', auth()->user()->id_empresa);
+        })
         ->whereBetween('fecha_inicio', [
             Carbon::parse($fechaInicio)->startOfDay(),
             Carbon::parse($fechaFin)->endOfDay()
