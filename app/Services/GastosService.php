@@ -567,6 +567,21 @@ class GastosService
                     $pago->movimiento_bancario_id,
                     $fechaCancelacion
                 );
+            } elseif ($pago->cuenta_bancaria_id) {
+                // Si es un pago migrado (sin movimiento_bancario_id), registramos la devolución (abono)
+                // de manera directa en la cuenta bancaria usando los datos del pago.
+                $this->bancosService->registrarMovimiento([
+                    'cuenta_bancaria_id' => $pago->cuenta_bancaria_id,
+                    'tipo'               => 'abono', // Devolución (contrario al cargo original)
+                    'monto'              => $pago->monto,
+                    'concepto'           => 'Devolución - ' . ($pago->gasto?->concepto ?? 'Pago cancelado'),
+                    'fecha_movimiento'   => $fechaCancelacion,
+                    'origen'             => 'sistema',
+                    'referencia'         => 'cancelación' . ($pago->referencia ? ' - ' . $pago->referencia : ''),
+                    'referenciaable_type' => Gasto::class,
+                    'referenciaable_id'   => $pago->gasto_id,
+                    'observaciones'      => 'Cancelación de pago histórico migrado. Pago ID: ' . $pago->id,
+                ]);
             }
 
             $pago->update(['estatus' => 'cancelado']);
