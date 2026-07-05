@@ -774,23 +774,82 @@
 
         class EstatusRenderer {
             init(params) {
-                const val = params.value;
-                this.eGui = document.createElement('span');
+                this.eGui = document.createElement('div');
+                this.eGui.style.display = 'flex';
+                this.eGui.style.flexDirection = 'column';
+                this.eGui.style.alignItems = 'flex-start';
+                this.eGui.style.lineHeight = '1.2';
+                this.eGui.style.justifyContent = 'center';
+                this.eGui.style.height = '100%';
+
+                const val = params.data.estatus;
+                const badge = document.createElement('span');
+
                 if (val === 'pagado') {
-                    this.eGui.className = 'badge bg-success';
-                    this.eGui.textContent = 'Pagado';
+                    badge.className = 'badge bg-success mb-1';
+                    badge.textContent = 'Pagado';
+                    this.eGui.appendChild(badge);
+
+                    // Si hay pagos, mostrar información de la cuenta y fecha
+                    const pagos = params.data.pagos || [];
+                    const pagoActivo = pagos.find(p => p.estatus !== 'cancelado');
+                    if (pagoActivo) {
+                        const infoText = document.createElement('span');
+                        infoText.style.fontSize = '9.5px';
+                        infoText.style.color = '#525f7f';
+                        infoText.style.fontWeight = '500';
+                        
+                        let bancoInfo = '';
+                        if (pagoActivo.cuenta_bancaria) {
+                            const cBanc = pagoActivo.cuenta_bancaria;
+                            const accNum = cBanc.cuenta_bancaria || '';
+                            const last4 = accNum.length > 4 ? '****' + accNum.slice(-4) : accNum;
+                            bancoInfo = `${cBanc.nombre} ${last4}`;
+                        }
+                        
+                        const fecha = formatFecha({ value: pagoActivo.fecha_pago });
+                        infoText.innerHTML = `<i class="fa fa-university text-muted" style="font-size: 8px;"></i> ${bancoInfo}<br><i class="fa fa-calendar-alt text-muted" style="font-size: 8px;"></i> ${fecha}`;
+                        this.eGui.appendChild(infoText);
+                    }
                 } else if (val === 'pagado_parcial') {
-                    this.eGui.className = 'badge bg-warning text-dark';
-                    this.eGui.textContent = 'Parcial';
+                    badge.className = 'badge bg-warning text-dark mb-1';
+                    badge.textContent = 'Parcial';
+                    this.eGui.appendChild(badge);
+
+                    // Si hay pagos parciales, mostrar info del último pago
+                    const pagos = params.data.pagos || [];
+                    const pagosActivos = pagos.filter(p => p.estatus !== 'cancelado');
+                    if (pagosActivos.length > 0) {
+                        const ultimoPago = pagosActivos[pagosActivos.length - 1];
+                        const infoText = document.createElement('span');
+                        infoText.style.fontSize = '9.5px';
+                        infoText.style.color = '#525f7f';
+                        infoText.style.fontWeight = '500';
+                        
+                        let bancoInfo = '';
+                        if (ultimoPago.cuenta_bancaria) {
+                            const cBanc = ultimoPago.cuenta_bancaria;
+                            const accNum = cBanc.cuenta_bancaria || '';
+                            const last4 = accNum.length > 4 ? '****' + accNum.slice(-4) : accNum;
+                            bancoInfo = `${cBanc.nombre} ${last4}`;
+                        }
+                        
+                        const fecha = formatFecha({ value: ultimoPago.fecha_pago });
+                        infoText.innerHTML = `<i class="fa fa-university text-muted" style="font-size: 8px;"></i> ${bancoInfo}<br><i class="fa fa-calendar-alt text-muted" style="font-size: 8px;"></i> ${fecha}`;
+                        this.eGui.appendChild(infoText);
+                    }
                 } else if (val === 'pendiente_pago') {
-                    this.eGui.className = 'badge bg-danger';
-                    this.eGui.textContent = 'Pendiente';
+                    badge.className = 'badge bg-danger';
+                    badge.textContent = 'Pendiente';
+                    this.eGui.appendChild(badge);
                 } else if (val === 'cancelado') {
-                    this.eGui.className = 'badge bg-secondary';
-                    this.eGui.textContent = 'Cancelado';
+                    badge.className = 'badge bg-secondary';
+                    badge.textContent = 'Cancelado';
+                    this.eGui.appendChild(badge);
                 } else {
-                    this.eGui.className = 'badge bg-info';
-                    this.eGui.textContent = val || '';
+                    badge.className = 'badge bg-info';
+                    badge.textContent = val || '';
+                    this.eGui.appendChild(badge);
                 }
             }
             getGui() {
@@ -806,14 +865,28 @@
                     this.eGui.innerHTML = '<span class="text-muted text-xs">-</span>';
                     return;
                 }
-                this.eGui.innerHTML = vinculos.map(v => `
-                    <div style="line-height: 1.2; margin-bottom: 2px;">
-                        <span class="text-xs" style="font-size: 11px;">
-                            <i class="fa fa-link text-muted" style="font-size: 9px;"></i>
-                            <strong>${v.tipo.toUpperCase()}:</strong> ${v.detalle}
-                        </span>
-                    </div>
-                `).join('');
+                this.eGui.innerHTML = vinculos.map(v => {
+                    const esContenedor = v.tipo === 'contenedor' || v.tipo === 'asignacion' || v.detalle
+                        .toLowerCase().includes('contenedor');
+                    if (esContenedor) {
+                        return `
+                            <div style="line-height: 1.3; margin-bottom: 2px;">
+                                <span style="font-size: 11.5px; font-weight: bold; background-color: rgba(94, 114, 228, 0.12); color: #5e72e4; border: 1px solid rgba(94, 114, 228, 0.35); border-radius: 4px; padding: 2px 6px; display: inline-block;">
+                                    <i class="fa fa-box" style="font-size: 9px; margin-right: 3px;"></i>
+                                    <strong>${v.tipo.toUpperCase()}:</strong> ${v.detalle}
+                                </span>
+                            </div>
+                        `;
+                    }
+                    return `
+                        <div style="line-height: 1.2; margin-bottom: 2px;">
+                            <span style="font-size: 11px; color: #525f7f;">
+                                <i class="fa fa-link text-muted" style="font-size: 9px; margin-right: 3px;"></i>
+                                <strong>${v.tipo.toUpperCase()}:</strong> ${v.detalle}
+                            </span>
+                        </div>
+                    `;
+                }).join('');
             }
             getGui() {
                 return this.eGui;
@@ -887,27 +960,16 @@
                     this.eGui.appendChild(btnHistorial);
                 }
 
-                // CANCELACION RAPIDA
-                if (totalPagos === 1 && ultimoPagoId) {
-
-                    const btnCancelar = document.createElement('button');
-
-                    btnCancelar.className =
-                        'btn btn-xs btn-danger my-0 py-1 px-2';
-
-                    btnCancelar.innerHTML =
-                        '<i class="fa fa-times"></i>';
-
-                    btnCancelar.title = 'Cancelar pago';
-
-                    btnCancelar.addEventListener('click', () => {
-                        cancelarPagoDirecto(
-                            ultimoPagoId,
-                            params.data.ultima_fecha_pago
-                        );
+                // ELIMINAR GASTO
+                if (estatus !== 'cancelado') {
+                    const btnEliminar = document.createElement('button');
+                    btnEliminar.className = 'btn btn-xs btn-danger my-0 py-1 px-2';
+                    btnEliminar.innerHTML = '<i class="fa fa-trash"></i>';
+                    btnEliminar.title = 'Eliminar gasto';
+                    btnEliminar.addEventListener('click', () => {
+                        eliminarGastoNew(params.data.id, params.data.concepto);
                     });
-
-                    this.eGui.appendChild(btnCancelar);
+                    this.eGui.appendChild(btnEliminar);
                 }
 
                 if (this.eGui.children.length === 0) {
@@ -967,6 +1029,8 @@
             paginationPageSize: 15,
             paginationPageSizeSelector: [10, 15, 30, 50, 100],
             rowData: [],
+            rowHeight: 46,
+            headerHeight: 38,
             columnDefs: [{
                     field: "id",
                     headerName: "ID",
@@ -1007,8 +1071,14 @@
                 {
                     field: "vinculos",
                     headerName: "Vínculos",
-                    width: 230,
-                    cellRenderer: VinculosRenderer
+                    width: 320,
+                    cellRenderer: VinculosRenderer,
+                    filter: 'agTextColumnFilter',
+                    floatingFilter: true,
+                    filterValueGetter: (params) => {
+                        if (!params.data || !params.data.vinculos) return '';
+                        return params.data.vinculos.map(v => `${v.tipo} ${v.detalle}`).join(' ');
+                    }
                 },
                 {
                     field: "monto_total",
@@ -1048,7 +1118,7 @@
                 {
                     field: "estatus",
                     headerName: "Estatus",
-                    width: 110,
+                    width: 130,
                     cellRenderer: EstatusRenderer,
                     filter: 'agTextColumnFilter',
                     floatingFilter: true
@@ -1059,12 +1129,16 @@
                     width: 110,
                     valueGetter: (params) => params.data.origen_legacy || params.data.origen_modulo || '',
                     filter: 'agTextColumnFilter',
-                    floatingFilter: true
+                    floatingFilter: true,
+                    hide: true
                 },
                 {
                     headerName: "Acciones",
-                    width: 100,
-                    cellRenderer: ActionButtonRenderer
+                    width: 145,
+                    cellRenderer: ActionButtonRenderer,
+                    filter: false,
+                    suppressMenu: true,
+                    sortable: false
                 }
             ],
             localeText: localeText
@@ -1817,6 +1891,55 @@
             }
         }
 
+        async function eliminarGastoNew(gastoId, concepto) {
+            const result = await Swal.fire({
+                title: '¿Eliminar gasto?',
+                text: `¿Estás seguro de que deseas eliminar el gasto "${concepto}"? Se cancelarán todos los pagos y movimientos bancarios asociados, y se sincronizará la eliminación en el módulo origen.`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Sí, eliminar',
+                cancelButtonText: 'Cancelar'
+            });
+
+            if (!result.isConfirmed) {
+                return;
+            }
+
+            try {
+                Swal.fire({
+                    title: 'Eliminando...',
+                    text: 'Procesando la eliminación del gasto.',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                const response = await fetch(`/gastos/${gastoId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    }
+                });
+
+                const json = await response.json();
+
+                if (json.TMensaje === 'success') {
+                    Swal.fire('Eliminado', json.Mensaje, 'success');
+                    cargarGastosNew();
+                } else {
+                    Swal.fire('Error', json.Mensaje, 'error');
+                }
+            } catch (e) {
+                console.error(e);
+                Swal.fire('Error', 'No fue posible eliminar el gasto', 'error');
+            }
+        }
+
         $(function() {
             const hoy = moment().endOf("day"); // hoy hasta 23:59
             const hace7Dias = moment().subtract(6, "days").startOf(
@@ -1968,6 +2091,8 @@
             --ag-header-foreground-color: #495057;
             --ag-border-color: #e9ecef;
             --ag-row-hover-color: #f1f3f5;
+            --ag-font-size: 12px;
+            --ag-grid-size: 4px;
         }
     </style>
 @endsection

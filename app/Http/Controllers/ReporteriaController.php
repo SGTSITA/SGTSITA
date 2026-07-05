@@ -800,18 +800,17 @@ class ReporteriaController extends Controller
             $query->where('cotizaciones.estatus', 'Aprobada')
                   ->orWhere('cotizaciones.estatus', 'Finalizado');
         })
-       // ->where('cotizaciones.prove_restante', '>', 0);
-                //ahora
-           ->whereRaw('
-    asignaciones.total_proveedor - (
-        SELECT COALESCE(SUM(cpc.monto),0)
-        FROM cobros_pagos_cotizaciones cpc
-        JOIN cobros_pagos cp
-            ON cp.id = cpc.cobro_pago_id
-        WHERE cpc.cotizacion_id = cotizaciones.id
-        AND cp.tipo = "cxp"
-    ) > 0
-');
+        ->where('cotizaciones.prove_restante', '>', 0)
+        ->whereRaw('
+            asignaciones.total_proveedor - (
+                SELECT COALESCE(SUM(cpc.monto),0)
+                FROM cobros_pagos_cotizaciones cpc
+                JOIN cobros_pagos cp
+                    ON cp.id = cpc.cobro_pago_id
+                WHERE cpc.cotizacion_id = cotizaciones.id
+                AND cp.tipo = "cxp"
+            ) > 0
+        ');
 
         if (!empty($id_proveedor)) {
             $cotizacionesQuery->where('asignaciones.id_proveedor', $id_proveedor);

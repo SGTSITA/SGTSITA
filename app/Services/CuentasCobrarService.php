@@ -209,9 +209,17 @@ class CuentasCobrarService
 
     public function obtenerporClienteId($id_cliente, $resolverfulles = false)
     {
-        $base = $this->baseQuery(true)
-    ->where('t.id_cliente', $id_cliente)
-    ->get();
+        $query = $this->baseQuery(true)
+            ->where('t.id_cliente', $id_cliente)
+            ->leftJoin('estado_cuenta_cotizaciones as ecc', 'ecc.cotizacion_id', '=', 't.id')
+            ->leftJoin('estado_cuenta as ec', 'ec.id', '=', 'ecc.estado_cuenta_id')
+            ->select('t.*')
+            ->addSelect([
+                'ec.numero as numero_edo_cuenta',
+                'ec.id as id_numero_edo_cuenta'
+            ]);
+
+        $base = $query->get();
 
 
         $cotizacion = $base;
@@ -539,4 +547,125 @@ class CuentasCobrarService
         $cotizacion->save();
     }
 
+    public function obtenerPagosHistoricos(array $filters)
+    {
+        $idEmpresa = auth()->user()->id_empresa;
+
+        // Query base para CobroPago (tipo = cxc)
+        $query = \App\Models\CobroPago::with([
+            'cliente',
+            'bancoA',
+            'bancoB',
+            'detalles.cotizacion.DocCotizacion'
+        ])
+        ->where('tipo', 'cxc')
+        ->whereHas('detalles.cotizacion', function ($q) use ($idEmpresa) {
+            $q->where('cotizaciones.id_empresa', $idEmpresa);
+        });
+
+        // Filtrar por Cliente
+        if (!empty($filters['cliente_id'])) {
+            $query->where('cliente_id', $filters['cliente_id']);
+        }
+
+        // Filtrar por Proveedor (a través de cotizaciones -> contenedores -> asignaciones)
+        if (!empty($filters['proveedor_id'])) {
+            $provId = $filters['proveedor_id'];
+            $query->whereHas('detalles.cotizacion.DocCotizacion.Asignaciones', function ($q) use ($provId) {
+                $q->where('id_proveedor', $provId);
+            });
+        }
+
+        // Filtrar por número de contenedor
+        if (!empty($filters['num_contenedor'])) {
+            $container = $filters['num_contenedor'];
+            $query->whereHas('detalles.cotizacion.DocCotizacion', function ($q) use ($container) {
+                $q->where('num_contenedor', 'like', "%{$container}%");
+            });
+        }
+
+        // Filtrar por Rango de Fechas (fechaAplicacion1 o fechaAplicacion2)
+        if (!empty($filters['fecha_inicio']) && !empty($filters['fecha_fin'])) {
+            $fi = \Carbon\Carbon::parse($filters['fecha_inicio'])->startOfDay();
+            $ff = \Carbon\Carbon::parse($filters['fecha_fin'])->endOfDay();
+            $query->where(function ($q) use ($fi, $ff) {
+                $q->whereBetween('fechaAplicacion1', [$fi, $ff])
+                  ->orWhereBetween('fechaAplicacion2', [$fi, $ff]);
+            });
+        }
+
+        return $query->orderBy('created_at', 'desc')->paginate(30);
+    }
+
+    public function obtenerPagosHistoricosSinPaginacion(array $filters, $tipo = 'cxc')
+    {
+        $idEmpresa = auth()->user()->id_empresa;
+
+        $query = \App\Models\CobroPago::with([
+            'cliente',
+            'proveedor',
+            'bancoA',
+            'bancoB',
+            'detalles.cotizacion.DocCotizacion'
+        ])
+        ->where('tipo', $tipo);
+           $query->whereHas('detalles.cotizacion', function ($q) use ($idEmpresa) {
+            $q->where('cotizaciones.id_empresa', $idEmpresa);
+        });
+
+        // Filtrar por Cliente
+        if (!empty($filters['cliente_id'])) {
+            if ($tipo === 'cxc') {
+                $query->where('cliente_id', $filters['cliente_id']);
+            } else {
+                $cliId = $filters['cliente_id'];
+                $query->whereHas('detalles.cotizacion', function ($q) use ($cliId) {
+                    $q->where('id_cliente', $cliId);
+                });
+            }
+        }
+
+        // Filtrar por Proveedor
+        if (!empty($filters['proveedor_id'])) {
+            if ($tipo === 'cxp') {
+                $query->where('proveedor_id', $filters['proveedor_id']);
+            } else {
+                $provId = $filters['proveedor_id'];
+                $query->whereHas('detalles.cotizacion.DocCotizacion.Asignaciones', function ($q) use ($provId) {
+                    $q->where('id_proveedor', $provId);
+                });
+            }
+        }
+
+        // Filtrar por número de contenedor
+        if (!empty($filters['num_contenedor'])) {
+            $container = $filters['num_contenedor'];
+            $query->whereHas('detalles.cotizacion.DocCotizacion', function ($q) use ($container) {
+                $q->where('num_contenedor', 'like', "%{$container}%");
+            });
+        }
+
+        // Filtrar por Rango de Fechas
+        if (!empty($filters['fecha_inicio']) && !empty($filters['fecha_fin'])) {
+            $fi = \Carbon\Carbon::parse($filters['fecha_inicio'])->startOfDay();
+            $ff = \Carbon\Carbon::parse($filters['fecha_fin'])->endOfDay();
+            $query->where(function ($q) use ($fi, $ff) {
+                $q->whereBetween('fechaAplicacion1', [$fi, $ff])
+                  ->orWhereBetween('fechaAplicacion2', [$fi, $ff]);
+            });
+        }
+
+        return $query->orderBy('created_at', 'desc')->get();
+    }
+
+    public function obtenerPagoDetalle($id)
+    {
+        return \App\Models\CobroPago::with([
+            'cliente',
+            'proveedor',
+            'bancoA',
+            'bancoB',
+            'detalles.cotizacion.DocCotizacion'
+        ])->findOrFail($id);
+    }
 }

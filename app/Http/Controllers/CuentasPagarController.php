@@ -74,6 +74,8 @@ class CuentasPagarController extends Controller
     {
         $querybase = Cotizaciones::join('docum_cotizacion', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
         ->join('asignaciones', 'docum_cotizacion.id', '=', 'asignaciones.id_contenedor')
+        ->leftJoin('estado_cuenta_cotizaciones as ecc', 'ecc.cotizacion_id', '=', 'cotizaciones.id')
+        ->leftJoin('estado_cuenta as ec', 'ec.id', '=', 'ecc.estado_cuenta_id')
        ->wherein('asignaciones.tipo_contrato', ['Subcontratado'])
         ->where('jerarquia', 'Principal')
         ->where(function ($query) {
@@ -94,6 +96,7 @@ class CuentasPagarController extends Controller
             'cotizaciones.id_cuenta_prov2',
             'cotizaciones.dinero_cuenta_prov2',
             'cotizaciones.referencia_full',
+            'ec.numero as numero_edo_cuenta',
             DB::raw('
             (
                 SELECT COALESCE(SUM(cpc.monto),0)
@@ -124,6 +127,10 @@ class CuentasPagarController extends Controller
                 if ($secundaria && $secundaria->DocCotizacion) {
                     $numContenedor .= ' / ' . $secundaria->DocCotizacion->num_contenedor;
                 }
+            }
+
+            if (!empty($item->numero_edo_cuenta)) {
+                $numContenedor .= ' (Edo: ' . $item->numero_edo_cuenta . ')';
             }
 
             //  dd($numContenedor, $item->total_proveedor - $item->total_pagado);
@@ -326,10 +333,11 @@ class CuentasPagarController extends Controller
                     //   $cotizacion->estatus_pago = ($nuevoRestante == 0) ? 1 : 0;
                     $cotizacion->fecha_pago_proveedor = date('Y-m-d');
                     $cotizacion->save();
+                    $cleanContenedor = preg_replace('/\s*\(Edo:.*?\)/i', '', $c[0]);
 
                     // Agregar contenedor y abono al array
                     $contenedorAbono = [
-                        'num_contenedor' => $c[0],
+                        'num_contenedor' => $cleanContenedor,
                         'abono' => $c[6]
                     ];
 
@@ -342,15 +350,15 @@ class CuentasPagarController extends Controller
 
                     if ($c[4] > 0) { //validamos si el pago 1 trae cantidad
                         $contenedorAbono1 = [
-                     'num_contenedor' => $c[0],
-                     'abono' => $c[4]
+                      'num_contenedor' => $cleanContenedor,
+                      'abono' => $c[4]
                     ];
                         CobroPagoCotizacion::create([
                                         'cobro_pago_id' => $cobroPago->id,
                                         'cotizacion_id' => $id ,
                                         'origen' => 'A',
                                         'monto' => $c[4],
-                                    ]);
+                                     ]);
 
                         array_push($contenedoresAbonos1, $contenedorAbono1);
 
@@ -358,8 +366,8 @@ class CuentasPagarController extends Controller
 
                     if ($c[5] > 0) { //validamos si el pago 2 trae cantidad
                         $contenedorAbono2 = [
-                     'num_contenedor' => $c[0],
-                     'abono' => $c[5]
+                      'num_contenedor' => $cleanContenedor,
+                      'abono' => $c[5]
                     ];
 
                         CobroPagoCotizacion::create([
@@ -590,5 +598,70 @@ class CuentasPagarController extends Controller
         $banco->save();
 
         return redirect()->back()->with('success', 'Cobro exitoso');
+    }
+
+    public function buscarPagos(\Illuminate\Http\Request $request)
+    {
+        $idEmpresa = auth()->user()->id_empresa;
+
+        // Clientes para filtro (relacionados a las cotizaciones de los detalles del pago)
+        $clientes = \App\Models\Client::join('client_empresa as ce', 'clients.id', '=', 'ce.id_client')
+            ->where('ce.id_empresa', $idEmpresa)
+            ->where('is_active', 1)
+            ->orderBy('nombre')
+            ->select('clients.*')
+            ->get();
+
+        // Proveedores para filtro
+        $proveedores = \App\Models\Proveedor::where('id_empresa', $idEmpresa)
+            ->orderBy('nombre')
+            ->get();
+
+        // Query base para CobroPago (tipo = cxp)
+        $query = \App\Models\CobroPago::with([
+            'proveedor',
+            'bancoA',
+            'bancoB',
+            'detalles.cotizacion.DocCotizacion'
+        ])
+        ->where('tipo', 'cxp')
+        ->whereHas('detalles.cotizacion', function ($q) use ($idEmpresa) {
+            $q->where('cotizaciones.id_empresa', $idEmpresa);
+        });
+
+        // Filtrar por Proveedor
+        if ($request->filled('proveedor_id')) {
+            $query->where('proveedor_id', $request->input('proveedor_id'));
+        }
+
+        // Filtrar por Cliente (a través de cotizaciones)
+        if ($request->filled('cliente_id')) {
+            $cliId = $request->input('cliente_id');
+            $query->whereHas('detalles.cotizacion', function ($q) use ($cliId) {
+                $q->where('id_cliente', $cliId);
+            });
+        }
+
+        // Filtrar por número de contenedor
+        if ($request->filled('num_contenedor')) {
+            $container = $request->input('num_contenedor');
+            $query->whereHas('detalles.cotizacion.DocCotizacion', function ($q) use ($container) {
+                $q->where('num_contenedor', 'like', "%{$container}%");
+            });
+        }
+
+        // Filtrar por Rango de Fechas (fechaAplicacion1 o fechaAplicacion2)
+        if ($request->filled('fecha_inicio') && $request->filled('fecha_fin')) {
+            $fi = \Carbon\Carbon::parse($request->input('fecha_inicio'))->startOfDay();
+            $ff = \Carbon\Carbon::parse($request->input('fecha_fin'))->endOfDay();
+            $query->where(function ($q) use ($fi, $ff) {
+                $q->whereBetween('fechaAplicacion1', [$fi, $ff])
+                  ->orWhereBetween('fechaAplicacion2', [$fi, $ff]);
+            });
+        }
+
+        $pagos = $query->orderBy('created_at', 'desc')->paginate(30);
+
+        return view('cuentas_pagar.historico', compact('pagos', 'clientes', 'proveedores'));
     }
 }

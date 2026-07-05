@@ -521,6 +521,11 @@ Route::middleware(['auth', 'idle.timeout'])->group(function () {
         Route::patch('cuentas/cobrar/update/{id}', [App\Http\Controllers\CuentasCobrarController::class, 'update'])->name('update.cobrar');
         Route::post('cuentas/cobrar/update/varios', [\App\Http\Controllers\CuentasCobrarController::class, 'update_varios'])->name('update_varios.cobrar');
         Route::post('/reporteria/cxp/EdoCuenta/store', [App\Http\Controllers\CuentasCobrarController::class, 'storeEdocuenta'])->name('storeEdocuenta');
+        Route::get('cuentas/cobrar/buscar-pagos', [App\Http\Controllers\CuentasCobrarController::class, 'buscarPagos'])->name('cobros_pagos.historico');
+        Route::delete('cuentas/cobros-pagos/{id}', [App\Http\Controllers\CuentasCobrarController::class, 'eliminarCobroPago'])->name('cobros_pagos.eliminar');
+        Route::get('cuentas/cobros-pagos/exportar-excel', [App\Http\Controllers\CuentasCobrarController::class, 'exportarExcel'])->name('cobros_pagos.exportar_excel');
+        Route::get('cuentas/cobros-pagos/exportar-pdf', [App\Http\Controllers\CuentasCobrarController::class, 'exportarPdf'])->name('cobros_pagos.exportar_pdf');
+        Route::get('cuentas/cobros-pagos/{id}/comprobante', [App\Http\Controllers\CuentasCobrarController::class, 'descargarComprobantePdf'])->name('cobros_pagos.comprobante_pdf');
 
         // ==================== C U E N T A S  P O R  P A G A R ====================
         Route::get('cuentas/pagar', [App\Http\Controllers\CuentasPagarController::class, 'index'])->name('index.pagar');
@@ -529,6 +534,7 @@ Route::middleware(['auth', 'idle.timeout'])->group(function () {
         Route::post('cuentas/pagar/update/varios', [App\Http\Controllers\CuentasPagarController::class, 'update_varios'])->name('update_varios.pagar');
         Route::post('cuentas/pagar/por_liquidar', [App\Http\Controllers\CuentasPagarController::class, 'viajes_por_liquidar'])->name('por_liquidar.pagar');
         Route::post('cuentas/pagar/confirmar_pagos', [App\Http\Controllers\CuentasPagarController::class, 'aplicar_pagos'])->name('confirmar.pagos');
+        Route::get('cuentas/pagar/buscar-pagos', [App\Http\Controllers\CuentasPagarController::class, 'buscarPagos'])->name('cobros_pagos.historico_pagar');
 
         // ==================== R E P O R T E R I A ====================
         Route::get('reporteria/cotizaciones/cxc', [App\Http\Controllers\ReporteriaController::class, 'index'])->name('index.reporteria');
@@ -616,6 +622,9 @@ Route::middleware(['auth', 'idle.timeout'])->group(function () {
 
                     Route::put('/{gasto}', [App\Http\Controllers\GastosController::class, 'update'])
                         ->name('update');
+
+                    Route::delete('/{gasto}', [App\Http\Controllers\GastosController::class, 'destroy'])
+                        ->name('destroy');
 
                     Route::post('/{gasto}/pagar', [App\Http\Controllers\GastosController::class, 'pay'])
                         ->name('pay');
