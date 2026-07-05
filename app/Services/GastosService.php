@@ -187,6 +187,7 @@ class GastosService
                             'id' => $pago->cuentaBancaria->id,
                             'nombre' => $pago->cuentaBancaria->nombre_banco,
                             'nombre_beneficiario' => $pago->cuentaBancaria->nombre_beneficiario,
+                            'cuenta_bancaria' => $pago->cuentaBancaria->cuenta_bancaria,
                         ] : null,
                     ];
 
@@ -585,7 +586,16 @@ class GastosService
             }
 
             $pago->update(['estatus' => 'cancelado']);
-            $this->sincronizarEstatusPago($pago->gasto);
+            
+            $gasto = $pago->gasto;
+            if ($gasto) {
+                $pagosActivos = $gasto->pagos()->where('estatus', '!=', 'cancelado')->count();
+                if ($pagosActivos === 0) {
+                    $gasto->delete();
+                } else {
+                    $this->sincronizarEstatusPago($gasto);
+                }
+            }
         });
     }
 

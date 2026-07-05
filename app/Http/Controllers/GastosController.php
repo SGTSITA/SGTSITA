@@ -815,4 +815,79 @@ class GastosController extends Controller
             
         return response()->json($conceptos);
     }
+
+    public function destroy(Request $request, Gasto $gasto)
+    {
+        try {
+            \DB::beginTransaction();
+
+            $fechaCancelacion = $request->fecha_cancelacion ?? now()->format('Y-m-d');
+
+            // 1. Cancelar todos los pagos del gasto (y sus movimientos bancarios asociados)
+            foreach ($gasto->pagos()->where('estatus', '!=', 'cancelado')->get() as $pago) {
+                $this->gastosService->cancelarPago($pago, $fechaCancelacion);
+            }
+
+            // 2. Si tiene origen legacy, sincronizar la eliminación
+            if ($gasto->origen_legacy && $gasto->origen_legacy_id) {
+                $legacyId = $gasto->origen_legacy_id;
+                
+                if ($gasto->origen_legacy === 'gastos_operadores') {
+                    \DB::table('gastos_operadores')
+                        ->where('id', $legacyId)
+                        ->update(['estatus' => 'eliminado']);
+                } elseif ($gasto->origen_legacy === 'gastos_extras') {
+                    \DB::table('gastos_extras')
+                        ->where('id', $legacyId)
+                        ->update(['estatus' => 'eliminado']);
+
+                    // Ajustar el restante de la cotización si es un gasto extra
+                    $gExtra = \DB::table('gastos_extras')->where('id', $legacyId)->first();
+                    if ($gExtra && !empty($gExtra->id_cotizacion)) {
+                        $monto = floatval($gExtra->monto ?? 0);
+                        if ($monto > 0) {
+                            \DB::table('cotizaciones')
+                                ->where('id', $gExtra->id_cotizacion)
+                                ->update([
+                                    'restante' => \DB::raw("restante - {$monto}")
+                                ]);
+                        }
+                    }
+                } elseif ($gasto->origen_legacy === 'gastos_generales') {
+                    \DB::table('gastos_generales')
+                        ->where('id', $legacyId)
+                        ->delete();
+
+                    \DB::table('gastos_operadores')
+                        ->where('id_gasto_origen', $legacyId)
+                        ->update(['estatus' => 'eliminado']);
+                }
+            }
+
+            // 3. Cambiar estatus a cancelado y soft delete del Gasto
+            $gasto->update(['estatus' => 'cancelado']);
+            $gasto->delete();
+
+            \DB::commit();
+
+            return response()->json([
+                'TMensaje' => 'success',
+                'Titulo' => 'Gasto eliminado',
+                'Mensaje' => 'El gasto y sus pagos asociados fueron eliminados correctamente.',
+            ]);
+
+        } catch (\Throwable $t) {
+            \DB::rollBack();
+            \Log::channel('daily')->error('Error al eliminar gasto desde modulo unificado', [
+                'gasto_id' => $gasto->id,
+                'error' => $t->getMessage(),
+            ]);
+
+            return response()->json([
+                'TMensaje' => 'error',
+                'Titulo' => 'Error al eliminar',
+                'Mensaje' => 'Ocurrió un error al intentar eliminar el gasto: ' . $t->getMessage(),
+            ]);
+        }
+    }
 }

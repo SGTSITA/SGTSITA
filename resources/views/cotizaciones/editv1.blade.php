@@ -86,7 +86,13 @@
                                             class="custom-nav-radio" name="contenedorTabs" id="tab1" />
                                         <div class="custom-nav-link active">
                                             <i class="ni ni-box-2 text-warning text-gradient"></i>
-                                            <h6>Contenedor A</h6>
+                                            <h6>Contenedor A
+                                                @if($cotizacion->estadoCuenta)
+                                                    <span class="badge bg-gradient-success ms-2 text-xs" style="font-size: 10px; text-transform: none; letter-spacing: 0; padding: 4px 8px;">
+                                                        Edo. Cuenta: {{ $cotizacion->estadoCuenta->numero }}
+                                                    </span>
+                                                @endif
+                                            </h6>
                                         </div>
                                     </label>
 
@@ -96,7 +102,13 @@
                                             name="contenedorTabs" id="tab2" />
                                         <div class="custom-nav-link">
                                             <i class="ni ni-box-2 text-info text-gradient"></i>
-                                            <h6>Contenedor B</h6>
+                                            <h6>Contenedor B
+                                                @if(isset($secundaria) && $secundaria && $secundaria->estadoCuenta)
+                                                    <span class="badge bg-gradient-success ms-2 text-xs" style="font-size: 10px; text-transform: none; letter-spacing: 0; padding: 4px 8px;">
+                                                        Edo. Cuenta: {{ $secundaria->estadoCuenta->numero }}
+                                                    </span>
+                                                @endif
+                                            </h6>
                                         </div>
                                     </label>
                                 </div>

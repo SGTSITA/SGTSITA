@@ -129,10 +129,13 @@ class CuentasCobrarController extends Controller
         //dd($cotizacionesPorPagar);
         $handsOnTableData = $cotizacionesPorPagar->map(function ($item) {
 
-
+            $numContenedor = $item->num_contenedor;
+            if (!empty($item->numero_edo_cuenta)) {
+                $numContenedor .= ' (Edo: ' . $item->numero_edo_cuenta . ')';
+            }
 
             return [
-                $item->num_contenedor,
+                $numContenedor,
                  $item->nombre_subcliente,
               $item->tipo . ' ( ' . $item->tipo_viaje . ' )',
                 ($item->estatus == 'Aprobada') ? "En Curso" : $item->estatus,
@@ -411,5 +414,135 @@ class CuentasCobrarController extends Controller
             ], 422);
         }
 
+    }
+
+    public function buscarPagos(Request $request)
+    {
+        $idEmpresa = auth()->user()->id_empresa;
+
+        // Clientes para filtro
+        $clientes = Client::join('client_empresa as ce', 'clients.id', '=', 'ce.id_client')
+            ->where('ce.id_empresa', $idEmpresa)
+            ->where('is_active', 1)
+            ->orderBy('nombre')
+            ->select('clients.*')
+            ->get();
+
+        // Proveedores para filtro
+        $proveedores = \App\Models\Proveedor::where('id_empresa', $idEmpresa)
+            ->orderBy('nombre')
+            ->get();
+
+        $pagos = $this->CuentasCobrarService->obtenerPagosHistoricos($request->all());
+
+        return view('cuentas_cobrar.historico', compact('pagos', 'clientes', 'proveedores'));
+    }
+
+    public function eliminarCobroPago(Request $request, $id)
+    {
+        try {
+            DB::beginTransaction();
+
+            $cobroPago = \App\Models\CobroPago::with('detalles.cotizacion')->findOrFail($id);
+
+            // 1. Revertir saldos y estatus en las cotizaciones vinculadas
+            foreach ($cobroPago->detalles as $detalle) {
+                $cotizacion = $detalle->cotizacion;
+                if ($cotizacion) {
+                    if ($cobroPago->tipo === 'cxc') {
+                        $cotizacion->restante = $cotizacion->restante + $detalle->monto;
+                        $cotizacion->estatus_pago = ($cotizacion->restante == 0);
+                        if ($cotizacion->restante > 0) {
+                            $cotizacion->fecha_pago = null;
+                        }
+                    } elseif ($cobroPago->tipo === 'cxp') {
+                        $cotizacion->prove_restante = $cotizacion->prove_restante + $detalle->monto;
+                        if ($cotizacion->prove_restante > 0) {
+                            $cotizacion->fecha_pago_proveedor = null;
+                        }
+                    }
+                    $cotizacion->save();
+                }
+                // Eliminar el detalle del cobro/pago
+                $detalle->delete();
+            }
+
+            // 2. Buscar y cancelar movimientos bancarios
+            $movimientos = \App\Models\CatBancoCuentasMovimientos::where('referenciaable_id', $cobroPago->id)
+                ->where('referenciaable_type', \App\Models\CobroPago::class)
+                ->where('cancelado', false)
+                ->get();
+
+            $fechaCancelacion = $request->input('fecha_cancelacion', now()->format('Y-m-d'));
+
+            foreach ($movimientos as $mov) {
+                // Cancelamos el movimiento en el sistema de bancos
+                $this->BancosService->cancelarMovimiento($mov->cuenta_bancaria_id, $mov->id, $fechaCancelacion);
+
+                // Actualizar manualmente el saldo de la cuenta bancaria para mantener coherencia
+                if ($mov->tipo === 'abono') {
+                    // Si era abono (ingreso), restamos del saldo
+                    Bancos::where('id', $mov->cuenta_bancaria_id)
+                        ->update(['saldo' => DB::raw("COALESCE(saldo, 0) - " . floatval($mov->monto))]);
+                } elseif ($mov->tipo === 'cargo') {
+                    // Si era cargo (egreso), sumamos de vuelta al saldo
+                    Bancos::where('id', $mov->cuenta_bancaria_id)
+                        ->update(['saldo' => DB::raw("COALESCE(saldo, 0) + " . floatval($mov->monto))]);
+                }
+            }
+
+            // 3. Eliminar el registro principal de CobroPago
+            $cobroPago->delete();
+
+            DB::commit();
+
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'El cobro/pago y sus movimientos bancarios asociados han sido cancelados y eliminados correctamente.'
+                ]);
+            }
+
+            return redirect()->back()->with('success', 'El cobro/pago y sus movimientos bancarios asociados han sido cancelados y eliminados correctamente.');
+
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error al intentar eliminar el registro: ' . $th->getMessage()
+                ], 422);
+            }
+            return redirect()->back()->with('error', 'Error al intentar eliminar el registro: ' . $th->getMessage());
+        }
+    }
+
+    public function exportarExcel(Request $request)
+    {
+        $tipo = $request->input('tipo', 'cxc');
+        $pagos = $this->CuentasCobrarService->obtenerPagosHistoricosSinPaginacion($request->all(), $tipo);
+
+        $filename = "historial_" . $tipo . "_" . date('Y-m-d') . ".xls";
+
+        return response()->view('cuentas_cobrar.excel_historico', compact('pagos', 'tipo'))
+            ->header('Content-Type', 'application/vnd.ms-excel')
+            ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
+    }
+
+    public function exportarPdf(Request $request)
+    {
+        $tipo = $request->input('tipo', 'cxc');
+        $pagos = $this->CuentasCobrarService->obtenerPagosHistoricosSinPaginacion($request->all(), $tipo);
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('cuentas_cobrar.pdf_historico', compact('pagos', 'tipo'));
+        return $pdf->download("historial_" . $tipo . "_" . date('Y-m-d') . ".pdf");
+    }
+
+    public function descargarComprobantePdf($id)
+    {
+        $pago = $this->CuentasCobrarService->obtenerPagoDetalle($id);
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('cuentas_cobrar.pdf_comprobante', compact('pago'));
+        return $pdf->download("comprobante_" . $pago->tipo . "_" . $pago->id . ".pdf");
     }
 }

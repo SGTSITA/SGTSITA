@@ -1036,6 +1036,16 @@ else{
     public function edit($id) //revision para gastos extras
     {
         $cotizacion = Cotizaciones::where('id', '=', $id)->first();
+        $cotizacion->load('estadoCuenta');
+
+        $secundaria = null;
+        if (!is_null($cotizacion->referencia_full)) {
+            $secundaria = Cotizaciones::where('referencia_full', $cotizacion->referencia_full)
+                ->where('jerarquia', 'Secundario')
+                ->with('estadoCuenta')
+                ->first();
+        }
+
         $documentacion = DocumCotizacion::with('Asignaciones')->where('id_cotizacion', '=', $cotizacion->id)->first();
         /*
         $gastos_extras = GastosExtras::where('id_cotizacion', '=', $cotizacion->id)->get();
@@ -1152,6 +1162,7 @@ else{
         return view('cotizaciones.editv1', compact(
             'bancos',
             'cotizacion',
+            'secundaria',
             'documentacion',
             'clientes',
             'gastos_extras',
