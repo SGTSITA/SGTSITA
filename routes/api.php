@@ -36,3 +36,6 @@ Route::get('/api/coordenadas/entidadesPC', [App\Http\Controllers\CoordenadasCont
 // SGT Validation and Login APIs
 Route::post('/login', [App\Http\Controllers\ApiValidationController::class, 'login']);
 Route::post('/validate-operador', [App\Http\Controllers\ApiValidationController::class, 'validateOperador']);
+Route::post('/operador/coordenadas', [App\Http\Controllers\ApiValidationController::class, 'guardarCoordenadas']);
+Route::post('/operador/iniciar-viaje', [App\Http\Controllers\ApiValidationController::class, 'iniciarViaje']);
+Route::post('/operador/estatus-flujo', [App\Http\Controllers\ApiValidationController::class, 'obtenerEstatusFlujo']);

@@ -13,7 +13,12 @@ use App\Models\Proveedor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use  Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\DB;
+use App\Models\Coordenadas;
+use App\Models\coordenadashistorial;
+use App\Models\ComprobanteGastos;
+use App\Models\GastosOperadores;
+use Carbon\Carbon;
 
 class ApiValidationController extends Controller
 {
@@ -135,7 +140,9 @@ class ApiValidationController extends Controller
             'id_asignacion' => $asignacion->id,
             'nombre'        => $operador->nombre,
             'num_contenedor' => $contenedor->num_contenedor,
-            'unidad'        => $camion->id_equipo
+            'unidad'        => $camion->id_equipo,
+            'telefono'      => $operador->telefono,
+            'token'         => 'operador_session_' . $operador->id
         ]);
     }
 
@@ -441,7 +448,7 @@ class ApiValidationController extends Controller
     {
         $coordenadasController = app(CoordenadasController::class);
         $response = $coordenadasController->getEquiposGps($request);
-        
+
         return $this->apiResponse(true, 'Datos de monitoreo obtenidos con éxito.', $response->getData());
     }
 
@@ -588,6 +595,141 @@ class ApiValidationController extends Controller
             "subcliente" => $cotizacion->Subcliente,
             "documentos" => $documentosFirst,
             "documents" => $misDocumentos->first()
+        ]);
+    }
+
+    public function guardarCoordenadas(Request $request)
+    {
+        $idAsignacion = $request->id_asignacion;
+        $asignacion = Asignaciones::find($idAsignacion);
+
+        if (!$asignacion) {
+            return $this->apiResponse(false, 'Asignación no encontrada.', [], 404);
+        }
+
+        // Save coordinate in history
+        if ($request->latitud && $request->longitud) {
+            coordenadashistorial::create([
+                'latitud' => $request->latitud,
+                'longitud' => $request->longitud,
+                'registrado_en' => Carbon::now(),
+                'ubicacionable_id' => $asignacion->id_camion,
+                'ubicacionable_type' => 'App\Models\Equipo',
+                'tipo' => 'OperadorMovil'
+            ]);
+        }
+
+        // Save diesel ticket if uploaded
+        if ($request->ticket_foto_base64) {
+            $path = public_path('/uploads/diesel/' . $idAsignacion);
+            if (!file_exists($path)) {
+                mkdir($path, 0755, true);
+            }
+            $fileName = uniqid() . '_diesel_ticket.jpg';
+            file_put_contents($path . '/' . $fileName, base64_decode($request->ticket_foto_base64));
+
+            // Get id_cotizacion
+            $doc = DocumCotizacion::find($asignacion->id_contenedor);
+            $idCotizacion = $doc ? $doc->id_cotizacion : null;
+
+            // Create Gasto record
+            GastosOperadores::create([
+                'id_asignacion' => $idAsignacion,
+                'id_operador' => $asignacion->id_operador,
+                'id_cotizacion' => $idCotizacion,
+                'cantidad' => $request->costo ?? 0.0,
+                'tipo' => 'Diesel',
+                'estatus' => 'pendiente',
+                'comprobante' => 'uploads/diesel/' . $idAsignacion . '/' . $fileName,
+                'fecha_pago' => Carbon::now()
+            ]);
+
+            // Save also in comprobantes_gastos
+            ComprobanteGastos::create([
+                'id_asignacion' => $idAsignacion,
+                'imagen' => 'uploads/diesel/' . $idAsignacion . '/' . $fileName,
+                'tipo' => 'diesel'
+            ]);
+        }
+
+        return $this->apiResponse(true, 'Coordenadas y registro de diésel guardados con éxito.');
+    }
+
+    public function iniciarViaje(Request $request)
+    {
+        $idAsignacion = $request->id_asignacion;
+        $asignacion = Asignaciones::find($idAsignacion);
+
+        if (!$asignacion) {
+            return $this->apiResponse(false, 'Asignación no encontrada.', [], 404);
+        }
+
+        // Decode and save images
+        if ($request->fotos_base64 && is_array($request->fotos_base64)) {
+            $path = public_path('/uploads/carga_contenedor/' . $idAsignacion);
+            if (!file_exists($path)) {
+                mkdir($path, 0755, true);
+            }
+            foreach ($request->fotos_base64 as $index => $base64Str) {
+                $fileName = uniqid() . '_carga_' . ($index + 1) . '.jpg';
+                file_put_contents($path . '/' . $fileName, base64_decode($base64Str));
+
+                ComprobanteGastos::create([
+                    'id_asignacion' => $idAsignacion,
+                    'imagen' => 'uploads/carga_contenedor/' . $idAsignacion . '/' . $fileName,
+                    'tipo' => 'carga_contenedor'
+                ]);
+            }
+        }
+
+        // Get id_cotizacion
+        $doc = DocumCotizacion::find($asignacion->id_contenedor);
+        $idCotizacion = $doc ? $doc->id_cotizacion : null;
+
+        // Update tracking status to starting trip
+        $coordenada = Coordenadas::firstOrCreate([
+            'id_asignacion' => $idAsignacion,
+            'id_cotizacion' => $idCotizacion
+        ]);
+        $coordenada->update([
+            'cargado_contenedor' => 'Cargado - Inicio Viaje',
+            'cargado_contenedor_datatime' => Carbon::now()
+        ]);
+
+        return $this->apiResponse(true, 'Viaje iniciado y fotos guardadas correctamente.');
+    }
+
+    public function obtenerEstatusFlujo(Request $request)
+    {
+        $idAsignacion = $request->id_asignacion;
+        if (!$idAsignacion) {
+            return $this->apiResponse(false, 'Falta id_asignacion', [], 400);
+        }
+
+        $diesel = GastosOperadores::where('id_asignacion', $idAsignacion)
+            ->where('tipo', 'Diesel')
+            ->first();
+
+        $coordenada = Coordenadas::where('id_asignacion', $idAsignacion)->first();
+        $viajeIniciado = $coordenada && $coordenada->cargado_contenedor !== null;
+
+        $fotos = ComprobanteGastos::where('id_asignacion', $idAsignacion)
+            ->where('tipo', 'carga_contenedor')
+            ->get()
+            ->map(function ($f) {
+                return asset($f->imagen);
+            })
+            ->toArray();
+
+        return $this->apiResponse(true, 'Estatus obtenido con éxito.', [
+            'diesel_registrado' => $diesel !== null,
+            'diesel_datos' => $diesel ? [
+                'costo' => $diesel->cantidad,
+                'fecha' => $diesel->fecha_pago,
+                'comprobante' => asset($diesel->comprobante)
+            ] : null,
+            'viaje_iniciado' => $viajeIniciado,
+            'fotos' => $fotos
         ]);
     }
 }
