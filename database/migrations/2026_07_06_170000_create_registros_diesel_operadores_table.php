@@ -33,6 +33,10 @@ return new class extends Migration
             $table->string('odometro')->nullable();
             $table->string('comprobante')->nullable();
             
+            // Container load / Trip start tracking
+            $table->dateTime('viaje_iniciado')->nullable();
+            $table->text('fotos_carga')->nullable(); // JSON encoded list of paths
+            
             $table->timestamps();
         });
     }
