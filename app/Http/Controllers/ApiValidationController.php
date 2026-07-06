@@ -650,6 +650,18 @@ class ApiValidationController extends Controller
                 'imagen' => 'uploads/diesel/' . $idAsignacion . '/' . $fileName,
                 'tipo' => 'diesel'
             ]);
+
+            // Save in detailed mobile records table
+            \App\Models\RegistroDieselOperador::create([
+                'id_asignacion' => $idAsignacion,
+                'id_operador' => $asignacion->id_operador,
+                'latitud' => $request->latitud,
+                'longitud' => $request->longitud,
+                'litros' => $request->litros,
+                'costo' => $request->costo,
+                'odometro' => $request->odometro,
+                'comprobante' => 'uploads/diesel/' . $idAsignacion . '/' . $fileName,
+            ]);
         }
 
         return $this->apiResponse(true, 'Coordenadas y registro de diésel guardados con éxito.');
@@ -721,12 +733,18 @@ class ApiValidationController extends Controller
             })
             ->toArray();
 
+        $dieselDetallado = \App\Models\RegistroDieselOperador::where('id_asignacion', $idAsignacion)->first();
+
         return $this->apiResponse(true, 'Estatus obtenido con éxito.', [
             'diesel_registrado' => $diesel !== null,
             'diesel_datos' => $diesel ? [
                 'costo' => $diesel->cantidad,
                 'fecha' => $diesel->fecha_pago,
-                'comprobante' => asset($diesel->comprobante)
+                'comprobante' => asset($diesel->comprobante),
+                'litros' => $dieselDetallado ? $dieselDetallado->litros : null,
+                'odometro' => $dieselDetallado ? $dieselDetallado->odometro : null,
+                'latitud' => $dieselDetallado ? $dieselDetallado->latitud : null,
+                'longitud' => $dieselDetallado ? $dieselDetallado->longitud : null,
             ] : null,
             'viaje_iniciado' => $viajeIniciado,
             'fotos' => $fotos
