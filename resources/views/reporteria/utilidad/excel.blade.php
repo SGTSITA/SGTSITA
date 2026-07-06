@@ -50,6 +50,7 @@
                     <th>Precio Viaje</th>
                     <th>Pago Operación</th>
                     <th>Gastos Extra</th>
+                    <th>Dinero Viaje S/Justificar</th>
                     <th>Gastos Viaje</th>
                     <th>Gastos Diferidos</th>
                     <th>Utilidad</th>
@@ -64,6 +65,7 @@
                         <td>{{ number_format($cotizacion['precioViaje'], 2) }}</td>
                         <td>{{ number_format($cotizacion['pagoOperacion'], 2) }}</td>
                         <td>{{ number_format($cotizacion['gastosExtra'], 2) }}</td>
+                        <td>{{ number_format($cotizacion['dineroViajeSinJustificar'], 2) }}</td>
                         <td>{{ number_format($cotizacion['gastosViaje'], 2) }}</td>
                         <td>{{ number_format($cotizacion['gastosDiferidos'], 2) }}</td>
                         <td @if ($cotizacion['utilidad'] < 0) style="background-color:#ffc107;" @endif>

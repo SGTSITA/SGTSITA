@@ -47,6 +47,7 @@ class ReporteriaService
             ->where('c.id_empresa', $idEmpresa)
             ->select(
                 'c.id as id_cotizacion',
+                'dc.id as id_docum_cotizacion',
                 'a.id_camion',
                 'dc.num_contenedor',
                 'cl.nombre as cliente',
@@ -116,9 +117,15 @@ class ReporteriaService
                 ];
             }
 
-            $dineroViaje = DineroContenedor::where('id_contenedor', $d->id_cotizacion)->sum('monto');
+            $dineroViaje = DineroContenedor::where('id_contenedor', $d->id_docum_cotizacion)->sum('monto');
+            if ($dineroViaje <= 0 && $d->dinero_viaje > 0) {
+                $dineroViaje = $d->dinero_viaje;
+            }
             $dineroViajeJustificado = ViaticosOperador::where('id_cotizacion', $d->id_cotizacion)->sum('monto');
             $sinJustificar = $dineroViaje - $dineroViajeJustificado;
+            if ($sinJustificar < 0) {
+                $sinJustificar = 0;
+            }
 
             $contenedor = $d->num_contenedor;
 
@@ -145,9 +152,9 @@ class ReporteriaService
                 "precioViaje" => $d->total + $sumGastosExtra,
                 "transportadoPor" => (is_null($d->Proveedor)) ? 'Operador' : 'Proveedor',
                 "operadorOrProveedor" => (is_null($d->Proveedor)) ? $d->Operador : $d->Proveedor,
-                "pagoOperacion" => $pagoOperacion - abs($sinJustificar),
+                "pagoOperacion" => $pagoOperacion - $sinJustificar,
                 "gastosExtra" => $sumGastosExtra,
-                "dineroViajeSinJustificar" => abs($sinJustificar),
+                "dineroViajeSinJustificar" => $sinJustificar,
                 "gastosViaje" => $sumGastosOperador,
                 "viajeInicia" => $d->fecha_inicio,
                 "viajeTermina" => $d->fecha_fin,
