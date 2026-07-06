@@ -677,6 +677,7 @@ class ApiValidationController extends Controller
         }
 
         // Decode and save images
+        $savedFilePaths = [];
         if ($request->fotos_base64 && is_array($request->fotos_base64)) {
             $path = public_path('/uploads/carga_contenedor/' . $idAsignacion);
             if (!file_exists($path)) {
@@ -686,9 +687,12 @@ class ApiValidationController extends Controller
                 $fileName = uniqid() . '_carga_' . ($index + 1) . '.jpg';
                 file_put_contents($path . '/' . $fileName, base64_decode($base64Str));
 
+                $relativeUrl = 'uploads/carga_contenedor/' . $idAsignacion . '/' . $fileName;
+                $savedFilePaths[] = $relativeUrl;
+
                 ComprobanteGastos::create([
                     'id_asignacion' => $idAsignacion,
-                    'imagen' => 'uploads/carga_contenedor/' . $idAsignacion . '/' . $fileName,
+                    'imagen' => $relativeUrl,
                     'tipo' => 'carga_contenedor'
                 ]);
             }
@@ -698,7 +702,7 @@ class ApiValidationController extends Controller
         $doc = DocumCotizacion::find($asignacion->id_contenedor);
         $idCotizacion = $doc ? $doc->id_cotizacion : null;
 
-        // Update tracking status to starting trip
+        // Update tracking status to starting trip (legacy/admin compatibility)
         $coordenada = Coordenadas::firstOrCreate([
             'id_asignacion' => $idAsignacion,
             'id_cotizacion' => $idCotizacion
@@ -706,6 +710,16 @@ class ApiValidationController extends Controller
         $coordenada->update([
             'cargado_contenedor' => 'Cargado - Inicio Viaje',
             'cargado_contenedor_datatime' => Carbon::now()
+        ]);
+
+        // Save in detailed operator flow tracking model
+        $flowRecord = \App\Models\RegistroDieselOperador::firstOrCreate([
+            'id_asignacion' => $idAsignacion
+        ]);
+        $flowRecord->update([
+            'id_operador' => $asignacion->id_operador,
+            'viaje_iniciado' => Carbon::now(),
+            'fotos_carga' => json_encode($savedFilePaths),
         ]);
 
         return $this->apiResponse(true, 'Viaje iniciado y fotos guardadas correctamente.');
@@ -718,33 +732,31 @@ class ApiValidationController extends Controller
             return $this->apiResponse(false, 'Falta id_asignacion', [], 400);
         }
 
-        $diesel = GastosOperadores::where('id_asignacion', $idAsignacion)
-            ->where('tipo', 'Diesel')
-            ->first();
+        $flowRecord = \App\Models\RegistroDieselOperador::where('id_asignacion', $idAsignacion)->first();
 
-        $coordenada = Coordenadas::where('id_asignacion', $idAsignacion)->first();
-        $viajeIniciado = $coordenada && $coordenada->cargado_contenedor !== null;
+        $dieselRegistrado = $flowRecord && $flowRecord->comprobante !== null;
+        $viajeIniciado = $flowRecord && $flowRecord->viaje_iniciado !== null;
 
-        $fotos = ComprobanteGastos::where('id_asignacion', $idAsignacion)
-            ->where('tipo', 'carga_contenedor')
-            ->get()
-            ->map(function ($f) {
-                return asset($f->imagen);
-            })
-            ->toArray();
-
-        $dieselDetallado = \App\Models\RegistroDieselOperador::where('id_asignacion', $idAsignacion)->first();
+        $fotos = [];
+        if ($flowRecord && $flowRecord->fotos_carga) {
+            $decoded = json_decode($flowRecord->fotos_carga, true);
+            if (is_array($decoded)) {
+                foreach ($decoded as $path) {
+                    $fotos[] = asset($path);
+                }
+            }
+        }
 
         return $this->apiResponse(true, 'Estatus obtenido con éxito.', [
-            'diesel_registrado' => $diesel !== null,
-            'diesel_datos' => $diesel ? [
-                'costo' => $diesel->cantidad,
-                'fecha' => $diesel->fecha_pago,
-                'comprobante' => asset($diesel->comprobante),
-                'litros' => $dieselDetallado ? $dieselDetallado->litros : null,
-                'odometro' => $dieselDetallado ? $dieselDetallado->odometro : null,
-                'latitud' => $dieselDetallado ? $dieselDetallado->latitud : null,
-                'longitud' => $dieselDetallado ? $dieselDetallado->longitud : null,
+            'diesel_registrado' => $dieselRegistrado,
+            'diesel_datos' => $dieselRegistrado ? [
+                'costo' => $flowRecord->costo,
+                'fecha' => $flowRecord->created_at ? $flowRecord->created_at->toDateString() : Carbon::now()->toDateString(),
+                'comprobante' => asset($flowRecord->comprobante),
+                'litros' => $flowRecord->litros,
+                'odometro' => $flowRecord->odometro,
+                'latitud' => $flowRecord->latitud,
+                'longitud' => $flowRecord->longitud,
             ] : null,
             'viaje_iniciado' => $viajeIniciado,
             'fotos' => $fotos
