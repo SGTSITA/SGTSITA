@@ -117,7 +117,6 @@ class CuentasPagarController extends Controller
         // dd($cotizacionesPorPagar);
         $handsOnTableData = $cotizacionesPorPagar->map(function ($item) {
             $numContenedor = $item->num_contenedor;
-            // dd($item);
             if (!is_null($item->referencia_full)) {
                 $secundaria = Cotizaciones::where('referencia_full', $item->referencia_full)
                         ->where('jerarquia', 'Secundario')
@@ -129,24 +128,21 @@ class CuentasPagarController extends Controller
                 }
             }
 
-            if (!empty($item->numero_edo_cuenta)) {
-                $numContenedor .= ' (Edo: ' . $item->numero_edo_cuenta . ')';
-            }
+            $edoCuenta = $item->numero_edo_cuenta ?? 'NA';
 
-            //  dd($numContenedor, $item->total_proveedor - $item->total_pagado);
             $t_pag =  (float)$item->total_pagado_cxp;
             $restante = (float) $item->total_proveedor - (float)$item->total_pagado_cxp;
             return [
-                $numContenedor,
-                ($item->estatus == 'Aprobada') ? "En Curso" : $item->estatus,
-                $restante,
-               $restante,
-                0,
-                0,
-                0,
-                $item->id_cotizacion,
-                 $t_pag
-
+                $numContenedor, // index 0
+                $edoCuenta, // index 1 (new column)
+                ($item->estatus == 'Aprobada') ? "En Curso" : $item->estatus, // index 2
+                $restante, // index 3
+                $restante, // index 4
+                0, // index 5
+                0, // index 6
+                0, // index 7
+                $item->id_cotizacion, // index 8
+                $t_pag // index 9
             ];
         });
 
@@ -214,7 +210,7 @@ class CuentasPagarController extends Controller
             //Primero validaremos que los pagos/abonos de cada contenedor no sea mayor al saldo pendiente
             $cotizaciones = json_decode($request->datahotTableCXP);
             foreach ($cotizaciones as $c) {
-                if ($c[6] > $c[2]) {
+                if ($c[7] > $c[3]) {
                     return response()->json([
                                               "success" => false,
                                               "Titulo" => "Error en el contenedor $c[0]",
@@ -318,12 +314,12 @@ class CuentasPagarController extends Controller
             //
 
             foreach ($cotizaciones as $c) {
-                if ($c[6] > 0) {//Si el pago es mayor a cero
-                    $id = $c[7];
+                if ($c[7] > 0) {//Si el pago es mayor a cero
+                    $id = $c[8];
                     $cotizacion = Cotizaciones::where('id', '=', $id)->first();
 
                     // Establecer el abono y calcular el restante
-                    $abono = $c[6];
+                    $abono = $c[7];
                     $nuevoRestante = $cotizacion->prove_restante - $abono;
                     if ($nuevoRestante < 0) {
                         $nuevoRestante = 0;
@@ -338,7 +334,7 @@ class CuentasPagarController extends Controller
                     // Agregar contenedor y abono al array
                     $contenedorAbono = [
                         'num_contenedor' => $cleanContenedor,
-                        'abono' => $c[6]
+                        'abono' => $c[7]
                     ];
 
 
@@ -348,33 +344,33 @@ class CuentasPagarController extends Controller
 
 
 
-                    if ($c[4] > 0) { //validamos si el pago 1 trae cantidad
+                    if ($c[5] > 0) { //validamos si el pago 1 trae cantidad
                         $contenedorAbono1 = [
                       'num_contenedor' => $cleanContenedor,
-                      'abono' => $c[4]
+                      'abono' => $c[5]
                     ];
                         CobroPagoCotizacion::create([
                                         'cobro_pago_id' => $cobroPago->id,
                                         'cotizacion_id' => $id ,
                                         'origen' => 'A',
-                                        'monto' => $c[4],
+                                        'monto' => $c[5],
                                      ]);
 
                         array_push($contenedoresAbonos1, $contenedorAbono1);
 
                     }
 
-                    if ($c[5] > 0) { //validamos si el pago 2 trae cantidad
+                    if ($c[6] > 0) { //validamos si el pago 2 trae cantidad
                         $contenedorAbono2 = [
                       'num_contenedor' => $cleanContenedor,
-                      'abono' => $c[5]
+                      'abono' => $c[6]
                     ];
 
                         CobroPagoCotizacion::create([
                                       'cobro_pago_id' => $cobroPago->id,
                                       'cotizacion_id' =>  $id ,
                                       'origen' => 'B',
-                                      'monto' => $c[5],
+                                      'monto' => $c[6],
                                   ]);
 
                         array_push($contenedoresAbonos2, $contenedorAbono2);
@@ -604,6 +600,13 @@ class CuentasPagarController extends Controller
     {
         $idEmpresa = auth()->user()->id_empresa;
 
+        if (!$request->has('fecha_inicio') || !$request->has('fecha_fin')) {
+            $request->merge([
+                'fecha_inicio' => now()->subDays(6)->format('Y-m-d'),
+                'fecha_fin' => now()->format('Y-m-d'),
+            ]);
+        }
+
         // Clientes para filtro (relacionados a las cotizaciones de los detalles del pago)
         $clientes = \App\Models\Client::join('client_empresa as ce', 'clients.id', '=', 'ce.id_client')
             ->where('ce.id_empresa', $idEmpresa)
@@ -622,7 +625,8 @@ class CuentasPagarController extends Controller
             'proveedor',
             'bancoA',
             'bancoB',
-            'detalles.cotizacion.DocCotizacion'
+            'detalles.cotizacion.DocCotizacion',
+            'detalles.cotizacion.estadoCuenta'
         ])
         ->where('tipo', 'cxp')
         ->whereHas('detalles.cotizacion', function ($q) use ($idEmpresa) {

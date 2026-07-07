@@ -24,6 +24,7 @@ var config = {
     autoWrapRow: true,
     colHeaders: [
         "# CONTENEDOR",
+        "EDO CUENTA",
         "ESTATUS",
         "SALDO ORIGINAL",
         "SALDO ACTUAL",
@@ -35,10 +36,11 @@ var config = {
     ],
     fixedColumnsLeft: 1,
     columns: [
-        { readOnly: true },
-        { readOnly: true },
+        { readOnly: true }, // 0: # CONTENEDOR
+        { readOnly: true }, // 1: EDO CUENTA
+        { readOnly: true }, // 2: ESTATUS
         {
-            readOnly: true,
+            readOnly: true, // 3: SALDO ORIGINAL
             type: "numeric",
             numericFormat: {
                 pattern: "$ 0,0.00",
@@ -46,6 +48,7 @@ var config = {
             },
         },
         {
+            readOnly: true, // 4: SALDO ACTUAL
             type: "numeric",
             numericFormat: {
                 pattern: "$ 0,0.00",
@@ -53,14 +56,14 @@ var config = {
             },
         },
         {
-            type: "numeric",
+            type: "numeric", // 5: PAGO 1
             numericFormat: {
                 pattern: "$ 0,0.00",
                 culture: "en-US",
             },
         },
         {
-            readOnly: false,
+            readOnly: false, // 6: PAGO 2
             type: "numeric",
             numericFormat: {
                 pattern: "$ 0,0.00",
@@ -69,7 +72,7 @@ var config = {
             render: errorRenderer,
         },
         {
-            readOnly: true,
+            readOnly: true, // 7: TOTAL PAGADO
             type: "numeric",
             numericFormat: {
                 pattern: "$ 0,0.00",
@@ -77,14 +80,14 @@ var config = {
             },
         },
         {
-            readOnly: true,
+            readOnly: true, // 8: ID
         },
 
         {
-            readOnly: true, // ← ESTA FALTABA (index 8)
+            readOnly: true, // 9: T_PAGADO_BD
         },
     ],
-    hiddenColumns: { columns: [7, 8], indicators: false },
+    hiddenColumns: { columns: [8, 9], indicators: false },
     filters: true,
     dropdownMenu: ["filter_by_value", "filter_action_bar"],
     licenseKey: "non-commercial-and-evaluation",
@@ -160,9 +163,9 @@ hotTableCXP.updateSettings({
         var cellProperties = {};
         // var data = this.instance.getData();
         var cellTotalPayment =
-            hotTableCXP.getDataAtCell(row, 4) +
-            hotTableCXP.getDataAtCell(row, 5);
-        if (col >= 1 && cellTotalPayment > hotTableCXP.getDataAtCell(row, 2)) {
+            hotTableCXP.getDataAtCell(row, 5) +
+            hotTableCXP.getDataAtCell(row, 6);
+        if (col >= 1 && cellTotalPayment > hotTableCXP.getDataAtCell(row, 3)) {
             this.renderer = errorRenderer;
             btnAplicarPago.disabled = true;
         } else {
@@ -176,18 +179,17 @@ hotTableCXP.updateSettings({
     },
     afterFilter: () => {
         //getDataFiltered
-        sumPayment(4, 5);
+        sumPayment(5, 6);
         const filteredData = hotTableCXP.getData(); // Obtén los datos de la tabla después de filtrar
         // Aquí puedes recorrer los datos filtrados y hacer cualquier actualización necesaria
         filteredData.forEach((row, index) => {
-            //  hotTableCXP.setDataAtRowProp(index, 6, totalPayment);
             totalPayment =
-                hotTableCXP.getDataAtCell(index, 4) +
-                hotTableCXP.getDataAtCell(index, 5);
-            var rowSaldoOriginal = hotTableCXP.getDataAtCell(index, 2);
+                hotTableCXP.getDataAtCell(index, 5) +
+                hotTableCXP.getDataAtCell(index, 6);
+            var rowSaldoOriginal = hotTableCXP.getDataAtCell(index, 3);
             var rowSaldoActual = rowSaldoOriginal - totalPayment;
-            hotTableCXP.setDataAtCell(index, 3, rowSaldoActual);
-            hotTableCXP.setDataAtCell(index, 6, totalPayment);
+            hotTableCXP.setDataAtCell(index, 4, rowSaldoActual);
+            hotTableCXP.setDataAtCell(index, 7, totalPayment);
         });
     },
     afterChange: (changes) => {
@@ -197,25 +199,18 @@ hotTableCXP.updateSettings({
             Columna = changes[0][1];
             ValAnterior = changes[0][2];
             ValNuevo = changes[0][3];
-            if (Columna == 4 || Columna == 5) {
-                sumPayment(4, 5);
-                /* totalPayment = hotTableCXP.getDataAtCell(Fila,4) + hotTableCXP.getDataAtCell(Fila,5);
-                var rowSaldoOriginal = hotTableCXP.getDataAtCell(Fila,2);
-                var rowSaldoActual =  rowSaldoOriginal - totalPayment;
-                hotTableCXP.setDataAtCell(Fila,5,rowSaldoActual);
-                hotTableCXP.setDataAtCell(Fila,8,totalPayment);*/
+            if (Columna == 5 || Columna == 6) {
+                sumPayment(5, 6);
                 const filteredData = hotTableCXP.getData(); // Obtén los datos de la tabla después de filtrar
                 // Aquí puedes recorrer los datos filtrados y hacer cualquier actualización necesaria
                 filteredData.forEach((row, index) => {
-                    // Ejemplo: actualizando una celda específica
-                    // hotTableCXP.setDataAtRowProp(index, 8, 1);
                     totalPayment =
-                        hotTableCXP.getDataAtCell(index, 4) +
-                        hotTableCXP.getDataAtCell(index, 5);
-                    var rowSaldoOriginal = hotTableCXP.getDataAtCell(index, 2);
+                        hotTableCXP.getDataAtCell(index, 5) +
+                        hotTableCXP.getDataAtCell(index, 6);
+                    var rowSaldoOriginal = hotTableCXP.getDataAtCell(index, 3);
                     var rowSaldoActual = rowSaldoOriginal - totalPayment;
-                    hotTableCXP.setDataAtCell(index, 3, rowSaldoActual);
-                    hotTableCXP.setDataAtCell(index, 6, totalPayment);
+                    hotTableCXP.setDataAtCell(index, 4, rowSaldoActual);
+                    hotTableCXP.setDataAtCell(index, 7, totalPayment);
                 });
             }
         }
@@ -247,12 +242,12 @@ function getViajesPorPagar(provee) {
         beforeSend: function () {},
         success: function (data) {
             hotTableCXP.loadData(data.handsOnTableData);
-            getCurrentBalance(2);
+            getCurrentBalance(3);
             var formatCurrentBalance = moneyFormat(currentBalance);
             $("#currentBalance").text(formatCurrentBalance);
             $("#finalBalance").text(formatCurrentBalance);
             $("#countViajes").text(data.handsOnTableData.length);
-            sumPayment(4, 5);
+            sumPayment(5, 6);
         },
         error: function (data) {
             swal(
@@ -264,7 +259,7 @@ function getViajesPorPagar(provee) {
     });
 }
 
-function getCurrentBalance(colBalance = 2) {
+function getCurrentBalance(colBalance = 3) {
     var data = hotTableCXP.getDataAtCol(colBalance); // Obtiene los datos de la columna específica
     currentBalance = data.reduce(function (accumulator, currentValue) {
         // Verifica si el valor es un número válido antes de sumarlo

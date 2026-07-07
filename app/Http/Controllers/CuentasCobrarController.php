@@ -130,24 +130,23 @@ class CuentasCobrarController extends Controller
         $handsOnTableData = $cotizacionesPorPagar->map(function ($item) {
 
             $numContenedor = $item->num_contenedor;
-            if (!empty($item->numero_edo_cuenta)) {
-                $numContenedor .= ' (Edo: ' . $item->numero_edo_cuenta . ')';
-            }
+            $edoCuenta = $item->numero_edo_cuenta ?? 'NA';
 
             return [
-                $numContenedor,
-                 $item->nombre_subcliente,
-              $item->tipo . ' ( ' . $item->tipo_viaje . ' )',
-                ($item->estatus == 'Aprobada') ? "En Curso" : $item->estatus,
+                $numContenedor, // index 0
+                $edoCuenta, // index 1 (new column)
+                $item->nombre_subcliente, // index 2
+                $item->tipo . ' ( ' . $item->tipo_viaje . ' )', // index 3
+                ($item->estatus == 'Aprobada') ? "En Curso" : $item->estatus, // index 4
 
-                $item->total_restante,
-                $item->total_restante,
+                $item->total_restante, // index 5
+                $item->total_restante, // index 6
 
-                0,
-                0,
-                0,
+                0, // index 7
+                0, // index 8
+                0, // index 9
 
-                $item->id
+                $item->id // index 10
             ];
         });
 
@@ -419,6 +418,13 @@ class CuentasCobrarController extends Controller
     public function buscarPagos(Request $request)
     {
         $idEmpresa = auth()->user()->id_empresa;
+
+        if (!$request->has('fecha_inicio') || !$request->has('fecha_fin')) {
+            $request->merge([
+                'fecha_inicio' => now()->subDays(6)->format('Y-m-d'),
+                'fecha_fin' => now()->format('Y-m-d'),
+            ]);
+        }
 
         // Clientes para filtro
         $clientes = Client::join('client_empresa as ce', 'clients.id', '=', 'ce.id_client')

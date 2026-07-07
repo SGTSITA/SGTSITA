@@ -24,6 +24,7 @@ var config = {
     autoWrapRow: true,
     colHeaders: [
         "# CONTENEDOR",
+        "EDO CUENTA",
         "SUBCLIENTE",
         "TIPO VIAJE",
         "ESTATUS",
@@ -36,12 +37,13 @@ var config = {
     ],
     fixedColumnsLeft: 1,
     columns: [
-        { readOnly: true },
-        { readOnly: true },
-        { readOnly: true },
-        { readOnly: true },
+        { readOnly: true }, // 0: # CONTENEDOR
+        { readOnly: true }, // 1: EDO CUENTA
+        { readOnly: true }, // 2: SUBCLIENTE
+        { readOnly: true }, // 3: TIPO VIAJE
+        { readOnly: true }, // 4: ESTATUS
         {
-            readOnly: true,
+            readOnly: true, // 5: SALDO ORIGINAL
             type: "numeric",
             numericFormat: {
                 pattern: "$ 0,0.00",
@@ -49,6 +51,7 @@ var config = {
             },
         },
         {
+            readOnly: true, // 6: SALDO ACTUAL (readOnly: true fits best or same as before)
             type: "numeric",
             numericFormat: {
                 pattern: "$ 0,0.00",
@@ -56,14 +59,14 @@ var config = {
             },
         },
         {
-            type: "numeric",
+            type: "numeric", // 7: COBRO 1
             numericFormat: {
                 pattern: "$ 0,0.00",
                 culture: "en-US",
             },
         },
         {
-            readOnly: false,
+            readOnly: false, // 8: COBRO 2
             type: "numeric",
             numericFormat: {
                 pattern: "$ 0,0.00",
@@ -72,7 +75,7 @@ var config = {
             render: errorRenderer,
         },
         {
-            readOnly: true,
+            readOnly: true, // 9: TOTAL COBRADO
             type: "numeric",
             numericFormat: {
                 pattern: "$ 0,0.00",
@@ -80,10 +83,10 @@ var config = {
             },
         },
         {
-            readOnly: true,
+            readOnly: true, // 10: ID
         },
     ],
-    hiddenColumns: { columns: [9], indicators: true },
+    hiddenColumns: { columns: [10], indicators: true },
     filters: true,
     dropdownMenu: ["filter_by_value", "filter_action_bar"],
     licenseKey: "non-commercial-and-evaluation",
@@ -160,8 +163,8 @@ hotTable.updateSettings({
         var cellProperties = {};
         // var data = this.instance.getData();
         var cellTotalPayment =
-            hotTable.getDataAtCell(row, 6) + hotTable.getDataAtCell(row, 7);
-        if (col >= 1 && cellTotalPayment > hotTable.getDataAtCell(row, 4)) {
+            hotTable.getDataAtCell(row, 7) + hotTable.getDataAtCell(row, 8);
+        if (col >= 1 && cellTotalPayment > hotTable.getDataAtCell(row, 5)) {
             this.renderer = errorRenderer;
             btnAplicarPago.disabled = true;
         } else {
@@ -175,19 +178,19 @@ hotTable.updateSettings({
     },
     afterFilter: () => {
         //getDataFiltered
-        sumPayment(6, 7);
+        sumPayment(7, 8);
         const filteredData = hotTable.getData(); // Obtén los datos de la tabla después de filtrar
         // Aquí puedes recorrer los datos filtrados y hacer cualquier actualización necesaria
         filteredData.forEach((row, index) => {
             // Ejemplo: actualizando una celda específica
-            hotTable.setDataAtRowProp(index, 8, 1);
+            hotTable.setDataAtRowProp(index, 9, 1);
             totalPayment =
-                hotTable.getDataAtCell(index, 6) +
-                hotTable.getDataAtCell(index, 7);
-            var rowSaldoOriginal = hotTable.getDataAtCell(index, 4);
+                hotTable.getDataAtCell(index, 7) +
+                hotTable.getDataAtCell(index, 8);
+            var rowSaldoOriginal = hotTable.getDataAtCell(index, 5);
             var rowSaldoActual = rowSaldoOriginal - totalPayment;
-            hotTable.setDataAtCell(index, 5, rowSaldoActual);
-            hotTable.setDataAtCell(index, 8, totalPayment);
+            hotTable.setDataAtCell(index, 6, rowSaldoActual);
+            hotTable.setDataAtCell(index, 9, totalPayment);
         });
     },
     afterChange: (changes) => {
@@ -197,25 +200,20 @@ hotTable.updateSettings({
             Columna = changes[0][1];
             ValAnterior = changes[0][2];
             ValNuevo = changes[0][3];
-            if (Columna == 6 || Columna == 7) {
-                sumPayment(6, 7);
-                /* totalPayment = hotTable.getDataAtCell(Fila,6) + hotTable.getDataAtCell(Fila,7);
-                var rowSaldoOriginal = hotTable.getDataAtCell(Fila,4);
-                var rowSaldoActual =  rowSaldoOriginal - totalPayment;
-                hotTable.setDataAtCell(Fila,5,rowSaldoActual);
-                hotTable.setDataAtCell(Fila,8,totalPayment);*/
+            if (Columna == 7 || Columna == 8) {
+                sumPayment(7, 8);
                 const filteredData = hotTable.getData(); // Obtén los datos de la tabla después de filtrar
                 // Aquí puedes recorrer los datos filtrados y hacer cualquier actualización necesaria
                 filteredData.forEach((row, index) => {
                     // Ejemplo: actualizando una celda específica
-                    hotTable.setDataAtRowProp(index, 8, 1);
+                    hotTable.setDataAtRowProp(index, 9, 1);
                     totalPayment =
-                        hotTable.getDataAtCell(index, 6) +
-                        hotTable.getDataAtCell(index, 7);
-                    var rowSaldoOriginal = hotTable.getDataAtCell(index, 4);
+                        hotTable.getDataAtCell(index, 7) +
+                        hotTable.getDataAtCell(index, 8);
+                    var rowSaldoOriginal = hotTable.getDataAtCell(index, 5);
                     var rowSaldoActual = rowSaldoOriginal - totalPayment;
-                    hotTable.setDataAtCell(index, 5, rowSaldoActual);
-                    hotTable.setDataAtCell(index, 8, totalPayment);
+                    hotTable.setDataAtCell(index, 6, rowSaldoActual);
+                    hotTable.setDataAtCell(index, 9, totalPayment);
                 });
             }
         }
@@ -247,11 +245,11 @@ function getViajesSinLiquidar(client) {
         beforeSend: function () {},
         success: function (data) {
             hotTable.loadData(data.handsOnTableData);
-            getCurrentBalance(4);
+            getCurrentBalance(5);
             var formatCurrentBalance = moneyFormat(currentBalance);
             $("#currentBalance").text(formatCurrentBalance);
             $("#finalBalance").text(formatCurrentBalance);
-            sumPayment(6, 7);
+            sumPayment(7, 8);
         },
         error: function (data) {
             swal(
@@ -263,7 +261,7 @@ function getViajesSinLiquidar(client) {
     });
 }
 
-function getCurrentBalance(colBalance = 4) {
+function getCurrentBalance(colBalance = 5) {
     var data = hotTable.getDataAtCol(colBalance); // Obtiene los datos de la columna específica
     currentBalance = data.reduce(function (accumulator, currentValue) {
         // Verifica si el valor es un número válido antes de sumarlo
