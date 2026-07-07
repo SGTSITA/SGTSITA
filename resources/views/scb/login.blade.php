@@ -343,103 +343,36 @@
             <div class="scb-login-card">
 
                 <div class="scb-login-icon">
-                    <i class="fas fa-lock"></i>
+                    <i class="fas fa-circle-info"></i>
                 </div>
 
                 <h2 class="scb-login-title">
-                    Acceso al módulo
+                    Sistema trasladado
                 </h2>
 
-                <p class="scb-login-subtitle">
-                    Ingresa tus credenciales para continuar al sistema de control bancario.
-                </p>
+                <div class="alert alert-warning text-start mt-3">
+                    <strong>Este sistema ha sido trasladado.</strong><br><br>
 
-                @if ($errors->any())
-                    <div class="alert alert-danger mb-3">
-                        <strong>Acceso no válido.</strong>
-                        <div>{{ $errors->first() }}</div>
-                    </div>
-                @endif
+                    El <strong>Sistema de Control Bancario (SCB)</strong> ahora se encuentra disponible en la siguiente
+                    dirección:
 
-                @if (session('status'))
-                    <div class="alert alert-success mb-3">
-                        {{ session('status') }}
-                    </div>
-                @endif
-
-                <form method="POST" action="{{ route('scb.login.post') }}">
-                    @csrf
-
-                    <div class="mb-3">
-                        <label class="scb-form-label" for="email">
-                            Correo electrónico
-                        </label>
-
-                        <div class="scb-input-group">
-                            <i class="fas fa-envelope scb-input-icon"></i>
-
-                            <input type="email" name="email" id="email"
-                                class="form-control scb-form-control @error('email') is-invalid @enderror"
-                                value="{{ old('email') }}" placeholder="usuario@empresa.com" autocomplete="email"
-                                required autofocus>
-                        </div>
-
-                        @error('email')
-                            <div class="text-danger small mt-1">
-                                {{ $message }}
-                            </div>
-                        @enderror
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="scb-form-label" for="password">
-                            Contraseña
-                        </label>
-
-                        <div class="scb-input-group">
-                            <i class="fas fa-key scb-input-icon"></i>
-
-                            <input type="password" name="password" id="password"
-                                class="form-control scb-form-control @error('password') is-invalid @enderror"
-                                placeholder="••••••••" autocomplete="current-password" required>
-                        </div>
-
-                        @error('password')
-                            <div class="text-danger small mt-1">
-                                {{ $message }}
-                            </div>
-                        @enderror
-                    </div>
-
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="remember" id="remember"
-                                {{ old('remember') ? 'checked' : '' }}>
-
-                            <label class="form-check-label small" for="remember">
-                                Recordarme
-                            </label>
-                        </div>
-
-                        @if (Route::has('password.request'))
-                            <a class="scb-back-link" href="{{ route('password.request') }}">
-                                ¿Olvidaste tu contraseña?
-                            </a>
-                        @endif
-                    </div>
-
-                    <button type="submit" class="scb-btn-login">
-                        <i class="fas fa-right-to-bracket me-1"></i>
-                        Entrar al módulo
-                    </button>
-                </form>
-
-                <div class="scb-login-footer">
-
-                    <div class="mt-3">
-                        SCB · Sistema de Control Bancario
+                    <div class="mt-3 text-center">
+                        <a href="https://scb.gologipro.com/login" class="btn btn-primary">
+                            <i class="fas fa-arrow-up-right-from-square me-1"></i>
+                            Ir a SCB
+                        </a>
                     </div>
                 </div>
+
+                <div class="scb-login-footer">
+                    Nueva dirección:<br>
+                    <strong>https://scb.gologipro.com/login</strong>
+                </div>
+
+
+
+
+
 
             </div>
         </section>

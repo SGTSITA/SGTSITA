@@ -139,6 +139,7 @@
                                                                 <tr class="table-secondary">
                                                                     <th>Cotización ID</th>
                                                                     <th>Contenedor</th>
+                                                                    <th>Edo Cuenta</th>
                                                                     <th>Origen</th>
                                                                     <th>Destino</th>
                                                                     <th>Monto Aplicado</th>
@@ -147,9 +148,25 @@
                                                             </thead>
                                                             <tbody>
                                                                 @forelse($pago->detalles as $detalle)
+                                                                    @if ($detalle->cotizacion && $detalle->cotizacion->jerarquia === 'Secundario' && $detalle->monto == 0)
+                                                                        @continue
+                                                                    @endif
+                                                                    @php
+                                                                        $numContenedor = $detalle->cotizacion->DocCotizacion->num_contenedor ?? 'N/A';
+                                                                        if ($detalle->cotizacion && !is_null($detalle->cotizacion->referencia_full) && $detalle->cotizacion->jerarquia === 'Principal') {
+                                                                            $secundaria = \App\Models\Cotizaciones::where('referencia_full', $detalle->cotizacion->referencia_full)
+                                                                                ->where('jerarquia', 'Secundario')
+                                                                                ->with('DocCotizacion')
+                                                                                ->first();
+                                                                            if ($secundaria && $secundaria->DocCotizacion) {
+                                                                                $numContenedor .= ' / ' . $secundaria->DocCotizacion->num_contenedor;
+                                                                            }
+                                                                        }
+                                                                    @endphp
                                                                     <tr>
                                                                         <td>{{ $detalle->cotizacion_id }}</td>
-                                                                        <td><strong>{{ $detalle->cotizacion->DocCotizacion->num_contenedor ?? 'N/A' }}</strong></td>
+                                                                        <td><strong>{{ $numContenedor }}</strong></td>
+                                                                        <td>{{ $detalle->cotizacion->estadoCuenta->numero ?? 'N/A' }}</td>
                                                                         <td>{{ $detalle->cotizacion->origen ?? '-' }}</td>
                                                                         <td>{{ $detalle->cotizacion->destino ?? '-' }}</td>
                                                                         <td>${{ number_format($detalle->monto, 2) }}</td>
@@ -157,7 +174,7 @@
                                                                     </tr>
                                                                 @empty
                                                                     <tr>
-                                                                        <td colspan="6" class="text-center">No hay cotizaciones vinculadas.</td>
+                                                                        <td colspan="7" class="text-center">No hay cotizaciones vinculadas.</td>
                                                                     </tr>
                                                                 @endforelse
                                                             </tbody>

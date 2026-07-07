@@ -327,7 +327,7 @@ class CuentasCobrarService
     private function validarMontos($rows)
     {
         foreach ($rows as $c) {
-            if ($c[8] > $c[4]) {
+            if ($c[9] > $c[5]) {
                 throw new \Exception("Error en contenedor {$c[0]}: el pago es mayor al saldo");
             }
         }
@@ -360,9 +360,9 @@ class CuentasCobrarService
         &$contenedoresAbonos1,
         &$contenedoresAbonos2
     ) {
-        $abono = $c[8];
-        $pagoA = $c[6];
-        $pagoB = $c[7];
+        $abono = $c[9];
+        $pagoA = $c[7];
+        $pagoB = $c[8];
 
         $this->aplicarAbonoCotizacion($cotizacion, $abono);
 
@@ -400,9 +400,9 @@ class CuentasCobrarService
         $principal = $grupo->firstWhere('jerarquia', 'Principal');
         $secundaria = $grupo->firstWhere('jerarquia', 'Secundario');
 
-        $abono = $c[8];
-        $pagoA = $c[6];
-        $pagoB = $c[7];
+        $abono = $c[9];
+        $pagoA = $c[7];
+        $pagoB = $c[8];
 
 
         $this->aplicarAbonoCotizacion($principal, $abono);
@@ -464,11 +464,11 @@ class CuentasCobrarService
 
         foreach ($cotizaciones as $c) {
 
-            if ($c[8] <= 0) {
+            if ($c[9] <= 0) {
                 continue;
             }
 
-            $cotizacion = Cotizaciones::with('DocCotizacion')->find($c[9]);
+            $cotizacion = Cotizaciones::with('DocCotizacion')->find($c[10]);
 
             if ($cotizacion->referencia_full) {
                 $this->procesarFull(
@@ -556,7 +556,8 @@ class CuentasCobrarService
             'cliente',
             'bancoA',
             'bancoB',
-            'detalles.cotizacion.DocCotizacion'
+            'detalles.cotizacion.DocCotizacion',
+            'detalles.cotizacion.estadoCuenta'
         ])
         ->where('tipo', 'cxc')
         ->whereHas('detalles.cotizacion', function ($q) use ($idEmpresa) {
@@ -606,7 +607,8 @@ class CuentasCobrarService
             'proveedor',
             'bancoA',
             'bancoB',
-            'detalles.cotizacion.DocCotizacion'
+            'detalles.cotizacion.DocCotizacion',
+            'detalles.cotizacion.estadoCuenta'
         ])
         ->where('tipo', $tipo);
            $query->whereHas('detalles.cotizacion', function ($q) use ($idEmpresa) {
@@ -665,7 +667,8 @@ class CuentasCobrarService
             'proveedor',
             'bancoA',
             'bancoB',
-            'detalles.cotizacion.DocCotizacion'
+            'detalles.cotizacion.DocCotizacion',
+            'detalles.cotizacion.estadoCuenta'
         ])->findOrFail($id);
     }
 }
