@@ -1,3 +1,4 @@
+let docsData = [];
 class MissionResultRenderer {
     eGui;
 
@@ -670,38 +671,75 @@ function getContenedoresPendientesPatio(estatus = "Local") {
     });
 }
 
-function goToUploadDocuments() {
-    let contenedor = apiGrid.getSelectedRows();
-    if (contenedor.length != 1) {
-        toastr.options = {
-            closeButton: true,
-            debug: false,
-            newestOnTop: false,
-            progressBar: true,
-            positionClass: "toastr-top-center",
-            preventDuplicates: false,
-            onclick: null,
-            showDuration: "1500",
-            hideDuration: "1000",
-            timeOut: "5000",
-            extendedTimeOut: "1000",
-            showEasing: "swing",
-            hideEasing: "linear",
-            showMethod: "fadeIn",
-            hideMethod: "fadeOut",
-        };
+function goToUploadDocuments(numContenedorFromBtn = null) {
+    let numContenedor = numContenedorFromBtn;
 
-        toastr.error(
-            `Debe seleccionar unicamente un contenedor para esta opción`,
-        );
-        return false;
+    if (!numContenedor) {
+        let contenedor = apiGrid.getSelectedRows();
+        if (contenedor.length != 1) {
+            toastr.options = {
+                closeButton: true,
+                debug: false,
+                newestOnTop: false,
+                progressBar: true,
+                positionClass: "toastr-top-center",
+                preventDuplicates: false,
+                onclick: null,
+                showDuration: "1500",
+                hideDuration: "1000",
+                timeOut: "5000",
+                extendedTimeOut: "1000",
+                showEasing: "swing",
+                hideEasing: "linear",
+                showMethod: "fadeIn",
+                hideMethod: "fadeOut",
+            };
+
+            toastr.error(
+                `Debe seleccionar unicamente un contenedor para esta opción`,
+            );
+            return false;
+        }
+        contenedor.forEach((c) => (numContenedor = c.NumContenedor));
     }
-    let numContenedor = null;
-    contenedor.forEach((c) => (numContenedor = c.NumContenedor));
 
+    if (!numContenedor) return;
+
+    let selectContenedores = document.querySelector("#selectContenedores");
     let titleFileUploader = document.querySelector("#titleFileUploader");
-    titleFileUploader.textContent = numContenedor.toUpperCase();
-    localStorage.setItem("numContenedor", numContenedor);
+
+    if (selectContenedores) {
+        while (selectContenedores.options.length > 0) {
+            selectContenedores.remove(0);
+        }
+
+        let contenedores = numContenedor.replace(/\s+/g, "*").split("*").filter(Boolean);
+
+        contenedores.forEach((c) => {
+            let option = document.createElement("option");
+            option.value = c;
+            option.text = c;
+            selectContenedores.appendChild(option);
+        });
+
+        titleFileUploader.textContent = contenedores[0].toUpperCase();
+        localStorage.setItem("numContenedor", contenedores[0]);
+
+        // Fetch documents info for the first container
+        fetch(`/viajes/file-manager/get-file-list/${contenedores[0]}`)
+            .then(response => response.json())
+            .then(json => {
+                docsData = json.data;
+                let seleccionado = document.querySelector(".CheckTypeFile:checked");
+                if (seleccionado) {
+                    actualizarFolio(seleccionado);
+                }
+            });
+    } else {
+        titleFileUploader.textContent = numContenedor.toUpperCase();
+        localStorage.setItem("numContenedor", numContenedor);
+    }
+
     const modalElement = document.getElementById("kt_modal_fileuploader");
     const bootstrapModal = new bootstrap.Modal(modalElement);
     bootstrapModal.show();
@@ -1177,3 +1215,95 @@ function guardarCambioEstatus() {
 }
 
 //document.querySelector('#btnDocs').addEventListener('click', goToUploadDocuments);
+const btnDocsopciones = document.querySelector("#btnDocs");
+if (btnDocsopciones) {
+    btnDocsopciones.addEventListener("click", () => goToUploadDocuments());
+}
+
+let selectContenedores = document.querySelector("#selectContenedores");
+if (selectContenedores) {
+    selectContenedores.addEventListener("change", (e) => {
+        let container = e.target.value;
+        localStorage.setItem("numContenedor", container);
+        fetch(`/viajes/file-manager/get-file-list/${container}`)
+            .then(response => response.json())
+            .then(json => {
+                docsData = json.data;
+                let seleccionado = document.querySelector(".CheckTypeFile:checked");
+                if (seleccionado) {
+                    actualizarFolio(seleccionado);
+                }
+            });
+    });
+}
+
+function obtenerFolioPorTipo(tipo) {
+    if (!docsData || docsData.length === 0) return "";
+
+    let file = docsData.find((f) => f.fileCode === tipo);
+
+    if (!file) return "";
+
+    return file.num_doc || "";
+}
+
+function actualizarFolio(radioSeleccionado) {
+    let container = document.getElementById("containerFolio");
+    let label = document.getElementById("labelFolio");
+    let input = document.getElementById("inputFolio");
+
+    if (!container || !label || !input) return;
+
+    input.value = "";
+
+    if (radioSeleccionado.value === "CartaPorte") {
+        container.classList.add("d-none");
+        return;
+    }
+
+    container.classList.remove("d-none");
+    input.type = "text";
+    let tipoSearchDoc = "";
+    switch (radioSeleccionado.value) {
+        case "BoletaLiberacion":
+            label.innerText = "Folio Boleta de Liberación";
+            input.placeholder = "Ej: BL-12345";
+            tipoSearchDoc = "Boleta-de-liberacion";
+            break;
+
+        case "DODA":
+            label.innerText = "Folio DODA";
+            input.placeholder = "Ej: DODA-98765";
+            tipoSearchDoc = "Doda";
+            break;
+
+        case "Prealta":
+            label.innerText = "Fecha Pre Alta";
+            input.placeholder = "";
+            input.type = "date";
+            tipoSearchDoc = "Pre-Alta";
+            break;
+    }
+
+    let folioExistente = obtenerFolioPorTipo(tipoSearchDoc);
+    if (radioSeleccionado.value === "Prealta") {
+        if (folioExistente) {
+            let fecha = new Date(folioExistente);
+            input.value = fecha.toISOString().split("T")[0];
+        } else {
+            input.value = "";
+        }
+    } else {
+        input.value = folioExistente || "";
+    }
+}
+
+let radios = document.querySelectorAll(".CheckTypeFile");
+
+if (radios.length > 0) {
+    radios.forEach((radio) => {
+        radio.addEventListener("change", function () {
+            actualizarFolio(this);
+        });
+    });
+}
