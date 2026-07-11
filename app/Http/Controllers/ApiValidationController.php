@@ -66,7 +66,9 @@ class ApiValidationController extends Controller
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
-                'id_empresa' => $user->id_empresa
+                'id_empresa' => $user->id_empresa,
+                'roles' => $user->roles()->pluck('name')->toArray(),
+                'permissions' => $user->getAllPermissions()->pluck('name')->toArray(),
             ]
         ]);
     }
@@ -76,85 +78,151 @@ class ApiValidationController extends Controller
      */
     public function validateOperador(Request $request)
     {
-        $request->validate([
-            'nombre'     => 'required|string',
-            'telefono'   => 'required|string',
-            'unidad'     => 'required|string',
-            'contenedor' => 'required|string',
-        ]);
+        if ($request->has('contrasena')) {
+            $request->validate([
+                'nombre'     => 'required|string',
+                'telefono'   => 'required|string',
+                'contrasena' => 'required|string',
+            ], [
+                'nombre.required' => 'El nombre es requerido.',
+                'telefono.required' => 'El teléfono es requerido.',
+                'contrasena.required' => 'La contraseña es requerida.',
+            ]);
 
-        // 1. Validate container exists
-        $contenedor = DocumCotizacion::where('num_contenedor', $request->contenedor)->first();
-        if (!$contenedor) {
-            return $this->apiResponse(false, 'Contenedor no registrado en cotizaciones.', [], 404);
-        }
+            $reqTelefono = preg_replace('/\D/', '', $request->telefono);
+            $operadores = Operador::all();
+            $operador = $operadores->first(function($op) use ($reqTelefono) {
+                return preg_replace('/\D/', '', $op->telefono) === $reqTelefono;
+            });
 
-        // 2. Validate Assignment (Trip) exists for this container
-        $asignacion = Asignaciones::with(['Operador', 'Camion'])
-            ->where('id_contenedor', $contenedor->id)
-            ->first();
+            if (!$operador) {
+                return $this->apiResponse(false, 'Operador no registrado.', [], 404);
+            }
 
-        if (!$asignacion) {
-            return $this->apiResponse(false, 'El viaje/asignación no existe para este contenedor.', [
-                'id_contenedor' => $contenedor->id
-            ], 404);
-        }
+            if (stripos($operador->nombre, trim($request->nombre)) === false && stripos(trim($request->nombre), $operador->nombre) === false) {
+                return $this->apiResponse(false, 'El nombre del operador no coincide.', [], 400);
+            }
 
-        // 3. Validate Unit (Camion) matches the assignment
-        $camion = $asignacion->Camion;
-        if (!$camion || strtolower(trim($camion->id_equipo)) !== strtolower(trim($request->unidad))) {
-            return $this->apiResponse(false, 'La unidad no coincide con el viaje asignado.', [
+            $asignacion = Asignaciones::with(['Camion'])
+                ->where('id_operador', $operador->id)
+                ->where('password_temporal', $request->contrasena)
+                ->first();
+
+            if (!$asignacion) {
+                return $this->apiResponse(false, 'Contraseña incorrecta o no hay viaje asignado con esa contraseña.', [], 400);
+            }
+
+            $contenedor = DocumCotizacion::find($asignacion->id_contenedor);
+            $camion = $asignacion->Camion;
+
+            return $this->apiResponse(true, 'Operador y viaje validados correctamente para ingresar operador.', [
+                'id_contenedor' => $contenedor ? $contenedor->id : null,
+                'id_operador'   => $operador->id,
+                'id_asignacion' => $asignacion->id,
+                'nombre'        => $operador->nombre,
+                'num_contenedor' => $contenedor ? $contenedor->num_contenedor : '',
+                'unidad'        => $camion ? $camion->id_equipo : '',
+                'telefono'      => $operador->telefono,
+                'token'         => 'operador_session_' . $operador->id,
+                'id_equipo'     => $camion ? $camion->id_equipo : '',
+            ]);
+        } else {
+            $request->validate([
+                'nombre'     => 'required|string',
+                'telefono'   => 'required|string',
+                'unidad'     => 'required|string',
+                'contenedor' => 'required|string',
+            ]);
+
+            // 1. Validate container exists
+            $contenedor = DocumCotizacion::where('num_contenedor', $request->contenedor)->first();
+            if (!$contenedor) {
+                return $this->apiResponse(false, 'Contenedor no registrado en cotizaciones.', [], 404);
+            }
+
+            // 2. Validate Assignment (Trip) exists for this container
+            $asignacion = Asignaciones::with(['Operador', 'Camion'])
+                ->where('id_contenedor', $contenedor->id)
+                ->first();
+
+            if (!$asignacion) {
+                return $this->apiResponse(false, 'El viaje/asignación no existe para este contenedor.', [
+                    'id_contenedor' => $contenedor->id
+                ], 404);
+            }
+
+            // 3. Validate Unit (Camion) matches the assignment
+            $camion = $asignacion->Camion;
+            if (!$camion || strtolower(trim($camion->id_equipo)) !== strtolower(trim($request->unidad))) {
+                return $this->apiResponse(false, 'La unidad no coincide con el viaje asignado.', [
+                    'id_contenedor' => $contenedor->id,
+                    'unidad_asignada' => $camion ? $camion->id_equipo : 'Ninguna'
+                ], 400);
+            }
+
+            // 4. Validate Operator matches the assignment
+            $operador = $asignacion->Operador;
+            if (!$operador) {
+                return $this->apiResponse(false, 'No hay operador asignado a este viaje.', [
+                    'id_contenedor' => $contenedor->id
+                ], 400);
+            }
+
+            // Check name (soft match)
+            if (stripos($operador->nombre, trim($request->nombre)) === false && stripos(trim($request->nombre), $operador->nombre) === false) {
+                return $this->apiResponse(false, 'El nombre del operador no coincide con el viaje asignado.', [
+                    'id_contenedor' => $contenedor->id
+                ], 400);
+            }
+
+            // Check phone
+            $reqTelefono = preg_replace('/\D/', '', $request->telefono);
+            $dbTelefono = preg_replace('/\D/', '', $operador->telefono);
+            if ($reqTelefono !== $dbTelefono) {
+                return $this->apiResponse(false, 'El teléfono no coincide con el operador asignado.', [
+                    'id_contenedor' => $contenedor->id
+                ], 400);
+            }
+
+            // All details validated successfully!
+            return $this->apiResponse(true, 'Operador y viaje validados correctamente para ingresar operador.', [
                 'id_contenedor' => $contenedor->id,
-                'unidad_asignada' => $camion ? $camion->id_equipo : 'Ninguna'
-            ], 400);
+                'id_operador'   => $operador->id,
+                'id_asignacion' => $asignacion->id,
+                'nombre'        => $operador->nombre,
+                'num_contenedor' => $contenedor->num_contenedor,
+                'unidad'        => $camion->id_equipo,
+                'telefono'      => $operador->telefono,
+                'token'         => 'operador_session_' . $operador->id,
+                'id_equipo'     => $camion->id_equipo,
+            ]);
         }
-
-        // 4. Validate Operator matches the assignment
-        $operador = $asignacion->Operador;
-        if (!$operador) {
-            return $this->apiResponse(false, 'No hay operador asignado a este viaje.', [
-                'id_contenedor' => $contenedor->id
-            ], 400);
-        }
-
-        // Check name (soft match)
-        if (stripos($operador->nombre, trim($request->nombre)) === false && stripos(trim($request->nombre), $operador->nombre) === false) {
-            return $this->apiResponse(false, 'El nombre del operador no coincide con el viaje asignado.', [
-                'id_contenedor' => $contenedor->id
-            ], 400);
-        }
-
-        // Check phone
-        $reqTelefono = preg_replace('/\D/', '', $request->telefono);
-        $dbTelefono = preg_replace('/\D/', '', $operador->telefono);
-        if ($reqTelefono !== $dbTelefono) {
-            return $this->apiResponse(false, 'El teléfono no coincide con el operador asignado.', [
-                'id_contenedor' => $contenedor->id
-            ], 400);
-        }
-
-        // All details validated successfully!
-        return $this->apiResponse(true, 'Operador y viaje validados correctamente para ingresar operador.', [
-            'id_contenedor' => $contenedor->id,
-            'id_operador'   => $operador->id,
-            'id_asignacion' => $asignacion->id,
-            'nombre'        => $operador->nombre,
-            'num_contenedor' => $contenedor->num_contenedor,
-            'unidad'        => $camion->id_equipo,
-            'telefono'      => $operador->telefono,
-            'token'         => 'operador_session_' . $operador->id
-        ]);
     }
 
     public function getOperacionActiva(Request $request)
     {
         $user = $request->user();
-        $empresaId = $user->id_empresa;
+        $empresaId = $request->id_empresa ?? $user->id_empresa;
 
-        // Cargar cotizaciones de la empresa correspondiente
-        $cotizaciones = Cotizaciones::where('id_empresa', $empresaId)
+        // Construir la consulta base
+        $query = Cotizaciones::where('id_empresa', $empresaId)
             ->where('jerarquia', '!=', 'Secundario')
-            ->with(['Cliente', 'DocCotizacion.Asignaciones.Operador', 'DocCotizacion.Asignaciones.Camion', 'viajes.costos'])
+            ->wherein('tipo_viaje_seleccion', ['foraneo','local_to_foraneo'])
+            ->where(function($q) {
+                $q->where('estatus', '!=', 'Finalizado')
+                  ->orWhere('updated_at', '>=', now('America/Mexico_City')->subDays(15));
+            });
+
+        // Filtrar si el usuario tiene proveedores asociados (lógica MEP / Proveedores)
+        $userProveedores = User::find($user->id);
+        if ($userProveedores && $userProveedores->proveedores()->exists()) {
+            $query->whereIn(
+                'id_proveedor',
+                $userProveedores->proveedores()->pluck('proveedor_id')
+            );
+        }
+
+        $cotizaciones = $query->with(['Cliente', 'DocCotizacion.Asignaciones.Operador', 'DocCotizacion.Asignaciones.Camion', 'DocCotizacion.naviera', 'viajes.costos'])
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -322,7 +390,7 @@ class ApiValidationController extends Controller
 
                 // Detalles del contenedor y terminal
                 'terminal' => $cotizacion->DocCotizacion?->terminal ?? 'N/A',
-                'naviera' => $cotizacion->DocCotizacion?->naviera_id ?? 'N/A',
+                'naviera' => $cotizacion->DocCotizacion?->naviera?->naviera ?? 'N/A',
                 'boleta_liberacion' => $cotizacion->DocCotizacion?->boleta_liberacion ?? '',
                 'num_boleta_liberacion' => $cotizacion->DocCotizacion?->num_boleta_liberacion ?? '',
 
@@ -339,7 +407,7 @@ class ApiValidationController extends Controller
     public function getCotizaciones(Request $request)
     {
         $user = $request->user();
-        $empresaId = $user->id_empresa;
+        $empresaId = $request->id_empresa ?? $user->id_empresa;
 
         // Consultar cotizaciones uniendo con clientes y documentos de cotización para retornar los datos correctos
         $cotizaciones = DB::table('cotizaciones')
@@ -354,6 +422,8 @@ class ApiValidationController extends Controller
                 'cotizaciones.total',
                 'cotizaciones.estatus'
             )
+            ->orderBy('cotizaciones.created_at', 'desc')
+            ->limit(100)
             ->get();
 
                return $this->apiResponse(true, 'Cotizaciones obtenidas con éxito.', [
@@ -367,7 +437,7 @@ class ApiValidationController extends Controller
     public function getViajes(Request $request)
     {
         $user = $request->user();
-        $empresaId = $user->id_empresa;
+        $empresaId = $request->id_empresa ?? $user->id_empresa;
 
         $viajes = DB::table('asignaciones')
             ->leftJoin('docum_cotizacion', 'asignaciones.id_contenedor', '=', 'docum_cotizacion.id')
@@ -382,6 +452,8 @@ class ApiValidationController extends Controller
                 'asignaciones.total_viaje as costo',
                 'asignaciones.estatus_viaje as estatus'
             )
+            ->orderBy('asignaciones.created_at', 'desc')
+            ->limit(100)
             ->get();
 
           return $this->apiResponse(true, 'Viajes obtenidos con éxito.', [
@@ -396,7 +468,7 @@ class ApiValidationController extends Controller
     public function getContenedores(Request $request)
     {
         $user = $request->user();
-        $empresaId = $user->id_empresa;
+        $empresaId = $request->id_empresa ?? $user->id_empresa;
 
         $contenedores = DB::table('docum_cotizacion')
             ->leftJoin('cotizaciones', 'docum_cotizacion.id_cotizacion', '=', 'cotizaciones.id')
@@ -409,6 +481,8 @@ class ApiValidationController extends Controller
                 'docum_cotizacion.terminal as ubicacion',
                 'cotizaciones.estatus'
             )
+            ->orderBy('docum_cotizacion.created_at', 'desc')
+            ->limit(100)
             ->get();
 
               return $this->apiResponse(true, 'Contenedores obtenidos con éxito.', [
@@ -423,7 +497,7 @@ class ApiValidationController extends Controller
     public function getReportes(Request $request)
     {
         $user = $request->user();
-        $empresaId = $user->id_empresa;
+        $empresaId = $request->id_empresa ?? $user->id_empresa;
 
         $totales = [
             'total_cotizaciones' => DB::table('cotizaciones')->where('id_empresa', $empresaId)->count(),
@@ -535,13 +609,21 @@ class ApiValidationController extends Controller
 
         $misDocumentos = $documentos->map(function ($cot) {
             $numContenedor = $cot->num_contenedor;
-            $docCCP = $cot->doc_ccp;
-            $doda = $cot->doda;
-            $boletaLiberacion = $cot->boleta_liberacion;
-            $cartaPorte = $cot->carta_porte;
-            $cartaPorteXml = $cot->carta_porte_xml;
-            $boletaVacio = $cot->boleta_vacio;
-            $docEir = $cot->doc_eir;
+
+            // Helper para validar si el archivo existe físicamente en el disco
+            $checkFile = function($file, $id) {
+                if (empty($file)) return null;
+                $path = public_path('cotizaciones/cotizacion' . $id . '/' . $file);
+                return \File::exists($path) ? $file : null;
+            };
+
+            $docCCP = $checkFile($cot->doc_ccp, $cot->id);
+            $doda = $checkFile($cot->doda, $cot->id);
+            $boletaLiberacion = $checkFile($cot->boleta_liberacion, $cot->id);
+            $cartaPorte = $checkFile($cot->carta_porte, $cot->id);
+            $cartaPorteXml = $checkFile($cot->carta_porte_xml, $cot->id);
+            $boletaVacio = $checkFile($cot->boleta_vacio, $cot->id);
+            $docEir = $checkFile($cot->doc_eir, $cot->id);
             $tipo = "--";
 
             if (!is_null($cot->referencia_full)) {
@@ -551,15 +633,21 @@ class ApiValidationController extends Controller
                     ->first();
 
                 if ($secundaria && $secundaria->DocCotizacion) {
-                    $docCCP = ($docCCP && $secundaria->DocCotizacion->doc_ccp) ? true : false;
-                    $doda = ($doda && $secundaria->DocCotizacion->doda) ? true : false;
-                    $docEir = (!is_null($docEir) && !is_null($secundaria->DocCotizacion->doc_eir)) ? true : false;
+                    $secCCP = $checkFile($secundaria->DocCotizacion->doc_ccp, $secundaria->id);
+                    $secDoda = $checkFile($secundaria->DocCotizacion->doda, $secundaria->id);
+                    $secEir = $checkFile($secundaria->DocCotizacion->doc_eir, $secundaria->id);
+                    $secBoletaLiberacion = $checkFile($secundaria->DocCotizacion->boleta_liberacion, $secundaria->id);
+                    $secCartaPorte = $checkFile($secundaria->carta_porte, $secundaria->id);
+                    $secCartaPorteXml = $checkFile($secundaria->carta_porte_xml, $secundaria->id);
+                    $secBoletaVacio = $checkFile($secundaria->img_boleta, $secundaria->id);
 
-                    $boletaLiberacion = ($boletaLiberacion && $secundaria->DocCotizacion->boleta_liberacion) ? true : false;
-                    $cartaPorte = ($cartaPorte && $secundaria->carta_porte) ? true : false;
-                    $cartaPorteXml = ($cartaPorteXml && $secundaria->carta_porte_xml) ? true : false;
-
-                    $boletaVacio = ($boletaVacio && $secundaria->img_boleta) ? true : false;
+                    $docCCP = ($docCCP && $secCCP) ? $docCCP : null;
+                    $doda = ($doda && $secDoda) ? $doda : null;
+                    $docEir = ($docEir !== null && $secEir !== null) ? $docEir : null;
+                    $boletaLiberacion = ($boletaLiberacion && $secBoletaLiberacion) ? $boletaLiberacion : null;
+                    $cartaPorte = ($cartaPorte && $secCartaPorte) ? $cartaPorte : null;
+                    $cartaPorteXml = ($cartaPorteXml && $secCartaPorteXml) ? $cartaPorteXml : null;
+                    $boletaVacio = ($boletaVacio && $secBoletaVacio) ? $boletaVacio : null;
 
                     $numContenedor .= ' / ' . $secundaria->DocCotizacion->num_contenedor;
                 }
@@ -586,6 +674,18 @@ class ApiValidationController extends Controller
         });
 
         $documentosFirst = $documentos->first();
+        $firstChecked = $misDocumentos->first();
+
+        // Sincronizar el primer registro original con las rutas físicas validadas
+        if ($documentosFirst && $firstChecked) {
+            $documentosFirst->doc_ccp = $firstChecked['doc_ccp'];
+            $documentosFirst->doda = $firstChecked['doda'];
+            $documentosFirst->boleta_liberacion = $firstChecked['boleta_liberacion'];
+            $documentosFirst->carta_porte = $firstChecked['carta_porte'];
+            $documentosFirst->carta_porte_xml = $firstChecked['carta_porte_xml'];
+            $documentosFirst->boleta_vacio = $firstChecked['boleta_vacio'];
+            $documentosFirst->doc_eir = $firstChecked['doc_eir'];
+        }
 
         return $this->apiResponse(true, 'Información del viaje obtenida con éxito.', [
             "nombre" => $asignaciones?->Operador?->nombre ?? $documentosFirst?->transportista_nombre ?? '',
@@ -594,7 +694,7 @@ class ApiValidationController extends Controller
             "cliente" => $cotizacion->Cliente,
             "subcliente" => $cotizacion->Subcliente,
             "documentos" => $documentosFirst,
-            "documents" => $misDocumentos->first()
+            "documents" => $firstChecked
         ]);
     }
 
@@ -631,6 +731,7 @@ class ApiValidationController extends Controller
             // Get id_cotizacion
             $doc = DocumCotizacion::find($asignacion->id_contenedor);
             $idCotizacion = $doc ? $doc->id_cotizacion : null;
+            $cotizacion = Cotizaciones::find($idCotizacion);
 
             // Create Gasto record
             GastosOperadores::create([
@@ -651,6 +752,13 @@ class ApiValidationController extends Controller
                 'tipo' => 'diesel'
             ]);
 
+            // Decode and save urea ticket if uploaded
+            $ureaFileName = null;
+            if ($request->ticket_foto_urea_base64) {
+                $ureaFileName = uniqid() . '_urea_ticket.jpg';
+                file_put_contents($path . '/' . $ureaFileName, base64_decode($request->ticket_foto_urea_base64));
+            }
+
             // Save in detailed mobile records table
             \App\Models\RegistroDieselOperador::create([
                 'id_asignacion' => $idAsignacion,
@@ -661,7 +769,17 @@ class ApiValidationController extends Controller
                 'costo' => $request->costo,
                 'odometro' => $request->odometro,
                 'comprobante' => 'uploads/diesel/' . $idAsignacion . '/' . $fileName,
+                'litros_urea' => $request->litros_urea,
+                'costo_urea' => $request->costo_urea,
+                'comprobante_urea' => $ureaFileName ? 'uploads/diesel/' . $idAsignacion . '/' . $ureaFileName : null,
             ]);
+
+
+            //sincronizar con captura de litros diesel
+
+             $cotizacion->litros_diesel = $request->litros;
+             $cotizacion->litros_urea = $request->litros_urea;
+             $cotizacion->update();
         }
 
         return $this->apiResponse(true, 'Coordenadas y registro de diésel guardados con éxito.');
@@ -674,6 +792,18 @@ class ApiValidationController extends Controller
 
         if (!$asignacion) {
             return $this->apiResponse(false, 'Asignación no encontrada.', [], 404);
+        }
+
+        // Save coordinate in history
+        if ($request->latitud && $request->longitud) {
+            coordenadashistorial::create([
+                'latitud' => $request->latitud,
+                'longitud' => $request->longitud,
+                'registrado_en' => Carbon::now(),
+                'ubicacionable_id' => $asignacion->id_camion,
+                'ubicacionable_type' => 'App\Models\Equipo',
+                'tipo' => 'OperadorMovil'
+            ]);
         }
 
         // Decode and save images
@@ -725,6 +855,58 @@ class ApiValidationController extends Controller
         return $this->apiResponse(true, 'Viaje iniciado y fotos guardadas correctamente.');
     }
 
+    public function finalizarViajeOperador(Request $request)
+    {
+        $idAsignacion = $request->id_asignacion;
+        $asignacion = Asignaciones::find($idAsignacion);
+
+        if (!$asignacion) {
+            return $this->apiResponse(false, 'Asignación no encontrada.', [], 404);
+        }
+
+        // Save coordinate in history
+        if ($request->latitud && $request->longitud) {
+            coordenadashistorial::create([
+                'latitud' => $request->latitud,
+                'longitud' => $request->longitud,
+                'registrado_en' => Carbon::now(),
+                'ubicacionable_id' => $asignacion->id_camion,
+                'ubicacionable_type' => 'App\Models\Equipo',
+                'tipo' => 'OperadorMovil'
+            ]);
+        }
+
+        // Decode and save images
+        $savedFilePaths = [];
+        if ($request->fotos_base64 && is_array($request->fotos_base64)) {
+            $path = public_path('/uploads/entrega_contenedor/' . $idAsignacion);
+            if (!file_exists($path)) {
+                mkdir($path, 0755, true);
+            }
+            foreach ($request->fotos_base64 as $index => $base64Str) {
+                $fileName = uniqid() . '_entrega_' . ($index + 1) . '.jpg';
+                file_put_contents($path . '/' . $fileName, base64_decode($base64Str));
+
+                $relativeUrl = 'uploads/entrega_contenedor/' . $idAsignacion . '/' . $fileName;
+                $savedFilePaths[] = $relativeUrl;
+            }
+        }
+
+        // Save in detailed operator flow tracking model
+        $flowRecord = \App\Models\RegistroDieselOperador::firstOrCreate([
+            'id_asignacion' => $idAsignacion
+        ]);
+        $flowRecord->update([
+            'id_operador' => $asignacion->id_operador,
+            'viaje_finalizado' => Carbon::now(),
+            'fotos_fin' => json_encode($savedFilePaths),
+            'latitud_fin' => $request->latitud,
+            'longitud_fin' => $request->longitud,
+        ]);
+
+        return $this->apiResponse(true, 'Viaje finalizado correctamente.');
+    }
+
     public function obtenerEstatusFlujo(Request $request)
     {
         $idAsignacion = $request->id_asignacion;
@@ -736,6 +918,7 @@ class ApiValidationController extends Controller
 
         $dieselRegistrado = $flowRecord && $flowRecord->comprobante !== null;
         $viajeIniciado = $flowRecord && $flowRecord->viaje_iniciado !== null;
+        $viajeFinalizado = $flowRecord && $flowRecord->viaje_finalizado !== null;
 
         $fotos = [];
         if ($flowRecord && $flowRecord->fotos_carga) {
@@ -743,6 +926,16 @@ class ApiValidationController extends Controller
             if (is_array($decoded)) {
                 foreach ($decoded as $path) {
                     $fotos[] = asset($path);
+                }
+            }
+        }
+
+        $fotosFin = [];
+        if ($flowRecord && $flowRecord->fotos_fin) {
+            $decodedFin = json_decode($flowRecord->fotos_fin, true);
+            if (is_array($decodedFin)) {
+                foreach ($decodedFin as $path) {
+                    $fotosFin[] = asset($path);
                 }
             }
         }
@@ -757,9 +950,27 @@ class ApiValidationController extends Controller
                 'odometro' => $flowRecord->odometro,
                 'latitud' => $flowRecord->latitud,
                 'longitud' => $flowRecord->longitud,
+                'litros_urea' => $flowRecord->litros_urea,
+                'costo_urea' => $flowRecord->costo_urea,
+                'comprobante_urea' => $flowRecord->comprobante_urea ? asset($flowRecord->comprobante_urea) : null,
             ] : null,
             'viaje_iniciado' => $viajeIniciado,
-            'fotos' => $fotos
+            'fotos' => $fotos,
+            'viaje_finalizado' => $viajeFinalizado,
+            'fotos_fin' => $fotosFin
+        ]);
+    }
+
+    public function getEmpresasPropias(Request $request)
+    {
+        $empresas = DB::table('empresas')
+            ->where('id_tipo_empresa', 1)
+            ->where('estatus', 1)
+            ->select('id', 'nombre')
+            ->get();
+
+        return $this->apiResponse(true, 'Empresas propias obtenidas con éxito.', [
+            'data' => $empresas
         ]);
     }
 }

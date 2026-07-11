@@ -100,6 +100,7 @@ class Cotizaciones extends Model
         'editing_by',
         'editing_at',
         'litros_diesel',
+        'litros_urea',
         'km_recorridos',
     ];
 

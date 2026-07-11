@@ -192,6 +192,7 @@ $contenedor = DocumCotizacion::find($request->idContenendor);
         ->leftjoin('proveedores', 'proveedores.id', '=', 'asignaciones.id_proveedor')
         ->select(
             'asignaciones.id as asignacionId',
+            'asignaciones.password_temporal',
             'cotizaciones.id',
             'clients.nombre as cliente',
             'docum_cotizacion.num_contenedor',
@@ -282,6 +283,71 @@ $contenedor = DocumCotizacion::find($request->idContenendor);
 
         $documentos = $documentos->first();
 
+        // Construct the WhatsApp text for resending:
+        $contenedorStr = $misDocumentos->first()['num_contenedor'] ?? '';
+
+        $camion = $asignaciones ? \App\Models\Equipo::find($asignaciones->id_camion) : null;
+        $unidadEco = $camion ? $camion->id_equipo : '';
+
+        $origen = $cotizacion->origen ?? '';
+        $direccion = $cotizacion->direccion_entrega ?? '';
+        $lat = $cotizacion->latitud ?? '';
+        $lng = $cotizacion->longitud ?? '';
+        $contacto = $cotizacion->cp_contacto_entrega ?? '';
+        $fechaEntregaRaw = $cotizacion->cp_fecha_tentativa_entrega ?: $cotizacion->fecha_entrega;
+        $fechaEntrega = $fechaEntregaRaw ? \Carbon\Carbon::parse($fechaEntregaRaw)->format('d/m/Y') : '';
+        $horaLlegada = $cotizacion->cp_hora_tentativa_entrega ?? '';
+        $comentarios = $cotizacion->cp_comentarios ?? '';
+
+        // Map link
+        $mapLink = ($lat && $lng) ? "https://maps.google.com/?q={$lat},{$lng}" : '';
+
+        $passwordTemporal = $asignaciones ? $asignaciones->password_temporal : '';
+
+        if ($asignaciones && !empty($asignaciones->mensaje_compartido)) {
+            $waText = $asignaciones->mensaje_compartido;
+        } else {
+            $hora = \Carbon\Carbon::now()->hour;
+            if ($hora >= 6 && $hora < 12) {
+                $saludo = "Buenos días";
+            } elseif ($hora >= 12 && $hora < 19) {
+                $saludo = "Buenas tardes";
+            } else {
+                $saludo = "Buenas noches";
+            }
+            $nombreOp = ($asignaciones && $asignaciones->Operador) ? $asignaciones->Operador->nombre : '';
+
+            $cliente = $cotizacion->Cliente;
+            $capturaFcpp = $cliente ? (bool) $cliente->captura_fcpp : false;
+
+            if ($capturaFcpp) {
+                $waText = "{$saludo} " . ($nombreOp ? trim($nombreOp) : "Operador") . ",\n\n";
+                $waText .= "Comparto los datos de salida del día de hoy:\n\n";
+                $waText .= "{$contenedorStr}" . ($unidadEco ? "-{$unidadEco}" : "") . "\n";
+                $waText .= "Puerto / Lugar de salida:\n" . ($origen ?: "") . "\n";
+                $waText .= "Domicilio de entrega: " . ($direccion ?: "") . "\n";
+                $waText .= "Mapa: " . ($mapLink ?: "") . "\n";
+                $waText .= "Contacto: " . ($contacto ?: "") . "\n";
+                $waText .= "Fecha de entrega:\n" . ($fechaEntrega ?: "") . "\n";
+                $waText .= "Hora de llegada a bodega:\n" . ($horaLlegada ?: "") . "\n";
+                $waText .= "Hora de salida: \n";
+                $waText .= "Comentarios:\n" . ($comentarios ?: "") . "\n\n";
+                $waText .= "Contraseña temporal para Operador: " . $passwordTemporal;
+            } else {
+                $waText = "{$saludo} " . ($nombreOp ? trim($nombreOp) : "Operador") . ",\n\n";
+                $waText .= "Comparto los datos de salida del día de hoy:\n\n";
+                $waText .= "{$contenedorStr}" . ($unidadEco ? "-{$unidadEco}" : "") . "\n";
+                $waText .= "Puerto / Lugar de salida:\n" . ($origen ?: "") . "\n";
+                $waText .= "Domicilio de entrega: " . ($direccion ?: "") . "\n";
+                $waText .= "Mapa: " . ($mapLink ?: "") . "\n";
+                $waText .= "Contacto: \n";
+                $waText .= "Fecha de entrega:\n" . ($fechaEntrega ?: "") . "\n";
+                $waText .= "Hora de llegada a bodega:\n\n";
+                $waText .= "Hora de salida: \n";
+                $waText .= "Comentarios:\n\n";
+                $waText .= "Contraseña temporal para Operador: " . $passwordTemporal;
+            }
+        }
 
         return [
                     "nombre" => $asignaciones->Operador->nombre ?? $documentos->transportista_nombre ?? '',
@@ -290,12 +356,31 @@ $contenedor = DocumCotizacion::find($request->idContenendor);
                     "cliente" => $cotizacion->Cliente,
                     "subcliente" => $cotizacion->Subcliente,
                     "documentos" => $documentos,
-                    "documents" => $misDocumentos->first()
+                    "documents" => $misDocumentos->first(),
+                    "password_temporal" => $passwordTemporal,
+                    "wa_text" => $waText
                 ];
 
 
 
 
+    }
+
+    public function guardarMensajeWhatsApp(Request $request)
+    {
+        $request->validate([
+            'id_asignacion' => 'required',
+            'mensaje' => 'required|string',
+        ]);
+
+        $asignacion = Asignaciones::find($request->id_asignacion);
+        if ($asignacion) {
+            $asignacion->mensaje_compartido = $request->mensaje;
+            $asignacion->save();
+            return response()->json(['success' => true]);
+        }
+
+        return response()->json(['success' => false, 'message' => 'Asignacion no encontrada'], 404);
     }
 
     public function initBoard(Request $request)
@@ -665,10 +750,12 @@ $contenedor = DocumCotizacion::find($request->idContenendor);
 
 
                  */
-            $litrosDiesel = $request->get('litros_diesel') ?? 0;
+            $litrosDiesel = $request->get('litros_diesel') ?? $request->get('gasto_litros_diesel') ?? 0;
+            $litrosUrea = $request->get('litros_urea') ?? $request->get('gasto_litros_urea') ?? 0;
 
                 $asignaciones->update();
                 $cotizacion->litros_diesel = $litrosDiesel;
+                $cotizacion->litros_urea = $litrosUrea;
                 $cotizacion->estatus_planeacion = 1;
                 $cotizacion->tipo_viaje = $request->get('cmbTipoUnidad');
                 $cotizacion->update();
@@ -703,6 +790,72 @@ $contenedor = DocumCotizacion::find($request->idContenendor);
                     }
                 }
 
+                // Generate temporary operator password
+                $passwordTemporal = (string) mt_rand(100000, 999999);
+                $asignaciones->password_temporal = $passwordTemporal;
+                $asignaciones->save();
+
+                // Fetch details to build the WhatsApp share message
+                $camion = Equipo::find($asignaciones->id_camion);
+                $unidadEco = $camion ? $camion->id_equipo : '';
+
+                $origen = $cotizacion->origen ?? '';
+                $direccion = $cotizacion->direccion_entrega ?? '';
+                $lat = $cotizacion->latitud ?? '';
+                $lng = $cotizacion->longitud ?? '';
+                $fechaEntregaRaw = $cotizacion->cp_fecha_tentativa_entrega ?: $cotizacion->fecha_entrega;
+                $fechaEntrega = $fechaEntregaRaw ? \Carbon\Carbon::parse($fechaEntregaRaw)->format('d/m/Y') : '';
+                $horaLlegada = $cotizacion->cp_hora_tentativa_entrega ?? '';
+                $comentarios = $cotizacion->cp_comentarios ?? '';
+
+                // Map link
+                $mapLink = ($lat && $lng) ? "https://maps.google.com/?q={$lat},{$lng}" : '';
+
+                $contenedorStr = is_array($numContenedores) ? implode(' / ', $numContenedores) : $numContenedor;
+
+                $hora = \Carbon\Carbon::now()->hour;
+                if ($hora >= 6 && $hora < 12) {
+                    $saludo = "Buenos días";
+                } elseif ($hora >= 12 && $hora < 19) {
+                    $saludo = "Buenas tardes";
+                } else {
+                    $saludo = "Buenas noches";
+                }
+                $operador = Operador::find($asignaciones->id_operador);
+                $nombreOp = $operador ? $operador->nombre : '';
+
+                $cliente = $cotizacion->Cliente;
+                $capturaFcpp = $cliente ? (bool) $cliente->captura_fcpp : false;
+
+                // Construct structured message
+                if ($capturaFcpp) {
+                    $waText = "{$saludo} " . ($nombreOp ? trim($nombreOp) : "Operador") . ",\n\n";
+                    $waText .= "Comparto los datos de salida del día de hoy:\n\n";
+                    $waText .= "{$contenedorStr}" . ($unidadEco ? "-{$unidadEco}" : "") . "\n";
+                    $waText .= "Puerto / Lugar de salida:\n" . ($origen ?: "") . "\n";
+                    $waText .= "Domicilio de entrega: " . ($direccion ?: "") . "\n";
+                    $waText .= "Mapa: " . ($mapLink ?: "") . "\n";
+                    $waText .= "Contacto: " . ($contacto ?: "") . "\n";
+                    $waText .= "Fecha de entrega:\n" . ($fechaEntrega ?: "") . "\n";
+                    $waText .= "Hora de llegada a bodega:\n" . ($horaLlegada ?: "") . "\n";
+                    $waText .= "Hora de salida: \n";
+                    $waText .= "Comentarios:\n" . ($comentarios ?: "") . "\n\n";
+                    $waText .= "Contraseña temporal para Operador: " . $passwordTemporal;
+                } else {
+                    $waText = "{$saludo} " . ($nombreOp ? trim($nombreOp) : "Operador") . ",\n\n";
+                    $waText .= "Comparto los datos de salida del día de hoy:\n\n";
+                    $waText .= "{$contenedorStr}" . ($unidadEco ? "-{$unidadEco}" : "") . "\n";
+                    $waText .= "Puerto / Lugar de salida:\n" . ($origen ?: "") . "\n";
+                    $waText .= "Domicilio de entrega: " . ($direccion ?: "") . "\n";
+                    $waText .= "Mapa: " . ($mapLink ?: "") . "\n";
+                    $waText .= "Contacto: \n";
+                    $waText .= "Fecha de entrega:\n" . ($fechaEntrega ?: "") . "\n";
+                    $waText .= "Hora de llegada a bodega:\n\n";
+                    $waText .= "Hora de salida: \n";
+                    $waText .= "Comentarios:\n\n";
+                    $waText .= "Contraseña temporal para Operador: " . $passwordTemporal;
+                }
+
                 DB::commit();
 
                 return response()->json([
@@ -710,7 +863,10 @@ $contenedor = DocumCotizacion::find($request->idContenendor);
                     "Titulo" => "Planeado correctamente",
                     "Mensaje" => "Se ha programado correctamente el viaje del contenedor",
                     'success' => true,
-                    'cotizacion_data' => $cotizacion_data
+                    'cotizacion_data' => $cotizacion_data,
+                    'password_temporal' => $passwordTemporal,
+                    'wa_text' => $waText,
+                    'id_asignacion' => $asignaciones->id
                 ]);
 
             } catch (\Throwable $t) {
@@ -727,6 +883,170 @@ $contenedor = DocumCotizacion::find($request->idContenendor);
 
 
 
+    }
+
+    public function asignacionElemental(Request $request)
+    {
+        $idEmpresa = auth()->user()->id_empresa;
+        $numContenedoresRaw = $request->get('num_contenedor');
+        $numContenedores = json_decode($numContenedoresRaw);
+        if (json_last_error() !== JSON_ERROR_NONE || is_null($numContenedores)) {
+            $numContenedores = $numContenedoresRaw;
+        }
+        if (is_array($numContenedores)) {
+            $numContenedor = !empty($numContenedores) ? $numContenedores[0] : '';
+        } else {
+            $numContenedor = $numContenedores;
+            $numContenedores = !empty($numContenedores) ? [$numContenedores] : [];
+        }
+
+        $fechaInicio = common::TransformaFecha($request->txtFechaInicio);
+        $fechaFinal = common::TransformaFecha($request->txtFechaFinal);
+
+        $contenedor = DocumCotizacion::where('num_contenedor', $numContenedor)->first();
+        $cotizacion = Cotizaciones::where('id', '=', $contenedor->id_cotizacion)->first();
+
+        try {
+            DB::beginTransaction();
+
+            $asignaciones = Asignaciones::where('id_contenedor', $contenedor->id)->first();
+            if (!$asignaciones) {
+                $asignaciones = new Asignaciones();
+                $asignaciones->id_contenedor = $contenedor->id;
+            }
+            $asignaciones->fecha_inicio = $fechaInicio;
+            $asignaciones->fecha_fin = $fechaFinal . ' 23:00:00';
+            $asignaciones->fehca_inicio_guard = $fechaInicio;
+            $asignaciones->fehca_fin_guard = $fechaFinal . ' 23:00:00';
+            $asignaciones->id_chasis = $request->get('cmbChasis');
+            $asignaciones->id_chasis2 = null;
+            $asignaciones->id_dolys = null;
+            $asignaciones->id_camion = $request->get('cmbCamion');
+            $asignaciones->id_operador = $request->get('cmbOperador');
+            $asignaciones->sueldo_viaje = 0;
+            $asignaciones->estatus_pagado = 'Pendiente Pago';
+            $asignaciones->dinero_viaje = 0;
+            $asignaciones->pago_operador = 0;
+            $asignaciones->restante_pago_operador = 0;
+            $asignaciones->tipo_contrato = 'Propio';
+            // Generate temporary operator password
+            $passwordTemporal = (string) mt_rand(100000, 999999);
+            $asignaciones->password_temporal = $passwordTemporal;
+            $asignaciones->save();
+
+            $litrosDiesel = $request->get('litros_diesel') ?? $request->get('gasto_litros_diesel') ?? 0;
+            $litrosUrea = $request->get('litros_urea') ?? $request->get('gasto_litros_urea') ?? 0;
+
+            $cotizacion->litros_diesel = $litrosDiesel;
+            $cotizacion->litros_urea = $litrosUrea;
+            $cotizacion->estatus_planeacion = 1;
+            $cotizacion->tipo_viaje = 'Sencillo';
+            $cotizacion->update();
+
+            $cotizacion_data = [
+                "tipo_viaje" => $cotizacion->tipo_viaje,
+            ];
+
+            if (sizeof($numContenedores) == 2) {
+                $fullUUID = Common::generarUuidV4();
+                foreach ($numContenedores as $i => $cont) {
+                    $contenedor = DocumCotizacion::where('num_contenedor', $cont)->first();
+                    $cotizacion = Cotizaciones::where('id', '=', $contenedor->id_cotizacion)->first();
+                    $cotizacion->referencia_full = $fullUUID;
+                    $cotizacion->jerarquia = ($i == 0) ? 'Principal' : 'Secundario';
+                    $cotizacion->estatus_planeacion = 1;
+                    $cotizacion->tipo_viaje = 'Full';
+                    $cotizacion->update();
+                }
+            }
+
+            // Fetch details to build the WhatsApp share message
+            $camion = Equipo::find($request->get('cmbCamion'));
+            $unidadEco = $camion ? $camion->id_equipo : '';
+
+            $origen = $cotizacion->origen ?? '';
+            $direccion = $cotizacion->direccion_entrega ?? '';
+            $lat = $cotizacion->latitud ?? '';
+            $lng = $cotizacion->longitud ?? '';
+            $contacto = $cotizacion->cp_contacto_entrega ?? '';
+            $fechaEntregaRaw = $cotizacion->cp_fecha_tentativa_entrega ?: $cotizacion->fecha_entrega;
+            $fechaEntrega = $fechaEntregaRaw ? \Carbon\Carbon::parse($fechaEntregaRaw)->format('d/m/Y') : '';
+            $horaLlegada = $cotizacion->cp_hora_tentativa_entrega ?? '';
+            $comentarios = $cotizacion->cp_comentarios ?? '';
+
+            // Map link
+            $mapLink = ($lat && $lng) ? "https://maps.google.com/?q={$lat},{$lng}" : '';
+
+            $contenedorStr = is_array($numContenedores) ? implode(' / ', $numContenedores) : $numContenedor;
+
+            $hora = \Carbon\Carbon::now()->hour;
+            if ($hora >= 6 && $hora < 12) {
+                $saludo = "Buenos días";
+            } elseif ($hora >= 12 && $hora < 19) {
+                $saludo = "Buenas tardes";
+            } else {
+                $saludo = "Buenas noches";
+            }
+            $operador = Operador::find($request->get('cmbOperador'));
+            $nombreOp = $operador ? $operador->nombre : '';
+
+            $cliente = $cotizacion->Cliente;
+            $capturaFcpp = $cliente ? (bool) $cliente->captura_fcpp : false;
+
+            // Construct structured message
+            if ($capturaFcpp) {
+                $waText = "{$saludo} " . ($nombreOp ? trim($nombreOp) : "Operador") . ",\n\n";
+                $waText .= "Comparto los datos de salida del día de hoy:\n\n";
+                $waText .= "{$contenedorStr}" . ($unidadEco ? "-{$unidadEco}" : "") . "\n";
+                $waText .= "Puerto / Lugar de salida:\n" . ($origen ?: "") . "\n";
+                $waText .= "Domicilio de entrega: " . ($direccion ?: "") . "\n";
+                $waText .= "Mapa: " . ($mapLink ?: "") . "\n";
+                $waText .= "Contacto: " . ($contacto ?: "") . "\n";
+                $waText .= "Fecha de entrega:\n" . ($fechaEntrega ?: "") . "\n";
+                $waText .= "Hora de llegada a bodega:\n" . ($horaLlegada ?: "") . "\n";
+                $waText .= "Hora de salida: \n";
+                $waText .= "Comentarios:\n" . ($comentarios ?: "") . "\n\n";
+                $waText .= "Contraseña temporal para Operador: " . $passwordTemporal;
+            } else {
+                $waText = "{$saludo} " . ($nombreOp ? trim($nombreOp) : "Operador") . ",\n\n";
+                $waText .= "Comparto los datos de salida del día de hoy:\n\n";
+                $waText .= "{$contenedorStr}" . ($unidadEco ? "-{$unidadEco}" : "") . "\n";
+                $waText .= "Puerto / Lugar de salida:\n" . ($origen ?: "") . "\n";
+                $waText .= "Domicilio de entrega: " . ($direccion ?: "") . "\n";
+                $waText .= "Mapa: " . ($mapLink ?: "") . "\n";
+                $waText .= "Contacto: \n";
+                $waText .= "Fecha de entrega:\n" . ($fechaEntrega ?: "") . "\n";
+                $waText .= "Hora de llegada a bodega:\n\n";
+                $waText .= "Hora de salida: \n";
+                $waText .= "Comentarios:\n\n";
+                $waText .= "Contraseña temporal para Operador: " . $passwordTemporal;
+            }
+
+            DB::commit();
+
+            return response()->json([
+                "TMensaje" => "success",
+                "Titulo" => "Planeado correctamente",
+                "Mensaje" => "Se ha programado correctamente el viaje del contenedor (Elemental)",
+                'success' => true,
+                'cotizacion_data' => $cotizacion_data,
+                'password_temporal' => $passwordTemporal,
+                'wa_text' => $waText,
+                'id_asignacion' => $asignaciones->id
+            ]);
+
+        } catch (\Throwable $t) {
+            DB::rollback();
+            Log::channel('daily')->info('No se guardó planeacion elemental: '.$t->getMessage());
+            return response()->json([
+                "TMensaje" => "warning",
+                "Titulo" => "No se pudo planear",
+                "Mensaje" => "Ocurrio un error mientras procesabamos su solicitud (Elemental)",
+                'success' => false,
+                'cotizacion_data' => [],
+                'ERROR-ADMIN' => $t->getMessage()
+            ]);
+        }
     }
 
     public function reprogramarViajes(Request $request)
@@ -780,6 +1100,147 @@ $contenedor = DocumCotizacion::find($request->idContenendor);
 
 
 
+    public function updatePlaneacion(Request $request, $idCotizacion)
+    {
+        $cotizacion = Cotizaciones::findOrFail($idCotizacion);
+        $contenedor = $cotizacion->DocCotizacion;
+
+        $fechaInicio = common::TransformaFecha($request->txtFechaInicio);
+        $fechaFinal = common::TransformaFecha($request->txtFechaFinal);
+
+        try {
+            DB::beginTransaction();
+
+            $asignaciones = Asignaciones::where('id_contenedor', $contenedor->id)->first();
+            if (!$asignaciones) {
+                $asignaciones = new Asignaciones();
+                $asignaciones->id_contenedor = $contenedor->id;
+            }
+
+            $asignaciones->fecha_inicio = $fechaInicio;
+            $asignaciones->fecha_fin = $fechaFinal . ' 23:00:00';
+            $asignaciones->fehca_inicio_guard = $fechaInicio;
+            $asignaciones->fehca_fin_guard = $fechaFinal . ' 23:00:00';
+
+            $asignaciones->id_chasis = $request->get('cmbChasis');
+            $asignaciones->id_chasis2 = $request->get('cmbChasis2');
+            $asignaciones->id_dolys = $request->get('cmbDoly');
+            $asignaciones->id_camion = $request->get('cmbCamion');
+            $asignaciones->id_operador = $request->get('cmbOperador');
+
+            $sueldoOperador = $request->filled('txtSueldoOperador') ? str_replace(',', '', $request->get('txtSueldoOperador')) : 0;
+            $dineroViaje = $request->filled('txtDineroViaje') ? str_replace(',', '', $request->get('txtDineroViaje')) : 0;
+
+            // Buscar y cancelar movimiento bancario anterior si existía
+            if ($asignaciones->id && $asignaciones->id_banco1_dinero_viaje) {
+                $movimientoBanco = $this->BancosService->findMovimiento($asignaciones->id, \App\Models\Asignaciones::class, $asignaciones->id_banco1_dinero_viaje);
+                if ($movimientoBanco) {
+                    $this->BancosService->cancelarMovimiento($asignaciones->id_banco1_dinero_viaje, $movimientoBanco->id, $movimientoBanco->fecha_movimiento);
+                }
+            }
+
+            $asignaciones->sueldo_viaje = $sueldoOperador;
+            $asignaciones->dinero_viaje = $dineroViaje;
+            $asignaciones->id_banco1_dinero_viaje = $request->get('cmbBanco');
+            $asignaciones->cantidad_banco1_dinero_viaje = $dineroViaje;
+
+            $resta = floatval($sueldoOperador) - floatval($dineroViaje);
+            $asignaciones->pago_operador = $resta;
+            $asignaciones->restante_pago_operador = $resta;
+            $asignaciones->tipo_contrato = 'Propio';
+            $asignaciones->estatus_pagado = 'Pendiente Pago';
+
+            $asignaciones->save();
+
+            if ($request->filled('FechaAplicacionDinero')) {
+                // Registrar/Actualizar el DineroContenedor
+                $dineroViajeModel = DineroContenedor::where('id_contenedor', $contenedor->id)
+                    ->where('motivo', 'Dinero para viaje')
+                    ->first();
+                if (!$dineroViajeModel) {
+                    $dineroViajeModel = new DineroContenedor();
+                    $dineroViajeModel->id_contenedor = $contenedor->id;
+                    $dineroViajeModel->motivo = 'Dinero para viaje';
+                }
+                $dineroViajeModel->id_banco = $request->get('cmbBanco');
+                $dineroViajeModel->monto = $dineroViaje;
+                $dineroViajeModel->fecha_entrega_monto = \Carbon\Carbon::createFromFormat(
+                    'd/m/Y',
+                    $request->get('FechaAplicacionDinero')
+                )->format('Y-m-d');
+                $dineroViajeModel->save();
+
+                // Registrar nuevo movimiento bancario con los montos actualizados si es mayor a 0
+                if ($dineroViaje > 0) {
+                    $operadorN = \App\Models\Operador::find($request->get('cmbOperador'));
+                    $contenedoresAbonos = [
+                        [
+                            'num_contenedor' => $contenedor->num_contenedor,
+                            'abono' => $dineroViaje
+                        ]
+                    ];
+                    $dataMov = [
+                        'cuenta_bancaria_id' => $request->get('cmbBanco'),
+                        'tipo' => 'cargo',
+                        'monto' => floatval($dineroViaje),
+                        'concepto' => 'Dinero para viaje '. $contenedor->num_contenedor .' '. ($operadorN?->nombre ?? ''),
+                        'fecha_movimiento' => \Carbon\Carbon::createFromFormat('d/m/Y', $request->get('FechaAplicacionDinero'))->format('Y-m-d'),
+                        'origen' => null,
+                        'referencia' => 'del ' .\Carbon\Carbon::parse($fechaInicio)->format('d/m/Y') . ' al '.\Carbon\Carbon::parse($fechaFinal)->format('d/m/Y'),
+                        'detalles' => json_encode($contenedoresAbonos),
+                        'referenciaable_id' => $asignaciones->id,
+                        'referenciaable_type' => \App\Models\Asignaciones::class,
+                    ];
+
+                    $movimientoCrear = $this->BancosService->registrarMovimiento($dataMov);
+                    if (!$movimientoCrear) {
+                        throw new \Exception('No se pudo crear el nuevo movimiento bancario, dinero para viaje ');
+                    }
+                }
+            }
+
+            $cotizacion->litros_diesel = $request->get('litros_diesel') ?? $request->get('gasto_litros_diesel') ?? 0;
+            $cotizacion->litros_urea = $request->get('litros_urea') ?? $request->get('gasto_litros_urea') ?? 0;
+            $cotizacion->estatus_planeacion = 1;
+            $cotizacion->update();
+
+            // Eliminar gastos adicionales anteriores del viaje para evitar duplicidades
+            $oldGastos = \App\Models\Gasto::where('origen_legacy_id', $asignaciones->id)
+                ->where('origen_legacy', 'like', 'asignacion_planeacion%')
+                ->get();
+            foreach ($oldGastos as $og) {
+                $og->forceDelete();
+            }
+
+            Log::channel('daily')->info('filasOtrosGastos recibida en request: ' . $request->get('filasOtrosGastos'));
+            Log::channel('daily')->info('filasOtrosGastos filled check: ' . ($request->filled('filasOtrosGastos') ? 'true' : 'false'));
+
+            if ($request->filled('filasOtrosGastos')) {
+                $resG = self::guardarOtrosGastosPlaneacion($request, $contenedor->num_contenedor, $request->get('cmbOperador'));
+                Log::channel('daily')->info('Respuesta de guardarOtrosGastosPlaneacion: ' . json_encode($resG));
+            }
+
+            DB::commit();
+
+            return response()->json([
+                "TMensaje" => "success",
+                "Titulo" => "Actualizado correctamente",
+                "Mensaje" => "Se ha actualizado correctamente la planeación del viaje",
+                'success' => true
+            ]);
+
+        } catch (\Throwable $t) {
+            DB::rollback();
+            Log::channel('daily')->info('No se actualizó planeacion: ' . $t->getMessage());
+            return response()->json([
+                "TMensaje" => "error",
+                "Titulo" => "No se pudo actualizar",
+                "Mensaje" => "Ocurrio un error: " . $t->getMessage(),
+                'success' => false
+            ]);
+        }
+    }
+
     public function editar($id)
     {
         $idEmpresa = auth()->user()->id_empresa;
@@ -806,12 +1267,28 @@ $contenedor = DocumCotizacion::find($request->idContenendor);
         $bancos2 = Bancos::where('id_empresa', '=', auth()->user()->id_empresa)->where('saldo', '>', '0')->get();
         $bancos = $this->BancosService->getCuentasOption(auth()->user()->id_empresa, $fecha, $fecha, true);
 
+        $asignacion = $cotizacion->DocCotizacion->Asignaciones;
+        $dineroViaje = null;
+        $gastosAsignados = collect();
+        if ($asignacion) {
+            $dineroViaje = DineroContenedor::where('id_contenedor', $cotizacion->DocCotizacion->id)
+                ->where('motivo', 'Dinero para viaje')
+                ->first();
+
+            $gastosAsignados = \App\Models\Gasto::with(['pagos'])
+                ->where('origen_legacy_id', $asignacion->id)
+                ->where('origen_legacy', 'like', 'asignacion_planeacion%')
+                ->get();
+        }
+
         return view('planeacion.edit', compact(
             'cotizacion',
             'equipos',
             'operadores',
             'bancos',
-            'proveedores'
+            'proveedores',
+            'dineroViaje',
+            'gastosAsignados'
         ) + [
     'modoEdicion' => true,
     'tipo' => optional($cotizacion->DocCotizacion->Asignaciones)->tipo_contrato ?? 'propio'
@@ -920,7 +1397,8 @@ $contenedor = DocumCotizacion::find($request->idContenendor);
             $descripcionGastosPermitidos = [
                 'GCM01' => 'GCM01 - Comisión',
                 'GDI02' => 'GDI02 - Diesel',
-                'GBV01' => 'GBV01 - Burrero Vacio'
+                'GBV01' => 'GBV01 - Burrero Vacio',
+                'GU001' => 'GU001 - Urea'
             ];
 
             foreach ($otrosGastos as $gasto) {

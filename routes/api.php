@@ -28,6 +28,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/dashboard/monitoreo', [App\Http\Controllers\ApiValidationController::class, 'getMonitoreo']);
     Route::get('/dashboard/planeacion', [App\Http\Controllers\ApiValidationController::class, 'getPlaneacion']);
     Route::get('/dashboard/reportes', [App\Http\Controllers\ApiValidationController::class, 'getReportes']);
+    Route::get('/dashboard/empresas-propias', [App\Http\Controllers\ApiValidationController::class, 'getEmpresasPropias']);
 });
 
 Route::get('/api/coordenadas/subclientes/{clienteId}', [App\Http\Controllers\CoordenadasController::class, 'getSubclientes']);
@@ -38,4 +39,5 @@ Route::post('/login', [App\Http\Controllers\ApiValidationController::class, 'log
 Route::post('/validate-operador', [App\Http\Controllers\ApiValidationController::class, 'validateOperador']);
 Route::post('/operador/coordenadas', [App\Http\Controllers\ApiValidationController::class, 'guardarCoordenadas']);
 Route::post('/operador/iniciar-viaje', [App\Http\Controllers\ApiValidationController::class, 'iniciarViaje']);
+Route::post('/operador/finalizar-viaje', [App\Http\Controllers\ApiValidationController::class, 'finalizarViajeOperador']);
 Route::post('/operador/estatus-flujo', [App\Http\Controllers\ApiValidationController::class, 'obtenerEstatusFlujo']);

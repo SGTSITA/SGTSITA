@@ -20,8 +20,15 @@ class RegistroDieselOperador extends Model
         'costo',
         'odometro',
         'comprobante',
+        'litros_urea',
+        'costo_urea',
+        'comprobante_urea',
         'viaje_iniciado',
         'fotos_carga',
+        'viaje_finalizado',
+        'fotos_fin',
+        'latitud_fin',
+        'longitud_fin',
     ];
 
     public function Asignacion()

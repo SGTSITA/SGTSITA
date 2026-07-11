@@ -659,8 +659,21 @@ function validarUnidadesPlanear(stipoViaje) {
     cmbDoly.disabled = isActive;
 }); */
 async function programarViaje() {
+    const toggleElemental = document.getElementById("toggleElemental");
+    const isElemental = toggleElemental && toggleElemental.checked;
+
     let fieldsViaje =
         tipoViaje == "propio" ? formFieldsPlaneacion : formFieldsProveedor;
+
+    if (isElemental) {
+        fieldsViaje = [
+            { field: "txtFechaInicio", label: "Fecha salida", required: true },
+            { field: "txtFechaFinal", label: "Fecha entrega", required: true },
+            { field: "cmbCamion", label: "Unidad", required: true },
+            { field: "cmbChasis", label: "Chasis", required: true },
+            { field: "cmbOperador", label: "Operador", required: true },
+        ];
+    }
 
     if (tipoViaje == "propio" && !validarUnidadesPlanear(tipoViaje)) {
         return false;
@@ -669,20 +682,15 @@ async function programarViaje() {
     let passValidation = fieldsViaje.every((item) => {
         let field = document.getElementById(item.field);
         if (field) {
-            if (item.required === true && field.value.length == 0) {
-                Swal.fire(
-                    "El campo " + item.label + " es obligatorio",
-                    "Parece que no ha proporcionado información en el campo " +
-                        item.label,
-                    "warning",
-                );
-                return false;
-            }
-            if (tipoViaje == "propio" && item.field === "txtSueldoOperador") {
+            if (
+                !isElemental &&
+                tipoViaje == "propio" &&
+                item.field === "txtSueldoOperador"
+            ) {
                 let value = field.value.replace(/[$,]/g, "").trim();
                 let sueldo = parseFloat(value);
 
-                if (isNaN(sueldo) || sueldo <= 0) {
+                if (field.value.length == 0 || isNaN(sueldo) || sueldo <= 0) {
                     Swal.fire(
                         "Sueldo inválido",
                         "El sueldo del operador debe ser mayor a 0.",
@@ -700,39 +708,53 @@ async function programarViaje() {
                     return false;
                 }
             }
+
+            if (item.required === true && field.value.length == 0) {
+                Swal.fire(
+                    "El campo " + item.label + " es obligatorio",
+                    "Parece que no ha proporcionado información en el campo " +
+                        item.label,
+                    "warning",
+                );
+                return false;
+            }
         }
         return true;
     });
 
     if (!passValidation) return passValidation;
 
-    let dineroViajeInput = document.getElementById("txtDineroViaje");
+    if (!isElemental) {
+        let dineroViajeInput = document.getElementById("txtDineroViaje");
 
-    if (dineroViajeInput) {
-        let dineroViaje =
-            parseFloat(dineroViajeInput.value.replace(/[$,]/g, "").trim()) || 0;
+        if (dineroViajeInput) {
+            let dineroViaje =
+                parseFloat(
+                    dineroViajeInput.value.replace(/[$,]/g, "").trim(),
+                ) || 0;
 
-        if (dineroViaje === 0) {
-            let confirmacion = await Swal.fire({
-                title: "¿Continuar sin dinero de viaje?",
-                text: "Está asignando $0.00 para dinero de viaje.",
-                icon: "warning",
-                showCancelButton: true,
-                confirmButtonText: "Sí, continuar",
-                cancelButtonText: "Cancelar",
-            });
+            if (dineroViaje === 0) {
+                let confirmacion = await Swal.fire({
+                    title: "¿Continuar sin dinero de viaje?",
+                    text: "Está asignando $0.00 para dinero de viaje.",
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonText: "Sí, continuar",
+                    cancelButtonText: "Cancelar",
+                });
 
-            if (!confirmacion.isConfirmed) {
-                return;
+                if (!confirmacion.isConfirmed) {
+                    return;
+                }
             }
-        }
-        if (dineroViaje > 999999.99) {
-            Swal.fire(
-                "Dinero viaje demasiado alto",
-                "El monto excede el límite permitido.",
-                "error",
-            );
-            return false;
+            if (dineroViaje > 999999.99) {
+                Swal.fire(
+                    "Dinero viaje demasiado alto",
+                    "El monto excede el límite permitido.",
+                    "error",
+                );
+                return false;
+            }
         }
     }
 
@@ -836,7 +858,10 @@ async function programarViaje() {
         .getAttribute("content");
     formData["num_contenedor"] = localStorage.getItem("numContenedor");
     formData["tipoViaje"] = tipoViaje;
-    let url = "/planeaciones/viaje/programar";
+
+    let url = isElemental
+        ? "/planeaciones/viaje/programar-elemental"
+        : "/planeaciones/viaje/programar";
 
     $.ajax({
         url: url,
@@ -848,13 +873,58 @@ async function programarViaje() {
         },
         success: function (data) {
             ocultarLoading();
-            Swal.fire(data.Titulo, data.Mensaje, data.TMensaje).then(
-                function () {
-                    if (data.TMensaje == "success") {
-                        window.location.replace("/planeaciones");
+            if (data.TMensaje == "success") {
+                if (data.wa_text) {
+                    let modalEl = document.getElementById("modalWhatsAppPlaneacion");
+                    if (modalEl) {
+                        document.getElementById("waTextarea").value = data.wa_text;
+                        
+                        let btnSend = document.getElementById("btnSendWhatsApp");
+                        if (btnSend) {
+                            btnSend.onclick = function() {
+                                let editedText = document.getElementById("waTextarea").value;
+                                
+                                // Save message to DB before redirecting/sharing
+                                $.ajax({
+                                    url: "/planeaciones/viaje/guardar-mensaje-wa",
+                                    type: "post",
+                                    data: {
+                                        _token: document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                                        id_asignacion: data.id_asignacion,
+                                        mensaje: editedText
+                                    },
+                                    success: function() {
+                                        let url = "https://wa.me/?text=" + encodeURIComponent(editedText);
+                                        window.open(url, "_blank");
+                                    },
+                                    error: function() {
+                                        // Open anyway if DB update fails to prevent blocking the user
+                                        let url = "https://wa.me/?text=" + encodeURIComponent(editedText);
+                                        window.open(url, "_blank");
+                                    }
+                                });
+                            };
+                        }
+                        
+                        let bootstrapModal = new bootstrap.Modal(modalEl);
+                        bootstrapModal.show();
+                    } else {
+                        Swal.fire(data.Titulo, data.Mensaje, data.TMensaje).then(
+                            function () {
+                                window.location.replace("/planeaciones");
+                            }
+                        );
                     }
-                },
-            );
+                } else {
+                    Swal.fire(data.Titulo, data.Mensaje, data.TMensaje).then(
+                        function () {
+                            window.location.replace("/planeaciones");
+                        }
+                    );
+                }
+            } else {
+                Swal.fire(data.Titulo, data.Mensaje, data.TMensaje);
+            }
             btnProgramar.disabled = false;
         },
         error: function () {

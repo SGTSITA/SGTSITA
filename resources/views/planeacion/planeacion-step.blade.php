@@ -242,190 +242,220 @@
                         </div>
                     </div>
                 </div>
-            </form>
-        </div>
-    </div>
-@endsection
+                <!-- Modal Compartir WhatsApp -->
+                <div class="modal fade" id="modalWhatsAppPlaneacion" tabindex="-1"
+                    aria-labelledby="modalWhatsAppPlaneacionLabel" aria-hidden="true" data-bs-backdrop="static">
+                    <div class="modal-dialog modal-dialog-centered modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="modalWhatsAppPlaneacionLabel">Compartir Datos de Salida por
+                                    WhatsApp</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"
+                                    onclick="window.location.replace('/planeaciones')"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="mb-3">
+                                    <label for="waTextarea" class="form-label fw-bold">Mensaje a Compartir:</label>
+                                    <textarea class="form-control" id="waTextarea" rows="15" style="font-family: monospace; font-size: 14px;"></textarea>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
+                                    onclick="window.location.replace('/planeaciones')">Cerrar</button>
+                                <button type="button" class="btn btn-success" id="btnSendWhatsApp">
+                                    <i class="fab fa-whatsapp"></i> Compartir en WhatsApp
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endsection
 
-@push('custom-javascript')
-    <style>
-        .custom-radio-group {
-            display: flex;
-            justify-content: center;
-            gap: 2rem;
-            margin-top: 2rem;
-        }
+            @push('custom-javascript')
+                <style>
+                    .custom-radio-group {
+                        display: flex;
+                        justify-content: center;
+                        gap: 2rem;
+                        margin-top: 2rem;
+                    }
 
-        .custom-radio {
-            cursor: pointer;
-            text-align: center;
-            width: 160px;
-            height: 160px;
-            position: relative;
-        }
+                    .custom-radio {
+                        cursor: pointer;
+                        text-align: center;
+                        width: 160px;
+                        height: 160px;
+                        position: relative;
+                    }
 
-        .custom-radio input[type='radio'] {
-            display: none;
-        }
+                    .custom-radio input[type='radio'] {
+                        display: none;
+                    }
 
-        .custom-radio .content {
-            border: 1px dashed #ccc;
-            border-radius: 15px;
-            width: 100%;
-            height: 100%;
-            padding: 1rem;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            transition: all 0.3s ease;
-        }
+                    .custom-radio .content {
+                        border: 1px dashed #ccc;
+                        border-radius: 15px;
+                        width: 100%;
+                        height: 100%;
+                        padding: 1rem;
+                        display: flex;
+                        flex-direction: column;
+                        justify-content: center;
+                        align-items: center;
+                        transition: all 0.3s ease;
+                    }
 
-        .custom-radio .content i {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-            color: #555;
-        }
+                    .custom-radio .content i {
+                        font-size: 3rem;
+                        margin-bottom: 1rem;
+                        color: #555;
+                    }
 
-        .custom-radio .content span {
-            font-size: 1.2rem;
-            color: #333;
-        }
+                    .custom-radio .content span {
+                        font-size: 1.2rem;
+                        color: #333;
+                    }
 
-        /* Cuando está seleccionado */
-        .custom-radio input[type='radio']:checked+.content {
-            border: 1px solid #007bff;
-            /* Borde sólido azul */
-        }
+                    /* Cuando está seleccionado */
+                    .custom-radio input[type='radio']:checked+.content {
+                        border: 1px solid #007bff;
+                        /* Borde sólido azul */
+                    }
 
-        .custom-radio input[type='radio']:checked+.content i,
-        .custom-radio input[type='radio']:checked+.content span {
-            color: #007bff;
-        }
+                    .custom-radio input[type='radio']:checked+.content i,
+                    .custom-radio input[type='radio']:checked+.content span {
+                        color: #007bff;
+                    }
 
-        /* Hover efecto */
-        .custom-radio:hover .content {
-            border-color: #007bff;
-        }
+                    /* Hover efecto */
+                    .custom-radio:hover .content {
+                        border-color: #007bff;
+                    }
 
-        input.flatpickr-input[readonly] {
-            background-color: #fff !important;
-            /* Fondo blanco */
-            cursor: pointer;
-            /* Opcional: para que el mouse cambie a "manita" */
-        }
+                    input.flatpickr-input[readonly] {
+                        background-color: #fff !important;
+                        /* Fondo blanco */
+                        cursor: pointer;
+                        /* Opcional: para que el mouse cambie a "manita" */
+                    }
 
-        .flatpickr-day .today {
-            background: #28a745 !important;
-            /* verde */
-            border-color: #28a745 !important;
-            color: #fff;
-            /* texto blanco */
-        }
+                    .flatpickr-day .today {
+                        background: #28a745 !important;
+                        /* verde */
+                        border-color: #28a745 !important;
+                        color: #fff;
+                        /* texto blanco */
+                    }
 
-        .gasto-item .form-control {
-            height: calc(2.5rem + 2px);
-        }
+                    .gasto-item .form-control {
+                        height: calc(2.5rem + 2px);
+                    }
 
-        /* Toggle personalizado */
-        .toggle-switch {
-            position: relative;
-            width: 45px;
-            height: 24px;
-            display: inline-block;
-        }
+                    /* Toggle personalizado */
+                    .toggle-switch {
+                        position: relative;
+                        width: 45px;
+                        height: 24px;
+                        display: inline-block;
+                    }
 
-        .toggle-switch input {
-            display: none;
-        }
+                    .toggle-switch input {
+                        display: none;
+                    }
 
-        .toggle-slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: #d1d5db;
-            transition: 0.3s;
-            border-radius: 34px;
-        }
+                    .toggle-slider {
+                        position: absolute;
+                        cursor: pointer;
+                        top: 0;
+                        left: 0;
+                        right: 0;
+                        bottom: 0;
+                        background-color: #d1d5db;
+                        transition: 0.3s;
+                        border-radius: 34px;
+                    }
 
-        .toggle-slider:before {
-            position: absolute;
-            content: '';
-            height: 18px;
-            width: 18px;
-            left: 3px;
-            bottom: 3px;
-            background-color: white;
-            transition: 0.3s;
-            border-radius: 50%;
-        }
+                    .toggle-slider:before {
+                        position: absolute;
+                        content: '';
+                        height: 18px;
+                        width: 18px;
+                        left: 3px;
+                        bottom: 3px;
+                        background-color: white;
+                        transition: 0.3s;
+                        border-radius: 50%;
+                    }
 
-        .toggle-switch input:checked+.toggle-slider {
-            background-color: #2dce89;
-        }
+                    .toggle-switch input:checked+.toggle-slider {
+                        background-color: #2dce89;
+                    }
 
-        .toggle-switch input:checked+.toggle-slider:before {
-            transform: translateX(21px);
-        }
+                    .toggle-switch input:checked+.toggle-slider:before {
+                        transform: translateX(21px);
+                    }
 
-        .multisteps-form__content {
-            padding-bottom: 1rem !important;
-        }
-    </style>
-    <!-- AG Grid -->
-    <script src="https://unpkg.com/ag-grid-community/dist/ag-grid-community.min.js"></script>
+                    .multisteps-form__content {
+                        padding-bottom: 1rem !important;
+                    }
+                </style>
+                <!-- AG Grid -->
+                <script src="https://unpkg.com/ag-grid-community/dist/ag-grid-community.min.js"></script>
 
-    <!-- Nuestro JavaScript unificado -->
-    <script src="/js/sgt/cotizaciones/aprobadas_list.js?v=1744206575"></script>
-    <script src="/js/sgt/common.js?v=1744206575"></script>
+                <!-- Nuestro JavaScript unificado -->
+                <script
+                    src="/js/sgt/cotizaciones/aprobadas_list.js?v={{ filemtime(public_path('js/sgt/cotizaciones/aprobadas_list.js')) }}">
+                </script>
+                <script src="/js/sgt/common.js?v=1744206575"></script>
 
-    <script src="/assets/js/plugins/multistep-form.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            flatpickr(".dateInput", {
-                dateFormat: "d/m/Y",
-                locale: "es"
-            });
+                <script src="/assets/js/plugins/multistep-form.js"></script>
+                <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+                <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+                <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
+                <script>
+                    document.addEventListener('DOMContentLoaded', function() {
+                        flatpickr(".dateInput", {
+                            dateFormat: "d/m/Y",
+                            locale: "es"
+                        });
 
-            let moneyformatInput = document.querySelectorAll('.moneyformat');
+                        let moneyformatInput = document.querySelectorAll('.moneyformat');
 
-            moneyformatInput.forEach((r) => r.value = moneyFormat(r.value))
+                        moneyformatInput.forEach((r) => r.value = moneyFormat(r.value))
 
-        });
+                    });
 
-        const botonGastos = document.getElementById('btnAddGasto');
-        const container = document.getElementById('otrosGastosContainer');
+                    const botonGastos = document.getElementById('btnAddGasto');
+                    const container = document.getElementById('otrosGastosContainer');
 
-        const opcionesGasto = [{
-                value: 'GCM01',
-                text: 'GCM01 - Comisión'
-            },
-            {
-                value: 'GDI02',
-                text: 'GDI02 - Diesel'
-            },
-            {
-                value: 'GBV01',
-                text: 'GBV01 - Burrero Vacio'
-            },
-        ];
+                    const opcionesGasto = [{
+                            value: 'GCM01',
+                            text: 'GCM01 - Comisión'
+                        },
+                        {
+                            value: 'GDI02',
+                            text: 'GDI02 - Diesel'
+                        },
+                        {
+                            value: 'GBV01',
+                            text: 'GBV01 - Burrero Vacio'
+                        },
+                        {
+                            value: 'GU001',
+                            text: 'GU001 - Urea'
+                        }
+                    ];
 
-        if (botonGastos) {
-            botonGastos.addEventListener('click', function() {
-                const total = container.querySelectorAll('.gasto-item').length;
+                    if (botonGastos) {
+                        botonGastos.addEventListener('click', function() {
+                            const total = container.querySelectorAll('.gasto-item').length;
 
-                if (total >= 2) {
-                    alert('Solo puedes agregar un máximo de 2 gastos.');
-                    return;
-                }
+                            if (total >= 2) {
+                                alert('Solo puedes agregar un máximo de 2 gastos.');
+                                return;
+                            }
 
-                const gastoHTML = `
+                            const gastoHTML = `
               <div class="row gasto-item align-items-center mb-3 border-bottom pb-3">
                 <div class="col-md-3">
                   <label class="form-label mb-1">Motivo del gasto</label>
@@ -487,92 +517,92 @@
                 </div>
               </div>`;
 
-                container.insertAdjacentHTML('beforeend', gastoHTML);
+                            container.insertAdjacentHTML('beforeend', gastoHTML);
 
-                const ultimoDateInput = container.querySelector('.gasto-item:last-child .dateInput');
+                            const ultimoDateInput = container.querySelector('.gasto-item:last-child .dateInput');
 
-                if (!ultimoDateInput._flatpickr) {
-                    flatpickr(ultimoDateInput, {
-                        dateFormat: "d/m/Y",
-                        locale: "es"
+                            if (!ultimoDateInput._flatpickr) {
+                                flatpickr(ultimoDateInput, {
+                                    dateFormat: "d/m/Y",
+                                    locale: "es"
+                                });
+                            }
+                            actualizarDisponibles();
+                        });
+                    }
+
+                    // Mostrar/ocultar banco según pago inmediato
+                    document.addEventListener('change', function(e) {
+                        if (e.target.classList.contains('pagoInmediatoCheck')) {
+                            const row = e.target.closest('.gasto-item');
+                            const bancoCol = row.querySelector('.banco-col');
+                            bancoCol.style.display = e.target.checked ? 'block' : 'none';
+                            if (!e.target.checked) bancoCol.querySelector('select').value = '';
+
+                            const fechaCol = row.querySelector('.fecha-col');
+                            fechaCol.style.display = e.target.checked ? 'block' : 'none';
+                        }
+
+                        if (e.target.name === 'gasto_nombre[]') {
+                            actualizarDisponibles();
+                        }
                     });
-                }
-                actualizarDisponibles();
-            });
-        }
 
-        // Mostrar/ocultar banco según pago inmediato
-        document.addEventListener('change', function(e) {
-            if (e.target.classList.contains('pagoInmediatoCheck')) {
-                const row = e.target.closest('.gasto-item');
-                const bancoCol = row.querySelector('.banco-col');
-                bancoCol.style.display = e.target.checked ? 'block' : 'none';
-                if (!e.target.checked) bancoCol.querySelector('select').value = '';
-
-                const fechaCol = row.querySelector('.fecha-col');
-                fechaCol.style.display = e.target.checked ? 'block' : 'none';
-            }
-
-            if (e.target.name === 'gasto_nombre[]') {
-                actualizarDisponibles();
-            }
-        });
-
-        // Eliminar gasto
-        document.addEventListener('click', function(e) {
-            if (e.target.closest('.removeGastoBtn')) {
-                e.target.closest('.gasto-item').remove();
-                actualizarDisponibles();
-            }
-        });
+                    // Eliminar gasto
+                    document.addEventListener('click', function(e) {
+                        if (e.target.closest('.removeGastoBtn')) {
+                            e.target.closest('.gasto-item').remove();
+                            actualizarDisponibles();
+                        }
+                    });
 
 
-        function actualizarDisponibles() {
-            const selects = Array.from(container.querySelectorAll('select[name="gasto_nombre[]"]'));
-            const seleccionados = selects.map(s => s.value).filter(v => v !== '');
+                    function actualizarDisponibles() {
+                        const selects = Array.from(container.querySelectorAll('select[name="gasto_nombre[]"]'));
+                        const seleccionados = selects.map(s => s.value).filter(v => v !== '');
 
-            selects.forEach((select) => {
-                const valorActual = select.value;
+                        selects.forEach((select) => {
+                            const valorActual = select.value;
 
-                // reconstruimos las opciones
-                const opciones = ['<option value="">Seleccione un motivo</option>'];
-                opcionesGasto.forEach(op => {
-                    const ocupadoPorOtro = seleccionados.includes(op.value) && op.value !== valorActual;
-                    opciones.push(
-                        `<option value="${op.value}" ${ocupadoPorOtro ? 'disabled' : ''}>${op.text}</option>`
-                    );
-                });
-
-
-                select.innerHTML = opciones.join('');
+                            // reconstruimos las opciones
+                            const opciones = ['<option value="">Seleccione un motivo</option>'];
+                            opcionesGasto.forEach(op => {
+                                const ocupadoPorOtro = seleccionados.includes(op.value) && op.value !== valorActual;
+                                opciones.push(
+                                    `<option value="${op.value}" ${ocupadoPorOtro ? 'disabled' : ''}>${op.text}</option>`
+                                );
+                            });
 
 
-                if (valorActual && [...select.options].some(o => o.value === valorActual && !o.disabled)) {
-                    select.value = valorActual;
-                } else {
-                    select.value = '';
-                }
-            });
-        }
-    </script>
-    @can('Proveedor Autonomo 11am')
-        <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                setTipoViaje('propio');
+                            select.innerHTML = opciones.join('');
 
-                // Habilitar paso siguiente
-                const nextTwo = document.getElementById('nextTwo');
-                if (nextTwo) nextTwo.disabled = false;
 
-                // Mostrar/ocultar bloques
-                document.getElementById('viaje-propio').classList.remove('d-none');
-                document.getElementById('viaje-proveedor').classList.add('d-none');
+                            if (valorActual && [...select.options].some(o => o.value === valorActual && !o.disabled)) {
+                                select.value = valorActual;
+                            } else {
+                                select.value = '';
+                            }
+                        });
+                    }
+                </script>
+                @can('Proveedor Autonomo 11am')
+                    <script>
+                        document.addEventListener('DOMContentLoaded', function() {
+                            setTipoViaje('propio');
 
-                // Avanzar automáticamente al panel 3
-                setTimeout(() => {
-                    nextTwo.click();
-                }, 300);
-            });
-        </script>
-    @endcan
-@endpush
+                            // Habilitar paso siguiente
+                            const nextTwo = document.getElementById('nextTwo');
+                            if (nextTwo) nextTwo.disabled = false;
+
+                            // Mostrar/ocultar bloques
+                            document.getElementById('viaje-propio').classList.remove('d-none');
+                            document.getElementById('viaje-proveedor').classList.add('d-none');
+
+                            // Avanzar automáticamente al panel 3
+                            setTimeout(() => {
+                                nextTwo.click();
+                            }, 300);
+                        });
+                    </script>
+                @endcan
+            @endpush
