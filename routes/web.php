@@ -436,6 +436,7 @@ Route::middleware(['auth', 'idle.timeout'])->group(function () {
             Route::patch('update/{id}', [App\Http\Controllers\PlaneacionController::class, 'update'])->name('update.planeaciones');
             Route::get('equipos', [App\Http\Controllers\PlaneacionController::class, 'equipos'])->name('equipos.planeaciones');
             Route::post('viaje/programar', [App\Http\Controllers\PlaneacionController::class, 'asignacion'])->name('asignacion.planeaciones');
+            Route::post('viaje/programar-elemental', [App\Http\Controllers\PlaneacionController::class, 'asignacionElemental'])->name('asignacion.elemental.planeaciones');
 
             Route::post('viaje/programa/anular', [App\Http\Controllers\PlaneacionController::class, 'anularPlaneacion'])->name('anular.planeaciones');
 
@@ -450,11 +451,15 @@ Route::middleware(['auth', 'idle.timeout'])->group(function () {
 
             Route::post('viajes/reprogramar', [App\Http\Controllers\PlaneacionController::class, 'reprogramarViajes'])->name('asignacion.reprogramar');
             Route::post('viajes/{id}/fechas', [App\Http\Controllers\PlaneacionController::class, 'cambioFechas'])->name('asignacion.cambio_fechas');
-
+            Route::post('viaje/guardar-mensaje-wa', [App\Http\Controllers\PlaneacionController::class, 'guardarMensajeWhatsApp'])->name('planeacion.guardar_mensaje_wa');
             Route::get(
                 '/viajes/editar/{idCotizacion}',
                 [App\Http\Controllers\PlaneacionController::class, 'editar']
             )->name('viajes.editar');
+            Route::post(
+                '/viajes/editar/{idCotizacion}',
+                [App\Http\Controllers\PlaneacionController::class, 'updatePlaneacion']
+            )->name('viajes.update');
 
         });
 

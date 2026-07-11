@@ -33,9 +33,20 @@ return new class extends Migration
             $table->string('odometro')->nullable();
             $table->string('comprobante')->nullable();
             
+            // Urea tracking (Optional)
+            $table->decimal('litros_urea', 10, 2)->nullable();
+            $table->decimal('costo_urea', 12, 2)->nullable();
+            $table->string('comprobante_urea')->nullable();
+            
             // Container load / Trip start tracking
             $table->dateTime('viaje_iniciado')->nullable();
             $table->text('fotos_carga')->nullable(); // JSON encoded list of paths
+
+            // Trip completion tracking (Optional)
+            $table->dateTime('viaje_finalizado')->nullable();
+            $table->text('fotos_fin')->nullable(); // JSON encoded list of paths
+            $table->decimal('latitud_fin', 10, 8)->nullable();
+            $table->decimal('longitud_fin', 11, 8)->nullable();
             
             $table->timestamps();
         });

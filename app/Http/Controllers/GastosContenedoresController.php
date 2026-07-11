@@ -56,7 +56,7 @@ class GastosContenedoresController extends Controller
         ->map(function ($g) {
             $vinculoAsignacion = $g->vinculos->firstWhere('tipo_vinculo', 'asignacion');
             $asignacion = $vinculoAsignacion ? $vinculoAsignacion->vinculable : null;
-            
+
             $contenedor = $asignacion ? optional($asignacion->Contenedor)->num_contenedor : '';
             $contenedorB = $asignacion ? self::getContenedorSecundario(optional(optional($asignacion->Contenedor)->Cotizacion)->referencia_full) : '';
 
@@ -164,7 +164,7 @@ class GastosContenedoresController extends Controller
                     if ($gasto) {
                         $contenedorVinculo = $gasto->vinculos()->where('tipo_vinculo', 'contenedor')->first();
                         $numContenedor = $contenedorVinculo ? $contenedorVinculo->observaciones : null;
-                        
+
                         $operadorVinculo = $gasto->vinculos()->where('tipo_vinculo', 'operador')->first();
                         $operadorNombre = $operadorVinculo ? str_replace('Operador: ', '', $operadorVinculo->observaciones) : null;
 
@@ -460,7 +460,7 @@ class GastosContenedoresController extends Controller
                          /*
                          $gastoViaje = GastosOperadores::where('id_cotizacion', $contenedor->id_cotizacion)->where('tipo', $descripcionGastos[$e]);
                          */
-                         $gastoViaje = \App\Models\GastoImputacion::join('gastos', 'gastos.id', '=', 'gasto_imputaciones.gasto_id')
+                      /*    $gastoViaje = \App\Models\GastoImputacion::join('gastos', 'gastos.id', '=', 'gasto_imputaciones.gasto_id')
                              ->join('gasto_vinculos', 'gasto_vinculos.gasto_id', '=', 'gastos.id')
                              ->whereNull('gastos.deleted_at')
                              ->where('gastos.estatus', '!=', 'cancelado')
@@ -534,10 +534,10 @@ class GastosContenedoresController extends Controller
                      }
                  }
 
-             }
+             } */
 
              //Validemos que el banco tenga saldo suficiente para pagar el total de los gastos segun la seleccion del usuario
-             $gastosBancos = collect($nuevosGastos)
+          /*    $gastosBancos = collect($nuevosGastos)
              ->groupBy('banco')
              ->map(fn ($items) => $items->sum('gasto'));
 
@@ -563,18 +563,18 @@ class GastosContenedoresController extends Controller
              }
 
              GastosOperadores::insert($datosGasto);
-             BancoDinero::insert($bancoDinero);
+             BancoDinero::insert($bancoDinero); */
 
              //Descontar la suma de los bancos correspondientes
-
+/*
              foreach ($gastosBancos as $idBanco => $totalGasto) {
                  Bancos::where('id', '=', $idBanco)->update(
                      ["saldo" => DB::raw("saldo - ". $totalGasto)
-                 ]
-                 );
-             }
+                 ] */
+              //   );
+            // }
 
-             DB::commit(); */
+            // DB::commit(); */
 
             DB::beginTransaction();
 

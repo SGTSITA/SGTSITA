@@ -37,6 +37,8 @@ class Asignaciones extends Model
         'otro7',
         'otro8',
         'otro9',
+        'password_temporal',
+        'mensaje_compartido',
     ];
 
     public function Camion()

@@ -1,4 +1,14 @@
 <div class="row text-start mt-3">
+    <!-- TOGGLE PLANEACION ELEMENTAL -->
+    <div class="col-12 mb-3">
+        <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" id="toggleElemental" name="elemental" value="1">
+            <label class="form-check-label font-weight-bold text-info" for="toggleElemental" style="cursor: pointer;">
+                ⚡ Planeación Elemental (Solo programar con fechas, operador, unidad y chasis)
+            </label>
+        </div>
+    </div>
+
     <h6 class="mb-0">Información de la unidad</h6>
     <p class="text-sm">Proporcione los datos de la unidad donde se realizará el envío.</p>
     <div class="col-12 col-md-4  mt-2 text-start">
@@ -21,7 +31,6 @@
     <div class="col-12 col-md-4  mt-2 text-start">
         <label>Chasis</label>
         <select class="form-control" name="cmbChasis" id="cmbChasis">
-
             @foreach ($equipos as $item)
                 @if ($item->tipo == 'Chasis / Plataforma')
                     <option value="{{ $item->id }}">{{ $item->id_equipo }}</option>
@@ -69,24 +78,11 @@
                         <option value="{{ $item->id }}">{{ $item->nombre }}</option>
                     @endforeach
                 </select>
-                <!--<div class="form-group w-70">
-                    <div class="input-group bg-gray-200 is-filled">
-                      <input class="form-control form-control-sm" value="argon-dashboard-vmsk392" type="text" disabled="" onfocus="focused(this)" onfocusout="defocused(this)">
-                      <span class="input-group-text bg-transparent" data-bs-toggle="tooltip" data-bs-placement="top" aria-label="Referral code expires in 24 hours" data-bs-original-title="Referral code expires in 24 hours">
-                        <i class="ni ni-key-25"></i>
-                      </span>
-                    </div>
-                  </div>
-                  <a href="javascript:;" class="btn btn-sm btn-outline-secondary ms-2 px-3">Copy</a>-->
             </div>
-            <!--<p class="text-xs mb-1">You cannot generate codes.</p>
-                <p class="text-xs mb-0">
-                  <a href="javascript:;">Contact us</a> to generate more referrals link.
-                </p>-->
         </div>
     </div>
     @cannot('Proveedor Autonomo 11am')
-        <div class="col-lg-7 col-12 mt-4 mt-lg-0">
+        <div class="col-lg-7 col-12 mt-4 mt-lg-0 elemental-hidden">
             <h6 class="mb-0">Información de pago</h6>
             <p class="text-sm">Proporcione la información de pago.</p>
             <div class="row">
@@ -141,21 +137,10 @@
                             <label class="fw-bold d-block mb-1 text-dark">Peso</label>
                             <span id="pesoContenedor" class="fs-5 text-success">--</span>
 
-                            <label class="fw-bold d-block mb-1 text-dark">Total</label>
-                            <span id="precioViaje" class="fs-5 text-success">--</span>
+                            <label class="fw-bold d-block mb-1 text-dark elemental-hidden">Total</label>
+                            <span id="precioViaje" class="fs-5 text-success elemental-hidden">--</span>
                         </div>
                     </div>
-
-                    <!-- Peso Contenedor -->
-
-
-                    {{-- <!-- Tamaño -->
-                          <div class="col-md-4 col-12 mb-3">
-                            <div class="border rounded-3 p-3 shadow-sm bg-light">
-                              <label class="fw-bold d-block mb-1 text-dark">Tamaño</label>
-                              <span id="tamanoContenedor" class="fs-5 text-success">--</span>
-                            </div>
-                          </div> --}}
 
                     <!--  Direccion entrega -->
                     <div class="col-md-9 col-12 mb-3">
@@ -171,7 +156,7 @@
                 </div>
             </div>
 
-            <div class="col-lg-7 col-12 mt-4 mt-lg-0">
+            <div class="col-lg-7 col-12 mt-4 mt-lg-0 elemental-hidden">
                 <div class="row">
 
                     <div class="row">
@@ -205,6 +190,13 @@
                     <input type="number" class="form-control form-control-sm text-end" id="litros_diesel"
                         step="0.001" min="0" name="gasto_litros_diesel" placeholder="0.000">
                 </div>
+                <div class="col-md-4 mt-3">
+                    <label class="form-label mb-1 small fw-bold">
+                        Litros urea
+                    </label>
+                    <input type="number" class="form-control form-control-sm text-end" id="litros_urea"
+                        step="0.001" min="0" name="gasto_litros_urea" placeholder="0.000">
+                </div>
 
             </div>
 
@@ -213,7 +205,7 @@
         </div> <!-- Cierra col-lg-7 col-12 mt-4 mt-lg-0 -->
     </div> <!-- Cierra row mt-4 (Cotización + Gastos, Peso contenedor, Dirección entrega) -->
 
-    <div class="row mt-4"> <!-- Nueva fila para los botones y gastos -->
+    <div class="row mt-4 elemental-hidden"> <!-- Nueva fila para los botones y gastos -->
         <div class="col-12 mt-4">
             <button type="button" class="btn btn-success btn-sm mt-2" id="btnAddGasto">
                 <i class="ni ni-fat-add"></i> Agregar gastos al viaje
@@ -221,4 +213,21 @@
             <div id="otrosGastosContainer" class="mt-2"></div>
         </div>
     </div>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.getElementById('toggleElemental');
+        if (toggle) {
+            toggle.addEventListener('change', function() {
+                const hiddenElements = document.querySelectorAll('.elemental-hidden');
+                hiddenElements.forEach(el => {
+                    if (toggle.checked) {
+                        el.classList.add('d-none');
+                    } else {
+                        el.classList.remove('d-none');
+                    }
+                });
+            });
+        }
+    });
+    </script>
 @endcannot

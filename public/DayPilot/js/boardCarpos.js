@@ -445,13 +445,32 @@ function getInfoViaje(startDate, endDate, numContenedor_, idContendor) {
             btnRastreo.onclick = () => {
                 abrirMapaEnNuevaPestana(numContenedor_, tipoS);
             };
-            btnEditarViaje.onclick = async () => {
-                if (!modoEdicion) {
-                    activarModoEdicion();
+            // Update WhatsApp share data for Operator
+            let divWhatsApp = document.getElementById("datosCompartidosWhatsAppDiv");
+            if (divWhatsApp) {
+                if (response.password_temporal) {
+                    divWhatsApp.style.display = "block";
+                    let pwdSpan = document.getElementById("passwordTemporalSpan");
+                    if (pwdSpan) pwdSpan.textContent = response.password_temporal;
+                    
+                    let btnReenviar = document.getElementById("btnReenviarWhatsApp");
+                    if (btnReenviar) {
+                        btnReenviar.onclick = () => {
+                            let url = "https://wa.me/?text=" + encodeURIComponent(response.wa_text);
+                            window.open(url, "_blank");
+                        };
+                    }
                 } else {
-                    await guardarCambios();
+                    divWhatsApp.style.display = "none";
                 }
-            };
+            }
+
+            const btnEv = document.getElementById("btnEditarViaje");
+            if (btnEv) {
+                btnEv.onclick = () => {
+                    window.location.href = `/planeaciones/viajes/editar/${response.cotizacion.id}`;
+                };
+            }
 
             let documentosRequeridos = [
                 "boleta_liberacion",
@@ -532,9 +551,12 @@ function activarModoEdicion() {
 
     modoEdicion = true;
 
-    btnEditarViaje.textContent = "Aplicar cambios";
-    btnEditarViaje.classList.remove("btn-primary");
-    btnEditarViaje.classList.add("btn-success");
+    const btnEv = document.getElementById("btnEditarViaje");
+    if (btnEv) {
+        btnEv.textContent = "Aplicar cambios";
+        btnEv.classList.remove("btn-primary");
+        btnEv.classList.add("btn-success");
+    }
 }
 async function guardarCambios() {
     let fechaInicio = document.getElementById("txtFechaInicio").value;
@@ -571,9 +593,12 @@ function volverModoLectura(inicio, fin) {
 
     modoEdicion = false;
 
-    btnEditarViaje.textContent = "Editar Fechas viaje";
-    btnEditarViaje.classList.remove("btn-success");
-    btnEditarViaje.classList.add("btn-primary");
+    const btnEv = document.getElementById("btnEditarViaje");
+    if (btnEv) {
+        btnEv.textContent = "Editar viaje";
+        btnEv.classList.remove("btn-success");
+        btnEv.classList.add("btn-primary");
+    }
 }
 function confirmarCambiosPlaneacion() {
     var _token = $('input[name="_token"]').val();
