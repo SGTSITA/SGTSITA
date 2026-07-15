@@ -801,3 +801,55 @@ if (radios.length > 0) {
         actualizarFolio(seleccionado);
     }
 }
+
+function loadOperatorFiles() {
+    let tbody = document.getElementById("tblOperatorFilesBody");
+    let msg = document.getElementById("noOperatorFilesMessage");
+    if (!tbody) return;
+
+    tbody.innerHTML = '<tr><td colspan="6" class="text-center">Cargando archivos del operador...</td></tr>';
+    msg.classList.add("d-none");
+
+    fetch(`/viajes/file-manager/get-operator-files/${numContenedor}`)
+        .then(response => response.json())
+        .then(data => {
+            tbody.innerHTML = '';
+            if (data.files && data.files.length > 0) {
+                data.files.forEach(file => {
+                    let tr = document.createElement("tr");
+                    tr.innerHTML = `
+                        <td>
+                            <a href="${file.url}" target="_blank">
+                                <img src="${file.url}" alt="${file.name}" class="rounded" style="width: 50px; height: 50px; object-fit: cover; border: 1px solid #ddd;" onerror="this.onerror=null; this.src='/assets/images/faces/default-avatar.png';">
+                            </a>
+                        </td>
+                        <td>${file.name}</td>
+                        <td>
+                            <span class="badge badge-light-info fw-bold">${file.tipo}</span>
+                        </td>
+                        <td>${file.size}</td>
+                        <td>${file.date}</td>
+                        <td class="text-end">
+                            <a href="${file.url}" target="_blank" class="btn btn-sm btn-light-primary btn-active-primary me-2">
+                                Ver
+                            </a>
+                            <a href="${file.url}" download="${file.name}" class="btn btn-sm btn-light-success btn-active-success">
+                                Descargar
+                            </a>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } else {
+                msg.classList.remove("d-none");
+            }
+        })
+        .catch(err => {
+            console.error("Error loading operator files:", err);
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center text-danger">Error al cargar los archivos.</td></tr>';
+        });
+}
+
+$(document).ready(() => {
+    loadOperatorFiles();
+});
