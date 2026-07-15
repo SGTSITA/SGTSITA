@@ -1007,11 +1007,60 @@ else{
         ]);
 
         $cotizaciones = Cotizaciones::findOrFail($id);
-        $cotizaciones->estatus = $request->get('estatus');
+        $newEstatus = $request->get('estatus');
+
+        // Jerarquía de estatus para validar flujo hacia adelante
+        $statusWeights = [
+            'Pendiente' => 1,
+            'Documentos Faltantes' => 1,
+            'Aprobada' => 2, // Cuando no está planeada
+            'Planeada' => 3, // Virtual: Aprobada con estatus_planeacion = 1
+            'Cancelada' => 4,
+        ];
+
+        // Determinar estatus actual
+        $currentEstatusName = $cotizaciones->estatus;
+        if ($currentEstatusName == 'Aprobada' && $cotizaciones->estatus_planeacion == 1) {
+            $currentEstatusName = 'Planeada';
+        }
+
+        // Si es planeada, no se puede alterar desde aquí
+        if ($currentEstatusName === 'Planeada') {
+            $msg = 'No se puede cambiar el estatus de una cotización ya planeada. Debe anular la planeación primero desde el tablero de planeación.';
+            if ($request->ajax()) {
+                return response()->json(['success' => false, 'message' => $msg], 422);
+            }
+            return redirect()->back()->with('error', $msg);
+        }
+
+        // Si es cancelada, permitimos pasarla a Aprobada, pero no a otras
+        if ($currentEstatusName === 'Cancelada' && !in_array($newEstatus, ['Cancelada', 'Aprobada'])) {
+            $msg = 'De una cotización cancelada solo se puede cambiar el estatus a Aprobada.';
+            if ($request->ajax()) {
+                return response()->json(['success' => false, 'message' => $msg], 422);
+            }
+            return redirect()->back()->with('error', $msg);
+        }
+
+        $currentWeight = $statusWeights[$currentEstatusName] ?? 0;
+        $newWeight = $statusWeights[$newEstatus] ?? 0;
+
+        // Validar flujo hacia adelante (excepto si pasa de Cancelada a Aprobada)
+        $isTransitionFromCancelledToApproved = ($currentEstatusName === 'Cancelada' && $newEstatus === 'Aprobada');
+
+        if ($newWeight < $currentWeight && !$isTransitionFromCancelledToApproved) {
+            $msg = "No se puede cambiar el estatus hacia atrás (de {$currentEstatusName} a {$newEstatus}).";
+            if ($request->ajax()) {
+                return response()->json(['success' => false, 'message' => $msg], 422);
+            }
+            return redirect()->back()->with('error', $msg);
+        }
+
+        $cotizaciones->estatus = $newEstatus;
         $cotizaciones->estatus_planeacion = null;
         $cotizaciones->save();
 
-        if (in_array($request->get('estatus'), ['Cancelada', 'Pendiente'])) {
+        if (in_array($newEstatus, ['Cancelada', 'Pendiente'])) {
             if ($cotizaciones->DocCotizacion && $cotizaciones->DocCotizacion->Asignaciones) {
                 $asignaciones = $cotizaciones->DocCotizacion->Asignaciones;
                 $asignaciones->fecha_inicio = null;
@@ -1020,15 +1069,9 @@ else{
             }
         }
 
-
-
         if ($request->ajax()) {
             return response()->json(['success' => true, 'message' => 'Estatus actualizado correctamente.']);
-
-
-
         }
-
 
         return redirect()->route('index.cotizaciones')
             ->with('success', 'Estatus actualizado correctamente.');

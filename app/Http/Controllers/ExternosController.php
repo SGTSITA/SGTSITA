@@ -794,8 +794,12 @@ if (!is_null($documentos->evidencia_descarga)) {
         }
 
         return ["data" => $documentList,"numContenedor" => $numContenedor,"documentos" => $doccotiPrincipal,'num_autorizaciones' => $num_autorizaciones];
+    }
 
-
+    public function getOperatorFiles($numContenedor, \App\Services\CotizacionesService $cotizacionesService)
+    {
+        $filesList = $cotizacionesService->getOperatorFilesByContenedor($numContenedor);
+        return response()->json(['files' => $filesList]);
     }
 
     public function filePropertiescoordenadas($id, $file, $title)

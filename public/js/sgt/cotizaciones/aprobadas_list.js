@@ -679,6 +679,30 @@ async function programarViaje() {
         return false;
     }
 
+    //validar fechas
+
+    let fechaInicioInput = document.getElementById("txtFechaInicio");
+    let fechaFinalInput = document.getElementById("txtFechaFinal");
+
+    if (fechaInicioInput && fechaFinalInput) {
+        function convertirFecha(fecha) {
+            let partes = fecha.split("/");
+            return new Date(partes[2], partes[1] - 1, partes[0]);
+        }
+
+        let fechaInicio = convertirFecha(fechaInicioInput.value);
+        let fechaFinal = convertirFecha(fechaFinalInput.value);
+
+        if (fechaFinal < fechaInicio) {
+            Swal.fire(
+                "Fechas inválidas",
+                "La fecha de entrega no puede ser anterior a la fecha de salida.",
+                "error",
+            );
+            return false;
+        }
+    }
+
     let passValidation = fieldsViaje.every((item) => {
         let field = document.getElementById(item.field);
         if (field) {
@@ -875,51 +899,66 @@ async function programarViaje() {
             ocultarLoading();
             if (data.TMensaje == "success") {
                 if (data.wa_text) {
-                    let modalEl = document.getElementById("modalWhatsAppPlaneacion");
+                    let modalEl = document.getElementById(
+                        "modalWhatsAppPlaneacion",
+                    );
                     if (modalEl) {
-                        document.getElementById("waTextarea").value = data.wa_text;
-                        
-                        let btnSend = document.getElementById("btnSendWhatsApp");
+                        document.getElementById("waTextarea").value =
+                            data.wa_text;
+
+                        let btnSend =
+                            document.getElementById("btnSendWhatsApp");
                         if (btnSend) {
-                            btnSend.onclick = function() {
-                                let editedText = document.getElementById("waTextarea").value;
-                                
+                            btnSend.onclick = function () {
+                                let editedText =
+                                    document.getElementById("waTextarea").value;
+
                                 // Save message to DB before redirecting/sharing
                                 $.ajax({
                                     url: "/planeaciones/viaje/guardar-mensaje-wa",
                                     type: "post",
                                     data: {
-                                        _token: document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                                        _token: document
+                                            .querySelector(
+                                                'meta[name="csrf-token"]',
+                                            )
+                                            .getAttribute("content"),
                                         id_asignacion: data.id_asignacion,
-                                        mensaje: editedText
+                                        mensaje: editedText,
                                     },
-                                    success: function() {
-                                        let url = "https://wa.me/?text=" + encodeURIComponent(editedText);
+                                    success: function () {
+                                        let url =
+                                            "https://wa.me/?text=" +
+                                            encodeURIComponent(editedText);
                                         window.open(url, "_blank");
                                     },
-                                    error: function() {
+                                    error: function () {
                                         // Open anyway if DB update fails to prevent blocking the user
-                                        let url = "https://wa.me/?text=" + encodeURIComponent(editedText);
+                                        let url =
+                                            "https://wa.me/?text=" +
+                                            encodeURIComponent(editedText);
                                         window.open(url, "_blank");
-                                    }
+                                    },
                                 });
                             };
                         }
-                        
+
                         let bootstrapModal = new bootstrap.Modal(modalEl);
                         bootstrapModal.show();
                     } else {
-                        Swal.fire(data.Titulo, data.Mensaje, data.TMensaje).then(
-                            function () {
-                                window.location.replace("/planeaciones");
-                            }
-                        );
+                        Swal.fire(
+                            data.Titulo,
+                            data.Mensaje,
+                            data.TMensaje,
+                        ).then(function () {
+                            window.location.replace("/planeaciones");
+                        });
                     }
                 } else {
                     Swal.fire(data.Titulo, data.Mensaje, data.TMensaje).then(
                         function () {
                             window.location.replace("/planeaciones");
-                        }
+                        },
                     );
                 }
             } else {

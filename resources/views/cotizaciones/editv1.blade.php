@@ -1274,6 +1274,38 @@
                                             </table>
                                         </div>
                                     </div>
+                                    
+                                    @if ($documentacion && $documentacion->num_contenedor != null)
+                                        <div class="card mt-5">
+                                            <div class="card-header collapsible cursor-pointer" data-bs-toggle="collapse" data-bs-target="#kt_card_operator_files" aria-expanded="true">
+                                                <h3 class="card-title">Otros documentos o evidencias de viaje (Subidos por Operador)</h3>
+                                            </div>
+                                            <div id="kt_card_operator_files" class="collapse show">
+                                                <div class="card-body">
+                                                    <div class="table-responsive">
+                                                        <table id="tblOperatorFiles" class="table align-middle table-row-dashed fs-6 gy-5 table-striped">
+                                                            <thead>
+                                                                <tr class="text-start text-gray-500 fw-bold fs-7 text-uppercase gs-0">
+                                                                    <th>Vista Previa</th>
+                                                                    <th>Nombre del archivo</th>
+                                                                    <th>Tipo de Evidencia</th>
+                                                                    <th>Tamaño</th>
+                                                                    <th>Fecha de subida</th>
+                                                                    <th class="text-end min-w-100px">Acciones</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody class="text-gray-600 fw-semibold" id="tblOperatorFilesBody">
+                                                                <!-- Dynamic Rows -->
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                    <div id="noOperatorFilesMessage" class="text-center text-muted p-4 d-none">
+                                                        No hay evidencias ni otros documentos registrados por el operador para este viaje.
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endif
                                 </div>
 
                                 <div class="tab-pane fade" id="nav-Gastos" role="tabpanel"
@@ -2036,8 +2068,64 @@
             loadSubclientes(initialClienteId, initialSubclienteId);
         });
 
+        function loadOperatorFiles() {
+            let tbody = document.getElementById("tblOperatorFilesBody");
+            let msg = document.getElementById("noOperatorFilesMessage");
+            if (!tbody) return;
+
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center">Cargando archivos del operador...</td></tr>';
+            if (msg) msg.classList.add("d-none");
+
+            let numCont = '{{ $documentacion ? $documentacion->num_contenedor : "" }}';
+            if (!numCont) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Sin contenedor registrado</td></tr>';
+                return;
+            }
+
+            fetch(`/viajes/file-manager/get-operator-files/${numCont}`)
+                .then(response => response.json())
+                .then(data => {
+                    tbody.innerHTML = '';
+                    if (data.files && data.files.length > 0) {
+                        data.files.forEach(file => {
+                            let tr = document.createElement("tr");
+                            tr.innerHTML = `
+                                <td>
+                                    <a href="${file.url}" target="_blank">
+                                        <img src="${file.url}" alt="${file.name}" class="rounded" style="width: 50px; height: 50px; object-fit: cover; border: 1px solid #ddd;" onerror="this.onerror=null; this.src='{{ asset('img/not-file.png') }}';">
+                                    </a>
+                                </td>
+                                <td>${file.name}</td>
+                                <td>
+                                    <span class="badge bg-info fw-bold text-white">${file.tipo}</span>
+                                </td>
+                                <td>${file.size}</td>
+                                <td>${file.date}</td>
+                                <td class="text-end">
+                                    <a href="${file.url}" target="_blank" class="btn btn-sm btn-outline-primary me-2">
+                                        Ver
+                                    </a>
+                                    <a href="${file.url}" download="${file.name}" class="btn btn-sm btn-outline-success">
+                                        Descargar
+                                    </a>
+                                </td>
+                            `;
+                            tbody.appendChild(tr);
+                        });
+                    } else {
+                        if (msg) msg.classList.remove("d-none");
+                        tbody.innerHTML = '';
+                    }
+                })
+                .catch(err => {
+                    console.error("Error loading operator files:", err);
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center text-danger">Error al cargar los archivos.</td></tr>';
+                });
+        }
+
         $(document).ready(() => {
             sobrePesoViaje();
+            loadOperatorFiles();
 
             formFields.forEach((item) => {
                 if (item.type == 'money') {
