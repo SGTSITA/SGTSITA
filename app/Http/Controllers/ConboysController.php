@@ -10,9 +10,20 @@ use App\Models\User;
 use App\Models\coordenadashistorial;
 use Illuminate\Support\Facades\Auth;
 use App\Services\AuditoriaCifrado;
+use Carbon\Carbon;
+use App\Services\CoordenadasService;
 
 class ConboysController extends Controller
 {
+
+private $coordenadasService;
+
+    public function __construct(CoordenadasService $coordenadasService)
+    {
+        $this->coordenadasService = $coordenadasService;
+    }
+
+
     //externos
     public function exindex()
     {
@@ -427,46 +438,128 @@ class ConboysController extends Controller
 
     public function guardarCoordenadasseguimintos(Request $request)
     {
-        $request->validate([
-             'latitud' => 'required|numeric',
-             'longitud' => 'required|numeric',
-             'ubicacionable_id' => 'required|integer',
-             'tipo' => 'required|string',
-         ]);
+         $request->validate([
+        'latitud' => 'required|numeric',
+        'longitud' => 'required|numeric',
+        'ubicacionable_id' => 'required|integer',
+        'tipo' => 'required|string',
+    ]);
+
+    $latitud = (float) $request->latitud;
+    $longitud = (float) $request->longitud;
+
+    $ubicacionableType = $request->tipoRastreo;
+    $ubicacionableId = (int) $request->ubicacionable_id;
+    $tipo = $request->tipo;
+    $idConvoy = $request->idProceso;
+    $valorSolicitado = $request->valorSolicitado;
+    $idCompaniaGps = $request->new_id ?? null;
 
 
-        $responseEncriptado = isset($request->data)
-    ? AuditoriaCifrado::encrypt($request->data)
-    : null;
+    $metrosMinimosCambio = 10;
+    $minutosMaximosSinGuardar = 10;
 
-        $coordenada = CoordenadasHistorial::create([
-            'latitud' => $request->latitud,
-            'longitud' => $request->longitud,
-            'registrado_en' => now(),
-            'user_id' => auth()->id(),
-            'ubicacionable_id' => $request->ubicacionable_id,
-            'ubicacionable_type' => $request-> tipoRastreo,
-            'tipo' => $request->tipo,
-            'id_convoy' => $request->idProceso,
+    $ultimoRegistro = CoordenadasHistorial::query()
+        ->where('ubicacionable_id', $ubicacionableId)
+        ->where('ubicacionable_type', $ubicacionableType)
+        ->where('tipo', $tipo)
+        ->when($idConvoy, function ($q) use ($idConvoy) {
+            $q->where('id_convoy', $idConvoy);
+        })
+        ->when($valorSolicitado, function ($q) use ($valorSolicitado) {
+            $q->where('valorSolicitado', $valorSolicitado);
+        })
+        ->when($idCompaniaGps, function ($q) use ($idCompaniaGps) {
+            $q->where('id_compania_gps', $idCompaniaGps);
+        })
+        ->latest('registrado_en')
+        ->first();
 
-              'status_api' =>  $request->status_api ?? 0,
-    'id_compania_gps' =>  $request->new_id ?? null,
-    'tiempo_respuesta_ms' =>  $request->tiempo_respuesta_ms ?? null,
-    'valorSolicitado' =>  $request->valorSolicitado ?? null,
+    if ($ultimoRegistro) {
+        $distanciaMetros = $this->calcularDistanciaMetros(
+            (float) $ultimoRegistro->latitud,
+            (float) $ultimoRegistro->longitud,
+            $latitud,
+            $longitud
+        );
 
-    'response_json' =>   $responseEncriptado,
+        $mismoStatus = (string) ($ultimoRegistro->status_api ?? 0) === (string) ($request->status_api ?? 0);
 
+        $mismoError = (string) ($ultimoRegistro->error_message ?? '') === (string) ($request->messageAp ?? '');
 
-    'error_message' => $request->messageAp ?? null,
-        ]);
+        $minutosDesdeUltimo = $ultimoRegistro->registrado_en
+            ? now()->diffInMinutes($ultimoRegistro->registrado_en)
+            : $minutosMaximosSinGuardar + 1;
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Coordenada registrada correctamente.',
-            'data' => $coordenada
-        ]);
+        $esDuplicado =
+            $distanciaMetros < $metrosMinimosCambio &&
+            $mismoStatus &&
+            $mismoError &&
+            $minutosDesdeUltimo < $minutosMaximosSinGuardar;
+
+        if ($esDuplicado) {
+            return response()->json([
+                'success' => true,
+                'skipped' => true,
+                'message' => 'Coordenada duplicada, no se guardó nuevamente.',
+                'distancia_metros' => round($distanciaMetros, 2),
+                'ultimo_registro_id' => $ultimoRegistro->id,
+                'data' => $ultimoRegistro,
+            ]);
+        }
+    }
+
+    $responseEncriptado = isset($request->data)
+        ? AuditoriaCifrado::encrypt($request->data)
+        : null;
+
+    $coordenada = CoordenadasHistorial::create([
+        'latitud' => $latitud,
+        'longitud' => $longitud,
+        'registrado_en' => now(),
+        'user_id' => auth()->id(),
+
+        'ubicacionable_id' => $ubicacionableId,
+        'ubicacionable_type' => $ubicacionableType,
+        'tipo' => $tipo,
+        'id_convoy' => $idConvoy,
+
+        'status_api' => $request->status_api ?? 0,
+        'id_compania_gps' => $idCompaniaGps,
+        'tiempo_respuesta_ms' => $request->tiempo_respuesta_ms ?? null,
+        'valorSolicitado' => $valorSolicitado,
+
+        'response_json' => $responseEncriptado,
+        'error_message' => $request->messageAp ?? null,
+    ]);
+
+    return response()->json([
+        'success' => true,
+        'skipped' => false,
+        'message' => 'Coordenada registrada correctamente.',
+        'data' => $coordenada,
+    ]);
 
     }
+
+    private function calcularDistanciaMetros(float $lat1, float $lon1, float $lat2, float $lon2): float
+{
+    $radioTierra = 6371000; // metros
+
+    $lat1Rad = deg2rad($lat1);
+    $lat2Rad = deg2rad($lat2);
+
+    $deltaLat = deg2rad($lat2 - $lat1);
+    $deltaLon = deg2rad($lon2 - $lon1);
+
+    $a = sin($deltaLat / 2) * sin($deltaLat / 2) +
+        cos($lat1Rad) * cos($lat2Rad) *
+        sin($deltaLon / 2) * sin($deltaLon / 2);
+
+    $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+
+    return $radioTierra * $c;
+}
     public function rastreohistorialUbicaciones(Request $request)
     {
         $idSearch = $request->query('idSearch');
@@ -686,80 +779,113 @@ class ConboysController extends Controller
 
 
         $idCliente = 0;
-        $cliendID = auth()->user()->id_cliente;
-        if ($cliendID !== 0) {
+         $isAdmin = auth()->user()->es_admin;
+        $hoy = Carbon::now()->toDateString();
+         $cliendID = auth()->user()->id_cliente;
+
+        $idEmpresa = auth()->user()->id_empresa;
+
+
+        if($cliendID !=0){
             $idCliente = $cliendID;
         }
 
 
-        $idEmpresa = Auth::User()->id_empresa;
-        $asignaciones = DB::table('asignaciones')
-        ->join('docum_cotizacion', 'docum_cotizacion.id', '=', 'asignaciones.id_contenedor')
-        ->join('equipos', 'equipos.id', '=', 'asignaciones.id_camion')
-        ->join('gps_company', 'gps_company.id', '=', 'equipos.gps_company_id')
-        ->leftjoin('equipos as eq_chasis', 'eq_chasis.id', '=', 'asignaciones.id_chasis')
-        ->select(
-            'docum_cotizacion.id as id_contenedor',
-            'asignaciones.id',
-            'asignaciones.id_camion',
-            'docum_cotizacion.num_contenedor',
-            'asignaciones.fecha_inicio',
-            'asignaciones.fecha_fin',
-            'equipos.imei',
-            'gps_company.url_conexion as tipoGps',
-            'eq_chasis.imei as imei_chasis',
-            DB::raw("CASE WHEN asignaciones.id_proveedor IS NULL THEN asignaciones.id_operador ELSE asignaciones.id_proveedor END as beneficiario_id"),
-            DB::raw("CASE WHEN asignaciones.id_proveedor IS NULL THEN 'Propio' ELSE 'Subcontratado' END as tipo_contrato")
-        );
 
-        $beneficiarios = DB::table(function ($query) {
-            $query->select('id', 'nombre', 'telefono', DB::raw("'Propio' as tipo_contrato"), 'id_empresa')
-                ->from('operadores')
-                ->union(
-                    DB::table('proveedores')
-                        ->select('id', 'nombre', 'telefono', DB::raw("'Subcontratado' as tipo_contrato"), 'id_empresa')
-                );
-        }, 'beneficiarios');
+           $filters = [
+            'isAdmin' => $isAdmin,
+           'id_empresa' => $idEmpresa,
+            'contenedor' => $request->query('contenedor', null),
+            'contenedores' => $request->query('contenedores', null),
+            'idCliente' => $idCliente,
+            'id_convoys' => $request->query('ids', null) ? explode(',', $request->query('ids')) : null,
+        ];
+
+        $conboys = $this->coordenadasService->getConboys($filters);
+
+          $conboysdetalleAll = $this->coordenadasService->getConboysDetalle($filters);
+
+          $mapidscontenendor = $conboysdetalleAll->pluck('id_contenedor')->unique()->toArray();
 
 
-        $datosAll = DB::table('cotizaciones')
-            ->select(
-                'cotizaciones.id as id_cotizacion',
-                'asig.id as id_asignacion',
-                'coordenadas.id as id_coordenada',
-                'clients.nombre as cliente',
-                'cotizaciones.origen',
-                'cotizaciones.destino',
-                'asig.num_contenedor as contenedor',
-                'cotizaciones.estatus',
-                'asig.imei',
-                'asig.id_contenedor',
-                'asig.tipo_contrato',
-                'asig.fecha_inicio',
-                'asig.fecha_fin',
-                'asig.tipoGps',
-                'asig.imei_chasis',
-                'cotizaciones.id_empresa'
-            )
-        ->join('clients', 'cotizaciones.id_cliente', '=', 'clients.id')
-   ->joinSub($asignaciones, 'asig', function ($join) {
-       $join->on('asig.id_contenedor', '=', 'cotizaciones.id');
-   })
-        ->LeftJoin('coordenadas', 'coordenadas.id_asignacion', '=', 'asig.id')
-        ->joinSub($beneficiarios, 'beneficiarios', function ($join) {
-            $join->on('asig.beneficiario_id', '=', 'beneficiarios.id')
-                 ->on('asig.tipo_contrato', '=', 'beneficiarios.tipo_contrato');
-        })
-        ->whereNotNull('asig.imei')
-        ->when($idCliente !== 0, function ($query) use ($idCliente) {
-            return $query->where('cotizaciones.id_cliente', $idCliente);
-        })
-        ->where('cotizaciones.estatus', '=', 'Aprobada')
-        ->get();
+
+
+
+
+        $datosAll = $this->coordenadasService->getContenedoresBase([
+            'id_contenedores' => $mapidscontenendor,'isAdmin' => $isAdmin
+        ])->get();
+
+        // dd($datosAll);
+
+//         $idEmpresa = Auth::User()->id_empresa;
+//         $asignaciones = DB::table('asignaciones')
+//         ->join('docum_cotizacion', 'docum_cotizacion.id', '=', 'asignaciones.id_contenedor')
+//         ->join('equipos', 'equipos.id', '=', 'asignaciones.id_camion')
+//         ->join('gps_company', 'gps_company.id', '=', 'equipos.gps_company_id')
+//         ->leftjoin('equipos as eq_chasis', 'eq_chasis.id', '=', 'asignaciones.id_chasis')
+//         ->select(
+//             'docum_cotizacion.id as id_contenedor',
+//             'asignaciones.id',
+//             'asignaciones.id_camion',
+//             'docum_cotizacion.num_contenedor',
+//             'asignaciones.fecha_inicio',
+//             'asignaciones.fecha_fin',
+//             'equipos.imei',
+//             'gps_company.url_conexion as tipoGps',
+//             'eq_chasis.imei as imei_chasis',
+//             DB::raw("CASE WHEN asignaciones.id_proveedor IS NULL THEN asignaciones.id_operador ELSE asignaciones.id_proveedor END as beneficiario_id"),
+//             DB::raw("CASE WHEN asignaciones.id_proveedor IS NULL THEN 'Propio' ELSE 'Subcontratado' END as tipo_contrato")
+//         );
+
+//         $beneficiarios = DB::table(function ($query) {
+//             $query->select('id', 'nombre', 'telefono', DB::raw("'Propio' as tipo_contrato"), 'id_empresa')
+//                 ->from('operadores')
+//                 ->union(
+//                     DB::table('proveedores')
+//                         ->select('id', 'nombre', 'telefono', DB::raw("'Subcontratado' as tipo_contrato"), 'id_empresa')
+//                 );
+//         }, 'beneficiarios');
+
+
+//         $datosAll = DB::table('cotizaciones')
+//             ->select(
+//                 'cotizaciones.id as id_cotizacion',
+//                 'asig.id as id_asignacion',
+//                 'coordenadas.id as id_coordenada',
+//                 'clients.nombre as cliente',
+//                 'cotizaciones.origen',
+//                 'cotizaciones.destino',
+//                 'asig.num_contenedor as contenedor',
+//                 'cotizaciones.estatus',
+//                 'asig.imei',
+//                 'asig.id_contenedor',
+//                 'asig.tipo_contrato',
+//                 'asig.fecha_inicio',
+//                 'asig.fecha_fin',
+//                 'asig.tipoGps',
+//                 'asig.imei_chasis',
+//                 'cotizaciones.id_empresa'
+//             )
+//         ->join('clients', 'cotizaciones.id_cliente', '=', 'clients.id')
+//    ->joinSub($asignaciones, 'asig', function ($join) {
+//        $join->on('asig.id_contenedor', '=', 'cotizaciones.id');
+//    })
+//         ->LeftJoin('coordenadas', 'coordenadas.id_asignacion', '=', 'asig.id')
+//         ->joinSub($beneficiarios, 'beneficiarios', function ($join) {
+//             $join->on('asig.beneficiario_id', '=', 'beneficiarios.id')
+//                  ->on('asig.tipo_contrato', '=', 'beneficiarios.tipo_contrato');
+//         })
+//         ->whereNotNull('asig.imei')
+//         ->when($idCliente !== 0, function ($query) use ($idCliente) {
+//             return $query->where('cotizaciones.id_cliente', $idCliente);
+//         })
+//         ->where('cotizaciones.estatus', '=', 'Aprobada')
+//         ->get();
 
         $ids = explode(',', $request->input('ids'));
 
-        $conboys = DB::table('conboys')
+       /*  $conboys = DB::table('conboys')
         ->join('conboys_contenedores', 'conboys.id', '=', 'conboys_contenedores.conboy_id')
         ->join('docum_cotizacion', 'docum_cotizacion.id', '=', 'conboys_contenedores.id_contenedor')
         ->join('cotizaciones', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
@@ -778,8 +904,8 @@ class ConboysController extends Controller
             'conboys.geocerca_radio',
         )->wherein('conboys.id', $ids)
         ->distinct()
-        ->get();
-
+        ->get(); */
+/*
         $conboysdetalleAll =  DB::table('conboys_contenedores')
             ->join('conboys', 'conboys.id', '=', 'conboys_contenedores.conboy_id')
             ->join('docum_cotizacion', 'docum_cotizacion.id', '=', 'conboys_contenedores.id_contenedor')
@@ -801,7 +927,7 @@ class ConboysController extends Controller
             })
             ->where('conboys.estatus', '=', 'activo')
             ->wherein('conboys.id', $ids)
-            ->get();
+            ->get(); */
 
         return view('coordenadas.mapas_rastreoAll', compact('conboys', 'conboysdetalleAll', 'datosAll'));
     }

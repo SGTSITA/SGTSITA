@@ -1,5 +1,8 @@
 let operadores = [];
 let unidades = [];
+let distanciaEquipos = 0;
+let equipoActivos = 0;
+let cargaIni = true;
 
 const formFieldsMep = [
     {
@@ -171,11 +174,92 @@ const normalizarFecha = (valueFecha) => {
     return valueFecha.substring(0, 10);
 };
 
+document.getElementById("btnMapaUnidad").addEventListener("click", function () {
+    // ocultar formulario
+    document.getElementById("formPlaneacion").classList.add("d-none");
+
+    // mostrar mapa
+    document.getElementById("seccionMapa").classList.remove("d-none");
+
+    // asegurar modal abierto
+    $("#viajeModal").modal("show");
+
+    // inicializar mapa
+    setTimeout(() => {
+        googleMapsReady();
+    }, 200);
+});
+
+document
+    .getElementById("btnRegresarPlaneacion")
+    .addEventListener("click", function () {
+        // ocultar mapa
+        document.getElementById("seccionMapa").classList.add("d-none");
+
+        // mostrar formulario
+        document.getElementById("formPlaneacion").classList.remove("d-none");
+    });
 const btnAsignaOperador = document.querySelector("#btnAsignaOperador");
 const btnPlanearViaje = document.querySelector("#btnPlanearViaje");
 
 function asignarOperador2(planear = 0) {
     const formData = {};
+    distanciaEquipos = 0;
+    actualizarDistanciaEquipos();
+
+    if (distanciaEquipos > 10 && planear == 1) {
+        Swal.fire(
+            `Planeacion viajes`,
+            `Los equipos que intenta planear no estar cercanos , y no se pueden planear.`,
+            "warning",
+        );
+        return false;
+    }
+
+    let equiposInvalidos = [];
+
+    Object.keys(mapInputs).forEach((key) => {
+        const config = mapInputs[key];
+
+        if (!esEquipoValido(config)) {
+            const input = document.getElementById(config.input);
+            const placas = document.getElementById(config.placas);
+
+            equiposInvalidos.push({
+                tipo: key,
+                unidad: input?.value || "Sin unidad",
+                placas: placas?.value || "Sin placas",
+            });
+        }
+    });
+
+    if (equiposInvalidos.length > 0 && planear == 1) {
+        let html = equiposInvalidos
+            .map((e) => {
+                return `
+            <div style="margin-bottom:8px;">
+                Tipo:  <b>${e.tipo}</b><br>
+                Unidad: ${e.unidad}<br>
+                Placas: ${e.placas}
+            </div>
+        `;
+            })
+            .join("");
+
+        Swal.fire({
+            icon: "error",
+            title: "No se puede Planear,Equipos sin conexión",
+            html: `
+            <div style="text-align:left">
+                ${html}
+                <hr>
+                Verifica GPS, IMEI y coordenadas.
+            </div>
+        `,
+        });
+
+        return false;
+    }
 
     //formFieldsMep
     let passValidation = formFieldsMep.every((item) => {
@@ -250,6 +334,35 @@ function asignarOperador2(planear = 0) {
 
         return true;
     });
+
+    let fecha_inicio = formData["txtFechaInicio"]
+        ? new Date(formData["txtFechaInicio"])
+        : null;
+    let fecha_final = formData["txtFechaFinal"]
+        ? new Date(formData["txtFechaFinal"])
+        : null;
+
+    if (fecha_inicio && fecha_final && fecha_inicio > fecha_final) {
+        Swal.fire(
+            "Fechas incorrectas",
+            "La fecha de inicio no puede ser mayor a la fecha final. Por favor verifique las fechas proporcionadas.",
+            "warning",
+        );
+        return false;
+    }
+
+    let ChasisA = formData["txtNumChasisA"] ? formData["txtNumChasisA"] : null;
+    let ChasisB = formData["txtNumChasisB"] ? formData["txtNumChasisB"] : null;
+
+    if (ChasisA && ChasisB && ChasisA === ChasisB) {
+        Swal.fire(
+            "Chasis duplicados",
+            "No se pueden asignar dos chasis con el mismo número.",
+            "warning",
+        );
+        return false;
+    }
+
     formData["planear"] = planear;
 
     if (!passValidation) return passValidation;
@@ -340,7 +453,13 @@ const mapInputs = {
         serie: "txtSerie",
         imei: "txtImei",
         gps: "selectGPS",
+
+        // NUEVO
+        statusGps: "gpsStatusUnidad",
+        latitud: null,
+        longitud: null,
     },
+
     ChasisA: {
         input: "txtNumChasisA",
         box: "sugerenciasChasisA",
@@ -349,7 +468,13 @@ const mapInputs = {
         serie: null,
         imei: "txtImeiChasisA",
         gps: "selectChasisAGPS",
+
+        // NUEVO
+        statusGps: "gpsStatusChasisA",
+        latitud: null,
+        longitud: null,
     },
+
     ChasisB: {
         input: "txtNumChasisB",
         box: "sugerenciasChasisB",
@@ -358,9 +483,38 @@ const mapInputs = {
         serie: null,
         imei: "txtImeiChasisB",
         gps: "selectChasisBGPS",
+
+        // NUEVO
+        statusGps: "gpsStatusChasisB",
+        latitud: null,
+        longitud: null,
     },
 };
 
+function coordenadasValidas(lat, lng) {
+    lat = parseFloat(lat);
+    lng = parseFloat(lng);
+
+    return !isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0;
+}
+function esEquipoValido(config) {
+    const input = document.getElementById(config.input);
+    const imei = document.getElementById(config.imei);
+    const gps = document.getElementById(config.gps);
+
+    const lat = config.latitud;
+    const lng = config.longitud;
+
+    const tieneInput = input && input.value.trim() !== "";
+    const tieneImei = imei && imei.value.trim() !== "";
+    const tieneGps = gps && gps.value !== "";
+    if (tieneInput && tieneImei && tieneGps) {
+        const coordsOk = coordenadasValidas(lat, lng);
+
+        return coordsOk;
+    }
+    return true;
+}
 function buscarUnidad(numUnidad, sTipo) {
     let unidad = unidades.find((u) => {
         return u.id_equipo === numUnidad.toUpperCase() ? u : false;
@@ -429,6 +583,7 @@ function getCatalogoOperadorUnidad() {
         success: (response) => {
             operadores = response.operadores;
             unidades = response.unidades;
+            populateUnidadesSelects();
         },
         error: () => {
             console.error(
@@ -495,105 +650,368 @@ inputOperador.addEventListener("blur", () => {
         boxOperador.style.display = "none";
     }, 200);
 });
+function actualizarBotonMapa() {
+    const cardmapa = document.getElementById("cardGpsMapa");
 
-//sugerencias unidad/chasis A y chasis B
+    if (!cardmapa) return;
+
+    const tieneCoords = [
+        mapInputs.Unidad,
+        mapInputs.ChasisA,
+        mapInputs.ChasisB,
+    ].some((item) => {
+        return (
+            item.latitud &&
+            item.longitud &&
+            parseFloat(item.latitud) !== 0 &&
+            parseFloat(item.longitud) !== 0
+        );
+    });
+
+    if (tieneCoords) {
+        cardmapa.classList.remove("d-none");
+
+        //   document.getElementById("cardGpsMapa").classList.remove("d-none");
+    } else {
+        cardmapa.classList.add("d-none");
+        //  document.getElementById("cardGpsMapa").classList.add("d-none");
+    }
+}
+async function validarConexionGPS(tipoKey, imei, gpsCompanyId, equipos = []) {
+    const config = mapInputs[tipoKey];
+    const btnActualizar = document.getElementById(`btnActualizarGPS${tipoKey}`);
+
+    if (!imei || !gpsCompanyId) {
+        if (btnActualizar) btnActualizar.style.display = "none";
+        actualizarEstadoGPS(config.statusGps, "secondary", "Sin GPS");
+
+        config.latitud = null;
+        config.longitud = null;
+
+        return false;
+    }
+    if (btnActualizar) btnActualizar.style.display = "inline-block";
+    actualizarBotonMapa();
+    actualizarEstadoGPS(config.statusGps, "warning", "Conectando GPS...");
+
+    try {
+        const response = await fetch("/mep/viajes/ubicaciones", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRF-TOKEN": document
+                    .querySelector('meta[name="csrf-token"]')
+                    .getAttribute("content"),
+            },
+            body: JSON.stringify({
+                equipos: equipos,
+            }),
+        });
+
+        const data = await response.json();
+        const ubi = data[0]?.ubicacion ?? null;
+
+        if (ubi.lat && ubi.lng) {
+            actualizarEstadoGPS(config.statusGps, "success", "Equipo en línea");
+
+            config.latitud = parseFloat(ubi.lat);
+            config.longitud = parseFloat(ubi.lng);
+            actualizarBotonMapa();
+            actualizarDistanciaEquipos();
+            return true;
+        } else {
+            actualizarEstadoGPS(config.statusGps, "danger", "GPS sin señal");
+
+            config.latitud = null;
+            config.longitud = null;
+
+            return false;
+        }
+    } catch (e) {
+        actualizarEstadoGPS(config.statusGps, "danger", "Error conexión GPS");
+
+        config.latitud = null;
+        config.longitud = null;
+
+        console.error(e);
+
+        return false;
+    }
+}
+
+function calcularDistanciaKm(lat1, lon1, lat2, lon2) {
+    const R = 6371;
+
+    const dLat = ((lat2 - lat1) * Math.PI) / 180;
+    const dLon = ((lon2 - lon1) * Math.PI) / 180;
+
+    const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos((lat1 * Math.PI) / 180) *
+            Math.cos((lat2 * Math.PI) / 180) *
+            Math.sin(dLon / 2) *
+            Math.sin(dLon / 2);
+
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return R * c;
+}
+
+function guardarDistancia(distancia) {
+    if (distancia > distanciaEquipos) {
+        distanciaEquipos = distancia;
+    }
+}
+
+function actualizarDistanciaEquipos() {
+    const unidad = mapInputs.Unidad;
+
+    const chasisA = mapInputs.ChasisA;
+
+    const chasisB = mapInputs.ChasisB;
+
+    const lbl = document.getElementById("lblDistanciaEquipos");
+
+    if (!lbl) return;
+
+    let html = "";
+
+    function renderDistancia(nombreA, itemA, nombreB, itemB) {
+        if (
+            !itemA.latitud ||
+            !itemA.longitud ||
+            !itemB.latitud ||
+            !itemB.longitud
+        ) {
+            return "";
+        }
+
+        const distancia = calcularDistanciaKm(
+            parseFloat(itemA.latitud),
+            parseFloat(itemA.longitud),
+            parseFloat(itemB.latitud),
+            parseFloat(itemB.longitud),
+        );
+
+        guardarDistancia(distancia);
+
+        return `
+            <div class="d-flex align-items-center justify-content-between mb-1">
+
+                <span class="small text-dark">
+                    ${nombreA} ↔ ${nombreB}
+                </span>
+
+                <span class="
+                    badge rounded-pill
+                    ${distancia > 10 ? "bg-danger" : "bg-success"}
+                ">
+                    ${distancia.toFixed(2)} KM
+                </span>
+
+            </div>
+        `;
+    }
+
+    html += renderDistancia("Unidad", unidad, "Chasis A", chasisA);
+
+    if (chasisB.latitud && chasisB.longitud) {
+        html += renderDistancia("Unidad", unidad, "Chasis B", chasisB);
+
+        html += renderDistancia("Chasis A", chasisA, "Chasis B", chasisB);
+    }
+
+    if (!html) {
+        lbl.innerHTML = `
+            <span class="text-muted small">
+                Sin datos GPS
+            </span>
+        `;
+
+        return;
+    }
+
+    lbl.innerHTML = html;
+}
+function populateUnidadesSelects() {
+    const selectUnidad = document.getElementById("txtNumUnidad");
+    const selectChasisA = document.getElementById("txtNumChasisA");
+    const selectChasisB = document.getElementById("txtNumChasisB");
+
+    if (selectUnidad) {
+        const valActual = selectUnidad.value;
+        const mepUnidadActual = selectUnidad.dataset.mepUnidad;
+        selectUnidad.innerHTML = '<option value="" disabled selected>Selecciona Unidad...</option>';
+        unidades.filter(u => u.tipo === "Tractos / Camiones").forEach(u => {
+            const opt = document.createElement("option");
+            opt.value = u.id_equipo;
+            opt.textContent = `${u.id_equipo} ${u.placas ? '('+u.placas+')' : ''}`;
+            opt.dataset.unitId = u.id;
+            selectUnidad.appendChild(opt);
+        });
+        if (valActual) {
+            selectUnidad.value = valActual;
+        }
+        if (mepUnidadActual) {
+            selectUnidad.dataset.mepUnidad = mepUnidadActual;
+        }
+    }
+
+    if (selectChasisA) {
+        const valActual = selectChasisA.value;
+        const mepUnidadActual = selectChasisA.dataset.mepUnidad;
+        selectChasisA.innerHTML = '<option value="" disabled selected>Selecciona Chasis A...</option>';
+        unidades.filter(u => u.tipo === "Chasis / Plataforma").forEach(u => {
+            const opt = document.createElement("option");
+            opt.value = u.id_equipo;
+            opt.textContent = `${u.id_equipo} ${u.placas ? '('+u.placas+')' : ''}`;
+            opt.dataset.unitId = u.id;
+            selectChasisA.appendChild(opt);
+        });
+        if (valActual) {
+            selectChasisA.value = valActual;
+        }
+        if (mepUnidadActual) {
+            selectChasisA.dataset.mepUnidad = mepUnidadActual;
+        }
+    }
+
+    if (selectChasisB) {
+        const valActual = selectChasisB.value;
+        const mepUnidadActual = selectChasisB.dataset.mepUnidad;
+        selectChasisB.innerHTML = '<option value="" disabled selected>Selecciona Chasis B...</option>';
+        unidades.filter(u => u.tipo === "Chasis / Plataforma").forEach(u => {
+            const opt = document.createElement("option");
+            opt.value = u.id_equipo;
+            opt.textContent = `${u.id_equipo} ${u.placas ? '('+u.placas+')' : ''}`;
+            opt.dataset.unitId = u.id;
+            selectChasisB.appendChild(opt);
+        });
+        if (valActual) {
+            selectChasisB.value = valActual;
+        }
+        if (mepUnidadActual) {
+            selectChasisB.dataset.mepUnidad = mepUnidadActual;
+        }
+    }
+
+    // Inicializar o actualizar Select2
+    if (typeof jQuery !== 'undefined' && typeof jQuery.fn.select2 !== 'undefined') {
+        const select2Options = {
+            width: '100%',
+            dropdownParent: jQuery('#viajeModal')
+        };
+        if (selectUnidad) jQuery(selectUnidad).select2(select2Options);
+        if (selectChasisA) jQuery(selectChasisA).select2(select2Options);
+        if (selectChasisB) jQuery(selectChasisB).select2(select2Options);
+    }
+}
+
 function initAutocompleteUnidad(tipoKey) {
     const config = mapInputs[tipoKey];
+    const select = document.getElementById(config.input);
 
-    const input = document.getElementById(config.input);
-    const box = document.getElementById(config.box);
+    if (!select) return;
 
-    input.addEventListener("input", function () {
-        const valor = this.value.toLowerCase().trim();
+    jQuery(select).on("change", async function () {
+        const val = this.value;
+        const selectedOpt = this.options[this.selectedIndex];
+        const unitId = selectedOpt ? selectedOpt.dataset.unitId : null;
 
-        this.dataset.mepUnidad = 0;
+        config.latitud = null;
+        config.longitud = null;
+        actualizarEstadoGPS(config.statusGps, "secondary", "Sin validar");
 
         if (config.placas) document.getElementById(config.placas).value = "";
         if (config.serie) document.getElementById(config.serie).value = "";
         if (config.imei) document.getElementById(config.imei).value = "";
         if (config.gps) document.getElementById(config.gps).selectedIndex = 0;
 
-        if (!valor) {
-            box.style.display = "none";
+        if (!val || !unitId) {
+            this.dataset.mepUnidad = 0;
+            const btnActualizar = document.getElementById(`btnActualizarGPS${tipoKey}`);
+            if (btnActualizar) btnActualizar.style.display = "none";
             return;
         }
 
-        const resultados = unidades.filter(
-            (u) =>
-                u.tipo === config.tipoFiltro &&
-                (u.id_equipo || "").toLowerCase().includes(valor),
-        );
+        const u = unidades.find(unit => String(unit.id) === String(unitId));
+        if (u) {
+            this.dataset.mepUnidad = u.id;
 
-        if (resultados.length === 0) {
-            box.style.display = "none";
-            return;
-        }
+            if (config.placas)
+                document.getElementById(config.placas).value = u.placas ?? "";
 
-        box.innerHTML = "";
+            if (config.serie)
+                document.getElementById(config.serie).value = u.num_serie ?? "";
 
-        resultados.forEach((u) => {
-            const item = document.createElement("div");
+            if (config.imei)
+                document.getElementById(config.imei).value = u.imei ?? "";
 
-            item.innerHTML = `
-                <div style="font-size:13px;">
-                    <strong>${u.id_equipo}</strong><br>
-                    <small>${u.placas || "Sin placas"}</small>
-                </div>
-            `;
-
-            item.style.padding = "8px";
-            item.style.cursor = "pointer";
-
-            item.onmouseenter = () => (item.style.background = "#f1f1f1");
-            item.onmouseleave = () => (item.style.background = "white");
-
-            item.onclick = () => {
-                input.value = u.id_equipo;
-                input.dataset.mepUnidad = u.id;
-
-                if (config.placas)
-                    document.getElementById(config.placas).value =
-                        u.placas ?? "";
-                if (config.serie)
-                    document.getElementById(config.serie).value =
-                        u.num_serie ?? "";
-                if (config.imei)
-                    document.getElementById(config.imei).value = u.imei ?? "";
-
-                if (config.gps) {
-                    let select = document.getElementById(config.gps);
-                    for (let i = 0; i < select.options.length; i++) {
-                        if (
-                            String(select.options[i].value) ===
-                            String(u.gps_company_id)
-                        ) {
-                            select.selectedIndex = i;
-                            break;
-                        }
+            if (config.gps) {
+                let selectGps = document.getElementById(config.gps);
+                for (let i = 0; i < selectGps.options.length; i++) {
+                    if (
+                        String(selectGps.options[i].value) ===
+                        String(u.gps_company_id)
+                    ) {
+                        selectGps.selectedIndex = i;
+                        break;
                     }
                 }
+            }
 
-                box.style.display = "none";
+            toastr.success(`${tipoKey} seleccionado`);
 
-                toastr.success(`${tipoKey} seleccionado`);
-            };
-
-            box.appendChild(item);
-        });
-
-        box.style.display = "block";
-    });
-
-    input.addEventListener("blur", () => {
-        setTimeout(() => {
-            box.style.display = "none";
-        }, 200);
+            const btnActualizar = document.getElementById(`btnActualizarGPS${tipoKey}`);
+            if (u.imei && u.gps_company_id) {
+                if (btnActualizar) btnActualizar.style.display = "inline-block";
+                actualizarEstadoGPS(
+                    config.statusGps,
+                    "warning",
+                    "GPS listo para consultar",
+                );
+                validarConexionGPS(tipoKey, u.imei, u.gps_company_id, [u.id]);
+            } else {
+                if (btnActualizar) btnActualizar.style.display = "none";
+                actualizarEstadoGPS(
+                    config.statusGps,
+                    "danger",
+                    "Equipo sin IMEI configurado",
+                );
+            }
+        } else {
+            this.dataset.mepUnidad = 0;
+        }
     });
 }
 
 initAutocompleteUnidad("Unidad");
 initAutocompleteUnidad("ChasisA");
 initAutocompleteUnidad("ChasisB");
+
+jQuery(document).on("click", ".btn-actualizar-gps", async function() {
+    const tipoKey = this.dataset.gpsTipo;
+    const config = mapInputs[tipoKey];
+    if (!config) return;
+
+    const select = document.getElementById(config.input);
+    const unitId = select ? select.options[select.selectedIndex]?.dataset.unitId : null;
+    const imei = document.getElementById(config.imei)?.value;
+    const gpsCompanyId = document.getElementById(config.gps)?.value;
+
+    if (imei && gpsCompanyId) {
+        const btn = jQuery(this);
+        const originalHtml = btn.html();
+        btn.prop("disabled", true).html('<i class="fas fa-spinner fa-spin"></i> Consultando...');
+        try {
+            await validarConexionGPS(tipoKey, imei, gpsCompanyId, unitId ? [unitId] : []);
+        } catch (e) {
+            console.error(e);
+        } finally {
+            btn.prop("disabled", false).html(originalHtml);
+        }
+    }
+});
 
 //
 function abrirDocumentos(idCotizacion) {
@@ -635,6 +1053,7 @@ function abrirDocumentos(idCotizacion) {
                 { label: "Boleta Vacio", valor: data.boleta_vacio === "si" },
                 { label: "EIR", valor: data.doc_eir },
                 // { label: 'Foto Patio', valor: data.foto_patio },
+                { label: "Evidencia Descarga", valor: data.evidencia_descarga },
             ];
 
             campos.forEach((item) => {
@@ -662,17 +1081,191 @@ function abrirDocumentos(idCotizacion) {
 }
 
 function cambiarTab(tabId) {
-    // Ocultamos todos los divs con clase 'tab-content'
     const tabs = document.querySelectorAll(".tab-content");
     tabs.forEach((tab) => {
         tab.style.display = "none";
     });
 
-    // Mostramos solo el que corresponde
     const tabToShow = document.getElementById("tab-" + tabId);
     if (tabToShow) {
         tabToShow.style.display = "block";
     } else {
         console.error(`No se encontró el tab: tab-${tabId}`);
+    }
+}
+
+function actualizarEstadoGPS(id, tipo, texto) {
+    const clases = {
+        success: "text-success",
+        danger: "text-danger",
+        warning: "text-warning",
+        muted: "text-muted",
+    };
+
+    const iconos = {
+        success: "fa-circle",
+        danger: "fa-triangle-exclamation",
+        warning: "fa-spinner fa-spin",
+        muted: "fa-minus-circle",
+    };
+
+    $("#" + id)
+        .removeClass()
+        .addClass(`small fw-bold ${clases[tipo]}`).html(`
+            <i class="fas ${iconos[tipo]}"></i>
+            ${texto}
+        `);
+}
+
+let mapaEquiposInstance = null;
+
+function googleMapsReady() {
+    const equipos = [
+        {
+            nombre: "Unidad",
+            data: mapInputs.Unidad,
+            icono: "http://maps.google.com/mapfiles/ms/icons/blue-dot.png",
+        },
+        {
+            nombre: "Chasis A",
+            data: mapInputs.ChasisA,
+            icono: "http://maps.google.com/mapfiles/ms/icons/green-dot.png",
+        },
+        {
+            nombre: "Chasis B",
+            data: mapInputs.ChasisB,
+            icono: "http://maps.google.com/mapfiles/ms/icons/orange-dot.png",
+        },
+    ];
+
+    const equiposValidos = equipos.filter((e) => {
+        return (
+            e.data.latitud &&
+            e.data.longitud &&
+            parseFloat(e.data.latitud) !== 0 &&
+            parseFloat(e.data.longitud) !== 0
+        );
+    });
+
+    if (equiposValidos.length === 0 && !cargaIni) {
+        Swal.fire({
+            icon: "warning",
+            title: "Sin ubicación GPS",
+            text: "No hay equipos con coordenadas válidas.",
+        });
+
+        return;
+    }
+
+    cargaIni = false;
+
+    const centro = {
+        lat: parseFloat(equiposValidos[0].data.latitud),
+        lng: parseFloat(equiposValidos[0].data.longitud),
+    };
+
+    mapaEquiposInstance = new google.maps.Map(
+        document.getElementById("mapaEquipos"),
+        {
+            zoom: 10,
+            center: centro,
+            mapTypeId: "roadmap",
+        },
+    );
+
+    const bounds = new google.maps.LatLngBounds();
+
+    equiposValidos.forEach((equipo) => {
+        const lat = parseFloat(equipo.data.latitud);
+
+        const lng = parseFloat(equipo.data.longitud);
+
+        const marker = new google.maps.Marker({
+            position: { lat, lng },
+            map: mapaEquiposInstance,
+            title: equipo.nombre,
+            animation: google.maps.Animation.DROP,
+            icon: equipo.icono,
+        });
+
+        bounds.extend({ lat, lng });
+
+        const infoWindow = new google.maps.InfoWindow({
+            content: `
+                <div style="min-width:220px;">
+
+                    <div class="fw-bold mb-1">
+                        ${equipo.nombre}
+                    </div>
+
+                    <div>
+                        <strong>Equipo:</strong>
+                        ${document.getElementById(equipo.data.input)?.value || "N/D"}
+                    </div>
+
+                    <div>
+                        <strong>IMEI:</strong>
+                        ${document.getElementById(equipo.data.imei)?.value || "N/D"}
+                    </div>
+
+                    <div>
+                        <strong>Lat:</strong>
+                        ${lat}
+                    </div>
+
+                    <div>
+                        <strong>Lng:</strong>
+                        ${lng}
+                    </div>
+
+                </div>
+            `,
+        });
+
+        marker.addListener("click", () => {
+            infoWindow.open({
+                anchor: marker,
+                map: mapaEquiposInstance,
+            });
+        });
+    });
+
+    mapaEquiposInstance.fitBounds(bounds);
+
+    function dibujarLinea(a, b, color = "#0d6efd") {
+        if (
+            !a.data.latitud ||
+            !a.data.longitud ||
+            !b.data.latitud ||
+            !b.data.longitud
+        ) {
+            return;
+        }
+
+        new google.maps.Polyline({
+            path: [
+                {
+                    lat: parseFloat(a.data.latitud),
+                    lng: parseFloat(a.data.longitud),
+                },
+                {
+                    lat: parseFloat(b.data.latitud),
+                    lng: parseFloat(b.data.longitud),
+                },
+            ],
+            geodesic: true,
+            strokeColor: color,
+            strokeOpacity: 0.8,
+            strokeWeight: 3,
+            map: mapaEquiposInstance,
+        });
+    }
+
+    dibujarLinea(equipos[0], equipos[1], "#198754");
+
+    if (mapInputs.ChasisB.latitud && mapInputs.ChasisB.longitud) {
+        dibujarLinea(equipos[0], equipos[2], "#dc3545");
+
+        dibujarLinea(equipos[1], equipos[2], "#fd7e14");
     }
 }

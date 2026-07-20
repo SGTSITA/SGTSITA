@@ -79,6 +79,20 @@
                             Telefono:
                             <b id="telefonoOperador"></b>
                         </p>
+
+                        @can('ver-datos-compartidos-whatsapp')
+                        <div class="mt-3 border-top pt-2" id="datosCompartidosWhatsAppDiv" style="display: none;">
+                            <h6 class="text-primary font-weight-bold" style="color: #25d366 !important; border-left-color: #25d366 !important;">
+                                <i class="fab fa-whatsapp"></i> Compartido con el Operador
+                            </h6>
+                            <p class="text-sm">
+                                Contraseña temporal: <b id="passwordTemporalSpan">N/A</b>
+                            </p>
+                            <button type="button" class="btn btn-sm btn-success" id="btnReenviarWhatsApp" style="background-color: #25d366; border-color: #25d366;">
+                                <i class="fab fa-whatsapp"></i> Reenviar a WhatsApp
+                            </button>
+                        </div>
+                        @endcan
                     </div>
                 </div>
                 <div class="">
@@ -170,10 +184,12 @@
                     <i class="fa fa-shipping-fast"></i>
                     Rastreo
                 </button>
+                @can('editar-planeacion')
                 <button type="button" class="btn btn-sm bg-gradient-info" id="btnEditarViaje">
                     <i class="fa fa-edit"></i>
-                    Editar Fechas viaje
+                    Editar viaje
                 </button>
+                @endcan
                 <button type="button" class="btn btn-sm bg-gradient-danger" id="btnDeshacer">
                     Deshacer planeación
                 </button>

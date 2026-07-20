@@ -136,37 +136,41 @@ class GpsCompanyController extends Controller
         $mensajeError = null;
         $resp = null;
         switch ((int) $r->gps) {
-            case 1: //Global GPS
+            case 1: //Global GPS ok refactor
                 $token = GlobalGpsTrait::getAccessToken(
                     $credenciales['appkey'] ?? null,
-                    $credenciales['account'] ?? null
+                    $credenciales['account'] ?? null, true
                 );
                 break;
 
-            case 2: //Jimi GPS
+            case 2: //Jimi GPS refactor ok
+
+
                 $token = JimiGpsTrait::getGpsAccessToken(
-                    $empresaId,
-                    $credenciales
+                                       $credenciales,true
                 );
                 break;
 
-            case 3: //Lego GPS
-                $token = LegoGpsTrait::validateOwner($credenciales);
-                break;
+            case 3: //Lego GPS refactor ok
+                $response = LegoGpsTrait::getLocation($credenciales,true);
 
-            case 4: //Tracker GPS MX
+                $token = $response->success;
+                $resp = $response;
+                 break;
+
+
+            case 4: //Tracker GPS MX refactor ok
                 $token = GpsTrackerMXTrait::getGpsAccessToken(
-                    $empresaId,
-                    $credenciales
+                                      $credenciales, true
                 );
                 break;
 
-            case 5: // Beyond GPS tajiro
+            case 5: // Beyond GPS tajiro refactor ok
 
                 $response = BeyondGPSTrait::getLocation(
                     $credenciales['user'] ?? null,
                     $credenciales['password'] ?? null,
-                    $credenciales['endpoint'] ?? null
+                    $credenciales['endpoint'] ?? null, true
                 );
                 $resp = $response;
                 if (!$response->success) {
@@ -199,10 +203,10 @@ class GpsCompanyController extends Controller
 
                 break;
 
-            case 6: // Wialon GPS
-                $responseWialon =   WialonGpsTrait::getLocation(
+            case 6: // Wialon GPS refactor ok
+                $responseWialon =   WialonGpsTrait::getloginLocation(
                     $credenciales['token'] ?? null,
-                    $credenciales['SID'] ?? null
+                    $credenciales['SID'] ?? null, true
                 );
                 $resp = $responseWialon;
                 if (
@@ -218,12 +222,12 @@ class GpsCompanyController extends Controller
                 $token = true;
                 break;
 
-            case 7: //SIS GPS
+            case 7: //SIS GPS refactor ok
                 $response = SISGPSTrait::sisValidarCredenciales(
                     $credenciales['account'] ?? '',
                     $credenciales['key'] ?? ''
                 );
-
+ $resp = $response;
                 if ($response->success) {
                     $token = $response->data['token'] ?? null;
                 } else {
@@ -232,7 +236,7 @@ class GpsCompanyController extends Controller
                 break;
 
 
-            case 8: //SkyAngel GPS
+            case 8: //SkyAngel GPS refactor ok
 
 
                 $username =    $credenciales['email'] ?? null;
@@ -242,9 +246,9 @@ class GpsCompanyController extends Controller
                 // $password = $credenciales['password'] ?? null;
 
                 // dd($username, $password);
-                $accessToken = SkyAngel::getAccessToken($username, $password);
+                $accessToken = SkyAngel::getAccessToken($username, $password, true);
                 $ubicacion = SkyAngel::getLocation($accessToken);
-                $ubicacionApiResponse = $ubicacion->data;
+             //   $ubicacionApiResponse = $ubicacion->data;
                 $token = $accessToken;
                 $resp =   $ubicacion;
 
@@ -255,6 +259,8 @@ class GpsCompanyController extends Controller
             default:
                 $token = false;
         }
+
+
 
         if (!$token) {
             return response()->json([
@@ -374,7 +380,7 @@ class GpsCompanyController extends Controller
         return response()->json(['success' => true]);
     }
 
-    public function testGpsApi()
+   /*  public function testGpsApi()
     {
 
         $toTest = 'JimiGps';
@@ -411,7 +417,7 @@ class GpsCompanyController extends Controller
         }
 
         return $data;
-    }
+    } */
 
 
     public function setConfigEquipo(Request $r)
@@ -434,42 +440,44 @@ class GpsCompanyController extends Controller
 
             /* ================= VALIDACIÓN ================= */
             switch ((int) $r->gps_company_id) {
-                case 1: // Global GPS
+                case 1: // Global GPS refactor ok
                     $token = GlobalGpsTrait::getAccessToken(
                         $credenciales['appkey'] ?? null,
-                        $credenciales['account'] ?? null
+                        $credenciales['account'] ?? null, true
                     );
                     $resp = $token;
                     break;
 
-                case 2: // Jimi
+                case 2: // Jimi GPS refactor ok
                     $token = JimiGpsTrait::getGpsAccessToken(
-                        auth()->user()->id_empresa,
-                        $credenciales
+
+                        $credenciales, true
                     );
                     $resp = $token;
                     break;
 
-                case 3: // Lego
-                    $token = LegoGpsTrait::validateOwner($credenciales);
-                    $resp = $token;
+                case 3: // Lego GPS refactor ok
+                    $response = LegoGpsTrait::getLocation($credenciales, true);
+
+                     $resp = $response;
+                    $token = $response->success;
                     break;
 
-                case 4: // Tracker
+                case 4: // Tracker GPS MX refactor ok
                     $token = GpsTrackerMXTrait::getGpsAccessToken(
-                        auth()->user()->id_empresa,
-                        $credenciales
+
+                        $credenciales, true
                     );
                     $resp = $token;
                     break;
 
 
-                case 5: // Beyond GPS
+                case 5: // Beyond GPS tajiro refactor ok
 
                     $response = BeyondGPSTrait::getLocation(
                         $credenciales['user'] ?? null,
                         $credenciales['password'] ?? null,
-                        $credenciales['endpoint'] ?? null
+                        $credenciales['endpoint'] ?? null, true
                     );
 
                     $resp = $response;
@@ -500,11 +508,11 @@ class GpsCompanyController extends Controller
                     $token = true;
                     break;
 
-                case 6: // Wialon
+                case 6: // Wialon GPS refactor ok
 
-                    $responseWialon = WialonGpsTrait::getLocation(
+                    $responseWialon = WialonGpsTrait::getloginLocation(
                         $credenciales['token'] ?? null,
-                        $credenciales['SID'] ?? null
+                        $credenciales['SID'] ?? null, true
                     );
 
                     $resp = $responseWialon;
@@ -524,11 +532,11 @@ class GpsCompanyController extends Controller
                     break;
 
 
-                case 7: //sis gps
-                    $data = SISGPSTrait::sisGetLastPosition(
+                case 7: //sis gps refactor ok
+                    $data = SISGPSTrait::sisValidarCredenciales(
                         $credenciales['account'],
-                        $credenciales['appkey'],
-                        0
+                        $credenciales['appkey']
+
                     );
                     $resp = $data;
                     $raw =  $data->data['raw']->return ?? null;
@@ -542,7 +550,7 @@ class GpsCompanyController extends Controller
 
                     break;
 
-                case 8: //SkyAngel GPS
+                case 8: //SkyAngel GPS refactor ok
 
 
                     $username =    $credenciales['email'] ?? null;
@@ -552,7 +560,7 @@ class GpsCompanyController extends Controller
                     // $password = $credenciales['password'] ?? null;
 
                     //  dd($username, $password);
-                    $accessToken = SkyAngel::getAccessToken($username, $password);
+                    $accessToken = SkyAngel::getAccessToken($username, $password, true);
                     $ubicacion = SkyAngel::getLocation($accessToken);
                     $ubicacionApiResponse = $ubicacion->data;
                     $token = $accessToken;
