@@ -1,8 +1,8 @@
 ---
 title: File earmark image
 categories:
-  - Files and folders
+    - Files and folders
 tags:
-  - photo
-  - picture
+    - photo
+    - picture
 ---

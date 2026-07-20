@@ -1,8 +1,8 @@
 ---
 title: File earmark font
 categories:
-  - Files and folders
+    - Files and folders
 tags:
-  - ttf
-  - otf
+    - ttf
+    - otf
 ---

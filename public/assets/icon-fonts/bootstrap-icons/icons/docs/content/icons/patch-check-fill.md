@@ -1,11 +1,11 @@
 ---
 title: Patch check fill
 categories:
-  - Badges
+    - Badges
 tags:
-  - verified
-  - checkmark
-  - certified
+    - verified
+    - checkmark
+    - certified
 aliases:
-  - /icons/patch-check-fll/
+    - /icons/patch-check-fll/
 ---

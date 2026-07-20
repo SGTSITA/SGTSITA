@@ -5,10 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
+use App\Traits\Auditable;
 
 class Asignaciones extends Model
 {
     use HasFactory;
+    use Auditable;
     protected $table = 'asignaciones';
 
     protected $fillable = [
@@ -35,6 +37,8 @@ class Asignaciones extends Model
         'otro7',
         'otro8',
         'otro9',
+        'password_temporal',
+        'mensaje_compartido',
     ];
 
     public function Camion()
@@ -57,6 +61,7 @@ class Asignaciones extends Model
     {
         return $this->belongsTo(DocumCotizacion::class, 'id_contenedor');
     }
+
     public function Operador()
     {
         return $this->belongsTo(Operador::class, 'id_operador');
@@ -74,10 +79,29 @@ class Asignaciones extends Model
         return $this->belongsTo(Bancos::class, 'id_banco2_dinero_viaje');
     }
 
-    public function Justificacion(){
-        return $this->hasMany(ViaticosOperador::class, 'id_cotizacion','id_contenedor');
+    public function Justificacion()
+    {
+        return $this->hasMany(ViaticosOperador::class, 'id_cotizacion', 'id_contenedor');
     }
-    
+
+    public function movimientosBancarios()
+    {
+        return $this->morphMany(
+            CatBancoCuentasMovimientos::class,
+            'referenciaable'
+        );
+    }
+
+
+    public function getAuditoriaData($old = [], $new = [])
+    {
+        $this->loadMissing('Contenedor');
+
+        return [
+            'referencia' => $this->Contenedor?->num_contenedor,
+        ];
+    }
+
     protected static function boot()
     {
         parent::boot();
@@ -91,4 +115,3 @@ class Asignaciones extends Model
         });
     }
 }
-

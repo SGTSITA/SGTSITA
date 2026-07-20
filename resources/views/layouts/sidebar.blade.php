@@ -25,7 +25,7 @@
 
             @can('clientes-list')
                 <li class="nav-item">
-                    <a class="nav-link {{ Request::is('clients*') ? 'active' : '' }}" href="{{ route('clients.index') }}"
+                    <a class="nav-link {{ Request::is('clientes*') ? 'active' : '' }}" href="{{ route('clientes.index') }}"
                         target="">
                         <div
                             class="icon icon-shape icon-sm text-center  me-2 d-flex align-items-center justify-content-center">
@@ -79,6 +79,18 @@
 
                     </ul>
                 </div>
+            @endcan
+            @can('mep-config-equipos-gps')
+                <li class="nav-item">
+                    <a class="nav-link {{ Request::is('Equipos*') ? 'active' : '' }}"
+                        href="{{ route('equipos.gps.mep') }}" target="">
+                        <div
+                            class="icon icon-shape icon-sm text-center me-2 d-flex align-items-center justify-content-center">
+                            <i class="fas fa-satellite-dish text-info"></i>
+                        </div>
+                        <span class="nav-link-text ms-1"><b>III</b> Equipos GPS</span>
+                    </a>
+                </li>
             @endcan
 
             @can('servicio-gps')
@@ -166,6 +178,13 @@
                                     <span class="sidenav-normal">Solicitudes entrantes</span>
                                 </a>
                             @endcan
+                            @can('cotizacion-solicitudes-locales')
+                                <a class="nav-link {{ Request::is('cotizaciones/busqueda') ? 'show' : '' }}"
+                                    href="{{ route('cotizaciones.Solic-locales') }}">
+                                    <span class="sidenav-mini-icon"> P </span>
+                                    <span class="sidenav-normal">Solicitudes Locales</span>
+                                </a>
+                            @endcan
                         </li>
                     </ul>
                 </div>
@@ -198,8 +217,18 @@
 
 
             @can('bancos-list')
-                <li class="nav-item">
+                {{-- <li class="nav-item">
                     <a class="nav-link {{ Request::is('bancos*') ? 'active' : '' }}" href="{{ route('index.bancos') }}"
+                        target="">
+                        <div
+                            class="icon icon-shape icon-sm text-center  me-2 d-flex align-items-center justify-content-center">
+                            <img src="{{ asset('img/icon/banco.png') }}" alt="" width="20px">
+                        </div>
+                        <span class="nav-link-text ms-1"><b>VII</b> Bancos old</span>
+                    </a>
+                </li> --}}
+                <li class="nav-item">
+                    <a class="nav-link {{ Request::is('bancos*') ? 'active' : '' }}" href="{{ route('index.bancos2') }}"
                         target="">
                         <div
                             class="icon icon-shape icon-sm text-center  me-2 d-flex align-items-center justify-content-center">
@@ -209,6 +238,8 @@
                     </a>
                 </li>
             @endcan
+
+
 
 
             @can('cuentas-cobrar')
@@ -237,9 +268,10 @@
                 </li>
             @endcan
 
-            @can('gastos-generales')
+            @canany(['gastos-generales', 'gastos'])
                 <a data-bs-toggle="collapse" href="#pagesGastos"
-                    class="nav-link {{ Request::is('gastos/generales*') ? 'active' : '' }}" target="">
+                    class="nav-link {{ Request::is('gastos/generales*') || Request::is('gastos*') ? 'active' : '' }}"
+                    target="">
                     <div
                         class="icon icon-shape icon-sm text-center  me-2 d-flex align-items-center justify-content-center">
                         <img src="{{ asset('img/icon/billetera.png') }}" alt="" width="20px">
@@ -251,25 +283,34 @@
                 <div class="collapse " id="pagesGastos">
                     <ul class="nav ms-4">
                         <li class="nav-item ">
-                            <a class="nav-link {{ Request::is('gastos/generales*') ? 'show' : '' }}"
-                                href="{{ route('index.gastos_generales') }}">
-                                <span class="sidenav-mini-icon"> P </span>
-                                <span class="sidenav-normal">Gastos Generales</span>
-                            </a>
-                            <a class="nav-link {{ Request::is('gastos/generales*') ? 'show' : '' }}"
-                                href="{{ route('index.gastos_viajes') }}">
-                                <span class="sidenav-mini-icon"> P </span>
-                                <span class="sidenav-normal">Gastos Viajes</span>
-                            </a>
-                            <a class="nav-link {{ Request::is('gastos/generales*') ? 'show' : '' }}"
-                                href="{{ route('index.gastos_por_pagar') }}">
-                                <span class="sidenav-mini-icon"> P </span>
-                                <span class="sidenav-normal">Gastos por Pagar</span>
-                            </a>
+                            @can('gastos')
+                                <a class="nav-link {{ Request::is('gastos*') ? 'show' : '' }}"
+                                    href="{{ route('gastos.index') }}">
+                                    <span class="sidenav-mini-icon"> N </span>
+                                    <span class="sidenav-normal">Gastos Unificado</span>
+                                </a>
+                            @endcan
+                            @can('gastos-generales')
+                                <a class="nav-link {{ Request::is('gastos/generales*') ? 'show' : '' }}"
+                                    href="{{ route('index.gastos_generales') }}">
+                                    <span class="sidenav-mini-icon"> P </span>
+                                    <span class="sidenav-normal">Gastos Generales</span>
+                                </a>
+                                <a class="nav-link {{ Request::is('gastos/generales*') ? 'show' : '' }}"
+                                    href="{{ route('index.gastos_viajes') }}">
+                                    <span class="sidenav-mini-icon"> P </span>
+                                    <span class="sidenav-normal">Gastos Viajes</span>
+                                </a>
+                                <a class="nav-link {{ Request::is('gastos/generales*') ? 'show' : '' }}"
+                                    href="{{ route('index.gastos_por_pagar') }}">
+                                    <span class="sidenav-mini-icon"> P </span>
+                                    <span class="sidenav-normal">Gastos por Pagar</span>
+                                </a>
+                            @endcan
                         </li>
                     </ul>
                 </div>
-            @endcan
+            @endcanany
 
 
             @can('reportes')
@@ -341,6 +382,13 @@
                                     <span class="sidenav-normal">Liquidados cxp</span>
                                 </a>
                             @endcan
+                            @can('reportes-rendimiento')
+                                <a class="nav-link {{ Request::is('reporteria/rendimiento*') ? 'show' : '' }}"
+                                    href="{{ route('reporteria.consumo-unidades.index') }}">
+                                    <span class="sidenav-mini-icon"> P </span>
+                                    <span class="sidenav-normal">Rendimiento</span>
+                                </a>
+                            @endcan
                             @if (auth()->user()->hasRole('Proveedor'))
                         <li class="nav-item">
                             <a class="nav-link {{ Request::is('reporteria/viajes-por-cobrar*') ? 'show' : '' }}"
@@ -398,15 +446,15 @@
                     </ul>
                 </div>
                 <!--li class="nav-item">
-                                                                                                <a class="nav-link {{ Request::is('liquidaciones*') ? 'active' : '' }}"
-                                                                                                    href="{{ route('index.liquidacion') }}" target="">
-                                                                                                    <div
-                                                                                                        class="icon icon-shape icon-sm text-center  me-2 d-flex align-items-center justify-content-center">
-                                                                                                        <img src="{{ asset('img/icon/pago-en-efectivo.png') }}" alt="" width="20px">
-                                                                                                    </div>
-                                                                                                   
-                                                                                                </a>
-                                                                                            </li-->
+                                                                                                                                                                                                                                                                    <a class="nav-link {{ Request::is('liquidaciones*') ? 'active' : '' }}"
+                                                                                                                                                                                                                                                                        href="{{ route('index.liquidacion') }}" target="">
+                                                                                                                                                                                                                                                                        <div
+                                                                                                                                                                                                                                                                            class="icon icon-shape icon-sm text-center  me-2 d-flex align-items-center justify-content-center">
+                                                                                                                                                                                                                                                                            <img src="{{ asset('img/icon/pago-en-efectivo.png') }}" alt="" width="20px">
+                                                                                                                                                                                                                                                                        </div>
+
+                                                                                                                                                                                                                                                                    </a>
+                                                                                                                                                                                                                                                                </li-->
             @endcan
             @can('Coordenadas SGT')
                 <a data-bs-toggle="collapse" href="#pagesExamplesCoordenadas"
@@ -459,7 +507,7 @@
                             </a>
 
                             </a>
-                            
+
                             <a class="nav-link {{ Request::is('coordenadas/conboys') ? 'show' : '' }}"
                                 href="{{ route('HistorialUbicaciones') }}">
                                 <span class="sidenav-mini-icon"> H </span>
@@ -533,12 +581,12 @@
 
                     <!-- @can('usuarios-empresas')
     <li class="nav-item ">
-                                                                    <a class="nav-link {{ Request::is('usuarios-empresas*') ? 'show' : '' }}"
-                                                                        href="{{ route('Usuarios-empresas.index') }}">
-                                                                        <span class="sidenav-mini-icon"> P </span>
-                                                                        <span class="sidenav-normal">Usuarios Empresas </span>
-                                                                    </a>
-                                                                </li>
+                                                                                                                                                                                                                                        <a class="nav-link {{ Request::is('usuarios-empresas*') ? 'show' : '' }}"
+                                                                                                                                                                                                                                            href="{{ route('Usuarios-empresas.index') }}">
+                                                                                                                                                                                                                                            <span class="sidenav-mini-icon"> P </span>
+                                                                                                                                                                                                                                            <span class="sidenav-normal">Usuarios Empresas </span>
+                                                                                                                                                                                                                                        </a>
+                                                                                                                                                                                                                                    </li>
 @endcan -->
 
 
@@ -592,6 +640,32 @@
                             </li>
                         </ul>
                     </div>
+                    @can('auditoria-admin')
+                        <div class="collapse " id="sistem">
+                            <ul class="nav ms-4">
+                                <li class="nav-item ">
+                                    <a class="nav-link {{ Request::is('configuracion*') ? 'show' : '' }}"
+                                        href="{{ route('auditoria.index') }}">
+                                        <span class="sidenav-mini-icon">A</span>
+                                        <span class="sidenav-normal">Auditoria</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    @endcan
+                    @can('notificacions')
+                        <div class="collapse " id="sistem">
+                            <ul class="nav ms-4">
+                                <li class="nav-item ">
+                                    <a class="nav-link {{ Request::is('configuracion*') ? 'show' : '' }}"
+                                        href="{{ route('notificaciones.index') }}">
+                                        <span class="sidenav-mini-icon">N</span>
+                                        <span class="sidenav-normal">Notificaciones</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    @endcan
                 </li>
             @endcan
         </ul>

@@ -1,12 +1,12 @@
 ---
 title: Filetype sass
 categories:
-  - Files and folders
+    - Files and folders
 tags:
-  - file
-  - "file type"
-  - extension
-  - code
-  - css
-  - stylesheet
+    - file
+    - 'file type'
+    - extension
+    - code
+    - css
+    - stylesheet
 ---

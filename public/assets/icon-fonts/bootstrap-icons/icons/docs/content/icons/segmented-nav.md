@@ -1,11 +1,11 @@
 ---
 title: Segmented nav
 categories:
-  - Controls
+    - Controls
 tags:
-  - nav
-  - tabs
-  - tabbed
-  - app
-  - ui
+    - nav
+    - tabs
+    - tabbed
+    - app
+    - ui
 ---

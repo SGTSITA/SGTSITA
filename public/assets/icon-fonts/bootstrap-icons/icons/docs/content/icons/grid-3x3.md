@@ -1,8 +1,8 @@
 ---
 title: Grid 3x3
 categories:
-  - Layout
+    - Layout
 tags:
-  - grid
-  - layout
+    - grid
+    - layout
 ---

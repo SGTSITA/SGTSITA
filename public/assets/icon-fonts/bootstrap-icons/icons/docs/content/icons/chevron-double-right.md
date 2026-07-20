@@ -1,7 +1,7 @@
 ---
 title: Chevron double right
 categories:
-  - Chevrons
+    - Chevrons
 tags:
-  - chevron
+    - chevron
 ---

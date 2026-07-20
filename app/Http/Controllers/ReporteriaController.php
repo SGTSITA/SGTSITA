@@ -23,157 +23,595 @@ use App\Models\GastosDiferidosDetalle;
 use App\Models\DineroContenedor;
 use App\Models\ViaticosOperador;
 use App\Models\CuentaGlobal;
+use App\Models\Estado_Cuenta;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Storage;
-
 use App\Traits\CommonTrait as Common;
 use Carbon\Carbon;
-use DB;
-use PDF;
-use Excel;
-use Auth;
+use Illuminate\Support\Facades\DB;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
+use App\Traits\CommonTrait;
+use Illuminate\Support\Facades\File;
+use App\Services\CuentasCobrarService;
+use App\Services\ReporteriaService;
+
+
+use App\Exports\ConsumoUnidadesExport;
+use App\Services\ConsumoUnidadesService;
+use App\Models\Gasto;
+
 
 
 class ReporteriaController extends Controller
 {
-    public function index(){
+    protected $cuentasPorCobrarService;
+    protected $reporteriaService;
+
+    public function __construct(
+        CuentasCobrarService $cuentasPorCobrarService,
+        ReporteriaService $reporteriaService
+    ) {
+        $this->cuentasPorCobrarService = $cuentasPorCobrarService;
+        $this->reporteriaService = $reporteriaService;
+    }
+
+    public function index()
+    {
 
         //$clientes = Client::where('id_empresa' ,'=',auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
-        $clientes = Client::join('client_empresa as ce','clients.id','=','ce.id_client')
-                            ->where('ce.id_empresa',Auth::User()->id_empresa)
-                            ->where('is_active',1)
+        $clientes = Client::join('client_empresa as ce', 'clients.id', '=', 'ce.id_client')
+                            ->where('ce.id_empresa', Auth::User()->id_empresa)
+                            ->where('is_active', 1)
                             ->orderBy('nombre')->get();
 
         $clientesIds = $clientes->pluck('id');
 
-        $subclientes = Subclientes::whereIn('id_cliente' ,$clientesIds)->orderBy('created_at', 'desc')->get();
-        $proveedores = Proveedor::where('id_empresa' ,'=',auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
+        $subclientes = Subclientes::whereIn('id_cliente', $clientesIds)->orderBy('created_at', 'desc')->get();
+        $proveedores = Proveedor::where('id_empresa', '=', auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
 
-        return view('reporteria.cxc.index', compact('clientes', 'subclientes', 'proveedores'));
+        $estadosCuentas = Estado_Cuenta::where('id_empresa', '=', auth()->user()->id_empresa)->get();
+
+
+        $documentos = config('CatAuxiliares.columnsbycode');
+
+        return view('reporteria.cxc.index', compact('clientes', 'subclientes', 'proveedores', 'estadosCuentas', 'documentos'));
     }
 
-    public function advance(Request $request) {
+    public function advance(Request $request)
+    {
         // Obtener los datos de los filtros
         $id_client = $request->input('id_client');
         $id_subcliente = $request->input('id_subcliente');
         $id_proveedor = $request->input('id_proveedor');
-    
+        $numeroEdoCuenta = $request->numero_edo_cuenta ?? null;
+
         // Obtener los clientes, subclientes y proveedores para mostrarlos en el formulario
         //$clientes = Client::where('id_empresa', auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
-        $clientes = Client::join('client_empresa as ce','clients.id','=','ce.id_client')
-                            ->where('ce.id_empresa',Auth::User()->id_empresa)
-                            ->where('is_active',1)
+        $clientes = Client::join('client_empresa as ce', 'clients.id', '=', 'ce.id_client')
+                            ->where('ce.id_empresa', Auth::User()->id_empresa)
+                            ->where('is_active', 1)
                             ->orderBy('nombre')->get();
 
         $clientesIds = $clientes->pluck('id');
 
         $subclientes = Subclientes::whereIn('id_cliente', $clientesIds)->orderBy('created_at', 'desc')->get();
         $proveedores = Proveedor::where('id_empresa', auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
-    
-        // Inicializar la consulta de cotizaciones
-        $cotizaciones = Cotizaciones::where('id_empresa', auth()->user()->id_empresa)
-            ->where(function ($query) {
-                $query->where('estatus', '=', 'Aprobada')
-                    ->orWhere('estatus', '=', 'Finalizado');
-            })
-            ->where('estatus_pago', '=', '0')
-            ->where('restante', '>', 0);  // Solo cotizaciones con saldo restante
-    
-        // Filtrar por cliente si se selecciona uno
-        if ($id_client) {
-            $cotizaciones->where('id_cliente', $id_client);
-        }
-    
-        // Filtrar por subcliente si se selecciona uno
-        if ($id_subcliente) {
-            $cotizaciones->where('id_subcliente', $id_subcliente);
-        }
-    
-        // Filtrar por proveedor si se selecciona uno
-        if ($id_proveedor) {
-            $cotizaciones->whereHas('DocCotizacion.Asignaciones', function ($query) use ($id_proveedor) {
-                $query->where('id_proveedor', $id_proveedor);
-            });
-        }
-    
-        // Ejecutar la consulta
-        $cotizaciones = $cotizaciones->get();
-    
-        // Devolver la vista con los filtros y las cotizaciones
-        return view('reporteria.cxc.index', compact('clientes', 'subclientes', 'proveedores', 'cotizaciones'));
-    }
-    
 
-    public function getSubclientes($clienteId){
+        $estadosCuentas = Estado_Cuenta::where('id_empresa', '=', auth()->user()->id_empresa)->get();
+
+        $documentos = config('CatAuxiliares.columnsbycode');
+
+        /*    // Inicializar la consulta de cotizaciones
+           $cotizaciones = Cotizaciones::query()
+    ->select(
+           'cotizaciones.*',
+           'estado_cuenta.numero as numero_edo_cuenta',
+           'estado_cuenta.id as id_numero_edo_cuenta'
+    )
+    ->leftJoin(
+           'estado_cuenta_cotizaciones',
+           'estado_cuenta_cotizaciones.cotizacion_id',
+           '=',
+           'cotizaciones.id'
+    )
+    ->leftJoin(
+           'estado_cuenta',
+           'estado_cuenta.id',
+           '=',
+           'estado_cuenta_cotizaciones.estado_cuenta_id'
+    )->where('cotizaciones.id_empresa', auth()->user()->id_empresa)
+               ->where(function ($query) {
+                   $query->where('estatus', '=', 'Aprobada')
+                       ->orWhere('estatus', '=', 'Finalizado');
+               })
+              ->where(function ($q) { //antes
+                  $q->where('estatus_pago', 0)
+                    ->orWhereNull('estatus_pago');
+              })
+              // ->where('restante', '>', 0)
+                 //ahora
+              ->whereRaw('
+    cotizaciones.total - (
+           SELECT COALESCE(SUM(cpc.monto),0)
+           FROM cobros_pagos_cotizaciones cpc
+           JOIN cobros_pagos cp
+               ON cp.id = cpc.cobro_pago_id
+           WHERE cpc.cotizacion_id = cotizaciones.id
+           AND cp.tipo = "cxc"
+    ) > 0
+')
+
+           ;  // Solo cotizaciones con saldo restante
+
+
+           if ($id_client) {
+               $cotizaciones->where('id_cliente', $id_client);
+           }
+
+
+           if ($id_subcliente) {
+               $cotizaciones->where('id_subcliente', $id_subcliente);
+           }
+
+
+           if ($id_proveedor) {
+               $cotizaciones->whereHas('DocCotizacion.Asignaciones', function ($query) use ($id_proveedor) {
+                   $query->where('id_proveedor', $id_proveedor);
+               });
+           }
+
+           if ($numeroEdoCuenta) {
+               $cotizaciones->where('estado_cuenta.id', '=', $numeroEdoCuenta);
+           }
+
+           // Ejecutar la consulta
+           $cotizaciones = $cotizaciones->get(); */
+
+        $filtros = [
+    'id_cliente' => $request->id_client,
+    'id_subcliente' => $request->id_subcliente,
+    'id_proveedor' => $request->id_proveedor,
+    'numero_edo_cuenta' => $request->numero_edo_cuenta,
+];
+
+        $cotizaciones = $this->cuentasPorCobrarService->getCuentasPorCobrar($filtros);
+
+        // Devolver la vista con los filtros y las cotizaciones
+        return view('reporteria.cxc.index', compact('clientes', 'subclientes', 'proveedores', 'cotizaciones', 'estadosCuentas', 'documentos'));
+    }
+
+
+    public function getSubclientes($clienteId)
+    {
         $subclientes = Subclientes::where('id_cliente', $clienteId)->get();
         return response()->json($subclientes);
     }
 
     public function export(Request $request)
     {
+
         $fecha = date('Y-m-d');
         $fechaCarbon = Carbon::parse($fecha);
+        $modo = $request->input('modo');
+        $adjuntar = filter_var($request->input('adjuntar_docs'), FILTER_VALIDATE_BOOLEAN);
+        $documentos = $request->input('documentos', []);
 
         $cotizacionIds = $request->input('selected_ids', []);
+
         if (empty($cotizacionIds)) {
             return redirect()->back()->with('error', 'No se seleccionaron cotizaciones.');
         }
 
-        $cotizacion = Cotizaciones::where('id', $cotizacionIds)->first();
-        $user = User::where('id', '=', auth()->user()->id)->first();
+        $cotizaciones = Cotizaciones::with(['estadoCuenta', 'DocCotizacion'])
+            ->whereIn('id', $cotizacionIds)
+            ->get();
+
+        $cotizacion = $cotizaciones->first();
+
+        $user = auth()->user();
         $cuentaGlobal = CuentaGlobal::first();
 
-        $cotizaciones = Cotizaciones::whereIn('id', $cotizacionIds)->get();
-        if(in_array($cotizacion->id_empresa,[2,6])){
-            $bancos_oficiales = Bancos::where('id_empresa', '=', $cotizacion->id_empresa)->get();
-            $bancos_no_oficiales = Bancos::where('id_empresa', '=', $cotizacion->id_empresa)->get();
-        }else{
-            $bancos_oficiales = Bancos::where('tipo', '=', 'Oficial')->get();
-            $bancos_no_oficiales = Bancos::where('tipo', '=', 'No Oficial')->get();
+
+        if (in_array($cotizacion->id_empresa, [2, 6])) {
+            $bancos_oficiales = Bancos::where('id_empresa', $cotizacion->id_empresa)->get();
+            $bancos_no_oficiales = Bancos::where('id_empresa', $cotizacion->id_empresa)->get();
+        } else {
+            $bancos_oficiales = Bancos::where('tipo', 'Oficial')->get();
+            $bancos_no_oficiales = Bancos::where('tipo', 'No Oficial')->get();
         }
-        
 
-        if($request->fileType == "xlsx"){
-            Excel::store(new CxcExport($cotizaciones, $fechaCarbon, $bancos_oficiales, $bancos_no_oficiales, $cotizacion, $user), 'cotizaciones_cxc.xlsx','public');
-            return Response::download(storage_path('app/public/cotizaciones_cxc.xlsx'), "cxc.xlsx")->deleteFileAfterSend(true);
-        }else{
-            $pdf = PDF::loadView('reporteria.cxc.pdf', compact('cotizaciones', 'fechaCarbon', 'bancos_oficiales', 'bancos_no_oficiales', 'cotizacion', 'user','cuentaGlobal'))->setPaper([0, 0, 595, 1200], 'landscape');
 
-            // Generar el nombre del archivo
-            $fileName = 'cxc_' . implode('_', $cotizacionIds) . '.pdf';
-            // Guardar el PDF en la carpeta storage
-            $pdf->save(storage_path('app/public/' . $fileName));
-    
-            // Devolver el archivo PDF como respuesta
-            $filePath = storage_path('app/public/' . $fileName);
-            return Response::download($filePath, $fileName)->deleteFileAfterSend(true);
+        if ($modo === 'preview' || !$adjuntar) {
+
+            if ($request->fileType == "xlsx") {
+
+                Excel::store(
+                    new CxcExport($cotizaciones, $fechaCarbon, $bancos_oficiales, $bancos_no_oficiales, $cotizacion, $user),
+                    'cxc.xlsx',
+                    'public'
+                );
+
+                return response()->download(storage_path('app/public/' . 'cxc.xlsx'))->deleteFileAfterSend(true);
+            }
+
+            $pdf = PDF::loadView('reporteria.cxc.pdf', compact(
+                'cotizaciones',
+                'fechaCarbon',
+                'bancos_oficiales',
+                'bancos_no_oficiales',
+                'cotizacion',
+                'user',
+                'cuentaGlobal'
+            ))->setPaper([0, 0, 595, 1200], 'landscape');
+
+            $fileName = 'cxc.pdf';
+            $pdf->save(public_path($fileName));
+
+            return response()->download(public_path($fileName))->deleteFileAfterSend(true);
+        }
+
+
+        $columns = collect($documentos)
+            ->map(fn ($doc) => ['fileCode' => $doc])
+            ->toArray();
+
+
+        $grupos = $cotizaciones->groupBy(function ($cot) {
+            return optional($cot->estadoCuenta)->numero ?? 'SIN_ESTADO';
+        });
+
+        $zip = new \ZipArchive();
+        $zipName = 'cxc_' . time() . '.zip';
+        $zipPath = public_path($zipName);
+
+        if ($zip->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) === true) {
+
+
+            if ($grupos->count() === 1) {
+
+
+                $numero = $grupos->keys()->first();
+                $items = $grupos->first();
+
+                $nombreGrupo =  preg_replace('/[^A-Za-z0-9_\-]/', '_', $numero);
+                $nombreGrupoDocs = 'Docs_' . $nombreGrupo;
+
+                $reporte = "Estado de cuenta: {$nombreGrupo}\n\n";
+                if ($request->fileType == "xlsx") {
+
+                    $excelName = "cxc_{$nombreGrupo}.xlsx";
+                    // dd($items, $fechaCarbon, $bancos_oficiales, $bancos_no_oficiales, $items->first(), $user);
+                    Excel::store(
+                        new CxcExport($items, $fechaCarbon, $bancos_oficiales, $bancos_no_oficiales, $items->first(), $user),
+                        $excelName,
+                        'public'
+                    );
+
+                    $zip->addFile(storage_path('app/public/' . $excelName), $excelName);
+
+                } else {
+
+                    $pdfName = "cxc_{$nombreGrupo}.pdf";
+
+                    $pdf = PDF::loadView('reporteria.cxc.pdf', [
+                        'cotizaciones' => $items,
+                        'fechaCarbon' => $fechaCarbon,
+                        'bancos_oficiales' => $bancos_oficiales,
+                        'bancos_no_oficiales' => $bancos_no_oficiales,
+                        'cotizacion' => $items->first(),
+                        'user' => $user,
+                        'cuentaGlobal' => $cuentaGlobal
+                    ])->setPaper([0, 0, 595, 1200], 'landscape');
+
+                    $pdf->save(public_path($pdfName));
+
+                    $zip->addFile(public_path($pdfName), $pdfName);
+                }
+
+
+                foreach ($items as $cot) {
+                    $contenedor = optional($cot->DocCotizacion)->num_contenedor ?? 'SIN_CONTENEDOR';
+
+                    $reporte .= "Contenedor: {$contenedor}\n";
+
+                    if (!$cot->DocCotizacion) {
+                        $reporte .= "- Sin información de documentos\n\n";
+                        continue;
+                    }
+
+                    $files = $this->getFilesByColumns($cot->DocCotizacion->id, $columns);
+
+                    // indexar por fileCode para validar fácil
+                    $filesMap = collect($files)->keyBy('fileCode');
+
+
+
+                    foreach ($columns as $col) {
+
+                        $code = $col['fileCode'];
+
+                        if (isset($filesMap[$code])) {
+
+                            $doc = $filesMap[$code];
+                            $folderId = $doc['folder'];
+                            // dd($doc);
+
+                            $filePath = public_path("cotizaciones/cotizacion{$folderId}/{$doc['filePath']}");
+
+                            if (file_exists($filePath)) {
+
+
+                                $zip->addFile(
+                                    $filePath,
+                                    "{$nombreGrupoDocs}/Contenedor_{$contenedor}/" .
+                                    $doc['secondaryFileName'] . '.' . $doc['fileType']
+                                );
+
+                                $reporte .= "- {$code}: OK\n";
+
+                            } else {
+                                $reporte .= "- {$code}: NO EXISTE (archivo no encontrado)\n";
+                            }
+
+                        } else {
+                            $reporte .= "- {$code}: NO EXISTE (sin registro)\n";
+                        }
+                    }
+
+                    $reporte .= "\n";
+                }
+
+            } else {
+
+
+
+                foreach ($grupos as $numero => $items) {
+
+                    $nombreGrupo = 'Docs_' . preg_replace('/[^A-Za-z0-9_\-]/', '_', $numero);
+                    $reporte = "Estado de cuenta: {$numero}\n\n";
+
+
+                    if ($request->fileType == "xlsx") {
+
+                        $excelName = "cxc_{$nombreGrupo}.xlsx";
+
+                        Excel::store(
+                            new CxcExport($items, $fechaCarbon, $bancos_oficiales, $bancos_no_oficiales, $items->first(), $user),
+                            $excelName,
+                            'public'
+                        );
+
+                        $excelPath = storage_path('app/public/' . $excelName);
+
+                        if (file_exists($excelPath)) {
+                            $zip->addFile($excelPath, "{$nombreGrupo}/{$excelName}");
+                        } else {
+                            $reporte .= "❌ Excel no encontrado: {$excelName}\n";
+                            Log::warning("Excel no encontrado: {$excelPath}");
+                        }
+
+                    } else {
+
+                        $pdfName = "cxc_{$nombreGrupo}.pdf";
+                        $pdfPath = public_path($pdfName);
+
+                        $pdf = PDF::loadView('reporteria.cxc.pdf', [
+                            'cotizaciones' => $items,
+                            'fechaCarbon' => $fechaCarbon,
+                            'bancos_oficiales' => $bancos_oficiales,
+                            'bancos_no_oficiales' => $bancos_no_oficiales,
+                            'cotizacion' => $items->first(),
+                            'user' => $user,
+                            'cuentaGlobal' => $cuentaGlobal
+                        ]);
+
+                        $pdf->save($pdfPath);
+
+                        if (file_exists($pdfPath)) {
+                            $zip->addFile($pdfPath, "{$nombreGrupo}/{$pdfName}");
+                        } else {
+                            $reporte .= "❌ PDF no encontrado: {$pdfName}\n";
+                            Log::warning("PDF no encontrado: {$pdfPath}");
+                        }
+                    }
+
+
+                    foreach ($items as $cot) {
+
+                        $contenedor = optional($cot->DocCotizacion)->num_contenedor ?? 'SIN_CONTENEDOR';
+
+                        $reporte .= "Contenedor: {$contenedor}\n";
+
+                        if (!$cot->DocCotizacion) {
+                            $reporte .= "- Sin DocCotizacion\n\n";
+                            continue;
+                        }
+
+                        $files = $this->getFilesByColumns($cot->DocCotizacion->id, $columns);
+
+                        if (empty($files)) {
+                            $reporte .= "- Sin documentos configurados\n\n";
+                            continue;
+                        }
+
+                        foreach ($columns as $col) {
+
+                            $code = is_array($col) ? $col['fileCode'] : $col;
+
+                            $doc = collect($files)->firstWhere('fileCode', $code);
+
+                            if (!$doc) {
+                                $reporte .= "- {$code}: NO EXISTE (sin registro)\n";
+                                continue;
+                            }
+
+                            $filePath = public_path("cotizaciones/cotizacion{$doc['id_cotizacion']}/{$doc['filePath']}");
+
+                            if (file_exists($filePath)) {
+
+                                $zip->addFile(
+                                    $filePath,
+                                    "{$nombreGrupo}/cotizacion_{$doc['id_cotizacion']}/" .
+                                    $doc['secondaryFileName'] . '.' . $doc['fileType']
+                                );
+
+                                $reporte .= "- {$code}: OK\n";
+
+                            } else {
+
+                                $reporte .= "- {$code}: NO EXISTE (archivo físico)\n";
+
+                                Log::warning("Archivo faltante: {$filePath}");
+                            }
+                        }
+
+                        $reporte .= "\n";
+                    }
+
+
+                    $zip->addFromString("{$nombreGrupo}/reporte.txt", $reporte);
+                }
+            }
+
+            $txtName = "reporte_{$nombreGrupo}.txt";
+            $txtPath = public_path($txtName);
+
+            file_put_contents($txtPath, $reporte);
+            $zip->addFile($txtPath, "{$nombreGrupoDocs}/{$txtName}");
+
+            $zip->close();
+        }
+
+        // dd("Archivo ZIP generado: {$zipName}");
+        return response()->download($zipPath)->deleteFileAfterSend(true);
+    }
+    public function getFilesByColumns(int $documentacionId, array $columns)
+    {
+        $documentList = [];
+
+
+        $documentos = DocumCotizacion::where('id', $documentacionId)->first();
+        $cotizacion  = Cotizaciones::find($documentos->id_cotizacion);
+
+        //dd($documentos, $cotizacion);
+
+        if (!$documentos || !$cotizacion) {
+            return [];
+        }
+
+        $columnskey = config('CatAuxiliares.columnsbycode');
+
+        foreach ($columns as $item) {
+            $fileCode = is_array($item)
+        ? ($item['fileCode'] ?? null)
+        : $item;
+
+            $column = $columnskey[$fileCode] ?? $fileCode;
+
+            if (!$column) {
+                $column = $item['fileCode'];
+            }
+
+
+
+            //dd($column);
+            $num_contenendor = $documentos->num_contenedor;
+            // buscar en DocumCotizacion
+            if (isset($documentos->$column) && $documentos->$column) {
+                $file = $documentos->$column;
+
+                $doc = self::fileProperties(
+                    $documentos->id_cotizacion,
+                    $file,
+                    $column,
+                    $num_contenendor
+                );
+
+                if (!empty($doc)) {
+                    $documentList[] = $doc;
+                }
+            }
+
+            // buscar en Cotizaciones
+            if (isset($cotizacion->$column) && $cotizacion->$column) {
+                $file = $cotizacion->$column;
+
+                $doc = self::fileProperties(
+                    $documentos->id_cotizacion,
+                    $file,
+                    $column,
+                    $num_contenendor
+                );
+
+                if (!empty($doc)) {
+                    $documentList[] = $doc;
+                }
+            }
+        }
+
+        return $documentList;
+    }
+
+    public function fileProperties($id, $file, $title, $num_contenendor)
+    {
+
+        $columnsbycode = config('CatAuxiliares.columnsbycode');
+        $clave = array_search($title, $columnsbycode, true);
+        $path = public_path('cotizaciones/cotizacion'.$id.'/'.$file);
+
+        if (File::exists($path)) {
+            $finfo = finfo_open(FILEINFO_MIME_TYPE); // Abrir la base de datos de tipos MIME
+            $mimeType = finfo_file($finfo, $path);
+            finfo_close($finfo);
+
+            return [
+                "filePath" => $file,
+                'fileName' => $title,
+                "folder" => $id,
+                'secondaryFileName' => str_replace('-', ' ', $clave).' '. $num_contenendor ,
+                "fileDate" => CommonTrait::obtenerFechaEnLetra(date("Y-m-d", filemtime($path))),
+                "fileSize" => CommonTrait::calculateFileSize(filesize($path)),
+                "fileSizeBytes" => (filesize($path)),
+                "fileType" => pathinfo($path, PATHINFO_EXTENSION),
+                "mimeType" => $mimeType,
+                "identifier" => $id,
+                "fileCode" => iconv('UTF-8', 'ASCII//TRANSLIT', str_replace(' ', '-', $title))
+                ];
+            //iconv('UTF-8', 'ASCII//TRANSLIT', $cadena);
+        } else {
+            return [];
         }
     }
 
-    public function exportExcel(request $r){
+    public function exportExcel(request $r)
+    {
         $collection = Collect(json_decode($r->dataExport));
-        $procesedData = $collection->map(function($c){
+        $procesedData = $collection->map(function ($c) {
             $fecha = optional($c->doc_cotizacion->asignaciones)->fehca_inicio_guard;
-            return ["id"=>$c->id,
-                    "fecha"=> ($fecha != null) ? Carbon::parse($fecha)->format('d/m/Y') : "Sin Fecha",
-                    "cliente"=>$c->cliente->nombre,
-                    "subcliente"=>$c->subcliente->nombre ?? "-",
-                    "origen"=>$c->origen,
-                    "dest"=>$c->destino,
-                    "contenedor"=>$c->doc_cotizacion->num_contenedor,
-                    "estatus"=>$c->estatus
+            return ["id" => $c->id,
+                    "fecha" => ($fecha != null) ? Carbon::parse($fecha)->format('d/m/Y') : "Sin Fecha",
+                    "cliente" => $c->cliente->nombre,
+                    "subcliente" => $c->subcliente->nombre ?? "-",
+                    "origen" => $c->origen,
+                    "dest" => $c->destino,
+                    "contenedor" => $c->doc_cotizacion->num_contenedor,
+                    "estatus" => $c->estatus
                 ];
         });
 
-        Excel::store(new CotizacionesCXC(json_decode($procesedData)), 'cotizaciones_cxc.xlsx','public');
+        Excel::store(new CotizacionesCXC(json_decode($procesedData)), 'cotizaciones_cxc.xlsx', 'public');
         return Response::download(storage_path('app/public/cotizaciones_cxc.xlsx'), "cxc.xlsx")->deleteFileAfterSend(true);
     }
 
-    public function buildExcelData($excelData, $report = 0){
+    public function buildExcelData($excelData, $report = 0)
+    {
         $collection = Collect(json_decode($excelData));
-        $procesedData = $collection->map(function($c) use ($report){
-            switch($report){
+        $procesedData = $collection->map(function ($c) use ($report) {
+            switch ($report) {
                 case 0:
                     return [
                         $c->id,
@@ -182,25 +620,25 @@ class ReporteriaController extends Controller
                         $c->num_contenedor,
                         $c->estatus
                    ];
-                break;
-                case 1: 
-                   return [
-                           $c->contenedor->cotizacion->cliente->nombre,
-                           ($c->contenedor->cotizacion->id_subcliente != null) ? $c->contenedor->cotizacion->subcliente->nombre." / ".$c->contenedor->cotizacion->subcliente->telefono : '-',
-                           $c->contenedor->cotizacion->origen,
-                           $c->contenedor->cotizacion->destino,
-                           $c->contenedor->num_contenedor,
-                           Carbon::parse($c->fehca_inicio_guard)->format('d-m-Y') ,
-                           Carbon::parse($c->fehca_fin_guard)->format('d-m-Y') ,
-                           $c->contenedor->cotizacion->estatus
-                        ];
-                break;
-                case 2: 
-                    if($c->total_proveedor == NULL){
+                    break;
+                case 1:
+                    return [
+                            $c->contenedor->cotizacion->cliente->nombre,
+                            ($c->contenedor->cotizacion->id_subcliente != null) ? $c->contenedor->cotizacion->subcliente->nombre." / ".$c->contenedor->cotizacion->subcliente->telefono : '-',
+                            $c->contenedor->cotizacion->origen,
+                            $c->contenedor->cotizacion->destino,
+                            $c->contenedor->num_contenedor,
+                            Carbon::parse($c->fehca_inicio_guard)->format('d-m-Y') ,
+                            Carbon::parse($c->fehca_fin_guard)->format('d-m-Y') ,
+                            $c->contenedor->cotizacion->estatus
+                         ];
+                    break;
+                case 2:
+                    if ($c->total_proveedor == null) {
                         $utilidad = $c->total - $c->pago_operador;
-                    }elseif($c->total_proveedor != NULL){
+                    } elseif ($c->total_proveedor != null) {
                         $utilidad = $c->total - $c->total_proveedor;
-                    }else{
+                    } else {
                         $utilidad = 0;
                     }
                     return [
@@ -211,9 +649,9 @@ class ReporteriaController extends Controller
                             $c->contenedor->num_contenedor,
                             $utilidad
                          ];
-                 break;
-                 case 3: // Liquidados cxc
-                
+                    break;
+                case 3: // Liquidados cxc
+
                     return [
                         $c->cliente->nombre,
                         ($c->subcliente != null) ? $c->subcliente->nombre." / ".$c->subcliente->telefono : '-',
@@ -223,184 +661,322 @@ class ReporteriaController extends Controller
                         $c->estatus
                      ];
                     break;
-                    case 4: // Liquidados cxp
-                        return [
-                            $c->origen,
-                            $c->destino,
-                            $c->num_contenedor,
-                            $c->estatus
-                         ];
-                        break;
-                
+                case 4: // Liquidados cxp
+                    return [
+                        $c->origen,
+                        $c->destino,
+                        $c->num_contenedor,
+                        $c->estatus
+                     ];
+                    break;
+
             }
-            
+
         })->toArray();
         return $procesedData;
     }
 
-    public function exportGenericExcel(Request $r){
+    public function exportGenericExcel(Request $r)
+    {
         $fileName = "generic_excel_".uniqid().".xlsx";
         $data = self::buildExcelData($r->dataExport, $r->reportNumber);
         $headers = json_decode($r->reportHeaders);
 
-        Excel::store(new GenericExport($headers,$data), $fileName, 'public');
+        Excel::store(new GenericExport($headers, $data), $fileName, 'public');
         return Response::download(storage_path('app/public/'.$fileName), "excel_export.xlsx")->deleteFileAfterSend(true);
     }
 
     // ==================== C U E N T A S  P O R  P A G A R ====================
     public function index_cxp()
-{
-    $proveedores = Proveedor::where('id_empresa', '=', auth()->user()->id_empresa)
-                             ->orderBy('created_at', 'desc')
-                             ->get();
+    {
+        $proveedores = Proveedor::where('id_empresa', '=', auth()->user()->id_empresa)
+                                 ->orderBy('created_at', 'desc')
+                                 ->get();
 
-    /*$clientes = Client::where('id_empresa', '=', auth()->user()->id_empresa)
-                        ->orderBy('nombre', 'asc')
-                        ->get();*/
-    $clientes = Client::join('client_empresa as ce','clients.id','=','ce.id_client')
-                            ->where('ce.id_empresa',Auth::User()->id_empresa)
-                            ->where('is_active',1)
+        /*$clientes = Client::where('id_empresa', '=', auth()->user()->id_empresa)
+                            ->orderBy('nombre', 'asc')
+                            ->get();*/
+        $clientes = Client::join('client_empresa as ce', 'clients.id', '=', 'ce.id_client')
+                                ->where('ce.id_empresa', Auth::User()->id_empresa)
+                                ->where('is_active', 1)
+                                ->orderBy('nombre')->get();
+
+        $estadosCuentas = Estado_Cuenta::where('id_empresa', '=', auth()->user()->id_empresa)->get();
+
+        $clientesIds = $clientes->pluck('id');
+
+        $subclientes = Subclientes::whereIn('id_cliente', $clientesIds)->orderBy('created_at', 'desc')->get();
+
+        return view('reporteria.cxp.index', compact('proveedores', 'clientes', 'subclientes', 'estadosCuentas'));
+    }
+    public function advance_cxp(Request $request)
+    {
+        // Obtener proveedores y clientes de la empresa actual
+        $proveedores = Proveedor::where('id_empresa', '=', auth()->user()->id_empresa)
+                                 ->orderBy('created_at', 'desc')
+                                 ->get();
+
+        $clientes = Client::join('client_empresa as ce', 'clients.id', '=', 'ce.id_client')
+                            ->where('ce.id_empresa', Auth::User()->id_empresa)
+                            ->where('is_active', 1)
                             ->orderBy('nombre')->get();
+        $estadosCuentas = Estado_Cuenta::where('id_empresa', '=', auth()->user()->id_empresa)->get();
 
-    $clientesIds = $clientes->pluck('id');
+        $clientesIds = $clientes->pluck('id');
 
-    $subclientes = Subclientes::whereIn('id_cliente' ,$clientesIds)->orderBy('created_at', 'desc')->get();
+        $subclientes = Subclientes::whereIn('id_cliente', $clientesIds)->orderBy('created_at', 'desc')->get();
 
-    return view('reporteria.cxp.index', compact('proveedores', 'clientes','subclientes'));
-}
-public function advance_cxp(Request $request)
-{
-    // Obtener proveedores y clientes de la empresa actual
-    $proveedores = Proveedor::where('id_empresa', '=', auth()->user()->id_empresa)
-                             ->orderBy('created_at', 'desc')
-                             ->get();
+        // Obtener el ID del proveedor y del cliente desde la solicitud
+        $id_proveedor = $request->input('id_proveedor');
+        $numeroEdoCuenta = $request->numero_edo_cuenta ?? null;
 
-    $clientes = Client::join('client_empresa as ce','clients.id','=','ce.id_client')
-                        ->where('ce.id_empresa',Auth::User()->id_empresa)
-                        ->where('is_active',1)
-                        ->orderBy('nombre')->get();
+        // Mostrar advertencia si no se seleccionó proveedor
+        $showWarning = empty($id_proveedor);
 
-    $clientesIds = $clientes->pluck('id');                        
+        // Inicializar variables
+        $cotizaciones = [];
+        $proveedor_cxp = null;
 
-    $subclientes = Subclientes::whereIn('id_cliente' ,$clientesIds)->orderBy('created_at', 'desc')->get();
+        // Si se seleccionó un proveedor, filtrar las cotizaciones correspondientes
+        //     if ($id_proveedor) {
+        //         $cotizaciones = Cotizaciones::join('docum_cotizacion', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
+        //             ->join('asignaciones', 'docum_cotizacion.id', '=', 'asignaciones.id_contenedor')
+        //              ->leftJoin(
+        //                  'estado_cuenta_cotizaciones',
+        //                  'estado_cuenta_cotizaciones.cotizacion_id',
+        //                  '=',
+        //                  'cotizaciones.id'
+        //              )
+        // ->leftJoin(
+        //     'estado_cuenta',
+        //     'estado_cuenta.id',
+        //     '=',
+        //     'estado_cuenta_cotizaciones.estado_cuenta_id'
+        // )
+        //             ->where('cotizaciones.id_empresa', '=', auth()->user()->id_empresa)
+        //           //  ->whereNull('asignaciones.id_camion') // Verificar que el camión sea NULL , se rompio la logica al agregar contratos de tipo propio
+        //             ->where('asignaciones.tipo_contrato', 'Subcontratado')
+        //             ->where(function ($query) {
+        //                 $query->where('cotizaciones.estatus', '=', 'Aprobada')
+        //                       ->orWhere('cotizaciones.estatus', '=', 'Finalizado');
+        //             })
+        //             ->where('asignaciones.id_proveedor', '=', $id_proveedor)
+        //             ->where('cotizaciones.prove_restante', '>', 0)
+        //             ->select(
+        //                 'asignaciones.*',
+        //                 'docum_cotizacion.num_contenedor',
+        //                 'docum_cotizacion.id_cotizacion',
+        //                 'cotizaciones.origen',
+        //                 'cotizaciones.destino',
+        //                 'cotizaciones.estatus',
+        //                 'cotizaciones.prove_restante',
+        //                 'estado_cuenta.numero as numero_edo_cuenta'
+        //             )
+        //             ->get();
 
-    // Obtener el ID del proveedor y del cliente desde la solicitud
-    $id_proveedor = $request->input('id_proveedor');
+        //         // Obtener datos del proveedor seleccionado
+        //         $proveedor_cxp = Proveedor::find($id_proveedor);
+        //     }
 
-    // Mostrar advertencia si no se seleccionó proveedor
-    $showWarning = empty($id_proveedor);
 
-    // Inicializar variables
-    $cotizaciones = [];
-    $proveedor_cxp = null;
 
-    // Si se seleccionó un proveedor, filtrar las cotizaciones correspondientes
-    if ($id_proveedor) {
-        $cotizaciones = Cotizaciones::join('docum_cotizacion', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
-            ->join('asignaciones', 'docum_cotizacion.id', '=', 'asignaciones.id_contenedor')
-            ->where('cotizaciones.id_empresa', '=', auth()->user()->id_empresa)
-            ->whereNull('asignaciones.id_camion') // Verificar que el camión sea NULL
-            ->where(function($query) {
-                $query->where('cotizaciones.estatus', '=', 'Aprobada')
-                      ->orWhere('cotizaciones.estatus', '=', 'Finalizado');
-            })
-            ->where('asignaciones.id_proveedor', '=', $id_proveedor)
-            ->where('cotizaciones.prove_restante', '>', 0)
-            ->select(
-                'asignaciones.*',
-                'docum_cotizacion.num_contenedor',
-                'docum_cotizacion.id_cotizacion',
-                'cotizaciones.origen',
-                'cotizaciones.destino',
-                'cotizaciones.estatus',
-                'cotizaciones.prove_restante'
-            )
-            ->get();
+        $cotizacionesQuery = Cotizaciones::join('docum_cotizacion', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
+        ->join('asignaciones', 'docum_cotizacion.id', '=', 'asignaciones.id_contenedor')
+        ->leftJoin(
+            'estado_cuenta_cotizaciones',
+            'estado_cuenta_cotizaciones.cotizacion_id',
+            '=',
+            'cotizaciones.id'
+        )
+        ->leftJoin(
+            'estado_cuenta',
+            'estado_cuenta.id',
+            '=',
+            'estado_cuenta_cotizaciones.estado_cuenta_id'
+        )
+        ->where('cotizaciones.id_empresa', auth()->user()->id_empresa)
+        ->where('asignaciones.tipo_contrato', 'Subcontratado')
+        ->where(function ($query) {
+            $query->where('cotizaciones.estatus', 'Aprobada')
+                  ->orWhere('cotizaciones.estatus', 'Finalizado');
+        })
+        ->where('cotizaciones.prove_restante', '>', 0)
+        ->whereRaw('
+            asignaciones.total_proveedor - (
+                SELECT COALESCE(SUM(cpc.monto),0)
+                FROM cobros_pagos_cotizaciones cpc
+                JOIN cobros_pagos cp
+                    ON cp.id = cpc.cobro_pago_id
+                WHERE cpc.cotizacion_id = cotizaciones.id
+                AND cp.tipo = "cxp"
+            ) > 0
+        ');
 
-        // Obtener datos del proveedor seleccionado
-        $proveedor_cxp = Proveedor::find($id_proveedor);
+        if (!empty($id_proveedor)) {
+            $cotizacionesQuery->where('asignaciones.id_proveedor', $id_proveedor);
+        }
+
+        if (!empty($numeroEdoCuenta)) {
+            $cotizacionesQuery->where('estado_cuenta.id', $numeroEdoCuenta);
+        }
+
+        $cotizaciones = $cotizacionesQuery
+    ->select(
+        'asignaciones.*',
+        'docum_cotizacion.num_contenedor',
+        'docum_cotizacion.id_cotizacion',
+        'cotizaciones.origen',
+        'cotizaciones.destino',
+        'cotizaciones.estatus',
+        'cotizaciones.prove_restante',
+        'estado_cuenta.numero as numero_edo_cuenta',
+        'estado_cuenta.id as id_numero_edo_cuenta'
+    )
+    ->get();
+
+
+        if (!empty($id_proveedor)) {
+            $proveedor_cxp = Proveedor::find($id_proveedor);
+        }
+
+        // Retornar la vista con los datos necesarios
+        return view('reporteria.cxp.index', compact('proveedores', 'clientes', 'cotizaciones', 'proveedor_cxp', 'showWarning', 'id_proveedor', 'subclientes', 'estadosCuentas'));
     }
 
-    // Retornar la vista con los datos necesarios
-    return view('reporteria.cxp.index', compact('proveedores', 'clientes', 'cotizaciones', 'proveedor_cxp', 'showWarning', 'id_proveedor','subclientes'));
-}
 
-    
-public function export_cxp(Request $request)
-{
-    // Obtener la fecha actual
-    $fecha = date('Y-m-d');
-    $fechaCarbon = Carbon::parse($fecha);
+    public function export_cxp(Request $request)
+    {
+        // Obtener la fecha actual
+        $fecha = date('Y-m-d');
+        $fechaCarbon = Carbon::parse($fecha);
 
-    // Obtener los IDs de las cotizaciones seleccionadas
-    $cotizacionIds = $request->input('selected_ids', []);
-    if (empty($cotizacionIds)) {
-        return redirect()->back()->with('error', 'No se seleccionaron cotizaciones.');
+        // Obtener los IDs de las cotizaciones seleccionadas
+        $cotizacionIds = $request->input('selected_ids', []);
+        if (empty($cotizacionIds)) {
+            return redirect()->back()->with('error', 'No se seleccionaron cotizaciones.');
+        }
+
+        // Cargar las cotizaciones con sus proveedores y cuentas bancarias
+        $cotizaciones = Asignaciones::with([
+            'Proveedor.CuentasBancarias',
+            'Contenedor.Cotizacion.Subcliente',
+            'Contenedor.Cotizacion.estadoCuenta'
+        ])->whereIn('id', $cotizacionIds)->get();
+
+
+
+
+        $bancos_oficiales = Bancos::where('tipo', '=', 'Oficial')->get();
+        $bancos_no_oficiales = Bancos::where('tipo', '=', 'No Oficial')->get();
+
+        // Obtener la primera cotización (si es necesario)
+        $cotizacion = Asignaciones::with('Contenedor.Cotizacion.estadoCuenta')->where('id', $cotizacionIds)->first();
+        //  dd($cotizacion);
+
+        // Obtener los datos del usuario autenticado
+        $user = User::where('id', '=', auth()->user()->id)->first();
+
+        // Generar el archivo Excel o PDF según el tipo de archivo solicitado
+        if ($request->fileType == "xlsx") {
+            // Generar el archivo Excel y almacenarlo
+            Excel::store(new CxpExport($cotizaciones, $fechaCarbon, $bancos_oficiales, $bancos_no_oficiales, $cotizacion, $user, true), 'cotizaciones_cxp.xlsx', 'public');
+
+            // Devolver el archivo Excel como descarga
+            return Response::download(storage_path('app/public/cotizaciones_cxp.xlsx'), "cxp.xlsx")->deleteFileAfterSend(true);
+        } else {
+            // Generar el archivo PDF
+            $pdf = PDF::loadView('reporteria.cxp.pdf', compact('cotizaciones', 'fechaCarbon', 'bancos_oficiales', 'bancos_no_oficiales', 'cotizacion', 'user'))->setPaper('a4', 'landscape');
+
+            // Crear un nombre para el archivo PDF
+            $fileName = 'cxp_' . implode('_', $cotizacionIds) . '.pdf';
+
+            // Guardar el archivo PDF en la carpeta de almacenamiento
+            $pdf->save(storage_path('app/public/' . $fileName));
+
+            // Devolver el archivo PDF como descarga
+            $filePath = storage_path('app/public/' . $fileName);
+            return Response::download($filePath, $fileName)->deleteFileAfterSend(true);
+        }
     }
-
-    // Cargar las cotizaciones con sus proveedores y cuentas bancarias
-    $cotizaciones = Asignaciones::with([
-        'Proveedor.CuentasBancarias',
-        'Contenedor.Cotizacion.Subcliente'
-    ])->whereIn('id', $cotizacionIds)->get();
-    
-    
-    $bancos_oficiales = Bancos::where('tipo', '=', 'Oficial')->get();
-    $bancos_no_oficiales = Bancos::where('tipo', '=', 'No Oficial')->get();
-
-    // Obtener la primera cotización (si es necesario)
-    $cotizacion = Asignaciones::where('id', $cotizacionIds)->first();
-
-    // Obtener los datos del usuario autenticado
-    $user = User::where('id', '=', auth()->user()->id)->first();
-
-    // Generar el archivo Excel o PDF según el tipo de archivo solicitado
-    if ($request->fileType == "xlsx") {
-        // Generar el archivo Excel y almacenarlo
-        Excel::store(new CxpExport($cotizaciones, $fechaCarbon, $bancos_oficiales, $bancos_no_oficiales, $cotizacion, $user), 'cotizaciones_cxp.xlsx', 'public');
-        
-        // Devolver el archivo Excel como descarga
-        return Response::download(storage_path('app/public/cotizaciones_cxp.xlsx'), "cxp.xlsx")->deleteFileAfterSend(true);
-    } else {
-        // Generar el archivo PDF
-        $pdf = PDF::loadView('reporteria.cxp.pdf', compact('cotizaciones', 'fechaCarbon', 'bancos_oficiales', 'bancos_no_oficiales', 'cotizacion', 'user'))->setPaper('a4', 'landscape');
-
-        // Crear un nombre para el archivo PDF
-        $fileName = 'cxp_' . implode('_', $cotizacionIds) . '.pdf';
-
-        // Guardar el archivo PDF en la carpeta de almacenamiento
-        $pdf->save(storage_path('app/public/' . $fileName));
-
-        // Devolver el archivo PDF como descarga
-        $filePath = storage_path('app/public/' . $fileName);
-        return Response::download($filePath, $fileName)->deleteFileAfterSend(true);
-    }
-}
 
 
     // ==================== V I A J E S ====================
-    public function index_viajes(){
+    public function index_viajes()
+    {
 
-        $clientes = Client::where('id_empresa' ,'=',auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
+        /*   $clientes = Client::where('id_empresa', '=', auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
 
-        $subclientes = Subclientes::where('id_empresa' ,'=',auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
-        $proveedores = Proveedor::where('id_empresa' ,'=',auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
-        $estatus = \DB::table('cotizaciones')
-                    ->where('id_empresa', auth()->user()->id_empresa)
-                    ->select('estatus')
-                    ->distinct()
-                    ->pluck('estatus');
-                    $asignaciones = Asignaciones::with([
-                        'Contenedor.Cotizacion.Cliente',
-                        'Contenedor.Cotizacion.Subcliente',
-                        'Proveedor'
-                    ])
-                    ->where('id_empresa', auth()->user()->id_empresa)
-                    ->get();
+          $subclientes = Subclientes::where('id_empresa', '=', auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
+          $proveedores = Proveedor::where('id_empresa', '=', auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
+          $estatus = DB::table('cotizaciones')
+                      ->where('id_empresa', auth()->user()->id_empresa)
+                      ->select('estatus')
+                      ->distinct()
+                      ->pluck('estatus');
+          $asignaciones = Asignaciones::with([
+              'Contenedor.Cotizacion.Cliente',
+              'Contenedor.Cotizacion.Subcliente',
+              'Proveedor',
+              'Operador'
+          ])
+          ->where('id_empresa', auth()->user()->id_empresa)
+          ->get();
 
-    $viajesData = $asignaciones->map(function ($a) {
-        $numContenedor = $a->Contenedor->num_contenedor;
-        if(!is_null($a->Contenedor->Cotizacion->referencia_full)){
+          $viajesData = $asignaciones->map(function ($a) {
+              $numContenedor = $a->Contenedor->num_contenedor;
+              if (!is_null($a->Contenedor->Cotizacion->referencia_full)) {
+                  $secundaria = Cotizaciones::where('referencia_full', $a->Contenedor->Cotizacion->referencia_full)
+                  ->where('jerarquia', 'Secundario')
+                  ->with('DocCotizacion.Asignaciones')
+                  ->first();
+
+                  if ($secundaria && $secundaria->DocCotizacion) {
+                      $numContenedor .= ' / ' . $secundaria->DocCotizacion->num_contenedor;
+                  }
+              }
+              return [
+                  'id' => $a->id,
+                  'cliente' => $a->Contenedor->Cotizacion->Cliente->nombre ?? '-',
+                  'subcliente' => $a->Contenedor->Cotizacion->Subcliente->nombre ?? '-',
+                  'origen' => $a->Contenedor->Cotizacion->origen ?? '',
+                  'destino' => $a->Contenedor->Cotizacion->destino ?? '',
+                  'contenedor' => $numContenedor ?? '',
+                  'fecha_salida' => \Carbon\Carbon::parse($a->fecha_inicio)->format('d-m-Y'),
+                  'fecha_llegada' => \Carbon\Carbon::parse($a->fecha_fin)->format('d-m-Y'),
+                  'estatus' => $a->Contenedor->Cotizacion->estatus ?? '',
+                  'proveedor' => $a->Proveedor->nombre ?? '-',
+                  'operador' => $a->Operador->nombre ?? '-',
+              ];
+          })->toArray(); */
+
+        return view('reporteria.asignaciones.index');
+    }
+
+    public function getViajesFiltrados(Request $request)
+    {
+        $fechaInicio = $request->query('fecha_inicio');
+        $fechaFin = $request->query('fecha_fin');
+
+        $asignaciones = Asignaciones::with([
+            'Contenedor.Cotizacion.Cliente',
+            'Contenedor.Cotizacion.Subcliente',
+            'Proveedor',
+            'Operador'
+        ])
+        ->whereHas('Contenedor.Cotizacion', function ($query) {
+            $query->where('id_empresa', auth()->user()->id_empresa);
+        })
+        ->whereBetween('fecha_inicio', [
+            Carbon::parse($fechaInicio)->startOfDay(),
+            Carbon::parse($fechaFin)->endOfDay()
+        ])
+        ->get();
+
+        //  dd(Carbon::parse($fechaFin)->endOfDay(), $asignaciones);
+
+        $viajesData = $asignaciones->map(function ($a) {
+            $numContenedor = $a->Contenedor->num_contenedor;
+            if (!is_null($a->Contenedor->Cotizacion->referencia_full)) {
                 $secundaria = Cotizaciones::where('referencia_full', $a->Contenedor->Cotizacion->referencia_full)
                 ->where('jerarquia', 'Secundario')
                 ->with('DocCotizacion.Asignaciones')
@@ -409,52 +985,6 @@ public function export_cxp(Request $request)
                 if ($secundaria && $secundaria->DocCotizacion) {
                     $numContenedor .= ' / ' . $secundaria->DocCotizacion->num_contenedor;
                 }
-        }
-        return [
-            'id' => $a->id,
-            'cliente' => $a->Contenedor->Cotizacion->Cliente->nombre ?? '-',
-            'subcliente' => $a->Contenedor->Cotizacion->Subcliente->nombre ?? '-',
-            'origen' => $a->Contenedor->Cotizacion->origen ?? '',
-            'destino' => $a->Contenedor->Cotizacion->destino ?? '',
-            'contenedor' => $numContenedor ?? '',
-            'fecha_salida' => \Carbon\Carbon::parse($a->fehca_inicio_guard)->format('d-m-Y'),
-            'fecha_llegada' => \Carbon\Carbon::parse($a->fehca_fin_guard)->format('d-m-Y'),
-            'estatus' => $a->Contenedor->Cotizacion->estatus ?? '',
-            'proveedor' => $a->Proveedor->nombre ?? '-',
-        ];
-    })->toArray();
-
-    return view('reporteria.asignaciones.index', compact('clientes', 'subclientes', 'proveedores', 'estatus', 'asignaciones', 'viajesData'));
-    }
-
-    public function getViajesFiltrados(Request $request)
-    {
-        $fechaInicio = $request->query('fecha_inicio');
-        $fechaFin = $request->query('fecha_fin');
-    
-        $asignaciones = Asignaciones::with([
-            'Contenedor.Cotizacion.Cliente',
-            'Contenedor.Cotizacion.Subcliente',
-            'Proveedor'
-        ])
-        ->where('id_empresa', auth()->user()->id_empresa)
-        ->whereBetween('fehca_inicio_guard', [
-            Carbon::parse($fechaInicio)->startOfDay(),
-            Carbon::parse($fechaFin)->endOfDay()
-        ])
-        ->get();
-    
-        $viajesData = $asignaciones->map(function ($a) {
-            $numContenedor = $a->Contenedor->num_contenedor;
-            if(!is_null($a->Contenedor->Cotizacion->referencia_full)){
-                    $secundaria = Cotizaciones::where('referencia_full', $a->Contenedor->Cotizacion->referencia_full)
-                    ->where('jerarquia', 'Secundario')
-                    ->with('DocCotizacion.Asignaciones')
-                    ->first();
-
-                    if ($secundaria && $secundaria->DocCotizacion) {
-                        $numContenedor .= ' / ' . $secundaria->DocCotizacion->num_contenedor;
-                    }
             }
             return [
                 'id' => $a->id,
@@ -467,14 +997,16 @@ public function export_cxp(Request $request)
                 'fecha_llegada' => optional($a->fehca_fin_guard)->format('d-m-Y'),
                 'estatus' => $a->Contenedor->Cotizacion->estatus ?? '',
                 'proveedor' => $a->Proveedor->nombre ?? '-',
+                 'operador' => $a->Operador->nombre ?? '-',
             ];
         });
-    
+
         return response()->json($viajesData);
     }
 
-    public static function getContenedorSecundario($referencia_full){
-        if(!is_null($referencia_full)){
+    public static function getContenedorSecundario($referencia_full)
+    {
+        if (!is_null($referencia_full)) {
             $secundaria = Cotizaciones::where('referencia_full', $referencia_full)
             ->where('jerarquia', 'Secundario')
             ->with('DocCotizacion.Asignaciones')
@@ -486,7 +1018,7 @@ public function export_cxp(Request $request)
             }
 
         }
-                    
+
     }
 
     public function advance_viajes(Request $request)
@@ -494,64 +1026,63 @@ public function export_cxp(Request $request)
         $clientes = Client::where('id_empresa', auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
         $subclientes = Subclientes::where('id_empresa', auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
         $proveedores = Proveedor::where('id_empresa', auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
-        $estatus = \DB::table('cotizaciones')
+        $estatus = DB::table('cotizaciones')
             ->where('id_empresa', auth()->user()->id_empresa)
             ->select('estatus')
             ->distinct()
             ->pluck('estatus');
-    
+
         $id_client = $request->id_client;
         $id_subcliente = $request->id_subcliente;
         $id_proveedor = $request->id_proveedor;
-    
-        $asignaciones = Asignaciones::
-            join('docum_cotizacion', 'asignaciones.id_contenedor', '=', 'docum_cotizacion.id')
+
+        $asignaciones = Asignaciones::join('docum_cotizacion', 'asignaciones.id_contenedor', '=', 'docum_cotizacion.id')
             ->join('cotizaciones', 'docum_cotizacion.id_cotizacion', '=', 'cotizaciones.id')
             ->where('asignaciones.id_empresa', auth()->user()->id_empresa)
             ->select('asignaciones.*');
-    
+
         // ✅ Reemplazamos filtro por fechas anteriores por el nuevo daterange
         $fechaInicio = $request->query('fecha_inicio');
         $fechaFin = $request->query('fecha_fin');
-    
+
         if ($fechaInicio && $fechaFin) {
             $inicio = Carbon::parse($fechaInicio)->startOfDay();
             $fin = Carbon::parse($fechaFin)->endOfDay();
-    
+
             $asignaciones = $asignaciones->whereBetween('asignaciones.fehca_inicio_guard', [$inicio, $fin]);
         }
-    
+
         if (!is_null($id_client)) {
             $asignaciones = $asignaciones->where('cotizaciones.id_cliente', $id_client);
-    
+
             if (!is_null($id_subcliente) && $id_subcliente !== '') {
                 $asignaciones = $asignaciones->where('cotizaciones.id_subcliente', $id_subcliente);
             }
         }
-    
+
         if (!is_null($id_proveedor)) {
             $asignaciones = $asignaciones->where('asignaciones.id_proveedor', $id_proveedor);
         }
-    
+
         if ($request->filled('estatus')) {
             $asignaciones = $asignaciones->where('cotizaciones.estatus', $request->estatus);
         }
-    
+
         $asignaciones = $asignaciones->get();
-    
+
         $asignaciones = $asignaciones->get();
 
         $viajesData = $asignaciones->map(function ($a) {
             $numContenedor = $a->Contenedor->num_contenedor;
-            if(!is_null($a->Contenedor->Cotizacion->referencia_full)){
-                    $secundaria = Cotizaciones::where('referencia_full', $a->Contenedor->Cotizacion->referencia_full)
-                    ->where('jerarquia', 'Secundario')
-                    ->with('DocCotizacion.Asignaciones')
-                    ->first();
+            if (!is_null($a->Contenedor->Cotizacion->referencia_full)) {
+                $secundaria = Cotizaciones::where('referencia_full', $a->Contenedor->Cotizacion->referencia_full)
+                ->where('jerarquia', 'Secundario')
+                ->with('DocCotizacion.Asignaciones')
+                ->first();
 
-                    if ($secundaria && $secundaria->DocCotizacion) {
-                        $numContenedor .= ' / ' . $secundaria->DocCotizacion->num_contenedor;
-                    }
+                if ($secundaria && $secundaria->DocCotizacion) {
+                    $numContenedor .= ' / ' . $secundaria->DocCotizacion->num_contenedor;
+                }
             }
             return [
                 'id' => $a->id,
@@ -563,10 +1094,10 @@ public function export_cxp(Request $request)
                 'fecha_salida' => \Carbon\Carbon::parse($a->fehca_inicio_guard)->format('d-m-Y'),
                 'fecha_llegada' => \Carbon\Carbon::parse($a->fehca_fin_guard)->format('d-m-Y'),
                 'estatus' => $a->Contenedor->Cotizacion->estatus ?? '',
-                'proveedor' => $a->Proveedor->nombre ?? '-', 
+                'proveedor' => $a->Proveedor->nombre ?? '-',
             ];
         })->toArray();
-        
+
         return view('reporteria.asignaciones.index', compact(
             'asignaciones',
             'clientes',
@@ -575,92 +1106,93 @@ public function export_cxp(Request $request)
             'estatus',
             'viajesData'
         ));
-        
+
     }
-    
+
 
     public function export_viajes(Request $request)
-{
-    $fecha = date('Y-m-d');
-    $fechaCarbon = Carbon::parse($fecha);
+    {
+        $fecha = date('Y-m-d');
+        $fechaCarbon = Carbon::parse($fecha);
 
-    $fileType = $request->input('fileType');
-    $exportAll = $request->input('exportAll') === 'true';
-    $cotizacionIds = $request->input('cotizacion_ids', []);
+        $fileType = $request->input('fileType');
+        $exportAll = $request->input('exportAll') === 'true';
+        $cotizacionIds = $request->input('cotizacion_ids', []);
 
-    //  Detectar si se exporta todo o solo selección
-    if ($exportAll) {
-        $cotizaciones = Asignaciones::with(['Contenedor.Cotizacion.Cliente', 'Contenedor.Cotizacion.Subcliente'])
-            ->where('id_empresa', auth()->user()->id_empresa)
-            ->get();
-    } elseif (!empty($cotizacionIds)) {
-        $cotizaciones = Asignaciones::with(['Contenedor.Cotizacion.Cliente', 'Contenedor.Cotizacion.Subcliente'])
-            ->whereIn('id', $cotizacionIds)
-            ->get();
-    } else {
-        return back()->with('error', 'No se seleccionaron viajes para exportar.');
+        //  Detectar si se exporta todo o solo selección
+        if ($exportAll) {
+            $cotizaciones = Asignaciones::with(['Contenedor.Cotizacion.Cliente', 'Contenedor.Cotizacion.Subcliente'])
+                ->where('id_empresa', auth()->user()->id_empresa)
+                ->get();
+        } elseif (!empty($cotizacionIds)) {
+            $cotizaciones = Asignaciones::with(['Contenedor.Cotizacion.Cliente', 'Contenedor.Cotizacion.Subcliente'])
+                ->whereIn('id', $cotizacionIds)
+                ->get();
+        } else {
+            return back()->with('error', 'No se seleccionaron viajes para exportar.');
+        }
+
+        $bancos_oficiales = Bancos::where('tipo', '=', 'Oficial')->get();
+        $bancos_no_oficiales = Bancos::where('tipo', '=', 'No Oficial')->get();
+        $cotizacion = $cotizaciones->first();
+        $user = User::find(auth()->id());
+
+        if ($fileType === "xlsx") {
+            Excel::store(
+                new \App\Exports\AsignacionesExport(
+                    $cotizaciones,
+                    $fechaCarbon,
+                    $bancos_oficiales,
+                    $bancos_no_oficiales,
+                    $cotizacion,
+                    $user
+                ),
+                'viajes_' . $fecha . '.xlsx',
+                'public'
+            );
+
+            return response()->download(
+                storage_path('app/public/viajes_' . $fecha . '.xlsx'),
+                'viajes_' . $fecha . '.xlsx',
+                ['Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']
+            )->deleteFileAfterSend(true);
+        }
+
+        if ($fileType === "pdf") {
+            $pdf = PDF::loadView('reporteria.asignaciones.pdf', [
+                'cotizaciones' => $cotizaciones,
+                'fechaCarbon' => $fechaCarbon,
+                'bancos_oficiales' => $bancos_oficiales,
+                'bancos_no_oficiales' => $bancos_no_oficiales,
+                'cotizacion' => $cotizacion,
+                'user' => $user
+            ])->setPaper('a4', 'landscape');
+            set_time_limit(120); // 2 minutos
+            ini_set('memory_limit', '512M');
+
+            return $pdf->download('viajes_' . $fecha . '.pdf');
+        }
+
+        return back()->with('error', 'Formato no soportado.');
     }
 
-    $bancos_oficiales = Bancos::where('tipo', '=', 'Oficial')->get();
-    $bancos_no_oficiales = Bancos::where('tipo', '=', 'No Oficial')->get();
-    $cotizacion = $cotizaciones->first();
-    $user = User::find(auth()->id());
 
-    if ($fileType === "xlsx") {
-        Excel::store(
-            new \App\Exports\AsignacionesExport(
-                $cotizaciones,
-                $fechaCarbon,
-                $bancos_oficiales,
-                $bancos_no_oficiales,
-                $cotizacion,
-                $user
-            ),
-            'viajes_' . $fecha . '.xlsx',
-            'public'
-        );
-
-        return response()->download(
-            storage_path('app/public/viajes_' . $fecha . '.xlsx'),
-            'viajes_' . $fecha . '.xlsx',
-            ['Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']
-        )->deleteFileAfterSend(true);
-    }
-
-    if ($fileType === "pdf") {
-        $pdf = PDF::loadView('reporteria.asignaciones.pdf', [
-            'cotizaciones' => $cotizaciones,
-            'fechaCarbon' => $fechaCarbon,
-            'bancos_oficiales' => $bancos_oficiales,
-            'bancos_no_oficiales' => $bancos_no_oficiales,
-            'cotizacion' => $cotizacion,
-            'user' => $user
-        ])->setPaper('a4', 'landscape');
-        set_time_limit(120); // 2 minutos
-    ini_set('memory_limit', '512M');
-
-        return $pdf->download('viajes_' . $fecha . '.pdf');
-    }
-
-    return back()->with('error', 'Formato no soportado.');
-}
-
-    
     // ==================== U T I L I D A D E S ====================
 
-    public function index_utilidad(){
+    public function index_utilidad()
+    {
 
         return view('reporteria.utilidad.index');
     }
 
-    public function advance_utilidad(Request $request) {
-        $clientes = Client::where('id_empresa' ,'=',auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
-        $subclientes = Subclientes::where('id_empresa' ,'=',auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
-        $contenedores = DocumCotizacion::
-        join('cotizaciones', 'docum_cotizacion.id_cotizacion', '=', 'cotizaciones.id')
-        ->where('docum_cotizacion.num_contenedor' ,'!=', NULL)
-        ->where('docum_cotizacion.id_empresa' ,'=',auth()->user()->id_empresa)
-        ->where('cotizaciones.estatus' ,'=', 'Aprobada')
+    public function advance_utilidad(Request $request)
+    {
+        $clientes = Client::where('id_empresa', '=', auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
+        $subclientes = Subclientes::where('id_empresa', '=', auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
+        $contenedores = DocumCotizacion::join('cotizaciones', 'docum_cotizacion.id_cotizacion', '=', 'cotizaciones.id')
+        ->where('docum_cotizacion.num_contenedor', '!=', null)
+        ->where('docum_cotizacion.id_empresa', '=', auth()->user()->id_empresa)
+        ->where('cotizaciones.estatus', '=', 'Aprobada')
         ->orderBy('docum_cotizacion.created_at', 'desc')->get();
 
         $id_client = $request->id_client;
@@ -678,8 +1210,12 @@ public function export_cxp(Request $request)
         if ($request->fecha_de && $request->fecha_hasta) {
             $inicio = $request->fecha_de;
             $fin = $request->fecha_hasta;
-            $asignaciones = $asignaciones->where('asignaciones.fecha_inicio', '>=', $inicio)
-                                         ->where('asignaciones.fecha_inicio', '<=', $fin);
+            $asignaciones = $asignaciones->whereBetween('asignaciones.fecha_inicio', [
+        Carbon::parse($inicio)->startOfDay(),
+        Carbon::parse($fin)->endOfDay()
+    ]);
+            // ->where('asignaciones.fecha_inicio', '>=', $inicio)
+            //                                      ->where('asignaciones.fecha_inicio', '<=', $fin);
         }
 
         // Obtener los resultados
@@ -691,205 +1227,87 @@ public function export_cxp(Request $request)
         return view('reporteria.utilidad.index', compact('asignaciones', 'clientes', 'subclientes', 'contenedores', 'fechaDe', 'fechaHasta'));
     }
 
-    public function getContenedorUtilidad(Request $r){
-       /* */
-
+    public function getContenedorUtilidad(Request $r)
+    {
+        $info = $this->reporteriaService->getContenedorUtilidad($r->startDate, $r->endDate, auth()->user()->id_empresa);
         $contadorPeriodos = Common::contadorPeriodos($r->startDate, $r->endDate);
-       // $datos = Collect();
-        
-       // $datos = $datos->merge($viajes);
-
-       $fechaIniciaPeriodo = $r->startDate;
-       $fechaHasta = $r->endDate;
-       $Info = [];
-       $Diferidos = [];
-        for($periodo = 1; $periodo <= $contadorPeriodos; $periodo++){
-            $finalMes = Carbon::parse($fechaIniciaPeriodo);
-            $finalMes = $finalMes->endOfMonth();
-            $fechaFinPeriodo = $finalMes->toDateString();
-            $fechaInialGastos = Carbon::parse($fechaIniciaPeriodo)->startOfMonth();
-
-            $fechaI = $fechaIniciaPeriodo.' 00:00:00';
-            $fechaF = $fechaFinPeriodo.' 00:00:00';
-
-            //Obtener los gastos de las unidades (vehiculos)
-            $gastosUnidadQuery = "SELECT 
-            a.id_camion,
-            gg.motivo,
-            COUNT(DISTINCT a.id) AS total_asignaciones,
-            COALESCE(SUM(DISTINCT gg.monto1 / JSON_LENGTH(JSON_EXTRACT(gg.aplicacion_gasto, '$.elementos'))), 0) AS total_gastos_periodo,
-            COALESCE(SUM(DISTINCT gg.monto1 / JSON_LENGTH(JSON_EXTRACT(gg.aplicacion_gasto, '$.elementos'))), 0) / COUNT(DISTINCT a.id) AS gasto_por_viaje
-            FROM asignaciones a
-            LEFT JOIN gastos_generales gg 
-                ON gg.aplicacion_gasto IS NOT NULL
-                AND JSON_VALID(gg.aplicacion_gasto) = 1
-                AND JSON_UNQUOTE(JSON_EXTRACT(gg.aplicacion_gasto, '$.aplicacion')) = 'equipos'
-                AND JSON_CONTAINS(
-                    JSON_EXTRACT(gg.aplicacion_gasto, '$.elementos'),
-                    JSON_OBJECT('equipo', CAST(a.id_camion AS CHAR)),
-                    '$'
-                )
-                AND gg.fecha BETWEEN '$fechaI' AND '$fechaF'
-            WHERE a.fecha_inicio BETWEEN '$fechaI' AND '$fechaF'
-            AND a.id_camion IS NOT NULL
-            GROUP BY a.id_camion, gg.motivo;";
-
-            $gastosUnidad = Collect(DB::select($gastosUnidadQuery));
-
-            $consultar = 'select c.id as id_cotizacion,a.id_camion,dc.num_contenedor,cl.nombre as cliente, op.nombre Operador, a.sueldo_viaje,dinero_viaje, pr.nombre as Proveedor,total_proveedor,
-            c.total, c.estatus,estatus_pago,c.fecha_pago,a.fecha_inicio,a.fecha_fin,DATEDIFF(a.fecha_fin,a.fecha_inicio) as tiempo_viaje,c.referencia_full
-            from cotizaciones c
-            left join clients cl on c.id_cliente = cl.id
-            left join docum_cotizacion dc on c.id = dc.id_cotizacion
-            left join asignaciones a on dc.id = a.id_contenedor
-            left join operadores op on a.id_operador = op.id
-            left join proveedores pr on a.id_proveedor = pr.id
-            left join equipos eq on a.id_camion = eq.id
-            where a.fecha_inicio between '."'".$fechaI."'".' and '."'".$fechaF."' and c.estatus != 'Cancelada' and c.id_empresa = ".Auth::User()->id_empresa;
-
-            $viajes = DB::select($consultar);
-
-            $viajesPeriodo = sizeof($viajes);
-
-            foreach($viajes as $d){
-                $detalleGastos = null;
-
-                $camion = $gastosUnidad->where('id_camion', $d->id_camion);
-
-                foreach ($camion as $gc) {
-                    // Accedés a $fila->total_asignaciones, $fila->total_gastos_periodo, etc.
-                    $detalleGastos [] = ["fecha_gasto" => $fechaI, 
-                                        "monto_gasto" => round($gc->gasto_por_viaje ,2), 
-                                        "tipo_gasto" => "DIFERIDO", 
-                                        "motivo_gasto" => $gc->motivo
-                                    ];
-                }
-
-                $gastosExtra = GastosExtras::where('id_cotizacion',$d->id_cotizacion)->get();
-                $gastosOperador = GastosOperadores::where('id_cotizacion',$d->id_cotizacion)->get();
-
-                $dineroViaje = DineroContenedor::where('id_contenedor',$d->id_cotizacion)->get()->sum('monto');
-                $dineroViajeJustificado = ViaticosOperador::where('id_cotizacion',$d->id_cotizacion)->get()->sum('monto');
-
-                $sinJustificar = $dineroViaje - $dineroViajeJustificado;
-    
-                foreach($gastosExtra as $ge){
-                    $detalleGastos [] = ["fecha_gasto" => $ge->created_at, 
-                    "monto_gasto" => $ge->monto, 
-                    "tipo_gasto" => "Gasto Extra", 
-                    "motivo_gasto" => $ge->descripcion
-                ];
-                }
-    
-                foreach($gastosOperador as $go){
-                    $detalleGastos [] = ["fecha_gasto" => $go->fecha_pago, 
-                    "monto_gasto" => $go->cantidad, 
-                    "tipo_gasto" => "Gastos Viaje", 
-                    "motivo_gasto" => $go->tipo
-                ];
-                }
-
-                $contenedor = $d->num_contenedor;
-
-                if (!is_null($d->referencia_full )) {
-                    $secundaria = Cotizaciones::where('referencia_full', $d->referencia_full)
-                        ->where('jerarquia', 'Secundario')
-                        ->with('DocCotizacion.Asignaciones')
-                        ->first();
-
-                    if ($secundaria && $secundaria->DocCotizacion) {
-                        $contenedor .= ' / ' . $secundaria->DocCotizacion->num_contenedor;
-                    }
-                }
-
-    
-                $pagoOperacion = (is_null($d->Proveedor)) ? $d->sueldo_viaje : $d->total_proveedor;
-                $gastosDiferidos = round($camion->sum('gasto_por_viaje') ,2);
-                $Columns = [
-                            "numContenedor" => $contenedor,
-                            "cliente" => $d->cliente,
-                            "precioViaje" => $d->total + $gastosExtra->sum('monto'),
-                            "transportadoPor" => (is_null($d->Proveedor)) ? 'Operador' : 'Proveedor',
-                            "operadorOrProveedor" => (is_null($d->Proveedor)) ? $d->Operador : $d->Proveedor,
-                            "pagoOperacion" => $pagoOperacion - abs($sinJustificar),
-                            "gastosExtra" => $gastosExtra->sum('monto'),
-                            "dineroViajeSinJustificar" => abs($sinJustificar),
-                            "gastosViaje" => $gastosOperador->sum('cantidad'),
-                            "viajeInicia"=> $d->fecha_inicio,
-                            "viajeTermina"=> $d->fecha_fin, 
-                            "estatusViaje" => $d->estatus,     
-                            "estatusPago" => ($d->estatus_pago == 1) ? 'Pagado' : 'Por Cobrar',
-                            "gastosDiferidos" =>  $gastosDiferidos,
-                            "detalleGastos" => $detalleGastos,
-                            "utilidad" => $d->total  - $pagoOperacion - $gastosDiferidos - $gastosExtra->sum('monto') - $gastosOperador->sum('cantidad') ,
-
-                            ];
-                $Info[] = $Columns;
-            }
-
-            $fechaIniciaPeriodo = $finalMes->addDay()->toDateString();
-            
-        }
-
-        return json_encode(["Info" => $Info,"contadorPeriodos"=> $contadorPeriodos, "Diferidos" => $Diferidos]);
-        return $Info;
-
+        return json_encode(["Info" => $info, "contadorPeriodos" => $contadorPeriodos, "Diferidos" => []]);
     }
-
-    public function export_utilidad(Request $request){
+    public function export_utilidad(Request $request)
+    {
         $fechaInicio = $request->input('fechaInicio');
         $fechaFin = $request->input('fechaFin');
+        $fileType = $request->input('fileType');
 
         $fecha = date('Y-m-d');
         $fechaCarbon = Carbon::parse($fecha);
-        $cotizaciones = Collect(json_decode($request->rowData,true));//Asignaciones::whereIn('id', $cotizacionIds)->get();
-        $cotizacion = [];//Asignaciones::where('id', $cotizacionIds)->first();
+
+
+        $info = $this->reporteriaService->getContenedorUtilidad($fechaInicio, $fechaFin, auth()->user()->id_empresa);
+        $cotizaciones = collect($info);
+
+
+        if ($request->has('rowData') && !empty($request->rowData)) {
+            $selectedData = json_decode($request->rowData, true);
+            if (is_array($selectedData) && count($selectedData) > 0) {
+                $selectedContenedores = collect($selectedData)->pluck('numContenedor')->toArray();
+                $cotizaciones = $cotizaciones->filter(function ($item) use ($selectedContenedores) {
+                    return in_array($item['numContenedor'], $selectedContenedores);
+                })->values();
+            }
+        }
+
+        $cotizacion = [];
         $user = User::where('id', '=', auth()->user()->id)->first();
 
-       $gastosGenerales = GastosGenerales::with('Categoria')
-    ->where('id_empresa', auth()->user()->id_empresa)
-    ->where('aplicacion_gasto','like',"%periodo%")
-    ->whereBetween('fecha',[$fechaInicio,$fechaFin])
-    ->get();
 
-       $gastos = $gastosGenerales->sum('monto1');
+     $gastosGenerales = Gasto::with(['categoria', 'pagos'])
+        ->join('gasto_imputaciones as gi', 'gastos.id', '=', 'gi.gasto_id')
+        ->where('gastos.id_empresa', auth()->user()->id_empresa)
+        ->whereIn('gi.tipo_imputacion', ['periodo', 'empresa'])
+        ->whereBetween('gi.fecha_imputacion', [$fechaInicio, $fechaFin])
+        ->select('gastos.*', 'gi.monto_imputado as monto_aplicado', 'gi.fecha_imputacion as fecha_aplicada')
+        ->get();
 
-       // $gastos = [];
-
+        $gastos = $gastosGenerales->sum('monto_aplicado');
         $utilidad = $cotizaciones->sum('utilidad');
 
-        $totalRows = $request->totalRows;
+        $totalRows = count($info);
         $selectedRows = $cotizaciones->count();
-  
 
-   if ($request->fileType == "xlsx") {
-    return Excel::download(
-        new \App\Exports\UtilidadExport(
-            $cotizaciones, 
-            $fechaCarbon, 
-            $cotizacion, 
-            $user, 
-            $gastos, 
-            $gastosGenerales, 
-            $utilidad,
-            $fechaInicio,
-            $fechaFin,
-            $totalRows,
-            $selectedRows
-        ),
-        'Resultados_' . now()->format('d-m-Y') . '.xlsx'
-    );
+        if ($fileType == "xlsx") {
+            return Excel::download(
+                new \App\Exports\UtilidadExport(
+                    $cotizaciones,
+                    $fechaCarbon,
+                    $cotizacion,
+                    $user,
+                    $gastos,
+                    $gastosGenerales,
+                    $utilidad,
+                    $fechaInicio,
+                    $fechaFin,
+                    $totalRows,
+                    $selectedRows
+                ),
+                'Resultados_' . now()->format('d-m-Y') . '.xlsx'
+            );
+        } else {
+            $pdf = PDF::loadView('reporteria.utilidad.pdf', compact(
+                'cotizaciones',
+                'utilidad',
+                'fechaInicio',
+                'fechaFin',
+                'cotizacion',
+                'user',
+                'gastos',
+                'gastosGenerales',
+                'totalRows',
+                'selectedRows'
+            ))->setPaper('a4', 'landscape');
 
-
-} else {
-    $pdf = PDF::loadView('reporteria.utilidad.pdf', compact(
-        'cotizaciones','utilidad','fechaInicio','fechaFin',
-        'cotizacion','user','gastos','gastosGenerales','totalRows','selectedRows'
-    ))->setPaper('a4', 'landscape');
-
-    return $pdf->stream('Resultados_rpt.pdf');
-}
-
+            return $pdf->stream('Resultados_rpt.pdf');
+        }
     }
 
     // ==================== D O C U M E N T O S ====================
@@ -899,21 +1317,21 @@ public function export_cxp(Request $request)
         $clientes = Client::where('id_empresa', auth()->user()->id_empresa)
             ->orderBy('created_at', 'desc')
             ->get();
-    
+
         $subclientes = Subclientes::where('id_empresa', auth()->user()->id_empresa)
             ->orderBy('created_at', 'desc')
             ->get();
-    
+
         $proveedores = Proveedor::where('id_empresa', auth()->user()->id_empresa)
             ->orderBy('created_at', 'desc')
             ->get();
-    
+
         // Construir consulta base
         $cotizacionesQuery = Cotizaciones::query()
 
             ->where('cotizaciones.id_empresa', auth()->user()->id_empresa)
             ->where('cotizaciones.estatus', '!=', 'Cancelada')
-            ->where('cotizaciones.jerarquia',"Principal")
+            ->where('cotizaciones.jerarquia', "Principal")
             ->leftJoin('docum_cotizacion', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
             ->leftJoin('asignaciones', 'docum_cotizacion.id', '=', 'asignaciones.id_contenedor')
             ->leftJoin('clients', 'cotizaciones.id_cliente', '=', 'clients.id')
@@ -935,7 +1353,7 @@ public function export_cxp(Request $request)
             )
             ->distinct();
 
-    
+
         // Aplicar filtro por fechas si vienen del request
         if ($request->filled('fecha_inicio') && $request->filled('fecha_fin')) {
             $cotizacionesQuery->whereBetween('asignaciones.fecha_inicio', [
@@ -943,258 +1361,261 @@ public function export_cxp(Request $request)
                 $request->fecha_fin
             ]);
         }
-    
+
         $cotizaciones = $cotizacionesQuery->get();
-        
-       $cotizaciones = $cotizaciones->map(function($cot){
-    $numContenedor = $cot->num_contenedor;
-    $docCCP = $cot->doc_ccp;
-    $doda = $cot->doda;
-    $boletaLiberacion = $cot->boleta_liberacion;
-    $cartaPorte = $cot->carta_porte;
-    $boletaVacio = $cot->boleta_vacio;
-    $docEir = $cot->doc_eir;
-    
-    $tipo = "";
-    $eirPrimario = $cot->doc_eir;
-$cimaPrimario = $cot->cima;
-$eirSecundario = null;
-$cimaSecundario = null;
 
-    $proveedorNombre = null;
-    if ($cot->id_proveedor) {
-        $proveedor = \App\Models\Proveedor::find($cot->id_proveedor);
-        $proveedorNombre = $proveedor ? $proveedor->nombre : null;
-    }
+        $cotizaciones = $cotizaciones->map(function ($cot) {
+            $numContenedor = $cot->num_contenedor;
+            $docCCP = $cot->doc_ccp;
+            $doda = $cot->doda;
+            $boletaLiberacion = $cot->boleta_liberacion;
+            $cartaPorte = $cot->carta_porte;
+            $boletaVacio = $cot->boleta_vacio;
+            $docEir = $cot->doc_eir;
 
-    if (!is_null($cot->referencia_full)) {
-    $secundaria = \App\Models\Cotizaciones::where('referencia_full', $cot->referencia_full)
-        ->where('jerarquia', 'Secundario')
-        ->with('DocCotizacion')
-        ->first();
+            $tipo = "";
+            $eirPrimario = $cot->doc_eir;
+            $cimaPrimario = $cot->cima;
+            $eirSecundario = null;
+            $cimaSecundario = null;
 
-    if ($secundaria && $secundaria->DocCotizacion) {
-        $eirSecundario = $secundaria->DocCotizacion->doc_eir;
-        $cimaSecundario = $secundaria->DocCotizacion->cima;
+            $proveedorNombre = null;
+            if ($cot->id_proveedor) {
+                $proveedor = \App\Models\Proveedor::find($cot->id_proveedor);
+                $proveedorNombre = $proveedor ? $proveedor->nombre : null;
+            }
 
-        $docCCP = ($docCCP && $secundaria->DocCotizacion->doc_ccp) ? true : false;
-        $doda = ($doda && $secundaria->DocCotizacion->doda) ? true : false;
-        $docEir = ($docEir && $secundaria->DocCotizacion->doc_eir) ? true : false;
-        $boletaLiberacion = ($boletaLiberacion && $secundaria->DocCotizacion->boleta_liberacion) ? true : false;
-        $cartaPorte = ($cartaPorte && $secundaria->carta_porte) ? true : false;
-        $boletaVacio = ($boletaVacio && $secundaria->img_boleta) ? true : false;
-        $numContenedor .= '/' . $secundaria->DocCotizacion->num_contenedor;
-    }
+            if (!is_null($cot->referencia_full)) {
+                $secundaria = \App\Models\Cotizaciones::where('referencia_full', $cot->referencia_full)
+                    ->where('jerarquia', 'Secundario')
+                    ->with('DocCotizacion')
+                    ->first();
 
-    $tipo = 'Full';
-}
+                if ($secundaria && $secundaria->DocCotizacion) {
+                    $eirSecundario = $secundaria->DocCotizacion->doc_eir;
+                    $cimaSecundario = $secundaria->DocCotizacion->cima;
 
-   return [
-    "id"=> $cot->id,
-    "cliente"=> $cot->cliente,
-    "num_contenedor"=>$numContenedor,
-    "doc_ccp"=> $docCCP,
-    "boleta_liberacion"=> $boletaLiberacion,
-    "doda"=> $doda,
-    "carta_porte"=> $cartaPorte,
-    "boleta_vacio"=> $boletaVacio,
-    "doc_eir"=> $docEir,
-    "proveedor" => $proveedorNombre,
-    "fecha_inicio"=> $cot->fecha_inicio,
-    "fecha_fin"=> $cot->fecha_fin,
-    "tipo" => $tipo,
-    "cima" => $cot->cima, //  agrega esta línea
-    "eir_primario" => $eirPrimario,
+                    $docCCP = ($docCCP && $secundaria->DocCotizacion->doc_ccp) ? true : false;
+                    $doda = ($doda && $secundaria->DocCotizacion->doda) ? true : false;
+                    $docEir = ($docEir && $secundaria->DocCotizacion->doc_eir) ? true : false;
+                    $boletaLiberacion = ($boletaLiberacion && $secundaria->DocCotizacion->boleta_liberacion) ? true : false;
+                    $cartaPorte = ($cartaPorte && $secundaria->carta_porte) ? true : false;
+                    $boletaVacio = ($boletaVacio && $secundaria->img_boleta) ? true : false;
+                    $numContenedor .= '/' . $secundaria->DocCotizacion->num_contenedor;
+                }
+
+                $tipo = 'Full';
+            }
+
+            return [
+             "id" => $cot->id,
+             "cliente" => $cot->cliente,
+             "num_contenedor" => $numContenedor,
+             "doc_ccp" => $docCCP,
+             "boleta_liberacion" => $boletaLiberacion,
+             "doda" => $doda,
+             "carta_porte" => $cartaPorte,
+             "boleta_vacio" => $boletaVacio,
+             "doc_eir" => $docEir,
+             "proveedor" => $proveedorNombre,
+             "fecha_inicio" => $cot->fecha_inicio,
+             "fecha_fin" => $cot->fecha_fin,
+             "tipo" => $tipo,
+             "cima" => $cot->cima, //  agrega esta línea
+             "eir_primario" => $eirPrimario,
 "eir_secundario" => $eirSecundario,
 "cima_primario" => $cimaPrimario,
 "cima_secundario" => $cimaSecundario,
 ];
 
-});
+        });
 
-    
+
         return view('reporteria.documentos.index', compact('cotizaciones', 'clientes', 'subclientes', 'proveedores'));
     }
 
-    
-    
 
-public function advance_documentos(Request $request) {
-    $clientes = Client::where('id_empresa', auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
-    $subclientes = Subclientes::where('id_empresa', auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
 
-    $id_client = $request->id_client;
-    $id_subcliente = $request->id_subcliente;
 
-    // Construir la consulta inicial
-    $cotizaciones = Cotizaciones::join('docum_cotizacion', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
-        ->where('cotizaciones.id_empresa', auth()->user()->id_empresa)
-        ->where('cotizaciones.estatus', 'Aprobada')
-        ->select(
-            'cotizaciones.id',
-            'docum_cotizacion.num_contenedor',
-            'docum_cotizacion.doc_ccp',
-            'docum_cotizacion.boleta_liberacion',
-            'docum_cotizacion.doda',
-            'cotizaciones.carta_porte',
-            'cotizaciones.img_boleta AS boleta_vacio',
-            'docum_cotizacion.doc_eir',
-            DB::raw('EXISTS(SELECT 1 FROM docum_cotizacion WHERE docum_cotizacion.id_cotizacion = cotizaciones.id) as documentos_existen')
-        );
+    public function advance_documentos(Request $request)
+    {
+        $clientes = Client::where('id_empresa', auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
+        $subclientes = Subclientes::where('id_empresa', auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
 
-    if ($id_client !== null) {
-        $cotizaciones = $cotizaciones->where('cotizaciones.id_cliente', $id_client);
+        $id_client = $request->id_client;
+        $id_subcliente = $request->id_subcliente;
 
-        if ($id_subcliente !== null && $id_subcliente !== '') {
-            $cotizaciones = $cotizaciones->where('cotizaciones.id_subcliente', $id_subcliente);
+        // Construir la consulta inicial
+        $cotizaciones = Cotizaciones::join('docum_cotizacion', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
+            ->where('cotizaciones.id_empresa', auth()->user()->id_empresa)
+            ->where('cotizaciones.estatus', 'Aprobada')
+            ->select(
+                'cotizaciones.id',
+                'docum_cotizacion.num_contenedor',
+                'docum_cotizacion.doc_ccp',
+                'docum_cotizacion.boleta_liberacion',
+                'docum_cotizacion.doda',
+                'cotizaciones.carta_porte',
+                'cotizaciones.img_boleta AS boleta_vacio',
+                'docum_cotizacion.doc_eir',
+                DB::raw('EXISTS(SELECT 1 FROM docum_cotizacion WHERE docum_cotizacion.id_cotizacion = cotizaciones.id) as documentos_existen')
+            );
+
+        if ($id_client !== null) {
+            $cotizaciones = $cotizaciones->where('cotizaciones.id_cliente', $id_client);
+
+            if ($id_subcliente !== null && $id_subcliente !== '') {
+                $cotizaciones = $cotizaciones->where('cotizaciones.id_subcliente', $id_subcliente);
+            }
         }
+
+        // Obtener los resultados
+        $cotizaciones = $cotizaciones->get();
+
+        return view('reporteria.documentos.index', compact('cotizaciones', 'clientes', 'subclientes'));
     }
 
-    // Obtener los resultados
-    $cotizaciones = $cotizaciones->get();
-
-    return view('reporteria.documentos.index', compact('cotizaciones', 'clientes', 'subclientes'));
-}
 
 
 
+    public function export_documentos(Request $request)
+    {
 
-public function export_documentos(Request $request)
-{
+        ini_set('memory_limit', '512M');
+        ini_set('max_execution_time', 120);
+        $fecha = date('Y-m-d');
+        $fechaCarbon = Carbon::parse($fecha);
+        $cotizacionIds = $request->input('selected_ids', []);
 
-    ini_set('memory_limit', '512M');
-    ini_set('max_execution_time', 120);
-    $fecha = date('Y-m-d');
-    $fechaCarbon = Carbon::parse($fecha);
-    $cotizacionIds = $request->input('selected_ids', []);
+        if (empty($cotizacionIds)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No se seleccionaron cotizaciones.'
+            ], 400);
+        }
 
-    if (empty($cotizacionIds)) {
+        $cotizaciones1 = Cotizaciones::join('docum_cotizacion', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
+            ->whereIn('cotizaciones.id', $cotizacionIds)
+            ->where('cotizaciones.jerarquia', "Principal")
+            ->select(
+                'docum_cotizacion.num_contenedor',
+                'docum_cotizacion.doc_ccp',
+                'docum_cotizacion.boleta_liberacion',
+                'docum_cotizacion.doda',
+                'cotizaciones.carta_porte',
+                'docum_cotizacion.boleta_vacio',
+                'docum_cotizacion.doc_eir',
+                'docum_cotizacion.cima',
+                'cotizaciones.referencia_full'
+            )
+            ->get();
+
+        $cotizacion = Cotizaciones::whereIn('id', $cotizacionIds)->get();
+
+        $cotizaciones = $cotizaciones1->map(function ($cot) {
+            $numContenedor = $cot->num_contenedor;
+            $docCCP = $cot->doc_ccp;
+            $doda = $cot->doda;
+            $boletaLiberacion = $cot->boleta_liberacion;
+            $cartaPorte = $cot->carta_porte;
+            $boletaVacio = $cot->boleta_vacio;
+            $docEir = $cot->doc_eir;
+            $tipo = "";
+
+            // Nuevos campos para EIR y CIMA individuales
+            $eirPrimario = $docEir;
+            $cimaPrimario = $cot->cima;
+            $eirSecundario = null;
+            $cimaSecundario = null;
+
+            if (!is_null($cot->referencia_full)) {
+                $secundaria = \App\Models\Cotizaciones::where('referencia_full', $cot->referencia_full)
+                    ->where('jerarquia', 'Secundario')
+                    ->with('DocCotizacion')
+                    ->first();
+
+                if ($secundaria && $secundaria->DocCotizacion) {
+                    $eirSecundario = $secundaria->DocCotizacion->doc_eir;
+                    $cimaSecundario = $secundaria->DocCotizacion->cima;
+
+                    $docCCP = ($docCCP && $secundaria->DocCotizacion->doc_ccp) ? true : false;
+                    $doda = ($doda && $secundaria->DocCotizacion->doda) ? true : false;
+                    $docEir = ($docEir && $secundaria->DocCotizacion->doc_eir) ? true : false;
+                    $boletaLiberacion = ($boletaLiberacion && $secundaria->DocCotizacion->boleta_liberacion) ? true : false;
+                    $cartaPorte = ($cartaPorte && $secundaria->carta_porte) ? true : false;
+                    $boletaVacio = ($boletaVacio && $secundaria->img_boleta) ? true : false;
+
+                    $numContenedor .= ' / ' . $secundaria->DocCotizacion->num_contenedor;
+                    $tipo = "Full";
+                }
+            }
+
+            return [
+                "id" => $cot->id,
+                "cliente" => $cot->cliente ?? null,
+                "num_contenedor" => $numContenedor,
+                "doc_ccp" => $docCCP,
+                "boleta_liberacion" => $boletaLiberacion,
+                "doda" => $doda,
+                "carta_porte" => $cartaPorte,
+                "boleta_vacio" => $boletaVacio,
+                "doc_eir" => $docEir,
+                "id_proveedor" => $cot->id_proveedor ?? null,
+                "fecha_inicio" => $cot->fecha_inicio ?? null,
+                "fecha_fin" => $cot->fecha_fin ?? null,
+                "tipo" => $tipo,
+                "cima" => $cot->cima,
+
+                // 👇 Agregados para PDF dinámico
+                "eir_primario" => $eirPrimario,
+                "eir_secundario" => $eirSecundario,
+                "cima_primario" => $cimaPrimario,
+                "cima_secundario" => $cimaSecundario,
+            ];
+        });
+
+
+        $user = auth()->user();
+
+        if ($request->fileType === 'xlsx') {
+            return Excel::download(
+                new \App\Exports\DocumentosExport($cotizaciones, $fechaCarbon, $cotizacion, $user),
+                'documentos.xlsx'
+            );
+        }
+
+        if ($request->fileType === 'pdf') {
+            $pdf = PDF::loadView('reporteria.documentos.pdf', compact('cotizaciones', 'fechaCarbon', 'cotizacion', 'user'))
+                ->setPaper('a4', 'landscape');
+            return $pdf->download('documentos.pdf');
+        }
+
         return response()->json([
             'success' => false,
-            'message' => 'No se seleccionaron cotizaciones.'
+            'message' => 'Tipo de archivo no soportado.'
         ], 400);
     }
-
-    $cotizaciones1 = Cotizaciones::join('docum_cotizacion', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
-        ->whereIn('cotizaciones.id', $cotizacionIds)
-        ->where('cotizaciones.jerarquia',"Principal")
-        ->select(
-            'docum_cotizacion.num_contenedor',
-            'docum_cotizacion.doc_ccp',
-            'docum_cotizacion.boleta_liberacion',
-            'docum_cotizacion.doda',
-            'cotizaciones.carta_porte',
-            'docum_cotizacion.boleta_vacio',
-            'docum_cotizacion.doc_eir',
-            'docum_cotizacion.cima',
-            'cotizaciones.referencia_full'
-        )
-        ->get();
-
-    $cotizacion = Cotizaciones::whereIn('id', $cotizacionIds)->get(); 
-
-    $cotizaciones = $cotizaciones1->map(function($cot){
-    $numContenedor = $cot->num_contenedor;
-    $docCCP = $cot->doc_ccp;
-    $doda = $cot->doda;
-    $boletaLiberacion = $cot->boleta_liberacion;
-    $cartaPorte = $cot->carta_porte;
-    $boletaVacio = $cot->boleta_vacio;
-    $docEir = $cot->doc_eir;
-    $tipo = "";
-    
-    // Nuevos campos para EIR y CIMA individuales
-    $eirPrimario = $docEir;
-    $cimaPrimario = $cot->cima;
-    $eirSecundario = null;
-    $cimaSecundario = null;
-
-    if (!is_null($cot->referencia_full)) {
-        $secundaria = \App\Models\Cotizaciones::where('referencia_full', $cot->referencia_full)
-            ->where('jerarquia', 'Secundario')
-            ->with('DocCotizacion')
-            ->first();
-
-        if ($secundaria && $secundaria->DocCotizacion) {
-            $eirSecundario = $secundaria->DocCotizacion->doc_eir;
-            $cimaSecundario = $secundaria->DocCotizacion->cima;
-
-            $docCCP = ($docCCP && $secundaria->DocCotizacion->doc_ccp) ? true : false;
-            $doda = ($doda && $secundaria->DocCotizacion->doda) ? true : false;
-            $docEir = ($docEir && $secundaria->DocCotizacion->doc_eir) ? true : false;
-            $boletaLiberacion = ($boletaLiberacion && $secundaria->DocCotizacion->boleta_liberacion) ? true : false;
-            $cartaPorte = ($cartaPorte && $secundaria->carta_porte) ? true : false;
-            $boletaVacio = ($boletaVacio && $secundaria->img_boleta) ? true : false;
-
-            $numContenedor .= ' / ' . $secundaria->DocCotizacion->num_contenedor;
-            $tipo = "Full";
-        }
-    }
-
-    return [
-        "id"=> $cot->id,
-        "cliente"=> $cot->cliente ?? null,
-        "num_contenedor"=> $numContenedor,
-        "doc_ccp"=> $docCCP,
-        "boleta_liberacion"=> $boletaLiberacion,
-        "doda"=> $doda,
-        "carta_porte"=> $cartaPorte,
-        "boleta_vacio"=> $boletaVacio,
-        "doc_eir"=> $docEir,
-        "id_proveedor"=> $cot->id_proveedor ?? null,
-        "fecha_inicio"=> $cot->fecha_inicio ?? null,
-        "fecha_fin"=> $cot->fecha_fin ?? null,
-        "tipo" => $tipo,
-        "cima" => $cot->cima,
-
-        // 👇 Agregados para PDF dinámico
-        "eir_primario" => $eirPrimario,
-        "eir_secundario" => $eirSecundario,
-        "cima_primario" => $cimaPrimario,
-        "cima_secundario" => $cimaSecundario,
-    ];
-});
-
-
-    $user = auth()->user();
-
-    if ($request->fileType === 'xlsx') {
-        return Excel::download(
-            new \App\Exports\DocumentosExport($cotizaciones, $fechaCarbon, $cotizacion, $user),
-            'documentos.xlsx'
-        );
-    }
-
-    if ($request->fileType === 'pdf') {
-        $pdf = PDF::loadView('reporteria.documentos.pdf', compact('cotizaciones', 'fechaCarbon', 'cotizacion', 'user'))
-            ->setPaper('a4', 'landscape');
-        return $pdf->download('documentos.pdf');
-    }
-
-    return response()->json([
-        'success' => false,
-        'message' => 'Tipo de archivo no soportado.'
-    ], 400);
-}
 
 
 
 
     // ==================== L I Q U I D A D O S CXC ====================
-    public function index_liquidados_cxc(){
+    public function index_liquidados_cxc()
+    {
 
-        $clientes = Client::where('id_empresa' ,'=',auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
+        $clientes = Client::where('id_empresa', '=', auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
 
-        $subclientes = Subclientes::where('id_empresa' ,'=',auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
+        $subclientes = Subclientes::where('id_empresa', '=', auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
 
         return view('reporteria.liquidados.cxc.index', compact('clientes', 'subclientes'));
     }
 
-    public function advance_liquidados_cxc(Request $request) {
+    public function advance_liquidados_cxc(Request $request)
+    {
 
-        $clientes = Client::where('id_empresa' ,'=',auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
+        $clientes = Client::where('id_empresa', '=', auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
 
-        $proveedores = Proveedor::where('id_empresa' ,'=',auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
+        $proveedores = Proveedor::where('id_empresa', '=', auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
 
 
         $id_client = $request->id_client;
@@ -1263,50 +1684,52 @@ public function export_documentos(Request $request)
         $user = User::where('id', '=', auth()->user()->id)->first();
         $cotizacion_first = Cotizaciones::where('id', $cotizacionIds)->first();
 
-        if($request->fileType == "xlsx"){
-            Excel::store(new \App\Exports\LiquidadosCxcExport($cotizaciones, $fechaCarbon, $bancos_oficiales, $bancos_no_oficiales, $registrosBanco, $user,$cotizacion_first), 'liquidados_cxc.xlsx','public');
+        if ($request->fileType == "xlsx") {
+            Excel::store(new \App\Exports\LiquidadosCxcExport($cotizaciones, $fechaCarbon, $bancos_oficiales, $bancos_no_oficiales, $registrosBanco, $user, $cotizacion_first), 'liquidados_cxc.xlsx', 'public');
             return Response::download(storage_path('app/public/liquidados_cxc.xlsx'), "liquidados_cxp.xlsx")->deleteFileAfterSend(true);
-        }else{
-        // Generar el PDF con los datos necesarios
-        $pdf = PDF::loadView('reporteria.liquidados.cxc.pdf', compact('cotizaciones', 'fechaCarbon', 'bancos_oficiales', 'bancos_no_oficiales', 'registrosBanco', 'user', 'cotizacion_first'))
-            ->setPaper([0, 0, 595, 1200], 'landscape');
+        } else {
+            // Generar el PDF con los datos necesarios
+            $pdf = PDF::loadView('reporteria.liquidados.cxc.pdf', compact('cotizaciones', 'fechaCarbon', 'bancos_oficiales', 'bancos_no_oficiales', 'registrosBanco', 'user', 'cotizacion_first'))
+                ->setPaper([0, 0, 595, 1200], 'landscape');
 
-        // Generar el nombre del archivo
-        $fileName = 'cxc_' . implode('_', $cotizacionIds) . '.pdf';
+            // Generar el nombre del archivo
+            $fileName = 'cxc_' . implode('_', $cotizacionIds) . '.pdf';
 
-        // Guardar el PDF en la carpeta storage
-        $pdf->save(storage_path('app/public/' . $fileName));
+            // Guardar el PDF en la carpeta storage
+            $pdf->save(storage_path('app/public/' . $fileName));
 
-        // Devolver el archivo PDF como respuesta
-        $filePath = storage_path('app/public/' . $fileName);
-        return Response::download($filePath, $fileName)->deleteFileAfterSend(true);
+            // Devolver el archivo PDF como respuesta
+            $filePath = storage_path('app/public/' . $fileName);
+            return Response::download($filePath, $fileName)->deleteFileAfterSend(true);
         }
     }
 
     // ==================== L I Q U I D A D O S CXP ====================
 
-    public function index_liquidados_cxp(){
+    public function index_liquidados_cxp()
+    {
 
-        $proveedores = Proveedor::where('id_empresa' ,'=',auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
+        $proveedores = Proveedor::where('id_empresa', '=', auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
 
         return view('reporteria.liquidados.cxp.index', compact('proveedores'));
     }
 
-    public function advance_liquidados_cxp(Request $request) {
+    public function advance_liquidados_cxp(Request $request)
+    {
 
-        $proveedores = Proveedor::where('id_empresa' ,'=',auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
+        $proveedores = Proveedor::where('id_empresa', '=', auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
         $id_proveedor = $request->id_proveedor;
 
         if ($id_proveedor !== null) {
             $cotizaciones = Cotizaciones::join('docum_cotizacion', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
             ->join('asignaciones', 'docum_cotizacion.id', '=', 'asignaciones.id_contenedor')
-            ->where('cotizaciones.id_empresa' ,'=',auth()->user()->id_empresa)
-            ->where('asignaciones.id_camion', '=', NULL)
-            ->where(function($query) {
+            ->where('cotizaciones.id_empresa', '=', auth()->user()->id_empresa)
+            ->where('asignaciones.id_camion', '=', null)
+            ->where(function ($query) {
                 $query->where('cotizaciones.estatus', '=', 'Aprobada')
                     ->orWhere('cotizaciones.estatus', '=', 'Finalizado');
             })
-            ->where('asignaciones.id_proveedor', '=', $id_proveedor)
+            ->where('asignaciones.id_proveedor', '=', $id_proveedor) //checar despues de corregir cxp detallado
             ->where('cotizaciones.prove_restante', '=', 0)
             ->select('asignaciones.*', 'docum_cotizacion.num_contenedor', 'docum_cotizacion.id_cotizacion', 'cotizaciones.origen', 'cotizaciones.destino', 'cotizaciones.estatus', 'cotizaciones.prove_restante')
             ->get();
@@ -1346,10 +1769,10 @@ public function export_documentos(Request $request)
         $user = User::where('id', '=', auth()->user()->id)->first();
         $cotizacion = Asignaciones::where('id', $cotizacionIds)->first();
 
-        if($request->fileType == "xlsx"){
-            Excel::store(new \App\Exports\LiquidadosCxpExport($cotizaciones, $fechaCarbon, $bancos_oficiales, $bancos_no_oficiales, $registrosBanco, $user,$cotizacion), 'liquidados_cxp.xlsx','public');
+        if ($request->fileType == "xlsx") {
+            Excel::store(new \App\Exports\LiquidadosCxpExport($cotizaciones, $fechaCarbon, $bancos_oficiales, $bancos_no_oficiales, $registrosBanco, $user, $cotizacion), 'liquidados_cxp.xlsx', 'public');
             return Response::download(storage_path('app/public/liquidados_cxp.xlsx'), "liquidados_cxp.xlsx")->deleteFileAfterSend(true);
-        }else{
+        } else {
             // Generar el PDF con los datos necesarios
             $pdf = PDF::loadView('reporteria.liquidados.cxp.pdf', compact('cotizaciones', 'fechaCarbon', 'bancos_oficiales', 'bancos_no_oficiales', 'registrosBanco', 'user', 'cotizacion'))
                 ->setPaper('a4', 'landscape');
@@ -1365,240 +1788,605 @@ public function export_documentos(Request $request)
         }
     }
 
-  // Dentro de ReporteriaController.php
+    // Dentro de ReporteriaController.php
 
-public function index_gxp(Request $request)
-{
-    $gastos = GastosOperadores::with([
-        'Asignaciones.Proveedor',
-        'Asignaciones.Contenedor.Cotizacion.Cliente',
-        'Asignaciones.Contenedor.Cotizacion.Subcliente'
-    ])
-    ->whereHas('Asignaciones', fn ($q) => $q->where('id_empresa', auth()->user()->id_empresa))
-    ->where('estatus', '!=', 'Pagado')
-    ->get();
+    public function index_gxp(Request $request)
+    {
+        /*
+        $gastos = GastosOperadores::with([
+            'Asignaciones.Proveedor',
+            'Asignaciones.Contenedor.Cotizacion.Cliente',
+            'Asignaciones.Contenedor.Cotizacion.Subcliente'
+        ])
+        ->whereHas('Asignaciones', fn ($q) => $q->where('id_empresa', auth()->user()->id_empresa))
+        ->where('estatus', '!=', 'Pagado')
+        ->get();
+        */
+        $gastos = \App\Models\GastoImputacion::join('gastos', 'gastos.id', '=', 'gasto_imputaciones.gasto_id')
+            ->whereNull('gastos.deleted_at')
+            ->where('gastos.estatus', '!=', 'cancelado')
+            ->where('gastos.id_empresa', auth()->user()->id_empresa)
+            ->where('gasto_imputaciones.tipo_imputacion', '=', 'operador')
+            ->where('gastos.estatus', '!=', 'pagado')
+            ->select('gasto_imputaciones.*', 'gastos.concepto as motivo_gasto', 'gastos.estatus as gasto_estatus')
+            ->get();
 
-    $data = $gastos->map(function ($g) {
-        $asignacion = $g->Asignaciones;
+        $gastos->load([
+            'imputable', // Operador
+            'gasto.vinculos' => function ($q) {
+                $q->where('tipo_vinculo', 'asignacion');
+            },
+            'gasto.vinculos.vinculable.Proveedor',
+            'gasto.vinculos.vinculable.Contenedor.Cotizacion.Cliente',
+            'gasto.vinculos.vinculable.Contenedor.Cotizacion.Subcliente'
+        ]);
 
-        return [
-            'id' => $g->id,
-            'operador' => optional($g->Operador)->nombre ?? '-',
-            'cliente' => optional($asignacion->Contenedor->Cotizacion->Cliente)->nombre ?? '-',
-            'subcliente' => optional($asignacion->Contenedor->Cotizacion->Subcliente)->nombre ?? '-',
-            'num_contenedor' => optional($asignacion->Contenedor)->num_contenedor ?? '-',
-            'monto' => $g->cantidad ?? 0,
-            'motivo' => $g->tipo ?? 'Gasto pendiente',
-            'fecha_inicio' => $asignacion?->fecha_inicio,
-            'fecha_fin' => $asignacion?->fecha_fin,
-            'fecha_movimiento' => $g->created_at,
-            'fecha_aplicacion' => $g->fecha_pago,
-        ];
-    });
+        $data = $gastos->map(function ($g) {
+            $vinculoAsignacion = $g->gasto?->vinculos?->first();
+            $asignacion = $vinculoAsignacion ? $vinculoAsignacion->vinculable : null;
 
-    return view('reporteria.gxp.index', ['gastos' => $data]);
-}
+            return [
+                'id' => $g->id,
+                'operador' => $g->imputable?->nombre ?? '-',
+                'cliente' => optional($asignacion?->Contenedor?->Cotizacion?->Cliente)->nombre ?? '-',
+                'subcliente' => optional($asignacion?->Contenedor?->Cotizacion?->Subcliente)->nombre ?? '-',
+                'num_contenedor' => optional($asignacion?->Contenedor)->num_contenedor ?? '-',
+                'monto' => $g->monto_imputado ?? 0,
+                'motivo' => $g->motivo_gasto ?? 'Gasto pendiente',
+                'fecha_inicio' => $asignacion?->fecha_inicio,
+                'fecha_fin' => $asignacion?->fecha_fin,
+                'fecha_movimiento' => $g->created_at,
+                'fecha_aplicacion' => $g->fecha_imputacion,
+            ];
+        });
 
-
-
-public function getGastosPorPagarData()
-{
-    $idEmpresa = auth()->user()->id_empresa;
-
-    $gastos = GastosOperadores::with([
-        'Asignaciones.Contenedor.Cotizacion.Cliente',
-        'Asignaciones.Contenedor.Cotizacion.Subcliente'
-    ])
-    ->whereHas('Asignaciones', function ($q) use ($idEmpresa) {
-        $q->where('id_empresa', $idEmpresa);
-    })
-    ->where('estatus', '!=', 'Pagado')
-    ->get();
-
-    $data = $gastos->map(function ($g) {
-        $asignacion = $g->Asignaciones;
-
-        $proveedorNombre = '-';
-        if ($asignacion && $asignacion->id_proveedor) {
-            $proveedor = \App\Models\Proveedor::find($asignacion->id_proveedor);
-            $proveedorNombre = $proveedor?->nombre ?? '-';
-        }
-
-        return [
-            'id' => $g->id,
-            'operador' => optional($g->Operador)->nombre ?? '-',
-            'cliente' => optional($asignacion?->Contenedor?->Cotizacion?->Cliente)->nombre ?? '-',
-            'subcliente' => optional($asignacion?->Contenedor?->Cotizacion?->Subcliente)->nombre ?? '-',
-            'num_contenedor' => optional($asignacion?->Contenedor)->num_contenedor ?? '-',
-            'monto' => $g->cantidad ?? 0,
-            'motivo' => $g->tipo ?? 'Gasto pendiente',
-            'fecha_movimiento' => $g->created_at ? Carbon::parse($g->created_at)->format('Y-m-d') : null,
-            'fecha_aplicacion' => $g->fecha_pago ? Carbon::parse($g->fecha_pago)->format('Y-m-d') : null,
-            'fecha_inicio' => $asignacion?->fecha_inicio ? Carbon::parse($asignacion->fecha_inicio)->format('Y-m-d') : null,
-            'fecha_fin' => $asignacion?->fecha_fin ? Carbon::parse($asignacion->fecha_fin)->format('Y-m-d') : null,
-        ];
-    });
-
-    return response()->json($data);
-}
+        return view('reporteria.gxp.index', ['gastos' => $data]);
+    }
 
 
-public function exportGastosPorPagar(Request $request)
-{
-    try {
-        $ids = $request->input('selected_ids', []);
-        $fileType = $request->input('fileType');
 
-        $export = new \App\Exports\GastosPorPagarExport($ids);
+    public function getGastosPorPagarData()
+    {
+        $idEmpresa = auth()->user()->id_empresa;
 
-        if ($fileType === 'xlsx') {
-            return \Maatwebsite\Excel\Facades\Excel::download($export, 'gastos_por_pagar.xlsx');
-        }
+        /*
+        $gastos = GastosOperadores::with([
+            'Asignaciones.Contenedor.Cotizacion.Cliente',
+            'Asignaciones.Contenedor.Cotizacion.Subcliente'
+        ])
+        ->whereHas('Asignaciones', function ($q) use ($idEmpresa) {
+            $q->where('id_empresa', $idEmpresa);
+        })
+        ->where('estatus', '!=', 'Pagado')
+        ->get();
+        */
+        $gastos = \App\Models\GastoImputacion::join('gastos', 'gastos.id', '=', 'gasto_imputaciones.gasto_id')
+            ->whereNull('gastos.deleted_at')
+            ->where('gastos.estatus', '!=', 'cancelado')
+            ->where('gastos.id_empresa', $idEmpresa)
+            ->where('gasto_imputaciones.tipo_imputacion', '=', 'operador')
+            ->where('gastos.estatus', '!=', 'pagado')
+            ->select('gasto_imputaciones.*', 'gastos.concepto as motivo_gasto')
+            ->get();
 
-        if ($fileType === 'pdf') {
-            $gastos = collect($export->getGastosData())->map(function ($g) {
-                return is_array($g) ? $g : (array) $g;
-            });
+        $gastos->load([
+            'imputable', // Operador
+            'gasto.vinculos' => function ($q) {
+                $q->where('tipo_vinculo', 'asignacion');
+            },
+            'gasto.vinculos.vinculable.Contenedor.Cotizacion.Cliente',
+            'gasto.vinculos.vinculable.Contenedor.Cotizacion.Subcliente'
+        ]);
 
-            return \PDF::loadView('reporteria.gxp.pdf', [
+        $data = $gastos->map(function ($g) {
+            $vinculoAsignacion = $g->gasto?->vinculos?->first();
+            $asignacion = $vinculoAsignacion ? $vinculoAsignacion->vinculable : null;
+
+            $proveedorNombre = '-';
+            if ($asignacion && $asignacion->id_proveedor) {
+                $proveedor = \App\Models\Proveedor::find($asignacion->id_proveedor);
+                $proveedorNombre = $proveedor?->nombre ?? '-';
+            }
+
+            return [
+                'id' => $g->id,
+                'operador' => $g->imputable?->nombre ?? '-',
+                'cliente' => optional($asignacion?->Contenedor?->Cotizacion?->Cliente)->nombre ?? '-',
+                'subcliente' => optional($asignacion?->Contenedor?->Cotizacion?->Subcliente)->nombre ?? '-',
+                'num_contenedor' => optional($asignacion?->Contenedor)->num_contenedor ?? '-',
+                'monto' => $g->monto_imputado ?? 0,
+                'motivo' => $g->motivo_gasto ?? 'Gasto pendiente',
+                'fecha_movimiento' => $g->created_at ? Carbon::parse($g->created_at)->format('Y-m-d') : null,
+                'fecha_aplicacion' => $g->fecha_imputacion ? Carbon::parse($g->fecha_imputacion)->format('Y-m-d') : null,
+                'fecha_inicio' => $asignacion?->fecha_inicio ? Carbon::parse($asignacion->fecha_inicio)->format('Y-m-d') : null,
+                'fecha_fin' => $asignacion?->fecha_fin ? Carbon::parse($asignacion->fecha_fin)->format('Y-m-d') : null,
+                'proveedor' => $proveedorNombre,
+            ];
+        });
+
+        return response()->json($data);
+    }
+
+
+    public function exportGastosPorPagar(Request $request)
+    {
+        try {
+            $ids = $request->input('selected_ids', []);
+            $fileType = $request->input('fileType');
+
+            $export = new \App\Exports\GastosPorPagarExport($ids);
+
+            if ($fileType === 'xlsx') {
+                return \Maatwebsite\Excel\Facades\Excel::download($export, 'gastos_por_pagar.xlsx');
+            }
+
+            if ($fileType === 'pdf') {
+                $gastos = collect($export->getGastosData())->map(function ($g) {
+                    return is_array($g) ? $g : (array) $g;
+                });
+
+                return PDF::loadView('reporteria.gxp.pdf', [
     'gastos' => $gastos,
     'empresa' => auth()->user()->Empresa->nombre ?? 'Sin Empresa'
 ])->setPaper('a4', 'landscape')->download('gastos_por_pagar.pdf');
 
 
+            }
+
+            return response()->json(['error' => 'Tipo de archivo no válido'], 400);
+
+        } catch (\Throwable $e) {
+            Log::error('Error al exportar gastos', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
+            ]);
+
+            return response()->json(['error' => 'Error interno del servidor'], 500);
+        }
+    }
+
+    public function indexVXC()
+    {
+        $user = auth()->user();
+
+        if (!$user->hasRole('Proveedor')) {
+            abort(403, 'No autorizado');
         }
 
-        return response()->json(['error' => 'Tipo de archivo no válido'], 400);
+        $rfc = $user->rfc;
 
-    } catch (\Throwable $e) {
-        \Log::error('Error al exportar gastos', [
-            'message' => $e->getMessage(),
-            'file' => $e->getFile(),
-            'line' => $e->getLine()
+        $cotizaciones = Cotizaciones::whereHas('DocCotizacion.Asignaciones.Proveedor', function ($query) use ($rfc) {
+            $query->where('rfc', $rfc);
+        })
+        ->where('restante', '>', 0)
+        ->where('estatus', '!=', 'Cancelada')
+        ->with([
+            'DocCotizacion.Asignaciones.Proveedor',
+            'DocCotizacion',
+            'Subcliente'
+        ])
+        ->get();
+
+        $totalGenerado = $cotizaciones->sum('restante');
+
+        $retenido = $cotizaciones->filter(function ($c) {
+            return !$c->carta_porte || !$c->carta_porte_xml;
+        })->sum('restante');
+
+        $pagoNeto = $cotizaciones->filter(function ($c) {
+            return $c->carta_porte && $c->carta_porte_xml;
+        })->sum('restante');
+
+        return view('reporteria.vxc.index', compact('cotizaciones', 'totalGenerado', 'retenido', 'pagoNeto'));
+    }
+
+
+
+
+    public function dataVXC()
+    {
+        $user = auth()->user();
+
+        if (!$user->hasRole('Proveedor')) {
+            abort(403, 'No autorizado');
+        }
+
+        $rfc = $user->rfc;
+
+        $cotizaciones = Cotizaciones::whereHas('DocCotizacion.Asignaciones.Proveedor', function ($query) use ($rfc) {
+            $query->where('rfc', $rfc);
+        })
+        ->where('restante', '>', 0)
+        ->where('estatus', '!=', 'Cancelada')
+        ->with([
+            'DocCotizacion.Asignaciones.Proveedor',
+            'DocCotizacion',
+            'Subcliente'
+        ])
+        ->get()
+        ->map(function ($c) {
+            return [
+                'id' => $c->id,
+                'restante' => $c->restante,
+                'tipo_viaje' => $c->tipo_viaje ?? 'Subcontratado',
+                'estatus' => $c->estatus === 'Aprobada' ? 'En curso' : $c->estatus,
+                'subcliente' => $c->Subcliente->nombre ?? '-',
+                'num_contenedor' => $c->DocCotizacion->num_contenedor ?? '-',
+                'proveedor' => $c->DocCotizacion->Asignaciones->Proveedor->nombre ?? '-',
+                'carta_porte' => $c->carta_porte ?? false,
+                'carta_porte_xml' => $c->carta_porte_xml ?? false
+            ];
+        });
+
+        return response()->json($cotizaciones);
+    }
+
+
+    public function exportarVXC(Request $request)
+    {
+        try {
+            $tipo = $request->input('tipo');
+
+            $cotizaciones = collect($request->input('cotizaciones', []));
+            $totalGenerado = $request->input('totales.totalGenerado', 0);
+            $retenido = $request->input('totales.retenido', 0);
+            $pagoNeto = $request->input('totales.pagoNeto', 0);
+
+            if ($tipo === 'pdf') {
+                $pdf = PDF::loadView('reporteria.vxc.pdf', [
+                    'cotizaciones' => $cotizaciones,
+                    'totalGenerado' => $totalGenerado,
+                    'retenido' => $retenido,
+                    'pagoNeto' => $pagoNeto
+                ])->setPaper('A4', 'landscape');
+
+                return $pdf->download('viajes_por_cobrar.pdf');
+            }
+
+            if ($tipo === 'excel') {
+                return Excel::download(
+                    new \App\Exports\VXCExport($cotizaciones, $totalGenerado, $retenido, $pagoNeto),
+                    'viajes_por_cobrar.xlsx'
+                );
+            }
+
+            return response()->json(['error' => 'Tipo de exportación no válido.'], 400);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'error' => 'Error interno',
+                'message' => $e->getMessage(),
+                'line' => $e->getLine(),
+                'file' => $e->getFile(),
+            ], 500);
+        }
+    }
+
+
+public function indexRendimiento()
+{
+    $isAdmin = auth()->user()->es_admin;
+
+    $equiposConViajes = Asignaciones::query()
+        ->select('id_camion')
+        ->whereNotNull('id_camion')
+        ->distinct();
+
+    $equipos = Equipo::query()
+        ->whereIn('id', $equiposConViajes)
+        ->when(!$isAdmin, function ($query) {
+            $query->where('id_empresa', auth()->user()->id_empresa);
+        })
+        ->where('tipo', 'Tractos / Camiones')
+        ->orderBy('id_equipo')
+        ->get();
+
+    return view('reporteria.rendimiento.index', compact('equipos'));
+}
+
+    // public function dataRendimiento(Request $request)
+    // {
+    //       $data = $request->validate([
+    //     'unidad_id' => ['required', 'integer'],
+    //     'fecha_inicio' => ['required', 'date'],
+    //     'fecha_fin' => ['required', 'date', 'after_or_equal:fecha_inicio'],
+    // ]);
+
+    // $unidadId = $data['unidad_id'];
+    // $fechaInicio = $data['fecha_inicio'];
+    // $fechaFin = $data['fecha_fin'];
+
+    // $filtroPrincipal = function ($q) {
+    //     $q->where(function ($q2) {
+    //         $q2->where('jerarquia', '!=', 'Secundario')
+    //             ->orWhereNull('jerarquia');
+    //     });
+    // };
+
+    // $asignacionesBase = Asignaciones::query()
+    //     ->with([
+    //         'Contenedor.Cotizacion',
+    //         'Operador',
+    //         'Camion',
+    //     ])
+    //     ->where('id_camion', $unidadId)
+    //     ->whereDate('fecha_inicio', '>=', $fechaInicio)
+    //     ->whereDate('fecha_inicio', '<=', $fechaFin)
+    //     ->whereHas('Contenedor.Cotizacion', $filtroPrincipal)
+    //     ->orderBy('fecha_inicio')
+    //     ->orderBy('id')
+    //     ->get()
+    //     ->values();
+
+    // $ultimoViaje = $asignacionesBase->last();
+
+    // $asignacionExtra = null;
+
+    // if ($ultimoViaje) {
+    //     $asignacionExtra = Asignaciones::query()
+    //         ->with([
+    //             'Contenedor.Cotizacion',
+    //             'Operador',
+    //             'Camion',
+    //         ])
+    //         ->where('id_camion', $unidadId)
+    //         ->whereHas('Contenedor.Cotizacion', $filtroPrincipal)
+    //         ->where(function ($q) use ($ultimoViaje) {
+    //             $q->where('fecha_inicio', '>', $ultimoViaje->fecha_inicio)
+    //                 ->orWhere(function ($q2) use ($ultimoViaje) {
+    //                     $q2->where('fecha_inicio', $ultimoViaje->fecha_inicio)
+    //                         ->where('id', '>', $ultimoViaje->id);
+    //                 });
+    //         })
+    //         ->orderBy('fecha_inicio')
+    //         ->orderBy('id')
+    //         ->first();
+    // }
+
+    // /*
+    //  * Esta colección incluye el viaje extra solo para poder tomar
+    //  * los litros del siguiente viaje.
+    //  */
+    // $asignacionesParaCalculo = $asignacionExtra
+    //     ? $asignacionesBase->concat([$asignacionExtra])->values()
+    //     : $asignacionesBase->values();
+
+    // $obtenerTextoContenedor = function ($asignacion) {
+    //     $contenedor = $asignacion?->Contenedor;
+    //     $cotizacion = $contenedor?->Cotizacion;
+
+    //     $numContenedor = $contenedor?->num_contenedor ?? 'S/N';
+
+    //     if ($cotizacion?->referencia_full) {
+    //         $cotizacionSecundaria = Cotizaciones::query()
+    //             ->with('DocCotizacion')
+    //             ->where('referencia_full', $cotizacion->referencia_full)
+    //             ->where('jerarquia', 'Secundario')
+    //             ->first();
+
+    //         if ($cotizacionSecundaria) {
+    //             $docSecundario = $cotizacionSecundaria->DocCotizacion;
+
+    //             if ($docSecundario instanceof \Illuminate\Support\Collection) {
+    //                 $numSecundario = $docSecundario->first()?->num_contenedor;
+    //             } else {
+    //                 $numSecundario = $docSecundario?->num_contenedor;
+    //             }
+
+    //             $numContenedor .= ' / ' . ($numSecundario ?? 'S/N');
+    //         }
+    //     }
+
+    //     return $numContenedor;
+    // };
+
+    // $rows = $asignacionesBase->map(function ($asignacion, $index) use ($asignacionesParaCalculo, $obtenerTextoContenedor) {
+    //     $contenedor = $asignacion->Contenedor;
+    //     $cotizacion = $contenedor?->Cotizacion;
+
+    //     $siguienteAsignacion = $asignacionesParaCalculo->get($index + 1);
+    //     $cotizacionSiguiente = $siguienteAsignacion?->Contenedor?->Cotizacion;
+
+    //     /*
+    //      * Datos propios del viaje actual.
+    //      */
+    //     $km = (float) ($cotizacion?->km_recorridos ?? 0);
+    //     $litrosCapturadosViaje = (float) ($cotizacion?->litros_diesel ?? 0);
+
+    //     /*
+    //      * Fórmula correcta:
+    //      * El consumo del viaje actual se toma de la carga del siguiente viaje.
+    //      */
+    //     $litrosCalculoConsumo = (float) ($cotizacionSiguiente?->litros_diesel ?? 0);
+
+    //     $rendimiento = $litrosCalculoConsumo > 0
+    //         ? round($km / $litrosCalculoConsumo, 3)
+    //         : null;
+
+    //     $consumoLitrosPor100Km = $km > 0 && $litrosCalculoConsumo > 0
+    //         ? round(($litrosCalculoConsumo / $km) * 100, 3)
+    //         : null;
+
+    //     $observacion = null;
+
+    //     if (!$siguienteAsignacion) {
+    //         $observacion = 'Pendiente de siguiente carga para calcular consumo';
+    //     } elseif ($km <= 0 && $litrosCalculoConsumo <= 0) {
+    //         $observacion = 'Sin KM y sin litros para cálculo';
+    //     } elseif ($km <= 0) {
+    //         $observacion = 'Sin KM capturados';
+    //     } elseif ($litrosCalculoConsumo <= 0) {
+    //         $observacion = 'El siguiente viaje no tiene litros capturados';
+    //     }
+
+    //     return [
+    //         'asignacion_id' => $asignacion->id,
+    //         'cotizacion_id' => $cotizacion?->id,
+    //         'contenedor_id' => $contenedor?->id,
+    //         'peso_contenedor' => $cotizacion?->peso_contenedor ?? 0,
+
+    //         'fecha_inicio' => $asignacion->fecha_inicio
+    //             ? Carbon::parse($asignacion->fecha_inicio)->format('d/m/Y')
+    //             : 'S/N',
+
+    //         'fecha_fin' => $asignacion->fecha_fin
+    //             ? Carbon::parse($asignacion->fecha_fin)->format('d/m/Y')
+    //             : 'S/N',
+
+    //         'contenedor' => $obtenerTextoContenedor($asignacion),
+    //         'operador' => $asignacion->Operador?->nombre ?? 'S/N',
+
+    //         'origen' => $cotizacion ? $cotizacion->origen : 'S/N',
+    //         'destino' => $cotizacion ? $cotizacion->destino : 'S/N',
+
+    //         /*
+    //          * KM del viaje actual.
+    //          */
+    //         'km_recorridos' => round($km, 2),
+
+    //         /*
+    //          * Litros guardados realmente en este viaje.
+    //          * Esto evita la confusión de que "no se guardó".
+    //          */
+    //         'litros_capturados_viaje' => round($litrosCapturadosViaje, 3),
+
+    //         /*
+    //          * Litros que se usan para calcular el consumo de este viaje.
+    //          * Vienen del siguiente viaje.
+    //          */
+    //         'litros_calculo_consumo' => round($litrosCalculoConsumo, 3),
+
+    //         /*
+    //          * Mantengo este alias por compatibilidad, pero ya no lo uses en front.
+    //          */
+    //         'litros_diesel' => round($litrosCapturadosViaje, 3),
+
+    //         'rendimiento_km_litro' => $rendimiento,
+    //         'consumo_litros_100_km' => $consumoLitrosPor100Km,
+
+    //         'litros_tomados_de_asignacion_id' => $siguienteAsignacion?->id,
+    //         'litros_tomados_de_cotizacion_id' => $cotizacionSiguiente?->id,
+    //         'litros_tomados_de_contenedor' => $siguienteAsignacion
+    //             ? $obtenerTextoContenedor($siguienteAsignacion)
+    //             : null,
+
+    //         'observacion' => $observacion,
+    //     ];
+    // });
+
+    // $totalKm = round($rows->sum('km_recorridos'), 2);
+
+    // /*
+    //  * Total capturado: suma de litros guardados en los viajes visibles.
+    //  * Total cálculo: suma de litros realmente usados para rendimiento.
+    //  */
+    // $totalLitrosCapturados = round($rows->sum('litros_capturados_viaje'), 3);
+    // $totalLitrosCalculo = round($rows->sum('litros_calculo_consumo'), 3);
+
+    // $rendimientoPromedio = $totalLitrosCalculo > 0
+    //     ? round($totalKm / $totalLitrosCalculo, 3)
+    //     : null;
+
+    // $consumoPromedioLitros100Km = $totalKm > 0 && $totalLitrosCalculo > 0
+    //     ? round(($totalLitrosCalculo / $totalKm) * 100, 3)
+    //     : null;
+
+    // $viajesConDatos = $rows->filter(function ($row) {
+    //     return $row['km_recorridos'] > 0 && $row['litros_calculo_consumo'] > 0;
+    // })->count();
+
+    // $viajesSinDatos = $rows->filter(function ($row) {
+    //     return $row['km_recorridos'] <= 0 || $row['litros_calculo_consumo'] <= 0;
+    // })->count();
+
+    // return response()->json([
+    //     'success' => true,
+    //     'resumen' => [
+    //         'total_viajes' => $rows->count(),
+    //         'viajes_con_datos' => $viajesConDatos,
+    //         'viajes_sin_datos' => $viajesSinDatos,
+    //         'total_km' => $totalKm,
+
+
+    //         'total_litros' => $totalLitrosCalculo,
+
+
+    //         'total_litros_capturados' => $totalLitrosCapturados,
+    //         'total_litros_calculo' => $totalLitrosCalculo,
+
+    //         'rendimiento_promedio' => $rendimientoPromedio,
+    //         'consumo_promedio_litros_100_km' => $consumoPromedioLitros100Km,
+    //     ],
+    //     'rows' => $rows->values(),
+    // ]);
+
+    // }
+
+
+
+
+    public function dataRendimiento(Request $request, ConsumoUnidadesService $service)
+    {
+        $data = $request->validate([
+            'unidad_id' => ['required', 'integer'],
+            'fecha_inicio' => ['required', 'date'],
+            'fecha_fin' => ['required', 'date', 'after_or_equal:fecha_inicio'],
         ]);
 
-        return response()->json(['error' => 'Error interno del servidor'], 500);
-    }
-}
-
-public function indexVXC()
-{
-    $user = auth()->user();
-
-    if (!$user->hasRole('Proveedor')) {
-        abort(403, 'No autorizado');
+        return response()->json(
+            $service->generar($data)
+        );
     }
 
-    $rfc = $user->rfc;
+    public function exportarunidadesconsumo(Request $request, string $tipo, ConsumoUnidadesService $service)
+    {
+        $data = $request->validate([
+            'unidad_id' => ['required', 'integer'],
+            'fecha_inicio' => ['required', 'date'],
+            'fecha_fin' => ['required', 'date', 'after_or_equal:fecha_inicio'],
+        ]);
 
-    $cotizaciones = Cotizaciones::whereHas('DocCotizacion.Asignaciones.Proveedor', function ($query) use ($rfc) {
-        $query->where('rfc', $rfc);
-    })
-    ->where('restante', '>', 0)
-    ->where('estatus', '!=', 'Cancelada') // ❌ Excluir cancelados
-    ->with([
-        'DocCotizacion.Asignaciones.Proveedor',
-        'DocCotizacion',
-        'Subcliente'
-    ])
-    ->get();
+        if (!in_array($tipo, ['pdf', 'excel'], true)) {
+            abort(404);
+        }
 
-    $totalGenerado = $cotizaciones->sum('restante');
+        $reporte = $service->generar($data);
+        $filtros = $this->obtenerFiltrosExportacion($data);
 
-    $retenido = $cotizaciones->filter(function ($c) {
-        return !$c->carta_porte || !$c->carta_porte_xml;
-    })->sum('restante');
-
-    $pagoNeto = $cotizaciones->filter(function ($c) {
-        return $c->carta_porte && $c->carta_porte_xml;
-    })->sum('restante');
-
-    return view('reporteria.vxc.index', compact('cotizaciones', 'totalGenerado', 'retenido', 'pagoNeto'));
-}
-
-
-
-
-public function dataVXC()
-{
-    $user = auth()->user();
-
-    if (!$user->hasRole('Proveedor')) {
-        abort(403, 'No autorizado');
-    }
-
-    $rfc = $user->rfc;
-
-    $cotizaciones = Cotizaciones::whereHas('DocCotizacion.Asignaciones.Proveedor', function ($query) use ($rfc) {
-        $query->where('rfc', $rfc);
-    })
-    ->where('restante', '>', 0)
-    ->where('estatus', '!=', 'Cancelada') // ❌ Filtrar cancelados
-    ->with([
-        'DocCotizacion.Asignaciones.Proveedor',
-        'DocCotizacion',
-        'Subcliente'
-    ])
-    ->get()
-    ->map(function ($c) {
-        return [
-            'id' => $c->id,
-            'restante' => $c->restante,
-            'tipo_viaje' => $c->tipo_viaje ?? 'Subcontratado',
-            'estatus' => $c->estatus === 'Aprobada' ? 'En curso' : $c->estatus,
-            'subcliente' => $c->Subcliente->nombre ?? '-',
-            'num_contenedor' => $c->DocCotizacion->num_contenedor ?? '-',
-            'proveedor' => $c->DocCotizacion->Asignaciones->Proveedor->nombre ?? '-',
-            'carta_porte' => $c->carta_porte ?? false,
-            'carta_porte_xml' => $c->carta_porte_xml ?? false
-        ];
-    });
-
-    return response()->json($cotizaciones);
-}
-
-
-public function exportarVXC(Request $request)
-{
-    try {
-        $tipo = $request->input('tipo');
-
-        $cotizaciones = collect($request->input('cotizaciones', []));
-        $totalGenerado = $request->input('totales.totalGenerado', 0);
-        $retenido = $request->input('totales.retenido', 0);
-        $pagoNeto = $request->input('totales.pagoNeto', 0);
+        $nombreArchivo = 'reporte_consumo_unidad_' . now()->format('Ymd_His');
 
         if ($tipo === 'pdf') {
-            $pdf = \PDF::loadView('reporteria.vxc.pdf', [
-                'cotizaciones' => $cotizaciones,
-                'totalGenerado' => $totalGenerado,
-                'retenido' => $retenido,
-                'pagoNeto' => $pagoNeto
-            ])->setPaper('A4', 'landscape');
+            $pdf = Pdf::loadView('reporteria.rendimiento.pdf', [
+                'reporte' => $reporte,
+                'filtros' => $filtros,
+            ])->setPaper('letter', 'landscape');
 
-            return $pdf->download('viajes_por_cobrar.pdf');
+            return $pdf->download($nombreArchivo . '.pdf');
         }
 
-        if ($tipo === 'excel') {
-            return \Excel::download(
-                new \App\Exports\VXCExport($cotizaciones, $totalGenerado, $retenido, $pagoNeto),
-                'viajes_por_cobrar.xlsx'
-            );
-        }
-
-        return response()->json(['error' => 'Tipo de exportación no válido.'], 400);
-    } catch (\Throwable $e) {
-        return response()->json([
-            'error' => 'Error interno',
-            'message' => $e->getMessage(),
-            'line' => $e->getLine(),
-            'file' => $e->getFile(),
-        ], 500);
+        return Excel::download(
+            new ConsumoUnidadesExport($reporte, $filtros),
+            $nombreArchivo . '.xlsx'
+        );
     }
-}
 
+    private function obtenerFiltrosExportacion(array $data): array
+    {
+        $unidad = Equipo::find($data['unidad_id']);
 
+        return [
+            'unidad' => $unidad
+                ? trim(
+                    ($unidad->id_equipo ?? 'S/N') .
+                    ($unidad->marca ? ' - ' . $unidad->marca : '') .
+                    ($unidad->placas ? ' - ' . $unidad->placas : '')
+                )
+                : 'S/N',
 
+            'fecha_inicio' => Carbon::parse($data['fecha_inicio'])->format('d/m/Y'),
+            'fecha_fin' => Carbon::parse($data['fecha_fin'])->format('d/m/Y'),
+        ];
+    }
 
 
 }

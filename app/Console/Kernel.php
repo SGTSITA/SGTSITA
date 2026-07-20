@@ -30,7 +30,22 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule)
     {
         $schedule->command('command:saldosBancarios')->daily();
-        
+
+        try {
+            $intervalSetting = RastreoIntervals::where('task_name', 'rastreo_gps_interval')->first();
+            if ($intervalSetting && !empty($intervalSetting->interval)) {
+                $method = $intervalSetting->interval; // e.g. 'everyMinute', 'everyFiveMinutes', 'hourly', 'daily', etc.
+                if (method_exists($schedule->command('rastreo:intervalConfig'), $method)) {
+                    $schedule->command('rastreo:intervalConfig')->$method();
+                } else {
+                    $schedule->command('rastreo:intervalConfig')->hourly();
+                }
+            } else {
+                $schedule->command('rastreo:intervalConfig')->hourly();
+            }
+        } catch (\Exception $e) {
+            // Safe fallback if database isn't initialized or accessible
+        }
     }
 
     /**

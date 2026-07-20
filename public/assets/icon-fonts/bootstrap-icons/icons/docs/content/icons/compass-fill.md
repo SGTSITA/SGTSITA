@@ -1,9 +1,9 @@
 ---
 title: Compass fill
 categories:
-  - Geo
+    - Geo
 tags:
-  - direction
-  - map
-  - location
+    - direction
+    - map
+    - location
 ---

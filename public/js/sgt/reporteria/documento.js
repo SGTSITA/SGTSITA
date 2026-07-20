@@ -4,8 +4,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const columnDefs = [
         {
-            headerName: "Fecha inicio",
-            field: "fecha_inicio",
+            headerName: 'Fecha inicio',
+            field: 'fecha_inicio',
             checkboxSelection: true,
             headerCheckboxSelection: true,
             headerCheckboxSelectionFilteredOnly: true,
@@ -33,16 +33,16 @@ document.addEventListener('DOMContentLoaded', () => {
             },
         },
         {
-            headerName: "Cliente",
-            field: "cliente",
+            headerName: 'Cliente',
+            field: 'cliente',
             filter: 'agTextColumnFilter',
             floatingFilter: true,
             width: 100,
-            cellClass: 'text-center'
+            cellClass: 'text-center',
         },
         {
-            headerName: "# Contenedor",
-            field: "num_contenedor",
+            headerName: '# Contenedor',
+            field: 'num_contenedor',
             width: 170,
             filter: true,
             floatingFilter: true,
@@ -62,71 +62,71 @@ document.addEventListener('DOMContentLoaded', () => {
         },
 
         {
-            headerName: "Proveedor",
-            field: "proveedor",
+            headerName: 'Proveedor',
+            field: 'proveedor',
             filter: 'agTextColumnFilter',
             floatingFilter: true,
             width: 130,
-            cellClass: 'text-center'
+            cellClass: 'text-center',
         },
 
         {
-            headerName: "Formato CCP",
-            field: "doc_ccp",
+            headerName: 'Formato CCP',
+            field: 'doc_ccp',
             cellRenderer: checkboxRenderer,
             filter: 'agTextColumnFilter',
             width: 120,
-            cellClass: 'text-center'
+            cellClass: 'text-center',
         },
         {
-            headerName: "Boleta liberación",
-            field: "boleta_liberacion",
+            headerName: 'Boleta liberación',
+            field: 'boleta_liberacion',
             cellRenderer: checkboxRenderer,
             filter: 'agTextColumnFilter',
             width: 120,
-            cellClass: 'text-center'
+            cellClass: 'text-center',
         },
         {
-            headerName: "DODA",
-            field: "doda",
+            headerName: 'DODA',
+            field: 'doda',
             cellRenderer: checkboxRenderer,
             filter: 'agTextColumnFilter',
             width: 110,
-            cellClass: 'text-center'
+            cellClass: 'text-center',
         },
         {
-            headerName: "Carta porte",
-            field: "carta_porte",
+            headerName: 'Carta porte',
+            field: 'carta_porte',
             cellRenderer: checkboxRenderer,
             filter: 'agTextColumnFilter',
             width: 120,
-            cellClass: 'text-center'
+            cellClass: 'text-center',
         },
         {
-            headerName: "Boleta vacío",
-            field: "boleta_vacio",
+            headerName: 'Boleta vacío',
+            field: 'boleta_vacio',
             cellRenderer: checkboxRenderer,
             filter: 'agTextColumnFilter',
             width: 120,
-            cellClass: 'text-center'
+            cellClass: 'text-center',
         },
         {
-            headerName: "EIR",
-            field: "doc_eir",
+            headerName: 'EIR',
+            field: 'doc_eir',
             cellRenderer: checkboxRenderer,
             filter: 'agTextColumnFilter',
             width: 120,
-            cellClass: 'text-center'
+            cellClass: 'text-center',
         },
         {
-            headerName: "Acciones",
-            field: "id",
+            headerName: 'Acciones',
+            field: 'id',
             cellRenderer: (params) => {
                 return `<a class="btn btn-sm bg-gradient-info" href="/cotizaciones/edit/${params.value}">Editar</a>`;
             },
             width: 140,
-            cellClass: 'text-center'
-        }
+            cellClass: 'text-center',
+        },
     ];
 
     const rowData = window.cotizacionesData || [];
@@ -143,7 +143,7 @@ document.addEventListener('DOMContentLoaded', () => {
         defaultColDef: {
             sortable: true,
             filter: true,
-            resizable: true
+            resizable: true,
         },
         animateRows: true,
         onGridReady: (params) => {
@@ -151,9 +151,8 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         onFilterChanged: () => {
             if (gridApi) gridApi.deselectAll();
-        }
+        },
     };
-
 
     agGrid.createGrid(gridDiv, gridOptions);
     function checkboxRenderer(params) {
@@ -200,18 +199,14 @@ document.addEventListener('DOMContentLoaded', () => {
     `;
     }
 
-
-
-
-
     // Exportar a Excel o PDF
-    document.querySelectorAll('.exportButton').forEach(button => {
+    document.querySelectorAll('.exportButton').forEach((button) => {
         button.addEventListener('click', async function () {
             if (!gridApi) return;
 
             const fileType = this.dataset.filetype;
             const selectedRows = gridApi.getSelectedRows();
-            const selectedIds = selectedRows.map(row => row.id);
+            const selectedIds = selectedRows.map((row) => row.id);
 
             if (selectedIds.length === 0) {
                 Swal.fire({
@@ -225,15 +220,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const formData = new FormData();
             formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
             formData.append('fileType', fileType);
-            selectedIds.forEach(id => formData.append('selected_ids[]', id));
+            selectedIds.forEach((id) => formData.append('selected_ids[]', id));
 
             try {
                 const response = await fetch(exportUrl, {
                     method: 'POST',
-                    body: formData
+                    body: formData,
                 });
 
-                if (!response.ok) throw new Error("Error al generar el archivo.");
+                if (!response.ok) throw new Error('Error al generar el archivo.');
 
                 const blob = await response.blob();
                 const downloadUrl = window.URL.createObjectURL(blob);
@@ -254,42 +249,54 @@ document.addEventListener('DOMContentLoaded', () => {
                 Swal.fire({
                     icon: 'error',
                     title: 'Error',
-                    text: error.message
+                    text: error.message,
                 });
             }
         });
     });
 
     // ========== RANGO DE FECHAS ==========
-    $('#daterange').daterangepicker({
-        startDate: getUrlParam('fecha_inicio') || moment().subtract(7, 'days'),
-        endDate: getUrlParam('fecha_fin') || moment(),
-        maxDate: moment(),
-        opens: 'right',
-        locale: {
-            format: 'YYYY-MM-DD',
-            separator: ' AL ',
-            applyLabel: 'Aplicar',
-            cancelLabel: 'Cancelar',
-            fromLabel: 'Desde',
-            toLabel: 'Hasta',
-            customRangeLabel: 'Personalizado',
-            daysOfWeek: ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa'],
-            monthNames: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto',
-                'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'],
-            firstDay: 1
-        }
-    }, function (start, end) {
-        const currentStart = getUrlParam('fecha_inicio');
-        const currentEnd = getUrlParam('fecha_fin');
+    $('#daterange').daterangepicker(
+        {
+            startDate: getUrlParam('fecha_inicio') || moment().subtract(7, 'days'),
+            endDate: getUrlParam('fecha_fin') || moment(),
+            maxDate: moment(),
+            opens: 'right',
+            locale: {
+                format: 'YYYY-MM-DD',
+                separator: ' AL ',
+                applyLabel: 'Aplicar',
+                cancelLabel: 'Cancelar',
+                fromLabel: 'Desde',
+                toLabel: 'Hasta',
+                customRangeLabel: 'Personalizado',
+                daysOfWeek: ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa'],
+                monthNames: [
+                    'Enero',
+                    'Febrero',
+                    'Marzo',
+                    'Abril',
+                    'Mayo',
+                    'Junio',
+                    'Julio',
+                    'Agosto',
+                    'Septiembre',
+                    'Octubre',
+                    'Noviembre',
+                    'Diciembre',
+                ],
+                firstDay: 1,
+            },
+        },
+        function (start, end) {
+            const currentStart = getUrlParam('fecha_inicio');
+            const currentEnd = getUrlParam('fecha_fin');
 
-        if (
-            start.format('YYYY-MM-DD') !== currentStart ||
-            end.format('YYYY-MM-DD') !== currentEnd
-        ) {
-            getDatosFiltradosPorFecha(start.format('YYYY-MM-DD'), end.format('YYYY-MM-DD'));
-        }
-    });
+            if (start.format('YYYY-MM-DD') !== currentStart || end.format('YYYY-MM-DD') !== currentEnd) {
+                getDatosFiltradosPorFecha(start.format('YYYY-MM-DD'), end.format('YYYY-MM-DD'));
+            }
+        },
+    );
 
     function getUrlParam(name) {
         const params = new URLSearchParams(window.location.search);

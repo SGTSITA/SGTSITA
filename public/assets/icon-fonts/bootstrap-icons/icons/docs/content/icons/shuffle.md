@@ -1,8 +1,8 @@
 ---
 title: Shuffle
 categories:
-  - Arrows
+    - Arrows
 tags:
-  - shuffle
-  - random
+    - shuffle
+    - random
 ---

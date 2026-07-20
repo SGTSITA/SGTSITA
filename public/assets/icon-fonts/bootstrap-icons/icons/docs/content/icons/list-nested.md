@@ -1,10 +1,10 @@
 ---
 title: List nested
 categories:
-  - Typography
+    - Typography
 tags:
-  - text
-  - type
-  - alignment
-  - children
+    - text
+    - type
+    - alignment
+    - children
 ---

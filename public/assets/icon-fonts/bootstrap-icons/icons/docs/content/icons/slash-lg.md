@@ -1,10 +1,10 @@
 ---
 title: Slash lg
 categories:
-  - Alerts, warnings, and signs
+    - Alerts, warnings, and signs
 tags:
-  - shape
-  - stop
-  - ban
-  - no
+    - shape
+    - stop
+    - ban
+    - no
 ---

@@ -1,9 +1,9 @@
 ---
 title: Cursor text
 categories:
-  - Typography
+    - Typography
 tags:
-  - text
-  - type
-  - cursor
+    - text
+    - type
+    - cursor
 ---

@@ -1,9 +1,9 @@
 ---
 title: Badge SD fill
 categories:
-  - Badges
+    - Badges
 tags:
-  - display
-  - resolution
-  - "standard definition"
+    - display
+    - resolution
+    - 'standard definition'
 ---

@@ -1,7 +1,7 @@
 ---
 title: USB drive fill
 categories:
-  - Devices
+    - Devices
 tags:
-  - thumb-drive
+    - thumb-drive
 ---

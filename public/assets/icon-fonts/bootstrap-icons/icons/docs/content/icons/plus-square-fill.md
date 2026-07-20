@@ -1,8 +1,8 @@
 ---
 title: Plus square fill
 categories:
-  - Alerts, warnings, and signs
+    - Alerts, warnings, and signs
 tags:
-  - add
-  - new
+    - add
+    - new
 ---
