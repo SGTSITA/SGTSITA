@@ -49,11 +49,13 @@ document.addEventListener("DOMContentLoaded", function () {
         {
             headerName: "Acciones",
             field: "acciones",
+            width: 220,
+            minWidth: 180,
 
             cellRenderer: (params) => {
                 return `
             <button
-                class="btn btn-sm btn-primary btnEditarEquipo me-1"
+                class="btn btn-xs btn-primary btnEditarEquipo me-1"
                 title="Editar equipo"
                 data-id="${params.data.id}"
                 data-numero="${params.data.id_equipo}"
@@ -62,21 +64,24 @@ document.addEventListener("DOMContentLoaded", function () {
                 data-placas="${params.data.placas}"
                 data-serie="${params.data.num_serie}"
                 data-tipoequipo="${params.data.tipo}"
-
-
-
-
-
             >
                 <i class="bi bi-pencil"></i>
             </button>
 
             <button
-                class="btn btn-sm btn-warning"
+                class="btn btn-xs btn-warning me-1"
                 title="Configurar GPS"
                 onclick="abrirModalConfig('${encodeURIComponent(JSON.stringify(params.data))}')"
             >
                 <i class="bi bi-gear"></i>
+            </button>
+
+            <button
+                class="btn btn-xs btn-danger btnEliminarEquipo"
+                title="Eliminar equipo"
+                data-id="${params.data.id}"
+            >
+                <i class="bi bi-trash"></i>
             </button>
         `;
             },
@@ -91,6 +96,12 @@ document.addEventListener("DOMContentLoaded", function () {
             filter: true,
             resizable: true,
         },
+        getRowStyle: params => {
+            if (params.data && params.data.is_duplicated_imei) {
+                return { backgroundColor: '#f8d7da', color: '#721c24' };
+            }
+            return null;
+        }
     };
 
     const eGridDiv = document.querySelector("#gridEquiposGPS");
@@ -399,13 +410,83 @@ $("#btnGuardarEquipo").on("click", function () {
         error: function (err) {
             Swal.close();
 
+            const message = err.responseJSON && err.responseJSON.message 
+                ? err.responseJSON.message 
+                : "No se pudo guardar el equipo";
+
             Swal.fire({
                 icon: "error",
                 title: "Error",
-                text: "No se pudo guardar el equipo",
+                text: message,
             });
 
             console.error(err);
         },
+    });
+});
+
+$(document).on("click", ".btnEliminarEquipo", function () {
+    const id = $(this).data("id");
+
+    Swal.fire({
+        title: "¿Estás seguro?",
+        text: "El equipo será desactivado y no aparecerá en el catálogo activo, pero se conservará en el historial.",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#d33",
+        cancelButtonColor: "#3085d6",
+        confirmButtonText: "Sí, desactivar",
+        cancelButtonText: "Cancelar"
+    }).then((result) => {
+        if (result.isConfirmed) {
+            $.ajax({
+                url: `/equipos/desactivar/${id}`,
+                method: "POST",
+                data: {
+                    _token: $('meta[name="csrf-token"]').attr("content"),
+                    _method: "PATCH",
+                    tipo: "desactivado"
+                },
+                beforeSend: function () {
+                    Swal.fire({
+                        title: "Desactivando...",
+                        text: "Por favor espera",
+                        allowOutsideClick: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+                },
+                success: function (res) {
+                    Swal.close();
+                    if (res.success) {
+                        Swal.fire({
+                            icon: "success",
+                            title: "Desactivado",
+                            text: res.message || "El equipo se desactivó con éxito",
+                            timer: 1500,
+                            showConfirmButton: false
+                        }).then(() => {
+                            location.reload();
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: "error",
+                            title: "Error",
+                            text: res.message || "No se pudo desactivar el equipo"
+                        });
+                    }
+                },
+                error: function (err) {
+                    Swal.close();
+                    Swal.fire({
+                        icon: "error",
+                        title: "Error",
+                        text: "Ocurrió un error al intentar desactivar el equipo"
+                    });
+                    console.error(err);
+                }
+            });
+        }
     });
 });

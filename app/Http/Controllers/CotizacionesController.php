@@ -1455,6 +1455,200 @@ else{
         //return $pdf->stream();
         return $pdf->download('cotizacion'.$cotizacion->Cliente->nombre.'_#'.$cotizacion->id.'.pdf');
     }
+
+    public function pdfValidacionDocs(Request $request, $id)
+    {
+        abort_if(!auth()->user()->can('generar-pdf-validacion-docs'), 403, 'No autorizado.');
+
+        $cotizacion = Cotizaciones::where('id', '=', $id)->firstOrFail();
+        $documentacion = DocumCotizacion::where('id_cotizacion', '=', $cotizacion->id)->first();
+        
+        if (!$documentacion) {
+            return back()->with('error', 'No hay datos de documentación para esta cotización.');
+        }
+
+        $cotizacionId = $cotizacion->id;
+        $basePath = public_path("cotizaciones/cotizacion{$cotizacionId}/");
+        
+        $docDefinitions = [
+            [
+                'tipo' => 'Carta Porte XML',
+                'archivo' => $cotizacion->carta_porte_xml ?? null,
+                'folio' => $documentacion->num_carta_porte ?? null,
+                'tabla' => 'cotizaciones',
+                'columna' => 'carta_porte_xml'
+            ],
+            [
+                'tipo' => 'Carta Porte PDF',
+                'archivo' => $cotizacion->carta_porte ?? null,
+                'folio' => $documentacion->num_carta_porte ?? null,
+                'tabla' => 'cotizaciones',
+                'columna' => 'carta_porte'
+            ],
+            [
+                'tipo' => 'Formato CCP',
+                'archivo' => $documentacion->doc_ccp ?? null,
+                'folio' => $documentacion->ccp ?? null,
+                'tabla' => 'docum_cotizacion',
+                'columna' => 'doc_ccp'
+            ],
+            [
+                'tipo' => 'Boleta de liberación',
+                'archivo' => $documentacion->boleta_liberacion ?? null,
+                'folio' => $documentacion->num_boleta_liberacion ?? null,
+                'tabla' => 'docum_cotizacion',
+                'columna' => 'boleta_liberacion'
+            ],
+            [
+                'tipo' => 'Doda',
+                'archivo' => $documentacion->doda ?? null,
+                'folio' => $documentacion->num_doda ?? null,
+                'tabla' => 'docum_cotizacion',
+                'columna' => 'doda'
+            ],
+            [
+                'tipo' => 'Prealta - Boleta vacío',
+                'archivo' => $cotizacion->img_boleta ?? null,
+                'folio' => $documentacion->fecha_boleta_vacio ?? null,
+                'tabla' => 'cotizaciones',
+                'columna' => 'img_boleta'
+            ],
+            [
+                'tipo' => 'EIR - Comprobante vacío',
+                'archivo' => $documentacion->doc_eir ?? null,
+                'folio' => $cotizacion->fecha_eir ?? null,
+                'tabla' => 'docum_cotizacion',
+                'columna' => 'doc_eir'
+            ],
+            [
+                'tipo' => 'Evidencia Descarga',
+                'archivo' => $documentacion->evidencia_descarga ?? null,
+                'folio' => $documentacion->fecha_evidencia_descarga ?? null,
+                'tabla' => 'docum_cotizacion',
+                'columna' => 'evidencia_descarga'
+            ],
+            [
+                'tipo' => 'Boleta Patio',
+                'archivo' => $documentacion->boleta_patio ?? null,
+                'folio' => $documentacion->fecha_boleta_patio ?? null,
+                'tabla' => 'docum_cotizacion',
+                'columna' => 'boleta_patio'
+            ],
+        ];
+
+        $docs = [];
+        foreach ($docDefinitions as $def) {
+            $archivo = $def['archivo'];
+            $exists = false;
+            $size = 'N/A';
+            $ext = 'N/A';
+            $fecha_carga = 'N/A';
+
+            if (!empty($archivo)) {
+                $filePath = $basePath . $archivo;
+                if (file_exists($filePath)) {
+                    $exists = true;
+                    $sizeBytes = filesize($filePath);
+                    if ($sizeBytes >= 1048576) {
+                        $size = round($sizeBytes / 1048576, 2) . ' MB';
+                    } elseif ($sizeBytes >= 1024) {
+                        $size = round($sizeBytes / 1024, 2) . ' KB';
+                    } else {
+                        $size = $sizeBytes . ' B';
+                    }
+                    $ext = strtoupper(pathinfo($filePath, PATHINFO_EXTENSION));
+                    $fecha_carga = date('d-m-Y H:i:s', filemtime($filePath));
+                } else {
+                    $ext = strtoupper(pathinfo($archivo, PATHINFO_EXTENSION));
+                }
+            }
+
+            $docs[] = [
+                'tipo' => $def['tipo'],
+                'archivo' => $archivo ?? 'No cargado',
+                'extension' => $ext,
+                'tamanio' => $size,
+                'fecha_carga' => $fecha_carga,
+                'folio' => $def['folio'] ?? 'No asignado',
+                'existe' => $exists,
+            ];
+        }
+
+        $incluirAuditoria = $request->get('incluir_auditoria') == 1;
+        $auditLogs = [];
+
+        if ($incluirAuditoria) {
+            $logsRaw = \App\Models\ActivityLog::where(function($query) use ($cotizacion, $documentacion) {
+                $query->where('model', 'Cotizaciones')->where('model_id', $cotizacion->id);
+                if ($documentacion) {
+                    $query->orWhere(function($q) use ($documentacion) {
+                        $q->where('model', 'DocumCotizacion')->where('model_id', $documentacion->id);
+                    });
+                }
+            })
+            ->with('user')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+            $columnMap = [
+                'carta_porte_xml' => 'Carta Porte XML',
+                'carta_porte' => 'Carta Porte PDF',
+                'doc_ccp' => 'Formato CCP',
+                'ccp' => 'CCP (Folio)',
+                'boleta_liberacion' => 'Boleta de liberación',
+                'num_boleta_liberacion' => 'Boleta de liberación (Folio)',
+                'doda' => 'Doda',
+                'num_doda' => 'Doda (Folio)',
+                'img_boleta' => 'Prealta - Boleta vacío (Imagen)',
+                'fecha_boleta_vacio' => 'Prealta - Boleta vacío (Folio/Fecha)',
+                'doc_eir' => 'EIR - Comprobante vacío',
+                'fecha_eir' => 'EIR (Folio/Fecha)',
+                'evidencia_descarga' => 'Evidencia Descarga',
+                'fecha_evidencia_descarga' => 'Evidencia Descarga (Folio/Fecha)',
+                'boleta_patio' => 'Boleta Patio',
+                'fecha_boleta_patio' => 'Boleta Patio (Folio/Fecha)',
+                'num_contenedor' => 'Número de Contenedor',
+            ];
+
+            foreach ($logsRaw as $log) {
+                $old = $log->old_values ?? [];
+                $new = $log->new_values ?? [];
+                
+                $details = [];
+                
+                if ($log->action == 'created') {
+                    foreach ($new as $key => $val) {
+                        if (array_key_exists($key, $columnMap) && !empty($val)) {
+                            $details[] = "Inicializó " . $columnMap[$key] . " con valor: " . $val;
+                        }
+                    }
+                } else {
+                    foreach ($new as $key => $val) {
+                        if (array_key_exists($key, $columnMap)) {
+                            $oldVal = $old[$key] ?? 'N/A';
+                            $details[] = "Modificó " . $columnMap[$key] . " de '" . (is_array($oldVal) ? json_encode($oldVal) : $oldVal) . "' a '" . (is_array($val) ? json_encode($val) : $val) . "'";
+                        }
+                    }
+                }
+
+                if (!empty($details)) {
+                    $auditLogs[] = [
+                        'fecha' => $log->created_at_local,
+                        'usuario' => $log->user->name ?? 'Sistema',
+                        'accion' => $log->action,
+                        'detalles' => $details,
+                    ];
+                }
+            }
+        }
+
+        $configuracion = \App\Models\Configuracion::first();
+        $fechaCarbon = \Carbon\Carbon::now('America/Mexico_City');
+
+        $pdf = PDF::loadView('cotizaciones.pdf_validacion_docs', compact('cotizacion', 'documentacion', 'docs', 'incluirAuditoria', 'auditLogs', 'configuracion', 'fechaCarbon'));
+        
+        return $pdf->download('validacion_docs_coti_' . $cotizacion->id . '.pdf');
+    }
 public function updateKmDiesel(Request $request, Cotizaciones $cotizacion)
 {
     $data = $request->validate([

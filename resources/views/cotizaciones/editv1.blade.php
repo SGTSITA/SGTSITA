@@ -87,8 +87,9 @@
                                         <div class="custom-nav-link active">
                                             <i class="ni ni-box-2 text-warning text-gradient"></i>
                                             <h6>Contenedor A
-                                                @if($cotizacion->estadoCuenta)
-                                                    <span class="badge bg-gradient-success ms-2 text-xs" style="font-size: 10px; text-transform: none; letter-spacing: 0; padding: 4px 8px;">
+                                                @if ($cotizacion->estadoCuenta)
+                                                    <span class="badge bg-gradient-success ms-2 text-xs"
+                                                        style="font-size: 10px; text-transform: none; letter-spacing: 0; padding: 4px 8px;">
                                                         Edo. Cuenta: {{ $cotizacion->estadoCuenta->numero }}
                                                     </span>
                                                 @endif
@@ -103,8 +104,9 @@
                                         <div class="custom-nav-link">
                                             <i class="ni ni-box-2 text-info text-gradient"></i>
                                             <h6>Contenedor B
-                                                @if(isset($secundaria) && $secundaria && $secundaria->estadoCuenta)
-                                                    <span class="badge bg-gradient-success ms-2 text-xs" style="font-size: 10px; text-transform: none; letter-spacing: 0; padding: 4px 8px;">
+                                                @if (isset($secundaria) && $secundaria && $secundaria->estadoCuenta)
+                                                    <span class="badge bg-gradient-success ms-2 text-xs"
+                                                        style="font-size: 10px; text-transform: none; letter-spacing: 0; padding: 4px 8px;">
                                                         Edo. Cuenta: {{ $secundaria->estadoCuenta->numero }}
                                                     </span>
                                                 @endif
@@ -214,13 +216,13 @@
 
                                         <div class="col-6 form-group">
                                             <!--label for="name">Cliente *</label>
-                                                                                                                                                                                                                                                                                                                                    <select class="form-select cliente d-inline-block" data-toggle="select" id="id_cliente" name="id_cliente">
-                                                                                                                                                                                                                                                                                                                                        <option value="{{ $cotizacion->id_cliente }}">{{ $cotizacion->Cliente->nombre }} / {{ $cotizacion->Cliente->telefono }}</option>
-                                                                                                                                                                                                                                                                                                                                        @foreach ($clientes as $item)
+                                                                                                                                                                                                                                                                                                                                                <select class="form-select cliente d-inline-block" data-toggle="select" id="id_cliente" name="id_cliente">
+                                                                                                                                                                                                                                                                                                                                                    <option value="{{ $cotizacion->id_cliente }}">{{ $cotizacion->Cliente->nombre }} / {{ $cotizacion->Cliente->telefono }}</option>
+                                                                                                                                                                                                                                                                                                                                                    @foreach ($clientes as $item)
     <option value="{{ $item->id }}">{{ $item->nombre }} / {{ $item->telefono }}</option>
     @endforeach
 
-                                                                                                                                                                                                                                                                                                                                    </select-->
+                                                                                                                                                                                                                                                                                                                                                </select-->
                                             <ul class="list-group">
                                                 <li
                                                     class="list-group-item border-1 border-dashed d-flex p-4 mb-2 bg-gray-100 border-radius-lg">
@@ -261,14 +263,14 @@
 
                                         <div class="col-6 form-group">
                                             <!--label for="name">Subcliente *</label>
-                                                                                                                                                                                                                                                                                                                                    <select class="form-select subcliente d-inline-block" id="id_subcliente" name="id_subcliente">
+                                                                                                                                                                                                                                                                                                                                                <select class="form-select subcliente d-inline-block" id="id_subcliente" name="id_subcliente">
 
-                                                                                                                                                                                                                                                                                    @if ($cotizacion->id_subcliente != null)
+                                                                                                                                                                                                                                                                                                @if ($cotizacion->id_subcliente != null)
     <option value="{{ $cotizacion->id_subcliente }}">{{ $cotizacion->Subcliente->nombre }} / {{ $cotizacion->Subcliente->telefono }}</option>
 @else
     <option value="">Seleccionar subcliente</option>
     @endif
-                                                                                                                                                                                                                                                                                                                                    </select-->
+                                                                                                                                                                                                                                                                                                                                                </select-->
                                             <ul class="list-group">
                                                 <li
                                                     class="list-group-item border-1 border-dashed d-flex p-4 mb-2 bg-gray-100 border-radius-lg">
@@ -754,6 +756,28 @@
                                             Num contenedor: {{ $documentacion->num_contenedor }}
                                         </label>
                                     @endif
+
+                                    @can('generar-pdf-validacion-docs')
+                                        <div class="card mb-4 mt-2 bg-gray-100 shadow-none border">
+                                            <div class="card-body p-3">
+                                                <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                                                    <div>
+                                                        <h6 class="mb-0 text-sm font-weight-bold">Reporte de Validación de Documentos</h6>
+                                                        <p class="text-xs text-secondary mb-0">Genera un PDF con el estado, nombres de archivo y folios de los documentos cargados.</p>
+                                                    </div>
+                                                    <div class="d-flex align-items-center gap-4">
+                                                        <div class="form-check form-switch mb-0">
+                                                            <input class="form-check-input cursor-pointer" type="checkbox" id="incluirAuditoriaDocs" name="incluir_auditoria_docs">
+                                                            <label class="form-check-label mb-0 text-xs font-weight-bold cursor-pointer" for="incluirAuditoriaDocs">Incluir Auditoría</label>
+                                                        </div>
+                                                        <button type="button" id="btnGenerarPDFValidacionDocs" class="btn btn-danger btn-sm mb-0 d-flex align-items-center gap-2">
+                                                            <i class="fas fa-file-pdf"></i> Generar PDF
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endcan
 
                                     <div class="row">
                                         <div class="col-12">
@@ -1274,38 +1298,47 @@
                                             </table>
                                         </div>
                                     </div>
-                                    
-                                    @if ($documentacion && $documentacion->num_contenedor != null)
-                                        <div class="card mt-5">
-                                            <div class="card-header collapsible cursor-pointer" data-bs-toggle="collapse" data-bs-target="#kt_card_operator_files" aria-expanded="true">
-                                                <h3 class="card-title">Otros documentos o evidencias de viaje (Subidos por Operador)</h3>
-                                            </div>
-                                            <div id="kt_card_operator_files" class="collapse show">
-                                                <div class="card-body">
-                                                    <div class="table-responsive">
-                                                        <table id="tblOperatorFiles" class="table align-middle table-row-dashed fs-6 gy-5 table-striped">
-                                                            <thead>
-                                                                <tr class="text-start text-gray-500 fw-bold fs-7 text-uppercase gs-0">
-                                                                    <th>Vista Previa</th>
-                                                                    <th>Nombre del archivo</th>
-                                                                    <th>Tipo de Evidencia</th>
-                                                                    <th>Tamaño</th>
-                                                                    <th>Fecha de subida</th>
-                                                                    <th class="text-end min-w-100px">Acciones</th>
-                                                                </tr>
-                                                            </thead>
-                                                            <tbody class="text-gray-600 fw-semibold" id="tblOperatorFilesBody">
-                                                                <!-- Dynamic Rows -->
-                                                            </tbody>
-                                                        </table>
-                                                    </div>
-                                                    <div id="noOperatorFilesMessage" class="text-center text-muted p-4 d-none">
-                                                        No hay evidencias ni otros documentos registrados por el operador para este viaje.
+                                    @can('DocsoperadorSGT')
+                                        @if ($documentacion && $documentacion->num_contenedor != null)
+                                            <div class="card mt-5">
+                                                <div class="card-header collapsible cursor-pointer" data-bs-toggle="collapse"
+                                                    data-bs-target="#kt_card_operator_files" aria-expanded="true">
+                                                    <h3 class="card-title">Otros documentos o evidencias de viaje (Subidos por
+                                                        Operador)</h3>
+                                                </div>
+                                                <div id="kt_card_operator_files" class="collapse show">
+                                                    <div class="card-body">
+                                                        <div class="table-responsive">
+                                                            <table id="tblOperatorFiles"
+                                                                class="table align-middle table-row-dashed fs-6 gy-5 table-striped">
+                                                                <thead>
+                                                                    <tr
+                                                                        class="text-start text-gray-500 fw-bold fs-7 text-uppercase gs-0">
+                                                                        <th>Vista Previa</th>
+                                                                        <th>Nombre del archivo</th>
+                                                                        <th>Tipo de Evidencia</th>
+                                                                        <th>Tamaño</th>
+                                                                        <th>Fecha de subida</th>
+                                                                        <th class="text-end min-w-100px">Acciones</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody class="text-gray-600 fw-semibold"
+                                                                    id="tblOperatorFilesBody">
+                                                                    <!-- Dynamic Rows -->
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+                                                        <div id="noOperatorFilesMessage"
+                                                            class="text-center text-muted p-4 d-none">
+                                                            No hay evidencias ni otros documentos registrados por el operador
+                                                            para este viaje.
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    @endif
+                                        @endif
+                                    @endcan
+
                                 </div>
 
                                 <div class="tab-pane fade" id="nav-Gastos" role="tabpanel"
@@ -1326,7 +1359,9 @@
                                                     <i class="fa fa-trash"></i>
                                                     Eliminar
                                                 </button>
-                                                <button type="button" data-bs-toggle="modal" data-bs-target="#modal-form" data-origen="cotizacion" class="btn btn-sm bg-gradient-info btnAgregarGastoTrigger">
+                                                <button type="button" data-bs-toggle="modal"
+                                                    data-bs-target="#modal-form" data-origen="cotizacion"
+                                                    class="btn btn-sm bg-gradient-info btnAgregarGastoTrigger">
                                                     Agregar gasto
                                                 </button>
                                             </div>
@@ -1344,8 +1379,8 @@
                                                     <img src="{{ asset('img/icon/monedas.webp') }}" alt=""
                                                         width="25px" />
                                                 </span>
-                                                <input type="text" id="txtSumGastos" class="form-control txtSumGastos"
-                                                    value="0" readonly />
+                                                <input type="text" id="txtSumGastos"
+                                                    class="form-control txtSumGastos" value="0" readonly />
                                             </div>
                                         </div>
                                         <div class="col-4 form-group">
@@ -2076,7 +2111,7 @@
             tbody.innerHTML = '<tr><td colspan="6" class="text-center">Cargando archivos del operador...</td></tr>';
             if (msg) msg.classList.add("d-none");
 
-            let numCont = '{{ $documentacion ? $documentacion->num_contenedor : "" }}';
+            let numCont = '{{ $documentacion ? $documentacion->num_contenedor : '' }}';
             if (!numCont) {
                 tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Sin contenedor registrado</td></tr>';
                 return;
@@ -2119,13 +2154,18 @@
                 })
                 .catch(err => {
                     console.error("Error loading operator files:", err);
-                    tbody.innerHTML = '<tr><td colspan="6" class="text-center text-danger">Error al cargar los archivos.</td></tr>';
+                    tbody.innerHTML =
+                        '<tr><td colspan="6" class="text-center text-danger">Error al cargar los archivos.</td></tr>';
                 });
         }
 
         $(document).ready(() => {
             sobrePesoViaje();
-            loadOperatorFiles();
+            const operdaroContainer = document.getElementById('kt_card_operator_files');
+            if (operdaroContainer) {
+                loadOperatorFiles();
+            }
+
 
             formFields.forEach((item) => {
                 if (item.type == 'money') {
@@ -2160,6 +2200,17 @@
                         '' : 'recinto-si';
                 });
             });
+
+            @can('generar-pdf-validacion-docs')
+            let btnGenerarPDF = document.getElementById('btnGenerarPDFValidacionDocs');
+            if (btnGenerarPDF) {
+                btnGenerarPDF.addEventListener('click', function() {
+                    let incluirAuditoria = document.getElementById('incluirAuditoriaDocs').checked ? 1 : 0;
+                    let url = "{{ route('cotizaciones.pdf-validacion-docs', $cotizacion->id) }}?incluir_auditoria=" + incluirAuditoria;
+                    window.open(url, '_blank');
+                });
+            }
+            @endcan
         });
     </script>
 @endsection

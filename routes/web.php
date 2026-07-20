@@ -409,6 +409,7 @@ Route::middleware(['auth', 'idle.timeout'])->group(function () {
         //fin burrero local editar
 
         Route::get('cotizaciones/pdf/{id}', [App\Http\Controllers\CotizacionesController::class, 'pdf'])->name('pdf.cotizaciones');
+        Route::get('cotizaciones/pdf-validacion-docs/{id}', [App\Http\Controllers\CotizacionesController::class, 'pdfValidacionDocs'])->name('cotizaciones.pdf-validacion-docs');
 
         Route::patch('cotizaciones/update/estatus/{id}', [App\Http\Controllers\CotizacionesController::class, 'update_estatus'])->name('update_estatus.cotizaciones');
         Route::patch('cotizaciones/update/tipo/{id}', [App\Http\Controllers\CotizacionesController::class, 'update_cambio'])->name('update_cambio.cotizaciones');

@@ -163,6 +163,19 @@ class MigrarGastosHistoricos extends Command
                         'updated_at' => now(),
                     ]);
 
+                    // Crear Imputación
+                    GastoImputacion::create([
+                        'gasto_id' => $gasto->id,
+                        'gasto_partida_id' => null,
+                        'periodo_id' => null,
+                        'fecha_imputacion' => $gGeneral->fecha ?? now()->toDateString(),
+                        'tipo_imputacion' => (!empty($gGeneral->diferir_gasto) && $gGeneral->diferir_gasto) ? 'periodo' : 'empresa',
+                        'imputable_type' => null,
+                        'imputable_id' => null,
+                        'monto_imputado' => $montoTotal,
+                        'origen' => (!empty($gGeneral->diferir_gasto) && $gGeneral->diferir_gasto) ? 'diferido' : 'directo',
+                    ]);
+
                     // Crear pagos si corresponde
                     if ($gGeneral->pago_realizado == 1) {
                         if (floatval($gGeneral->monto1 ?? 0) > 0) {
