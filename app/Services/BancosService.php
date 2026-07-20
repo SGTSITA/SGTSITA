@@ -210,7 +210,7 @@ class BancosService
 
         return DB::transaction(function () use ($data) {
 
-            return CatBancoCuentasMovimientos::create([
+            $mov = CatBancoCuentasMovimientos::create([
                 'cuenta_bancaria_id' => $data['cuenta_bancaria_id'],
                 'tipo'               => $data['tipo'], // cargo | abono
                 'monto'              => $data['monto'],
@@ -218,12 +218,24 @@ class BancosService
                 'fecha_movimiento'   => $data['fecha_movimiento'],
                 'origen'             => $data['origen'] ?? 'sistema',
                 'referencia'         => $data['referencia'] ?? null,
-                'referenciaable_type'         => $data['referenciaable_type'] ?? null,
-                'referenciaable_id'         => $data['referenciaable_id'] ?? null,
+                'referenciaable_type'=> $data['referenciaable_type'] ?? null,
+                'referenciaable_id'  => $data['referenciaable_id'] ?? null,
                 'detalles'           => $data['detalles'] ?? null,
-                'observaciones'           => $data['observaciones'] ?? null,
+                'observaciones'      => $data['observaciones'] ?? null,
                 'user_id'            => auth()->id(),
             ]);
+
+            // Sync legacy saldo column
+            $banco = Bancos::find($data['cuenta_bancaria_id']);
+            if ($banco) {
+                if ($data['tipo'] === 'abono') {
+                    $banco->increment('saldo', $data['monto']);
+                } else {
+                    $banco->decrement('saldo', $data['monto']);
+                }
+            }
+
+            return $mov;
 
         });
     }
@@ -252,7 +264,7 @@ class BancosService
             $movimiento = CatBancoCuentasMovimientos::where('id', $movimientoId)
                 ->where('cuenta_bancaria_id', $cuentaId)
                 ->firstOrFail();
- $fechaCancelacion = $this->parseFecha($fecha_cancelacionmovi);
+            $fechaCancelacion = $this->parseFecha($fecha_cancelacionmovi);
 
             if ($movimiento->cancelado) {
                 return [
@@ -275,18 +287,28 @@ class BancosService
                 'fecha_movimiento'   => $fechaCancelacion ?? now(),
                 'origen'             => 'sistema',
                 'referencia'         => 'cancelación'. $movimiento->referencia ? ' - ' . $movimiento->referencia : null,
-                'referenciaable_type'         => $movimiento->referenciaable_type ?? null,
-                'referenciaable_id'         => $movimiento->referenciaable_id ?? null,
-                'detalles' => $movimiento->detalles,
-                'cancelado' => false,
-                'user_id'   => auth()->id(),
-                'observaciones' =>  'movimiento_original_id |' . $movimiento->id . '|'. 'concepto_original|'  . $movimiento->concepto,
+                'referenciaable_type'=> $movimiento->referenciaable_type ?? null,
+                'referenciaable_id'  => $movimiento->referenciaable_id ?? null,
+                'detalles'           => $movimiento->detalles,
+                'cancelado'          => false,
+                'user_id'            => auth()->id(),
+                'observaciones'      => 'movimiento_original_id |' . $movimiento->id . '|'. 'concepto_original|' . $movimiento->concepto,
             ]);
 
 
             $movimiento->update([
                 'cancelado' => true
             ]);
+
+            // Sync legacy saldo column
+            $banco = Bancos::find($cuentaId);
+            if ($banco) {
+                if ($tipoInverso === 'abono') {
+                    $banco->increment('saldo', $movimiento->monto);
+                } else {
+                    $banco->decrement('saldo', $movimiento->monto);
+                }
+            }
 
             return [
                 'status' => true,

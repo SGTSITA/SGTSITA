@@ -1242,11 +1242,11 @@ class ReporteriaController extends Controller
         $fecha = date('Y-m-d');
         $fechaCarbon = Carbon::parse($fecha);
 
-        // Fetch cotizaciones list server-side using the same service method
+
         $info = $this->reporteriaService->getContenedorUtilidad($fechaInicio, $fechaFin, auth()->user()->id_empresa);
         $cotizaciones = collect($info);
 
-        // If specific rows were selected, filter them by numContenedor
+
         if ($request->has('rowData') && !empty($request->rowData)) {
             $selectedData = json_decode($request->rowData, true);
             if (is_array($selectedData) && count($selectedData) > 0) {
@@ -1260,7 +1260,7 @@ class ReporteriaController extends Controller
         $cotizacion = [];
         $user = User::where('id', '=', auth()->user()->id)->first();
 
-        // Fetch general/other expenses from the new unified gastos table (instead of GastosGenerales)
+
      $gastosGenerales = Gasto::with(['categoria', 'pagos'])
         ->join('gasto_imputaciones as gi', 'gastos.id', '=', 'gi.gasto_id')
         ->where('gastos.id_empresa', auth()->user()->id_empresa)
@@ -1269,7 +1269,7 @@ class ReporteriaController extends Controller
         ->select('gastos.*', 'gi.monto_imputado as monto_aplicado', 'gi.fecha_imputacion as fecha_aplicada')
         ->get();
 
-        $gastos = $gastosGenerales->sum('monto_total');
+        $gastos = $gastosGenerales->sum('monto_aplicado');
         $utilidad = $cotizaciones->sum('utilidad');
 
         $totalRows = count($info);

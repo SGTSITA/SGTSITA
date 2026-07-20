@@ -99,11 +99,12 @@ class PlaneacionController extends Controller
 
                 $movimientoBanco = $this->BancosService->findMovimiento($asignaciones->id, \App\Models\Asignaciones::class, $asignaciones->id_banco1_dinero_viaje);
 
-                $cancelarMovimientoBanco =  $this->BancosService->cancelarMovimiento($asignaciones->id_banco1_dinero_viaje, $movimientoBanco->id,$movimientoBanco->fecha_movimiento);
+                if ($movimientoBanco) {
+                    $cancelarMovimientoBanco = $this->BancosService->cancelarMovimiento($asignaciones->id_banco1_dinero_viaje, $movimientoBanco->id, $movimientoBanco->fecha_movimiento);
 
-                if (!$cancelarMovimientoBanco) {
-
-                    throw new \Exception('No se pudo cancelar el movimiento bancario, dinero para viaje ');
+                    if (!$cancelarMovimientoBanco) {
+                        throw new \Exception('No se pudo cancelar el movimiento bancario, dinero para viaje ');
+                    }
                 }
 
 

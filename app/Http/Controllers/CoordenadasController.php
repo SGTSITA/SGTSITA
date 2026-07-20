@@ -654,7 +654,7 @@ $fechaSalida = $request->query('fecha_salida', null);
 
 $idCliente = 0;
 $cliendID = auth()->user()->id_cliente;
-$idEmpresa = auth()->user()->id_empresa;
+$idEmpresa = $request->id_empresa ?? $request->query('id_empresa') ?? auth()->user()->id_empresa;
 
 if ($cliendID !== 0) {
     $idCliente = $cliendID;
