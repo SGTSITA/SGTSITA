@@ -1,4 +1,4 @@
-﻿let equiposSearch = [];
+let equiposSearch = [];
 let rastreosActivos = {};
 let map;
 const estadosLi = {};
@@ -5392,12 +5392,14 @@ function obtenerColorYTipo(item) {
 
         // EQUIPO
         if (tipoLi === "Equipo") {
-            if (idEquipo && idLi === idEquipo) {
+            if (idContenedor && idLi === idContenedor) {
                 resultado.colorMarker = li.data("color");
                 resultado.tipoitemPanel = tipoLi;
                 return false;
             }
 
+            const imei = String(item.ubicacion?.imei ?? "");
+            const textoPanel = li.text().toLowerCase();
             if (imei && textoPanel.includes(imei.toLowerCase())) {
                 resultado.colorMarker = li.data("color");
                 resultado.tipoitemPanel = tipoLi;
