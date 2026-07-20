@@ -695,44 +695,52 @@ class CoordenadasService
              }
          })
 
-                 ->whereExists(function ($sub) use ($filters,$fecha, $fechaSalida) {
+         ->where(function ($queryOuter) use ($filters, $fecha, $fechaSalida) {
+             $queryOuter->whereExists(function ($sub) use ($filters, $fecha, $fechaSalida) {
+                 $sub->select(DB::raw(1))
+                     ->from('asignaciones as a')
+                     ->join('docum_cotizacion as dc', 'dc.id', '=', 'a.id_contenedor')
+                     ->join('cotizaciones as c', 'c.id', '=', 'dc.id_cotizacion')
 
-            $sub->select(DB::raw(1))
-                ->from('asignaciones as a')
-                ->join('docum_cotizacion as dc', 'dc.id', '=', 'a.id_contenedor')
-                ->join('cotizaciones as c', 'c.id', '=', 'dc.id_cotizacion')
+                     // El equipo puede estar como tracto, chasis A o chasis B
+                     ->where(function ($q) {
+                         $q->whereColumn('a.id_camion', 'equipos.id')
+                             ->orWhereColumn('a.id_chasis', 'equipos.id')
+                             ->orWhereColumn('a.id_chasis2', 'equipos.id');
+                     })
 
-                // El equipo puede estar como tracto, chasis A o chasis B
-                ->where(function ($q) {
-                    $q->whereColumn('a.id_camion', 'equipos.id')
-                        ->orWhereColumn('a.id_chasis', 'equipos.id')
-                        ->orWhereColumn('a.id_chasis2', 'equipos.id');
-                })
+                     ->when($fecha ?? null, function ($q) use ($fecha) {
+                         $q->whereDate('fecha_inicio', '<=', $fecha)
+                           ->whereDate('fecha_fin', '>=', $fecha);
+                     })
+                     ->when($fechaSalida ?? null, function ($q) use ($fechaSalida) {
+                         $q->whereDate('fecha_inicio', '>=', $fechaSalida);
+                     })
 
-               ->when($fecha ?? null, function ($q) use ($fecha) {
+                     // Si no es admin, también valida empresa en asignaciones
+                     ->when(!($filters['isAdmin'] ?? false), function ($q) use ($filters) {
+                         $empresa = $filters['id_empresa'] ?? 0;
+                         if ($empresa != 0) {
+                             $q->where('a.id_empresa', $empresa);
+                         }
+                     })
 
-    $q->whereDate('fecha_inicio', '<=', $fecha)
-      ->whereDate('fecha_fin', '>=', $fecha);
-})
-->when($fechaSalida ?? null, function ($q) use ($fechaSalida) {
-    $q->whereDate('fecha_inicio', '>=', $fechaSalida);
-})
-
-                // Si no es admin, también valida empresa en asignaciones
-                ->when(!($filters['isAdmin'] ?? false), function ($q) use ($filters) {
-
-                    $empresa = $filters['id_empresa'] ?? 0;
-
-                    if ($empresa != 0) {
-                        $q->where('a.id_empresa', $empresa);
-                    }
-                })
-
-                // Si es cliente externo o usuario con cliente asignado
-                ->when(!empty($filters['idCliente']), function ($q) use ($filters) {
-                    $q->where('c.id_cliente', $filters['idCliente']);
-                });
-        });
+                     // Si es cliente externo o usuario con cliente asignado
+                     ->when(!empty($filters['idCliente']), function ($q) use ($filters) {
+                         $q->where('c.id_cliente', $filters['idCliente']);
+                     });
+             })
+             // O si nunca ha viajado (no existe en ninguna asignación)
+             ->orWhereNotExists(function ($sub) {
+                 $sub->select(DB::raw(1))
+                     ->from('asignaciones as a')
+                     ->where(function ($q) {
+                         $q->whereColumn('a.id_camion', 'equipos.id')
+                             ->orWhereColumn('a.id_chasis', 'equipos.id')
+                             ->orWhereColumn('a.id_chasis2', 'equipos.id');
+                     });
+             });
+         });
 
     }
 
