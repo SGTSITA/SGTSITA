@@ -1,3 +1,35 @@
+<style>
+    /* Estilos para el Dropdown de Select2 */
+    .select2-container--default .select2-results > .select2-results__options {
+        max-height: 160px !important;
+    }
+    .select2-container--default .select2-results__option {
+        padding: 4px 8px !important;
+        font-size: 12px !important;
+    }
+    #viajeModal .select2-container--default .select2-selection--single {
+        border-radius: 50rem !important; /* rounded-pill */
+        height: 31px !important;
+        border: 1px solid #d2d6da !important;
+        font-size: 12px !important;
+    }
+    #viajeModal .select2-container--default .select2-selection--single .select2-selection__rendered {
+        line-height: 31px !important;
+        padding-left: 12px !important;
+        text-transform: uppercase !important;
+    }
+    #viajeModal .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: 31px !important;
+        right: 8px !important;
+    }
+    .select2-container--default .select2-search--dropdown .select2-search__field {
+        border: 1px solid #d2d6da !important;
+        border-radius: 0.25rem !important;
+        padding: 4px 8px !important;
+        font-size: 12px !important;
+    }
+</style>
+
 <!-- Modal Detalles del Viaje -->
 <div class="modal fade" id="viajeModal" aria-labelledby="viajeModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
@@ -111,7 +143,7 @@
                         </div>
                     </div>
 
-                    <div class="row">
+                    <div class="row align-items-end">
                         <div class="col-md-4">
                             <label for="selectGPS" class="form-label">Compañia GPS</label>
                             <div class="position-relative w-100" style="max-width: 300px">
@@ -138,17 +170,7 @@
                                 </span>
                             </div>
                         </div>
-                    </div>
-                    <div class="row mt-2">
-                        <div class="col-12">
-                            <span class="form-text text-muted text-xs ms-1">
-                                <i class="fas fa-info-circle text-info me-1"></i> Para modificar los datos de esta unidad, realiza la edición desde el <a href="/equipos-gps/index" target="_blank" class="text-primary fw-bold text-decoration-underline">Catálogo de Equipos</a>.
-                            </span>
-                        </div>
-                    </div>
-
-                    <div class="row mt-4">
-                        <div class="col-md-6">
+                        <div class="col-md-5 mb-2">
                             <div class="d-flex align-items-center gap-2">
                                 <div id="gpsStatusUnidad" class="small fw-bold text-muted">
                                     Sin asignar GPS
@@ -159,42 +181,35 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-4 d-flex align-items-end">
-
-                        <div class="border rounded-4 px-3 py-3 bg-light d-none w-100 shadow-sm" id="cardGpsMapa">
-
-                            <div class="d-flex justify-content-between align-items-center">
-
-                                <div>
-
-                                    <div class="fw-bold small text-dark d-flex align-items-center gap-2">
-
-                                        <i class="fas fa-satellite-dish text-primary"></i>
-
-                                        <span>Monitoreo GPS</span>
-
-                                    </div>
-
-                                    <div id="lblDistanciaEquipos" class="small text-muted mt-1">
-
-                                        <i class="fas fa-info-circle me-1"></i>
-                                        Sin datos GPS
-
-                                    </div>
-
-                                </div>
-
-                                <button type="button" class="btn btn-sm btn-primary rounded-pill px-3 shadow-sm"
-                                    id="btnMapaUnidad">
-
-                                    <i class="fas fa-map-marker-alt"></i>
-
-                                </button>
-
-                            </div>
-
+                    <div class="row mt-2">
+                        <div class="col-12">
+                            <span class="form-text text-muted text-xs ms-1">
+                                <i class="fas fa-info-circle text-info me-1"></i> Para modificar los datos de esta unidad, realiza la edición desde el <a href="/equipos-gps/index" target="_blank" class="text-primary fw-bold text-decoration-underline">Catálogo de Equipos</a>.
+                            </span>
                         </div>
+                    </div>
 
+                    <div class="row mt-2">
+                        <div class="col-12 col-md-5">
+                            <div class="border rounded-4 px-3 py-3 bg-light d-none w-100 shadow-sm" id="cardGpsMapa">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <div class="fw-bold small text-dark d-flex align-items-center gap-2">
+                                            <i class="fas fa-satellite-dish text-primary"></i>
+                                            <span>Monitoreo GPS</span>
+                                        </div>
+                                        <div id="lblDistanciaEquipos" class="small text-muted mt-1">
+                                            <i class="fas fa-info-circle me-1"></i>
+                                            Sin datos GPS
+                                        </div>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-primary rounded-pill px-3 shadow-sm"
+                                        id="btnMapaUnidad">
+                                        <i class="fas fa-map-marker-alt"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     <hr class="horizontal dark mt-4 mb-4" />
 
@@ -253,7 +268,7 @@
                                 </div>
                             </div>
 
-                            <div class="row mt-2">
+                            <div class="row mt-2 align-items-end">
                                 <div class="col-md-4">
                                     <label class="form-label">Compañía GPS</label>
                                     <div class="position-relative w-100">
@@ -284,19 +299,16 @@
                                         </span>
                                     </div>
                                 </div>
-                                <div class="row mt-2">
 
-                                    <div class="col-md-6">
-                                        <div class="d-flex align-items-center gap-2">
-                                            <div id="gpsStatusChasisA" class="small fw-bold text-muted">
-                                                Sin asignar GPS
-                                            </div>
-                                            <button type="button" class="btn btn-xs btn-outline-primary py-1 px-2 btn-actualizar-gps shadow-sm" data-gps-tipo="ChasisA" style="font-size:10px; display:none;" id="btnActualizarGPSChasisA">
-                                                <i class="fas fa-sync-alt"></i> Actualizar GPS
-                                            </button>
+                                <div class="col-md-5 mb-2">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div id="gpsStatusChasisA" class="small fw-bold text-muted">
+                                            Sin asignar GPS
                                         </div>
+                                        <button type="button" class="btn btn-xs btn-outline-primary py-1 px-2 btn-actualizar-gps shadow-sm" data-gps-tipo="ChasisA" style="font-size:10px; display:none;" id="btnActualizarGPSChasisA">
+                                            <i class="fas fa-sync-alt"></i> Actualizar GPS
+                                        </button>
                                     </div>
-
                                 </div>
                             </div>
                             <div class="row mt-2">
@@ -339,7 +351,7 @@
                                 </div>
                             </div>
 
-                            <div class="row mt-2">
+                            <div class="row mt-2 align-items-end">
                                 <div class="col-md-4">
                                     <label class="form-label">Compañía GPS</label>
                                     <div class="position-relative w-100">
@@ -371,19 +383,16 @@
                                         </span>
                                     </div>
                                 </div>
-                                <div class="row mt-2">
 
-                                    <div class="col-md-6">
-                                        <div class="d-flex align-items-center gap-2">
-                                            <div id="gpsStatusChasisB" class="small fw-bold text-muted">
-                                                Sin asignar GPS
-                                            </div>
-                                            <button type="button" class="btn btn-xs btn-outline-primary py-1 px-2 btn-actualizar-gps shadow-sm" data-gps-tipo="ChasisB" style="font-size:10px; display:none;" id="btnActualizarGPSChasisB">
-                                                <i class="fas fa-sync-alt"></i> Actualizar GPS
-                                            </button>
+                                <div class="col-md-5 mb-2">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div id="gpsStatusChasisB" class="small fw-bold text-muted">
+                                            Sin asignar GPS
                                         </div>
+                                        <button type="button" class="btn btn-xs btn-outline-primary py-1 px-2 btn-actualizar-gps shadow-sm" data-gps-tipo="ChasisB" style="font-size:10px; display:none;" id="btnActualizarGPSChasisB">
+                                            <i class="fas fa-sync-alt"></i> Actualizar GPS
+                                        </button>
                                     </div>
-
                                 </div>
                             </div>
                             <div class="row mt-2">

@@ -967,7 +967,7 @@
                     btnEliminar.innerHTML = '<i class="fa fa-trash"></i>';
                     btnEliminar.title = 'Eliminar gasto';
                     btnEliminar.addEventListener('click', () => {
-                        eliminarGastoNew(params.data.id, params.data.concepto);
+                        eliminarGastoNew(params.data.id, params.data.concepto, params.data.ultima_fecha_pago || params.data.fecha_gasto);
                     });
                     this.eGui.appendChild(btnEliminar);
                 }
@@ -1891,19 +1891,33 @@
             }
         }
 
-        async function eliminarGastoNew(gastoId, concepto) {
-            const result = await Swal.fire({
+        async function eliminarGastoNew(gastoId, concepto, defaultDate) {
+            const defaultDateVal = defaultDate || moment().format('YYYY-MM-DD');
+            const { value: fechaCancelacion } = await Swal.fire({
                 title: '¿Eliminar gasto?',
-                text: `¿Estás seguro de que deseas eliminar el gasto "${concepto}"? Se cancelarán todos los pagos y movimientos bancarios asociados, y se sincronizará la eliminación en el módulo origen.`,
                 icon: 'warning',
+                html: `
+                    <p>¿Estás seguro de que deseas eliminar el gasto "${concepto}"? Se cancelarán todos los pagos y movimientos bancarios asociados, y se sincronizará la eliminación en el módulo origen.</p>
+                    <div class="form-group text-left" style="margin-top: 15px;">
+                        <label for="swal-fecha-cancelacion"><b>Fecha de cancelación (para histórico en bancos):</b></label>
+                        <input type="date" id="swal-fecha-cancelacion" class="form-control" value="${defaultDateVal}">
+                    </div>
+                `,
                 showCancelButton: true,
                 confirmButtonColor: '#d33',
                 cancelButtonColor: '#3085d6',
                 confirmButtonText: 'Sí, eliminar',
-                cancelButtonText: 'Cancelar'
+                cancelButtonText: 'Cancelar',
+                preConfirm: () => {
+                    const fecha = document.getElementById('swal-fecha-cancelacion').value;
+                    if (!fecha) {
+                        Swal.showValidationMessage('La fecha de cancelación es requerida');
+                    }
+                    return fecha;
+                }
             });
 
-            if (!result.isConfirmed) {
+            if (!fechaCancelacion) {
                 return;
             }
 
@@ -1923,7 +1937,10 @@
                         'Content-Type': 'application/json',
                         'Accept': 'application/json',
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                    }
+                    },
+                    body: JSON.stringify({
+                        fecha_cancelacion: fechaCancelacion
+                    })
                 });
 
                 const json = await response.json();

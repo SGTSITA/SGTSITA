@@ -735,10 +735,13 @@ class GastosController extends Controller
 
             $pagoExistente = $gasto->pagos()->where('estatus', 'aplicado')->first();
 
-            // If the amount changes and there is an existing payment, adjust or validate balance
-            if ($pagoExistente && $montoDiferencia != 0) {
+            // If there is an existing payment
+            if ($pagoExistente) {
+                $nuevoMontoPago = (float)$pagoExistente->monto + $montoDiferencia;
+                $dateChanged = $request->fecha_gasto !== $gasto->fecha_gasto;
+
+                // Validate balance if amount increased
                 if ($montoDiferencia > 0) {
-                    // Validate if bank has enough funds to cover the difference
                     $validacion = $this->bancosService->validarsaldoparacargo(
                         auth()->user()->id_empresa,
                         $pagoExistente->cuenta_bancaria_id,
@@ -756,23 +759,66 @@ class GastosController extends Controller
                     }
                 }
 
-                // Update the payment amount
-                $nuevoMontoPago = (float)$pagoExistente->monto + $montoDiferencia;
+                // Update the payment amount and date
                 $pagoExistente->update([
                     'monto' => $nuevoMontoPago,
                     'fecha_pago' => $request->fecha_gasto
                 ]);
 
                 // Update corresponding bank movement
+                $movimiento = null;
                 if ($pagoExistente->movimiento_bancario_id) {
                     $movimiento = \App\Models\CatBancoCuentasMovimientos::find($pagoExistente->movimiento_bancario_id);
-                    if ($movimiento) {
-                        $movimiento->update([
-                            'monto' => $nuevoMontoPago,
-                            'fecha_movimiento' => $request->fecha_gasto,
-                            'concepto' => 'Pago gasto (Editado): ' . $request->concepto
-                        ]);
+                } elseif ($gasto->origen_legacy && $gasto->origen_legacy_id) {
+                    // Try to find legacy bank movement polymorphically
+                    $legacyTypes = [
+                        'gastos_generales' => \App\Models\GastosGenerales::class,
+                        'gastos_extras' => \App\Models\GastosExtras::class,
+                        'gastos_operadores' => \App\Models\GastosOperadores::class,
+                    ];
+                    if (isset($legacyTypes[$gasto->origen_legacy])) {
+                        $movimiento = \App\Models\CatBancoCuentasMovimientos::where('referenciaable_id', $gasto->origen_legacy_id)
+                            ->where('referenciaable_type', $legacyTypes[$gasto->origen_legacy])
+                            ->first();
                     }
+                }
+
+                if ($movimiento) {
+                    $movimiento->update([
+                        'monto' => $nuevoMontoPago,
+                        'fecha_movimiento' => $request->fecha_gasto,
+                        'concepto' => 'Pago gasto (Editado): ' . $request->concepto
+                    ]);
+                }
+            }
+
+            // Sync legacy tables if applicable
+            if ($gasto->origen_legacy && $gasto->origen_legacy_id) {
+                $legacyId = $gasto->origen_legacy_id;
+                if ($gasto->origen_legacy === 'gastos_generales') {
+                    \DB::table('gastos_generales')
+                        ->where('id', $legacyId)
+                        ->update([
+                            'motivo' => $request->concepto,
+                            'monto1' => $montoTotal,
+                            'fecha' => $request->fecha_gasto,
+                            'fecha_operacion' => $request->fecha_gasto,
+                        ]);
+                } elseif ($gasto->origen_legacy === 'gastos_extras') {
+                    \DB::table('gastos_extras')
+                        ->where('id', $legacyId)
+                        ->update([
+                            'descripcion' => $request->concepto,
+                            'monto' => $montoTotal,
+                            'fecha_aplicacion' => $request->fecha_gasto,
+                        ]);
+                } elseif ($gasto->origen_legacy === 'gastos_operadores') {
+                    \DB::table('gastos_operadores')
+                        ->where('id', $legacyId)
+                        ->update([
+                            'cantidad' => $montoTotal,
+                            'fecha_pago' => $request->fecha_gasto,
+                        ]);
                 }
             }
 

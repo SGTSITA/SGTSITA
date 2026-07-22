@@ -151,11 +151,11 @@ const camposDinamicos = document.getElementById("camposDinamicos");
 
 $(document).on("change", 'input[name="tipo_config"]', function () {
     if (this.value === "personalizado" && this.checked) {
-        $("#bloqueProveedor").removeClass("d-none");
         $("#camposDinamicos").removeClass("d-none");
+        $("#gps_company_id").trigger("change");
     } else {
-        $("#bloqueProveedor").addClass("d-none");
         $("#camposDinamicos").addClass("d-none");
+        $("#camposDinamicos").html("");
     }
 });
 
@@ -228,19 +228,30 @@ function mostrarStatus(msg, tipo) {
 function validarCampos() {
     let valid = true;
 
-    document.querySelectorAll("#camposDinamicos input").forEach((input) => {
-        if (!input.value.trim()) {
-            input.classList.add("is-invalid");
-            valid = false;
-        } else {
-            input.classList.remove("is-invalid");
-        }
-    });
+    if ($('input[name="tipo_config"]:checked').val() === 'personalizado') {
+        document.querySelectorAll("#camposDinamicos input").forEach((input) => {
+            if (!input.value.trim()) {
+                input.classList.add("is-invalid");
+                valid = false;
+            } else {
+                input.classList.remove("is-invalid");
+            }
+        });
+    }
 
     return valid;
 }
 $("#formConfigGPS").on("submit", function (e) {
     e.preventDefault();
+
+    if (!$("#gps_company_id").val()) {
+        Swal.fire({
+            icon: "warning",
+            title: "Proveedor GPS requerido",
+            text: "Debe seleccionar un proveedor de GPS antes de continuar",
+        });
+        return;
+    }
 
     if (!validarCampos()) {
         Swal.fire({
@@ -253,6 +264,7 @@ $("#formConfigGPS").on("submit", function (e) {
     let formData = {
         equipo_id: $("#equipo_id").val(),
         gps_company_id: $("#gps_company_id").val(),
+        tipo_config: $('input[name="tipo_config"]:checked').val(),
         cuentaConfig: [],
     };
 
