@@ -819,7 +819,7 @@ function populateUnidadesSelects() {
     if (typeof jQuery !== 'undefined' && typeof jQuery.fn.select2 !== 'undefined') {
         const select2Options = {
             width: '100%',
-            dropdownParent: jQuery('#viajeModal')
+            dropdownParent: jQuery(document.body)
         };
         if (selectUnidad) jQuery(selectUnidad).select2(select2Options);
         if (selectChasisA) jQuery(selectChasisA).select2(select2Options);

@@ -418,14 +418,23 @@ class GpsCompanyController extends Controller
 
         return $data;
     } */
-
-
     public function setConfigEquipo(Request $r)
     {
         try {
-
             $equipo = Equipo::findOrFail($r->equipo_id);
 
+            if ($r->tipo_config === 'sistema') {
+                $equipo->update([
+                    'gps_company_id'     => $r->gps_company_id,
+                    'usar_config_global' => 1,
+                    'credenciales_gps'   => null,
+                ]);
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Configuración de Sistema guardada correctamente'
+                ]);
+            }
 
             $credenciales = collect($r->cuentaConfig)
                 ->pluck('valor', 'field')

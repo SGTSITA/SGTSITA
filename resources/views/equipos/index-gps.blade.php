@@ -69,7 +69,7 @@
                         </div>
 
 
-                        <div class="mb-3 d-none" id="bloqueProveedor">
+                        <div class="mb-3" id="bloqueProveedor">
                             <label>Proveedor GPS</label>
                             <select id="gps_company_id" class="form-control" name="gps_company_id">
                                 <option value="">Seleccionar</option>
