@@ -37,6 +37,8 @@ class ApiValidationService
 
         $token = $user->createToken('sgt-api-token')->plainTextToken;
 
+        $cliente = \App\Models\Client::find($user->id_cliente);
+
         return [
             'success' => true,
             'message' => 'Inicio de sesión exitoso.',
@@ -47,6 +49,8 @@ class ApiValidationService
                     'name' => $user->name,
                     'email' => $user->email,
                     'id_empresa' => $user->id_empresa,
+                    'id_cliente' => $user->id_cliente,
+                    'cliente_nombre' => $cliente?->nombre ?? null,
                     'roles' => $user->roles()->pluck('name')->toArray(),
                     'permissions' => $user->getAllPermissions()->pluck('name')->toArray(),
                 ]
@@ -376,14 +380,24 @@ class ApiValidationService
         ];
     }
 
-    public function getCotizaciones($empresaId)
+    public function getCotizaciones($empresaId, $idCliente = null)
     {
-        $cotizaciones = DB::table('cotizaciones')
+        if ($idCliente === null) {
+            $idCliente = auth()->user()->id_cliente ?? 0;
+        }
+
+        $query = DB::table('cotizaciones')
             ->leftJoin('clients', 'cotizaciones.id_cliente', '=', 'clients.id')
             ->leftJoin('docum_cotizacion', 'docum_cotizacion.id_cotizacion', '=', 'cotizaciones.id')
-            ->where('cotizaciones.id_empresa', $empresaId)
-            ->where('cotizaciones.jerarquia', '!=', 'Secundario')
-            ->select(
+            ->where('cotizaciones.jerarquia', '!=', 'Secundario');
+
+        if ($idCliente != 0) {
+            $query->where('cotizaciones.id_cliente', $idCliente);
+        } else {
+            $query->where('cotizaciones.id_empresa', $empresaId);
+        }
+
+        $cotizaciones = $query->select(
                 'cotizaciones.id',
                 'clients.nombre as cliente',
                 'docum_cotizacion.num_contenedor as contenedor',
@@ -402,14 +416,24 @@ class ApiValidationService
         ];
     }
 
-    public function getViajes($empresaId)
+    public function getViajes($empresaId, $idCliente = null)
     {
-        $viajes = DB::table('asignaciones')
+        if ($idCliente === null) {
+            $idCliente = auth()->user()->id_cliente ?? 0;
+        }
+
+        $query = DB::table('asignaciones')
             ->leftJoin('docum_cotizacion', 'asignaciones.id_contenedor', '=', 'docum_cotizacion.id')
             ->leftJoin('cotizaciones', 'docum_cotizacion.id_cotizacion', '=', 'cotizaciones.id')
-            ->leftJoin('operadores', 'asignaciones.id_operador', '=', 'operadores.id')
-            ->where('asignaciones.id_empresa', $empresaId)
-            ->select(
+            ->leftJoin('operadores', 'asignaciones.id_operador', '=', 'operadores.id');
+
+        if ($idCliente != 0) {
+            $query->where('cotizaciones.id_cliente', $idCliente);
+        } else {
+            $query->where('asignaciones.id_empresa', $empresaId);
+        }
+
+        $viajes = $query->select(
                 'asignaciones.id',
                 'cotizaciones.origen',
                 'cotizaciones.destino',
@@ -429,12 +453,22 @@ class ApiValidationService
         ];
     }
 
-    public function getContenedores($empresaId)
+    public function getContenedores($empresaId, $idCliente = null)
     {
-        $contenedores = DB::table('docum_cotizacion')
-            ->leftJoin('cotizaciones', 'docum_cotizacion.id_cotizacion', '=', 'cotizaciones.id')
-            ->where('docum_cotizacion.id_empresa', $empresaId)
-            ->select(
+        if ($idCliente === null) {
+            $idCliente = auth()->user()->id_cliente ?? 0;
+        }
+
+        $query = DB::table('docum_cotizacion')
+            ->leftJoin('cotizaciones', 'docum_cotizacion.id_cotizacion', '=', 'cotizaciones.id');
+
+        if ($idCliente != 0) {
+            $query->where('cotizaciones.id_cliente', $idCliente);
+        } else {
+            $query->where('docum_cotizacion.id_empresa', $empresaId);
+        }
+
+        $contenedores = $query->select(
                 'docum_cotizacion.id',
                 'docum_cotizacion.num_contenedor as numero',
                 'cotizaciones.referencia_full as tipo',
@@ -450,6 +484,48 @@ class ApiValidationService
             'success' => true,
             'message' => 'Contenedores obtenidos con éxito.',
             'data' => $contenedores,
+            'status' => 200
+        ];
+    }
+
+    public function getPlaneacion($empresaId, $fechaInicio = null, $fechaFin = null)
+    {
+        $startDate = $fechaInicio ? \Carbon\Carbon::parse($fechaInicio)->toDateString() : \Carbon\Carbon::now()->subDays(15)->toDateString();
+        $endDate = $fechaFin ? \Carbon\Carbon::parse($fechaFin)->toDateString() : \Carbon\Carbon::now()->addDays(15)->toDateString();
+
+        $planeaciones = DB::table('asignaciones')
+            ->leftJoin('docum_cotizacion', 'asignaciones.id_contenedor', '=', 'docum_cotizacion.id')
+            ->leftJoin('cotizaciones', 'docum_cotizacion.id_cotizacion', '=', 'cotizaciones.id')
+            ->leftJoin('operadores', 'asignaciones.id_operador', '=', 'operadores.id')
+            ->leftJoin('proveedores', function($join) {
+                $join->on('proveedores.id', '=', DB::raw('COALESCE(NULLIF(asignaciones.id_proveedor, 0), NULLIF(cotizaciones.id_proveedor, 0))'));
+            })
+            ->leftJoin('empresas as em', 'em.id', '=', 'asignaciones.id_empresa')
+            ->leftJoin('empresas as emc', 'emc.id', '=', 'cotizaciones.id_empresa')
+            ->where('asignaciones.id_empresa', $empresaId)
+            ->where('cotizaciones.estatus_planeacion', 1)
+            ->whereBetween('asignaciones.fecha_inicio', [$startDate, $endDate])
+            ->select(
+                'asignaciones.id',
+                'docum_cotizacion.num_contenedor as contenedor',
+                'asignaciones.fecha_inicio',
+                'asignaciones.fecha_fin',
+                'operadores.nombre as operador',
+                DB::raw("COALESCE(NULLIF(em.nombre, ''), emc.nombre) as proveedor"),
+                'proveedores.nombre as transportista',
+                'cotizaciones.origen',
+                'cotizaciones.destino',
+                'cotizaciones.id as cotizacion_id',
+                'docum_cotizacion.id as contenedor_id',
+                DB::raw("'Planeada' as estatus")
+            )
+            ->orderBy('asignaciones.fecha_inicio', 'asc')
+            ->get();
+
+        return [
+            'success' => true,
+            'message' => 'Planeaciones obtenidas con éxito.',
+            'data' => $planeaciones,
             'status' => 200
         ];
     }
@@ -526,7 +602,9 @@ class ApiValidationService
             ->leftjoin('equipos', 'asignaciones.id_camion', '=', 'equipos.id')
             ->leftjoin('equipos as chasis', 'asignaciones.id_chasis', '=', 'chasis.id')
             ->leftjoin('operadores', 'operadores.id', '=', 'asignaciones.id_operador')
-            ->leftjoin('proveedores', 'proveedores.id', '=', 'asignaciones.id_proveedor')
+            ->leftJoin('proveedores', function($join) {
+                $join->on('proveedores.id', '=', DB::raw('COALESCE(NULLIF(asignaciones.id_proveedor, 0), NULLIF(cotizaciones.id_proveedor, 0))'));
+            })
             ->select(
                 'asignaciones.id as asignacionId',
                 'cotizaciones.id',
@@ -637,6 +715,66 @@ class ApiValidationService
             $documentosFirst->doc_eir = $firstChecked['doc_eir'];
         }
 
+        // Construct the WhatsApp text for resending:
+        $contenedorStr = $firstChecked['num_contenedor'] ?? '';
+        $camion = $asignaciones ? \App\Models\Equipo::find($asignaciones->id_camion) : null;
+        $unidadEco = $camion ? $camion->id_equipo : '';
+        $origen = $cotizacion->origen ?? '';
+        $direccion = $cotizacion->direccion_entrega ?? '';
+        $lat = $cotizacion->latitud ?? '';
+        $lng = $cotizacion->longitud ?? '';
+        $contacto = $cotizacion->cp_contacto_entrega ?? '';
+        $fechaEntregaRaw = $cotizacion->cp_fecha_tentativa_entrega ?: $cotizacion->fecha_entrega;
+        $fechaEntrega = $fechaEntregaRaw ? \Carbon\Carbon::parse($fechaEntregaRaw)->format('d/m/Y') : '';
+        $horaLlegada = $cotizacion->cp_hora_tentativa_entrega ?? '';
+        $comentarios = $cotizacion->cp_comentarios ?? '';
+        $mapLink = ($lat && $lng) ? "https://maps.google.com/?q={$lat},{$lng}" : '';
+        $passwordTemporal = $asignaciones ? $asignaciones->password_temporal : '';
+
+        if ($asignaciones && !empty($asignaciones->mensaje_compartido)) {
+            $waText = $asignaciones->mensaje_compartido;
+        } else {
+            $hora = \Carbon\Carbon::now()->hour;
+            if ($hora >= 6 && $hora < 12) {
+                $saludo = "Buenos días";
+            } elseif ($hora >= 12 && $hora < 19) {
+                $saludo = "Buenas tardes";
+            } else {
+                $saludo = "Buenas noches";
+            }
+            $nombreOp = ($asignaciones && $asignaciones->Operador) ? $asignaciones->Operador->nombre : '';
+            $clienteObj = $cotizacion->Cliente;
+            $capturaFcpp = $clienteObj ? (bool) $clienteObj->captura_fcpp : false;
+
+            if ($capturaFcpp) {
+                $waText = "{$saludo} " . ($nombreOp ? trim($nombreOp) : "Operador") . ",\n\n";
+                $waText .= "Comparto los datos de salida del día de hoy:\n\n";
+                $waText .= "{$contenedorStr}" . ($unidadEco ? "-{$unidadEco}" : "") . "\n";
+                $waText .= "Puerto / Lugar de salida:\n" . ($origen ?: "") . "\n";
+                $waText .= "Domicilio de entrega: " . ($direccion ?: "") . "\n";
+                $waText .= "Mapa: " . ($mapLink ?: "") . "\n";
+                $waText .= "Contacto: " . ($contacto ?: "") . "\n";
+                $waText .= "Fecha de entrega:\n" . ($fechaEntrega ?: "") . "\n";
+                $waText .= "Hora de llegada a bodega:\n" . ($horaLlegada ?: "") . "\n";
+                $waText .= "Hora de salida: \n";
+                $waText .= "Comentarios:\n" . ($comentarios ?: "") . "\n\n";
+                $waText .= "Contraseña temporal para Operador: " . $passwordTemporal;
+            } else {
+                $waText = "{$saludo} " . ($nombreOp ? trim($nombreOp) : "Operador") . ",\n\n";
+                $waText .= "Comparto los datos de salida del día de hoy:\n\n";
+                $waText .= "{$contenedorStr}" . ($unidadEco ? "-{$unidadEco}" : "") . "\n";
+                $waText .= "Puerto / Lugar de salida:\n" . ($origen ?: "") . "\n";
+                $waText .= "Domicilio de entrega: " . ($direccion ?: "") . "\n";
+                $waText .= "Mapa: " . ($mapLink ?: "") . "\n";
+                $waText .= "Contacto: \n";
+                $waText .= "Fecha de entrega:\n" . ($fechaEntrega ?: "") . "\n";
+                $waText .= "Hora de llegada a bodega:\n\n";
+                $waText .= "Hora de salida: \n";
+                $waText .= "Comentarios:\n\n";
+                $waText .= "Contraseña temporal para Operador: " . $passwordTemporal;
+            }
+        }
+
         return [
             'success' => true,
             'message' => 'Información del viaje obtenida con éxito.',
@@ -647,7 +785,8 @@ class ApiValidationService
                 "cliente" => $cotizacion->Cliente,
                 "subcliente" => $cotizacion->Subcliente,
                 "documentos" => $documentosFirst,
-                "documents" => $firstChecked
+                "documents" => $firstChecked,
+                "wa_text" => $waText
             ],
             'status' => 200
         ];
@@ -995,5 +1134,64 @@ class ApiValidationService
         } catch (\Exception $e) {
             Log::error("Error en ApiValidationService al registrar gasto de urea: " . $e->getMessage());
         }
+    }
+
+    public function getCatalogsProgramarViaje($empresaId)
+    {
+        // 1. Contenedores aprobados no planeados
+        $contenedores = DB::table('docum_cotizacion')
+            ->join('cotizaciones', 'docum_cotizacion.id_cotizacion', '=', 'cotizaciones.id')
+            ->where('cotizaciones.id_empresa', $empresaId)
+            ->where('cotizaciones.estatus', 'Aprobada')
+            ->where(function($q) {
+                $q->where('cotizaciones.estatus_planeacion', 0)
+                  ->orWhereNull('cotizaciones.estatus_planeacion');
+            })
+            ->select('docum_cotizacion.num_contenedor as nombre', 'docum_cotizacion.num_contenedor as id', 'cotizaciones.referencia_full as referencia_full')
+            ->get();
+
+        // 2. Operadores
+        $operadores = DB::table('operadores')
+            ->where('id_empresa', $empresaId)
+            ->select('nombre', 'id')
+            ->get();
+
+        // 3. Camiones / Tractos (Equipos tipo camion/tracto)
+        $camiones = DB::table('equipos')
+            ->where('id_empresa', $empresaId)
+            ->where('tipo', 'Tractos / Camiones')
+            ->select('id_equipo as nombre', 'id')
+            ->get();
+
+        // 4. Chasis / Plataformas (Equipos tipo chasis/plataforma)
+        $chasis = DB::table('equipos')
+            ->where('id_empresa', $empresaId)
+            ->where('tipo', 'Chasis / Plataforma')
+            ->select('id_equipo as nombre', 'id')
+            ->get();
+
+        return [
+            'success' => true,
+            'message' => 'Catálogos cargados con éxito.',
+            'data' => [
+                'contenedores' => $contenedores,
+                'operadores' => $operadores,
+                'camiones' => $camiones,
+                'chasis' => $chasis
+            ],
+            'status' => 200
+        ];
+    }
+
+    public function programarViajeMobile(array $data)
+    {
+        $request = new \Illuminate\Http\Request($data);
+        $planeacionController = app(\App\Http\Controllers\PlaneacionController::class);
+        $response = $planeacionController->asignacionElemental($request);
+        
+        $resData = json_decode($response->getContent(), true) ?? [];
+        $resData['status'] = $response->getStatusCode();
+
+        return $resData;
     }
 }

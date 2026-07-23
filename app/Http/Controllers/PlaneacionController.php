@@ -166,9 +166,50 @@ class PlaneacionController extends Controller
 
     public function finalizarViaje(Request $request)
     {
+        $contenedor = DocumCotizacion::find($request->idContenendor);
+        if (!$contenedor) {
+            return response()->json(["Titulo" => "Error", "Mensaje" => "Contenedor no encontrado", "TMensaje" => "error"], 404);
+        }
 
-$contenedor = DocumCotizacion::find($request->idContenendor);
         $cotizaciones = Cotizaciones::find($contenedor->id_cotizacion);
+        if (!$cotizaciones) {
+            return response()->json(["Titulo" => "Error", "Mensaje" => "Cotización no encontrada", "TMensaje" => "error"], 404);
+        }
+
+        // Validaciones de documentos
+        $isCima = !empty($contenedor->cima);
+        $missingDocs = [];
+
+        if (empty($contenedor->doc_ccp)) {
+            $missingDocs[] = "Carta Porte (CCP)";
+        }
+        if (empty($contenedor->doda)) {
+            $missingDocs[] = "DODA";
+        }
+        if (empty($contenedor->boleta_liberacion)) {
+            $missingDocs[] = "Boleta de Liberación";
+        }
+        if (!$isCima && empty($contenedor->doc_eir)) {
+            $missingDocs[] = "EIR";
+        }
+        if (empty($cotizaciones->carta_porte)) {
+            $missingDocs[] = "Carta Porte PDF";
+        }
+        if (empty($cotizaciones->carta_porte_xml)) {
+            $missingDocs[] = "Carta Porte XML";
+        }
+        if (empty($cotizaciones->img_boleta)) {
+            $missingDocs[] = "Boleta de Vacío";
+        }
+
+        if (!empty($missingDocs)) {
+            return response()->json([
+                "Titulo" => "Documentos faltantes",
+                "Mensaje" => "No se puede finalizar el viaje. Faltan documentos requeridos: " . implode(", ", $missingDocs),
+                "TMensaje" => "error"
+            ]);
+        }
+
         $cotizaciones->estatus = 'Finalizado';
         $cotizaciones->update();
         return response()->json(["Titulo" => "Viaje finalizado","Mensaje" => "Has finalizado correctamente el viaje", "TMensaje" => "success"]);
@@ -621,6 +662,7 @@ $contenedor = DocumCotizacion::find($request->idContenendor);
                 $asignaciones = new Asignaciones();
 
                 $asignaciones->id_contenedor = $contenedor->id;
+                $asignaciones->id_empresa = $cotizacion->id_empresa;
                 $asignaciones->fecha_inicio = $fechaInicio;
                 $asignaciones->fecha_fin = $fechaFinal . ' 23:00:00';
                 $asignaciones->fehca_inicio_guard = $fechaInicio;
@@ -915,6 +957,7 @@ $contenedor = DocumCotizacion::find($request->idContenendor);
                 $asignaciones = new Asignaciones();
                 $asignaciones->id_contenedor = $contenedor->id;
             }
+            $asignaciones->id_empresa = $cotizacion->id_empresa;
             $asignaciones->fecha_inicio = $fechaInicio;
             $asignaciones->fecha_fin = $fechaFinal . ' 23:00:00';
             $asignaciones->fehca_inicio_guard = $fechaInicio;
