@@ -29,6 +29,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/dashboard/planeacion', [App\Http\Controllers\ApiValidationController::class, 'getPlaneacion']);
     Route::get('/dashboard/reportes', [App\Http\Controllers\ApiValidationController::class, 'getReportes']);
     Route::get('/dashboard/empresas-propias', [App\Http\Controllers\ApiValidationController::class, 'getEmpresasPropias']);
+    Route::get('/dashboard/catalogos-programar-viaje', [App\Http\Controllers\ApiValidationController::class, 'getCatalogsProgramarViaje']);
+    Route::post('/dashboard/programar-viaje', [App\Http\Controllers\ApiValidationController::class, 'programarViajeMobile']);
+    Route::post('/dashboard/anular-planeacion', [App\Http\Controllers\ApiValidationController::class, 'anularPlaneacionMobile']);
+    Route::post('/dashboard/finalizar-viaje', [App\Http\Controllers\ApiValidationController::class, 'finalizarViajeMobile']);
 });
 
 Route::get('/api/coordenadas/subclientes/{clienteId}', [App\Http\Controllers\CoordenadasController::class, 'getSubclientes']);
