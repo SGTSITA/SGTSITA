@@ -33,6 +33,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/dashboard/programar-viaje', [App\Http\Controllers\ApiValidationController::class, 'programarViajeMobile']);
     Route::post('/dashboard/anular-planeacion', [App\Http\Controllers\ApiValidationController::class, 'anularPlaneacionMobile']);
     Route::post('/dashboard/finalizar-viaje', [App\Http\Controllers\ApiValidationController::class, 'finalizarViajeMobile']);
+    Route::get('/dashboard/bancos', [App\Http\Controllers\ApiValidationController::class, 'getBancosMobile']);
+    Route::get('/dashboard/bancos/{id}/reporte', [App\Http\Controllers\ApiValidationController::class, 'exportarReporteBancoMobile']);
+    Route::post('/dashboard/reportes/generar', [App\Http\Controllers\ApiValidationController::class, 'generarReporteMobile']);
 });
 
 Route::get('/api/coordenadas/subclientes/{clienteId}', [App\Http\Controllers\CoordenadasController::class, 'getSubclientes']);
@@ -41,6 +44,8 @@ Route::get('/api/coordenadas/entidadesPC', [App\Http\Controllers\CoordenadasCont
 // SGT Validation and Login APIs
 Route::post('/login', [App\Http\Controllers\ApiValidationController::class, 'login']);
 Route::post('/validate-operador', [App\Http\Controllers\ApiValidationController::class, 'validateOperador']);
+Route::get('/dashboard/reportes/descargar', [App\Http\Controllers\ApiValidationController::class, 'descargarReporteMobile']);
+Route::get('/dashboard/bancos/{id}/reporte-descargar', [App\Http\Controllers\ApiValidationController::class, 'descargarReporteBancoMobile']);
 Route::post('/operador/coordenadas', [App\Http\Controllers\ApiValidationController::class, 'guardarCoordenadas']);
 Route::post('/operador/iniciar-viaje', [App\Http\Controllers\ApiValidationController::class, 'iniciarViaje']);
 Route::post('/operador/finalizar-viaje', [App\Http\Controllers\ApiValidationController::class, 'finalizarViajeOperador']);

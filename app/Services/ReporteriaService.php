@@ -171,4 +171,20 @@ class ReporteriaService
 
         return $Info;
     }
+
+    /**
+     * NOTA DE ARQUITECTURA SGT:
+     * Para separar responsabilidades y evitar duplicidad de lógica de negocio, se recomienda
+     * migrar la generación del cuerpo de datos de los reportes de ReporteriaController
+     * hacia este ReporteriaService.
+     * 
+     * Métodos como cxc, cxp, utilidad, viajes, etc. deben definirse aquí
+     * retornando colecciones de datos limpias. De esta manera:
+     *   1. El controlador Web (ReporteriaController) puede invocarlos y retornar una vista o descarga de Excel/PDF.
+     *   2. El controlador API (ApiValidationController) puede consumirlos directamente de forma segura
+     *      para peticiones móviles, sin peligro de redirecciones inesperadas de sesión web (como back()).
+     * 
+     * Nota: No se debe alterar la lógica interna de negocio de las consultas para mantener la paridad exacta
+     * de datos mostrados en Web y en la App Móvil.
+     */
 }

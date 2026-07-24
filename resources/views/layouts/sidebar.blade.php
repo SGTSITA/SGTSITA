@@ -368,6 +368,14 @@
                                 </a>
                             @endcan
 
+                            @can('generar-pdf-validacion-docs')
+                                <a class="nav-link {{ Request::is('reporteria/validacion-documentos*') ? 'show' : '' }}"
+                                    href="{{ route('reporteria.validacion-documentos.index') }}">
+                                    <span class="sidenav-mini-icon"> V </span>
+                                    <span class="sidenav-normal">Validación de Documentos</span>
+                                </a>
+                            @endcan
+
                             @can('reportes-liquidados-cxc')
                                 <a class="nav-link {{ Request::is('reporteria/liquidados/cxc*') ? 'show' : '' }}"
                                     href="{{ route('index_liquidados_cxc.reporteria') }}">

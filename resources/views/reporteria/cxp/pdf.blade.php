@@ -154,12 +154,12 @@
                 transform:translateX(-50%);
                 margin:0;
                 font-weight:bold;">
-                    {{ $cotizacion->Contenedor->Cotizacion->estadoCuenta->numero }}
+                    {{ optional(optional(optional($cotizacion)->Contenedor)->Cotizacion)->estadoCuenta ? $cotizacion->Contenedor->Cotizacion->estadoCuenta->numero : 'Sin Número' }}
                 </h2>
             </div>
 
             <h4 style="margin: 2px">
-                Proveedor: {{ $cotizacion->Proveedor->nombre }}
+                Proveedor: {{ optional($cotizacion->Proveedor)->nombre ?? 'Sin Proveedor' }}
             </h4>
             <br>
         </div>

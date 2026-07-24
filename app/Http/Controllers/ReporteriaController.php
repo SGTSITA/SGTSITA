@@ -888,7 +888,7 @@ class ReporteriaController extends Controller
             $pdf = PDF::loadView('reporteria.cxp.pdf', compact('cotizaciones', 'fechaCarbon', 'bancos_oficiales', 'bancos_no_oficiales', 'cotizacion', 'user'))->setPaper('a4', 'landscape');
 
             // Crear un nombre para el archivo PDF
-            $fileName = 'cxp_' . implode('_', $cotizacionIds) . '.pdf';
+            $fileName = 'cxp_' . date('Ymd_His') . '.pdf';
 
             // Guardar el archivo PDF en la carpeta de almacenamiento
             $pdf->save(storage_path('app/public/' . $fileName));
@@ -1423,10 +1423,10 @@ class ReporteriaController extends Controller
              "tipo" => $tipo,
              "cima" => $cot->cima, //  agrega esta línea
              "eir_primario" => $eirPrimario,
-"eir_secundario" => $eirSecundario,
-"cima_primario" => $cimaPrimario,
-"cima_secundario" => $cimaSecundario,
-];
+                "eir_secundario" => $eirSecundario,
+                "cima_primario" => $cimaPrimario,
+                "cima_secundario" => $cimaSecundario,
+                ];
 
         });
 
@@ -1434,12 +1434,236 @@ class ReporteriaController extends Controller
         return view('reporteria.documentos.index', compact('cotizaciones', 'clientes', 'subclientes', 'proveedores'));
     }
 
+    public function index_validacion_documentos(Request $request)
+    {
+        abort_if(!auth()->user()->can('generar-pdf-validacion-docs'), 403, 'No autorizado.');
+
+        $clientes = Client::join('client_empresa as ce', 'clients.id', '=', 'ce.id_client')
+            ->where('ce.id_empresa', auth()->user()->id_empresa)
+            ->where('is_active', 1)
+            ->select('clients.*')
+            ->orderBy('nombre', 'asc')
+            ->get();
+
+        $query = Cotizaciones::where('cotizaciones.id_empresa', auth()->user()->id_empresa)
+            ->where('cotizaciones.estatus', '!=', 'Cancelada')
+            ->where('cotizaciones.jerarquia', "Principal")
+            ->join('docum_cotizacion', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
+            ->leftJoin('clients', 'cotizaciones.id_cliente', '=', 'clients.id')
+            ->leftJoin('asignaciones', 'docum_cotizacion.id', '=', 'asignaciones.id_contenedor')
+            ->select(
+                'cotizaciones.id',
+                'clients.nombre as cliente',
+                'docum_cotizacion.num_contenedor',
+                'asignaciones.fecha_inicio',
+                'cotizaciones.referencia_full'
+            )
+            ->distinct();
+
+        if ($request->filled('fecha_inicio') && $request->filled('fecha_fin')) {
+            $query->whereBetween('asignaciones.fecha_inicio', [
+                $request->fecha_inicio,
+                $request->fecha_fin
+            ]);
+        }
+
+        if ($request->filled('num_contenedor')) {
+            $numContenedor = trim($request->num_contenedor);
+            $query->where('docum_cotizacion.num_contenedor', 'like', "%{$numContenedor}%");
+        }
+
+        if ($request->filled('id_cliente')) {
+            $query->where('cotizaciones.id_cliente', $request->id_cliente);
+        }
+
+        $cotizaciones = $query->orderBy('cotizaciones.id', 'desc')->get();
+
+        return view('reporteria.validacion_documentos.index', compact('cotizaciones', 'clientes'));
+    }
+
+    public function pdf_validacion_documentos_multi(Request $request)
+    {
+        abort_if(!auth()->user()->can('generar-pdf-validacion-docs'), 403, 'No autorizado.');
+
+        $incluirAuditoria = $request->get('incluir_auditoria') == 1;
+
+        $query = Cotizaciones::where('cotizaciones.id_empresa', auth()->user()->id_empresa)
+            ->where('cotizaciones.estatus', '!=', 'Cancelada')
+            ->where('cotizaciones.jerarquia', "Principal")
+            ->join('docum_cotizacion', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
+            ->leftJoin('asignaciones', 'docum_cotizacion.id', '=', 'asignaciones.id_contenedor');
+
+        if ($request->filled('fecha_inicio') && $request->filled('fecha_fin')) {
+            $query->whereBetween('asignaciones.fecha_inicio', [
+                $request->fecha_inicio,
+                $request->fecha_fin
+            ]);
+        }
+
+        if ($request->filled('num_contenedor')) {
+            $numContenedor = trim($request->num_contenedor);
+            $query->where('docum_cotizacion.num_contenedor', 'like', "%{$numContenedor}%");
+        }
+
+        if ($request->filled('id_cliente')) {
+            $query->where('cotizaciones.id_cliente', $request->id_cliente);
+        }
+
+        if ($request->filled('ids')) {
+            $ids = is_array($request->ids) ? $request->ids : explode(',', $request->ids);
+            $query->whereIn('cotizaciones.id', $ids);
+        }
+
+        $cotizaciones = $query->select('cotizaciones.*')->distinct()->get();
+
+        if ($cotizaciones->isEmpty()) {
+            return back()->with('error', 'No se encontraron contenedores para generar el reporte.');
+        }
+
+        $reporteData = [];
+        $columnMap = [
+            'carta_porte_xml' => 'Carta Porte XML',
+            'carta_porte' => 'Carta Porte PDF',
+            'doc_ccp' => 'Formato CCP',
+            'ccp' => 'CCP (Folio)',
+            'boleta_liberacion' => 'Boleta de liberación',
+            'num_boleta_liberacion' => 'Boleta de liberación (Folio)',
+            'doda' => 'Doda',
+            'num_doda' => 'Doda (Folio)',
+            'img_boleta' => 'Prealta - Boleta vacío (Imagen)',
+            'fecha_boleta_vacio' => 'Prealta - Boleta vacío (Folio/Fecha)',
+            'doc_eir' => 'EIR - Comprobante vacío',
+            'fecha_eir' => 'EIR (Folio/Fecha)',
+            'evidencia_descarga' => 'Evidencia Descarga',
+            'fecha_evidencia_descarga' => 'Evidencia Descarga (Folio/Fecha)',
+            'boleta_patio' => 'Boleta Patio',
+            'fecha_boleta_patio' => 'Boleta Patio (Folio/Fecha)',
+            'num_contenedor' => 'Número de Contenedor',
+        ];
+
+        foreach ($cotizaciones as $cotizacion) {
+            $documentacion = DocumCotizacion::where('id_cotizacion', '=', $cotizacion->id)->first();
+            if (!$documentacion) {
+                continue;
+            }
+
+            $basePath = public_path("cotizaciones/cotizacion{$cotizacion->id}/");
+            $docDefinitions = [
+                ['tipo' => 'Carta Porte XML', 'archivo' => $cotizacion->carta_porte_xml ?? null, 'folio' => $documentacion->num_carta_porte ?? null],
+                ['tipo' => 'Carta Porte PDF', 'archivo' => $cotizacion->carta_porte ?? null, 'folio' => $documentacion->num_carta_porte ?? null],
+                ['tipo' => 'Formato CCP', 'archivo' => $documentacion->doc_ccp ?? null, 'folio' => $documentacion->ccp ?? null],
+                ['tipo' => 'Boleta de liberación', 'archivo' => $documentacion->boleta_liberacion ?? null, 'folio' => $documentacion->num_boleta_liberacion ?? null],
+                ['tipo' => 'Doda', 'archivo' => $documentacion->doda ?? null, 'folio' => $documentacion->num_doda ?? null],
+                ['tipo' => 'Prealta - Boleta vacío', 'archivo' => $cotizacion->img_boleta ?? null, 'folio' => $documentacion->fecha_boleta_vacio ?? null],
+                ['tipo' => 'EIR - Comprobante vacío', 'archivo' => $documentacion->doc_eir ?? null, 'folio' => $cotizacion->fecha_eir ?? null],
+                ['tipo' => 'Evidencia Descarga', 'archivo' => $documentacion->evidencia_descarga ?? null, 'folio' => $documentacion->fecha_evidencia_descarga ?? null],
+                ['tipo' => 'Boleta Patio', 'archivo' => $documentacion->boleta_patio ?? null, 'folio' => $documentacion->fecha_boleta_patio ?? null],
+            ];
+
+            $docs = [];
+            foreach ($docDefinitions as $def) {
+                $archivo = $def['archivo'];
+                $exists = false;
+                $size = 'N/A';
+                $ext = 'N/A';
+                $fecha_carga = 'N/A';
+
+                if (!empty($archivo)) {
+                    $filePath = $basePath . $archivo;
+                    if (file_exists($filePath)) {
+                        $exists = true;
+                        $sizeBytes = filesize($filePath);
+                        if ($sizeBytes >= 1048576) {
+                            $size = round($sizeBytes / 1048576, 2) . ' MB';
+                        } elseif ($sizeBytes >= 1024) {
+                            $size = round($sizeBytes / 1024, 2) . ' KB';
+                        } else {
+                            $size = $sizeBytes . ' B';
+                        }
+                        $ext = strtoupper(pathinfo($filePath, PATHINFO_EXTENSION));
+                        $fecha_carga = date('d-m-Y H:i:s', filemtime($filePath));
+                    } else {
+                        $ext = strtoupper(pathinfo($archivo, PATHINFO_EXTENSION));
+                    }
+                }
+
+                $docs[] = [
+                    'tipo' => $def['tipo'],
+                    'archivo' => $archivo ?? 'No cargado',
+                    'extension' => $ext,
+                    'tamanio' => $size,
+                    'fecha_carga' => $fecha_carga,
+                    'folio' => $def['folio'] ?? 'No asignado',
+                    'existe' => $exists,
+                ];
+            }
+
+            $auditLogs = [];
+            if ($incluirAuditoria) {
+                $logsRaw = \App\Models\ActivityLog::where(function($query) use ($cotizacion, $documentacion) {
+                    $query->where('model', 'Cotizaciones')->where('model_id', $cotizacion->id);
+                    $query->orWhere(function($q) use ($documentacion) {
+                        $q->where('model', 'DocumCotizacion')->where('model_id', $documentacion->id);
+                    });
+                })
+                ->with('user')
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+                foreach ($logsRaw as $log) {
+                    $old = $log->old_values ?? [];
+                    $new = $log->new_values ?? [];
+                    $details = [];
+
+                    if ($log->action == 'created') {
+                        foreach ($new as $key => $val) {
+                            if (array_key_exists($key, $columnMap) && !empty($val)) {
+                                $details[] = "Inicializó " . $columnMap[$key] . " con valor: " . $val;
+                            }
+                        }
+                    } else {
+                        foreach ($new as $key => $val) {
+                            if (array_key_exists($key, $columnMap)) {
+                                $oldVal = $old[$key] ?? 'N/A';
+                                $details[] = "Modificó " . $columnMap[$key] . " de '" . (is_array($oldVal) ? json_encode($oldVal) : $oldVal) . "' a '" . (is_array($val) ? json_encode($val) : $val) . "'";
+                            }
+                        }
+                    }
+
+                    if (!empty($details)) {
+                        $auditLogs[] = [
+                            'fecha' => $log->created_at_local,
+                            'usuario' => $log->user->name ?? 'Sistema',
+                            'accion' => $log->action,
+                            'detalles' => $details,
+                        ];
+                    }
+                }
+            }
+
+            $reporteData[] = [
+                'cotizacion' => $cotizacion,
+                'documentacion' => $documentacion,
+                'docs' => $docs,
+                'auditLogs' => $auditLogs,
+            ];
+        }
+
+        $configuracion = \App\Models\Configuracion::first();
+        $fechaCarbon = \Carbon\Carbon::now('America/Mexico_City');
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('cotizaciones.pdf_validacion_docs_multi', compact('reporteData', 'incluirAuditoria', 'configuracion', 'fechaCarbon'));
+        return $pdf->download('reporte_validacion_documentos_' . date('d_m_Y_H_i_s') . '.pdf');
+    }
+
 
 
 
     public function advance_documentos(Request $request)
     {
-        $clientes = Client::where('id_empresa', auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
+        $clientes = Client::where('id_empresa', auth()->user()->id_empresa)
+->where('is_active', 1 )
+        ->orderBy('created_at', 'desc')->get();
         $subclientes = Subclientes::where('id_empresa', auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
 
         $id_client = $request->id_client;
@@ -1777,7 +2001,7 @@ class ReporteriaController extends Controller
             $pdf = PDF::loadView('reporteria.liquidados.cxp.pdf', compact('cotizaciones', 'fechaCarbon', 'bancos_oficiales', 'bancos_no_oficiales', 'registrosBanco', 'user', 'cotizacion'))
                 ->setPaper('a4', 'landscape');
 
-            $fileName = 'cxp_' . implode('_', $cotizacionIds) . '.pdf';
+            $fileName = 'cxp_liquidados_' . date('Ymd_His') . '.pdf';
 
             // Guardar el PDF en la carpeta storage
             $pdf->save(storage_path('app/public/' . $fileName));
