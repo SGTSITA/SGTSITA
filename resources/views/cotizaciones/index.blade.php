@@ -352,6 +352,13 @@
 
     <script>
         document.addEventListener("DOMContentLoaded", function() {
+            // Evitar que Bootstrap modal bloquee el foco del campo de búsqueda de Select2 (Fase de captura)
+            document.addEventListener('focusin', function(e) {
+                if (e.target.closest && e.target.closest('.select2-container, .select2-dropdown, .select2-search')) {
+                    e.stopImmediatePropagation();
+                }
+            }, true);
+
             flatpickr(".dateInput", {
                 dateFormat: "d/m/Y",
                 locale: "es"

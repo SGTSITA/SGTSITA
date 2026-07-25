@@ -568,6 +568,9 @@ Route::middleware(['auth', 'idle.timeout'])->group(function () {
         Route::get('reporteria/documentos/buscador', [App\Http\Controllers\ReporteriaController::class, 'advance_documentos'])->name('advance_documentos.buscador');
         Route::post('reporteria/documentos/export', [App\Http\Controllers\ReporteriaController::class, 'export_documentos'])->name('export_documentos.export');
 
+        Route::get('reporteria/validacion-documentos', [App\Http\Controllers\ReporteriaController::class, 'index_validacion_documentos'])->name('reporteria.validacion-documentos.index');
+        Route::post('reporteria/validacion-documentos/pdf', [App\Http\Controllers\ReporteriaController::class, 'pdf_validacion_documentos_multi'])->name('reporteria.validacion-documentos.pdf');
+
         Route::get('reporteria/liquidados/cxc', [App\Http\Controllers\ReporteriaController::class, 'index_liquidados_cxc'])->name('index_liquidados_cxc.reporteria');
         Route::get('reporteria/liquidados/cxc/buscador', [App\Http\Controllers\ReporteriaController::class, 'advance_liquidados_cxc'])->name('advance_liquidados.buscador');
         Route::post('reporteria/liquidados/cxc/export', [App\Http\Controllers\ReporteriaController::class, 'export_liquidados_cxc'])->name('liquidados_cxc.export');
