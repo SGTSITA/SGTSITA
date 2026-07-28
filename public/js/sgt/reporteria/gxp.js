@@ -73,22 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const gridOptions = {
         columnDefs,
-        rowData: (window.cotizacionesData || [])
-            .map((item) => ({
-                ...item,
-                fecha_inicio: item.fecha_inicio ? new Date(item.fecha_inicio) : null,
-                fecha_fin: item.fecha_fin ? new Date(item.fecha_fin) : null,
-                fecha_movimiento: item.fecha_movimiento ? new Date(item.fecha_movimiento) : null,
-                fecha_aplicacion: item.fecha_aplicacion ? new Date(item.fecha_aplicacion) : null,
-            }))
-            .filter((item) => {
-                const fecha = item.fecha_inicio;
-                return (
-                    fecha instanceof Date &&
-                    !isNaN(fecha) &&
-                    moment(fecha).isBetween(moment().subtract(7, 'days'), moment(), 'day', '[]')
-                );
-            }),
+        rowData: [],
 
         pagination: true,
         paginationPageSize: 30,
@@ -129,9 +114,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
+            const statusVal = document.getElementById('statusFilter') ? document.getElementById('statusFilter').value : 'por_pagar';
             const formData = new FormData();
             formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
             formData.append('fileType', fileType);
+            formData.append('status', statusVal);
             selectedIds.forEach((id) => formData.append('selected_ids[]', id));
 
             try {
@@ -212,36 +199,46 @@ document.addEventListener('DOMContentLoaded', () => {
             },
         },
         function (start, end) {
-            // ⚡ Filtro local sin fetch
-            const filtrado = (window.cotizacionesData || [])
-                .map((item) => ({
-                    ...item,
-                    fecha_inicio: item.fecha_inicio ? new Date(item.fecha_inicio) : null,
-                    fecha_fin: item.fecha_fin ? new Date(item.fecha_fin) : null,
-                    fecha_movimiento: item.fecha_movimiento ? new Date(item.fecha_movimiento) : null,
-                }))
-                .filter((item) => {
-                    const fi = item.fecha_inicio;
-                    const ff = item.fecha_fin;
-
-                    return (
-                        fi instanceof Date &&
-                        ff instanceof Date &&
-                        !isNaN(fi) &&
-                        !isNaN(ff) &&
-                        moment(fi).isBetween(start, end, 'day', '[]')
-                        //  && moment(ff).isSameOrBefore(end, 'day')
-                    );
-                });
-
-            if (gridApi) {
-                gridApi.setGridOption('rowData', filtrado);
-                gridApi.deselectAll(); // Limpia los seleccionados que ya no están
-            }
-
-            if (gridApi) {
-                gridApi.setGridOption('rowData', filtrado);
-            }
-        },
+            applyFilters();
+        }
     );
+
+    async function applyFilters() {
+        const daterange = $('#daterange').data('daterangepicker');
+        if(!daterange) return;
+        const start = daterange.startDate.format('YYYY-MM-DD');
+        const end = daterange.endDate.format('YYYY-MM-DD');
+        const status = document.getElementById('statusFilter') ? document.getElementById('statusFilter').value : 'por_pagar';
+
+        try {
+            const url = `/reporteria/gastos-pagar/data?status=${status}&from=${start}&to=${end}`;
+            const response = await fetch(url);
+            if (!response.ok) throw new Error('Error al obtener los datos.');
+            const data = await response.json();
+
+            // Formatear fechas si es necesario para el grid, aunque si el server regresa YYYY-MM-DD suele bastar
+            const filtrado = data.map((item) => ({
+                ...item,
+                fecha_inicio: item.fecha_inicio ? new Date(item.fecha_inicio) : null,
+                fecha_fin: item.fecha_fin ? new Date(item.fecha_fin) : null,
+                fecha_movimiento: item.fecha_movimiento ? new Date(item.fecha_movimiento) : null,
+            }));
+
+            if (gridApi) {
+                gridApi.setGridOption('rowData', filtrado);
+                gridApi.deselectAll(); 
+            }
+        } catch (error) {
+            console.error('Error fetching data:', error);
+            Swal.fire('Error', 'No se pudieron cargar los datos.', 'error');
+        }
+    }
+
+    const statusFilter = document.getElementById('statusFilter');
+    if (statusFilter) {
+        statusFilter.addEventListener('change', applyFilters);
+    }
+    
+    // Poblar inicialmente
+    applyFilters();
 });

@@ -19,21 +19,15 @@
         <div class="card-body">
             <div class="row g-2 mb-3 align-items-end">
 
-                <div class="col-md-4">
+                <div class="col-md-2">
                     <label class="form-label text-sm mb-1">Periodo</label>
                     <input type="text" id="daterange" readonly class="form-control form-control-sm">
                 </div>
 
-                <div class="col-md-3">
-                    <label class="form-label text-sm mb-1">Concepto / Folio</label>
-                    <input type="text" id="gastosNewSearch" class="form-control form-control-sm"
-                        placeholder="Buscar concepto, folio...">
-                </div>
-
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <label class="form-label text-sm mb-1">Tipo de Gasto</label>
                     <select id="gastosNewTipo" class="form-control form-control-sm">
-                        <option value="todos">Todos los tipos</option>
+                        <option value="todos">Todos</option>
                         <option value="general">General</option>
                         <option value="periodo">Periodo</option>
                         <option value="unidad">Unidad</option>
@@ -45,14 +39,40 @@
                 </div>
 
                 <div class="col-md-2">
-                    <button type="button" class="btn btn-sm btn-outline-primary w-100 mb-0" id="btnGastosNewBuscar">
-                        Buscar
+                    <label class="form-label text-sm mb-1">Categoría</label>
+                    <select id="gastosNewCategoria" class="form-control form-control-sm">
+                        <option value="">Todas</option>
+                        @foreach ($categorias as $categoria)
+                            <option value="{{ $categoria->id }}">{{ $categoria->categoria }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label text-sm mb-1">Subcategoría</label>
+                    <select id="gastosNewSubcategoria" class="form-control form-control-sm">
+                        <option value="">Todas</option>
+                    </select>
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label text-sm mb-1">Concepto / Folio</label>
+                    <input type="text" id="gastosNewSearch" class="form-control form-control-sm"
+                        placeholder="Buscar...">
+                </div>
+
+                <div class="col-md-2 d-flex gap-2">
+                    <button type="button" class="btn btn-sm btn-outline-primary mb-0 flex-fill px-2" id="btnGastosNewBuscar" title="Buscar">
+                        <i class="fa fa-search"></i>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-success mb-0 flex-fill px-2" id="btnPayMultiple" title="Pagar seleccionados">
+                        Pagar selec.
                     </button>
                 </div>
 
             </div>
             <div class="row">
-                <div id="myGridNew" class="col-12 ag-theme-quartz" style="height: 550px"></div>
+                <div id="myGridNew" class="col-12 ag-theme-alpine" style="height: 550px"></div>
             </div>
         </div>
     </div>
@@ -107,6 +127,57 @@
                             <label class="form-label">Referencia del Pago</label>
                             <input type="text" name="referencia" class="form-control"
                                 placeholder="Ej. Transferencia 12345">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-sm btn-success">Aplicar Pago</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para Pagar Múltiples Gastos -->
+    <div class="modal fade" id="modalPagarMultiple" tabindex="-1" aria-hidden="true" data-bs-backdrop="static"
+        data-bs-keyboard="false">
+        <div class="modal-dialog">
+            <form class="modal-content" id="formPagarMultiple">
+                @csrf
+                <div class="modal-header">
+                    <h5 class="modal-title">Pagar Múltiples Gastos</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label text-muted mb-0">Total a Pagar</label>
+                            <div class="font-weight-bold text-danger text-lg" id="pagoMultipleTotal">$ 0.00</div>
+                            <div class="text-sm text-muted mb-2" id="pagoMultipleResumen">0 gastos seleccionados para aplicar</div>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label">Cuenta de retiro (Banco) *</label>
+                            <select class="form-select" name="cuenta_bancaria_id" id="pagoMultipleCuenta" required>
+                                <option value="">-- Seleccionar Cuenta --</option>
+                                @foreach ($bancos as $b)
+                                    <option value="{{ $b['id'] }}">
+                                        {{ $b['display'] }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Fecha de Pago *</label>
+                            <input type="date" name="fecha_pago" id="pagoMultipleFecha" class="form-control"
+                                value="{{ now()->format('Y-m-d') }}" required>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Referencia del Pago</label>
+                            <input type="text" name="referencia" class="form-control"
+                                placeholder="Ej. Transferencia Múltiple">
                         </div>
                     </div>
                 </div>
@@ -798,7 +869,7 @@
                         infoText.style.fontSize = '9.5px';
                         infoText.style.color = '#525f7f';
                         infoText.style.fontWeight = '500';
-                        
+
                         let bancoInfo = '';
                         if (pagoActivo.cuenta_bancaria) {
                             const cBanc = pagoActivo.cuenta_bancaria;
@@ -806,9 +877,12 @@
                             const last4 = accNum.length > 4 ? '****' + accNum.slice(-4) : accNum;
                             bancoInfo = `${cBanc.nombre} ${last4}`;
                         }
-                        
-                        const fecha = formatFecha({ value: pagoActivo.fecha_pago });
-                        infoText.innerHTML = `<i class="fa fa-university text-muted" style="font-size: 8px;"></i> ${bancoInfo}<br><i class="fa fa-calendar-alt text-muted" style="font-size: 8px;"></i> ${fecha}`;
+
+                        const fecha = formatFecha({
+                            value: pagoActivo.fecha_pago
+                        });
+                        infoText.innerHTML =
+                            `<i class="fa fa-university text-muted" style="font-size: 8px;"></i> ${bancoInfo}<br><i class="fa fa-calendar-alt text-muted" style="font-size: 8px;"></i> ${fecha}`;
                         this.eGui.appendChild(infoText);
                     }
                 } else if (val === 'pagado_parcial') {
@@ -825,7 +899,7 @@
                         infoText.style.fontSize = '9.5px';
                         infoText.style.color = '#525f7f';
                         infoText.style.fontWeight = '500';
-                        
+
                         let bancoInfo = '';
                         if (ultimoPago.cuenta_bancaria) {
                             const cBanc = ultimoPago.cuenta_bancaria;
@@ -833,9 +907,12 @@
                             const last4 = accNum.length > 4 ? '****' + accNum.slice(-4) : accNum;
                             bancoInfo = `${cBanc.nombre} ${last4}`;
                         }
-                        
-                        const fecha = formatFecha({ value: ultimoPago.fecha_pago });
-                        infoText.innerHTML = `<i class="fa fa-university text-muted" style="font-size: 8px;"></i> ${bancoInfo}<br><i class="fa fa-calendar-alt text-muted" style="font-size: 8px;"></i> ${fecha}`;
+
+                        const fecha = formatFecha({
+                            value: ultimoPago.fecha_pago
+                        });
+                        infoText.innerHTML =
+                            `<i class="fa fa-university text-muted" style="font-size: 8px;"></i> ${bancoInfo}<br><i class="fa fa-calendar-alt text-muted" style="font-size: 8px;"></i> ${fecha}`;
                         this.eGui.appendChild(infoText);
                     }
                 } else if (val === 'pendiente_pago') {
@@ -967,7 +1044,8 @@
                     btnEliminar.innerHTML = '<i class="fa fa-trash"></i>';
                     btnEliminar.title = 'Eliminar gasto';
                     btnEliminar.addEventListener('click', () => {
-                        eliminarGastoNew(params.data.id, params.data.concepto, params.data.ultima_fecha_pago || params.data.fecha_gasto);
+                        eliminarGastoNew(params.data.id, params.data.concepto, params.data.ultima_fecha_pago ||
+                            params.data.fecha_gasto);
                     });
                     this.eGui.appendChild(btnEliminar);
                 }
@@ -1029,9 +1107,20 @@
             paginationPageSize: 15,
             paginationPageSizeSelector: [10, 15, 30, 50, 100],
             rowData: [],
+            rowSelection: 'multiple',
+            suppressRowClickSelection: false,
             rowHeight: 46,
             headerHeight: 38,
-            columnDefs: [{
+            columnDefs: [
+                {
+                    headerName: "",
+                    checkboxSelection: true,
+                    headerCheckboxSelection: true,
+                    headerCheckboxSelectionFilteredOnly: true,
+                    width: 50,
+                    pinned: 'left'
+                },
+                {
                     field: "id",
                     headerName: "ID",
                     width: 75,
@@ -1152,9 +1241,11 @@
             const to = window.mesfin;
             const search = document.getElementById('gastosNewSearch').value;
             const tipo_gasto = document.getElementById('gastosNewTipo').value;
+            const categoria_id = document.getElementById('gastosNewCategoria').value;
+            const subcategoria_id = document.getElementById('gastosNewSubcategoria').value;
 
             const url =
-                `${gastosRoutes.data}?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&search=${encodeURIComponent(search)}&tipo_gasto=${encodeURIComponent(tipo_gasto)}`;
+                `${gastosRoutes.data}?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&search=${encodeURIComponent(search)}&tipo_gasto=${encodeURIComponent(tipo_gasto)}&categoria_id=${encodeURIComponent(categoria_id)}&subcategoria_id=${encodeURIComponent(subcategoria_id)}`;
 
             try {
                 const response = await fetch(url, {
@@ -1181,6 +1272,94 @@
         });
 
         document.getElementById('gastosNewTipo').addEventListener('change', cargarGastosNew);
+
+        document.getElementById('gastosNewCategoria').addEventListener('change', function() {
+            const catId = this.value;
+            const selectSub = document.getElementById('gastosNewSubcategoria');
+            selectSub.innerHTML = '<option value="">Todas</option>';
+            if(catId) {
+                fetch(`/gastos/categorias/${catId}/conceptos`)
+                    .then(res => res.json())
+                    .then(data => {
+                        let html = '<option value="">Todas</option>';
+                        data.forEach(item => {
+                            html += `<option value="${item.id}">${item.nombre}</option>`;
+                        });
+                        selectSub.innerHTML = html;
+                    });
+            }
+            cargarGastosNew();
+        });
+
+        document.getElementById('gastosNewSubcategoria').addEventListener('change', cargarGastosNew);
+
+        document.getElementById('btnPayMultiple').addEventListener('click', () => {
+            if (!apiGrid) return;
+            const selectedRows = apiGrid.getSelectedRows();
+            if (selectedRows.length === 0) {
+                Swal.fire('Atención', 'Seleccione al menos un gasto para pagar', 'warning');
+                return;
+            }
+            
+            const valid = selectedRows.every(r => r.estatus !== 'cancelado' && parseFloat(r.saldo_pendiente) > 0);
+            if (!valid) {
+                Swal.fire('Atención', 'Algunos gastos seleccionados ya están pagados o cancelados.', 'warning');
+                return;
+            }
+
+            let total = 0;
+            selectedRows.forEach(r => total += parseFloat(r.saldo_pendiente));
+            
+            document.getElementById('pagoMultipleTotal').textContent = currencyFormatter(total);
+            const count = selectedRows.length;
+            document.getElementById('pagoMultipleResumen').textContent = `${count} gastos seleccionados para aplicar`;
+            const modal = new bootstrap.Modal(document.getElementById('modalPagarMultiple'));
+            modal.show();
+        });
+
+        document.getElementById('formPagarMultiple')?.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const form = event.target;
+            const selectedRows = apiGrid.getSelectedRows();
+            if (selectedRows.length === 0) return;
+
+            const formData = new FormData(form);
+            selectedRows.forEach(r => formData.append('ids[]', r.id));
+
+            Swal.fire({
+                title: 'Procesando...',
+                text: 'Registrando los pagos múltiples, por favor espere.',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            try {
+                const response = await fetch('/gastos/pagar-multiple', {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': formData.get('_token')
+                    },
+                    body: formData
+                });
+                const json = await response.json();
+
+                if (json.TMensaje === 'success' || json.success) {
+                    Swal.fire('Éxito', json.Mensaje || 'Los pagos se registraron correctamente.', 'success').then(() => {
+                        form.reset();
+                        bootstrap.Modal.getInstance(document.getElementById('modalPagarMultiple')).hide();
+                        cargarGastosNew();
+                    });
+                } else {
+                    Swal.fire(json.Titulo || 'Error', json.Mensaje || 'No se pudo aplicar el pago múltiple.', 'error');
+                }
+            } catch (err) {
+                console.error(err);
+                Swal.fire('Error', 'Ocurrió un error al procesar el pago.', 'error');
+            }
+        });
 
         const selectTipoGasto = document.querySelector('select[name="tipo_gasto"]');
         const modalForm = document.getElementById('formGastoNew');
@@ -1893,7 +2072,9 @@
 
         async function eliminarGastoNew(gastoId, concepto, defaultDate) {
             const defaultDateVal = defaultDate || moment().format('YYYY-MM-DD');
-            const { value: fechaCancelacion } = await Swal.fire({
+            const {
+                value: fechaCancelacion
+            } = await Swal.fire({
                 title: '¿Eliminar gasto?',
                 icon: 'warning',
                 html: `

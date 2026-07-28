@@ -141,6 +141,7 @@ class PlaneacionController extends Controller
 
 
 
+            \App\Models\GastosOperadores::withoutGlobalScope('no_eliminados')->where('id_asignacion', $asignaciones->id)->delete();
             Coordenadas::where('id_asignacion', $asignaciones->id)->delete();
             $asignaciones->delete();
 

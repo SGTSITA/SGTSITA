@@ -235,9 +235,8 @@
                                 </div>
                                 <div class="col-md-4 form-group mt-2">
                                     <label class="form-label font-weight-bold" for="litros_urea">Litros Urea</label>
-                                    <input type="number" step="0.001" class="form-control text-end"
-                                        id="litros_urea" name="litros_urea"
-                                        value="{{ $cotizacion->litros_urea ?? 0 }}">
+                                    <input type="number" step="0.001" class="form-control text-end" id="litros_urea"
+                                        name="litros_urea" value="{{ $cotizacion->litros_urea ?? 0 }}">
                                 </div>
                             </div>
 
@@ -404,11 +403,11 @@
                 botonGastos.addEventListener('click', function() {
                     const total = container.querySelectorAll('.gasto-item').length;
 
-                    if (total >= 2) {
-                        Swal.fire("Límite alcanzado", "Solo puedes agregar un máximo de 2 gastos.",
-                            "warning");
-                        return;
-                    }
+                    /*   if (total >= 2) {
+                          Swal.fire("Límite alcanzado", "Solo puedes agregar un máximo de 2 gastos.",
+                              "warning");
+                          return;
+                      } */
 
                     const gastoHTML = `
                 <div class="row gasto-item align-items-center mb-3 border-bottom pb-3">

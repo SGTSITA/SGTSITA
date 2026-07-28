@@ -450,10 +450,10 @@
                         botonGastos.addEventListener('click', function() {
                             const total = container.querySelectorAll('.gasto-item').length;
 
-                            if (total >= 2) {
-                                alert('Solo puedes agregar un máximo de 2 gastos.');
-                                return;
-                            }
+                            /*   if (total >= 2) {
+                                  alert('Solo puedes agregar un máximo de 2 gastos.');
+                                  return;
+                              } */
 
                             const gastoHTML = `
               <div class="row gasto-item align-items-center mb-3 border-bottom pb-3">
