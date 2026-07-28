@@ -72,6 +72,13 @@ class GastosService
         ])
         ->where('id_empresa', $filters['id_empresa']);
 
+        if (!empty($filters['categoria_id'])) {
+            $query->where('categoria_gasto_id', $filters['categoria_id']);
+        }
+        if (!empty($filters['subcategoria_id'])) {
+            $query->where('gasto_concepto_id', $filters['subcategoria_id']);
+        }
+
         if (empty($filters['cotizacion_id'])) {
             $query->whereBetween('fecha_gasto', [
                 $fechaInicio->format('Y-m-d'),
@@ -555,6 +562,31 @@ class GastosService
         });
     }
 
+    public function pagarConMovimientoExistente(Gasto $gasto, array $data): GastoPago
+    {
+        $monto = $this->normalizarMonto($data['monto'] ?? $gasto->saldo_pendiente);
+        $fechaPago = $this->normalizarFecha($data['fecha_pago'] ?? now());
+
+        $pago = GastoPago::create([
+            'gasto_id' => $gasto->id,
+            'gasto_programacion_id' => $data['gasto_programacion_id'] ?? null,
+            'cuenta_bancaria_id' => $data['cuenta_bancaria_id'],
+            'movimiento_bancario_id' => $data['movimiento_bancario_id'],
+            'fecha_pago' => $fechaPago,
+            'monto' => $monto,
+            'metodo_pago' => $data['metodo_pago'] ?? 'Transferencia',
+            'referencia' => $data['referencia'] ?? null,
+            'comprobante' => $data['comprobante'] ?? null,
+            'estatus' => 'aplicado',
+            'user_id' => $data['user_id'] ?? auth()->id(),
+        ]);
+
+        $this->actualizarProgramacionPagada($pago);
+        $this->sincronizarEstatusPago($gasto);
+
+        return $pago;
+    }
+
     public function cancelarPago(GastoPago $pago, string $fechaCancelacion): void
     {
         DB::transaction(function () use ($pago, $fechaCancelacion) {
@@ -563,11 +595,33 @@ class GastosService
             }
 
             if ($pago->movimiento_bancario_id && $pago->cuenta_bancaria_id) {
-                $this->bancosService->cancelarMovimiento(
-                    $pago->cuenta_bancaria_id,
-                    $pago->movimiento_bancario_id,
-                    $fechaCancelacion
-                );
+                // Verificar si hay otros pagos vinculados al mismo movimiento
+                $pagosVinculados = GastoPago::where('movimiento_bancario_id', $pago->movimiento_bancario_id)
+                    ->where('estatus', '!=', 'cancelado')
+                    ->where('id', '!=', $pago->id)
+                    ->exists();
+
+                if ($pagosVinculados) {
+                    // Solo hacer un abono por el monto del gasto cancelado
+                    $this->bancosService->registrarMovimiento([
+                        'cuenta_bancaria_id' => $pago->cuenta_bancaria_id,
+                        'tipo'               => 'abono', 
+                        'monto'              => $pago->monto,
+                        'concepto'           => 'Devolución Parcial - ' . ($pago->gasto?->concepto ?? 'Pago cancelado'),
+                        'fecha_movimiento'   => $fechaCancelacion,
+                        'origen'             => 'sistema',
+                        'referencia'         => 'cancelación' . ($pago->referencia ? ' - ' . $pago->referencia : ''),
+                        'referenciaable_type' => Gasto::class,
+                        'referenciaable_id'   => $pago->gasto_id,
+                        'observaciones'      => 'Cancelación parcial de pago múltiple. Pago ID: ' . $pago->id,
+                    ]);
+                } else {
+                    $this->bancosService->cancelarMovimiento(
+                        $pago->cuenta_bancaria_id,
+                        $pago->movimiento_bancario_id,
+                        $fechaCancelacion
+                    );
+                }
             } elseif ($pago->cuenta_bancaria_id) {
                 // Si es un pago migrado (sin movimiento_bancario_id), registramos la devolución (abono)
                 // de manera directa en la cuenta bancaria usando los datos del pago.
@@ -589,12 +643,7 @@ class GastosService
             
             $gasto = $pago->gasto;
             if ($gasto) {
-                $pagosActivos = $gasto->pagos()->where('estatus', '!=', 'cancelado')->count();
-                if ($pagosActivos === 0) {
-                    $gasto->delete();
-                } else {
-                    $this->sincronizarEstatusPago($gasto);
-                }
+                $this->sincronizarEstatusPago($gasto);
             }
         });
     }

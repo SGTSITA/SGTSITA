@@ -172,7 +172,7 @@
     <style>
         #dp {
             flex: 1;
-            min-height: 0;
+            min-height: 200px;
         }
 
         .search-container {

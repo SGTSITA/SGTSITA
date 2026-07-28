@@ -506,19 +506,61 @@ class GastosController extends Controller
                 ]);
             }
 
+            // Registrar movimiento bancario UNICO
+            $conceptos = [];
+            $detalles = [];
+            
+            foreach ($gastos as $gasto) {
+                if ($gasto->estatus !== 'pagado') {
+                    $conceptos[] = $gasto->concepto;
+                    
+                    $gasto->loadMissing('vinculos');
+                    $vinculosInfo = [];
+                    foreach ($gasto->vinculos as $v) {
+                        $vinculosInfo[] = [
+                            'tipo' => $v->tipo_vinculo,
+                            'referencia' => $v->observaciones ?: $v->vinculable_id
+                        ];
+                    }
+                    
+                    $detalles[] = [
+                        'gasto_id' => $gasto->id,
+                        'concepto' => $gasto->concepto,
+                        'monto' => $gasto->saldo_pendiente,
+                        'tipo_gasto' => $gasto->tipo_gasto,
+                        'vinculos' => $vinculosInfo
+                    ];
+                }
+            }
+            
+            $conceptosStr = implode(', ', $conceptos);
+            if (strlen($conceptosStr) > 200) {
+                $conceptosStr = substr($conceptosStr, 0, 197) . '...';
+            }
+
+            $movimiento = $this->bancosService->registrarMovimiento([
+                'cuenta_bancaria_id' => $data['cuenta_bancaria_id'],
+                'tipo' => 'cargo',
+                'monto' => $totalMonto,
+                'concepto' => '[PAGO MULTIPLE] Pago de gastos',
+                'fecha_movimiento' => $data['fecha_pago'],
+                'referencia' => $data['referencia'] ?? 'PAGO MULTIPLE',
+                'detalles' => $detalles,
+                'referenciaable_id' => null, // Multiple gastos
+                'referenciaable_type' => \App\Models\Gasto::class,
+            ]);
+
             foreach ($gastos as $gasto) {
                 if ($gasto->estatus === 'pagado') {
                     continue;
                 }
 
-                $categoryName = $gasto->categoria?->categoria ?: 'Gasto';
-                $this->gastosService->pagar($gasto, [
+                $this->gastosService->pagarConMovimientoExistente($gasto, [
                     'cuenta_bancaria_id' => $data['cuenta_bancaria_id'],
                     'fecha_pago' => $data['fecha_pago'],
                     'monto' => $gasto->saldo_pendiente,
                     'referencia' => $data['referencia'] ?? 'Pago múltiple',
-                    'concepto_banco' => BancosService::generarConcepto('gasto', $gasto->concepto, null, null),
-                    'referencia_banco' => $data['referencia'] ?? 'PAGO MULTIPLE GASTO',
+                    'movimiento_bancario_id' => $movimiento->id,
                 ]);
             }
 
@@ -784,11 +826,18 @@ class GastosController extends Controller
                 }
 
                 if ($movimiento) {
-                    $movimiento->update([
-                        'monto' => $nuevoMontoPago,
+                    $nuevoMontoMovimiento = (float)$movimiento->monto + $montoDiferencia;
+                    
+                    $updateData = [
+                        'monto' => $nuevoMontoMovimiento,
                         'fecha_movimiento' => $request->fecha_gasto,
-                        'concepto' => 'Pago gasto (Editado): ' . $request->concepto
-                    ]);
+                    ];
+                    
+                    if (strpos($movimiento->concepto ?? '', '[PAGO MULTIPLE]') === false) {
+                        $updateData['concepto'] = 'Pago gasto (Editado): ' . $request->concepto;
+                    }
+
+                    $movimiento->update($updateData);
                 }
             }
 

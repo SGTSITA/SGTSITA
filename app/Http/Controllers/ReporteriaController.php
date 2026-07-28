@@ -2016,24 +2016,23 @@ class ReporteriaController extends Controller
 
     public function index_gxp(Request $request)
     {
-        /*
-        $gastos = GastosOperadores::with([
-            'Asignaciones.Proveedor',
-            'Asignaciones.Contenedor.Cotizacion.Cliente',
-            'Asignaciones.Contenedor.Cotizacion.Subcliente'
-        ])
-        ->whereHas('Asignaciones', fn ($q) => $q->where('id_empresa', auth()->user()->id_empresa))
-        ->where('estatus', '!=', 'Pagado')
-        ->get();
-        */
-        $gastos = \App\Models\GastoImputacion::join('gastos', 'gastos.id', '=', 'gasto_imputaciones.gasto_id')
+        $status = $request->input('status', 'por_pagar');
+
+        $query = \App\Models\GastoImputacion::join('gastos', 'gastos.id', '=', 'gasto_imputaciones.gasto_id')
             ->whereNull('gastos.deleted_at')
-            ->where('gastos.estatus', '!=', 'cancelado')
             ->where('gastos.id_empresa', auth()->user()->id_empresa)
             ->where('gasto_imputaciones.tipo_imputacion', '=', 'operador')
-            ->where('gastos.estatus', '!=', 'pagado')
-            ->select('gasto_imputaciones.*', 'gastos.concepto as motivo_gasto', 'gastos.estatus as gasto_estatus')
-            ->get();
+            ->select('gasto_imputaciones.*', 'gastos.concepto as motivo_gasto', 'gastos.estatus as gasto_estatus');
+
+        if ($status === 'por_pagar') {
+            $query->where('gastos.estatus', '!=', 'cancelado')
+                  ->where('gastos.estatus', '!=', 'pagado');
+        } elseif ($status === 'pagados') {
+            $query->where('gastos.estatus', 'pagado');
+        } elseif ($status === 'todos') {
+            $query->where('gastos.estatus', '!=', 'cancelado');
+        }
+        $gastos = $query->get();
 
         $gastos->load([
             'imputable', // Operador
@@ -2069,29 +2068,26 @@ class ReporteriaController extends Controller
 
 
 
-    public function getGastosPorPagarData()
+    public function getGastosPorPagarData(Request $request)
     {
         $idEmpresa = auth()->user()->id_empresa;
+        $status = $request->input('status', 'por_pagar');
 
-        /*
-        $gastos = GastosOperadores::with([
-            'Asignaciones.Contenedor.Cotizacion.Cliente',
-            'Asignaciones.Contenedor.Cotizacion.Subcliente'
-        ])
-        ->whereHas('Asignaciones', function ($q) use ($idEmpresa) {
-            $q->where('id_empresa', $idEmpresa);
-        })
-        ->where('estatus', '!=', 'Pagado')
-        ->get();
-        */
-        $gastos = \App\Models\GastoImputacion::join('gastos', 'gastos.id', '=', 'gasto_imputaciones.gasto_id')
+        $query = \App\Models\GastoImputacion::join('gastos', 'gastos.id', '=', 'gasto_imputaciones.gasto_id')
             ->whereNull('gastos.deleted_at')
-            ->where('gastos.estatus', '!=', 'cancelado')
             ->where('gastos.id_empresa', $idEmpresa)
             ->where('gasto_imputaciones.tipo_imputacion', '=', 'operador')
-            ->where('gastos.estatus', '!=', 'pagado')
-            ->select('gasto_imputaciones.*', 'gastos.concepto as motivo_gasto')
-            ->get();
+            ->select('gasto_imputaciones.*', 'gastos.concepto as motivo_gasto');
+
+        if ($status === 'por_pagar') {
+            $query->where('gastos.estatus', '!=', 'cancelado')
+                  ->where('gastos.estatus', '!=', 'pagado');
+        } elseif ($status === 'pagados') {
+            $query->where('gastos.estatus', 'pagado');
+        } elseif ($status === 'todos') {
+            $query->where('gastos.estatus', '!=', 'cancelado');
+        }
+        $gastos = $query->get();
 
         $gastos->load([
             'imputable', // Operador
@@ -2128,6 +2124,15 @@ class ReporteriaController extends Controller
             ];
         });
 
+        if ($request->filled('from') && $request->filled('to')) {
+            $from = $request->input('from');
+            $to = $request->input('to');
+            $data = $data->filter(function ($item) use ($from, $to) {
+                if (!$item['fecha_inicio']) return false;
+                return $item['fecha_inicio'] >= $from && $item['fecha_inicio'] <= $to;
+            })->values();
+        }
+
         return response()->json($data);
     }
 
@@ -2136,25 +2141,23 @@ class ReporteriaController extends Controller
     {
         try {
             $ids = $request->input('selected_ids', []);
+            $status = $request->input('status', 'por_pagar');
             $fileType = $request->input('fileType');
 
-            $export = new \App\Exports\GastosPorPagarExport($ids);
+            $export = new \App\Exports\GastosPorPagarExport($ids, $status);
 
             if ($fileType === 'xlsx') {
                 return \Maatwebsite\Excel\Facades\Excel::download($export, 'gastos_por_pagar.xlsx');
             }
 
             if ($fileType === 'pdf') {
-                $gastos = collect($export->getGastosData())->map(function ($g) {
-                    return is_array($g) ? $g : (array) $g;
-                });
+                $data = $export->getGastosData();
 
                 return PDF::loadView('reporteria.gxp.pdf', [
-    'gastos' => $gastos,
-    'empresa' => auth()->user()->Empresa->nombre ?? 'Sin Empresa'
-])->setPaper('a4', 'landscape')->download('gastos_por_pagar.pdf');
-
-
+                    'gastos' => $data['gastos'],
+                    'status' => $data['status'],
+                    'empresa' => auth()->user()->Empresa->nombre ?? 'Sin Empresa'
+                ])->setPaper('a4', 'landscape')->download('gastos_por_pagar.pdf');
             }
 
             return response()->json(['error' => 'Tipo de archivo no válido'], 400);
