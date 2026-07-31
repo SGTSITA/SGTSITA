@@ -1286,7 +1286,7 @@ max-width: 100%;
                 .then((res) => res.json())
                 .then((data) => {
                     //console.log('Ubicaciones recibidas:', data);
-                    const dataUbi = data;
+                    const dataUbi = Array.isArray(data) ? data : (data.data || []);
 
                     //limpiarMarcadores();
                     responseOk = true;
