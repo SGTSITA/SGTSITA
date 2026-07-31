@@ -358,6 +358,11 @@
                                     <span class="sidenav-mini-icon"> P </span>
                                     <span class="sidenav-normal">Reporte de Resultados</span>
                                 </a>
+                              <a class="nav-link {{ Request::is('reporteria/balance-general*') ? 'show' : '' }}"
+                                    href="{{ route('reporteria.balance-general.index') }}">
+                                    <span class="sidenav-mini-icon"> B </span>
+                                    <span class="sidenav-normal">Balance General</span>
+                                </a>
                             @endcan
 
                             @can('reportes-documentos')
