@@ -6,14 +6,62 @@
 
 @section('content')
     <div class="card">
-        <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
+        <div class="card-header bg-transparent d-flex justify-content-between align-items-center flex-wrap gap-3">
             <div>
                 <h5 class="mb-0">Gastos</h5>
-                <p class="text-sm text-muted mb-0">Modulo unificado para validar registros nuevos y espejos legacy.</p>
+                <p class="text-sm text-muted mb-0">Modulo unificado para gastos del periodo, viaje, cotización.</p>
             </div>
             <button type="button" class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#modalGastoNew">
                 <i class="fa fa-plus"></i> Registrar gasto
             </button>
+        </div>
+
+        <!-- Cards de Totales -->
+        <div class="px-4 py-3 bg-light border-bottom">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="card border shadow-none mb-0">
+                        <div class="card-body p-3 d-flex align-items-center justify-content-between">
+                            <div>
+                                <p class="text-xs text-muted mb-1 font-weight-bold text-uppercase">Total Gastos</p>
+                                <h4 class="mb-0 font-weight-bolder text-dark" id="card-total-monto">$ 0.00</h4>
+                            </div>
+                            <div class="rounded-circle p-3 d-flex align-items-center justify-content-center"
+                                style="width: 48px; height: 48px; background-color: rgba(94, 114, 228, 0.15); color: #5e72e4;">
+                                <i class="fa fa-calculator text-lg"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card border shadow-none mb-0">
+                        <div class="card-body p-3 d-flex align-items-center justify-content-between">
+                            <div>
+                                <p class="text-xs text-success mb-1 font-weight-bold text-uppercase">Total Pagado</p>
+                                <h4 class="mb-0 font-weight-bolder text-success" id="card-pagado-monto">$ 0.00</h4>
+                            </div>
+                            <div class="rounded-circle p-3 d-flex align-items-center justify-content-center"
+                                style="width: 48px; height: 48px; background-color: rgba(45, 206, 137, 0.15); color: #2dce89;">
+                                <i class="fa fa-check-circle text-lg"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card border shadow-none mb-0">
+                        <div class="card-body p-3 d-flex align-items-center justify-content-between">
+                            <div>
+                                <p class="text-xs text-danger mb-1 font-weight-bold text-uppercase">Total Pendiente</p>
+                                <h4 class="mb-0 font-weight-bolder text-danger" id="card-pendiente-monto">$ 0.00</h4>
+                            </div>
+                            <div class="rounded-circle p-3 d-flex align-items-center justify-content-center"
+                                style="width: 48px; height: 48px; background-color: rgba(245, 54, 92, 0.15); color: #f5365c;">
+                                <i class="fa fa-exclamation-circle text-lg"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div class="card-body">
@@ -57,15 +105,16 @@
 
                 <div class="col-md-2">
                     <label class="form-label text-sm mb-1">Concepto / Folio</label>
-                    <input type="text" id="gastosNewSearch" class="form-control form-control-sm"
-                        placeholder="Buscar...">
+                    <input type="text" id="gastosNewSearch" class="form-control form-control-sm" placeholder="Buscar...">
                 </div>
 
                 <div class="col-md-2 d-flex gap-2">
-                    <button type="button" class="btn btn-sm btn-outline-primary mb-0 flex-fill px-2" id="btnGastosNewBuscar" title="Buscar">
+                    <button type="button" class="btn btn-sm btn-outline-primary mb-0 flex-fill px-2"
+                        id="btnGastosNewBuscar" title="Buscar">
                         <i class="fa fa-search"></i>
                     </button>
-                    <button type="button" class="btn btn-sm btn-success mb-0 flex-fill px-2" id="btnPayMultiple" title="Pagar seleccionados">
+                    <button type="button" class="btn btn-sm btn-success mb-0 flex-fill px-2" id="btnPayMultiple"
+                        title="Pagar seleccionados">
                         Pagar selec.
                     </button>
                 </div>
@@ -153,7 +202,8 @@
                         <div class="col-12">
                             <label class="form-label text-muted mb-0">Total a Pagar</label>
                             <div class="font-weight-bold text-danger text-lg" id="pagoMultipleTotal">$ 0.00</div>
-                            <div class="text-sm text-muted mb-2" id="pagoMultipleResumen">0 gastos seleccionados para aplicar</div>
+                            <div class="text-sm text-muted mb-2" id="pagoMultipleResumen">0 gastos seleccionados para
+                                aplicar</div>
                         </div>
 
                         <div class="col-12">
@@ -985,7 +1035,7 @@
                 const totalPagos = params.data.total_pagos || 0;
                 const ultimoPagoId = params.data.ultimo_pago_id;
 
-                // PAGAR
+
                 if (saldo > 0 && estatus !== 'cancelado') {
 
                     const btnPagar = document.createElement('button');
@@ -1005,7 +1055,7 @@
                     this.eGui.appendChild(btnPagar);
                 }
 
-                // EDITAR
+
                 if (estatus !== 'cancelado') {
                     const btnEditar = document.createElement('button');
                     btnEditar.className = 'btn btn-xs btn-warning my-0 py-1 px-2';
@@ -1111,8 +1161,7 @@
             suppressRowClickSelection: false,
             rowHeight: 46,
             headerHeight: 38,
-            columnDefs: [
-                {
+            columnDefs: [{
                     headerName: "",
                     checkboxSelection: true,
                     headerCheckboxSelection: true,
@@ -1230,10 +1279,34 @@
                     sortable: false
                 }
             ],
-            localeText: localeText
+            localeText: localeText,
+            onModelUpdated: (event) => {
+                recalcularTotalesCards(event.api);
+            }
         };
 
         let apiGrid = null;
+
+        function recalcularTotalesCards(api) {
+            const gridApi = api || apiGrid;
+            if (!gridApi) return;
+
+            let total = 0;
+            let pagado = 0;
+            let pendiente = 0;
+
+            gridApi.forEachNodeAfterFilter((node) => {
+                if (node.data) {
+                    total += parseFloat(node.data.monto_total || 0);
+                    pagado += parseFloat(node.data.monto_pagado || 0);
+                    pendiente += parseFloat(node.data.saldo_pendiente || 0);
+                }
+            });
+
+            document.getElementById('card-total-monto').textContent = currencyFormatter(total);
+            document.getElementById('card-pagado-monto').textContent = currencyFormatter(pagado);
+            document.getElementById('card-pendiente-monto').textContent = currencyFormatter(pendiente);
+        }
 
         async function cargarGastosNew() {
 
@@ -1277,7 +1350,7 @@
             const catId = this.value;
             const selectSub = document.getElementById('gastosNewSubcategoria');
             selectSub.innerHTML = '<option value="">Todas</option>';
-            if(catId) {
+            if (catId) {
                 fetch(`/gastos/categorias/${catId}/conceptos`)
                     .then(res => res.json())
                     .then(data => {
@@ -1300,7 +1373,7 @@
                 Swal.fire('Atención', 'Seleccione al menos un gasto para pagar', 'warning');
                 return;
             }
-            
+
             const valid = selectedRows.every(r => r.estatus !== 'cancelado' && parseFloat(r.saldo_pendiente) > 0);
             if (!valid) {
                 Swal.fire('Atención', 'Algunos gastos seleccionados ya están pagados o cancelados.', 'warning');
@@ -1309,10 +1382,11 @@
 
             let total = 0;
             selectedRows.forEach(r => total += parseFloat(r.saldo_pendiente));
-            
+
             document.getElementById('pagoMultipleTotal').textContent = currencyFormatter(total);
             const count = selectedRows.length;
-            document.getElementById('pagoMultipleResumen').textContent = `${count} gastos seleccionados para aplicar`;
+            document.getElementById('pagoMultipleResumen').textContent =
+                `${count} gastos seleccionados para aplicar`;
             const modal = new bootstrap.Modal(document.getElementById('modalPagarMultiple'));
             modal.show();
         });
@@ -1347,13 +1421,16 @@
                 const json = await response.json();
 
                 if (json.TMensaje === 'success' || json.success) {
-                    Swal.fire('Éxito', json.Mensaje || 'Los pagos se registraron correctamente.', 'success').then(() => {
-                        form.reset();
-                        bootstrap.Modal.getInstance(document.getElementById('modalPagarMultiple')).hide();
-                        cargarGastosNew();
-                    });
+                    Swal.fire('Éxito', json.Mensaje || 'Los pagos se registraron correctamente.', 'success')
+                        .then(() => {
+                            form.reset();
+                            bootstrap.Modal.getInstance(document.getElementById('modalPagarMultiple'))
+                            .hide();
+                            cargarGastosNew();
+                        });
                 } else {
-                    Swal.fire(json.Titulo || 'Error', json.Mensaje || 'No se pudo aplicar el pago múltiple.', 'error');
+                    Swal.fire(json.Titulo || 'Error', json.Mensaje || 'No se pudo aplicar el pago múltiple.',
+                        'error');
                 }
             } catch (err) {
                 console.error(err);

@@ -360,6 +360,13 @@
                                         </label>
                                     </div>
 
+                                    <div class="form-check mb-2 border-top pt-2">
+                                        <input class="form-check-input" type="checkbox" id="desactivarAgrupamientoInteligente" value="1">
+                                        <label class="form-check-label small text-danger fw-bold" for="desactivarAgrupamientoInteligente">
+                                            Desactivar Agrupamiento
+                                        </label>
+                                    </div>
+
                                     <div class="pt-2 border-top">
                                         <span class="badge bg-light text-dark border" id="lblFiltroVistaMapa">
                                             Todos
@@ -787,6 +794,7 @@
                             @method('PUT')
 
                             <div class="mb-3">
+                             <div class="mb-3">
                                 <label for="interval" class="form-label">Intervalo</label>
                                 <select name="interval" id="interval" class="form-select">
                                     <option value="everyMinute"
@@ -807,6 +815,23 @@
                                         Semanal
                                     </option>
                                 </select>
+                            </div>
+
+                            <div class="mb-3 border-top pt-3">
+                                <div class="form-check form-switch mb-2">
+                                    <input class="form-check-input" type="checkbox" name="alerta_distancia" value="1" id="configAlertaDistancia"
+                                        {{ ($intervals->alerta_distancia ?? false) ? 'checked' : '' }}>
+                                    <label class="form-check-label fw-bold" for="configAlertaDistancia">
+                                        Alerta a Distancia Inteligente
+                                    </label>
+                                </div>
+                                <div class="text-muted small mb-2">
+                                    Si la distancia entre tracto y chasis es mayor a la configurada, se genera una alerta. En caso contrario, se muestra solo 1 marcador (el tracto) para limpiar el mapa.
+                                </div>
+                                
+                                <label for="configMetrosAlerta" class="form-label small fw-semibold">Distancia Mínima para Mostrar Ambos (Metros)</label>
+                                <input type="number" name="metros_alerta" id="configMetrosAlerta" class="form-control" min="1"
+                                    value="{{ $intervals->metros_alerta ?? 50 }}">
                             </div>
 
                             <button type="submit" class="btn btn-primary w-100">Guardar cambios</button>
