@@ -264,17 +264,13 @@ class LiquidacionesController extends Controller
             )
             ->groupBy('id_contenedor');
 
-        $subJustificados = DB::table('gasto_vinculos as gv')
-            ->join('gastos as g', 'gv.gasto_id', '=', 'g.id')
-            ->where('gv.vinculable_type', DocumCotizacion::class)
-            ->where('g.tipo_gasto', 'operador')
-            ->where('g.origen_modulo', 'liquidacion_operador')
-            ->whereNull('g.deleted_at')
+        $subJustificados = DB::table('viaticos_operadores as vo')
+            ->join('docum_cotizacion as dc', 'vo.id_cotizacion', '=', 'dc.id_cotizacion')
             ->select(
-                'gv.vinculable_id as id_contenedor',
-                DB::raw('SUM(g.monto_total) as total_justificado')
+                'dc.id as id_contenedor',
+                DB::raw('SUM(vo.monto) as total_justificado')
             )
-            ->groupBy('gv.vinculable_id');
+            ->groupBy('dc.id');
 
 
         $asignaciones = DB::table('asignaciones as a')
@@ -323,17 +319,13 @@ class LiquidacionesController extends Controller
 
 
 
-        $justificaciones = DB::table('gasto_vinculos as gv')
-            ->join('gastos as g', 'gv.gasto_id', '=', 'g.id')
-            ->where('gv.vinculable_type', DocumCotizacion::class)
-            ->where('g.tipo_gasto', 'operador')
-            ->where('g.origen_modulo', 'liquidacion_operador')
-            ->whereNull('g.deleted_at')
+        $justificaciones = DB::table('viaticos_operadores as vo')
+            ->join('docum_cotizacion as dc', 'vo.id_cotizacion', '=', 'dc.id_cotizacion')
             ->select(
-                'gv.vinculable_id as id_contenedor',
-                'g.id',
-                'g.concepto as descripcion_gasto',
-                'g.monto_total as monto'
+                'dc.id as id_contenedor',
+                'vo.id',
+                'vo.descripcion_gasto',
+                'vo.monto'
             )
             ->get()
             ->groupBy('id_contenedor');
@@ -1043,6 +1035,46 @@ class LiquidacionesController extends Controller
                 }
                 $asignacion->update();
 
+                // Buscar gastos de viáticos/excedentes asociados a esta asignación que estén pendientes
+                $gastosAsociados = \App\Models\Gasto::where('estatus', 'pendiente_pago')
+                    ->whereIn('origen_legacy', ['viaticos_operadores', 'viaticos_operadores_excedente'])
+                    ->whereHas('vinculos', function ($query) use ($asignacion) {
+                        $query->where('tipo_vinculo', 'asignacion')
+                              ->where('vinculable_id', $asignacion->id);
+                    })
+                    ->get();
+
+                foreach ($gastosAsociados as $gasto) {
+                    $gasto->update(['estatus' => 'pagado']);
+
+                    // Crear GastoPago si no existe
+                    $existePago = \App\Models\GastoPago::where('gasto_id', $gasto->id)->exists();
+                    if (!$existePago) {
+                        $cuentaBancariaId = null;
+                        if ($gasto->origen_legacy === 'viaticos_operadores_excedente') {
+                            $cuentaBancariaId = $request->bancoId;
+                        } else {
+                            $cuentaBancariaId = $asignacion->id_banco1_dinero_viaje ?? $request->bancoId;
+                        }
+
+                        if ($cuentaBancariaId) {
+                            $existeBanco = \DB::table('bancos')->where('id', $cuentaBancariaId)->exists();
+                            if (!$existeBanco) {
+                                $cuentaBancariaId = null;
+                            }
+                        }
+
+                        \App\Models\GastoPago::create([
+                            'gasto_id' => $gasto->id,
+                            'cuenta_bancaria_id' => $cuentaBancariaId,
+                            'fecha_pago' => \Carbon\Carbon::createFromFormat('d/m/Y', $fechaAplicacionDinero)->format('Y-m-d'),
+                            'monto' => $gasto->monto_total,
+                            'estatus' => 'aplicado',
+                            'user_id' => auth()->id(),
+                        ]);
+                    }
+                }
+
                 $cotizacion = DocumCotizacion::where('id', '=', $asignacion->id_contenedor)->first();
 
 
@@ -1369,14 +1401,35 @@ class LiquidacionesController extends Controller
                 $asignacion = Asignaciones::where('id_contenedor', $c->id_contenedor)->first();
 
                 if ($asignacion) {
-
-                    $asignacion->restante_pago_operador += $c->total_pagado;
+                    // Restar lo justificado y sumar lo pagado para regresar al saldo original antes de justificaciones y pago
+                    $asignacion->restante_pago_operador = ($asignacion->restante_pago_operador - $c->dinero_justificado) + $c->total_pagado;
 
                     if ($asignacion->restante_pago_operador > 0) {
                         $asignacion->estatus_pagado = 'Pendiente Pago';
                     }
 
                     $asignacion->save();
+
+                    // 1. Eliminar justificaciones de la tabla viaticos_operadores
+                    $documCotizacion = DocumCotizacion::find($c->id_contenedor);
+                    if ($documCotizacion) {
+                        ViaticosOperador::where('id_cotizacion', $documCotizacion->id_cotizacion)->delete();
+                    }
+
+                    // 2. Buscar y eliminar por completo los gastos de viáticos y excedentes asociados a este viaje
+                    $gastosAsociados = \App\Models\Gasto::whereIn('origen_legacy', ['viaticos_operadores', 'viaticos_operadores_excedente'])
+                        ->whereHas('vinculos', function ($query) use ($asignacion) {
+                            $query->where('tipo_vinculo', 'asignacion')
+                                  ->where('vinculable_id', $asignacion->id);
+                        })
+                        ->get();
+
+                    foreach ($gastosAsociados as $gasto) {
+                        // Eliminar pagos del gasto
+                        \App\Models\GastoPago::where('gasto_id', $gasto->id)->delete();
+                        // Forzar la eliminación del gasto
+                        $gasto->forceDelete();
+                    }
                 }
             }
 

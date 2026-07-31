@@ -913,6 +913,14 @@ class GastosController extends Controller
 
     public function destroy(Request $request, Gasto $gasto)
     {
+        if (in_array($gasto->origen_legacy, ['viaticos_operadores', 'viaticos_operadores_excedente', 'gastos_operadores'])) {
+            return response()->json([
+                'TMensaje' => 'error',
+                'Titulo' => 'Acción rechazada',
+                'Mensaje' => 'Este gasto proviene de justificaciones de viáticos o excedentes del viaje del operador y no puede ser eliminado desde este módulo, ya que su flujo de pago se gestiona a través de la liquidación del viaje.'
+            ]);
+        }
+
         try {
             \DB::beginTransaction();
 

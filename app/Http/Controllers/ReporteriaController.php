@@ -2615,5 +2615,116 @@ public function indexRendimiento()
         ];
     }
 
+    public function index_balance_general(Request $request, \App\Services\BalanceGeneralService $service)
+    {
+        $idEmpresa = auth()->user()->id_empresa;
+        $fechaCorte = $request->input('fecha_corte', now()->format('Y-m-d'));
+        $ejercicio = Carbon::parse($fechaCorte)->year;
 
+        $balance = $service->calculate($idEmpresa, $fechaCorte);
+        $configs = $service->getConfigurations($idEmpresa);
+
+        // Fetch all unique exercises/years configured for this company
+        $ejerciciosRegistrados = \App\Models\BalanceGeneralSaldoInicial::where('id_empresa', $idEmpresa)
+            ->select('ejercicio', 'fecha_inicio')
+            ->groupBy('ejercicio', 'fecha_inicio')
+            ->orderBy('ejercicio', 'desc')
+            ->get();
+
+        return view('reporteria.balance_general.index', compact('balance', 'configs', 'fechaCorte', 'ejercicio', 'ejerciciosRegistrados'));
+    }
+
+    public function update_balance_general_config(Request $request)
+    {
+        $request->validate([
+            'id' => 'required|exists:balance_general_configs,id',
+            'concepto' => 'required|string|max:255',
+            'tipo_calculo' => 'required|string',
+            'valor_manual' => 'nullable|numeric',
+            'orden' => 'required|integer',
+        ]);
+
+        $config = \App\Models\BalanceGeneralConfig::findOrFail($request->id);
+        
+        if ($config->id_empresa && $config->id_empresa !== auth()->user()->id_empresa) {
+            abort(403, 'No autorizado');
+        }
+
+        $config->update([
+            'concepto' => $request->concepto,
+            'tipo_calculo' => $request->tipo_calculo,
+            'valor_manual' => $request->valor_manual ?? 0.00,
+            'orden' => $request->orden,
+        ]);
+
+        return response()->json(['success' => true, 'message' => 'Configuración actualizada correctamente.']);
+    }
+
+    public function get_balance_general_saldos_iniciales(Request $request)
+    {
+        $idEmpresa = auth()->user()->id_empresa;
+        $ejercicio = $request->input('ejercicio');
+
+        $saldos = \App\Models\BalanceGeneralSaldoInicial::where('id_empresa', $idEmpresa)
+            ->where('ejercicio', $ejercicio)
+            ->get()
+            ->keyBy('config_id');
+
+        return response()->json([
+            'success' => true,
+            'ejercicio' => $ejercicio,
+            'fecha_inicio' => $saldos->first()?->fecha_inicio?->format('Y-m-d') ?? ($ejercicio . '-01-01'),
+            'saldos' => $saldos
+        ]);
+    }
+
+    public function update_balance_general_saldos_iniciales(Request $request)
+    {
+        $request->validate([
+            'ejercicio' => 'required|integer|min:2000|max:2100',
+            'saldos' => 'required|array',
+            'saldos.*.config_id' => 'required|exists:balance_general_configs,id',
+            'saldos.*.monto' => 'required|numeric',
+            'saldos.*.fecha_inicio' => 'required|date',
+        ]);
+
+        $idEmpresa = auth()->user()->id_empresa;
+        $ejercicio = $request->ejercicio;
+
+        foreach ($request->saldos as $saldoData) {
+            \App\Models\BalanceGeneralSaldoInicial::updateOrCreate([
+                'id_empresa' => $idEmpresa,
+                'config_id' => $saldoData['config_id'],
+                'ejercicio' => $ejercicio,
+            ], [
+                'fecha_inicio' => $saldoData['fecha_inicio'],
+                'monto' => $saldoData['monto'],
+            ]);
+        }
+
+        return response()->json(['success' => true, 'message' => 'Saldos iniciales guardados correctamente.']);
+    }
+
+    public function export_balance_general_excel(Request $request, \App\Services\BalanceGeneralService $service)
+    {
+        $idEmpresa = auth()->user()->id_empresa;
+        $fechaCorte = $request->input('fecha_corte', now()->format('Y-m-d'));
+        $balance = $service->calculate($idEmpresa, $fechaCorte);
+
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Exports\BalanceGeneralExport($balance, $fechaCorte),
+            'Balance_General_' . $fechaCorte . '.xlsx'
+        );
+    }
+
+    public function export_balance_general_pdf(Request $request, \App\Services\BalanceGeneralService $service)
+    {
+        $idEmpresa = auth()->user()->id_empresa;
+        $fechaCorte = $request->input('fecha_corte', now()->format('Y-m-d'));
+        $balance = $service->calculate($idEmpresa, $fechaCorte);
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('reporteria.balance_general.pdf', compact('balance', 'fechaCorte'));
+        return $pdf->download('Balance_General_' . $fechaCorte . '.pdf');
+    }
 }
+

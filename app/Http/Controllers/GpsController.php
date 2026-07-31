@@ -33,14 +33,24 @@ public function obtenerUbicacionByImei(Request $request, UbicacionService $ubica
     if (is_array($items) && count($items) > 0) {
         $result = $ubicacionService->obtenerUbicacionPorItems($items);
 
+        $config = \App\Models\RastreoIntervals::where('task_name', 'rastreo_gps_interval')->first();
+
+        // Inject configuration into result envelope
+        $responseEnvelope = [
+            'success' => true,
+            'alerta_distancia' => $config ? (bool)$config->alerta_distancia : false,
+            'metros_alerta' => $config ? (int)$config->metros_alerta : 50,
+            'data' => $result
+        ];
+
         Log::info('RASTREO TOTAL REQUEST ITEMS', [
             'items_recibidos' => count($items),
-            'total_resultado' => is_countable($result) ? count($result) : 0,
+            'total_resultado' => count($result),
             'ms' => round((microtime(true) - $inicioTotal) * 1000, 2),
             'segundos' => round(microtime(true) - $inicioTotal, 2),
         ]);
 
-        return response()->json($result);
+        return response()->json($responseEnvelope);
     }
 
     $imeis = $request->input('imeis', []);

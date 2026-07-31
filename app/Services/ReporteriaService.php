@@ -63,7 +63,8 @@ class ReporteriaService
                 'a.fecha_inicio',
                 'a.fecha_fin',
                 DB::raw('DATEDIFF(a.fecha_fin, a.fecha_inicio) as tiempo_viaje'),
-                'c.referencia_full'
+                'c.referencia_full',
+                'c.estatus_planeacion'
             )
             ->get();
 
@@ -160,7 +161,7 @@ class ReporteriaService
                 "viajeTermina" => $d->fecha_fin,
                 "tiempoViaje" => $d->tiempo_viaje,
                 "gastosDiferidos" => $gastosDiferidos,
-                "estatusViaje" => $d->estatus,
+                "estatusViaje" => ($d->estatus === 'Aprobada' && $d->estatus_planeacion == 1) ? 'Planeada' : $d->estatus,
                 "estatusPago" => $d->estatus_pago == 1 ? 'Pagado' : 'Por Cobrar',
                 "utilidad" => ($d->total + $sumGastosExtra) - ($pagoOperacion + $sumGastosExtra + $sumGastosOperador + $gastosDiferidos),
                 "detalleGastos" => $detalleGastos,

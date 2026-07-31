@@ -28,6 +28,7 @@ const ItemsSelects = [];
 let rastreoActivo = false;
 let requestEnCurso = false;
 let timeoutRastreo = null;
+let cargandoRastreoInicial = false;
 
 const INTERVALO_RASTREO = 30000;
 
@@ -97,6 +98,17 @@ async function cargarinicial() {
     if (cargandoRastreo) return;
 
     cargandoRastreo = true;
+
+    if (typeof Swal !== "undefined") {
+        Swal.fire({
+            title: "Cargando...",
+            html: "<strong>Obteniendo información de dispositivos GPS...</strong><br>Por favor espere.",
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+    }
 
     try {
         const params = new URLSearchParams();
@@ -199,14 +211,22 @@ async function cargarinicial() {
         console.error("Error al traer coordenadas:", error);
     } finally {
         cargandoRastreo = false;
+        if (typeof Swal !== "undefined" && Swal.isVisible()) {
+            Swal.close();
+        }
     }
 }
-$("#filtroFechaSalida").on("change", async function () {
-    await cargarinicial();
-    aplicarFiltrosPanel();
-    limpiarMapa();
+let debounceTimerFechaSalida;
+$("#filtroFechaSalida").on("input change", function () {
+    clearTimeout(debounceTimerFechaSalida);
+    debounceTimerFechaSalida = setTimeout(async function () {
+        await cargarinicial();
+        aplicarFiltrosPanel();
+        limpiarMapa();
+    }, 800);
 });
 $("#btnLimpiarFechaSalida").on("click", async function () {
+    clearTimeout(debounceTimerFechaSalida);
     $("#filtroFechaSalida").val("");
 
     await cargarinicial();
@@ -2144,6 +2164,139 @@ function initMap() {
         gestureHandling: "greedy",
         scrollwheel: true,
     });
+
+    agregarBuscadorMapa(map);
+}
+
+function agregarBuscadorMapa(map) {
+    const searchContainer = document.createElement("div");
+    searchContainer.style.margin = "10px";
+    searchContainer.style.position = "relative";
+    searchContainer.style.zIndex = "1000";
+
+    const input = document.createElement("input");
+    input.type = "text";
+    input.placeholder = "🔍 Buscar equipo/contenedor en mapa...";
+    input.style.width = "260px";
+    input.style.height = "38px";
+    input.style.padding = "0 10px 0 12px";
+    input.style.borderRadius = "8px";
+    input.style.border = "1px solid #ccc";
+    input.style.boxShadow = "0 2px 6px rgba(0,0,0,0.3)";
+    input.style.fontSize = "13px";
+    input.style.outline = "none";
+    input.style.backgroundColor = "#fff";
+    input.style.color = "#333";
+    
+    searchContainer.appendChild(input);
+
+    const dropdown = document.createElement("div");
+    dropdown.style.position = "absolute";
+    dropdown.style.top = "42px";
+    dropdown.style.left = "0";
+    dropdown.style.width = "260px";
+    dropdown.style.backgroundColor = "#fff";
+    dropdown.style.border = "1px solid #ccc";
+    dropdown.style.borderRadius = "8px";
+    dropdown.style.boxShadow = "0 4px 8px rgba(0,0,0,0.15)";
+    dropdown.style.maxHeight = "200px";
+    dropdown.style.overflowY = "auto";
+    dropdown.style.display = "none";
+    dropdown.style.zIndex = "1001";
+    searchContainer.appendChild(dropdown);
+
+    input.addEventListener("input", function() {
+        const query = this.value.trim().toLowerCase();
+        dropdown.innerHTML = "";
+
+        if (query.length < 2) {
+            dropdown.style.display = "none";
+            return;
+        }
+
+        const matchingMarkers = [];
+        Object.entries(markers).forEach(([key, marker]) => {
+            if (!marker || !marker.getPosition()) return;
+
+            const textToMatch = [
+                marker.contenedor || "",
+                marker.imei || "",
+                marker.tipoEquipo || "",
+                marker.dataItem?.placas || "",
+                marker.dataItem?.marca || "",
+                marker.dataItem?.id_equipo || "",
+                marker.dataItem?.economico || "",
+                marker.dataItem?.alias || "",
+                marker.dataItem?.contenedor || "",
+                marker.dataItem?.EquipoBD || "",
+                marker.dataItem?.equipo || "",
+                key
+            ].join(" ").toLowerCase();
+
+            if (textToMatch.includes(query)) {
+                matchingMarkers.push({
+                    key: key,
+                    marker: marker,
+                    label: marker.contenedor || marker.imei || key.split("|")[1] || "Dispositivo"
+                });
+            }
+        });
+
+        if (matchingMarkers.length === 0) {
+            const noResults = document.createElement("div");
+            noResults.textContent = "Sin coincidencias en el mapa";
+            noResults.style.padding = "8px 12px";
+            noResults.style.color = "#777";
+            noResults.style.fontSize = "12px";
+            dropdown.appendChild(noResults);
+            dropdown.style.display = "block";
+            return;
+        }
+
+        matchingMarkers.forEach(item => {
+            const row = document.createElement("div");
+            let infoAdicional = "";
+            if (item.marker.dataItem?.placas) {
+                infoAdicional += ` | Placas: ${item.marker.dataItem.placas}`;
+            }
+            if (item.marker.dataItem?.id_equipo) {
+                infoAdicional += ` | Eco: ${item.marker.dataItem.id_equipo}`;
+            }
+            row.textContent = `📍 ${item.label} (${item.marker.tipoEquipo || 'Dispositivo'}${infoAdicional})`;
+            row.style.padding = "8px 12px";
+            row.style.cursor = "pointer";
+            row.style.fontSize = "12px";
+            row.style.borderBottom = "1px solid #f0f0f0";
+            
+            row.addEventListener("mouseover", () => {
+                row.style.backgroundColor = "#f5f5f5";
+            });
+            row.addEventListener("mouseout", () => {
+                row.style.backgroundColor = "#fff";
+            });
+
+            row.addEventListener("click", () => {
+                const pos = item.marker.getPosition();
+                map.panTo(pos);
+                map.setZoom(15);
+                google.maps.event.trigger(item.marker, 'click');
+                dropdown.style.display = "none";
+                input.value = item.label;
+            });
+
+            dropdown.appendChild(row);
+        });
+
+        dropdown.style.display = "block";
+    });
+
+    document.addEventListener("click", function(e) {
+        if (!searchContainer.contains(e.target)) {
+            dropdown.style.display = "none";
+        }
+    });
+
+    map.controls[google.maps.ControlPosition.TOP_CENTER].push(searchContainer);
 }
 
 function getRandomColor() {
@@ -3104,8 +3257,13 @@ function actualizarUbicacion(
         let lnglocal = "";
         let idConvoyOContenedor = "";
 
-        latlocal = parseFloat(item.ubicacion.lat);
-        lnglocal = parseFloat(item.ubicacion.lng);
+        latlocal = parseFloat(item.ubicacion?.lat);
+        lnglocal = parseFloat(item.ubicacion?.lng);
+
+        if (isNaN(latlocal) || isNaN(lnglocal) || latlocal === 0 || lnglocal === 0) {
+            console.warn("Ubicación omitida por coordenadas inválidas (0,0):", item.value);
+            return;
+        }
 
         idConvoyOContenedor = item.id_contenendor;
 
@@ -3321,6 +3479,12 @@ function actualizarUbicacion(
                 );
 
                 map.fitBounds(bounds);
+
+                const boundsListener = google.maps.event.addListenerOnce(map, 'idle', function() {
+                    if (map.getZoom() > 7) {
+                        map.setZoom(7);
+                    }
+                });
 
                 mapaAjustado = true;
             }
@@ -3632,6 +3796,7 @@ function iniciarRastreo() {
     }
 
     intervaloRastreo = setInterval(buscarUbicaciones, 8000);
+    cargandoRastreoInicial = true;
     buscarUbicaciones();
 }
 function toggleTodos(estado) {
@@ -3672,6 +3837,70 @@ function mapIconGps(icono) {
 
     return `/assets/icons/${icono}`;
 }
+let floatingDetailPanel = null;
+
+function esPantallaCompleta() {
+    return !!(
+        document.fullscreenElement ||
+        document.webkitFullscreenElement ||
+        document.mozFullScreenElement ||
+        document.msFullscreenElement
+    );
+}
+
+function asegurarPanelDetallesFlotante() {
+    if (floatingDetailPanel) return;
+
+    floatingDetailPanel = document.createElement("div");
+    floatingDetailPanel.id = "mapFloatingDetailsPanel";
+    floatingDetailPanel.style.margin = "10px";
+    floatingDetailPanel.style.width = "340px";
+    floatingDetailPanel.style.maxHeight = "500px";
+    floatingDetailPanel.style.backgroundColor = "rgba(255, 255, 255, 0.98)";
+    floatingDetailPanel.style.border = "2px solid #0d6efd";
+    floatingDetailPanel.style.borderRadius = "12px";
+    floatingDetailPanel.style.boxShadow = "0 8px 32px rgba(0, 0, 0, 0.25)";
+    floatingDetailPanel.style.padding = "16px";
+    floatingDetailPanel.style.overflowY = "auto";
+    floatingDetailPanel.style.zIndex = "1002";
+    floatingDetailPanel.style.display = "none";
+    floatingDetailPanel.style.fontFamily = "Arial, sans-serif";
+
+    // Close button
+    const closeBtn = document.createElement("button");
+    closeBtn.innerHTML = "&times;";
+    closeBtn.style.position = "absolute";
+    closeBtn.style.top = "4px";
+    closeBtn.style.right = "10px";
+    closeBtn.style.background = "none";
+    closeBtn.style.border = "none";
+    closeBtn.style.fontSize = "28px";
+    closeBtn.style.cursor = "pointer";
+    closeBtn.style.color = "#dc3545";
+    closeBtn.style.lineHeight = "1";
+    closeBtn.addEventListener("click", () => {
+        floatingDetailPanel.style.display = "none";
+    });
+    floatingDetailPanel.appendChild(closeBtn);
+
+    // Content container
+    const content = document.createElement("div");
+    content.id = "mapFloatingDetailsContent";
+    floatingDetailPanel.appendChild(content);
+
+    map.controls[google.maps.ControlPosition.RIGHT_TOP].push(floatingDetailPanel);
+
+    const handleFullscreenChange = () => {
+        if (!esPantallaCompleta() && floatingDetailPanel) {
+            floatingDetailPanel.style.display = "none";
+        }
+    };
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    document.addEventListener("webkitfullscreenchange", handleFullscreenChange);
+    document.addEventListener("mozfullscreenchange", handleFullscreenChange);
+    document.addEventListener("MSFullscreenChange", handleFullscreenChange);
+}
+
 function mostrarInfoConvoy(contenedores, equipo, chasis) {
     const tabs = document.getElementById("contenedorTabs");
     const content = document.getElementById("contenedorTabsContent");
@@ -3679,6 +3908,98 @@ function mostrarInfoConvoy(contenedores, equipo, chasis) {
     tabs.innerHTML = "";
     content.innerHTML = "";
     let info = "";
+
+    // Generate floating panel content
+    asegurarPanelDetallesFlotante();
+    const floatContent = document.getElementById("mapFloatingDetailsContent");
+    if (floatContent) {
+        let floatHTML = `
+            <div style="font-family: Arial, sans-serif; font-size: 13px; color: #333; padding-right: 15px;">
+                <h4 style="margin: 0 0 12px 0; font-size: 16px; font-weight: bold; border-bottom: 2px solid #0d6efd; padding-bottom: 6px; color: #0d6efd;">
+                    ${equipo ? 'Equipo: ' + equipo : 'Detalles de Contenedor'}
+                </h4>
+        `;
+
+        contenedores.forEach((contenedor) => {
+            let tabId = contenedor.num_contenedor || contenedor.contenedor;
+            let containerInfo = contenedoresDisponiblesAll.find(
+                (d) => d.contenedor === tabId
+            );
+            if (!containerInfo) {
+                containerInfo = contenedoresDisponiblesAll.find(
+                    (d) => d.contenedor === contenedor.contenedor
+                );
+            }
+            if (!containerInfo) return;
+
+            let tieneDato = (v) => v !== null && v !== undefined && String(v).trim() !== "" && String(v).trim().toLowerCase() !== "null";
+            let valor = (v) => tieneDato(v) ? String(v).trim() : "S/N";
+
+            floatHTML += `
+                <div style="background: #f8f9fa; border-left: 5px solid #0d6efd; padding: 10px; border-radius: 8px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-top: 1px solid #ddd; border-right: 1px solid #ddd; border-bottom: 1px solid #ddd;">
+                    <div style="font-size: 15px; font-weight: bold; color: #0d6efd; margin-bottom: 8px; border-bottom: 1px dashed #ccc; padding-bottom: 4px;">
+                        📦 Contenedor: ${tabId}
+                    </div>
+                    <div style="margin-bottom: 5px; font-size: 13px;"><strong>Cliente:</strong> ${valor(containerInfo.cliente)}</div>
+                    <div style="margin-bottom: 5px; font-size: 13px;"><strong>Origen:</strong> ${valor(containerInfo.origen)}</div>
+                    <div style="margin-bottom: 5px; font-size: 13px;"><strong>Destino:</strong> ${valor(containerInfo.destino)}</div>
+                    <div style="margin-bottom: 5px; font-size: 13px;"><strong>Proveedor:</strong> ${valor(containerInfo.empresa)}</div>
+                    <div style="margin-bottom: 5px; font-size: 13px;"><strong>Transportista:</strong> ${valor(containerInfo.transportista_nombre)}</div>
+                    <div style="margin-bottom: 5px; font-size: 13px;"><strong>Operador:</strong> ${valor(containerInfo.operador)}</div>
+                    
+                    <div style="margin-top: 10px; display: grid; gap: 8px;">
+            `;
+
+            // Tracto
+            if (tieneDato(containerInfo.imei_gps) || tieneDato(containerInfo.id_equipo)) {
+                floatHTML += `
+                    <div style="background: #fff; border: 1px solid #fd7e14; border-radius: 8px; padding: 8px; font-size: 12px; border-left: 4px solid #fd7e14;">
+                        <div style="font-weight: bold; color: #fd7e14; font-size: 13px; margin-bottom: 4px;">🚛 TRACTO</div>
+                        <div style="margin-bottom: 2px;"><strong>IMEI:</strong> <span style="font-family: monospace; font-weight: bold;">${valor(containerInfo.imei_gps)}</span></div>
+                        <div style="margin-bottom: 2px;"><strong>Equipo:</strong> ${valor(containerInfo.id_equipo)}</div>
+                        <div><strong>Placas:</strong> ${valor(containerInfo.placas)}</div>
+                    </div>
+                `;
+            }
+
+            // Chasis A
+            if (tieneDato(containerInfo.imei_chasis) || tieneDato(containerInfo.id_equipo_chasis)) {
+                floatHTML += `
+                    <div style="background: #fff; border: 1px solid #28a745; border-radius: 8px; padding: 8px; font-size: 12px; border-left: 4px solid #28a745;">
+                        <div style="font-weight: bold; color: #28a745; font-size: 13px; margin-bottom: 4px;">🚛 CHASIS A</div>
+                        <div style="margin-bottom: 2px;"><strong>IMEI:</strong> <span style="font-family: monospace; font-weight: bold;">${valor(containerInfo.imei_chasis)}</span></div>
+                        <div style="margin-bottom: 2px;"><strong>Equipo:</strong> ${valor(containerInfo.id_equipo_chasis)}</div>
+                        <div><strong>Placas:</strong> ${valor(containerInfo.placas_chasis)}</div>
+                    </div>
+                `;
+            }
+
+            // Chasis B
+            if (tieneDato(containerInfo.imei_chasis_b) || tieneDato(containerInfo.id_equipo_chasis_b)) {
+                floatHTML += `
+                    <div style="background: #fff; border: 1px solid #17a2b8; border-radius: 8px; padding: 8px; font-size: 12px; border-left: 4px solid #17a2b8;">
+                        <div style="font-weight: bold; color: #17a2b8; font-size: 13px; margin-bottom: 4px;">🚛 CHASIS B</div>
+                        <div style="margin-bottom: 2px;"><strong>IMEI:</strong> <span style="font-family: monospace; font-weight: bold;">${valor(containerInfo.imei_chasis_b)}</span></div>
+                        <div style="margin-bottom: 2px;"><strong>Equipo:</strong> ${valor(containerInfo.id_equipo_chasis_b)}</div>
+                        <div><strong>Placas:</strong> ${valor(containerInfo.placas_chasis_b)}</div>
+                    </div>
+                `;
+            }
+
+            floatHTML += `
+                    </div>
+                </div>
+            `;
+        });
+
+        floatHTML += `</div>`;
+        floatContent.innerHTML = floatHTML;
+        if (esPantallaCompleta()) {
+            floatingDetailPanel.style.display = "block";
+        } else {
+            floatingDetailPanel.style.display = "none";
+        }
+    }
 
     contenedores.forEach((contenedor, index) => {
         let tabId = contenedor.num_contenedor;
@@ -4219,10 +4540,12 @@ max-width: 100%;
         }
     });
 
-    const modal = new bootstrap.Modal(
-        document.getElementById("modalInfoViaje"),
-    );
-    modal.show();
+    if (!esPantallaCompleta()) {
+        const modal = new bootstrap.Modal(
+            document.getElementById("modalInfoViaje"),
+        );
+        modal.show();
+    }
 }
 function crearurlmapalatitudlongitud(lat, lng) {
     return `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
@@ -4546,13 +4869,27 @@ $("#filtroEmpresa").on("change", function () {
     aplicarFiltrosPanel();
 });
 
+$(document).ready(function() {
+    $("#filtroTipo, #filtroLineaT, #filtrocliente, #buscadorGeneral").each(function() {
+        $(this).data("prevValue", $(this).val() || "");
+    });
+});
+
 $("#filtroTipo,#filtroLineaT,#filtrocliente,#buscadorGeneral").on(
     "change keyup",
-    function () {
+    function (e) {
         let selector = "#" + $(this).attr("id");
-        let valor = $(this).val();
-        cambiofiltros(selector, valor);
-        //aplicarFiltrosPanel();
+        let valorAnterior = $(this).data("prevValue");
+        if (valorAnterior === undefined) {
+            valorAnterior = $(this).val() || "";
+        }
+        let valorNuevo = $(this).val() || "";
+
+        if (e.type === "keyup" && valorNuevo === valorAnterior) {
+            return;
+        }
+
+        cambiofiltros(selector, valorAnterior);
     },
 );
 
@@ -4596,6 +4933,20 @@ function buscarUbicaciones() {
         return Promise.resolve();
     }
 
+    if (cargandoRastreoInicial) {
+        cargandoRastreoInicial = false;
+        if (typeof Swal !== "undefined") {
+            Swal.fire({
+                title: "Buscando dispositivos...",
+                html: "<strong>Obteniendo información de dispositivos GPS...</strong><br>Por favor espere.",
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+        }
+    }
+
     return fetch("/coordenadas/ubicacion-vehiculo", {
         method: "POST",
         headers: {
@@ -4608,12 +4959,18 @@ function buscarUbicaciones() {
     })
         .then((res) => res.json())
         .then((data) => {
+            if (typeof Swal !== "undefined" && Swal.isVisible()) {
+                Swal.close();
+            }
             actualizarEstadosPanel(data);
             actualizarUbicacion(data, "Equipo", "all", 0, map, 0, 0);
 
             return data;
         })
         .catch((err) => {
+            if (typeof Swal !== "undefined" && Swal.isVisible()) {
+                Swal.close();
+            }
             console.error(err);
             throw err;
         });
@@ -5188,6 +5545,7 @@ function iniciarRastreo() {
     if (rastreoActivo) return;
 
     rastreoActivo = true;
+    cargandoRastreoInicial = true;
 
     ejecutarRastreo();
 }
@@ -5530,13 +5888,24 @@ function cambiofiltros(input, valorAnterior) {
         }).then((result) => {
             if (result.isConfirmed) {
                 limpiarMapa();
+                const toggle = document.getElementById("toggleTodos");
+                if (toggle && toggle.checked) {
+                    toggle.checked = false;
+                    const label = document.getElementById("labelToggle");
+                    if (label) {
+                        label.textContent = label.textContent.includes("Todos") ? "Mostrar Todos" : "Mostrar todos";
+                    }
+                }
                 aplicarFiltrosPanel();
+                $(input).data("prevValue", $(input).val() || "");
             } else {
                 $(input).val(valorAnterior);
+                $(input).data("prevValue", valorAnterior);
             }
         });
     } else {
         aplicarFiltrosPanel();
+        $(input).data("prevValue", $(input).val() || "");
     }
 }
 

@@ -831,6 +831,7 @@ private function consultarWialonGrupo(
         );
 
         $itemsWialon = $data?->data['items'] ?? [];
+               // dd($itemsWialon);
 
 
         $indexado = collect($itemsWialon)->mapWithKeys(function ($item) {
@@ -1365,7 +1366,7 @@ private function formatearResultadoGps(array $item, array $responseGps): array
 public function consultarEquiposGps(array $items): array
 {
 
-log::info('Preparando grupos para consulta GPS', [
+log::info('Preparando grupos equipos para consulta GPS', [
     'items' => $items,
 ]);
     $grupos = [];
