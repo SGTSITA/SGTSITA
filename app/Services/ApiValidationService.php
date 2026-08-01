@@ -62,35 +62,57 @@ class ApiValidationService
     public function validateOperador(array $data)
     {
         if (isset($data['contrasena'])) {
-            $nombre = $data['nombre'];
-            $telefono = $data['telefono'];
-            $contrasena = $data['contrasena'];
+          $nombre = $data['nombre'];
+$telefono = $data['telefono'];
+$contrasena = $data['contrasena'];
 
-            $reqTelefono = preg_replace('/\D/', '', $telefono);
-            $operadores = Operador::all();
-            $operador = $operadores->first(function($op) use ($reqTelefono) {
-                return preg_replace('/\D/', '', $op->telefono) === $reqTelefono;
-            });
+$reqTelefono = preg_replace('/\D/', '', $telefono);
 
-            if (!$operador) {
-                return ['success' => false, 'message' => 'Operador no registrado.', 'data' => [], 'status' => 404];
-            }
+// Buscar la asignación por la contraseña temporal
+$asignacion = Asignaciones::with(['Camion', 'Operador'])
+    ->where('password_temporal', $contrasena)
+    ->first();
 
-            if (stripos($operador->nombre, trim($nombre)) === false && stripos(trim($nombre), $operador->nombre) === false) {
-                return ['success' => false, 'message' => 'El nombre del operador no coincide.', 'data' => [], 'status' => 400];
-            }
+if (!$asignacion) {
+    return [
+        'success' => false,
+        'message' => 'Contraseña incorrecta o no hay viaje asignado con esa contraseña.',
+        'data' => [],
+        'status' => 400
+    ];
+}
 
-            $asignacion = Asignaciones::with(['Camion'])
-                ->where('id_operador', $operador->id)
-                ->where('password_temporal', $contrasena)
-                ->first();
+// Obtener el operador de esa asignación
+$operador = $asignacion->Operador;
 
-            if (!$asignacion) {
-                return ['success' => false, 'message' => 'Contraseña incorrecta o no hay viaje asignado con esa contraseña.', 'data' => [], 'status' => 400];
-            }
+// Validar teléfono
+if (preg_replace('/\D/', '', $operador->telefono) !== $reqTelefono) {
+    return [
+        'success' => false,
+        'message' => 'El teléfono no corresponde a la asignación.',
+        'data' => [],
+        'status' => 400
+    ];
+}
 
-            $contenedor = DocumCotizacion::find($asignacion->id_contenedor);
-            $camion = $asignacion->Camion;
+// Validar nombre
+$nombreBDClean = $this->normalizarTexto($operador->nombre);
+$nombreAppClean = $this->normalizarTexto($nombre);
+
+if (
+    stripos($nombreBDClean, $nombreAppClean) === false &&
+    stripos($nombreAppClean, $nombreBDClean) === false
+) {
+    return [
+        'success' => false,
+        'message' => 'El nombre del operador no coincide.',
+        'data' => [],
+        'status' => 400
+    ];
+}
+
+$contenedor = DocumCotizacion::find($asignacion->id_contenedor);
+$camion = $asignacion->Camion;
 
             return [
                 'success' => true,
@@ -108,90 +130,24 @@ class ApiValidationService
                 ],
                 'status' => 200
             ];
-        } else {
-            $nombre = $data['nombre'];
-            $telefono = $data['telefono'];
-            $unidad = $data['unidad'];
-            $contenedorNum = $data['contenedor'];
-
-            $contenedor = DocumCotizacion::where('num_contenedor', $contenedorNum)->first();
-            if (!$contenedor) {
-                return ['success' => false, 'message' => 'Contenedor no registrado en cotizaciones.', 'data' => [], 'status' => 404];
-            }
-
-            $asignacion = Asignaciones::with(['Operador', 'Camion'])
-                ->where('id_contenedor', $contenedor->id)
-                ->first();
-
-            if (!$asignacion) {
-                return [
-                    'success' => false,
-                    'message' => 'El viaje/asignación no existe para este contenedor.',
-                    'data' => ['id_contenedor' => $contenedor->id],
-                    'status' => 404
-                ];
-            }
-
-            $camion = $asignacion->Camion;
-            if (!$camion || strtolower(trim($camion->id_equipo)) !== strtolower(trim($unidad))) {
-                return [
-                    'success' => false,
-                    'message' => 'La unidad no coincide con el viaje asignado.',
-                    'data' => [
-                        'id_contenedor' => $contenedor->id,
-                        'unidad_asignada' => $camion ? $camion->id_equipo : 'Ninguna'
-                    ],
-                    'status' => 400
-                ];
-            }
-
-            $operador = $asignacion->Operador;
-            if (!$operador) {
-                return [
-                    'success' => false,
-                    'message' => 'No hay operador asignado a este viaje.',
-                    'data' => ['id_contenedor' => $contenedor->id],
-                    'status' => 400
-                ];
-            }
-
-            if (stripos($operador->nombre, trim($nombre)) === false && stripos(trim($nombre), $operador->nombre) === false) {
-                return [
-                    'success' => false,
-                    'message' => 'El nombre del operador no coincide con el viaje asignado.',
-                    'data' => ['id_contenedor' => $contenedor->id],
-                    'status' => 400
-                ];
-            }
-
-            $reqTelefono = preg_replace('/\D/', '', $telefono);
-            $dbTelefono = preg_replace('/\D/', '', $operador->telefono);
-            if ($reqTelefono !== $dbTelefono) {
-                return [
-                    'success' => false,
-                    'message' => 'El teléfono no coincide con el operador asignado.',
-                    'data' => ['id_contenedor' => $contenedor->id],
-                    'status' => 400
-                ];
-            }
-
-            return [
-                'success' => true,
-                'message' => 'Operador y viaje validados correctamente para ingresar operador.',
-                'data' => [
-                    'id_contenedor' => $contenedor->id,
-                    'id_operador'   => $operador->id,
-                    'id_asignacion' => $asignacion->id,
-                    'nombre'        => $operador->nombre,
-                    'num_contenedor' => $contenedor->num_contenedor,
-                    'unidad'        => $camion->id_equipo,
-                    'telefono'      => $operador->telefono,
-                    'token'         => 'operador_session_' . $operador->id,
-                    'id_equipo'     => $camion->id_equipo,
-                ],
-                'status' => 200
-            ];
         }
+    }
+
+    function normalizarTexto($texto) {
+        // Convertir a minúsculas
+        $texto = mb_strtolower(trim($texto), 'UTF-8');
+
+        // Reemplazar tildes/acentos
+        $buscar   = array('á','é','í','ó','ú','ä','ë','ï','ö','ü','à','è','ì','ò','ù');
+        $reemplazar = array('a','e','i','o','u','a','e','i','o','u','a','e','i','o','u');
+        $texto = str_replace($buscar, $reemplazar, $texto);
+
+        // Normalizar la Ñ (opcional, si quieres que 'ñ' sea igual a 'n')
+        // $texto = str_replace('ñ', 'n', $texto);
+        // Reemplazar múltiples espacios internos por uno solo
+        $texto = preg_replace('/\s+/', ' ', $texto);
+
+        return $texto;
     }
 
     public function getOperacionActiva($user, $empresaId)
@@ -1188,7 +1144,7 @@ class ApiValidationService
         $request = new \Illuminate\Http\Request($data);
         $planeacionController = app(\App\Http\Controllers\PlaneacionController::class);
         $response = $planeacionController->asignacionElemental($request);
-        
+
         $resData = json_decode($response->getContent(), true) ?? [];
         $resData['status'] = $response->getStatusCode();
 
