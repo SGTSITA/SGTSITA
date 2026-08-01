@@ -826,6 +826,16 @@ foreach ($cotizacionesCreadas as $cotizacion) {
 
     public function storeMultiple(Request $request)
     {
+        $lockKey = 'store_multiple_' . auth()->id();
+        $lock = \Illuminate\Support\Facades\Cache::lock($lockKey, 10);
+        if (!$lock->get()) {
+            return response()->json([
+                "Titulo" => "Proceso en curso",
+                "Mensaje" => "Ya se está procesando una solicitud. Por favor espere unos segundos.",
+                "TMensaje" => "warning"
+            ]);
+        }
+
         try {
             DB::beginTransaction();
             $contenedores = $request->contenedores;
@@ -997,6 +1007,8 @@ else{
             DB::rollback();
             Log::channel('daily')->info($t->getMessage());
             return response()->json(["Titulo" => "Ocurrion un error", "Mensaje" => "Ocurrio un error mientras procesabamos su solicitud. ".$t->getMessage(), "TMensaje" => "error"]);
+        } finally {
+            $lock->release();
         }
     }
 
@@ -3312,7 +3324,12 @@ $this->procesarDocumento(
     public function adjuntarDocumentos(Request $r)
     {
         $id_cot = null;
-        Log::channel('daily')->info('inicio adjuntar documentos');
+        Log::channel('daily')->info('--- INICIO ADJUNTAR DOCUMENTOS ---');
+        Log::channel('daily')->info('Parámetros recibidos en la request:', [
+            'numContenedor' => $r->numContenedor,
+            'urlRepo' => $r->urlRepo,
+            'folio' => $r->folio
+        ]);
 
         $requiereFolio = in_array($r->urlRepo, ['BoletaLib', 'Doda', 'PreAlta']);
         $esCliente = auth()->user()->id_cliente != 0;
@@ -3356,39 +3373,70 @@ $this->procesarDocumento(
             })
             ->first();
 
-
-        $id_cot = $cotizacion->id;
-        // Log::channel('daily')->info('Ids confirmar', ['cotizacionRequest' =>$id_cot  , 'cotizacionEncontrada' => $cotizacion->cotizacion_id ?? null ]);
-
-        // dd($cotizacion);
-
-        $idDocum = $cotizacion->docCotizacion->id;
-
-
-
-        $tipoViajecontenedor = $cotizacion->tipo_viaje_seleccion;
+        Log::channel('daily')->info('Búsqueda de cotización finalizada.', [
+            'cotizacion_encontrada' => !is_null($cotizacion),
+            'id_cotizacion' => !is_null($cotizacion) ? $cotizacion->id : null
+        ]);
 
         if (is_null($cotizacion)) {
+            Log::channel('daily')->error('No se pudo encontrar ninguna cotización con el contenedor: ' . $r->numContenedor);
             $upload['hasWarnings'] = true;
             $upload['warnings'] = ['Guarde los datos del viaje antes de cargar archivos'];
             return response()->json($upload);
             exit;
         }
 
+        $id_cot = $cotizacion->id;
+        
+        if (is_null($cotizacion->docCotizacion)) {
+            Log::channel('daily')->error('La cotización encontrada (ID: ' . $id_cot . ') no tiene un registro asociado en docum_cotizacion.');
+            $upload['hasWarnings'] = true;
+            $upload['warnings'] = ['No se encontraron registros de documentos para esta cotización'];
+            return response()->json($upload);
+            exit;
+        }
+
+        $idDocum = $cotizacion->docCotizacion->id;
+        $tipoViajecontenedor = $cotizacion->tipo_viaje_seleccion;
         $estatus = $cotizacion->estatus;
 
         $directorio =  public_path().'/cotizaciones/cotizacion'.$id_cot;
+        Log::channel('daily')->info('Verificando directorio de destino:', [
+            'ruta' => $directorio,
+            'existe' => is_dir($directorio)
+        ]);
+
         if (!is_dir($directorio)) {
-            mkdir($directorio);
+            $creado = mkdir($directorio, 0755, true);
+            Log::channel('daily')->info('Creando directorio de cotización...', [
+                'ruta' => $directorio,
+                'resultado_mkdir' => $creado
+            ]);
         }
+
         $FileUploader = new FileUploader('files', array(
-        'uploadDir' => public_path()."/cotizaciones/cotizacion$id_cot/",
+            'uploadDir' => public_path()."/cotizaciones/cotizacion$id_cot/",
         ));
 
         // call to upload the files
+        Log::channel('daily')->info('Iniciando carga física con FileUploader...');
         $upload = $FileUploader->upload();
+        
+        Log::channel('daily')->info('Resultado del FileUploader:', [
+            'isSuccess' => $upload['isSuccess'] ?? false,
+            'hasWarnings' => $upload['hasWarnings'] ?? false,
+            'warnings' => $upload['warnings'] ?? []
+        ]);
+
         if ($upload['isSuccess']) {
             foreach ($upload['files'] as $key => $item) {
+                Log::channel('daily')->info('Archivo procesado por FileUploader:', [
+                    'name' => $item['name'],
+                    'old_name' => $item['old_name'],
+                    'size' => $item['size'],
+                    'extension' => $item['extension']
+                ]);
+
                 $upload['files'][$key] = array(
                     'extension' => $item['extension'],
                     'format' => $item['format'],
@@ -3403,66 +3451,74 @@ $this->procesarDocumento(
                     'opcion' => $r->urlRepo,
                     'num_doc'=> $r->folio
                 );
-
-                //$fileName = uniqid() . $item['name'];
-
-
-                } //end foreach
+            }
 
             $json = $upload['files'];
-            //   $upload['typeOfDocument'] = $r->urlRepo;
-           switch ($r->urlRepo) {
+            $update = [];
 
-    case 'BoletaLib':
-        $update = [
-            "boleta_liberacion" => $item['name'],
-        ];
-
-        if ($esCliente && !empty($r->folio)) {
-            $update["num_boleta_liberacion"] = $r->folio;
-        }
-        break;
-
-    case 'Doda':
-        $update = [
-            "doda" => $item['name'],
-        ];
-
-        if ($esCliente && !empty($r->folio)) {
-            $update["num_doda"] = $r->folio;
-        }
-        break;
-
-    case 'CartaPorte':
-        $update = [
-            "doc_ccp" => $item['name'],
-            "ccp" => "si"
-        ];
-        break;
-
-    case 'PreAlta':
-        $update = [
-            "img_boleta" => $item['name'],
-        ];
-
-        if ($esCliente && !empty($r->folio)) {
-             $update["fecha_boleta_vacio"] = $r->folio;
-        }
-        break;
-
-                case 'CartaPortePDF': $update = ["carta_porte" => $item['name']];
+            switch ($r->urlRepo) {
+                case 'BoletaLib':
+                    $update = [
+                        "boleta_liberacion" => $item['name'],
+                    ];
+                    if ($esCliente && !empty($r->folio)) {
+                        $update["num_boleta_liberacion"] = $r->folio;
+                    }
                     break;
-                case 'CartaPorteXML': $update = ["carta_porte_xml" => $item['name']];
-                    break;
-                case 'EIR': $update = ["doc_eir" => $item['name'], 'eir' => "si"];
-                    break;
-                case 'CCP': $update = ["doc_ccp" => $item['name'], 'ccp' => "si"];
-                    break;
-                case 'BoletaPatio': $update = ["boleta_patio" => $item['name']];
-                    break;
-                    case 'EvidenciaDescarga' :  $update = ["evidencia_descarga" => $item['name']];
 
+                case 'Doda':
+                    $update = [
+                        "doda" => $item['name'],
+                    ];
+                    if ($esCliente && !empty($r->folio)) {
+                        $update["num_doda"] = $r->folio;
+                    }
+                    break;
+
+                case 'CartaPorte':
+                    $update = [
+                        "doc_ccp" => $item['name'],
+                        "ccp" => "si"
+                    ];
+                    break;
+
+                case 'PreAlta':
+                    $update = [
+                        "img_boleta" => $item['name'],
+                    ];
+                    if ($esCliente && !empty($r->folio)) {
+                         $update["fecha_boleta_vacio"] = $r->folio;
+                    }
+                    break;
+
+                case 'CartaPortePDF': 
+                    $update = ["carta_porte" => $item['name']];
+                    break;
+                case 'CartaPorteXML': 
+                    $update = ["carta_porte_xml" => $item['name']];
+                    break;
+                case 'EIR': 
+                    $update = ["doc_eir" => $item['name'], 'eir' => "si"];
+                    break;
+                case 'CCP': 
+                    $update = ["doc_ccp" => $item['name'], 'ccp' => "si"];
+                    break;
+                case 'BoletaPatio': 
+                    $update = ["boleta_patio" => $item['name']];
+                    break;
+                case 'EvidenciaDescarga':  
+                    $update = ["evidencia_descarga" => $item['name']];
+                    break;
             }
+
+            Log::channel('daily')->info('Datos preparados para actualización en la base de datos:', [
+                'tabla_a_actualizar' => (
+                    $r->urlRepo != 'PreAlta' &&
+                    $r->urlRepo != 'CartaPortePDF' &&
+                    $r->urlRepo != 'CartaPorteXML'
+                ) ? 'docum_cotizacion' : 'cotizaciones',
+                'datos' => $update
+            ]);
 
             if (
                 $r->urlRepo != 'PreAlta' &&
@@ -3470,26 +3526,38 @@ $this->procesarDocumento(
                 $r->urlRepo != 'CartaPorteXML'
             ) {
                 $doc = DocumCotizacion::find($idDocum);
-
                 if ($doc) {
-                    $doc->update($update);
+                    $res = $doc->update($update);
+                    Log::channel('daily')->info('Resultado del update en DocumCotizacion:', [
+                        'idDocum' => $idDocum,
+                        'exito' => $res
+                    ]);
+                } else {
+                    Log::channel('daily')->error('No se pudo encontrar el registro de DocumCotizacion con ID: ' . $idDocum);
                 }
-
             } else {
                 $cot = Cotizaciones::find($id_cot);
-
                 if ($cot) {
-                    $cot->update($update);
+                    $res = $cot->update($update);
+                    Log::channel('daily')->info('Resultado del update en Cotizaciones:', [
+                        'id_cot' => $id_cot,
+                        'exito' => $res
+                    ]);
+                } else {
+                    Log::channel('daily')->error('No se pudo encontrar el registro de Cotizaciones con ID: ' . $id_cot);
                 }
             }
 
             if ($r->urlRepo == 'PreAlta') {
                 $doc = DocumCotizacion::find($idDocum);
-
                 if ($doc) {
                     $doc->boleta_vacio = 'si';
-$doc->fecha_boleta_vacio= $r->folio;
-                    $doc->save();
+                    $doc->fecha_boleta_vacio = $r->folio;
+                    $resSave = $doc->save();
+                    Log::channel('daily')->info('Guardado adicional para PreAlta en DocumCotizacion:', [
+                        'idDocum' => $idDocum,
+                        'exito' => $resSave
+                    ]);
                 }
             }
 
@@ -4294,6 +4362,16 @@ if ($cotizacion) {
     }
     public function storeMultiplelocal(Request $request)
     {
+        $lockKey = 'store_multiple_local_' . auth()->id();
+        $lock = \Illuminate\Support\Facades\Cache::lock($lockKey, 10);
+        if (!$lock->get()) {
+            return response()->json([
+                "Titulo" => "Proceso en curso",
+                "Mensaje" => "Ya se está procesando una solicitud de creación. Por favor espere unos segundos.",
+                "TMensaje" => "warning"
+            ]);
+        }
+
         try {
             DB::beginTransaction();
             $contenedores = $request->contenedores;
@@ -4449,6 +4527,8 @@ if ($cotizacion) {
             DB::rollback();
             Log::channel('daily')->info($t->getMessage());
             return response()->json(["Titulo" => "Ocurrion un error", "Mensaje" => "Ocurrio un error mientras procesabamos su solicitud. ".$t->getMessage(), "TMensaje" => "error"]);
+        } finally {
+            $lock->release();
         }
     }
 
