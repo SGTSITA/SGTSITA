@@ -740,45 +740,82 @@ function calcularTotal(modulo = "crear") {
     const field_estadia = fields.find((i) => i.field == "estadia");
     const field_maniobra = fields.find((i) => i.field == "maniobra");
 
-    const precio_viaje =
-        parseFloat(
-            reverseMoneyFormat(
-                document.getElementById(field_precio_viaje.id).value,
-            ),
-        ) || 0;
+    let fieldprecioviajes = document.getElementById(field_precio_viaje.id);
+    let fieldburreos = document.getElementById(field_burreo.id);
+    let fieldotros = document.getElementById(field_otro.id);
+    let fieldestadias = document.getElementById(field_estadia.id);
+    let fieldmaniobras = document.getElementById(field_maniobra.id);
 
-    const burreo =
-        parseFloat(
-            reverseMoneyFormat(document.getElementById(field_burreo.id).value),
-        ) || 0;
+    let precio_viaje = 0;
+    let burreo = 0;
+    let otro = 0;
+    let estadia = 0;
+    let maniobra = 0;
 
-    const otro =
-        parseFloat(
-            reverseMoneyFormat(document.getElementById(field_otro.id).value),
-        ) || 0;
+    if (fieldprecioviajes) {
+        precio_viaje =
+            parseFloat(
+                reverseMoneyFormat(
+                    document.getElementById(field_precio_viaje.id).value,
+                ),
+            ) || 0;
+    }
 
-    const estadia =
-        parseFloat(
-            reverseMoneyFormat(document.getElementById(field_estadia.id).value),
-        ) || 0;
+    if (fieldburreos) {
+        burreo =
+            parseFloat(
+                reverseMoneyFormat(
+                    document.getElementById(field_burreo.id).value,
+                ),
+            ) || 0;
+    }
 
-    const maniobra =
-        parseFloat(
-            reverseMoneyFormat(
-                document.getElementById(field_maniobra.id).value,
-            ),
-        ) || 0;
+    if (fieldotros) {
+        otro =
+            parseFloat(
+                reverseMoneyFormat(
+                    document.getElementById(field_otro.id).value,
+                ),
+            ) || 0;
+    }
 
-    const subTotal = precio_viaje + burreo + maniobra + estadia + otro;
+    if (fieldestadias) {
+        estadia =
+            parseFloat(
+                reverseMoneyFormat(
+                    document.getElementById(field_estadia.id).value,
+                ),
+            ) || 0;
+    }
+
+    if (fieldmaniobras) {
+        maniobra =
+            parseFloat(
+                reverseMoneyFormat(
+                    document.getElementById(field_maniobra.id).value,
+                ),
+            ) || 0;
+    }
+
+    const subTotal =
+        (precio_viaje ?? 0) +
+        (burreo ?? 0) +
+        (maniobra ?? 0) +
+        (estadia ?? 0) +
+        (otro ?? 0);
 
     const field_base_factura = fields.find((i) => i.field == "base_factura");
 
-    const baseFactura =
-        parseFloat(
-            reverseMoneyFormat(
-                document.getElementById(field_base_factura.id).value,
-            ),
-        ) || 0;
+    let fieldbasefacturas = document.getElementById(field_base_factura.id);
+    let baseFactura = 0;
+    if (fieldbasefacturas) {
+        baseFactura =
+            parseFloat(
+                reverseMoneyFormat(
+                    document.getElementById(field_base_factura.id).value,
+                ),
+            ) || 0;
+    }
 
     const iva = baseFactura * tasa_iva;
 
@@ -790,27 +827,31 @@ function calcularTotal(modulo = "crear") {
     const field_iva = fields.find((i) => i.field == "iva");
 
     const field_retencion = fields.find((i) => i.field == "retencion");
-
-    document.getElementById(field_iva.id).value = moneyFormat(iva);
-
+    let fielretencion = document.getElementById(field_retencion.id);
+    let fieldiva = document.getElementById(field_iva.id);
+    if (fieldiva) {
+        document.getElementById(field_iva.id).value = moneyFormat(iva);
+    }
     let retencion = 0;
 
     if (retAuto) {
         retencion = baseFactura * tasa_retencion;
 
-        document.getElementById(field_retencion.id).value =
-            moneyFormat(retencion);
-
-        document.getElementById(field_retencion.id).readOnly = true;
+        if (fielretencion) {
+            document.getElementById(field_retencion.id).value =
+                moneyFormat(retencion);
+            document.getElementById(field_retencion.id).readOnly = true;
+        }
     } else {
-        retencion =
-            parseFloat(
-                reverseMoneyFormat(
-                    document.getElementById(field_retencion.id).value,
-                ),
-            ) || 0;
-
-        document.getElementById(field_retencion.id).readOnly = false;
+        if (fielretencion) {
+            retencion =
+                parseFloat(
+                    reverseMoneyFormat(
+                        document.getElementById(field_retencion.id).value,
+                    ),
+                ) || 0;
+            document.getElementById(field_retencion.id).readOnly = false;
+        }
     }
 
     /*
@@ -819,22 +860,28 @@ function calcularTotal(modulo = "crear") {
     |--------------------------------------------------------------------------
     */
     const totalSinRetencion =
-        precio_viaje + burreo + iva + otro + estadia + maniobra;
+        (precio_viaje ?? 0) +
+        (burreo ?? 0) +
+        (iva ?? 0) +
+        (otro ?? 0) +
+        (estadia ?? 0) +
+        (maniobra ?? 0);
 
     const totalConRetencion = totalSinRetencion - retencion;
 
-    const precioTonelada =
-        modulo != "proveedores"
-            ? parseFloat(
-                  reverseMoneyFormat(
-                      document.getElementById("total_sobrepeso_viaje").value,
-                  ),
-              ) || 0
-            : parseFloat(
-                  reverseMoneyFormat(
-                      document.getElementById("total_tonelada").value,
-                  ),
-              );
+    let totalsobrepesoField = document.getElementById("total_sobrepeso_viaje");
+    let totaltoneladaField = document.getElementById("total_tonelada");
+
+    let precioTonelada = 0;
+    if (modulo != "proveedores") {
+        precioTonelada = totalsobrepesoField
+            ? parseFloat(reverseMoneyFormat(totalsobrepesoField.value)) || 0
+            : 0;
+    } else {
+        precioTonelada = totaltoneladaField
+            ? parseFloat(reverseMoneyFormat(totaltoneladaField.value)) || 0
+            : 0;
+    }
 
     const totalFinal = totalConRetencion + precioTonelada;
 
@@ -870,8 +917,11 @@ function calcularTotal(modulo = "crear") {
     const baseTaref = totalFinal - baseFactura - iva + retencion;
 
     const field_base_taref = fields.find((i) => i.field == "base_taref");
-
-    document.getElementById(field_base_taref.id).value = moneyFormat(baseTaref);
+    const fieldbaseTaref = document.getElementById(field_base_taref.id);
+    if (fieldbaseTaref) {
+        document.getElementById(field_base_taref.id).value =
+            moneyFormat(baseTaref);
+    }
 }
 const chkRetencionAuto = document.getElementById("retencion_automatica");
 const inputRetencion = document.getElementById("retencion");
@@ -1214,9 +1264,13 @@ document.addEventListener("DOMContentLoaded", function () {
     calcularSobrepeso();
 
     // Agregar eventos de cambio a los inputs para calcular automáticamente
-    document.getElementById("base_factura").addEventListener("input", () => {
-        calcularTotal();
-    });
+    const base_facturaInput = document.getElementById("base_factura");
+    if (base_facturaInput) {
+        base_facturaInput.addEventListener("input", () => {
+            calcularTotal();
+        });
+    }
+
     var inputMoneyFormat = $(".calculo-cotizacion");
     inputMoneyFormat.on("input", () => {
         calcularTotal();
@@ -1489,12 +1543,17 @@ function sobrePesoViaje() {
             ? 0
             : parseFloat(ContenedorB["sobrepeso"] || 0);
     let viajeSobrePeso = parseFloat(ContenedorA["sobrepeso"] || 0) + sobrePesoB;
-    sobrePesoViajeInput.value = viajeSobrePeso;
-    let precio = reverseMoneyFormat(precioSobrePesoInpu.value);
+    let precio = 0;
+    if (sobrePesoViajeInput) {
+        sobrePesoViajeInput.value = viajeSobrePeso;
+        precio = reverseMoneyFormat(precioSobrePesoInpu.value);
+    }
 
-    totalSobrePesoViaje.value = moneyFormat(
-        parseFloat(viajeSobrePeso || 0) * parseFloat(precio || 0),
-    );
+    if (totalSobrePesoViaje) {
+        totalSobrePesoViaje.value = moneyFormat(
+            parseFloat(viajeSobrePeso || 0) * parseFloat(precio || 0),
+        );
+    }
 
     var sobrePesoProveedor = document.getElementById(
         "cantidad_sobrepeso_proveedor",
