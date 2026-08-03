@@ -79,6 +79,11 @@ class Asignaciones extends Model
         return $this->belongsTo(Bancos::class, 'id_banco2_dinero_viaje');
     }
 
+    public function bitacoraViaje()
+    {
+        return $this->hasOne(BitacoraViajeOperador::class, 'id_asignacion');
+    }
+
     public function Justificacion()
     {
         return $this->hasMany(ViaticosOperador::class, 'id_cotizacion', 'id_contenedor');

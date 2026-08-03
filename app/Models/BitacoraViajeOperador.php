@@ -5,11 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class RegistroDieselOperador extends Model
+class BitacoraViajeOperador extends Model
 {
     use HasFactory;
 
-    protected $table = 'registros_diesel_operadores';
+    protected $table = 'bitacora_viajes_operadores';
 
     protected $fillable = [
         'id_asignacion',

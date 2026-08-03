@@ -4,7 +4,7 @@ namespace App\Services;
 
 use App\Models\DocumCotizacion;
 use App\Models\Asignaciones;
-use App\Models\ComprobanteGastos;
+use App\Models\BitacoraViajeOperador;
 
 class CotizacionesService
 {
@@ -28,32 +28,40 @@ class CotizacionesService
                 if ($asignacion) {
                     $idAsignacion = $asignacion->id;
 
-                    $comprobantes = ComprobanteGastos::where('id_asignacion', $idAsignacion)
-                        ->where('tipo', '!=', 'diesel')
-                        ->get();
-
-                    foreach ($comprobantes as $comp) {
-                        if (!empty($comp->imagen) && !in_array($comp->imagen, $uniquePaths)) {
-                            $uniquePaths[] = $comp->imagen;
+                    // Retrieve operator files from BitacoraViajeOperador
+                    $bitacoras = BitacoraViajeOperador::where('id_asignacion', $idAsignacion)->get();
+                    foreach ($bitacoras as $bitacora) {
+                        // 1. Start trip / loading photos
+                        if (!empty($bitacora->fotos_carga)) {
+                            $decodedCarga = json_decode($bitacora->fotos_carga, true);
+                            if (is_array($decodedCarga)) {
+                                foreach ($decodedCarga as $path) {
+                                    if (!empty($path) && !isset($uniquePaths[$path])) {
+                                        $uniquePaths[$path] = 'Evidencia de Carga';
+                                    }
+                                }
+                            }
+                        }
+                        // 2. End trip / delivery photos
+                        if (!empty($bitacora->fotos_fin)) {
+                            $decodedFin = json_decode($bitacora->fotos_fin, true);
+                            if (is_array($decodedFin)) {
+                                foreach ($decodedFin as $path) {
+                                    if (!empty($path) && !isset($uniquePaths[$path])) {
+                                        $uniquePaths[$path] = 'Conclusión de Viaje';
+                                    }
+                                }
+                            }
                         }
                     }
                 }
             }
         }
 
-        foreach ($uniquePaths as $relativePath) {
+        foreach ($uniquePaths as $relativePath => $labelTipo) {
             $relativePath = ltrim($relativePath, '/');
             $fullPath = public_path($relativePath);
             if (file_exists($fullPath)) {
-                $labelTipo = 'Evidencia / Otro';
-                if (str_contains($relativePath, 'carga_contenedor')) {
-                    $labelTipo = 'Evidencia de Carga';
-                } elseif (str_contains($relativePath, 'entrega_contenedor')) {
-                    $labelTipo = 'Evidencia de Entrega';
-                } elseif (str_contains($relativePath, 'diesel')) {
-                    $labelTipo = 'Comprobante Diésel';
-                }
-
                 $filesList[] = [
                     'name' => basename($relativePath),
                     'url' => asset($relativePath),

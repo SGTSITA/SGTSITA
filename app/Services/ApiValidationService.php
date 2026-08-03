@@ -12,9 +12,8 @@ use App\Models\Client;
 use App\Models\Proveedor;
 use App\Models\Coordenadas;
 use App\Models\coordenadashistorial;
-use App\Models\ComprobanteGastos;
 use App\Models\GastosOperadores;
-use App\Models\RegistroDieselOperador;
+use App\Models\BitacoraViajeOperador;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -768,64 +767,107 @@ $camion = $asignacion->Camion;
             ]);
         }
 
-        if (isset($data['ticket_foto_base64'])) {
-            $path = public_path('/uploads/diesel/' . $idAsignacion);
-            if (!file_exists($path)) {
-                mkdir($path, 0755, true);
+        // Verificar si ya existe un gasto de diésel pagado en esta asignación
+        $dieselPagadoExistente = \App\Models\Gasto::where('origen_legacy_id', $idAsignacion)
+            ->where('origen_legacy', 'like', 'asignacion_planeacion%')
+            ->where('concepto', 'like', '%Diesel%')
+            ->where('estatus', 'pagado')
+            ->exists();
+
+        // Verificar si ya existe un gasto de urea pagado en esta asignación
+        $ureaPagadaExistente = \App\Models\Gasto::where('origen_legacy_id', $idAsignacion)
+            ->where('origen_legacy', 'like', 'asignacion_planeacion%')
+            ->where('concepto', 'like', '%Urea%')
+            ->where('estatus', 'pagado')
+            ->exists();
+
+        $path = public_path('/uploads/diesel/' . $idAsignacion);
+        if (!file_exists($path)) {
+            mkdir($path, 0777, true);
+        }
+
+        $fileName = null;
+        if (isset($data['ticket_foto_base64']) && !empty($data['ticket_foto_base64'])) {
+            $cleanDieselBase64 = $data['ticket_foto_base64'];
+            if (preg_match('/^data:image\/(\w+);base64,/', $cleanDieselBase64, $type)) {
+                $cleanDieselBase64 = substr($cleanDieselBase64, strpos($cleanDieselBase64, ',') + 1);
             }
             $fileName = uniqid() . '_diesel_ticket.jpg';
-            file_put_contents($path . '/' . $fileName, base64_decode($data['ticket_foto_base64']));
+            file_put_contents($path . '/' . $fileName, base64_decode($cleanDieselBase64));
 
-            $doc = DocumCotizacion::find($asignacion->id_contenedor);
-            $idCotizacion = $doc ? $doc->id_cotizacion : null;
-            $cotizacion = Cotizaciones::find($idCotizacion);
+            if (!$dieselPagadoExistente) {
+                $doc = DocumCotizacion::find($asignacion->id_contenedor);
+                $idCotizacion = $doc ? $doc->id_cotizacion : null;
 
-            GastosOperadores::create([
-                'id_asignacion' => $idAsignacion,
-                'id_operador' => $asignacion->id_operador,
-                'id_cotizacion' => $idCotizacion,
-                'cantidad' => $data['costo'] ?? 0.0,
-                'tipo' => 'Diesel',
-                'estatus' => 'pendiente',
-                'comprobante' => 'uploads/diesel/' . $idAsignacion . '/' . $fileName,
-                'fecha_pago' => Carbon::now()
-            ]);
+                $gastoOperador = GastosOperadores::create([
+                    'id_asignacion' => $idAsignacion,
+                    'id_operador' => $asignacion->id_operador,
+                    'id_cotizacion' => $idCotizacion,
+                    'cantidad' => $data['costo'] ?? 0.0,
+                    'tipo' => 'Diesel',
+                    'estatus' => 'pendiente',
+                    'comprobante' => 'uploads/diesel/' . $idAsignacion . '/' . $fileName,
+                    'fecha_pago' => Carbon::now()
+                ]);
 
-            ComprobanteGastos::create([
-                'id_asignacion' => $idAsignacion,
-                'imagen' => 'uploads/diesel/' . $idAsignacion . '/' . $fileName,
-                'tipo' => 'diesel'
-            ]);
-
-            $ureaFileName = null;
-            if (isset($data['ticket_foto_urea_base64'])) {
-                $ureaFileName = uniqid() . '_urea_ticket.jpg';
-                file_put_contents($path . '/' . $ureaFileName, base64_decode($data['ticket_foto_urea_base64']));
+                try {
+                    app(\App\Services\GastosService::class)->registrarDesdeGastoOperador($gastoOperador);
+                } catch (\Exception $e) {
+                    \Log::error("Error registrando gasto de diesel en gastos: " . $e->getMessage());
+                }
+            } else {
+                \Log::info("El diésel para la asignación ID {$idAsignacion} ya se encuentra pagado. Se omitió la sobrescritura del gasto.");
             }
+        }
 
-            RegistroDieselOperador::create([
-                'id_asignacion' => $idAsignacion,
-                'id_operador' => $asignacion->id_operador,
-                'latitud' => $data['latitud'] ?? null,
-                'longitud' => $data['longitud'] ?? null,
-                'litros' => $data['litros'] ?? null,
-                'costo' => $data['costo'] ?? null,
-                'odometro' => $data['odometro'] ?? null,
-                'comprobante' => 'uploads/diesel/' . $idAsignacion . '/' . $fileName,
-                'litros_urea' => $data['litros_urea'] ?? null,
-                'costo_urea' => $data['costo_urea'] ?? null,
-                'comprobante_urea' => $ureaFileName ? 'uploads/diesel/' . $idAsignacion . '/' . $ureaFileName : null,
-            ]);
-
-            if ($cotizacion) {
-                $cotizacion->litros_diesel = $data['litros'] ?? null;
-                $cotizacion->litros_urea = $data['litros_urea'] ?? null;
-                $cotizacion->update();
+        $ureaFileName = null;
+        if (isset($data['ticket_foto_urea_base64']) && !empty($data['ticket_foto_urea_base64'])) {
+            $cleanUreaBase64 = $data['ticket_foto_urea_base64'];
+            if (preg_match('/^data:image\/(\w+);base64,/', $cleanUreaBase64, $type)) {
+                $cleanUreaBase64 = substr($cleanUreaBase64, strpos($cleanUreaBase64, ',') + 1);
             }
+            $ureaFileName = uniqid() . '_urea_ticket.jpg';
+            file_put_contents($path . '/' . $ureaFileName, base64_decode($cleanUreaBase64));
+        }
 
-            if (isset($data['costo_urea']) && floatval($data['costo_urea']) > 0) {
+        if (isset($data['costo_urea']) && floatval($data['costo_urea']) > 0) {
+            if (!$ureaPagadaExistente) {
                 $this->registrarGastoUreaDesdeApp(intval($idAsignacion), floatval($data['costo_urea']));
+            } else {
+                \Log::info("La urea para la asignación ID {$idAsignacion} ya se encuentra pagada. Se omitió la sobrescritura del gasto.");
             }
+        }
+
+        // Siempre guardar/actualizar en la bitácora del viaje
+        $flowRecord = BitacoraViajeOperador::firstOrCreate([
+            'id_asignacion' => $idAsignacion
+        ]);
+        $flowRecord->update([
+            'id_operador' => $asignacion->id_operador,
+            'latitud' => $data['latitud'] ?? null,
+            'longitud' => $data['longitud'] ?? null,
+            'litros' => $data['litros'] ?? null,
+            'costo' => $data['costo'] ?? null,
+            'odometro' => $data['odometro'] ?? null,
+            'comprobante' => $fileName ? 'uploads/diesel/' . $idAsignacion . '/' . $fileName : $flowRecord->comprobante,
+            'litros_urea' => $data['litros_urea'] ?? null,
+            'costo_urea' => $data['costo_urea'] ?? null,
+            'comprobante_urea' => $ureaFileName ? 'uploads/diesel/' . $idAsignacion . '/' . $ureaFileName : $flowRecord->comprobante_urea,
+        ]);
+
+        // Actualizar cotización si no están pagados
+        $doc = DocumCotizacion::find($asignacion->id_contenedor);
+        $idCotizacion = $doc ? $doc->id_cotizacion : null;
+        $cotizacion = Cotizaciones::find($idCotizacion);
+
+        if ($cotizacion) {
+            if (!$dieselPagadoExistente && isset($data['litros'])) {
+                $cotizacion->litros_diesel = $data['litros'];
+            }
+            if (!$ureaPagadaExistente && isset($data['litros_urea'])) {
+                $cotizacion->litros_urea = $data['litros_urea'];
+            }
+            $cotizacion->update();
         }
 
         return ['success' => true, 'message' => 'Coordenadas y registro de diésel guardados con éxito.', 'data' => [], 'status' => 200];
@@ -852,23 +894,32 @@ $camion = $asignacion->Camion;
         }
 
         $savedFilePaths = [];
-        if (isset($data['fotos_base64']) && is_array($data['fotos_base64'])) {
+        $rawFotos = $data['fotos_base64'] ?? [];
+        if (is_string($rawFotos)) {
+            $decoded = json_decode($rawFotos, true);
+            if (is_array($decoded)) {
+                $rawFotos = $decoded;
+            } else {
+                $rawFotos = [$rawFotos];
+            }
+        }
+
+        if (is_array($rawFotos) && !empty($rawFotos)) {
             $path = public_path('/uploads/carga_contenedor/' . $idAsignacion);
             if (!file_exists($path)) {
-                mkdir($path, 0755, true);
+                mkdir($path, 0777, true);
             }
-            foreach ($data['fotos_base64'] as $index => $base64Str) {
+            foreach ($rawFotos as $index => $base64Str) {
+                if (empty($base64Str)) continue;
+                $cleanBase64 = $base64Str;
+                if (preg_match('/^data:image\/(\w+);base64,/', $cleanBase64, $type)) {
+                    $cleanBase64 = substr($cleanBase64, strpos($cleanBase64, ',') + 1);
+                }
                 $fileName = uniqid() . '_carga_' . ($index + 1) . '.jpg';
-                file_put_contents($path . '/' . $fileName, base64_decode($base64Str));
+                file_put_contents($path . '/' . $fileName, base64_decode($cleanBase64));
 
                 $relativeUrl = 'uploads/carga_contenedor/' . $idAsignacion . '/' . $fileName;
                 $savedFilePaths[] = $relativeUrl;
-
-                ComprobanteGastos::create([
-                    'id_asignacion' => $idAsignacion,
-                    'imagen' => $relativeUrl,
-                    'tipo' => 'carga_contenedor'
-                ]);
             }
         }
 
@@ -884,7 +935,7 @@ $camion = $asignacion->Camion;
             'cargado_contenedor_datatime' => Carbon::now()
         ]);
 
-        $flowRecord = RegistroDieselOperador::firstOrCreate([
+        $flowRecord = BitacoraViajeOperador::firstOrCreate([
             'id_asignacion' => $idAsignacion
         ]);
         $flowRecord->update([
@@ -917,21 +968,36 @@ $camion = $asignacion->Camion;
         }
 
         $savedFilePaths = [];
-        if (isset($data['fotos_base64']) && is_array($data['fotos_base64'])) {
+        $rawFotos = $data['fotos_base64'] ?? [];
+        if (is_string($rawFotos)) {
+            $decoded = json_decode($rawFotos, true);
+            if (is_array($decoded)) {
+                $rawFotos = $decoded;
+            } else {
+                $rawFotos = [$rawFotos];
+            }
+        }
+
+        if (is_array($rawFotos) && !empty($rawFotos)) {
             $path = public_path('/uploads/entrega_contenedor/' . $idAsignacion);
             if (!file_exists($path)) {
-                mkdir($path, 0755, true);
+                mkdir($path, 0777, true);
             }
-            foreach ($data['fotos_base64'] as $index => $base64Str) {
+            foreach ($rawFotos as $index => $base64Str) {
+                if (empty($base64Str)) continue;
+                $cleanBase64 = $base64Str;
+                if (preg_match('/^data:image\/(\w+);base64,/', $cleanBase64, $type)) {
+                    $cleanBase64 = substr($cleanBase64, strpos($cleanBase64, ',') + 1);
+                }
                 $fileName = uniqid() . '_entrega_' . ($index + 1) . '.jpg';
-                file_put_contents($path . '/' . $fileName, base64_decode($base64Str));
+                file_put_contents($path . '/' . $fileName, base64_decode($cleanBase64));
 
                 $relativeUrl = 'uploads/entrega_contenedor/' . $idAsignacion . '/' . $fileName;
                 $savedFilePaths[] = $relativeUrl;
             }
         }
 
-        $flowRecord = RegistroDieselOperador::firstOrCreate([
+        $flowRecord = BitacoraViajeOperador::firstOrCreate([
             'id_asignacion' => $idAsignacion
         ]);
         $flowRecord->update([
@@ -951,7 +1017,7 @@ $camion = $asignacion->Camion;
             return ['success' => false, 'message' => 'Falta id_asignacion', 'data' => [], 'status' => 400];
         }
 
-        $flowRecord = RegistroDieselOperador::where('id_asignacion', $idAsignacion)->first();
+        $flowRecord = BitacoraViajeOperador::where('id_asignacion', $idAsignacion)->first();
 
         $dieselRegistrado = $flowRecord && $flowRecord->comprobante !== null;
         $viajeIniciado = $flowRecord && $flowRecord->viaje_iniciado !== null;
@@ -977,6 +1043,69 @@ $camion = $asignacion->Camion;
             }
         }
 
+        $documentos = [];
+        $asignacion = Asignaciones::with('Contenedor')->find($idAsignacion);
+        if ($asignacion && $asignacion->Contenedor) {
+            $contenedor = $asignacion->Contenedor;
+            $idCotizacion = $contenedor->id_cotizacion;
+
+            // Consultar la configuración global de documentos permitidos para el operador
+            $allowedFields = null;
+            try {
+                $config = DB::table('global_configs')->where('key', 'documentos_operador')->first();
+                if ($config && !empty($config->value)) {
+                    $decoded = json_decode($config->value, true);
+                    if (is_array($decoded)) {
+                        $allowedFields = array_map(function($val) {
+                            return strtolower(trim($val));
+                        }, $decoded);
+                    }
+                }
+            } catch (\Exception $e) {
+                \Log::warning("No se pudo consultar global_configs o decodificar su valor: " . $e->getMessage());
+            }
+
+            $fields = [
+                'boleta_liberacion' => 'Boleta de Liberación',
+                'doda' => 'Documento DODA',
+                'boleta_vacio' => 'Boleta de Vacío',
+                'doc_eir' => 'Documento EIR',
+                'doc_ccp' => 'Documento CCP',
+                'boleta_patio' => 'Boleta de Patio',
+                'evidencia_descarga' => 'Evidencia de Descarga'
+            ];
+
+            foreach ($fields as $field => $label) {
+                // Si la configuración especifica qué documentos mostrar, filtrar
+                if ($allowedFields !== null) {
+                    $fieldLower = strtolower($field);
+                    $labelLower = strtolower($label);
+                    $isAllowed = false;
+                    foreach ($allowedFields as $allowed) {
+                        if ($allowed === $fieldLower || $allowed === $labelLower || str_contains($fieldLower, $allowed) || str_contains($labelLower, $allowed)) {
+                            $isAllowed = true;
+                            break;
+                        }
+                    }
+                    if (!$isAllowed) {
+                        continue;
+                    }
+                }
+
+                if (!empty($contenedor->$field)) {
+                    $fileName = $contenedor->$field;
+                    $url = str_starts_with($fileName, 'http')
+                        ? $fileName
+                        : asset('cotizaciones/cotizacion' . $idCotizacion . '/' . $fileName);
+
+                    $documentos[] = [
+                        'nombre' => $label,
+                        'url' => $url
+                    ];
+                }
+            }
+        }
+
         return [
             'success' => true,
             'message' => 'Estatus obtenido con éxito.',
@@ -997,7 +1126,9 @@ $camion = $asignacion->Camion;
                 'viaje_iniciado' => $viajeIniciado,
                 'fotos' => $fotos,
                 'viaje_finalizado' => $viajeFinalizado,
-                'fotos_fin' => $fotosFin
+                'fotos_fin' => $fotosFin,
+                'id_cotizacion' => $asignacion->Contenedor->id_cotizacion ?? null,
+                'documentos_viaje' => $documentos
             ],
             'status' => 200
         ];
@@ -1040,29 +1171,23 @@ $camion = $asignacion->Camion;
             }
 
             // Resolver id_empresa dinámicamente
-            $idEmpresa = 1;
+            $idEmpresa = $asignacion->id_empresa;
             $contenedor = DocumCotizacion::find($asignacion->id_contenedor);
+            $cotizacion = null;
             if ($contenedor) {
                 $cotizacion = Cotizaciones::find($contenedor->id_cotizacion);
-                if ($cotizacion) {
+                if ($cotizacion && !$idEmpresa) {
                     $idEmpresa = $cotizacion->id_empresa;
                 }
             }
-
-            $categoriaId = 1; // Combustible
-
-            $con = DB::table('gasto_conceptos')->where('clave', 'GUREA')->first();
-            if (!$con) {
-                $con = new \App\Models\GastoConcepto();
-                $con->categoria_gasto_id = $categoriaId;
-                $con->clave = 'GUREA';
-                $con->nombre = 'GU001 - Urea';
-                $con->tipo_default = 'periodo';
-                $con->afecta_utilidad = true;
-                $con->is_active = true;
-                $con->save();
+            if (!$idEmpresa) {
+                $idEmpresa = 27; // Default to 27 or 1
             }
-            $conceptoId = $con->id;
+
+            $categoriaId = 1; // Combustible / Combustibles
+
+            $con = DB::table('gasto_conceptos')->where('clave', 'GUREA')->orWhere('nombre', 'like', '%Urea%')->first();
+            $conceptoId = $con ? $con->id : 42;
 
             app(\App\Services\GastosService::class)->registrar([
                 'id_empresa'          => $idEmpresa,
@@ -1070,19 +1195,36 @@ $camion = $asignacion->Camion;
                 'gasto_concepto_id'   => $conceptoId,
                 'concepto'            => 'GU001 - Urea',
                 'monto_total'         => $montoUrea,
-                'tipo_gasto'          => 'periodo',
+                'tipo_gasto'          => 'operador',
+                'metodo_imputacion'   => 'directo',
                 'estatus'             => 'pendiente_pago',
-                'fecha_gasto'         => Carbon::now()->startOfMonth(),
-                'origen_legacy'       => 'registro_operador_urea',
+                'fecha_gasto'         => Carbon::now()->toDateString(),
+                'origen_legacy'       => 'asignacion_planeacionGU001 - Urea',
                 'origen_legacy_id'    => $asignacion->id,
-                'user_id'             => auth()->id() ?? 1,
-                'vinculos'            => [
-                    [
+                'user_id'             => auth()->id() ?? 81,
+                'vinculos'            => array_filter([
+                    $cotizacion ? [
+                        'tipo_vinculo'    => 'cotizacion',
+                        'vinculable_type' => get_class($cotizacion),
+                        'vinculable_id'   => $cotizacion->id,
+                    ] : null,
+                    $contenedor ? [
+                        'tipo_vinculo'    => 'contenedor',
+                        'vinculable_type' => get_class($contenedor),
+                        'vinculable_id'   => $contenedor->id,
+                        'observaciones'   => $contenedor->num_contenedor,
+                    ] : null,
+                    $asignacion ? [
+                        'tipo_vinculo'    => 'asignacion',
+                        'vinculable_type' => get_class($asignacion),
+                        'vinculable_id'   => $asignacion->id,
+                    ] : null,
+                    $asignacion->id_operador ? [
                         'tipo_vinculo'    => 'operador',
                         'vinculable_type' => \App\Models\Operador::class,
                         'vinculable_id'   => $asignacion->id_operador,
-                    ]
-                ],
+                    ] : null,
+                ]),
                 'imputaciones'        => []
             ]);
 

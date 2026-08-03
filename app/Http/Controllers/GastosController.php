@@ -939,6 +939,13 @@ class GastosController extends Controller
                     \DB::table('gastos_operadores')
                         ->where('id', $legacyId)
                         ->update(['estatus' => 'eliminado']);
+                } elseif (str_starts_with($gasto->origen_legacy, 'asignacion_planeacion')) {
+                    if (str_contains($gasto->concepto, 'Diesel')) {
+                        \DB::table('gastos_operadores')
+                            ->where('id_asignacion', $legacyId)
+                            ->where('tipo', 'Diesel')
+                            ->update(['estatus' => 'eliminado']);
+                    }
                 } elseif ($gasto->origen_legacy === 'gastos_extras') {
                     \DB::table('gastos_extras')
                         ->where('id', $legacyId)

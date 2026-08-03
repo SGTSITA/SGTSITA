@@ -233,12 +233,14 @@ function resetUploadConfig() {
                 item.html.find(".progress-bar2").fadeOut(400);
             }, 400);
 
-            const apiGrid = null;
-            if (typeof gridOptions !== "undefined" && gridOptions?.api) {
-                apiGrid = gridOptions.api;
+            let gridApi = null;
+            if (typeof apiGrid !== "undefined" && apiGrid) {
+                gridApi = apiGrid;
+            } else if (typeof gridOptions !== "undefined" && gridOptions?.api) {
+                gridApi = gridOptions.api;
             }
-            if (apiGrid) {
-                let dataGrid = apiGrid.getGridOption("rowData");
+            if (gridApi) {
+                let dataGrid = gridApi.getGridOption("rowData");
                 var rowIndex = dataGrid.findIndex(
                     (d) => d.NumContenedor == numContenedor,
                 );
@@ -246,7 +248,7 @@ function resetUploadConfig() {
                 const colId = fileSettings.agGrid;
 
                 // Obtener el nodo de la fila
-                const rowNode = apiGrid.getDisplayedRowAtIndex(rowIndex);
+                const rowNode = gridApi.getDisplayedRowAtIndex(rowIndex);
 
                 // Establecer un nuevo valor en la celda
                 if (rowNode) {

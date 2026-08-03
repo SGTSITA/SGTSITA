@@ -1321,8 +1321,15 @@ class PlaneacionController extends Controller
                 ->first();
 
             $gastosAsignados = \App\Models\Gasto::with(['pagos'])
-                ->where('origen_legacy_id', $asignacion->id)
-                ->where('origen_legacy', 'like', 'asignacion_planeacion%')
+                ->where(function ($query) use ($asignacion) {
+                    $query->where(function ($q) use ($asignacion) {
+                        $q->where('origen_legacy_id', $asignacion->id)
+                          ->where('origen_legacy', 'like', 'asignacion_planeacion%');
+                    })->orWhereHas('vinculos', function ($q) use ($asignacion) {
+                        $q->where('vinculable_type', \App\Models\Asignaciones::class)
+                          ->where('vinculable_id', $asignacion->id);
+                    });
+                })
                 ->get();
         }
 

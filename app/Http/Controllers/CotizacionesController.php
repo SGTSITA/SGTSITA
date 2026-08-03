@@ -1671,21 +1671,30 @@ public function updateKmDiesel(Request $request, Cotizaciones $cotizacion)
             'min:0',
             'regex:/^\d+(\.\d{1,3})?$/',
         ],
+        'litros_urea' => [
+            'nullable',
+            'numeric',
+            'min:0',
+            'regex:/^\d+(\.\d{1,3})?$/',
+        ],
     ], [
         'litros_diesel.regex' => 'Los litros diesel solo pueden tener hasta 3 decimales.',
+        'litros_urea.regex' => 'Los litros urea solo pueden tener hasta 3 decimales.',
     ]);
 
     $cotizacion->update([
         'km_recorridos' => $data['km_recorridos'] ?? null,
         'litros_diesel' => $data['litros_diesel'] ?? null,
+        'litros_urea' => $data['litros_urea'] ?? null,
     ]);
 
     return response()->json([
         'success' => true,
-        'message' => 'Kilómetros y litros diesel actualizados correctamente.',
+        'message' => 'Datos de viaje actualizados correctamente.',
         'data' => [
             'km_recorridos' => $cotizacion->km_recorridos,
             'litros_diesel' => $cotizacion->litros_diesel,
+            'litros_urea' => $cotizacion->litros_urea,
         ],
     ]);
 }
