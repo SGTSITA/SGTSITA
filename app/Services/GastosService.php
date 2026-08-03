@@ -391,9 +391,31 @@ class GastosService
         $asignacion = $legacy->Asignaciones;
         $operador = $legacy->Operador;
 
+        $categoriaId = null;
+        $conceptoId = null;
+        $concepto = $legacy->tipo ?: 'Gasto operador';
+
+        if (strtolower(trim($legacy->tipo)) === 'diesel') {
+            $categoriaId = 1;
+            $conceptoId = 24;
+            $concepto = 'GDI02 - Diesel';
+        }
+
+        $idEmpresa = $asignacion?->id_empresa ?: ($cotizacion?->id_empresa ?: (auth()->user()?->id_empresa ?: 2));
+
+        $origenLegacy = 'gastos_operadores';
+        $origenLegacyId = $legacy->id;
+
+        if ($asignacion && strtolower(trim($legacy->tipo)) === 'diesel') {
+            $origenLegacy = 'asignacion_planeacionGDI02 - Diesel';
+            $origenLegacyId = $asignacion->id;
+        }
+
         $gasto = $this->registrar([
-            'id_empresa' => $asignacion?->id_empresa ?? $cotizacion?->id_empresa ?? auth()->user()?->id_empresa,
-            'concepto' => $legacy->tipo ?: 'Gasto operador',
+            'id_empresa' => $idEmpresa,
+            'categoria_gasto_id' => $categoriaId,
+            'gasto_concepto_id' => $conceptoId,
+            'concepto' => $concepto,
             'descripcion' => $legacy->tipo,
             'monto_total' => $legacy->cantidad,
             'fecha_gasto' => $legacy->created_at ?? now(),
@@ -402,8 +424,8 @@ class GastosService
             'metodo_imputacion' => 'directo',
             'estatus' => $this->mapearEstatusLegacy($legacy->estatus ?? 'pendiente'),
             'origen_modulo' => 'liquidacion_operador',
-            'origen_legacy' => 'gastos_operadores',
-            'origen_legacy_id' => $legacy->id,
+            'origen_legacy' => $origenLegacy,
+            'origen_legacy_id' => $origenLegacyId,
             'vinculos' => array_filter([
                 $cotizacion ? [
                     'tipo_vinculo' => 'cotizacion',

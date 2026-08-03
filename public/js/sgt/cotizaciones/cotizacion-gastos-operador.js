@@ -55,6 +55,7 @@ $(document).on("click", "#btnGuardarKmDiesel", function () {
     const cotizacionId = $("#cotizacion_km_diesel_id").val();
     const kmRecorridos = $("#km_recorridos").val();
     const litrosDiesel = $("#litros_diesel").val();
+    const litrosUrea = $("#litros_urea").val();
 
     if (!cotizacionId) {
         Swal.fire({
@@ -72,6 +73,7 @@ $(document).on("click", "#btnGuardarKmDiesel", function () {
             _token: $('meta[name="csrf-token"]').attr("content"),
             km_recorridos: kmRecorridos,
             litros_diesel: litrosDiesel,
+            litros_urea: litrosUrea,
         },
         beforeSend: function () {
             $("#btnGuardarKmDiesel")
@@ -89,6 +91,7 @@ $(document).on("click", "#btnGuardarKmDiesel", function () {
 
             $("#km_recorridos").val(response.data.km_recorridos ?? "");
             $("#litros_diesel").val(response.data.litros_diesel ?? "");
+            $("#litros_urea").val(response.data.litros_urea ?? "");
         },
         error: function (xhr) {
             const msg =

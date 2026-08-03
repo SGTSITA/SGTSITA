@@ -227,16 +227,35 @@
                                     </div>
                                 </div>
 
+                                @php
+                                    $bitacora = optional($cotizacion->DocCotizacion?->Asignaciones)->bitacoraViaje;
+                                @endphp
                                 <div class="col-md-4 form-group mt-2">
                                     <label class="form-label font-weight-bold" for="litros_diesel">Litros Diésel</label>
                                     <input type="number" step="0.001" class="form-control text-end"
                                         id="litros_diesel" name="litros_diesel"
                                         value="{{ $cotizacion->litros_diesel ?? 0 }}">
+                                    @if($bitacora && $bitacora->costo)
+                                        <div class="mt-1 small text-muted d-flex justify-content-between align-items-center">
+                                            <span><strong>Importe (App):</strong> ${{ number_format($bitacora->costo, 2) }}</span>
+                                            @if($bitacora->comprobante)
+                                                <a href="{{ asset($bitacora->comprobante) }}" target="_blank" class="badge bg-gradient-info text-white text-xxs">Ver Ticket</a>
+                                            @endif
+                                        </div>
+                                    @endif
                                 </div>
                                 <div class="col-md-4 form-group mt-2">
                                     <label class="form-label font-weight-bold" for="litros_urea">Litros Urea</label>
                                     <input type="number" step="0.001" class="form-control text-end" id="litros_urea"
                                         name="litros_urea" value="{{ $cotizacion->litros_urea ?? 0 }}">
+                                    @if($bitacora && $bitacora->costo_urea)
+                                        <div class="mt-1 small text-muted d-flex justify-content-between align-items-center">
+                                            <span><strong>Importe (App):</strong> ${{ number_format($bitacora->costo_urea, 2) }}</span>
+                                            @if($bitacora->comprobante_urea)
+                                                <a href="{{ asset($bitacora->comprobante_urea) }}" target="_blank" class="badge bg-gradient-info text-white text-xxs">Ver Ticket</a>
+                                            @endif
+                                        </div>
+                                    @endif
                                 </div>
                             </div>
 

@@ -1714,7 +1714,7 @@
                                                                         value="{{ $cotizacion->id }}">
 
                                                                     <div class="row g-2 align-items-end">
-                                                                        <div class="col-md-5 col-6">
+                                                                        <div class="col-md-3 col-6">
                                                                             <label class="form-label mb-1 small fw-bold">
                                                                                 KM recorridos
                                                                             </label>
@@ -1726,7 +1726,7 @@
                                                                                 placeholder="0.00">
                                                                         </div>
 
-                                                                        <div class="col-md-5 col-6">
+                                                                        <div class="col-md-3 col-6">
                                                                             <label class="form-label mb-1 small fw-bold">
                                                                                 Litros diesel
                                                                             </label>
@@ -1738,14 +1738,77 @@
                                                                                 placeholder="0.000">
                                                                         </div>
 
-                                                                        <div class="col-md-2 col-12">
+                                                                        <div class="col-md-3 col-6">
+                                                                            <label class="form-label mb-1 small fw-bold">
+                                                                                Litros urea
+                                                                            </label>
+                                                                            <input type="number"
+                                                                                class="form-control form-control-sm text-end"
+                                                                                id="litros_urea" step="0.001"
+                                                                                min="0"
+                                                                                value="{{ old('litros_urea', $documentacion?->Cotizacion?->litros_urea ?? '0.000') }}"
+                                                                                placeholder="0.000">
+                                                                        </div>
+
+                                                                        <div class="col-md-3 col-6">
                                                                             <button type="button"
                                                                                 class="btn btn-sm bg-gradient-primary w-100 mb-0"
                                                                                 id="btnGuardarKmDiesel">
-                                                                                <i class="fas fa-save"></i>
+                                                                                <i class="fas fa-save"></i> Guardar
                                                                             </button>
                                                                         </div>
                                                                     </div>
+
+                                                                    @php
+                                                                        $bitacora = $documentacion?->Asignaciones?->bitacoraViaje;
+                                                                    @endphp
+
+                                                                    @if ($bitacora)
+                                                                        <div class="text-center mt-2 pt-2 border-top">
+                                                                            <a class="btn btn-sm btn-light-info text-info fw-bold w-100 mb-0 py-1" data-bs-toggle="collapse" href="#collapseAppEvidencia" role="button" aria-expanded="false" aria-controls="collapseAppEvidencia">
+                                                                                <i class="fas fa-mobile-alt me-1 fs-6"></i> Ver Evidencias de la App
+                                                                            </a>
+                                                                        </div>
+
+                                                                        <div class="collapse" id="collapseAppEvidencia">
+                                                                            <div class="mt-2 pt-2 border-top">
+                                                                                <div class="row g-2">
+                                                                                    @if ($bitacora->costo || $bitacora->comprobante)
+                                                                                        <div class="col-md-6 col-12 border-end border-1">
+                                                                                            <span class="small fw-bold text-muted d-block">Diésel (App):</span>
+                                                                                            @if ($bitacora->costo)
+                                                                                                <span class="small text-dark d-block">Importe: <strong>${{ number_format($bitacora->costo, 2) }}</strong></span>
+                                                                                            @endif
+                                                                                            @if ($bitacora->comprobante)
+                                                                                                <a href="{{ asset($bitacora->comprobante) }}" target="_blank" class="d-inline-flex align-items-center mt-1">
+                                                                                                    <img src="{{ asset($bitacora->comprobante) }}" alt="Comprobante Diésel" class="rounded border shadow-sm me-2" style="max-height: 40px; max-width: 80px; object-fit: contain;">
+                                                                                                    <span class="small">Ver Comprobante</span>
+                                                                                                </a>
+                                                                                            @endif
+                                                                                        </div>
+                                                                                    @endif
+
+                                                                                    @if ($bitacora->litros_urea || $bitacora->costo_urea || $bitacora->comprobante_urea)
+                                                                                        <div class="col-md-6 col-12">
+                                                                                            <span class="small fw-bold text-muted d-block">Urea (App):</span>
+                                                                                            @if ($bitacora->litros_urea)
+                                                                                                <span class="small text-dark d-block">Litros: <strong>{{ number_format($bitacora->litros_urea, 3) }} L</strong></span>
+                                                                                            @endif
+                                                                                            @if ($bitacora->costo_urea)
+                                                                                                <span class="small text-dark d-block">Importe: <strong>${{ number_format($bitacora->costo_urea, 2) }}</strong></span>
+                                                                                            @endif
+                                                                                            @if ($bitacora->comprobante_urea)
+                                                                                                <a href="{{ asset($bitacora->comprobante_urea) }}" target="_blank" class="d-inline-flex align-items-center mt-1">
+                                                                                                    <img src="{{ asset($bitacora->comprobante_urea) }}" alt="Comprobante Urea" class="rounded border shadow-sm me-2" style="max-height: 40px; max-width: 80px; object-fit: contain;">
+                                                                                                    <span class="small">Ver Comprobante</span>
+                                                                                                </a>
+                                                                                            @endif
+                                                                                        </div>
+                                                                                    @endif
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    @endif
 
                                                                     <small class="text-muted d-block mt-1">
                                                                         Puedes actualizar los datos de rendimiento del viaje.
