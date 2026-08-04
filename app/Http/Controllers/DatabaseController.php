@@ -34,7 +34,6 @@ class DatabaseController extends Controller
             '--user=' . escapeshellarg($username),
             '--password=' . escapeshellarg($password),
             '--host=' . escapeshellarg($host),
-            '--skip-ssl', // Evita errores de certificados autofirmados (ej. Docker local)
             '--single-transaction', // Clave: evita bloqueos de tablas en producción para motor InnoDB
             '--databases', // Incluye la instrucción CREATE DATABASE y USE en el archivo de volcado automáticamente
             escapeshellarg($databaseName),
