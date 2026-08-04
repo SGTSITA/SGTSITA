@@ -80,6 +80,9 @@ class AuditObserver
         $old = is_array($old) ? $old : [];
         $new = is_array($new) ? $new : [];
 
+        $old = collect($old)->except($this->exclude)->toArray();
+        $new = collect($new)->except($this->exclude)->toArray();
+
         $oldNormalized = $this->normalize($old);
         $newNormalized = $this->normalize($new);
 

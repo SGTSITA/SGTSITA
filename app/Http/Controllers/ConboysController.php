@@ -456,8 +456,8 @@ private $coordenadasService;
     $idCompaniaGps = $request->new_id ?? null;
 
 
-    $metrosMinimosCambio = 10;
-    $minutosMaximosSinGuardar = 10;
+    $metrosMinimosCambio = 15;
+    $minutosMaximosSinGuardar = 30;
 
     $ultimoRegistro = CoordenadasHistorial::query()
         ->where('ubicacionable_id', $ubicacionableId)
@@ -509,7 +509,9 @@ private $coordenadasService;
         }
     }
 
-    $responseEncriptado = isset($request->data)
+    $statusApi = $request->status_api ?? 0;
+
+    $responseEncriptado = ($statusApi != 1 && isset($request->data))
         ? AuditoriaCifrado::encrypt($request->data)
         : null;
 
@@ -524,7 +526,7 @@ private $coordenadasService;
         'tipo' => $tipo,
         'id_convoy' => $idConvoy,
 
-        'status_api' => $request->status_api ?? 0,
+        'status_api' => $statusApi,
         'id_compania_gps' => $idCompaniaGps,
         'tiempo_respuesta_ms' => $request->tiempo_respuesta_ms ?? null,
         'valorSolicitado' => $valorSolicitado,
