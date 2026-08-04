@@ -81,17 +81,19 @@
                         </p>
 
                         @can('ver-datos-compartidos-whatsapp')
-                        <div class="mt-3 border-top pt-2" id="datosCompartidosWhatsAppDiv" style="display: none;">
-                            <h6 class="text-primary font-weight-bold" style="color: #25d366 !important; border-left-color: #25d366 !important;">
-                                <i class="fab fa-whatsapp"></i> Compartido con el Operador
-                            </h6>
-                            <p class="text-sm">
-                                Contraseña temporal: <b id="passwordTemporalSpan">N/A</b>
-                            </p>
-                            <button type="button" class="btn btn-sm btn-success" id="btnReenviarWhatsApp" style="background-color: #25d366; border-color: #25d366;">
-                                <i class="fab fa-whatsapp"></i> Reenviar a WhatsApp
-                            </button>
-                        </div>
+                            <div class="mt-3 border-top pt-2" id="datosCompartidosWhatsAppDiv" style="display: none;">
+                                <h6 class="text-primary font-weight-bold"
+                                    style="color: #25d366 !important; border-left-color: #25d366 !important;">
+                                    <i class="fab fa-whatsapp"></i> Compartido con el Operador
+                                </h6>
+                                <p class="text-sm">
+                                    Contraseña temporal: <b id="passwordTemporalSpan">N/A</b>
+                                </p>
+                                <button type="button" class="btn btn-sm btn-success" id="btnReenviarWhatsApp"
+                                    style="background-color: #25d366; border-color: #25d366;">
+                                    <i class="fab fa-whatsapp"></i> Reenviar a WhatsApp
+                                </button>
+                            </div>
                         @endcan
                     </div>
                 </div>
@@ -179,27 +181,28 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-sm bg-gradient-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-sm bg-gradient-secondary"
+                    data-bs-dismiss="modal">Cerrar</button>
                 @can('rastreo-seguimeinto')
-                <button type="button" class="btn btn-sm btn-success" title="Rastrear contenedor" id="btnRastreo">
-                    <i class="fa fa-shipping-fast"></i>
-                    Rastreo
-                </button>
+                    <button type="button" class="btn btn-sm btn-success" title="Rastrear contenedor" id="btnRastreo">
+                        <i class="fa fa-shipping-fast"></i>
+                        Rastreo
+                    </button>
                 @endcan
                 @can('editar viaje planeado')
-                <button type="button" class="btn btn-sm bg-gradient-info" id="btnEditarViaje">
-                    <i class="fa fa-edit"></i>
-                    Editar viaje
-                </button>
+                    <button type="button" class="btn btn-sm bg-gradient-info" id="btnEditarViaje">
+                        <i class="fa fa-edit"></i>
+                        Editar viaje
+                    </button>
                 @endcan
                 @can('anular-planecion')
-                <button type="button" class="btn btn-sm bg-gradient-danger" id="btnDeshacer">
-                    Deshacer planeación
-                </button>
+                    <button type="button" class="btn btn-sm bg-gradient-danger" id="btnDeshacer">
+                        Deshacer planeación
+                    </button>
                 @endcan
                 @can('finalizar viaje seguimeinto')
-                <button type="button" class="btn btn-sm bg-gradient-success" id="btnFinalizar">Finalizar
-                    viaje</button>
+                    <button type="button" class="btn btn-sm bg-gradient-success" id="btnFinalizar">Finalizar
+                        viaje</button>
                 @endcan
             </div>
         </div>
