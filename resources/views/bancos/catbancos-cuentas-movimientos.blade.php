@@ -711,7 +711,7 @@
         $('#daterange').daterangepicker({
                 startDate,
                 endDate,
-                maxDate: moment().endOf('month'),
+                // maxDate: moment().endOf('month'),
                 opens: 'right',
                 locale: {
                     format: 'YYYY-MM-DD',

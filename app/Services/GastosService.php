@@ -420,7 +420,7 @@ class GastosService
             'monto_total' => $legacy->cantidad,
             'fecha_gasto' => $legacy->created_at ?? now(),
             'fecha_operacion' => $legacy->fecha_pago,
-            'tipo_gasto' => 'operador',
+            'tipo_gasto' => 'viaje',
             'metodo_imputacion' => 'directo',
             'estatus' => $this->mapearEstatusLegacy($legacy->estatus ?? 'pendiente'),
             'origen_modulo' => 'liquidacion_operador',
