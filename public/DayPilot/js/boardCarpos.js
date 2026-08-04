@@ -432,7 +432,7 @@ function getInfoViaje(startDate, endDate, numContenedor_, idContendor) {
             }
             let tipoS = "Planeacion-> Contenedor:";
             //Once en true para que se ejecute una sola vez y se elimine el listener    onclick="('${params.data.contenedor}')
-
+            const btnFinalizar = document.getElementById("btnFinalizar");
             if (btnFinalizar) {
                 btnFinalizar.addEventListener(
                     "click",
@@ -440,6 +440,7 @@ function getInfoViaje(startDate, endDate, numContenedor_, idContendor) {
                     { once: true },
                 );
             }
+            const btnDeshacer = document.getElementById("btnDeshacer");
             if (btnDeshacer) {
                 btnDeshacer.addEventListener(
                     "click",
@@ -447,6 +448,7 @@ function getInfoViaje(startDate, endDate, numContenedor_, idContendor) {
                     { once: true },
                 );
             }
+            const btnRastreo = document.getElementById("btnRastreo");
             if (btnRastreo) {
                 btnRastreo.addEventListener(
                     "click",
