@@ -432,31 +432,50 @@ function getInfoViaje(startDate, endDate, numContenedor_, idContendor) {
             }
             let tipoS = "Planeacion-> Contenedor:";
             //Once en true para que se ejecute una sola vez y se elimine el listener    onclick="('${params.data.contenedor}')
-            btnFinalizar.addEventListener(
-                "click",
-                () => finalizarViaje(idContendor, numContenedor_),
-                { once: true },
-            );
-            btnDeshacer.addEventListener(
-                "click",
-                () => anularPlaneacion(idContendor, numContenedor_),
-                { once: true },
-            );
-            btnRastreo.onclick = () => {
-                abrirMapaEnNuevaPestana(numContenedor_, tipoS);
-            };
+
+            if (btnFinalizar) {
+                btnFinalizar.addEventListener(
+                    "click",
+                    () => finalizarViaje(idContendor, numContenedor_),
+                    { once: true },
+                );
+            }
+            if (btnDeshacer) {
+                btnDeshacer.addEventListener(
+                    "click",
+                    () => anularPlaneacion(idContendor, numContenedor_),
+                    { once: true },
+                );
+            }
+            if (btnRastreo) {
+                btnRastreo.addEventListener(
+                    "click",
+                    () => abrirMapaEnNuevaPestana(numContenedor_, tipoS),
+                    { once: true },
+                );
+            }
+
             // Update WhatsApp share data for Operator
-            let divWhatsApp = document.getElementById("datosCompartidosWhatsAppDiv");
+            let divWhatsApp = document.getElementById(
+                "datosCompartidosWhatsAppDiv",
+            );
             if (divWhatsApp) {
                 if (response.password_temporal) {
                     divWhatsApp.style.display = "block";
-                    let pwdSpan = document.getElementById("passwordTemporalSpan");
-                    if (pwdSpan) pwdSpan.textContent = response.password_temporal;
-                    
-                    let btnReenviar = document.getElementById("btnReenviarWhatsApp");
+                    let pwdSpan = document.getElementById(
+                        "passwordTemporalSpan",
+                    );
+                    if (pwdSpan)
+                        pwdSpan.textContent = response.password_temporal;
+
+                    let btnReenviar = document.getElementById(
+                        "btnReenviarWhatsApp",
+                    );
                     if (btnReenviar) {
                         btnReenviar.onclick = () => {
-                            let url = "https://wa.me/?text=" + encodeURIComponent(response.wa_text);
+                            let url =
+                                "https://wa.me/?text=" +
+                                encodeURIComponent(response.wa_text);
                             window.open(url, "_blank");
                         };
                     }
