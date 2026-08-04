@@ -17,20 +17,18 @@ class CorregirGastosOperadoresPagados extends Command
     {
         $this->info('🚀 Iniciando corrección de gastos de operadores...');
 
-        // Obtener todos los gastos de origen gastos_operadores en estatus pendiente_pago
-        $gastos = Gasto::where('origen_legacy', 'gastos_operadores')
-            ->where('estatus', 'pendiente_pago')
-            ->get();
+        // Obtener todos los gastos de origen gastos_operadores
+        $gastos = Gasto::where('origen_legacy', 'gastos_operadores')->get();
 
-        $this->info('Se encontraron ' . $gastos->count() . ' gastos migrados en estatus pendiente_pago.');
+        $this->info('Se encontraron ' . $gastos->count() . ' gastos migrados de origen gastos_operadores.');
 
-        $corregidos = 0;
+        $actualizadosAPagado = 0;
+        $actualizadosAPendiente = 0;
 
         foreach ($gastos as $gasto) {
             // Buscar el registro original en la tabla legacy gastos_operadores
             $gOperador = DB::table('gastos_operadores')
                 ->where('id', $gasto->origen_legacy_id)
-                ->whereNotNull('id_banco')
                 ->first();
 
             if (!$gOperador) {
@@ -38,48 +36,60 @@ class CorregirGastosOperadoresPagados extends Command
                 continue;
             }
 
-            // Validar si el estatus original es "pagado" (insensible a mayúsculas/minúsculas)
-            if (strtolower($gOperador->estatus ?? '') === 'pagado') {
-                DB::transaction(function () use ($gasto, $gOperador, &$corregidos) {
-                    // 1. Actualizar el estatus del Gasto a pagado
-                    $gasto->update(['estatus' => 'pagado']);
+            $legacyEstatus = strtolower($gOperador->estatus ?? '');
 
-                    // 2. Verificar si ya existe un pago asociado (por seguridad)
-                    $existePago = GastoPago::where('gasto_id', $gasto->id)->exists();
+            if ($legacyEstatus === 'pagado') {
+                // Si el origen es pagado pero en el sistema está como pendiente
+                if ($gasto->estatus !== 'pagado') {
+                    DB::transaction(function () use ($gasto, $gOperador, &$actualizadosAPagado) {
+                        $gasto->update(['estatus' => 'pagado']);
 
-                    if (!$existePago) {
-                        $monto = floatval($gOperador->cantidad ?? 0);
-
-                        $fecha = $gOperador->fecha_pago ?? $gOperador->created_at ?? now()->toDateString();
-                        if (is_string($fecha) && strlen($fecha) > 10) {
-                            $fecha = substr($fecha, 0, 10);
-                        }
-
-                        // Validar si el banco existe en la tabla de bancos
-                        $cuentaBancariaId = null;
-                        if (!empty($gOperador->id_banco) && $gOperador->id_banco > 0) {
-                            $existeBanco = DB::table('bancos')->where('id', $gOperador->id_banco)->exists();
-                            if ($existeBanco) {
-                                $cuentaBancariaId = $gOperador->id_banco;
+                        $existePago = GastoPago::where('gasto_id', $gasto->id)->exists();
+                        if (!$existePago) {
+                            $monto = floatval($gOperador->cantidad ?? 0);
+                            $fecha = $gOperador->fecha_pago ?? $gOperador->created_at ?? now()->toDateString();
+                            if (is_string($fecha) && strlen($fecha) > 10) {
+                                $fecha = substr($fecha, 0, 10);
                             }
+
+                            $cuentaBancariaId = null;
+                            if (!empty($gOperador->id_banco) && $gOperador->id_banco > 0) {
+                                $existeBanco = DB::table('bancos')->where('id', $gOperador->id_banco)->exists();
+                                if ($existeBanco) {
+                                    $cuentaBancariaId = $gOperador->id_banco;
+                                }
+                            }
+
+                            GastoPago::create([
+                                'gasto_id' => $gasto->id,
+                                'cuenta_bancaria_id' => $cuentaBancariaId,
+                                'fecha_pago' => $fecha,
+                                'monto' => $monto,
+                                'comprobante' => $gOperador->comprobante,
+                                'estatus' => 'aplicado',
+                            ]);
                         }
+                        $actualizadosAPagado++;
+                    });
+                }
+            } else {
+                // Si el origen NO es pagado (está pendiente) pero en el sistema está marcado como pagado
+                if ($gasto->estatus === 'pagado') {
+                    DB::transaction(function () use ($gasto, &$actualizadosAPendiente) {
+                        // 1. Revertir estatus a pendiente_pago
+                        $gasto->update(['estatus' => 'pendiente_pago']);
 
-                        // 3. Crear el registro en GastoPago
-                        GastoPago::create([
-                            'gasto_id' => $gasto->id,
-                            'cuenta_bancaria_id' => $cuentaBancariaId,
-                            'fecha_pago' => $fecha,
-                            'monto' => $monto,
-                            'comprobante' => $gOperador->comprobante,
-                            'estatus' => 'aplicado',
-                        ]);
-                    }
+                        // 2. Eliminar registros de GastoPago asociados
+                        GastoPago::where('gasto_id', $gasto->id)->delete();
 
-                    $corregidos++;
-                });
+                        $actualizadosAPendiente++;
+                    });
+                }
             }
         }
 
-        $this->info("✔ Corrección finalizada. Se actualizaron {$corregidos} gastos a 'pagado' y se les generó su registro de GastoPago.");
+        $this->info("✔ Corrección finalizada. Resultados:");
+        $this->info("- Gastos actualizados a 'pagado' (con GastoPago): {$actualizadosAPagado}");
+        $this->info("- Gastos revertidos a 'pendiente_pago' (GastoPago eliminado): {$actualizadosAPendiente}");
     }
 }
