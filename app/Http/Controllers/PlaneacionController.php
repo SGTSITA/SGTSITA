@@ -1546,7 +1546,7 @@ class PlaneacionController extends Controller
                     'gasto_concepto_id' => $conceptoId,
                     'concepto' => $tipoGasto,
                     'monto_total' => $monto,
-                    'tipo_gasto' => 'operador',
+                    'tipo_gasto' => 'viaje',
                     'estatus' => $esPagoInmediato ? 'pagado' : 'pendiente_pago',
                     'fecha_gasto' => Carbon::now(),
                     'origen_legacy' => 'asignacion_planeacion'.$tipoGasto,

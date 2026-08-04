@@ -180,21 +180,27 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-sm bg-gradient-secondary" data-bs-dismiss="modal">Cerrar</button>
+                @can('rastreo-seguimeinto')
                 <button type="button" class="btn btn-sm btn-success" title="Rastrear contenedor" id="btnRastreo">
                     <i class="fa fa-shipping-fast"></i>
                     Rastreo
                 </button>
-                @can('editar-planeacion')
+                @endcan
+                @can('editar viaje planeado')
                 <button type="button" class="btn btn-sm bg-gradient-info" id="btnEditarViaje">
                     <i class="fa fa-edit"></i>
                     Editar viaje
                 </button>
                 @endcan
+                @can('anular-planecion')
                 <button type="button" class="btn btn-sm bg-gradient-danger" id="btnDeshacer">
                     Deshacer planeación
                 </button>
+                @endcan
+                @can('finalizar viaje seguimeinto')
                 <button type="button" class="btn btn-sm bg-gradient-success" id="btnFinalizar">Finalizar
                     viaje</button>
+                @endcan
             </div>
         </div>
     </div>

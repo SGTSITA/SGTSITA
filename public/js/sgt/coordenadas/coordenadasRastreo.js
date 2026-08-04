@@ -4591,7 +4591,7 @@ document.addEventListener("DOMContentLoaded", function () {
         {
             startDate: moment(inicio),
             endDate: moment(fin),
-            maxDate: moment(),
+            // maxDate: moment(),
             opens: "right",
             locale: {
                 format: "YYYY-MM-DD",
