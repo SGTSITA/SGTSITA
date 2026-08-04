@@ -27,7 +27,7 @@ class GastosPorPagarExport implements FromView
         $query = GastoImputacion::join('gastos', 'gastos.id', '=', 'gasto_imputaciones.gasto_id')
             ->whereNull('gastos.deleted_at')
             ->where('gastos.id_empresa', $idEmpresa)
-            ->where('gasto_imputaciones.tipo_imputacion', '=', 'operador')
+            ->whereIn('gasto_imputaciones.tipo_imputacion', ['operador', 'viaje'])
             ->select('gasto_imputaciones.*', 'gastos.concepto as motivo_gasto');
 
         if (!empty($this->ids)) {
@@ -53,6 +53,7 @@ class GastosPorPagarExport implements FromView
             'gasto.vinculos' => function ($q) {
                 $q->where('tipo_vinculo', 'asignacion');
             },
+            'gasto.vinculos.vinculable.Operador',
             'gasto.vinculos.vinculable.Contenedor.Cotizacion.Cliente',
             'gasto.vinculos.vinculable.Contenedor.Cotizacion.Subcliente'
         ]);
@@ -65,7 +66,7 @@ class GastosPorPagarExport implements FromView
 
                 return [
                     'id' => $g->id,
-                    'operador' => $g->imputable?->nombre ?? '-',
+                    'operador' => $g->tipo_imputacion === 'operador' ? ($g->imputable?->nombre ?? '-') : ($asignacion?->Operador?->nombre ?? '-'),
                     'cliente' => optional($asignacion?->Contenedor?->Cotizacion?->Cliente)->nombre ?? '-',
                     'subcliente' => optional($asignacion?->Contenedor?->Cotizacion?->Subcliente)->nombre ?? '-',
                     'num_contenedor' => optional($asignacion?->Contenedor)->num_contenedor ?? '-',
@@ -101,8 +102,10 @@ class GastosPorPagarExport implements FromView
                 if (optional($asignacion?->Contenedor)->num_contenedor) {
                     $vinculos[] = 'Contenedor: ' . $asignacion->Contenedor->num_contenedor;
                 }
-                if ($g->imputable?->nombre) {
+                if ($g->tipo_imputacion === 'operador' && $g->imputable?->nombre) {
                     $vinculos[] = 'Operador: ' . $g->imputable->nombre;
+                } elseif ($g->tipo_imputacion === 'viaje' && optional($asignacion)->Operador?->nombre) {
+                    $vinculos[] = 'Operador: ' . $asignacion->Operador->nombre;
                 }
 
                 return [

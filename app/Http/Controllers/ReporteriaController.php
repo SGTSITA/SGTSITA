@@ -2021,7 +2021,7 @@ class ReporteriaController extends Controller
         $query = \App\Models\GastoImputacion::join('gastos', 'gastos.id', '=', 'gasto_imputaciones.gasto_id')
             ->whereNull('gastos.deleted_at')
             ->where('gastos.id_empresa', auth()->user()->id_empresa)
-            ->where('gasto_imputaciones.tipo_imputacion', '=', 'operador')
+            ->whereIn('gasto_imputaciones.tipo_imputacion', ['operador', 'viaje'])
             ->select('gasto_imputaciones.*', 'gastos.concepto as motivo_gasto', 'gastos.estatus as gasto_estatus');
 
         if ($status === 'por_pagar') {
@@ -2035,11 +2035,12 @@ class ReporteriaController extends Controller
         $gastos = $query->get();
 
         $gastos->load([
-            'imputable', // Operador
+            'imputable', // Operador or Asignacion
             'gasto.vinculos' => function ($q) {
                 $q->where('tipo_vinculo', 'asignacion');
             },
             'gasto.vinculos.vinculable.Proveedor',
+            'gasto.vinculos.vinculable.Operador',
             'gasto.vinculos.vinculable.Contenedor.Cotizacion.Cliente',
             'gasto.vinculos.vinculable.Contenedor.Cotizacion.Subcliente'
         ]);
@@ -2050,7 +2051,7 @@ class ReporteriaController extends Controller
 
             return [
                 'id' => $g->id,
-                'operador' => $g->imputable?->nombre ?? '-',
+                'operador' => $g->tipo_imputacion === 'operador' ? ($g->imputable?->nombre ?? '-') : ($asignacion?->Operador?->nombre ?? '-'),
                 'cliente' => optional($asignacion?->Contenedor?->Cotizacion?->Cliente)->nombre ?? '-',
                 'subcliente' => optional($asignacion?->Contenedor?->Cotizacion?->Subcliente)->nombre ?? '-',
                 'num_contenedor' => optional($asignacion?->Contenedor)->num_contenedor ?? '-',
@@ -2076,7 +2077,7 @@ class ReporteriaController extends Controller
         $query = \App\Models\GastoImputacion::join('gastos', 'gastos.id', '=', 'gasto_imputaciones.gasto_id')
             ->whereNull('gastos.deleted_at')
             ->where('gastos.id_empresa', $idEmpresa)
-            ->where('gasto_imputaciones.tipo_imputacion', '=', 'operador')
+            ->whereIn('gasto_imputaciones.tipo_imputacion', ['operador', 'viaje'])
             ->select('gasto_imputaciones.*', 'gastos.concepto as motivo_gasto');
 
         if ($status === 'por_pagar') {
@@ -2090,10 +2091,11 @@ class ReporteriaController extends Controller
         $gastos = $query->get();
 
         $gastos->load([
-            'imputable', // Operador
+            'imputable', // Operador or Asignacion
             'gasto.vinculos' => function ($q) {
                 $q->where('tipo_vinculo', 'asignacion');
             },
+            'gasto.vinculos.vinculable.Operador',
             'gasto.vinculos.vinculable.Contenedor.Cotizacion.Cliente',
             'gasto.vinculos.vinculable.Contenedor.Cotizacion.Subcliente'
         ]);
@@ -2110,7 +2112,7 @@ class ReporteriaController extends Controller
 
             return [
                 'id' => $g->id,
-                'operador' => $g->imputable?->nombre ?? '-',
+                'operador' => $g->tipo_imputacion === 'operador' ? ($g->imputable?->nombre ?? '-') : ($asignacion?->Operador?->nombre ?? '-'),
                 'cliente' => optional($asignacion?->Contenedor?->Cotizacion?->Cliente)->nombre ?? '-',
                 'subcliente' => optional($asignacion?->Contenedor?->Cotizacion?->Subcliente)->nombre ?? '-',
                 'num_contenedor' => optional($asignacion?->Contenedor)->num_contenedor ?? '-',
@@ -2725,6 +2727,30 @@ public function indexRendimiento()
 
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('reporteria.balance_general.pdf', compact('balance', 'fechaCorte'));
         return $pdf->download('Balance_General_' . $fechaCorte . '.pdf');
+    }
+
+    public function json_balance_general(Request $request, \App\Services\BalanceGeneralService $service)
+    {
+        $idEmpresa = auth()->user()->id_empresa;
+        $fechaCorte = $request->input('fecha_corte', now()->format('Y-m-d'));
+        $balance = $service->calculate($idEmpresa, $fechaCorte);
+
+        return response()->json(['success' => true, 'balance' => $balance]);
+    }
+
+    public function index_contabilidad_balance(Request $request, \App\Services\BalanceGeneralService $service)
+    {
+        $idEmpresa = auth()->user()->id_empresa;
+        $fechaCorte = $request->input('fecha_corte', now()->format('Y-m-d'));
+
+        $configs = $service->getConfigurations($idEmpresa);
+        $ejerciciosRegistrados = \App\Models\BalanceGeneralSaldoInicial::where('id_empresa', $idEmpresa)
+            ->select('ejercicio', 'fecha_inicio')
+            ->groupBy('ejercicio', 'fecha_inicio')
+            ->orderBy('ejercicio', 'desc')
+            ->get();
+
+        return view('contabilidad.balance_general.index', compact('configs', 'ejerciciosRegistrados', 'fechaCorte'));
     }
 }
 

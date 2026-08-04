@@ -1140,7 +1140,7 @@ else{
             ->where('gasto_vinculos.tipo_vinculo', '=', 'cotizacion')
             ->where('gasto_vinculos.vinculable_type', '=', \App\Models\Cotizaciones::class)
             ->where('gasto_vinculos.vinculable_id', '=', $cotizacion->id)
-            ->where('gasto_imputaciones.tipo_imputacion', '=', 'operador')
+            ->whereIn('gasto_imputaciones.tipo_imputacion', ['operador', 'viaje'])
             ->select(
                 'gasto_imputaciones.*',
                 'gasto_imputaciones.monto_imputado as cantidad',
@@ -1335,7 +1335,7 @@ else{
             ->where('gasto_vinculos.tipo_vinculo', '=', 'cotizacion')
             ->where('gasto_vinculos.vinculable_type', '=', \App\Models\Cotizaciones::class)
             ->where('gasto_vinculos.vinculable_id', '=', $cotizacion->id)
-            ->where('gasto_imputaciones.tipo_imputacion', '=', 'operador')
+            ->whereIn('gasto_imputaciones.tipo_imputacion', ['operador', 'viaje'])
             ->select(
                 'gasto_imputaciones.*',
                 'gasto_imputaciones.monto_imputado as cantidad',
@@ -2439,7 +2439,7 @@ $this->procesarDocumento(
         ]);
 
         $gastosOperador = $gastosUnificados->filter(function ($g) {
-            return $g['tipo_gasto'] === 'operador';
+            return in_array($g['tipo_gasto'], ['operador', 'viaje']);
         });
 
         $gastosContenedor =
