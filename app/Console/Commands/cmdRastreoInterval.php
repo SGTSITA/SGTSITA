@@ -15,6 +15,11 @@ class cmdRastreoInterval extends Command
 
     protected $description = 'Revisa la base de datos las cotizaciones planeadas y si encuentra ejecuta el rastro';
 
+    /**
+     * @var UbicacionService
+     */
+    protected $ubiService;
+
    
 
         public function __construct(UbicacionService $ubiService)
