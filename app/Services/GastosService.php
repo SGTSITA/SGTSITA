@@ -124,6 +124,8 @@ class GastosService
                               });
                       });
                 });
+            } elseif ($filters['tipo_gasto'] === 'operador') {
+                $query->whereIn('tipo_gasto', ['operador', 'viaje']);
             } else {
                 $query->where('tipo_gasto', $filters['tipo_gasto']);
             }
