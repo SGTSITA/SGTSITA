@@ -1780,14 +1780,24 @@
                                                                                                 <span class="small text-dark d-block">Importe: <strong>${{ number_format($bitacora->costo, 2) }}</strong></span>
                                                                                             @endif
                                                                                             @if ($bitacora->comprobante)
-                                                                                                <a href="{{ asset($bitacora->comprobante) }}" target="_blank" class="d-inline-flex align-items-center mt-1">
-                                                                                                    <img src="{{ asset($bitacora->comprobante) }}" alt="Comprobante Diésel" class="rounded border shadow-sm me-2" style="max-height: 40px; max-width: 80px; object-fit: contain;">
-                                                                                                    <span class="small">Ver Comprobante</span>
-                                                                                                </a>
+                                                                                                @php
+                                                                                                    $dieselFiles = json_decode($bitacora->comprobante, true);
+                                                                                                    if (json_last_error() !== JSON_ERROR_NONE || !is_array($dieselFiles)) {
+                                                                                                        $dieselFiles = [$bitacora->comprobante];
+                                                                                                    }
+                                                                                                @endphp
+                                                                                                <div class="d-flex flex-column gap-1 mt-1">
+                                                                                                    @foreach($dieselFiles as $idx => $file)
+                                                                                                        <a href="{{ asset($file) }}" target="_blank" class="d-inline-flex align-items-center mb-1">
+                                                                                                            <img src="{{ asset($file) }}" alt="Comprobante Diésel {{ $idx + 1 }}" class="rounded border shadow-sm me-2" style="max-height: 40px; max-width: 80px; object-fit: contain;">
+                                                                                                            <span class="small">Ver Comprobante {{ $idx + 1 }}</span>
+                                                                                                        </a>
+                                                                                                    @endforeach
+                                                                                                </div>
                                                                                             @endif
                                                                                         </div>
                                                                                     @endif
-
+ 
                                                                                     @if ($bitacora->litros_urea || $bitacora->costo_urea || $bitacora->comprobante_urea)
                                                                                         <div class="col-md-6 col-12">
                                                                                             <span class="small fw-bold text-muted d-block">Urea (App):</span>
@@ -1798,10 +1808,20 @@
                                                                                                 <span class="small text-dark d-block">Importe: <strong>${{ number_format($bitacora->costo_urea, 2) }}</strong></span>
                                                                                             @endif
                                                                                             @if ($bitacora->comprobante_urea)
-                                                                                                <a href="{{ asset($bitacora->comprobante_urea) }}" target="_blank" class="d-inline-flex align-items-center mt-1">
-                                                                                                    <img src="{{ asset($bitacora->comprobante_urea) }}" alt="Comprobante Urea" class="rounded border shadow-sm me-2" style="max-height: 40px; max-width: 80px; object-fit: contain;">
-                                                                                                    <span class="small">Ver Comprobante</span>
-                                                                                                </a>
+                                                                                                @php
+                                                                                                    $ureaFiles = json_decode($bitacora->comprobante_urea, true);
+                                                                                                    if (json_last_error() !== JSON_ERROR_NONE || !is_array($ureaFiles)) {
+                                                                                                        $ureaFiles = [$bitacora->comprobante_urea];
+                                                                                                    }
+                                                                                                @endphp
+                                                                                                <div class="d-flex flex-column gap-1 mt-1">
+                                                                                                    @foreach($ureaFiles as $idx => $file)
+                                                                                                        <a href="{{ asset($file) }}" target="_blank" class="d-inline-flex align-items-center mb-1">
+                                                                                                            <img src="{{ asset($file) }}" alt="Comprobante Urea {{ $idx + 1 }}" class="rounded border shadow-sm me-2" style="max-height: 40px; max-width: 80px; object-fit: contain;">
+                                                                                                            <span class="small">Ver Comprobante {{ $idx + 1 }}</span>
+                                                                                                        </a>
+                                                                                                    @endforeach
+                                                                                                </div>
                                                                                             @endif
                                                                                         </div>
                                                                                     @endif
