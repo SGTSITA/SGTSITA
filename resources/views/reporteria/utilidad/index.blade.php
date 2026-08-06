@@ -178,7 +178,7 @@
                             moment().subtract(1, 'month').endOf('month'),
                         ],
                     },
-                    maxDate: moment()
+                    // maxDate: moment()
                 },
                 function(start, end, label) {
                     getUtilidadesViajes(start.format('YYYY-MM-DD'), end.format('YYYY-MM-DD'));

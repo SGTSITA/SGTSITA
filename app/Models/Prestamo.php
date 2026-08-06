@@ -27,6 +27,9 @@ class Prestamo extends Model
          'fecha_prestamo',
     ];
 
+    protected $casts = [
+    'fecha_prestamo' => 'date',
+];
     // Relación: un préstamo pertenece a un operador
     public function operador()
     {

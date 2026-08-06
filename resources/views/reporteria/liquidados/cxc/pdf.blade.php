@@ -83,8 +83,8 @@
             <tbody style="text-align: center; font-size: 100%">
                 @foreach ($cotizaciones as $cotizacion)
                     @php
-                        $total_oficial = $cotizacion->base_factura + $cotizacion->iva - $cotizacion->retencion;
-                        $base_taref = $cotizacion->total - $cotizacion->base_factura - $cotizacion->iva + $cotizacion->retencion;
+                        $total_oficial = (float)$cotizacion->base_factura + (float)$cotizacion->iva - (float)$cotizacion->retencion;
+                        $base_taref = (float)$cotizacion->total - (float)$cotizacion->base_factura - (float)$cotizacion->iva + (float)$cotizacion->retencion;
 
                         $importe_vta = $base_taref + $total_oficial;
 
@@ -102,14 +102,14 @@
                         <td>{{ $cotizacion->DocCotizacion->num_contenedor }}</td>
                         <td>
                             @php
-                                $total_oficial = $cotizacion->base_factura + $cotizacion->iva - $cotizacion->retencion;
+                                $total_oficial = (float)$cotizacion->base_factura + (float)$cotizacion->iva - (float)$cotizacion->retencion;
                             @endphp
 
                             $ {{ number_format($total_oficial, 2, '.', ',') }}
                         </td>
                         <td>
                             @php
-                                $total_no_ofi = $cotizacion->total - $cotizacion->base_factura - $cotizacion->iva + $cotizacion->retencion;
+                                $total_no_ofi = (float)$cotizacion->total - (float)$cotizacion->base_factura - (float)$cotizacion->iva + (float)$cotizacion->retencion;
                             @endphp
 
                             $ {{ number_format($total_no_ofi, 2, '.', ',') }}
@@ -156,9 +156,9 @@
                             {{ $cotizacion->monto2 }}
                         </td>
                         <td>
-                            {{ \Carbon\Carbon::parse($cotizacion->DocCotizacion->Asignaciones->fehca_inicio_guard)->translatedFormat('d F Y') }}
+                            {{ $cotizacion->DocCotizacion?->Asignaciones?->fehca_inicio_guard ? \Carbon\Carbon::parse($cotizacion->DocCotizacion->Asignaciones->fehca_inicio_guard)->translatedFormat('d F Y') : '-' }}
                             <br />
-                            {{ \Carbon\Carbon::parse($cotizacion->DocCotizacion->Asignaciones->fehca_fin_guard)->translatedFormat('d F Y') }}
+                            {{ $cotizacion->DocCotizacion?->Asignaciones?->fehca_fin_guard ? \Carbon\Carbon::parse($cotizacion->DocCotizacion->Asignaciones->fehca_fin_guard)->translatedFormat('d F Y') : '-' }}
                         </td>
                         <td>
                             @foreach ($registrosBanco as $registro)

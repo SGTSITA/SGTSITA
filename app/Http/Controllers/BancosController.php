@@ -62,7 +62,22 @@ class BancosController extends Controller
             })
             ->get();
 
+            /*
             $gastos_generales = GastosGenerales::where('id_banco1', '=', $banco->id)->where('is_active', 1)->get();
+            */
+            $gastos_generales = \App\Models\GastoImputacion::join('gastos', 'gastos.id', '=', 'gasto_imputaciones.gasto_id')
+                ->join('gasto_pagos', 'gasto_pagos.gasto_id', '=', 'gastos.id')
+                ->whereNull('gastos.deleted_at')
+                ->where('gastos.estatus', '!=', 'cancelado')
+                ->whereIn('gasto_imputaciones.tipo_imputacion', ['periodo', 'empresa'])
+                ->where('gasto_pagos.cuenta_bancaria_id', '=', $banco->id)
+                ->select(
+                    'gasto_imputaciones.*',
+                    'gasto_imputaciones.monto_imputado as monto1',
+                    'gasto_imputaciones.fecha_imputacion as fecha',
+                    'gastos.concepto as motivo'
+                )
+                ->get();
 
             $banco_entrada = 0;
             $banco_salida = 0;
@@ -251,9 +266,25 @@ class BancosController extends Controller
         ->whereBetween('fecha_pago', [$startOfWeek, $endOfWeek])
         ->get();
 
+        /*
         $gastos_generales = GastosGenerales::where('id_banco1', '=', $id)
         ->where('is_active', 1)
         ->whereBetween('fecha', [$startOfWeek, $endOfWeek])
+        ->get();
+        */
+        $gastos_generales = \App\Models\GastoImputacion::join('gastos', 'gastos.id', '=', 'gasto_imputaciones.gasto_id')
+        ->join('gasto_pagos', 'gasto_pagos.gasto_id', '=', 'gastos.id')
+        ->whereNull('gastos.deleted_at')
+        ->where('gastos.estatus', '!=', 'cancelado')
+        ->whereIn('gasto_imputaciones.tipo_imputacion', ['periodo', 'empresa'])
+        ->where('gasto_pagos.cuenta_bancaria_id', '=', $id)
+        ->whereBetween('gasto_imputaciones.fecha_imputacion', [$startOfWeek, $endOfWeek])
+        ->select(
+            'gasto_imputaciones.*',
+            'gasto_imputaciones.monto_imputado as monto1',
+            'gasto_imputaciones.fecha_imputacion as fecha',
+            'gastos.concepto as motivo'
+        )
         ->get();
 
         // Calculo del saldo final
@@ -387,8 +418,24 @@ class BancosController extends Controller
         ->get();
 
 
+        /*
         $gastos_generales = GastosGenerales::where('id_banco1', '=', $id)
         ->whereBetween('fecha', [$startOfWeek, $endOfWeek])
+        ->get();
+        */
+        $gastos_generales = \App\Models\GastoImputacion::join('gastos', 'gastos.id', '=', 'gasto_imputaciones.gasto_id')
+        ->join('gasto_pagos', 'gasto_pagos.gasto_id', '=', 'gastos.id')
+        ->whereNull('gastos.deleted_at')
+        ->where('gastos.estatus', '!=', 'cancelado')
+        ->whereIn('gasto_imputaciones.tipo_imputacion', ['periodo', 'empresa'])
+        ->where('gasto_pagos.cuenta_bancaria_id', '=', $id)
+        ->whereBetween('gasto_imputaciones.fecha_imputacion', [$startOfWeek, $endOfWeek])
+        ->select(
+            'gasto_imputaciones.*',
+            'gasto_imputaciones.monto_imputado as monto1',
+            'gasto_imputaciones.fecha_imputacion as fecha',
+            'gastos.concepto as motivo'
+        )
         ->get();
 
         // Calculo del saldo final
@@ -522,8 +569,24 @@ class BancosController extends Controller
         ->whereBetween('fecha_pago', [$startOfWeek, $endOfWeek])
         ->get();
 
+        /*
         $gastos_generales = GastosGenerales::where('id_banco1', '=', $id)
         ->whereBetween('fecha', [$startOfWeek, $endOfWeek])
+        ->get();
+        */
+        $gastos_generales = \App\Models\GastoImputacion::join('gastos', 'gastos.id', '=', 'gasto_imputaciones.gasto_id')
+        ->join('gasto_pagos', 'gasto_pagos.gasto_id', '=', 'gastos.id')
+        ->whereNull('gastos.deleted_at')
+        ->where('gastos.estatus', '!=', 'cancelado')
+        ->whereIn('gasto_imputaciones.tipo_imputacion', ['periodo', 'empresa'])
+        ->where('gasto_pagos.cuenta_bancaria_id', '=', $id)
+        ->whereBetween('gasto_imputaciones.fecha_imputacion', [$startOfWeek, $endOfWeek])
+        ->select(
+            'gasto_imputaciones.*',
+            'gasto_imputaciones.monto_imputado as monto1',
+            'gasto_imputaciones.fecha_imputacion as fecha',
+            'gastos.concepto as motivo'
+        )
         ->get();
 
         $combined = collect()

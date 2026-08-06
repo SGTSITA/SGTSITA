@@ -68,9 +68,9 @@ class Proveedor extends Model
             }
         });
 
-        static::updating(function ($empresa) {
+        /* static::updating(function ($empresa) {
             $empresa->id_empresa = Auth::user()->id_empresa;
-        });
+        }); */
     }
 
 

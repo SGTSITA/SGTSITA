@@ -6,11 +6,13 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 use App\Traits\Auditable;
 
 class User extends Authenticatable
 {
+    use HasApiTokens;
     use HasFactory;
     use Notifiable;
     use HasRoles;
@@ -72,5 +74,36 @@ class User extends Authenticatable
             'proveedor_id'
         );
     }
+
+    public function clientes()
+    {
+        return $this->belongsToMany(
+            Client::class,
+            'user_clientes',
+            'user_id',
+            'cliente_id'
+        );
+    }
+
+    public function notificaciones()
+{
+    return $this->hasMany(Notificacion::class, 'user_id');
+}
+
+public function notificacionesNoLeidas()
+{
+    return $this->hasMany(Notificacion::class, 'user_id')
+        ->whereNull('leida_at');
+}
+
+public function reglasNotificacion()
+{
+    return $this->belongsToMany(
+        NotificacionRegla::class,
+        'notificacion_regla_usuarios',
+        'user_id',
+        'notificacion_regla_id'
+    )->withTimestamps();
+}
 
 }
