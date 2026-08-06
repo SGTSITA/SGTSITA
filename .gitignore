@@ -28,3 +28,5 @@ Dockerfile
 docker-compose.yml
 /apache
 /public/uploads/
+.prettierrc.json
+.vscode/

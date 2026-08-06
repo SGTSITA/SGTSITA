@@ -1,8 +1,8 @@
 ---
 title: Reply all
 categories:
-  - Communications
+    - Communications
 tags:
-  - mail
-  - email
+    - mail
+    - email
 ---

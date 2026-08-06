@@ -1,11 +1,11 @@
 ---
 title: People circle
 categories:
-  - People
+    - People
 tags:
-  - humans
-  - organization
-  - avatar
-  - user
-  - account
+    - humans
+    - organization
+    - avatar
+    - user
+    - account
 ---

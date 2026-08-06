@@ -1,6 +1,6 @@
 ---
 title: Explicit fill
 categories:
-  - Badges
+    - Badges
 tags:
 ---

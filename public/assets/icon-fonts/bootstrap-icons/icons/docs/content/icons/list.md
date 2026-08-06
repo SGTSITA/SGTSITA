@@ -1,12 +1,12 @@
 ---
 title: List
 categories:
-  - Typography
+    - Typography
 tags:
-  - text
-  - type
-  - justify
-  - alignment
-  - menu
-  - hamburger
+    - text
+    - type
+    - justify
+    - alignment
+    - menu
+    - hamburger
 ---

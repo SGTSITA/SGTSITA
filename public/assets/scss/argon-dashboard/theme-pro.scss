@@ -17,20 +17,20 @@
 
 // {{ site.product.name }} Core styling components
 
-@import "theme";
+@import 'theme';
 
 // Mixin
-@import "mixins/mixins";
+@import 'mixins/mixins';
 
 // PRO Components
-@import "accordion";
-@import "backgrounds";
-@import "cards-extend";
-@import "components";
-@import "dropdown-extend";
-@import "floating-elements";
-@import "misc-extend";
-@import "rtl-extend";
+@import 'accordion';
+@import 'backgrounds';
+@import 'cards-extend';
+@import 'components';
+@import 'dropdown-extend';
+@import 'floating-elements';
+@import 'misc-extend';
+@import 'rtl-extend';
 
 // Plugins
-@import "plugins/pro/plugins-extend";
+@import 'plugins/pro/plugins-extend';

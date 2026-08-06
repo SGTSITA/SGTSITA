@@ -1,8 +1,8 @@
 ---
 title: Badge wc fill
 categories:
-  - Badges
+    - Badges
 tags:
-  - wash closet
-  - wc
+    - wash closet
+    - wc
 ---

@@ -1,16 +1,12 @@
- let contenedoresDisponibles;
- let contenedoresAsignadosAntes ;
-  let gridApi;
- document.addEventListener('DOMContentLoaded', function () {
-
-     
-
+let contenedoresDisponibles;
+let contenedoresAsignadosAntes;
+let gridApi;
+document.addEventListener('DOMContentLoaded', function () {
     definirTable();
-
 
     const modal = new bootstrap.Modal(document.getElementById('modalBuscarConvoy'), {
         backdrop: 'static',
-        keyboard: false
+        keyboard: false,
     });
 
     // Mostrar el modal al cargar la vista
@@ -21,20 +17,15 @@
         modal.show();
     });
 
- 
- 
-
-
     document.getElementById('formBuscarConvoy').addEventListener('submit', function (e) {
         e.preventDefault();
 
         const numero = document.getElementById('numero_convoy').value;
 
         fetch(`/coordenadas/conboys/getconvoy/${numero}`)
-            .then(res => res.json())
-            .then(data => {
+            .then((res) => res.json())
+            .then((data) => {
                 if (data.success) {
-
                     const fechaInicio = new Date(data.data.fecha_inicio);
                     const fechaFin = new Date(data.data.fecha_fin);
 
@@ -48,126 +39,109 @@
                     contenedoresDisponibles = data.data.contenedoresPropios;
                     contenedoresAsignadosAntes = data.data.contenedoresPropiosAsignados;
                     contenedoresAsignadosAntes.forEach((contenedor, index) => {
-                         seleccionarContenedor(contenedor.num_contenedor)
-                         
-                        });
-                   
-
-                   
+                        seleccionarContenedor(contenedor.num_contenedor);
+                    });
 
                     document.getElementById('resultadoConvoy').style.display = 'block';
                 } else {
-                    alert("Convoy no encontrado.");
+                    alert('Convoy no encontrado.');
                 }
             });
     });
 
-
-
-    
     document.getElementById('btnGuardarContenedores').addEventListener('click', function () {
         const numeroConvoy = document.getElementById('numero_convoy').value;
         let idconvoy = document.getElementById('id_convoy').value;
-    document.getElementById('ItemsSelects').value = ItemsSelects.join(';');
-    
-if (!ItemsSelects || ItemsSelects.length === 0) {
-    alert('Por favor, seleccione al menos un contenedor.');
-    return;
-  }
-let datap = {
-    items_selects: ItemsSelects,
-    idconvoy:idconvoy,
-    numero_convoy:numeroConvoy,
-};
+        document.getElementById('ItemsSelects').value = ItemsSelects.join(';');
+
+        if (!ItemsSelects || ItemsSelects.length === 0) {
+            alert('Por favor, seleccione al menos un contenedor.');
+            return;
+        }
+        let datap = {
+            items_selects: ItemsSelects,
+            idconvoy: idconvoy,
+            numero_convoy: numeroConvoy,
+        };
 
         fetch(`/coordenadas/conboys/agregar`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
             },
-            body: JSON.stringify(datap)
+            body: JSON.stringify(datap),
         })
-        .then(async res => {
-            if (!res.ok) {
-                // Intentamos extraer el mensaje del error (por si Laravel lo devuelve)
-                const errorText = await res.text();
-                throw new Error(errorText || 'Error desconocido del servidor');
-            }
-            return res.json();
-        })
-        .then(data => {
-            if (data.success) {
-                document.getElementById('modalBuscarConvoy').style.display = 'none';
-              
+            .then(async (res) => {
+                if (!res.ok) {
+                    // Intentamos extraer el mensaje del error (por si Laravel lo devuelve)
+                    const errorText = await res.text();
+                    throw new Error(errorText || 'Error desconocido del servidor');
+                }
+                return res.json();
+            })
+            .then((data) => {
+                if (data.success) {
+                    document.getElementById('modalBuscarConvoy').style.display = 'none';
 
-                Swal.fire({
-                    title: 'Guardado correctamente',
-                    text: data.message + ' ' + data.no_conboy,
-                    icon: 'success',
-                    confirmButtonText: 'Aceptar'
-                });
+                    Swal.fire({
+                        title: 'Guardado correctamente',
+                        text: data.message + ' ' + data.no_conboy,
+                        icon: 'success',
+                        confirmButtonText: 'Aceptar',
+                    });
 
                     const modal = bootstrap.Modal.getInstance(document.getElementById('modalBuscarConvoy'));
                     modal.hide();
+                } else {
+                    Swal.fire({
+                        title: 'Error',
+                        text: data.message || 'No se pudo guardar.',
+                        icon: 'error',
+                        confirmButtonText: 'Cerrar',
+                    });
+                }
+            })
+            .catch((error) => {
+                console.error('Error en la petición:', error);
 
-            } else {
                 Swal.fire({
-                    title: 'Error',
-                    text: data.message || 'No se pudo guardar.',
+                    title: 'Error inesperado',
+                    text: error.message,
                     icon: 'error',
-                    confirmButtonText: 'Cerrar'
+                    confirmButtonText: 'Cerrar',
                 });
-            }
-        })
-        .catch(error => {
-            console.error('Error en la petición:', error);
-
-            Swal.fire({
-                title: 'Error inesperado',
-                text: error.message,
-                icon: 'error',
-                confirmButtonText: 'Cerrar'
             });
-        });
     });
+});
 
-
-
-
-
-
-    });
-
-    function definirTable(){
-  const columnDefs = [
+function definirTable() {
+    const columnDefs = [
         {
-        headerCheckboxSelection: true,
-        checkboxSelection: true,
-        width: 40, 
-        pinned: "left", 
-        suppressSizeToFit: true,
-        resizable: false
+            headerCheckboxSelection: true,
+            checkboxSelection: true,
+            width: 40,
+            pinned: 'left',
+            suppressSizeToFit: true,
+            resizable: false,
         },
         // { headerName: "No Coti", field: "id_cotizacion", sortable: true, filter: true },
         // { headerName: "No Asig", field: "id_asignacion", sortable: true, filter: true },
         // { headerName: "No Coor", field: "id_coordenada", sortable: true, filter: true },
-        { headerName: "Id", field: "no_conboy", sortable: true, filter: true },
-        { headerName: "Descripcion", field: "nombre", sortable: true, filter: true },
-        { headerName: "Fecha Inicio", field: "fecha_inicio", sortable: true, filter: true },
-        { headerName: "Fecha Fin", field: "fecha_fin", sortable: true, filter: true },
-       
-        
+        { headerName: 'Id', field: 'no_conboy', sortable: true, filter: true },
+        { headerName: 'Descripcion', field: 'nombre', sortable: true, filter: true },
+        { headerName: 'Fecha Inicio', field: 'fecha_inicio', sortable: true, filter: true },
+        { headerName: 'Fecha Fin', field: 'fecha_fin', sortable: true, filter: true },
 
-       {
-    headerName: "Acciones",
-    field: "acciones",
-    cellRenderer: function (params) {
-        const container = document.createElement("div");
-        const data = params.data;
+        {
+            headerName: 'Acciones',
+            field: 'acciones',
+            cellRenderer: function (params) {
+                const container = document.createElement('div');
+                const data = params.data;
 
-        // Botón Editar
-       /*  const btnEditar = document.createElement("button");
+                // Botón Editar
+                /*  const btnEditar = document.createElement("button");
         btnEditar.innerText = "✏️ Editar";
         btnEditar.classList.add("btn", "btn-sm", "btn-warning", "me-1");
         btnEditar.onclick = function () {
@@ -191,149 +165,134 @@ let datap = {
             modal.show();
         }; */
 
-        const btnRastrear = document.createElement("button");
-btnRastrear.innerText = "🔗 Rastrear convoy";
-btnRastrear.classList.add("btn", "btn-sm", "btn-info");
+                const btnRastrear = document.createElement('button');
+                btnRastrear.innerText = '🔗 Rastrear convoy';
+                btnRastrear.classList.add('btn', 'btn-sm', 'btn-info');
 
-btnRastrear.onclick = function () {
-    // Arma la URL que quieres abrir
-    const url = `${window.location.origin}/coordenadas/rastrear`;
+                btnRastrear.onclick = function () {
+                    // Arma la URL que quieres abrir
+                    const url = `${window.location.origin}/coordenadas/rastrear`;
 
-    // Abre la URL en una nueva pestaña o ventana
-    window.open(url, '_blank');
-};
+                    // Abre la URL en una nueva pestaña o ventana
+                    window.open(url, '_blank');
+                };
 
-        // container.appendChild(btnEditar);
-        container.appendChild(btnRastrear);
+                // container.appendChild(btnEditar);
+                container.appendChild(btnRastrear);
 
-        return container;
-    }
-}
-       
-       
-             
-       
+                return container;
+            },
+        },
     ];
     function formatDateForInput(dateString) {
-    const date = new Date(dateString);
-    const year = date.getFullYear();
-    const month = (`0${date.getMonth() + 1}`).slice(-2);
-    const day = (`0${date.getDate()}`).slice(-2);
-    return `${year}-${month}-${day}`;
-}
+        const date = new Date(dateString);
+        const year = date.getFullYear();
+        const month = `0${date.getMonth() + 1}`.slice(-2);
+        const day = `0${date.getDate()}`.slice(-2);
+        return `${year}-${month}-${day}`;
+    }
 
-
-const gridOptions = {
+    const gridOptions = {
         columnDefs: columnDefs,
         pagination: true,
         paginationPageSize: 100,
         // rowSelection: "multiple",
         defaultColDef: {
             resizable: true,
-            flex: 1
+            flex: 1,
         },
     };
 
-    const myGridElement = document.querySelector("#myGrid");
+    const myGridElement = document.querySelector('#myGrid');
     gridApi = agGrid.createGrid(myGridElement, gridOptions);
 
     cargaConboys();
 
-    function cargaConboys()
-    { 
-        const overlay = document.getElementById("gridLoadingOverlay");
-        overlay.style.display = "flex";
-    
-                
-            gridApi.setGridOption("rowData", []); 
-        
-            fetch("/coordenadas/conboys/getconboys")
-                .then(response => response.json())
-                .then(data => {
-                   const rowData = data.data;
-                    gridApi.setGridOption("rowData", rowData);
-                    contenedoresGuardados = data.dataConten;
-                })
-                .catch(error => {
-                    console.error("❌ Error al obtener la lista de convoys:", error);
-                })
-                .finally(() => {
-                    overlay.style.display = "none"; 
-                });
+    function cargaConboys() {
+        const overlay = document.getElementById('gridLoadingOverlay');
+        overlay.style.display = 'flex';
+
+        gridApi.setGridOption('rowData', []);
+
+        fetch('/coordenadas/conboys/getconboys')
+            .then((response) => response.json())
+            .then((data) => {
+                const rowData = data.data;
+                gridApi.setGridOption('rowData', rowData);
+                contenedoresGuardados = data.dataConten;
+            })
+            .catch((error) => {
+                console.error('❌ Error al obtener la lista de convoys:', error);
+            })
+            .finally(() => {
+                overlay.style.display = 'none';
+            });
     }
 }
 
-     
+//sugerencias propias
 
-
-     //sugerencias propias
-
-    
 const seleccionados = [];
 const ItemsSelects = [];
 
-    function mostrarSugerencias() {
-        const input = document.getElementById('contenedor-input');
-        const filtro = input.value.trim().toUpperCase();
-        const sugerenciasDiv = document.getElementById('sugerencias');
-        sugerenciasDiv.innerHTML = '';
+function mostrarSugerencias() {
+    const input = document.getElementById('contenedor-input');
+    const filtro = input.value.trim().toUpperCase();
+    const sugerenciasDiv = document.getElementById('sugerencias');
+    sugerenciasDiv.innerHTML = '';
 
-        if (filtro.length === 0) {
-            sugerenciasDiv.style.display = 'none';
-            return;
-        }
-
-        const filtrados = contenedoresDisponibles.filter(c =>
-            
-            (c.num_contenedor || '').toUpperCase().includes(filtro) &&
-    !seleccionados.includes(c.num_contenedor)
-
-
-        );
-
-        filtrados.forEach(c => {
-            const item = document.createElement('div');
-            item.textContent = c.num_contenedor;
-            item.style.padding = '5px';
-            item.style.cursor = 'pointer';
-            item.onclick = () => seleccionarContenedor(c.num_contenedor);
-            sugerenciasDiv.appendChild(item);
-        });
-
-        sugerenciasDiv.style.display = filtrados.length ? 'block' : 'none';
+    if (filtro.length === 0) {
+        sugerenciasDiv.style.display = 'none';
+        return;
     }
 
-    function seleccionarContenedor(valor) {
+    const filtrados = contenedoresDisponibles.filter(
+        (c) => (c.num_contenedor || '').toUpperCase().includes(filtro) && !seleccionados.includes(c.num_contenedor),
+    );
+
+    filtrados.forEach((c) => {
+        const item = document.createElement('div');
+        item.textContent = c.num_contenedor;
+        item.style.padding = '5px';
+        item.style.cursor = 'pointer';
+        item.onclick = () => seleccionarContenedor(c.num_contenedor);
+        sugerenciasDiv.appendChild(item);
+    });
+
+    sugerenciasDiv.style.display = filtrados.length ? 'block' : 'none';
+}
+
+function seleccionarContenedor(valor) {
+    seleccionados.push(valor);
+    const contenedorData = contenedoresDisponibles.find((c) => c.num_contenedor === valor);
+
+    ItemsSelects.push(valor + '-' + contenedorData.id_contenedor);
+    document.getElementById('contenedor-input').value = '';
+    document.getElementById('sugerencias').style.display = 'none';
+    actualizarVista();
+}
+
+function agregarContenedor() {
+    const input = document.getElementById('contenedor-input');
+    const valor = input.value.trim().toUpperCase();
+    if (valor && contenedoresDisponibles.includes(valor) && !seleccionados.includes(valor)) {
         seleccionados.push(valor);
-         const contenedorData = contenedoresDisponibles.find(c => c.num_contenedor === valor);
 
-         ItemsSelects.push(valor +"-" + contenedorData.id_contenedor);
-        document.getElementById('contenedor-input').value = '';
-        document.getElementById('sugerencias').style.display = 'none';
+        input.value = '';
         actualizarVista();
     }
+}
 
-    function agregarContenedor() {
-        const input = document.getElementById('contenedor-input');
-        const valor = input.value.trim().toUpperCase();
-        if (valor && contenedoresDisponibles.includes(valor) && !seleccionados.includes(valor)) {
-            seleccionados.push(valor);
-           
-            input.value = '';
-            actualizarVista();
-        }
-    }
+function eliminarContenedor(idx) {
+    seleccionados.splice(idx, 1);
+    ItemsSelects.splice(idx, 1);
+    actualizarVista();
+}
 
-    function eliminarContenedor(idx) {
-        seleccionados.splice(idx, 1);
-          ItemsSelects.splice(idx, 1);
-        actualizarVista();
-    }
-
-    function actualizarVista() {
-        const tbody = document.querySelector('#tablaContenedores tbody');
-     tbody.innerHTML = '';
-         seleccionados.forEach((cont, i) => {
+function actualizarVista() {
+    const tbody = document.querySelector('#tablaContenedores tbody');
+    tbody.innerHTML = '';
+    seleccionados.forEach((cont, i) => {
         const row = document.createElement('tr');
         row.innerHTML = `
           
@@ -348,14 +307,12 @@ const ItemsSelects = [];
         `;
         tbody.appendChild(row);
     });
-    
 
-        document.getElementById('contenedores').value = seleccionados.join(';');
-        document.getElementById('ItemsSelects').value = ItemsSelects.join(';');
-    }
+    document.getElementById('contenedores').value = seleccionados.join(';');
+    document.getElementById('ItemsSelects').value = ItemsSelects.join(';');
+}
 
-
-    function limpiarFormularioConvoy() {
+function limpiarFormularioConvoy() {
     // Limpiar tabla de contenedores
     const tbody = document.getElementById('tablaContenedores');
     tbody.innerHTML = '';
@@ -372,5 +329,5 @@ const ItemsSelects = [];
     document.getElementById('modalBuscarConvoy').style.display = 'none';
 
     // Limpiar también posibles mensajes o alertas
-   // document.getElementById('resultadoBusquedaConvoy')?.innerHTML = '';
+    // document.getElementById('resultadoBusquedaConvoy')?.innerHTML = '';
 }

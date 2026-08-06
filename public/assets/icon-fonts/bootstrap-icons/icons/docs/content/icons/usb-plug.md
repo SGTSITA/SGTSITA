@@ -1,6 +1,6 @@
 ---
 title: USB plug
 categories:
-  - Devices
+    - Devices
 tags:
 ---

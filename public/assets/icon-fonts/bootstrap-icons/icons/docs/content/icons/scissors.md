@@ -1,8 +1,8 @@
 ---
 title: Scissors
 categories:
-  - Real world
+    - Real world
 tags:
-  - cut
-  - shears
+    - cut
+    - shears
 ---

@@ -3,48 +3,51 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Http;
 
 class WhatsAppController extends Controller
 {
+    public static function sendText($phone, $message)
+    {
+        $endpoint = 'https://graph.facebook.com/v22.0/708560132336379/messages';
+        $token = ENV('WHATSAPP_TOKEN');
 
-    public static function sendText($phone, $message){
-      $endpoint = 'https://graph.facebook.com/v22.0/708560132336379/messages';
-      $token = ENV('WHATSAPP_TOKEN');
-		
-		  $Header = array('Content-Type:application/json',
-						  'Authorization:Bearer '.$token,
-						 );
+        $Header = array('Content-Type:application/json',
+                        'Authorization:Bearer '.$token,
+                       );
 
-     // $phone = (ENV('APP_DEBUG') == false) ? '52'.$phone : "529931362770";
-      $dataObject = '{"to":"52'.$phone.'","messaging_product":"whatsapp", "recipient_type": "individual", "type":"text", "text":{"body": "'.$message.'"}}'; 
-      $API = curl_init();
-      curl_setopt($API, CURLOPT_URL,$endpoint);
-      curl_setopt($API, CURLOPT_HTTPHEADER,$Header);
-      curl_setopt($API, CURLOPT_CUSTOMREQUEST,'POST');
-      curl_setopt($API, CURLOPT_POSTFIELDS,$dataObject);
-      curl_setopt($API, CURLOPT_RETURNTRANSFER,true);
+        // $phone = (ENV('APP_DEBUG') == false) ? '52'.$phone : "529931362770";
+        $dataObject = '{"to":"52'.$phone.'","messaging_product":"whatsapp", "recipient_type": "individual", "type":"text", "text":{"body": "'.$message.'"}}';
+        $API = curl_init();
+        curl_setopt($API, CURLOPT_URL, $endpoint);
+        curl_setopt($API, CURLOPT_HTTPHEADER, $Header);
+        curl_setopt($API, CURLOPT_CUSTOMREQUEST, 'POST');
+        curl_setopt($API, CURLOPT_POSTFIELDS, $dataObject);
+        curl_setopt($API, CURLOPT_RETURNTRANSFER, true);
 
-      $Result = curl_exec($API);
-      $httpCode = curl_getinfo($API,CURLINFO_HTTP_CODE);
+        $Result = curl_exec($API);
+        $httpCode = curl_getinfo($API, CURLINFO_HTTP_CODE);
 
-          //Evaluamos la respuesta recibida
-		  $respuestaAPI = json_decode($Result);
-          switch ($httpCode) {
-            case 200:              
-              $response =  ["code" => $httpCode,"respuesta" => '',"status" => "Mensaje enviado"];
-              break;
-              default:
-              $response =  ["code" => $httpCode,"respuesta" => $respuestaAPI->error->message, "status" => "Validacion incorrecta - Registros no encontrados"];
-              break;
-          }
+        //Evaluamos la respuesta recibida
+        $respuestaAPI = json_decode($Result);
+        switch ($httpCode) {
+            case 200:
+                $response =  ["code" => $httpCode,"respuesta" => '',"status" => "Mensaje enviado"];
+                break;
+            default:
+                $response =  ["code" => $httpCode,"respuesta" => $respuestaAPI->error->message, "status" => "Validacion incorrecta - Registros no encontrados"];
+                break;
+        }
 
-          curl_close($API);
-		  return json_encode($response);
+        curl_close($API);
+        return json_encode($response);
     }
 
     //Este metodo recibe la data lista para ser enviada, lo que permite que se envie todo tipo de mensaje de WhatsApp
-    public static function sendWhatsAppMessage($data){
-        
+    public static function sendWhatsAppMessage($data)
+    {
+
         try {
             $endpoint = 'https://graph.facebook.com/v22.0/708560132336379/messages';
             $token = env('WHATSAPP_TOKEN');
@@ -107,7 +110,7 @@ class WhatsAppController extends Controller
             ];
 
             // Si no está en debug, usar el teléfono real
-        //  $phone = (env('APP_DEBUG') === false) ? '52' . $phone : '529931362770';
+            //  $phone = (env('APP_DEBUG') === false) ? '52' . $phone : '529931362770';
 
             $data = [
                 "to" => "52$phone",
@@ -177,7 +180,8 @@ class WhatsAppController extends Controller
         return response('Token inválido', 403);
     }
 
-    public function webHook(Request $request){
+    public function webHook(Request $request)
+    {
         // Guarda el payload en el log
         Log::info('Webhook recibido:', $request->all());
 
@@ -187,10 +191,22 @@ class WhatsAppController extends Controller
 
         // Procesa según el tipo de evento
         //if ($event === 'envio.completado') {
-            // Tu lógica aquí...
+        // Tu lógica aquí...
         //}
 
         return response()->json(['status' => 'ok'], 200);
+    }
+
+
+    public function enviarGrupo(Request $request)
+    {
+        Http::post('http://127.0.0.1:3001/send', [
+            'to' => $request->to,
+            'message' => $request->message,
+            'file' => $request->file_path // opcional
+        ]);
+
+        return response()->json(['ok' => true]);
     }
 
 }

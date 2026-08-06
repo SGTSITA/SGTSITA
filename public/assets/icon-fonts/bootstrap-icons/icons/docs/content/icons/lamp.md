@@ -1,8 +1,8 @@
 ---
 title: Lamp
 categories:
-  - Real world
+    - Real world
 tags:
-  - light
-  - lamp
+    - light
+    - lamp
 ---

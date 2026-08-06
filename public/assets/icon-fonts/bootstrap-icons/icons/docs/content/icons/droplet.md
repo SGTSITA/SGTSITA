@@ -1,10 +1,10 @@
 ---
 title: Droplet
 categories:
-  - Graphics
+    - Graphics
 tags:
-  - water-drop
-  - paint
-  - ink
-  - liquid
+    - water-drop
+    - paint
+    - ink
+    - liquid
 ---

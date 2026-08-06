@@ -1,7 +1,7 @@
 ---
 title: Chevron bar contract
 categories:
-  - Chevrons
+    - Chevrons
 tags:
-  - chevron
+    - chevron
 ---

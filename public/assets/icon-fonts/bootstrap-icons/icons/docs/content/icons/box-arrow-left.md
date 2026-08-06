@@ -1,10 +1,10 @@
 ---
 title: Box arrow left
 categories:
-  - Box arrows
+    - Box arrows
 tags:
-  - arrow
-  - logout
-  - signout
-  - exit
+    - arrow
+    - logout
+    - signout
+    - exit
 ---

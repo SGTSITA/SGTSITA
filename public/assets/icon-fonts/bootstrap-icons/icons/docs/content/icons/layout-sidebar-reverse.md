@@ -1,9 +1,9 @@
 ---
 title: Layout sidebar reverse
 categories:
-  - Layout
+    - Layout
 tags:
-  - grid
-  - layout
-  - sidebar
+    - grid
+    - layout
+    - sidebar
 ---

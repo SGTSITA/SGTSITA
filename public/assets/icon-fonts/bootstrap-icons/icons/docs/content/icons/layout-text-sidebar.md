@@ -1,8 +1,8 @@
 ---
 title: Layout text sidebar
 categories:
-  - Layout
+    - Layout
 tags:
-  - layout
-  - columns
+    - layout
+    - columns
 ---
