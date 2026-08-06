@@ -786,15 +786,34 @@ $camion = $asignacion->Camion;
             mkdir($path, 0777, true);
         }
 
-        $fileName = null;
+        $savedFilePaths = [];
         if (isset($data['ticket_foto_base64']) && !empty($data['ticket_foto_base64'])) {
-            $cleanDieselBase64 = $data['ticket_foto_base64'];
-            if (preg_match('/^data:image\/(\w+);base64,/', $cleanDieselBase64, $type)) {
-                $cleanDieselBase64 = substr($cleanDieselBase64, strpos($cleanDieselBase64, ',') + 1);
+            $rawFotos = $data['ticket_foto_base64'];
+            if (is_string($rawFotos)) {
+                $decoded = json_decode($rawFotos, true);
+                if (is_array($decoded)) {
+                    $rawFotos = $decoded;
+                } else {
+                    $rawFotos = [$rawFotos];
+                }
             }
-            $fileName = uniqid() . '_diesel_ticket.jpg';
-            file_put_contents($path . '/' . $fileName, base64_decode($cleanDieselBase64));
+            if (is_array($rawFotos)) {
+                $rawFotos = array_slice($rawFotos, 0, 3);
+                foreach ($rawFotos as $index => $base64Str) {
+                    if (empty($base64Str)) continue;
+                    $cleanDieselBase64 = $base64Str;
+                    if (preg_match('/^data:image\/(\w+);base64,/', $cleanDieselBase64, $type)) {
+                        $cleanDieselBase64 = substr($cleanDieselBase64, strpos($cleanDieselBase64, ',') + 1);
+                    }
+                    $fileSuffix = uniqid() . '_diesel_ticket_' . ($index + 1) . '.jpg';
+                    file_put_contents($path . '/' . $fileSuffix, base64_decode($cleanDieselBase64));
+                    $savedFilePaths[] = 'uploads/diesel/' . $idAsignacion . '/' . $fileSuffix;
+                }
+            }
+        }
+        $fileName = !empty($savedFilePaths) ? json_encode($savedFilePaths) : null;
 
+        if ($fileName) {
             if (!$dieselPagadoExistente) {
                 $doc = DocumCotizacion::find($asignacion->id_contenedor);
                 $idCotizacion = $doc ? $doc->id_cotizacion : null;
@@ -806,7 +825,7 @@ $camion = $asignacion->Camion;
                     'cantidad' => $data['costo'] ?? 0.0,
                     'tipo' => 'Diesel',
                     'estatus' => 'pendiente',
-                    'comprobante' => 'uploads/diesel/' . $idAsignacion . '/' . $fileName,
+                    'comprobante' => $fileName,
                     'fecha_pago' => Carbon::now()
                 ]);
 
@@ -820,15 +839,32 @@ $camion = $asignacion->Camion;
             }
         }
 
-        $ureaFileName = null;
+        $savedUreaFilePaths = [];
         if (isset($data['ticket_foto_urea_base64']) && !empty($data['ticket_foto_urea_base64'])) {
-            $cleanUreaBase64 = $data['ticket_foto_urea_base64'];
-            if (preg_match('/^data:image\/(\w+);base64,/', $cleanUreaBase64, $type)) {
-                $cleanUreaBase64 = substr($cleanUreaBase64, strpos($cleanUreaBase64, ',') + 1);
+            $rawUreaFotos = $data['ticket_foto_urea_base64'];
+            if (is_string($rawUreaFotos)) {
+                $decoded = json_decode($rawUreaFotos, true);
+                if (is_array($decoded)) {
+                    $rawUreaFotos = $decoded;
+                } else {
+                    $rawUreaFotos = [$rawUreaFotos];
+                }
             }
-            $ureaFileName = uniqid() . '_urea_ticket.jpg';
-            file_put_contents($path . '/' . $ureaFileName, base64_decode($cleanUreaBase64));
+            if (is_array($rawUreaFotos)) {
+                $rawUreaFotos = array_slice($rawUreaFotos, 0, 3);
+                foreach ($rawUreaFotos as $index => $base64Str) {
+                    if (empty($base64Str)) continue;
+                    $cleanUreaBase64 = $base64Str;
+                    if (preg_match('/^data:image\/(\w+);base64,/', $cleanUreaBase64, $type)) {
+                        $cleanUreaBase64 = substr($cleanUreaBase64, strpos($cleanUreaBase64, ',') + 1);
+                    }
+                    $ureaFileSuffix = uniqid() . '_urea_ticket_' . ($index + 1) . '.jpg';
+                    file_put_contents($path . '/' . $ureaFileSuffix, base64_decode($cleanUreaBase64));
+                    $savedUreaFilePaths[] = 'uploads/diesel/' . $idAsignacion . '/' . $ureaFileSuffix;
+                }
+            }
         }
+        $ureaFileName = !empty($savedUreaFilePaths) ? json_encode($savedUreaFilePaths) : null;
 
         if (isset($data['costo_urea']) && floatval($data['costo_urea']) > 0) {
             if (!$ureaPagadaExistente) {
@@ -849,10 +885,10 @@ $camion = $asignacion->Camion;
             'litros' => $data['litros'] ?? null,
             'costo' => $data['costo'] ?? null,
             'odometro' => $data['odometro'] ?? null,
-            'comprobante' => $fileName ? 'uploads/diesel/' . $idAsignacion . '/' . $fileName : $flowRecord->comprobante,
+            'comprobante' => $fileName ? $fileName : $flowRecord->comprobante,
             'litros_urea' => $data['litros_urea'] ?? null,
             'costo_urea' => $data['costo_urea'] ?? null,
-            'comprobante_urea' => $ureaFileName ? 'uploads/diesel/' . $idAsignacion . '/' . $ureaFileName : $flowRecord->comprobante_urea,
+            'comprobante_urea' => $ureaFileName ? $ureaFileName : $flowRecord->comprobante_urea,
         ]);
 
         // Actualizar cotización si no están pagados
@@ -1114,14 +1150,14 @@ $camion = $asignacion->Camion;
                 'diesel_datos' => $dieselRegistrado ? [
                     'costo' => $flowRecord->costo,
                     'fecha' => $flowRecord->created_at ? $flowRecord->created_at->toDateString() : Carbon::now()->toDateString(),
-                    'comprobante' => asset($flowRecord->comprobante),
+                    'comprobante' => self::formatAssetUrls($flowRecord->comprobante),
                     'litros' => $flowRecord->litros,
                     'odometro' => $flowRecord->odometro,
                     'latitud' => $flowRecord->latitud,
                     'longitud' => $flowRecord->longitud,
                     'litros_urea' => $flowRecord->litros_urea,
                     'costo_urea' => $flowRecord->costo_urea,
-                    'comprobante_urea' => $flowRecord->comprobante_urea ? asset($flowRecord->comprobante_urea) : null,
+                    'comprobante_urea' => self::formatAssetUrls($flowRecord->comprobante_urea),
                 ] : null,
                 'viaje_iniciado' => $viajeIniciado,
                 'fotos' => $fotos,
@@ -1291,5 +1327,31 @@ $camion = $asignacion->Camion;
         $resData['status'] = $response->getStatusCode();
 
         return $resData;
+    }
+
+    private static function formatAssetUrls($value)
+    {
+        if (empty($value)) {
+            return null;
+        }
+
+        // Check if JSON array
+        if (str_starts_with($value, '[') && str_ends_with($value, ']')) {
+            $decoded = json_decode($value, true);
+            if (is_array($decoded)) {
+                return implode(',', array_map(function($path) {
+                    return asset($path);
+                }, $decoded));
+            }
+        }
+
+        // Check if comma separated
+        if (str_contains($value, ',')) {
+            return implode(',', array_map(function($path) {
+                return asset(trim($path));
+            }, explode(',', $value)));
+        }
+
+        return asset($value);
     }
 }

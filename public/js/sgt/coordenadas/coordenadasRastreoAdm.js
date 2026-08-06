@@ -4958,14 +4958,15 @@ function buscarUbicaciones() {
         body: JSON.stringify({ items: items }),
     })
         .then((res) => res.json())
-        .then((data) => {
+        .then((envelope) => {
             if (typeof Swal !== "undefined" && Swal.isVisible()) {
                 Swal.close();
             }
-            actualizarEstadosPanel(data);
-            actualizarUbicacion(data, "Equipo", "all", 0, map, 0, 0);
+            const listData = envelope.data || [];
+            actualizarEstadosPanel(listData);
+            actualizarUbicacion(listData, "Equipo", "all", 0, map, 0, 0);
 
-            return data;
+            return envelope;
         })
         .catch((err) => {
             if (typeof Swal !== "undefined" && Swal.isVisible()) {

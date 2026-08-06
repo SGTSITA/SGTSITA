@@ -239,7 +239,17 @@
                                         <div class="mt-1 small text-muted d-flex justify-content-between align-items-center">
                                             <span><strong>Importe (App):</strong> ${{ number_format($bitacora->costo, 2) }}</span>
                                             @if($bitacora->comprobante)
-                                                <a href="{{ asset($bitacora->comprobante) }}" target="_blank" class="badge bg-gradient-info text-white text-xxs">Ver Ticket</a>
+                                                @php
+                                                    $dieselFiles = json_decode($bitacora->comprobante, true);
+                                                    if (json_last_error() !== JSON_ERROR_NONE || !is_array($dieselFiles)) {
+                                                        $dieselFiles = [$bitacora->comprobante];
+                                                    }
+                                                @endphp
+                                                <div class="d-inline-flex gap-1 flex-wrap">
+                                                    @foreach($dieselFiles as $idx => $file)
+                                                        <a href="{{ asset($file) }}" target="_blank" class="badge bg-gradient-info text-white text-xxs">Ver Ticket {{ $idx + 1 }}</a>
+                                                    @endforeach
+                                                </div>
                                             @endif
                                         </div>
                                     @endif
@@ -252,7 +262,17 @@
                                         <div class="mt-1 small text-muted d-flex justify-content-between align-items-center">
                                             <span><strong>Importe (App):</strong> ${{ number_format($bitacora->costo_urea, 2) }}</span>
                                             @if($bitacora->comprobante_urea)
-                                                <a href="{{ asset($bitacora->comprobante_urea) }}" target="_blank" class="badge bg-gradient-info text-white text-xxs">Ver Ticket</a>
+                                                @php
+                                                    $ureaFiles = json_decode($bitacora->comprobante_urea, true);
+                                                    if (json_last_error() !== JSON_ERROR_NONE || !is_array($ureaFiles)) {
+                                                        $ureaFiles = [$bitacora->comprobante_urea];
+                                                    }
+                                                @endphp
+                                                <div class="d-inline-flex gap-1 flex-wrap">
+                                                    @foreach($ureaFiles as $idx => $file)
+                                                        <a href="{{ asset($file) }}" target="_blank" class="badge bg-gradient-info text-white text-xxs">Ver Ticket {{ $idx + 1 }}</a>
+                                                    @endforeach
+                                                </div>
                                             @endif
                                         </div>
                                     @endif
