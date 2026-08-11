@@ -583,6 +583,17 @@ Route::middleware(['auth', 'idle.timeout'])->group(function () {
 
         Route::get('reporteria/gastos-pagar', [App\Http\Controllers\ReporteriaController::class, 'index_gxp'])->name('index_gxp.reporteria');
         Route::get('reporteria/gastos-pagar/data', [App\Http\Controllers\ReporteriaController::class, 'getGastosPorPagarData'])->name('gxp.data');
+
+    // Balance General Routes
+        Route::get('reporteria/balance-general', [App\Http\Controllers\ReporteriaController::class, 'index_balance_general'])->name('reporteria.balance-general.index')->middleware('finanzas:3');
+        Route::post('reporteria/balance-general/config/update', [App\Http\Controllers\ReporteriaController::class, 'update_balance_general_config'])->name('reporteria.balance-general.config.update')->middleware('finanzas:3');
+        Route::get('reporteria/balance-general/saldos/get', [App\Http\Controllers\ReporteriaController::class, 'get_balance_general_saldos_iniciales'])->name('reporteria.balance-general.saldos.get')->middleware('finanzas:3');
+        Route::post('reporteria/balance-general/saldos/update', [App\Http\Controllers\ReporteriaController::class, 'update_balance_general_saldos_iniciales'])->name('reporteria.balance-general.saldos.update')->middleware('finanzas:3');
+        Route::get('reporteria/balance-general/export/excel', [App\Http\Controllers\ReporteriaController::class, 'export_balance_general_excel'])->name('reporteria.balance-general.export.excel')->middleware('finanzas:3');
+        Route::get('reporteria/balance-general/export/pdf', [App\Http\Controllers\ReporteriaController::class, 'export_balance_general_pdf'])->name('reporteria.balance-general.export.pdf')->middleware('finanzas:3');
+
+
+    
         Route::post('reporteria/gastos-pagar/export', [App\Http\Controllers\ReporteriaController::class, 'exportGastosPorPagar'])->name('gxp.export');
 
 
