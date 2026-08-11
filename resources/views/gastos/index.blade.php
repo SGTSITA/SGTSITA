@@ -1195,9 +1195,26 @@
                 {
                     field: "tipo_gasto",
                     headerName: "Tipo",
-                    width: 100,
+                    width: 180,
                     filter: 'agTextColumnFilter',
-                    floatingFilter: true
+                    floatingFilter: true,
+                    valueFormatter: (params) => {
+                        if (!params.value) return '';
+                        const val = params.value.toLowerCase();
+                        if (val === 'periodo' || val === 'general' || val === 'unidad') {
+                            return 'General / Período';
+                        }
+                        if (val === 'operador') {
+                            return 'Operador';
+                        }
+                        if (val === 'viaje') {
+                            return 'Viaje';
+                        }
+                        if (val === 'cotizacion' || val === 'cotización' || val === 'extras' || val === 'gasto_extra') {
+                            return 'Cotización';
+                        }
+                        return params.value.charAt(0).toUpperCase() + params.value.slice(1);
+                    }
                 },
                 {
                     field: "categoria",

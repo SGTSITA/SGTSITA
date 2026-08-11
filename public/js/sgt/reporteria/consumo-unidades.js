@@ -1,5 +1,6 @@
 document.addEventListener("DOMContentLoaded", function () {
     const unidad = document.getElementById("unidad_id");
+    const tipoConsumo = document.getElementById("tipo_consumo");
     const fechaInicio = document.getElementById("fecha_inicio");
     const fechaFin = document.getElementById("fecha_fin");
     const btnConsultar = document.getElementById("btnConsultarConsumo");
@@ -86,6 +87,21 @@ document.addEventListener("DOMContentLoaded", function () {
             },
         },
         {
+            headerName: "Mapa",
+            field: "mapa",
+            width: 80,
+            minWidth: 80,
+            cellClass: "text-center",
+            cellRenderer: (params) => {
+                const row = params.data || {};
+                const hasRuta = (row.coordenadas_ruta && row.coordenadas_ruta.length > 0) || (row.diesel_lat && row.diesel_lng);
+                if (!hasRuta) {
+                    return `<button type="button" class="btn btn-sm btn-icon-only btn-outline-secondary m-0 p-1" title="Sin datos de ruta" disabled style="opacity: 0.5;"><i class="fas fa-map-marked-alt"></i></button>`;
+                }
+                return `<button type="button" class="btn btn-sm btn-icon-only btn-outline-info m-0 p-1 btn-ver-mapa" title="Ver Ruta en Mapa"><i class="fas fa-map-marked-alt"></i></button>`;
+            }
+        },
+        {
             headerName: "KM",
             field: "km_recorridos",
             filter: "agNumberColumnFilter",
@@ -96,6 +112,28 @@ document.addEventListener("DOMContentLoaded", function () {
             cellClass: "text-end fw-bold",
             valueGetter: (params) => Number(params.data?.km_recorridos || 0),
             valueFormatter: (params) => numberFormat(params.value, 2),
+        },
+        {
+            headerName: "Origen KM",
+            field: "origen_km",
+            filter: "agTextColumnFilter",
+            floatingFilter: true,
+            width: 140,
+            minWidth: 140,
+            cellRenderer: (params) => {
+                const val = params.value || "Sin KM";
+                let badgeClass = "bg-secondary";
+                if (val === "Diferencia Odómetros") {
+                    badgeClass = "bg-success";
+                } else if (val === "Estimación Coordenadas") {
+                    badgeClass = "bg-info text-dark";
+                } else if (val === "Captura Manual") {
+                    badgeClass = "bg-primary";
+                } else if (val === "Coordenadas Diésel") {
+                    badgeClass = "bg-warning text-dark";
+                }
+                return `<span class="badge ${badgeClass} text-xxs p-1">${val}</span>`;
+            }
         },
         {
             headerName: "Litros capturados",
@@ -213,6 +251,12 @@ document.addEventListener("DOMContentLoaded", function () {
     const gridOptionsConsumo = {
         columnDefs: columnDefsConsumo,
         rowData: [],
+        onCellClicked: (params) => {
+            if (params.event.target.closest('.btn-ver-mapa')) {
+                const rowData = params.data;
+                abrirMapaRuta(rowData);
+            }
+        },
         animateRows: true,
         pagination: true,
         paginationPageSize: 20,
@@ -273,9 +317,11 @@ document.addEventListener("DOMContentLoaded", function () {
         if (!validarFiltros()) return;
 
         pintarLoading();
+        updateGridHeaders();
 
         const params = new URLSearchParams({
             unidad_id: unidad.value,
+            tipo_consumo: tipoConsumo.value,
             fecha_inicio: fechaInicio.value,
             fecha_fin: fechaFin.value,
         });
@@ -322,6 +368,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         const params = new URLSearchParams({
             unidad_id: unidad.value,
+            tipo_consumo: tipoConsumo.value,
             fecha_inicio: fechaInicio.value,
             fecha_fin: fechaFin.value,
         });
@@ -360,6 +407,17 @@ document.addEventListener("DOMContentLoaded", function () {
         document
             .getElementById("resumenConsumoUnidad")
             .classList.remove("d-none");
+
+        const fuelLabel = tipoConsumo.value === "urea" ? "Urea" : "Diésel";
+        const lblTitleTotalLitros = document.getElementById("lblTitleTotalLitros");
+        const lblTitleRendimientoPromedio = document.getElementById("lblTitleRendimientoPromedio");
+        
+        if (lblTitleTotalLitros) {
+            lblTitleTotalLitros.textContent = `Total litros ${fuelLabel.toLowerCase()}`;
+        }
+        if (lblTitleRendimientoPromedio) {
+            lblTitleRendimientoPromedio.textContent = `KM / Litro ${fuelLabel.toLowerCase()}`;
+        }
 
         setText("lblTotalViajes", resumen.total_viajes || 0);
         setText("lblViajesConDatos", resumen.viajes_con_datos || 0);
@@ -477,5 +535,151 @@ document.addEventListener("DOMContentLoaded", function () {
             .replaceAll(">", "&gt;")
             .replaceAll('"', "&quot;")
             .replaceAll("'", "&#039;");
+    }
+
+    let googleMapInstance = null;
+    let mapMarkers = [];
+    let mapPathPolyline = null;
+
+    function abrirMapaRuta(rowData) {
+        const modalEl = document.getElementById('modalMapaRuta');
+        const modal = new bootstrap.Modal(modalEl);
+        modal.show();
+
+        if (mapMarkers) {
+            mapMarkers.forEach(m => m.setMap(null));
+        }
+        mapMarkers = [];
+        if (mapPathPolyline) {
+            mapPathPolyline.setMap(null);
+            mapPathPolyline = null;
+        }
+
+        setTimeout(() => {
+            const mapDiv = document.getElementById('mapaRutaConsumo');
+            if (typeof google === 'undefined' || typeof google.maps === 'undefined') {
+                mapDiv.innerHTML = '<div class="alert alert-danger m-3">Google Maps API no está cargado correctamente.</div>';
+                return;
+            }
+
+            const defaultCenter = { lat: 19.4326, lng: -99.1332 };
+            const mapOptions = {
+                zoom: 8,
+                center: defaultCenter,
+                mapTypeId: google.maps.MapTypeId.ROADMAP
+            };
+
+            googleMapInstance = new google.maps.Map(mapDiv, mapOptions);
+            const bounds = new google.maps.LatLngBounds();
+
+            if (rowData.diesel_lat && rowData.diesel_lng) {
+                const dieselPos = { lat: parseFloat(rowData.diesel_lat), lng: parseFloat(rowData.diesel_lng) };
+                const marker = new google.maps.Marker({
+                    position: dieselPos,
+                    map: googleMapInstance,
+                    title: "Carga Diésel actual / Origen",
+                    icon: 'https://maps.google.com/mapfiles/ms/icons/green-dot.png'
+                });
+                mapMarkers.push(marker);
+                bounds.extend(dieselPos);
+            }
+
+            if (rowData.diesel_siguiente_lat && rowData.diesel_siguiente_lng) {
+                const dieselSigPos = { lat: parseFloat(rowData.diesel_siguiente_lat), lng: parseFloat(rowData.diesel_siguiente_lng) };
+                const marker = new google.maps.Marker({
+                    position: dieselSigPos,
+                    map: googleMapInstance,
+                    title: "Siguiente carga Diésel / Destino",
+                    icon: 'https://maps.google.com/mapfiles/ms/icons/red-dot.png'
+                });
+                mapMarkers.push(marker);
+                bounds.extend(dieselSigPos);
+            }
+
+            const pathCoordinates = [];
+            if (rowData.coordenadas_ruta && rowData.coordenadas_ruta.length > 0) {
+                rowData.coordenadas_ruta.forEach((coord) => {
+                    const pos = { lat: parseFloat(coord.latitud), lng: parseFloat(coord.longitud) };
+                    pathCoordinates.push(pos);
+                    bounds.extend(pos);
+
+                    const dotMarker = new google.maps.Marker({
+                        position: pos,
+                        map: googleMapInstance,
+                        title: `Punto rastreo: ${coord.registrado_en || ''}`,
+                        icon: {
+                            path: google.maps.SymbolPath.CIRCLE,
+                            scale: 4,
+                            fillColor: "#007bff",
+                            fillOpacity: 0.8,
+                            strokeColor: "#ffffff",
+                            strokeWeight: 1,
+                        }
+                    });
+                    mapMarkers.push(dotMarker);
+                });
+            }
+
+            if (pathCoordinates.length > 0) {
+                mapPathPolyline = new google.maps.Polyline({
+                    path: pathCoordinates,
+                    geodesic: true,
+                    strokeColor: '#007bff',
+                    strokeOpacity: 0.8,
+                    strokeWeight: 4,
+                    map: googleMapInstance
+                });
+            } else if (rowData.diesel_lat && rowData.diesel_lng && rowData.diesel_siguiente_lat && rowData.diesel_siguiente_lng) {
+                mapPathPolyline = new google.maps.Polyline({
+                    path: [
+                        { lat: parseFloat(rowData.diesel_lat), lng: parseFloat(rowData.diesel_lng) },
+                        { lat: parseFloat(rowData.diesel_siguiente_lat), lng: parseFloat(rowData.diesel_siguiente_lng) }
+                    ],
+                    geodesic: true,
+                    strokeColor: '#dc3545',
+                    strokeOpacity: 0.6,
+                    strokeWeight: 3,
+                    map: googleMapInstance
+                });
+            }
+
+            if (!bounds.isEmpty()) {
+                googleMapInstance.fitBounds(bounds);
+            } else {
+                googleMapInstance.setCenter(defaultCenter);
+                googleMapInstance.setZoom(6);
+            }
+        }, 300);
+    }
+
+    function updateGridHeaders() {
+        if (!gridConsumoApi) return;
+        const fuelLabel = tipoConsumo.value === "urea" ? "Urea" : "Diésel";
+        
+        let colDefs = [];
+        if (typeof gridConsumoApi.getColumnDefs === "function") {
+            colDefs = gridConsumoApi.getColumnDefs();
+        } else if (gridOptionsConsumo.columnDefs) {
+            colDefs = gridOptionsConsumo.columnDefs;
+        }
+
+        if (colDefs && colDefs.length > 0) {
+            colDefs.forEach(col => {
+                if (col.field === "litros_capturados_viaje") {
+                    col.headerName = `Litros ${col.field === "litros_capturados_viaje" ? fuelLabel.toLowerCase() : ""} capturados`;
+                    // Actually let's use exact match
+                    col.headerName = `Litros ${fuelLabel.toLowerCase()} capturados`;
+                }
+                if (col.field === "litros_calculo_consumo") {
+                    col.headerName = `Litros ${fuelLabel.toLowerCase()} cálculo`;
+                }
+            });
+
+            if (typeof gridConsumoApi.setGridOption === "function") {
+                gridConsumoApi.setGridOption("columnDefs", colDefs);
+            } else if (typeof gridConsumoApi.setColumnDefs === "function") {
+                gridConsumoApi.setColumnDefs(colDefs);
+            }
+        }
     }
 });
