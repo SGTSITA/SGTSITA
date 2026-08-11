@@ -461,15 +461,15 @@
                     </ul>
                 </div>
                 <!--li class="nav-item">
-                                                                                                                                                                                                                                                                                        <a class="nav-link {{ Request::is('liquidaciones*') ? 'active' : '' }}"
-                                                                                                                                                                                                                                                                                            href="{{ route('index.liquidacion') }}" target="">
-                                                                                                                                                                                                                                                                                            <div
-                                                                                                                                                                                                                                                                                                class="icon icon-shape icon-sm text-center  me-2 d-flex align-items-center justify-content-center">
-                                                                                                                                                                                                                                                                                                <img src="{{ asset('img/icon/pago-en-efectivo.png') }}" alt="" width="20px">
-                                                                                                                                                                                                                                                                                            </div>
+                                                                                                                                                                                                                                                                                            <a class="nav-link {{ Request::is('liquidaciones*') ? 'active' : '' }}"
+                                                                                                                                                                                                                                                                                                href="{{ route('index.liquidacion') }}" target="">
+                                                                                                                                                                                                                                                                                                <div
+                                                                                                                                                                                                                                                                                                    class="icon icon-shape icon-sm text-center  me-2 d-flex align-items-center justify-content-center">
+                                                                                                                                                                                                                                                                                                    <img src="{{ asset('img/icon/pago-en-efectivo.png') }}" alt="" width="20px">
+                                                                                                                                                                                                                                                                                                </div>
 
-                                                                                                                                                                                                                                                                                        </a>
-                                                                                                                                                                                                                                                                                    </li-->
+                                                                                                                                                                                                                                                                                            </a>
+                                                                                                                                                                                                                                                                                        </li-->
             @endcan
             @can('Coordenadas SGT')
                 <a data-bs-toggle="collapse" href="#pagesExamplesCoordenadas"
@@ -564,7 +564,7 @@
                 </li>
             @endcan
 
-            @can('reportes-utilidad')
+            @can('reportes-utilidad-')
                 <a data-bs-toggle="collapse" href="#pagesContabilidad"
                     class="nav-link {{ Request::is('contabilidad*') ? 'active' : '' }}"
                     aria-controls="pagesContabilidad" role="button" aria-expanded="false">
@@ -631,12 +631,12 @@
 
                     <!-- @can('usuarios-empresas')
     <li class="nav-item ">
-                                                                                                                                                                                                                                                            <a class="nav-link {{ Request::is('usuarios-empresas*') ? 'show' : '' }}"
-                                                                                                                                                                                                                                                                href="{{ route('Usuarios-empresas.index') }}">
-                                                                                                                                                                                                                                                                <span class="sidenav-mini-icon"> P </span>
-                                                                                                                                                                                                                                                                <span class="sidenav-normal">Usuarios Empresas </span>
-                                                                                                                                                                                                                                                            </a>
-                                                                                                                                                                                                                                                        </li>
+                                                                                                                                                                                                                                                                <a class="nav-link {{ Request::is('usuarios-empresas*') ? 'show' : '' }}"
+                                                                                                                                                                                                                                                                    href="{{ route('Usuarios-empresas.index') }}">
+                                                                                                                                                                                                                                                                    <span class="sidenav-mini-icon"> P </span>
+                                                                                                                                                                                                                                                                    <span class="sidenav-normal">Usuarios Empresas </span>
+                                                                                                                                                                                                                                                                </a>
+                                                                                                                                                                                                                                                            </li>
 @endcan -->
 
 
