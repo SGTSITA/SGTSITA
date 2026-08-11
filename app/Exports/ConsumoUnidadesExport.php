@@ -31,10 +31,12 @@ class ConsumoUnidadesExport implements FromArray, ShouldAutoSize, WithColumnWidt
     {
         $resumen = $this->reporte['resumen'] ?? [];
         $rows = $this->reporte['rows'] ?? [];
+        $tipo = $this->filtros['tipo_consumo'] ?? 'diesel';
+        $fuelLabel = $tipo === 'urea' ? 'Urea' : 'Diésel';
 
         $data = [];
 
-        $data[] = ['Reporte de consumo por unidad'];
+        $data[] = ['Reporte de consumo por unidad (' . $fuelLabel . ')'];
         $data[] = [
             'Unidad',
             $this->filtros['unidad'] ?? 'S/N',
@@ -51,8 +53,8 @@ class ConsumoUnidadesExport implements FromArray, ShouldAutoSize, WithColumnWidt
             'Con datos',
             'Sin datos',
             'Total KM',
-            'Litros cálculo',
-            'Litros capturados',
+            'Litros cálculo (' . $fuelLabel . ')',
+            'Litros capturados (' . $fuelLabel . ')',
             'KM / Litro',
         ];
 
@@ -77,8 +79,8 @@ class ConsumoUnidadesExport implements FromArray, ShouldAutoSize, WithColumnWidt
             'Origen',
             'Destino',
             'KM',
-            'Litros capturados',
-            'Litros cálculo',
+            'Litros capturados (' . $fuelLabel . ')',
+            'Litros cálculo (' . $fuelLabel . ')',
             'Rendimiento KM/L',
             'Tomado de contenedor',
             'Observación',

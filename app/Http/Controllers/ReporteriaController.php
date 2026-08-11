@@ -2560,6 +2560,7 @@ public function indexRendimiento()
             'unidad_id' => ['required', 'integer'],
             'fecha_inicio' => ['required', 'date'],
             'fecha_fin' => ['required', 'date', 'after_or_equal:fecha_inicio'],
+            'tipo_consumo' => ['nullable', 'string', 'in:diesel,urea'],
         ]);
 
         return response()->json(
@@ -2573,6 +2574,7 @@ public function indexRendimiento()
             'unidad_id' => ['required', 'integer'],
             'fecha_inicio' => ['required', 'date'],
             'fecha_fin' => ['required', 'date', 'after_or_equal:fecha_inicio'],
+            'tipo_consumo' => ['nullable', 'string', 'in:diesel,urea'],
         ]);
 
         if (!in_array($tipo, ['pdf', 'excel'], true)) {
@@ -2614,6 +2616,7 @@ public function indexRendimiento()
 
             'fecha_inicio' => Carbon::parse($data['fecha_inicio'])->format('d/m/Y'),
             'fecha_fin' => Carbon::parse($data['fecha_fin'])->format('d/m/Y'),
+            'tipo_consumo' => $data['tipo_consumo'] ?? 'diesel',
         ];
     }
 

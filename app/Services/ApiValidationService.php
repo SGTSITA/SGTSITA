@@ -18,6 +18,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Http;
 
 class ApiValidationService
 {
@@ -891,6 +892,16 @@ $camion = $asignacion->Camion;
             'comprobante_urea' => $ureaFileName ? $ureaFileName : $flowRecord->comprobante_urea,
         ]);
 
+        try {
+            $this->actualizarKmRecorridosPorCoordenadas($asignacion);
+        } catch (\Exception $e) {
+            \Log::error("Error actualizando kilometraje por coordenadas: " . $e->getMessage());
+        }
+
+        if (isset($data['odometro']) && floatval($data['odometro']) > 0) {
+            $this->actualizarKmRecorridosPorOdometro($asignacion, floatval($data['odometro']));
+        }
+
         // Actualizar cotización si no están pagados
         $doc = DocumCotizacion::find($asignacion->id_contenedor);
         $idCotizacion = $doc ? $doc->id_cotizacion : null;
@@ -1354,4 +1365,216 @@ $camion = $asignacion->Camion;
 
         return asset($value);
     }
+
+    private function actualizarKmRecorridosPorOdometro(Asignaciones $asignacion, float $odometroActual)
+    {
+        if ($odometroActual <= 0) {
+            return;
+        }
+
+        // 1. UPDATE PREVIOUS TRIP'S KM
+        // Find the previous trip for the same truck
+        $prevAsignacion = Asignaciones::where('id_camion', $asignacion->id_camion)
+            ->where('id', '!=', $asignacion->id)
+            ->where(function ($query) use ($asignacion) {
+                $query->where('fecha_inicio', '<', $asignacion->fecha_inicio)
+                      ->orWhere(function ($q) use ($asignacion) {
+                          $q->where('fecha_inicio', '=', $asignacion->fecha_inicio)
+                            ->where('id', '<', $asignacion->id);
+                      });
+            })
+            ->orderBy('fecha_inicio', 'desc')
+            ->orderBy('id', 'desc')
+            ->first();
+
+        if ($prevAsignacion) {
+            $prevBitacora = $prevAsignacion->bitacoraViaje;
+            if ($prevBitacora && $prevBitacora->odometro > 0) {
+                $km = $odometroActual - floatval($prevBitacora->odometro);
+                if ($km > 0) {
+                    $prevDoc = DocumCotizacion::find($prevAsignacion->id_contenedor);
+                    $prevIdCoti = $prevDoc ? $prevDoc->id_cotizacion : null;
+                    $prevCotizacion = Cotizaciones::find($prevIdCoti);
+                    if ($prevCotizacion) {
+                        $prevCotizacion->km_recorridos = $km;
+                        $prevCotizacion->save();
+                        \Log::info("Auto-calculo de KM: Asignación ID {$prevAsignacion->id} actualizada a {$km} km.");
+                    }
+                }
+            }
+        }
+
+        // 2. UPDATE CURRENT TRIP'S KM (If next trip already has odometer)
+        // Find the next trip for the same truck
+        $nextAsignacion = Asignaciones::where('id_camion', $asignacion->id_camion)
+            ->where('id', '!=', $asignacion->id)
+            ->where(function ($query) use ($asignacion) {
+                $query->where('fecha_inicio', '>', $asignacion->fecha_inicio)
+                      ->orWhere(function ($q) use ($asignacion) {
+                          $q->where('fecha_inicio', '=', $asignacion->fecha_inicio)
+                            ->where('id', '>', $asignacion->id);
+                      });
+            })
+            ->orderBy('fecha_inicio', 'asc')
+            ->orderBy('id', 'asc')
+            ->first();
+
+        if ($nextAsignacion) {
+            $nextBitacora = $nextAsignacion->bitacoraViaje;
+            if ($nextBitacora && $nextBitacora->odometro > 0) {
+                $km = floatval($nextBitacora->odometro) - $odometroActual;
+                if ($km > 0) {
+                    $currDoc = DocumCotizacion::find($asignacion->id_contenedor);
+                    $currIdCoti = $currDoc ? $currDoc->id_cotizacion : null;
+                    $currCotizacion = Cotizaciones::find($currIdCoti);
+                    if ($currCotizacion) {
+                        $currCotizacion->km_recorridos = $km;
+                        $currCotizacion->save();
+                        \Log::info("Auto-calculo de KM: Asignación ID {$asignacion->id} actualizada a {$km} km.");
+                    }
+                }
+            }
+        }
+    }
+
+    private function actualizarKmRecorridosPorCoordenadas(Asignaciones $asignacion)
+    {
+        $bitacora = $asignacion->bitacoraViaje;
+        if (!$bitacora || !$bitacora->latitud || !$bitacora->longitud) {
+            return;
+        }
+
+        // 1. UPDATE PREVIOUS TRIP'S KM
+        $prevAsignacion = Asignaciones::where('id_camion', $asignacion->id_camion)
+            ->where('id', '!=', $asignacion->id)
+            ->where(function ($query) use ($asignacion) {
+                $query->where('fecha_inicio', '<', $asignacion->fecha_inicio)
+                      ->orWhere(function ($q) use ($asignacion) {
+                          $q->where('fecha_inicio', '=', $asignacion->fecha_inicio)
+                            ->where('id', '<', $asignacion->id);
+                      });
+            })
+            ->orderBy('fecha_inicio', 'desc')
+            ->orderBy('id', 'desc')
+            ->first();
+
+        if ($prevAsignacion) {
+            $prevBitacora = $prevAsignacion->bitacoraViaje;
+            if ($prevBitacora && $prevBitacora->latitud && $prevBitacora->longitud) {
+                $km = $this->obtenerDistanciaPorCarretera(
+                    floatval($prevBitacora->latitud),
+                    floatval($prevBitacora->longitud),
+                    floatval($bitacora->latitud),
+                    floatval($bitacora->longitud)
+                );
+                if ($km > 0) {
+                    $prevDoc = DocumCotizacion::find($prevAsignacion->id_contenedor);
+                    $prevIdCoti = $prevDoc ? $prevDoc->id_cotizacion : null;
+                    $prevCotizacion = Cotizaciones::find($prevIdCoti);
+                    if ($prevCotizacion) {
+                        $prevCotizacion->km_recorridos = $km;
+                        $prevCotizacion->save();
+                        \Log::info("Auto-calculo de KM por Coordenadas Diésel: Asignación ID {$prevAsignacion->id} actualizada a {$km} km.");
+                    }
+                }
+            }
+        }
+
+        // 2. UPDATE CURRENT TRIP'S KM
+        $nextAsignacion = Asignaciones::where('id_camion', $asignacion->id_camion)
+            ->where('id', '!=', $asignacion->id)
+            ->where(function ($query) use ($asignacion) {
+                $query->where('fecha_inicio', '>', $asignacion->fecha_inicio)
+                      ->orWhere(function ($q) use ($asignacion) {
+                          $q->where('fecha_inicio', '=', $asignacion->fecha_inicio)
+                            ->where('id', '>', $asignacion->id);
+                      });
+            })
+            ->orderBy('fecha_inicio', 'asc')
+            ->orderBy('id', 'asc')
+            ->first();
+
+        if ($nextAsignacion) {
+            $nextBitacora = $nextAsignacion->bitacoraViaje;
+            if ($nextBitacora && $nextBitacora->latitud && $nextBitacora->longitud) {
+                $km = $this->obtenerDistanciaPorCarretera(
+                    floatval($bitacora->latitud),
+                    floatval($bitacora->longitud),
+                    floatval($nextBitacora->latitud),
+                    floatval($nextBitacora->longitud)
+                );
+                if ($km > 0) {
+                    $currDoc = DocumCotizacion::find($asignacion->id_contenedor);
+                    $currIdCoti = $currDoc ? $currDoc->id_cotizacion : null;
+                    $currCotizacion = Cotizaciones::find($currIdCoti);
+                    if ($currCotizacion) {
+                        $currCotizacion->km_recorridos = $km;
+                        $currCotizacion->save();
+                        \Log::info("Auto-calculo de KM por Coordenadas Diésel: Asignación ID {$asignacion->id} actualizada a {$km} km.");
+                    }
+                }
+            }
+        }
+    }
+
+    private function obtenerDistanciaPorCarretera($lat1, $lon1, $lat2, $lon2): float
+    {
+        if (empty($lat1) || empty($lon1) || empty($lat2) || empty($lon2)) {
+            return 0.0;
+        }
+
+        $apiKey = env('GOOLEAPIMAPS');
+        if ($apiKey) {
+            try {
+                $url = "https://maps.googleapis.com/maps/api/directions/json?origin={$lat1},{$lon1}&destination={$lat2},{$lon2}&key={$apiKey}";
+                $response = Http::timeout(5)->get($url);
+                if ($response->successful()) {
+                    $json = $response->json();
+                    if (isset($json['routes'][0]['legs'][0]['distance']['value'])) {
+                        $meters = (float) $json['routes'][0]['legs'][0]['distance']['value'];
+                        return round($meters / 1000, 2);
+                    }
+                }
+            } catch (\Exception $e) {
+                \Log::warning("Error al consultar Google Maps Directions: " . $e->getMessage());
+            }
+        }
+
+        try {
+            $url = "http://router.project-osrm.org/route/v1/driving/{$lon1},{$lat1};{$lon2},{$lat2}?overview=false";
+            $response = Http::timeout(5)->get($url);
+            if ($response->successful()) {
+                $json = $response->json();
+                if (isset($json['routes'][0]['distance'])) {
+                    $meters = (float) $json['routes'][0]['distance'];
+                    return round($meters / 1000, 2);
+                }
+            }
+        } catch (\Exception $e) {
+            \Log::warning("Error al consultar OSRM API: " . $e->getMessage());
+        }
+
+        return $this->calcularDistanciaHaversine($lat1, $lon1, $lat2, $lon2);
+    }
+
+    private function calcularDistanciaHaversine($lat1, $lon1, $lat2, $lon2): float
+    {
+        if (empty($lat1) || empty($lon1) || empty($lat2) || empty($lon2)) {
+            return 0.0;
+        }
+
+        $earthRadius = 6371; // km
+        $dLat = deg2rad($lat2 - $lat1);
+        $dLon = deg2rad($lon2 - $lon1);
+
+        $a = sin($dLat/2) * sin($dLat/2) +
+             cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
+             sin($dLon/2) * sin($dLon/2);
+
+        $c = 2 * atan2(sqrt($a), sqrt(1-$a));
+        $distance = $earthRadius * $c;
+
+        return round($distance * 1.18, 2);
+    }
 }
+

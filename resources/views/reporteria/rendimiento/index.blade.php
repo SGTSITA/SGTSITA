@@ -80,7 +80,7 @@
 
         <div class="card-body">
             <div class="row g-3 align-items-end">
-                <div class="col-md-5">
+                <div class="col-md-3">
                     <label class="form-label fw-bold">Unidad / Tracto</label>
                     <select id="unidad_id" class="form-select">
                         <option value="">Seleccione unidad</option>
@@ -91,6 +91,14 @@
                                 {{ $equipo->placas ? ' - ' . $equipo->placas : '' }}
                             </option>
                         @endforeach
+                    </select>
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label fw-bold">Tipo Consumo</label>
+                    <select id="tipo_consumo" class="form-select">
+                        <option value="diesel" selected>Diésel</option>
+                        <option value="urea">Urea</option>
                     </select>
                 </div>
 
@@ -159,14 +167,14 @@
 
         <div class="col-md-2">
             <div class="consumo-card">
-                <small>Total litros</small>
+                <small id="lblTitleTotalLitros">Total litros</small>
                 <h5 id="lblTotalLitros">0.000</h5>
             </div>
         </div>
 
         <div class="col-md-2">
             <div class="consumo-card consumo-card-danger">
-                <small>KM / Litro</small>
+                <small id="lblTitleRendimientoPromedio">KM / Litro</small>
                 <h5 id="lblRendimientoPromedio">0.000</h5>
             </div>
         </div>
@@ -181,6 +189,26 @@
             <div id="gridConsumoUnidad" class="col-12 ag-theme-quartz mb-6" style="height: 610px"></div>
         </div>
     </div>
+
+    <!-- Modal de Google Maps -->
+    <div class="modal fade" id="modalMapaRuta" tabindex="-1" aria-labelledby="modalMapaRutaLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalMapaRutaLabel">Ruta del Viaje / Contenedor</h5>
+                    <button type="button" class="btn-close text-dark" data-bs-dismiss="modal" aria-label="Close" style="border: none; background: none; font-size: 1.5rem;">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body p-0">
+                    <div id="mapaRutaConsumo" style="height: 500px; width: 100%;"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn bg-gradient-secondary" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
 @endsection
 
 @push('custom-javascript')
@@ -189,6 +217,7 @@
         const URL_CONSUMO_UNIDADES_EXPORTAR = "{{ route('reporteria.consumo-unidades.exportar', ['tipo' => '__TIPO__']) }}";
     </script>
 
+    <script src="https://maps.googleapis.com/maps/api/js?key={{ config('services.googleMapsApi.apikey') }}&libraries=geometry"></script>
     <script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.js"></script>
 
     <script

@@ -95,9 +95,14 @@
 </head>
 
 <body>
-    <div class="titulo">Reporte de consumo por unidad</div>
+    @php
+        $tipo = $filtros['tipo_consumo'] ?? 'diesel';
+        $combustibleLabel = $tipo === 'urea' ? 'Urea' : 'Diésel';
+    @endphp
+
+    <div class="titulo">Reporte de consumo por unidad ({{ $combustibleLabel }})</div>
     <div class="subtitulo">
-        Consulta kilómetros, litros diesel y rendimiento por viaje
+        Consulta kilómetros, litros {{ strtolower($combustibleLabel) }} y rendimiento por viaje
     </div>
 
     <table class="filtros">
@@ -118,8 +123,8 @@
                 <th>Con datos</th>
                 <th>Sin datos</th>
                 <th>Total KM</th>
-                <th>Litros cálculo</th>
-                <th>Litros capturados</th>
+                <th>Litros cálculo ({{ $combustibleLabel }})</th>
+                <th>Litros capturados ({{ $combustibleLabel }})</th>
                 <th>KM / Litro</th>
             </tr>
         </thead>
@@ -152,8 +157,8 @@
                 <th>Origen</th>
                 <th>Destino</th>
                 <th>KM</th>
-                <th>Litros cap.</th>
-                <th>Litros calc.</th>
+                <th>Litros cap. ({{ $combustibleLabel }})</th>
+                <th>Litros calc. ({{ $combustibleLabel }})</th>
                 <th>KM/L</th>
                 <th>Tomado de</th>
                 <th>Estado</th>
