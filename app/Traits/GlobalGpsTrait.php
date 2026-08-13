@@ -35,8 +35,9 @@ public static function getManyByCredentialGroups(array $gruposGlobal): array
 
         $tokenCacheKey = 'gps:globalgps:token:' . md5($apiid . '|' . $key);
 
-        if (Cache::has($tokenCacheKey)) {
-            $tokens[$index] = Cache::get($tokenCacheKey);
+        $cachedToken = self::getStoredToken($tokenCacheKey);
+        if ($cachedToken) {
+            $tokens[$index] = $cachedToken;
         } else {
             $authPendientes[$index] = [
                 'key' => $key,
@@ -64,7 +65,7 @@ public static function getManyByCredentialGroups(array $gruposGlobal): array
 
                 if ($response->successful() && $response->json('accessToken')) {
                     $token = $response->json('accessToken');
-                    Cache::put($auth['cacheKey'], $token, now()->addMinutes(115));
+                    self::storeToken($auth['cacheKey'], $token);
                     $tokens[$index] = $token;
 
                     Log::info('GLOBAL GPS AUTH ok', [
@@ -481,5 +482,47 @@ public static function getDeviceRealTimeLocation($imei, $apikey, $idUs)
             status: 500
         );
     }
+}
+
+private static function getStoredToken(string $cacheKey): ?string
+{
+    if (\Cache::has($cacheKey)) {
+        return \Cache::get($cacheKey);
+    }
+    
+    $filePath = storage_path('app/gps_tokens.json');
+    if (file_exists($filePath)) {
+        $data = json_decode(file_get_contents($filePath), true);
+        if (is_array($data) && isset($data[$cacheKey])) {
+            $item = $data[$cacheKey];
+            if (isset($item['token'], $item['expires_at']) && time() < $item['expires_at']) {
+                \Cache::put($cacheKey, $item['token'], now()->addMinutes(115));
+                return $item['token'];
+            }
+        }
+    }
+    return null;
+}
+
+private static function storeToken(string $cacheKey, string $token): void
+{
+    \Cache::put($cacheKey, $token, now()->addMinutes(115));
+    
+    $filePath = storage_path('app/gps_tokens.json');
+    $data = [];
+    if (file_exists($filePath)) {
+        $data = json_decode(file_get_contents($filePath), true);
+        if (!is_array($data)) {
+            $data = [];
+        }
+    }
+    
+    $data[$cacheKey] = [
+        'token' => $token,
+        'expires_at' => time() + (115 * 60)
+    ];
+    
+    file_put_contents($filePath, json_encode($data));
+    @chmod($filePath, 0666);
 }
 }
