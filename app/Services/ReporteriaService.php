@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Auth;
 
 class ReporteriaService
 {
-    public function getContenedorUtilidad(string $startDate, string $endDate, int $idEmpresa): array
+    public function getContenedorUtilidad(string $startDate, string $endDate, int $idEmpresa, int $idProveedor = null): array
     {
         $fechaI = Carbon::parse($startDate)->startOfDay();
         $fechaF = Carbon::parse($endDate)->endOfDay();
@@ -35,7 +35,7 @@ class ReporteriaService
             ->get();
 
         // 2. Obtener viajes/asignaciones del periodo
-        $viajes = DB::table('cotizaciones as c')
+        $viajesQuery = DB::table('cotizaciones as c')
             ->leftJoin('clients as cl', 'c.id_cliente', '=', 'cl.id')
             ->leftJoin('docum_cotizacion as dc', 'c.id', '=', 'dc.id_cotizacion')
             ->leftJoin('asignaciones as a', 'dc.id', '=', 'a.id_contenedor')
@@ -44,29 +44,33 @@ class ReporteriaService
             ->leftJoin('equipos as eq', 'a.id_camion', '=', 'eq.id')
             ->whereBetween('a.fecha_inicio', [$fechaI, $fechaF])
             ->where('c.estatus', '!=', 'Cancelada')
-            ->where('c.id_empresa', $idEmpresa)
-            ->select(
-                'c.id as id_cotizacion',
-                'dc.id as id_docum_cotizacion',
-                'a.id_camion',
-                'dc.num_contenedor',
-                'cl.nombre as cliente',
-                'op.nombre as Operador',
-                'a.sueldo_viaje',
-                'a.dinero_viaje',
-                'pr.nombre as Proveedor',
-                'a.total_proveedor',
-                'c.total',
-                'c.estatus',
-                'c.estatus_pago',
-                'c.fecha_pago',
-                'a.fecha_inicio',
-                'a.fecha_fin',
-                DB::raw('DATEDIFF(a.fecha_fin, a.fecha_inicio) as tiempo_viaje'),
-                'c.referencia_full',
-                'c.estatus_planeacion'
-            )
-            ->get();
+            ->where('c.id_empresa', $idEmpresa);
+
+        if ($idProveedor) {
+            $viajesQuery->where('a.id_proveedor', $idProveedor);
+        }
+
+        $viajes = $viajesQuery->select(
+            'c.id as id_cotizacion',
+            'dc.id as id_docum_cotizacion',
+            'a.id_camion',
+            'dc.num_contenedor',
+            'cl.nombre as cliente',
+            'op.nombre as Operador',
+            'a.sueldo_viaje',
+            'a.dinero_viaje',
+            'pr.nombre as Proveedor',
+            'a.total_proveedor',
+            'c.total',
+            'c.estatus',
+            'c.estatus_pago',
+            'c.fecha_pago',
+            'a.fecha_inicio',
+            'a.fecha_fin',
+            DB::raw('DATEDIFF(a.fecha_fin, a.fecha_inicio) as tiempo_viaje'),
+            'c.referencia_full',
+            'c.estatus_planeacion'
+        )->get();
 
         // Agrupar asignaciones por camión para calcular el prorrateo de gastos por viaje en memoria
         $viajesPorCamion = $viajes->groupBy('id_camion');
@@ -91,14 +95,17 @@ class ReporteriaService
             }
 
             // 3. Obtener gastos unificados (Extras y de Viaje/Operador)
-            $gastosUnificados = Gasto::whereHas('vinculos', function ($q) use ($d) {
+            $gastosExtra = Gasto::whereHas('vinculos', function ($q) use ($d) {
                 $q->where('tipo_vinculo', 'cotizacion')
                   ->where('vinculable_type', Cotizaciones::class)
                   ->where('vinculable_id', $d->id_cotizacion);
-            })->get();
+            })->where('tipo_gasto', 'cotizacion')->get();
 
-            $gastosExtra = $gastosUnificados->where('tipo_gasto', 'cotizacion');
-            $gastosOperador = $gastosUnificados->whereIn('tipo_gasto', ['operador', 'viaje']);
+            $gastosOperador = Gasto::whereHas('vinculos', function ($q) use ($d) {
+                $q->where('tipo_vinculo', 'cotizacion')
+                  ->where('vinculable_type', Cotizaciones::class)
+                  ->where('vinculable_id', $d->id_cotizacion);
+            })->whereIn('tipo_gasto', ['operador', 'viaje'])->get();
 
             foreach ($gastosExtra as $ge) {
                 $detalleGastos[] = [
@@ -171,6 +178,17 @@ class ReporteriaService
         }
 
         return $Info;
+    }
+
+    public function getGastosGeneralesPeriodo(string $startDate, string $endDate, int $idEmpresa)
+    {
+        return Gasto::with(['categoria', 'pagos'])
+            ->join('gasto_imputaciones as gi', 'gastos.id', '=', 'gi.gasto_id')
+            ->where('gastos.id_empresa', $idEmpresa)
+            ->whereIn('gi.tipo_imputacion', ['periodo', 'empresa'])
+            ->whereBetween('gi.fecha_imputacion', [$startDate, $endDate])
+            ->select('gastos.*', 'gi.monto_imputado as monto_aplicado', 'gi.fecha_imputacion as fecha_aplicada')
+            ->get();
     }
 
     /**

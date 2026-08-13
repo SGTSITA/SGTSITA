@@ -9,6 +9,7 @@ class SocioCalculoPeriodo extends Model
     protected $table = 'socios_calculos_periodos';
     protected $fillable = [
         'id_empresa',
+        'equipo_id',
         'fecha_desde',
         'fecha_hasta',
         'total_utilidad_bruta_viajes',
@@ -16,6 +17,11 @@ class SocioCalculoPeriodo extends Model
         'utilidad_neta_distribuible',
         'user_id'
     ];
+
+    public function equipo()
+    {
+        return $this->belongsTo(Equipo::class, 'equipo_id');
+    }
 
     public function detalles()
     {

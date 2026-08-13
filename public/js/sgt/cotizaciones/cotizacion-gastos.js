@@ -253,9 +253,11 @@ $(document).on('show.bs.modal', '#modal-form', function (event) {
     if (currentGastoOrigen === 'cotizacion') {
         $('#modalGastoTitulo').text('Agregar Gasto Extra');
         $('#divCamposOperador').hide();
+        $('#txtDescripcion').prop('readonly', false);
     } else {
         $('#modalGastoTitulo').text('Agregar Gasto Operador');
         $('#divCamposOperador').show();
+        $('#txtDescripcion').prop('readonly', true);
     }
     
     // Limpiar campos del modal
@@ -293,8 +295,21 @@ $(document).on('change', '#cmbCategoriaGasto', function () {
 
 $(document).on('change', '#cmbConceptoGasto', function () {
     let conceptoText = $('#cmbConceptoGasto option:selected').text();
-    if ($(this).val()) {
+    let val = $(this).val();
+    if (val) {
         $('#txtDescripcion').val(conceptoText);
+        if (currentGastoOrigen !== 'cotizacion') {
+            if (conceptoText.toLowerCase().includes('otros') || conceptoText.toLowerCase().includes('otro')) {
+                $('#txtDescripcion').prop('readonly', false);
+            } else {
+                $('#txtDescripcion').prop('readonly', true);
+            }
+        }
+    } else {
+        $('#txtDescripcion').val('');
+        if (currentGastoOrigen !== 'cotizacion') {
+            $('#txtDescripcion').prop('readonly', true);
+        }
     }
 });
 

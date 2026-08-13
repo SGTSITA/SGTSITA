@@ -50,15 +50,27 @@
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                             <h5 id="card_title">
                                 Reporte de Resultados
-                                <p class="text-sm mb-0">
-                                </p>
-                                <div class="font-weight-bolder text-sm"><span class="small">Periodo</span></div>
-                                <input type="text" id="daterange" readonly class="form-control form-control-sm min-w-100"
-                                    style="border: none; box-shadow: none;" />
-
+                                <div class="d-flex align-items-center gap-3 mt-2 flex-wrap">
+                                    <div class="d-flex flex-column" style="min-width: 200px;">
+                                        <label class="text-xs font-weight-bolder text-uppercase mb-1" style="color:#7b809a;">Periodo</label>
+                                        <input type="text" id="daterange" readonly class="form-control form-control-sm border border-light ps-2" style="background-color: #fff; box-shadow: none;" />
+                                    </div>
+                                    <div class="d-flex flex-column" style="min-width: 250px;">
+                                        <label class="text-xs font-weight-bolder text-uppercase mb-1" style="color:#7b809a;">Proveedor</label>
+                                        <select id="selProveedorUtilidad" class="form-select form-select-sm border border-light ps-2" style="background-color: #fff; box-shadow: none;">
+                                            <option value="">-- Todos los Proveedores --</option>
+                                            @foreach ($proveedores as $prov)
+                                                <option value="{{ $prov->id }}">{{ $prov->nombre }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                </div>
                             </h5>
 
                             <div class="float-right">
+                                <button class="btn btn-sm bg-gradient-info text-white d-none" id="btnVistaPreliminar">
+                                    <i class="fa fa-fw fa-eye"></i> Vista Preliminar
+                                </button>
                                 <button class="btn btn-sm btn-outline" id="btnVerDetalle">Ver Gastos</button>
                                 <button type="button" class="btn btn-sm bg-gradient-danger" id="btnVerDetalle1"
                                     onclick="exportUtilidades()">
@@ -71,8 +83,16 @@
                     <div class="card-body">
                         <div id="myGrid" class="col-12 ag-theme-quartz" style="height: 620px"></div>
 
-                    </div>
-                </div>
+                        <!-- Panel de Vista Preliminar -->
+                        <div id="panelVistaPreliminar" class="mt-4 d-none" style="animation: fadeIn 0.4s;">
+                            <hr class="horizontal dark my-4">
+                            <h5 class="mb-3 font-weight-bold text-dark"><i class="fas fa-file-pdf me-2 text-danger"></i> Vista Preliminar del Reporte (PDF)</h5>
+                            
+                            <div id="iframePreviewContainer" style="width: 100%; height: 720px; background-color: #f5f5f5; border-radius: 8px;" class="shadow-sm d-flex align-items-center justify-content-center">
+                                <span class="text-muted"><i class="fas fa-spinner fa-spin me-2"></i> Generando vista previa...</span>
+                            </div>
+                        </div>
+                    </div>  </div>
             </div>
         </div>
     </div>

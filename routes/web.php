@@ -586,14 +586,48 @@ Route::middleware(['auth', 'idle.timeout'])->group(function () {
 
     // Balance General Routes
         Route::get('reporteria/balance-general', [App\Http\Controllers\ReporteriaController::class, 'index_balance_general'])->name('reporteria.balance-general.index')->middleware('finanzas:3');
+        Route::get('reporteria/balance-general/json', [App\Http\Controllers\ReporteriaController::class, 'json_balance_general'])->name('reporteria.balance-general.json')->middleware('finanzas:3');
         Route::post('reporteria/balance-general/config/update', [App\Http\Controllers\ReporteriaController::class, 'update_balance_general_config'])->name('reporteria.balance-general.config.update')->middleware('finanzas:3');
         Route::get('reporteria/balance-general/saldos/get', [App\Http\Controllers\ReporteriaController::class, 'get_balance_general_saldos_iniciales'])->name('reporteria.balance-general.saldos.get')->middleware('finanzas:3');
         Route::post('reporteria/balance-general/saldos/update', [App\Http\Controllers\ReporteriaController::class, 'update_balance_general_saldos_iniciales'])->name('reporteria.balance-general.saldos.update')->middleware('finanzas:3');
         Route::get('reporteria/balance-general/export/excel', [App\Http\Controllers\ReporteriaController::class, 'export_balance_general_excel'])->name('reporteria.balance-general.export.excel')->middleware('finanzas:3');
         Route::get('reporteria/balance-general/export/pdf', [App\Http\Controllers\ReporteriaController::class, 'export_balance_general_pdf'])->name('reporteria.balance-general.export.pdf')->middleware('finanzas:3');
+        Route::get('reporteria/socios', [App\Http\Controllers\SociosController::class, 'reporteriaIndex'])->name('reporteria.socios.index');
+
+        // ==================== C O N T A B I L I D A D ====================
+        Route::get('contabilidad/balance-general', [App\Http\Controllers\ReporteriaController::class, 'index_contabilidad_balance'])->name('contabilidad.balance-general.index')->middleware('finanzas:3');
 
 
-    
+        // ==================== S O C I O S  (PARTNERS) ====================
+        Route::prefix('socios')->name('socios.')->group(function () {
+            Route::get('/', [App\Http\Controllers\SociosController::class, 'index'])->name('index');
+            Route::get('/data', [App\Http\Controllers\SociosController::class, 'getSociosData'])->name('data');
+            Route::post('/store', [App\Http\Controllers\SociosController::class, 'storeSocio'])->name('store');
+            Route::put('/{socio}', [App\Http\Controllers\SociosController::class, 'updateSocio'])->name('update')->withTrashed();
+            Route::delete('/{socio}', [App\Http\Controllers\SociosController::class, 'destroySocio'])->name('destroy')->withTrashed();
+
+            Route::prefix('configs')->name('configs.')->group(function () {
+                Route::get('/data', [App\Http\Controllers\SociosController::class, 'getConfigsData'])->name('data');
+                Route::post('/store', [App\Http\Controllers\SociosController::class, 'storeConfig'])->name('store');
+                Route::put('/{config}', [App\Http\Controllers\SociosController::class, 'updateConfig'])->name('update')->withTrashed();
+                Route::delete('/{config}', [App\Http\Controllers\SociosController::class, 'destroyConfig'])->name('destroy')->withTrashed();
+            });
+
+            Route::get('/reporte-utilidad', [App\Http\Controllers\SociosController::class, 'getUtilityReport'])->name('reporte.utilidad');
+            Route::post('/guardar-corte', [App\Http\Controllers\SociosController::class, 'saveCortePeriodo'])->name('guardar.corte');
+            Route::get('/comparativa', [App\Http\Controllers\SociosController::class, 'checkComparativa'])->name('comparativa');
+            Route::get('/exportar', [App\Http\Controllers\SociosController::class, 'exportReport'])->name('exportar');
+
+            // Pagos
+            Route::post('/pagar', [App\Http\Controllers\SociosController::class, 'registrarPago'])->name('pagar');
+            Route::get('/pagos-historial', [App\Http\Controllers\SociosController::class, 'getPagosHistorial'])->name('pagos.historial');
+            Route::get('/socio-cortes', [App\Http\Controllers\SociosController::class, 'getSocioCortes'])->name('socio.cortes');
+            Route::get('/cortes-historial', [App\Http\Controllers\SociosController::class, 'getCortesHistorial'])->name('cortes-historial');
+            Route::delete('/cortes/{corte}', [App\Http\Controllers\SociosController::class, 'destroyCortePeriodo'])->name('cortes.destroy');
+            Route::delete('/pagos/{pago}', [App\Http\Controllers\SociosController::class, 'destroyPago'])->name('pagos.destroy');
+        });
+
+
         Route::post('reporteria/gastos-pagar/export', [App\Http\Controllers\ReporteriaController::class, 'exportGastosPorPagar'])->name('gxp.export');
 
 

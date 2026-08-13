@@ -113,20 +113,25 @@
                 </div>
 
                 <div class="col-md-3">
-                    <label class="form-label fw-bold d-block">&nbsp;</label>
+                    <div class="form-check mb-1">
+                        <input class="form-check-input" type="checkbox" id="chkRecargarCoordenadas">
+                        <label class="form-check-label text-xs fw-bold" for="chkRecargarCoordenadas">
+                            Recargar desde GPS (ignorar caché)
+                        </label>
+                    </div>
 
                     <div class="d-flex gap-2">
-                        <button type="button" class="btn bg-gradient-primary flex-fill" id="btnConsultarConsumo">
+                        <button type="button" class="btn bg-gradient-primary flex-fill mb-0" id="btnConsultarConsumo">
                             <i class="fas fa-search me-1"></i>
                             Consultar
                         </button>
 
-                        <button type="button" class="btn btn-outline-danger" id="btnExportarPdfConsumo"
+                        <button type="button" class="btn btn-outline-danger mb-0" id="btnExportarPdfConsumo"
                             title="Exportar PDF">
                             <i class="fas fa-file-pdf"></i>
                         </button>
 
-                        <button type="button" class="btn btn-outline-success" id="btnExportarExcelConsumo"
+                        <button type="button" class="btn btn-outline-success mb-0" id="btnExportarExcelConsumo"
                             title="Exportar Excel">
                             <i class="fas fa-file-excel"></i>
                         </button>
@@ -192,7 +197,7 @@
 
     <!-- Modal de Google Maps -->
     <div class="modal fade" id="modalMapaRuta" tabindex="-1" aria-labelledby="modalMapaRutaLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="modalMapaRutaLabel">Ruta del Viaje / Contenedor</h5>
@@ -201,7 +206,21 @@
                     </button>
                 </div>
                 <div class="modal-body p-0">
-                    <div id="mapaRutaConsumo" style="height: 500px; width: 100%;"></div>
+                    <div class="row g-0">
+                        <div class="col-lg-8 col-12">
+                            <div id="mapaRutaConsumo" style="height: 550px; width: 100%;"></div>
+                        </div>
+                        <div class="col-lg-4 col-12 border-start bg-light" style="max-height: 550px; overflow-y: auto;">
+                            <div class="p-3">
+                                <h6 class="mb-3 text-uppercase font-weight-bold" style="font-size: 12px; letter-spacing: 0.5px; color: #495057;">
+                                    <i class="fas fa-history me-1"></i> Línea de Tiempo del Viaje
+                                </h6>
+                                <div id="timelineRutaConsumo" style="font-size: 13px;">
+                                    <p class="text-muted text-center my-4">No hay puntos de rastreo registrados.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn bg-gradient-secondary" data-bs-dismiss="modal">Cerrar</button>

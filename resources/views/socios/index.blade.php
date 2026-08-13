@@ -105,6 +105,15 @@
                                         class="form-control form-control-sm">
                                 </div>
                                 <div class="col-md-3">
+                                    <label class="form-label text-sm mb-1">Unidad (Equipo)</label>
+                                    <select id="utilidad_equipo_id" class="form-select form-select-sm">
+                                        <option value="">Todas las unidades</option>
+                                        @foreach ($equipos as $eq)
+                                            <option value="{{ $eq->id }}">{{ ($eq->id_equipo ? $eq->id_equipo . ' - ' : '') . $eq->placas . ' (' . $eq->marca . ')' }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
                                     <button type="button" class="btn btn-sm btn-info mb-0 w-100"
                                         onclick="cargarReporteUtilidad()">
                                         <i class="fas fa-sync me-1"></i> Calcular Utilidades
@@ -436,6 +445,10 @@
                                 style="max-height: 150px; overflow-y: auto; background-color: #fafafa;">
                                 <span class="text-xs text-muted">Cargando periodos...</span>
                             </div>
+                        </div>
+                        <div class="col-12" id="grupo_pago_concepto_div">
+                            <label class="form-label text-xs mb-1">Concepto / Referencia (Adelanto)</label>
+                            <input type="text" class="form-control" name="concepto" id="pago_concepto" placeholder="Ej. Adelanto de utilidades">
                         </div>
                         <div class="col-12">
                             <label class="form-label text-xs mb-1">Monto a Pagar *</label>
@@ -938,6 +951,16 @@
                         cellRenderer: params => formatDate(params.value)
                     },
                     {
+                        headerName: 'Unidad',
+                        field: 'equipo',
+                        width: 140,
+                        cellRenderer: params => {
+                            const eq = params.value;
+                            if (!eq) return '<span class="badge bg-secondary text-xs">Global</span>';
+                            return (eq.id_equipo ? eq.id_equipo + ' - ' : '') + eq.placas;
+                        }
+                    },
+                    {
                         headerName: 'Util. Bruta Viajes',
                         field: 'total_utilidad_bruta_viajes',
                         width: 160,
@@ -1067,6 +1090,7 @@
             const dates = $('#utilidadDaterange').val().split(' - ');
             const from = dates[0];
             const to = dates[1];
+            const equipoId = document.getElementById('utilidad_equipo_id').value;
 
             try {
                 Swal.fire({
@@ -1078,7 +1102,7 @@
                     }
                 });
 
-                const res = await fetch(`{{ route('socios.reporte.utilidad') }}?from=${from}&to=${to}`);
+                const res = await fetch(`{{ route('socios.reporte.utilidad') }}?from=${from}&to=${to}&equipo_id=${equipoId}`);
                 const json = await res.json();
 
 
@@ -1086,7 +1110,7 @@
                 document.getElementById('resumenGastos').textContent = formatCurrency(json.total_gastos_periodo);
                 document.getElementById('resumenComisiones').textContent = formatCurrency(json
                     .total_distribuido_socios);
-                document.getElementById('resumenNeta').textContent = formatCurrency(json.utilidad_neta_empresa);
+                document.getElementById('resumenNeta').textContent = formatCurrency(json.total_pagado_periodo);
 
                 document.getElementById('seccionResumenPeriodo').classList.remove('d-none');
                 document.getElementById('divAccionesCorte').classList.remove('d-none');
@@ -1098,13 +1122,21 @@
                     gridViajesApi.setGridOption('rowData', json.viajes_desglose);
                 }
 
-                const compRes = await fetch(`{{ route('socios.comparativa') }}?from=${from}&to=${to}`);
+                const compRes = await fetch(`{{ route('socios.comparativa') }}?from=${from}&to=${to}&equipo_id=${equipoId}`);
                 const compJson = await compRes.json();
                 comparativaData = compJson;
                 corteGuardadoGlobal = compJson.has_saved;
 
                 if (gridUtilidadApi) {
                     gridUtilidadApi.redrawRows();
+                }
+
+                if (compJson.has_overlap) {
+                    document.getElementById('divAccionesCorte').classList.add('d-none');
+                    Swal.fire('Atención', compJson.overlap_message, 'warning');
+                } else {
+                    document.getElementById('divAccionesCorte').classList.remove('d-none');
+                    Swal.close();
                 }
 
                 const alertComp = document.getElementById('alertaComparativa');
@@ -1115,8 +1147,6 @@
                 } else {
                     alertComp.classList.add('d-none');
                 }
-
-                Swal.close();
             } catch (e) {
                 console.error(e);
                 Swal.fire('Error', 'No se pudieron calcular los rendimientos.', 'error');
@@ -1155,6 +1185,7 @@
             const dates = $('#utilidadDaterange').val().split(' - ');
             const from = dates[0];
             const to = dates[1];
+            const equipoId = document.getElementById('utilidad_equipo_id').value;
 
             const confirm = await Swal.fire({
                 title: '¿Guardar Corte Financiero?',
@@ -1184,7 +1215,8 @@
                         },
                         body: JSON.stringify({
                             from,
-                            to
+                            to,
+                            equipo_id: equipoId
                         })
                     });
                     const json = await res.json();
@@ -1193,6 +1225,8 @@
                         document.getElementById('alertaComparativa').classList.add('d-none');
                         await cargarReporteUtilidad();
                         cargarHistorialCortes();
+                    } else {
+                        Swal.fire('Atención', json.Mensaje || 'No se pudo guardar el corte.', 'warning');
                     }
                 } catch (e) {
                     Swal.fire('Error', 'No se pudo guardar el corte del periodo.', 'error');
@@ -1596,6 +1630,8 @@
 
         function actualizarMontoPagoAutomatico() {
             let total = 0;
+            const checkedCount = document.querySelectorAll('.corte-check-item:checked').length;
+
             document.querySelectorAll('.corte-check-item:checked').forEach(el => {
                 const idx = el.getAttribute('data-idx');
                 const corte = socioCortesData[idx];
@@ -1604,6 +1640,17 @@
                 }
             });
             document.getElementById('pago_monto').value = total > 0 ? total.toFixed(2) : '';
+
+            const conceptoDiv = document.getElementById('grupo_pago_concepto_div');
+            const conceptoInput = document.getElementById('pago_concepto');
+            if (checkedCount > 0) {
+                conceptoDiv.style.display = 'none';
+                conceptoInput.required = false;
+                conceptoInput.value = '';
+            } else {
+                conceptoDiv.style.display = 'block';
+                conceptoInput.required = true;
+            }
         }
 
         async function cargarHistorialPagosFiltrado() {
@@ -1645,6 +1692,7 @@
             const montoTotal = parseFloat(document.getElementById('pago_monto').value);
             const bancoId = document.getElementById('pago_banco_id').value;
             const fechaAplicacion = document.getElementById('pago_fecha_aplicacion').value;
+            const concepto = document.getElementById('pago_concepto').value;
 
             // Distribute payment among checked periods
             let periodosPayload = [];
@@ -1707,6 +1755,7 @@
                         monto: montoTotal,
                         banco_id: bancoId,
                         fecha_aplicacion: fechaAplicacion,
+                        concepto: concepto,
                         periodos: periodosPayload
                     })
                 });

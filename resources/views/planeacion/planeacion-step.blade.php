@@ -434,15 +434,19 @@
                         },
                         {
                             value: 'GDI02',
-                            text: 'GDI02 - Diesel'
+                            text: 'GDI02 - Diésel'
                         },
                         {
                             value: 'GBV01',
-                            text: 'GBV01 - Burrero Vacio'
+                            text: 'GBV01 - Burrero Vacío'
                         },
                         {
                             value: 'GU001',
                             text: 'GU001 - Urea'
+                        },
+                        {
+                            value: 'OTR01',
+                            text: 'Otros'
                         }
                     ];
 
@@ -465,7 +469,12 @@
                   </select>
                 </div>
 
-                <div class="col-md-2">
+                <div class="col-md-2 concepto-otro-col" style="display:none;">
+                   <label class="form-label mb-1">Concepto del gasto</label>
+                   <input type="text" class="form-control concepto-otro-input" name="gasto_concepto_otro[]" placeholder="Escriba el concepto">
+                 </div>
+
+                <div class="col-md-2 monto-col">
                   <label class="form-label mb-1">Monto</label>
                   <div class="input-group">
                     <span class="input-group-text bg-gradient-success text-white">
@@ -544,6 +553,17 @@
                         }
 
                         if (e.target.name === 'gasto_nombre[]') {
+                            const row = e.target.closest('.gasto-item');
+                            const conceptoCol = row.querySelector('.concepto-otro-col');
+                            const conceptoInput = row.querySelector('.concepto-otro-input');
+                            if (e.target.value === 'OTR01') {
+                                conceptoCol.style.display = 'block';
+                                conceptoInput.required = true;
+                            } else {
+                                conceptoCol.style.display = 'none';
+                                conceptoInput.required = false;
+                                conceptoInput.value = '';
+                            }
                             actualizarDisponibles();
                         }
                     });
@@ -559,7 +579,7 @@
 
                     function actualizarDisponibles() {
                         const selects = Array.from(container.querySelectorAll('select[name="gasto_nombre[]"]'));
-                        const seleccionados = selects.map(s => s.value).filter(v => v !== '');
+                        const seleccionados = selects.map(s => s.value).filter(v => v !== '' && v !== 'OTR01');
 
                         selects.forEach((select) => {
                             const valorActual = select.value;
