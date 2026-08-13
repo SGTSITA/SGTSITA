@@ -584,7 +584,7 @@ Route::middleware(['auth', 'idle.timeout'])->group(function () {
         Route::get('reporteria/gastos-pagar', [App\Http\Controllers\ReporteriaController::class, 'index_gxp'])->name('index_gxp.reporteria');
         Route::get('reporteria/gastos-pagar/data', [App\Http\Controllers\ReporteriaController::class, 'getGastosPorPagarData'])->name('gxp.data');
 
-    // Balance General Routes
+      // Balance General Routes
         Route::get('reporteria/balance-general', [App\Http\Controllers\ReporteriaController::class, 'index_balance_general'])->name('reporteria.balance-general.index')->middleware('finanzas:3');
         Route::get('reporteria/balance-general/json', [App\Http\Controllers\ReporteriaController::class, 'json_balance_general'])->name('reporteria.balance-general.json')->middleware('finanzas:3');
         Route::post('reporteria/balance-general/config/update', [App\Http\Controllers\ReporteriaController::class, 'update_balance_general_config'])->name('reporteria.balance-general.config.update')->middleware('finanzas:3');
@@ -618,6 +618,7 @@ Route::middleware(['auth', 'idle.timeout'])->group(function () {
             Route::get('/comparativa', [App\Http\Controllers\SociosController::class, 'checkComparativa'])->name('comparativa');
             Route::get('/exportar', [App\Http\Controllers\SociosController::class, 'exportReport'])->name('exportar');
 
+            
             // Pagos
             Route::post('/pagar', [App\Http\Controllers\SociosController::class, 'registrarPago'])->name('pagar');
             Route::get('/pagos-historial', [App\Http\Controllers\SociosController::class, 'getPagosHistorial'])->name('pagos.historial');
@@ -628,6 +629,7 @@ Route::middleware(['auth', 'idle.timeout'])->group(function () {
         });
 
 
+    
         Route::post('reporteria/gastos-pagar/export', [App\Http\Controllers\ReporteriaController::class, 'exportGastosPorPagar'])->name('gxp.export');
 
 
