@@ -49,6 +49,25 @@ public static function getManyByCredentialGroups(array $gruposGlobal): array
 
     if (!empty($authPendientes)) {
         foreach ($authPendientes as $index => $auth) {
+            $lockKey = 'gps:globalgps:lock:' . md5($auth['apiid'] . '|' . $auth['key']);
+            
+            // Si otra petición ya está logueando este grupo, esperamos hasta 5 segundos (10 intentos de 0.5s)
+            $attempts = 0;
+            while (\Cache::has($lockKey) && $attempts < 10) {
+                usleep(500000); // Esperar 0.5 segundos
+                $attempts++;
+            }
+
+            // Validar si la otra petición ya obtuvo y guardó el token en la caché/archivo
+            $cachedToken = self::getStoredToken($auth['cacheKey']);
+            if ($cachedToken) {
+                $tokens[$index] = $cachedToken;
+                continue; // Avanzar al siguiente sin iniciar sesión otra vez
+            }
+
+            // Adquirir bloqueo temporal para este grupo por 15 segundos
+            \Cache::put($lockKey, true, 15);
+
             try {
                 $timestamp = time();
                 $signature = self::generateSignature($auth['key'], $timestamp);
@@ -90,6 +109,9 @@ public static function getManyByCredentialGroups(array $gruposGlobal): array
                     'message' => $e->getMessage(),
                 ]);
                 $tokens[$index] = null;
+            } finally {
+                // Liberar el bloqueo
+                \Cache::forget($lockKey);
             }
 
             // Pequeña pausa para no saturar al servidor y evitar que retorne 503 o caiga en timeout
