@@ -356,13 +356,44 @@ public static function getAccessToken($apikey, $idUs, bool $forceRefresh = false
     try {
         if ($forceRefresh) {
             Cache::forget($cacheKey);
-
-            return self::fetchAccessToken($key, $apiid);
+            $filePath = storage_path('app/gps_tokens.json');
+            if (file_exists($filePath)) {
+                $data = json_decode(file_get_contents($filePath), true);
+                if (is_array($data)) {
+                    unset($data[$cacheKey]);
+                    file_put_contents($filePath, json_encode($data));
+                }
+            }
+        } else {
+            $cachedToken = self::getStoredToken($cacheKey);
+            if ($cachedToken) {
+                return $cachedToken;
+            }
         }
 
-        return Cache::remember($cacheKey, now()->addMinutes(115), function () use ($key, $apiid) {
-            return self::fetchAccessToken($key, $apiid);
-        });
+        // Semáforo (Lock/Mutex) para evitar tormenta de peticiones concurrentes
+        $lockKey = 'gps:globalgps:lock:' . md5($apiid . '|' . $key);
+        $attempts = 0;
+        while (Cache::has($lockKey) && $attempts < 10) {
+            usleep(500000); // Esperar 0.5 segundos
+            $attempts++;
+        }
+
+        // Validar si otra petición concurrente ya guardó el token
+        $cachedToken = self::getStoredToken($cacheKey);
+        if ($cachedToken) {
+            return $cachedToken;
+        }
+
+        Cache::put($lockKey, true, 15);
+
+        try {
+            $token = self::fetchAccessToken($key, $apiid);
+            self::storeToken($cacheKey, $token);
+            return $token;
+        } finally {
+            Cache::forget($lockKey);
+        }
 
     } catch (\Throwable $e) {
         Cache::forget($cacheKey);
