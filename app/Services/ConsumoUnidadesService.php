@@ -94,6 +94,9 @@ class ConsumoUnidadesService
             }
 
             if (empty($coordenadasRuta)) {
+                $fechaInicioQuery = Carbon::parse($fechaInicio)->startOfDay();
+                $fechaFinQuery = Carbon::parse($fechaFin)->endOfDay();
+
                 $coordenadasRuta = \DB::table('coordenadas_historial')
                     ->where(function ($query) use ($contenedor, $asignacion) {
                         $query->where(function ($q) use ($contenedor) {
@@ -113,12 +116,8 @@ class ConsumoUnidadesService
                             }
                         });
                     })
-                    ->when($fechaInicio, function ($q) use ($fechaInicio) {
-                        $q->where('registrado_en', '>=', $fechaInicio);
-                    })
-                    ->when($fechaFin, function ($q) use ($fechaFin) {
-                        $q->where('registrado_en', '<=', $fechaFin);
-                    })
+                    ->where('registrado_en', '>=', $fechaInicioQuery)
+                    ->where('registrado_en', '<=', $fechaFinQuery)
                     ->orderBy('registrado_en', 'asc')
                     ->get(['latitud', 'longitud', 'registrado_en'])
                     ->toArray();
