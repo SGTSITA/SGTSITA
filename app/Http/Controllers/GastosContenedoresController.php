@@ -442,7 +442,7 @@ class GastosContenedoresController extends Controller
                  $numContenedor = $gasto[0];
                  $camposGastos = [1,2,3];
                  $camposGastoInmediato = [6,7,8];
-                 $descripcionGastos = ['GCM01 - Comisión','GDI02 - Diesel','GCP03 - Casetas / Peaje'];
+                 $descripcionGastos = ['GCM01 - Comisión','GDI02 - Diésel','GCP03 - Casetas / Peaje'];
                  $idEmpresa = auth()->user()->id_empresa;
 
                  $contenedor = DocumCotizacion::where('num_contenedor', $numContenedor)

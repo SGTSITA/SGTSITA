@@ -881,6 +881,16 @@ foreach ($cotizacionesCreadas as $cotizacion) {
                         return response()->json(["Titulo" => "Transportista NO Valido", "Mensaje" => "El transportista de la fila $row no es un transportista registrado", "TMensaje" => "warning"]);
                     }
                 }
+
+                // Validar que el peso del contenedor sea válido
+                $pesoContenedorVal = $cont[7 + $sumarIndex] ?? null;
+                if (is_null($pesoContenedorVal) || $pesoContenedorVal === '' || !is_numeric($pesoContenedorVal) || floatval($pesoContenedorVal) <= 0) {
+                    return response()->json([
+                        "Titulo" => "Peso no válido",
+                        "Mensaje" => "El peso del contenedor de la fila $row debe ser un número válido mayor a cero.",
+                        "TMensaje" => "warning"
+                    ]);
+                }
  $url = $cont[18 + $sumarIndex];
  $lat = null;
                    $lng  = null;
@@ -923,7 +933,7 @@ else{
             //una vez superada todas las validaciones procedemos a guardar los datos
             foreach ($contenedores as $contenedor) {
 
-                $pesocontenedor = (float) $contenedor[5 + $sumarIndex];
+                $pesocontenedor = (float) $contenedor[7 + $sumarIndex];
                 $numSubCliente = substr($contenedor[0], 0, 5);
                 $pesoReglamentario = 22;
                 $numContenedor = str_replace(' ', '', $contenedor[3 + $sumarIndex]);
@@ -4387,9 +4397,14 @@ if ($cotizacion) {
             $row = 1;
 
             $origen_inicial = $request->origen_captura;
+            $sumarIndex = 0;
+            if ($request->has('permiso_proveedor') && $request->get('permiso_proveedor') == 1) {
+                $sumarIndex = 2;
+            }
+
             foreach ($contenedores as $cont) {
                 //validaremos que los contenedores no existan
-                $numContenedor = str_replace(' ', '', $cont[3]);
+                $numContenedor = str_replace(' ', '', $cont[3 + $sumarIndex]);
                 $idEmpresa = auth()->user()->id_empresa;
 
                 $contenedorExistente = DocumCotizacion::where('num_contenedor', $numContenedor)
@@ -4424,13 +4439,20 @@ if ($cotizacion) {
                     }
                 }
 
+                // Validar que el peso del contenedor sea válido
+                $pesoContenedorVal = $cont[5 + $sumarIndex] ?? null;
+                if (is_null($pesoContenedorVal) || $pesoContenedorVal === '' || !is_numeric($pesoContenedorVal) || floatval($pesoContenedorVal) <= 0) {
+                    return response()->json([
+                        "Titulo" => "Peso no válido",
+                        "Mensaje" => "El peso del contenedor de la fila $row debe ser un número válido mayor a cero.",
+                        "TMensaje" => "warning"
+                    ]);
+                }
+
+                $row += 1;
 
 
-            }
-            $sumarIndex = 0;
-            if ($request->has('permiso_proveedor') && $request->get('permiso_proveedor') == 1) {
-                //si se requiere validar proveedor y transportista, se ajustan los indices
-                $sumarIndex = 0;
+
             }
 
             //una vez superada todas las validaciones procedemos a guardar los datos

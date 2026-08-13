@@ -617,6 +617,7 @@ Route::middleware(['auth', 'idle.timeout'])->group(function () {
             Route::post('/guardar-corte', [App\Http\Controllers\SociosController::class, 'saveCortePeriodo'])->name('guardar.corte');
             Route::get('/comparativa', [App\Http\Controllers\SociosController::class, 'checkComparativa'])->name('comparativa');
             Route::get('/exportar', [App\Http\Controllers\SociosController::class, 'exportReport'])->name('exportar');
+
             
             // Pagos
             Route::post('/pagar', [App\Http\Controllers\SociosController::class, 'registrarPago'])->name('pagar');
@@ -626,6 +627,8 @@ Route::middleware(['auth', 'idle.timeout'])->group(function () {
             Route::delete('/cortes/{corte}', [App\Http\Controllers\SociosController::class, 'destroyCortePeriodo'])->name('cortes.destroy');
             Route::delete('/pagos/{pago}', [App\Http\Controllers\SociosController::class, 'destroyPago'])->name('pagos.destroy');
         });
+
+
     
         Route::post('reporteria/gastos-pagar/export', [App\Http\Controllers\ReporteriaController::class, 'exportGastosPorPagar'])->name('gxp.export');
 

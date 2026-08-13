@@ -319,11 +319,14 @@ document.addEventListener("DOMContentLoaded", function () {
         pintarLoading();
         updateGridHeaders();
 
+        const isRefresh = document.getElementById("chkRecargarCoordenadas")?.checked ? 1 : 0;
+
         const params = new URLSearchParams({
             unidad_id: unidad.value,
             tipo_consumo: tipoConsumo.value,
             fecha_inicio: fechaInicio.value,
             fecha_fin: fechaFin.value,
+            refresh: isRefresh,
         });
 
         try {
@@ -540,6 +543,7 @@ document.addEventListener("DOMContentLoaded", function () {
     let googleMapInstance = null;
     let mapMarkers = [];
     let mapPathPolyline = null;
+    let directionsRenderers = [];
 
     function abrirMapaRuta(rowData) {
         const modalEl = document.getElementById('modalMapaRuta');
@@ -554,6 +558,10 @@ document.addEventListener("DOMContentLoaded", function () {
             mapPathPolyline.setMap(null);
             mapPathPolyline = null;
         }
+        if (directionsRenderers) {
+            directionsRenderers.forEach(r => r.setMap(null));
+        }
+        directionsRenderers = [];
 
         setTimeout(() => {
             const mapDiv = document.getElementById('mapaRutaConsumo');
@@ -571,76 +579,246 @@ document.addEventListener("DOMContentLoaded", function () {
 
             googleMapInstance = new google.maps.Map(mapDiv, mapOptions);
             const bounds = new google.maps.LatLngBounds();
+            const infoWindow = new google.maps.InfoWindow();
+
+            // Populate Timeline Panel HTML
+            const timelineDiv = document.getElementById('timelineRutaConsumo');
+            timelineDiv.innerHTML = '';
+            let timelineItems = [];
+
+            let originLatLng = null;
+            let destLatLng = null;
 
             if (rowData.diesel_lat && rowData.diesel_lng) {
-                const dieselPos = { lat: parseFloat(rowData.diesel_lat), lng: parseFloat(rowData.diesel_lng) };
-                const marker = new google.maps.Marker({
-                    position: dieselPos,
-                    map: googleMapInstance,
-                    title: "Carga Diésel actual / Origen",
-                    icon: 'https://maps.google.com/mapfiles/ms/icons/green-dot.png'
-                });
-                mapMarkers.push(marker);
-                bounds.extend(dieselPos);
+                originLatLng = new google.maps.LatLng(parseFloat(rowData.diesel_lat), parseFloat(rowData.diesel_lng));
+            } else if (rowData.coordenadas_ruta && rowData.coordenadas_ruta.length > 0) {
+                originLatLng = new google.maps.LatLng(parseFloat(rowData.coordenadas_ruta[0].latitud), parseFloat(rowData.coordenadas_ruta[0].longitud));
             }
 
             if (rowData.diesel_siguiente_lat && rowData.diesel_siguiente_lng) {
-                const dieselSigPos = { lat: parseFloat(rowData.diesel_siguiente_lat), lng: parseFloat(rowData.diesel_siguiente_lng) };
-                const marker = new google.maps.Marker({
-                    position: dieselSigPos,
-                    map: googleMapInstance,
-                    title: "Siguiente carga Diésel / Destino",
-                    icon: 'https://maps.google.com/mapfiles/ms/icons/red-dot.png'
-                });
-                mapMarkers.push(marker);
-                bounds.extend(dieselSigPos);
+                destLatLng = new google.maps.LatLng(parseFloat(rowData.diesel_siguiente_lat), parseFloat(rowData.diesel_siguiente_lng));
+            } else if (rowData.coordenadas_ruta && rowData.coordenadas_ruta.length > 0) {
+                destLatLng = new google.maps.LatLng(parseFloat(rowData.coordenadas_ruta[rowData.coordenadas_ruta.length - 1].latitud), parseFloat(rowData.coordenadas_ruta[rowData.coordenadas_ruta.length - 1].longitud));
             }
 
-            const pathCoordinates = [];
+            // 1. Agregar marcador de Inicio (Diésel Origen)
+            if (originLatLng) {
+                const marker = new google.maps.Marker({
+                    position: originLatLng,
+                    map: googleMapInstance,
+                    title: "Inicio del viaje (Carga Diésel / Origen)",
+                    icon: 'https://maps.google.com/mapfiles/ms/icons/green-dot.png'
+                });
+                mapMarkers.push(marker);
+                bounds.extend(originLatLng);
+
+                const infoContent = `
+                    <div style="font-family: sans-serif; font-size: 13px; line-height: 1.4; padding: 5px;">
+                        <h6 style="margin: 0 0 5px 0; color: #198754; font-weight: bold;"><i class="fas fa-play-circle me-1"></i>Inicio del Viaje</h6>
+                        <strong>Fecha/Hora:</strong> ${rowData.fecha_inicio || 'S/N'}<br>
+                        <strong>Lat/Lng:</strong> ${originLatLng.lat().toFixed(5)}, ${originLatLng.lng().toFixed(5)}
+                    </div>
+                `;
+                marker.addListener('click', () => {
+                    infoWindow.setContent(infoContent);
+                    infoWindow.open(googleMapInstance, marker);
+                });
+
+                timelineItems.push({
+                    title: 'Inicio (Carga Diésel)',
+                    time: rowData.fecha_inicio || 'S/N',
+                    lat: originLatLng.lat(),
+                    lng: originLatLng.lng(),
+                    badgeClass: 'bg-success',
+                    iconClass: 'fa-play'
+                });
+            }
+
+            // 2. Agregar marcadores intermedios (Coordenadas Historial)
             if (rowData.coordenadas_ruta && rowData.coordenadas_ruta.length > 0) {
-                rowData.coordenadas_ruta.forEach((coord) => {
+                rowData.coordenadas_ruta.forEach((coord, idx) => {
                     const pos = { lat: parseFloat(coord.latitud), lng: parseFloat(coord.longitud) };
-                    pathCoordinates.push(pos);
                     bounds.extend(pos);
 
                     const dotMarker = new google.maps.Marker({
                         position: pos,
                         map: googleMapInstance,
-                        title: `Punto rastreo: ${coord.registrado_en || ''}`,
+                        title: `Punto de rastreo #${idx + 1}: ${coord.registrado_en || ''}`,
                         icon: {
                             path: google.maps.SymbolPath.CIRCLE,
-                            scale: 4,
+                            scale: 5,
                             fillColor: "#007bff",
-                            fillOpacity: 0.8,
+                            fillOpacity: 0.9,
                             strokeColor: "#ffffff",
                             strokeWeight: 1,
                         }
                     });
                     mapMarkers.push(dotMarker);
+
+                    const infoContent = `
+                        <div style="font-family: sans-serif; font-size: 13px; line-height: 1.4; padding: 5px;">
+                            <h6 style="margin: 0 0 5px 0; color: #007bff; font-weight: bold;"><i class="fas fa-map-marker-alt me-1"></i>Punto de Rastreo #${idx + 1}</h6>
+                            <strong>Fecha/Hora:</strong> ${coord.registrado_en || 'S/N'}<br>
+                            <strong>Lat/Lng:</strong> ${parseFloat(coord.latitud).toFixed(5)}, ${parseFloat(coord.longitud).toFixed(5)}
+                        </div>
+                    `;
+                    dotMarker.addListener('click', () => {
+                        infoWindow.setContent(infoContent);
+                        infoWindow.open(googleMapInstance, dotMarker);
+                    });
+
+                    timelineItems.push({
+                        title: `Punto de Rastreo #${idx + 1}`,
+                        time: coord.registrado_en || 'S/N',
+                        lat: pos.lat,
+                        lng: pos.lng,
+                        badgeClass: 'bg-info',
+                        iconClass: 'fa-map-pin'
+                    });
                 });
             }
 
-            if (pathCoordinates.length > 0) {
-                mapPathPolyline = new google.maps.Polyline({
-                    path: pathCoordinates,
-                    geodesic: true,
-                    strokeColor: '#007bff',
-                    strokeOpacity: 0.8,
-                    strokeWeight: 4,
-                    map: googleMapInstance
+            // 3. Agregar marcador de Fin (Siguiente Carga)
+            if (destLatLng) {
+                const marker = new google.maps.Marker({
+                    position: destLatLng,
+                    map: googleMapInstance,
+                    title: "Fin del viaje (Siguiente Carga / Destino)",
+                    icon: 'https://maps.google.com/mapfiles/ms/icons/red-dot.png'
                 });
-            } else if (rowData.diesel_lat && rowData.diesel_lng && rowData.diesel_siguiente_lat && rowData.diesel_siguiente_lng) {
-                mapPathPolyline = new google.maps.Polyline({
-                    path: [
-                        { lat: parseFloat(rowData.diesel_lat), lng: parseFloat(rowData.diesel_lng) },
-                        { lat: parseFloat(rowData.diesel_siguiente_lat), lng: parseFloat(rowData.diesel_siguiente_lng) }
-                    ],
-                    geodesic: true,
-                    strokeColor: '#dc3545',
-                    strokeOpacity: 0.6,
-                    strokeWeight: 3,
-                    map: googleMapInstance
+                mapMarkers.push(marker);
+                bounds.extend(destLatLng);
+
+                const infoContent = `
+                    <div style="font-family: sans-serif; font-size: 13px; line-height: 1.4; padding: 5px;">
+                        <h6 style="margin: 0 0 5px 0; color: #dc3545; font-weight: bold;"><i class="fas fa-flag-checkered me-1"></i>Fin del Viaje</h6>
+                        <strong>Fecha/Hora:</strong> ${rowData.litros_tomados_de_contenedor ? 'Carga posterior' : 'S/N'}<br>
+                        <strong>Lat/Lng:</strong> ${destLatLng.lat().toFixed(5)}, ${destLatLng.lng().toFixed(5)}
+                    </div>
+                `;
+                marker.addListener('click', () => {
+                    infoWindow.setContent(infoContent);
+                    infoWindow.open(googleMapInstance, marker);
                 });
+
+                timelineItems.push({
+                    title: 'Fin (Siguiente Carga)',
+                    time: rowData.litros_tomados_de_contenedor ? 'Siguiente viaje' : 'S/N',
+                    lat: destLatLng.lat(),
+                    lng: destLatLng.lng(),
+                    badgeClass: 'bg-danger',
+                    iconClass: 'fa-flag-checkered'
+                });
+            }
+
+            // 4. Renderizar Línea de Tiempo
+            if (timelineItems.length > 0) {
+                let html = '<div class="list-group list-group-flush">';
+                timelineItems.forEach((item, index) => {
+                    html += `
+                        <a href="javascript:void(0);" class="list-group-item list-group-item-action py-3 lh-sm item-timeline-map" data-lat="${item.lat}" data-lng="${item.lng}" data-index="${index}">
+                            <div class="d-flex w-100 align-items-center justify-content-between mb-1">
+                                <strong class="mb-0 text-dark"><span class="badge ${item.badgeClass} me-2"><i class="fas ${item.iconClass}"></i></span>${item.title}</strong>
+                                <small class="text-muted font-weight-bold" style="font-size: 11px;">${item.time}</small>
+                            </div>
+                            <div class="small text-muted ps-4" style="font-size: 11px;">
+                                Coord: <strong>${item.lat.toFixed(5)}, ${item.lng.toFixed(5)}</strong>
+                            </div>
+                        </a>
+                    `;
+                });
+                html += '</div>';
+                timelineDiv.innerHTML = html;
+
+                document.querySelectorAll('.item-timeline-map').forEach(el => {
+                    el.addEventListener('click', function() {
+                        const lat = parseFloat(this.getAttribute('data-lat'));
+                        const lng = parseFloat(this.getAttribute('data-lng'));
+                        const idx = parseInt(this.getAttribute('data-index'));
+                        
+                        const pos = new google.maps.LatLng(lat, lng);
+                        googleMapInstance.setCenter(pos);
+                        googleMapInstance.setZoom(13);
+
+                        const marker = mapMarkers[idx];
+                        if (marker) {
+                            google.maps.event.trigger(marker, 'click');
+                        }
+                    });
+                });
+            } else {
+                timelineDiv.innerHTML = '<p class="text-muted text-center my-4">No hay puntos de rastreo registrados.</p>';
+            }
+
+            // 5. Trazar Ruta por Carretera (Directions API)
+            if (originLatLng && destLatLng) {
+                let waypoints = [];
+                if (rowData.coordenadas_ruta && rowData.coordenadas_ruta.length > 2) {
+                    let rawIntermediates = rowData.coordenadas_ruta.slice(1, -1);
+                    let step = 1;
+                    if (rawIntermediates.length > 21) {
+                        step = rawIntermediates.length / 21;
+                    }
+                    for (let i = 0; i < 21 && i * step < rawIntermediates.length; i++) {
+                        let idx = Math.floor(i * step);
+                        let pt = rawIntermediates[idx];
+                        waypoints.push({
+                            location: new google.maps.LatLng(parseFloat(pt.latitud), parseFloat(pt.longitud)),
+                            stopover: false
+                        });
+                    }
+                }
+
+                const directionsService = new google.maps.DirectionsService();
+                const directionsRenderer = new google.maps.DirectionsRenderer({
+                    map: googleMapInstance,
+                    suppressMarkers: true,
+                    polylineOptions: {
+                        strokeColor: '#007bff',
+                        strokeOpacity: 0.8,
+                        strokeWeight: 5
+                    }
+                });
+                directionsRenderers.push(directionsRenderer);
+
+                directionsService.route({
+                    origin: originLatLng,
+                    destination: destLatLng,
+                    waypoints: waypoints,
+                    optimizeWaypoints: false,
+                    travelMode: google.maps.TravelMode.DRIVING
+                }, function(response, status) {
+                    if (status === 'OK') {
+                        directionsRenderer.setDirections(response);
+                    } else {
+                        console.warn('Directions API failed (' + status + '). Fallback to polyline.');
+                        trazarPolylineDirecta(rowData);
+                    }
+                });
+            } else {
+                trazarPolylineDirecta(rowData);
+            }
+
+            function trazarPolylineDirecta(data) {
+                const pathCoordinates = [];
+                if (originLatLng) pathCoordinates.push(originLatLng);
+                if (data.coordenadas_ruta && data.coordenadas_ruta.length > 0) {
+                    data.coordenadas_ruta.forEach(c => {
+                        pathCoordinates.push({ lat: parseFloat(c.latitud), lng: parseFloat(c.longitud) });
+                    });
+                }
+                if (destLatLng) pathCoordinates.push(destLatLng);
+
+                if (pathCoordinates.length > 0) {
+                    mapPathPolyline = new google.maps.Polyline({
+                        path: pathCoordinates,
+                        geodesic: true,
+                        strokeColor: '#dc3545',
+                        strokeOpacity: 0.8,
+                        strokeWeight: 4,
+                        map: googleMapInstance
+                    });
+                }
             }
 
             if (!bounds.isEmpty()) {

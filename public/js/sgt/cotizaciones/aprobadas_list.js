@@ -807,9 +807,15 @@ async function programarViaje() {
         let hayErrorGastos = false;
 
         for (const fila of filas) {
-            const motivo = fila
-                .querySelector('[name="gasto_nombre[]"]')
-                .value.trim();
+            const motivoVal = fila.querySelector('[name="gasto_nombre[]"]').value.trim();
+            const conceptoOtroInput = fila.querySelector('[name="gasto_concepto_otro[]"]');
+            const conceptoOtro = conceptoOtroInput ? conceptoOtroInput.value.trim() : '';
+
+            const selectEl = fila.querySelector('[name="gasto_nombre[]"]');
+            const labelMotivo = selectEl.options[selectEl.selectedIndex].text.trim();
+
+            const motivo = motivoVal === 'OTR01' ? conceptoOtro : labelMotivo;
+
             const monto =
                 parseFloat(
                     fila.querySelector('[name="gasto_monto[]"]').value,
@@ -822,7 +828,17 @@ async function programarViaje() {
             const fechaAplicacion =
                 fila.querySelector('[name="fechaAplicacion[]"]').value || null;
 
-            if (motivo !== "" && monto <= 0) {
+            if (motivoVal === 'OTR01' && conceptoOtro === "") {
+                Swal.fire(
+                    "Concepto requerido",
+                    "Debe escribir el concepto para el gasto tipo 'Otros'.",
+                    "warning",
+                );
+                hayErrorGastos = true;
+                break;
+            }
+
+            if (motivoVal !== "" && monto <= 0) {
                 Swal.fire(
                     "Monto inválido",
                     "El monto del gasto '" +
@@ -857,9 +873,10 @@ async function programarViaje() {
                 break;
             }
 
-            if (motivo !== "" || monto > 0) {
+            if (motivoVal !== "" || monto > 0) {
                 gastosValidos.push({
-                    motivo,
+                    motivo: motivoVal,
+                    conceptoOtro: conceptoOtro,
                     monto,
                     pagoInmediato,
                     banco: pagoInmediato ? banco : null,

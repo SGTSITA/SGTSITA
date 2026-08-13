@@ -179,11 +179,12 @@ class SociosController extends Controller
     {
         $request->validate([
             'from' => 'required|date',
-            'to' => 'required|date|after_or_equal:from'
+            'to' => 'required|date|after_or_equal:from',
+            'equipo_id' => 'nullable|exists:equipos,id'
         ]);
 
         $res = $this->sociosService->saveCalculoPeriodo(
-            $request->only('from', 'to'),
+            $request->only('from', 'to', 'equipo_id'),
             auth()->user()->id_empresa,
             auth()->user()->id
         );
@@ -195,13 +196,15 @@ class SociosController extends Controller
     {
         $request->validate([
             'from' => 'required|date',
-            'to' => 'required|date|after_or_equal:from'
+            'to' => 'required|date|after_or_equal:from',
+            'equipo_id' => 'nullable|integer'
         ]);
 
         $res = $this->sociosService->getSnapshotComparativa(
             $request->input('from'),
             $request->input('to'),
-            auth()->user()->id_empresa
+            auth()->user()->id_empresa,
+            $request->input('equipo_id')
         );
 
         return response()->json($res);
@@ -249,6 +252,7 @@ class SociosController extends Controller
             'monto' => 'required|numeric',
             'banco_id' => 'required|exists:bancos,id',
             'fecha_aplicacion' => 'required|date',
+            'concepto' => 'nullable|string|max:255',
             'periodos' => 'nullable|array',
             'periodos.*.id' => 'required|exists:socios_calculos_periodos,id',
             'periodos.*.monto' => 'required|numeric'
@@ -260,10 +264,13 @@ class SociosController extends Controller
         $pagos = [];
 
         return \Illuminate\Support\Facades\DB::transaction(function() use ($validated, $idEmpresa, $userId, &$pagos) {
-            $socio = \App\Models\Socio::findOrFail($validated['socio_id']);
+            $socio = \App\Models\Socio::withTrashed()->findOrFail($validated['socio_id']);
 
             if (!empty($validated['periodos'])) {
                 foreach ($validated['periodos'] as $pData) {
+                    $periodo = \App\Models\SocioCalculoPeriodo::find($pData['id']);
+                    $periodoLabel = $periodo ? (' (Periodo #' . $periodo->id . ' del ' . \Carbon\Carbon::parse($periodo->fecha_desde)->format('d-m-Y') . ' al ' . \Carbon\Carbon::parse($periodo->fecha_hasta)->format('d-m-Y') . ')') : ' (Periodo #' . $pData['id'] . ')';
+
                     $pago = \App\Models\SocioPago::create([
                         'id_empresa' => $idEmpresa,
                         'socio_id' => $validated['socio_id'],
@@ -278,7 +285,7 @@ class SociosController extends Controller
                         'cuenta_bancaria_id' => $validated['banco_id'],
                         'tipo' => 'cargo',
                         'monto' => $pData['monto'],
-                        'concepto' => 'Pago a Socio: ' . $socio->nombre . ' (Periodo #' . $pData['id'] . ')',
+                        'concepto' => 'Pago a Socio: ' . $socio->nombre . $periodoLabel,
                         'fecha_movimiento' => $validated['fecha_aplicacion'],
                         'origen' => 'sistema',
                         'referencia' => 'Pago de utilidades #' . $pago->id,
@@ -299,11 +306,13 @@ class SociosController extends Controller
                     'user_id' => $userId
                 ]);
 
+                $conceptoBanco = !empty($validated['concepto']) ? $validated['concepto'] : ('Pago a Socio: ' . $socio->nombre);
+
                 app(\App\Services\BancosService::class)->registrarMovimiento([
                     'cuenta_bancaria_id' => $validated['banco_id'],
                     'tipo' => 'cargo',
                     'monto' => $validated['monto'],
-                    'concepto' => 'Pago a Socio: ' . $socio->nombre,
+                    'concepto' => $conceptoBanco,
                     'fecha_movimiento' => $validated['fecha_aplicacion'],
                     'origen' => 'sistema',
                     'referencia' => 'Pago de utilidades #' . $pago->id,
@@ -499,7 +508,7 @@ class SociosController extends Controller
     {
         $idEmpresa = auth()->user()->id_empresa;
         $cortes = \App\Models\SocioCalculoPeriodo::where('id_empresa', $idEmpresa)
-            ->with(['user', 'detalles.socio'])
+            ->with(['user', 'detalles.socio', 'equipo'])
             ->orderBy('id', 'desc')
             ->get();
 
@@ -600,11 +609,22 @@ class SociosController extends Controller
         abort_unless($pago->id_empresa === auth()->user()->id_empresa, 403);
 
         return \Illuminate\Support\Facades\DB::transaction(function() use ($pago) {
-            // Delete associated bank movement if it exists
-            \DB::table('cuenta_bancaria_movimientos')
-                ->where('referenciaable_type', \App\Models\SocioPago::class)
+            // Find and delete associated bank movement adjusting balance
+            $mov = \App\Models\CatBancoCuentasMovimientos::where('referenciaable_type', \App\Models\SocioPago::class)
                 ->where('referenciaable_id', $pago->id)
-                ->delete();
+                ->first();
+
+            if ($mov) {
+                $banco = \App\Models\Bancos::find($mov->cuenta_bancaria_id);
+                if ($banco) {
+                    if ($mov->tipo === 'cargo') {
+                        $banco->increment('saldo', $mov->monto);
+                    } else {
+                        $banco->decrement('saldo', $mov->monto);
+                    }
+                }
+                $mov->delete();
+            }
 
             $pago->delete();
 

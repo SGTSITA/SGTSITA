@@ -1448,9 +1448,10 @@ class PlaneacionController extends Controller
             //  Solo se permiten estos tipos peticion don  jose
             $descripcionGastosPermitidos = [
                 'GCM01' => 'GCM01 - Comisión',
-                'GDI02' => 'GDI02 - Diesel',
-                'GBV01' => 'GBV01 - Burrero Vacio',
-                'GU001' => 'GU001 - Urea'
+                'GDI02' => 'GDI02 - Diésel',
+                'GBV01' => 'GBV01 - Burrero Vacío',
+                'GU001' => 'GU001 - Urea',
+                'OTR01' => 'Otros'
             ];
 
             foreach ($otrosGastos as $gasto) {
@@ -1460,7 +1461,7 @@ class PlaneacionController extends Controller
                 $monto = floatval($gasto['monto'] ?? 0);
                 $esPagoInmediato = !empty($gasto['pagoInmediato']);
                 $idBanco = !empty($gasto['banco']) ? intval($gasto['banco']) : null;
-              $fechaAplicacionInput = $gasto['fechaAplicacion'] ?? null;
+                $fechaAplicacionInput = $gasto['fechaAplicacion'] ?? null;
 
                 $fechaAplicacion = null;
 
@@ -1503,7 +1504,7 @@ class PlaneacionController extends Controller
                     continue;
                 }
 
-                $tipoGasto = $descripcionGastosPermitidos[$motivo];
+                $tipoGasto = $motivo === 'OTR01' ? ($gasto['conceptoOtro'] ?? 'Otros') : $descripcionGastosPermitidos[$motivo];
 
                 // Resolver categoria_gasto_id y gasto_concepto_id de manera dinámica
                 $categoriaId = null;
@@ -1521,17 +1522,20 @@ class PlaneacionController extends Controller
                     $categoriaId = $cat?->id ?? 5;
                     $con = DB::table('gasto_conceptos')->where('clave', 'COM_VTA')->first();
                     $conceptoId = $con?->id;
-                } elseif ($motivo === 'GBV01') {
-                    // Burrero Vacio -> Otros
+                } else {
+                    // Otros / Burrero Vacío / Urea -> Categoria: Otros
                     $cat = DB::table('categorias_gastos')->where('categoria', 'like', '%Otros%')->first();
                     $categoriaId = $cat?->id ?? 12;
-                    // Buscar o registrar concepto para Burrero Vacío
-                    $con = \App\Models\GastoConcepto::where('clave', 'OTR_BV')->first();
+
+                    $claveConcepto = $motivo === 'GBV01' ? 'OTR_BV' : ($motivo === 'GU001' ? 'OTR_UR' : 'OTR_GEN');
+                    $nombreConcepto = $motivo === 'GBV01' ? 'GBV01 - Burrero Vacío' : ($motivo === 'GU001' ? 'GU001 - Urea' : 'Otros');
+
+                    $con = \App\Models\GastoConcepto::where('clave', $claveConcepto)->first();
                     if (!$con) {
                         $con = new \App\Models\GastoConcepto();
                         $con->categoria_gasto_id = $categoriaId;
-                        $con->clave = 'OTR_BV';
-                        $con->nombre = 'Burrero Vacio';
+                        $con->clave = $claveConcepto;
+                        $con->nombre = $nombreConcepto;
                         $con->tipo_default = 'viaje';
                         $con->afecta_utilidad = true;
                         $con->is_active = true;

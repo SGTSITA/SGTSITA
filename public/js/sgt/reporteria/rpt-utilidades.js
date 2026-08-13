@@ -183,6 +183,19 @@ const gridOptions = {
     ],
 
     localeText: localeText,
+    onSelectionChanged: () => {
+        const selectedRows = apiGrid ? apiGrid.getSelectedRows() : [];
+        const btn = document.getElementById("btnVistaPreliminar");
+        if (btn) {
+            if (selectedRows.length > 0) {
+                btn.classList.remove("d-none");
+            } else {
+                btn.classList.add("d-none");
+                // Hide the preview panel if no rows are selected
+                document.getElementById("panelVistaPreliminar").classList.add("d-none");
+            }
+        }
+    }
 };
 
 const myGridElement = document.querySelector("#myGrid");
@@ -228,6 +241,7 @@ function ejecutarExportacion(fileType) {
     const totalRows = apiGrid.paginationGetRowCount();
     let fechaInicio = $("#daterange").attr("data-start");
     let fechaFin = $("#daterange").attr("data-end");
+    let idProveedor = $("#selProveedorUtilidad").val();
 
     $.ajax({
         url: "/reporteria/utilidad/export",
@@ -239,6 +253,7 @@ function ejecutarExportacion(fileType) {
             fechaInicio: fechaInicio,
             fechaFin: fechaFin,
             fileType: fileType,
+            id_proveedor: idProveedor,
         },
         xhrFields: {
             responseType: "blob",
@@ -293,10 +308,11 @@ function getUtilidadesViajes(startDate, endDate) {
     var _token = document
         .querySelector('meta[name="csrf-token"]')
         .getAttribute("content");
+    let idProveedor = $("#selProveedorUtilidad").val();
     $.ajax({
         url: "/reporteria/utilidad/ver-utilidad",
         type: "post",
-        data: { _token, startDate, endDate },
+        data: { _token, startDate, endDate, id_proveedor: idProveedor },
         beforeSend: () => {
             mostrarLoading("Consultando viajes...");
         },
@@ -304,12 +320,85 @@ function getUtilidadesViajes(startDate, endDate) {
             ocultarLoading();
             let data = JSON.parse(response);
             apiGrid.setGridOption("rowData", data.Info);
+            
+            // Guardar gastos generales
+            window.latestGastosGenerales = data.GastosGenerales || [];
+            
+            // Actualizar vista preliminar si está abierta
+            if (!document.getElementById("panelVistaPreliminar").classList.contains("d-none")) {
+                calcularVistaPreliminar();
+            }
         },
         error: () => {
             ocultarLoading();
         },
     });
 }
+
+$("#selProveedorUtilidad").on("change", function () {
+    let fechaInicio = $("#daterange").attr("data-start");
+    let fechaFin = $("#daterange").attr("data-end");
+    if (fechaInicio && fechaFin) {
+        getUtilidadesViajes(fechaInicio, fechaFin);
+    }
+});
+
+function cargarPdfVistaPreliminar() {
+    const panel = document.getElementById("panelVistaPreliminar");
+    panel.classList.remove("d-none");
+
+    const _token = document.querySelector('meta[name="csrf-token"]').getAttribute("content");
+    const rowData = JSON.stringify(apiGrid.getSelectedRows());
+    const totalRows = apiGrid.paginationGetRowCount();
+    let fechaInicio = $("#daterange").attr("data-start");
+    let fechaFin = $("#daterange").attr("data-end");
+    let idProveedor = $("#selProveedorUtilidad").val();
+
+    let iframeContainer = document.getElementById("iframePreviewContainer");
+    iframeContainer.innerHTML = ''; // Clear previous
+
+    let iframe = document.createElement("iframe");
+    iframe.name = "pdf_preview_iframe";
+    iframe.style.width = "100%";
+    iframe.style.height = "700px";
+    iframe.style.border = "none";
+    iframe.style.borderRadius = "8px";
+    iframeContainer.appendChild(iframe);
+
+    let form = document.createElement("form");
+    form.method = "POST";
+    form.action = "/reporteria/utilidad/export";
+    form.target = "pdf_preview_iframe";
+
+    const inputs = {
+        _token: _token,
+        rowData: rowData,
+        totalRows: totalRows,
+        fechaInicio: fechaInicio,
+        fechaFin: fechaFin,
+        fileType: 'pdf',
+        id_proveedor: idProveedor
+    };
+
+    for (const [key, value] of Object.entries(inputs)) {
+        let input = document.createElement("input");
+        input.type = "hidden";
+        input.name = key;
+        input.value = value;
+        form.appendChild(input);
+    }
+
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
+
+    panel.scrollIntoView({ behavior: 'smooth' });
+}
+
+document.getElementById("btnVistaPreliminar").addEventListener("click", function() {
+    cargarPdfVistaPreliminar();
+});
+
 
 function verDetalleGastos() {
     let contenedor = apiGrid.getSelectedRows();

@@ -1181,8 +1181,8 @@ class ReporteriaController extends Controller
 
     public function index_utilidad()
     {
-
-        return view('reporteria.utilidad.index');
+        $proveedores = \App\Models\Proveedor::where('id_empresa', '=', auth()->user()->id_empresa)->orderBy('nombre', 'asc')->get();
+        return view('reporteria.utilidad.index', compact('proveedores'));
     }
 
     public function advance_utilidad(Request $request)
@@ -1229,23 +1229,31 @@ class ReporteriaController extends Controller
 
     public function getContenedorUtilidad(Request $r)
     {
-        $info = $this->reporteriaService->getContenedorUtilidad($r->startDate, $r->endDate, auth()->user()->id_empresa);
+        $idProveedor = $r->input('id_proveedor');
+        $info = $this->reporteriaService->getContenedorUtilidad($r->startDate, $r->endDate, auth()->user()->id_empresa, $idProveedor);
         $contadorPeriodos = Common::contadorPeriodos($r->startDate, $r->endDate);
-        return json_encode(["Info" => $info, "contadorPeriodos" => $contadorPeriodos, "Diferidos" => []]);
+        
+        $gastosGenerales = $this->reporteriaService->getGastosGeneralesPeriodo($r->startDate, $r->endDate, auth()->user()->id_empresa);
+        
+        return json_encode([
+            "Info" => $info, 
+            "contadorPeriodos" => $contadorPeriodos, 
+            "Diferidos" => [],
+            "GastosGenerales" => $gastosGenerales
+        ]);
     }
     public function export_utilidad(Request $request)
     {
         $fechaInicio = $request->input('fechaInicio');
         $fechaFin = $request->input('fechaFin');
         $fileType = $request->input('fileType');
+        $idProveedor = $request->input('id_proveedor');
 
         $fecha = date('Y-m-d');
         $fechaCarbon = Carbon::parse($fecha);
 
-
-        $info = $this->reporteriaService->getContenedorUtilidad($fechaInicio, $fechaFin, auth()->user()->id_empresa);
+        $info = $this->reporteriaService->getContenedorUtilidad($fechaInicio, $fechaFin, auth()->user()->id_empresa, $idProveedor);
         $cotizaciones = collect($info);
-
 
         if ($request->has('rowData') && !empty($request->rowData)) {
             $selectedData = json_decode($request->rowData, true);
@@ -1260,14 +1268,7 @@ class ReporteriaController extends Controller
         $cotizacion = [];
         $user = User::where('id', '=', auth()->user()->id)->first();
 
-
-     $gastosGenerales = Gasto::with(['categoria', 'pagos'])
-        ->join('gasto_imputaciones as gi', 'gastos.id', '=', 'gi.gasto_id')
-        ->where('gastos.id_empresa', auth()->user()->id_empresa)
-        ->whereIn('gi.tipo_imputacion', ['periodo', 'empresa'])
-        ->whereBetween('gi.fecha_imputacion', [$fechaInicio, $fechaFin])
-        ->select('gastos.*', 'gi.monto_imputado as monto_aplicado', 'gi.fecha_imputacion as fecha_aplicada')
-        ->get();
+        $gastosGenerales = $this->reporteriaService->getGastosGeneralesPeriodo($fechaInicio, $fechaFin, auth()->user()->id_empresa);
 
         $gastos = $gastosGenerales->sum('monto_aplicado');
         $utilidad = $cotizaciones->sum('utilidad');
@@ -2561,6 +2562,7 @@ public function indexRendimiento()
             'fecha_inicio' => ['required', 'date'],
             'fecha_fin' => ['required', 'date', 'after_or_equal:fecha_inicio'],
             'tipo_consumo' => ['nullable', 'string', 'in:diesel,urea'],
+            'refresh' => ['nullable', 'boolean'],
         ]);
 
         return response()->json(

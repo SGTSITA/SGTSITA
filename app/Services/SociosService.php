@@ -64,7 +64,10 @@ class SociosService
             ->whereBetween('fecha_gasto', [$startDate, $endDate])
             ->sum('monto_total');
 
-        $configsQuery = SocioConfiguracion::with('socio')
+        $configsQuery = SocioConfiguracion::whereHas('socio', function ($query) {
+                $query->where('activo', 1)->whereNull('deleted_at');
+            })
+            ->with('socio')
             ->where('id_empresa', $idEmpresa)
             ->where('activo', true);
 
@@ -225,6 +228,10 @@ class SociosService
             ];
         }
 
+        $totalPagadoPeriodo = \App\Models\SocioPago::where('id_empresa', $idEmpresa)
+            ->whereBetween('fecha_aplicacion', [$startDate, $endDate])
+            ->sum('monto');
+
         return [
             'fecha_desde' => $startDate,
             'fecha_hasta' => $endDate,
@@ -233,6 +240,7 @@ class SociosService
             'utilidad_neta_distribuible' => $totalUtilidadBruta - $gastosGeneralesPeriodo,
             'total_distribuido_socios' => $totalPagosSocios,
             'utilidad_neta_empresa' => ($totalUtilidadBruta - $gastosGeneralesPeriodo) - $totalPagosSocios,
+            'total_pagado_periodo' => (float) $totalPagadoPeriodo,
             'socios_desglose' => $sociosFinal,
             'viajes_desglose' => $viajesDesglose
         ];
@@ -245,34 +253,45 @@ class SociosService
     {
         $startDate = $params['from'];
         $endDate = $params['to'];
+        $equipoId = isset($params['equipo_id']) && $params['equipo_id'] !== '' ? (int)$params['equipo_id'] : null;
 
-        // 1. Overlap Validation (Do not allow overlapping periods unless it's the exact same dates)
-        $overlap = SocioCalculoPeriodo::where('id_empresa', $idEmpresa)
+        // 1. Overlap Validation
+        $overlapQuery = SocioCalculoPeriodo::where('id_empresa', $idEmpresa)
             ->where(function ($query) use ($startDate, $endDate) {
                 $query->where('fecha_desde', '<=', $endDate)
                       ->where('fecha_hasta', '>=', $startDate);
             })
-            ->where(function ($query) use ($startDate, $endDate) {
+            ->where(function ($query) use ($startDate, $endDate, $equipoId) {
                 $query->where('fecha_desde', '!=', $startDate)
-                      ->orWhere('fecha_hasta', '!=', $endDate);
-            })
-            ->first();
+                      ->orWhere('fecha_hasta', '!=', $endDate)
+                      ->orWhere('equipo_id', '!=', $equipoId);
+            });
+
+        if ($equipoId !== null) {
+            $overlapQuery->where(function ($query) use ($equipoId) {
+                $query->whereNull('equipo_id')
+                      ->orWhere('equipo_id', $equipoId);
+            });
+        }
+        $overlap = $overlapQuery->first();
 
         if ($overlap) {
+            $overlapLabel = $overlap->equipo ? 'unidad ' . ($overlap->equipo->id_equipo ?? $overlap->equipo->placas) : 'corte global';
             return [
                 'success' => false,
-                'Mensaje' => 'El rango de fechas se traslapa con un corte existente: (' . $overlap->fecha_desde . ' al ' . $overlap->fecha_hasta . ').'
+                'Mensaje' => 'El rango de fechas se traslapa con un corte existente para ' . $overlapLabel . ': (' . $overlap->fecha_desde . ' al ' . $overlap->fecha_hasta . ').'
             ];
         }
 
         // Get calculations data
-        $calcData = $this->calculatePartnerUtility($startDate, $endDate, $idEmpresa);
+        $calcData = $this->calculatePartnerUtility($startDate, $endDate, $idEmpresa, null, $equipoId);
 
-        return DB::transaction(function () use ($calcData, $startDate, $endDate, $idEmpresa, $userId) {
+        return DB::transaction(function () use ($calcData, $startDate, $endDate, $idEmpresa, $userId, $equipoId) {
             // Find if period already exists to update it and avoid changing parent ID (which would break payment relations)
             $periodo = SocioCalculoPeriodo::where('id_empresa', $idEmpresa)
                 ->where('fecha_desde', $startDate)
                 ->where('fecha_hasta', $endDate)
+                ->where('equipo_id', $equipoId)
                 ->first();
 
             if ($periodo) {
@@ -287,6 +306,7 @@ class SociosService
             } else {
                 $periodo = SocioCalculoPeriodo::create([
                     'id_empresa' => $idEmpresa,
+                    'equipo_id' => $equipoId,
                     'fecha_desde' => $startDate,
                     'fecha_hasta' => $endDate,
                     'total_utilidad_bruta_viajes' => $calcData['total_utilidad_bruta_viajes'],
@@ -324,11 +344,41 @@ class SociosService
     /**
      * Checks if there are discrepancies between current DB and saved snapshot
      */
-    public function getSnapshotComparativa(string $startDate, string $endDate, int $idEmpresa): array
+    public function getSnapshotComparativa(string $startDate, string $endDate, int $idEmpresa, int $equipoId = null): array
     {
+        // 1. Check for overlap
+        $overlapQuery = SocioCalculoPeriodo::where('id_empresa', $idEmpresa)
+            ->where(function ($query) use ($startDate, $endDate) {
+                $query->where('fecha_desde', '<=', $endDate)
+                      ->where('fecha_hasta', '>=', $startDate);
+            })
+            ->where(function ($query) use ($startDate, $endDate, $equipoId) {
+                $query->where('fecha_desde', '!=', $startDate)
+                      ->orWhere('fecha_hasta', '!=', $endDate)
+                      ->orWhere('equipo_id', '!=', $equipoId);
+            });
+
+        if ($equipoId !== null) {
+            $overlapQuery->where(function ($query) use ($equipoId) {
+                $query->whereNull('equipo_id')
+                      ->orWhere('equipo_id', $equipoId);
+            });
+        }
+        $overlap = $overlapQuery->first();
+
+        if ($overlap) {
+            $overlapLabel = $overlap->equipo ? 'unidad ' . ($overlap->equipo->id_equipo ?? $overlap->equipo->placas) : 'corte global';
+            return [
+                'has_saved' => false,
+                'has_overlap' => true,
+                'overlap_message' => 'El rango se traslapa con un corte existente para ' . $overlapLabel . ': (' . $overlap->fecha_desde . ' al ' . $overlap->fecha_hasta . ').'
+            ];
+        }
+
         $periodo = SocioCalculoPeriodo::where('id_empresa', $idEmpresa)
             ->where('fecha_desde', $startDate)
             ->where('fecha_hasta', $endDate)
+            ->where('equipo_id', $equipoId)
             ->with(['viajesHistorico', 'detalles.socio'])
             ->first();
 
@@ -336,7 +386,7 @@ class SociosService
             return ['has_saved' => false];
         }
 
-        $calcActual = $this->calculatePartnerUtility($startDate, $endDate, $idEmpresa);
+        $calcActual = $this->calculatePartnerUtility($startDate, $endDate, $idEmpresa, null, $equipoId);
 
         $diferencias = [];
         // Check trip discrepancies

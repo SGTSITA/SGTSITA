@@ -299,6 +299,10 @@
                                                     $motivo = 'GDI02';
                                                 } elseif (strpos($gasto->concepto, 'GBV01') === 0) {
                                                     $motivo = 'GBV01';
+                                                } elseif (strpos($gasto->concepto, 'GU001') === 0) {
+                                                    $motivo = 'GU001';
+                                                } else {
+                                                    $motivo = 'OTR01';
                                                 }
                                                 $esPagoInmediato = $gasto->estatus === 'pagado';
                                                 $bancoId = $pago ? $pago->cuenta_bancaria_id : '';
@@ -317,12 +321,23 @@
                                                             {{ $motivo === 'GCM01' ? 'selected' : '' }}>GCM01 - Comisión
                                                         </option>
                                                         <option value="GDI02"
-                                                            {{ $motivo === 'GDI02' ? 'selected' : '' }}>GDI02 - Diesel
+                                                            {{ $motivo === 'GDI02' ? 'selected' : '' }}>GDI02 - Diésel
                                                         </option>
                                                         <option value="GBV01"
-                                                            {{ $motivo === 'GBV01' ? 'selected' : '' }}>GBV01 - Burrero
-                                                            Vacio</option>
+                                                            {{ $motivo === 'GBV01' ? 'selected' : '' }}>GBV01 - Burrero Vacío
+                                                        </option>
+                                                        <option value="GU001"
+                                                            {{ $motivo === 'GU001' ? 'selected' : '' }}>GU001 - Urea
+                                                        </option>
+                                                        <option value="OTR01"
+                                                            {{ $motivo === 'OTR01' ? 'selected' : '' }}>Otros
+                                                        </option>
                                                     </select>
+                                                </div>
+
+                                                <div class="col-md-2 concepto-otro-col" style="{{ $motivo === 'OTR01' ? '' : 'display:none;' }}">
+                                                    <label class="form-label mb-1">Concepto del gasto</label>
+                                                    <input type="text" class="form-control concepto-otro-input" name="gasto_concepto_otro[]" value="{{ $motivo === 'OTR01' ? $gasto->concepto : '' }}" placeholder="Escriba el concepto" {{ $motivo === 'OTR01' ? 'required' : '' }}>
                                                 </div>
 
                                                 <div class="col-md-2">
@@ -426,15 +441,19 @@
                 },
                 {
                     value: 'GDI02',
-                    text: 'GDI02 - Diesel'
+                    text: 'GDI02 - Diésel'
                 },
                 {
                     value: 'GBV01',
-                    text: 'GBV01 - Burrero Vacio'
+                    text: 'GBV01 - Burrero Vacío'
                 },
                 {
                     value: 'GU001',
                     text: 'GU001 - Urea'
+                },
+                {
+                    value: 'OTR01',
+                    text: 'Otros'
                 }
             ];
 
@@ -456,6 +475,11 @@
                             <option value="">Seleccione un motivo</option>
                             ${opcionesGasto.map(op => `<option value="${op.value}">${op.text}</option>`).join('')}
                         </select>
+                    </div>
+
+                    <div class="col-md-2 concepto-otro-col" style="display:none;">
+                        <label class="form-label mb-1">Concepto del gasto</label>
+                        <input type="text" class="form-control concepto-otro-input" name="gasto_concepto_otro[]" placeholder="Escriba el concepto">
                     </div>
 
                     <div class="col-md-2">
@@ -530,6 +554,17 @@
                 }
 
                 if (e.target.classList.contains('gasto-select')) {
+                    const row = e.target.closest('.gasto-item');
+                    const conceptoCol = row.querySelector('.concepto-otro-col');
+                    const conceptoInput = row.querySelector('.concepto-otro-input');
+                    if (e.target.value === 'OTR01') {
+                        conceptoCol.style.display = 'block';
+                        conceptoInput.required = true;
+                    } else {
+                        conceptoCol.style.display = 'none';
+                        conceptoInput.required = false;
+                        conceptoInput.value = '';
+                    }
                     actualizarDisponibles();
                 }
             });
@@ -544,7 +579,7 @@
 
             function actualizarDisponibles() {
                 const selects = Array.from(container.querySelectorAll('.gasto-select'));
-                const seleccionados = selects.map(s => s.value).filter(v => v !== '');
+                const seleccionados = selects.map(s => s.value).filter(v => v !== '' && v !== 'OTR01');
 
                 selects.forEach((select) => {
                     const valorActual = select.value;
