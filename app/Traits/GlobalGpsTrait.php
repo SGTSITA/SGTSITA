@@ -72,7 +72,12 @@ public static function getManyByCredentialGroups(array $gruposGlobal): array
                 $timestamp = time();
                 $signature = self::generateSignature($auth['key'], $timestamp);
 
-                $response = Http::asJson()
+                $response = Http::withOptions([
+                        'curl' => [
+                            CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4
+                        ]
+                    ])
+                    ->asJson()
                     ->acceptJson()
                     ->connectTimeout(5)
                     ->timeout(10)
@@ -168,6 +173,11 @@ public static function getManyByCredentialGroups(array $gruposGlobal): array
             foreach ($locationPendientes as $requestKey => $info) {
                 $requests[$requestKey] = $pool
                     ->as($requestKey)
+                    ->withOptions([
+                        'curl' => [
+                            CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4
+                        ]
+                    ])
                     ->withHeaders([
                         'accessToken' => $info['token'],
                         'Accept' => 'application/json',
@@ -417,10 +427,15 @@ public static function getAccessToken($apikey, $idUs, bool $forceRefresh = false
     $timestamp = time();
     $signature = self::generateSignature($key, $timestamp);
 
-    $response = Http::asJson()
+    $response = Http::withOptions([
+            'curl' => [
+                CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4
+            ]
+        ])
+        ->asJson()
         ->acceptJson()
-        ->connectTimeout(3)
-        ->timeout(6)
+        ->connectTimeout(5)
+        ->timeout(10)
         ->retry(1, 300)
         ->post($endpoint, [
             'appid'     => $apiid,
