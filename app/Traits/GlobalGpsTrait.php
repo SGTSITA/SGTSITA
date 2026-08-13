@@ -47,16 +47,12 @@ public static function getManyByCredentialGroups(array $gruposGlobal): array
     }
 
     if (!empty($authPendientes)) {
-        $authResponses = Http::pool(function ($pool) use ($authPendientes, $endpointAuth) {
-            $requests = [];
-
-            foreach ($authPendientes as $index => $auth) {
+        foreach ($authPendientes as $index => $auth) {
+            try {
                 $timestamp = time();
                 $signature = self::generateSignature($auth['key'], $timestamp);
 
-                $requests[$index] = $pool
-                    ->as((string) $index)
-                    ->asJson()
+                $response = Http::asJson()
                     ->acceptJson()
                     ->connectTimeout(5)
                     ->timeout(10)
@@ -65,48 +61,38 @@ public static function getManyByCredentialGroups(array $gruposGlobal): array
                         'time'      => $timestamp,
                         'signature' => $signature,
                     ]);
-            }
 
-            return $requests;
-        });
+                if ($response->successful() && $response->json('accessToken')) {
+                    $token = $response->json('accessToken');
+                    Cache::put($auth['cacheKey'], $token, now()->addMinutes(115));
+                    $tokens[$index] = $token;
 
-        foreach ($authPendientes as $index => $auth) {
-            $response = $authResponses[(string) $index] ?? null;
-
-           if (
-    $response instanceof \Illuminate\Http\Client\Response &&
-    $response->successful() &&
-    $response->json('accessToken')
-) {
-                $token = $response->json('accessToken');
-
-                Cache::put($auth['cacheKey'], $token, now()->addMinutes(115));
-
-                $tokens[$index] = $token;
-
-                      Log::info('GLOBAL GPS AUTH POOL ok', [
+                    Log::info('GLOBAL GPS AUTH ok', [
+                        'grupo' => $index,
+                        'appid' => $auth['apiid'],
+                        'status' => $response->status(),
+                        'token_length' => is_string($token) ? strlen($token) : null,
+                    ]);
+                } else {
+                    Log::error('GLOBAL GPS AUTH ERROR', [
+                        'grupo' => $index,
+                        'appid' => $auth['apiid'],
+                        'status' => $response->status(),
+                        'body' => $response->body(),
+                    ]);
+                    $tokens[$index] = null;
+                }
+            } catch (\Exception $e) {
+                Log::error('GLOBAL GPS AUTH EXCEPTION', [
                     'grupo' => $index,
                     'appid' => $auth['apiid'],
-                    'status' => $response instanceof \Illuminate\Http\Client\Response
-    ? $response->status()
-    : null,
-    'token_length' => is_string($token) ? strlen($token) : null,
-
+                    'message' => $e->getMessage(),
                 ]);
-            } else {
-                Log::error('GLOBAL GPS AUTH POOL ERROR', [
-                    'grupo' => $index,
-                    'appid' => $auth['apiid'],
-                    'status' => $response instanceof \Illuminate\Http\Client\Response
-    ? $response->status()
-    : null,
-                  'body' => $response instanceof \Illuminate\Http\Client\Response
-    ? $response->body()
-    : $response?->getMessage(),
-                ]);
-
                 $tokens[$index] = null;
             }
+
+            // Pequeña pausa para no saturar al servidor y evitar que retorne 503 o caiga en timeout
+            usleep(250000);
         }
     }
 
