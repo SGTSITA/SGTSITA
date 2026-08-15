@@ -357,40 +357,62 @@ function cargarPdfVistaPreliminar() {
     let iframeContainer = document.getElementById("iframePreviewContainer");
     iframeContainer.innerHTML = ''; // Clear previous
 
-    let iframe = document.createElement("iframe");
-    iframe.name = "pdf_preview_iframe";
-    iframe.style.width = "100%";
-    iframe.style.height = "700px";
-    iframe.style.border = "none";
-    iframe.style.borderRadius = "8px";
-    iframeContainer.appendChild(iframe);
+    const isMobileOrTablet = window.innerWidth < 992 || ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
 
-    let form = document.createElement("form");
-    form.method = "POST";
-    form.action = "/reporteria/utilidad/export";
-    form.target = "pdf_preview_iframe";
+    if (isMobileOrTablet) {
+        let mobileContainer = document.createElement("div");
+        mobileContainer.className = "text-center p-5 bg-white rounded border shadow-sm w-100";
+        mobileContainer.innerHTML = `
+            <div class="mb-3">
+                <i class="fas fa-file-pdf text-danger" style="font-size: 56px;"></i>
+            </div>
+            <h5 class="text-dark font-weight-bold">Vista previa no disponible en este dispositivo</h5>
+            <p class="text-muted small px-3">Los navegadores móviles no permiten incrustar la vista previa interactiva del PDF. Puedes descargar o abrir el reporte completo directamente pulsando el siguiente botón.</p>
+            <button type="button" class="btn btn-danger btn-sm text-white px-4 py-2 mt-2 font-weight-bold" id="btnDescargarPdfDirecto">
+                <i class="fas fa-download me-1"></i> Descargar / Abrir PDF
+            </button>
+        `;
+        iframeContainer.appendChild(mobileContainer);
 
-    const inputs = {
-        _token: _token,
-        rowData: rowData,
-        totalRows: totalRows,
-        fechaInicio: fechaInicio,
-        fechaFin: fechaFin,
-        fileType: 'pdf',
-        id_proveedor: idProveedor
-    };
+        document.getElementById("btnDescargarPdfDirecto").addEventListener("click", function() {
+            ejecutarExportacion("pdf");
+        });
+    } else {
+        let iframe = document.createElement("iframe");
+        iframe.name = "pdf_preview_iframe";
+        iframe.style.width = "100%";
+        iframe.style.height = "700px";
+        iframe.style.border = "none";
+        iframe.style.borderRadius = "8px";
+        iframeContainer.appendChild(iframe);
 
-    for (const [key, value] of Object.entries(inputs)) {
-        let input = document.createElement("input");
-        input.type = "hidden";
-        input.name = key;
-        input.value = value;
-        form.appendChild(input);
+        let form = document.createElement("form");
+        form.method = "POST";
+        form.action = "/reporteria/utilidad/export";
+        form.target = "pdf_preview_iframe";
+
+        const inputs = {
+            _token: _token,
+            rowData: rowData,
+            totalRows: totalRows,
+            fechaInicio: fechaInicio,
+            fechaFin: fechaFin,
+            fileType: 'pdf',
+            id_proveedor: idProveedor
+        };
+
+        for (const [key, value] of Object.entries(inputs)) {
+            let input = document.createElement("input");
+            input.type = "hidden";
+            input.name = key;
+            input.value = value;
+            form.appendChild(input);
+        }
+
+        document.body.appendChild(form);
+        form.submit();
+        document.body.removeChild(form);
     }
-
-    document.body.appendChild(form);
-    form.submit();
-    document.body.removeChild(form);
 
     panel.scrollIntoView({ behavior: 'smooth' });
 }
