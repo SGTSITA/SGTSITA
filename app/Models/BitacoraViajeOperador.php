@@ -29,6 +29,8 @@ class BitacoraViajeOperador extends Model
         'fotos_fin',
         'latitud_fin',
         'longitud_fin',
+        'fecha_carga_diesel',
+        'fecha_carga_urea',
     ];
 
     public function Asignacion()

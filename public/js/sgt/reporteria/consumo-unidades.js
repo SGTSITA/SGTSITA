@@ -595,7 +595,9 @@ document.addEventListener("DOMContentLoaded", function () {
                 originLatLng = new google.maps.LatLng(parseFloat(rowData.coordenadas_ruta[0].latitud), parseFloat(rowData.coordenadas_ruta[0].longitud));
             }
 
-            if (rowData.diesel_siguiente_lat && rowData.diesel_siguiente_lng) {
+            if (rowData.viaje_finalizado_lat && rowData.viaje_finalizado_lng) {
+                destLatLng = new google.maps.LatLng(parseFloat(rowData.viaje_finalizado_lat), parseFloat(rowData.viaje_finalizado_lng));
+            } else if (rowData.diesel_siguiente_lat && rowData.diesel_siguiente_lng) {
                 destLatLng = new google.maps.LatLng(parseFloat(rowData.diesel_siguiente_lat), parseFloat(rowData.diesel_siguiente_lng));
             } else if (rowData.coordenadas_ruta && rowData.coordenadas_ruta.length > 0) {
                 destLatLng = new google.maps.LatLng(parseFloat(rowData.coordenadas_ruta[rowData.coordenadas_ruta.length - 1].latitud), parseFloat(rowData.coordenadas_ruta[rowData.coordenadas_ruta.length - 1].longitud));
@@ -678,21 +680,27 @@ document.addEventListener("DOMContentLoaded", function () {
                 });
             }
 
-            // 3. Agregar marcador de Fin (Siguiente Carga)
+            // 3. Agregar marcador de Fin (Siguiente Carga o Viaje Finalizado)
             if (destLatLng) {
+                const isFinalizado = !!(rowData.viaje_finalizado_lat && rowData.viaje_finalizado_lng);
+                const titleText = isFinalizado ? "Fin del viaje (Viaje Finalizado - App Móvil)" : "Fin del viaje (Siguiente Carga / Destino)";
                 const marker = new google.maps.Marker({
                     position: destLatLng,
                     map: googleMapInstance,
-                    title: "Fin del viaje (Siguiente Carga / Destino)",
+                    title: titleText,
                     icon: 'https://maps.google.com/mapfiles/ms/icons/red-dot.png'
                 });
                 mapMarkers.push(marker);
                 bounds.extend(destLatLng);
 
+                const fechaFinDisplay = isFinalizado 
+                    ? rowData.viaje_finalizado_fecha 
+                    : (rowData.litros_tomados_de_contenedor ? 'Carga posterior' : 'S/N');
+
                 const infoContent = `
                     <div style="font-family: sans-serif; font-size: 13px; line-height: 1.4; padding: 5px;">
                         <h6 style="margin: 0 0 5px 0; color: #dc3545; font-weight: bold;"><i class="fas fa-flag-checkered me-1"></i>Fin del Viaje</h6>
-                        <strong>Fecha/Hora:</strong> ${rowData.litros_tomados_de_contenedor ? 'Carga posterior' : 'S/N'}<br>
+                        <strong>Fecha/Hora:</strong> ${fechaFinDisplay}<br>
                         <strong>Lat/Lng:</strong> ${destLatLng.lat().toFixed(5)}, ${destLatLng.lng().toFixed(5)}
                     </div>
                 `;
@@ -702,8 +710,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 });
 
                 timelineItems.push({
-                    title: 'Fin (Siguiente Carga)',
-                    time: rowData.litros_tomados_de_contenedor ? 'Siguiente viaje' : 'S/N',
+                    title: isFinalizado ? 'Fin (Viaje Finalizado - App Móvil)' : 'Fin (Siguiente Carga)',
+                    time: fechaFinDisplay,
                     lat: destLatLng.lat(),
                     lng: destLatLng.lng(),
                     badgeClass: 'bg-danger',

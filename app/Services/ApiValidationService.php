@@ -875,11 +875,11 @@ $camion = $asignacion->Camion;
             }
         }
 
-        // Siempre guardar/actualizar en la bitácora del viaje
         $flowRecord = BitacoraViajeOperador::firstOrCreate([
             'id_asignacion' => $idAsignacion
         ]);
-        $flowRecord->update([
+
+        $updateFields = [
             'id_operador' => $asignacion->id_operador,
             'latitud' => $data['latitud'] ?? null,
             'longitud' => $data['longitud'] ?? null,
@@ -890,7 +890,17 @@ $camion = $asignacion->Camion;
             'litros_urea' => $data['litros_urea'] ?? null,
             'costo_urea' => $data['costo_urea'] ?? null,
             'comprobante_urea' => $ureaFileName ? $ureaFileName : $flowRecord->comprobante_urea,
-        ]);
+        ];
+
+        if (isset($data['litros']) || isset($data['costo']) || $fileName) {
+            $updateFields['fecha_carga_diesel'] = Carbon::now();
+        }
+
+        if (isset($data['litros_urea']) || isset($data['costo_urea']) || $ureaFileName) {
+            $updateFields['fecha_carga_urea'] = Carbon::now();
+        }
+
+        $flowRecord->update($updateFields);
 
         try {
             $this->actualizarKmRecorridosPorCoordenadas($asignacion);
