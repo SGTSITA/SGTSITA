@@ -1771,58 +1771,136 @@
                                                                         </div>
 
                                                                         <div class="collapse" id="collapseAppEvidencia">
-                                                                            <div class="mt-2 pt-2 border-top">
-                                                                                <div class="row g-2">
-                                                                                    @if ($bitacora->costo || $bitacora->comprobante)
-                                                                                        <div class="col-md-6 col-12 border-end border-1">
-                                                                                            <span class="small fw-bold text-muted d-block">Diésel (App):</span>
-                                                                                            @if ($bitacora->costo)
-                                                                                                <span class="small text-dark d-block">Importe: <strong>${{ number_format($bitacora->costo, 2) }}</strong></span>
-                                                                                            @endif
-                                                                                            @if ($bitacora->comprobante)
-                                                                                                @php
-                                                                                                    $dieselFiles = json_decode($bitacora->comprobante, true);
-                                                                                                    if (json_last_error() !== JSON_ERROR_NONE || !is_array($dieselFiles)) {
-                                                                                                        $dieselFiles = [$bitacora->comprobante];
-                                                                                                    }
-                                                                                                @endphp
-                                                                                                <div class="d-flex flex-column gap-1 mt-1">
-                                                                                                    @foreach($dieselFiles as $idx => $file)
-                                                                                                        <a href="{{ asset($file) }}" target="_blank" class="d-inline-flex align-items-center mb-1">
-                                                                                                            <img src="{{ asset($file) }}" alt="Comprobante Diésel {{ $idx + 1 }}" class="rounded border shadow-sm me-2" style="max-height: 40px; max-width: 80px; object-fit: contain;">
-                                                                                                            <span class="small">Ver Comprobante {{ $idx + 1 }}</span>
-                                                                                                        </a>
-                                                                                                    @endforeach
+                                                                            <div class="mt-3 pt-3 border-top text-start">
+                                                                                <div class="row g-3">
+                                                                                    <!-- 1. Carga Diésel -->
+                                                                                    @if ($bitacora->litros || $bitacora->costo || $bitacora->comprobante)
+                                                                                        <div class="col-md-6 col-12">
+                                                                                            <div class="p-2 border rounded bg-light">
+                                                                                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                                                                                    <span class="badge bg-gradient-success">Carga Diésel</span>
+                                                                                                    @php
+                                                                                                        $fechaDieselVal = $bitacora->fecha_carga_diesel ?? $bitacora->created_at;
+                                                                                                    @endphp
+                                                                                                    <small class="text-muted"><i class="far fa-clock"></i> {{ $fechaDieselVal ? \Carbon\Carbon::parse($fechaDieselVal)->format('d/m/Y H:i') : 'S/N' }}</small>
                                                                                                 </div>
-                                                                                            @endif
+                                                                                                @if ($bitacora->litros)
+                                                                                                    <span class="small text-dark d-block">Litros: <strong>{{ number_format($bitacora->litros, 3) }} L</strong></span>
+                                                                                                @endif
+                                                                                                @if ($bitacora->costo)
+                                                                                                    <span class="small text-dark d-block">Importe: <strong>${{ number_format($bitacora->costo, 2) }}</strong></span>
+                                                                                                @endif
+                                                                                                @if ($bitacora->odometro)
+                                                                                                    <span class="small text-dark d-block">Odómetro: <strong>{{ $bitacora->odometro }} KM</strong></span>
+                                                                                                @endif
+                                                                                                @if ($bitacora->comprobante)
+                                                                                                    @php
+                                                                                                        $dieselFiles = json_decode($bitacora->comprobante, true);
+                                                                                                        if (json_last_error() !== JSON_ERROR_NONE || !is_array($dieselFiles)) {
+                                                                                                            $dieselFiles = [$bitacora->comprobante];
+                                                                                                        }
+                                                                                                    @endphp
+                                                                                                    <div class="d-flex flex-wrap gap-1 mt-1 align-items-center">
+                                                                                                        @foreach($dieselFiles as $idx => $file)
+                                                                                                            <a href="{{ asset($file) }}" target="_blank" class="d-inline-flex align-items-center me-2">
+                                                                                                                <img src="{{ asset($file) }}" alt="Comprobante Diésel {{ $idx + 1 }}" class="rounded border shadow-sm" style="height: 35px; width: 60px; object-fit: cover;">
+                                                                                                            </a>
+                                                                                                        @endforeach
+                                                                                                    </div>
+                                                                                                @endif
+                                                                                            </div>
                                                                                         </div>
                                                                                     @endif
- 
+
+                                                                                    <!-- 2. Carga Urea -->
                                                                                     @if ($bitacora->litros_urea || $bitacora->costo_urea || $bitacora->comprobante_urea)
                                                                                         <div class="col-md-6 col-12">
-                                                                                            <span class="small fw-bold text-muted d-block">Urea (App):</span>
-                                                                                            @if ($bitacora->litros_urea)
-                                                                                                <span class="small text-dark d-block">Litros: <strong>{{ number_format($bitacora->litros_urea, 3) }} L</strong></span>
-                                                                                            @endif
-                                                                                            @if ($bitacora->costo_urea)
-                                                                                                <span class="small text-dark d-block">Importe: <strong>${{ number_format($bitacora->costo_urea, 2) }}</strong></span>
-                                                                                            @endif
-                                                                                            @if ($bitacora->comprobante_urea)
-                                                                                                @php
-                                                                                                    $ureaFiles = json_decode($bitacora->comprobante_urea, true);
-                                                                                                    if (json_last_error() !== JSON_ERROR_NONE || !is_array($ureaFiles)) {
-                                                                                                        $ureaFiles = [$bitacora->comprobante_urea];
-                                                                                                    }
-                                                                                                @endphp
-                                                                                                <div class="d-flex flex-column gap-1 mt-1">
-                                                                                                    @foreach($ureaFiles as $idx => $file)
-                                                                                                        <a href="{{ asset($file) }}" target="_blank" class="d-inline-flex align-items-center mb-1">
-                                                                                                            <img src="{{ asset($file) }}" alt="Comprobante Urea {{ $idx + 1 }}" class="rounded border shadow-sm me-2" style="max-height: 40px; max-width: 80px; object-fit: contain;">
-                                                                                                            <span class="small">Ver Comprobante {{ $idx + 1 }}</span>
-                                                                                                        </a>
-                                                                                                    @endforeach
+                                                                                            <div class="p-2 border rounded bg-light">
+                                                                                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                                                                                    <span class="badge bg-gradient-info">Carga Urea</span>
+                                                                                                    @php
+                                                                                                        $fechaUreaVal = $bitacora->fecha_carga_urea ?? $bitacora->updated_at ?? $bitacora->created_at;
+                                                                                                    @endphp
+                                                                                                    <small class="text-muted"><i class="far fa-clock"></i> {{ $fechaUreaVal ? \Carbon\Carbon::parse($fechaUreaVal)->format('d/m/Y H:i') : 'S/N' }}</small>
                                                                                                 </div>
-                                                                                            @endif
+                                                                                                @if ($bitacora->litros_urea)
+                                                                                                    <span class="small text-dark d-block">Litros: <strong>{{ number_format($bitacora->litros_urea, 3) }} L</strong></span>
+                                                                                                @endif
+                                                                                                @if ($bitacora->costo_urea)
+                                                                                                    <span class="small text-dark d-block">Importe: <strong>${{ number_format($bitacora->costo_urea, 2) }}</strong></span>
+                                                                                                @endif
+                                                                                                @if ($bitacora->comprobante_urea)
+                                                                                                    @php
+                                                                                                        $ureaFiles = json_decode($bitacora->comprobante_urea, true);
+                                                                                                        if (json_last_error() !== JSON_ERROR_NONE || !is_array($ureaFiles)) {
+                                                                                                            $ureaFiles = [$bitacora->comprobante_urea];
+                                                                                                        }
+                                                                                                    @endphp
+                                                                                                    <div class="d-flex flex-wrap gap-1 mt-1 align-items-center">
+                                                                                                        @foreach($ureaFiles as $idx => $file)
+                                                                                                            <a href="{{ asset($file) }}" target="_blank" class="d-inline-flex align-items-center me-2">
+                                                                                                                <img src="{{ asset($file) }}" alt="Comprobante Urea {{ $idx + 1 }}" class="rounded border shadow-sm" style="height: 35px; width: 60px; object-fit: cover;">
+                                                                                                            </a>
+                                                                                                        @endforeach
+                                                                                                    </div>
+                                                                                                @endif
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    @endif
+
+                                                                                    <!-- 3. Iniciar Viaje -->
+                                                                                    @if ($bitacora->viaje_iniciado || $bitacora->fotos_carga)
+                                                                                        <div class="col-md-6 col-12">
+                                                                                            <div class="p-2 border rounded bg-light">
+                                                                                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                                                                                    <span class="badge bg-gradient-primary">Iniciar Viaje</span>
+                                                                                                    <small class="text-muted"><i class="far fa-clock"></i> {{ $bitacora->viaje_iniciado ? \Carbon\Carbon::parse($bitacora->viaje_iniciado)->format('d/m/Y H:i') : 'S/N' }}</small>
+                                                                                                </div>
+                                                                                                <span class="small text-dark d-block">Estado: <strong>Viaje Iniciado</strong></span>
+                                                                                                @if ($bitacora->fotos_carga)
+                                                                                                    @php
+                                                                                                        $fotosCarga = json_decode($bitacora->fotos_carga, true);
+                                                                                                        if (json_last_error() !== JSON_ERROR_NONE || !is_array($fotosCarga)) {
+                                                                                                            $fotosCarga = $bitacora->fotos_carga ? [$bitacora->fotos_carga] : [];
+                                                                                                        }
+                                                                                                    @endphp
+                                                                                                    <div class="d-flex flex-wrap gap-1 mt-1 align-items-center">
+                                                                                                        @foreach($fotosCarga as $idx => $file)
+                                                                                                            <a href="{{ asset($file) }}" target="_blank" class="d-inline-flex align-items-center me-2">
+                                                                                                                <img src="{{ asset($file) }}" alt="Foto Carga {{ $idx + 1 }}" class="rounded border shadow-sm" style="height: 35px; width: 60px; object-fit: cover;">
+                                                                                                            </a>
+                                                                                                        @endforeach
+                                                                                                    </div>
+                                                                                                @endif
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    @endif
+
+                                                                                    <!-- 4. Concluir Viaje -->
+                                                                                    @if ($bitacora->viaje_finalizado || $bitacora->fotos_fin)
+                                                                                        <div class="col-md-6 col-12">
+                                                                                            <div class="p-2 border rounded bg-light">
+                                                                                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                                                                                    <span class="badge bg-gradient-danger">Concluir Viaje</span>
+                                                                                                    <small class="text-muted"><i class="far fa-clock"></i> {{ $bitacora->viaje_finalizado ? \Carbon\Carbon::parse($bitacora->viaje_finalizado)->format('d/m/Y H:i') : 'S/N' }}</small>
+                                                                                                </div>
+                                                                                                <span class="small text-dark d-block">Estado: <strong>Viaje Concluido</strong></span>
+                                                                                                @if ($bitacora->fotos_fin)
+                                                                                                    @php
+                                                                                                        $fotosFin = json_decode($bitacora->fotos_fin, true);
+                                                                                                        if (json_last_error() !== JSON_ERROR_NONE || !is_array($fotosFin)) {
+                                                                                                            $fotosFin = $bitacora->fotos_fin ? [$bitacora->fotos_fin] : [];
+                                                                                                        }
+                                                                                                    @endphp
+                                                                                                    <div class="d-flex flex-wrap gap-1 mt-1 align-items-center">
+                                                                                                        @foreach($fotosFin as $idx => $file)
+                                                                                                            <a href="{{ asset($file) }}" target="_blank" class="d-inline-flex align-items-center me-2">
+                                                                                                                <img src="{{ asset($file) }}" alt="Foto Fin {{ $idx + 1 }}" class="rounded border shadow-sm" style="height: 35px; width: 60px; object-fit: cover;">
+                                                                                                            </a>
+                                                                                                        @endforeach
+                                                                                                    </div>
+                                                                                                @endif
+                                                                                            </div>
                                                                                         </div>
                                                                                     @endif
                                                                                 </div>
