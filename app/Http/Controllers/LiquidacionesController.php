@@ -103,6 +103,16 @@ class LiquidacionesController extends Controller
         ->where('a.id_empresa', auth()->user()->id_empresa)
         ->where('a.tipo_contrato', 'Propio')
         ->where('a.estatus_pagado', 'Pendiente Pago')
+        ->whereRaw('
+            (
+                (
+                    a.sueldo_viaje
+                    - IFNULL(dc2.total_dinero, 0)
+                    + IFNULL(lc.justificado, 0)
+                )
+                - IFNULL(lc.pagado, 0)
+            ) != 0
+        ')
         ->select(
             'a.id_operador',
             'o.nombre',
