@@ -794,6 +794,9 @@ Route::middleware(['auth', 'idle.timeout'])->group(function () {
 
     // En routes/web.php
     Route::get('/descargar-db', [App\Http\Controllers\DatabaseController::class, 'descargarBaseDeDatos'])->name('descargar.db');
+    Route::get('/backups-historiales', [App\Http\Controllers\DatabaseController::class, 'listarBackupsHistoriales'])->name('backups.historiales');
+    Route::get('/backups-historiales/descargar/{file}', [App\Http\Controllers\DatabaseController::class, 'descargarBackupHistorial'])->name('backups.historiales.descargar');
+    Route::post('/backups-historiales/limpiar-ahora', [App\Http\Controllers\DatabaseController::class, 'ejecutarLimpiezaAhora'])->name('backups.historiales.limpiar');
 
 
     // Ruta para la vista principal de correos
