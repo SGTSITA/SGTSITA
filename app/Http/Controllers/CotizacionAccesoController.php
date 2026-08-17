@@ -19,7 +19,7 @@ class CotizacionAccesoController extends Controller
         $documCotizacion = DocumCotizacion::with('cotizacion')->findorfail($documento_id);
 
         $cotizacion = $documCotizacion->cotizacion;
-        if ($cotizacion && $cotizacion->tipo_viaje_seleccion === 'foraneo') {
+        if ($cotizacion && ($cotizacion->tipo_viaje_seleccion === 'foraneo' || $cotizacion->tipo_viaje_seleccion === 'local_to_foraneo')) {
             $eslocal = false;
         }
 

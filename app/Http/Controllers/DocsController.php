@@ -41,8 +41,8 @@ class DocsController extends Controller
 
     $validarUser = UserProveedores::where('proveedor_id', $proveedorId)->exists();
     
-    // If the trip selection is explicitly foraneo, we force the restriction
-    $esForaneo = $cotizacion && $cotizacion->tipo_viaje_seleccion === 'foraneo';
+    // If the trip selection is explicitly foraneo or local_to_foraneo, we force the restriction
+    $esForaneo = $cotizacion && ($cotizacion->tipo_viaje_seleccion === 'foraneo' || $cotizacion->tipo_viaje_seleccion === 'local_to_foraneo');
 
     $estaPlaneado = DocumCotizacionAcceso::where('documento_id', $id_doc)
         ->whereHas('documento.Asignaciones')
