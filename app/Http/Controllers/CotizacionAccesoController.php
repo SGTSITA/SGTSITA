@@ -18,13 +18,16 @@ class CotizacionAccesoController extends Controller
         $eslocal = $request->eslocal;
         $documCotizacion = DocumCotizacion::with('cotizacion')->findorfail($documento_id);
 
-       $validacionProveedor = $this->validateprovempresa($documCotizacion, $eslocal);
+        $cotizacion = $documCotizacion->cotizacion;
+        if ($cotizacion && $cotizacion->tipo_viaje_seleccion === 'foraneo') {
+            $eslocal = false;
+        }
 
-if ($validacionProveedor !== true) {
-    return $validacionProveedor;
-}
+        $validacionProveedor = $this->validateprovempresa($documCotizacion, $eslocal);
 
-
+        if ($validacionProveedor !== true) {
+            return $validacionProveedor;
+        }
 
         DocumCotizacionAcceso::where('documento_id', $documento_id)
             ->update(['activo' => false]);
@@ -36,7 +39,7 @@ if ($validacionProveedor !== true) {
             'documento_id' => $documento_id,
             'token' => Str::random(60),
             'password_hash' => Hash::make($password),
-            'expires_at' => now()->addDays(7),
+            'expires_at' => now()->addHours(24),
             'user_id' => auth()->user()->id,
             'shared_files' => $filesNames,
             'proveedor_id' => $request->input('proveedor_id'),
@@ -45,9 +48,11 @@ if ($validacionProveedor !== true) {
             'user_agent' => $request->userAgent(),
             ]);
 
+        $isLocalBool = filter_var($eslocal, FILTER_VALIDATE_BOOLEAN);
+
         return response()->json([
-            'link' => url("/externos/ver-documentos/{$acceso->token}"),
-            'password' => $password,
+            'link' => $isLocalBool ? url("/externos/ver-documentos/{$acceso->token}") : null,
+            'password' => $isLocalBool ? $password : null,
             'message' => 'Enlace generado correctamente.',
             'titulo' => 'link generado',
             'success' => true,

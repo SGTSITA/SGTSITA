@@ -130,7 +130,7 @@ class LiquidacionesController extends Controller
         )
         - IFNULL(lc.pagado,0)
     )
-    > 0
+    != 0
 ')
         ->get();
 
@@ -313,7 +313,7 @@ class LiquidacionesController extends Controller
     ')
 )
 
-->having('saldo_real', '>', 0)
+->having('saldo_real', '!=', 0)
 
 ->get();
 
