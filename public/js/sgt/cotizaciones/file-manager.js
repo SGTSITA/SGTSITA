@@ -531,6 +531,12 @@ async function abrirModalWhatsapp() {
     if (modalWhatsApp2Element && !modalWhatsApp2) {
         modalWhatsApp2 = new bootstrap.Modal(modalWhatsApp2Element);
     }
+    if (modalWhatsApp2Element) {
+        const modalTitle = modalWhatsApp2Element.querySelector(".modal-title");
+        if (modalTitle) {
+            modalTitle.textContent = esLocal ? "Compartir enlace por WhatsApp" : "Compartir información de maniobra";
+        }
+    }
     waArchivosSeleccionados = obtenerArchivosSeleccionados();
 
     if (waArchivosSeleccionados.length === 0) {
@@ -631,13 +637,17 @@ ${!esLocal && addpesoDireccion ? `Peso: ${data.cotizacion.peso_contenedor}` : ""
 ${!esLocal && addpesoDireccion ? `Destino: ${data.cotizacion.destino ?? ""}` : ""}
 `.trim();
 
-    messageadd2 = `
+    if (esLocal) {
+        messageadd2 = `
 Documentos:
 ${waLinkGenerado}
 Contraseña de acceso: ${waPasswordGenerado}
-    `.trim();
+        `.trim();
+    } else {
+        messageadd2 = "";
+    }
 
-    let messagefinal = mensaje + "\n" + messageadd + "\n\n" + messageadd2;
+    let messagefinal = mensaje + "\n" + messageadd + (messageadd2 ? "\n\n" + messageadd2 : "");
     const url = `https://wa.me/?text=${encodeURIComponent(messagefinal)}`;
     window.open(url, "_blank");
 }

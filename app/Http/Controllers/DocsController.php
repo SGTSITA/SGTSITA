@@ -33,18 +33,22 @@ class DocsController extends Controller
     }
 
     $id_doc = $acceso->documento_id;
-    $proveedorId = $acceso->proveedor_id;
+
+    // Check the current provider of the cotizacion first, fallback to the access record provider
+    $documento = $acceso->documento;
+    $cotizacion = $documento ? $documento->cotizacion : null;
+    $proveedorId = ($cotizacion && $cotizacion->id_proveedor) ? $cotizacion->id_proveedor : $acceso->proveedor_id;
 
     $validarUser = UserProveedores::where('proveedor_id', $proveedorId)->exists();
+    
+    // If the trip selection is explicitly foraneo or local_to_foraneo, we force the restriction
+    $esForaneo = $cotizacion && ($cotizacion->tipo_viaje_seleccion === 'foraneo' || $cotizacion->tipo_viaje_seleccion === 'local_to_foraneo');
 
     $estaPlaneado = DocumCotizacionAcceso::where('documento_id', $id_doc)
         ->whereHas('documento.Asignaciones')
         ->exists();
 
-
-      //  dd($id_doc, $proveedorId , $validarUser, $estaPlaneado );
-
-    if ($validarUser && !$estaPlaneado) {
+    if (($validarUser || $esForaneo) && !$estaPlaneado) {
         return 'NO_PLANEADO';
     }
 
