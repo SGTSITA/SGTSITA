@@ -13,7 +13,7 @@
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h3 class="mb-0">Configuracion Sistema</h3>
                         <div class="d-flex gap-2">
-                            <a href="{{ route('descargar.db') }}" class="btn btn-sm btn-primary">
+                            <a href="{{ route('descargar.db') }}" class="btn btn-sm btn-primary" onclick="event.preventDefault(); confirmarDescargaDb(this.href);">
                                 <i class="fas fa-database me-1"></i> Descargar Base de Datos
                             </a>
                             <a href="{{ route('backups.historiales') }}" class="btn btn-sm btn-info">
@@ -216,3 +216,32 @@
         </div>
     </div>
 @endsection
+
+@push('custom-javascript')
+<script>
+function confirmarDescargaDb(url) {
+    Swal.fire({
+        title: 'Generar Respaldo de Base de Datos',
+        text: '¿Deseas iniciar la generación del respaldo completo de la base de datos? Esto guardará un archivo ZIP en el servidor.',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Sí, generar',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            Swal.fire({
+                title: 'Generando respaldo...',
+                text: 'Por favor, espera un momento mientras se crea el archivo.',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            window.location.href = url;
+        }
+    });
+}
+</script>
+@endpush

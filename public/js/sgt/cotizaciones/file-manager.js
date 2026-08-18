@@ -637,7 +637,7 @@ ${!esLocal && addpesoDireccion ? `Peso: ${data.cotizacion.peso_contenedor}` : ""
 ${!esLocal && addpesoDireccion ? `Destino: ${data.cotizacion.destino ?? ""}` : ""}
 `.trim();
 
-    if (esLocal) {
+    if (waLinkGenerado) {
         messageadd2 = `
 Documentos:
 ${waLinkGenerado}
