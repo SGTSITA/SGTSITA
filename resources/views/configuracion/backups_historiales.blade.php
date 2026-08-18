@@ -36,9 +36,9 @@
                             <p class="text-muted small mb-0">Listado de archivos ZIP con coordenadas e historiales antiguos depurados (mayores a 90 días).</p>
                         </div>
                         <div class="d-flex gap-2">
-                            <form action="{{ route('backups.historiales.limpiar') }}" method="POST" onsubmit="return confirm('¿Está seguro de querer depurar y generar respaldos en este momento? Las coordenadas y logs de actividad mayores a 90 días se eliminarán de la base de datos y se archivarán en ZIP.');">
+                            <form id="formLimpiarHistoriales" action="{{ route('backups.historiales.limpiar') }}" method="POST" style="display:inline;">
                                 @csrf
-                                <button type="submit" class="btn btn-sm bg-gradient-warning text-white">
+                                <button type="button" class="btn btn-sm bg-gradient-warning text-white" onclick="confirmarLimpiezaYRespaldo();">
                                     <i class="fas fa-sync-alt me-1"></i> Depurar y Respaldar Ahora
                                 </button>
                             </form>
@@ -117,3 +117,32 @@
         </div>
     </div>
 @endsection
+
+@push('custom-javascript')
+<script>
+function confirmarLimpiezaYRespaldo() {
+    Swal.fire({
+        title: '¿Iniciar depuración y respaldos?',
+        text: 'Las coordenadas y logs de actividad mayores a 90 días se eliminarán de la base de datos y se archivará un respaldo ZIP en el servidor junto con la base de datos limpia.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ffc107',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Sí, depurar y respaldar',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            Swal.fire({
+                title: 'Procesando...',
+                text: 'Depurando base de datos y generando respaldos ZIP. Por favor, no cierre esta ventana.',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            document.getElementById('formLimpiarHistoriales').submit();
+        }
+    });
+}
+</script>
+@endpush

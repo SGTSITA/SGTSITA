@@ -19,42 +19,72 @@ class CotizacionAccesoController extends Controller
         $documCotizacion = DocumCotizacion::with('cotizacion')->findorfail($documento_id);
 
         $cotizacion = $documCotizacion->cotizacion;
-        if ($cotizacion && ($cotizacion->tipo_viaje_seleccion === 'foraneo' || $cotizacion->tipo_viaje_seleccion === 'local_to_foraneo')) {
+        $isForaneoOrLocalToForaneo = $cotizacion && ($cotizacion->tipo_viaje_seleccion === 'foraneo' || $cotizacion->tipo_viaje_seleccion === 'local_to_foraneo');
+        
+        if ($isForaneoOrLocalToForaneo) {
             $eslocal = false;
         }
 
-        $validacionProveedor = $this->validateprovempresa($documCotizacion, $eslocal);
+        $isLocalBool = filter_var($eslocal, FILTER_VALIDATE_BOOLEAN);
+        $requestArchivos = $request->input('archivos', []);
+        $generarAcceso = true;
 
-        if ($validacionProveedor !== true) {
-            return $validacionProveedor;
+        if (!$isLocalBool) {
+            $preAltaFile = null;
+            foreach ($requestArchivos as $archivo) {
+                if (isset($archivo['fileCode']) && $archivo['fileCode'] === 'Pre-Alta') {
+                    $preAltaFile = $archivo;
+                    break;
+                }
+            }
+
+            if (!$preAltaFile) {
+                $generarAcceso = false;
+            } else {
+                $requestArchivos = [$preAltaFile];
+            }
         }
 
-        DocumCotizacionAcceso::where('documento_id', $documento_id)
-            ->update(['activo' => false]);
+        if ($generarAcceso) {
+            $validacionProveedor = $this->validateprovempresa($documCotizacion, $eslocal);
 
-        $password = random_int(1000, 9999);
-        $filesNames = json_encode($request->input('archivos', []));
+            if ($validacionProveedor !== true) {
+                return $validacionProveedor;
+            }
 
-        $acceso = DocumCotizacionAcceso::create([
-            'documento_id' => $documento_id,
-            'token' => Str::random(60),
-            'password_hash' => Hash::make($password),
-            'expires_at' => now()->addHours(24),
-            'user_id' => auth()->user()->id,
-            'shared_files' => $filesNames,
-            'proveedor_id' => $request->input('proveedor_id'),
-            'last_access_at' => Carbon::now(),
-            'last_ip' => $request->ip(),
-            'user_agent' => $request->userAgent(),
+            DocumCotizacionAcceso::where('documento_id', $documento_id)
+                ->update(['activo' => false]);
+
+            $password = random_int(1000, 9999);
+            $filesNames = json_encode($requestArchivos);
+
+            $acceso = DocumCotizacionAcceso::create([
+                'documento_id' => $documento_id,
+                'token' => Str::random(60),
+                'password_hash' => Hash::make($password),
+                'expires_at' => now()->addHours(24),
+                'user_id' => auth()->user()->id,
+                'shared_files' => $filesNames,
+                'proveedor_id' => $request->input('proveedor_id'),
+                'last_access_at' => Carbon::now(),
+                'last_ip' => $request->ip(),
+                'user_agent' => $request->userAgent(),
             ]);
 
-        $isLocalBool = filter_var($eslocal, FILTER_VALIDATE_BOOLEAN);
+            return response()->json([
+                'link' => url("/externos/ver-documentos/{$acceso->token}"),
+                'password' => $password,
+                'message' => 'Enlace generado correctamente.',
+                'titulo' => 'link generado',
+                'success' => true,
+            ]);
+        }
 
         return response()->json([
-            'link' => $isLocalBool ? url("/externos/ver-documentos/{$acceso->token}") : null,
-            'password' => $isLocalBool ? $password : null,
-            'message' => 'Enlace generado correctamente.',
-            'titulo' => 'link generado',
+            'link' => null,
+            'password' => null,
+            'message' => 'Compartiendo información general sin documentos.',
+            'titulo' => 'informacion general',
             'success' => true,
         ]);
     }

@@ -48,7 +48,23 @@ class DocsController extends Controller
         ->whereHas('documento.Asignaciones')
         ->exists();
 
-    if (($validarUser || $esForaneo) && !$estaPlaneado) {
+    // Permitir ver el documento si es únicamente la Pre-Alta
+    $soloPreAlta = false;
+    $sharedFiles = $acceso->shared_files;
+    
+    // Si es un string JSON, decodificarlo, de lo contrario usarlo directamente
+    if (is_string($sharedFiles)) {
+        $sharedFiles = json_decode($sharedFiles, true);
+    }
+    
+    if (is_array($sharedFiles) && count($sharedFiles) === 1) {
+        $firstFile = reset($sharedFiles);
+        if (isset($firstFile['fileCode']) && $firstFile['fileCode'] === 'Pre-Alta') {
+            $soloPreAlta = true;
+        }
+    }
+
+    if (($validarUser || $esForaneo) && !$estaPlaneado && !$soloPreAlta) {
         return 'NO_PLANEADO';
     }
 
