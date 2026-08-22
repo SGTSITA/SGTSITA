@@ -195,45 +195,14 @@
         </div>
     </div>
 
-    <!-- Modal de Google Maps -->
-    <div class="modal fade" id="modalMapaRuta" tabindex="-1" aria-labelledby="modalMapaRutaLabel" aria-hidden="true">
-        <div class="modal-dialog modal-xl modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="modalMapaRutaLabel">Ruta del Viaje / Contenedor</h5>
-                    <button type="button" class="btn-close text-dark" data-bs-dismiss="modal" aria-label="Close" style="border: none; background: none; font-size: 1.5rem;">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body p-0">
-                    <div class="row g-0">
-                        <div class="col-lg-8 col-12">
-                            <div id="mapaRutaConsumo" style="height: 550px; width: 100%;"></div>
-                        </div>
-                        <div class="col-lg-4 col-12 border-start bg-light" style="max-height: 550px; overflow-y: auto;">
-                            <div class="p-3">
-                                <h6 class="mb-3 text-uppercase font-weight-bold" style="font-size: 12px; letter-spacing: 0.5px; color: #495057;">
-                                    <i class="fas fa-history me-1"></i> Línea de Tiempo del Viaje
-                                </h6>
-                                <div id="timelineRutaConsumo" style="font-size: 13px;">
-                                    <p class="text-muted text-center my-4">No hay puntos de rastreo registrados.</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn bg-gradient-secondary" data-bs-dismiss="modal">Cerrar</button>
-                </div>
-            </div>
-        </div>
-    </div>
+
 @endsection
 
 @push('custom-javascript')
     <script>
         const URL_CONSUMO_UNIDADES = "{{ route('reporteria.consumo-unidades.data') }}";
         const URL_CONSUMO_UNIDADES_EXPORTAR = "{{ route('reporteria.consumo-unidades.exportar', ['tipo' => '__TIPO__']) }}";
+        const URL_GUARDAR_COORDENADAS = "{{ route('reporteria.consumo-unidades.guardar-coordenadas') }}";
     </script>
 
     <script src="https://maps.googleapis.com/maps/api/js?key={{ config('services.googleMapsApi.apikey') }}&libraries=geometry"></script>

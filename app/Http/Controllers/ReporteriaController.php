@@ -2570,6 +2570,45 @@ public function indexRendimiento()
         );
     }
 
+    public function guardarCoordenadasAsignacion(Request $request)
+    {
+        $data = $request->validate([
+            'asignacion_id' => ['required', 'integer'],
+            'coordenadas' => ['required', 'array'],
+            'km_recorridos' => ['nullable', 'numeric'],
+        ]);
+
+        $asignacion = \App\Models\Asignaciones::find($data['asignacion_id']);
+        if (!$asignacion) {
+            return response()->json(['success' => false, 'message' => 'Asignación no encontrada'], 404);
+        }
+
+        $payload = [
+            'coordenadas' => $data['coordenadas'],
+            'km_google' => !empty($data['km_recorridos']) ? floatval($data['km_recorridos']) : null
+        ];
+        $asignacion->ruta_coordenadas = json_encode($payload);
+        $asignacion->save();
+
+        if (!empty($data['km_recorridos']) && floatval($data['km_recorridos']) > 0) {
+            $contenedor = $asignacion->Contenedor;
+            $cotizacion = $contenedor?->Cotizacion;
+            if ($cotizacion) {
+                $cotizacion->km_recorridos = floatval($data['km_recorridos']);
+                $cotizacion->save();
+            }
+        }
+
+        return response()->json(['success' => true, 'message' => 'Coordenadas e historial de kilómetros guardados exitosamente']);
+    }
+
+    public function verMapaCompleto(int $asignacionId, Request $request, ConsumoUnidadesService $service)
+    {
+        $refresh = $request->query('refresh') == '1';
+        $rowData = $service->procesarAsignacionUnica($asignacionId, 'diesel', $refresh);
+        return view('reporteria.rendimiento.mapa-completo', compact('rowData'));
+    }
+
     public function exportarunidadesconsumo(Request $request, string $tipo, ConsumoUnidadesService $service)
     {
         $data = $request->validate([

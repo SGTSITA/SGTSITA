@@ -390,6 +390,12 @@ Route::middleware(['auth', 'idle.timeout'])->group(function () {
     Route::get('/reporteria/consumo-unidades/data', [App\Http\Controllers\ReporteriaController::class, 'dataRendimiento'])
         ->name('reporteria.consumo-unidades.data');
 
+    Route::post('/reporteria/consumo-unidades/guardar-coordenadas', [App\Http\Controllers\ReporteriaController::class, 'guardarCoordenadasAsignacion'])
+        ->name('reporteria.consumo-unidades.guardar-coordenadas');
+
+    Route::get('/reporteria/consumo-unidades/mapa/{asignacion_id}', [App\Http\Controllers\ReporteriaController::class, 'verMapaCompleto'])
+        ->name('reporteria.consumo-unidades.mapa');
+
         Route::get('/reporteria/consumo-unidades/exportar/{tipo}', [ App\Http\Controllers\ReporteriaController::class,'exportarunidadesconsumo'])->name('reporteria.consumo-unidades.exportar');
 
         Route::post('cotizaciones/updateMep/{id}', [App\Http\Controllers\CotizacionesController::class, 'updateMep'])->name('updatemep.cotizaciones');
