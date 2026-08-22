@@ -1,40 +1,149 @@
-document.addEventListener('DOMContentLoaded', function () {
-    const gridDiv = document.querySelector('#operadoresGrid');
+document.addEventListener("DOMContentLoaded", function () {
+    const frmOperador = document.getElementById("operadorform");
+
+    if (!frmOperador) {
+        console.error("No se encontró el formulario #operadorform");
+        return;
+    }
+
+    frmOperador.addEventListener("submit", async function (e) {
+        e.preventDefault();
+
+        let form = this;
+        let formData = new FormData(form);
+        let url = $(form).attr("action");
+
+        Swal.fire({
+            title: "Guardando operador...",
+            text: "Por favor espera",
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            didOpen: () => {
+                Swal.showLoading();
+            },
+        });
+
+        $.ajax({
+            url: url,
+            type: "POST",
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function (response) {
+                Swal.close();
+
+                Swal.fire({
+                    icon: "success",
+                    title: "Correcto",
+                    text: response.message ?? "Operador creado correctamente.",
+                    confirmButtonText: "Entendido",
+                }).then(() => {
+                    $("#operadoresModal").modal("hide");
+                    form.reset();
+
+                    // Si quieres recargar la página para ver el nuevo operador:
+                    location.reload();
+
+                    // Si usas DataTable por AJAX, mejor sería:
+                    // $('#tablaOperadores').DataTable().ajax.reload(null, false);
+                });
+            },
+            error: function (xhr) {
+                Swal.close();
+
+                let response = xhr.responseJSON;
+
+                if (xhr.status === 422) {
+                    if (response.message && !response.errors) {
+                        Swal.fire({
+                            icon: "error",
+                            title: "Error",
+                            html: response.message,
+                            confirmButtonText: "Entendido",
+                        });
+
+                        return;
+                    }
+
+                    if (response.errors) {
+                        let errores = "";
+
+                        $.each(response.errors, function (campo, mensajes) {
+                            errores += mensajes.join("<br>") + "<br>";
+                        });
+
+                        Swal.fire({
+                            icon: "error",
+                            title: "Formulario inválido",
+                            html: errores,
+                            confirmButtonText: "Entendido",
+                        });
+
+                        return;
+                    }
+                }
+
+                Swal.fire({
+                    icon: "error",
+                    title: "Error inesperado",
+                    text:
+                        response?.message ??
+                        "Ocurrió un error al guardar el operador.",
+                    confirmButtonText: "Entendido",
+                });
+            },
+        });
+    });
+
+    const gridDiv = document.querySelector("#operadoresGrid");
 
     const rowData = operadoresData.map((op) => {
-        const pendientes = pagosPendientes.filter((p) => p.id_operador === op.id).length;
+        const pendientes = pagosPendientes.filter(
+            (p) => p.id_operador === op.id,
+        ).length;
         return {
             id: op.id,
             nombre: op.nombre,
             telefono: op.telefono,
             curp: op.curp,
-            estatus: op.deleted_at ? 'Inactivo' : 'Activo',
+            estatus: op.deleted_at ? "Inactivo" : "Activo",
             deleted_at: op.deleted_at,
             acciones: op.id,
         };
     });
 
     const columnDefs = [
-        { headerName: 'No', field: 'id', width: 80 },
-        { headerName: 'Nombre', field: 'nombre', flex: 1, floatingFilter: true },
-        { headerName: 'Teléfono', field: 'telefono', flex: 1, floatingFilter: true },
-        { headerName: 'Curp', field: 'curp', flex: 1, floatingFilter: true },
+        { headerName: "No", field: "id", width: 80 },
         {
-            headerName: 'Estatus',
-            field: 'estatus',
+            headerName: "Nombre",
+            field: "nombre",
+            flex: 1,
+            floatingFilter: true,
+        },
+        {
+            headerName: "Teléfono",
+            field: "telefono",
+            flex: 1,
+            floatingFilter: true,
+        },
+        { headerName: "Curp", field: "curp", flex: 1, floatingFilter: true },
+        {
+            headerName: "Estatus",
+            field: "estatus",
             width: 130,
             cellRenderer: (params) => {
-                return params.value === 'Activo'
+                return params.value === "Activo"
                     ? `<span class="badge bg-success"><i class="fas fa-circle-check me-1"></i> Activo</span>`
                     : `<span class="badge bg-danger"><i class="fas fa-circle-xmark me-1"></i> Inactivo</span>`;
             },
         },
         {
-            headerName: 'Acciones',
-            field: 'acciones',
+            headerName: "Acciones",
+            field: "acciones",
             cellRenderer: (params) => {
                 const id = params.value;
-                const isInactive = !!rowData.find((r) => r.id === id).deleted_at;
+                const isInactive = !!rowData.find((r) => r.id === id)
+                    .deleted_at;
                 const editBtn = `<button class="btn btn-sm btn-outline-primary me-1" onclick="abrirModalEditar(${id})"><i class='fas fa-edit'></i></button>`;
                 const actionBtn = isInactive
                     ? `<button class="btn btn-sm btn-outline-success" onclick="restaurarOperador(${id})" title="Reactivar"><i class='fas fa-rotate-left'></i></button>`
@@ -58,23 +167,25 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 function abrirModalEditar(id) {
-    const modal = new bootstrap.Modal(document.getElementById(`operadoresModal_Edit${id}`));
+    const modal = new bootstrap.Modal(
+        document.getElementById(`operadoresModal_Edit${id}`),
+    );
     modal.show();
 }
 
 function eliminarOperador(id) {
     Swal.fire({
-        title: '¿Estás seguro?',
-        text: 'El operador será dado de baja.',
-        icon: 'warning',
+        title: "¿Estás seguro?",
+        text: "El operador será dado de baja.",
+        icon: "warning",
         showCancelButton: true,
-        confirmButtonColor: '#d33',
-        cancelButtonColor: '#6c757d',
-        confirmButtonText: 'Sí, dar de baja',
-        cancelButtonText: 'Cancelar',
+        confirmButtonColor: "#d33",
+        cancelButtonColor: "#6c757d",
+        confirmButtonText: "Sí, dar de baja",
+        cancelButtonText: "Cancelar",
     }).then((result) => {
         if (result.isConfirmed) {
-            const form = document.getElementById('form-eliminar');
+            const form = document.getElementById("form-eliminar");
             form.action = `/operadores/${id}`;
             form.submit();
         }
@@ -83,17 +194,17 @@ function eliminarOperador(id) {
 
 function restaurarOperador(id) {
     Swal.fire({
-        title: '¿Reactivar operador?',
-        text: 'El operador será reactivado.',
-        icon: 'info',
+        title: "¿Reactivar operador?",
+        text: "El operador será reactivado.",
+        icon: "info",
         showCancelButton: true,
-        confirmButtonColor: '#198754',
-        cancelButtonColor: '#6c757d',
-        confirmButtonText: 'Sí, reactivar',
-        cancelButtonText: 'Cancelar',
+        confirmButtonColor: "#198754",
+        cancelButtonColor: "#6c757d",
+        confirmButtonText: "Sí, reactivar",
+        cancelButtonText: "Cancelar",
     }).then((result) => {
         if (result.isConfirmed) {
-            const form = document.getElementById('form-restaurar');
+            const form = document.getElementById("form-restaurar");
             form.action = `/operadores/${id}/restaurar`;
             form.submit();
         }

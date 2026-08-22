@@ -209,6 +209,14 @@ const formFields = [
         type: "text",
         master: false,
     },
+    {
+        field: "retencion_automatica",
+        id: "retencion_automatica",
+        label: "retencion_automatica",
+        required: false,
+        type: "checkbox",
+        master: false,
+    },
 ];
 
 const editFormFields = [
@@ -378,6 +386,14 @@ const editFormFields = [
         label: "Origen de Captura",
         required: false,
         type: "text",
+        master: false,
+    },
+    {
+        field: "retencion_automatica",
+        id: "retencion_automatica",
+        label: "retencion_automatica",
+        required: false,
+        type: "checkbox",
         master: false,
     },
 ];
@@ -551,6 +567,24 @@ const formFieldsMec = [
         master: false,
         trigger: "none",
     },
+    {
+        field: "numBoleta",
+        id: "numBoleta",
+        label: "Folio Boleta Liberación",
+        required: true,
+        type: "text",
+        master: false,
+        trigger: "none",
+    },
+    {
+        field: "numDoda",
+        id: "numDoda",
+        label: "Folio Doda",
+        required: true,
+        type: "text",
+        master: false,
+        trigger: "none",
+    },
 ];
 
 const formFieldsFacturacion = [
@@ -692,7 +726,13 @@ $(".moneyformat").on("blur", (e) => {
 });
 
 function calcularTotal(modulo = "crear") {
-    const fields = modulo == "crear" ? formFields : formFieldsProveedor;
+    const fields =
+        modulo == "crear" || modulo == "edit"
+            ? formFields
+            : formFieldsProveedor;
+
+    const retAuto =
+        document.getElementById("retencion_automatica")?.checked ?? true;
 
     const field_precio_viaje = fields.find((i) => i.field == "precio_viaje");
     const field_burreo = fields.find((i) => i.field == "burreo");
@@ -700,71 +740,149 @@ function calcularTotal(modulo = "crear") {
     const field_estadia = fields.find((i) => i.field == "estadia");
     const field_maniobra = fields.find((i) => i.field == "maniobra");
 
-    const precio_viaje =
-        parseFloat(
-            reverseMoneyFormat(
-                document.getElementById(field_precio_viaje.id).value,
-            ),
-        ) || 0;
-    const burreo =
-        parseFloat(
-            reverseMoneyFormat(document.getElementById(field_burreo.id).value),
-        ) || 0;
-    const otro =
-        parseFloat(
-            reverseMoneyFormat(document.getElementById(field_otro.id).value),
-        ) || 0;
-    const estadia =
-        parseFloat(
-            reverseMoneyFormat(document.getElementById(field_estadia.id).value),
-        ) || 0;
-    const maniobra =
-        parseFloat(
-            reverseMoneyFormat(
-                document.getElementById(field_maniobra.id).value,
-            ),
-        ) || 0;
+    let fieldprecioviajes = document.getElementById(field_precio_viaje.id);
+    let fieldburreos = document.getElementById(field_burreo.id);
+    let fieldotros = document.getElementById(field_otro.id);
+    let fieldestadias = document.getElementById(field_estadia.id);
+    let fieldmaniobras = document.getElementById(field_maniobra.id);
 
-    const subTotal = precio_viaje + burreo + maniobra + estadia + otro;
+    let precio_viaje = 0;
+    let burreo = 0;
+    let otro = 0;
+    let estadia = 0;
+    let maniobra = 0;
+
+    if (fieldprecioviajes) {
+        precio_viaje =
+            parseFloat(
+                reverseMoneyFormat(
+                    document.getElementById(field_precio_viaje.id).value,
+                ),
+            ) || 0;
+    }
+
+    if (fieldburreos) {
+        burreo =
+            parseFloat(
+                reverseMoneyFormat(
+                    document.getElementById(field_burreo.id).value,
+                ),
+            ) || 0;
+    }
+
+    if (fieldotros) {
+        otro =
+            parseFloat(
+                reverseMoneyFormat(
+                    document.getElementById(field_otro.id).value,
+                ),
+            ) || 0;
+    }
+
+    if (fieldestadias) {
+        estadia =
+            parseFloat(
+                reverseMoneyFormat(
+                    document.getElementById(field_estadia.id).value,
+                ),
+            ) || 0;
+    }
+
+    if (fieldmaniobras) {
+        maniobra =
+            parseFloat(
+                reverseMoneyFormat(
+                    document.getElementById(field_maniobra.id).value,
+                ),
+            ) || 0;
+    }
+
+    const subTotal =
+        (precio_viaje ?? 0) +
+        (burreo ?? 0) +
+        (maniobra ?? 0) +
+        (estadia ?? 0) +
+        (otro ?? 0);
 
     const field_base_factura = fields.find((i) => i.field == "base_factura");
 
-    const baseFactura =
-        parseFloat(
-            reverseMoneyFormat(
-                document.getElementById(field_base_factura.id).value,
-            ),
-        ) || 0;
+    let fieldbasefacturas = document.getElementById(field_base_factura.id);
+    let baseFactura = 0;
+    if (fieldbasefacturas) {
+        baseFactura =
+            parseFloat(
+                reverseMoneyFormat(
+                    document.getElementById(field_base_factura.id).value,
+                ),
+            ) || 0;
+    }
+
     const iva = baseFactura * tasa_iva;
-    const retencion = baseFactura * tasa_retencion;
 
+    /*
+    |--------------------------------------------------------------------------
+    | Retención
+    |--------------------------------------------------------------------------
+    */
     const field_iva = fields.find((i) => i.field == "iva");
+
     const field_retencion = fields.find((i) => i.field == "retencion");
+    let fielretencion = document.getElementById(field_retencion.id);
+    let fieldiva = document.getElementById(field_iva.id);
+    if (fieldiva) {
+        document.getElementById(field_iva.id).value = moneyFormat(iva);
+    }
+    let retencion = 0;
 
-    document.getElementById(field_iva.id).value = moneyFormat(iva);
-    document.getElementById(field_retencion.id).value = moneyFormat(retencion);
+    if (retAuto) {
+        retencion = baseFactura * tasa_retencion;
 
-    // Restar el valor de Retención del total
+        if (fielretencion) {
+            document.getElementById(field_retencion.id).value =
+                moneyFormat(retencion);
+            document.getElementById(field_retencion.id).readOnly = true;
+        }
+    } else {
+        if (fielretencion) {
+            retencion =
+                parseFloat(
+                    reverseMoneyFormat(
+                        document.getElementById(field_retencion.id).value,
+                    ),
+                ) || 0;
+            document.getElementById(field_retencion.id).readOnly = false;
+        }
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Totales
+    |--------------------------------------------------------------------------
+    */
     const totalSinRetencion =
-        precio_viaje + burreo + iva + otro + estadia + maniobra;
+        (precio_viaje ?? 0) +
+        (burreo ?? 0) +
+        (iva ?? 0) +
+        (otro ?? 0) +
+        (estadia ?? 0) +
+        (maniobra ?? 0);
+
     const totalConRetencion = totalSinRetencion - retencion;
 
-    // Obtener el valor de Precio Tonelada
-    //const field_precio_tonelada = fields.find( i => i.field == "precio_tonelada");
-    const precioTonelada =
-        modulo != "proveedores"
-            ? parseFloat(
-                  reverseMoneyFormat(
-                      document.getElementById("total_sobrepeso_viaje").value,
-                  ),
-              ) || 0
-            : parseFloat(
-                  reverseMoneyFormat(
-                      document.getElementById("total_tonelada").value,
-                  ),
-              );
+    let totalsobrepesoField = document.getElementById("total_sobrepeso_viaje");
+    let totaltoneladaField = document.getElementById("total_tonelada");
 
-    // Sumar el valor de Precio Tonelada al total
+    let precioTonelada = 0;
+    if (modulo != "proveedores") {
+        precioTonelada = totalsobrepesoField
+            ? parseFloat(reverseMoneyFormat(totalsobrepesoField.value)) || 0
+            : 0;
+    } else {
+        precioTonelada = totaltoneladaField
+            ? parseFloat(reverseMoneyFormat(totaltoneladaField.value)) || 0
+            : 0;
+    }
+
     const totalFinal = totalConRetencion + precioTonelada;
 
     if (modulo != "proveedores" && document.querySelector("#txtSumGastos")) {
@@ -774,7 +892,9 @@ function calcularTotal(modulo = "crear") {
                     document.querySelector("#txtSumGastos").value,
                 ),
             ) || 0;
+
         let txtResultGastos = document.querySelectorAll(".txtResultGastos");
+
         txtResultGastos.forEach(
             (r) => (r.value = moneyFormat(totalFinal + SumGastos)),
         );
@@ -784,21 +904,38 @@ function calcularTotal(modulo = "crear") {
         modulo == "proveedores"
             ? document.querySelectorAll(".total-cotizacion-proveedor")
             : document.querySelectorAll(".total-cotizacion");
+
     totalCotizacion.forEach((r) => {
         r.value = moneyFormat(totalFinal);
     });
-    //baseTaref Corresponde a Base 2
-    const baseTaref = totalFinal - baseFactura - iva + retencion;
-    // Mostrar el resultado en el input de base_taref
-    const field_base_taref = fields.find((i) => i.field == "base_taref");
-    console.log(field_base_taref.id);
-    document.getElementById(field_base_taref.id).value = moneyFormat(baseTaref);
 
-    // Formatear el total con comas
-    //const totalFormateado = moneyFormat(totalFinal);
-    //const field_total = fields.find( i => i.field == "total");
-    // document.getElementById(field_total.id).value = totalFormateado;
-    //  console.log(totalFormateado)
+    /*
+    |--------------------------------------------------------------------------
+    | Base Taref
+    |--------------------------------------------------------------------------
+    */
+    const baseTaref = totalFinal - baseFactura - iva + retencion;
+
+    const field_base_taref = fields.find((i) => i.field == "base_taref");
+    const fieldbaseTaref = document.getElementById(field_base_taref.id);
+    if (fieldbaseTaref) {
+        document.getElementById(field_base_taref.id).value =
+            moneyFormat(baseTaref);
+    }
+}
+const chkRetencionAuto = document.getElementById("retencion_automatica");
+const inputRetencion = document.getElementById("retencion");
+
+if (chkRetencionAuto) {
+    chkRetencionAuto.addEventListener("change", function () {
+        if (this.checked) {
+            inputRetencion.readOnly = true;
+            calcularTotal(frmMode);
+        } else {
+            inputRetencion.readOnly = false;
+            //inputRetencion.value = 0;
+        }
+    });
 }
 
 function getClientes(clienteId, subclienteid) {
@@ -1127,9 +1264,13 @@ document.addEventListener("DOMContentLoaded", function () {
     calcularSobrepeso();
 
     // Agregar eventos de cambio a los inputs para calcular automáticamente
-    document.getElementById("base_factura").addEventListener("input", () => {
-        calcularTotal();
-    });
+    const base_facturaInput = document.getElementById("base_factura");
+    if (base_facturaInput) {
+        base_facturaInput.addEventListener("input", () => {
+            calcularTotal();
+        });
+    }
+
     var inputMoneyFormat = $(".calculo-cotizacion");
     inputMoneyFormat.on("input", () => {
         calcularTotal();
@@ -1139,11 +1280,37 @@ document.addEventListener("DOMContentLoaded", function () {
         calcularTotal("proveedores");
     });
 });
-
+let mapClickListener = null;
 function crearurlmapalatitudlongitud(lat, lng) {
     let url = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
     console.log(url);
     return url;
+}
+
+const btnCopiarMapa = document.getElementById("btnCopiarMapa");
+if (btnCopiarMapa) {
+    btnCopiarMapa.addEventListener("click", () => {
+        const url = document.getElementById("linkMapa").href;
+
+        navigator.clipboard.writeText(url);
+
+        const btn = document.getElementById("btnCopiarMapa");
+        btn.innerHTML = '<i class="fas fa-check"></i>';
+
+        setTimeout(() => {
+            btn.innerHTML = '<i class="fas fa-copy"></i>';
+        }, 1200);
+    });
+}
+
+function actualizarDireccionInput(direccion) {
+    const inputDireccion = document.getElementById("direccion_entrega");
+
+    inputDireccion.value = direccion;
+
+    inputDireccion.dispatchEvent(new Event("input", { bubbles: true }));
+
+    inputDireccion.dispatchEvent(new Event("change", { bubbles: true }));
 }
 
 var modal = document.getElementById("mapModal");
@@ -1176,8 +1343,7 @@ if (modal) {
                 .then((res) => res.json())
                 .then((data) => {
                     const direccion = data.display_name;
-                    document.getElementById("direccion_entrega").value =
-                        direccion;
+                    actualizarDireccionInput(direccion);
                     document.getElementById("direccion_mapa").value = direccion;
                 });
             let urlCrearMapa = crearurlmapalatitudlongitud(lat, lng);
@@ -1189,7 +1355,7 @@ if (modal) {
         const lng = parseFloat(document.getElementById("longitud").value);
         const direccion = document.getElementById("direccion_entrega").value;
 
-        if ((!lat || !lng) && direccion) {
+        if ((isNaN(lat) || isNaN(lng)) && direccion) {
             // Geocoding con dirección
             fetch(
                 `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(direccion)}`,
@@ -1308,8 +1474,7 @@ function geocodificardireccion(lat, long) {
                     document.getElementById("latitud").value = lat.toFixed(6);
                     document.getElementById("longitud").value = long.toFixed(6);
 
-                    document.getElementById("direccion_entrega").value =
-                        direccion;
+                    actualizarDireccionInput(direccion);
                 } else {
                     console.log("No se encontró dirección");
                 }
@@ -1366,6 +1531,7 @@ function sobrePesoViaje() {
         'input[name="contenedorTabs"]:checked',
     );
 
+    if (!tabSelected) return;
     initContenedores(tabSelected.value);
 
     let tipoViajeSelected = document.querySelector(
@@ -1377,12 +1543,17 @@ function sobrePesoViaje() {
             ? 0
             : parseFloat(ContenedorB["sobrepeso"] || 0);
     let viajeSobrePeso = parseFloat(ContenedorA["sobrepeso"] || 0) + sobrePesoB;
-    sobrePesoViajeInput.value = viajeSobrePeso;
-    let precio = reverseMoneyFormat(precioSobrePesoInpu.value);
+    let precio = 0;
+    if (sobrePesoViajeInput) {
+        sobrePesoViajeInput.value = viajeSobrePeso;
+        precio = reverseMoneyFormat(precioSobrePesoInpu.value);
+    }
 
-    totalSobrePesoViaje.value = moneyFormat(
-        parseFloat(viajeSobrePeso || 0) * parseFloat(precio || 0),
-    );
+    if (totalSobrePesoViaje) {
+        totalSobrePesoViaje.value = moneyFormat(
+            parseFloat(viajeSobrePeso || 0) * parseFloat(precio || 0),
+        );
+    }
 
     var sobrePesoProveedor = document.getElementById(
         "cantidad_sobrepeso_proveedor",
@@ -1749,19 +1920,31 @@ $("#cotizacionCreateMultiple").on("submit", async function (e) {
     formData["sobrePeso"] = sobrePeso;
     formData["precioSobrePeso"] = reverseMoneyFormat(precioSobrePeso);
     //coordenadas para comparacion
-    formData["latitud"] = document.getElementById("latitud")?.value ?? null;
-    formData["longitud"] = document.getElementById("longitud")?.value ?? null;
+
+    //nueva cvalidacion de sellecion de lat y lng en mapa , si no no dejar guardar la cotizacion
+    let latitud = document.getElementById("latitud")?.value ?? null;
+    let longitud = document.getElementById("longitud")?.value ?? null;
+
+    if ((latitud && !longitud) || (!latitud && longitud)) {
+        Swal.fire(
+            "Coordenadas incompletas",
+            "Parece que ha proporcionado solo una coordenada, por favor asegúrese de seleccionar ambos valores de latitud y longitud en el mapa.",
+            "warning",
+        );
+        return false;
+    }
+
+    //
+
+    formData["latitud"] = latitud;
+    formData["longitud"] = longitud;
     formData["direccion_mapa"] =
         document.getElementById("direccion_mapa")?.value ?? null;
     formData["fecha_seleccion"] =
         document.getElementById("fecha_seleccion")?.value ?? null;
 
-    formData["latitud"] = document.getElementById("latitud")?.value ?? null;
-    formData["longitud"] = document.getElementById("longitud")?.value ?? null;
-    formData["direccion_mapa"] =
-        document.getElementById("direccion_mapa")?.value ?? null;
-    formData["fecha_seleccion"] =
-        document.getElementById("fecha_seleccion")?.value ?? null;
+    formData["retencion_automatica"] =
+        document.getElementById("retencion_automatica")?.checked ?? null;
 
     $.ajax({
         url: url,
@@ -1867,18 +2050,90 @@ $("#cotizacionCreate").on("submit", function (e) {
     formData["id_cliente"] = $("#id_cliente").val();
     formData["id_subcliente"] = selectSubClient.value;
 
+    //documentos
+    const boletaFile = document.getElementById("BoletaLib")?.files[0];
+    const dodaFile = document.getElementById("Doda")?.files[0];
+    const ccpFile = document.getElementById("CCP")?.files[0];
+
+    if (boletaFile) {
+        formData["boleta_liberacion_file"] = boletaFile;
+    }
+
+    if (dodaFile) {
+        formData["doda_file"] = dodaFile;
+    }
+
+    if (ccpFile) {
+        formData["ccp_file"] = ccpFile;
+    }
+
+    //nueva cvalidacion de sellecion de lat y lng en mapa , si no no dejar guardar la cotizacion
+    let latitud = document.getElementById("latitud")?.value ?? null;
+    let longitud = document.getElementById("longitud")?.value ?? null;
+
+    const latVacia =
+        latitud === null ||
+        latitud === undefined ||
+        latitud.toString().trim() === "";
+
+    const lngVacia =
+        longitud === null ||
+        longitud === undefined ||
+        longitud.toString().trim() === "";
+
+    if (latVacia && lngVacia) {
+        Swal.fire(
+            "Sin coordenadas",
+            "Por favor selecciona un punto en el mapa.",
+            "warning",
+        );
+        return false;
+    }
+
+    if ((latVacia && !lngVacia) || (!latVacia && lngVacia)) {
+        Swal.fire(
+            "Coordenadas incompletas",
+            "Debes seleccionar tanto latitud como longitud.",
+            "warning",
+        );
+        return false;
+    }
+
+    const lat = Number(latitud);
+    const lng = Number(longitud);
+
+    const fueraDeMexico =
+        isNaN(lat) ||
+        isNaN(lng) ||
+        lat < 14 ||
+        lat > 33 ||
+        lng < -118 ||
+        lng > -86;
+
+    if (fueraDeMexico) {
+        Swal.fire(
+            "Coordenadas fuera de rango",
+            "Selecciona un punto dentro de México.",
+            "warning",
+        );
+        return false;
+    }
+
     //
-    formData["latitud"] = document.getElementById("latitud")?.value ?? null;
-    formData["longitud"] = document.getElementById("longitud")?.value ?? null;
+
+    formData["latitud"] = latitud;
+    formData["longitud"] = longitud;
     formData["direccion_mapa"] =
         document.getElementById("direccion_mapa")?.value ?? null;
     formData["fecha_seleccion"] =
         document.getElementById("fecha_seleccion")?.value ?? null;
+
     formData["modifico_informacion"] =
         document.getElementById("modifico_informacion")?.value ?? 0;
 
     //Obtenemos el UUID si es que ya se habia iniciado una cotizacion
     var uuid = localStorage.getItem("uuid");
+
     //Validaciones MEC
     if (uuid != null) {
         formData["uuid"] = uuid;
@@ -1940,6 +2195,10 @@ $("#cotizacionCreate").on("submit", function (e) {
             }
 
             if (field) {
+                const isHidden = field.closest(".d-none");
+
+                if (field.disabled || field.readOnly || isHidden) return true;
+
                 if (item.required === true && field.value.length == 0) {
                     Swal.fire(
                         "El campo " + item.label + " es obligatorio",
@@ -1998,10 +2257,18 @@ $("#cotizacionCreate").on("submit", function (e) {
         if (!passValidation) return passValidation;
     }
 
+    const multipartData = new FormData();
+
+    Object.keys(formData).forEach((key) => {
+        multipartData.append(key, formData[key]);
+    });
+
     $.ajax({
         url: url,
         type: "post",
-        data: formData,
+        data: multipartData,
+        processData: false,
+        contentType: false,
         beforeSend: function () {},
         success: function (data) {
             Swal.fire(data.Titulo, data.Mensaje, data.TMensaje).then(
@@ -2013,7 +2280,7 @@ $("#cotizacionCreate").on("submit", function (e) {
                         );
                         var uuid = localStorage.getItem("uuid");
                         if (uuid) {
-                            initFileUploader();
+                            //   initFileUploader();
                             setTimeout(() => {
                                 document
                                     .getElementById("noticeFileUploader")
@@ -2033,6 +2300,7 @@ $("#cotizacionCreate").on("submit", function (e) {
                         } else {
                             location.reload();
                         }
+                        limpiarEstadoDocumentos();
                     }
                 },
             );

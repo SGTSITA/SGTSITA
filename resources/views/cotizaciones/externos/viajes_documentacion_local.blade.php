@@ -14,13 +14,8 @@
                         </span>
                     </h3>
                     <div class="card-toolbar">
-                        <button
-                            name="btnDocs1"
-                            id="btnDocs1"
-                            onclick="fileManager()"
-                            disabled="true"
-                            class="btnDocs btn btn-sm btn-primary me-3"
-                        >
+                        <button name="btnDocs1" id="btnDocs1" onclick="fileManager()" disabled="true"
+                            class="btnDocs btn btn-sm btn-primary me-3">
                             Ver Documentos
                         </button>
                         <button name="btnDocs" id="btnDocs" disabled="true" class="btnDocs btn btn-sm btn-primary me-3">
@@ -42,29 +37,19 @@
 
 @push('javascript')
     <link href="{{ asset('assets/metronic/fileuploader/font/font-fileuploader.css') }}" rel="stylesheet" />
-    <link
-        href="{{ asset('assets/metronic/fileuploader/jquery.fileuploader.min.css') }}"
-        media="all"
-        rel="stylesheet"
-    />
-    <link
-        href="{{ asset('assets/metronic/fileuploader/jquery.fileuploader-theme-dragdrop.css') }}"
-        media="all"
-        rel="stylesheet"
-    />
-    <script
-        src="{{ asset('assets/metronic/fileuploader/jquery.fileuploader.min.js') }}"
-        type="text/javascript"
-    ></script>
-    <script
-        src="{{ asset('assets/metronic/fileuploader/cotizacion-cliente-externolocal.js') }}"
-        type="text/javascript"
-    ></script>
+    <link href="{{ asset('assets/metronic/fileuploader/jquery.fileuploader.min.css') }}" media="all" rel="stylesheet" />
+    <link href="{{ asset('assets/metronic/fileuploader/jquery.fileuploader-theme-dragdrop.css') }}" media="all"
+        rel="stylesheet" />
+    <script src="{{ asset('assets/metronic/fileuploader/jquery.fileuploader.min.js') }}" type="text/javascript"></script>
+
 
     <script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.js"></script>
 
-    <script src="{{ asset('js/sgt/cotizaciones/cotizacion-documentacion-local.js') }}?v={{ filemtime(public_path('js/sgt/cotizaciones/cotizacion-documentacion-local.js')) }}"></script>
+    <script
+        src="{{ asset('js/sgt/cotizaciones/cotizacion-documentacion-local.js') }}?v={{ filemtime(public_path('js/sgt/cotizaciones/cotizacion-documentacion-local.js')) }}">
+    </script>
     <script>
+        const btnDocumets = document.querySelectorAll(".btnDocs");
         $(document).ready(() => {
             getContenedoresPendientes('4');
             adjuntarDocumentos();

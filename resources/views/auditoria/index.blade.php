@@ -161,7 +161,7 @@
 
         const columnDefs = [{
                 headerName: 'Fecha',
-                field: 'created_at'
+                field: 'created_at_local'
             },
             {
                 headerName: 'Usuario',

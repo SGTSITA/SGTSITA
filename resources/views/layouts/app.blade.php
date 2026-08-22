@@ -67,6 +67,86 @@
         .ag-theme-quartz .row-odd {
             background-color: #ffffff;
         }
+
+        /* ============================
+       FIX GLOBAL LAYOUT
+       ============================ */
+
+        html,
+        body {
+            width: 100%;
+            max-width: 100%;
+            overflow-x: hidden;
+        }
+
+        body>.min-height-300.position-absolute.w-100 {
+            max-width: 100%;
+            overflow-x: hidden;
+        }
+
+        .app-main-content {
+            min-width: 0;
+            max-width: 100%;
+        }
+
+        .app-content-container {
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+
+        .app-content-container>* {
+            max-width: 100%;
+        }
+
+        .app-content-container input,
+        .app-content-container select,
+        .app-content-container textarea,
+        .app-content-container .form-control,
+        .app-content-container .form-select {
+            max-width: 100%;
+        }
+
+        .app-content-container .card,
+        .app-content-container .tab-content,
+        .app-content-container .table-responsive,
+        .app-content-container .ag-theme-alpine,
+        .app-content-container .ag-theme-quartz,
+        .app-content-container .dataTable-wrapper {
+            max-width: 100%;
+        }
+
+        .app-scroll-x {
+            width: 100%;
+            max-width: 100%;
+            overflow-x: auto;
+            overflow-y: hidden;
+        }
+
+        @media (max-width: 767.98px) {
+            .app-content-container {
+                padding-left: .75rem !important;
+                padding-right: .75rem !important;
+            }
+        }
+
+        .main-content,
+        .app-main-content,
+        .main-content.ps,
+        .app-main-content.ps {
+            overflow-x: hidden !important;
+        }
+
+        /* Oculta la barra horizontal generada por Perfect Scrollbar */
+        .main-content .ps__rail-x,
+        .main-content .ps__thumb-x,
+        .app-main-content .ps__rail-x,
+        .app-main-content .ps__thumb-x {
+            display: none !important;
+            height: 0 !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+        }
     </style>
 </head>
 
@@ -98,13 +178,10 @@
     <!-- Sidenav -->
     @include('layouts.sidebar')
 
-    <main class="main-content position-relative border-radius-lg">
-        <!-- Navbar -->
+    <main class="main-content position-relative border-radius-lg app-main-content">
         @include('layouts.navbar')
 
-        <!-- End Navbar -->
-
-        <div class="container-fluid">
+        <div class="container-fluid px-3 px-md-4 app-content-container">
             {{-- @include('layouts.header') --}}
             @include('layouts.simple_alert')
             @yield('breadcrumb')
@@ -118,6 +195,16 @@
         </div>
     </main>
 
+    @auth
+        <script>
+            window.SGT_SESSION_TIMEOUT_MS = {{ config('session.lifetime') * 60 * 1000 }};
+            window.SGT_LOGOUT_URL = "{{ route('logout') }}";
+            window.SGT_LOGIN_URL = "{{ url('login') }}";
+        </script>
+
+        <script src="{{ asset('js/sgt/common/sessionAutoLogout.js') }}"></script>
+    @endauth
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="{{ asset('js/sgt/common.js') }}"></script>
     @yield('js_custom')
 
@@ -133,13 +220,17 @@
     <script src="{{ asset('assets/js/core/bootstrap.min.js') }}"></script>
     <script src="{{ asset('assets/js/plugins/perfect-scrollbar.min.js') }}"></script>
     <script src="{{ asset('assets/js/plugins/smooth-scrollbar.min.js') }}"></script>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    {{-- <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script> --}}
 
     <script src="{{ asset('assets/js/plugins/datatables.js') }}"></script>
 
     <script src="{{ asset('assets/js/argon-dashboard.min.js') }}"></script>
 
     <script type="text/javascript" src="{{ asset('assets/js/sweetalert2.all.min.js') }}"></script>
+
+    @auth
+        <script src="{{ asset('js/sgt/notificaciones/notificaciones_navbar.js') }}"></script>
+    @endauth
 
     <script>
         var token = $('meta[name="csrf-token"]').attr('content');
@@ -151,6 +242,7 @@
     @yield('alerta')
 
     @yield('select2')
+
     @stack('custom-javascript')
     @stack('scripts')
 </body>

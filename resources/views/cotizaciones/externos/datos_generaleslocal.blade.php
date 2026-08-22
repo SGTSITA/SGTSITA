@@ -365,6 +365,55 @@
     </div>
 </div>
 <input type="hidden" value="MEC-local" id="origen_captura" name="origen_captura" />
+<div class="separator my-5"></div>
+<h5 class="text-gray-700 mb-3">📦 Datos Operativos</h5>
+
+<div class="row">
+
+    <!-- CITA -->
+    <div class="col-md-3">
+        <div class="form-floating mb-3">
+            <input type="date" class="form-control" id="cita_at" name="cita_at"
+                @if ($action == 'editar') value="{{ \Carbon\Carbon::parse($cotizacion?->DocCotizacion?->cita_at)->format('Y-m-d') }}" @endif>
+            <label>Cita</label>
+        </div>
+    </div>
+
+    <!-- ETA -->
+    <div class="col-md-3">
+        <div class="form-floating mb-3">
+            <input type="date" class="form-control" id="eta" name="eta"
+                @if ($action == 'editar') value="{{ \Carbon\Carbon::parse($cotizacion?->DocCotizacion?->eta)->format('Y-m-d') }}" @endif>
+            <label>ETA</label>
+        </div>
+    </div>
+
+    <!-- NAVIERA -->
+    <div class="col-md-3">
+        <div class="form-floating mb-3">
+            <select class="form-select" name="naviera_id" id="naviera_id">
+                <option value="">Seleccionar naviera</option>
+                @foreach ($navieras as $n)
+                    <option value="{{ $n->id }}" @if (isset($cotizacion) && $cotizacion?->DocCotizacion?->naviera_id == $n->id) selected @endif>
+                        {{ $n->naviera }}
+                    </option>
+                @endforeach
+            </select>
+            <label>Naviera</label>
+        </div>
+    </div>
+
+    <!-- PEDIMENTO -->
+    <div class="col-md-3">
+        <div class="form-floating mb-3">
+            <input type="date" class="form-control" id="pedimento_recibido_at" name="pedimento_recibido_at"
+                @if ($action == 'editar') value="{{ \Carbon\Carbon::parse($cotizacion?->DocCotizacion->pedimento_recibido_at)->format('Y-m-d') }}" @endif>
+            <label>Recepción de Pedimento</label>
+        </div>
+    </div>
+
+</div>
+
 
 <div class="separator my-5"></div>
 <h5 class="text-gray-700 mb-3">⛴️ Estadía y Pernocta en Puerto</h5>
