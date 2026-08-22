@@ -123,8 +123,20 @@ class ConsumoUnidadesService
                             }
                         })
                         ->orWhere(function ($q) use ($asignacion) {
-                            if ($asignacion && $asignacion->id_camion) {
-                                $q->where('ubicacionable_id', $asignacion->id_camion)
+                            $idsEquipos = [];
+                            if ($asignacion) {
+                                if ($asignacion->id_camion) {
+                                    $idsEquipos[] = $asignacion->id_camion;
+                                }
+                                if ($asignacion->id_chasis) {
+                                    $idsEquipos[] = $asignacion->id_chasis;
+                                }
+                                if ($asignacion->id_chasis2) {
+                                    $idsEquipos[] = $asignacion->id_chasis2;
+                                }
+                            }
+                            if (!empty($idsEquipos)) {
+                                $q->whereIn('ubicacionable_id', $idsEquipos)
                                   ->whereIn('ubicacionable_type', ['App\\Models\\Equipo', 'App\\Models\\Equipos', 'Equipo', 'Equipos', 'OperadorMovil']);
                             } else {
                                 $q->whereRaw('1 = 0');
@@ -192,7 +204,7 @@ class ConsumoUnidadesService
                             $origenKm = 'Captura Manual';
                         }
                     } else {
-                        $origenKm = !empty($asignacion->ruta_coordenadas) ? 'Guardado desde Mapa' : 'Captura Manual';
+                        $origenKm = 'Captura Manual';
                     }
                 } else {
                     // 2. Respaldo 1: Ruta por Historial de Coordenadas
@@ -333,8 +345,20 @@ class ConsumoUnidadesService
                                         }
                                     })
                                     ->orWhere(function ($q) use ($asigTemp) {
-                                        if ($asigTemp && $asigTemp->id_camion) {
-                                            $q->where('ubicacionable_id', $asigTemp->id_camion)
+                                        $idsEquipos = [];
+                                        if ($asigTemp) {
+                                            if ($asigTemp->id_camion) {
+                                                $idsEquipos[] = $asigTemp->id_camion;
+                                            }
+                                            if ($asigTemp->id_chasis) {
+                                                $idsEquipos[] = $asigTemp->id_chasis;
+                                            }
+                                            if ($asigTemp->id_chasis2) {
+                                                $idsEquipos[] = $asigTemp->id_chasis2;
+                                            }
+                                        }
+                                        if (!empty($idsEquipos)) {
+                                            $q->whereIn('ubicacionable_id', $idsEquipos)
                                               ->whereIn('ubicacionable_type', ['App\\Models\\Equipo', 'App\\Models\\Equipos', 'Equipo', 'Equipos', 'OperadorMovil']);
                                         } else {
                                             $q->whereRaw('1 = 0');
@@ -451,7 +475,7 @@ class ConsumoUnidadesService
                                 $origenKm = 'Captura Manual';
                             }
                         } else {
-                            $origenKm = !empty($asigTemp->ruta_coordenadas) ? 'Guardado desde Mapa' : 'Captura Manual';
+                            $origenKm = 'Captura Manual';
                         }
                     } else {
                         // 1. Prioridad: Ruta Historial Coordenadas
@@ -820,8 +844,20 @@ class ConsumoUnidadesService
                         }
                     })
                     ->orWhere(function ($q) use ($asignacion) {
-                        if ($asignacion && $asignacion->id_camion) {
-                            $q->where('ubicacionable_id', $asignacion->id_camion)
+                        $idsEquipos = [];
+                        if ($asignacion) {
+                            if ($asignacion->id_camion) {
+                                $idsEquipos[] = $asignacion->id_camion;
+                            }
+                            if ($asignacion->id_chasis) {
+                                $idsEquipos[] = $asignacion->id_chasis;
+                            }
+                            if ($asignacion->id_chasis2) {
+                                $idsEquipos[] = $asignacion->id_chasis2;
+                            }
+                        }
+                        if (!empty($idsEquipos)) {
+                            $q->whereIn('ubicacionable_id', $idsEquipos)
                               ->whereIn('ubicacionable_type', ['App\\Models\\Equipo', 'App\\Models\\Equipos', 'Equipo', 'Equipos', 'OperadorMovil']);
                         } else {
                             $q->whereRaw('1 = 0');
@@ -886,7 +922,7 @@ class ConsumoUnidadesService
                         $origenKm = 'Captura Manual';
                     }
                 } else {
-                    $origenKm = !empty($asignacion->ruta_coordenadas) ? 'Guardado desde Mapa' : 'Captura Manual';
+                    $origenKm = 'Captura Manual';
                 }
             } else {
                 $kmHistorial = $kmHistorialCalculado;
