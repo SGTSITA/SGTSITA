@@ -1,9 +1,9 @@
 ---
 title: List columns
 categories:
-  - Typography
+    - Typography
 tags:
-  - text
-  - type
-  - alignment
+    - text
+    - type
+    - alignment
 ---

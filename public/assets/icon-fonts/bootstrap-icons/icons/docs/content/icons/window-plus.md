@@ -1,9 +1,9 @@
 ---
 title: Window plus
 categories:
-  - Apps
+    - Apps
 tags:
-  - application
-  - desktop
-  - app
+    - application
+    - desktop
+    - app
 ---

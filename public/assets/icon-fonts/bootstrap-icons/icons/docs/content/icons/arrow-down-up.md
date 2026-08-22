@@ -1,7 +1,7 @@
 ---
 title: Arrow down-up
 categories:
-  - Arrows
+    - Arrows
 tags:
-  - arrow
+    - arrow
 ---

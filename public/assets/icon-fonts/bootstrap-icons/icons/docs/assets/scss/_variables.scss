@@ -5,11 +5,11 @@ $bd-accent: #ffe484;
 $bd-gutter-x: 3rem;
 
 :root {
-  --bd-purple: #{$bd-purple};
-  --bd-violet: #{$bd-violet};
-  --bd-accent: #{$bd-accent};
-  --bd-violet-rgb: #{to-rgb($bd-violet)};
-  --bd-accent-rgb: #{to-rgb($bd-accent)};
-  --bd-pink-rgb: #{to-rgb($pink-500)};
-  --bd-teal-rgb: #{to-rgb($teal-500)};
+    --bd-purple: #{$bd-purple};
+    --bd-violet: #{$bd-violet};
+    --bd-accent: #{$bd-accent};
+    --bd-violet-rgb: #{to-rgb($bd-violet)};
+    --bd-accent-rgb: #{to-rgb($bd-accent)};
+    --bd-pink-rgb: #{to-rgb($pink-500)};
+    --bd-teal-rgb: #{to-rgb($teal-500)};
 }

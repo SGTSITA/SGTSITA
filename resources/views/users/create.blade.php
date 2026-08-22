@@ -118,15 +118,27 @@
                             <div class="col-md-12 form-group-ios">
                                 <label class="form-label">Contraseña</label>
                                 <i class="fas fa-lock"></i>
-                                <input type="password" id="password" name="password" class="form-control"
-                                    placeholder="Password" required>
+                                <input
+                                    type="password"
+                                    id="password"
+                                    name="password"
+                                    class="form-control"
+                                    placeholder="Password"
+                                    required
+                                />
                             </div>
 
                             <div class="col-md-12 form-group-ios">
                                 <label class="form-label">Confirmar Contraseña</label>
                                 <i class="fas fa-lock"></i>
-                                <input type="password" name="confirm-password" id="confirm-password" class="form-control"
-                                    placeholder="Confirm Password" required>
+                                <input
+                                    type="password"
+                                    name="confirm-password"
+                                    id="confirm-password"
+                                    class="form-control"
+                                    placeholder="Confirm Password"
+                                    required
+                                />
                             </div>
 
                             <div class="col-md-12">
@@ -134,15 +146,20 @@
                                 <div class="radio-group-ios">
                                     @foreach ($roles as $key => $rol)
                                         <label>
-                                            <input type="radio" name="roles[]" value="{{ $key }}"
-                                                class="radio-ios" required>
+                                            <input
+                                                type="radio"
+                                                name="roles[]"
+                                                value="{{ $key }}"
+                                                class="radio-ios"
+                                                required
+                                            />
                                             {{ $rol }}
                                         </label>
                                     @endforeach
                                 </div>
                             </div>
 
-                            <div class="col-md-6" id="clienteGroup" style="display: none;">
+                            <div class="col-md-6" id="clienteGroup" style="display: none">
                                 <label class="form-label">Selecciona el Cliente</label>
                                 <select name="id_cliente" id="id_cliente" class="form-select">
                                     <option value="0">Sin cliente</option>

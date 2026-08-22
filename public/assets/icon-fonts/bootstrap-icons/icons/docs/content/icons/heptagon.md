@@ -1,8 +1,8 @@
 ---
 title: Heptagon
 categories:
-  - Shapes
+    - Shapes
 tags:
-  - shape
-  - polygon
+    - shape
+    - polygon
 ---

@@ -1,8 +1,8 @@
 ---
 title: Border style
 categories:
-  - Typography
+    - Typography
 tags:
-  - borders
-  - wysiwyg
+    - borders
+    - wysiwyg
 ---

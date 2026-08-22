@@ -1,8 +1,8 @@
 ---
 title: Window sidebar
 categories:
-  - Apps
+    - Apps
 tags:
-  - application
-  - desktop
+    - application
+    - desktop
 ---

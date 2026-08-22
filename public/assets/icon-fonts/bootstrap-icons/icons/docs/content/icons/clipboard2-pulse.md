@@ -1,10 +1,10 @@
 ---
 title: Clipboard2 pulse
 categories:
-  - Real world
-  - Medical
+    - Real world
+    - Medical
 tags:
-  - copy
-  - paste
-  - heartrate
+    - copy
+    - paste
+    - heartrate
 ---

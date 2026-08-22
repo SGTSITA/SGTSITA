@@ -1,7 +1,7 @@
 ---
 title: Tornado
 categories:
-  - Weather
+    - Weather
 tags:
-  - wind
+    - wind
 ---

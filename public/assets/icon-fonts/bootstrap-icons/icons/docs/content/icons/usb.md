@@ -1,6 +1,6 @@
 ---
 title: USB
 categories:
-  - Devices
+    - Devices
 tags:
 ---

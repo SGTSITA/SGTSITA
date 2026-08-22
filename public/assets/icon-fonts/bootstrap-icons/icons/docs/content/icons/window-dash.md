@@ -1,9 +1,9 @@
 ---
 title: Window dash
 categories:
-  - Apps
+    - Apps
 tags:
-  - application
-  - desktop
-  - app
+    - application
+    - desktop
+    - app
 ---

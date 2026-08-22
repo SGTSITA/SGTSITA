@@ -1,8 +1,8 @@
 ---
 title: Share
 categories:
-  - Communications
+    - Communications
 tags:
-  - share
-  - link
+    - share
+    - link
 ---

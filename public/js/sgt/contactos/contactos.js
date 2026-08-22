@@ -6,17 +6,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     gridOptions = {
         columnDefs: [
-            { field: "id", headerName: "ID", width: 70 },
+            { field: 'id', headerName: 'ID', width: 70 },
             {
-                field: "nombre",
-                headerName: "Nombre",
+                field: 'nombre',
+                headerName: 'Nombre',
                 flex: 1,
                 cellRenderer: (params) => {
-                    const nombre = params.value || "Sin nombre";
-                    const foto = params.data.foto
-                        ? params.data.foto
-                        : '/assets/images/faces/default-avatar.png';
-
+                    const nombre = params.value || 'Sin nombre';
+                    const foto = params.data.foto ? params.data.foto : '/assets/images/faces/default-avatar.png';
 
                     return `
             <div class="d-flex align-items-center">
@@ -24,16 +21,15 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <span>${nombre}</span>
             </div>
         `;
-                }
+                },
             },
 
-
-            { field: "telefono", headerName: "Teléfono", flex: 1 },
-            { field: "email", headerName: "Correo", flex: 1 },
-            { field: "empresa", headerName: "Empresa", flex: 1 },
+            { field: 'telefono', headerName: 'Teléfono', flex: 1 },
+            { field: 'email', headerName: 'Correo', flex: 1 },
+            { field: 'empresa', headerName: 'Empresa', flex: 1 },
             {
-                headerName: "Estado",
-                field: "deleted_at",
+                headerName: 'Estado',
+                field: 'deleted_at',
                 width: 120,
                 cellRenderer: (params) => {
                     const activo = params.value === null;
@@ -46,10 +42,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                         </span>
                     `;
                 },
-                cellClass: 'text-center'
+                cellClass: 'text-center',
             },
             {
-                headerName: "Acciones",
+                headerName: 'Acciones',
                 width: 150,
                 cellRenderer: (params) => {
                     const { id, deleted_at, nombre } = params.data;
@@ -73,9 +69,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                     return acciones;
                 },
-                cellStyle: { textAlign: 'center' }
-            }
-
+                cellStyle: { textAlign: 'center' },
+            },
         ],
         rowData,
         pagination: true,
@@ -83,7 +78,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             sortable: true,
             filter: true,
             resizable: true,
-        }
+        },
     };
 
     const eGridDiv = document.querySelector('#myGrid');
@@ -101,21 +96,21 @@ async function recargarTabla() {
 async function inactivarContacto(id, nombre) {
     const confirm = await Swal.fire({
         title: `¿Eliminar a <b>${nombre}</b>?`,
-        text: "El contacto será marcado como inactivo.",
+        text: 'El contacto será marcado como inactivo.',
         icon: 'warning',
         showCancelButton: true,
         confirmButtonText: 'Sí, eliminar',
         cancelButtonText: 'Cancelar',
         confirmButtonColor: '#d33',
-        cancelButtonColor: '#aaa'
+        cancelButtonColor: '#aaa',
     });
 
     if (confirm.isConfirmed) {
         const response = await fetch(`/contactos/${id}`, {
             method: 'DELETE',
             headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-            }
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            },
         });
 
         if (response.ok) {
@@ -131,21 +126,21 @@ async function inactivarContacto(id, nombre) {
 async function activarContacto(id, nombre) {
     const confirm = await Swal.fire({
         title: `¿Reactivar a <b>${nombre}</b>?`,
-        text: "El contacto volverá a estar activo.",
+        text: 'El contacto volverá a estar activo.',
         icon: 'question',
         showCancelButton: true,
         confirmButtonText: 'Sí, reactivar',
         cancelButtonText: 'Cancelar',
         confirmButtonColor: '#3085d6',
-        cancelButtonColor: '#aaa'
+        cancelButtonColor: '#aaa',
     });
 
     if (confirm.isConfirmed) {
         const response = await fetch(`/contactos/${id}/restore`, {
             method: 'PUT',
             headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-            }
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            },
         });
 
         if (response.ok) {

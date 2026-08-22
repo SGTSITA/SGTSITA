@@ -1,9 +1,9 @@
 ---
 title: Credit card
 categories:
-  - Real world
+    - Real world
 tags:
-  - debit
-  - card
-  - payment
+    - debit
+    - card
+    - payment
 ---

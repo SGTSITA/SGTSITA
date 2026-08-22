@@ -54,8 +54,7 @@
                 // pendiente u otros
                 return `<span class="text-muted">—</span>`;
             },
-        }
-
+        },
     ];
 
     function fmtMoney(params) {
@@ -79,17 +78,17 @@
         },
     };
 
-
     const gridApi = agGrid.createGrid(gridDiv, gridOptions);
 
     fetch(urlData, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
-        .then(r => r.json())
-        .then(data => {
+        .then((r) => r.json())
+        .then((data) => {
             gridApi.setGridOption('rowData', data);
             aplicarFiltroInicialPorQuery();
         });
 
-    document.getElementById('quickSearch')
+    document
+        .getElementById('quickSearch')
         .addEventListener('input', (e) => gridApi.setGridOption('quickFilterText', e.target.value));
 
     document.getElementById('btnAll').addEventListener('click', () => setStatusFilter(null));
@@ -117,13 +116,13 @@ document.addEventListener('click', function (e) {
     const id = btn.dataset.id;
 
     fetch(`/costos/mep/cambios/${id}/detalle`, {
-        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
     })
-        .then(res => {
+        .then((res) => {
             if (!res.ok) throw new Error('Error del servidor');
             return res.json();
         })
-        .then(data => {
+        .then((data) => {
             if (!data || Object.keys(data).length === 0) {
                 throw new Error('Sin datos');
             }
@@ -133,7 +132,6 @@ document.addEventListener('click', function (e) {
             Swal.fire('Error', 'No se pudo cargar la información del cambio rechazado.', 'error');
         });
 });
-
 
 function mostrarModalObservaciones(data) {
     const modal = new bootstrap.Modal(document.getElementById('modalObservaciones'));
@@ -155,7 +153,7 @@ function mostrarModalObservaciones(data) {
         retencion: 'Retención',
         sobrepeso: 'Sobrepeso',
         precio_sobrepeso: 'Precio sobrepeso',
-        total: 'Total'
+        total: 'Total',
     };
 
     const camposCalculados = ['iva', 'retencion', 'base2', 'total'];
@@ -195,7 +193,7 @@ function mostrarModalObservaciones(data) {
     modal.show();
     const inputs = document.querySelectorAll('.campo-editable');
 
-    inputs.forEach(input => {
+    inputs.forEach((input) => {
         input.addEventListener('input', () => {
             // Actualizar row con los nuevos valores del input
             const name = input.name;
@@ -220,7 +218,7 @@ function mostrarModalObservaciones(data) {
             const iva = base1 * tasa_iva;
             const retencion = base1 * tasa_retencion;
             const total = subtotal + sobre + iva - retencion;
-            const base2 = (total - base1 - iva) + retencion;
+            const base2 = total - base1 - iva + retencion;
 
             // Guardar los nuevos valores
             row.iva = parseFloat(iva.toFixed(4));
@@ -235,7 +233,6 @@ function mostrarModalObservaciones(data) {
             document.querySelector('input[name="base2"]').value = row.base2;
         });
     });
-
 }
 
 const csrf = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
@@ -245,7 +242,7 @@ document.getElementById('btnReenviarCambios').addEventListener('click', () => {
     const row = JSON.parse(document.getElementById('btnReenviarCambios').dataset.row);
 
     const inputs = document.querySelectorAll('#tablaCamposObservados .campo-editable');
-    inputs.forEach(input => {
+    inputs.forEach((input) => {
         row[input.name] = parseFloat(input.value || 0);
     });
 
@@ -267,7 +264,7 @@ document.getElementById('btnReenviarCambios').addEventListener('click', () => {
     const iva = base1 * tasa_iva;
     const retencion = base1 * tasa_retencion;
     const total = subtotal + sobre + iva - retencion;
-    const base2 = (total - base1 - iva) + retencion;
+    const base2 = total - base1 - iva + retencion;
 
     row.iva = parseFloat(iva.toFixed(4));
     row.retencion = parseFloat(retencion.toFixed(4));
@@ -278,12 +275,12 @@ document.getElementById('btnReenviarCambios').addEventListener('click', () => {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': csrf
+            'X-CSRF-TOKEN': csrf,
         },
-        body: JSON.stringify(row)
+        body: JSON.stringify(row),
     })
-        .then(res => res.json())
-        .then(res => {
+        .then((res) => res.json())
+        .then((res) => {
             if (res.success) {
                 Swal.fire('Enviado', res.message, 'success').then(() => location.reload());
             } else {
