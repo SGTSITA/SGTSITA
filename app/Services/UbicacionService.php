@@ -763,6 +763,10 @@ private function consultarSkyAngelGrupo(array $items, array $credenciales): arra
 
         $response = SkyAngel::getLocation($accessToken);
 
+        if (!$response || !$response->success) {
+            throw new \Exception($response->message ?? 'No se pudo obtener la ubicación desde SkyAngel.');
+        }
+
         $data = $response->data ?? [];
 
         $indexado = collect($data)->keyBy(function ($item) {
@@ -1473,13 +1477,15 @@ public function consultarGps(
 
                 $ubicacionApiResponse = null;
 
-                foreach ($response->data as $item) {
+                if ($response && $response->success && is_array($response->data)) {
+                    foreach ($response->data as $item) {
 
-                    if ((string)$item['imei'] === (string)$imei) {
-                        $ubicacionApiResponse = $item;
-                        break;
+                        if ((string)$item['imei'] === (string)$imei) {
+                            $ubicacionApiResponse = $item;
+                            break;
+                        }
+
                     }
-
                 }
 
                 $track = $ubicacionApiResponse['tracks'][0] ?? null;

@@ -67,8 +67,8 @@ public static function getAccessToken(
 
     $endpoint = config('services.SkyAngelGps.url_base') . '/token';
 
-    $response = Http::connectTimeout(5)
-        ->timeout(10)
+    $response = Http::connectTimeout(15)
+        ->timeout(20)
         ->retry(1, 300)
         ->post($endpoint, [
             'username' => $username,
@@ -94,6 +94,15 @@ public static function getAccessToken(
 
    public static function getLocation($accessToken)
 {
+    if (!$accessToken) {
+        return new ApiResponse(
+            success: false,
+            data: [],
+            message: 'Token de acceso no válido o vacío.',
+            status: 401
+        );
+    }
+
     $cacheKey = 'gps:skyangel:locations:' . md5($accessToken);
 
     Log::info('SKYANGEL LOCATION CACHE', [
@@ -130,8 +139,8 @@ private static function fetchLocation($accessToken)
         $response = Http::withHeaders([
                 'Authorization' => $accessToken,
             ])
-            ->connectTimeout(5)
-            ->timeout(10)
+            ->connectTimeout(15)
+            ->timeout(20)
             ->retry(1, 300)
             ->get($endpoint);
 

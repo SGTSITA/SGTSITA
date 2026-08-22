@@ -254,7 +254,7 @@ document.addEventListener("DOMContentLoaded", function () {
         onCellClicked: (params) => {
             if (params.event.target.closest('.btn-ver-mapa')) {
                 const rowData = params.data;
-                abrirMapaRuta(rowData);
+                window.open(`/reporteria/consumo-unidades/mapa/${rowData.asignacion_id}`, '_blank');
             }
         },
         animateRows: true,
@@ -319,6 +319,16 @@ document.addEventListener("DOMContentLoaded", function () {
         pintarLoading();
         updateGridHeaders();
 
+        // Show SweetAlert2 loader
+        Swal.fire({
+            title: 'Consultando información...',
+            text: 'Por favor espera mientras recopilamos el historial del GPS.',
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+
         const isRefresh = document.getElementById("chkRecargarCoordenadas")?.checked ? 1 : 0;
 
         const params = new URLSearchParams({
@@ -352,6 +362,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 return;
             }
 
+            Swal.close(); // Close loader
             pintarResumen(data.resumen);
             pintarTabla(data.rows);
         } catch (error) {
@@ -544,12 +555,86 @@ document.addEventListener("DOMContentLoaded", function () {
     let mapMarkers = [];
     let mapPathPolyline = null;
     let directionsRenderers = [];
+    let currentActiveRowData = null;
+
+    document.getElementById('selectSegmentoMapa').addEventListener('change', function() {
+        if (currentActiveRowData) {
+            renderizarMapaRuta(currentActiveRowData, this.value);
+        }
+    });
+
+    document.getElementById('btnGuardarHistorial').addEventListener('click', async function() {
+        if (!currentActiveRowData || !currentActiveRowData.coordenadas_ruta || currentActiveRowData.coordenadas_ruta.length === 0) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Sin datos',
+                text: 'No hay coordenadas en el historial de este viaje para guardar.'
+            });
+            return;
+        }
+
+        Swal.fire({
+            title: '¿Guardar historial?',
+            text: 'Se registrarán de forma permanente estas coordenadas en la asignación para consultas rápidas posteriores.',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, guardar',
+            cancelButtonText: 'Cancelar',
+            showLoaderOnConfirm: true,
+            preConfirm: async () => {
+                try {
+                    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                    const response = await fetch(URL_GUARDAR_COORDENADAS, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': csrfToken
+                        },
+                        body: JSON.stringify({
+                            asignacion_id: currentActiveRowData.asignacion_id,
+                            coordenadas: currentActiveRowData.coordenadas_ruta
+                        })
+                    });
+                    const data = await response.json();
+                    if (!response.ok || !data.success) {
+                        throw new Error(data.message || 'Error al guardar coordenadas.');
+                    }
+                    return data;
+                } catch (error) {
+                    Swal.showValidationMessage(`Request failed: ${error}`);
+                }
+            },
+            allowOutsideClick: () => !Swal.isLoading()
+        }).then((result) => {
+            if (result.isConfirmed) {
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡Guardado!',
+                    text: 'El historial de coordenadas ha sido guardado exitosamente.'
+                });
+            }
+        });
+    });
 
     function abrirMapaRuta(rowData) {
+        currentActiveRowData = rowData;
+        document.getElementById('selectSegmentoMapa').value = 'todos';
+
+        // Set container and dates info in modal header
+        document.getElementById('badgeContenedorModal').innerText = `Contenedor: ${rowData.contenedor || 'S/N'}`;
+        document.getElementById('badgeFechasModal').innerText = `Ruta: ${rowData.fecha_inicio || 'S/N'} al ${rowData.fecha_fin || 'S/N'}`;
+
         const modalEl = document.getElementById('modalMapaRuta');
         const modal = new bootstrap.Modal(modalEl);
         modal.show();
 
+        setTimeout(() => {
+            renderizarMapaRuta(rowData, 'todos');
+        }, 300);
+    }
+
+    function renderizarMapaRuta(rowData, tramo) {
         if (mapMarkers) {
             mapMarkers.forEach(m => m.setMap(null));
         }
@@ -563,279 +648,432 @@ document.addEventListener("DOMContentLoaded", function () {
         }
         directionsRenderers = [];
 
-        setTimeout(() => {
-            const mapDiv = document.getElementById('mapaRutaConsumo');
-            if (typeof google === 'undefined' || typeof google.maps === 'undefined') {
-                mapDiv.innerHTML = '<div class="alert alert-danger m-3">Google Maps API no está cargado correctamente.</div>';
-                return;
+        const mapDiv = document.getElementById('mapaRutaConsumo');
+        if (typeof google === 'undefined' || typeof google.maps === 'undefined') {
+            mapDiv.innerHTML = '<div class="alert alert-danger m-3">Google Maps API no está cargado correctamente.</div>';
+            return;
+        }
+
+        const defaultCenter = { lat: 19.4326, lng: -99.1332 };
+        const mapOptions = {
+            zoom: 8,
+            center: defaultCenter,
+            mapTypeId: google.maps.MapTypeId.ROADMAP
+        };
+
+        googleMapInstance = new google.maps.Map(mapDiv, mapOptions);
+        const bounds = new google.maps.LatLngBounds();
+        const infoWindow = new google.maps.InfoWindow();
+
+        const timelineDiv = document.getElementById('timelineRutaConsumo');
+        timelineDiv.innerHTML = '';
+        let timelineItems = [];
+
+        function getDistanceKm(lat1, lon1, lat2, lon2) {
+            const R = 6371;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLon/2) * Math.sin(dLon/2);
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        }
+
+        let accumulatedDistances = [];
+        let totalAccumulatedDist = 0;
+        let deliveryIdx = -1;
+
+        if (rowData.coordenadas_ruta && rowData.coordenadas_ruta.length > 0) {
+            accumulatedDistances.push(0);
+            for (let i = 1; i < rowData.coordenadas_ruta.length; i++) {
+                const prev = rowData.coordenadas_ruta[i-1];
+                const curr = rowData.coordenadas_ruta[i];
+                totalAccumulatedDist += getDistanceKm(
+                    parseFloat(prev.latitud), parseFloat(prev.longitud),
+                    parseFloat(curr.latitud), parseFloat(curr.longitud)
+                );
+                accumulatedDistances.push(totalAccumulatedDist);
             }
 
-            const defaultCenter = { lat: 19.4326, lng: -99.1332 };
-            const mapOptions = {
-                zoom: 8,
-                center: defaultCenter,
-                mapTypeId: google.maps.MapTypeId.ROADMAP
-            };
-
-            googleMapInstance = new google.maps.Map(mapDiv, mapOptions);
-            const bounds = new google.maps.LatLngBounds();
-            const infoWindow = new google.maps.InfoWindow();
-
-            // Populate Timeline Panel HTML
-            const timelineDiv = document.getElementById('timelineRutaConsumo');
-            timelineDiv.innerHTML = '';
-            let timelineItems = [];
-
-            let originLatLng = null;
-            let destLatLng = null;
-
-            if (rowData.diesel_lat && rowData.diesel_lng) {
-                originLatLng = new google.maps.LatLng(parseFloat(rowData.diesel_lat), parseFloat(rowData.diesel_lng));
-            } else if (rowData.coordenadas_ruta && rowData.coordenadas_ruta.length > 0) {
-                originLatLng = new google.maps.LatLng(parseFloat(rowData.coordenadas_ruta[0].latitud), parseFloat(rowData.coordenadas_ruta[0].longitud));
-            }
-
-            if (rowData.viaje_finalizado_lat && rowData.viaje_finalizado_lng) {
-                destLatLng = new google.maps.LatLng(parseFloat(rowData.viaje_finalizado_lat), parseFloat(rowData.viaje_finalizado_lng));
-            } else if (rowData.diesel_siguiente_lat && rowData.diesel_siguiente_lng) {
-                destLatLng = new google.maps.LatLng(parseFloat(rowData.diesel_siguiente_lat), parseFloat(rowData.diesel_siguiente_lng));
-            } else if (rowData.coordenadas_ruta && rowData.coordenadas_ruta.length > 0) {
-                destLatLng = new google.maps.LatLng(parseFloat(rowData.coordenadas_ruta[rowData.coordenadas_ruta.length - 1].latitud), parseFloat(rowData.coordenadas_ruta[rowData.coordenadas_ruta.length - 1].longitud));
-            }
-
-            // 1. Agregar marcador de Inicio (Diésel Origen)
-            if (originLatLng) {
-                const marker = new google.maps.Marker({
-                    position: originLatLng,
-                    map: googleMapInstance,
-                    title: "Inicio del viaje (Carga Diésel / Origen)",
-                    icon: 'https://maps.google.com/mapfiles/ms/icons/green-dot.png'
-                });
-                mapMarkers.push(marker);
-                bounds.extend(originLatLng);
-
-                const infoContent = `
-                    <div style="font-family: sans-serif; font-size: 13px; line-height: 1.4; padding: 5px;">
-                        <h6 style="margin: 0 0 5px 0; color: #198754; font-weight: bold;"><i class="fas fa-play-circle me-1"></i>Inicio del Viaje</h6>
-                        <strong>Fecha/Hora:</strong> ${rowData.fecha_inicio || 'S/N'}<br>
-                        <strong>Lat/Lng:</strong> ${originLatLng.lat().toFixed(5)}, ${originLatLng.lng().toFixed(5)}
-                    </div>
-                `;
-                marker.addListener('click', () => {
-                    infoWindow.setContent(infoContent);
-                    infoWindow.open(googleMapInstance, marker);
-                });
-
-                timelineItems.push({
-                    title: 'Inicio (Carga Diésel)',
-                    time: rowData.fecha_inicio || 'S/N',
-                    lat: originLatLng.lat(),
-                    lng: originLatLng.lng(),
-                    badgeClass: 'bg-success',
-                    iconClass: 'fa-play'
-                });
-            }
-
-            // 2. Agregar marcadores intermedios (Coordenadas Historial)
-            if (rowData.coordenadas_ruta && rowData.coordenadas_ruta.length > 0) {
+            if (rowData.destino_lat && rowData.destino_lng) {
+                const destLat = parseFloat(rowData.destino_lat);
+                const destLng = parseFloat(rowData.destino_lng);
+                let minCotiDist = Infinity;
                 rowData.coordenadas_ruta.forEach((coord, idx) => {
-                    const pos = { lat: parseFloat(coord.latitud), lng: parseFloat(coord.longitud) };
-                    bounds.extend(pos);
+                    const dist = getDistanceKm(destLat, destLng, parseFloat(coord.latitud), parseFloat(coord.longitud));
+                    if (dist < minCotiDist) {
+                        minCotiDist = dist;
+                        deliveryIdx = idx;
+                    }
+                });
+            }
+        }
 
-                    const dotMarker = new google.maps.Marker({
+        let fullRuta = rowData.coordenadas_ruta || [];
+        let filteredRuta = [];
+        let startIdx = 0;
+        let endIdx = fullRuta.length - 1;
+
+        if (deliveryIdx !== -1) {
+            if (tramo === 'ida') {
+                endIdx = deliveryIdx;
+            } else if (tramo === 'regreso') {
+                startIdx = deliveryIdx;
+            }
+        }
+        filteredRuta = fullRuta.slice(startIdx, endIdx + 1);
+
+        let originLatLng = null;
+        let destLatLng = null;
+
+        if (filteredRuta.length > 0) {
+            originLatLng = new google.maps.LatLng(parseFloat(filteredRuta[0].latitud), parseFloat(filteredRuta[0].longitud));
+            destLatLng = new google.maps.LatLng(parseFloat(filteredRuta[filteredRuta.length - 1].latitud), parseFloat(filteredRuta[filteredRuta.length - 1].longitud));
+        }
+
+        // Draw start marker
+        if (originLatLng) {
+            let startTitle = tramo === 'regreso' ? "Punto de Entrega (Inicio Regreso)" : "Inicio del viaje (Origen)";
+            let startTimelineTitle = tramo === 'regreso' ? "Punto de Entrega (Destino)" : "Inicio (Origen)";
+            const marker = new google.maps.Marker({
+                position: originLatLng,
+                map: googleMapInstance,
+                title: startTitle,
+                icon: tramo === 'regreso' ? 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png' : 'https://maps.google.com/mapfiles/ms/icons/green-dot.png'
+            });
+            mapMarkers.push(marker);
+            bounds.extend(originLatLng);
+
+            const startInfoContent = `
+                <div style="font-family: sans-serif; font-size: 13px; line-height: 1.4; padding: 5px;">
+                    <h6 style="margin: 0 0 5px 0; color: #198754; font-weight: bold;"><i class="fas fa-play-circle me-1"></i>${startTitle}</h6>
+                    <strong>Fecha/Hora:</strong> ${rowData.fecha_inicio || 'S/N'}<br>
+                    <strong>Lat/Lng:</strong> ${originLatLng.lat().toFixed(6)}, ${originLatLng.lng().toFixed(6)}
+                </div>
+            `;
+            marker.addListener('click', () => {
+                infoWindow.setContent(startInfoContent);
+                infoWindow.open(googleMapInstance, marker);
+            });
+
+            timelineItems.push({
+                title: startTimelineTitle,
+                time: rowData.fecha_inicio || 'S/N',
+                lat: originLatLng.lat(),
+                lng: originLatLng.lng(),
+                badgeClass: tramo === 'regreso' ? 'bg-primary' : 'bg-success',
+                iconClass: tramo === 'regreso' ? 'fa-map-marker-alt' : 'fa-play'
+            });
+        }
+
+        // Find closest point to diesel loading in this filtered subset
+        let dieselInsertIdx = -1;
+        if (rowData.diesel_lat && rowData.diesel_lng) {
+            const dLat = parseFloat(rowData.diesel_lat);
+            const dLng = parseFloat(rowData.diesel_lng);
+            let minTrackDist = Infinity;
+            filteredRuta.forEach((coord, idx) => {
+                const dist = getDistanceKm(dLat, dLng, parseFloat(coord.latitud), parseFloat(coord.longitud));
+                if (dist < minTrackDist) {
+                    minTrackDist = dist;
+                    dieselInsertIdx = idx;
+                }
+            });
+        }
+
+        // Render intermediate tracking markers
+        let lastMarkerPos = null;
+        filteredRuta.forEach((coord, idx) => {
+            const globalIdx = startIdx + idx;
+            const pos = { lat: parseFloat(coord.latitud), lng: parseFloat(coord.longitud) };
+            bounds.extend(pos);
+
+            let labelType = "Ida";
+            let labelClass = "badge bg-info text-white ms-2";
+            if (deliveryIdx !== -1) {
+                if (globalIdx < deliveryIdx) {
+                    labelType = "Ida";
+                    labelClass = "badge bg-info text-white ms-2";
+                } else if (globalIdx === deliveryIdx) {
+                    labelType = "Entrega";
+                    labelClass = "badge bg-dark text-white ms-2";
+                } else {
+                    labelType = "Vuelta";
+                    labelClass = "badge bg-secondary text-white ms-2";
+                }
+            }
+
+            // Downsample markers to avoid clustering (threshold: 4 km)
+            let shouldDrawMarker = idx === 0 || 
+                                   idx === filteredRuta.length - 1 || 
+                                   globalIdx === deliveryIdx ||
+                                   globalIdx === (deliveryIdx - 1) ||
+                                   globalIdx === (deliveryIdx + 1);
+            if (!shouldDrawMarker && lastMarkerPos) {
+                const dist = getDistanceKm(lastMarkerPos.lat, lastMarkerPos.lng, pos.lat, pos.lng);
+                if (dist >= 4.0) {
+                    shouldDrawMarker = true;
+                }
+            }
+
+            if (shouldDrawMarker) {
+                lastMarkerPos = pos;
+                let markerTitle = `Punto de rastreo (${labelType})`;
+                let markerIcon = {
+                    path: google.maps.SymbolPath.CIRCLE,
+                    scale: 5,
+                    fillColor: globalIdx === deliveryIdx ? "#343a40" : (globalIdx < deliveryIdx ? "#007bff" : "#6c757d"),
+                    fillOpacity: 0.9,
+                    strokeColor: "#ffffff",
+                    strokeWeight: 1,
+                };
+
+                let dotMarker;
+                if (globalIdx === deliveryIdx && tramo === 'todos') {
+                    dotMarker = new google.maps.Marker({
                         position: pos,
                         map: googleMapInstance,
-                        title: `Punto de rastreo #${idx + 1}: ${coord.registrado_en || ''}`,
-                        icon: {
-                            path: google.maps.SymbolPath.CIRCLE,
-                            scale: 5,
-                            fillColor: "#007bff",
-                            fillOpacity: 0.9,
-                            strokeColor: "#ffffff",
-                            strokeWeight: 1,
-                        }
+                        title: "Punto de Entrega (Destino)",
+                        icon: 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png'
                     });
-                    mapMarkers.push(dotMarker);
-
-                    const infoContent = `
-                        <div style="font-family: sans-serif; font-size: 13px; line-height: 1.4; padding: 5px;">
-                            <h6 style="margin: 0 0 5px 0; color: #007bff; font-weight: bold;"><i class="fas fa-map-marker-alt me-1"></i>Punto de Rastreo #${idx + 1}</h6>
-                            <strong>Fecha/Hora:</strong> ${coord.registrado_en || 'S/N'}<br>
-                            <strong>Lat/Lng:</strong> ${parseFloat(coord.latitud).toFixed(5)}, ${parseFloat(coord.longitud).toFixed(5)}
-                        </div>
-                    `;
-                    dotMarker.addListener('click', () => {
-                        infoWindow.setContent(infoContent);
-                        infoWindow.open(googleMapInstance, dotMarker);
+                } else {
+                    dotMarker = new google.maps.Marker({
+                        position: pos,
+                        map: googleMapInstance,
+                        title: `${markerTitle}: ${coord.registrado_en || ''} (A ${accumulatedDistances[globalIdx].toFixed(1)} km)`,
+                        icon: markerIcon
                     });
-
-                    timelineItems.push({
-                        title: `Punto de Rastreo #${idx + 1}`,
-                        time: coord.registrado_en || 'S/N',
-                        lat: pos.lat,
-                        lng: pos.lng,
-                        badgeClass: 'bg-info',
-                        iconClass: 'fa-map-pin'
-                    });
-                });
-            }
-
-            // 3. Agregar marcador de Fin (Siguiente Carga o Viaje Finalizado)
-            if (destLatLng) {
-                const isFinalizado = !!(rowData.viaje_finalizado_lat && rowData.viaje_finalizado_lng);
-                const titleText = isFinalizado ? "Fin del viaje (Viaje Finalizado - App Móvil)" : "Fin del viaje (Siguiente Carga / Destino)";
-                const marker = new google.maps.Marker({
-                    position: destLatLng,
-                    map: googleMapInstance,
-                    title: titleText,
-                    icon: 'https://maps.google.com/mapfiles/ms/icons/red-dot.png'
-                });
-                mapMarkers.push(marker);
-                bounds.extend(destLatLng);
-
-                const fechaFinDisplay = isFinalizado 
-                    ? rowData.viaje_finalizado_fecha 
-                    : (rowData.litros_tomados_de_contenedor ? 'Carga posterior' : 'S/N');
+                }
+                mapMarkers.push(dotMarker);
 
                 const infoContent = `
                     <div style="font-family: sans-serif; font-size: 13px; line-height: 1.4; padding: 5px;">
-                        <h6 style="margin: 0 0 5px 0; color: #dc3545; font-weight: bold;"><i class="fas fa-flag-checkered me-1"></i>Fin del Viaje</h6>
-                        <strong>Fecha/Hora:</strong> ${fechaFinDisplay}<br>
-                        <strong>Lat/Lng:</strong> ${destLatLng.lat().toFixed(5)}, ${destLatLng.lng().toFixed(5)}
+                        <h6 style="margin: 0 0 5px 0; color: #007bff; font-weight: bold;"><i class="fas fa-map-marker-alt me-1"></i>Punto de Rastreo <span class="${labelClass}">${labelType}</span></h6>
+                        <strong>Fecha/Hora:</strong> ${coord.registrado_en || 'S/N'}<br>
+                        <strong>Distancia recorrida:</strong> ${accumulatedDistances[globalIdx].toFixed(1)} km<br>
+                        <strong>Lat/Lng:</strong> ${parseFloat(coord.latitud).toFixed(5)}, ${parseFloat(coord.longitud).toFixed(5)}
                     </div>
                 `;
-                marker.addListener('click', () => {
+                dotMarker.addListener('click', () => {
                     infoWindow.setContent(infoContent);
-                    infoWindow.open(googleMapInstance, marker);
+                    infoWindow.open(googleMapInstance, dotMarker);
                 });
 
                 timelineItems.push({
-                    title: isFinalizado ? 'Fin (Viaje Finalizado - App Móvil)' : 'Fin (Siguiente Carga)',
-                    time: fechaFinDisplay,
-                    lat: destLatLng.lat(),
-                    lng: destLatLng.lng(),
-                    badgeClass: 'bg-danger',
-                    iconClass: 'fa-flag-checkered'
+                    title: `Ruta (${accumulatedDistances[globalIdx].toFixed(1)} km) <span class="${labelClass}" style="font-size:10px;">${labelType}</span>`,
+                    time: coord.registrado_en || 'S/N',
+                    lat: pos.lat,
+                    lng: pos.lng,
+                    badgeClass: globalIdx === deliveryIdx ? 'bg-dark' : (globalIdx < deliveryIdx ? 'bg-info' : 'bg-secondary'),
+                    iconClass: 'fa-map-pin'
                 });
             }
 
-            // 4. Renderizar Línea de Tiempo
-            if (timelineItems.length > 0) {
-                let html = '<div class="list-group list-group-flush">';
-                timelineItems.forEach((item, index) => {
-                    html += `
-                        <a href="javascript:void(0);" class="list-group-item list-group-item-action py-3 lh-sm item-timeline-map" data-lat="${item.lat}" data-lng="${item.lng}" data-index="${index}">
-                            <div class="d-flex w-100 align-items-center justify-content-between mb-1">
-                                <strong class="mb-0 text-dark"><span class="badge ${item.badgeClass} me-2"><i class="fas ${item.iconClass}"></i></span>${item.title}</strong>
-                                <small class="text-muted font-weight-bold" style="font-size: 11px;">${item.time}</small>
-                            </div>
-                            <div class="small text-muted ps-4" style="font-size: 11px;">
-                                Coord: <strong>${item.lat.toFixed(5)}, ${item.lng.toFixed(5)}</strong>
-                            </div>
-                        </a>
-                    `;
-                });
-                html += '</div>';
-                timelineDiv.innerHTML = html;
-
-                document.querySelectorAll('.item-timeline-map').forEach(el => {
-                    el.addEventListener('click', function() {
-                        const lat = parseFloat(this.getAttribute('data-lat'));
-                        const lng = parseFloat(this.getAttribute('data-lng'));
-                        const idx = parseInt(this.getAttribute('data-index'));
-                        
-                        const pos = new google.maps.LatLng(lat, lng);
-                        googleMapInstance.setCenter(pos);
-                        googleMapInstance.setZoom(13);
-
-                        const marker = mapMarkers[idx];
-                        if (marker) {
-                            google.maps.event.trigger(marker, 'click');
-                        }
-                    });
-                });
-            } else {
-                timelineDiv.innerHTML = '<p class="text-muted text-center my-4">No hay puntos de rastreo registrados.</p>';
-            }
-
-            // 5. Trazar Ruta por Carretera (Directions API)
-            if (originLatLng && destLatLng) {
-                let waypoints = [];
-                if (rowData.coordenadas_ruta && rowData.coordenadas_ruta.length > 2) {
-                    let rawIntermediates = rowData.coordenadas_ruta.slice(1, -1);
-                    let step = 1;
-                    if (rawIntermediates.length > 21) {
-                        step = rawIntermediates.length / 21;
-                    }
-                    for (let i = 0; i < 21 && i * step < rawIntermediates.length; i++) {
-                        let idx = Math.floor(i * step);
-                        let pt = rawIntermediates[idx];
-                        waypoints.push({
-                            location: new google.maps.LatLng(parseFloat(pt.latitud), parseFloat(pt.longitud)),
-                            stopover: false
-                        });
-                    }
-                }
-
-                const directionsService = new google.maps.DirectionsService();
-                const directionsRenderer = new google.maps.DirectionsRenderer({
+            // Diesel refueling event marker
+            if (idx === dieselInsertIdx && rowData.diesel_lat && rowData.diesel_lng) {
+                const dieselLatLng = new google.maps.LatLng(parseFloat(rowData.diesel_lat), parseFloat(rowData.diesel_lng));
+                const dieselMarker = new google.maps.Marker({
+                    position: dieselLatLng,
                     map: googleMapInstance,
-                    suppressMarkers: true,
-                    polylineOptions: {
-                        strokeColor: '#007bff',
-                        strokeOpacity: 0.8,
-                        strokeWeight: 5
-                    }
+                    title: `Carga de Diésel (A ${accumulatedDistances[globalIdx].toFixed(1)} km del inicio)`,
+                    icon: 'https://maps.google.com/mapfiles/ms/icons/orange-dot.png'
                 });
-                directionsRenderers.push(directionsRenderer);
+                mapMarkers.push(dieselMarker);
 
-                directionsService.route({
-                    origin: originLatLng,
-                    destination: destLatLng,
-                    waypoints: waypoints,
-                    optimizeWaypoints: false,
-                    travelMode: google.maps.TravelMode.DRIVING
-                }, function(response, status) {
-                    if (status === 'OK') {
-                        directionsRenderer.setDirections(response);
-                    } else {
-                        console.warn('Directions API failed (' + status + '). Fallback to polyline.');
-                        trazarPolylineDirecta(rowData);
-                    }
+                const dieselInfoContent = `
+                    <div style="font-family: sans-serif; font-size: 13px; line-height: 1.4; padding: 5px;">
+                        <h6 style="margin: 0 0 5px 0; color: #fd7e14; font-weight: bold;"><i class="fas fa-gas-pump me-1"></i>Carga de Diésel <span class="${labelClass}">${labelType}</span></h6>
+                        <strong>Aprox. Recorrido:</strong> ${accumulatedDistances[globalIdx].toFixed(1)} km<br>
+                        <strong>Lat/Lng:</strong> ${dieselLatLng.lat().toFixed(5)}, ${dieselLatLng.lng().toFixed(5)}
+                    </div>
+                `;
+                dieselMarker.addListener('click', () => {
+                    infoWindow.setContent(dieselInfoContent);
+                    infoWindow.open(googleMapInstance, dieselMarker);
                 });
-            } else {
-                trazarPolylineDirecta(rowData);
+
+                timelineItems.push({
+                    title: `Carga de Diésel (${accumulatedDistances[globalIdx].toFixed(1)} km) <span class="${labelClass}" style="font-size:10px;">${labelType}</span>`,
+                    time: coord.registrado_en || 'S/N',
+                    lat: dieselLatLng.lat(),
+                    lng: dieselLatLng.lng(),
+                    badgeClass: 'bg-warning text-dark',
+                    iconClass: 'fa-gas-pump'
+                });
+            }
+        });
+
+        // Destination marker
+        if (destLatLng) {
+            let destTitle = tramo === 'ida' ? "Punto de Entrega (Destino)" : "Fin del viaje (Retorno Lázaro)";
+            let destTimelineTitle = tramo === 'ida' ? "Punto de Entrega (Destino)" : "Fin (Retorno Lázaro)";
+            const marker = new google.maps.Marker({
+                position: destLatLng,
+                map: googleMapInstance,
+                title: destTitle,
+                icon: tramo === 'ida' ? 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png' : 'https://maps.google.com/mapfiles/ms/icons/red-dot.png'
+            });
+            mapMarkers.push(marker);
+            bounds.extend(destLatLng);
+
+            let fechaFinDisplay = 'S/N';
+            if (tramo === 'ida' && deliveryIdx !== -1) {
+                fechaFinDisplay = fullRuta[deliveryIdx].registrado_en || 'S/N';
+            } else if (rowData.viaje_finalizado_lat && rowData.viaje_finalizado_lng) {
+                fechaFinDisplay = rowData.viaje_finalizado_fecha || 'S/N';
+            } else if (filteredRuta.length > 0) {
+                fechaFinDisplay = filteredRuta[filteredRuta.length - 1].registrado_en || 'S/N';
             }
 
-            function trazarPolylineDirecta(data) {
-                const pathCoordinates = [];
-                if (originLatLng) pathCoordinates.push(originLatLng);
-                if (data.coordenadas_ruta && data.coordenadas_ruta.length > 0) {
-                    data.coordenadas_ruta.forEach(c => {
-                        pathCoordinates.push({ lat: parseFloat(c.latitud), lng: parseFloat(c.longitud) });
+            const destInfoContent = `
+                <div style="font-family: sans-serif; font-size: 13px; line-height: 1.4; padding: 5px;">
+                    <h6 style="margin: 0 0 5px 0; color: #dc3545; font-weight: bold;"><i class="fas fa-flag-checkered me-1"></i>${destTitle}</h6>
+                    <strong>Fecha/Hora:</strong> ${fechaFinDisplay}<br>
+                    <strong>Lat/Lng:</strong> ${destLatLng.lat().toFixed(6)}, ${destLatLng.lng().toFixed(6)}
+                </div>
+            `;
+            marker.addListener('click', () => {
+                infoWindow.setContent(destInfoContent);
+                infoWindow.open(googleMapInstance, marker);
+            });
+
+            timelineItems.push({
+                title: destTimelineTitle,
+                time: fechaFinDisplay,
+                lat: destLatLng.lat(),
+                lng: destLatLng.lng(),
+                badgeClass: tramo === 'ida' ? 'bg-primary' : 'bg-danger',
+                iconClass: 'fa-flag-checkered'
+            });
+        }
+
+        // Draw path using Directions Service (Route by road)
+        function trazarRutaCarretera(origin, dest, pts, color) {
+            let waypoints = [];
+            if (pts && pts.length > 2) {
+                let rawIntermediates = pts.slice(1, -1);
+                let step = 1;
+                if (rawIntermediates.length > 21) {
+                    step = rawIntermediates.length / 21;
+                }
+                for (let i = 0; i < 21 && i * step < rawIntermediates.length; i++) {
+                    let idx = Math.floor(i * step);
+                    let pt = rawIntermediates[idx];
+                    waypoints.push({
+                        location: new google.maps.LatLng(parseFloat(pt.latitud), parseFloat(pt.longitud)),
+                        stopover: false
                     });
                 }
-                if (destLatLng) pathCoordinates.push(destLatLng);
+            }
 
-                if (pathCoordinates.length > 0) {
-                    mapPathPolyline = new google.maps.Polyline({
-                        path: pathCoordinates,
-                        geodesic: true,
-                        strokeColor: '#dc3545',
-                        strokeOpacity: 0.8,
-                        strokeWeight: 4,
-                        map: googleMapInstance
-                    });
+            const directionsService = new google.maps.DirectionsService();
+            const directionsRenderer = new google.maps.DirectionsRenderer({
+                map: googleMapInstance,
+                suppressMarkers: true,
+                polylineOptions: {
+                    strokeColor: color,
+                    strokeOpacity: 0.8,
+                    strokeWeight: 5
                 }
-            }
+            });
+            directionsRenderers.push(directionsRenderer);
 
-            if (!bounds.isEmpty()) {
-                googleMapInstance.fitBounds(bounds);
-            } else {
-                googleMapInstance.setCenter(defaultCenter);
-                googleMapInstance.setZoom(6);
+            directionsService.route({
+                origin: origin,
+                destination: dest,
+                waypoints: waypoints,
+                optimizeWaypoints: false,
+                travelMode: google.maps.TravelMode.DRIVING
+            }, function(response, status) {
+                if (status === 'OK') {
+                    directionsRenderer.setDirections(response);
+                } else {
+                    console.warn('Directions API failed (' + status + '). Fallback to polyline.');
+                    trazarPolylineDirecta(origin, dest, pts, color);
+                }
+            });
+        }
+
+        function trazarPolylineDirecta(origin, dest, pts, color) {
+            const pathCoordinates = [];
+            if (origin) pathCoordinates.push(origin);
+            if (pts && pts.length > 0) {
+                pts.forEach(c => {
+                    pathCoordinates.push({ lat: parseFloat(c.latitud), lng: parseFloat(c.longitud) });
+                });
             }
-        }, 300);
+            if (dest) pathCoordinates.push(dest);
+
+            if (pathCoordinates.length > 0) {
+                const poly = new google.maps.Polyline({
+                    path: pathCoordinates,
+                    geodesic: true,
+                    strokeColor: color,
+                    strokeOpacity: 0.8,
+                    strokeWeight: 4,
+                    map: googleMapInstance
+                });
+            }
+        }
+
+        // Trigger road-based routing depending on segment selection
+        if (tramo === 'todos' && deliveryIdx !== -1) {
+            let rutaIda = fullRuta.slice(0, deliveryIdx + 1);
+            let rutaRegreso = fullRuta.slice(deliveryIdx);
+            
+            let oIda = new google.maps.LatLng(parseFloat(rutaIda[0].latitud), parseFloat(rutaIda[0].longitud));
+            let dIda = new google.maps.LatLng(parseFloat(rutaIda[rutaIda.length - 1].latitud), parseFloat(rutaIda[rutaIda.length - 1].longitud));
+            
+            let oRegreso = new google.maps.LatLng(parseFloat(rutaRegreso[0].latitud), parseFloat(rutaRegreso[0].longitud));
+            let dRegreso = new google.maps.LatLng(parseFloat(rutaRegreso[rutaRegreso.length - 1].latitud), parseFloat(rutaRegreso[rutaRegreso.length - 1].longitud));
+
+            trazarRutaCarretera(oIda, dIda, rutaIda, '#007bff'); // Blue for Ida
+            trazarRutaCarretera(oRegreso, dRegreso, rutaRegreso, '#dc3545'); // Red/Orange for Regreso
+        } else {
+            if (originLatLng && destLatLng) {
+                trazarRutaCarretera(originLatLng, destLatLng, filteredRuta, tramo === 'ida' ? '#007bff' : '#dc3545');
+            }
+        }
+
+        // Render Timeline
+        if (timelineItems.length > 0) {
+            let html = '<div class="list-group list-group-flush">';
+            timelineItems.forEach((item, index) => {
+                html += `
+                    <a href="javascript:void(0);" class="list-group-item list-group-item-action py-2 lh-sm item-timeline-map" data-lat="${item.lat}" data-lng="${item.lng}" data-index="${index}" style="font-size: 11.5px;">
+                        <div class="d-flex w-100 flex-column mb-1">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <strong class="mb-0 text-dark" style="font-size: 11.5px;"><span class="badge ${item.badgeClass} me-2"><i class="fas ${item.iconClass}"></i></span>${item.title}</strong>
+                                <small class="text-muted font-weight-bold" style="font-size: 10px;">${item.time}</small>
+                            </div>
+                        </div>
+                        <div class="text-muted ps-4" style="font-size: 10.5px; margin-top: 2px;">
+                            <i class="fas fa-map-marker-alt me-1"></i>Coord: <strong>${item.lat.toFixed(6)}, ${item.lng.toFixed(6)}</strong>
+                        </div>
+                    </a>
+                `;
+            });
+            html += '</div>';
+            timelineDiv.innerHTML = html;
+
+            document.querySelectorAll('.item-timeline-map').forEach(el => {
+                el.addEventListener('click', function() {
+                    const lat = parseFloat(this.getAttribute('data-lat'));
+                    const lng = parseFloat(this.getAttribute('data-lng'));
+                    if (googleMapInstance) {
+                        googleMapInstance.setCenter({ lat, lng });
+                        googleMapInstance.setZoom(14);
+                    }
+                });
+            });
+        }
+
+        if (!bounds.isEmpty()) {
+            googleMapInstance.fitBounds(bounds);
+        } else {
+            googleMapInstance.setCenter(defaultCenter);
+            googleMapInstance.setZoom(6);
+        }
     }
 
     function updateGridHeaders() {

@@ -262,15 +262,19 @@ class GpsCompanyController extends Controller
 
 
 
-        if (!$token) {
-            return response()->json([
-                "Titulo"   => "Credenciales incorrectas",
-                "Mensaje"  => "No se pudo validar el acceso al proveedor GPS ,".   $mensajeError,
-                "TMensaje" => "warning",
+         if (!$token) {
+             $detalles = $mensajeError ? ' ' . $mensajeError : '';
+             if (isset($resp) && is_object($resp) && !empty($resp->message)) {
+                 $detalles = ' Detalle: ' . $resp->message;
+             }
+             return response()->json([
+                 "Titulo"   => "Error de validación",
+                 "Mensaje"  => "No se pudo validar el acceso al proveedor GPS." . $detalles,
+                 "TMensaje" => "warning",
                  "resp"    => $token,
-                "r" => $resp
-            ]);
-        }
+                 "r" => $resp
+             ]);
+         }
 
         foreach ($proveedorIds as $proveedorId) {
 
@@ -588,9 +592,13 @@ class GpsCompanyController extends Controller
 
 
             if (!$token) {
+                $msg = 'Credenciales inválidas';
+                if (isset($resp) && is_object($resp) && !empty($resp->message)) {
+                    $msg .= ' o error. Detalle: ' . $resp->message;
+                }
                 return response()->json([
                     'success' => false,
-                    'message' => 'Credenciales inválidas'
+                    'message' => $msg
                 ]);
             }
 

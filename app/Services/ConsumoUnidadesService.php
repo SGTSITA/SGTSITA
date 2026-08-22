@@ -86,28 +86,38 @@ class ConsumoUnidadesService
             $fechaFin = $asignacion->fecha_fin ?? $siguienteAsignacion?->fecha_inicio ?? now();
             $coordenadasRuta = [];
 
+            $kmGoogle = null;
             if (!$refresh && !empty($asignacion->ruta_coordenadas)) {
                 $decoded = json_decode($asignacion->ruta_coordenadas, false);
                 if (is_array($decoded)) {
                     $coordenadasRuta = $decoded;
+                } elseif (is_object($decoded)) {
+                    $coordenadasRuta = $decoded->coordenadas ?? [];
+                    $kmGoogle = $decoded->km_google ?? null;
                 }
             }
 
             if (empty($coordenadasRuta)) {
-                $fechaInicioQuery = ($bitacora && $bitacora->created_at)
-                    ? Carbon::parse($bitacora->created_at)
-                    : Carbon::parse($fechaInicio)->startOfDay();
+                $fechaInicioQuery = ($bitacora && $bitacora->viaje_iniciado)
+                    ? Carbon::parse($bitacora->viaje_iniciado)
+                    : (($bitacora && $bitacora->created_at)
+                        ? Carbon::parse($bitacora->created_at)
+                        : Carbon::parse($fechaInicio)->startOfDay());
 
-                $fechaFinQuery = ($bitacora && $bitacora->viaje_finalizado)
-                    ? Carbon::parse($bitacora->viaje_finalizado)
-                    : Carbon::parse($fechaFin)->endOfDay();
+                $fechaFinQuery = Carbon::parse($fechaFin)->endOfDay();
+                if ($bitacora && $bitacora->viaje_finalizado) {
+                    $viajeFin = Carbon::parse($bitacora->viaje_finalizado);
+                    if ($viajeFin->gt($fechaFinQuery)) {
+                        $fechaFinQuery = $viajeFin;
+                    }
+                }
 
                 $coordenadasRuta = \DB::table('coordenadas_historial')
                     ->where(function ($query) use ($contenedor, $asignacion) {
                         $query->where(function ($q) use ($contenedor) {
                             if ($contenedor) {
                                 $q->where('ubicacionable_id', $contenedor->id)
-                                  ->whereIn('ubicacionable_type', ['rastreo service', 'App\\Models\\DocumCotizacion', 'DocumCotizacion']);
+                                  ->whereIn('ubicacionable_type', ['rastreo service', 'App\\Models\\DocumCotizacion', 'DocumCotizacion', 'Contenedor']);
                             } else {
                                 $q->whereRaw('1 = 0');
                             }
@@ -127,6 +137,19 @@ class ConsumoUnidadesService
                     ->get(['latitud', 'longitud', 'registrado_en'])
                     ->toArray();
 
+                // Calcular distancia real con coordenadas completas antes del downsampling
+                $kmHistorialCalculado = 0.0;
+                if (count($coordenadasRuta) > 1) {
+                    for ($i = 0; $i < count($coordenadasRuta) - 1; $i++) {
+                        $kmHistorialCalculado += $this->calcularDistanciaHaversine(
+                            (float)$coordenadasRuta[$i]->latitud,
+                            (float)$coordenadasRuta[$i]->longitud,
+                            (float)$coordenadasRuta[$i+1]->latitud,
+                            (float)$coordenadasRuta[$i+1]->longitud
+                        );
+                    }
+                }
+
                 $coordenadasRuta = $this->downsampleCoordinates($coordenadasRuta, 100);
 
                 $viajeFinalizado = ($asignacion->fecha_fin !== null) || ($siguienteAsignacion !== null);
@@ -135,6 +158,18 @@ class ConsumoUnidadesService
                     $asignacion->save();
                 }
             } else {
+                // Calcular distancia real con coordenadas completas antes del downsampling
+                $kmHistorialCalculado = 0.0;
+                if (count($coordenadasRuta) > 1) {
+                    for ($i = 0; $i < count($coordenadasRuta) - 1; $i++) {
+                        $kmHistorialCalculado += $this->calcularDistanciaHaversine(
+                            (float)$coordenadasRuta[$i]->latitud,
+                            (float)$coordenadasRuta[$i]->longitud,
+                            (float)$coordenadasRuta[$i+1]->latitud,
+                            (float)$coordenadasRuta[$i+1]->longitud
+                        );
+                    }
+                }
                 $coordenadasRuta = $this->downsampleCoordinates($coordenadasRuta, 100);
             }
 
@@ -150,20 +185,14 @@ class ConsumoUnidadesService
                 if ($cotizacion && $cotizacion->km_recorridos > 0) {
                     $km = (float) $cotizacion->km_recorridos;
                     $esEstimado = false;
-                    $origenKm = 'Captura Manual';
+                    if ($kmGoogle !== null && abs($km - floatval($kmGoogle)) < 0.1) {
+                        $origenKm = 'Guardado desde Mapa';
+                    } else {
+                        $origenKm = 'Captura Manual';
+                    }
                 } else {
                     // 2. Respaldo 1: Ruta por Historial de Coordenadas
-                    $kmHistorial = 0.0;
-                    if (count($coordenadasRuta) > 1) {
-                        for ($i = 0; $i < count($coordenadasRuta) - 1; $i++) {
-                            $kmHistorial += $this->calcularDistanciaHaversine(
-                                (float)$coordenadasRuta[$i]->latitud,
-                                (float)$coordenadasRuta[$i]->longitud,
-                                (float)$coordenadasRuta[$i+1]->latitud,
-                                (float)$coordenadasRuta[$i+1]->longitud
-                            );
-                        }
-                    }
+                    $kmHistorial = $kmHistorialCalculado;
 
                     if ($kmHistorial > 0) {
                         $km = $kmHistorial;
@@ -259,10 +288,14 @@ class ConsumoUnidadesService
 
                         // Intentar obtener ruta histórica guardada o consultar y persistir
                         $coordsSegmento = [];
+                        $kmGoogleSeg = null;
                         if (!$refresh && !empty($asigTemp->ruta_coordenadas)) {
                             $decodedSeg = json_decode($asigTemp->ruta_coordenadas, false);
                             if (is_array($decodedSeg)) {
                                 $coordsSegmento = $decodedSeg;
+                            } elseif (is_object($decodedSeg)) {
+                                $coordsSegmento = $decodedSeg->coordenadas ?? [];
+                                $kmGoogleSeg = $decodedSeg->km_google ?? null;
                             }
                         }
 
@@ -271,20 +304,26 @@ class ConsumoUnidadesService
                             $fInicioTemp = $asigTemp->fecha_inicio;
                             $fFinTemp = $asigTemp->fecha_fin ?? $asigSiguienteTemp?->fecha_inicio ?? now();
 
-                            $fInicioTempQuery = ($bitacoraTemp && $bitacoraTemp->created_at)
-                                ? Carbon::parse($bitacoraTemp->created_at)
-                                : ($fInicioTemp ? Carbon::parse($fInicioTemp)->startOfDay() : null);
+                            $fInicioTempQuery = ($bitacoraTemp && $bitacoraTemp->viaje_iniciado)
+                                ? Carbon::parse($bitacoraTemp->viaje_iniciado)
+                                : (($bitacoraTemp && $bitacoraTemp->created_at)
+                                    ? Carbon::parse($bitacoraTemp->created_at)
+                                    : ($fInicioTemp ? Carbon::parse($fInicioTemp)->startOfDay() : null));
 
-                            $fFinTempQuery = ($bitacoraTemp && $bitacoraTemp->viaje_finalizado)
-                                ? Carbon::parse($bitacoraTemp->viaje_finalizado)
-                                : ($fFinTemp ? Carbon::parse($fFinTemp)->endOfDay() : null);
+                            $fFinTempQuery = $fFinTemp ? Carbon::parse($fFinTemp)->endOfDay() : null;
+                            if ($bitacoraTemp && $bitacoraTemp->viaje_finalizado && $fFinTempQuery) {
+                                $viajeFinTemp = Carbon::parse($bitacoraTemp->viaje_finalizado);
+                                if ($viajeFinTemp->gt($fFinTempQuery)) {
+                                    $fFinTempQuery = $viajeFinTemp;
+                                }
+                            }
 
                             $queryBuilder = \DB::table('coordenadas_historial')
                                 ->where(function ($query) use ($cTemp, $asigTemp) {
                                     $query->where(function ($q) use ($cTemp) {
                                         if ($cTemp) {
                                             $q->where('ubicacionable_id', $cTemp->id)
-                                              ->whereIn('ubicacionable_type', ['rastreo service', 'App\\Models\\DocumCotizacion', 'DocumCotizacion']);
+                                              ->whereIn('ubicacionable_type', ['rastreo service', 'App\\Models\\DocumCotizacion', 'DocumCotizacion', 'Contenedor']);
                                         } else {
                                             $q->whereRaw('1 = 0');
                                         }
@@ -311,6 +350,19 @@ class ConsumoUnidadesService
                                 ->get(['latitud', 'longitud', 'registrado_en'])
                                 ->toArray();
 
+                            // Calcular distancia real con coordenadas completas antes del downsampling
+                            $kmHistSegCalculado = 0.0;
+                            if (count($coordsSegmento) > 1) {
+                                for ($j = 0; $j < count($coordsSegmento) - 1; $j++) {
+                                    $kmHistSegCalculado += $this->calcularDistanciaHaversine(
+                                        (float)$coordsSegmento[$j]->latitud,
+                                        (float)$coordsSegmento[$j]->longitud,
+                                        (float)$coordsSegmento[$j+1]->latitud,
+                                        (float)$coordsSegmento[$j+1]->longitud
+                                    );
+                                }
+                            }
+
                             $coordsSegmento = $this->downsampleCoordinates($coordsSegmento, 100);
 
                             $segFinished = ($asigTemp->fecha_fin !== null) || ($asigSiguienteTemp !== null);
@@ -319,16 +371,11 @@ class ConsumoUnidadesService
                                 $asigTemp->save();
                             }
                         } else {
-                            $coordsSegmento = $this->downsampleCoordinates($coordsSegmento, 100);
-                        }
-
-                        if ($cotiTemp && $cotiTemp->km_recorridos > 0) {
-                            $tripKm = (float) $cotiTemp->km_recorridos;
-                        } else {
-                            $kmHistSeg = 0.0;
+                            // Calcular distancia real con coordenadas completas antes del downsampling
+                            $kmHistSegCalculado = 0.0;
                             if (count($coordsSegmento) > 1) {
                                 for ($j = 0; $j < count($coordsSegmento) - 1; $j++) {
-                                    $kmHistSeg += $this->calcularDistanciaHaversine(
+                                    $kmHistSegCalculado += $this->calcularDistanciaHaversine(
                                         (float)$coordsSegmento[$j]->latitud,
                                         (float)$coordsSegmento[$j]->longitud,
                                         (float)$coordsSegmento[$j+1]->latitud,
@@ -336,6 +383,13 @@ class ConsumoUnidadesService
                                     );
                                 }
                             }
+                            $coordsSegmento = $this->downsampleCoordinates($coordsSegmento, 100);
+                        }
+
+                        if ($cotiTemp && $cotiTemp->km_recorridos > 0) {
+                            $tripKm = (float) $cotiTemp->km_recorridos;
+                        } else {
+                            $kmHistSeg = $kmHistSegCalculado;
 
                             if ($kmHistSeg > 0) {
                                 $tripKm = $kmHistSeg;
@@ -386,7 +440,11 @@ class ConsumoUnidadesService
 
                     if ($cotizacion && $cotizacion->km_recorridos > 0) {
                         $km = (float) $cotizacion->km_recorridos;
-                        $origenKm = 'Captura Manual';
+                        if ($kmGoogleSeg !== null && abs($km - floatval($kmGoogleSeg)) < 0.1) {
+                            $origenKm = 'Guardado desde Mapa';
+                        } else {
+                            $origenKm = 'Captura Manual';
+                        }
                     } else {
                         // 1. Prioridad: Ruta Historial Coordenadas
                         $kmHistorial = 0.0;
@@ -469,6 +527,8 @@ class ConsumoUnidadesService
 
                 'origen' => $cotizacion?->origen ?? 'S/N',
                 'destino' => $cotizacion?->destino ?? 'S/N',
+                'destino_lat' => $cotizacion?->latitud,
+                'destino_lng' => $cotizacion?->longitud,
 
                 'km_recorridos' => round($km, 2),
                 'origen_km' => $origenKm,
@@ -660,24 +720,228 @@ class ConsumoUnidadesService
 
     private function downsampleCoordinates(array $coordinates, int $maxPoints = 100): array
     {
-        $count = count($coordinates);
-        if ($count <= $maxPoints) {
-            return $coordinates;
-        }
+        return $coordinates;
+    }
 
-        $sampled = [];
-        $sampled[] = $coordinates[0]; // Always include the first point
+    public function procesarAsignacionUnica(int $asignacionId, string $tipoConsumo = 'diesel', bool $refresh = false): array
+    {
+        $asignacion = Asignaciones::with([
+            'Contenedor.Cotizacion',
+            'Operador',
+            'Camion',
+            'bitacoraViaje',
+        ])->findOrFail($asignacionId);
 
-        $step = ($count - 1) / ($maxPoints - 1);
-        for ($i = 1; $i < $maxPoints - 1; $i++) {
-            $index = (int) round($i * $step);
-            if ($index > 0 && $index < $count - 1) {
-                $sampled[] = $coordinates[$index];
+        $unidadId = $asignacion->id_camion;
+
+        $filtroPrincipal = function ($q) {
+            $q->where(function ($q2) {
+                $q2->where('jerarquia', '!=', 'Secundario')
+                    ->orWhereNull('jerarquia');
+            });
+        };
+
+        $siguienteAsignacion = Asignaciones::query()
+            ->with([
+                'Contenedor.Cotizacion',
+                'Operador',
+                'Camion',
+                'bitacoraViaje',
+            ])
+            ->where('id_camion', $unidadId)
+            ->whereHas('Contenedor.Cotizacion', $filtroPrincipal)
+            ->where(function ($q) use ($asignacion) {
+                $q->where('fecha_inicio', '>', $asignacion->fecha_inicio)
+                    ->orWhere(function ($q2) use ($asignacion) {
+                        $q2->where('fecha_inicio', $asignacion->fecha_inicio)
+                            ->where('id', '>', $asignacion->id);
+                    });
+            })
+            ->orderBy('fecha_inicio')
+            ->orderBy('id')
+            ->first();
+
+        $contenedor = $asignacion->Contenedor;
+        $cotizacion = $contenedor?->Cotizacion;
+
+        $bitacora = $asignacion->bitacoraViaje;
+        $bitacoraSiguiente = $siguienteAsignacion?->bitacoraViaje;
+        $cotizacionSiguiente = $siguienteAsignacion?->Contenedor?->Cotizacion;
+
+        $fechaInicio = $asignacion->fecha_inicio;
+        $fechaFin = $asignacion->fecha_fin ?? $siguienteAsignacion?->fecha_inicio ?? now();
+        $coordenadasRuta = [];
+        $esHistoricoGuardado = false;
+
+        $kmGoogle = null;
+        if (!$refresh && !empty($asignacion->ruta_coordenadas)) {
+            $decoded = json_decode($asignacion->ruta_coordenadas, false);
+            if (is_array($decoded)) {
+                $coordenadasRuta = $decoded;
+                $esHistoricoGuardado = true;
+            } elseif (is_object($decoded)) {
+                $coordenadasRuta = $decoded->coordenadas ?? [];
+                $kmGoogle = $decoded->km_google ?? null;
+                $esHistoricoGuardado = true;
             }
         }
 
-        $sampled[] = $coordinates[$count - 1]; // Always include the last point
+        if (empty($coordenadasRuta)) {
+            $fechaInicioQuery = ($bitacora && $bitacora->viaje_iniciado)
+                ? Carbon::parse($bitacora->viaje_iniciado)
+                : (($bitacora && $bitacora->created_at)
+                    ? Carbon::parse($bitacora->created_at)
+                    : Carbon::parse($fechaInicio)->startOfDay());
 
-        return $sampled;
+            $fechaFinQuery = Carbon::parse($fechaFin)->endOfDay();
+            if ($bitacora && $bitacora->viaje_finalizado) {
+                $viajeFin = Carbon::parse($bitacora->viaje_finalizado);
+                if ($viajeFin->gt($fechaFinQuery)) {
+                    $fechaFinQuery = $viajeFin;
+                }
+            }
+
+            $coordenadasRuta = \DB::table('coordenadas_historial')
+                ->where(function ($query) use ($contenedor, $asignacion) {
+                    $query->where(function ($q) use ($contenedor) {
+                        if ($contenedor) {
+                            $q->where('ubicacionable_id', $contenedor->id)
+                              ->whereIn('ubicacionable_type', ['rastreo service', 'App\\Models\\DocumCotizacion', 'DocumCotizacion', 'Contenedor']);
+                        } else {
+                            $q->whereRaw('1 = 0');
+                        }
+                    })
+                    ->orWhere(function ($q) use ($asignacion) {
+                        if ($asignacion && $asignacion->id_camion) {
+                            $q->where('ubicacionable_id', $asignacion->id_camion)
+                              ->whereIn('ubicacionable_type', ['App\\Models\\Equipo', 'App\\Models\\Equipos', 'Equipo', 'Equipos', 'OperadorMovil']);
+                        } else {
+                            $q->whereRaw('1 = 0');
+                        }
+                    });
+                })
+                ->where('registrado_en', '>=', $fechaInicioQuery)
+                ->where('registrado_en', '<=', $fechaFinQuery)
+                ->orderBy('registrado_en', 'asc')
+                ->get(['latitud', 'longitud', 'registrado_en'])
+                ->toArray();
+
+            $kmHistorialCalculado = 0.0;
+            if (count($coordenadasRuta) > 1) {
+                for ($i = 0; $i < count($coordenadasRuta) - 1; $i++) {
+                    $kmHistorialCalculado += $this->calcularDistanciaHaversine(
+                        (float)$coordenadasRuta[$i]->latitud,
+                        (float)$coordenadasRuta[$i]->longitud,
+                        (float)$coordenadasRuta[$i+1]->latitud,
+                        (float)$coordenadasRuta[$i+1]->longitud
+                    );
+                }
+            }
+
+            $coordenadasRuta = $this->downsampleCoordinates($coordenadasRuta, 100);
+
+            $viajeFinalizado = ($asignacion->fecha_fin !== null) || ($siguienteAsignacion !== null);
+            if ($viajeFinalizado && !empty($coordenadasRuta)) {
+                $asignacion->ruta_coordenadas = json_encode($coordenadasRuta);
+                $asignacion->save();
+            }
+        } else {
+            $kmHistorialCalculado = 0.0;
+            if (count($coordenadasRuta) > 1) {
+                for ($i = 0; $i < count($coordenadasRuta) - 1; $i++) {
+                    $kmHistorialCalculado += $this->calcularDistanciaHaversine(
+                        (float)$coordenadasRuta[$i]->latitud,
+                        (float)$coordenadasRuta[$i]->longitud,
+                        (float)$coordenadasRuta[$i+1]->latitud,
+                        (float)$coordenadasRuta[$i+1]->longitud
+                    );
+                }
+            }
+            $coordenadasRuta = $this->downsampleCoordinates($coordenadasRuta, 100);
+        }
+
+        $esEstimado = false;
+        $origenKm = 'Sin KM';
+        $litrosCapturadosViaje = 0.0;
+        $litrosCalculoConsumo = 0.0;
+        $observacion = null;
+        $km = 0.0;
+
+        if ($tipoConsumo === 'diesel') {
+            if ($cotizacion && $cotizacion->km_recorridos > 0) {
+                $km = (float) $cotizacion->km_recorridos;
+                $esEstimado = false;
+                if ($kmGoogle !== null && abs($km - floatval($kmGoogle)) < 0.1) {
+                    $origenKm = 'Guardado desde Mapa';
+                } else {
+                    $origenKm = 'Captura Manual';
+                }
+            } else {
+                $kmHistorial = $kmHistorialCalculado;
+                if ($kmHistorial > 0) {
+                    $km = $kmHistorial;
+                    $esEstimado = true;
+                    $origenKm = 'Ruta Historial Coordenadas';
+                }
+                elseif ($bitacora && $bitacora->latitud && $bitacora->longitud && $bitacoraSiguiente && $bitacoraSiguiente->latitud && $bitacoraSiguiente->longitud) {
+                    $kmEstimado = $this->obtenerDistanciaPorCarretera(
+                        $bitacora->latitud,
+                        $bitacora->longitud,
+                        $bitacoraSiguiente->latitud,
+                        $bitacoraSiguiente->longitud
+                    );
+                    if ($kmEstimado > 0) {
+                        $km = $kmEstimado;
+                        $esEstimado = true;
+                        $origenKm = 'Coordenadas Diésel';
+                    }
+                }
+                elseif ($bitacora && $bitacora->odometro > 0 && $bitacoraSiguiente && $bitacoraSiguiente->odometro > 0) {
+                    $kmEstimado = floatval($bitacoraSiguiente->odometro) - floatval($bitacora->odometro);
+                    if ($kmEstimado > 0) {
+                        $km = $kmEstimado;
+                        $esEstimado = false;
+                        $origenKm = 'Diferencia Odómetros';
+                    }
+                }
+                elseif ($bitacora) {
+                    $kmEstimado = $this->calcularDistanciaHaversine(
+                        $bitacora->latitud,
+                        $bitacora->longitud,
+                        $bitacora->latitud_fin,
+                        $bitacora->longitud_fin
+                    );
+                    if ($kmEstimado > 0) {
+                        $km = $kmEstimado;
+                        $esEstimado = true;
+                        $origenKm = 'Estimación Coordenadas';
+                    }
+                }
+            }
+        }
+
+        return [
+            'asignacion_id' => $asignacion->id,
+            'cotizacion_id' => $cotizacion?->id,
+            'contenedor_id' => $contenedor?->id,
+            'peso_contenedor' => $cotizacion?->peso_contenedor ?? 0,
+            'fecha_inicio' => $asignacion->fecha_inicio ? Carbon::parse($asignacion->fecha_inicio)->format('d/m/Y') : 'S/N',
+            'fecha_fin' => $asignacion->fecha_fin ? Carbon::parse($asignacion->fecha_fin)->format('d/m/Y') : 'S/N',
+            'contenedor' => $this->obtenerTextoContenedor($asignacion),
+            'operador' => $asignacion->Operador?->nombre ?? 'S/N',
+            'origen' => $cotizacion?->origen ?? 'S/N',
+            'destino' => $cotizacion?->destino ?? 'S/N',
+            'destino_lat' => $cotizacion?->latitud,
+            'destino_lng' => $cotizacion?->longitud,
+            'km_recorridos' => round($km, 2),
+            'origen_km' => $origenKm,
+            'coordenadas_ruta' => $coordenadasRuta,
+            'es_historico_guardado' => $esHistoricoGuardado,
+            'diesel_lat' => $bitacora?->latitud,
+            'diesel_lng' => $bitacora?->longitud,
+            'viaje_finalizado_lat' => $bitacora?->latitud_fin ?? $bitacoraSiguiente?->latitud,
+            'viaje_finalizado_lng' => $bitacora?->longitud_fin ?? $bitacoraSiguiente?->longitud,
+            'viaje_finalizado_fecha' => $bitacora?->viaje_finalizado,
+        ];
     }
 }
