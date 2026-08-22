@@ -185,10 +185,14 @@ class ConsumoUnidadesService
                 if ($cotizacion && $cotizacion->km_recorridos > 0) {
                     $km = (float) $cotizacion->km_recorridos;
                     $esEstimado = false;
-                    if ($kmGoogle !== null && abs($km - floatval($kmGoogle)) < 0.1) {
-                        $origenKm = 'Guardado desde Mapa';
+                    if ($kmGoogle !== null) {
+                        if (abs($km - floatval($kmGoogle)) < 0.1) {
+                            $origenKm = 'Guardado desde Mapa';
+                        } else {
+                            $origenKm = 'Captura Manual';
+                        }
                     } else {
-                        $origenKm = 'Captura Manual';
+                        $origenKm = !empty($asignacion->ruta_coordenadas) ? 'Guardado desde Mapa' : 'Captura Manual';
                     }
                 } else {
                     // 2. Respaldo 1: Ruta por Historial de Coordenadas
@@ -440,10 +444,14 @@ class ConsumoUnidadesService
 
                     if ($cotizacion && $cotizacion->km_recorridos > 0) {
                         $km = (float) $cotizacion->km_recorridos;
-                        if ($kmGoogleSeg !== null && abs($km - floatval($kmGoogleSeg)) < 0.1) {
-                            $origenKm = 'Guardado desde Mapa';
+                        if ($kmGoogleSeg !== null) {
+                            if (abs($km - floatval($kmGoogleSeg)) < 0.1) {
+                                $origenKm = 'Guardado desde Mapa';
+                            } else {
+                                $origenKm = 'Captura Manual';
+                            }
                         } else {
-                            $origenKm = 'Captura Manual';
+                            $origenKm = !empty($asigTemp->ruta_coordenadas) ? 'Guardado desde Mapa' : 'Captura Manual';
                         }
                     } else {
                         // 1. Prioridad: Ruta Historial Coordenadas
@@ -871,10 +879,14 @@ class ConsumoUnidadesService
             if ($cotizacion && $cotizacion->km_recorridos > 0) {
                 $km = (float) $cotizacion->km_recorridos;
                 $esEstimado = false;
-                if ($kmGoogle !== null && abs($km - floatval($kmGoogle)) < 0.1) {
-                    $origenKm = 'Guardado desde Mapa';
+                if ($kmGoogle !== null) {
+                    if (abs($km - floatval($kmGoogle)) < 0.1) {
+                        $origenKm = 'Guardado desde Mapa';
+                    } else {
+                        $origenKm = 'Captura Manual';
+                    }
                 } else {
-                    $origenKm = 'Captura Manual';
+                    $origenKm = !empty($asignacion->ruta_coordenadas) ? 'Guardado desde Mapa' : 'Captura Manual';
                 }
             } else {
                 $kmHistorial = $kmHistorialCalculado;
