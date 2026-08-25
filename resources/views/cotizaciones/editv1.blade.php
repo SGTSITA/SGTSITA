@@ -216,13 +216,13 @@
 
                                         <div class="col-6 form-group">
                                             <!--label for="name">Cliente *</label>
-                                                                                                                                                                                                                                                                                                                                                <select class="form-select cliente d-inline-block" data-toggle="select" id="id_cliente" name="id_cliente">
-                                                                                                                                                                                                                                                                                                                                                    <option value="{{ $cotizacion->id_cliente }}">{{ $cotizacion->Cliente->nombre }} / {{ $cotizacion->Cliente->telefono }}</option>
-                                                                                                                                                                                                                                                                                                                                                    @foreach ($clientes as $item)
+                                                                                                                                                                                                                                                                                                                                                    <select class="form-select cliente d-inline-block" data-toggle="select" id="id_cliente" name="id_cliente">
+                                                                                                                                                                                                                                                                                                                                                        <option value="{{ $cotizacion->id_cliente }}">{{ $cotizacion->Cliente->nombre }} / {{ $cotizacion->Cliente->telefono }}</option>
+                                                                                                                                                                                                                                                                                                                                                        @foreach ($clientes as $item)
     <option value="{{ $item->id }}">{{ $item->nombre }} / {{ $item->telefono }}</option>
     @endforeach
 
-                                                                                                                                                                                                                                                                                                                                                </select-->
+                                                                                                                                                                                                                                                                                                                                                    </select-->
                                             <ul class="list-group">
                                                 <li
                                                     class="list-group-item border-1 border-dashed d-flex p-4 mb-2 bg-gray-100 border-radius-lg">
@@ -263,14 +263,14 @@
 
                                         <div class="col-6 form-group">
                                             <!--label for="name">Subcliente *</label>
-                                                                                                                                                                                                                                                                                                                                                <select class="form-select subcliente d-inline-block" id="id_subcliente" name="id_subcliente">
+                                                                                                                                                                                                                                                                                                                                                    <select class="form-select subcliente d-inline-block" id="id_subcliente" name="id_subcliente">
 
-                                                                                                                                                                                                                                                                                                @if ($cotizacion->id_subcliente != null)
+                                                                                                                                                                                                                                                                                                    @if ($cotizacion->id_subcliente != null)
     <option value="{{ $cotizacion->id_subcliente }}">{{ $cotizacion->Subcliente->nombre }} / {{ $cotizacion->Subcliente->telefono }}</option>
 @else
     <option value="">Seleccionar subcliente</option>
     @endif
-                                                                                                                                                                                                                                                                                                                                                </select-->
+                                                                                                                                                                                                                                                                                                                                                    </select-->
                                             <ul class="list-group">
                                                 <li
                                                     class="list-group-item border-1 border-dashed d-flex p-4 mb-2 bg-gray-100 border-radius-lg">
@@ -762,15 +762,21 @@
                                             <div class="card-body p-3">
                                                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
                                                     <div>
-                                                        <h6 class="mb-0 text-sm font-weight-bold">Reporte de Validación de Documentos</h6>
-                                                        <p class="text-xs text-secondary mb-0">Genera un PDF con el estado, nombres de archivo y folios de los documentos cargados.</p>
+                                                        <h6 class="mb-0 text-sm font-weight-bold">Reporte de Validación de
+                                                            Documentos</h6>
+                                                        <p class="text-xs text-secondary mb-0">Genera un PDF con el estado,
+                                                            nombres de archivo y folios de los documentos cargados.</p>
                                                     </div>
                                                     <div class="d-flex align-items-center gap-4">
                                                         <div class="form-check form-switch mb-0">
-                                                            <input class="form-check-input cursor-pointer" type="checkbox" id="incluirAuditoriaDocs" name="incluir_auditoria_docs">
-                                                            <label class="form-check-label mb-0 text-xs font-weight-bold cursor-pointer" for="incluirAuditoriaDocs">Incluir Auditoría</label>
+                                                            <input class="form-check-input cursor-pointer" type="checkbox"
+                                                                id="incluirAuditoriaDocs" name="incluir_auditoria_docs">
+                                                            <label
+                                                                class="form-check-label mb-0 text-xs font-weight-bold cursor-pointer"
+                                                                for="incluirAuditoriaDocs">Incluir Auditoría</label>
                                                         </div>
-                                                        <button type="button" id="btnGenerarPDFValidacionDocs" class="btn btn-danger btn-sm mb-0 d-flex align-items-center gap-2">
+                                                        <button type="button" id="btnGenerarPDFValidacionDocs"
+                                                            class="btn btn-danger btn-sm mb-0 d-flex align-items-center gap-2">
                                                             <i class="fas fa-file-pdf"></i> Generar PDF
                                                         </button>
                                                     </div>
@@ -1305,9 +1311,11 @@
                                                                         id="img-Comprobante-Pago-PDF" />
                                                                 </div>
                                                                 <div class="d-flex flex-column justify-content-center">
-                                                                    <h6 class="mb-0 text-sm">Comprobante de pago PDF</h6>
-                                                                    <p class="text-sm font-weight-bold text-secondary mb-0">
-                                                                        <span class="text-muted" id="filSize-Comprobante-Pago-PDF">0</span>
+                                                                    <h6 class="mb-0 text-sm">Complemento de pago PDF</h6>
+                                                                    <p
+                                                                        class="text-sm font-weight-bold text-secondary mb-0">
+                                                                        <span class="text-muted"
+                                                                            id="filSize-Comprobante-Pago-PDF">0</span>
                                                                     </p>
                                                                 </div>
                                                             </div>
@@ -1322,7 +1330,8 @@
                                                             </p>
                                                         </td>
                                                         <td class="align-middle text-end">
-                                                            <div class="d-flex px-3 py-1 justify-content-center align-items-center">
+                                                            <div
+                                                                class="d-flex px-3 py-1 justify-content-center align-items-center">
                                                                 @can('upload-docum-compagopdf')
                                                                     <button type="button"
                                                                         class="btn btn-sm btn-icon-only btnDocs btn-rounded btn-outline-secondary mb-0 ms-2 btn-sm d-flex align-items-center justify-content-center ms-3"
@@ -1354,9 +1363,11 @@
                                                                         id="img-Comprobante-Pago-XML" />
                                                                 </div>
                                                                 <div class="d-flex flex-column justify-content-center">
-                                                                    <h6 class="mb-0 text-sm">Comprobante de pago XML</h6>
-                                                                    <p class="text-sm font-weight-bold text-secondary mb-0">
-                                                                        <span class="text-muted" id="filSize-Comprobante-Pago-XML">0</span>
+                                                                    <h6 class="mb-0 text-sm">Complemento de pago XML</h6>
+                                                                    <p
+                                                                        class="text-sm font-weight-bold text-secondary mb-0">
+                                                                        <span class="text-muted"
+                                                                            id="filSize-Comprobante-Pago-XML">0</span>
                                                                     </p>
                                                                 </div>
                                                             </div>
@@ -1371,7 +1382,8 @@
                                                             </p>
                                                         </td>
                                                         <td class="align-middle text-end">
-                                                            <div class="d-flex px-3 py-1 justify-content-center align-items-center">
+                                                            <div
+                                                                class="d-flex px-3 py-1 justify-content-center align-items-center">
                                                                 @can('upload-docum-compagoxml')
                                                                     <button type="button"
                                                                         class="btn btn-sm btn-icon-only btnDocs btn-rounded btn-outline-secondary mb-0 ms-2 btn-sm d-flex align-items-center justify-content-center ms-3"
@@ -1399,8 +1411,9 @@
                                     @can('DocsoperadorSGT')
                                         @if ($documentacion && $documentacion->num_contenedor != null)
                                             <div class="card mt-5">
-                                                <div class="card-header collapsible cursor-pointer" data-bs-toggle="collapse"
-                                                    data-bs-target="#kt_card_operator_files" aria-expanded="true">
+                                                <div class="card-header collapsible cursor-pointer"
+                                                    data-bs-toggle="collapse" data-bs-target="#kt_card_operator_files"
+                                                    aria-expanded="true">
                                                     <h3 class="card-title">Otros documentos o evidencias de viaje (Subidos por
                                                         Operador)</h3>
                                                 </div>
@@ -1858,13 +1871,20 @@
                                                                     </div>
 
                                                                     @php
-                                                                        $bitacora = $documentacion?->Asignaciones?->bitacoraViaje;
+                                                                        $bitacora =
+                                                                            $documentacion?->Asignaciones
+                                                                                ?->bitacoraViaje;
                                                                     @endphp
 
                                                                     @if ($bitacora)
                                                                         <div class="text-center mt-2 pt-2 border-top">
-                                                                            <a class="btn btn-sm btn-light-info text-info fw-bold w-100 mb-0 py-1" data-bs-toggle="collapse" href="#collapseAppEvidencia" role="button" aria-expanded="false" aria-controls="collapseAppEvidencia">
-                                                                                <i class="fas fa-mobile-alt me-1 fs-6"></i> Ver Evidencias de la App
+                                                                            <a class="btn btn-sm btn-light-info text-info fw-bold w-100 mb-0 py-1"
+                                                                                data-bs-toggle="collapse"
+                                                                                href="#collapseAppEvidencia" role="button"
+                                                                                aria-expanded="false"
+                                                                                aria-controls="collapseAppEvidencia">
+                                                                                <i class="fas fa-mobile-alt me-1 fs-6"></i>
+                                                                                Ver Evidencias de la App
                                                                             </a>
                                                                         </div>
 
@@ -1874,34 +1894,68 @@
                                                                                     <!-- 1. Carga Diésel -->
                                                                                     @if ($bitacora->litros || $bitacora->costo || $bitacora->comprobante)
                                                                                         <div class="col-md-6 col-12">
-                                                                                            <div class="p-2 border rounded bg-light">
-                                                                                                <div class="d-flex justify-content-between align-items-center mb-1">
-                                                                                                    <span class="badge bg-gradient-success">Carga Diésel</span>
+                                                                                            <div
+                                                                                                class="p-2 border rounded bg-light">
+                                                                                                <div
+                                                                                                    class="d-flex justify-content-between align-items-center mb-1">
+                                                                                                    <span
+                                                                                                        class="badge bg-gradient-success">Carga
+                                                                                                        Diésel</span>
                                                                                                     @php
-                                                                                                        $fechaDieselVal = $bitacora->fecha_carga_diesel ?? $bitacora->created_at;
+                                                                                                        $fechaDieselVal =
+                                                                                                            $bitacora->fecha_carga_diesel ??
+                                                                                                            $bitacora->created_at;
                                                                                                     @endphp
-                                                                                                    <small class="text-muted"><i class="far fa-clock"></i> {{ $fechaDieselVal ? \Carbon\Carbon::parse($fechaDieselVal)->format('d/m/Y H:i') : 'S/N' }}</small>
+                                                                                                    <small
+                                                                                                        class="text-muted"><i
+                                                                                                            class="far fa-clock"></i>
+                                                                                                        {{ $fechaDieselVal ? \Carbon\Carbon::parse($fechaDieselVal)->format('d/m/Y H:i') : 'S/N' }}</small>
                                                                                                 </div>
                                                                                                 @if ($bitacora->litros)
-                                                                                                    <span class="small text-dark d-block">Litros: <strong>{{ number_format($bitacora->litros, 3) }} L</strong></span>
+                                                                                                    <span
+                                                                                                        class="small text-dark d-block">Litros:
+                                                                                                        <strong>{{ number_format($bitacora->litros, 3) }}
+                                                                                                            L</strong></span>
                                                                                                 @endif
                                                                                                 @if ($bitacora->costo)
-                                                                                                    <span class="small text-dark d-block">Importe: <strong>${{ number_format($bitacora->costo, 2) }}</strong></span>
+                                                                                                    <span
+                                                                                                        class="small text-dark d-block">Importe:
+                                                                                                        <strong>${{ number_format($bitacora->costo, 2) }}</strong></span>
                                                                                                 @endif
                                                                                                 @if ($bitacora->odometro)
-                                                                                                    <span class="small text-dark d-block">Odómetro: <strong>{{ $bitacora->odometro }} KM</strong></span>
+                                                                                                    <span
+                                                                                                        class="small text-dark d-block">Odómetro:
+                                                                                                        <strong>{{ $bitacora->odometro }}
+                                                                                                            KM</strong></span>
                                                                                                 @endif
                                                                                                 @if ($bitacora->comprobante)
                                                                                                     @php
-                                                                                                        $dieselFiles = json_decode($bitacora->comprobante, true);
-                                                                                                        if (json_last_error() !== JSON_ERROR_NONE || !is_array($dieselFiles)) {
-                                                                                                            $dieselFiles = [$bitacora->comprobante];
+                                                                                                        $dieselFiles = json_decode(
+                                                                                                            $bitacora->comprobante,
+                                                                                                            true,
+                                                                                                        );
+                                                                                                        if (
+                                                                                                            json_last_error() !==
+                                                                                                                JSON_ERROR_NONE ||
+                                                                                                            !is_array(
+                                                                                                                $dieselFiles,
+                                                                                                            )
+                                                                                                        ) {
+                                                                                                            $dieselFiles = [
+                                                                                                                $bitacora->comprobante,
+                                                                                                            ];
                                                                                                         }
                                                                                                     @endphp
-                                                                                                    <div class="d-flex flex-wrap gap-1 mt-1 align-items-center">
-                                                                                                        @foreach($dieselFiles as $idx => $file)
-                                                                                                            <a href="{{ asset($file) }}" target="_blank" class="d-inline-flex align-items-center me-2">
-                                                                                                                <img src="{{ asset($file) }}" alt="Comprobante Diésel {{ $idx + 1 }}" class="rounded border shadow-sm" style="height: 35px; width: 60px; object-fit: cover;">
+                                                                                                    <div
+                                                                                                        class="d-flex flex-wrap gap-1 mt-1 align-items-center">
+                                                                                                        @foreach ($dieselFiles as $idx => $file)
+                                                                                                            <a href="{{ asset($file) }}"
+                                                                                                                target="_blank"
+                                                                                                                class="d-inline-flex align-items-center me-2">
+                                                                                                                <img src="{{ asset($file) }}"
+                                                                                                                    alt="Comprobante Diésel {{ $idx + 1 }}"
+                                                                                                                    class="rounded border shadow-sm"
+                                                                                                                    style="height: 35px; width: 60px; object-fit: cover;">
                                                                                                             </a>
                                                                                                         @endforeach
                                                                                                     </div>
@@ -1913,31 +1967,63 @@
                                                                                     <!-- 2. Carga Urea -->
                                                                                     @if ($bitacora->litros_urea || $bitacora->costo_urea || $bitacora->comprobante_urea)
                                                                                         <div class="col-md-6 col-12">
-                                                                                            <div class="p-2 border rounded bg-light">
-                                                                                                <div class="d-flex justify-content-between align-items-center mb-1">
-                                                                                                    <span class="badge bg-gradient-info">Carga Urea</span>
+                                                                                            <div
+                                                                                                class="p-2 border rounded bg-light">
+                                                                                                <div
+                                                                                                    class="d-flex justify-content-between align-items-center mb-1">
+                                                                                                    <span
+                                                                                                        class="badge bg-gradient-info">Carga
+                                                                                                        Urea</span>
                                                                                                     @php
-                                                                                                        $fechaUreaVal = $bitacora->fecha_carga_urea ?? $bitacora->updated_at ?? $bitacora->created_at;
+                                                                                                        $fechaUreaVal =
+                                                                                                            $bitacora->fecha_carga_urea ??
+                                                                                                            ($bitacora->updated_at ??
+                                                                                                                $bitacora->created_at);
                                                                                                     @endphp
-                                                                                                    <small class="text-muted"><i class="far fa-clock"></i> {{ $fechaUreaVal ? \Carbon\Carbon::parse($fechaUreaVal)->format('d/m/Y H:i') : 'S/N' }}</small>
+                                                                                                    <small
+                                                                                                        class="text-muted"><i
+                                                                                                            class="far fa-clock"></i>
+                                                                                                        {{ $fechaUreaVal ? \Carbon\Carbon::parse($fechaUreaVal)->format('d/m/Y H:i') : 'S/N' }}</small>
                                                                                                 </div>
                                                                                                 @if ($bitacora->litros_urea)
-                                                                                                    <span class="small text-dark d-block">Litros: <strong>{{ number_format($bitacora->litros_urea, 3) }} L</strong></span>
+                                                                                                    <span
+                                                                                                        class="small text-dark d-block">Litros:
+                                                                                                        <strong>{{ number_format($bitacora->litros_urea, 3) }}
+                                                                                                            L</strong></span>
                                                                                                 @endif
                                                                                                 @if ($bitacora->costo_urea)
-                                                                                                    <span class="small text-dark d-block">Importe: <strong>${{ number_format($bitacora->costo_urea, 2) }}</strong></span>
+                                                                                                    <span
+                                                                                                        class="small text-dark d-block">Importe:
+                                                                                                        <strong>${{ number_format($bitacora->costo_urea, 2) }}</strong></span>
                                                                                                 @endif
                                                                                                 @if ($bitacora->comprobante_urea)
                                                                                                     @php
-                                                                                                        $ureaFiles = json_decode($bitacora->comprobante_urea, true);
-                                                                                                        if (json_last_error() !== JSON_ERROR_NONE || !is_array($ureaFiles)) {
-                                                                                                            $ureaFiles = [$bitacora->comprobante_urea];
+                                                                                                        $ureaFiles = json_decode(
+                                                                                                            $bitacora->comprobante_urea,
+                                                                                                            true,
+                                                                                                        );
+                                                                                                        if (
+                                                                                                            json_last_error() !==
+                                                                                                                JSON_ERROR_NONE ||
+                                                                                                            !is_array(
+                                                                                                                $ureaFiles,
+                                                                                                            )
+                                                                                                        ) {
+                                                                                                            $ureaFiles = [
+                                                                                                                $bitacora->comprobante_urea,
+                                                                                                            ];
                                                                                                         }
                                                                                                     @endphp
-                                                                                                    <div class="d-flex flex-wrap gap-1 mt-1 align-items-center">
-                                                                                                        @foreach($ureaFiles as $idx => $file)
-                                                                                                            <a href="{{ asset($file) }}" target="_blank" class="d-inline-flex align-items-center me-2">
-                                                                                                                <img src="{{ asset($file) }}" alt="Comprobante Urea {{ $idx + 1 }}" class="rounded border shadow-sm" style="height: 35px; width: 60px; object-fit: cover;">
+                                                                                                    <div
+                                                                                                        class="d-flex flex-wrap gap-1 mt-1 align-items-center">
+                                                                                                        @foreach ($ureaFiles as $idx => $file)
+                                                                                                            <a href="{{ asset($file) }}"
+                                                                                                                target="_blank"
+                                                                                                                class="d-inline-flex align-items-center me-2">
+                                                                                                                <img src="{{ asset($file) }}"
+                                                                                                                    alt="Comprobante Urea {{ $idx + 1 }}"
+                                                                                                                    class="rounded border shadow-sm"
+                                                                                                                    style="height: 35px; width: 60px; object-fit: cover;">
                                                                                                             </a>
                                                                                                         @endforeach
                                                                                                     </div>
@@ -1949,23 +2035,52 @@
                                                                                     <!-- 3. Iniciar Viaje -->
                                                                                     @if ($bitacora->viaje_iniciado || $bitacora->fotos_carga)
                                                                                         <div class="col-md-6 col-12">
-                                                                                            <div class="p-2 border rounded bg-light">
-                                                                                                <div class="d-flex justify-content-between align-items-center mb-1">
-                                                                                                    <span class="badge bg-gradient-primary">Iniciar Viaje</span>
-                                                                                                    <small class="text-muted"><i class="far fa-clock"></i> {{ $bitacora->viaje_iniciado ? \Carbon\Carbon::parse($bitacora->viaje_iniciado)->format('d/m/Y H:i') : 'S/N' }}</small>
+                                                                                            <div
+                                                                                                class="p-2 border rounded bg-light">
+                                                                                                <div
+                                                                                                    class="d-flex justify-content-between align-items-center mb-1">
+                                                                                                    <span
+                                                                                                        class="badge bg-gradient-primary">Iniciar
+                                                                                                        Viaje</span>
+                                                                                                    <small
+                                                                                                        class="text-muted"><i
+                                                                                                            class="far fa-clock"></i>
+                                                                                                        {{ $bitacora->viaje_iniciado ? \Carbon\Carbon::parse($bitacora->viaje_iniciado)->format('d/m/Y H:i') : 'S/N' }}</small>
                                                                                                 </div>
-                                                                                                <span class="small text-dark d-block">Estado: <strong>Viaje Iniciado</strong></span>
+                                                                                                <span
+                                                                                                    class="small text-dark d-block">Estado:
+                                                                                                    <strong>Viaje
+                                                                                                        Iniciado</strong></span>
                                                                                                 @if ($bitacora->fotos_carga)
                                                                                                     @php
-                                                                                                        $fotosCarga = json_decode($bitacora->fotos_carga, true);
-                                                                                                        if (json_last_error() !== JSON_ERROR_NONE || !is_array($fotosCarga)) {
-                                                                                                            $fotosCarga = $bitacora->fotos_carga ? [$bitacora->fotos_carga] : [];
+                                                                                                        $fotosCarga = json_decode(
+                                                                                                            $bitacora->fotos_carga,
+                                                                                                            true,
+                                                                                                        );
+                                                                                                        if (
+                                                                                                            json_last_error() !==
+                                                                                                                JSON_ERROR_NONE ||
+                                                                                                            !is_array(
+                                                                                                                $fotosCarga,
+                                                                                                            )
+                                                                                                        ) {
+                                                                                                            $fotosCarga = $bitacora->fotos_carga
+                                                                                                                ? [
+                                                                                                                    $bitacora->fotos_carga,
+                                                                                                                ]
+                                                                                                                : [];
                                                                                                         }
                                                                                                     @endphp
-                                                                                                    <div class="d-flex flex-wrap gap-1 mt-1 align-items-center">
-                                                                                                        @foreach($fotosCarga as $idx => $file)
-                                                                                                            <a href="{{ asset($file) }}" target="_blank" class="d-inline-flex align-items-center me-2">
-                                                                                                                <img src="{{ asset($file) }}" alt="Foto Carga {{ $idx + 1 }}" class="rounded border shadow-sm" style="height: 35px; width: 60px; object-fit: cover;">
+                                                                                                    <div
+                                                                                                        class="d-flex flex-wrap gap-1 mt-1 align-items-center">
+                                                                                                        @foreach ($fotosCarga as $idx => $file)
+                                                                                                            <a href="{{ asset($file) }}"
+                                                                                                                target="_blank"
+                                                                                                                class="d-inline-flex align-items-center me-2">
+                                                                                                                <img src="{{ asset($file) }}"
+                                                                                                                    alt="Foto Carga {{ $idx + 1 }}"
+                                                                                                                    class="rounded border shadow-sm"
+                                                                                                                    style="height: 35px; width: 60px; object-fit: cover;">
                                                                                                             </a>
                                                                                                         @endforeach
                                                                                                     </div>
@@ -1977,23 +2092,52 @@
                                                                                     <!-- 4. Concluir Viaje -->
                                                                                     @if ($bitacora->viaje_finalizado || $bitacora->fotos_fin)
                                                                                         <div class="col-md-6 col-12">
-                                                                                            <div class="p-2 border rounded bg-light">
-                                                                                                <div class="d-flex justify-content-between align-items-center mb-1">
-                                                                                                    <span class="badge bg-gradient-danger">Concluir Viaje</span>
-                                                                                                    <small class="text-muted"><i class="far fa-clock"></i> {{ $bitacora->viaje_finalizado ? \Carbon\Carbon::parse($bitacora->viaje_finalizado)->format('d/m/Y H:i') : 'S/N' }}</small>
+                                                                                            <div
+                                                                                                class="p-2 border rounded bg-light">
+                                                                                                <div
+                                                                                                    class="d-flex justify-content-between align-items-center mb-1">
+                                                                                                    <span
+                                                                                                        class="badge bg-gradient-danger">Concluir
+                                                                                                        Viaje</span>
+                                                                                                    <small
+                                                                                                        class="text-muted"><i
+                                                                                                            class="far fa-clock"></i>
+                                                                                                        {{ $bitacora->viaje_finalizado ? \Carbon\Carbon::parse($bitacora->viaje_finalizado)->format('d/m/Y H:i') : 'S/N' }}</small>
                                                                                                 </div>
-                                                                                                <span class="small text-dark d-block">Estado: <strong>Viaje Concluido</strong></span>
+                                                                                                <span
+                                                                                                    class="small text-dark d-block">Estado:
+                                                                                                    <strong>Viaje
+                                                                                                        Concluido</strong></span>
                                                                                                 @if ($bitacora->fotos_fin)
                                                                                                     @php
-                                                                                                        $fotosFin = json_decode($bitacora->fotos_fin, true);
-                                                                                                        if (json_last_error() !== JSON_ERROR_NONE || !is_array($fotosFin)) {
-                                                                                                            $fotosFin = $bitacora->fotos_fin ? [$bitacora->fotos_fin] : [];
+                                                                                                        $fotosFin = json_decode(
+                                                                                                            $bitacora->fotos_fin,
+                                                                                                            true,
+                                                                                                        );
+                                                                                                        if (
+                                                                                                            json_last_error() !==
+                                                                                                                JSON_ERROR_NONE ||
+                                                                                                            !is_array(
+                                                                                                                $fotosFin,
+                                                                                                            )
+                                                                                                        ) {
+                                                                                                            $fotosFin = $bitacora->fotos_fin
+                                                                                                                ? [
+                                                                                                                    $bitacora->fotos_fin,
+                                                                                                                ]
+                                                                                                                : [];
                                                                                                         }
                                                                                                     @endphp
-                                                                                                    <div class="d-flex flex-wrap gap-1 mt-1 align-items-center">
-                                                                                                        @foreach($fotosFin as $idx => $file)
-                                                                                                            <a href="{{ asset($file) }}" target="_blank" class="d-inline-flex align-items-center me-2">
-                                                                                                                <img src="{{ asset($file) }}" alt="Foto Fin {{ $idx + 1 }}" class="rounded border shadow-sm" style="height: 35px; width: 60px; object-fit: cover;">
+                                                                                                    <div
+                                                                                                        class="d-flex flex-wrap gap-1 mt-1 align-items-center">
+                                                                                                        @foreach ($fotosFin as $idx => $file)
+                                                                                                            <a href="{{ asset($file) }}"
+                                                                                                                target="_blank"
+                                                                                                                class="d-inline-flex align-items-center me-2">
+                                                                                                                <img src="{{ asset($file) }}"
+                                                                                                                    alt="Foto Fin {{ $idx + 1 }}"
+                                                                                                                    class="rounded border shadow-sm"
+                                                                                                                    style="height: 35px; width: 60px; object-fit: cover;">
                                                                                                             </a>
                                                                                                         @endforeach
                                                                                                     </div>
@@ -2461,14 +2605,17 @@
             });
 
             @can('generar-pdf-validacion-docs')
-            let btnGenerarPDF = document.getElementById('btnGenerarPDFValidacionDocs');
-            if (btnGenerarPDF) {
-                btnGenerarPDF.addEventListener('click', function() {
-                    let incluirAuditoria = document.getElementById('incluirAuditoriaDocs').checked ? 1 : 0;
-                    let url = "{{ route('cotizaciones.pdf-validacion-docs', $cotizacion->id) }}?incluir_auditoria=" + incluirAuditoria;
-                    window.open(url, '_blank');
-                });
-            }
+                let btnGenerarPDF = document.getElementById('btnGenerarPDFValidacionDocs');
+                if (btnGenerarPDF) {
+                    btnGenerarPDF.addEventListener('click', function() {
+                        let incluirAuditoria = document.getElementById('incluirAuditoriaDocs').checked ? 1 :
+                            0;
+                        let url =
+                            "{{ route('cotizaciones.pdf-validacion-docs', $cotizacion->id) }}?incluir_auditoria=" +
+                            incluirAuditoria;
+                        window.open(url, '_blank');
+                    });
+                }
             @endcan
         });
     </script>

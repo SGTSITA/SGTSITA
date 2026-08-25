@@ -42,12 +42,12 @@ var [
     },
     {
         opcion: "ComprobantePagoPDF",
-        titulo: "Comprobante de pago PDF",
+        titulo: "Complemento de pago PDF",
         agGrid: "ComprobantePagoPDF",
     },
     {
         opcion: "ComprobantePagoXML",
-        titulo: "Comprobante de pago XML",
+        titulo: "Complemento de pago XML",
         agGrid: "ComprobantePagoXML",
     },
 ];
@@ -138,20 +138,28 @@ function goToUploadDocuments() {
     let labelTitleDoc = document.querySelector("#labelTitleDoc");
     labelTitleDoc.textContent = fileSettings.titulo;
 
-    let allowedFileTypesLabel = document.querySelector("#allowedFileTypesLabel");
+    let allowedFileTypesLabel = document.querySelector(
+        "#allowedFileTypesLabel",
+    );
     if (allowedFileTypesLabel) {
         let titleUpper = fileSettings.titulo.toUpperCase();
         let opcionUpper = fileSettings.opcion.toUpperCase();
-        
+
         if (titleUpper.includes("PDF") || opcionUpper.includes("PDF")) {
-            allowedFileTypesLabel.textContent = "Formatos permitidos: PDF únicamente";
-            allowedFileTypesLabel.className = "badge bg-light-danger text-danger fs-7";
+            allowedFileTypesLabel.textContent =
+                "Formatos permitidos: PDF únicamente";
+            allowedFileTypesLabel.className =
+                "badge bg-light-danger text-danger fs-7";
         } else if (titleUpper.includes("XML") || opcionUpper.includes("XML")) {
-            allowedFileTypesLabel.textContent = "Formatos permitidos: XML únicamente";
-            allowedFileTypesLabel.className = "badge bg-light-danger text-danger fs-7";
+            allowedFileTypesLabel.textContent =
+                "Formatos permitidos: XML únicamente";
+            allowedFileTypesLabel.className =
+                "badge bg-light-danger text-danger fs-7";
         } else {
-            allowedFileTypesLabel.textContent = "Formatos permitidos: PDF, Imágenes, Excel, Word";
-            allowedFileTypesLabel.className = "badge bg-light-success text-success fs-7";
+            allowedFileTypesLabel.textContent =
+                "Formatos permitidos: PDF, Imágenes, Excel, Word";
+            allowedFileTypesLabel.className =
+                "badge bg-light-success text-success fs-7";
         }
     }
 
