@@ -628,9 +628,9 @@ class GpsCompanyController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'Error interno al configurar GPS',
+                'message' => $e->getMessage(),
                 'erradmin' => $e->getMessage()
-            ], 500);
+            ], 200);
         }
     }
 

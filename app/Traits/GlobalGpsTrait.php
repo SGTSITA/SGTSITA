@@ -50,7 +50,7 @@ public static function getManyByCredentialGroups(array $gruposGlobal): array
     if (!empty($authPendientes)) {
         foreach ($authPendientes as $index => $auth) {
             $lockKey = 'gps:globalgps:lock:' . md5($auth['apiid'] . '|' . $auth['key']);
-            
+
             // Si otra petición ya está logueando este grupo, esperamos hasta 5 segundos (10 intentos de 0.5s)
             $attempts = 0;
             while (\Cache::has($lockKey) && $attempts < 10) {
@@ -79,8 +79,8 @@ public static function getManyByCredentialGroups(array $gruposGlobal): array
                     ])
                     ->asJson()
                     ->acceptJson()
-                    ->connectTimeout(5)
-                    ->timeout(10)
+                    ->connectTimeout(10)
+                    ->timeout(20)
                     ->post($endpointAuth, [
                         'appid'     => $auth['apiid'],
                         'time'      => $timestamp,
@@ -183,7 +183,7 @@ public static function getManyByCredentialGroups(array $gruposGlobal): array
                         'Accept' => 'application/json',
                     ])
                     ->connectTimeout(3)
-                    ->timeout(9)
+                    ->timeout(20)
                     ->get($endpointLocation, [
                         'imei' => $info['imei'],
                     ]);
@@ -310,7 +310,7 @@ foreach ($locationPendientes as $requestKey => $info) {
                 'Accept' => 'application/json',
             ])
             ->connectTimeout(10)
-            ->timeout(15)
+            ->timeout(20)
             ->get($endpoint, [
                 'imei' => $imei,
             ]);
@@ -434,8 +434,8 @@ public static function getAccessToken($apikey, $idUs, bool $forceRefresh = false
         ])
         ->asJson()
         ->acceptJson()
-        ->connectTimeout(5)
-        ->timeout(10)
+        ->connectTimeout(10)
+        ->timeout(25)
         ->retry(1, 300)
         ->post($endpoint, [
             'appid'     => $apiid,
@@ -447,13 +447,19 @@ public static function getAccessToken($apikey, $idUs, bool $forceRefresh = false
         return $response->json('accessToken');
     }
 
+    $errorBody = $response->json();
+    $errorMessage = 'No se pudo obtener el token Global GPS';
+    if (isset($errorBody['code']) && $errorBody['code'] == 10004) {
+        $errorMessage = 'Credenciales de GPS inválidas (AppID o AppKey incorrectos)';
+    }
+
     Log::error('GLOBAL GPS AUTH ERROR', [
         'status' => $response->status(),
         'body'   => $response->body(),
         'appid'  => $apiid,
     ]);
 
-    throw new \Exception('No se pudo obtener el token Global GPS');
+    throw new \Exception($errorMessage);
 }
 public static function getDeviceRealTimeLocation($imei, $apikey, $idUs)
 {
@@ -557,7 +563,7 @@ private static function getStoredToken(string $cacheKey): ?string
     if (\Cache::has($cacheKey)) {
         return \Cache::get($cacheKey);
     }
-    
+
     $filePath = storage_path('app/gps_tokens.json');
     if (file_exists($filePath)) {
         $data = json_decode(file_get_contents($filePath), true);
@@ -575,7 +581,7 @@ private static function getStoredToken(string $cacheKey): ?string
 private static function storeToken(string $cacheKey, string $token): void
 {
     \Cache::put($cacheKey, $token, now()->addMinutes(115));
-    
+
     $filePath = storage_path('app/gps_tokens.json');
     $data = [];
     if (file_exists($filePath)) {
@@ -584,12 +590,12 @@ private static function storeToken(string $cacheKey, string $token): void
             $data = [];
         }
     }
-    
+
     $data[$cacheKey] = [
         'token' => $token,
         'expires_at' => time() + (115 * 60)
     ];
-    
+
     file_put_contents($filePath, json_encode($data));
     @chmod($filePath, 0666);
 }
