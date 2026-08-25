@@ -1294,6 +1294,104 @@
                                                             </div>
                                                         </td>
                                                     </tr>
+
+                                                    {{-- Comprobante de pago PDF --}}
+                                                    <tr>
+                                                        <td>
+                                                            <div class="d-flex px-3 py-1">
+                                                                <div>
+                                                                    <img src="{{ asset('img/not-file.png') }}"
+                                                                        class="avatar me-3" alt="image"
+                                                                        id="img-Comprobante-Pago-PDF" />
+                                                                </div>
+                                                                <div class="d-flex flex-column justify-content-center">
+                                                                    <h6 class="mb-0 text-sm">Comprobante de pago PDF</h6>
+                                                                    <p class="text-sm font-weight-bold text-secondary mb-0">
+                                                                        <span class="text-muted" id="filSize-Comprobante-Pago-PDF">0</span>
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        <td></td>
+                                                        <td class="align-middle text-center text-sm">
+                                                            <p class="text-sm font-weight-bold mb-0">
+                                                                <span class="badge bg-gradient-warning badge-sm"
+                                                                    id="badge-Comprobante-Pago-PDF">
+                                                                    Pendiente
+                                                                </span>
+                                                            </p>
+                                                        </td>
+                                                        <td class="align-middle text-end">
+                                                            <div class="d-flex px-3 py-1 justify-content-center align-items-center">
+                                                                @can('upload-docum-compagopdf')
+                                                                    <button type="button"
+                                                                        class="btn btn-sm btn-icon-only btnDocs btn-rounded btn-outline-secondary mb-0 ms-2 btn-sm d-flex align-items-center justify-content-center ms-3"
+                                                                        data-bs-toggle="tooltip" id="btnFileCompPagoPDF"
+                                                                        data-bs-placement="bottom" title="Cargar archivo"
+                                                                        data-bs-original-title="Cargar archivo">
+                                                                        <i class="fas fa-upload" aria-hidden="true"></i>
+                                                                    </button>
+                                                                @endcan
+                                                                <a href="javascript:void(0)" target="_blank"
+                                                                    class="openFile btn btn-sm btn-icon-only btn-rounded btn-outline-secondary mb-0 ms-2 btn-sm d-flex align-items-center justify-content-center ms-3"
+                                                                    data-bs-toggle="tooltip" data-bs-placement="bottom"
+                                                                    title="Ver Documento"
+                                                                    data-bs-original-title="Ver Documento"
+                                                                    id="btn-ver-Comprobante-Pago-PDF">
+                                                                    <i class="fas fa-eye" aria-hidden="true"></i>
+                                                                </a>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+
+                                                    {{-- Comprobante de pago XML --}}
+                                                    <tr>
+                                                        <td>
+                                                            <div class="d-flex px-3 py-1">
+                                                                <div>
+                                                                    <img src="{{ asset('img/not-file.png') }}"
+                                                                        class="avatar me-3" alt="image"
+                                                                        id="img-Comprobante-Pago-XML" />
+                                                                </div>
+                                                                <div class="d-flex flex-column justify-content-center">
+                                                                    <h6 class="mb-0 text-sm">Comprobante de pago XML</h6>
+                                                                    <p class="text-sm font-weight-bold text-secondary mb-0">
+                                                                        <span class="text-muted" id="filSize-Comprobante-Pago-XML">0</span>
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        <td></td>
+                                                        <td class="align-middle text-center text-sm">
+                                                            <p class="text-sm font-weight-bold mb-0">
+                                                                <span class="badge bg-gradient-warning badge-sm"
+                                                                    id="badge-Comprobante-Pago-XML">
+                                                                    Pendiente
+                                                                </span>
+                                                            </p>
+                                                        </td>
+                                                        <td class="align-middle text-end">
+                                                            <div class="d-flex px-3 py-1 justify-content-center align-items-center">
+                                                                @can('upload-docum-compagoxml')
+                                                                    <button type="button"
+                                                                        class="btn btn-sm btn-icon-only btnDocs btn-rounded btn-outline-secondary mb-0 ms-2 btn-sm d-flex align-items-center justify-content-center ms-3"
+                                                                        data-bs-toggle="tooltip" id="btnFileCompPagoXML"
+                                                                        data-bs-placement="bottom" title="Cargar archivo"
+                                                                        data-bs-original-title="Cargar archivo">
+                                                                        <i class="fas fa-upload" aria-hidden="true"></i>
+                                                                    </button>
+                                                                @endcan
+                                                                <a href="javascript:void(0)" target="_blank"
+                                                                    class="openFile btn btn-sm btn-icon-only btn-rounded btn-outline-secondary mb-0 ms-2 btn-sm d-flex align-items-center justify-content-center ms-3"
+                                                                    data-bs-toggle="tooltip" data-bs-placement="bottom"
+                                                                    title="Ver Documento"
+                                                                    data-bs-original-title="Ver Documento"
+                                                                    id="btn-ver-Comprobante-Pago-XML">
+                                                                    <i class="fas fa-eye" aria-hidden="true"></i>
+                                                                </a>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
                                                 </tbody>
                                             </table>
                                         </div>

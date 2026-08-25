@@ -225,6 +225,14 @@
                                 </select>
                             </div>
                         </div>
+                        <div class="mb-3">
+                            <label for="id_proveedor" class="form-label fw-semibold">Línea de transporte / Proveedor (opcional)</label>
+                            <div class="input-group">
+                                <select class="form-select border-start-0" id="id_proveedor" name="id_proveedor">
+                                    <option value="">Ninguno</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="modal-footer border-top-0 pt-3">
@@ -362,6 +370,34 @@
             flatpickr(".dateInput", {
                 dateFormat: "d/m/Y",
                 locale: "es"
+            });
+
+            // Cargar proveedores al cambiar empresa en modalCambioEmpresa
+            $('#modalCambioEmpresa #id_empresa').on('change', function() {
+                var proveedor = $(this).val();
+                var _token = $('meta[name="csrf-token"]').attr("content");
+                var selectProveedor = $('#modalCambioEmpresa #id_proveedor');
+
+                if (!proveedor) {
+                    selectProveedor.html('<option value="">Ninguno</option>');
+                    return;
+                }
+
+                $.ajax({
+                    type: "post",
+                    url: "/mec/transportistas/list",
+                    data: { proveedor: proveedor, _token: _token },
+                    success: function(response) {
+                        selectProveedor.empty();
+                        selectProveedor.append(new Option("Ninguno", ""));
+                        response.forEach(function(opcion) {
+                            selectProveedor.append(new Option(opcion.nombre, opcion.id));
+                        });
+                    },
+                    error: function() {
+                        selectProveedor.html('<option value="">Ninguno</option>');
+                    }
+                });
             });
 
             @can('mep-asignacion-unidad')

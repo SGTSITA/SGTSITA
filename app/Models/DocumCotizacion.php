@@ -46,7 +46,11 @@ class DocumCotizacion extends Model
      'pedimento_recibido_at',
 
      'evidencia_descarga',
-     'fecha_evidencia_descarga'
+     'fecha_evidencia_descarga',
+     'comprobante_pago_pdf',
+     'comprobante_pago_xml',
+     'comprobante_pago_pdf_at',
+     'comprobante_pago_xml_at'
 ];
 
     public function Cotizacion()

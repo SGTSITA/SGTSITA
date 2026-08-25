@@ -1550,6 +1550,20 @@ else{
                 'columna' => 'evidencia_descarga'
             ],
             [
+                'tipo' => 'Comprobante de pago PDF',
+                'archivo' => $documentacion->comprobante_pago_pdf ?? null,
+                'folio' => $documentacion->comprobante_pago_pdf_at ?? null,
+                'tabla' => 'docum_cotizacion',
+                'columna' => 'comprobante_pago_pdf'
+            ],
+            [
+                'tipo' => 'Comprobante de pago XML',
+                'archivo' => $documentacion->comprobante_pago_xml ?? null,
+                'folio' => $documentacion->comprobante_pago_xml_at ?? null,
+                'tabla' => 'docum_cotizacion',
+                'columna' => 'comprobante_pago_xml'
+            ],
+            [
                 'tipo' => 'Boleta Patio',
                 'archivo' => $documentacion->boleta_patio ?? null,
                 'folio' => $documentacion->fecha_boleta_patio ?? null,
@@ -1627,6 +1641,8 @@ else{
                 'fecha_eir' => 'EIR (Folio/Fecha)',
                 'evidencia_descarga' => 'Evidencia Descarga',
                 'fecha_evidencia_descarga' => 'Evidencia Descarga (Folio/Fecha)',
+                'comprobante_pago_pdf' => 'Comprobante de pago PDF',
+                'comprobante_pago_xml' => 'Comprobante de pago XML',
                 'boleta_patio' => 'Boleta Patio',
                 'fecha_boleta_patio' => 'Boleta Patio (Folio/Fecha)',
                 'num_contenedor' => 'Número de Contenedor',
@@ -3528,6 +3544,18 @@ $this->procesarDocumento(
                 case 'EvidenciaDescarga':  
                     $update = ["evidencia_descarga" => $item['name']];
                     break;
+                case 'ComprobantePagoPDF':
+                    $update = [
+                        "comprobante_pago_pdf" => $item['name'],
+                        "comprobante_pago_pdf_at" => Carbon::now()
+                    ];
+                    break;
+                case 'ComprobantePagoXML':
+                    $update = [
+                        "comprobante_pago_xml" => $item['name'],
+                        "comprobante_pago_xml_at" => Carbon::now()
+                    ];
+                    break;
             }
 
             Log::channel('daily')->info('Datos preparados para actualización en la base de datos:', [
@@ -3747,11 +3775,65 @@ $urlDocumento = asset("cotizaciones/cotizacion{$id_cot}/{$nameArchivo}");
 
     public function cambiar_empresa(Request $request, $id)
     {
-        // Obtener la cotización actual
-        $cotizacion = DB::table('cotizaciones')->where('id', $id)->first();
-        $doc = DocumCotizacion::where('id_cotizacion', $id)->first();
+        // Obtener la cotización actual usando Eloquent
+        $cotizacion = Cotizaciones::find($id);
+        if (!$cotizacion) {
+            return redirect()->back()->with('error', 'Cotización no encontrada.');
+        }
 
+        $doc = DocumCotizacion::where('id_cotizacion', $id)->first();
         $idEmpresa = $request->get('id_empresa');
+        $idProveedor = $request->get('id_proveedor') ?: null;
+
+        // Si existe asignación para este contenedor, se debe deshacer y eliminar por completo
+        if ($doc) {
+            $asignacion = Asignaciones::where('id_contenedor', '=', $doc->id)->first();
+            if ($asignacion) {
+                // Cancelar movimientos bancarios si existen
+                if (!is_null($asignacion->id_operador) && !is_null($asignacion->id_banco1_dinero_viaje)) {
+                    $movimientoBanco = $this->BancosService->findMovimiento($asignacion->id, \App\Models\Asignaciones::class, $asignacion->id_banco1_dinero_viaje);
+                    if ($movimientoBanco) {
+                        $this->BancosService->cancelarMovimiento($asignacion->id_banco1_dinero_viaje, $movimientoBanco->id, $movimientoBanco->fecha_movimiento);
+                    }
+                }
+
+                // Validar si hay gastos operador unificados y eliminarlos, cancelando movimientos bancarios si aplica
+                $gastosUnified = \App\Models\Gasto::where('origen_legacy', 'like', 'asignacion_planeacion%')
+                    ->where('origen_legacy_id', $asignacion->id)
+                    ->get();
+
+                foreach ($gastosUnified as $g) {
+                    foreach ($g->pagos as $pago) {
+                        if ($pago->estatus !== 'cancelado') {
+                            $movimientoBancoGasto = $this->BancosService->findMovimiento($g->id, \App\Models\Gasto::class, $pago->cuenta_bancaria_id);
+                            if ($movimientoBancoGasto) {
+                                $this->BancosService->cancelarMovimiento($pago->cuenta_bancaria_id, $movimientoBancoGasto->id, $movimientoBancoGasto->fecha_movimiento);
+                            }
+                            $pago->update(['estatus' => 'cancelado']);
+                        }
+                    }
+                    $g->vinculos()->delete();
+                    $g->imputaciones()->delete();
+                    $g->delete();
+                }
+
+                // Eliminar gastos operador, coordenadas vinculadas y la asignación
+                \App\Models\GastosOperadores::withoutGlobalScope('no_eliminados')->where('id_asignacion', $asignacion->id)->delete();
+                Coordenadas::where('id_asignacion', $asignacion->id)->delete();
+                
+                // Eliminar asignación usando Eloquent para disparar el observador de auditoría
+                $asignacion->delete();
+
+                // Eliminar dineros de contenedor y viáticos vinculados
+                \App\Models\DineroContenedor::where('id_contenedor', $doc->id)->delete();
+                \App\Models\ViaticosOperador::where('id_cotizacion', $cotizacion->id)->delete();
+            }
+        }
+
+        // Restablecer estatus de planeación
+        $cotizacion->estatus = 'Aprobada';
+        $cotizacion->estatus_planeacion = 0;
+        $cotizacion->save();
 
         $clientEmpresa = ClientEmpresa::where('id_client', $cotizacion->id_cliente)->where('id_empresa', $idEmpresa);
         if (!$clientEmpresa->exists()) {
@@ -3761,9 +3843,8 @@ $urlDocumento = asset("cotizaciones/cotizacion{$id_cot}/{$nameArchivo}");
             ]);
         }
 
-        if ($doc->num_contenedor != null) {
+        if ($doc && $doc->num_contenedor != null) {
             $numContenedor = $doc->num_contenedor;
-
 
             $contenedorExistente = DocumCotizacion::where('num_contenedor', $numContenedor)
                                                 ->where('id_empresa', $idEmpresa)
@@ -3774,164 +3855,17 @@ $urlDocumento = asset("cotizaciones/cotizacion{$id_cot}/{$nameArchivo}");
             }
         }
 
-        // Obtener el id_cliente actual de la empresa anterior
-        /*  $idClienteAnterior = DB::table('clients')
-              ->where('id', $cotizacion->id_cliente)
-              ->value('id');
-
-          // Obtener el correo del cliente anterior
-          $correoCliente = DB::table('clients')
-              ->where('id', $idClienteAnterior)
-              ->value('correo');
-
-          // Verificar si hay un cliente con el mismo correo en la nueva empresa
-          $nuevoIdEmpresa = $request->get('id_empresa');
-          $nuevoIdCliente = DB::table('clients')
-              ->where('correo', $correoCliente)
-              ->where('id_empresa', $nuevoIdEmpresa)
-              ->value('id');
-
-          if($cotizacion->id_subcliente != NULL){
-              // Obtener el id_subcliente actual de la empresa anterior
-              $idSubClienteAnterior = DB::table('subclientes')
-              ->where('id', $cotizacion->id_subcliente)
-              ->value('id');
-
-              // Obtener el correo del cliente anterior
-              $correoSubCliente = DB::table('subclientes')
-              ->where('id', $idSubClienteAnterior)
-              ->value('correo');
-
-              // Verificar si hay un cliente con el mismo correo en la nueva empresa
-              $nuevoIdSubCliente = DB::table('subclientes')
-                  ->where('correo', $correoSubCliente)
-                  ->where('id_empresa', $nuevoIdEmpresa)
-                  ->value('id');
-
-              if ($nuevoIdSubCliente) {
-
-              } else {
-                  return redirect()->route('index.cotizaciones')
-                      ->with('error', 'No tiene SubCliente con el mismo correo a la empresa que quiere cambiar');
-              }
-          }else{
-              $nuevoIdSubCliente = NULL;
-          }*/
-
-        $contenedor = DocumCotizacion::where('id_cotizacion', '=', $cotizacion->id)->first();
-        $nuevoIdEmpresa = $request->get('id_empresa');
-        if ($contenedor) {
-            $asignacionExiste = Asignaciones::where('id_contenedor', '=', $contenedor->id)->exists();
-
-            if ($asignacionExiste) {
-                // Obtener la asignación correspondiente
-                $asignacion = Asignaciones::where('id_contenedor', '=', $contenedor->id)->first();
-
-                // Obtener los datos necesarios del request
-
-
-                // Verificar si id_operador es null y actualizar id_proveedor
-                if (is_null($asignacion->id_operador)) {
-                    // Obtener el id_proveedor actual
-                    $idProveedorAnterior = $asignacion->id_proveedor;
-
-                    // Obtener el correo del proveedor anterior
-                    $correoProveedor = DB::table('proveedores')
-                        ->where('id', $idProveedorAnterior)
-                        ->value('correo');
-
-                    // Buscar el nuevo id_proveedor en la nueva empresa
-                    $nuevoIdProveedor = DB::table('proveedores')
-                        ->where('correo', $correoProveedor)
-                        ->where('id_empresa', $nuevoIdEmpresa)
-                        ->value('id');
-
-                    if ($nuevoIdProveedor) {
-                        // Actualizar id_proveedor y id_empresa
-                        DB::table('asignaciones')
-                            ->where('id_contenedor', '=', $contenedor->id)
-                            ->update([
-                                'id_empresa' => $nuevoIdEmpresa,
-                                'id_proveedor' => $nuevoIdProveedor
-                            ]);
-                    } else {
-                        $ProveedorAnterior = DB::table('proveedores')
-                        ->where('id', $idProveedorAnterior)
-                        ->first();
-
-                        $proveedor = new Proveedor();
-                        $proveedor->nombre = $ProveedorAnterior->nombre;
-                        $proveedor->correo = $ProveedorAnterior->correo;
-                        $proveedor->telefono = $ProveedorAnterior->telefono;
-                        $proveedor->id_empresa = $request->get('id_empresa');
-                        $proveedor->save();
-
-                        DB::table('asignaciones')
-                        ->where('id_contenedor', '=', $contenedor->id)
-                        ->update([
-                            'id_empresa' => $nuevoIdEmpresa,
-                            'id_proveedor' => $proveedor->id
-                        ]);
-                    }
-                }
-
-                // Verificar si id_proveedor es null y actualizar id_operador
-                if (is_null($asignacion->id_proveedor)) {
-                    // Obtener el id_operador actual
-                    $idOperadorAnterior = $asignacion->id_operador;
-
-                    // Obtener el correo del operador anterior
-                    $correoOperador = DB::table('operadores')
-                        ->where('id', $idOperadorAnterior)
-                        ->value('correo');
-
-                    // Buscar el nuevo id_operador en la nueva empresa
-                    $nuevoIdOperador = DB::table('operadores')
-                        ->where('correo', $correoOperador)
-                        ->where('id_empresa', $nuevoIdEmpresa)
-                        ->value('id');
-
-                    if ($nuevoIdOperador) {
-                        // Actualizar id_operador y id_empresa
-                        DB::table('asignaciones')
-                            ->where('id_contenedor', '=', $contenedor->id)
-                            ->update([
-                                'id_empresa' => $nuevoIdEmpresa,
-                                'id_operador' => $nuevoIdOperador
-                            ]);
-                    } else {
-                        $OperadorAnterior = DB::table('operadores')
-                        ->where('id', $idOperadorAnterior)
-                        ->first();
-
-                        $proveedor = new Operador();
-                        $proveedor->nombre = $OperadorAnterior->nombre;
-                        $proveedor->correo = $OperadorAnterior->correo;
-                        $proveedor->telefono = $OperadorAnterior->telefono;
-                        $proveedor->id_empresa = $request->get('id_empresa');
-                        $proveedor->save();
-
-                        DB::table('asignaciones')
-                        ->where('id_contenedor', '=', $contenedor->id)
-                        ->update([
-                            'id_empresa' => $nuevoIdEmpresa,
-                            'id_operador' => $proveedor->id
-                        ]);
-                    }
-                }
-            }
-        }
-
-        // Actualizar la cotización con el nuevo id_empresa y id_cliente
-        $cotizaciones = DB::table('cotizaciones')
+        // Actualizar la cotización con el nuevo id_empresa y id_proveedor
+        DB::table('cotizaciones')
         ->where('id', $id)
         ->update([
-            'id_empresa' => $nuevoIdEmpresa
+            'id_empresa' => $idEmpresa,
+            'id_proveedor' => $idProveedor
         ]);
 
         $contenedores = DB::table('docum_cotizacion')
         ->where('id_cotizacion', '=', $cotizacion->id)
-        ->update(['id_empresa' => $request->get('id_empresa')]);
+        ->update(['id_empresa' => $idEmpresa]);
 
         return redirect()->route('index.cotizaciones')
             ->with('success', 'Se ha editado sus datos con exito');

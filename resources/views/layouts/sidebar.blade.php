@@ -461,15 +461,15 @@
                     </ul>
                 </div>
                 <!--li class="nav-item">
-                                                                                                                                                                                                                                                                                            <a class="nav-link {{ Request::is('liquidaciones*') ? 'active' : '' }}"
-                                                                                                                                                                                                                                                                                                href="{{ route('index.liquidacion') }}" target="">
-                                                                                                                                                                                                                                                                                                <div
-                                                                                                                                                                                                                                                                                                    class="icon icon-shape icon-sm text-center  me-2 d-flex align-items-center justify-content-center">
-                                                                                                                                                                                                                                                                                                    <img src="{{ asset('img/icon/pago-en-efectivo.png') }}" alt="" width="20px">
-                                                                                                                                                                                                                                                                                                </div>
+                                                                                                                                                                                                                                                                                                <a class="nav-link {{ Request::is('liquidaciones*') ? 'active' : '' }}"
+                                                                                                                                                                                                                                                                                                    href="{{ route('index.liquidacion') }}" target="">
+                                                                                                                                                                                                                                                                                                    <div
+                                                                                                                                                                                                                                                                                                        class="icon icon-shape icon-sm text-center  me-2 d-flex align-items-center justify-content-center">
+                                                                                                                                                                                                                                                                                                        <img src="{{ asset('img/icon/pago-en-efectivo.png') }}" alt="" width="20px">
+                                                                                                                                                                                                                                                                                                    </div>
 
-                                                                                                                                                                                                                                                                                            </a>
-                                                                                                                                                                                                                                                                                        </li-->
+                                                                                                                                                                                                                                                                                                </a>
+                                                                                                                                                                                                                                                                                            </li-->
             @endcan
             @can('Coordenadas SGT')
                 <a data-bs-toggle="collapse" href="#pagesExamplesCoordenadas"
@@ -631,12 +631,12 @@
 
                     <!-- @can('usuarios-empresas')
     <li class="nav-item ">
-                                                                                                                                                                                                                                                                <a class="nav-link {{ Request::is('usuarios-empresas*') ? 'show' : '' }}"
-                                                                                                                                                                                                                                                                    href="{{ route('Usuarios-empresas.index') }}">
-                                                                                                                                                                                                                                                                    <span class="sidenav-mini-icon"> P </span>
-                                                                                                                                                                                                                                                                    <span class="sidenav-normal">Usuarios Empresas </span>
-                                                                                                                                                                                                                                                                </a>
-                                                                                                                                                                                                                                                            </li>
+                                                                                                                                                                                                                                                                    <a class="nav-link {{ Request::is('usuarios-empresas*') ? 'show' : '' }}"
+                                                                                                                                                                                                                                                                        href="{{ route('Usuarios-empresas.index') }}">
+                                                                                                                                                                                                                                                                        <span class="sidenav-mini-icon"> P </span>
+                                                                                                                                                                                                                                                                        <span class="sidenav-normal">Usuarios Empresas </span>
+                                                                                                                                                                                                                                                                    </a>
+                                                                                                                                                                                                                                                                </li>
 @endcan -->
 
 
@@ -716,6 +716,22 @@
                             </ul>
                         </div>
                     @endcan
+
+                    @can('app-admin-movil')
+                        {{-- App Movil Admin Option --}}
+                        <div class="collapse " id="sistem">
+                            <ul class="nav ms-4">
+                                <li class="nav-item ">
+                                    <a class="nav-link {{ Request::is('app-movil-admin*') ? 'show' : '' }}"
+                                        href="{{ route('app-movil-admin.index') }}">
+                                        <span class="sidenav-mini-icon">M</span>
+                                        <span class="sidenav-normal">App Móvil SGT Logistics</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    @endcan
+
                 </li>
             @endcan
         </ul>

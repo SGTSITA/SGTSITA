@@ -759,11 +759,24 @@ class ExternosController extends Controller
                     array_push($documentList, $doc_boleta_patio);
                 }
             }
-if (!is_null($documentos->evidencia_descarga)) {
-
+            if (!is_null($documentos->evidencia_descarga)) {
                 $EvidenciaDescarga = self::fileProperties($folderId, $documentos->evidencia_descarga, 'EvidenciaDescarga', $cont);
                 if (sizeof($EvidenciaDescarga) > 0) {
                     array_push($documentList, $EvidenciaDescarga);
+                }
+            }
+
+            if (!is_null($documentos->comprobante_pago_pdf)) {
+                $compPagoPDF = self::fileProperties($folderId, $documentos->comprobante_pago_pdf, 'Comprobante-Pago-PDF', $cont, $documentos->comprobante_pago_pdf_at);
+                if (sizeof($compPagoPDF) > 0) {
+                    array_push($documentList, $compPagoPDF);
+                }
+            }
+
+            if (!is_null($documentos->comprobante_pago_xml)) {
+                $compPagoXML = self::fileProperties($folderId, $documentos->comprobante_pago_xml, 'Comprobante-Pago-XML', $cont, $documentos->comprobante_pago_xml_at);
+                if (sizeof($compPagoXML) > 0) {
+                    array_push($documentList, $compPagoXML);
                 }
             }
 

@@ -177,6 +177,50 @@ class PlaneacionController extends Controller
             return response()->json(["Titulo" => "Error", "Mensaje" => "Cotización no encontrada", "TMensaje" => "error"], 404);
         }
 
+        // Validación de Planeación Elemental para viajes propios
+        $asignacion = Asignaciones::where('id_contenedor', '=', $contenedor->id)->first();
+        if ($asignacion && $asignacion->tipo_contrato === 'Propio') {
+            $erroresElemental = [];
+            if (empty($asignacion->dinero_viaje) || $asignacion->dinero_viaje == 0) {
+                $erroresElemental[] = "Dinero para viaje";
+            }
+            if (empty($asignacion->id_banco1_dinero_viaje) || $asignacion->id_banco1_dinero_viaje == 0) {
+                $erroresElemental[] = "Banco seleccionado";
+            }
+            if (empty($asignacion->fecha_inicio)) {
+                $erroresElemental[] = "Fecha de inicio";
+            }
+            if (empty($asignacion->sueldo_viaje) || $asignacion->sueldo_viaje == 0) {
+                $erroresElemental[] = "Sueldo operador";
+            }
+            $tieneGastos = \App\Models\GastosOperadores::where('id_asignacion', $asignacion->id)->exists();
+            if (!$tieneGastos) {
+                $erroresElemental[] = "Gastos capturados";
+            } else {
+                $tieneDiesel = \App\Models\GastosOperadores::where('id_asignacion', $asignacion->id)
+                    ->where('tipo', 'like', '%GDI02%')
+                    ->exists();
+                if (!$tieneDiesel) {
+                    $erroresElemental[] = "Gasto Diésel (GDI02)";
+                }
+
+                $tieneBurreroVacio = \App\Models\GastosOperadores::where('id_asignacion', $asignacion->id)
+                    ->where('tipo', 'like', '%GBV01%')
+                    ->exists();
+                if (!$tieneBurreroVacio) {
+                    $erroresElemental[] = "Gasto Burrero Vacío (GBV01)";
+                }
+            }
+
+            if (!empty($erroresElemental)) {
+                return response()->json([
+                    "Titulo" => "Planeación Elemental Activa",
+                    "Mensaje" => "El viaje tiene una planeación elemental activa y tiene que completarla para poder finalizarla. Faltan: " . implode(", ", $erroresElemental),
+                    "TMensaje" => "warning"
+                ]);
+            }
+        }
+
         // Validaciones de documentos
         $isCima = !empty($contenedor->cima);
         $missingDocs = [];

@@ -798,6 +798,10 @@ Route::middleware(['auth', 'idle.timeout'])->group(function () {
     Route::get('/configuracion/{id}', [App\Http\Controllers\ConfiguracionController::class, 'index'])->name('index.configuracion');
     Route::patch('/configuracion/update/{id}', [App\Http\Controllers\ConfiguracionController::class, 'update'])->name('update.configuracion');
 
+    // Rutas para Panel de Administracion de App Movil
+    Route::resource('app-movil-admin', App\Http\Controllers\AppMovilAdminController::class);
+
+
     // En routes/web.php
     Route::get('/descargar-db', [App\Http\Controllers\DatabaseController::class, 'descargarBaseDeDatos'])->name('descargar.db');
     Route::get('/backups-historiales', [App\Http\Controllers\DatabaseController::class, 'listarBackupsHistoriales'])->name('backups.historiales');
