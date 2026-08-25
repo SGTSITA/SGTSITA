@@ -106,7 +106,7 @@ async function cargarinicial() {
             allowOutsideClick: false,
             didOpen: () => {
                 Swal.showLoading();
-            }
+            },
         });
     }
 
@@ -2187,7 +2187,7 @@ function agregarBuscadorMapa(map) {
     input.style.outline = "none";
     input.style.backgroundColor = "#fff";
     input.style.color = "#333";
-    
+
     searchContainer.appendChild(input);
 
     const dropdown = document.createElement("div");
@@ -2205,7 +2205,7 @@ function agregarBuscadorMapa(map) {
     dropdown.style.zIndex = "1001";
     searchContainer.appendChild(dropdown);
 
-    input.addEventListener("input", function() {
+    input.addEventListener("input", function () {
         const query = this.value.trim().toLowerCase();
         dropdown.innerHTML = "";
 
@@ -2230,14 +2230,20 @@ function agregarBuscadorMapa(map) {
                 marker.dataItem?.contenedor || "",
                 marker.dataItem?.EquipoBD || "",
                 marker.dataItem?.equipo || "",
-                key
-            ].join(" ").toLowerCase();
+                key,
+            ]
+                .join(" ")
+                .toLowerCase();
 
             if (textToMatch.includes(query)) {
                 matchingMarkers.push({
                     key: key,
                     marker: marker,
-                    label: marker.contenedor || marker.imei || key.split("|")[1] || "Dispositivo"
+                    label:
+                        marker.contenedor ||
+                        marker.imei ||
+                        key.split("|")[1] ||
+                        "Dispositivo",
                 });
             }
         });
@@ -2253,7 +2259,7 @@ function agregarBuscadorMapa(map) {
             return;
         }
 
-        matchingMarkers.forEach(item => {
+        matchingMarkers.forEach((item) => {
             const row = document.createElement("div");
             let infoAdicional = "";
             if (item.marker.dataItem?.placas) {
@@ -2262,12 +2268,12 @@ function agregarBuscadorMapa(map) {
             if (item.marker.dataItem?.id_equipo) {
                 infoAdicional += ` | Eco: ${item.marker.dataItem.id_equipo}`;
             }
-            row.textContent = `📍 ${item.label} (${item.marker.tipoEquipo || 'Dispositivo'}${infoAdicional})`;
+            row.textContent = `📍 ${item.label} (${item.marker.tipoEquipo || "Dispositivo"}${infoAdicional})`;
             row.style.padding = "8px 12px";
             row.style.cursor = "pointer";
             row.style.fontSize = "12px";
             row.style.borderBottom = "1px solid #f0f0f0";
-            
+
             row.addEventListener("mouseover", () => {
                 row.style.backgroundColor = "#f5f5f5";
             });
@@ -2279,7 +2285,7 @@ function agregarBuscadorMapa(map) {
                 const pos = item.marker.getPosition();
                 map.panTo(pos);
                 map.setZoom(15);
-                google.maps.event.trigger(item.marker, 'click');
+                google.maps.event.trigger(item.marker, "click");
                 dropdown.style.display = "none";
                 input.value = item.label;
             });
@@ -2290,7 +2296,7 @@ function agregarBuscadorMapa(map) {
         dropdown.style.display = "block";
     });
 
-    document.addEventListener("click", function(e) {
+    document.addEventListener("click", function (e) {
         if (!searchContainer.contains(e.target)) {
             dropdown.style.display = "none";
         }
@@ -3260,8 +3266,16 @@ function actualizarUbicacion(
         latlocal = parseFloat(item.ubicacion?.lat);
         lnglocal = parseFloat(item.ubicacion?.lng);
 
-        if (isNaN(latlocal) || isNaN(lnglocal) || latlocal === 0 || lnglocal === 0) {
-            console.warn("Ubicación omitida por coordenadas inválidas (0,0):", item.value);
+        if (
+            isNaN(latlocal) ||
+            isNaN(lnglocal) ||
+            latlocal === 0 ||
+            lnglocal === 0
+        ) {
+            console.warn(
+                "Ubicación omitida por coordenadas inválidas (0,0):",
+                item.value,
+            );
             return;
         }
 
@@ -3504,11 +3518,15 @@ function actualizarUbicacion(
 
                 map.fitBounds(bounds);
 
-                const boundsListener = google.maps.event.addListenerOnce(map, 'idle', function() {
-                    if (map.getZoom() > 7) {
-                        map.setZoom(7);
-                    }
-                });
+                const boundsListener = google.maps.event.addListenerOnce(
+                    map,
+                    "idle",
+                    function () {
+                        if (map.getZoom() > 7) {
+                            map.setZoom(7);
+                        }
+                    },
+                );
 
                 mapaAjustado = true;
             }
@@ -3914,7 +3932,9 @@ function asegurarPanelDetallesFlotante() {
     content.id = "mapFloatingDetailsContent";
     floatingDetailPanel.appendChild(content);
 
-    map.controls[google.maps.ControlPosition.RIGHT_TOP].push(floatingDetailPanel);
+    map.controls[google.maps.ControlPosition.RIGHT_TOP].push(
+        floatingDetailPanel,
+    );
 
     const handleFullscreenChange = () => {
         if (!esPantallaCompleta() && floatingDetailPanel) {
@@ -3942,24 +3962,28 @@ function mostrarInfoConvoy(contenedores, equipo, chasis) {
         let floatHTML = `
             <div style="font-family: Arial, sans-serif; font-size: 13px; color: #333; padding-right: 15px;">
                 <h4 style="margin: 0 0 12px 0; font-size: 16px; font-weight: bold; border-bottom: 2px solid #0d6efd; padding-bottom: 6px; color: #0d6efd;">
-                    ${equipo ? 'Equipo: ' + equipo : 'Detalles de Contenedor'}
+                    ${equipo ? "Equipo: " + equipo : "Detalles de Contenedor"}
                 </h4>
         `;
 
         contenedores.forEach((contenedor) => {
             let tabId = contenedor.num_contenedor || contenedor.contenedor;
             let containerInfo = contenedoresDisponiblesAll.find(
-                (d) => d.contenedor === tabId
+                (d) => d.contenedor === tabId,
             );
             if (!containerInfo) {
                 containerInfo = contenedoresDisponiblesAll.find(
-                    (d) => d.contenedor === contenedor.contenedor
+                    (d) => d.contenedor === contenedor.contenedor,
                 );
             }
             if (!containerInfo) return;
 
-            let tieneDato = (v) => v !== null && v !== undefined && String(v).trim() !== "" && String(v).trim().toLowerCase() !== "null";
-            let valor = (v) => tieneDato(v) ? String(v).trim() : "S/N";
+            let tieneDato = (v) =>
+                v !== null &&
+                v !== undefined &&
+                String(v).trim() !== "" &&
+                String(v).trim().toLowerCase() !== "null";
+            let valor = (v) => (tieneDato(v) ? String(v).trim() : "S/N");
 
             floatHTML += `
                 <div style="background: #f8f9fa; border-left: 5px solid #0d6efd; padding: 10px; border-radius: 8px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-top: 1px solid #ddd; border-right: 1px solid #ddd; border-bottom: 1px solid #ddd;">
@@ -3972,12 +3996,15 @@ function mostrarInfoConvoy(contenedores, equipo, chasis) {
                     <div style="margin-bottom: 5px; font-size: 13px;"><strong>Proveedor:</strong> ${valor(containerInfo.empresa)}</div>
                     <div style="margin-bottom: 5px; font-size: 13px;"><strong>Transportista:</strong> ${valor(containerInfo.transportista_nombre)}</div>
                     <div style="margin-bottom: 5px; font-size: 13px;"><strong>Operador:</strong> ${valor(containerInfo.operador)}</div>
-                    
+
                     <div style="margin-top: 10px; display: grid; gap: 8px;">
             `;
 
             // Tracto
-            if (tieneDato(containerInfo.imei_gps) || tieneDato(containerInfo.id_equipo)) {
+            if (
+                tieneDato(containerInfo.imei_gps) ||
+                tieneDato(containerInfo.id_equipo)
+            ) {
                 floatHTML += `
                     <div style="background: #fff; border: 1px solid #fd7e14; border-radius: 8px; padding: 8px; font-size: 12px; border-left: 4px solid #fd7e14;">
                         <div style="font-weight: bold; color: #fd7e14; font-size: 13px; margin-bottom: 4px;">🚛 TRACTO</div>
@@ -3989,7 +4016,10 @@ function mostrarInfoConvoy(contenedores, equipo, chasis) {
             }
 
             // Chasis A
-            if (tieneDato(containerInfo.imei_chasis) || tieneDato(containerInfo.id_equipo_chasis)) {
+            if (
+                tieneDato(containerInfo.imei_chasis) ||
+                tieneDato(containerInfo.id_equipo_chasis)
+            ) {
                 floatHTML += `
                     <div style="background: #fff; border: 1px solid #28a745; border-radius: 8px; padding: 8px; font-size: 12px; border-left: 4px solid #28a745;">
                         <div style="font-weight: bold; color: #28a745; font-size: 13px; margin-bottom: 4px;">🚛 CHASIS A</div>
@@ -4001,7 +4031,10 @@ function mostrarInfoConvoy(contenedores, equipo, chasis) {
             }
 
             // Chasis B
-            if (tieneDato(containerInfo.imei_chasis_b) || tieneDato(containerInfo.id_equipo_chasis_b)) {
+            if (
+                tieneDato(containerInfo.imei_chasis_b) ||
+                tieneDato(containerInfo.id_equipo_chasis_b)
+            ) {
                 floatHTML += `
                     <div style="background: #fff; border: 1px solid #17a2b8; border-radius: 8px; padding: 8px; font-size: 12px; border-left: 4px solid #17a2b8;">
                         <div style="font-weight: bold; color: #17a2b8; font-size: 13px; margin-bottom: 4px;">🚛 CHASIS B</div>
@@ -4516,7 +4549,7 @@ max-width: 100%;
             icono: "🚛",
             imei: info.imei,
             equipo: info.id_equipo,
-            placas: filtroEqu?.placas,
+            placas: info?.placas,
             iconogps: info.icono_gps,
             nombreGps: info.nombre_gps,
         })}
@@ -4827,10 +4860,12 @@ $("#filtroEmpresa").on("change", function () {
     aplicarFiltrosPanel();
 });
 
-$(document).ready(function() {
-    $("#filtroTipo, #filtroLineaT, #filtrocliente, #buscadorGeneral").each(function() {
-        $(this).data("prevValue", $(this).val() || "");
-    });
+$(document).ready(function () {
+    $("#filtroTipo, #filtroLineaT, #filtrocliente, #buscadorGeneral").each(
+        function () {
+            $(this).data("prevValue", $(this).val() || "");
+        },
+    );
 });
 
 $("#filtroTipo,#filtroLineaT,#filtrocliente,#buscadorGeneral").on(
@@ -4900,7 +4935,7 @@ function buscarUbicaciones() {
                 allowOutsideClick: false,
                 didOpen: () => {
                     Swal.showLoading();
-                }
+                },
             });
         }
     }
@@ -6070,7 +6105,9 @@ function cambiofiltros(input, valorAnterior) {
                     toggle.checked = false;
                     const label = document.getElementById("labelToggle");
                     if (label) {
-                        label.textContent = label.textContent.includes("Todos") ? "Mostrar Todos" : "Mostrar todos";
+                        label.textContent = label.textContent.includes("Todos")
+                            ? "Mostrar Todos"
+                            : "Mostrar todos";
                     }
                 }
                 aplicarFiltrosPanel();
