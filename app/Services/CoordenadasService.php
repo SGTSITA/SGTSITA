@@ -347,6 +347,7 @@ class CoordenadasService
                 'eq.id as id_equipo_unico',
                 'eq.imei',
                 'eq.id_equipo',
+                'eq.placas',
                 'gps.url_conexion as tipoGps',
                 'gps.nombre as nombre_gps',
                 'gps.icono as icono_gps',
