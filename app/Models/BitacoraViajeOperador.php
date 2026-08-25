@@ -16,6 +16,8 @@ class BitacoraViajeOperador extends Model
         'id_operador',
         'latitud',
         'longitud',
+        'latitud_carga',
+        'longitud_carga',
         'litros',
         'costo',
         'odometro',

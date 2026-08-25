@@ -999,6 +999,8 @@ $camion = $asignacion->Camion;
             'id_operador' => $asignacion->id_operador,
             'viaje_iniciado' => Carbon::now(),
             'fotos_carga' => json_encode($savedFilePaths),
+            'latitud_carga' => $data['latitud'] ?? null,
+            'longitud_carga' => $data['longitud'] ?? null,
         ]);
 
         return ['success' => true, 'message' => 'Viaje iniciado y fotos guardadas correctamente.', 'data' => [], 'status' => 200];

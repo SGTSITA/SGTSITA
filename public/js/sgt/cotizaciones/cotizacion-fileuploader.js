@@ -13,6 +13,8 @@ var [
     CCP,
     EIR,
     EvidenciaDescarga,
+    ComprobantePagoPDF,
+    ComprobantePagoXML,
 ] = [
     {
         opcion: "BoletaLib",
@@ -38,6 +40,16 @@ var [
         titulo: "Evidencia Descarga",
         agGrid: "EvidenciaDescarga",
     },
+    {
+        opcion: "ComprobantePagoPDF",
+        titulo: "Comprobante de pago PDF",
+        agGrid: "ComprobantePagoPDF",
+    },
+    {
+        opcion: "ComprobantePagoXML",
+        titulo: "Comprobante de pago XML",
+        agGrid: "ComprobantePagoXML",
+    },
 ];
 
 let fileSettings = BoletaLib;
@@ -53,6 +65,8 @@ let btnFileccp = document.querySelector("#btnFileFormato-para-Carta-porte");
 let btnFileEir = document.querySelector("#btnFileeir");
 let btnBoletaVacio = document.querySelector("#btnFilePre-Alta");
 let btnFileevidenciaD = document.querySelector("#btnFileevidenciaD");
+let btnFileCompPagoPDF = document.querySelector("#btnFileCompPagoPDF");
+let btnFileCompPagoXML = document.querySelector("#btnFileCompPagoXML");
 
 if (btnFileDODA) {
     btnFileDODA.addEventListener("click", () => {
@@ -101,6 +115,18 @@ if (btnFileevidenciaD) {
     });
 }
 
+if (btnFileCompPagoPDF) {
+    btnFileCompPagoPDF.addEventListener("click", () => {
+        fileSettings = ComprobantePagoPDF;
+    });
+}
+
+if (btnFileCompPagoXML) {
+    btnFileCompPagoXML.addEventListener("click", () => {
+        fileSettings = ComprobantePagoXML;
+    });
+}
+
 const btnDocumets = document.querySelectorAll(".btnDocs");
 btnDocumets.forEach((e) => {
     e.addEventListener("click", goToUploadDocuments);
@@ -111,6 +137,24 @@ var uploadConfig = null;
 function goToUploadDocuments() {
     let labelTitleDoc = document.querySelector("#labelTitleDoc");
     labelTitleDoc.textContent = fileSettings.titulo;
+
+    let allowedFileTypesLabel = document.querySelector("#allowedFileTypesLabel");
+    if (allowedFileTypesLabel) {
+        let titleUpper = fileSettings.titulo.toUpperCase();
+        let opcionUpper = fileSettings.opcion.toUpperCase();
+        
+        if (titleUpper.includes("PDF") || opcionUpper.includes("PDF")) {
+            allowedFileTypesLabel.textContent = "Formatos permitidos: PDF únicamente";
+            allowedFileTypesLabel.className = "badge bg-light-danger text-danger fs-7";
+        } else if (titleUpper.includes("XML") || opcionUpper.includes("XML")) {
+            allowedFileTypesLabel.textContent = "Formatos permitidos: XML únicamente";
+            allowedFileTypesLabel.className = "badge bg-light-danger text-danger fs-7";
+        } else {
+            allowedFileTypesLabel.textContent = "Formatos permitidos: PDF, Imágenes, Excel, Word";
+            allowedFileTypesLabel.className = "badge bg-light-success text-success fs-7";
+        }
+    }
+
     const modalElement = document.getElementById("kt_modal_fileuploader");
     const bootstrapModal = new bootstrap.Modal(modalElement);
     bootstrapModal.show();
@@ -289,6 +333,8 @@ function getFilesContenedor() {
         { fileCode: "Pre-Alta" },
         { fileCode: "eir" },
         { fileCode: "EvidenciaDescarga" },
+        { fileCode: "Comprobante-Pago-PDF" },
+        { fileCode: "Comprobante-Pago-XML" },
     ];
     $.ajax({
         url: `/viajes/file-manager/get-file-list/${numContenedor}`,

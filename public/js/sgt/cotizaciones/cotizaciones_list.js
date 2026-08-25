@@ -192,7 +192,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         <a href="${params.data.edit_url}" class="btn btn-sm btn-outline-secondary" title="Editar">
                             <i class="fa fa-edit"></i>
                         </a>
-                        <button class="btn btn-sm btn-outline-primary" onclick="abrirCambioEmpresa(${params.data.id})" title="Cambiar Empresa">
+                        <button class="btn btn-sm btn-outline-primary" onclick="abrirCambioEmpresa(${params.data.id}, ${params.data.estatus_planeacion || 0}, '${params.data.coordenadas || ''}')" title="Cambiar Empresa">
                             <i class="fa fa-exchange-alt"></i>
                         </button>
                         <button class="btn btn-sm btn-outline-warning" onclick="abrirDocumentos(${params.data.id})" title="Ver Documentos">
@@ -238,7 +238,7 @@ document.addEventListener("DOMContentLoaded", function () {
                      <a href="${params.data.edit_url}" class="btn btn-sm btn-outline-secondary" title="Editar">
                             <i class="fa fa-edit"></i>
                         </a>
-                        <button class="btn btn-sm btn-outline-primary" onclick="abrirCambioEmpresa(${params.data.id})" title="Cambiar Empresa">
+                        <button class="btn btn-sm btn-outline-primary" onclick="abrirCambioEmpresa(${params.data.id}, ${params.data.estatus_planeacion || 0}, '${params.data.coordenadas || ''}')" title="Cambiar Empresa">
                             <i class="fa fa-exchange-alt"></i>
                         </button>
                         <button class="btn btn-sm btn-outline-info" onclick="abrirDocumentos(${params.data.id})" title="Ver Documentos">
@@ -922,10 +922,38 @@ function aprobarCotizacion(idCotizacion) {
         }
     });
 }
-function abrirCambioEmpresa(idCotizacion) {
+function abrirCambioEmpresa(idCotizacion, estatusPlaneacion, coordenadas) {
     const form = document.getElementById("formCambioEmpresa");
     const route = `/cotizaciones/cambiar/empresa/${idCotizacion}`;
     form.setAttribute("action", route);
+
+    // Si ya está planeada, interceptar submit para mostrar advertencia al usuario
+    if (estatusPlaneacion == 1 || coordenadas === 'Ver') {
+        form.onsubmit = function(e) {
+            e.preventDefault();
+            Swal.fire({
+                title: '¿Confirmar cambio?',
+                text: 'Esta cotización ya cuenta con planeación. Al cambiar de empresa o proveedor, la planeación se deshará (se eliminarán operadores, chasis, camiones, etc. de las asignaciones) y se registrará este movimiento en la auditoría para aclaraciones. ¿Desea continuar?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, continuar y deshacer planeación',
+                cancelButtonText: 'Cancelar',
+                customClass: {
+                    confirmButton: 'btn btn-danger me-2',
+                    cancelButton: 'btn btn-secondary'
+                },
+                buttonsStyling: false
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.onsubmit = null; // quitar interceptor
+                    form.submit();
+                }
+            });
+            return false;
+        };
+    } else {
+        form.onsubmit = null; // Limpiar interceptor si no está planeada
+    }
 
     const modal = new bootstrap.Modal(
         document.getElementById("modalCambioEmpresa"),
