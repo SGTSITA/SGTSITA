@@ -1484,14 +1484,14 @@ else{
 
         $cotizacion = Cotizaciones::where('id', '=', $id)->firstOrFail();
         $documentacion = DocumCotizacion::where('id_cotizacion', '=', $cotizacion->id)->first();
-        
+
         if (!$documentacion) {
             return back()->with('error', 'No hay datos de documentación para esta cotización.');
         }
 
         $cotizacionId = $cotizacion->id;
         $basePath = public_path("cotizaciones/cotizacion{$cotizacionId}/");
-        
+
         $docDefinitions = [
             [
                 'tipo' => 'Carta Porte XML',
@@ -1550,14 +1550,14 @@ else{
                 'columna' => 'evidencia_descarga'
             ],
             [
-                'tipo' => 'Comprobante de pago PDF',
+                'tipo' => 'Complemento de pago PDF',
                 'archivo' => $documentacion->comprobante_pago_pdf ?? null,
                 'folio' => $documentacion->comprobante_pago_pdf_at ?? null,
                 'tabla' => 'docum_cotizacion',
                 'columna' => 'comprobante_pago_pdf'
             ],
             [
-                'tipo' => 'Comprobante de pago XML',
+                'tipo' => 'Complemento de pago XML',
                 'archivo' => $documentacion->comprobante_pago_xml ?? null,
                 'folio' => $documentacion->comprobante_pago_xml_at ?? null,
                 'tabla' => 'docum_cotizacion',
@@ -1641,8 +1641,8 @@ else{
                 'fecha_eir' => 'EIR (Folio/Fecha)',
                 'evidencia_descarga' => 'Evidencia Descarga',
                 'fecha_evidencia_descarga' => 'Evidencia Descarga (Folio/Fecha)',
-                'comprobante_pago_pdf' => 'Comprobante de pago PDF',
-                'comprobante_pago_xml' => 'Comprobante de pago XML',
+                'comprobante_pago_pdf' => 'Complemento de pago PDF',
+                'comprobante_pago_xml' => 'Complemento de pago XML',
                 'boleta_patio' => 'Boleta Patio',
                 'fecha_boleta_patio' => 'Boleta Patio (Folio/Fecha)',
                 'num_contenedor' => 'Número de Contenedor',
@@ -1651,9 +1651,9 @@ else{
             foreach ($logsRaw as $log) {
                 $old = $log->old_values ?? [];
                 $new = $log->new_values ?? [];
-                
+
                 $details = [];
-                
+
                 if ($log->action == 'created') {
                     foreach ($new as $key => $val) {
                         if (array_key_exists($key, $columnMap) && !empty($val)) {
@@ -1684,7 +1684,7 @@ else{
         $fechaCarbon = \Carbon\Carbon::now('America/Mexico_City');
 
         $pdf = PDF::loadView('cotizaciones.pdf_validacion_docs', compact('cotizacion', 'documentacion', 'docs', 'incluirAuditoria', 'auditLogs', 'configuracion', 'fechaCarbon'));
-        
+
         return $pdf->download('validacion_docs_coti_' . $cotizacion->id . '.pdf');
     }
 public function updateKmDiesel(Request $request, Cotizaciones $cotizacion)
@@ -3422,7 +3422,7 @@ $this->procesarDocumento(
         }
 
         $id_cot = $cotizacion->id;
-        
+
         if (is_null($cotizacion->docCotizacion)) {
             Log::channel('daily')->error('La cotización encontrada (ID: ' . $id_cot . ') no tiene un registro asociado en docum_cotizacion.');
             $upload['hasWarnings'] = true;
@@ -3456,7 +3456,7 @@ $this->procesarDocumento(
         // call to upload the files
         Log::channel('daily')->info('Iniciando carga física con FileUploader...');
         $upload = $FileUploader->upload();
-        
+
         Log::channel('daily')->info('Resultado del FileUploader:', [
             'isSuccess' => $upload['isSuccess'] ?? false,
             'hasWarnings' => $upload['hasWarnings'] ?? false,
@@ -3526,22 +3526,22 @@ $this->procesarDocumento(
                     }
                     break;
 
-                case 'CartaPortePDF': 
+                case 'CartaPortePDF':
                     $update = ["carta_porte" => $item['name']];
                     break;
-                case 'CartaPorteXML': 
+                case 'CartaPorteXML':
                     $update = ["carta_porte_xml" => $item['name']];
                     break;
-                case 'EIR': 
+                case 'EIR':
                     $update = ["doc_eir" => $item['name'], 'eir' => "si"];
                     break;
-                case 'CCP': 
+                case 'CCP':
                     $update = ["doc_ccp" => $item['name'], 'ccp' => "si"];
                     break;
-                case 'BoletaPatio': 
+                case 'BoletaPatio':
                     $update = ["boleta_patio" => $item['name']];
                     break;
-                case 'EvidenciaDescarga':  
+                case 'EvidenciaDescarga':
                     $update = ["evidencia_descarga" => $item['name']];
                     break;
                 case 'ComprobantePagoPDF':
@@ -3820,7 +3820,7 @@ $urlDocumento = asset("cotizaciones/cotizacion{$id_cot}/{$nameArchivo}");
                 // Eliminar gastos operador, coordenadas vinculadas y la asignación
                 \App\Models\GastosOperadores::withoutGlobalScope('no_eliminados')->where('id_asignacion', $asignacion->id)->delete();
                 Coordenadas::where('id_asignacion', $asignacion->id)->delete();
-                
+
                 // Eliminar asignación usando Eloquent para disparar el observador de auditoría
                 $asignacion->delete();
 
