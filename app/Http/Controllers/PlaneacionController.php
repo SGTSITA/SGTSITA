@@ -193,21 +193,54 @@ class PlaneacionController extends Controller
             if (empty($asignacion->sueldo_viaje) || $asignacion->sueldo_viaje == 0) {
                 $erroresElemental[] = "Sueldo operador";
             }
-            $tieneGastos = \App\Models\GastosOperadores::where('id_asignacion', $asignacion->id)->exists();
+            // Validar gastos (soporta tabla unificada gastos y vínculos polimórficos)
+            $tieneGastosUnified = \App\Models\Gasto::where('origen_legacy_id', $asignacion->id)
+                ->where('origen_legacy', 'like', 'asignacion_planeacion%')
+                ->exists();
+            $tieneGastosVinculo = \App\Models\GastoVinculo::where('vinculable_id', $asignacion->id)
+                ->where('vinculable_type', '=', 'App\\Models\\Asignaciones')
+                ->exists();
+
+            $tieneGastos = ($tieneGastosUnified || $tieneGastosVinculo);
+
             if (!$tieneGastos) {
                 $erroresElemental[] = "Gastos capturados";
             } else {
-                $tieneDiesel = \App\Models\GastosOperadores::where('id_asignacion', $asignacion->id)
-                    ->where('tipo', 'like', '%GDI02%')
+                // Validación específica de Diesel (GDI02)
+                $tieneDieselUnified = \App\Models\Gasto::where('origen_legacy_id', $asignacion->id)
+                    ->where('origen_legacy', 'like', 'asignacion_planeacion%')
+                    ->where(function($q) {
+                        $q->where('concepto', 'like', '%GDI02%')
+                          ->orWhere('tipo_gasto', 'like', '%GDI02%');
+                    })
                     ->exists();
-                if (!$tieneDiesel) {
+                $tieneDieselVinculo = \App\Models\GastoVinculo::where('vinculable_id', $asignacion->id)
+                    ->where('vinculable_type', '=', 'App\\Models\\Asignaciones')
+                    ->whereHas('gasto', function($q) {
+                        $q->where('concepto', 'like', '%GDI02%');
+                    })
+                    ->exists();
+
+                if (!($tieneDieselUnified || $tieneDieselVinculo)) {
                     $erroresElemental[] = "Gasto Diésel (GDI02)";
                 }
 
-                $tieneBurreroVacio = \App\Models\GastosOperadores::where('id_asignacion', $asignacion->id)
-                    ->where('tipo', 'like', '%GBV01%')
+                // Validación específica de Burrero Vacío (GBV01)
+                $tieneBurreroUnified = \App\Models\Gasto::where('origen_legacy_id', $asignacion->id)
+                    ->where('origen_legacy', 'like', 'asignacion_planeacion%')
+                    ->where(function($q) {
+                        $q->where('concepto', 'like', '%GBV01%')
+                          ->orWhere('tipo_gasto', 'like', '%GBV01%');
+                    })
                     ->exists();
-                if (!$tieneBurreroVacio) {
+                $tieneBurreroVinculo = \App\Models\GastoVinculo::where('vinculable_id', $asignacion->id)
+                    ->where('vinculable_type', '=', 'App\\Models\\Asignaciones')
+                    ->whereHas('gasto', function($q) {
+                        $q->where('concepto', 'like', '%GBV01%');
+                    })
+                    ->exists();
+
+                if (!($tieneBurreroUnified || $tieneBurreroVinculo)) {
                     $erroresElemental[] = "Gasto Burrero Vacío (GBV01)";
                 }
             }
