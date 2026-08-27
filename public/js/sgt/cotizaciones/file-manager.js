@@ -7,7 +7,7 @@ let tagNumContenedor = document.querySelector("#numContenedor");
 let numContenedor = tagNumContenedor.textContent;
 //const safeValue = encodeURIComponent(numContenedor); //agregue porq habia uno que traia // en el num de contenendor , validar en captura..
 
-let urlGetFiles = `/viajes/file-manager/get-file-list/${numContenedor}`;
+let urlGetFiles = `/viajes/file-manager/get-file-list/${numContenedor}?portal=cliente`;
 let archivosData = [];
 let docsData = [];
 let contendores = "";

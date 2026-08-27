@@ -28,6 +28,7 @@ Route::group(["prefix" => "viajes"], function () {
     Route::post('solicitud/multiple', [CotizacionesController::class,'storeMultiple'])->name('viajes.multiple.create');
 
     Route::get('documents', [ExternosController::class,'viajesDocuments'])->name('viajes.documents');
+    Route::get('file-manager/complementos-pago', [ExternosController::class, 'complementosPagoView'])->name('viajes.complementos_pago_view');
     Route::post('documents/pending', [ExternosController::class,'getContenedoresPendientes'])->name('documents.pending');
 
     Route::post('cancelar', [ExternosController::class,'cancelarViaje'])->name('viajes.cancelar');
@@ -39,6 +40,8 @@ Route::group(["prefix" => "viajes"], function () {
     Route::get('file-manager/cfdi-files/{zipFile}', [ExternosController::class,'ZipDownload'])->name('cfdi.file-manager');
     Route::get('file-manager/get-file-list/{numContenedor}', [ExternosController::class,'getFilesProperties'])->name('viajes.files');
     Route::get('file-manager/get-operator-files/{numContenedor}', [ExternosController::class,'getOperatorFiles'])->name('viajes.operator_files');
+    Route::get('file-manager/get-complementos-pago', [ExternosController::class, 'getComplementosPago'])->name('viajes.get_complementos_pago');
+    Route::post('file-manager/download-zip-complementos', [ExternosController::class, 'descargarZipComplementos'])->name('viajes.download_zip_complementos');
 
     Route::post('/get-asignables', [ExternosController::class,'getContenedoresAsignables'])->name('viajes.asignables');
 

@@ -734,6 +734,8 @@ class PlaneacionController extends Controller
             $contenedor = DocumCotizacion::where('num_contenedor', $numContenedor)->first();
             $cotizacion = Cotizaciones::where('id', '=', $contenedor->id_cotizacion)->first();
 
+            $contacto='';
+
             try {
 
                 DB::beginTransaction();
