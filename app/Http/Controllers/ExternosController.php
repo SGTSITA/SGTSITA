@@ -693,6 +693,9 @@ class ExternosController extends Controller
 
     public function getFilesProperties($numContenedor)
     {
+        $esCliente = auth()->check() && auth()->user()->id_cliente != 0 && request()->query('portal') === 'cliente';
+
+        //dd($esCliente);
 
         $numContenedor = preg_replace('/\s+/', '*', $numContenedor);
         $contenedores = explode('*', $numContenedor);
@@ -766,17 +769,19 @@ class ExternosController extends Controller
                 }
             }
 
-            if (!is_null($documentos->comprobante_pago_pdf)) {
-                $compPagoPDF = self::fileProperties($folderId, $documentos->comprobante_pago_pdf, 'Comprobante-Pago-PDF', $cont, $documentos->comprobante_pago_pdf_at);
-                if (sizeof($compPagoPDF) > 0) {
-                    array_push($documentList, $compPagoPDF);
+            if (!$esCliente) {
+                if (!is_null($documentos->comprobante_pago_pdf)) {
+                    $compPagoPDF = self::fileProperties($folderId, $documentos->comprobante_pago_pdf, 'Comprobante-Pago-PDF', $cont, $documentos->comprobante_pago_pdf_at);
+                    if (sizeof($compPagoPDF) > 0) {
+                        array_push($documentList, $compPagoPDF);
+                    }
                 }
-            }
 
-            if (!is_null($documentos->comprobante_pago_xml)) {
-                $compPagoXML = self::fileProperties($folderId, $documentos->comprobante_pago_xml, 'Comprobante-Pago-XML', $cont, $documentos->comprobante_pago_xml_at);
-                if (sizeof($compPagoXML) > 0) {
-                    array_push($documentList, $compPagoXML);
+                if (!is_null($documentos->comprobante_pago_xml)) {
+                    $compPagoXML = self::fileProperties($folderId, $documentos->comprobante_pago_xml, 'Comprobante-Pago-XML', $cont, $documentos->comprobante_pago_xml_at);
+                    if (sizeof($compPagoXML) > 0) {
+                        array_push($documentList, $compPagoXML);
+                    }
                 }
             }
 
@@ -1707,4 +1712,160 @@ class ExternosController extends Controller
         return response()->json(['ok' => true]);
     }
 
+    public function getComplementosPago(Request $request)
+    {
+        $clientId = auth()->user()->id_cliente;
+        if (!$clientId) {
+            return response()->json(['success' => false, 'message' => 'No autorizado.'], 401);
+        }
+
+        $data = \DB::table('estado_cuenta as ec')
+            ->join('estado_cuenta_cotizaciones as ecc', 'ec.id', '=', 'ecc.estado_cuenta_id')
+            ->join('cotizaciones as c', 'ecc.cotizacion_id', '=', 'c.id')
+            ->join('docum_cotizacion as dc', 'c.id', '=', 'dc.id_cotizacion')
+            ->join('empresas as emp', 'c.id_empresa', '=', 'emp.id')
+            ->where('c.id_cliente', $clientId)
+            ->where(function($query) {
+                $query->whereNotNull('dc.comprobante_pago_pdf')
+                      ->orWhereNotNull('dc.comprobante_pago_xml');
+            })
+            ->select([
+                'ec.numero as num_estado_cuenta',
+                'emp.nombre as nombre_empresa',
+                'dc.id_cotizacion',
+                'dc.num_contenedor',
+                'dc.comprobante_pago_pdf',
+                'dc.comprobante_pago_xml'
+            ])
+            ->get();
+
+
+
+        $grouped = [];
+        foreach ($data as $item) {
+            $groupKey = $item->num_estado_cuenta . ' - ' . $item->nombre_empresa;
+
+            $files = [];
+            if (!empty($item->comprobante_pago_pdf)) {
+                $files[] = [
+                    'name' => 'PDF',
+                    'url' => asset("cotizaciones/cotizacion{$item->id_cotizacion}/{$item->comprobante_pago_pdf}"),
+                    'filename' => $item->comprobante_pago_pdf
+                ];
+            }
+            if (!empty($item->comprobante_pago_xml)) {
+                $files[] = [
+                    'name' => 'XML',
+                    'url' => asset("cotizaciones/cotizacion{$item->id_cotizacion}/{$item->comprobante_pago_xml}"),
+                    'filename' => $item->comprobante_pago_xml
+                ];
+            }
+
+            if (!isset($grouped[$groupKey])) {
+                $grouped[$groupKey] = [];
+            }
+
+            $grouped[$groupKey][] = [
+                'num_contenedor' => $item->num_contenedor,
+                'files' => $files
+            ];
+        }
+
+        $formatted = [];
+        foreach ($grouped as $key => $containers) {
+            $formatted[] = [
+                'grupo' => $key,
+                'contenedores' => $containers
+            ];
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $formatted
+        ]);
+    }
+
+    public function complementosPagoView()
+    {
+        return view('cotizaciones.externos.complementos_pago');
+    }
+
+    public function descargarZipComplementos(Request $request)
+    {
+        $clientId = auth()->user()->id_cliente;
+        if (!$clientId) {
+            return response()->json(['success' => false, 'message' => 'No autorizado.'], 401);
+        }
+
+        $request->validate([
+            'num_estado_cuenta' => 'required',
+            'nombre_empresa' => 'required'
+        ]);
+
+        try {
+            $data = \DB::table('estado_cuenta as ec')
+                ->join('estado_cuenta_cotizaciones as ecc', 'ec.id', '=', 'ecc.estado_cuenta_id')
+                ->join('cotizaciones as c', 'ecc.cotizacion_id', '=', 'c.id')
+                ->join('docum_cotizacion as dc', 'c.id', '=', 'dc.id_cotizacion')
+                ->join('empresas as emp', 'c.id_empresa', '=', 'emp.id')
+                ->where('c.id_cliente', $clientId)
+                ->where('ec.numero', $request->num_estado_cuenta)
+                ->where('emp.nombre', $request->nombre_empresa)
+                ->where(function($query) {
+                    $query->whereNotNull('dc.comprobante_pago_pdf')
+                          ->orWhereNotNull('dc.comprobante_pago_xml');
+                })
+                ->select([
+                    'dc.id_cotizacion',
+                    'dc.num_contenedor',
+                    'dc.comprobante_pago_pdf',
+                    'dc.comprobante_pago_xml'
+                ])
+                ->get();
+
+            if ($data->isEmpty()) {
+                return response()->json(['success' => false, 'message' => 'No hay archivos para descargar.'], 404);
+            }
+
+            $cleanNum = preg_replace('/[^A-Za-z0-9_\-]/', '_', $request->num_estado_cuenta);
+            $cleanEmp = preg_replace('/[^A-Za-z0-9_\-]/', '_', $request->nombre_empresa);
+            $zipName = "Estado_de_Cuenta_" . $cleanNum . "_" . $cleanEmp . ".zip";
+            $zipPath = public_path($zipName);
+            $zip = new \ZipArchive();
+
+            if ($zip->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) === true) {
+                foreach ($data as $item) {
+                    $folderId = $item->id_cotizacion;
+                    $pdf = $item->comprobante_pago_pdf;
+                    $xml = $item->comprobante_pago_xml;
+
+                    if (!empty($pdf)) {
+                        $pdfPath = public_path("/cotizaciones/cotizacion{$folderId}/{$pdf}");
+                        if (\File::exists($pdfPath)) {
+                            $zip->addFile($pdfPath, $item->num_contenedor . '-complemento.pdf');
+                        }
+                    }
+
+                    if (!empty($xml)) {
+                        $xmlPath = public_path("/cotizaciones/cotizacion{$folderId}/{$xml}");
+                        if (\File::exists($xmlPath)) {
+                            $zip->addFile($xmlPath, $item->num_contenedor . '-complemento.xml');
+                        }
+                    }
+                }
+                $zip->close();
+            }
+
+            return response()->json([
+                'success' => true,
+                'zipUrl' => asset($zipName)
+            ]);
+
+        } catch (\Throwable $t) {
+            return response()->json([
+                'success' => false,
+                'message' => $t->getMessage()
+            ]);
+        }
+    }
 }

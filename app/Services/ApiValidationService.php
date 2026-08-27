@@ -833,10 +833,10 @@ $camion = $asignacion->Camion;
                 try {
                     app(\App\Services\GastosService::class)->registrarDesdeGastoOperador($gastoOperador);
                 } catch (\Exception $e) {
-                    \Log::error("Error registrando gasto de diesel en gastos: " . $e->getMessage());
+                    Log::error("Error registrando gasto de diesel en gastos: " . $e->getMessage());
                 }
             } else {
-                \Log::info("El diésel para la asignación ID {$idAsignacion} ya se encuentra pagado. Se omitió la sobrescritura del gasto.");
+                Log::info("El diésel para la asignación ID {$idAsignacion} ya se encuentra pagado. Se omitió la sobrescritura del gasto.");
             }
         }
 
@@ -871,7 +871,7 @@ $camion = $asignacion->Camion;
             if (!$ureaPagadaExistente) {
                 $this->registrarGastoUreaDesdeApp(intval($idAsignacion), floatval($data['costo_urea']));
             } else {
-                \Log::info("La urea para la asignación ID {$idAsignacion} ya se encuentra pagada. Se omitió la sobrescritura del gasto.");
+                Log::info("La urea para la asignación ID {$idAsignacion} ya se encuentra pagada. Se omitió la sobrescritura del gasto.");
             }
         }
 
@@ -905,7 +905,7 @@ $camion = $asignacion->Camion;
         try {
             $this->actualizarKmRecorridosPorCoordenadas($asignacion);
         } catch (\Exception $e) {
-            \Log::error("Error actualizando kilometraje por coordenadas: " . $e->getMessage());
+            Log::error("Error actualizando kilometraje por coordenadas: " . $e->getMessage());
         }
 
         if (isset($data['odometro']) && floatval($data['odometro']) > 0) {
@@ -1121,7 +1121,7 @@ $camion = $asignacion->Camion;
                     }
                 }
             } catch (\Exception $e) {
-                \Log::warning("No se pudo consultar global_configs o decodificar su valor: " . $e->getMessage());
+                Log::warning("No se pudo consultar global_configs o decodificar su valor: " . $e->getMessage());
             }
 
             $fields = [
@@ -1410,7 +1410,7 @@ $camion = $asignacion->Camion;
                     if ($prevCotizacion) {
                         $prevCotizacion->km_recorridos = $km;
                         $prevCotizacion->save();
-                        \Log::info("Auto-calculo de KM: Asignación ID {$prevAsignacion->id} actualizada a {$km} km.");
+                        Log::info("Auto-calculo de KM: Asignación ID {$prevAsignacion->id} actualizada a {$km} km.");
                     }
                 }
             }
@@ -1442,7 +1442,7 @@ $camion = $asignacion->Camion;
                     if ($currCotizacion) {
                         $currCotizacion->km_recorridos = $km;
                         $currCotizacion->save();
-                        \Log::info("Auto-calculo de KM: Asignación ID {$asignacion->id} actualizada a {$km} km.");
+                        Log::info("Auto-calculo de KM: Asignación ID {$asignacion->id} actualizada a {$km} km.");
                     }
                 }
             }
@@ -1486,7 +1486,7 @@ $camion = $asignacion->Camion;
                     if ($prevCotizacion) {
                         $prevCotizacion->km_recorridos = $km;
                         $prevCotizacion->save();
-                        \Log::info("Auto-calculo de KM por Coordenadas Diésel: Asignación ID {$prevAsignacion->id} actualizada a {$km} km.");
+                        Log::info("Auto-calculo de KM por Coordenadas Diésel: Asignación ID {$prevAsignacion->id} actualizada a {$km} km.");
                     }
                 }
             }
@@ -1522,7 +1522,7 @@ $camion = $asignacion->Camion;
                     if ($currCotizacion) {
                         $currCotizacion->km_recorridos = $km;
                         $currCotizacion->save();
-                        \Log::info("Auto-calculo de KM por Coordenadas Diésel: Asignación ID {$asignacion->id} actualizada a {$km} km.");
+                        Log::info("Auto-calculo de KM por Coordenadas Diésel: Asignación ID {$asignacion->id} actualizada a {$km} km.");
                     }
                 }
             }
@@ -1548,7 +1548,7 @@ $camion = $asignacion->Camion;
                     }
                 }
             } catch (\Exception $e) {
-                \Log::warning("Error al consultar Google Maps Directions: " . $e->getMessage());
+                Log::warning("Error al consultar Google Maps Directions: " . $e->getMessage());
             }
         }
 
@@ -1563,7 +1563,7 @@ $camion = $asignacion->Camion;
                 }
             }
         } catch (\Exception $e) {
-            \Log::warning("Error al consultar OSRM API: " . $e->getMessage());
+            Log::warning("Error al consultar OSRM API: " . $e->getMessage());
         }
 
         return $this->calcularDistanciaHaversine($lat1, $lon1, $lat2, $lon2);

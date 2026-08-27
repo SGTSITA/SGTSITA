@@ -2453,7 +2453,11 @@
 
             adjuntarDocumentos();
             localStorage.setItem('numContenedor', '{{ $documentacion->num_contenedor }}');
-            await getContenedoresOnFull();
+            try {
+                await getContenedoresOnFull();
+            } catch (e) {
+                console.error("Error al obtener contenedores on full:", e);
+            }
             // showInfoContenedor('Contenedor-A')
 
             getFilesContenedor();
@@ -2573,8 +2577,10 @@
             formFields.forEach((item) => {
                 if (item.type == 'money') {
                     var field = document.getElementById(item.field);
-                    field.value = field.value.length > 0 ? reverseMoneyFormat(field.value) : 0;
-                    field.value = moneyFormat(field.value || 0);
+                    if (field) {
+                        field.value = field.value.length > 0 ? reverseMoneyFormat(field.value) : 0;
+                        field.value = moneyFormat(field.value || 0);
+                    }
                 }
             });
 
