@@ -47,6 +47,8 @@ class GastosController extends Controller
                 'tipo_gasto' => $request->tipo_gasto,
                 'search' => $request->search,
                 'cotizacion_id' => $request->cotizacion_id,
+                'categoria_id' => $request->categoria_id,
+                'subcategoria_id' => $request->subcategoria_id,
             ]),
         ]);
     }
