@@ -410,10 +410,10 @@ function getInfoViaje(startDate, endDate, numContenedor_, idContendor) {
 
             tipoViajeSpan.textContent = response.tipo;
 
-            origen.textContent = response.cotizacion.origen;
-            destino.textContent = response.cotizacion.destino;
-            nombreCliente.textContent = response.cliente.nombre;
-            nombreSubcliente.textContent = response.subcliente.nombre;
+            origen.textContent = response.cotizacion ? response.cotizacion.origen : "--";
+            destino.textContent = response.cotizacion ? response.cotizacion.destino : "--";
+            nombreCliente.textContent = response.cliente ? response.cliente.nombre : "--";
+            nombreSubcliente.textContent = response.subcliente ? response.subcliente.nombre : "--";
 
             placas_camion.textContent =
                 response.documentos.placas_camion ?? "NA";
