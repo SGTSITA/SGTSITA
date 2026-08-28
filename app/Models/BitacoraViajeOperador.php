@@ -1,0 +1,47 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class BitacoraViajeOperador extends Model
+{
+    use HasFactory;
+
+    protected $table = 'bitacora_viajes_operadores';
+
+    protected $fillable = [
+        'id_asignacion',
+        'id_operador',
+        'latitud',
+        'longitud',
+        'latitud_carga',
+        'longitud_carga',
+        'litros',
+        'costo',
+        'odometro',
+        'comprobante',
+        'litros_urea',
+        'costo_urea',
+        'comprobante_urea',
+        'viaje_iniciado',
+        'fotos_carga',
+        'viaje_finalizado',
+        'fotos_fin',
+        'latitud_fin',
+        'longitud_fin',
+        'fecha_carga_diesel',
+        'fecha_carga_urea',
+    ];
+
+    public function Asignacion()
+    {
+        return $this->belongsTo(Asignaciones::class, 'id_asignacion');
+    }
+
+    public function Operador()
+    {
+        return $this->belongsTo(Operadores::class, 'id_operador');
+    }
+}

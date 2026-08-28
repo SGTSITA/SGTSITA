@@ -184,47 +184,45 @@
                                                             value="{{ $cotizacion->id }}"
                                                             class="select-checkbox visually-hidden" />
                                                     </td>
+
                                                     <td>{{ $cotizacion->id }}</td>
+
                                                     <td>
                                                         {{ $cotizacion->numero_edo_cuenta ?? 'NA' }}
                                                     </td>
-                                                    <td>{{ $cotizacion->id_numero_edo_cuenta }}</td>
+
                                                     <td>
-                                                        {{ optional($cotizacion->DocCotizacion->Asignaciones)->fehca_inicio_guard ? Carbon\Carbon::parse($cotizacion->DocCotizacion->Asignaciones->fehca_inicio_guard)->format('d-m-Y') : 'Sin fecha' }}
+                                                        {{ $cotizacion->id_numero_edo_cuenta ?? '-' }}
                                                     </td>
 
-                                                    <td>{{ $cotizacion->Cliente->nombre }}</td>
-                                                    <td>{{ $cotizacion->Subcliente->nombre ?? '-' }}</td>
-                                                    <td>{{ $cotizacion->origen }}</td>
-                                                    <td>{{ $cotizacion->destino }}</td>
-                                                    @php
-                                                        $docPrincipal = optional($cotizacion->DocCotizacion);
-                                                        $numContenedor = $docPrincipal->num_contenedor ?? '';
-
-                                                        if (
-                                                            $cotizacion->jerarquia === 'Principal' &&
-                                                            $cotizacion->referencia_full
-                                                        ) {
-                                                            $cotSecundaria = \App\Models\Cotizaciones::where(
-                                                                'referencia_full',
-                                                                $cotizacion->referencia_full,
-                                                            )
-                                                                ->where('jerarquia', 'Secundario')
-                                                                ->with('DocCotizacion')
-                                                                ->first();
-
-                                                            $docSecundaria = optional($cotSecundaria)->DocCotizacion;
-                                                            if ($docSecundaria && $docSecundaria->num_contenedor) {
-                                                                $numContenedor .=
-                                                                    ' / ' . $docSecundaria->num_contenedor;
-                                                            }
-                                                        }
-                                                    @endphp
-
-                                                    <td>{{ $numContenedor }}</td>
+                                                    <td>
+                                                        {{ $cotizacion->fecha_inicio_guard
+                                                            ? \Carbon\Carbon::parse($cotizacion->fecha_inicio_guard)->format('d-m-Y')
+                                                            : 'Sin fecha' }}
+                                                    </td>
 
                                                     <td>
-                                                        {{ $cotizacion->jerarquia === 'Principal' && $cotizacion->referencia_full ? 'Full' : 'Sencillo' }}
+                                                        {{ $cotizacion->cliente_nombre }}
+                                                    </td>
+
+                                                    <td>
+                                                        {{ $cotizacion->nombre_subcliente ?? '-' }}
+                                                    </td>
+
+                                                    <td>
+                                                        {{ $cotizacion->origen ?? '-' }}
+                                                    </td>
+
+                                                    <td>
+                                                        {{ $cotizacion->destino ?? '-' }}
+                                                    </td>
+
+                                                    <td>
+                                                        {{ $cotizacion->num_contenedor }}
+                                                    </td>
+
+                                                    <td>
+                                                        {{ $cotizacion->tipo }}
                                                     </td>
 
                                                     <td>

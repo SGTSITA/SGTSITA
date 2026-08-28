@@ -27,7 +27,7 @@ async function initBoard(fromDate, toDate) {
     const result = await $.ajax({
         method: "post",
         url: "/planeaciones/monitor/board",
-        data: { _token: _token, fromDate: fromDate },
+        data: { _token: _token, fromDate: fromDate, toDate: toDate },
         beforeSend: () => {
             if (dpReady) {
                 dp.events.list = []; // Vacía la lista de eventos
@@ -80,6 +80,14 @@ async function initBoard(fromDate, toDate) {
             dp.startDate = scrollToDate?.addDays
                 ? scrollToDate.addDays(-2)
                 : new DayPilot.Date();
+
+            const from = new DayPilot.Date(fromDate).addDays(-10);
+            const to = new DayPilot.Date(toDate).addDays(10);
+
+            const days = DayPilot.DateUtil.daysDiff(from, to) + 1;
+
+            dp.startDate = from;
+            dp.days = days;
 
             if (dpReady) {
                 dp.update();
@@ -402,10 +410,10 @@ function getInfoViaje(startDate, endDate, numContenedor_, idContendor) {
 
             tipoViajeSpan.textContent = response.tipo;
 
-            origen.textContent = response.cotizacion.origen;
-            destino.textContent = response.cotizacion.destino;
-            nombreCliente.textContent = response.cliente.nombre;
-            nombreSubcliente.textContent = response.subcliente.nombre;
+            origen.textContent = response.cotizacion ? response.cotizacion.origen : "--";
+            destino.textContent = response.cotizacion ? response.cotizacion.destino : "--";
+            nombreCliente.textContent = response.cliente ? response.cliente.nombre : "--";
+            nombreSubcliente.textContent = response.subcliente ? response.subcliente.nombre : "--";
 
             placas_camion.textContent =
                 response.documentos.placas_camion ?? "NA";
@@ -424,26 +432,66 @@ function getInfoViaje(startDate, endDate, numContenedor_, idContendor) {
             }
             let tipoS = "Planeacion-> Contenedor:";
             //Once en true para que se ejecute una sola vez y se elimine el listener    onclick="('${params.data.contenedor}')
-            btnFinalizar.addEventListener(
-                "click",
-                () => finalizarViaje(idContendor, numContenedor_),
-                { once: true },
+            const btnFinalizar = document.getElementById("btnFinalizar");
+            if (btnFinalizar) {
+                btnFinalizar.addEventListener(
+                    "click",
+                    () => finalizarViaje(idContendor, numContenedor_),
+                    { once: true },
+                );
+            }
+            const btnDeshacer = document.getElementById("btnDeshacer");
+            if (btnDeshacer) {
+                btnDeshacer.addEventListener(
+                    "click",
+                    () => anularPlaneacion(idContendor, numContenedor_),
+                    { once: true },
+                );
+            }
+            const btnRastreo = document.getElementById("btnRastreo");
+            if (btnRastreo) {
+                btnRastreo.addEventListener(
+                    "click",
+                    () => abrirMapaEnNuevaPestana(numContenedor_, tipoS),
+                    { once: true },
+                );
+            }
+
+            // Update WhatsApp share data for Operator
+            let divWhatsApp = document.getElementById(
+                "datosCompartidosWhatsAppDiv",
             );
-            btnDeshacer.addEventListener(
-                "click",
-                () => anularPlaneacion(idContendor, numContenedor_),
-                { once: true },
-            );
-            btnRastreo.onclick = () => {
-                abrirMapaEnNuevaPestana(numContenedor_, tipoS);
-            };
-            btnEditarViaje.onclick = async () => {
-                if (!modoEdicion) {
-                    activarModoEdicion();
+            if (divWhatsApp) {
+                if (response.password_temporal) {
+                    divWhatsApp.style.display = "block";
+                    let pwdSpan = document.getElementById(
+                        "passwordTemporalSpan",
+                    );
+                    if (pwdSpan)
+                        pwdSpan.textContent = response.password_temporal;
+
+                    let btnReenviar = document.getElementById(
+                        "btnReenviarWhatsApp",
+                    );
+                    if (btnReenviar) {
+                        btnReenviar.onclick = () => {
+                            let url =
+                                "https://wa.me/?text=" +
+                                encodeURIComponent(response.wa_text);
+                            window.open(url, "_blank");
+                        };
+                    }
                 } else {
-                    await guardarCambios();
+                    divWhatsApp.style.display = "none";
                 }
-            };
+            }
+
+            const btnEv = document.getElementById("btnEditarViaje");
+            if (btnEv) {
+                btnEv.onclick = () => {
+                    window.location.href = `/planeaciones/viajes/editar/${response.cotizacion.id}`;
+                };
+            }
 
             let documentosRequeridos = [
                 "boleta_liberacion",
@@ -524,9 +572,12 @@ function activarModoEdicion() {
 
     modoEdicion = true;
 
-    btnEditarViaje.textContent = "Aplicar cambios";
-    btnEditarViaje.classList.remove("btn-primary");
-    btnEditarViaje.classList.add("btn-success");
+    const btnEv = document.getElementById("btnEditarViaje");
+    if (btnEv) {
+        btnEv.textContent = "Aplicar cambios";
+        btnEv.classList.remove("btn-primary");
+        btnEv.classList.add("btn-success");
+    }
 }
 async function guardarCambios() {
     let fechaInicio = document.getElementById("txtFechaInicio").value;
@@ -563,9 +614,12 @@ function volverModoLectura(inicio, fin) {
 
     modoEdicion = false;
 
-    btnEditarViaje.textContent = "Editar Fechas viaje";
-    btnEditarViaje.classList.remove("btn-success");
-    btnEditarViaje.classList.add("btn-primary");
+    const btnEv = document.getElementById("btnEditarViaje");
+    if (btnEv) {
+        btnEv.textContent = "Editar viaje";
+        btnEv.classList.remove("btn-success");
+        btnEv.classList.add("btn-primary");
+    }
 }
 function confirmarCambiosPlaneacion() {
     var _token = $('input[name="_token"]').val();
@@ -607,7 +661,7 @@ if (btnGuardarBoard) {
     //btnGuardarBoard.addEventListener('click',confirmarCambiosPlaneacion)
 }
 
-function anularPlaneacion(idCotizacion, numContenedor) {
+function anularPlaneacion(idContenendor, numContenedor) {
     $("#viajeModal").modal("hide");
     var _token = $('input[name="_token"]').val();
     Swal.fire({
@@ -626,7 +680,7 @@ function anularPlaneacion(idCotizacion, numContenedor) {
                 },
                 body: JSON.stringify({
                     _token: _token,
-                    idCotizacion: idCotizacion,
+                    idContenendor: idContenendor,
                     numContenedor: numContenedor,
                 }),
             })
@@ -634,7 +688,7 @@ function anularPlaneacion(idCotizacion, numContenedor) {
                 .then((data) => {
                     Swal.fire(data.Titulo, data.Mensaje, data.TMensaje);
                     if (data.TMensaje == "success") {
-                        dp.events.remove(idCotizacion); //Eliminar del board
+                        dp.events.remove(idContenendor); //Eliminar del board
                     }
                 })
                 .catch((error) => {
@@ -648,7 +702,7 @@ function anularPlaneacion(idCotizacion, numContenedor) {
     });
 }
 
-function finalizarViaje(idCotizacion, numContenedor) {
+function finalizarViaje(idContenendor, numContenedor) {
     if (!canEndTravel) {
         Swal.fire({
             icon: "warning",
@@ -677,14 +731,14 @@ function finalizarViaje(idCotizacion, numContenedor) {
                 },
                 body: JSON.stringify({
                     _token: _token,
-                    idCotizacion: idCotizacion,
+                    idContenendor: idContenendor,
                 }),
             })
                 .then((response) => response.json())
                 .then((data) => {
                     Swal.fire(data.Titulo, data.Mensaje, data.TMensaje);
                     if (data.TMensaje == "success") {
-                        dp.events.remove(idCotizacion); //Eliminar del board
+                        dp.events.remove(idContenendor); //Eliminar del board
                     }
                 })
                 .catch((error) => {

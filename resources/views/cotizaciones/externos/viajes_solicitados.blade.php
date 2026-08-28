@@ -84,6 +84,12 @@
                                 <div class="menu-item px-3">
                                     <a class="menu-link px-3" onclick="fileManager()">Ver Documentos</a>
                                 </div>
+                                @can('Complemento de pagos')
+                                    <div class="menu-item px-3">
+                                        <a class="menu-link px-3"
+                                            href="{{ route('viajes.complementos_pago_view') }}">Complemento de pagos</a>
+                                    </div>
+                                @endcan
                                 @can('cotizaciones-edit')
                                     <div class="menu-item px-3">
                                         <a class="menu-link px-3" onclick="editarViaje()">Editar Viaje</a>
@@ -94,32 +100,32 @@
 
                                 <!--div class="menu-item px-3" data-kt-menu-trigger="hover" data-kt-menu-placement="right-start">
 
-                                                                                                                                        <a href="#" class="menu-link px-3" data-bs-toggle="modal" data-bs-target="#kt_modal_top_up_wallet">
-                                                                                                                                          <span class="menu-title">Ver documentos</span>
-                                                                                                                                          <span class="menu-arrow"></span>
-                                                                                                                                        </a>
+                                                                                                                                                                <a href="#" class="menu-link px-3" data-bs-toggle="modal" data-bs-target="#kt_modal_top_up_wallet">
+                                                                                                                                                                  <span class="menu-title">Ver documentos</span>
+                                                                                                                                                                  <span class="menu-arrow"></span>
+                                                                                                                                                                </a>
 
 
-                                                                                                                                        <div class="menu-sub menu-sub-dropdown w-175px py-4">
+                                                                                                                                                                <div class="menu-sub menu-sub-dropdown w-175px py-4">
 
-                                                                                                                                          <div class="menu-item px-3">
-                                                                                                                                            <a href="#" class="menu-link px-3"> DODA </a>
-                                                                                                                                          </div>
+                                                                                                                                                                  <div class="menu-item px-3">
+                                                                                                                                                                    <a href="#" class="menu-link px-3"> DODA </a>
+                                                                                                                                                                  </div>
 
-                                                                                                                                          <div class="menu-item px-3">
-                                                                                                                                            <a href="#" class="menu-link px-3"> Pre Alta </a>
-                                                                                                                                          </div>
+                                                                                                                                                                  <div class="menu-item px-3">
+                                                                                                                                                                    <a href="#" class="menu-link px-3"> Pre Alta </a>
+                                                                                                                                                                  </div>
 
-                                                                                                                                          <div class="menu-item px-3">
-                                                                                                                                            <a href="#" class="menu-link px-3"> Boleta de liberación </a>
-                                                                                                                                          </div>
-                                                                                                                                          <div class="menu-item px-3">
-                                                                                                                                            <a href="#" class="menu-link px-3"> Formato Carta Porte </a>
-                                                                                                                                          </div>
+                                                                                                                                                                  <div class="menu-item px-3">
+                                                                                                                                                                    <a href="#" class="menu-link px-3"> Boleta de liberación </a>
+                                                                                                                                                                  </div>
+                                                                                                                                                                  <div class="menu-item px-3">
+                                                                                                                                                                    <a href="#" class="menu-link px-3"> Formato Carta Porte </a>
+                                                                                                                                                                  </div>
 
-                                                                                                                                        </div>
+                                                                                                                                                                </div>
 
-                                                                                                                                      </div-->
+                                                                                                                                                              </div-->
 
                                 <!--begin::Menu separator-->
                                 <div class="separator mt-3 opacity-75"></div>
@@ -130,19 +136,24 @@
                                     <a class="menu-link px-3" onclick="cancelarFull()"> Cancelar viaje Full</a>
 
                                 </div>
-                                <div class="menu-item px-3 disabled" id="btnRegresarLocal">
-                                    <a class="menu-link px-3" onclick="RegresarForaneoLocal()"> Regresar a local</a>
-                                </div>
+                                @can('regresar-Contendorlocal')
+                                    <div class="menu-item px-3 disabled" id="btnRegresarLocal">
+                                        <a class="menu-link px-3" onclick="RegresarForaneoLocal()"> Regresar a local</a>
+                                    </div>
+                                @endcan
+
+
                                 <!--end::Menu separator-->
                                 <!--begin::Menu item-->
-                                <div class="menu-item px-3">
-                                    <div class="menu-content px-3 py-3">
-                                        <button class="btn btn-primary btn-sm px-4" name="btnDocs" id="btnDocs">
-                                            Agregar documentos
-                                        </button>
+                                @can('addDocscliente-acceso')
+                                    <div class="menu-item px-3">
+                                        <div class="menu-content px-3 py-3">
+                                            <button class="btn btn-primary btn-sm px-4" name="btnDocs" id="btnDocs">
+                                                Agregar documentos
+                                            </button>
+                                        </div>
                                     </div>
-                                </div>
-
+                                @endcan
                                 <div class="menu-item px-3">
                                     <div class="menu-content px-3 py-3">
                                         <button type="button" class="btn btn-sm btn-success" title="Rastrear contenedor"
@@ -224,6 +235,7 @@
         </div>
     </div>
 
+
     @include('cotizaciones.externos.modal_fileuploader')
 @endsection
 
@@ -256,6 +268,87 @@
             getContenedoresPendientes(estatusSearch);
             adjuntarDocumentos();
         });
+
+        function ComplementoPago() {
+            var myModal = new bootstrap.Modal(document.getElementById('modalComplementoPagos'));
+            myModal.show();
+
+            $('#loadingComplemento').removeClass('d-none');
+            $('#complementoContent').html('');
+            $('#noComplementoMessage').addClass('d-none');
+
+            $.ajax({
+                url: '/viajes/file-manager/get-complementos-pago',
+                type: 'GET',
+                success: function(response) {
+                    $('#loadingComplemento').addClass('d-none');
+                    if (response.success && response.data.length > 0) {
+                        let accordionHtml = '';
+                        response.data.forEach((group, index) => {
+                            let headingId = `heading-${index}`;
+                            let collapseId = `collapse-${index}`;
+
+                            accordionHtml += `
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header" id="${headingId}">
+                                        <button class="accordion-button collapsed fw-bold text-dark fs-6" type="button" data-bs-toggle="collapse" data-bs-target="#${collapseId}" aria-expanded="false" aria-controls="${collapseId}">
+                                            Estado de Cuenta: ${group.grupo}
+                                        </button>
+                                    </h2>
+                                    <div id="${collapseId}" class="accordion-collapse collapse" aria-labelledby="${headingId}" data-bs-parent="#modalComplementoPagos">
+                                        <div class="accordion-body">
+                                            <div class="table-responsive">
+                                                <table class="table table-striped table-bordered align-middle fs-7">
+                                                    <thead>
+                                                        <tr class="fw-bold text-gray-800">
+                                                            <th>Contenedor</th>
+                                                            <th>Archivos Disponibles</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>`;
+
+                            group.contenedores.forEach(container => {
+                                accordionHtml += `
+                                    <tr>
+                                        <td class="fw-bold text-dark">${container.num_contenedor}</td>
+                                        <td>`;
+
+                                container.files.forEach(file => {
+                                    let btnColor = file.name === 'PDF' ? 'btn-danger' :
+                                        'btn-primary';
+                                    let icon = file.name === 'PDF' ? 'fa-file-pdf' :
+                                        'fa-file-code';
+                                    accordionHtml += `
+                                        <a href="${file.url}" target="_blank" class="btn btn-sm ${btnColor} me-1 my-1">
+                                            <i class="fa ${icon} me-1"></i> Descargar ${file.name}
+                                        </a>`;
+                                });
+
+                                accordionHtml += `
+                                        </td>
+                                    </tr>`;
+                            });
+
+                            accordionHtml += `
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>`;
+                        });
+                        $('#complementoContent').html(accordionHtml);
+                    } else {
+                        $('#noComplementoMessage').removeClass('d-none');
+                    }
+                },
+                error: function() {
+                    $('#loadingComplemento').addClass('d-none');
+                    $('#noComplementoMessage').removeClass('d-none').text(
+                        'Ocurrió un error al obtener los documentos.');
+                }
+            });
+        }
     </script>
     <style>
         .rag-red {

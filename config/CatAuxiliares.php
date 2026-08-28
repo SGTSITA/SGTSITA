@@ -250,7 +250,62 @@ return [
         [ 'texto' => "11) ¿Fin descarga?", 'campo' => 'fin_descarga', 'tooltip' => "Fin descarga" ],
         [ 'texto' => "12) ¿Recepción Doctos Firmados?", 'campo' => 'recepcion_doc_firmados', 'tooltip' => "Recepción Doctos Firmados" ],
 
-    ]
+    ],
+       'costosViajes' => [
+
+        'precio_viaje' => [
+            'concepto' => 'viaje',
+            'tipo_operacion' => 'cargo',
+        ],
+
+        'maniobra' => [
+            'concepto' => 'maniobra',
+            'tipo_operacion' => 'cargo',
+        ],
+
+        'burreo' => [
+            'concepto' => 'burreo',
+            'tipo_operacion' => 'cargo',
+        ],
+
+        'estadia' => [
+            'concepto' => 'estadia',
+            'tipo_operacion' => 'cargo',
+        ],
+
+        'otro' => [
+            'concepto' => 'otro',
+            'tipo_operacion' => 'cargo',
+        ],
+
+        'iva' => [
+            'concepto' => 'iva',
+            'tipo_operacion' => 'cargo',
+        ],
+
+        'retencion' => [
+            'concepto' => 'retencion',
+            'tipo_operacion' => 'descuento',
+        ],
+
+        'base_factura' => [
+            'concepto' => 'base_factura',
+            'tipo_operacion' => 'cargo',
+        ],
+
+        'base_taref' => [
+            'concepto' => 'base_taref',
+            'tipo_operacion' => 'cargo',
+        ],
+
+        // sobrepeso especial
+        'total_sobrepeso_viaje' => [
+            'concepto' => 'sobrepeso',
+            'tipo_operacion' => 'cargo',
+            'usa_meta' => true,
+        ],
+
+    ],
 
 
 ];
