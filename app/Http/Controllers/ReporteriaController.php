@@ -2822,7 +2822,8 @@ public function indexRendimiento()
             ->where(function($q) {
                 $q->whereNotNull('dc.comprobante_pago_pdf')
                   ->orWhereNotNull('dc.comprobante_pago_xml');
-            });
+            })
+            ->where('emp.id', auth()->user()->id_empresa);
 
         // If num_contenedor is provided, find all statement numbers containing that container.
         if (!empty($num_contenedor)) {
