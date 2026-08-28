@@ -1232,12 +1232,12 @@ class ReporteriaController extends Controller
         $idProveedor = $r->input('id_proveedor');
         $info = $this->reporteriaService->getContenedorUtilidad($r->startDate, $r->endDate, auth()->user()->id_empresa, $idProveedor);
         $contadorPeriodos = Common::contadorPeriodos($r->startDate, $r->endDate);
-        
+
         $gastosGenerales = $this->reporteriaService->getGastosGeneralesPeriodo($r->startDate, $r->endDate, auth()->user()->id_empresa);
-        
+
         return json_encode([
-            "Info" => $info, 
-            "contadorPeriodos" => $contadorPeriodos, 
+            "Info" => $info,
+            "contadorPeriodos" => $contadorPeriodos,
             "Diferidos" => [],
             "GastosGenerales" => $gastosGenerales
         ]);
@@ -2691,7 +2691,7 @@ public function indexRendimiento()
         ]);
 
         $config = \App\Models\BalanceGeneralConfig::findOrFail($request->id);
-        
+
         if ($config->id_empresa && $config->id_empresa !== auth()->user()->id_empresa) {
             abort(403, 'No autorizado');
         }
@@ -2795,6 +2795,183 @@ public function indexRendimiento()
             ->get();
 
         return view('contabilidad.balance_general.index', compact('configs', 'ejerciciosRegistrados', 'fechaCorte'));
+    }
+
+    public function index_complementos_pago()
+    {
+        if (!auth()->user()->can('reporte-complemento-pago')) {
+            abort(403, 'No tienes permiso para acceder a esta sección.');
+        }
+        return view('reporteria.complementos_pago.index');
+    }
+
+    public function getComplementosPagoReporte(Request $request)
+    {
+        if (!auth()->user()->can('reporte-complemento-pago')) {
+            return response()->json(['success' => false, 'message' => 'No autorizado.'], 403);
+        }
+
+        $num_estado_cuenta = $request->input('num_estado_cuenta');
+        $num_contenedor = $request->input('num_contenedor');
+
+        $query = \DB::table('estado_cuenta as ec')
+            ->join('estado_cuenta_cotizaciones as ecc', 'ec.id', '=', 'ecc.estado_cuenta_id')
+            ->join('cotizaciones as c', 'ecc.cotizacion_id', '=', 'c.id')
+            ->join('docum_cotizacion as dc', 'c.id', '=', 'dc.id_cotizacion')
+            ->join('empresas as emp', 'c.id_empresa', '=', 'emp.id')
+            ->where(function($q) {
+                $q->whereNotNull('dc.comprobante_pago_pdf')
+                  ->orWhereNotNull('dc.comprobante_pago_xml');
+            });
+
+        // If num_contenedor is provided, find all statement numbers containing that container.
+        if (!empty($num_contenedor)) {
+            $matchingEstados = \DB::table('estado_cuenta as ec')
+                ->join('estado_cuenta_cotizaciones as ecc', 'ec.id', '=', 'ecc.estado_cuenta_id')
+                ->join('cotizaciones as c', 'ecc.cotizacion_id', '=', 'c.id')
+                ->join('docum_cotizacion as dc', 'c.id', '=', 'dc.id_cotizacion')
+                ->where('dc.num_contenedor', 'like', '%' . $num_contenedor . '%')
+                ->pluck('ec.numero')
+                ->unique()
+                ->toArray();
+
+            if (empty($matchingEstados)) {
+                return response()->json([
+                    'success' => true,
+                    'data' => []
+                ]);
+            }
+            $query->whereIn('ec.numero', $matchingEstados);
+        }
+
+        if (!empty($num_estado_cuenta)) {
+            $query->where('ec.numero', 'like', '%' . $num_estado_cuenta . '%');
+        }
+
+        $data = $query->select([
+            'ec.numero as num_estado_cuenta',
+            'emp.nombre as nombre_empresa',
+            'dc.id_cotizacion',
+            'dc.num_contenedor',
+            'dc.comprobante_pago_pdf',
+            'dc.comprobante_pago_xml'
+        ])->get();
+
+        $grouped = [];
+        foreach ($data as $item) {
+            $groupKey = $item->num_estado_cuenta . ' - ' . $item->nombre_empresa;
+
+            $files = [];
+            if (!empty($item->comprobante_pago_pdf)) {
+                $files[] = [
+                    'name' => 'PDF',
+                    'url' => asset("cotizaciones/cotizacion{$item->id_cotizacion}/{$item->comprobante_pago_pdf}"),
+                    'filename' => $item->comprobante_pago_pdf
+                ];
+            }
+            if (!empty($item->comprobante_pago_xml)) {
+                $files[] = [
+                    'name' => 'XML',
+                    'url' => asset("cotizaciones/cotizacion{$item->id_cotizacion}/{$item->comprobante_pago_xml}"),
+                    'filename' => $item->comprobante_pago_xml
+                ];
+            }
+
+            if (!isset($grouped[$groupKey])) {
+                $grouped[$groupKey] = [];
+            }
+
+            $grouped[$groupKey][] = [
+                'num_contenedor' => $item->num_contenedor,
+                'files' => $files
+            ];
+        }
+
+        $formatted = [];
+        foreach ($grouped as $key => $containers) {
+            $formatted[] = [
+                'grupo' => $key,
+                'contenedores' => $containers
+            ];
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $formatted
+        ]);
+    }
+
+    public function descargarZipComplementosReporte(Request $request)
+    {
+        if (!auth()->user()->can('reporte-complemento-pago')) {
+            return response()->json(['success' => false, 'message' => 'No autorizado.'], 403);
+        }
+
+        $request->validate([
+            'num_estado_cuenta' => 'required',
+            'nombre_empresa' => 'required'
+        ]);
+
+        try {
+            $data = \DB::table('estado_cuenta as ec')
+                ->join('estado_cuenta_cotizaciones as ecc', 'ec.id', '=', 'ecc.estado_cuenta_id')
+                ->join('cotizaciones as c', 'ecc.cotizacion_id', '=', 'c.id')
+                ->join('docum_cotizacion as dc', 'c.id', '=', 'dc.id_cotizacion')
+                ->join('empresas as emp', 'c.id_empresa', '=', 'emp.id')
+                ->where('ec.numero', $request->num_estado_cuenta)
+                ->where('emp.nombre', $request->nombre_empresa)
+                ->where(function($query) {
+                    $query->whereNotNull('dc.comprobante_pago_pdf')
+                          ->orWhereNotNull('dc.comprobante_pago_xml');
+                })
+                ->select([
+                    'dc.id_cotizacion',
+                    'dc.num_contenedor',
+                    'dc.comprobante_pago_pdf',
+                    'dc.comprobante_pago_xml'
+                ])
+                ->get();
+
+            if ($data->isEmpty()) {
+                return response()->json(['success' => false, 'message' => 'No hay archivos para descargar.'], 404);
+            }
+
+            $cleanNum = preg_replace('/[^A-Za-z0-9_\-]/', '_', $request->num_estado_cuenta);
+            $cleanEmp = preg_replace('/[^A-Za-z0-9_\-]/', '_', $request->nombre_empresa);
+            $zipName = "Estado_de_Cuenta_" . $cleanNum . "_" . $cleanEmp . ".zip";
+            $zipPath = public_path($zipName);
+            $zip = new \ZipArchive();
+
+            if ($zip->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) === true) {
+                foreach ($data as $item) {
+                    $folderId = $item->id_cotizacion;
+                    $pdf = $item->comprobante_pago_pdf;
+                    $xml = $item->comprobante_pago_xml;
+
+                    if (!empty($pdf)) {
+                        $pdfPath = public_path("/cotizaciones/cotizacion{$folderId}/{$pdf}");
+                        if (\File::exists($pdfPath)) {
+                            $zip->addFile($pdfPath, $item->num_contenedor . '-complemento.pdf');
+                        }
+                    }
+
+                    if (!empty($xml)) {
+                        $xmlPath = public_path("/cotizaciones/cotizacion{$folderId}/{$xml}");
+                        if (\File::exists($xmlPath)) {
+                            $zip->addFile($xmlPath, $item->num_contenedor . '-complemento.xml');
+                        }
+                    }
+                }
+                $zip->close();
+            }
+
+            return response()->json([
+                'success' => true,
+                'zipUrl' => asset($zipName)
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
     }
 }
 

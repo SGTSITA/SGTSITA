@@ -549,6 +549,10 @@ Route::middleware(['auth', 'idle.timeout'])->group(function () {
         Route::get('cuentas/pagar/buscar-pagos', [App\Http\Controllers\CuentasPagarController::class, 'buscarPagos'])->name('cobros_pagos.historico_pagar');
 
         // ==================== R E P O R T E R I A ====================
+        Route::get('reporteria/complementos-pago', [App\Http\Controllers\ReporteriaController::class, 'index_complementos_pago'])->name('reporteria.complementos_pago.index');
+        Route::get('reporteria/complementos-pago/data', [App\Http\Controllers\ReporteriaController::class, 'getComplementosPagoReporte'])->name('reporteria.complementos_pago.data');
+        Route::post('reporteria/complementos-pago/download-zip', [App\Http\Controllers\ReporteriaController::class, 'descargarZipComplementosReporte'])->name('reporteria.complementos_pago.download_zip');
+
         Route::get('reporteria/cotizaciones/cxc', [App\Http\Controllers\ReporteriaController::class, 'index'])->name('index.reporteria');
         Route::get('reporteria/cotizaciones/cxc/buscador', [App\Http\Controllers\ReporteriaController::class, 'advance'])->name('advance_search.buscador');
         Route::post('reporteria/cotizaciones/cxc/export', [App\Http\Controllers\ReporteriaController::class, 'export'])->name('cotizaciones.export');
