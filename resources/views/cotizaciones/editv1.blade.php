@@ -178,7 +178,7 @@
                                             Proveedor
                                         </button>
                                     @elseif ($documentacion?->Asignaciones?->id_proveedor == null)
-                                        @can('cotizacion-valores')
+                                        @can('cotizacion-Gastos-viaje')
                                             <button class="nav-link custom-tab no-disable" id="nav-GastosOpe-tab"
                                                 data-bs-toggle="tab" data-bs-target="#nav-GastosOpe" type="button"
                                                 role="tab" aria-controls="nav-GastosOpe" aria-selected="false">
@@ -216,13 +216,13 @@
 
                                         <div class="col-6 form-group">
                                             <!--label for="name">Cliente *</label>
-                                                                                                                                                                                                                                                                                                                                                    <select class="form-select cliente d-inline-block" data-toggle="select" id="id_cliente" name="id_cliente">
-                                                                                                                                                                                                                                                                                                                                                        <option value="{{ $cotizacion->id_cliente }}">{{ $cotizacion->Cliente->nombre }} / {{ $cotizacion->Cliente->telefono }}</option>
-                                                                                                                                                                                                                                                                                                                                                        @foreach ($clientes as $item)
+                                                                                                                                                                                                                                                                                                                                                            <select class="form-select cliente d-inline-block" data-toggle="select" id="id_cliente" name="id_cliente">
+                                                                                                                                                                                                                                                                                                                                                                <option value="{{ $cotizacion->id_cliente }}">{{ $cotizacion->Cliente->nombre }} / {{ $cotizacion->Cliente->telefono }}</option>
+                                                                                                                                                                                                                                                                                                                                                                @foreach ($clientes as $item)
     <option value="{{ $item->id }}">{{ $item->nombre }} / {{ $item->telefono }}</option>
     @endforeach
 
-                                                                                                                                                                                                                                                                                                                                                    </select-->
+                                                                                                                                                                                                                                                                                                                                                            </select-->
                                             <ul class="list-group">
                                                 <li
                                                     class="list-group-item border-1 border-dashed d-flex p-4 mb-2 bg-gray-100 border-radius-lg">
@@ -263,14 +263,14 @@
 
                                         <div class="col-6 form-group">
                                             <!--label for="name">Subcliente *</label>
-                                                                                                                                                                                                                                                                                                                                                    <select class="form-select subcliente d-inline-block" id="id_subcliente" name="id_subcliente">
+                                                                                                                                                                                                                                                                                                                                                            <select class="form-select subcliente d-inline-block" id="id_subcliente" name="id_subcliente">
 
-                                                                                                                                                                                                                                                                                                    @if ($cotizacion->id_subcliente != null)
+                                                                                                                                                                                                                                                                                                            @if ($cotizacion->id_subcliente != null)
     <option value="{{ $cotizacion->id_subcliente }}">{{ $cotizacion->Subcliente->nombre }} / {{ $cotizacion->Subcliente->telefono }}</option>
 @else
     <option value="">Seleccionar subcliente</option>
     @endif
-                                                                                                                                                                                                                                                                                                                                                    </select-->
+                                                                                                                                                                                                                                                                                                                                                            </select-->
                                             <ul class="list-group">
                                                 <li
                                                     class="list-group-item border-1 border-dashed d-flex p-4 mb-2 bg-gray-100 border-radius-lg">
@@ -1791,7 +1791,7 @@
                                             @endcan
                                         </div>
                                     @elseif (is_null($documentacion->Asignaciones->id_proveedor))
-                                        @can('cotizacion-valores')
+                                        @can('cotizacion-Gastos-viaje')
                                             <div class="tab-pane fade" id="nav-GastosOpe" role="tabpanel"
                                                 aria-labelledby="nav-GastosOpe-tab" tabindex="0">
 
@@ -1860,14 +1860,16 @@
                                                                                 value="{{ old('litros_urea', $documentacion?->Cotizacion?->litros_urea ?? '0.000') }}"
                                                                                 placeholder="0.000">
                                                                         </div>
+                                                                        @can('cotizacion-valores')
+                                                                            <div class="col-md-3 col-6">
+                                                                                <button type="button"
+                                                                                    class="btn btn-sm bg-gradient-primary w-100 mb-0"
+                                                                                    id="btnGuardarKmDiesel">
+                                                                                    <i class="fas fa-save"></i> Guardar
+                                                                                </button>
+                                                                            </div>
+                                                                        @endcan
 
-                                                                        <div class="col-md-3 col-6">
-                                                                            <button type="button"
-                                                                                class="btn btn-sm bg-gradient-primary w-100 mb-0"
-                                                                                id="btnGuardarKmDiesel">
-                                                                                <i class="fas fa-save"></i> Guardar
-                                                                            </button>
-                                                                        </div>
                                                                     </div>
 
                                                                     @php
