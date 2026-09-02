@@ -416,10 +416,11 @@ class ApiValidationService
         $startDate = $fechaInicio ? \Carbon\Carbon::parse($fechaInicio)->toDateString() : \Carbon\Carbon::now()->subDays(15)->toDateString();
         $endDate = $fechaFin ? \Carbon\Carbon::parse($fechaFin)->toDateString() : \Carbon\Carbon::now()->addDays(15)->toDateString();
 
-        $planeaciones = DB::table('asignaciones')
+        $query = DB::table('asignaciones')
             ->leftJoin('docum_cotizacion', 'asignaciones.id_contenedor', '=', 'docum_cotizacion.id')
             ->leftJoin('cotizaciones', 'docum_cotizacion.id_cotizacion', '=', 'cotizaciones.id')
             ->leftJoin('operadores', 'asignaciones.id_operador', '=', 'operadores.id')
+            ->leftJoin('equipos', 'asignaciones.id_camion', '=', 'equipos.id')
             ->leftJoin('proveedores', function($join) {
                 $join->on('proveedores.id', '=', DB::raw('COALESCE(NULLIF(asignaciones.id_proveedor, 0), NULLIF(cotizaciones.id_proveedor, 0))'));
             })
@@ -434,16 +435,102 @@ class ApiValidationService
                 'asignaciones.fecha_inicio',
                 'asignaciones.fecha_fin',
                 'operadores.nombre as operador',
+                'equipos.id_equipo as id_equipo_camion',
+                'equipos.placas as placas_camion',
                 DB::raw("COALESCE(NULLIF(em.nombre, ''), emc.nombre) as proveedor"),
                 'proveedores.nombre as transportista',
                 'cotizaciones.origen',
                 'cotizaciones.destino',
                 'cotizaciones.id as cotizacion_id',
                 'docum_cotizacion.id as contenedor_id',
+                'docum_cotizacion.doc_ccp',
+                'docum_cotizacion.doda',
+                'docum_cotizacion.boleta_liberacion',
+                'docum_cotizacion.doc_eir',
+                'docum_cotizacion.cima',
+                'docum_cotizacion.boleta_patio',
+                'docum_cotizacion.doc_evidencia_descarga',
+                'cotizaciones.carta_porte',
+                'cotizaciones.carta_porte_xml',
+                'cotizaciones.img_boleta AS boleta_vacio',
+                'cotizaciones.referencia_full',
                 DB::raw("'Planeada' as estatus")
             )
             ->orderBy('asignaciones.fecha_inicio', 'asc')
             ->get();
+
+        $planeaciones = $query->map(function ($cot) {
+            $checkFile = function($file, $id) {
+                if (empty($file)) return null;
+                $path = public_path('cotizaciones/cotizacion' . $id . '/' . $file);
+                return \File::exists($path) ? $file : $file;
+            };
+
+            $docCCP = $checkFile($cot->doc_ccp, $cot->cotizacion_id);
+            $doda = $checkFile($cot->doda, $cot->cotizacion_id);
+            $boletaLiberacion = $checkFile($cot->boleta_liberacion, $cot->cotizacion_id);
+            $cartaPorte = $checkFile($cot->carta_porte, $cot->cotizacion_id);
+            $cartaPorteXml = $checkFile($cot->carta_porte_xml, $cot->cotizacion_id);
+            $boletaVacio = $checkFile($cot->boleta_vacio, $cot->cotizacion_id);
+            $docEir = $checkFile($cot->doc_eir, $cot->cotizacion_id);
+            $cima = $cot->cima;
+
+            $numContenedor = $cot->contenedor;
+
+            if (!is_null($cot->referencia_full)) {
+                $secundaria = Cotizaciones::where('referencia_full', $cot->referencia_full)
+                    ->where('jerarquia', 'Secundario')
+                    ->with('DocCotizacion')
+                    ->first();
+
+                if ($secundaria && $secundaria->DocCotizacion) {
+                    $secCCP = $checkFile($secundaria->DocCotizacion->doc_ccp, $secundaria->id);
+                    $secDoda = $checkFile($secundaria->DocCotizacion->doda, $secundaria->id);
+                    $secEir = $checkFile($secundaria->DocCotizacion->doc_eir, $secundaria->id);
+                    $secBoletaLiberacion = $checkFile($secundaria->DocCotizacion->boleta_liberacion, $secundaria->id);
+                    $secCartaPorte = $checkFile($secundaria->carta_porte, $secundaria->id);
+                    $secCartaPorteXml = $checkFile($secundaria->carta_porte_xml, $secundaria->id);
+                    $secBoletaVacio = $checkFile($secundaria->img_boleta, $secundaria->id);
+
+                    $docCCP = $docCCP ?: $secCCP;
+                    $doda = $doda ?: $secDoda;
+                    $docEir = $docEir ?: $secEir;
+                    $boletaLiberacion = $boletaLiberacion ?: $secBoletaLiberacion;
+                    $cartaPorte = $cartaPorte ?: $secCartaPorte;
+                    $cartaPorteXml = $cartaPorteXml ?: $secCartaPorteXml;
+                    $boletaVacio = $boletaVacio ?: $secBoletaVacio;
+
+                    if (!str_contains($numContenedor, $secundaria->DocCotizacion->num_contenedor)) {
+                        $numContenedor .= ' / ' . $secundaria->DocCotizacion->num_contenedor;
+                    }
+                }
+            }
+
+            return [
+                'id' => $cot->id,
+                'contenedor' => $numContenedor,
+                'fecha_inicio' => $cot->fecha_inicio,
+                'fecha_fin' => $cot->fecha_fin,
+                'operador' => $cot->operador ?? 'Sin Asignar',
+                'unidad' => $cot->id_equipo_camion ?? 'N/A',
+                'placas' => $cot->placas_camion ?? 'N/A',
+                'proveedor' => $cot->proveedor,
+                'transportista' => $cot->transportista ?? $cot->proveedor,
+                'origen' => $cot->origen,
+                'destino' => $cot->destino,
+                'cotizacion_id' => $cot->cotizacion_id,
+                'contenedor_id' => $cot->contenedor_id,
+                'estatus' => $cot->estatus,
+                'doc_ccp' => $docCCP,
+                'doda' => $doda,
+                'boleta_liberacion' => $boletaLiberacion,
+                'doc_eir' => $docEir,
+                'cima' => $cima,
+                'carta_porte' => $cartaPorte,
+                'carta_porte_xml' => $cartaPorteXml,
+                'boleta_vacio' => $boletaVacio,
+            ];
+        });
 
         return [
             'success' => true,

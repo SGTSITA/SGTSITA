@@ -963,7 +963,7 @@ class PlaneacionController extends Controller
                     $waText .= "Hora de llegada a bodega:\n" . ($horaLlegada ?: "") . "\n";
                     $waText .= "Hora de salida: \n";
                     $waText .= "Comentarios:\n" . ($comentarios ?: "") . "\n\n";
-                    $waText .= "Contraseña temporal para Operador: " . $passwordTemporal;
+                   // $waText .= "Contraseña temporal para Operador: " . $passwordTemporal;
                 } else {
                     $waText = "{$saludo} " . ($nombreOp ? trim($nombreOp) : "Operador") . ",\n\n";
                     $waText .= "Comparto los datos de salida del día de hoy:\n\n";
@@ -971,12 +971,12 @@ class PlaneacionController extends Controller
                     $waText .= "Puerto / Lugar de salida:\n" . ($origen ?: "") . "\n";
                     $waText .= "Domicilio de entrega: " . ($direccion ?: "") . "\n";
                     $waText .= "Mapa: " . ($mapLink ?: "") . "\n";
-                    $waText .= "Contacto: \n";
+                    $waText .= "Contacto: \n" . ($contacto ?: "") . "\n";
                     $waText .= "Fecha de entrega:\n" . ($fechaEntrega ?: "") . "\n";
-                    $waText .= "Hora de llegada a bodega:\n\n";
+                    $waText .= "Hora de llegada a bodega:\n\n" . ($horaLlegada ?: "") . "\n";
                     $waText .= "Hora de salida: \n";
-                    $waText .= "Comentarios:\n\n";
-                    $waText .= "Contraseña temporal para Operador: " . $passwordTemporal;
+                    $waText .= "Comentarios:\n\n" . ($comentarios ?: "") . "\n\n";
+                   // $waText .= "Contraseña temporal para Operador: " . $passwordTemporal;
                 }
 
                 DB::commit();
@@ -1130,7 +1130,7 @@ class PlaneacionController extends Controller
                 $waText .= "Hora de llegada a bodega:\n" . ($horaLlegada ?: "") . "\n";
                 $waText .= "Hora de salida: \n";
                 $waText .= "Comentarios:\n" . ($comentarios ?: "") . "\n\n";
-                $waText .= "Contraseña temporal para Operador: " . $passwordTemporal;
+               // $waText .= "Contraseña temporal para Operador: " . $passwordTemporal;
             } else {
                 $waText = "{$saludo} " . ($nombreOp ? trim($nombreOp) : "Operador") . ",\n\n";
                 $waText .= "Comparto los datos de salida del día de hoy:\n\n";
@@ -1138,12 +1138,12 @@ class PlaneacionController extends Controller
                 $waText .= "Puerto / Lugar de salida:\n" . ($origen ?: "") . "\n";
                 $waText .= "Domicilio de entrega: " . ($direccion ?: "") . "\n";
                 $waText .= "Mapa: " . ($mapLink ?: "") . "\n";
-                $waText .= "Contacto: \n";
+                $waText .= "Contacto: " . ($contacto ?: "") . "\n";
                 $waText .= "Fecha de entrega:\n" . ($fechaEntrega ?: "") . "\n";
-                $waText .= "Hora de llegada a bodega:\n\n";
+                $waText .= "Hora de llegada a bodega:\n" . ($horaLlegada ?: "") . "\n";
                 $waText .= "Hora de salida: \n";
-                $waText .= "Comentarios:\n\n";
-                $waText .= "Contraseña temporal para Operador: " . $passwordTemporal;
+                $waText .= "Comentarios:\n\n" . ($comentarios ?: "") . "\n\n";
+               // $waText .= "Contraseña temporal para Operador: " . $passwordTemporal;
             }
 
             DB::commit();
