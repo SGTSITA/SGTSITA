@@ -449,7 +449,7 @@ class ApiValidationService
                 'docum_cotizacion.doc_eir',
                 'docum_cotizacion.cima',
                 'docum_cotizacion.boleta_patio',
-                'docum_cotizacion.doc_evidencia_descarga',
+                'docum_cotizacion.evidencia_descarga',
                 'cotizaciones.carta_porte',
                 'cotizaciones.carta_porte_xml',
                 'cotizaciones.img_boleta AS boleta_vacio',
