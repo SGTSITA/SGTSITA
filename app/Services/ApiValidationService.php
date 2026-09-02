@@ -450,6 +450,8 @@ class ApiValidationService
                 'docum_cotizacion.cima',
                 'docum_cotizacion.boleta_patio',
                 'docum_cotizacion.evidencia_descarga',
+                'docum_cotizacion.comprobante_pago_pdf',
+                'docum_cotizacion.comprobante_pago_xml',
                 'cotizaciones.carta_porte',
                 'cotizaciones.carta_porte_xml',
                 'cotizaciones.img_boleta AS boleta_vacio',
@@ -473,6 +475,10 @@ class ApiValidationService
             $cartaPorteXml = $checkFile($cot->carta_porte_xml, $cot->cotizacion_id);
             $boletaVacio = $checkFile($cot->boleta_vacio, $cot->cotizacion_id);
             $docEir = $checkFile($cot->doc_eir, $cot->cotizacion_id);
+            $evidenciaDescarga = $checkFile($cot->evidencia_descarga, $cot->cotizacion_id);
+            $comprobantePagoPdf = $checkFile($cot->comprobante_pago_pdf, $cot->cotizacion_id);
+            $comprobantePagoXml = $checkFile($cot->comprobante_pago_xml, $cot->cotizacion_id);
+            $boletaPatio = $checkFile($cot->boleta_patio, $cot->cotizacion_id);
             $cima = $cot->cima;
 
             $numContenedor = $cot->contenedor;
@@ -491,6 +497,10 @@ class ApiValidationService
                     $secCartaPorte = $checkFile($secundaria->carta_porte, $secundaria->id);
                     $secCartaPorteXml = $checkFile($secundaria->carta_porte_xml, $secundaria->id);
                     $secBoletaVacio = $checkFile($secundaria->img_boleta, $secundaria->id);
+                    $secEvidenciaDescarga = $checkFile($secundaria->DocCotizacion->evidencia_descarga, $secundaria->id);
+                    $secComprobantePagoPdf = $checkFile($secundaria->DocCotizacion->comprobante_pago_pdf, $secundaria->id);
+                    $secComprobantePagoXml = $checkFile($secundaria->DocCotizacion->comprobante_pago_xml, $secundaria->id);
+                    $secBoletaPatio = $checkFile($secundaria->DocCotizacion->boleta_patio, $secundaria->id);
 
                     $docCCP = $docCCP ?: $secCCP;
                     $doda = $doda ?: $secDoda;
@@ -499,6 +509,10 @@ class ApiValidationService
                     $cartaPorte = $cartaPorte ?: $secCartaPorte;
                     $cartaPorteXml = $cartaPorteXml ?: $secCartaPorteXml;
                     $boletaVacio = $boletaVacio ?: $secBoletaVacio;
+                    $evidenciaDescarga = $evidenciaDescarga ?: $secEvidenciaDescarga;
+                    $comprobantePagoPdf = $comprobantePagoPdf ?: $secComprobantePagoPdf;
+                    $comprobantePagoXml = $comprobantePagoXml ?: $secComprobantePagoXml;
+                    $boletaPatio = $boletaPatio ?: $secBoletaPatio;
 
                     if (!str_contains($numContenedor, $secundaria->DocCotizacion->num_contenedor)) {
                         $numContenedor .= ' / ' . $secundaria->DocCotizacion->num_contenedor;
@@ -529,6 +543,10 @@ class ApiValidationService
                 'carta_porte' => $cartaPorte,
                 'carta_porte_xml' => $cartaPorteXml,
                 'boleta_vacio' => $boletaVacio,
+                'evidencia_descarga' => $evidenciaDescarga,
+                'comprobante_pago_pdf' => $comprobantePagoPdf,
+                'comprobante_pago_xml' => $comprobantePagoXml,
+                'boleta_patio' => $boletaPatio,
             ];
         });
 
@@ -629,6 +647,10 @@ class ApiValidationService
                 'cotizaciones.carta_porte_xml',
                 'cotizaciones.img_boleta AS boleta_vacio',
                 'docum_cotizacion.doc_eir',
+                'docum_cotizacion.evidencia_descarga',
+                'docum_cotizacion.comprobante_pago_pdf',
+                'docum_cotizacion.comprobante_pago_xml',
+                'docum_cotizacion.boleta_patio',
                 'asignaciones.id_proveedor',
                 'asignaciones.fecha_inicio',
                 'asignaciones.fecha_fin',
@@ -663,6 +685,10 @@ class ApiValidationService
             $cartaPorteXml = $checkFile($cot->carta_porte_xml, $cot->id);
             $boletaVacio = $checkFile($cot->boleta_vacio, $cot->id);
             $docEir = $checkFile($cot->doc_eir, $cot->id);
+            $evidenciaDescarga = $checkFile($cot->evidencia_descarga, $cot->id);
+            $comprobantePagoPdf = $checkFile($cot->comprobante_pago_pdf, $cot->id);
+            $comprobantePagoXml = $checkFile($cot->comprobante_pago_xml, $cot->id);
+            $boletaPatio = $checkFile($cot->boleta_patio, $cot->id);
             $tipo = "--";
 
             if (!is_null($cot->referencia_full)) {
@@ -679,14 +705,22 @@ class ApiValidationService
                     $secCartaPorte = $checkFile($secundaria->carta_porte, $secundaria->id);
                     $secCartaPorteXml = $checkFile($secundaria->carta_porte_xml, $secundaria->id);
                     $secBoletaVacio = $checkFile($secundaria->img_boleta, $secundaria->id);
+                    $secEvidenciaDescarga = $checkFile($secundaria->DocCotizacion->evidencia_descarga, $secundaria->id);
+                    $secComprobantePagoPdf = $checkFile($secundaria->DocCotizacion->comprobante_pago_pdf, $secundaria->id);
+                    $secComprobantePagoXml = $checkFile($secundaria->DocCotizacion->comprobante_pago_xml, $secundaria->id);
+                    $secBoletaPatio = $checkFile($secundaria->DocCotizacion->boleta_patio, $secundaria->id);
 
-                    $docCCP = ($docCCP && $secCCP) ? $docCCP : null;
-                    $doda = ($doda && $secDoda) ? $doda : null;
-                    $docEir = ($docEir !== null && $secEir !== null) ? $docEir : null;
-                    $boletaLiberacion = ($boletaLiberacion && $secBoletaLiberacion) ? $boletaLiberacion : null;
-                    $cartaPorte = ($cartaPorte && $secCartaPorte) ? $cartaPorte : null;
-                    $cartaPorteXml = ($cartaPorteXml && $secCartaPorteXml) ? $cartaPorteXml : null;
-                    $boletaVacio = ($boletaVacio && $secBoletaVacio) ? $boletaVacio : null;
+                    $docCCP = ($docCCP && $secCCP) ? $docCCP : ($docCCP ?: $secCCP);
+                    $doda = ($doda && $secDoda) ? $doda : ($doda ?: $secDoda);
+                    $docEir = ($docEir !== null && $secEir !== null) ? $docEir : ($docEir ?: $secEir);
+                    $boletaLiberacion = ($boletaLiberacion && $secBoletaLiberacion) ? $boletaLiberacion : ($boletaLiberacion ?: $secBoletaLiberacion);
+                    $cartaPorte = ($cartaPorte && $secCartaPorte) ? $cartaPorte : ($cartaPorte ?: $secCartaPorte);
+                    $cartaPorteXml = ($cartaPorteXml && $secCartaPorteXml) ? $cartaPorteXml : ($cartaPorteXml ?: $secCartaPorteXml);
+                    $boletaVacio = ($boletaVacio && $secBoletaVacio) ? $boletaVacio : ($boletaVacio ?: $secBoletaVacio);
+                    $evidenciaDescarga = ($evidenciaDescarga && $secEvidenciaDescarga) ? $evidenciaDescarga : ($evidenciaDescarga ?: $secEvidenciaDescarga);
+                    $comprobantePagoPdf = ($comprobantePagoPdf && $secComprobantePagoPdf) ? $comprobantePagoPdf : ($comprobantePagoPdf ?: $secComprobantePagoPdf);
+                    $comprobantePagoXml = ($comprobantePagoXml && $secComprobantePagoXml) ? $comprobantePagoXml : ($comprobantePagoXml ?: $secComprobantePagoXml);
+                    $boletaPatio = ($boletaPatio && $secBoletaPatio) ? $boletaPatio : ($boletaPatio ?: $secBoletaPatio);
 
                     $numContenedor .= ' / ' . $secundaria->DocCotizacion->num_contenedor;
                 }
@@ -705,6 +739,10 @@ class ApiValidationService
                 "carta_porte_xml" => $cartaPorteXml,
                 "boleta_vacio" => $boletaVacio,
                 "doc_eir" => $docEir,
+                "evidencia_descarga" => $evidenciaDescarga,
+                "comprobante_pago_pdf" => $comprobantePagoPdf,
+                "comprobante_pago_xml" => $comprobantePagoXml,
+                "boleta_patio" => $boletaPatio,
                 "id_proveedor" => $cot->id_proveedor,
                 "fecha_inicio" => $cot->fecha_inicio,
                 "fecha_fin" => $cot->fecha_fin,
@@ -723,6 +761,10 @@ class ApiValidationService
             $documentosFirst->carta_porte_xml = $firstChecked['carta_porte_xml'];
             $documentosFirst->boleta_vacio = $firstChecked['boleta_vacio'];
             $documentosFirst->doc_eir = $firstChecked['doc_eir'];
+            $documentosFirst->evidencia_descarga = $firstChecked['evidencia_descarga'];
+            $documentosFirst->comprobante_pago_pdf = $firstChecked['comprobante_pago_pdf'];
+            $documentosFirst->comprobante_pago_xml = $firstChecked['comprobante_pago_xml'];
+            $documentosFirst->boleta_patio = $firstChecked['boleta_patio'];
         }
 
         // Construct the WhatsApp text for resending:
@@ -774,11 +816,11 @@ class ApiValidationService
                 $waText .= "Puerto / Lugar de salida:\n" . ($origen ?: "") . "\n";
                 $waText .= "Domicilio de entrega: " . ($direccion ?: "") . "\n";
                 $waText .= "Mapa: " . ($mapLink ?: "") . "\n";
-                $waText .= "Contacto: \n";
+                $waText .= "Contacto: \n" . ($contacto ?: "") . "\n";
                 $waText .= "Fecha de entrega:\n" . ($fechaEntrega ?: "") . "\n";
-                $waText .= "Hora de llegada a bodega:\n\n";
+                $waText .= "Hora de llegada a bodega:\n\n" . ($horaLlegada ?: "") . "\n";
                 $waText .= "Hora de salida: \n";
-                $waText .= "Comentarios:\n";
+                $waText .= "Comentarios:\n" . ($comentarios ?: "") . "\n";
             }
         }
 

@@ -1054,8 +1054,8 @@ class PlaneacionController extends Controller
             $asignaciones->restante_pago_operador = 0;
             $asignaciones->tipo_contrato = 'Propio';
             // Generate temporary operator password
-            $passwordTemporal = (string) mt_rand(100000, 999999);
-            $asignaciones->password_temporal = $passwordTemporal;
+           // $passwordTemporal = (string) mt_rand(100000, 999999);
+            $asignaciones->password_temporal = null;//$passwordTemporal;
             $asignaciones->save();
 
             $litrosDiesel = $request->get('litros_diesel') ?? $request->get('gasto_litros_diesel') ?? 0;
@@ -1154,7 +1154,7 @@ class PlaneacionController extends Controller
                 "Mensaje" => "Se ha programado correctamente el viaje del contenedor (Elemental)",
                 'success' => true,
                 'cotizacion_data' => $cotizacion_data,
-                'password_temporal' => $passwordTemporal,
+                'password_temporal' => null,// $passwordTemporal,
                 'wa_text' => $waText,
                 'id_asignacion' => $asignaciones->id
             ]);
