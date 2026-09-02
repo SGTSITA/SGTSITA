@@ -33,128 +33,16 @@ class ApiValidationController extends Controller
     public function login(Request $request)
     {
         $request->validate([
-            'email'    => 'required|email',
+            'email'    => 'required',
             'password' => 'required',
         ]);
 
         $credentials = $request->only('email', 'password');
+        if (!$request->has('email') && $request->has('usuario')) {
+            $credentials['email'] = $request->usuario;
+        }
         $res = $this->apiValidationService->login($credentials);
         return $this->forwardResponse($res);
-    }
-
-    public function validateOperador(Request $request)
-    {
-        $request->validate([
-            'usuario'    => 'required|email',
-            'contrasena' => 'required|string',
-        ], [
-            'usuario.required' => 'El correo electrónico es requerido.',
-            'usuario.email'    => 'El correo electrónico no es válido.',
-            'contrasena.required' => 'La contraseña es requerida.',
-        ]);
-
-        $user = \App\Models\User::where('email', $request->usuario)->first();
-
-        if (!$user || !\Illuminate\Support\Facades\Hash::check($request->contrasena, $user->password)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Usuario o contraseña incorrectos.',
-                'mensaje' => 'Usuario o contraseña incorrectos.'
-            ], 401);
-        }
-
-        // Validar el permiso acceso-operaodor-movil
-        $hasPermission = false;
-        try {
-            if (method_exists($user, 'hasPermissionTo')) {
-                $hasPermission = $user->hasPermissionTo('acceso-operaodor-movil');
-            } else if (method_exists($user, 'can')) {
-                $hasPermission = $user->can('acceso-operaodor-movil');
-            }
-        } catch (\Exception $e) {
-            $hasPermission = $user->can('acceso-operaodor-movil');
-        }
-
-        if (!$hasPermission) {
-            return response()->json([
-                'success' => false,
-                'message' => 'El usuario no tiene permiso para acceder a esta sección o no tiene permiso para iniciar sesión.',
-                'mensaje' => 'El usuario no tiene permiso para acceder a esta sección o no tiene permiso para iniciar sesión.'
-            ], 403);
-        }
-
-        $token = $user->createToken('operador-movil-token')->plainTextToken;
-
-        // Intentar obtener el operador del usuario
-        $operador = null;
-        try {
-            $operador = \App\Models\Operador::where('email', $user->email)->first();
-        } catch (\Exception $e) {}
-
-        $idAsignacion = null;
-        $numContenedor = 'N/A';
-        $unidad = 'N/A';
-        $idEquipo = 'N/A';
-
-        // Buscar si el usuario tiene asignación ya aceptada activa
-        try {
-            $operadorIds = DB::table('operador_usuario')
-                ->where('user_id', $user->id)
-                ->pluck('id_operador');
-
-            if (!$operadorIds->isEmpty()) {
-                $asignacionActiva = DB::table('asignaciones')
-                    ->join('docum_cotizacion', 'asignaciones.id_contenedor', '=', 'docum_cotizacion.id')
-                    ->join('cotizaciones', 'docum_cotizacion.id_cotizacion', '=', 'cotizaciones.id')
-                    ->whereIn('asignaciones.id_operador', $operadorIds)
-                    ->where('asignaciones.estatus_viaje', 'Aceptado')
-                    ->where('cotizaciones.estatus_planeacion', 1)
-                    ->where('cotizaciones.estatus', 'Aprobada')
-                    ->select('asignaciones.*')
-                    ->first();
-
-                if ($asignacionActiva) {
-                    $idAsignacion = $asignacionActiva->id;
-                    $contenedor = DB::table('docum_cotizacion')
-                        ->where('id', $asignacionActiva->id_contenedor)
-                        ->first();
-                    $numContenedor = $contenedor ? $contenedor->num_contenedor : 'N/A';
-
-                    $camion = DB::table('equipos')
-                        ->where('id', $asignacionActiva->id_camion)
-                        ->first();
-                    $unidad = $camion ? $camion->id_equipo : 'N/A';
-                    $idEquipo = $unidad;
-                }
-            }
-        } catch (\Exception $e) {}
-
-        // Si no hay asignación activa, usar los datos básicos del camión por defecto del operador
-        if ($unidad === 'N/A' && $operador) {
-            try {
-                $unidad = $operador->Camion ? $operador->Camion->id_equipo : 'N/A';
-                $idEquipo = $unidad;
-            } catch (\Exception $e) {}
-        }
-
-        $data = [
-            'token' => $token,
-            'id' => $user->id,
-            'nombre' => $operador ? $operador->nombre : $user->name,
-            'email' => $user->email,
-            'id_operador' => $operador ? $operador->id : null,
-            'id_asignacion' => $idAsignacion,
-            'num_contenedor' => $numContenedor,
-            'unidad' => $unidad,
-            'id_equipo' => $idEquipo,
-        ];
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Inicio de sesión exitoso.',
-            'mensaje' => 'Inicio de sesión exitoso.',
-            'data' => $data
-        ], 200);
     }
 
     public function getOperacionActiva(Request $request)

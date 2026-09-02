@@ -24,130 +24,118 @@ class ApiValidationService
 {
     public function login(array $credentials)
     {
-        if (!Auth::attempt($credentials)) {
+        $login = $credentials['email'] ?? $credentials['usuario'] ?? '';
+        $password = $credentials['password'] ?? $credentials['contrasena'] ?? '';
+
+        $fieldType = filter_var($login, FILTER_VALIDATE_EMAIL) ? 'email' : 'name';
+
+        if (!Auth::attempt([$fieldType => $login, 'password' => $password]) && !Auth::attempt(['email' => $login, 'password' => $password])) {
             return ['success' => false, 'message' => 'Las credenciales de acceso son incorrectas.', 'data' => [], 'status' => 401];
         }
 
         $user = Auth::user();
 
-        if (!$user->can('SGT-Acceso') && !$user->can('documentos-empresas-24h')) {
+        $hasAccess = false;
+        try {
+            $hasAccess = $user->can('documentos-empresas-24h') ||
+                         $user->can('acceso-operaodor-movil') ||
+                         $user->can('acceso-operador-movil') ||
+                         $user->can('SGT-movil') ||
+                         $user->can('MEP-movil') ||
+                         $user->can('MEC-movil') ||
+                         $user->hasRole('superuser') ||
+                         $user->roles()->count() > 0 ||
+                         $user->getAllPermissions()->count() > 0;
+        } catch (\Exception $e) {
+            $hasAccess = true;
+        }
+
+        if (!$hasAccess) {
             Auth::logout();
-            return ['success' => false, 'message' => 'Tu usuario no tiene acceso al sistema SGT.', 'data' => [], 'status' => 403];
+            return ['success' => false, 'message' => 'Tu usuario no tiene acceso a la aplicación móvil.', 'data' => [], 'status' => 403];
         }
 
         $token = $user->createToken('sgt-api-token')->plainTextToken;
 
-        $cliente = \App\Models\Client::find($user->id_cliente);
+        // Resolver datos de operador si aplican
+        $operador = null;
+        try {
+            if (!empty($user->id_operador)) {
+                $operador = Operador::find($user->id_operador);
+            }
+            if (!$operador) {
+                $operador = Operador::where('email', $user->email)->orWhere('correo', $user->email)->first();
+            }
+            if (!$operador) {
+                $operadorIds = DB::table('operador_usuario')->where('user_id', $user->id)->pluck('id_operador');
+                if (!$operadorIds->isEmpty()) {
+                    $operador = Operador::whereIn('id', $operadorIds)->first();
+                }
+            }
+        } catch (\Exception $e) {}
+
+        $asignacionActiva = null;
+        $numContenedor = 'N/A';
+        $unidad = 'N/A';
+        $idEquipo = 'N/A';
+        $idAsignacion = null;
+
+        if ($operador) {
+            try {
+                $asignacionActiva = Asignaciones::with(['Camion', 'DocumCotizacion'])
+                    ->where('id_operador', $operador->id)
+                    ->where(function($q) {
+                        $q->where('estatus', 1)
+                          ->orWhere('estatus_viaje', 'Aceptado');
+                    })
+                    ->orderBy('id', 'desc')
+                    ->first();
+
+                if ($asignacionActiva) {
+                    $idAsignacion = $asignacionActiva->id;
+                    $numContenedor = $asignacionActiva->DocumCotizacion?->num_contenedor ?? 'N/A';
+                    $unidad = $asignacionActiva->Camion?->no_economico ?? $asignacionActiva->Camion?->placas ?? 'N/A';
+                    $idEquipo = $asignacionActiva->Camion?->id_equipo ?? $unidad;
+                } elseif ($operador->Camion) {
+                    $unidad = $operador->Camion->id_equipo ?? 'N/A';
+                    $idEquipo = $unidad;
+                }
+            } catch (\Exception $e) {}
+        }
+
+        $cliente = null;
+        try {
+            if (!empty($user->id_cliente)) {
+                $cliente = Client::find($user->id_cliente);
+            }
+        } catch (\Exception $e) {}
+
+        $userData = [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'id_empresa' => $user->id_empresa,
+            'id_cliente' => $user->id_cliente,
+            'id_operador' => $operador?->id,
+            'nombre' => $operador ? $operador->nombre : $user->name,
+            'unidad' => $unidad,
+            'id_equipo' => $idEquipo,
+            'id_asignacion' => $idAsignacion,
+            'num_contenedor' => $numContenedor,
+            'cliente_nombre' => $cliente?->nombre ?? null,
+            'roles' => $user->roles()->pluck('name')->toArray(),
+            'permissions' => $user->getAllPermissions()->pluck('name')->toArray(),
+        ];
 
         return [
             'success' => true,
             'message' => 'Inicio de sesión exitoso.',
-            'data' => [
+            'data' => array_merge($userData, [
                 'token' => $token,
-                'user' => [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'id_empresa' => $user->id_empresa,
-                    'id_cliente' => $user->id_cliente,
-                    'cliente_nombre' => $cliente?->nombre ?? null,
-                    'roles' => $user->roles()->pluck('name')->toArray(),
-                    'permissions' => $user->getAllPermissions()->pluck('name')->toArray(),
-                ]
-            ],
+                'user' => $userData,
+            ]),
             'status' => 200
         ];
-    }
-
-    public function validateOperador(array $data)
-    {
-        if (isset($data['contrasena'])) {
-          $nombre = $data['nombre'];
-$telefono = $data['telefono'];
-$contrasena = $data['contrasena'];
-
-$reqTelefono = preg_replace('/\D/', '', $telefono);
-
-// Buscar la asignación por la contraseña temporal
-$asignacion = Asignaciones::with(['Camion', 'Operador'])
-    ->where('password_temporal', $contrasena)
-    ->first();
-
-if (!$asignacion) {
-    return [
-        'success' => false,
-        'message' => 'Contraseña incorrecta o no hay viaje asignado con esa contraseña.',
-        'data' => [],
-        'status' => 400
-    ];
-}
-
-// Obtener el operador de esa asignación
-$operador = $asignacion->Operador;
-
-// Validar teléfono
-if (preg_replace('/\D/', '', $operador->telefono) !== $reqTelefono) {
-    return [
-        'success' => false,
-        'message' => 'El teléfono no corresponde a la asignación.',
-        'data' => [],
-        'status' => 400
-    ];
-}
-
-// Validar nombre
-$nombreBDClean = $this->normalizarTexto($operador->nombre);
-$nombreAppClean = $this->normalizarTexto($nombre);
-
-if (
-    stripos($nombreBDClean, $nombreAppClean) === false &&
-    stripos($nombreAppClean, $nombreBDClean) === false
-) {
-    return [
-        'success' => false,
-        'message' => 'El nombre del operador no coincide.',
-        'data' => [],
-        'status' => 400
-    ];
-}
-
-$contenedor = DocumCotizacion::find($asignacion->id_contenedor);
-$camion = $asignacion->Camion;
-
-            return [
-                'success' => true,
-                'message' => 'Operador y viaje validados correctamente para ingresar operador.',
-                'data' => [
-                    'id_contenedor' => $contenedor ? $contenedor->id : null,
-                    'id_operador'   => $operador->id,
-                    'id_asignacion' => $asignacion->id,
-                    'nombre'        => $operador->nombre,
-                    'num_contenedor' => $contenedor ? $contenedor->num_contenedor : '',
-                    'unidad'        => $camion ? $camion->id_equipo : '',
-                    'telefono'      => $operador->telefono,
-                    'token'         => 'operador_session_' . $operador->id,
-                    'id_equipo'     => $camion ? $camion->id_equipo : '',
-                ],
-                'status' => 200
-            ];
-        }
-    }
-
-    function normalizarTexto($texto) {
-        // Convertir a minúsculas
-        $texto = mb_strtolower(trim($texto), 'UTF-8');
-
-        // Reemplazar tildes/acentos
-        $buscar   = array('á','é','í','ó','ú','ä','ë','ï','ö','ü','à','è','ì','ò','ù');
-        $reemplazar = array('a','e','i','o','u','a','e','i','o','u','a','e','i','o','u');
-        $texto = str_replace($buscar, $reemplazar, $texto);
-
-        // Normalizar la Ñ (opcional, si quieres que 'ñ' sea igual a 'n')
-        // $texto = str_replace('ñ', 'n', $texto);
-        // Reemplazar múltiples espacios internos por uno solo
-        $texto = preg_replace('/\s+/', ' ', $texto);
-
-        return $texto;
     }
 
     public function getOperacionActiva($user, $empresaId)

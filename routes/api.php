@@ -52,7 +52,6 @@ Route::get('/api/coordenadas/entidadesPC', [App\Http\Controllers\CoordenadasCont
 
 // SGT Validation and Login APIs
 Route::post('/login', [App\Http\Controllers\ApiValidationController::class, 'login']);
-Route::post('/validate-operador', [App\Http\Controllers\ApiValidationController::class, 'validateOperador']);
 Route::get('/dashboard/reportes/descargar', [App\Http\Controllers\ApiValidationController::class, 'descargarReporteMobile']);
 Route::get('/dashboard/bancos/{id}/reporte-descargar', [App\Http\Controllers\ApiValidationController::class, 'descargarReporteBancoMobile']);
 Route::post('/operador/coordenadas', [App\Http\Controllers\ApiValidationController::class, 'guardarCoordenadas']);
