@@ -34,27 +34,6 @@ class ApiValidationService
         }
 
         $user = Auth::user();
-
-        $hasAccess = false;
-        try {
-            $hasAccess = $user->can('documentos-empresas-24h') ||
-                         $user->can('acceso-operaodor-movil') ||
-                         $user->can('acceso-operador-movil') ||
-                         $user->can('SGT-movil') ||
-                         $user->can('MEP-movil') ||
-                         $user->can('MEC-movil') ||
-                         $user->hasRole('superuser') ||
-                         $user->roles()->count() > 0 ||
-                         $user->getAllPermissions()->count() > 0;
-        } catch (\Exception $e) {
-            $hasAccess = true;
-        }
-
-        if (!$hasAccess) {
-            Auth::logout();
-            return ['success' => false, 'message' => 'Tu usuario no tiene acceso a la aplicación móvil.', 'data' => [], 'status' => 403];
-        }
-
         $token = $user->createToken('sgt-api-token')->plainTextToken;
 
         // Resolver datos de operador si aplican
