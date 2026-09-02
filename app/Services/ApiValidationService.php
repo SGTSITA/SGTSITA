@@ -30,7 +30,7 @@ class ApiValidationService
 
         $user = Auth::user();
 
-        if (!$user->can('SGT-Acceso')) {
+        if (!$user->can('SGT-Acceso') && !$user->can('documentos-empresas-24h')) {
             Auth::logout();
             return ['success' => false, 'message' => 'Tu usuario no tiene acceso al sistema SGT.', 'data' => [], 'status' => 403];
         }
@@ -685,7 +685,6 @@ $camion = $asignacion->Camion;
         $horaLlegada = $cotizacion->cp_hora_tentativa_entrega ?? '';
         $comentarios = $cotizacion->cp_comentarios ?? '';
         $mapLink = ($lat && $lng) ? "https://maps.google.com/?q={$lat},{$lng}" : '';
-        $passwordTemporal = $asignaciones ? $asignaciones->password_temporal : '';
 
         if ($asignaciones && !empty($asignaciones->mensaje_compartido)) {
             $waText = $asignaciones->mensaje_compartido;
@@ -713,8 +712,7 @@ $camion = $asignacion->Camion;
                 $waText .= "Fecha de entrega:\n" . ($fechaEntrega ?: "") . "\n";
                 $waText .= "Hora de llegada a bodega:\n" . ($horaLlegada ?: "") . "\n";
                 $waText .= "Hora de salida: \n";
-                $waText .= "Comentarios:\n" . ($comentarios ?: "") . "\n\n";
-                $waText .= "Contraseña temporal para Operador: " . $passwordTemporal;
+                $waText .= "Comentarios:\n" . ($comentarios ?: "");
             } else {
                 $waText = "{$saludo} " . ($nombreOp ? trim($nombreOp) : "Operador") . ",\n\n";
                 $waText .= "Comparto los datos de salida del día de hoy:\n\n";
@@ -726,8 +724,7 @@ $camion = $asignacion->Camion;
                 $waText .= "Fecha de entrega:\n" . ($fechaEntrega ?: "") . "\n";
                 $waText .= "Hora de llegada a bodega:\n\n";
                 $waText .= "Hora de salida: \n";
-                $waText .= "Comentarios:\n\n";
-                $waText .= "Contraseña temporal para Operador: " . $passwordTemporal;
+                $waText .= "Comentarios:\n";
             }
         }
 
@@ -742,10 +739,95 @@ $camion = $asignacion->Camion;
                 "subcliente" => $cotizacion->Subcliente,
                 "documentos" => $documentosFirst,
                 "documents" => $firstChecked,
+                "documentos_configurados" => $this->getDocumentosConfiguradosParaContenedor($docCotizacion, $cotizacion),
                 "wa_text" => $waText
             ],
             'status' => 200
         ];
+    }
+
+    public function getDocumentosConfiguradosParaContenedor($docCotizacion, $cotizacion)
+    {
+        $idCotizacion = $cotizacion->id;
+        $allowedFields = null;
+        try {
+            $config = DB::table('global_configs')->where('key', 'documentos_operador')->first();
+            if ($config && !empty($config->value)) {
+                $decoded = json_decode($config->value, true);
+                if (is_array($decoded)) {
+                    $allowedFields = array_map(function($val) {
+                        return strtolower(trim($val));
+                    }, $decoded);
+                }
+            }
+        } catch (\Exception $e) {
+            Log::warning("No se pudo consultar global_configs o decodificar su valor: " . $e->getMessage());
+        }
+
+        $fields = [
+            'doc_ccp' => 'Formato CCP',
+            'boleta_liberacion' => 'Boleta de Liberación',
+            'doda' => 'DODA',
+            'carta_porte' => 'Carta Porte (PDF)',
+            'carta_porte_xml' => 'Carta Porte (XML)',
+            'boleta_vacio' => 'Prealta - Boleta de Vacío',
+            'doc_eir' => 'EIR - Comprobante de Vacío',
+            'evidencia_descarga' => 'Evidencia de Descarga',
+            'comprobante_pago_pdf' => 'Complemento de Pago (PDF)',
+            'comprobante_pago_xml' => 'Complemento de Pago (XML)',
+            'boleta_patio' => 'Boleta de Patio',
+            'cima' => 'Documento CIMA',
+        ];
+
+        $documentos = [];
+
+        foreach ($fields as $field => $label) {
+            if ($allowedFields !== null) {
+                $fieldLower = strtolower($field);
+                $labelLower = strtolower($label);
+                $isAllowed = in_array($fieldLower, $allowedFields) || in_array($labelLower, $allowedFields);
+                if (!$isAllowed) {
+                    continue;
+                }
+            }
+
+            $fileName = null;
+            if (in_array($field, ['carta_porte', 'carta_porte_xml'])) {
+                if ($cotizacion && !empty($cotizacion->$field)) {
+                    $fileName = $cotizacion->$field;
+                }
+            } elseif ($field === 'boleta_vacio') {
+                if (!empty($docCotizacion->boleta_vacio)) {
+                    $fileName = $docCotizacion->boleta_vacio;
+                } elseif ($cotizacion && !empty($cotizacion->img_boleta)) {
+                    $fileName = $cotizacion->img_boleta;
+                }
+            } else {
+                if (!empty($docCotizacion->$field)) {
+                    $fileName = $docCotizacion->$field;
+                }
+            }
+
+            $hasFile = false;
+            $url = null;
+            if ($fileName) {
+                $path = public_path('cotizaciones/cotizacion' . $idCotizacion . '/' . $fileName);
+                if (\File::exists($path)) {
+                    $hasFile = true;
+                    $url = asset('cotizaciones/cotizacion' . $idCotizacion . '/' . $fileName);
+                }
+            }
+
+            $documentos[] = [
+                'clave' => $field,
+                'nombre' => $label,
+                'filename' => $fileName,
+                'disponible' => $hasFile,
+                'url' => $url
+            ];
+        }
+
+        return $documentos;
     }
 
     public function guardarCoordenadas(array $data)
@@ -1124,14 +1206,21 @@ $camion = $asignacion->Camion;
                 Log::warning("No se pudo consultar global_configs o decodificar su valor: " . $e->getMessage());
             }
 
+            $cotizacion = DB::table('cotizaciones')->where('id', $idCotizacion)->first();
+
             $fields = [
+                'doc_ccp' => 'Formato CCP',
                 'boleta_liberacion' => 'Boleta de Liberación',
-                'doda' => 'Documento DODA',
-                'boleta_vacio' => 'Boleta de Vacío',
-                'doc_eir' => 'Documento EIR',
-                'doc_ccp' => 'Documento CCP',
+                'doda' => 'DODA',
+                'carta_porte' => 'Carta Porte (PDF)',
+                'carta_porte_xml' => 'Carta Porte (XML)',
+                'boleta_vacio' => 'Prealta - Boleta de Vacío',
+                'doc_eir' => 'EIR - Comprobante de Vacío',
+                'evidencia_descarga' => 'Evidencia de Descarga',
+                'comprobante_pago_pdf' => 'Complemento de Pago (PDF)',
+                'comprobante_pago_xml' => 'Complemento de Pago (XML)',
                 'boleta_patio' => 'Boleta de Patio',
-                'evidencia_descarga' => 'Evidencia de Descarga'
+                'cima' => 'Documento CIMA',
             ];
 
             foreach ($fields as $field => $label) {
@@ -1139,26 +1228,37 @@ $camion = $asignacion->Camion;
                 if ($allowedFields !== null) {
                     $fieldLower = strtolower($field);
                     $labelLower = strtolower($label);
-                    $isAllowed = false;
-                    foreach ($allowedFields as $allowed) {
-                        if ($allowed === $fieldLower || $allowed === $labelLower || str_contains($fieldLower, $allowed) || str_contains($labelLower, $allowed)) {
-                            $isAllowed = true;
-                            break;
-                        }
-                    }
+                    $isAllowed = in_array($fieldLower, $allowedFields) || in_array($labelLower, $allowedFields);
                     if (!$isAllowed) {
                         continue;
                     }
                 }
 
-                if (!empty($contenedor->$field)) {
-                    $fileName = $contenedor->$field;
+                $fileName = null;
+                if (in_array($field, ['carta_porte', 'carta_porte_xml'])) {
+                    if ($cotizacion && !empty($cotizacion->$field)) {
+                        $fileName = $cotizacion->$field;
+                    }
+                } elseif ($field === 'boleta_vacio') {
+                    if (!empty($contenedor->boleta_vacio)) {
+                        $fileName = $contenedor->boleta_vacio;
+                    } elseif ($cotizacion && !empty($cotizacion->img_boleta)) {
+                        $fileName = $cotizacion->img_boleta;
+                    }
+                } else {
+                    if (!empty($contenedor->$field)) {
+                        $fileName = $contenedor->$field;
+                    }
+                }
+
+                if ($fileName) {
                     $url = str_starts_with($fileName, 'http')
                         ? $fileName
                         : asset('cotizaciones/cotizacion' . $idCotizacion . '/' . $fileName);
 
                     $documentos[] = [
                         'nombre' => $label,
+                        'clave' => $field,
                         'url' => $url
                     ];
                 }
@@ -1587,6 +1687,170 @@ $camion = $asignacion->Camion;
         $distance = $earthRadius * $c;
 
         return round($distance * 1.18, 2);
+    }
+
+    public function getContenedoresEmpresas24h()
+    {
+        try {
+            $now = Carbon::now();
+
+            if (!\Illuminate\Support\Facades\Schema::hasTable('contenedor_visibilidad_24h')) {
+                \Illuminate\Support\Facades\Schema::create('contenedor_visibilidad_24h', function ($table) {
+                    $table->id();
+                    $table->unsignedBigInteger('id_contenedor')->index();
+                    $table->unsignedBigInteger('id_cotizacion')->nullable()->index();
+                    $table->unsignedBigInteger('id_empresa')->nullable()->index();
+                    $table->dateTime('fecha_inicio_visibilidad')->index();
+                    $table->dateTime('fecha_fin_visibilidad')->index();
+                    $table->boolean('visible')->default(true)->index();
+                    $table->timestamps();
+                });
+            }
+
+            $now = Carbon::now();
+            $today = $now->toDateString();
+
+            // 1. Expirar contenedores que ya superaron su ventana de 24 horas
+            DB::table('contenedor_visibilidad_24h')
+                ->where('visible', 1)
+                ->where('fecha_fin_visibilidad', '<=', $now)
+                ->update([
+                    'visible' => 0,
+                    'updated_at' => $now
+                ]);
+
+            // 2. Identificar contenedores de viajes de empresas propias activos que aún no han sido registrados
+            // Condiciones: empresa_propia = 1, estatus_planeacion = 1, estatus = 'Aprobada' y now dentro del rango de viaje en asignaciones
+            $registradosIds = DB::table('contenedor_visibilidad_24h')
+                ->pluck('id_contenedor')
+                ->toArray();
+
+            $queryNuevos = DB::table('docum_cotizacion')
+                ->join('cotizaciones', 'docum_cotizacion.id_cotizacion', '=', 'cotizaciones.id')
+                ->join('empresas', 'cotizaciones.id_empresa', '=', 'empresas.id')
+                ->join('asignaciones', 'docum_cotizacion.id', '=', 'asignaciones.id_contenedor')
+                ->where('empresas.empresa_propia', 1)
+                ->where('empresas.estatus', 1)
+                ->where('cotizaciones.estatus_planeacion', 1)
+                ->where('cotizaciones.estatus', 'Aprobada')
+                ->whereDate('asignaciones.fecha_inicio', '<=', $today)
+                ->where(function ($q) use ($today) {
+                    $q->whereNull('asignaciones.fecha_fin')
+                      ->orWhereDate('asignaciones.fecha_fin', '>=', $today);
+                });
+
+            if (!empty($registradosIds)) {
+                $queryNuevos->whereNotIn('docum_cotizacion.id', $registradosIds);
+            }
+
+            $nuevos = $queryNuevos->select(
+                'docum_cotizacion.id as id_contenedor',
+                'cotizaciones.id as id_cotizacion',
+                'cotizaciones.id_empresa'
+            )->get();
+
+            $fin = $now->copy()->addHours(24);
+            $inserts = [];
+            foreach ($nuevos as $item) {
+                $inserts[] = [
+                    'id_contenedor' => $item->id_contenedor,
+                    'id_cotizacion' => $item->id_cotizacion,
+                    'id_empresa' => $item->id_empresa,
+                    'fecha_inicio_visibilidad' => $now,
+                    'fecha_fin_visibilidad' => $fin,
+                    'visible' => 1,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ];
+            }
+
+            if (!empty($inserts)) {
+                foreach (array_chunk($inserts, 100) as $chunk) {
+                    DB::table('contenedor_visibilidad_24h')->insert($chunk);
+                }
+            }
+
+            // 3. Consultar los contenedores activos en la ventana de 24h cruzando información relacional
+            $contenedores = DB::table('contenedor_visibilidad_24h')
+                ->join('docum_cotizacion', 'contenedor_visibilidad_24h.id_contenedor', '=', 'docum_cotizacion.id')
+                ->join('cotizaciones', 'contenedor_visibilidad_24h.id_cotizacion', '=', 'cotizaciones.id')
+                ->join('empresas', 'contenedor_visibilidad_24h.id_empresa', '=', 'empresas.id')
+                ->join('asignaciones', 'docum_cotizacion.id', '=', 'asignaciones.id_contenedor')
+                ->leftJoin('clients', 'cotizaciones.id_cliente', '=', 'clients.id')
+                ->leftJoin('operadores', 'asignaciones.id_operador', '=', 'operadores.id')
+                ->where('contenedor_visibilidad_24h.visible', 1)
+                ->where('contenedor_visibilidad_24h.fecha_fin_visibilidad', '>', $now)
+                ->where('empresas.empresa_propia', 1)
+                ->where('cotizaciones.estatus_planeacion', 1)
+                ->where('cotizaciones.estatus', 'Aprobada')
+                ->whereDate('asignaciones.fecha_inicio', '<=', $today)
+                ->where(function ($q) use ($today) {
+                    $q->whereNull('asignaciones.fecha_fin')
+                      ->orWhereDate('asignaciones.fecha_fin', '>=', $today);
+                })
+                ->select(
+                    'docum_cotizacion.id as id_contenedor',
+                    'docum_cotizacion.num_contenedor',
+                    'cotizaciones.id as id_cotizacion',
+                    'cotizaciones.origen',
+                    'cotizaciones.destino',
+                    'cotizaciones.estatus',
+                    'cotizaciones.referencia_full',
+                    'cotizaciones.tamano',
+                    'empresas.id as id_empresa',
+                    'empresas.nombre as empresa_nombre',
+                    'clients.nombre as cliente_nombre',
+                    'operadores.nombre as operador_nombre',
+                    'asignaciones.fecha_inicio as asignacion_fecha_inicio',
+                    'asignaciones.fecha_fin as asignacion_fecha_fin',
+                    'contenedor_visibilidad_24h.fecha_inicio_visibilidad',
+                    'contenedor_visibilidad_24h.fecha_fin_visibilidad'
+                )
+                ->orderBy('contenedor_visibilidad_24h.fecha_inicio_visibilidad', 'desc')
+                ->get();
+
+            $resultado = $contenedores->map(function ($row) use ($now) {
+                $finDt = Carbon::parse($row->fecha_fin_visibilidad);
+                $segundosRestantes = max(0, $now->diffInSeconds($finDt, false));
+                $minutosRestantes = max(0, (int) round($segundosRestantes / 60));
+
+                return [
+                    'id_contenedor' => $row->id_contenedor,
+                    'num_contenedor' => $row->num_contenedor,
+                    'id_cotizacion' => $row->id_cotizacion,
+                    'origen' => $row->origen ?? 'N/A',
+                    'destino' => $row->destino ?? 'N/A',
+                    'estatus' => $row->estatus ?? 'N/A',
+                    'referencia_full' => $row->referencia_full,
+                    'tamano' => $row->tamano,
+                    'id_empresa' => $row->id_empresa,
+                    'empresa_nombre' => $row->empresa_nombre ?? 'Empresa Propia',
+                    'cliente_nombre' => $row->cliente_nombre ?? 'N/A',
+                    'operador_nombre' => $row->operador_nombre ?? 'Sin Asignar',
+                    'asignacion_fecha_inicio' => $row->asignacion_fecha_inicio,
+                    'asignacion_fecha_fin' => $row->asignacion_fecha_fin,
+                    'fecha_inicio_visibilidad' => $row->fecha_inicio_visibilidad,
+                    'fecha_fin_visibilidad' => $row->fecha_fin_visibilidad,
+                    'segundos_restantes' => $segundosRestantes,
+                    'minutos_restantes' => $minutosRestantes,
+                ];
+            });
+
+            return [
+                'success' => true,
+                'message' => 'Contenedores de empresas propias (24h) obtenidos con éxito.',
+                'data' => $resultado,
+                'status' => 200
+            ];
+        } catch (\Exception $e) {
+            Log::error("Error en getContenedoresEmpresas24h: " . $e->getMessage());
+            return [
+                'success' => false,
+                'message' => 'Error al obtener contenedores: ' . $e->getMessage(),
+                'data' => [],
+                'status' => 500
+            ];
+        }
     }
 }
 

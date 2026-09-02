@@ -29,6 +29,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/dashboard/planeacion', [App\Http\Controllers\ApiValidationController::class, 'getPlaneacion']);
     Route::get('/dashboard/reportes', [App\Http\Controllers\ApiValidationController::class, 'getReportes']);
     Route::get('/dashboard/empresas-propias', [App\Http\Controllers\ApiValidationController::class, 'getEmpresasPropias']);
+    Route::get('/documentos-empresas/contenedores', [App\Http\Controllers\ApiValidationController::class, 'getContenedoresEmpresas24h']);
     Route::get('/dashboard/catalogos-programar-viaje', [App\Http\Controllers\ApiValidationController::class, 'getCatalogsProgramarViaje']);
     Route::post('/dashboard/programar-viaje', [App\Http\Controllers\ApiValidationController::class, 'programarViajeMobile']);
     Route::post('/dashboard/anular-planeacion', [App\Http\Controllers\ApiValidationController::class, 'anularPlaneacionMobile']);
@@ -36,6 +37,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/dashboard/bancos', [App\Http\Controllers\ApiValidationController::class, 'getBancosMobile']);
     Route::get('/dashboard/bancos/{id}/reporte', [App\Http\Controllers\ApiValidationController::class, 'exportarReporteBancoMobile']);
     Route::post('/dashboard/reportes/generar', [App\Http\Controllers\ApiValidationController::class, 'generarReporteMobile']);
+    Route::get('/operador/check-asignacion', [App\Http\Controllers\ApiValidationController::class, 'checkAsignacion']);
+    Route::post('/operador/aceptar-asignacion', [App\Http\Controllers\ApiValidationController::class, 'aceptarAsignacion']);
+    Route::get('/operador/historial', [App\Http\Controllers\ApiValidationController::class, 'getHistorial']);
+    Route::get('/operador/viajes-pendientes-liquidar', [App\Http\Controllers\ApiValidationController::class, 'getViajesPendientesLiquidar']);
+    Route::post('/operador/registrar-gastos-viaje', [App\Http\Controllers\ApiValidationController::class, 'registrarGastosViaje']);
+    Route::get('/operador/obtener-gastos-viaje/{id_asignacion}', [App\Http\Controllers\ApiValidationController::class, 'obtenerGastosViaje']);
+    Route::post('/operador/eliminar-gasto-viaje', [App\Http\Controllers\ApiValidationController::class, 'eliminarGastoViaje']);
+    Route::get('/operador/notification-config', [App\Http\Controllers\ApiValidationController::class, 'getNotificationConfig']);
 });
 
 Route::get('/api/coordenadas/subclientes/{clienteId}', [App\Http\Controllers\CoordenadasController::class, 'getSubclientes']);
