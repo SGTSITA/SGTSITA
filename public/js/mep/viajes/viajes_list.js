@@ -594,55 +594,56 @@ function getCatalogoOperadorUnidad() {
 
 const inputOperador = document.getElementById("txtOperador");
 const boxOperador = document.getElementById("sugerenciasOperador");
+if (inputOperador) {
+    inputOperador.addEventListener("input", function () {
+        const valor = this.value.toLowerCase().trim();
 
-inputOperador.addEventListener("input", function () {
-    const valor = this.value.toLowerCase().trim();
+        this.dataset.mepOperador = 0;
+        document.getElementById("txtTelefono").value = "";
 
-    this.dataset.mepOperador = 0;
-    document.getElementById("txtTelefono").value = "";
-
-    if (!valor) {
-        boxOperador.style.display = "none";
-        return;
-    }
-
-    const resultados = operadores.filter((op) =>
-        op.nombre.toLowerCase().includes(valor),
-    );
-
-    if (resultados.length === 0) {
-        boxOperador.style.display = "none";
-        return;
-    }
-
-    boxOperador.innerHTML = "";
-
-    resultados.forEach((op) => {
-        const item = document.createElement("div");
-
-        item.textContent = op.nombre;
-        item.style.padding = "8px";
-        item.style.cursor = "pointer";
-
-        item.onmouseenter = () => (item.style.background = "#f1f1f1");
-        item.onmouseleave = () => (item.style.background = "white");
-
-        item.onclick = () => {
-            inputOperador.value = op.nombre;
-            inputOperador.dataset.mepOperador = op.id;
-
-            document.getElementById("txtTelefono").value = op.telefono;
-
+        if (!valor) {
             boxOperador.style.display = "none";
+            return;
+        }
 
-            toastr.success("Operador seleccionado");
-        };
+        const resultados = operadores.filter((op) =>
+            op.nombre.toLowerCase().includes(valor),
+        );
 
-        boxOperador.appendChild(item);
+        if (resultados.length === 0) {
+            boxOperador.style.display = "none";
+            return;
+        }
+
+        boxOperador.innerHTML = "";
+
+        resultados.forEach((op) => {
+            const item = document.createElement("div");
+
+            item.textContent = op.nombre;
+            item.style.padding = "8px";
+            item.style.cursor = "pointer";
+
+            item.onmouseenter = () => (item.style.background = "#f1f1f1");
+            item.onmouseleave = () => (item.style.background = "white");
+
+            item.onclick = () => {
+                inputOperador.value = op.nombre;
+                inputOperador.dataset.mepOperador = op.id;
+
+                document.getElementById("txtTelefono").value = op.telefono;
+
+                boxOperador.style.display = "none";
+
+                toastr.success("Operador seleccionado");
+            };
+
+            boxOperador.appendChild(item);
+        });
+
+        boxOperador.style.display = "block";
     });
-
-    boxOperador.style.display = "block";
-});
+}
 
 inputOperador.addEventListener("blur", () => {
     setTimeout(() => {
