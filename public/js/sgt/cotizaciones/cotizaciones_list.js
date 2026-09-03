@@ -282,33 +282,69 @@ document.addEventListener("DOMContentLoaded", function () {
 
     getCotizacionesList();
 
+    let currentRequestId = 0;
+    let activeAbortController = null;
+
     function getCotizacionesList() {
         const overlay = document.getElementById("gridLoadingOverlay");
-        overlay.style.display = "flex";
+        if (overlay) overlay.style.display = "flex";
+
+        // Cancelar petición anterior si todavía está pendiente
+        if (activeAbortController) {
+            activeAbortController.abort();
+        }
+        activeAbortController = new AbortController();
+        const signal = activeAbortController.signal;
+
+        const requestId = ++currentRequestId;
+        const requestedTab = currentTab;
 
         let url = "/cotizaciones/list";
-        if (currentTab === "finalizadas") url = "/cotizaciones/finalizadas";
-        if (currentTab === "en_espera") url = "/cotizaciones/espera";
-        if (currentTab === "aprobadas") url = "/cotizaciones/aprobadas";
-        if (currentTab === "canceladas") url = "/cotizaciones/canceladas";
+        if (requestedTab === "finalizadas") url = "/cotizaciones/finalizadas";
+        if (requestedTab === "en_espera") url = "/cotizaciones/espera";
+        if (requestedTab === "aprobadas") url = "/cotizaciones/aprobadas";
+        if (requestedTab === "canceladas") url = "/cotizaciones/canceladas";
 
-        gridApi.setGridOption("rowData", []);
+        if (gridApi) {
+            gridApi.setGridOption("rowData", []);
+        }
 
-        fetch(url)
-            .then((response) => response.json())
+        fetch(url, { signal })
+            .then((response) => {
+                if (!response.ok) {
+                    throw new Error(`Error en la petición: ${response.status} ${response.statusText}`);
+                }
+                return response.json();
+            })
             .then((data) => {
-                gridApi.setGridOption("rowData", data.list);
+                // Solo aplicar datos si esta respuesta pertenece a la última petición
+                // y el usuario continúa en la misma pestaña
+                if (requestId === currentRequestId && currentTab === requestedTab) {
+                    if (gridApi) {
+                        gridApi.setGridOption("rowData", data.list || []);
+                    }
+                }
             })
             .catch((error) => {
+                if (error.name === "AbortError") {
+                    // Petición cancelada intencionalmente por cambio de pestaña; ignorar
+                    return;
+                }
                 console.error(
                     "❌ Error al obtener la lista de cotizaciones:",
                     error,
                 );
             })
             .finally(() => {
-                overlay.style.display = "none";
+                // Solo ocultar el spinner si esta petición sigue siendo la última vigente
+                if (requestId === currentRequestId) {
+                    if (overlay) overlay.style.display = "none";
+                    activeAbortController = null;
+                }
             });
     }
+
+    window.getCotizacionesList = getCotizacionesList;
 
     const botonAbrirModal = document.getElementById("abrirModalBtn");
 

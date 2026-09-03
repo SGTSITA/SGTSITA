@@ -174,31 +174,30 @@ const normalizarFecha = (valueFecha) => {
     return valueFecha.substring(0, 10);
 };
 
-document.getElementById("btnMapaUnidad").addEventListener("click", function () {
-    // ocultar formulario
-    document.getElementById("formPlaneacion").classList.add("d-none");
+const btnMapaUnidad = document.getElementById("btnMapaUnidad");
+const btnRegresarPlaneacion = document.getElementById("btnRegresarPlaneacion");
+if (btnMapaUnidad) {
+    btnMapaUnidad.addEventListener("click", function () {
+        document.getElementById("formPlaneacion").classList.add("d-none");
 
-    // mostrar mapa
-    document.getElementById("seccionMapa").classList.remove("d-none");
+        document.getElementById("seccionMapa").classList.remove("d-none");
 
-    // asegurar modal abierto
-    $("#viajeModal").modal("show");
+        $("#viajeModal").modal("show");
 
-    // inicializar mapa
-    setTimeout(() => {
-        googleMapsReady();
-    }, 200);
-});
+        setTimeout(() => {
+            googleMapsReady();
+        }, 200);
+    });
+}
 
-document
-    .getElementById("btnRegresarPlaneacion")
-    .addEventListener("click", function () {
-        // ocultar mapa
+if (btnRegresarPlaneacion) {
+    btnRegresarPlaneacion.addEventListener("click", function () {
         document.getElementById("seccionMapa").classList.add("d-none");
 
-        // mostrar formulario
         document.getElementById("formPlaneacion").classList.remove("d-none");
     });
+}
+
 const btnAsignaOperador = document.querySelector("#btnAsignaOperador");
 const btnPlanearViaje = document.querySelector("#btnPlanearViaje");
 
@@ -841,14 +840,17 @@ function populateUnidadesSelects() {
     if (selectUnidad) {
         const valActual = selectUnidad.value;
         const mepUnidadActual = selectUnidad.dataset.mepUnidad;
-        selectUnidad.innerHTML = '<option value="" disabled selected>Selecciona Unidad...</option>';
-        unidades.filter(u => u.tipo === "Tractos / Camiones").forEach(u => {
-            const opt = document.createElement("option");
-            opt.value = u.id_equipo;
-            opt.textContent = `${u.id_equipo} ${u.placas ? '('+u.placas+')' : ''}`;
-            opt.dataset.unitId = u.id;
-            selectUnidad.appendChild(opt);
-        });
+        selectUnidad.innerHTML =
+            '<option value="" disabled selected>Selecciona Unidad...</option>';
+        unidades
+            .filter((u) => u.tipo === "Tractos / Camiones")
+            .forEach((u) => {
+                const opt = document.createElement("option");
+                opt.value = u.id_equipo;
+                opt.textContent = `${u.id_equipo} ${u.placas ? "(" + u.placas + ")" : ""}`;
+                opt.dataset.unitId = u.id;
+                selectUnidad.appendChild(opt);
+            });
         if (valActual) {
             selectUnidad.value = valActual;
         }
@@ -860,14 +862,17 @@ function populateUnidadesSelects() {
     if (selectChasisA) {
         const valActual = selectChasisA.value;
         const mepUnidadActual = selectChasisA.dataset.mepUnidad;
-        selectChasisA.innerHTML = '<option value="" disabled selected>Selecciona Chasis A...</option>';
-        unidades.filter(u => u.tipo === "Chasis / Plataforma").forEach(u => {
-            const opt = document.createElement("option");
-            opt.value = u.id_equipo;
-            opt.textContent = `${u.id_equipo} ${u.placas ? '('+u.placas+')' : ''}`;
-            opt.dataset.unitId = u.id;
-            selectChasisA.appendChild(opt);
-        });
+        selectChasisA.innerHTML =
+            '<option value="" disabled selected>Selecciona Chasis A...</option>';
+        unidades
+            .filter((u) => u.tipo === "Chasis / Plataforma")
+            .forEach((u) => {
+                const opt = document.createElement("option");
+                opt.value = u.id_equipo;
+                opt.textContent = `${u.id_equipo} ${u.placas ? "(" + u.placas + ")" : ""}`;
+                opt.dataset.unitId = u.id;
+                selectChasisA.appendChild(opt);
+            });
         if (valActual) {
             selectChasisA.value = valActual;
         }
@@ -879,14 +884,17 @@ function populateUnidadesSelects() {
     if (selectChasisB) {
         const valActual = selectChasisB.value;
         const mepUnidadActual = selectChasisB.dataset.mepUnidad;
-        selectChasisB.innerHTML = '<option value="" disabled selected>Selecciona Chasis B...</option>';
-        unidades.filter(u => u.tipo === "Chasis / Plataforma").forEach(u => {
-            const opt = document.createElement("option");
-            opt.value = u.id_equipo;
-            opt.textContent = `${u.id_equipo} ${u.placas ? '('+u.placas+')' : ''}`;
-            opt.dataset.unitId = u.id;
-            selectChasisB.appendChild(opt);
-        });
+        selectChasisB.innerHTML =
+            '<option value="" disabled selected>Selecciona Chasis B...</option>';
+        unidades
+            .filter((u) => u.tipo === "Chasis / Plataforma")
+            .forEach((u) => {
+                const opt = document.createElement("option");
+                opt.value = u.id_equipo;
+                opt.textContent = `${u.id_equipo} ${u.placas ? "(" + u.placas + ")" : ""}`;
+                opt.dataset.unitId = u.id;
+                selectChasisB.appendChild(opt);
+            });
         if (valActual) {
             selectChasisB.value = valActual;
         }
@@ -896,10 +904,13 @@ function populateUnidadesSelects() {
     }
 
     // Inicializar o actualizar Select2
-    if (typeof jQuery !== 'undefined' && typeof jQuery.fn.select2 !== 'undefined') {
+    if (
+        typeof jQuery !== "undefined" &&
+        typeof jQuery.fn.select2 !== "undefined"
+    ) {
         const select2Options = {
-            width: '100%',
-            dropdownParent: jQuery(document.body)
+            width: "100%",
+            dropdownParent: jQuery(document.body),
         };
         if (selectUnidad) jQuery(selectUnidad).select2(select2Options);
         if (selectChasisA) jQuery(selectChasisA).select2(select2Options);
@@ -929,12 +940,14 @@ function initAutocompleteUnidad(tipoKey) {
 
         if (!val || !unitId) {
             this.dataset.mepUnidad = 0;
-            const btnActualizar = document.getElementById(`btnActualizarGPS${tipoKey}`);
+            const btnActualizar = document.getElementById(
+                `btnActualizarGPS${tipoKey}`,
+            );
             if (btnActualizar) btnActualizar.style.display = "none";
             return;
         }
 
-        const u = unidades.find(unit => String(unit.id) === String(unitId));
+        const u = unidades.find((unit) => String(unit.id) === String(unitId));
         if (u) {
             this.dataset.mepUnidad = u.id;
 
@@ -962,7 +975,9 @@ function initAutocompleteUnidad(tipoKey) {
 
             toastr.success(`${tipoKey} seleccionado`);
 
-            const btnActualizar = document.getElementById(`btnActualizarGPS${tipoKey}`);
+            const btnActualizar = document.getElementById(
+                `btnActualizarGPS${tipoKey}`,
+            );
             if (u.imei && u.gps_company_id) {
                 if (btnActualizar) btnActualizar.style.display = "inline-block";
                 actualizarEstadoGPS(
@@ -989,22 +1004,31 @@ initAutocompleteUnidad("Unidad");
 initAutocompleteUnidad("ChasisA");
 initAutocompleteUnidad("ChasisB");
 
-jQuery(document).on("click", ".btn-actualizar-gps", async function() {
+jQuery(document).on("click", ".btn-actualizar-gps", async function () {
     const tipoKey = this.dataset.gpsTipo;
     const config = mapInputs[tipoKey];
     if (!config) return;
 
     const select = document.getElementById(config.input);
-    const unitId = select ? select.options[select.selectedIndex]?.dataset.unitId : null;
+    const unitId = select
+        ? select.options[select.selectedIndex]?.dataset.unitId
+        : null;
     const imei = document.getElementById(config.imei)?.value;
     const gpsCompanyId = document.getElementById(config.gps)?.value;
 
     if (imei && gpsCompanyId) {
         const btn = jQuery(this);
         const originalHtml = btn.html();
-        btn.prop("disabled", true).html('<i class="fas fa-spinner fa-spin"></i> Consultando...');
+        btn.prop("disabled", true).html(
+            '<i class="fas fa-spinner fa-spin"></i> Consultando...',
+        );
         try {
-            await validarConexionGPS(tipoKey, imei, gpsCompanyId, unitId ? [unitId] : []);
+            await validarConexionGPS(
+                tipoKey,
+                imei,
+                gpsCompanyId,
+                unitId ? [unitId] : [],
+            );
         } catch (e) {
             console.error(e);
         } finally {
