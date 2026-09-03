@@ -957,7 +957,9 @@ async function validarConexionGPS(tipoKey, imei, gpsCompanyId, equipos = []) {
     if (!config) return false;
     const btnActualizar = document.getElementById(`btnActualizarGPS${tipoKey}`);
 
-    if (!imei || !gpsCompanyId) {
+    const equipoId = equipos && equipos.length ? equipos[0] : null;
+
+    if (!imei || !gpsCompanyId || !equipoId) {
         if (btnActualizar) btnActualizar.style.display = "none";
         actualizarEstadoGPS(config.statusGps, "secondary", "Sin GPS");
         config.latitud = null;
@@ -977,12 +979,13 @@ async function validarConexionGPS(tipoKey, imei, gpsCompanyId, equipos = []) {
                     .getAttribute("content"),
             },
             body: JSON.stringify({
-                equipos: equipos,
+                equipos: [equipoId],
             }),
         });
 
         const data = await response.json();
-        const ubi = data[0]?.ubicacion ?? null;
+        const itemRes = (data && Array.isArray(data) && data.length > 0) ? data[0] : null;
+        const ubi = itemRes?.ubicacion ?? null;
 
         if (ubi && ubi.lat && ubi.lng) {
             actualizarEstadoGPS(config.statusGps, "success", "Equipo en línea");
@@ -990,7 +993,8 @@ async function validarConexionGPS(tipoKey, imei, gpsCompanyId, equipos = []) {
             config.longitud = parseFloat(ubi.lng);
             return true;
         } else {
-            actualizarEstadoGPS(config.statusGps, "danger", "GPS sin señal");
+            const mensajeStatus = itemRes?.messageAp || "GPS sin señal";
+            actualizarEstadoGPS(config.statusGps, "danger", mensajeStatus);
             config.latitud = null;
             config.longitud = null;
             return false;
@@ -999,7 +1003,7 @@ async function validarConexionGPS(tipoKey, imei, gpsCompanyId, equipos = []) {
         actualizarEstadoGPS(config.statusGps, "danger", "Error conexión GPS");
         config.latitud = null;
         config.longitud = null;
-        console.error(e);
+        console.error("Error al validar conexión GPS:", e);
         return false;
     }
 }

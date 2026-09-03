@@ -680,14 +680,18 @@ function actualizarBotonMapa() {
 }
 async function validarConexionGPS(tipoKey, imei, gpsCompanyId, equipos = []) {
     const config = mapInputs[tipoKey];
+    if (!config) return false;
     const btnActualizar = document.getElementById(`btnActualizarGPS${tipoKey}`);
 
-    if (!imei || !gpsCompanyId) {
+    const equipoId = equipos && equipos.length ? equipos[0] : null;
+
+    if (!imei || !gpsCompanyId || !equipoId) {
         if (btnActualizar) btnActualizar.style.display = "none";
         actualizarEstadoGPS(config.statusGps, "secondary", "Sin GPS");
 
         config.latitud = null;
         config.longitud = null;
+        actualizarBotonMapa();
 
         return false;
     }
@@ -705,14 +709,15 @@ async function validarConexionGPS(tipoKey, imei, gpsCompanyId, equipos = []) {
                     .getAttribute("content"),
             },
             body: JSON.stringify({
-                equipos: equipos,
+                equipos: [equipoId],
             }),
         });
 
         const data = await response.json();
-        const ubi = data[0]?.ubicacion ?? null;
+        const itemRes = (data && Array.isArray(data) && data.length > 0) ? data[0] : null;
+        const ubi = itemRes?.ubicacion ?? null;
 
-        if (ubi.lat && ubi.lng) {
+        if (ubi && ubi.lat && ubi.lng) {
             actualizarEstadoGPS(config.statusGps, "success", "Equipo en línea");
 
             config.latitud = parseFloat(ubi.lat);
@@ -721,10 +726,12 @@ async function validarConexionGPS(tipoKey, imei, gpsCompanyId, equipos = []) {
             actualizarDistanciaEquipos();
             return true;
         } else {
-            actualizarEstadoGPS(config.statusGps, "danger", "GPS sin señal");
+            const mensajeStatus = itemRes?.messageAp || "GPS sin señal";
+            actualizarEstadoGPS(config.statusGps, "danger", mensajeStatus);
 
             config.latitud = null;
             config.longitud = null;
+            actualizarBotonMapa();
 
             return false;
         }
@@ -733,8 +740,9 @@ async function validarConexionGPS(tipoKey, imei, gpsCompanyId, equipos = []) {
 
         config.latitud = null;
         config.longitud = null;
+        actualizarBotonMapa();
 
-        console.error(e);
+        console.error("Error al validar conexión GPS:", e);
 
         return false;
     }
@@ -1126,6 +1134,7 @@ function actualizarEstadoGPS(id, tipo, texto) {
         danger: "text-danger",
         warning: "text-warning",
         muted: "text-muted",
+        secondary: "text-secondary",
     };
 
     const iconos = {
@@ -1133,12 +1142,13 @@ function actualizarEstadoGPS(id, tipo, texto) {
         danger: "fa-triangle-exclamation",
         warning: "fa-spinner fa-spin",
         muted: "fa-minus-circle",
+        secondary: "fa-ban",
     };
 
     $("#" + id)
         .removeClass()
-        .addClass(`small fw-bold ${clases[tipo]}`).html(`
-            <i class="fas ${iconos[tipo]}"></i>
+        .addClass(`small fw-bold ${clases[tipo] || clases.muted}`).html(`
+            <i class="fas ${iconos[tipo] || iconos.muted}"></i>
             ${texto}
         `);
 }
