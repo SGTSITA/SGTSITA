@@ -160,8 +160,6 @@ function resetUploadConfig() {
 
     urlRepo = fileSettings.opcion;
     numContenedor = localStorage.getItem("numContenedor");
-    console.log("paso aki en reset");
-    debugger;
     api.setOption("upload", {
         url: "/contenedores/files/upload",
         data: {
@@ -315,17 +313,24 @@ function resetUploadConfig() {
                     .width(data.percentage + "%");
             }
         },
-        onComplete: () => {
-            setTimeout(() => {
-                adjuntarDocumentos();
-                if (
-                    typeof dt !== "undefined" &&
-                    dt !== null &&
-                    $.fn.DataTable.isDataTable("#kt_datatable_example_1")
-                ) {
-                    dt.ajax.reload(null, false);
-                }
-            }, 2500);
+        onComplete: (listEl) => {
+            let hasErrors = false;
+            if (listEl && listEl.find) {
+                hasErrors = listEl.find(".upload-failed, .has-warnings").length > 0;
+            }
+
+            if (!hasErrors) {
+                setTimeout(() => {
+                    adjuntarDocumentos();
+                    if (
+                        typeof dt !== "undefined" &&
+                        dt !== null &&
+                        $.fn.DataTable.isDataTable("#kt_datatable_example_1")
+                    ) {
+                        dt.ajax.reload(null, false);
+                    }
+                }, 1000);
+            }
         },
     });
 }

@@ -960,12 +960,16 @@ class ApiValidationService
             ->where('estatus', 'pagado')
             ->exists();
 
+        $savedFilePaths = [];
         $path = public_path('/uploads/diesel/' . $idAsignacion);
-        if (!file_exists($path)) {
-            mkdir($path, 0777, true);
+        try {
+            if (!file_exists($path)) {
+                @mkdir($path, 0777, true);
+            }
+        } catch (\Throwable $e) {
+            Log::warning("No se pudo crear carpeta {$path}: " . $e->getMessage());
         }
 
-        $savedFilePaths = [];
         if (isset($data['ticket_foto_base64']) && !empty($data['ticket_foto_base64'])) {
             $rawFotos = $data['ticket_foto_base64'];
             if (is_string($rawFotos)) {
@@ -980,13 +984,19 @@ class ApiValidationService
                 $rawFotos = array_slice($rawFotos, 0, 3);
                 foreach ($rawFotos as $index => $base64Str) {
                     if (empty($base64Str)) continue;
-                    $cleanDieselBase64 = $base64Str;
-                    if (preg_match('/^data:image\/(\w+);base64,/', $cleanDieselBase64, $type)) {
-                        $cleanDieselBase64 = substr($cleanDieselBase64, strpos($cleanDieselBase64, ',') + 1);
+                    try {
+                        $cleanDieselBase64 = $base64Str;
+                        if (preg_match('/^data:image\/(\w+);base64,/', $cleanDieselBase64, $type)) {
+                            $cleanDieselBase64 = substr($cleanDieselBase64, strpos($cleanDieselBase64, ',') + 1);
+                        }
+                        $fileSuffix = uniqid() . '_diesel_ticket_' . ($index + 1) . '.jpg';
+                        if (file_exists($path) || @mkdir($path, 0777, true)) {
+                            file_put_contents($path . '/' . $fileSuffix, base64_decode($cleanDieselBase64));
+                            $savedFilePaths[] = 'uploads/diesel/' . $idAsignacion . '/' . $fileSuffix;
+                        }
+                    } catch (\Throwable $e) {
+                        Log::error("Error guardando foto diesel: " . $e->getMessage());
                     }
-                    $fileSuffix = uniqid() . '_diesel_ticket_' . ($index + 1) . '.jpg';
-                    file_put_contents($path . '/' . $fileSuffix, base64_decode($cleanDieselBase64));
-                    $savedFilePaths[] = 'uploads/diesel/' . $idAsignacion . '/' . $fileSuffix;
                 }
             }
         }
@@ -1033,13 +1043,19 @@ class ApiValidationService
                 $rawUreaFotos = array_slice($rawUreaFotos, 0, 3);
                 foreach ($rawUreaFotos as $index => $base64Str) {
                     if (empty($base64Str)) continue;
-                    $cleanUreaBase64 = $base64Str;
-                    if (preg_match('/^data:image\/(\w+);base64,/', $cleanUreaBase64, $type)) {
-                        $cleanUreaBase64 = substr($cleanUreaBase64, strpos($cleanUreaBase64, ',') + 1);
+                    try {
+                        $cleanUreaBase64 = $base64Str;
+                        if (preg_match('/^data:image\/(\w+);base64,/', $cleanUreaBase64, $type)) {
+                            $cleanUreaBase64 = substr($cleanUreaBase64, strpos($cleanUreaBase64, ',') + 1);
+                        }
+                        $ureaFileSuffix = uniqid() . '_urea_ticket_' . ($index + 1) . '.jpg';
+                        if (file_exists($path) || @mkdir($path, 0777, true)) {
+                            file_put_contents($path . '/' . $ureaFileSuffix, base64_decode($cleanUreaBase64));
+                            $savedUreaFilePaths[] = 'uploads/diesel/' . $idAsignacion . '/' . $ureaFileSuffix;
+                        }
+                    } catch (\Throwable $e) {
+                        Log::error("Error guardando foto urea: " . $e->getMessage());
                     }
-                    $ureaFileSuffix = uniqid() . '_urea_ticket_' . ($index + 1) . '.jpg';
-                    file_put_contents($path . '/' . $ureaFileSuffix, base64_decode($cleanUreaBase64));
-                    $savedUreaFilePaths[] = 'uploads/diesel/' . $idAsignacion . '/' . $ureaFileSuffix;
                 }
             }
         }
@@ -1141,20 +1157,30 @@ class ApiValidationService
 
         if (is_array($rawFotos) && !empty($rawFotos)) {
             $path = public_path('/uploads/carga_contenedor/' . $idAsignacion);
-            if (!file_exists($path)) {
-                mkdir($path, 0777, true);
+            try {
+                if (!file_exists($path)) {
+                    @mkdir($path, 0777, true);
+                }
+            } catch (\Throwable $e) {
+                Log::warning("No se pudo crear carpeta {$path}: " . $e->getMessage());
             }
+
             foreach ($rawFotos as $index => $base64Str) {
                 if (empty($base64Str)) continue;
-                $cleanBase64 = $base64Str;
-                if (preg_match('/^data:image\/(\w+);base64,/', $cleanBase64, $type)) {
-                    $cleanBase64 = substr($cleanBase64, strpos($cleanBase64, ',') + 1);
+                try {
+                    $cleanBase64 = $base64Str;
+                    if (preg_match('/^data:image\/(\w+);base64,/', $cleanBase64, $type)) {
+                        $cleanBase64 = substr($cleanBase64, strpos($cleanBase64, ',') + 1);
+                    }
+                    $fileName = uniqid() . '_carga_' . ($index + 1) . '.jpg';
+                    if (file_exists($path) || @mkdir($path, 0777, true)) {
+                        file_put_contents($path . '/' . $fileName, base64_decode($cleanBase64));
+                        $relativeUrl = 'uploads/carga_contenedor/' . $idAsignacion . '/' . $fileName;
+                        $savedFilePaths[] = $relativeUrl;
+                    }
+                } catch (\Throwable $e) {
+                    Log::error("Error guardando foto carga: " . $e->getMessage());
                 }
-                $fileName = uniqid() . '_carga_' . ($index + 1) . '.jpg';
-                file_put_contents($path . '/' . $fileName, base64_decode($cleanBase64));
-
-                $relativeUrl = 'uploads/carga_contenedor/' . $idAsignacion . '/' . $fileName;
-                $savedFilePaths[] = $relativeUrl;
             }
         }
 
@@ -1217,20 +1243,30 @@ class ApiValidationService
 
         if (is_array($rawFotos) && !empty($rawFotos)) {
             $path = public_path('/uploads/entrega_contenedor/' . $idAsignacion);
-            if (!file_exists($path)) {
-                mkdir($path, 0777, true);
+            try {
+                if (!file_exists($path)) {
+                    @mkdir($path, 0777, true);
+                }
+            } catch (\Throwable $e) {
+                Log::warning("No se pudo crear carpeta {$path}: " . $e->getMessage());
             }
+
             foreach ($rawFotos as $index => $base64Str) {
                 if (empty($base64Str)) continue;
-                $cleanBase64 = $base64Str;
-                if (preg_match('/^data:image\/(\w+);base64,/', $cleanBase64, $type)) {
-                    $cleanBase64 = substr($cleanBase64, strpos($cleanBase64, ',') + 1);
+                try {
+                    $cleanBase64 = $base64Str;
+                    if (preg_match('/^data:image\/(\w+);base64,/', $cleanBase64, $type)) {
+                        $cleanBase64 = substr($cleanBase64, strpos($cleanBase64, ',') + 1);
+                    }
+                    $fileName = uniqid() . '_entrega_' . ($index + 1) . '.jpg';
+                    if (file_exists($path) || @mkdir($path, 0777, true)) {
+                        file_put_contents($path . '/' . $fileName, base64_decode($cleanBase64));
+                        $relativeUrl = 'uploads/entrega_contenedor/' . $idAsignacion . '/' . $fileName;
+                        $savedFilePaths[] = $relativeUrl;
+                    }
+                } catch (\Throwable $e) {
+                    Log::error("Error guardando foto entrega: " . $e->getMessage());
                 }
-                $fileName = uniqid() . '_entrega_' . ($index + 1) . '.jpg';
-                file_put_contents($path . '/' . $fileName, base64_decode($cleanBase64));
-
-                $relativeUrl = 'uploads/entrega_contenedor/' . $idAsignacion . '/' . $fileName;
-                $savedFilePaths[] = $relativeUrl;
             }
         }
 

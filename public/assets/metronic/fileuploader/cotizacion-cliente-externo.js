@@ -17,6 +17,17 @@ var [BoletaLib, Doda, CartaPorte, PreAlta] = [
 
 let fileSettings = BoletaLib;
 
+function cambiarTipoDocumento(nuevoSetting) {
+    fileSettings = nuevoSetting;
+    var fileInputElement = document.getElementById("fileuploader");
+    if (fileInputElement) {
+        var api = $.fileuploader.getInstance(fileInputElement);
+        if (api && typeof api.reset === "function") {
+            api.reset();
+        }
+    }
+}
+
 let fileCartaPorte = document.querySelector("#fileCartaPorte");
 let btnFileCartaPorte = document.querySelector("#btnFileCartaPorte");
 let btnFileDODA = document.querySelector("#btnFileDODA");
@@ -27,24 +38,24 @@ let btnPreAlta = document.querySelector("#btnFilePrealta");
 
 if (btnFileCartaPorte) {
     btnFileCartaPorte.addEventListener("click", () => {
-        fileSettings = CartaPorte;
+        cambiarTipoDocumento(CartaPorte);
     });
 }
 if (btnFileDODA) {
     btnFileDODA.addEventListener("click", () => {
-        fileSettings = Doda;
+        cambiarTipoDocumento(Doda);
     });
 }
 
 if (btnFileBoletaLiberacion) {
     btnFileBoletaLiberacion.addEventListener("click", () => {
-        fileSettings = BoletaLib;
+        cambiarTipoDocumento(BoletaLib);
     });
 }
 
 if (btnPreAlta) {
     btnPreAlta.addEventListener("click", () => {
-        fileSettings = PreAlta;
+        cambiarTipoDocumento(PreAlta);
     });
 }
 
@@ -73,13 +84,13 @@ var uploadConfig = null;
 
 function resetUploadConfig() {
     var fileInputElement = document.getElementById("fileuploader");
+    if (!fileInputElement) return;
     // Obtener la instancia de Fileuploader asociada a este campo de carga
     var api = $.fileuploader.getInstance(fileInputElement);
+    if (!api) return;
 
     urlRepo = fileSettings.opcion;
     numContenedor = localStorage.getItem("numContenedor");
-    console.log("paso aki en reset");
-    debugger;
     api.setOption("upload", {
         url: "/contenedores/files/upload",
         data: {
@@ -106,7 +117,9 @@ function resetUploadConfig() {
                     Swal.fire(
                         "Debe ingresar el folio antes de subir el archivo",
                     );
-                    // adjuntarDocumentos();
+                    setTimeout(() => {
+                        adjuntarDocumentos();
+                    }, 400);
                     return false;
                 }
             }
@@ -201,6 +214,22 @@ function resetUploadConfig() {
             if (folioInput) {
                 folioInput.value = "";
             }
+
+            // Actualizar documentos en memoria si existe docsData
+            if (typeof docsData !== "undefined" && numContenedor && typeof fetch === "function") {
+                fetch(`/viajes/file-manager/get-file-list/${numContenedor}`)
+                    .then(response => response.json())
+                    .then(json => {
+                        if (json && json.data) {
+                            docsData = json.data;
+                            let seleccionado = document.querySelector(".CheckTypeFile:checked");
+                            if (seleccionado && typeof actualizarFolio === "function") {
+                                actualizarFolio(seleccionado);
+                            }
+                        }
+                    })
+                    .catch(err => console.log(err));
+            }
         },
         onError: function (item) {
             var progressBar = item.html.find(".progress-bar2");
@@ -233,17 +262,25 @@ function resetUploadConfig() {
                     .width(data.percentage + "%");
             }
         },
-        onComplete: () => {
-            setTimeout(() => {
-                //  adjuntarDocumentos();
-                if (
-                    typeof dt !== "undefined" &&
-                    dt !== null &&
-                    $.fn.DataTable.isDataTable("#kt_datatable_example_1")
-                ) {
-                    dt.ajax.reload(null, false);
-                }
-            }, 2500);
+        onComplete: (listEl) => {
+            let hasErrors = false;
+            if (listEl && listEl.find) {
+                hasErrors = listEl.find(".upload-failed, .has-warnings").length > 0;
+            }
+
+            // Reiniciar automáticamente el fileuploader si subió sin error para preparar el siguiente documento
+            if (!hasErrors) {
+                setTimeout(() => {
+                    adjuntarDocumentos();
+                    if (
+                        typeof dt !== "undefined" &&
+                        dt !== null &&
+                        $.fn.DataTable.isDataTable("#kt_datatable_example_1")
+                    ) {
+                        dt.ajax.reload(null, false);
+                    }
+                }, 1000);
+            }
         },
     });
 }
