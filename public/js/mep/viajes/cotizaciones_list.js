@@ -107,6 +107,8 @@ const btnCancelarFull = document.querySelector("#btnCancelarFull");
 document.addEventListener("DOMContentLoaded", function () {
     let gridApi;
     let currentTab = "planeadas";
+    let currentRequestId = 0;
+    let activeAbortController = null;
 
     const tabs = document.querySelectorAll("#cotTabs .nav-link");
 
@@ -295,11 +297,6 @@ document.addEventListener("DOMContentLoaded", function () {
     const myGridElement = document.querySelector("#myGrid");
     gridApi = agGrid.createGrid(myGridElement, gridOptions);
 
-    getCotizacionesList();
-
-    let currentRequestId = 0;
-    let activeAbortController = null;
-
     function getCotizacionesList() {
         const overlay = document.getElementById("gridLoadingOverlay");
         if (overlay) overlay.style.display = "flex";
@@ -360,6 +357,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     window.getCotizacionesList = getCotizacionesList;
+    getCotizacionesList();
 
     btnFull.addEventListener("click", () => {
         let seleccion = gridApi.getSelectedRows();
