@@ -1166,6 +1166,7 @@ function googleMapsReady() {
 
     const equiposValidos = equipos.filter((e) => {
         return (
+            e.data &&
             e.data.latitud &&
             e.data.longitud &&
             parseFloat(e.data.latitud) !== 0 &&
@@ -1173,17 +1174,23 @@ function googleMapsReady() {
         );
     });
 
-    if (equiposValidos.length === 0 && !cargaIni) {
-        Swal.fire({
-            icon: "warning",
-            title: "Sin ubicación GPS",
-            text: "No hay equipos con coordenadas válidas.",
-        });
+    if (equiposValidos.length === 0) {
+        if (!cargaIni) {
+            Swal.fire({
+                icon: "warning",
+                title: "Sin ubicación GPS",
+                text: "No hay equipos con coordenadas válidas.",
+            });
+        }
 
+        cargaIni = false;
         return;
     }
 
     cargaIni = false;
+
+    const mapaEl = document.getElementById("mapaEquipos");
+    if (!mapaEl) return;
 
     const centro = {
         lat: parseFloat(equiposValidos[0].data.latitud),
@@ -1191,7 +1198,7 @@ function googleMapsReady() {
     };
 
     mapaEquiposInstance = new google.maps.Map(
-        document.getElementById("mapaEquipos"),
+        mapaEl,
         {
             zoom: 10,
             center: centro,
