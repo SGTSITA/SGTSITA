@@ -991,4 +991,58 @@ class ApiValidationController extends Controller
             'message' => 'Configuracion no encontrada'
         ], 404);
     }
+
+    public function guardarAppLogs(Request $request)
+    {
+        $logs = $request->input('logs', []);
+        $device = $request->input('device', 'N/A');
+        $usuario = $request->input('usuario', 'Desconocido');
+
+        if (!is_array($logs)) {
+            $logs = [$logs];
+        }
+
+        $today = \Carbon\Carbon::now()->format('Y-m-d');
+        $logDir = storage_path('logs/app_movil');
+        if (!file_exists($logDir)) {
+            mkdir($logDir, 0777, true);
+        }
+
+        $logFile = $logDir . "/app_logs_{$today}.json";
+
+        $existingLogs = [];
+        if (file_exists($logFile)) {
+            $content = file_get_contents($logFile);
+            $existingLogs = json_decode($content, true) ?: [];
+        }
+
+        foreach ($logs as $logItem) {
+            $entry = [
+                'id' => uniqid('log_'),
+                'timestamp' => $logItem['timestamp'] ?? \Carbon\Carbon::now()->toIso8601String(),
+                'usuario' => $usuario,
+                'device' => $device,
+                'level' => $logItem['level'] ?? 'INFO',
+                'message' => $logItem['message'] ?? '',
+                'error' => $logItem['error'] ?? null,
+                'server_time' => \Carbon\Carbon::now()->toDateTimeString()
+            ];
+            $existingLogs[] = $entry;
+
+            $msg = is_array($logItem) ? json_encode($logItem, JSON_UNESCAPED_UNICODE) : (string)$logItem;
+            Log::channel('daily')->error("[APP MOBILE LOG] [User: {$usuario}] [Device: {$device}] " . $msg);
+        }
+
+        // Mantener hasta 2000 logs por día para no sobrecargar el archivo
+        if (count($existingLogs) > 2000) {
+            $existingLogs = array_slice($existingLogs, -2000);
+        }
+
+        file_put_contents($logFile, json_encode($existingLogs, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+
+        return response()->json([
+            'success' => true,
+            'mensaje' => 'Logs registrados correctamente en storage/logs/app_movil.'
+        ]);
+    }
 }

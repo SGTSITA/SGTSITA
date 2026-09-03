@@ -160,6 +160,60 @@ class AppMovilAdminController extends Controller
         // 3. Todas las configuraciones globales
         $todasLasConfigs = GlobalConfig::orderBy('key', 'asc')->get();
 
+        // 4. Logs de la App Móvil (almacenados en storage/logs/app_movil/)
+        $logDir = storage_path('logs/app_movil');
+        $availableDates = [];
+        if (file_exists($logDir)) {
+            $files = glob($logDir . '/app_logs_*.json');
+            foreach ($files as $f) {
+                if (preg_match('/app_logs_(\d{4}-\d{2}-\d{2})\.json$/', $f, $matches)) {
+                    $availableDates[] = $matches[1];
+                }
+            }
+            rsort($availableDates);
+        }
+
+        $selectedLogDate = $request->input('log_fecha', !empty($availableDates) ? $availableDates[0] : Carbon::now()->format('Y-m-d'));
+        $logBusqueda = $request->input('log_buscar', '');
+        $logNivel = $request->input('log_nivel', '');
+
+        $appLogs = [];
+        $totalLogsDia = 0;
+        $totalErrorsDia = 0;
+        $totalHttpDia = 0;
+
+        $logFilePath = $logDir . "/app_logs_{$selectedLogDate}.json";
+        if (file_exists($logFilePath)) {
+            $rawLogs = json_decode(file_get_contents($logFilePath), true) ?: [];
+            $totalLogsDia = count($rawLogs);
+
+            foreach ($rawLogs as $l) {
+                if (($l['level'] ?? '') === 'ERROR' || !empty($l['error'])) {
+                    $totalErrorsDia++;
+                }
+                if (($l['level'] ?? '') === 'HTTP') {
+                    $totalHttpDia++;
+                }
+            }
+
+            // Mostrar los más recientes primero
+            $rawLogs = array_reverse($rawLogs);
+
+            // Filtrar
+            foreach ($rawLogs as $logItem) {
+                if ($logNivel && ($logItem['level'] ?? '') !== $logNivel) {
+                    continue;
+                }
+                if ($logBusqueda) {
+                    $haystack = strtolower(json_encode($logItem));
+                    if (!str_contains($haystack, strtolower($logBusqueda))) {
+                        continue;
+                    }
+                }
+                $appLogs[] = $logItem;
+            }
+        }
+
         return view('app_movil_admin.index', compact(
             'bitacoras',
             'configuracion',
@@ -168,7 +222,15 @@ class AppMovilAdminController extends Controller
             'notifDia',
             'notifHora',
             'diasSemana',
-            'todasLasConfigs'
+            'todasLasConfigs',
+            'availableDates',
+            'selectedLogDate',
+            'logBusqueda',
+            'logNivel',
+            'appLogs',
+            'totalLogsDia',
+            'totalErrorsDia',
+            'totalHttpDia'
         ));
     }
 
@@ -543,5 +605,50 @@ class AppMovilAdminController extends Controller
 
         Session::flash('success', 'Parámetro de configuración eliminado con éxito.');
         return redirect()->route('app-movil-admin.index', ['tab' => 'config']);
+    }
+
+    /**
+     * Limpiar logs de la app móvil.
+     */
+    public function limpiarLogs(Request $request)
+    {
+        $fecha = $request->input('fecha');
+        $logDir = storage_path('logs/app_movil');
+
+        if ($fecha === 'all') {
+            if (file_exists($logDir)) {
+                $files = glob($logDir . '/app_logs_*.json');
+                foreach ($files as $f) {
+                    @unlink($f);
+                }
+            }
+            Session::flash('success', 'Todos los logs de la app móvil fueron eliminados correctamente.');
+        } elseif ($fecha) {
+            $file = $logDir . "/app_logs_{$fecha}.json";
+            if (file_exists($file)) {
+                @unlink($file);
+                Session::flash('success', "Los logs del día {$fecha} fueron eliminados.");
+            }
+        }
+
+        return redirect()->route('app-movil-admin.index', ['tab' => 'logs_app', 'log_fecha' => Carbon::now()->format('Y-m-d')]);
+    }
+
+    /**
+     * Descargar archivo JSON de logs de la app móvil para una fecha.
+     */
+    public function descargarLogs(Request $request)
+    {
+        $fecha = $request->input('fecha', Carbon::now()->format('Y-m-d'));
+        $logFile = storage_path("logs/app_movil/app_logs_{$fecha}.json");
+
+        if (file_exists($logFile)) {
+            return response()->download($logFile, "app_logs_{$fecha}.json", [
+                'Content-Type' => 'application/json',
+            ]);
+        }
+
+        Session::flash('error', 'No se encontró el archivo de logs para la fecha seleccionada.');
+        return redirect()->route('app-movil-admin.index', ['tab' => 'logs_app', 'log_fecha' => $fecha]);
     }
 }

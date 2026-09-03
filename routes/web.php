@@ -806,6 +806,8 @@ Route::middleware(['auth', 'idle.timeout'])->group(function () {
     Route::post('/app-movil-admin/configs', [App\Http\Controllers\AppMovilAdminController::class, 'updateConfigs'])->name('app-movil-admin.configs.update');
     Route::post('/app-movil-admin/configs/custom', [App\Http\Controllers\AppMovilAdminController::class, 'storeCustomConfig'])->name('app-movil-admin.configs.custom.store');
     Route::delete('/app-movil-admin/configs/{id}', [App\Http\Controllers\AppMovilAdminController::class, 'destroyConfig'])->name('app-movil-admin.configs.destroy');
+    Route::post('/app-movil-admin/logs/limpiar', [App\Http\Controllers\AppMovilAdminController::class, 'limpiarLogs'])->name('app-movil-admin.logs.limpiar');
+    Route::get('/app-movil-admin/logs/descargar', [App\Http\Controllers\AppMovilAdminController::class, 'descargarLogs'])->name('app-movil-admin.logs.descargar');
     Route::resource('app-movil-admin', App\Http\Controllers\AppMovilAdminController::class);
 
 
