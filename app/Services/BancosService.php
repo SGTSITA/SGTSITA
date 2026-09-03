@@ -248,6 +248,8 @@ class BancosService
          ->where('cancelado', 0)
          ->where('cuenta_bancaria_id', $cuentaId)
          ->where('referenciaable_type', $modeloType)
+         ->where('tipo', 'cargo')
+         ->where('concepto', 'not like', 'Devolución%')
          ->where('origen', 'sistema');
 
 
@@ -255,7 +257,7 @@ class BancosService
             $query->where('referencia', $referencia);
         }
 
-        return $query->first();
+        return $query->latest('id')->first();
     }
     public function cancelarMovimiento(int $cuentaId, int $movimientoId,string $fecha_cancelacionmovi )
     {

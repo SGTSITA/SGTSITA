@@ -311,7 +311,8 @@
                                                         ? date('d/m/Y', strtotime($pago->fecha_pago))
                                                         : '';
                                             @endphp
-                                            <div class="row gasto-item align-items-center mb-3 border-bottom pb-3">
+                                            <div class="row gasto-item align-items-center mb-3 border-bottom pb-3" data-gasto-id="{{ $gasto->id }}">
+                                                <input type="hidden" class="gasto-id-input" name="gasto_id[]" value="{{ $gasto->id }}">
                                                 <div class="col-md-3">
                                                     <label class="form-label mb-1">Motivo del gasto</label>
                                                     <select class="form-control gasto-select" name="gasto_nombre[]"
@@ -668,6 +669,8 @@
                     const checkPago = row.querySelector('.pagoInmediatoCheck');
                     const selectBanco = row.querySelector('select[name="gasto_banco_id[]"]');
                     const inputFecha = row.querySelector('input[name="fechaAplicacion[]"]');
+                    const inputConceptoOtro = row.querySelector('.concepto-otro-input');
+                    const gastoId = row.dataset.gastoId || row.querySelector('.gasto-id-input')?.value || null;
 
                     if (selectMotivo) {
                         if (!selectMotivo.value) {
@@ -705,7 +708,9 @@
                         }
 
                         gastosValidos.push({
+                            id: gastoId ? parseInt(gastoId) : null,
                             motivo: selectMotivo.value,
+                            conceptoOtro: inputConceptoOtro ? inputConceptoOtro.value : null,
                             monto: montoVal,
                             pagoInmediato: checkPago ? checkPago.checked : false,
                             banco: selectBanco ? selectBanco.value : null,
@@ -718,9 +723,7 @@
                 if (errGasto) return;
 
                 const formData = new FormData(form);
-                if (gastosValidos.length > 0) {
-                    formData.set('filasOtrosGastos', JSON.stringify(gastosValidos));
-                }
+                formData.set('filasOtrosGastos', JSON.stringify(gastosValidos));
 
                 $.ajax({
                     url: form.action,

@@ -24,130 +24,97 @@ class ApiValidationService
 {
     public function login(array $credentials)
     {
-        if (!Auth::attempt($credentials)) {
+        $login = $credentials['email'] ?? $credentials['usuario'] ?? '';
+        $password = $credentials['password'] ?? $credentials['contrasena'] ?? '';
+
+        $fieldType = filter_var($login, FILTER_VALIDATE_EMAIL) ? 'email' : 'name';
+
+        if (!Auth::attempt([$fieldType => $login, 'password' => $password]) && !Auth::attempt(['email' => $login, 'password' => $password])) {
             return ['success' => false, 'message' => 'Las credenciales de acceso son incorrectas.', 'data' => [], 'status' => 401];
         }
 
         $user = Auth::user();
-
-        if (!$user->can('SGT-Acceso')) {
-            Auth::logout();
-            return ['success' => false, 'message' => 'Tu usuario no tiene acceso al sistema SGT.', 'data' => [], 'status' => 403];
-        }
-
         $token = $user->createToken('sgt-api-token')->plainTextToken;
 
-        $cliente = \App\Models\Client::find($user->id_cliente);
+        // Resolver datos de operador si aplican
+        $operador = null;
+        try {
+            if (!empty($user->id_operador)) {
+                $operador = Operador::find($user->id_operador);
+            }
+            if (!$operador) {
+                $operador = Operador::where('email', $user->email)->orWhere('correo', $user->email)->first();
+            }
+            if (!$operador) {
+                $operadorIds = DB::table('operador_usuario')->where('user_id', $user->id)->pluck('id_operador');
+                if (!$operadorIds->isEmpty()) {
+                    $operador = Operador::whereIn('id', $operadorIds)->first();
+                }
+            }
+        } catch (\Exception $e) {}
+
+        $asignacionActiva = null;
+        $numContenedor = 'N/A';
+        $unidad = 'N/A';
+        $idEquipo = 'N/A';
+        $idAsignacion = null;
+
+        if ($operador) {
+            try {
+                $asignacionActiva = Asignaciones::with(['Camion', 'DocumCotizacion'])
+                    ->where('id_operador', $operador->id)
+                    ->where(function($q) {
+                        $q->where('estatus', 1)
+                          ->orWhere('estatus_viaje', 'Aceptado');
+                    })
+                    ->orderBy('id', 'desc')
+                    ->first();
+
+                if ($asignacionActiva) {
+                    $idAsignacion = $asignacionActiva->id;
+                    $numContenedor = $asignacionActiva->DocumCotizacion?->num_contenedor ?? 'N/A';
+                    $unidad = $asignacionActiva->Camion?->no_economico ?? $asignacionActiva->Camion?->placas ?? 'N/A';
+                    $idEquipo = $asignacionActiva->Camion?->id_equipo ?? $unidad;
+                } elseif ($operador->Camion) {
+                    $unidad = $operador->Camion->id_equipo ?? 'N/A';
+                    $idEquipo = $unidad;
+                }
+            } catch (\Exception $e) {}
+        }
+
+        $cliente = null;
+        try {
+            if (!empty($user->id_cliente)) {
+                $cliente = Client::find($user->id_cliente);
+            }
+        } catch (\Exception $e) {}
+
+        $userData = [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'id_empresa' => $user->id_empresa,
+            'id_cliente' => $user->id_cliente,
+            'id_operador' => $operador?->id,
+            'nombre' => $operador ? $operador->nombre : $user->name,
+            'unidad' => $unidad,
+            'id_equipo' => $idEquipo,
+            'id_asignacion' => $idAsignacion,
+            'num_contenedor' => $numContenedor,
+            'cliente_nombre' => $cliente?->nombre ?? null,
+            'roles' => $user->roles()->pluck('name')->toArray(),
+            'permissions' => $user->getAllPermissions()->pluck('name')->toArray(),
+        ];
 
         return [
             'success' => true,
             'message' => 'Inicio de sesión exitoso.',
-            'data' => [
+            'data' => array_merge($userData, [
                 'token' => $token,
-                'user' => [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'id_empresa' => $user->id_empresa,
-                    'id_cliente' => $user->id_cliente,
-                    'cliente_nombre' => $cliente?->nombre ?? null,
-                    'roles' => $user->roles()->pluck('name')->toArray(),
-                    'permissions' => $user->getAllPermissions()->pluck('name')->toArray(),
-                ]
-            ],
+                'user' => $userData,
+            ]),
             'status' => 200
         ];
-    }
-
-    public function validateOperador(array $data)
-    {
-        if (isset($data['contrasena'])) {
-          $nombre = $data['nombre'];
-$telefono = $data['telefono'];
-$contrasena = $data['contrasena'];
-
-$reqTelefono = preg_replace('/\D/', '', $telefono);
-
-// Buscar la asignación por la contraseña temporal
-$asignacion = Asignaciones::with(['Camion', 'Operador'])
-    ->where('password_temporal', $contrasena)
-    ->first();
-
-if (!$asignacion) {
-    return [
-        'success' => false,
-        'message' => 'Contraseña incorrecta o no hay viaje asignado con esa contraseña.',
-        'data' => [],
-        'status' => 400
-    ];
-}
-
-// Obtener el operador de esa asignación
-$operador = $asignacion->Operador;
-
-// Validar teléfono
-if (preg_replace('/\D/', '', $operador->telefono) !== $reqTelefono) {
-    return [
-        'success' => false,
-        'message' => 'El teléfono no corresponde a la asignación.',
-        'data' => [],
-        'status' => 400
-    ];
-}
-
-// Validar nombre
-$nombreBDClean = $this->normalizarTexto($operador->nombre);
-$nombreAppClean = $this->normalizarTexto($nombre);
-
-if (
-    stripos($nombreBDClean, $nombreAppClean) === false &&
-    stripos($nombreAppClean, $nombreBDClean) === false
-) {
-    return [
-        'success' => false,
-        'message' => 'El nombre del operador no coincide.',
-        'data' => [],
-        'status' => 400
-    ];
-}
-
-$contenedor = DocumCotizacion::find($asignacion->id_contenedor);
-$camion = $asignacion->Camion;
-
-            return [
-                'success' => true,
-                'message' => 'Operador y viaje validados correctamente para ingresar operador.',
-                'data' => [
-                    'id_contenedor' => $contenedor ? $contenedor->id : null,
-                    'id_operador'   => $operador->id,
-                    'id_asignacion' => $asignacion->id,
-                    'nombre'        => $operador->nombre,
-                    'num_contenedor' => $contenedor ? $contenedor->num_contenedor : '',
-                    'unidad'        => $camion ? $camion->id_equipo : '',
-                    'telefono'      => $operador->telefono,
-                    'token'         => 'operador_session_' . $operador->id,
-                    'id_equipo'     => $camion ? $camion->id_equipo : '',
-                ],
-                'status' => 200
-            ];
-        }
-    }
-
-    function normalizarTexto($texto) {
-        // Convertir a minúsculas
-        $texto = mb_strtolower(trim($texto), 'UTF-8');
-
-        // Reemplazar tildes/acentos
-        $buscar   = array('á','é','í','ó','ú','ä','ë','ï','ö','ü','à','è','ì','ò','ù');
-        $reemplazar = array('a','e','i','o','u','a','e','i','o','u','a','e','i','o','u');
-        $texto = str_replace($buscar, $reemplazar, $texto);
-
-        // Normalizar la Ñ (opcional, si quieres que 'ñ' sea igual a 'n')
-        // $texto = str_replace('ñ', 'n', $texto);
-        // Reemplazar múltiples espacios internos por uno solo
-        $texto = preg_replace('/\s+/', ' ', $texto);
-
-        return $texto;
     }
 
     public function getOperacionActiva($user, $empresaId)
@@ -449,10 +416,11 @@ $camion = $asignacion->Camion;
         $startDate = $fechaInicio ? \Carbon\Carbon::parse($fechaInicio)->toDateString() : \Carbon\Carbon::now()->subDays(15)->toDateString();
         $endDate = $fechaFin ? \Carbon\Carbon::parse($fechaFin)->toDateString() : \Carbon\Carbon::now()->addDays(15)->toDateString();
 
-        $planeaciones = DB::table('asignaciones')
+        $query = DB::table('asignaciones')
             ->leftJoin('docum_cotizacion', 'asignaciones.id_contenedor', '=', 'docum_cotizacion.id')
             ->leftJoin('cotizaciones', 'docum_cotizacion.id_cotizacion', '=', 'cotizaciones.id')
             ->leftJoin('operadores', 'asignaciones.id_operador', '=', 'operadores.id')
+            ->leftJoin('equipos', 'asignaciones.id_camion', '=', 'equipos.id')
             ->leftJoin('proveedores', function($join) {
                 $join->on('proveedores.id', '=', DB::raw('COALESCE(NULLIF(asignaciones.id_proveedor, 0), NULLIF(cotizaciones.id_proveedor, 0))'));
             })
@@ -467,16 +435,120 @@ $camion = $asignacion->Camion;
                 'asignaciones.fecha_inicio',
                 'asignaciones.fecha_fin',
                 'operadores.nombre as operador',
+                'equipos.id_equipo as id_equipo_camion',
+                'equipos.placas as placas_camion',
                 DB::raw("COALESCE(NULLIF(em.nombre, ''), emc.nombre) as proveedor"),
                 'proveedores.nombre as transportista',
                 'cotizaciones.origen',
                 'cotizaciones.destino',
                 'cotizaciones.id as cotizacion_id',
                 'docum_cotizacion.id as contenedor_id',
+                'docum_cotizacion.doc_ccp',
+                'docum_cotizacion.doda',
+                'docum_cotizacion.boleta_liberacion',
+                'docum_cotizacion.doc_eir',
+                'docum_cotizacion.cima',
+                'docum_cotizacion.boleta_patio',
+                'docum_cotizacion.evidencia_descarga',
+                'docum_cotizacion.comprobante_pago_pdf',
+                'docum_cotizacion.comprobante_pago_xml',
+                'cotizaciones.carta_porte',
+                'cotizaciones.carta_porte_xml',
+                'cotizaciones.img_boleta AS boleta_vacio',
+                'cotizaciones.referencia_full',
                 DB::raw("'Planeada' as estatus")
             )
             ->orderBy('asignaciones.fecha_inicio', 'asc')
             ->get();
+
+        $planeaciones = $query->map(function ($cot) {
+            $checkFile = function($file, $id) {
+                if (empty($file)) return null;
+                $path = public_path('cotizaciones/cotizacion' . $id . '/' . $file);
+                return \File::exists($path) ? $file : $file;
+            };
+
+            $docCCP = $checkFile($cot->doc_ccp, $cot->cotizacion_id);
+            $doda = $checkFile($cot->doda, $cot->cotizacion_id);
+            $boletaLiberacion = $checkFile($cot->boleta_liberacion, $cot->cotizacion_id);
+            $cartaPorte = $checkFile($cot->carta_porte, $cot->cotizacion_id);
+            $cartaPorteXml = $checkFile($cot->carta_porte_xml, $cot->cotizacion_id);
+            $boletaVacio = $checkFile($cot->boleta_vacio, $cot->cotizacion_id);
+            $docEir = $checkFile($cot->doc_eir, $cot->cotizacion_id);
+            $evidenciaDescarga = $checkFile($cot->evidencia_descarga, $cot->cotizacion_id);
+            $comprobantePagoPdf = $checkFile($cot->comprobante_pago_pdf, $cot->cotizacion_id);
+            $comprobantePagoXml = $checkFile($cot->comprobante_pago_xml, $cot->cotizacion_id);
+            $boletaPatio = $checkFile($cot->boleta_patio, $cot->cotizacion_id);
+            $cima = $cot->cima;
+
+            $numContenedor = $cot->contenedor;
+
+            if (!is_null($cot->referencia_full)) {
+                $secundaria = Cotizaciones::where('referencia_full', $cot->referencia_full)
+                    ->where('jerarquia', 'Secundario')
+                    ->with('DocCotizacion')
+                    ->first();
+
+                if ($secundaria && $secundaria->DocCotizacion) {
+                    $secCCP = $checkFile($secundaria->DocCotizacion->doc_ccp, $secundaria->id);
+                    $secDoda = $checkFile($secundaria->DocCotizacion->doda, $secundaria->id);
+                    $secEir = $checkFile($secundaria->DocCotizacion->doc_eir, $secundaria->id);
+                    $secBoletaLiberacion = $checkFile($secundaria->DocCotizacion->boleta_liberacion, $secundaria->id);
+                    $secCartaPorte = $checkFile($secundaria->carta_porte, $secundaria->id);
+                    $secCartaPorteXml = $checkFile($secundaria->carta_porte_xml, $secundaria->id);
+                    $secBoletaVacio = $checkFile($secundaria->img_boleta, $secundaria->id);
+                    $secEvidenciaDescarga = $checkFile($secundaria->DocCotizacion->evidencia_descarga, $secundaria->id);
+                    $secComprobantePagoPdf = $checkFile($secundaria->DocCotizacion->comprobante_pago_pdf, $secundaria->id);
+                    $secComprobantePagoXml = $checkFile($secundaria->DocCotizacion->comprobante_pago_xml, $secundaria->id);
+                    $secBoletaPatio = $checkFile($secundaria->DocCotizacion->boleta_patio, $secundaria->id);
+
+                    $docCCP = $docCCP ?: $secCCP;
+                    $doda = $doda ?: $secDoda;
+                    $docEir = $docEir ?: $secEir;
+                    $boletaLiberacion = $boletaLiberacion ?: $secBoletaLiberacion;
+                    $cartaPorte = $cartaPorte ?: $secCartaPorte;
+                    $cartaPorteXml = $cartaPorteXml ?: $secCartaPorteXml;
+                    $boletaVacio = $boletaVacio ?: $secBoletaVacio;
+                    $evidenciaDescarga = $evidenciaDescarga ?: $secEvidenciaDescarga;
+                    $comprobantePagoPdf = $comprobantePagoPdf ?: $secComprobantePagoPdf;
+                    $comprobantePagoXml = $comprobantePagoXml ?: $secComprobantePagoXml;
+                    $boletaPatio = $boletaPatio ?: $secBoletaPatio;
+
+                    if (!str_contains($numContenedor, $secundaria->DocCotizacion->num_contenedor)) {
+                        $numContenedor .= ' / ' . $secundaria->DocCotizacion->num_contenedor;
+                    }
+                }
+            }
+
+            return [
+                'id' => $cot->id,
+                'contenedor' => $numContenedor,
+                'fecha_inicio' => $cot->fecha_inicio,
+                'fecha_fin' => $cot->fecha_fin,
+                'operador' => $cot->operador ?? 'Sin Asignar',
+                'unidad' => $cot->id_equipo_camion ?? 'N/A',
+                'placas' => $cot->placas_camion ?? 'N/A',
+                'proveedor' => $cot->proveedor,
+                'transportista' => $cot->transportista ?? $cot->proveedor,
+                'origen' => $cot->origen,
+                'destino' => $cot->destino,
+                'cotizacion_id' => $cot->cotizacion_id,
+                'contenedor_id' => $cot->contenedor_id,
+                'estatus' => $cot->estatus,
+                'doc_ccp' => $docCCP,
+                'doda' => $doda,
+                'boleta_liberacion' => $boletaLiberacion,
+                'doc_eir' => $docEir,
+                'cima' => $cima,
+                'carta_porte' => $cartaPorte,
+                'carta_porte_xml' => $cartaPorteXml,
+                'boleta_vacio' => $boletaVacio,
+                'evidencia_descarga' => $evidenciaDescarga,
+                'comprobante_pago_pdf' => $comprobantePagoPdf,
+                'comprobante_pago_xml' => $comprobantePagoXml,
+                'boleta_patio' => $boletaPatio,
+            ];
+        });
 
         return [
             'success' => true,
@@ -575,6 +647,10 @@ $camion = $asignacion->Camion;
                 'cotizaciones.carta_porte_xml',
                 'cotizaciones.img_boleta AS boleta_vacio',
                 'docum_cotizacion.doc_eir',
+                'docum_cotizacion.evidencia_descarga',
+                'docum_cotizacion.comprobante_pago_pdf',
+                'docum_cotizacion.comprobante_pago_xml',
+                'docum_cotizacion.boleta_patio',
                 'asignaciones.id_proveedor',
                 'asignaciones.fecha_inicio',
                 'asignaciones.fecha_fin',
@@ -609,6 +685,10 @@ $camion = $asignacion->Camion;
             $cartaPorteXml = $checkFile($cot->carta_porte_xml, $cot->id);
             $boletaVacio = $checkFile($cot->boleta_vacio, $cot->id);
             $docEir = $checkFile($cot->doc_eir, $cot->id);
+            $evidenciaDescarga = $checkFile($cot->evidencia_descarga, $cot->id);
+            $comprobantePagoPdf = $checkFile($cot->comprobante_pago_pdf, $cot->id);
+            $comprobantePagoXml = $checkFile($cot->comprobante_pago_xml, $cot->id);
+            $boletaPatio = $checkFile($cot->boleta_patio, $cot->id);
             $tipo = "--";
 
             if (!is_null($cot->referencia_full)) {
@@ -625,14 +705,22 @@ $camion = $asignacion->Camion;
                     $secCartaPorte = $checkFile($secundaria->carta_porte, $secundaria->id);
                     $secCartaPorteXml = $checkFile($secundaria->carta_porte_xml, $secundaria->id);
                     $secBoletaVacio = $checkFile($secundaria->img_boleta, $secundaria->id);
+                    $secEvidenciaDescarga = $checkFile($secundaria->DocCotizacion->evidencia_descarga, $secundaria->id);
+                    $secComprobantePagoPdf = $checkFile($secundaria->DocCotizacion->comprobante_pago_pdf, $secundaria->id);
+                    $secComprobantePagoXml = $checkFile($secundaria->DocCotizacion->comprobante_pago_xml, $secundaria->id);
+                    $secBoletaPatio = $checkFile($secundaria->DocCotizacion->boleta_patio, $secundaria->id);
 
-                    $docCCP = ($docCCP && $secCCP) ? $docCCP : null;
-                    $doda = ($doda && $secDoda) ? $doda : null;
-                    $docEir = ($docEir !== null && $secEir !== null) ? $docEir : null;
-                    $boletaLiberacion = ($boletaLiberacion && $secBoletaLiberacion) ? $boletaLiberacion : null;
-                    $cartaPorte = ($cartaPorte && $secCartaPorte) ? $cartaPorte : null;
-                    $cartaPorteXml = ($cartaPorteXml && $secCartaPorteXml) ? $cartaPorteXml : null;
-                    $boletaVacio = ($boletaVacio && $secBoletaVacio) ? $boletaVacio : null;
+                    $docCCP = ($docCCP && $secCCP) ? $docCCP : ($docCCP ?: $secCCP);
+                    $doda = ($doda && $secDoda) ? $doda : ($doda ?: $secDoda);
+                    $docEir = ($docEir !== null && $secEir !== null) ? $docEir : ($docEir ?: $secEir);
+                    $boletaLiberacion = ($boletaLiberacion && $secBoletaLiberacion) ? $boletaLiberacion : ($boletaLiberacion ?: $secBoletaLiberacion);
+                    $cartaPorte = ($cartaPorte && $secCartaPorte) ? $cartaPorte : ($cartaPorte ?: $secCartaPorte);
+                    $cartaPorteXml = ($cartaPorteXml && $secCartaPorteXml) ? $cartaPorteXml : ($cartaPorteXml ?: $secCartaPorteXml);
+                    $boletaVacio = ($boletaVacio && $secBoletaVacio) ? $boletaVacio : ($boletaVacio ?: $secBoletaVacio);
+                    $evidenciaDescarga = ($evidenciaDescarga && $secEvidenciaDescarga) ? $evidenciaDescarga : ($evidenciaDescarga ?: $secEvidenciaDescarga);
+                    $comprobantePagoPdf = ($comprobantePagoPdf && $secComprobantePagoPdf) ? $comprobantePagoPdf : ($comprobantePagoPdf ?: $secComprobantePagoPdf);
+                    $comprobantePagoXml = ($comprobantePagoXml && $secComprobantePagoXml) ? $comprobantePagoXml : ($comprobantePagoXml ?: $secComprobantePagoXml);
+                    $boletaPatio = ($boletaPatio && $secBoletaPatio) ? $boletaPatio : ($boletaPatio ?: $secBoletaPatio);
 
                     $numContenedor .= ' / ' . $secundaria->DocCotizacion->num_contenedor;
                 }
@@ -651,6 +739,10 @@ $camion = $asignacion->Camion;
                 "carta_porte_xml" => $cartaPorteXml,
                 "boleta_vacio" => $boletaVacio,
                 "doc_eir" => $docEir,
+                "evidencia_descarga" => $evidenciaDescarga,
+                "comprobante_pago_pdf" => $comprobantePagoPdf,
+                "comprobante_pago_xml" => $comprobantePagoXml,
+                "boleta_patio" => $boletaPatio,
                 "id_proveedor" => $cot->id_proveedor,
                 "fecha_inicio" => $cot->fecha_inicio,
                 "fecha_fin" => $cot->fecha_fin,
@@ -669,6 +761,10 @@ $camion = $asignacion->Camion;
             $documentosFirst->carta_porte_xml = $firstChecked['carta_porte_xml'];
             $documentosFirst->boleta_vacio = $firstChecked['boleta_vacio'];
             $documentosFirst->doc_eir = $firstChecked['doc_eir'];
+            $documentosFirst->evidencia_descarga = $firstChecked['evidencia_descarga'];
+            $documentosFirst->comprobante_pago_pdf = $firstChecked['comprobante_pago_pdf'];
+            $documentosFirst->comprobante_pago_xml = $firstChecked['comprobante_pago_xml'];
+            $documentosFirst->boleta_patio = $firstChecked['boleta_patio'];
         }
 
         // Construct the WhatsApp text for resending:
@@ -685,7 +781,6 @@ $camion = $asignacion->Camion;
         $horaLlegada = $cotizacion->cp_hora_tentativa_entrega ?? '';
         $comentarios = $cotizacion->cp_comentarios ?? '';
         $mapLink = ($lat && $lng) ? "https://maps.google.com/?q={$lat},{$lng}" : '';
-        $passwordTemporal = $asignaciones ? $asignaciones->password_temporal : '';
 
         if ($asignaciones && !empty($asignaciones->mensaje_compartido)) {
             $waText = $asignaciones->mensaje_compartido;
@@ -713,8 +808,7 @@ $camion = $asignacion->Camion;
                 $waText .= "Fecha de entrega:\n" . ($fechaEntrega ?: "") . "\n";
                 $waText .= "Hora de llegada a bodega:\n" . ($horaLlegada ?: "") . "\n";
                 $waText .= "Hora de salida: \n";
-                $waText .= "Comentarios:\n" . ($comentarios ?: "") . "\n\n";
-                $waText .= "Contraseña temporal para Operador: " . $passwordTemporal;
+                $waText .= "Comentarios:\n" . ($comentarios ?: "");
             } else {
                 $waText = "{$saludo} " . ($nombreOp ? trim($nombreOp) : "Operador") . ",\n\n";
                 $waText .= "Comparto los datos de salida del día de hoy:\n\n";
@@ -722,12 +816,11 @@ $camion = $asignacion->Camion;
                 $waText .= "Puerto / Lugar de salida:\n" . ($origen ?: "") . "\n";
                 $waText .= "Domicilio de entrega: " . ($direccion ?: "") . "\n";
                 $waText .= "Mapa: " . ($mapLink ?: "") . "\n";
-                $waText .= "Contacto: \n";
+                $waText .= "Contacto: \n" . ($contacto ?: "") . "\n";
                 $waText .= "Fecha de entrega:\n" . ($fechaEntrega ?: "") . "\n";
-                $waText .= "Hora de llegada a bodega:\n\n";
+                $waText .= "Hora de llegada a bodega:\n\n" . ($horaLlegada ?: "") . "\n";
                 $waText .= "Hora de salida: \n";
-                $waText .= "Comentarios:\n\n";
-                $waText .= "Contraseña temporal para Operador: " . $passwordTemporal;
+                $waText .= "Comentarios:\n" . ($comentarios ?: "") . "\n";
             }
         }
 
@@ -742,10 +835,95 @@ $camion = $asignacion->Camion;
                 "subcliente" => $cotizacion->Subcliente,
                 "documentos" => $documentosFirst,
                 "documents" => $firstChecked,
+                "documentos_configurados" => $this->getDocumentosConfiguradosParaContenedor($docCotizacion, $cotizacion),
                 "wa_text" => $waText
             ],
             'status' => 200
         ];
+    }
+
+    public function getDocumentosConfiguradosParaContenedor($docCotizacion, $cotizacion)
+    {
+        $idCotizacion = $cotizacion->id;
+        $allowedFields = null;
+        try {
+            $config = DB::table('global_configs')->where('key', 'documentos_operador')->first();
+            if ($config && !empty($config->value)) {
+                $decoded = json_decode($config->value, true);
+                if (is_array($decoded)) {
+                    $allowedFields = array_map(function($val) {
+                        return strtolower(trim($val));
+                    }, $decoded);
+                }
+            }
+        } catch (\Exception $e) {
+            Log::warning("No se pudo consultar global_configs o decodificar su valor: " . $e->getMessage());
+        }
+
+        $fields = [
+            'doc_ccp' => 'Formato CCP',
+            'boleta_liberacion' => 'Boleta de Liberación',
+            'doda' => 'DODA',
+            'carta_porte' => 'Carta Porte (PDF)',
+            'carta_porte_xml' => 'Carta Porte (XML)',
+            'boleta_vacio' => 'Prealta - Boleta de Vacío',
+            'doc_eir' => 'EIR - Comprobante de Vacío',
+            'evidencia_descarga' => 'Evidencia de Descarga',
+            'comprobante_pago_pdf' => 'Complemento de Pago (PDF)',
+            'comprobante_pago_xml' => 'Complemento de Pago (XML)',
+            'boleta_patio' => 'Boleta de Patio',
+            'cima' => 'Documento CIMA',
+        ];
+
+        $documentos = [];
+
+        foreach ($fields as $field => $label) {
+            if ($allowedFields !== null) {
+                $fieldLower = strtolower($field);
+                $labelLower = strtolower($label);
+                $isAllowed = in_array($fieldLower, $allowedFields) || in_array($labelLower, $allowedFields);
+                if (!$isAllowed) {
+                    continue;
+                }
+            }
+
+            $fileName = null;
+            if (in_array($field, ['carta_porte', 'carta_porte_xml'])) {
+                if ($cotizacion && !empty($cotizacion->$field)) {
+                    $fileName = $cotizacion->$field;
+                }
+            } elseif ($field === 'boleta_vacio') {
+                if (!empty($docCotizacion->boleta_vacio)) {
+                    $fileName = $docCotizacion->boleta_vacio;
+                } elseif ($cotizacion && !empty($cotizacion->img_boleta)) {
+                    $fileName = $cotizacion->img_boleta;
+                }
+            } else {
+                if (!empty($docCotizacion->$field)) {
+                    $fileName = $docCotizacion->$field;
+                }
+            }
+
+            $hasFile = false;
+            $url = null;
+            if ($fileName) {
+                $path = public_path('cotizaciones/cotizacion' . $idCotizacion . '/' . $fileName);
+                if (\File::exists($path)) {
+                    $hasFile = true;
+                    $url = asset('cotizaciones/cotizacion' . $idCotizacion . '/' . $fileName);
+                }
+            }
+
+            $documentos[] = [
+                'clave' => $field,
+                'nombre' => $label,
+                'filename' => $fileName,
+                'disponible' => $hasFile,
+                'url' => $url
+            ];
+        }
+
+        return $documentos;
     }
 
     public function guardarCoordenadas(array $data)
@@ -782,12 +960,16 @@ $camion = $asignacion->Camion;
             ->where('estatus', 'pagado')
             ->exists();
 
+        $savedFilePaths = [];
         $path = public_path('/uploads/diesel/' . $idAsignacion);
-        if (!file_exists($path)) {
-            mkdir($path, 0777, true);
+        try {
+            if (!file_exists($path)) {
+                @mkdir($path, 0777, true);
+            }
+        } catch (\Throwable $e) {
+            Log::warning("No se pudo crear carpeta {$path}: " . $e->getMessage());
         }
 
-        $savedFilePaths = [];
         if (isset($data['ticket_foto_base64']) && !empty($data['ticket_foto_base64'])) {
             $rawFotos = $data['ticket_foto_base64'];
             if (is_string($rawFotos)) {
@@ -802,13 +984,19 @@ $camion = $asignacion->Camion;
                 $rawFotos = array_slice($rawFotos, 0, 3);
                 foreach ($rawFotos as $index => $base64Str) {
                     if (empty($base64Str)) continue;
-                    $cleanDieselBase64 = $base64Str;
-                    if (preg_match('/^data:image\/(\w+);base64,/', $cleanDieselBase64, $type)) {
-                        $cleanDieselBase64 = substr($cleanDieselBase64, strpos($cleanDieselBase64, ',') + 1);
+                    try {
+                        $cleanDieselBase64 = $base64Str;
+                        if (preg_match('/^data:image\/(\w+);base64,/', $cleanDieselBase64, $type)) {
+                            $cleanDieselBase64 = substr($cleanDieselBase64, strpos($cleanDieselBase64, ',') + 1);
+                        }
+                        $fileSuffix = uniqid() . '_diesel_ticket_' . ($index + 1) . '.jpg';
+                        if (file_exists($path) || @mkdir($path, 0777, true)) {
+                            file_put_contents($path . '/' . $fileSuffix, base64_decode($cleanDieselBase64));
+                            $savedFilePaths[] = 'uploads/diesel/' . $idAsignacion . '/' . $fileSuffix;
+                        }
+                    } catch (\Throwable $e) {
+                        Log::error("Error guardando foto diesel: " . $e->getMessage());
                     }
-                    $fileSuffix = uniqid() . '_diesel_ticket_' . ($index + 1) . '.jpg';
-                    file_put_contents($path . '/' . $fileSuffix, base64_decode($cleanDieselBase64));
-                    $savedFilePaths[] = 'uploads/diesel/' . $idAsignacion . '/' . $fileSuffix;
                 }
             }
         }
@@ -855,13 +1043,19 @@ $camion = $asignacion->Camion;
                 $rawUreaFotos = array_slice($rawUreaFotos, 0, 3);
                 foreach ($rawUreaFotos as $index => $base64Str) {
                     if (empty($base64Str)) continue;
-                    $cleanUreaBase64 = $base64Str;
-                    if (preg_match('/^data:image\/(\w+);base64,/', $cleanUreaBase64, $type)) {
-                        $cleanUreaBase64 = substr($cleanUreaBase64, strpos($cleanUreaBase64, ',') + 1);
+                    try {
+                        $cleanUreaBase64 = $base64Str;
+                        if (preg_match('/^data:image\/(\w+);base64,/', $cleanUreaBase64, $type)) {
+                            $cleanUreaBase64 = substr($cleanUreaBase64, strpos($cleanUreaBase64, ',') + 1);
+                        }
+                        $ureaFileSuffix = uniqid() . '_urea_ticket_' . ($index + 1) . '.jpg';
+                        if (file_exists($path) || @mkdir($path, 0777, true)) {
+                            file_put_contents($path . '/' . $ureaFileSuffix, base64_decode($cleanUreaBase64));
+                            $savedUreaFilePaths[] = 'uploads/diesel/' . $idAsignacion . '/' . $ureaFileSuffix;
+                        }
+                    } catch (\Throwable $e) {
+                        Log::error("Error guardando foto urea: " . $e->getMessage());
                     }
-                    $ureaFileSuffix = uniqid() . '_urea_ticket_' . ($index + 1) . '.jpg';
-                    file_put_contents($path . '/' . $ureaFileSuffix, base64_decode($cleanUreaBase64));
-                    $savedUreaFilePaths[] = 'uploads/diesel/' . $idAsignacion . '/' . $ureaFileSuffix;
                 }
             }
         }
@@ -963,20 +1157,30 @@ $camion = $asignacion->Camion;
 
         if (is_array($rawFotos) && !empty($rawFotos)) {
             $path = public_path('/uploads/carga_contenedor/' . $idAsignacion);
-            if (!file_exists($path)) {
-                mkdir($path, 0777, true);
+            try {
+                if (!file_exists($path)) {
+                    @mkdir($path, 0777, true);
+                }
+            } catch (\Throwable $e) {
+                Log::warning("No se pudo crear carpeta {$path}: " . $e->getMessage());
             }
+
             foreach ($rawFotos as $index => $base64Str) {
                 if (empty($base64Str)) continue;
-                $cleanBase64 = $base64Str;
-                if (preg_match('/^data:image\/(\w+);base64,/', $cleanBase64, $type)) {
-                    $cleanBase64 = substr($cleanBase64, strpos($cleanBase64, ',') + 1);
+                try {
+                    $cleanBase64 = $base64Str;
+                    if (preg_match('/^data:image\/(\w+);base64,/', $cleanBase64, $type)) {
+                        $cleanBase64 = substr($cleanBase64, strpos($cleanBase64, ',') + 1);
+                    }
+                    $fileName = uniqid() . '_carga_' . ($index + 1) . '.jpg';
+                    if (file_exists($path) || @mkdir($path, 0777, true)) {
+                        file_put_contents($path . '/' . $fileName, base64_decode($cleanBase64));
+                        $relativeUrl = 'uploads/carga_contenedor/' . $idAsignacion . '/' . $fileName;
+                        $savedFilePaths[] = $relativeUrl;
+                    }
+                } catch (\Throwable $e) {
+                    Log::error("Error guardando foto carga: " . $e->getMessage());
                 }
-                $fileName = uniqid() . '_carga_' . ($index + 1) . '.jpg';
-                file_put_contents($path . '/' . $fileName, base64_decode($cleanBase64));
-
-                $relativeUrl = 'uploads/carga_contenedor/' . $idAsignacion . '/' . $fileName;
-                $savedFilePaths[] = $relativeUrl;
             }
         }
 
@@ -1039,20 +1243,30 @@ $camion = $asignacion->Camion;
 
         if (is_array($rawFotos) && !empty($rawFotos)) {
             $path = public_path('/uploads/entrega_contenedor/' . $idAsignacion);
-            if (!file_exists($path)) {
-                mkdir($path, 0777, true);
+            try {
+                if (!file_exists($path)) {
+                    @mkdir($path, 0777, true);
+                }
+            } catch (\Throwable $e) {
+                Log::warning("No se pudo crear carpeta {$path}: " . $e->getMessage());
             }
+
             foreach ($rawFotos as $index => $base64Str) {
                 if (empty($base64Str)) continue;
-                $cleanBase64 = $base64Str;
-                if (preg_match('/^data:image\/(\w+);base64,/', $cleanBase64, $type)) {
-                    $cleanBase64 = substr($cleanBase64, strpos($cleanBase64, ',') + 1);
+                try {
+                    $cleanBase64 = $base64Str;
+                    if (preg_match('/^data:image\/(\w+);base64,/', $cleanBase64, $type)) {
+                        $cleanBase64 = substr($cleanBase64, strpos($cleanBase64, ',') + 1);
+                    }
+                    $fileName = uniqid() . '_entrega_' . ($index + 1) . '.jpg';
+                    if (file_exists($path) || @mkdir($path, 0777, true)) {
+                        file_put_contents($path . '/' . $fileName, base64_decode($cleanBase64));
+                        $relativeUrl = 'uploads/entrega_contenedor/' . $idAsignacion . '/' . $fileName;
+                        $savedFilePaths[] = $relativeUrl;
+                    }
+                } catch (\Throwable $e) {
+                    Log::error("Error guardando foto entrega: " . $e->getMessage());
                 }
-                $fileName = uniqid() . '_entrega_' . ($index + 1) . '.jpg';
-                file_put_contents($path . '/' . $fileName, base64_decode($cleanBase64));
-
-                $relativeUrl = 'uploads/entrega_contenedor/' . $idAsignacion . '/' . $fileName;
-                $savedFilePaths[] = $relativeUrl;
             }
         }
 
@@ -1124,14 +1338,21 @@ $camion = $asignacion->Camion;
                 Log::warning("No se pudo consultar global_configs o decodificar su valor: " . $e->getMessage());
             }
 
+            $cotizacion = DB::table('cotizaciones')->where('id', $idCotizacion)->first();
+
             $fields = [
+                'doc_ccp' => 'Formato CCP',
                 'boleta_liberacion' => 'Boleta de Liberación',
-                'doda' => 'Documento DODA',
-                'boleta_vacio' => 'Boleta de Vacío',
-                'doc_eir' => 'Documento EIR',
-                'doc_ccp' => 'Documento CCP',
+                'doda' => 'DODA',
+                'carta_porte' => 'Carta Porte (PDF)',
+                'carta_porte_xml' => 'Carta Porte (XML)',
+                'boleta_vacio' => 'Prealta - Boleta de Vacío',
+                'doc_eir' => 'EIR - Comprobante de Vacío',
+                'evidencia_descarga' => 'Evidencia de Descarga',
+                'comprobante_pago_pdf' => 'Complemento de Pago (PDF)',
+                'comprobante_pago_xml' => 'Complemento de Pago (XML)',
                 'boleta_patio' => 'Boleta de Patio',
-                'evidencia_descarga' => 'Evidencia de Descarga'
+                'cima' => 'Documento CIMA',
             ];
 
             foreach ($fields as $field => $label) {
@@ -1139,26 +1360,37 @@ $camion = $asignacion->Camion;
                 if ($allowedFields !== null) {
                     $fieldLower = strtolower($field);
                     $labelLower = strtolower($label);
-                    $isAllowed = false;
-                    foreach ($allowedFields as $allowed) {
-                        if ($allowed === $fieldLower || $allowed === $labelLower || str_contains($fieldLower, $allowed) || str_contains($labelLower, $allowed)) {
-                            $isAllowed = true;
-                            break;
-                        }
-                    }
+                    $isAllowed = in_array($fieldLower, $allowedFields) || in_array($labelLower, $allowedFields);
                     if (!$isAllowed) {
                         continue;
                     }
                 }
 
-                if (!empty($contenedor->$field)) {
-                    $fileName = $contenedor->$field;
+                $fileName = null;
+                if (in_array($field, ['carta_porte', 'carta_porte_xml'])) {
+                    if ($cotizacion && !empty($cotizacion->$field)) {
+                        $fileName = $cotizacion->$field;
+                    }
+                } elseif ($field === 'boleta_vacio') {
+                    if (!empty($contenedor->boleta_vacio)) {
+                        $fileName = $contenedor->boleta_vacio;
+                    } elseif ($cotizacion && !empty($cotizacion->img_boleta)) {
+                        $fileName = $cotizacion->img_boleta;
+                    }
+                } else {
+                    if (!empty($contenedor->$field)) {
+                        $fileName = $contenedor->$field;
+                    }
+                }
+
+                if ($fileName) {
                     $url = str_starts_with($fileName, 'http')
                         ? $fileName
                         : asset('cotizaciones/cotizacion' . $idCotizacion . '/' . $fileName);
 
                     $documentos[] = [
                         'nombre' => $label,
+                        'clave' => $field,
                         'url' => $url
                     ];
                 }
@@ -1587,6 +1819,170 @@ $camion = $asignacion->Camion;
         $distance = $earthRadius * $c;
 
         return round($distance * 1.18, 2);
+    }
+
+    public function getContenedoresEmpresas24h()
+    {
+        try {
+            $now = Carbon::now();
+
+            if (!\Illuminate\Support\Facades\Schema::hasTable('contenedor_visibilidad_24h')) {
+                \Illuminate\Support\Facades\Schema::create('contenedor_visibilidad_24h', function ($table) {
+                    $table->id();
+                    $table->unsignedBigInteger('id_contenedor')->index();
+                    $table->unsignedBigInteger('id_cotizacion')->nullable()->index();
+                    $table->unsignedBigInteger('id_empresa')->nullable()->index();
+                    $table->dateTime('fecha_inicio_visibilidad')->index();
+                    $table->dateTime('fecha_fin_visibilidad')->index();
+                    $table->boolean('visible')->default(true)->index();
+                    $table->timestamps();
+                });
+            }
+
+            $now = Carbon::now();
+            $today = $now->toDateString();
+
+            // 1. Expirar contenedores que ya superaron su ventana de 24 horas
+            DB::table('contenedor_visibilidad_24h')
+                ->where('visible', 1)
+                ->where('fecha_fin_visibilidad', '<=', $now)
+                ->update([
+                    'visible' => 0,
+                    'updated_at' => $now
+                ]);
+
+            // 2. Identificar contenedores de viajes de empresas propias activos que aún no han sido registrados
+            // Condiciones: empresa_propia = 1, estatus_planeacion = 1, estatus = 'Aprobada' y now dentro del rango de viaje en asignaciones
+            $registradosIds = DB::table('contenedor_visibilidad_24h')
+                ->pluck('id_contenedor')
+                ->toArray();
+
+            $queryNuevos = DB::table('docum_cotizacion')
+                ->join('cotizaciones', 'docum_cotizacion.id_cotizacion', '=', 'cotizaciones.id')
+                ->join('empresas', 'cotizaciones.id_empresa', '=', 'empresas.id')
+                ->join('asignaciones', 'docum_cotizacion.id', '=', 'asignaciones.id_contenedor')
+                ->where('empresas.empresa_propia', 1)
+                ->where('empresas.estatus', 1)
+                ->where('cotizaciones.estatus_planeacion', 1)
+                ->where('cotizaciones.estatus', 'Aprobada')
+                ->whereDate('asignaciones.fecha_inicio', '<=', $today)
+                ->where(function ($q) use ($today) {
+                    $q->whereNull('asignaciones.fecha_fin')
+                      ->orWhereDate('asignaciones.fecha_fin', '>=', $today);
+                });
+
+            if (!empty($registradosIds)) {
+                $queryNuevos->whereNotIn('docum_cotizacion.id', $registradosIds);
+            }
+
+            $nuevos = $queryNuevos->select(
+                'docum_cotizacion.id as id_contenedor',
+                'cotizaciones.id as id_cotizacion',
+                'cotizaciones.id_empresa'
+            )->get();
+
+            $fin = $now->copy()->addHours(24);
+            $inserts = [];
+            foreach ($nuevos as $item) {
+                $inserts[] = [
+                    'id_contenedor' => $item->id_contenedor,
+                    'id_cotizacion' => $item->id_cotizacion,
+                    'id_empresa' => $item->id_empresa,
+                    'fecha_inicio_visibilidad' => $now,
+                    'fecha_fin_visibilidad' => $fin,
+                    'visible' => 1,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ];
+            }
+
+            if (!empty($inserts)) {
+                foreach (array_chunk($inserts, 100) as $chunk) {
+                    DB::table('contenedor_visibilidad_24h')->insert($chunk);
+                }
+            }
+
+            // 3. Consultar los contenedores activos en la ventana de 24h cruzando información relacional
+            $contenedores = DB::table('contenedor_visibilidad_24h')
+                ->join('docum_cotizacion', 'contenedor_visibilidad_24h.id_contenedor', '=', 'docum_cotizacion.id')
+                ->join('cotizaciones', 'contenedor_visibilidad_24h.id_cotizacion', '=', 'cotizaciones.id')
+                ->join('empresas', 'contenedor_visibilidad_24h.id_empresa', '=', 'empresas.id')
+                ->join('asignaciones', 'docum_cotizacion.id', '=', 'asignaciones.id_contenedor')
+                ->leftJoin('clients', 'cotizaciones.id_cliente', '=', 'clients.id')
+                ->leftJoin('operadores', 'asignaciones.id_operador', '=', 'operadores.id')
+                ->where('contenedor_visibilidad_24h.visible', 1)
+                ->where('contenedor_visibilidad_24h.fecha_fin_visibilidad', '>', $now)
+                ->where('empresas.empresa_propia', 1)
+                ->where('cotizaciones.estatus_planeacion', 1)
+                ->where('cotizaciones.estatus', 'Aprobada')
+                ->whereDate('asignaciones.fecha_inicio', '<=', $today)
+                ->where(function ($q) use ($today) {
+                    $q->whereNull('asignaciones.fecha_fin')
+                      ->orWhereDate('asignaciones.fecha_fin', '>=', $today);
+                })
+                ->select(
+                    'docum_cotizacion.id as id_contenedor',
+                    'docum_cotizacion.num_contenedor',
+                    'cotizaciones.id as id_cotizacion',
+                    'cotizaciones.origen',
+                    'cotizaciones.destino',
+                    'cotizaciones.estatus',
+                    'cotizaciones.referencia_full',
+                    'cotizaciones.tamano',
+                    'empresas.id as id_empresa',
+                    'empresas.nombre as empresa_nombre',
+                    'clients.nombre as cliente_nombre',
+                    'operadores.nombre as operador_nombre',
+                    'asignaciones.fecha_inicio as asignacion_fecha_inicio',
+                    'asignaciones.fecha_fin as asignacion_fecha_fin',
+                    'contenedor_visibilidad_24h.fecha_inicio_visibilidad',
+                    'contenedor_visibilidad_24h.fecha_fin_visibilidad'
+                )
+                ->orderBy('contenedor_visibilidad_24h.fecha_inicio_visibilidad', 'desc')
+                ->get();
+
+            $resultado = $contenedores->map(function ($row) use ($now) {
+                $finDt = Carbon::parse($row->fecha_fin_visibilidad);
+                $segundosRestantes = max(0, $now->diffInSeconds($finDt, false));
+                $minutosRestantes = max(0, (int) round($segundosRestantes / 60));
+
+                return [
+                    'id_contenedor' => $row->id_contenedor,
+                    'num_contenedor' => $row->num_contenedor,
+                    'id_cotizacion' => $row->id_cotizacion,
+                    'origen' => $row->origen ?? 'N/A',
+                    'destino' => $row->destino ?? 'N/A',
+                    'estatus' => $row->estatus ?? 'N/A',
+                    'referencia_full' => $row->referencia_full,
+                    'tamano' => $row->tamano,
+                    'id_empresa' => $row->id_empresa,
+                    'empresa_nombre' => $row->empresa_nombre ?? 'Empresa Propia',
+                    'cliente_nombre' => $row->cliente_nombre ?? 'N/A',
+                    'operador_nombre' => $row->operador_nombre ?? 'Sin Asignar',
+                    'asignacion_fecha_inicio' => $row->asignacion_fecha_inicio,
+                    'asignacion_fecha_fin' => $row->asignacion_fecha_fin,
+                    'fecha_inicio_visibilidad' => $row->fecha_inicio_visibilidad,
+                    'fecha_fin_visibilidad' => $row->fecha_fin_visibilidad,
+                    'segundos_restantes' => $segundosRestantes,
+                    'minutos_restantes' => $minutosRestantes,
+                ];
+            });
+
+            return [
+                'success' => true,
+                'message' => 'Contenedores de empresas propias (24h) obtenidos con éxito.',
+                'data' => $resultado,
+                'status' => 200
+            ];
+        } catch (\Exception $e) {
+            Log::error("Error en getContenedoresEmpresas24h: " . $e->getMessage());
+            return [
+                'success' => false,
+                'message' => 'Error al obtener contenedores: ' . $e->getMessage(),
+                'data' => [],
+                'status' => 500
+            ];
+        }
     }
 }
 

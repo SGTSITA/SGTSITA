@@ -174,31 +174,30 @@ const normalizarFecha = (valueFecha) => {
     return valueFecha.substring(0, 10);
 };
 
-document.getElementById("btnMapaUnidad").addEventListener("click", function () {
-    // ocultar formulario
-    document.getElementById("formPlaneacion").classList.add("d-none");
+const btnMapaUnidad = document.getElementById("btnMapaUnidad");
+const btnRegresarPlaneacion = document.getElementById("btnRegresarPlaneacion");
+if (btnMapaUnidad) {
+    btnMapaUnidad.addEventListener("click", function () {
+        document.getElementById("formPlaneacion").classList.add("d-none");
 
-    // mostrar mapa
-    document.getElementById("seccionMapa").classList.remove("d-none");
+        document.getElementById("seccionMapa").classList.remove("d-none");
 
-    // asegurar modal abierto
-    $("#viajeModal").modal("show");
+        $("#viajeModal").modal("show");
 
-    // inicializar mapa
-    setTimeout(() => {
-        googleMapsReady();
-    }, 200);
-});
+        setTimeout(() => {
+            googleMapsReady();
+        }, 200);
+    });
+}
 
-document
-    .getElementById("btnRegresarPlaneacion")
-    .addEventListener("click", function () {
-        // ocultar mapa
+if (btnRegresarPlaneacion) {
+    btnRegresarPlaneacion.addEventListener("click", function () {
         document.getElementById("seccionMapa").classList.add("d-none");
 
-        // mostrar formulario
         document.getElementById("formPlaneacion").classList.remove("d-none");
     });
+}
+
 const btnAsignaOperador = document.querySelector("#btnAsignaOperador");
 const btnPlanearViaje = document.querySelector("#btnPlanearViaje");
 
@@ -595,61 +594,63 @@ function getCatalogoOperadorUnidad() {
 
 const inputOperador = document.getElementById("txtOperador");
 const boxOperador = document.getElementById("sugerenciasOperador");
+if (inputOperador) {
+    inputOperador.addEventListener("input", function () {
+        const valor = this.value.toLowerCase().trim();
 
-inputOperador.addEventListener("input", function () {
-    const valor = this.value.toLowerCase().trim();
+        this.dataset.mepOperador = 0;
+        document.getElementById("txtTelefono").value = "";
 
-    this.dataset.mepOperador = 0;
-    document.getElementById("txtTelefono").value = "";
-
-    if (!valor) {
-        boxOperador.style.display = "none";
-        return;
-    }
-
-    const resultados = operadores.filter((op) =>
-        op.nombre.toLowerCase().includes(valor),
-    );
-
-    if (resultados.length === 0) {
-        boxOperador.style.display = "none";
-        return;
-    }
-
-    boxOperador.innerHTML = "";
-
-    resultados.forEach((op) => {
-        const item = document.createElement("div");
-
-        item.textContent = op.nombre;
-        item.style.padding = "8px";
-        item.style.cursor = "pointer";
-
-        item.onmouseenter = () => (item.style.background = "#f1f1f1");
-        item.onmouseleave = () => (item.style.background = "white");
-
-        item.onclick = () => {
-            inputOperador.value = op.nombre;
-            inputOperador.dataset.mepOperador = op.id;
-
-            document.getElementById("txtTelefono").value = op.telefono;
-
+        if (!valor) {
             boxOperador.style.display = "none";
+            return;
+        }
 
-            toastr.success("Operador seleccionado");
-        };
+        const resultados = operadores.filter((op) =>
+            op.nombre.toLowerCase().includes(valor),
+        );
 
-        boxOperador.appendChild(item);
+        if (resultados.length === 0) {
+            boxOperador.style.display = "none";
+            return;
+        }
+
+        boxOperador.innerHTML = "";
+
+        resultados.forEach((op) => {
+            const item = document.createElement("div");
+
+            item.textContent = op.nombre;
+            item.style.padding = "8px";
+            item.style.cursor = "pointer";
+
+            item.onmouseenter = () => (item.style.background = "#f1f1f1");
+            item.onmouseleave = () => (item.style.background = "white");
+
+            item.onclick = () => {
+                inputOperador.value = op.nombre;
+                inputOperador.dataset.mepOperador = op.id;
+
+                document.getElementById("txtTelefono").value = op.telefono;
+
+                boxOperador.style.display = "none";
+
+                toastr.success("Operador seleccionado");
+            };
+
+            boxOperador.appendChild(item);
+        });
+
+        boxOperador.style.display = "block";
     });
 
-    boxOperador.style.display = "block";
-});
+    inputOperador.addEventListener("blur", () => {
+        setTimeout(() => {
+            boxOperador.style.display = "none";
+        }, 200);
+    });
+}
 
-inputOperador.addEventListener("blur", () => {
-    setTimeout(() => {
-        boxOperador.style.display = "none";
-    }, 200);
-});
 function actualizarBotonMapa() {
     const cardmapa = document.getElementById("cardGpsMapa");
 
@@ -679,14 +680,18 @@ function actualizarBotonMapa() {
 }
 async function validarConexionGPS(tipoKey, imei, gpsCompanyId, equipos = []) {
     const config = mapInputs[tipoKey];
+    if (!config) return false;
     const btnActualizar = document.getElementById(`btnActualizarGPS${tipoKey}`);
 
-    if (!imei || !gpsCompanyId) {
+    const equipoId = equipos && equipos.length ? equipos[0] : null;
+
+    if (!imei || !gpsCompanyId || !equipoId) {
         if (btnActualizar) btnActualizar.style.display = "none";
         actualizarEstadoGPS(config.statusGps, "secondary", "Sin GPS");
 
         config.latitud = null;
         config.longitud = null;
+        actualizarBotonMapa();
 
         return false;
     }
@@ -704,14 +709,15 @@ async function validarConexionGPS(tipoKey, imei, gpsCompanyId, equipos = []) {
                     .getAttribute("content"),
             },
             body: JSON.stringify({
-                equipos: equipos,
+                equipos: [equipoId],
             }),
         });
 
         const data = await response.json();
-        const ubi = data[0]?.ubicacion ?? null;
+        const itemRes = (data && Array.isArray(data) && data.length > 0) ? data[0] : null;
+        const ubi = itemRes?.ubicacion ?? null;
 
-        if (ubi.lat && ubi.lng) {
+        if (ubi && ubi.lat && ubi.lng) {
             actualizarEstadoGPS(config.statusGps, "success", "Equipo en línea");
 
             config.latitud = parseFloat(ubi.lat);
@@ -720,10 +726,12 @@ async function validarConexionGPS(tipoKey, imei, gpsCompanyId, equipos = []) {
             actualizarDistanciaEquipos();
             return true;
         } else {
-            actualizarEstadoGPS(config.statusGps, "danger", "GPS sin señal");
+            const mensajeStatus = itemRes?.messageAp || "GPS sin señal";
+            actualizarEstadoGPS(config.statusGps, "danger", mensajeStatus);
 
             config.latitud = null;
             config.longitud = null;
+            actualizarBotonMapa();
 
             return false;
         }
@@ -732,8 +740,9 @@ async function validarConexionGPS(tipoKey, imei, gpsCompanyId, equipos = []) {
 
         config.latitud = null;
         config.longitud = null;
+        actualizarBotonMapa();
 
-        console.error(e);
+        console.error("Error al validar conexión GPS:", e);
 
         return false;
     }
@@ -841,14 +850,17 @@ function populateUnidadesSelects() {
     if (selectUnidad) {
         const valActual = selectUnidad.value;
         const mepUnidadActual = selectUnidad.dataset.mepUnidad;
-        selectUnidad.innerHTML = '<option value="" disabled selected>Selecciona Unidad...</option>';
-        unidades.filter(u => u.tipo === "Tractos / Camiones").forEach(u => {
-            const opt = document.createElement("option");
-            opt.value = u.id_equipo;
-            opt.textContent = `${u.id_equipo} ${u.placas ? '('+u.placas+')' : ''}`;
-            opt.dataset.unitId = u.id;
-            selectUnidad.appendChild(opt);
-        });
+        selectUnidad.innerHTML =
+            '<option value="" disabled selected>Selecciona Unidad...</option>';
+        unidades
+            .filter((u) => u.tipo === "Tractos / Camiones")
+            .forEach((u) => {
+                const opt = document.createElement("option");
+                opt.value = u.id_equipo;
+                opt.textContent = `${u.id_equipo} ${u.placas ? "(" + u.placas + ")" : ""}`;
+                opt.dataset.unitId = u.id;
+                selectUnidad.appendChild(opt);
+            });
         if (valActual) {
             selectUnidad.value = valActual;
         }
@@ -860,14 +872,17 @@ function populateUnidadesSelects() {
     if (selectChasisA) {
         const valActual = selectChasisA.value;
         const mepUnidadActual = selectChasisA.dataset.mepUnidad;
-        selectChasisA.innerHTML = '<option value="" disabled selected>Selecciona Chasis A...</option>';
-        unidades.filter(u => u.tipo === "Chasis / Plataforma").forEach(u => {
-            const opt = document.createElement("option");
-            opt.value = u.id_equipo;
-            opt.textContent = `${u.id_equipo} ${u.placas ? '('+u.placas+')' : ''}`;
-            opt.dataset.unitId = u.id;
-            selectChasisA.appendChild(opt);
-        });
+        selectChasisA.innerHTML =
+            '<option value="" disabled selected>Selecciona Chasis A...</option>';
+        unidades
+            .filter((u) => u.tipo === "Chasis / Plataforma")
+            .forEach((u) => {
+                const opt = document.createElement("option");
+                opt.value = u.id_equipo;
+                opt.textContent = `${u.id_equipo} ${u.placas ? "(" + u.placas + ")" : ""}`;
+                opt.dataset.unitId = u.id;
+                selectChasisA.appendChild(opt);
+            });
         if (valActual) {
             selectChasisA.value = valActual;
         }
@@ -879,14 +894,17 @@ function populateUnidadesSelects() {
     if (selectChasisB) {
         const valActual = selectChasisB.value;
         const mepUnidadActual = selectChasisB.dataset.mepUnidad;
-        selectChasisB.innerHTML = '<option value="" disabled selected>Selecciona Chasis B...</option>';
-        unidades.filter(u => u.tipo === "Chasis / Plataforma").forEach(u => {
-            const opt = document.createElement("option");
-            opt.value = u.id_equipo;
-            opt.textContent = `${u.id_equipo} ${u.placas ? '('+u.placas+')' : ''}`;
-            opt.dataset.unitId = u.id;
-            selectChasisB.appendChild(opt);
-        });
+        selectChasisB.innerHTML =
+            '<option value="" disabled selected>Selecciona Chasis B...</option>';
+        unidades
+            .filter((u) => u.tipo === "Chasis / Plataforma")
+            .forEach((u) => {
+                const opt = document.createElement("option");
+                opt.value = u.id_equipo;
+                opt.textContent = `${u.id_equipo} ${u.placas ? "(" + u.placas + ")" : ""}`;
+                opt.dataset.unitId = u.id;
+                selectChasisB.appendChild(opt);
+            });
         if (valActual) {
             selectChasisB.value = valActual;
         }
@@ -896,10 +914,13 @@ function populateUnidadesSelects() {
     }
 
     // Inicializar o actualizar Select2
-    if (typeof jQuery !== 'undefined' && typeof jQuery.fn.select2 !== 'undefined') {
+    if (
+        typeof jQuery !== "undefined" &&
+        typeof jQuery.fn.select2 !== "undefined"
+    ) {
         const select2Options = {
-            width: '100%',
-            dropdownParent: jQuery(document.body)
+            width: "100%",
+            dropdownParent: jQuery(document.body),
         };
         if (selectUnidad) jQuery(selectUnidad).select2(select2Options);
         if (selectChasisA) jQuery(selectChasisA).select2(select2Options);
@@ -929,12 +950,14 @@ function initAutocompleteUnidad(tipoKey) {
 
         if (!val || !unitId) {
             this.dataset.mepUnidad = 0;
-            const btnActualizar = document.getElementById(`btnActualizarGPS${tipoKey}`);
+            const btnActualizar = document.getElementById(
+                `btnActualizarGPS${tipoKey}`,
+            );
             if (btnActualizar) btnActualizar.style.display = "none";
             return;
         }
 
-        const u = unidades.find(unit => String(unit.id) === String(unitId));
+        const u = unidades.find((unit) => String(unit.id) === String(unitId));
         if (u) {
             this.dataset.mepUnidad = u.id;
 
@@ -962,7 +985,9 @@ function initAutocompleteUnidad(tipoKey) {
 
             toastr.success(`${tipoKey} seleccionado`);
 
-            const btnActualizar = document.getElementById(`btnActualizarGPS${tipoKey}`);
+            const btnActualizar = document.getElementById(
+                `btnActualizarGPS${tipoKey}`,
+            );
             if (u.imei && u.gps_company_id) {
                 if (btnActualizar) btnActualizar.style.display = "inline-block";
                 actualizarEstadoGPS(
@@ -989,22 +1014,31 @@ initAutocompleteUnidad("Unidad");
 initAutocompleteUnidad("ChasisA");
 initAutocompleteUnidad("ChasisB");
 
-jQuery(document).on("click", ".btn-actualizar-gps", async function() {
+jQuery(document).on("click", ".btn-actualizar-gps", async function () {
     const tipoKey = this.dataset.gpsTipo;
     const config = mapInputs[tipoKey];
     if (!config) return;
 
     const select = document.getElementById(config.input);
-    const unitId = select ? select.options[select.selectedIndex]?.dataset.unitId : null;
+    const unitId = select
+        ? select.options[select.selectedIndex]?.dataset.unitId
+        : null;
     const imei = document.getElementById(config.imei)?.value;
     const gpsCompanyId = document.getElementById(config.gps)?.value;
 
     if (imei && gpsCompanyId) {
         const btn = jQuery(this);
         const originalHtml = btn.html();
-        btn.prop("disabled", true).html('<i class="fas fa-spinner fa-spin"></i> Consultando...');
+        btn.prop("disabled", true).html(
+            '<i class="fas fa-spinner fa-spin"></i> Consultando...',
+        );
         try {
-            await validarConexionGPS(tipoKey, imei, gpsCompanyId, unitId ? [unitId] : []);
+            await validarConexionGPS(
+                tipoKey,
+                imei,
+                gpsCompanyId,
+                unitId ? [unitId] : [],
+            );
         } catch (e) {
             console.error(e);
         } finally {
@@ -1100,6 +1134,7 @@ function actualizarEstadoGPS(id, tipo, texto) {
         danger: "text-danger",
         warning: "text-warning",
         muted: "text-muted",
+        secondary: "text-secondary",
     };
 
     const iconos = {
@@ -1107,12 +1142,13 @@ function actualizarEstadoGPS(id, tipo, texto) {
         danger: "fa-triangle-exclamation",
         warning: "fa-spinner fa-spin",
         muted: "fa-minus-circle",
+        secondary: "fa-ban",
     };
 
     $("#" + id)
         .removeClass()
-        .addClass(`small fw-bold ${clases[tipo]}`).html(`
-            <i class="fas ${iconos[tipo]}"></i>
+        .addClass(`small fw-bold ${clases[tipo] || clases.muted}`).html(`
+            <i class="fas ${iconos[tipo] || iconos.muted}"></i>
             ${texto}
         `);
 }
@@ -1140,6 +1176,7 @@ function googleMapsReady() {
 
     const equiposValidos = equipos.filter((e) => {
         return (
+            e.data &&
             e.data.latitud &&
             e.data.longitud &&
             parseFloat(e.data.latitud) !== 0 &&
@@ -1147,17 +1184,23 @@ function googleMapsReady() {
         );
     });
 
-    if (equiposValidos.length === 0 && !cargaIni) {
-        Swal.fire({
-            icon: "warning",
-            title: "Sin ubicación GPS",
-            text: "No hay equipos con coordenadas válidas.",
-        });
+    if (equiposValidos.length === 0) {
+        if (!cargaIni) {
+            Swal.fire({
+                icon: "warning",
+                title: "Sin ubicación GPS",
+                text: "No hay equipos con coordenadas válidas.",
+            });
+        }
 
+        cargaIni = false;
         return;
     }
 
     cargaIni = false;
+
+    const mapaEl = document.getElementById("mapaEquipos");
+    if (!mapaEl) return;
 
     const centro = {
         lat: parseFloat(equiposValidos[0].data.latitud),
@@ -1165,7 +1208,7 @@ function googleMapsReady() {
     };
 
     mapaEquiposInstance = new google.maps.Map(
-        document.getElementById("mapaEquipos"),
+        mapaEl,
         {
             zoom: 10,
             center: centro,

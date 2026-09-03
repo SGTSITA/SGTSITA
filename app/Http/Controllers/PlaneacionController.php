@@ -452,7 +452,7 @@ class PlaneacionController extends Controller
                 $waText .= "Hora de llegada a bodega:\n" . ($horaLlegada ?: "") . "\n";
                 $waText .= "Hora de salida: \n";
                 $waText .= "Comentarios:\n" . ($comentarios ?: "") . "\n\n";
-                $waText .= "Contraseña temporal para Operador: " . $passwordTemporal;
+               // $waText .= "Contraseña temporal para Operador: " . $passwordTemporal;
             } else {
                 $waText = "{$saludo} " . ($nombreOp ? trim($nombreOp) : "Operador") . ",\n\n";
                 $waText .= "Comparto los datos de salida del día de hoy:\n\n";
@@ -460,12 +460,12 @@ class PlaneacionController extends Controller
                 $waText .= "Puerto / Lugar de salida:\n" . ($origen ?: "") . "\n";
                 $waText .= "Domicilio de entrega: " . ($direccion ?: "") . "\n";
                 $waText .= "Mapa: " . ($mapLink ?: "") . "\n";
-                $waText .= "Contacto: \n";
+                $waText .= "Contacto: \n" . ($contacto ?: "") . "\n";
                 $waText .= "Fecha de entrega:\n" . ($fechaEntrega ?: "") . "\n";
-                $waText .= "Hora de llegada a bodega:\n\n";
+                $waText .= "Hora de llegada a bodega:\n\n" . ($horaLlegada ?: "") . "\n";
                 $waText .= "Hora de salida: \n";
-                $waText .= "Comentarios:\n\n";
-                $waText .= "Contraseña temporal para Operador: " . $passwordTemporal;
+                $waText .= "Comentarios:\n\n" . ($comentarios ?: "") . "\n\n";
+               // $waText .= "Contraseña temporal para Operador: " . $passwordTemporal;
             }
         }
 
@@ -963,7 +963,7 @@ class PlaneacionController extends Controller
                     $waText .= "Hora de llegada a bodega:\n" . ($horaLlegada ?: "") . "\n";
                     $waText .= "Hora de salida: \n";
                     $waText .= "Comentarios:\n" . ($comentarios ?: "") . "\n\n";
-                    $waText .= "Contraseña temporal para Operador: " . $passwordTemporal;
+                   // $waText .= "Contraseña temporal para Operador: " . $passwordTemporal;
                 } else {
                     $waText = "{$saludo} " . ($nombreOp ? trim($nombreOp) : "Operador") . ",\n\n";
                     $waText .= "Comparto los datos de salida del día de hoy:\n\n";
@@ -971,12 +971,12 @@ class PlaneacionController extends Controller
                     $waText .= "Puerto / Lugar de salida:\n" . ($origen ?: "") . "\n";
                     $waText .= "Domicilio de entrega: " . ($direccion ?: "") . "\n";
                     $waText .= "Mapa: " . ($mapLink ?: "") . "\n";
-                    $waText .= "Contacto: \n";
+                    $waText .= "Contacto: \n" . ($contacto ?: "") . "\n";
                     $waText .= "Fecha de entrega:\n" . ($fechaEntrega ?: "") . "\n";
-                    $waText .= "Hora de llegada a bodega:\n\n";
+                    $waText .= "Hora de llegada a bodega:\n\n" . ($horaLlegada ?: "") . "\n";
                     $waText .= "Hora de salida: \n";
-                    $waText .= "Comentarios:\n\n";
-                    $waText .= "Contraseña temporal para Operador: " . $passwordTemporal;
+                    $waText .= "Comentarios:\n\n" . ($comentarios ?: "") . "\n\n";
+                   // $waText .= "Contraseña temporal para Operador: " . $passwordTemporal;
                 }
 
                 DB::commit();
@@ -1130,7 +1130,7 @@ class PlaneacionController extends Controller
                 $waText .= "Hora de llegada a bodega:\n" . ($horaLlegada ?: "") . "\n";
                 $waText .= "Hora de salida: \n";
                 $waText .= "Comentarios:\n" . ($comentarios ?: "") . "\n\n";
-                $waText .= "Contraseña temporal para Operador: " . $passwordTemporal;
+               // $waText .= "Contraseña temporal para Operador: " . $passwordTemporal;
             } else {
                 $waText = "{$saludo} " . ($nombreOp ? trim($nombreOp) : "Operador") . ",\n\n";
                 $waText .= "Comparto los datos de salida del día de hoy:\n\n";
@@ -1138,12 +1138,12 @@ class PlaneacionController extends Controller
                 $waText .= "Puerto / Lugar de salida:\n" . ($origen ?: "") . "\n";
                 $waText .= "Domicilio de entrega: " . ($direccion ?: "") . "\n";
                 $waText .= "Mapa: " . ($mapLink ?: "") . "\n";
-                $waText .= "Contacto: \n";
+                $waText .= "Contacto: " . ($contacto ?: "") . "\n";
                 $waText .= "Fecha de entrega:\n" . ($fechaEntrega ?: "") . "\n";
-                $waText .= "Hora de llegada a bodega:\n\n";
+                $waText .= "Hora de llegada a bodega:\n" . ($horaLlegada ?: "") . "\n";
                 $waText .= "Hora de salida: \n";
-                $waText .= "Comentarios:\n\n";
-                $waText .= "Contraseña temporal para Operador: " . $passwordTemporal;
+                $waText .= "Comentarios:\n" . ($comentarios ?: "") . "\n";
+               // $waText .= "Contraseña temporal para Operador: " . $passwordTemporal;
             }
 
             DB::commit();
@@ -1154,7 +1154,7 @@ class PlaneacionController extends Controller
                 "Mensaje" => "Se ha programado correctamente el viaje del contenedor (Elemental)",
                 'success' => true,
                 'cotizacion_data' => $cotizacion_data,
-                'password_temporal' => $passwordTemporal,
+                'password_temporal' => null,// $passwordTemporal,
                 'wa_text' => $waText,
                 'id_asignacion' => $asignaciones->id
             ]);
@@ -1254,62 +1254,100 @@ class PlaneacionController extends Controller
 
             $sueldoOperador = $request->filled('txtSueldoOperador') ? str_replace(',', '', $request->get('txtSueldoOperador')) : 0;
             $dineroViaje = $request->filled('txtDineroViaje') ? str_replace(',', '', $request->get('txtDineroViaje')) : 0;
-
-            // Buscar y cancelar movimiento bancario anterior si existía
-            if ($asignaciones->id && $asignaciones->id_banco1_dinero_viaje) {
-                $movimientoBanco = $this->BancosService->findMovimiento($asignaciones->id, \App\Models\Asignaciones::class, $asignaciones->id_banco1_dinero_viaje);
-                if ($movimientoBanco) {
-                    $this->BancosService->cancelarMovimiento($asignaciones->id_banco1_dinero_viaje, $movimientoBanco->id, $movimientoBanco->fecha_movimiento);
+            $nuevoBancoDinero = $request->filled('cmbBanco') ? intval($request->get('cmbBanco')) : null;
+            $nuevaFechaAppDinero = null;
+            if ($request->filled('FechaAplicacionDinero')) {
+                try {
+                    $nuevaFechaAppDinero = \Carbon\Carbon::createFromFormat('d/m/Y', trim($request->get('FechaAplicacionDinero')))->format('Y-m-d');
+                } catch (\Exception $e) {
+                    $nuevaFechaAppDinero = \Carbon\Carbon::parse($request->get('FechaAplicacionDinero'))->format('Y-m-d');
                 }
             }
 
-            $asignaciones->sueldo_viaje = $sueldoOperador;
-            $asignaciones->dinero_viaje = $dineroViaje;
-            $asignaciones->id_banco1_dinero_viaje = $request->get('cmbBanco');
-            $asignaciones->cantidad_banco1_dinero_viaje = $dineroViaje;
+            // Buscar movimiento bancario existente para dinero de viaje de esta asignación
+            $movimientoBancoExistente = \App\Models\CatBancoCuentasMovimientos::where('referenciaable_id', $asignaciones->id)
+                ->where(function ($q) {
+                    $q->where('referenciaable_type', \App\Models\Asignaciones::class)
+                      ->orWhere('referenciaable_type', 'like', '%Asignaciones%');
+                })
+                ->where('cancelado', 0)
+                ->where('tipo', 'cargo')
+                ->where('concepto', 'not like', 'Devolución%')
+                ->latest('id')
+                ->first();
 
-            $resta = floatval($sueldoOperador) - floatval($dineroViaje);
-            $asignaciones->pago_operador = $resta;
-            $asignaciones->restante_pago_operador = $resta;
-            $asignaciones->tipo_contrato = 'Propio';
-            $asignaciones->estatus_pagado = 'Pendiente Pago';
+            if (!$movimientoBancoExistente && $asignaciones->id && $asignaciones->id_banco1_dinero_viaje) {
+                $movimientoBancoExistente = $this->BancosService->findMovimiento(
+                    $asignaciones->id,
+                    \App\Models\Asignaciones::class,
+                    $asignaciones->id_banco1_dinero_viaje
+                );
+            }
 
-            $asignaciones->save();
+            if ($movimientoBancoExistente) {
+                $montoMismo = abs(floatval($movimientoBancoExistente->monto) - floatval($dineroViaje)) < 0.01;
+                $bancoMismo = ($movimientoBancoExistente->cuenta_bancaria_id == $nuevoBancoDinero);
+                $fechaMovStr = $movimientoBancoExistente->fecha_movimiento
+                    ? \Carbon\Carbon::parse($movimientoBancoExistente->fecha_movimiento)->format('Y-m-d')
+                    : null;
+                $fechaMisma = ($fechaMovStr === $nuevaFechaAppDinero);
 
-            if ($request->filled('FechaAplicacionDinero')) {
-                // Registrar/Actualizar el DineroContenedor
-                $dineroViajeModel = DineroContenedor::where('id_contenedor', $contenedor->id)
-                    ->where('motivo', 'Dinero para viaje')
-                    ->first();
-                if (!$dineroViajeModel) {
-                    $dineroViajeModel = new DineroContenedor();
-                    $dineroViajeModel->id_contenedor = $contenedor->id;
-                    $dineroViajeModel->motivo = 'Dinero para viaje';
+                if ($montoMismo && $bancoMismo && $fechaMisma && floatval($dineroViaje) > 0) {
+                    // ¡Ya está pagado y aplicado sin cambios! NO TOCAR BANCOS para evitar duplicidad.
+                } else {
+                    // Cambió monto, banco o fecha, o se puso en 0: cancelar movimiento anterior usando su fecha original
+                    $fechaCancelacionMov = $fechaMovStr ?: now()->format('Y-m-d');
+                    $this->BancosService->cancelarMovimiento(
+                        $movimientoBancoExistente->cuenta_bancaria_id,
+                        $movimientoBancoExistente->id,
+                        $fechaCancelacionMov
+                    );
+
+                    // Si el nuevo monto es > 0, registrar el nuevo movimiento con los datos actualizados
+                    if (floatval($dineroViaje) > 0 && $nuevoBancoDinero && $nuevaFechaAppDinero) {
+                        $operadorN = \App\Models\Operador::find($request->get('cmbOperador'));
+                        $contenedoresAbonos = [
+                            [
+                                'num_contenedor' => $contenedor->num_contenedor,
+                                'abono' => floatval($dineroViaje)
+                            ]
+                        ];
+                        $dataMov = [
+                            'cuenta_bancaria_id' => $nuevoBancoDinero,
+                            'tipo' => 'cargo',
+                            'monto' => floatval($dineroViaje),
+                            'concepto' => 'Dinero para viaje '. $contenedor->num_contenedor .' '. ($operadorN?->nombre ?? ''),
+                            'fecha_movimiento' => $nuevaFechaAppDinero,
+                            'origen' => 'sistema',
+                            'referencia' => 'del ' .\Carbon\Carbon::parse($fechaInicio)->format('d/m/Y') . ' al '.\Carbon\Carbon::parse($fechaFinal)->format('d/m/Y'),
+                            'detalles' => json_encode($contenedoresAbonos),
+                            'referenciaable_id' => $asignaciones->id,
+                            'referenciaable_type' => \App\Models\Asignaciones::class,
+                        ];
+
+                        $movimientoCrear = $this->BancosService->registrarMovimiento($dataMov);
+                        if (!$movimientoCrear) {
+                            throw new \Exception('No se pudo crear el nuevo movimiento bancario, dinero para viaje ');
+                        }
+                    }
                 }
-                $dineroViajeModel->id_banco = $request->get('cmbBanco');
-                $dineroViajeModel->monto = $dineroViaje;
-                $dineroViajeModel->fecha_entrega_monto = \Carbon\Carbon::createFromFormat(
-                    'd/m/Y',
-                    $request->get('FechaAplicacionDinero')
-                )->format('Y-m-d');
-                $dineroViajeModel->save();
-
-                // Registrar nuevo movimiento bancario con los montos actualizados si es mayor a 0
-                if ($dineroViaje > 0) {
+            } else {
+                // No existía movimiento previo: registrar si dineroViaje > 0
+                if (floatval($dineroViaje) > 0 && $nuevoBancoDinero && $nuevaFechaAppDinero) {
                     $operadorN = \App\Models\Operador::find($request->get('cmbOperador'));
                     $contenedoresAbonos = [
                         [
                             'num_contenedor' => $contenedor->num_contenedor,
-                            'abono' => $dineroViaje
+                            'abono' => floatval($dineroViaje)
                         ]
                     ];
                     $dataMov = [
-                        'cuenta_bancaria_id' => $request->get('cmbBanco'),
+                        'cuenta_bancaria_id' => $nuevoBancoDinero,
                         'tipo' => 'cargo',
                         'monto' => floatval($dineroViaje),
                         'concepto' => 'Dinero para viaje '. $contenedor->num_contenedor .' '. ($operadorN?->nombre ?? ''),
-                        'fecha_movimiento' => \Carbon\Carbon::createFromFormat('d/m/Y', $request->get('FechaAplicacionDinero'))->format('Y-m-d'),
-                        'origen' => null,
+                        'fecha_movimiento' => $nuevaFechaAppDinero,
+                        'origen' => 'sistema',
                         'referencia' => 'del ' .\Carbon\Carbon::parse($fechaInicio)->format('d/m/Y') . ' al '.\Carbon\Carbon::parse($fechaFinal)->format('d/m/Y'),
                         'detalles' => json_encode($contenedoresAbonos),
                         'referenciaable_id' => $asignaciones->id,
@@ -1323,25 +1361,46 @@ class PlaneacionController extends Controller
                 }
             }
 
+            $asignaciones->sueldo_viaje = $sueldoOperador;
+            $asignaciones->dinero_viaje = $dineroViaje;
+            $asignaciones->id_banco1_dinero_viaje = $nuevoBancoDinero;
+            $asignaciones->cantidad_banco1_dinero_viaje = $dineroViaje;
+
+            $resta = floatval($sueldoOperador) - floatval($dineroViaje);
+            $asignaciones->pago_operador = $resta;
+            $asignaciones->restante_pago_operador = $resta;
+            $asignaciones->tipo_contrato = 'Propio';
+            $asignaciones->estatus_pagado = 'Pendiente Pago';
+
+            $asignaciones->save();
+
+            if ($nuevaFechaAppDinero) {
+                // Registrar/Actualizar el DineroContenedor
+                $dineroViajeModel = DineroContenedor::where('id_contenedor', $contenedor->id)
+                    ->where('motivo', 'Dinero para viaje')
+                    ->first();
+                if (!$dineroViajeModel) {
+                    $dineroViajeModel = new DineroContenedor();
+                    $dineroViajeModel->id_contenedor = $contenedor->id;
+                    $dineroViajeModel->motivo = 'Dinero para viaje';
+                }
+                $dineroViajeModel->id_banco = $nuevoBancoDinero;
+                $dineroViajeModel->monto = $dineroViaje;
+                $dineroViajeModel->fecha_entrega_monto = $nuevaFechaAppDinero;
+                $dineroViajeModel->save();
+            }
+
             $cotizacion->litros_diesel = $request->get('litros_diesel') ?? $request->get('gasto_litros_diesel') ?? 0;
             $cotizacion->litros_urea = $request->get('litros_urea') ?? $request->get('gasto_litros_urea') ?? 0;
             $cotizacion->estatus_planeacion = 1;
             $cotizacion->update();
 
-            // Eliminar gastos adicionales anteriores del viaje para evitar duplicidades
-            $oldGastos = \App\Models\Gasto::where('origen_legacy_id', $asignaciones->id)
-                ->where('origen_legacy', 'like', 'asignacion_planeacion%')
-                ->get();
-            foreach ($oldGastos as $og) {
-                $og->forceDelete();
-            }
-
             Log::channel('daily')->info('filasOtrosGastos recibida en request: ' . $request->get('filasOtrosGastos'));
             Log::channel('daily')->info('filasOtrosGastos filled check: ' . ($request->filled('filasOtrosGastos') ? 'true' : 'false'));
 
-            if ($request->filled('filasOtrosGastos')) {
-                $resG = self::guardarOtrosGastosPlaneacion($request, $contenedor->num_contenedor, $request->get('cmbOperador'));
-                Log::channel('daily')->info('Respuesta de guardarOtrosGastosPlaneacion: ' . json_encode($resG));
+            if ($request->has('filasOtrosGastos')) {
+                $resG = $this->sincronizarOtrosGastosPlaneacion($request, $asignaciones, $contenedor, $request->get('cmbOperador'));
+                Log::channel('daily')->info('Respuesta de sincronizarOtrosGastosPlaneacion: ' . json_encode($resG));
             }
 
             DB::commit();
@@ -1699,6 +1758,275 @@ class PlaneacionController extends Controller
         }
     }
 
+    public function sincronizarOtrosGastosPlaneacion($r, Asignaciones $asignacion, DocumCotizacion $contenedor, $idOperadorViaje)
+    {
+        try {
+            $otrosGastos = json_decode($r->filasOtrosGastos, true);
+            Log::info('Sincronizando otros gastos recibidos:', $otrosGastos ?: []);
+
+            if (!is_array($otrosGastos)) {
+                return [
+                    "Titulo" => "Sin datos",
+                    "Mensaje" => "No se recibieron gastos válidos.",
+                    "TMensaje" => "warning"
+                ];
+            }
+
+            $idEmpresa = auth()->user()->id_empresa;
+
+            $descripcionGastosPermitidos = [
+                'GCM01' => 'GCM01 - Comisión',
+                'GDI02' => 'GDI02 - Diésel',
+                'GBV01' => 'GBV01 - Burrero Vacío',
+                'GU001' => 'GU001 - Urea',
+                'OTR01' => 'Otros'
+            ];
+
+            // 1. Obtener gastos existentes vinculados a esta asignación
+            $gastosExistentes = \App\Models\Gasto::with(['pagos.movimientoBancario', 'imputaciones'])
+                ->where(function ($query) use ($asignacion) {
+                    $query->where(function ($q) use ($asignacion) {
+                        $q->where('origen_legacy_id', $asignacion->id)
+                          ->where('origen_legacy', 'like', 'asignacion_planeacion%');
+                    })->orWhereHas('vinculos', function ($q) use ($asignacion) {
+                        $q->where('vinculable_type', \App\Models\Asignaciones::class)
+                          ->where('vinculable_id', $asignacion->id);
+                    });
+                })
+                ->get();
+
+            $gastosProcesadosIds = [];
+
+            // 2. Procesar cada fila de gasto enviada en la solicitud
+            foreach ($otrosGastos as $gasto) {
+                $gastoId = !empty($gasto['id']) ? intval($gasto['id']) : null;
+                $motivo = $gasto['motivo'] ?? null;
+                $monto = floatval($gasto['monto'] ?? 0);
+                $esPagoInmediato = !empty($gasto['pagoInmediato']);
+                $idBanco = !empty($gasto['banco']) ? intval($gasto['banco']) : null;
+                $fechaAplicacionInput = $gasto['fechaAplicacion'] ?? null;
+                $conceptoOtro = $gasto['conceptoOtro'] ?? null;
+
+                if (!$motivo || !isset($descripcionGastosPermitidos[$motivo])) {
+                    continue;
+                }
+                if ($monto <= 0) {
+                    continue;
+                }
+
+                $fechaAplicacion = null;
+                if (!empty($fechaAplicacionInput)) {
+                    try {
+                        $fechaAplicacion = Carbon::createFromFormat('d/m/Y', trim($fechaAplicacionInput))->format('Y-m-d');
+                    } catch (\Exception $e) {
+                        $fechaAplicacion = Carbon::parse($fechaAplicacionInput)->format('Y-m-d');
+                    }
+                }
+
+                $tipoGasto = $motivo === 'OTR01' ? ($conceptoOtro ?: 'Otros') : $descripcionGastosPermitidos[$motivo];
+
+                // Buscar gasto existente por ID o fallback por motivo/concepto
+                $gastoExistente = null;
+                if ($gastoId) {
+                    $gastoExistente = $gastosExistentes->firstWhere('id', $gastoId);
+                }
+                if (!$gastoExistente && $motivo) {
+                    $gastoExistente = $gastosExistentes->first(function ($g) use ($motivo, $gastosProcesadosIds) {
+                        if (in_array($g->id, $gastosProcesadosIds)) {
+                            return false;
+                        }
+                        return str_starts_with($g->concepto, $motivo);
+                    });
+                }
+
+                // Resolver categoría y concepto del catálogo
+                $categoriaId = null;
+                $conceptoId = null;
+
+                if ($motivo === 'GDI02') {
+                    $cat = DB::table('categorias_gastos')->where('categoria', 'like', '%Combustible%')->first();
+                    $categoriaId = $cat?->id ?? 1;
+                    $con = DB::table('gasto_conceptos')->where('clave', 'DSL')->first();
+                    $conceptoId = $con?->id;
+                } elseif ($motivo === 'GCM01') {
+                    $cat = DB::table('categorias_gastos')->where('categoria', 'like', '%Comisiones de venta%')->first();
+                    $categoriaId = $cat?->id ?? 5;
+                    $con = DB::table('gasto_conceptos')->where('clave', 'COM_VTA')->first();
+                    $conceptoId = $con?->id;
+                } else {
+                    $cat = DB::table('categorias_gastos')->where('categoria', 'like', '%Otros%')->first();
+                    $categoriaId = $cat?->id ?? 12;
+
+                    $claveConcepto = $motivo === 'GBV01' ? 'OTR_BV' : ($motivo === 'GU001' ? 'OTR_UR' : 'OTR_GEN');
+                    $nombreConcepto = $motivo === 'GBV01' ? 'GBV01 - Burrero Vacío' : ($motivo === 'GU001' ? 'GU001 - Urea' : 'Otros');
+
+                    $con = \App\Models\GastoConcepto::where('clave', $claveConcepto)->first();
+                    if (!$con) {
+                        $con = new \App\Models\GastoConcepto();
+                        $con->categoria_gasto_id = $categoriaId;
+                        $con->clave = $claveConcepto;
+                        $con->nombre = $nombreConcepto;
+                        $con->tipo_default = 'viaje';
+                        $con->afecta_utilidad = true;
+                        $con->is_active = true;
+                        $con->save();
+                    }
+                    $conceptoId = $con->id;
+                }
+
+                if ($gastoExistente) {
+                    $gastosProcesadosIds[] = $gastoExistente->id;
+
+                    // Actualizar datos del gasto
+                    $gastoExistente->concepto = $tipoGasto;
+                    $gastoExistente->categoria_gasto_id = $categoriaId;
+                    $gastoExistente->gasto_concepto_id = $conceptoId;
+                    $gastoExistente->monto_total = $monto;
+                    $gastoExistente->save();
+
+                    // Sincronizar monto en imputaciones
+                    foreach ($gastoExistente->imputaciones as $imp) {
+                        $imp->monto_imputado = $monto;
+                        $imp->save();
+                    }
+
+                    // Verificar pago activo existente
+                    $pagoActivo = $gastoExistente->pagos()->where('estatus', '!=', 'cancelado')->first();
+                    $estabaPagado = ($pagoActivo !== null);
+
+                    if ($estabaPagado) {
+                        $montoPagoIgual = abs(floatval($pagoActivo->monto) - $monto) < 0.01;
+                        $bancoPagoIgual = ($pagoActivo->cuenta_bancaria_id == $idBanco);
+                        $fechaPagoActual = $pagoActivo->movimientoBancario?->fecha_movimiento
+                            ? Carbon::parse($pagoActivo->movimientoBancario->fecha_movimiento)->format('Y-m-d')
+                            : ($pagoActivo->fecha_pago ? Carbon::parse($pagoActivo->fecha_pago)->format('Y-m-d') : null);
+                        $fechaPagoEsperada = $fechaAplicacion ?? now()->format('Y-m-d');
+                        $fechaPagoIgual = ($fechaPagoActual === $fechaPagoEsperada);
+
+                        if (!$esPagoInmediato || empty($idBanco)) {
+                            // Usuario desmarcó pago inmediato o quitó el banco: cancelar pago con la fecha original del movimiento
+                            $fechaCancelacion = $fechaPagoActual ?: now()->format('Y-m-d');
+                            app(\App\Services\GastosService::class)->cancelarPago($pagoActivo, $fechaCancelacion);
+                            $gastoExistente->estatus = 'pendiente_pago';
+                            $gastoExistente->save();
+                        } elseif (!$montoPagoIgual || !$bancoPagoIgual || !$fechaPagoIgual) {
+                            // Cambiaron detalles de pago (monto, banco o fecha): cancelar el anterior con su fecha original y aplicar el nuevo
+                            $fechaCancelacion = $fechaPagoActual ?: now()->format('Y-m-d');
+                            app(\App\Services\GastosService::class)->cancelarPago($pagoActivo, $fechaCancelacion);
+
+                            app(\App\Services\GastosService::class)->pagar($gastoExistente, [
+                                'cuenta_bancaria_id' => $idBanco,
+                                'monto' => $monto,
+                                'fecha_pago' => $fechaAplicacion ?? now()->format('Y-m-d'),
+                                'concepto_banco' => \App\Services\BancosService::generarConcepto('gop', $tipoGasto, $contenedor->num_contenedor, $asignacion->Operador?->nombre ?? ($asignacion->id_operador ? \App\Models\Operador::find($asignacion->id_operador)?->nombre : null)),
+                                'referencia_banco' => 'GASTO_PLANEACION_VIAJE',
+                            ]);
+                        }
+                        // SI NADA CAMBIÓ: YA ESTÁ PAGADO -> NO TOCAR BANCOS (NO DUPLICAR)
+                    } else {
+                        // No estaba pagado: si ahora tiene pago inmediato y banco, pagar
+                        if ($esPagoInmediato && $idBanco) {
+                            app(\App\Services\GastosService::class)->pagar($gastoExistente, [
+                                'cuenta_bancaria_id' => $idBanco,
+                                'monto' => $monto,
+                                'fecha_pago' => $fechaAplicacion ?? now()->format('Y-m-d'),
+                                'concepto_banco' => \App\Services\BancosService::generarConcepto('gop', $tipoGasto, $contenedor->num_contenedor, $asignacion->Operador?->nombre ?? ($asignacion->id_operador ? \App\Models\Operador::find($asignacion->id_operador)?->nombre : null)),
+                                'referencia_banco' => 'GASTO_PLANEACION_VIAJE',
+                            ]);
+                        }
+                    }
+                } else {
+                    // Gasto NUEVO (ej. Urea que no existía)
+                    $nuevoGasto = app(\App\Services\GastosService::class)->registrar([
+                        'id_empresa' => $idEmpresa,
+                        'categoria_gasto_id' => $categoriaId,
+                        'gasto_concepto_id' => $conceptoId,
+                        'concepto' => $tipoGasto,
+                        'monto_total' => $monto,
+                        'tipo_gasto' => 'viaje',
+                        'estatus' => $esPagoInmediato ? 'pagado' : 'pendiente_pago',
+                        'fecha_gasto' => Carbon::now(),
+                        'origen_legacy' => 'asignacion_planeacion'.$tipoGasto,
+                        'origen_legacy_id' => $asignacion->id,
+                        'user_id' => auth()->id(),
+                        'vinculos' => [
+                            [
+                                'tipo_vinculo' => 'cotizacion',
+                                'vinculable_type' => Cotizaciones::class,
+                                'vinculable_id' => $contenedor->id_cotizacion,
+                            ],
+                            [
+                                'tipo_vinculo' => 'contenedor',
+                                'vinculable_type' => DocumCotizacion::class,
+                                'vinculable_id' => $contenedor->id,
+                            ],
+                            [
+                                'tipo_vinculo' => 'asignacion',
+                                'vinculable_type' => Asignaciones::class,
+                                'vinculable_id' => $asignacion->id,
+                            ],
+                            [
+                                'tipo_vinculo' => 'operador',
+                                'vinculable_type' => \App\Models\Operador::class,
+                                'vinculable_id' => $asignacion->id_operador,
+                            ]
+                        ],
+                        'imputaciones' => [
+                            [
+                                'fecha_imputacion' => Carbon::now(),
+                                'tipo_imputacion' => 'viaje',
+                                'imputable_type' => Asignaciones::class,
+                                'imputable_id' => $asignacion->id,
+                                'monto_imputado' => $monto,
+                                'origen' => 'directo',
+                            ]
+                        ]
+                    ]);
+
+                    $gastosProcesadosIds[] = $nuevoGasto->id;
+
+                    if ($esPagoInmediato && $idBanco) {
+                        app(\App\Services\GastosService::class)->pagar($nuevoGasto, [
+                            'cuenta_bancaria_id' => $idBanco,
+                            'monto' => $monto,
+                            'fecha_pago' => $fechaAplicacion ?? now()->format('Y-m-d'),
+                            'concepto_banco' => \App\Services\BancosService::generarConcepto('gop', $tipoGasto, $contenedor->num_contenedor, $asignacion->Operador?->nombre ?? ($asignacion->id_operador ? \App\Models\Operador::find($asignacion->id_operador)?->nombre : null)),
+                            'referencia_banco' => 'GASTO_PLANEACION_VIAJE',
+                        ]);
+                    }
+                }
+            }
+
+            // 3. Gastos eliminados (estaban en BD pero ya no están en la vista)
+            foreach ($gastosExistentes as $gastoBorrado) {
+                if (!in_array($gastoBorrado->id, $gastosProcesadosIds)) {
+                    foreach ($gastoBorrado->pagos()->where('estatus', '!=', 'cancelado')->get() as $pago) {
+                        $fechaCancelacion = $pago->movimientoBancario?->fecha_movimiento
+                            ? Carbon::parse($pago->movimientoBancario->fecha_movimiento)->format('Y-m-d')
+                            : ($pago->fecha_pago ? Carbon::parse($pago->fecha_pago)->format('Y-m-d') : now()->format('Y-m-d'));
+                        app(\App\Services\GastosService::class)->cancelarPago($pago, $fechaCancelacion);
+                    }
+                    $gastoBorrado->vinculos()->delete();
+                    $gastoBorrado->imputaciones()->delete();
+                    $gastoBorrado->update(['estatus' => 'cancelado']);
+                    $gastoBorrado->delete();
+                }
+            }
+
+            return [
+                "Titulo" => "Gastos actualizados",
+                "Mensaje" => "Se sincronizaron los gastos correctamente.",
+                "TMensaje" => "success"
+            ];
+        } catch (\Exception $e) {
+            Log::error('Error en sincronizarOtrosGastosPlaneacion: ' . $e->getMessage());
+            return [
+                "Titulo" => "Error interno",
+                "Mensaje" => "Ocurrió un error al sincronizar los gastos.",
+                "TMensaje" => "error"
+            ];
+        }
+    }
 
     public function edit_fecha(Request $request)
     {

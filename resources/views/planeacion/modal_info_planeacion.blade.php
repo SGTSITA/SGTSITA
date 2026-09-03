@@ -84,10 +84,10 @@
                             <div class="mt-3 border-top pt-2" id="datosCompartidosWhatsAppDiv" style="display: none;">
                                 <h6 class="text-primary font-weight-bold"
                                     style="color: #25d366 !important; border-left-color: #25d366 !important;">
-                                    <i class="fab fa-whatsapp"></i> Compartido con el Operador
+                                    <i class="fab fa-whatsapp"></i> Compartir con el Operador
                                 </h6>
                                 <p class="text-sm">
-                                    Contraseña temporal: <b id="passwordTemporalSpan">N/A</b>
+                                    <b id="passwordTemporalSpan"></b>
                                 </p>
                                 <button type="button" class="btn btn-sm btn-success" id="btnReenviarWhatsApp"
                                     style="background-color: #25d366; border-color: #25d366;">

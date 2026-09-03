@@ -21,10 +21,6 @@
             </div>
         </div>
     </div>
-
-    <!--Indica si se ha modificado alguna información en el formulario-->
-    <input type="hidden" id="modifico_informacion" name="modifico_informacion" value="0">
-
     <div class="card mb-5 mb-xl-10">
         <!--begin::Card header-->
         <div class="card-header card-header-stretch pb-0">
@@ -129,6 +125,7 @@
                                                                                                                                         <!--begin::Row-->
                                                                                                                                         <div class="row gx-9 gy-6">
                                                                                                                                         @csrf
+                                                                                                                                        <input type="hidden" id="modifico_informacion" name="modifico_informacion" value="0">
                                                                                                                                         <input type="hidden" value="{{ Auth::User()->id_cliente }}" name="id_cliente" id="id_cliente">
                                                                                                                                         @include('cotizaciones.externos.datos_generales')
                                                                                                                                         </div>
@@ -323,8 +320,14 @@
 
         $(document).ready(function() {
             // Detectar si algún campo cambia en cualquier formulario de la página para carta porte
-            $('form').on('change input', 'input, select, textarea', function() {
-                console.log('Campo modificado:', $(this).attr('name')); // <-- Para probar
+            $(document).on('change input', '#cotizacionCreate input, #cotizacionCreate select, #cotizacionCreate textarea', function() {
+                console.log('Campo modificado:', $(this).attr('name'));
+                $('#modifico_informacion').val('1');
+            });
+            $(document).on('apply.daterangepicker', function() {
+                $('#modifico_informacion').val('1');
+            });
+            $('#kt_facturacion').on('change input', 'input, select, textarea', function() {
                 $('#modifico_informacion').val('1');
             });
         });

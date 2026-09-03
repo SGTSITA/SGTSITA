@@ -216,13 +216,13 @@
 
                                         <div class="col-6 form-group">
                                             <!--label for="name">Cliente *</label>
-                                                                                                                                                                                                                                                                                                                                                            <select class="form-select cliente d-inline-block" data-toggle="select" id="id_cliente" name="id_cliente">
-                                                                                                                                                                                                                                                                                                                                                                <option value="{{ $cotizacion->id_cliente }}">{{ $cotizacion->Cliente->nombre }} / {{ $cotizacion->Cliente->telefono }}</option>
-                                                                                                                                                                                                                                                                                                                                                                @foreach ($clientes as $item)
+                                                                                                                                                                                                                                                                                                                                                                <select class="form-select cliente d-inline-block" data-toggle="select" id="id_cliente" name="id_cliente">
+                                                                                                                                                                                                                                                                                                                                                                    <option value="{{ $cotizacion->id_cliente }}">{{ $cotizacion->Cliente->nombre }} / {{ $cotizacion->Cliente->telefono }}</option>
+                                                                                                                                                                                                                                                                                                                                                                    @foreach ($clientes as $item)
     <option value="{{ $item->id }}">{{ $item->nombre }} / {{ $item->telefono }}</option>
     @endforeach
 
-                                                                                                                                                                                                                                                                                                                                                            </select-->
+                                                                                                                                                                                                                                                                                                                                                                </select-->
                                             <ul class="list-group">
                                                 <li
                                                     class="list-group-item border-1 border-dashed d-flex p-4 mb-2 bg-gray-100 border-radius-lg">
@@ -263,14 +263,14 @@
 
                                         <div class="col-6 form-group">
                                             <!--label for="name">Subcliente *</label>
-                                                                                                                                                                                                                                                                                                                                                            <select class="form-select subcliente d-inline-block" id="id_subcliente" name="id_subcliente">
+                                                                                                                                                                                                                                                                                                                                                                <select class="form-select subcliente d-inline-block" id="id_subcliente" name="id_subcliente">
 
-                                                                                                                                                                                                                                                                                                            @if ($cotizacion->id_subcliente != null)
+                                                                                                                                                                                                                                                                                                                @if ($cotizacion->id_subcliente != null)
     <option value="{{ $cotizacion->id_subcliente }}">{{ $cotizacion->Subcliente->nombre }} / {{ $cotizacion->Subcliente->telefono }}</option>
 @else
     <option value="">Seleccionar subcliente</option>
     @endif
-                                                                                                                                                                                                                                                                                                                                                            </select-->
+                                                                                                                                                                                                                                                                                                                                                                </select-->
                                             <ul class="list-group">
                                                 <li
                                                     class="list-group-item border-1 border-dashed d-flex p-4 mb-2 bg-gray-100 border-radius-lg">
@@ -2158,33 +2158,35 @@
                                                                 </div>
                                                             </div>
 
-                                                            <div class="col-md-4 col-12 text-center text-md-end">
-                                                                <button type="button"
-                                                                    class="btn btn-sm bg-gradient-info d-none"
-                                                                    id="btnEdit">
-                                                                    <i class="fa fa-fw fa-coins"></i>
-                                                                    Editar
-                                                                </button>
+                                                            @can('cotizacion-valores')
+                                                                <div class="col-md-4 col-12 text-center text-md-end">
+                                                                    <button type="button"
+                                                                        class="btn btn-sm bg-gradient-info d-none"
+                                                                        id="btnEdit">
+                                                                        <i class="fa fa-fw fa-coins"></i>
+                                                                        Editar
+                                                                    </button>
 
-                                                                <button type="button" class="btn btn-sm bg-gradient-danger"
-                                                                    id="btnDelete2">
-                                                                    <i class="fa fa-fw fa-trash"></i>
-                                                                    Eliminar
-                                                                </button>
+                                                                    <button type="button" class="btn btn-sm bg-gradient-danger"
+                                                                        id="btnDelete2">
+                                                                        <i class="fa fa-fw fa-trash"></i>
+                                                                        Eliminar
+                                                                    </button>
 
-                                                                <button type="button"
-                                                                    class="btn btn-sm bg-gradient-warning" id="btnPayment">
-                                                                    <i class="fa fa-fw fa-coins"></i>
-                                                                    Pagar
-                                                                </button>
+                                                                    <button type="button"
+                                                                        class="btn btn-sm bg-gradient-warning" id="btnPayment">
+                                                                        <i class="fa fa-fw fa-coins"></i>
+                                                                        Pagar
+                                                                    </button>
 
-                                                                <button type="button" data-bs-toggle="modal"
-                                                                    data-bs-target="#modal-form" data-origen="viaje"
-                                                                    class="btn btn-sm bg-gradient-success btnAgregarGastoTrigger"
-                                                                    id="btnNuevoGasto">
-                                                                    Registrar Gasto
-                                                                </button>
-                                                            </div>
+                                                                    <button type="button" data-bs-toggle="modal"
+                                                                        data-bs-target="#modal-form" data-origen="viaje"
+                                                                        class="btn btn-sm bg-gradient-success btnAgregarGastoTrigger"
+                                                                        id="btnNuevoGasto">
+                                                                        Registrar Gasto
+                                                                    </button>
+                                                                </div>
+                                                            @endcan
                                                         </div>
                                                     </div>
 

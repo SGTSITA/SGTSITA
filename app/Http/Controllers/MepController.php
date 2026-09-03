@@ -389,74 +389,144 @@ class MepController extends Controller
     }
 
 
-    public function getUbicacionesPlanear(Request $request,    UbicacionService $ubicacionService){
-$equipos = DB::table('equipos as e')
-    ->join('gps_company','e.gps_company_id','=','gps_company.id')
-    ->select(
-        'e.id',
-        'e.tipo',
-        'e.id_equipo',
-        'e.placas',
-        'e.imei',
-        'e.gps_company_id',
-        'e.usar_config_global',
-        'e.credenciales_gps',
-        'gps_company.url as tipogps'
-    )
-    ->whereIn('e.id', $request->equipos)
-    ->get();
-
-
-$itemsGps = [];
-
-foreach ($equipos as $equipo) {
-    try {
-        if ($equipo->usar_config_global == 0) {
-            $credenciales = json_decode(
-                Crypt::decryptString($equipo->credenciales_gps),
-                true
-            ) ?? [];
-        } else {
-            $credencialesGlobal = DB::table('user_proveedores as up')
-                ->join('gps_company_proveedores as gcp', 'gcp.id_proveedor', '=', 'up.proveedor_id')
-                ->where('up.user_id', auth()->id())
-                ->where('gcp.estado', 1)
-                ->where('gcp.id_gps_company', $equipo->gps_company_id)
-                ->value('gcp.account_info');
-
-            $raw = json_decode(
-                Crypt::decryptString($credencialesGlobal),
-                true
-            ) ?? [];
-
-            $credenciales = collect($raw)->pluck('valor', 'field')->toArray();
+    public function getUbicacionesPlanear(Request $request, UbicacionService $ubicacionService)
+    {
+        $equiposIds = array_values(array_filter((array) ($request->equipos ?? [])));
+        if (empty($equiposIds)) {
+            return response()->json([]);
         }
 
-        $itemsGps[] = [
-            'id' => $equipo->id,
-            'equipo' => $equipo->id_equipo,
-            'imei' => $equipo->imei,
-            'placas' => $equipo->placas,
-            'tipoGps' => $equipo->tipogps,
-            'tipo' => $equipo->tipo,
-            'gps_company_id' => $equipo->gps_company_id,
-            'credenciales' => $credenciales,
-        ];
+        $equipos = DB::table('equipos as e')
+            ->leftJoin('gps_company', 'e.gps_company_id', '=', 'gps_company.id')
+            ->select(
+                'e.id',
+                'e.tipo',
+                'e.id_equipo',
+                'e.placas',
+                'e.imei',
+                'e.gps_company_id',
+                'e.usar_config_global',
+                'e.credenciales_gps',
+                'e.user_id',
+                'e.id_empresa',
+                'gps_company.url as tipogps'
+            )
+            ->whereIn('e.id', $equiposIds)
+            ->get();
 
-    } catch (\Throwable $e) {
-        $resultados[] = [
-            'id' => $equipo->id,
-            'equipo' => $equipo->id_equipo,
-            'status' => false,
-            'messageAp' => $e->getMessage(),
-        ];
-    }
-}
+        $itemsGps = [];
+        $resultados = [];
 
-$responseGps = $ubicacionService->consultarEquiposGps($itemsGps);
+        foreach ($equipos as $equipo) {
+            try {
+                if (empty($equipo->tipogps)) {
+                    $resultados[] = [
+                        'id' => $equipo->id,
+                        'equipo' => $equipo->id_equipo,
+                        'status' => false,
+                        'messageAp' => 'Compañía GPS no configurada',
+                        'ubicacion' => null,
+                    ];
+                    continue;
+                }
 
-return response()->json($responseGps);
+                $credenciales = [];
 
+                if ($equipo->usar_config_global == 0) {
+                    if (!empty($equipo->credenciales_gps)) {
+                        try {
+                            $credenciales = json_decode(Crypt::decryptString($equipo->credenciales_gps), true) ?? [];
+                        } catch (\Throwable $e) {
+                            $credenciales = json_decode($equipo->credenciales_gps, true) ?? [];
+                        }
+                    }
+                } else {
+                    // 1. Buscar si el usuario actual tiene proveedor
+                    $userActual = User::find(auth()->id());
+                    $proveedorIds = $userActual ? $userActual->proveedores()->pluck('proveedor_id')->toArray() : [];
 
+                    // 2. Si el usuario actual es admin o no tiene proveedor asignado, buscar por el creador del equipo
+                    if (empty($proveedorIds) && !empty($equipo->user_id)) {
+                        $userEquipo = User::find($equipo->user_id);
+                        if ($userEquipo) {
+                            $proveedorIds = $userEquipo->proveedores()->pluck('proveedor_id')->toArray();
+                        }
+                    }
+
+                    $credencialesGlobal = null;
+
+                    if (!empty($proveedorIds)) {
+                        $credencialesGlobal = DB::table('gps_company_proveedores')
+                            ->whereIn('id_proveedor', $proveedorIds)
+                            ->where('id_gps_company', $equipo->gps_company_id)
+                            ->where('estado', 1)
+                            ->value('account_info');
+                    }
+
+                    if (!$credencialesGlobal && !empty(auth()->user()->id_empresa)) {
+                        $credencialesGlobal = DB::table('gps_company_proveedores')
+                            ->where('id_empresa', auth()->user()->id_empresa)
+                            ->where('id_gps_company', $equipo->gps_company_id)
+                            ->where('estado', 1)
+                            ->value('account_info');
+                    }
+
+                    if (!$credencialesGlobal && !empty($equipo->id_empresa)) {
+                        $credencialesGlobal = DB::table('gps_company_proveedores')
+                            ->where('id_empresa', $equipo->id_empresa)
+                            ->where('id_gps_company', $equipo->gps_company_id)
+                            ->where('estado', 1)
+                            ->value('account_info');
+                    }
+
+                    if (!empty($credencialesGlobal)) {
+                        try {
+                            $raw = json_decode(Crypt::decryptString($credencialesGlobal), true) ?? [];
+                        } catch (\Throwable $e) {
+                            $raw = json_decode($credencialesGlobal, true) ?? [];
+                        }
+                        $credenciales = collect($raw)->pluck('valor', 'field')->toArray();
+                    }
+                }
+
+                if (empty($credenciales)) {
+                    $resultados[] = [
+                        'id' => $equipo->id,
+                        'equipo' => $equipo->id_equipo,
+                        'status' => false,
+                        'messageAp' => 'Sin credenciales GPS',
+                        'ubicacion' => null,
+                    ];
+                    continue;
+                }
+
+                $itemsGps[] = [
+                    'id' => $equipo->id,
+                    'equipo' => $equipo->id_equipo,
+                    'imei' => $equipo->imei,
+                    'placas' => $equipo->placas,
+                    'tipoGps' => $equipo->tipogps,
+                    'tipo' => $equipo->tipo,
+                    'gps_company_id' => $equipo->gps_company_id,
+                    'credenciales' => $credenciales,
+                ];
+
+            } catch (\Throwable $e) {
+                $resultados[] = [
+                    'id' => $equipo->id,
+                    'equipo' => $equipo->id_equipo,
+                    'status' => false,
+                    'messageAp' => $e->getMessage(),
+                    'ubicacion' => null,
+                ];
+            }
+        }
+
+        if (!empty($itemsGps)) {
+            $responseGps = $ubicacionService->consultarEquiposGps($itemsGps);
+            $resultados = array_merge($resultados, $responseGps);
+        }
+
+        return response()->json($resultados);
     }
 }

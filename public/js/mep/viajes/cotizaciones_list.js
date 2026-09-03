@@ -107,6 +107,8 @@ const btnCancelarFull = document.querySelector("#btnCancelarFull");
 document.addEventListener("DOMContentLoaded", function () {
     let gridApi;
     let currentTab = "planeadas";
+    let currentRequestId = 0;
+    let activeAbortController = null;
 
     const tabs = document.querySelectorAll("#cotTabs .nav-link");
 
@@ -295,35 +297,67 @@ document.addEventListener("DOMContentLoaded", function () {
     const myGridElement = document.querySelector("#myGrid");
     gridApi = agGrid.createGrid(myGridElement, gridOptions);
 
-    getCotizacionesList();
-
     function getCotizacionesList() {
         const overlay = document.getElementById("gridLoadingOverlay");
-        overlay.style.display = "flex";
+        if (overlay) overlay.style.display = "flex";
+
+        // Cancelar petición anterior si todavía está pendiente
+        if (activeAbortController) {
+            activeAbortController.abort();
+        }
+        activeAbortController = new AbortController();
+        const signal = activeAbortController.signal;
+
+        const requestId = ++currentRequestId;
+        const requestedTab = currentTab;
 
         let url = "/mep/viajes/list";
-        if (currentTab === "finalizadas") url = "/mep/viajes/finalizadas";
-        if (currentTab === "en_espera") url = "/mep/viajes/espera";
-        if (currentTab === "aprobadas") url = "/mep/viajes/aprobadas";
-        if (currentTab === "canceladas") url = "/mep/viajes/canceladas";
+        if (requestedTab === "finalizadas") url = "/mep/viajes/finalizadas";
+        if (requestedTab === "en_espera") url = "/mep/viajes/espera";
+        if (requestedTab === "aprobadas") url = "/mep/viajes/aprobadas";
+        if (requestedTab === "canceladas") url = "/mep/viajes/canceladas";
 
-        gridApi.setGridOption("rowData", []);
+        if (gridApi) {
+            gridApi.setGridOption("rowData", []);
+        }
 
-        fetch(url)
-            .then((response) => response.json())
+        fetch(url, { signal })
+            .then((response) => {
+                if (!response.ok) {
+                    throw new Error(`Error en la petición: ${response.status} ${response.statusText}`);
+                }
+                return response.json();
+            })
             .then((data) => {
-                gridApi.setGridOption("rowData", data.list);
+                // Solo aplicar datos si esta respuesta pertenece a la última petición
+                // y el usuario continúa en la misma pestaña
+                if (requestId === currentRequestId && currentTab === requestedTab) {
+                    if (gridApi) {
+                        gridApi.setGridOption("rowData", data.list || []);
+                    }
+                }
             })
             .catch((error) => {
+                if (error.name === "AbortError") {
+                    // Petición cancelada intencionalmente por cambio de pestaña; ignorar
+                    return;
+                }
                 console.error(
                     "❌ Error al obtener la lista de cotizaciones:",
                     error,
                 );
             })
             .finally(() => {
-                overlay.style.display = "none";
+                // Solo ocultar el spinner si esta petición sigue siendo la última vigente
+                if (requestId === currentRequestId) {
+                    if (overlay) overlay.style.display = "none";
+                    activeAbortController = null;
+                }
             });
     }
+
+    window.getCotizacionesList = getCotizacionesList;
+    getCotizacionesList();
 
     btnFull.addEventListener("click", () => {
         let seleccion = gridApi.getSelectedRows();
@@ -923,7 +957,9 @@ async function validarConexionGPS(tipoKey, imei, gpsCompanyId, equipos = []) {
     if (!config) return false;
     const btnActualizar = document.getElementById(`btnActualizarGPS${tipoKey}`);
 
-    if (!imei || !gpsCompanyId) {
+    const equipoId = equipos && equipos.length ? equipos[0] : null;
+
+    if (!imei || !gpsCompanyId || !equipoId) {
         if (btnActualizar) btnActualizar.style.display = "none";
         actualizarEstadoGPS(config.statusGps, "secondary", "Sin GPS");
         config.latitud = null;
@@ -943,12 +979,13 @@ async function validarConexionGPS(tipoKey, imei, gpsCompanyId, equipos = []) {
                     .getAttribute("content"),
             },
             body: JSON.stringify({
-                equipos: equipos,
+                equipos: [equipoId],
             }),
         });
 
         const data = await response.json();
-        const ubi = data[0]?.ubicacion ?? null;
+        const itemRes = (data && Array.isArray(data) && data.length > 0) ? data[0] : null;
+        const ubi = itemRes?.ubicacion ?? null;
 
         if (ubi && ubi.lat && ubi.lng) {
             actualizarEstadoGPS(config.statusGps, "success", "Equipo en línea");
@@ -956,7 +993,8 @@ async function validarConexionGPS(tipoKey, imei, gpsCompanyId, equipos = []) {
             config.longitud = parseFloat(ubi.lng);
             return true;
         } else {
-            actualizarEstadoGPS(config.statusGps, "danger", "GPS sin señal");
+            const mensajeStatus = itemRes?.messageAp || "GPS sin señal";
+            actualizarEstadoGPS(config.statusGps, "danger", mensajeStatus);
             config.latitud = null;
             config.longitud = null;
             return false;
@@ -965,7 +1003,7 @@ async function validarConexionGPS(tipoKey, imei, gpsCompanyId, equipos = []) {
         actualizarEstadoGPS(config.statusGps, "danger", "Error conexión GPS");
         config.latitud = null;
         config.longitud = null;
-        console.error(e);
+        console.error("Error al validar conexión GPS:", e);
         return false;
     }
 }
