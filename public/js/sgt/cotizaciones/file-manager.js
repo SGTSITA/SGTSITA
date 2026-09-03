@@ -81,7 +81,7 @@ let dt = $("#kt_datatable_example_1")
 
                 render: function (data, type, row) {
                     return `
-                        <a href="/cotizaciones/cotizacion${data.identifier}/${data.filePath}" target="_blank" class="btn btn-active-primary btn-sm">
+                        <a href="/cotizaciones/cotizacion${data.identifier}/${data.filePath}?v=${Date.now()}" target="_blank" class="btn btn-active-primary btn-sm">
                             Ver Archivo
                         </a>
                     `;

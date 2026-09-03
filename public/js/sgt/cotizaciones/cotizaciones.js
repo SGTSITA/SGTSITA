@@ -2133,129 +2133,127 @@ $("#cotizacionCreate").on("submit", function (e) {
 
     //Obtenemos el UUID si es que ya se habia iniciado una cotizacion
     var uuid = localStorage.getItem("uuid");
-
-    //Validaciones MEC
     if (uuid != null) {
         formData["uuid"] = uuid;
-
-        passValidation = formFieldsBloque.every((item) => {
-            let trigger = item.trigger;
-            let field = document.getElementById(item.field);
-
-            if (trigger != "none") {
-                let primaryField = document.getElementById(trigger);
-                if (primaryField.value.length > 0 && field.value.length == 0) {
-                    Swal.fire(
-                        "El campo " + item.label + " es obligatorio",
-                        "Parece que no ha proporcionado información en el campo " +
-                            item.label,
-                        "warning",
-                    );
-                    return false;
-                }
-            }
-
-            if (field) {
-                if (item.required === true && field.value.length == 0) {
-                    Swal.fire(
-                        "El campo " + item.label + " es obligatorio",
-                        "Parece que no ha proporcionado información en el campo " +
-                            item.label,
-                        "warning",
-                    );
-                    return false;
-                }
-                formData[item.field] = field.value;
-            }
-
-            return true;
-        });
-
-        if (!passValidation) return passValidation;
-
-        //formFieldsMec
-        passValidation = formFieldsMec.every((item) => {
-            let trigger = item.trigger;
-            let field = document.getElementById(item.field);
-            if (!field) {
-                return true;
-            }
-
-            if (trigger != "none") {
-                let primaryField = document.getElementById(trigger);
-                if (primaryField.value.length > 0 && field.value.length == 0) {
-                    Swal.fire(
-                        "El campo " + item.label + " es obligatorio",
-                        "Parece que no ha proporcionado información en el campo " +
-                            item.label,
-                        "warning",
-                    );
-                    return false;
-                }
-            }
-
-            if (field) {
-                const isHidden = field.closest(".d-none");
-
-                if (field.disabled || field.readOnly || isHidden) return true;
-
-                if (item.required === true && field.value.length == 0) {
-                    Swal.fire(
-                        "El campo " + item.label + " es obligatorio",
-                        "Parece que no ha proporcionado información en el campo " +
-                            item.label,
-                        "warning",
-                    );
-                    return false;
-                }
-
-                formData[item.field] = field.value;
-            }
-
-            return true;
-        });
-
-        if (!passValidation) return passValidation;
-
-        //Validaciones Facturacion
-        passValidation = formFieldsFacturacion.every((item) => {
-            let trigger = item.trigger;
-            let field = document.getElementById(item.field);
-            if (!field) {
-                return true;
-            }
-
-            if (trigger != "none") {
-                let primaryField = document.getElementById(trigger);
-                if (primaryField.value.length > 0 && field.value.length == 0) {
-                    Swal.fire(
-                        "El campo " + item.label + " es obligatorio",
-                        "Parece que no ha proporcionado información en el campo " +
-                            item.label,
-                        "warning",
-                    );
-                    return false;
-                }
-            }
-
-            if (field) {
-                if (item.required === true && field.value.length == 0) {
-                    Swal.fire(
-                        "El campo " + item.label + " es obligatorio",
-                        "Parece que no ha proporcionado información en el campo " +
-                            item.label,
-                        "warning",
-                    );
-                    return false;
-                }
-            }
-
-            formData[item.field] = field.value;
-            return true;
-        });
-
-        if (!passValidation) return passValidation;
     }
+
+    //Validaciones Bloque
+    passValidation = formFieldsBloque.every((item) => {
+        let trigger = item.trigger;
+        let field = document.getElementById(item.field);
+
+        if (trigger != "none") {
+            let primaryField = document.getElementById(trigger);
+            if (primaryField && primaryField.value.length > 0 && field && field.value.length == 0) {
+                Swal.fire(
+                    "El campo " + item.label + " es obligatorio",
+                    "Parece que no ha proporcionado información en el campo " +
+                        item.label,
+                    "warning",
+                );
+                return false;
+            }
+        }
+
+        if (field) {
+            if (item.required === true && field.value.length == 0) {
+                Swal.fire(
+                    "El campo " + item.label + " es obligatorio",
+                    "Parece que no ha proporcionado información en el campo " +
+                        item.label,
+                    "warning",
+                );
+                return false;
+            }
+            formData[item.field] = field.value;
+        }
+
+        return true;
+    });
+
+    if (!passValidation) return passValidation;
+
+    //formFieldsMec
+    passValidation = formFieldsMec.every((item) => {
+        let trigger = item.trigger;
+        let field = document.getElementById(item.field);
+        if (!field) {
+            return true;
+        }
+
+        if (trigger != "none") {
+            let primaryField = document.getElementById(trigger);
+            if (primaryField && primaryField.value.length > 0 && field.value.length == 0) {
+                Swal.fire(
+                    "El campo " + item.label + " es obligatorio",
+                    "Parece que no ha proporcionado información en el campo " +
+                        item.label,
+                    "warning",
+                );
+                return false;
+            }
+        }
+
+        const isHidden = field.closest(".d-none");
+
+        if (field.disabled || field.readOnly || isHidden) return true;
+
+        if (item.required === true && field.value.length == 0) {
+            Swal.fire(
+                "El campo " + item.label + " es obligatorio",
+                "Parece que no ha proporcionado información en el campo " +
+                    item.label,
+                "warning",
+            );
+            return false;
+        }
+
+        formData[item.field] = field.value;
+
+        return true;
+    });
+
+    if (!passValidation) return passValidation;
+
+    //Validaciones Facturacion
+    passValidation = formFieldsFacturacion.every((item) => {
+        let trigger = item.trigger;
+        let field = document.getElementById(item.field);
+        if (!field) {
+            return true;
+        }
+
+        if (trigger != "none") {
+            let primaryField = document.getElementById(trigger);
+            if (primaryField && primaryField.value.length > 0 && field.value.length == 0) {
+                Swal.fire(
+                    "El campo " + item.label + " es obligatorio",
+                    "Parece que no ha proporcionado información en el campo " +
+                        item.label,
+                    "warning",
+                );
+                return false;
+            }
+        }
+
+        const isHidden = field.closest(".d-none");
+        if (field.disabled || field.readOnly || isHidden) return true;
+
+        if (item.required === true && field.value.length == 0) {
+            Swal.fire(
+                "El campo " + item.label + " es obligatorio",
+                "Parece que no ha proporcionado información en el campo " +
+                    item.label,
+                "warning",
+            );
+            return false;
+        }
+
+        formData[item.field] = field.value;
+        return true;
+    });
+
+    if (!passValidation) return passValidation;
 
     const multipartData = new FormData();
 

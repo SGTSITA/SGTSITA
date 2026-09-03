@@ -743,7 +743,7 @@ foreach ($cotizacionesCreadas as $cotizacion) {
 
         $user = Auth::User();
 
-        if ($request->has('uuid') && !$user->can('mec-ocultar_datos_facturacion')) {
+        if (!$user->can('mec-ocultar_datos_facturacion')) {
 
             $cotizaciones->sat_uso_cfdi_id = $request->id_uso_cfdi;
             $cotizaciones->sat_forma_pago_id = $request->id_forma_pago;
@@ -1841,207 +1841,216 @@ $this->procesarDocumento(
             $cotizaciones->direccion_mapa = $request->direccion_mapa;
 
 
-            if ($request->has('id_proveedor') && $request->id_proveedor !== $cotizaciones->id_empresa) { //checar si se cambio de empresa
-                $cotizaciones->id_empresa = $request->id_proveedor;
-                $doc_cotizaciones->id_empresa =$request->id_proveedor;
-                $doc_cotizaciones->update();
+            if ($request->has('id_proveedor')) {
+                $idProveedorReq = (int) $request->id_proveedor;
+                if ($idProveedorReq !== (int) $cotizaciones->id_empresa) { //checar si se cambio de empresa
+                    $cotizaciones->id_empresa = $idProveedorReq;
+                    $doc_cotizaciones->id_empresa = $idProveedorReq;
+                    $doc_cotizaciones->update();
+                }
             }
 
 
-            $idTransportistai = (int) $request->id_transportista;
+            if ($request->has('id_transportista')) {
+                $idTransportistai = (int) $request->id_transportista;
 
-            if ($request->has('id_transportista') && $idTransportistai !== $cotizaciones->id_proveedor) { //checar si se cambio de proveedor
-                //validamos planeacion
-                // dd(
-                //     gettype($request->id_transportista),
-                //     $request->id_transportista,
-                //     gettype($cotizaciones->id_proveedor),
-                //     $cotizaciones->id_proveedor
-                // );
+                if ($idTransportistai !== (int) $cotizaciones->id_proveedor) { //checar si se cambio de proveedor
+                    //validamos planeacion
+                    $asignaciones = Asignaciones::where('id_contenedor', $doc_cotizaciones->id)->first();
+                    $statusPlaneacion = $cotizaciones->estatus_planeacion ?? 0;
+                    if ($cotizaciones->estatus !== 'Finalizado' && $statusPlaneacion === 1) { //quitaremos la planeacion
 
-                $asignaciones = Asignaciones::where('id_contenedor', $doc_cotizaciones->id)->first();
-                $statusPlaneacion = $cotizaciones->estatus_planeacion ?? 0;
-                if ($cotizaciones->estatus !== 'Finalizado' && $statusPlaneacion === 1) { //quitaremos la planeacion
+                        try {
 
-                    try {
+                            DB::beginTransaction();
+                            $cotizaciones2 = Cotizaciones::find($id);
 
-                        DB::beginTransaction();
-                        $cotizaciones2 = Cotizaciones::find($id);
-
-                        if ($asignaciones && !is_null($asignaciones->id_operador)) {
-                            $afectaBanco = false;
-                            if ($asignaciones->id_banco1_dinero_viaje) {
-                                Bancos::where('id', '=', $asignaciones->id_banco1_dinero_viaje)->update(["saldo" => DB::raw("saldo + ". $asignaciones->dinero_viaje)]);
-                                $afectaBanco = true;
-                            }
-
-                            /*
-                            $gasto = GastosOperadores::where('id_cotizacion', $id)->get();  //verificar si tuvo un gasto
-                            */
-                            $gasto = \App\Models\GastoImputacion::join('gastos', 'gastos.id', '=', 'gasto_imputaciones.gasto_id')
-                                ->join('gasto_vinculos', 'gasto_vinculos.gasto_id', '=', 'gastos.id')
-                                ->leftJoin('gasto_pagos', 'gasto_pagos.gasto_id', '=', 'gastos.id')
-                                ->whereNull('gastos.deleted_at')
-                                ->where('gastos.estatus', '!=', 'cancelado')
-                                ->where('gasto_vinculos.tipo_vinculo', '=', 'cotizacion')
-                                ->where('gasto_vinculos.vinculable_type', '=', \App\Models\Cotizaciones::class)
-                                ->where('gasto_vinculos.vinculable_id', '=', $id)
-                                ->where('gasto_imputaciones.tipo_imputacion', '=', 'operador')
-                                ->select(
-                                    'gasto_imputaciones.*',
-                                    'gasto_imputaciones.monto_imputado as cantidad',
-                                    'gastos.concepto as tipo',
-                                    'gasto_pagos.cuenta_bancaria_id as id_banco'
-                                )
-                                ->get();
-                            foreach ($gasto as $g) {
-                                if (!is_null($g->id_banco) && $g->cantidad > 0) {//cantidad valida y ya tiene pago
-
-                                    $bancoA = new BancoDineroOpe();
-                                    $bancoA->id_operador = $asignaciones->id_operador;
-
-                                    $bancoA->monto1 = $g->cantidad;
-                                    $bancoA->metodo_pago1 = 'Devolución';
-                                    $bancoA->descripcion_gasto = $g->tipo . " (Devolución)";
-                                    $bancoA->id_banco1 = $g->id_banco;
-
-                                    $contenedoresAbonos1[] = [
-                                        'num_contenedor' => $request->numContenedor,
-                                        'abono' => $g->cantidad
-                                    ];
-                                    $contenedoresAbonosJson1 = json_encode($contenedoresAbonos1);
-
-                                    $bancoA->contenedores = $contenedoresAbonosJson1;
-                                    $bancoA->tipo = 'Entrada';
-                                    $bancoA->fecha_pago = date('Y-m-d');
-                                    $bancoA->save();
-
+                            if ($asignaciones && !is_null($asignaciones->id_operador)) {
+                                $afectaBanco = false;
+                                if ($asignaciones->id_banco1_dinero_viaje) {
+                                    Bancos::where('id', '=', $asignaciones->id_banco1_dinero_viaje)->update(["saldo" => DB::raw("saldo + ". $asignaciones->dinero_viaje)]);
+                                    $afectaBanco = true;
                                 }
 
+                                /*
+                                $gasto = GastosOperadores::where('id_cotizacion', $id)->get();  //verificar si tuvo un gasto
+                                */
+                                $gasto = \App\Models\GastoImputacion::join('gastos', 'gastos.id', '=', 'gasto_imputaciones.gasto_id')
+                                    ->join('gasto_vinculos', 'gasto_vinculos.gasto_id', '=', 'gastos.id')
+                                    ->leftJoin('gasto_pagos', 'gasto_pagos.gasto_id', '=', 'gastos.id')
+                                    ->whereNull('gastos.deleted_at')
+                                    ->where('gastos.estatus', '!=', 'cancelado')
+                                    ->where('gasto_vinculos.tipo_vinculo', '=', 'cotizacion')
+                                    ->where('gasto_vinculos.vinculable_type', '=', \App\Models\Cotizaciones::class)
+                                    ->where('gasto_vinculos.vinculable_id', '=', $id)
+                                    ->where('gasto_imputaciones.tipo_imputacion', '=', 'operador')
+                                    ->select(
+                                        'gasto_imputaciones.*',
+                                        'gasto_imputaciones.monto_imputado as cantidad',
+                                        'gastos.concepto as tipo',
+                                        'gasto_pagos.cuenta_bancaria_id as id_banco'
+                                    )
+                                    ->get();
+                                foreach ($gasto as $g) {
+                                    if (!is_null($g->id_banco) && $g->cantidad > 0) {//cantidad valida y ya tiene pago
 
+                                        $bancoA = new BancoDineroOpe();
+                                        $bancoA->id_operador = $asignaciones->id_operador;
 
+                                        $bancoA->monto1 = $g->cantidad;
+                                        $bancoA->metodo_pago1 = 'Devolución';
+                                        $bancoA->descripcion_gasto = $g->tipo . " (Devolución)";
+                                        $bancoA->id_banco1 = $g->id_banco;
 
+                                        $contenedoresAbonos1[] = [
+                                            'num_contenedor' => $request->numContenedor,
+                                            'abono' => $g->cantidad
+                                        ];
+                                        $contenedoresAbonosJson1 = json_encode($contenedoresAbonos1);
 
+                                        $bancoA->contenedores = $contenedoresAbonosJson1;
+                                        $bancoA->tipo = 'Entrada';
+                                        $bancoA->fecha_pago = date('Y-m-d');
+                                        $bancoA->save();
 
-                                $g->delete();
+                                    }
+
+                                    $g->delete();
+                                }
+
+                                if ($afectaBanco) {
+                                    $banco = new BancoDineroOpe();
+                                    $banco->id_operador = $asignaciones->id_operador;
+
+                                    $banco->monto1 = $asignaciones->dinero_viaje;
+                                    $banco->metodo_pago1 = 'Devolución';
+                                    $banco->descripcion_gasto = "Dinero para Viaje (Devolución)";
+                                    $banco->id_banco1 = $asignaciones->id_banco1_dinero_viaje;
+
+                                    $contenedoresAbonos[] = [
+                                        'num_contenedor' => $request->numContenedor,
+                                        'abono' => $asignaciones->dinero_viaje
+                                    ];
+                                    $contenedoresAbonosJson = json_encode($contenedoresAbonos);
+
+                                    $banco->contenedores = $contenedoresAbonosJson;
+
+                                    $banco->tipo = 'Entrada';
+                                    $banco->fecha_pago = date('Y-m-d');
+                                    $banco->save();
+                                }
+
                             }
 
-                            if ($afectaBanco) {
-                                $banco = new BancoDineroOpe();
-                                $banco->id_operador = $asignaciones->id_operador;
-
-                                $banco->monto1 = $asignaciones->dinero_viaje;
-                                $banco->metodo_pago1 = 'Devolución';
-                                $banco->descripcion_gasto = "Dinero para Viaje (Devolución)";
-                                $banco->id_banco1 = $asignaciones->id_banco1_dinero_viaje;
-
-                                $contenedoresAbonos[] = [
-                                    'num_contenedor' => $request->numContenedor,
-                                    'abono' => $asignaciones->dinero_viaje
-                                ];
-                                $contenedoresAbonosJson = json_encode($contenedoresAbonos);
-
-                                $banco->contenedores = $contenedoresAbonosJson;
-
-                                $banco->tipo = 'Entrada';
-                                $banco->fecha_pago = date('Y-m-d');
-                                $banco->save();
+                            if (!is_null($cotizaciones->referencia_full)) {
+                                $contenedor2 = Cotizaciones::where('referencia_full', $cotizaciones->referencia_full)->update(["estatus_planeacion" => 0]);
                             }
 
+                            $cotizaciones2->estatus = 'Aprobada';
+                            $cotizaciones2->estatus_planeacion = 0;
+                            $cotizaciones2->update();
+
+                            Coordenadas::where('id_asignacion', $asignaciones->id)->delete();
+
+                            $asignaciones->delete();
+
+                            DB::commit();
+
+                            // return response()->json(["Titulo" => "Programa cancelado","Mensaje" => "Se canceló el programa del viaje correctamente", "TMensaje" => "success"]);
+                        } catch (\Throwable $t) {
+                            DB::rollback();
+                            return response()->json(["Titulo" => "Error","Mensaje" => "Error 500: ".$t->getMessage(), "TMensaje" => "error"]);
+
                         }
-
-                        if (!is_null($cotizaciones->referencia_full)) {
-                            $contenedor2 = Cotizaciones::where('referencia_full', $cotizaciones->referencia_full)->update(["estatus_planeacion" => 0]);
-                        }
-
-                        $cotizaciones2->estatus = 'Aprobada';
-                        $cotizaciones2->estatus_planeacion = 0;
-                        $cotizaciones2->update();
-
-                        Coordenadas::where('id_asignacion', $asignaciones->id)->delete();
-
-
-
-                        $asignaciones->delete();
-
-
-                        DB::commit();
-
-                        // return response()->json(["Titulo" => "Programa cancelado","Mensaje" => "Se canceló el programa del viaje correctamente", "TMensaje" => "success"]);
-                    } catch (\Throwable $t) {
-                        DB::rollback();
-                        return response()->json(["Titulo" => "Error","Mensaje" => "Error 500: ".$t->getMessage(), "TMensaje" => "error"]);
 
                     }
+                    $cotizaciones->id_proveedor = $idTransportistai;
 
                 }
-                $cotizaciones->id_proveedor = $idTransportistai;
-
             }
             $cotizaciones->direccion_entrega = $request->direccion_entrega;
             $cotizaciones->save();
 
             $user = Auth::User();
-            //cambiar archivo pdf solo si hay cambios en la informacion de carta porte
-            $modifico = $request->get('modifico_informacion', 0);
-            if ($modifico == 1 && !$user->can('mec-ocultar_datos_facturacion')) {
-                Log::channel('daily')->info('Modifico informacion de carta porte para cotizacion ID: '.$id);
+            // Validar si el usuario tiene permiso para capturar/generar Carta Porte (Cliente 2)
+            if (!$user->can('mec-ocultar_datos_facturacion')) {
+                $modifico = (int) $request->get('modifico_informacion', 0);
 
-                $docucotizaciones =  DocumCotizacion::where('id_cotizacion', '=', $cotizaciones->id)->first();
+                if ($request->filled('id_uso_cfdi')) $cotizaciones->sat_uso_cfdi_id = $request->id_uso_cfdi;
+                if ($request->filled('id_forma_pago')) $cotizaciones->sat_forma_pago_id = $request->id_forma_pago;
+                if ($request->filled('id_metodo_pago')) $cotizaciones->sat_metodo_pago_id = $request->id_metodo_pago;
 
-                $docucotizaciones->num_contenedor = $numContenedor;
-                $docucotizaciones->doc_ccp = 'formato_carta_porte_' . $numContenedor . '.pdf';
-                $docucotizaciones->save();
-                // Definir ruta dentro de public
-                $path = public_path('cotizaciones/cotizacion'.$cotizaciones->id.'/formato_carta_porte_' . $numContenedor . '.pdf');
+                if ($request->has('direccion_recinto')) $cotizaciones->direccion_recinto = $request->direccion_recinto;
+                if ($request->has('text_recinto')) $cotizaciones->uso_recinto = ($request->text_recinto == 'recinto-si') ? 1 : 0;
 
-                if ($request->has('uuid')) {
-                    Log::channel('daily')->info('si hay uuid: '.$request->get('uuid'));
+                // Actualizar campos de Carta Porte
+                if ($request->has('cp_fraccion')) $cotizaciones->cp_fraccion = $request->cp_fraccion;
+                if ($request->has('cp_clave_sat')) $cotizaciones->cp_clave_sat = $request->cp_clave_sat;
+                if ($request->has('cp_pedimento')) $cotizaciones->cp_pedimento = $request->cp_pedimento;
+                if ($request->has('cp_clase_pedimento')) $cotizaciones->cp_clase_ped = $request->cp_clase_pedimento;
+                if ($request->has('cp_cantidad')) $cotizaciones->cp_cantidad = $request->cp_cantidad;
+                if ($request->has('cp_valor')) $cotizaciones->cp_valor = $request->cp_valor;
+                if ($request->has('cp_moneda_valor')) $cotizaciones->cp_moneda = $request->cp_moneda_valor;
+                if ($request->has('cp_contacto_entrega')) $cotizaciones->cp_contacto_entrega = $request->cp_contacto_entrega;
+                if ($request->has('cp_fecha_tentativa_entrega')) $cotizaciones->cp_fecha_tentativa_entrega = $request->cp_fecha_tentativa_entrega;
+                if ($request->has('cp_hora_tentativa_entrega')) $cotizaciones->cp_hora_tentativa_entrega = $request->cp_hora_tentativa_entrega;
+                if ($request->has('cp_comentarios')) $cotizaciones->cp_comentarios = $request->cp_comentarios;
 
-                    $cotizaciones->sat_uso_cfdi_id = $request->id_uso_cfdi;
-                    $cotizaciones->sat_forma_pago_id = $request->id_forma_pago;
-                    $cotizaciones->sat_metodo_pago_id = $request->id_metodo_pago;
+                // Definir ruta del PDF dentro de public
+                $path = public_path('cotizaciones/cotizacion' . $cotizaciones->id . '/formato_carta_porte_' . $numContenedor . '.pdf');
+                $folderPath = public_path('cotizaciones/cotizacion' . $cotizaciones->id);
+                $pdfExiste = File::exists($path);
 
-                    $cotizaciones->direccion_recinto = $request->direccion_recinto;
-                    $cotizaciones->uso_recinto = ($request->text_recinto == 'recinto-si') ? 1 : 0;
+                // Detección robusta de si debe generarse o regenerarse el documento:
+                // 1) Si no existe físicamente en el disco
+                // 2) Si se reportó modifico_informacion == 1 desde el formulario
+                // 3) Si cambió el contenedor respecto al original
+                // 4) Si hubo cambios en cualquier dato relevante de Carta Porte o generales visibles en el documento
+                // 5) Si el request contiene datos específicos de carta porte
+                $debeGenerarPdf = !$pdfExiste
+                    || $modifico === 1
+                    || ($contenedorSave && $contenedorSave->num_contenedor !== $numContenedor)
+                    || $cotizaciones->isDirty([
+                        'cp_fraccion', 'cp_clave_sat', 'cp_pedimento', 'cp_clase_ped',
+                        'cp_cantidad', 'cp_valor', 'cp_moneda', 'cp_contacto_entrega',
+                        'cp_fecha_tentativa_entrega', 'cp_hora_tentativa_entrega', 'cp_comentarios',
+                        'direccion_entrega', 'origen', 'id_subcliente', 'latitud', 'longitud',
+                        'sat_uso_cfdi_id', 'sat_forma_pago_id', 'sat_metodo_pago_id',
+                        'direccion_recinto', 'uso_recinto'
+                    ])
+                    || $request->filled('cp_pedimento')
+                    || $request->filled('cp_fraccion');
 
+                if ($debeGenerarPdf) {
+                    Log::channel('daily')->info('Regenerando/generando formato carta porte para cotizacion ID: ' . $id . ' Contenedor: ' . $numContenedor);
 
-
-                    $cotizaciones->cp_fraccion = $request->cp_fraccion;
-                    $cotizaciones->cp_clave_sat = $request->cp_clave_sat;
-                    $cotizaciones->cp_pedimento = $request->cp_pedimento;
-                    $cotizaciones->cp_clase_ped = $request->cp_clase_pedimento;
-                    $cotizaciones->cp_cantidad = $request->cp_cantidad;
-                    $cotizaciones->cp_valor = $request->cp_valor;
-                    $cotizaciones->cp_moneda = $request->cp_moneda_valor;
-                    $cotizaciones->cp_contacto_entrega = $request->cp_contacto_entrega;
-                    $cotizaciones->cp_fecha_tentativa_entrega = $request->cp_fecha_tentativa_entrega;
-                    $cotizaciones->cp_hora_tentativa_entrega = $request->cp_hora_tentativa_entrega;
-                    $cotizaciones->cp_comentarios = $request->cp_comentarios;
+                    $docucotizaciones = DocumCotizacion::where('id_cotizacion', '=', $cotizaciones->id)->first();
+                    if ($docucotizaciones) {
+                        $docucotizaciones->num_contenedor = $numContenedor;
+                        $docucotizaciones->doc_ccp = 'formato_carta_porte_' . $numContenedor . '.pdf';
+                        $docucotizaciones->ccp = 'si';
+                        $docucotizaciones->save();
+                    }
 
                     $subCliente = Subclientes::where('id', $cotizaciones->id_subcliente)->first();
 
                     $pdf = PDF::loadView('cotizaciones.carta_porte_pdf', compact('cotizaciones', 'numContenedor', 'subCliente'));
 
-                    $folderPath = public_path('cotizaciones/cotizacion' . $cotizaciones->id);
-
-                    Log::channel('daily')->info('path: '.$folderPath);
-                    // Crear la carpeta si no existe
                     if (!File::exists($folderPath)) {
                         File::makeDirectory($folderPath, 0755, true);
                     } else {
-                        //  Si el archivo anterior existe, lo eliminamos
+                        // Si el archivo anterior existe, lo eliminamos para guardar la versión fresca
                         if (File::exists($path)) {
-                            Log::channel('daily')->info('borrando archivo: '.$path);
+                            Log::channel('daily')->info('borrando archivo carta porte previo: ' . $path);
                             File::delete($path);
                         }
                     }
 
-                    // Guardar PDF
+                    // Guardar PDF actualizado
                     $pdf->save($path);
-
-                    $cotizaciones->update();
                 }
+
+                $cotizaciones->update();
             }
 
 

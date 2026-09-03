@@ -383,7 +383,7 @@ function getFilesContenedor() {
                         .addClass("bg-gradient-success")
                         .text("Cargado");
                     document.querySelector("#" + btnVer).href =
-                        `/cotizaciones/cotizacion${d.identifier}/${d.filePath}`;
+                        `/cotizaciones/cotizacion${d.identifier}/${d.filePath}?v=${Date.now()}`;
 
                     switch (d.fileType) {
                         case "docx":
