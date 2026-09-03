@@ -643,13 +643,14 @@ if (inputOperador) {
 
         boxOperador.style.display = "block";
     });
+
+    inputOperador.addEventListener("blur", () => {
+        setTimeout(() => {
+            boxOperador.style.display = "none";
+        }, 200);
+    });
 }
 
-inputOperador.addEventListener("blur", () => {
-    setTimeout(() => {
-        boxOperador.style.display = "none";
-    }, 200);
-});
 function actualizarBotonMapa() {
     const cardmapa = document.getElementById("cardGpsMapa");
 
