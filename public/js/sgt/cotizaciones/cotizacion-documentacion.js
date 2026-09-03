@@ -476,7 +476,9 @@ function goToUploadDocuments(numContenedorFromBtn = null) {
     }
 
     const modalElement = document.getElementById("kt_modal_fileuploader");
-    const bootstrapModal = new bootstrap.Modal(modalElement);
+    const bootstrapModal =
+        bootstrap.Modal.getInstance(modalElement) ||
+        new bootstrap.Modal(modalElement);
     if (typeof adjuntarDocumentos === "function") {
         adjuntarDocumentos();
     }

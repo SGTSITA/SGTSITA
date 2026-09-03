@@ -1,4 +1,5 @@
 let urlRepo = "";
+var _Folio = null;
 
 var _token = document
     .querySelector('meta[name="csrf-token"]')
@@ -17,17 +18,6 @@ var [BoletaLib, Doda, CartaPorte, PreAlta] = [
 
 let fileSettings = BoletaLib;
 
-function cambiarTipoDocumento(nuevoSetting) {
-    fileSettings = nuevoSetting;
-    var fileInputElement = document.getElementById("fileuploader");
-    if (fileInputElement) {
-        var api = $.fileuploader.getInstance(fileInputElement);
-        if (api && typeof api.reset === "function") {
-            api.reset();
-        }
-    }
-}
-
 let fileCartaPorte = document.querySelector("#fileCartaPorte");
 let btnFileCartaPorte = document.querySelector("#btnFileCartaPorte");
 let btnFileDODA = document.querySelector("#btnFileDODA");
@@ -38,24 +28,24 @@ let btnPreAlta = document.querySelector("#btnFilePrealta");
 
 if (btnFileCartaPorte) {
     btnFileCartaPorte.addEventListener("click", () => {
-        cambiarTipoDocumento(CartaPorte);
+        fileSettings = CartaPorte;
     });
 }
 if (btnFileDODA) {
     btnFileDODA.addEventListener("click", () => {
-        cambiarTipoDocumento(Doda);
+        fileSettings = Doda;
     });
 }
 
 if (btnFileBoletaLiberacion) {
     btnFileBoletaLiberacion.addEventListener("click", () => {
-        cambiarTipoDocumento(BoletaLib);
+        fileSettings = BoletaLib;
     });
 }
 
 if (btnPreAlta) {
     btnPreAlta.addEventListener("click", () => {
-        cambiarTipoDocumento(PreAlta);
+        fileSettings = PreAlta;
     });
 }
 
@@ -80,24 +70,14 @@ function getSubClientes() {
     }
 }
 
-var uploadConfig = null;
-
-function resetUploadConfig() {
-    var fileInputElement = document.getElementById("fileuploader");
-    if (!fileInputElement) return;
-    // Obtener la instancia de Fileuploader asociada a este campo de carga
-    var api = $.fileuploader.getInstance(fileInputElement);
-    if (!api) return;
-
-    urlRepo = fileSettings.opcion;
-    numContenedor = localStorage.getItem("numContenedor");
-    api.setOption("upload", {
+function getUploadConfig() {
+    let currentContenedor = localStorage.getItem("numContenedor");
+    return {
         url: "/contenedores/files/upload",
         data: {
-            urlRepo: urlRepo,
-            numContenedor: numContenedor,
-            tipo_documento: document.querySelector(".CheckTypeFile:checked")
-                ?.value,
+            urlRepo: fileSettings.opcion,
+            numContenedor: currentContenedor,
+            tipo_documento: document.querySelector(".CheckTypeFile:checked")?.value,
             folio: document.getElementById("inputFolio")?.value,
             _token: _token,
         },
@@ -106,7 +86,6 @@ function resetUploadConfig() {
         start: true,
         synchron: true,
         beforeSend: function (item, listEl, parentEl, newInputEl, inputEl) {
-            let tipo = document.querySelector(".CheckTypeFile:checked")?.value;
             let folioInput = document.getElementById("inputFolio");
             let container = document.getElementById("containerFolio");
 
@@ -122,6 +101,15 @@ function resetUploadConfig() {
                     }, 400);
                     return false;
                 }
+            }
+
+            // Sincronizar datos dinámicos justo antes del envío
+            if (item && item.upload && item.upload.data) {
+                item.upload.data.urlRepo = fileSettings.opcion;
+                item.upload.data.numContenedor = localStorage.getItem("numContenedor");
+                item.upload.data.tipo_documento = document.querySelector(".CheckTypeFile:checked")?.value;
+                item.upload.data.folio = document.getElementById("inputFolio")?.value;
+                item.upload.data._token = _token;
             }
 
             return true;
@@ -151,9 +139,6 @@ function resetUploadConfig() {
                 item.html
                     .removeClass("upload-successful")
                     .addClass("upload-failed");
-                // go out from success function by calling onError function
-                // in this case we have a animation there
-                // you can also response in PHP with 404
                 return this.onError ? this.onError(item) : null;
             }
 
@@ -172,8 +157,9 @@ function resetUploadConfig() {
             }
             if (gridApi) {
                 let dataGrid = gridApi.getGridOption("rowData");
+                let cNum = localStorage.getItem("numContenedor");
                 var rowIndex = dataGrid.findIndex(
-                    (d) => d.NumContenedor == numContenedor,
+                    (d) => d.NumContenedor == cNum,
                 );
 
                 const colId = fileSettings.agGrid;
@@ -216,8 +202,9 @@ function resetUploadConfig() {
             }
 
             // Actualizar documentos en memoria si existe docsData
-            if (typeof docsData !== "undefined" && numContenedor && typeof fetch === "function") {
-                fetch(`/viajes/file-manager/get-file-list/${numContenedor}`)
+            let cNum = localStorage.getItem("numContenedor");
+            if (typeof docsData !== "undefined" && cNum && typeof fetch === "function") {
+                fetch(`/viajes/file-manager/get-file-list/${cNum}`)
                     .then(response => response.json())
                     .then(json => {
                         if (json && json.data) {
@@ -282,12 +269,37 @@ function resetUploadConfig() {
                 }, 1000);
             }
         },
-    });
+    };
 }
+
+function resetUploadConfig() {
+    var $input = $("#content-file-input").find('input[type="file"]');
+    if (!$input.length) return;
+    var api = $.fileuploader.getInstance($input);
+    if (!api) return;
+
+    api.setOption("upload", getUploadConfig());
+}
+
 function adjuntarDocumentos() {
-    document.getElementById("content-file-input").innerHTML =
-        '<input type="file" name="files" id="fileuploader">';
-    $('input[name="files"]').fileuploader({
+    var container = document.getElementById("content-file-input");
+    if (!container) return;
+
+    var oldInput = container.querySelector('input[type="file"]');
+    if (oldInput) {
+        try {
+            var oldApi = $.fileuploader.getInstance(oldInput);
+            if (oldApi && typeof oldApi.destroy === "function") {
+                oldApi.destroy();
+            }
+        } catch (e) {
+            console.warn("Error destruyendo fileuploader previo:", e);
+        }
+    }
+
+    container.innerHTML = '<input type="file" name="files" id="fileuploader">';
+
+    $("#content-file-input").find('input[type="file"]').fileuploader({
         captions: "es",
         enableApi: true,
         start: true,
@@ -301,14 +313,14 @@ function adjuntarDocumentos() {
             "</div>" +
             "</div>",
         theme: "dragdrop",
-        upload: uploadConfig,
+        upload: getUploadConfig(),
         beforeSelect: function (listEl, parentEl, newInputEl, inputEl) {
             resetUploadConfig();
         },
         onRemove: function (item) {
             $.post("remove", {
                 _token: _token,
-                _Folio: _Folio,
+                _Folio: typeof _Folio !== "undefined" ? _Folio : null,
                 file: item.name,
             });
         },
@@ -320,6 +332,4 @@ function adjuntarDocumentos() {
             button: "Examinar archivos",
         }),
     });
-
-    // api.uploadStart(); // Iniciar la carga manualmente
 }
