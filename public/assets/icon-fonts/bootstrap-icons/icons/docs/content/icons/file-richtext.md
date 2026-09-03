@@ -1,9 +1,9 @@
 ---
 title: File rich text
 categories:
-  - Files and folders
+    - Files and folders
 tags:
-  - doc
-  - document
-  - richtext
+    - doc
+    - document
+    - richtext
 ---

@@ -1,8 +1,8 @@
 ---
 title: Cloud moon
 categories:
-  - Weather
+    - Weather
 tags:
-  - cloudy
-  - overcast
+    - cloudy
+    - overcast
 ---

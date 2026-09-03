@@ -14,9 +14,48 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/user', function (Request $request) {
+        return $request->user();
+    });
+
+    Route::get('/dashboard/operacion-activa', [App\Http\Controllers\ApiValidationController::class, 'getOperacionActiva']);
+    Route::post('/dashboard/finalizar-viaje', [App\Http\Controllers\ApiValidationController::class, 'finalizarViaje']);
+    Route::post('/dashboard/info-viaje', [App\Http\Controllers\ApiValidationController::class, 'infoViaje']);
+    Route::get('/dashboard/cotizaciones', [App\Http\Controllers\ApiValidationController::class, 'getCotizaciones']);
+    Route::get('/dashboard/viajes', [App\Http\Controllers\ApiValidationController::class, 'getViajes']);
+    Route::get('/dashboard/contenedores', [App\Http\Controllers\ApiValidationController::class, 'getContenedores']);
+    Route::get('/dashboard/monitoreo', [App\Http\Controllers\ApiValidationController::class, 'getMonitoreo']);
+    Route::get('/dashboard/planeacion', [App\Http\Controllers\ApiValidationController::class, 'getPlaneacion']);
+    Route::get('/dashboard/reportes', [App\Http\Controllers\ApiValidationController::class, 'getReportes']);
+    Route::get('/dashboard/empresas-propias', [App\Http\Controllers\ApiValidationController::class, 'getEmpresasPropias']);
+    Route::get('/documentos-empresas/contenedores', [App\Http\Controllers\ApiValidationController::class, 'getContenedoresEmpresas24h']);
+    Route::get('/dashboard/catalogos-programar-viaje', [App\Http\Controllers\ApiValidationController::class, 'getCatalogsProgramarViaje']);
+    Route::post('/dashboard/programar-viaje', [App\Http\Controllers\ApiValidationController::class, 'programarViajeMobile']);
+    Route::post('/dashboard/anular-planeacion', [App\Http\Controllers\ApiValidationController::class, 'anularPlaneacionMobile']);
+    Route::post('/dashboard/finalizar-viaje', [App\Http\Controllers\ApiValidationController::class, 'finalizarViajeMobile']);
+    Route::get('/dashboard/bancos', [App\Http\Controllers\ApiValidationController::class, 'getBancosMobile']);
+    Route::get('/dashboard/bancos/{id}/reporte', [App\Http\Controllers\ApiValidationController::class, 'exportarReporteBancoMobile']);
+    Route::post('/dashboard/reportes/generar', [App\Http\Controllers\ApiValidationController::class, 'generarReporteMobile']);
+    Route::get('/operador/check-asignacion', [App\Http\Controllers\ApiValidationController::class, 'checkAsignacion']);
+    Route::post('/operador/aceptar-asignacion', [App\Http\Controllers\ApiValidationController::class, 'aceptarAsignacion']);
+    Route::get('/operador/historial', [App\Http\Controllers\ApiValidationController::class, 'getHistorial']);
+    Route::get('/operador/viajes-pendientes-liquidar', [App\Http\Controllers\ApiValidationController::class, 'getViajesPendientesLiquidar']);
+    Route::post('/operador/registrar-gastos-viaje', [App\Http\Controllers\ApiValidationController::class, 'registrarGastosViaje']);
+    Route::get('/operador/obtener-gastos-viaje/{id_asignacion}', [App\Http\Controllers\ApiValidationController::class, 'obtenerGastosViaje']);
+    Route::post('/operador/eliminar-gasto-viaje', [App\Http\Controllers\ApiValidationController::class, 'eliminarGastoViaje']);
+    Route::get('/operador/notification-config', [App\Http\Controllers\ApiValidationController::class, 'getNotificationConfig']);
 });
 
 Route::get('/api/coordenadas/subclientes/{clienteId}', [App\Http\Controllers\CoordenadasController::class, 'getSubclientes']);
 Route::get('/api/coordenadas/entidadesPC', [App\Http\Controllers\CoordenadasController::class, 'getEntidadesPC']);
+
+// SGT Validation and Login APIs
+Route::post('/login', [App\Http\Controllers\ApiValidationController::class, 'login']);
+Route::post('/app-logs', [App\Http\Controllers\ApiValidationController::class, 'guardarAppLogs']);
+Route::get('/dashboard/reportes/descargar', [App\Http\Controllers\ApiValidationController::class, 'descargarReporteMobile']);
+Route::get('/dashboard/bancos/{id}/reporte-descargar', [App\Http\Controllers\ApiValidationController::class, 'descargarReporteBancoMobile']);
+Route::post('/operador/coordenadas', [App\Http\Controllers\ApiValidationController::class, 'guardarCoordenadas']);
+Route::post('/operador/iniciar-viaje', [App\Http\Controllers\ApiValidationController::class, 'iniciarViaje']);
+Route::post('/operador/finalizar-viaje', [App\Http\Controllers\ApiValidationController::class, 'finalizarViajeOperador']);
+Route::post('/operador/estatus-flujo', [App\Http\Controllers\ApiValidationController::class, 'obtenerEstatusFlujo']);

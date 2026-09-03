@@ -1,7 +1,7 @@
 ---
 title: Laptop
 categories:
-  - Devices
+    - Devices
 tags:
-  - computer
+    - computer
 ---

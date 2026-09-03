@@ -1,7 +1,7 @@
 ---
 title: Tablet
 categories:
-  - Devices
+    - Devices
 tags:
-  - mobile
+    - mobile
 ---

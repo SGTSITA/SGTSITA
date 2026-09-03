@@ -1,9 +1,9 @@
 ---
 title: Send plus
 categories:
-  - Communications
+    - Communications
 tags:
-  - message
-  - sending
-  - sent
+    - message
+    - sending
+    - sent
 ---

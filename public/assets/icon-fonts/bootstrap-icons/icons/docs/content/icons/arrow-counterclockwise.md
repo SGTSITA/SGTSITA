@@ -1,14 +1,14 @@
 ---
 title: Arrow counterclockwise
 categories:
-  - Arrows
+    - Arrows
 tags:
-  - arrow
-  - left
-  - spin
-  - turn
-  - around
-  - round
-  - rotate
-  - undo
+    - arrow
+    - left
+    - spin
+    - turn
+    - around
+    - round
+    - rotate
+    - undo
 ---

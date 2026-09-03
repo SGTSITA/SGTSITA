@@ -1,7 +1,7 @@
 ---
 title: Emoji dizzy
 categories:
-  - Emoji
+    - Emoji
 tags:
-  - emoticon
+    - emoticon
 ---

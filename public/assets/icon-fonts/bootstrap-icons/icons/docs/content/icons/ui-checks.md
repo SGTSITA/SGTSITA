@@ -1,8 +1,8 @@
 ---
 title: UI checks
 categories:
-  - Controls
+    - Controls
 tags:
-  - checkbox
-  - form
+    - checkbox
+    - form
 ---

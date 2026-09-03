@@ -1,9 +1,9 @@
 ---
 title: Badge hd
 categories:
-  - Badges
+    - Badges
 tags:
-  - display
-  - resolution
-  - "high definition"
+    - display
+    - resolution
+    - 'high definition'
 ---

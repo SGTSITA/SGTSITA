@@ -1,9 +1,9 @@
 ---
 title: Badge vr
 categories:
-  - Badges
+    - Badges
 tags:
-  - virtual
-  - reality
-  - vr
+    - virtual
+    - reality
+    - vr
 ---

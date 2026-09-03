@@ -1,8 +1,8 @@
 ---
 title: Sun
 categories:
-  - Weather
+    - Weather
 tags:
-  - solar
-  - weather
+    - solar
+    - weather
 ---

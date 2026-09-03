@@ -1,8 +1,8 @@
 ---
 title: Outlet
 categories:
-  - Real world
+    - Real world
 tags:
-  - plug
-  - power
+    - plug
+    - power
 ---

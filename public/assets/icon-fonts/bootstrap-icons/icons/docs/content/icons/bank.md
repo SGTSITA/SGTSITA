@@ -1,11 +1,11 @@
 ---
 title: Bank
 categories:
-  - Commerce
+    - Commerce
 tags:
-  - money
-  - finance
-  - banking
-  - market
-  - temple
+    - money
+    - finance
+    - banking
+    - market
+    - temple
 ---

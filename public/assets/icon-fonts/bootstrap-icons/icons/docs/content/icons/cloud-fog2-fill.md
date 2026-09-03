@@ -1,7 +1,7 @@
 ---
 title: Cloud fog2 fill
 categories:
-  - Weather
+    - Weather
 tags:
-  - foggy
+    - foggy
 ---

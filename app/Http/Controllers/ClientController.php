@@ -8,16 +8,12 @@ use App\Models\User;
 use App\Models\Empresas;
 use App\Models\ClientEmpresa;
 use Illuminate\Http\Request;
-use Mediconesystems\LivewireDatatables\Column;
-use Mediconesystems\LivewireDatatables\NumberColumn;
-use Mediconesystems\LivewireDatatables\DateColumn;
-use Mediconesystems\LivewireDatatables\Http\Livewire\LivewireDatatable;
-use Session;
-use DB;
-use Log;
-use Hash;
-use Mail;
-use Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Auth;
 
 /**
  * Class ClientController
@@ -34,9 +30,9 @@ class ClientController extends Controller
     public function index()
     {
 
-        $clients = Client::where('id_empresa' ,'=',auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
+        $clients = Client::where('id_empresa', '=', auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
 
-        $subclientes = Subclientes::where('id_empresa' ,'=',auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
+        $subclientes = Subclientes::where('id_empresa', '=', auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
 
         return view('client.index', compact('clients', 'subclientes'));
     }
@@ -47,24 +43,24 @@ class ClientController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function create()
-{
-    $client = new Client();
-    // Obtener todas las empresas 
-    $empresas = Empresas::All();
+    {
+        $client = new Client();
+        // Obtener todas las empresas
+        $empresas = Empresas::All();
 
-    return view('client.create', compact('client','empresas'));
-    
-}
-///////////
+        return view('client.create', compact('client', 'empresas'));
+    }
+    ///////////
 
- /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request $request
-     * @return \Illuminate\Http\Response
-     */
-    public function store(Request $request){
-        try{
+    /**
+        * Store a newly created resource in storage.
+        *
+        * @param  \Illuminate\Http\Request $request
+        * @return \Illuminate\Http\Response
+        */
+    public function store(Request $request)
+    {
+        try {
             DB::beginTransaction();
             $this->validate($request, [
                 'nombre' => 'required',
@@ -74,7 +70,7 @@ class ClientController extends Controller
 
             $fechaActual = date('Y-m-d');
 
-            $client = new Client;
+            $client = new Client();
             $client->id_empresa = auth()->user()->id_empresa;
 
             $client->nombre = $request->get('nombre');
@@ -107,35 +103,37 @@ class ClientController extends Controller
 
             $emails = [$request->get('correo'),env('MAIL_NOTIFICATIONS')];
             Mail::to($emails)->send(new \App\Mail\WelcomeMail($client, $welcomePassword));
-            
 
 
-            return response()->json(["TMensaje" =>"success", "Titulo" => "Cliente creado correctamente", "Mensaje" => "El cliente se ha creado con exito. Contraseña de acceso generada y enviada correctamente: $welcomePassword"]);
-          //  Session::flash('success', 'Se ha guardado sus datos con exito, Usuario de acceso generado automaticamente con contraseña: '.$welcomePassword);
+
+            return response()->json(["TMensaje" => "success", "Titulo" => "Cliente creado correctamente", "Mensaje" => "El cliente se ha creado con exito. Contraseña de acceso generada y enviada correctamente: $welcomePassword"]);
+            //  Session::flash('success', 'Se ha guardado sus datos con exito, Usuario de acceso generado automaticamente con contraseña: '.$welcomePassword);
             //return redirect()->back()->with('success', 'Cliente creado correctamente. Proporcione contraseña: '.$welcomePassword);
-        }catch(\Throwable $t){
+        } catch (\Throwable $t) {
             DB::rollback();
             Log::channel('daily')->info('Error al crear cliente: '.$t->getMessage());
-            return response()->json(["TMensaje" =>"error", "Titulo" => "Ocurrio un error", "Mensaje" => $t->getMessage()]);
+            return response()->json(["TMensaje" => "error", "Titulo" => "Ocurrio un error", "Mensaje" => $t->getMessage()]);
 
             //Session::flash('warning', 'Error:'.$t->getMessage());
 
             //return redirect()->back()->with('error', 'No se pudo crear el cliente. '.$t->getMessage());
         }
-        
+
 
     }
 
     /**
      * Obtiene la lista de clientes del usuario logueado (según la empresa a la que corresponde)
      */
-    public function get_list(){
-        $clientes = Client::join('client_empresa as ce','clients.id','=','ce.id_client')
-                            ->where('ce.id_empresa',Auth::User()->id_empresa)
-                            ->where('is_active',1)
+    public function get_list()
+    {
+
+        $clientes = Client::join('client_empresa as ce', 'clients.id', '=', 'ce.id_client')
+                            ->where('ce.id_empresa', Auth::User()->id_empresa)
+                            ->where('is_active', 1)
                             ->orderBy('nombre')->get();
 
-        $list = $clientes->map(function($c){
+        $list = $clientes->map(function ($c) {
             return [
                 "IdCliente" => $c->id,
                 "Nombre" => $c->nombre,
@@ -154,26 +152,31 @@ class ClientController extends Controller
     /**
      * Vista disponible unicamente en Modulo Externo de Clientes
      */
-    public function index_subcliente(){
+    public function index_subcliente()
+    {
         return view('client.cliente_externo');
     }
 
-    public function new_subcliente(Request $request){
-        return view('client.new_subclient',["idClient" => $request->idClient]);
+    public function new_subcliente(Request $request)
+    {
+        return view('client.new_subclient', ["idClient" => $request->idClient]);
     }
 
-    public function subcliente_list(){
+    public function subcliente_list()
+    {
         return view('client.subcliente_list');
     }
 
-    public function subcliente_list_internal(Request $request){
-        $client = Client::where('id',$request->id_client)->first();
-        return view('client.subcliente_list_internal',["id_client" => $request->id_client, "client" => $client]);
+    public function subcliente_list_internal(Request $request)
+    {
+        $client = Client::where('id', $request->id_client)->first();
+        return view('client.subcliente_list_internal', ["id_client" => $request->id_client, "client" => $client]);
     }
 
-    public function subcliente_get_list(Request $request){
-        $subClientes = Subclientes::where('id_cliente',$request->_cliente)->get();
-        $list = $subClientes->map(function ($s){
+    public function subcliente_get_list(Request $request)
+    {
+        $subClientes = Subclientes::where('id_cliente', $request->_cliente)->get();
+        $list = $subClientes->map(function ($s) {
             return [
                 "IdSubCliente" => $s->id,
                 "SubCliente" => $s->nombre,
@@ -187,7 +190,8 @@ class ClientController extends Controller
         return response()->json(["TMensaje" => "success", "data" => $list]);
     }
 
-    public function store_subclientes(Request $request){
+    public function store_subclientes(Request $request)
+    {
         $this->validate($request, [
             'nombre' => 'required',
             'correo' => 'required',
@@ -196,7 +200,7 @@ class ClientController extends Controller
 
         $fechaActual = date('Y-m-d');
 
-        $client = new Subclientes;
+        $client = new Subclientes();
         $client->id_cliente = $request->has('id_client') ? $request->id_client : $request->id_cliente;
         $client->nombre = $request->get('nombre');
         $client->correo = $request->get('correo');
@@ -208,7 +212,7 @@ class ClientController extends Controller
         $client->fecha = $fechaActual;
         $client->save();
 
-        if($request->has('uuid')){
+        if ($request->has('uuid')) {
             return response()->json(["TMensaje" => "success", "Mensaje" => "Se ha creado el cliente correctamente","Titulo" => "Proceso satisfactorio"]);
         }
 
@@ -241,58 +245,58 @@ class ClientController extends Controller
     {
         $subCliente = Subclientes::find($request->id_subcliente);
 
-        return (Auth::User()->id_cliente != 0) 
-         ? view('client.cliente_externo', ["subCliente" =>$subCliente])
-         : view('client.new_subclient', ["subCliente" =>$subCliente, "idClient" => $request->idClient]);
+        return (Auth::User()->id_cliente != 0)
+         ? view('client.cliente_externo', ["subCliente" => $subCliente])
+         : view('client.new_subclient', ["subCliente" => $subCliente, "idClient" => $request->idClient]);
 
-      //  return view('client.cliente_externo', ["subCliente" =>$subCliente]);
+        //  return view('client.cliente_externo', ["subCliente" =>$subCliente]);
     }
 
     public function edit(Request $request)
-{
-    $cliente = Client::find($request->id_client);
+    {
+        $cliente = Client::find($request->id_client);
 
-    if ($request->has('toggle_empresa')) {
-        // Gestionar el cambio de estado del switch
-        $idEmpresa = $request->toggle_empresa; // ID de la empresa
-        $checked = $request->checked; // Estado del switch
+        if ($request->has('toggle_empresa')) {
+            // Gestionar el cambio de estado del switch
+            $idEmpresa = $request->toggle_empresa; // ID de la empresa
+            $checked = $request->checked; // Estado del switch
 
-        if ($checked) {
-            // Crear la relación si está activada
-            DB::table('client_empresa')->updateOrInsert([
-                'id_client' => $cliente->id,
-                'id_empresa' => $idEmpresa,
-            ], [
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-        } else {
-            // Eliminar la relación si está desactivada
-            DB::table('client_empresa')
-                ->where('id_client', $cliente->id)
-                ->where('id_empresa', $idEmpresa)
-                ->delete();
+            if ($checked) {
+                // Crear la relación si está activada
+                DB::table('client_empresa')->updateOrInsert([
+                    'id_client' => $cliente->id,
+                    'id_empresa' => $idEmpresa,
+                ], [
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            } else {
+                // Eliminar la relación si está desactivada
+                DB::table('client_empresa')
+                    ->where('id_client', $cliente->id)
+                    ->where('id_empresa', $idEmpresa)
+                    ->delete();
+            }
+
+            return response()->json(['success' => true]);
         }
 
-        return response()->json(['success' => true]);
+        // Obtener todas las empresas
+        $empresas = Empresas::all();
+
+        // Identificar las empresas vinculadas al cliente
+        $vinculadas = DB::table('client_empresa')
+            ->where('id_client', $cliente->id)
+            ->pluck('id_empresa')
+            ->toArray();
+
+        return view('client.create', compact('cliente', 'empresas', 'vinculadas'));
     }
-
-    // Obtener todas las empresas
-    $empresas = Empresas::all();
-
-    // Identificar las empresas vinculadas al cliente
-    $vinculadas = DB::table('client_empresa')
-        ->where('id_client', $cliente->id)
-        ->pluck('id_empresa')
-        ->toArray();
-
-    return view('client.create', compact('cliente', 'empresas', 'vinculadas'));
-}
     public function edit_subclientes($id)
     {
         $subcliente = Subclientes::find($id);
 
-        return (Auth::User()->id_cliente != 0) 
+        return (Auth::User()->id_cliente != 0)
          ? view('client.subclientes', compact('subcliente'))
          : view('client.new_subclient', compact('subcliente'));
     }
@@ -300,8 +304,8 @@ class ClientController extends Controller
 
     public function update_subclientes(Request $request, Subclientes $id = null)
     {
-        
-        if($request->has('id_subcliente')){
+
+        if ($request->has('id_subcliente')) {
             $id = Subclientes::find($request->id_subcliente);
         }
 
@@ -310,7 +314,7 @@ class ClientController extends Controller
         return response()->json(["TMensaje" => "success","Mensaje" => "SubCliente modificado con exito","Titulo" => "Proceso exitoso!"]);
 
         Session::flash('edit', 'Se ha editado sus datos con exito');
-        return redirect()->route('clients.index')
+        return redirect()->route('clientes.index')
             ->with('success', 'Client updated successfully');
     }
 
@@ -324,8 +328,8 @@ class ClientController extends Controller
      */
     public function update(Request $request)
     {
-        $client = Client::where('id',$request->idClient);
-        $client->update($request->only('nombre','rfc','regimen_fiscal','nombre_empresa','correo','telefono','direccion'));
+        $client = Client::where('id', $request->idClient);
+        $client->update($request->only('nombre', 'rfc', 'regimen_fiscal', 'nombre_empresa', 'correo', 'telefono', 'direccion'));
 
         return response()->json(["Titulo" => "Datos actualizados", "Mensaje" => "Los datos del cliente han sido actualizados correctamente","TMensaje" => "success"]);
     }
@@ -340,8 +344,8 @@ class ClientController extends Controller
         $client = Client::find($id)->delete();
 
         Session::flash('delete', 'Se ha eliminado sus datos con exito');
-        return redirect()->route('clients.index')
+        return redirect()->route('clientes.index')
             ->with('success', 'Client deleted successfully');
     }
-    
+
 }
