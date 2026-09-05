@@ -196,8 +196,12 @@ if (btnPayment) {
 function btnPaymentStatus() {
     if (gridElementGastosOperador) {
         let seleccion = apiGridGastosOperador.getSelectedRows();
-        btnPayment.disabled = seleccion.length == 0 ? true : false;
-        btnElminar.disabled = seleccion.length == 0 ? true : false;
+        if (btnPayment) {
+            btnPayment.disabled = seleccion.length == 0 ? true : false;
+        }
+        if (btnElminar) {
+            btnElminar.disabled = seleccion.length == 0 ? true : false;
+        }
     }
 }
 

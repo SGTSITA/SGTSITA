@@ -669,10 +669,6 @@ Route::middleware(['auth', 'idle.timeout'])->group(function () {
         Route::post('liquidaciones/update/varios', [App\Http\Controllers\LiquidacionesController::class, 'update_varios'])->name('update_varios.liquidacion');
 
         // ==================== G A S T O S  ====================
-
-
-                    Route::get('/gastos/data', [App\Http\Controllers\GastosController::class, 'data'])
-                        ->name('data');
         Route::middleware('permission:gastos')
                 ->prefix('gastos')
                 ->name('gastos.')
@@ -681,6 +677,8 @@ Route::middleware(['auth', 'idle.timeout'])->group(function () {
                     Route::get('/', [App\Http\Controllers\GastosController::class, 'index'])
                         ->name('index');
 
+                    Route::get('/data', [App\Http\Controllers\GastosController::class, 'data'])
+                        ->name('data');
 
                     Route::get('/categorias/{categoria}/conceptos', [App\Http\Controllers\GastosController::class, 'getConceptosByCategoria'])
                         ->name('conceptos');
