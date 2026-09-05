@@ -628,7 +628,7 @@ Route::middleware(['auth', 'idle.timeout'])->group(function () {
             Route::get('/comparativa', [App\Http\Controllers\SociosController::class, 'checkComparativa'])->name('comparativa');
             Route::get('/exportar', [App\Http\Controllers\SociosController::class, 'exportReport'])->name('exportar');
 
-            
+
             // Pagos
             Route::post('/pagar', [App\Http\Controllers\SociosController::class, 'registrarPago'])->name('pagar');
             Route::get('/pagos-historial', [App\Http\Controllers\SociosController::class, 'getPagosHistorial'])->name('pagos.historial');
@@ -639,7 +639,7 @@ Route::middleware(['auth', 'idle.timeout'])->group(function () {
         });
 
 
-    
+
         Route::post('reporteria/gastos-pagar/export', [App\Http\Controllers\ReporteriaController::class, 'exportGastosPorPagar'])->name('gxp.export');
 
 
@@ -669,6 +669,10 @@ Route::middleware(['auth', 'idle.timeout'])->group(function () {
         Route::post('liquidaciones/update/varios', [App\Http\Controllers\LiquidacionesController::class, 'update_varios'])->name('update_varios.liquidacion');
 
         // ==================== G A S T O S  ====================
+
+
+                    Route::get('/gastos/data', [App\Http\Controllers\GastosController::class, 'data'])
+                        ->name('data');
         Route::middleware('permission:gastos')
                 ->prefix('gastos')
                 ->name('gastos.')
@@ -677,8 +681,6 @@ Route::middleware(['auth', 'idle.timeout'])->group(function () {
                     Route::get('/', [App\Http\Controllers\GastosController::class, 'index'])
                         ->name('index');
 
-                    Route::get('/data', [App\Http\Controllers\GastosController::class, 'data'])
-                        ->name('data');
 
                     Route::get('/categorias/{categoria}/conceptos', [App\Http\Controllers\GastosController::class, 'getConceptosByCategoria'])
                         ->name('conceptos');
