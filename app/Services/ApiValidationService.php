@@ -67,6 +67,10 @@ class ApiValidationService
                         $q->where('estatus', 1)
                           ->orWhere('estatus_viaje', 'Aceptado');
                     })
+                    ->where(function($q) {
+                        $q->whereNull('estatus_viaje')
+                          ->orWhere('estatus_viaje', '!=', 'Finalizado');
+                    })
                     ->orderBy('id', 'desc')
                     ->first();
 
@@ -1355,7 +1359,10 @@ class ApiValidationService
             'longitud_fin' => $data['longitud'] ?? null,
         ]);
 
-        return ['success' => true, 'message' => 'Viaje finalizado correctamente.', 'data' => [], 'status' => 200];
+        $asignacion->estatus_viaje = 'Finalizado';
+        $asignacion->save();
+
+     return ['success' => true, 'message' => 'Viaje finalizado correctamente.', 'data' => [], 'status' => 200];
     }
 
     public function obtenerEstatusFlujo($idAsignacion)
