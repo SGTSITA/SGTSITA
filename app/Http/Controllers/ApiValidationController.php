@@ -660,7 +660,9 @@ class ApiValidationController extends Controller
                     'nombre_empresa' => $empresa ? $empresa->nombre : 'Empresa Asignada',
                     'origen_destino' => $cotizacion ? ($cotizacion->origen . ' - ' . $cotizacion->destino) : 'Sin ruta especificada',
                     'num_contenedor' => $contenedor ? $contenedor->num_contenedor : 'Sin Contenedor',
-                    'camion'         => $camion ? $camion->id_equipo : 'Sin Unidad Asignada'
+                    'camion'         => $camion ? $camion->id_equipo : 'Sin Unidad Asignada',
+                    'fecha_inicio'   => $asignacion->fecha_inicio,
+                    'fecha_fin'      => $asignacion->fecha_fin,
                 ]
             ]);
         }
