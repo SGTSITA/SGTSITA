@@ -396,11 +396,17 @@ class GastosService
         $categoriaId = null;
         $conceptoId = null;
         $concepto = $legacy->tipo ?: 'Gasto operador';
+        $tipoClean = strtolower(trim($legacy->tipo));
 
-        if (strtolower(trim($legacy->tipo)) === 'diesel') {
+        if ($tipoClean === 'diesel') {
             $categoriaId = 1;
             $conceptoId = 24;
             $concepto = 'GDI02 - Diesel';
+        } elseif (in_array($tipoClean, ['urea', 'gu001 - urea', 'gurea'])) {
+            $categoriaId = 1;
+            $con = DB::table('gasto_conceptos')->where('clave', 'GUREA')->orWhere('clave', 'OTR_UR')->orWhere('nombre', 'like', '%Urea%')->first();
+            $conceptoId = $con ? $con->id : 42;
+            $concepto = 'GU001 - Urea';
         }
 
         $idEmpresa = $asignacion?->id_empresa ?: ($cotizacion?->id_empresa ?: (auth()->user()?->id_empresa ?: 2));
@@ -408,8 +414,11 @@ class GastosService
         $origenLegacy = 'gastos_operadores';
         $origenLegacyId = $legacy->id;
 
-        if ($asignacion && strtolower(trim($legacy->tipo)) === 'diesel') {
+        if ($asignacion && $tipoClean === 'diesel') {
             $origenLegacy = 'asignacion_planeacionGDI02 - Diesel';
+            $origenLegacyId = $asignacion->id;
+        } elseif ($asignacion && in_array($tipoClean, ['urea', 'gu001 - urea', 'gurea'])) {
+            $origenLegacy = 'asignacion_planeacionGU001 - Urea';
             $origenLegacyId = $asignacion->id;
         }
 
