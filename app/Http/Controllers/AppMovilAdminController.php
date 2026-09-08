@@ -279,21 +279,34 @@ class AppMovilAdminController extends Controller
         $bitacora = BitacoraViajeOperador::with(['Asignacion.Operador', 'Asignacion.Contenedor.Cotizacion'])->findOrFail($id);
         $configuracion = auth()->user()->Empresa->Configuracion ?? Configuracion::first();
 
-        // Verificar si existen gastos pagados asociados a esta asignación
+        // Verificar si existen gastos pagados o pagados parcialmente asociados a esta asignación
         $idAsignacion = $bitacora->id_asignacion;
-        $dieselPagado = Gasto::where('origen_legacy_id', $idAsignacion)
-            ->where('origen_legacy', 'like', 'asignacion_planeacion%')
-            ->where('concepto', 'like', '%Diesel%')
-            ->where('estatus', 'pagado')
-            ->exists();
-
-        $ureaPagada = Gasto::where('origen_legacy_id', $idAsignacion)
-            ->where('origen_legacy', 'like', 'asignacion_planeacion%')
-            ->where('concepto', 'like', '%Urea%')
-            ->where('estatus', 'pagado')
-            ->exists();
+        $dieselPagado = $this->verificarGastoPagado($idAsignacion, 'Diesel');
+        $ureaPagada = $this->verificarGastoPagado($idAsignacion, 'Urea');
 
         return view('app_movil_admin.edit', compact('bitacora', 'configuracion', 'dieselPagado', 'ureaPagada'));
+    }
+
+    private function verificarGastoPagado(int $idAsignacion, string $tipoConcepto): bool
+    {
+        return Gasto::where(function($q) use ($idAsignacion, $tipoConcepto) {
+                $q->where(function($q2) use ($idAsignacion, $tipoConcepto) {
+                    $q2->where('origen_legacy_id', $idAsignacion)
+                       ->where('origen_legacy', 'like', 'asignacion_planeacion%')
+                       ->where('concepto', 'like', "%{$tipoConcepto}%");
+                })->orWhereHas('vinculos', function($q2) use ($idAsignacion) {
+                    $q2->where('tipo_vinculo', 'asignacion')
+                       ->where('vinculable_type', Asignaciones::class)
+                       ->where('vinculable_id', $idAsignacion);
+                })->where('concepto', 'like', "%{$tipoConcepto}%");
+            })
+            ->where(function($q) {
+                $q->whereIn('estatus', ['pagado', 'pagado_parcial'])
+                  ->orWhereHas('pagos', function($q2) {
+                      $q2->where('estatus', 'aplicado');
+                  });
+            })
+            ->exists();
     }
 
     public function update(Request $request, $id)
@@ -325,17 +338,8 @@ class AppMovilAdminController extends Controller
         $idAsignacion = $bitacora->id_asignacion;
 
         // Comprobación de gastos pagados
-        $dieselPagadoExistente = Gasto::where('origen_legacy_id', $idAsignacion)
-            ->where('origen_legacy', 'like', 'asignacion_planeacion%')
-            ->where('concepto', 'like', '%Diesel%')
-            ->where('estatus', 'pagado')
-            ->exists();
-
-        $ureaPagadaExistente = Gasto::where('origen_legacy_id', $idAsignacion)
-            ->where('origen_legacy', 'like', 'asignacion_planeacion%')
-            ->where('concepto', 'like', '%Urea%')
-            ->where('estatus', 'pagado')
-            ->exists();
+        $dieselPagadoExistente = $this->verificarGastoPagado($idAsignacion, 'Diesel');
+        $ureaPagadaExistente = $this->verificarGastoPagado($idAsignacion, 'Urea');
 
         // Guardar coordenadas de historial si cambiaron y fueron especificadas
         if ($request->filled('latitud') && $request->filled('longitud')) {
@@ -481,10 +485,11 @@ class AppMovilAdminController extends Controller
                 $gastoOperador = GastosOperadores::updateOrCreate(
                     ['id_asignacion' => $idAsignacion, 'tipo' => 'Diesel'],
                     [
-                        'id_operador'  => $asignacion->id_operador,
+                        'id_operador'   => $asignacion->id_operador,
                         'id_cotizacion' => $idCotizacion,
                         'cantidad'      => $costoDieselVal,
                         'comprobante'   => $fileName,
+                        'estatus'       => 'pendiente',
                         'fecha_pago'    => Carbon::now()
                     ]
                 );
@@ -515,6 +520,7 @@ class AppMovilAdminController extends Controller
                         'id_cotizacion' => $idCotizacion,
                         'cantidad'      => $costoUreaVal,
                         'comprobante'   => $ureaFileName,
+                        'estatus'       => 'pendiente',
                         'fecha_pago'    => Carbon::now()
                     ]
                 );
