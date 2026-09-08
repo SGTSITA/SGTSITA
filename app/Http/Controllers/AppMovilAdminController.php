@@ -467,73 +467,63 @@ class AppMovilAdminController extends Controller
             }));
         }
 
-        // Si cambia costo de diésel
-        if ($request->filled('costo') && floatval($request->costo) != floatval($bitacora->costo)) {
+        // Si cambia costo o foto de diésel
+        $costoDieselVal = $request->filled('costo') ? floatval($request->costo) : floatval($bitacora->costo);
+        if (($request->filled('costo') && floatval($request->costo) != floatval($bitacora->costo)) || $request->hasFile('comprobante_diesel_file')) {
             if ($dieselPagadoExistente && !$request->filled('forzar_pago_diesel')) {
                 return redirect()->back()->withErrors(['costo' => 'El gasto de Diesel ya está pagado. Debe confirmar la advertencia para realizar cambios sobre una entidad pagada.']);
             }
 
-            // Afectar entidad gastos
             $doc = DocumCotizacion::find($asignacion->id_contenedor);
             $idCotizacion = $doc ? $doc->id_cotizacion : null;
 
-            // Buscar gasto operador existente o crear/actualizar
-            $gastoOperador = GastosOperadores::updateOrCreate(
-                ['id_asignacion' => $idAsignacion, 'tipo' => 'Diesel'],
-                [
-                    'id_operador' => $asignacion->id_operador,
-                    'id_cotizacion' => $idCotizacion,
-                    'cantidad' => $request->costo,
-                    'comprobante' => $fileName,
-                    'fecha_pago' => Carbon::now()
-                ]
-            );
+            if ($costoDieselVal > 0 || $request->hasFile('comprobante_diesel_file')) {
+                $gastoOperador = GastosOperadores::updateOrCreate(
+                    ['id_asignacion' => $idAsignacion, 'tipo' => 'Diesel'],
+                    [
+                        'id_operador'  => $asignacion->id_operador,
+                        'id_cotizacion' => $idCotizacion,
+                        'cantidad'      => $costoDieselVal,
+                        'comprobante'   => $fileName,
+                        'fecha_pago'    => Carbon::now()
+                    ]
+                );
 
-            try {
-                $this->gastosService->registrarDesdeGastoOperador($gastoOperador);
-            } catch (\Exception $e) {
-                \Log::error("Error actualizando gasto de diesel en admin panel: " . $e->getMessage());
+                try {
+                    $this->gastosService->registrarDesdeGastoOperador($gastoOperador);
+                } catch (\Exception $e) {
+                    \Log::error("Error actualizando gasto de diesel en admin panel: " . $e->getMessage());
+                }
             }
         }
 
-        // Si cambia costo de urea
-        if ($request->filled('costo_urea') && floatval($request->costo_urea) != floatval($bitacora->costo_urea)) {
+        // Si cambia costo o foto de urea
+        $costoUreaVal = $request->filled('costo_urea') ? floatval($request->costo_urea) : floatval($bitacora->costo_urea);
+        if (($request->filled('costo_urea') && floatval($request->costo_urea) != floatval($bitacora->costo_urea)) || $request->hasFile('comprobante_urea_file')) {
             if ($ureaPagadaExistente && !$request->filled('forzar_pago_urea')) {
                 return redirect()->back()->withErrors(['costo_urea' => 'El gasto de Urea ya está pagado. Debe confirmar la advertencia para realizar cambios sobre una entidad pagada.']);
             }
 
-            // Invocar el registro de Urea
-            $idEmpresa = $asignacion->id_empresa;
-            $contenedor = DocumCotizacion::find($asignacion->id_contenedor);
-            if ($contenedor) {
-                $cotizacion = Cotizaciones::find($contenedor->id_cotizacion);
-                if ($cotizacion && !$idEmpresa) {
-                    $idEmpresa = $cotizacion->id_empresa;
+            $doc = DocumCotizacion::find($asignacion->id_contenedor);
+            $idCotizacion = $doc ? $doc->id_cotizacion : null;
+
+            if ($costoUreaVal > 0 || $request->hasFile('comprobante_urea_file')) {
+                $gastoOperadorUrea = GastosOperadores::updateOrCreate(
+                    ['id_asignacion' => $idAsignacion, 'tipo' => 'Urea'],
+                    [
+                        'id_operador'   => $asignacion->id_operador,
+                        'id_cotizacion' => $idCotizacion,
+                        'cantidad'      => $costoUreaVal,
+                        'comprobante'   => $ureaFileName,
+                        'fecha_pago'    => Carbon::now()
+                    ]
+                );
+
+                try {
+                    $this->gastosService->registrarDesdeGastoOperador($gastoOperadorUrea);
+                } catch (\Exception $e) {
+                    \Log::error("Error actualizando gasto de urea en admin panel: " . $e->getMessage());
                 }
-            }
-            if (!$idEmpresa) {
-                $idEmpresa = 27;
-            }
-
-            $con = DB::table('gasto_conceptos')->where('clave', 'GUREA')->orWhere('nombre', 'like', '%Urea%')->first();
-            $conceptoId = $con ? $con->id : 42;
-
-            try {
-                $this->gastosService->registrar([
-                    'id_empresa'          => $idEmpresa,
-                    'categoria_gasto_id'  => 1,
-                    'gasto_concepto_id'   => $conceptoId,
-                    'concepto'            => 'GU001 - Urea',
-                    'monto_total'         => floatval($request->costo_urea),
-                    'tipo_gasto'          => 'viaje',
-                    'metodo_imputacion'   => 'directo',
-                    'estatus'             => $ureaPagadaExistente ? 'pagado' : 'pendiente_pago',
-                    'fecha_gasto'         => Carbon::now()->toDateString(),
-                    'origen_legacy'       => 'asignacion_planeacionGU001 - Urea',
-                    'origen_legacy_id'    => $asignacion->id,
-                ]);
-            } catch (\Exception $e) {
-                \Log::error("Error actualizando gasto de urea en admin panel: " . $e->getMessage());
             }
         }
 

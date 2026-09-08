@@ -1556,67 +1556,23 @@ class ApiValidationService
                 return;
             }
 
-            // Resolver id_empresa dinámicamente
-            $idEmpresa = $asignacion->id_empresa;
-            $contenedor = DocumCotizacion::find($asignacion->id_contenedor);
-            $cotizacion = null;
-            if ($contenedor) {
-                $cotizacion = Cotizaciones::find($contenedor->id_cotizacion);
-                if ($cotizacion && !$idEmpresa) {
-                    $idEmpresa = $cotizacion->id_empresa;
-                }
-            }
-            if (!$idEmpresa) {
-                $idEmpresa = 27; // Default to 27 or 1
-            }
+            $doc = DocumCotizacion::find($asignacion->id_contenedor);
+            $idCotizacion = $doc ? $doc->id_cotizacion : null;
 
-            $categoriaId = 1; // Combustible / Combustibles
+            $gastoOperadorUrea = GastosOperadores::updateOrCreate(
+                ['id_asignacion' => $idAsignacion, 'tipo' => 'Urea'],
+                [
+                    'id_operador'   => $asignacion->id_operador,
+                    'id_cotizacion' => $idCotizacion,
+                    'cantidad'      => $montoUrea,
+                    'fecha_pago'    => Carbon::now(),
+                    'estatus'       => 'pendiente'
+                ]
+            );
 
-            $con = DB::table('gasto_conceptos')->where('clave', 'GUREA')->orWhere('nombre', 'like', '%Urea%')->first();
-            $conceptoId = $con ? $con->id : 42;
-
-            app(\App\Services\GastosService::class)->registrar([
-                'id_empresa'          => $idEmpresa,
-                'categoria_gasto_id'  => $categoriaId,
-                'gasto_concepto_id'   => $conceptoId,
-                'concepto'            => 'GU001 - Urea',
-                'monto_total'         => $montoUrea,
-                'tipo_gasto'          => 'viaje',
-                'metodo_imputacion'   => 'directo',
-                'estatus'             => 'pendiente_pago',
-                'fecha_gasto'         => Carbon::now()->toDateString(),
-                'origen_legacy'       => 'asignacion_planeacionGU001 - Urea',
-                'origen_legacy_id'    => $asignacion->id,
-                'user_id'             => auth()->id() ?? 81,
-                'vinculos'            => array_filter([
-                    $cotizacion ? [
-                        'tipo_vinculo'    => 'cotizacion',
-                        'vinculable_type' => get_class($cotizacion),
-                        'vinculable_id'   => $cotizacion->id,
-                    ] : null,
-                    $contenedor ? [
-                        'tipo_vinculo'    => 'contenedor',
-                        'vinculable_type' => get_class($contenedor),
-                        'vinculable_id'   => $contenedor->id,
-                        'observaciones'   => $contenedor->num_contenedor,
-                    ] : null,
-                    $asignacion ? [
-                        'tipo_vinculo'    => 'asignacion',
-                        'vinculable_type' => get_class($asignacion),
-                        'vinculable_id'   => $asignacion->id,
-                    ] : null,
-                    $asignacion->id_operador ? [
-                        'tipo_vinculo'    => 'operador',
-                        'vinculable_type' => \App\Models\Operador::class,
-                        'vinculable_id'   => $asignacion->id_operador,
-                    ] : null,
-                ]),
-                'imputaciones'        => []
-            ]);
-
-            Log::info("Gasto de Urea (GUREA) registrado exitosamente para asignación ID: {$idAsignacion}");
-        } catch (\Exception $e) {
-            Log::error("Error en ApiValidationService al registrar gasto de urea: " . $e->getMessage());
+            app(\App\Services\GastosService::class)->registrarDesdeGastoOperador($gastoOperadorUrea);
+        } catch (\Throwable $e) {
+            Log::error("Error registrando gasto de urea desde app: " . $e->getMessage());
         }
     }
 
