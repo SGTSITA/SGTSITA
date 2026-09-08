@@ -389,7 +389,7 @@ class ReporteriaService
     {
         $fechaCarbon = Carbon::now();
 
-        $cotizaciones = Cotizaciones::with(['Cliente', 'DocCotizacion.Asignaciones.Proveedor', 'cobros.cobroPago.bancoA', 'cobros.cobroPago.bancoB'])
+        $cotizaciones = Cotizaciones::with(['Cliente', 'DocCotizacion.Asignaciones.Proveedor', 'cobros.cobroPago.bancoA', 'cobros.cobroPago.bancoB', 'estadoCuenta'])
             ->whereIn('id', $cotizacionIds)
             ->get();
 
@@ -425,7 +425,7 @@ class ReporteriaService
     {
         $fechaCarbon = Carbon::now();
 
-        $cotizaciones = Asignaciones::with(['Proveedor', 'Contenedor.Cotizacion.pagos.cobroPago.bancoA', 'Contenedor.Cotizacion.pagos.cobroPago.bancoB', 'Contenedor.Cotizacion.pagos.cobroPago.bancoProveedorA', 'Contenedor.Cotizacion.pagos.cobroPago.bancoProveedorB'])
+        $cotizaciones = Asignaciones::with(['Proveedor', 'Contenedor.Cotizacion.estadoCuenta', 'Contenedor.Cotizacion.pagos.cobroPago.bancoA', 'Contenedor.Cotizacion.pagos.cobroPago.bancoB', 'Contenedor.Cotizacion.pagos.cobroPago.bancoProveedorA', 'Contenedor.Cotizacion.pagos.cobroPago.bancoProveedorB'])
             ->whereIn('id', $cotizacionIds)
             ->get();
 

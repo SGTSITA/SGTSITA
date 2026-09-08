@@ -3,14 +3,14 @@
     @if (! isset($isExcel))
         <style>
             .registro-contenedor {
-                border: 2px solid #000; /* Cambia el color y grosor del borde según tus necesidades */
-                margin-bottom: 20px; /* Espacio entre cada registro */
-                padding: 15px; /* Espacio interno alrededor de las tablas */
-                border-radius: 5px; /* Bordes redondeados, opcional */
+                border: 2px solid #000;
+                margin-bottom: 20px;
+                padding: 15px;
+                border-radius: 5px;
             }
 
             .registro-contenedor table {
-                margin-bottom: 10px; /* Espacio entre tablas dentro del mismo contenedor */
+                margin-bottom: 10px;
             }
 
             .totales {
@@ -75,27 +75,36 @@
     <body>
         @php
             $cotizacionesGrouped = $cotizaciones->groupBy(function($item) use ($cotizacion) {
-                return $item->Proveedor?->nombre ?? ($cotizacion?->Proveedor?->nombre ?? 'Sin Proveedor');
+                $cotiPadre = $item->Contenedor?->Cotizacion;
+                $numEdo = $cotiPadre?->estadoCuenta?->numero ?? '-';
+                $prov = $item->Proveedor?->nombre ?? ($cotizacion?->Proveedor?->nombre ?? 'Sin Proveedor');
+                return $numEdo . ' ||| ' . $prov;
             });
 
             $grandImporteCT = 0;
             $grandPagar1 = 0;
             $grandPagar2 = 0;
+            $grandAbono = 0;
             $grandContratistas = [];
             $grandTotalContenedores = 0;
         @endphp
 
-        @foreach($cotizacionesGrouped as $nombreProveedor => $items)
+        @foreach($cotizacionesGrouped as $groupKey => $items)
             @php
+                $parts = explode(' ||| ', $groupKey);
+                $numEdoCuenta = $parts[0] ?? '-';
+                $nombreProveedor = $parts[1] ?? 'Sin Proveedor';
+
                 $subImporteCT = 0;
                 $subPagar1 = 0;
                 $subPagar2 = 0;
+                $subAbono = 0;
             @endphp
 
             <div class="proveedor-block">
                 <div class="sin_margem" style="margin-bottom: 12px; position: relative; clear: both;">
                     <h4 class="sin_espacios2">Empresa: {{ $user?->Empresa?->nombre ?? '-' }}</h4>
-                    <h4 class="sin_espacios2">Estado de cuenta</h4>
+                    <h4 class="sin_espacios2">Estado de cuenta: {{ $numEdoCuenta }}</h4>
                     <h4 class="sin_espacios2">Proveedor: {{ $nombreProveedor }}</h4>
                     <h5 style="position: absolute; right: 0; top: 0; margin: 0;">Estado de cuenta por pagar : {{ date('d-m-Y') }}</h5>
                 </div>
@@ -108,9 +117,9 @@
                             <th style="border: 1px solid #000; padding: 5px;">Importe CT</th>
                             <th style="border: 1px solid #000; padding: 5px; color: #000000; background: yellow;">A pagar 1</th>
                             <th style="border: 1px solid #000; padding: 5px; color: #000000; background: #fb6340;">A pagar 2</th>
+                            <th style="border: 1px solid #000; padding: 5px;">Fecha de planeación</th>
                             <th style="border: 1px solid #000; padding: 5px;">Forma de Pago</th>
                             <th style="border: 1px solid #000; padding: 5px;">Abono</th>
-                            <th style="border: 1px solid #000; padding: 5px;">Fecha de planeación</th>
                             <th style="border: 1px solid #000; padding: 5px;">Fecha de pago</th>
                         </tr>
                     </thead>
@@ -123,13 +132,35 @@
                                 $importe_vta = $base_factura - $total_oficial;
                                 $suma_importeCT = $base_factura + $total_oficial;
 
+                                $cotiPadre = $item->Contenedor?->Cotizacion;
+
+                                $abonoItem = 0;
+                                if(isset($cotiPadre->pagos) && $cotiPadre->pagos->count() > 0) {
+                                    $abonoItem = (float)$cotiPadre->pagos->sum('monto');
+                                } else {
+                                    $foundReg = false;
+                                    foreach ($registrosBanco as $registro) {
+                                        $contenedores = json_decode($registro->contenedores, true);
+                                        $contenedorEncontrado = collect($contenedores)->firstWhere('num_contenedor', $item->Contenedor?->num_contenedor);
+                                        if ($contenedorEncontrado && isset($contenedorEncontrado['abono'])) {
+                                            $abonoItem += (float)$contenedorEncontrado['abono'];
+                                            $foundReg = true;
+                                        }
+                                    }
+                                    if (!$foundReg) {
+                                        $abonoItem = (float)($cotiPadre?->prove_monto1 ?? 0) + (float)($cotiPadre?->prove_monto2 ?? 0);
+                                    }
+                                }
+
                                 $subImporteCT += $suma_importeCT;
                                 $subPagar1 += $total_oficial;
                                 $subPagar2 += $base_factura;
+                                $subAbono += $abonoItem;
 
                                 $grandImporteCT += $suma_importeCT;
                                 $grandPagar1 += $total_oficial;
                                 $grandPagar2 += $base_factura;
+                                $grandAbono += $abonoItem;
                                 $grandTotalContenedores++;
 
                                 if (!empty($nombreProveedor) && trim($nombreProveedor) !== '-') {
@@ -145,8 +176,19 @@
                                 <td style="border: 1px solid #000;">${{ number_format($base_factura, 2, '.', ',') }}</td>
                                 <td style="border: 1px solid #000;">
                                     @php
-                                        $cotiPadre = $item->Contenedor?->Cotizacion;
+                                        $fIni = $item->fecha_inicio ?? $item->fehca_inicio_guard;
+                                        $fFin = $item->fecha_fin ?? $item->fehca_fin_guard;
                                     @endphp
+                                    @if($fIni)
+                                        {{ \Carbon\Carbon::parse($fIni)->format('d/m/Y') }}
+                                        @if($fFin && $fFin != $fIni)
+                                            a {{ \Carbon\Carbon::parse($fFin)->format('d/m/Y') }}
+                                        @endif
+                                    @else
+                                        -
+                                    @endif
+                                </td>
+                                <td style="border: 1px solid #000;">
                                     @if(isset($cotiPadre->pagos) && $cotiPadre->pagos->count() > 0)
                                         @foreach($cotiPadre->pagos as $pagoDetalle)
                                             @php
@@ -172,9 +214,9 @@
                                         @endforeach
 
                                         @if(!$foundMetodo)
-                                            {{ $item->Contenedor?->Cotizacion?->prove_metodo_pago1 ?: 'Transferencia' }}
-                                            @if($item->Contenedor?->Cotizacion?->prove_metodo_pago2)
-                                                <br />{{ $item->Contenedor?->Cotizacion?->prove_metodo_pago2 }}
+                                            {{ $cotiPadre?->prove_metodo_pago1 ?: 'Transferencia' }}
+                                            @if($cotiPadre?->prove_metodo_pago2)
+                                                <br />{{ $cotiPadre->prove_metodo_pago2 }}
                                             @endif
                                         @endif
                                     @endif
@@ -185,6 +227,7 @@
                                             $ {{ number_format($pagoDetalle->monto, 2, '.', ',') }} <br />
                                         @endforeach
                                     @else
+                                        @php $hasAbonoPrint = false; @endphp
                                         @foreach ($registrosBanco as $registro)
                                             @php
                                                 $contenedores = json_decode($registro->contenedores, true);
@@ -192,28 +235,23 @@
                                             @endphp
 
                                             @if ($contenedorEncontrado)
+                                                @php $hasAbonoPrint = true; @endphp
                                                 $ {{ number_format($contenedorEncontrado['abono'], 2, '.', ',') }}
                                                 <br />
                                             @endif
                                         @endforeach
 
-                                        {{ $item->Contenedor?->Cotizacion?->prove_monto1 }}
-                                        <br />
-                                        {{ $item->Contenedor?->Cotizacion?->prove_monto2 }}
-                                    @endif
-                                </td>
-                                <td style="border: 1px solid #000;">
-                                    @php
-                                        $fIni = $item->fecha_inicio ?? $item->fehca_inicio_guard;
-                                        $fFin = $item->fecha_fin ?? $item->fehca_fin_guard;
-                                    @endphp
-                                    @if($fIni)
-                                        {{ \Carbon\Carbon::parse($fIni)->format('d/m/Y') }}
-                                        @if($fFin && $fFin != $fIni)
-                                            <br />{{ \Carbon\Carbon::parse($fFin)->format('d/m/Y') }}
+                                        @if(!$hasAbonoPrint)
+                                            @if($cotiPadre?->prove_monto1)
+                                                $ {{ number_format($cotiPadre->prove_monto1, 2, '.', ',') }} <br />
+                                            @endif
+                                            @if($cotiPadre?->prove_monto2)
+                                                $ {{ number_format($cotiPadre->prove_monto2, 2, '.', ',') }}
+                                            @endif
+                                            @if(!$cotiPadre?->prove_monto1 && !$cotiPadre?->prove_monto2)
+                                                $ 0.00
+                                            @endif
                                         @endif
-                                    @else
-                                        -
                                     @endif
                                 </td>
                                 <td style="border: 1px solid #000;">
@@ -239,7 +277,7 @@
                                             @endif
                                         @endforeach
 
-                                        {{ $item->Contenedor?->Cotizacion?->fecha_pago_proveedor }}
+                                        {{ $cotiPadre?->fecha_pago_proveedor }}
                                     @endif
                                 </td>
 
@@ -263,7 +301,12 @@
                             <td style="border: 1px solid #000; background-color: #fb6340; color: #000; padding: 5px;">
                                 $ {{ number_format($subPagar2, 2, '.', ',') }}
                             </td>
-                            <td style="border: 1px solid #000;" colspan="4"></td>
+                            <td style="border: 1px solid #000;"></td>
+                            <td style="border: 1px solid #000;"></td>
+                            <td style="border: 1px solid #000; padding: 5px;">
+                                $ {{ number_format($subAbono, 2, '.', ',') }}
+                            </td>
+                            <td style="border: 1px solid #000;"></td>
                         </tr>
                     </tfoot>
                 </table>
@@ -281,6 +324,7 @@
                             <th style="border: 1px solid #000; padding: 6px; color: #ffffff;">Total Importe CT</th>
                             <th style="border: 1px solid #000; padding: 6px; background: yellow; color: #000;">Total A pagar 1 (Oficial)</th>
                             <th style="border: 1px solid #000; padding: 6px; background: #fb6340; color: #000;">Total A pagar 2 (No Oficial)</th>
+                            <th style="border: 1px solid #000; padding: 6px; color: #ffffff;">Total Abonos</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -290,6 +334,7 @@
                             <td style="border: 1px solid #000; padding: 8px;">$ {{ number_format($grandImporteCT, 2, '.', ',') }}</td>
                             <td style="border: 1px solid #000; padding: 8px; background-color: yellow; color: #000;">$ {{ number_format($grandPagar1, 2, '.', ',') }}</td>
                             <td style="border: 1px solid #000; padding: 8px; background-color: #fb6340; color: #000;">$ {{ number_format($grandPagar2, 2, '.', ',') }}</td>
+                            <td style="border: 1px solid #000; padding: 8px;">$ {{ number_format($grandAbono, 2, '.', ',') }}</td>
                         </tr>
                     </tbody>
                 </table>
