@@ -74,6 +74,10 @@
                                         </div>
                                     @endif
                                     <div class="form-group">
+                                        <label for="fecha_carga_diesel" class="form-control-label">Fecha y Hora Carga Diésel</label>
+                                        <input class="form-control" type="datetime-local" name="fecha_carga_diesel" id="fecha_carga_diesel" value="{{ old('fecha_carga_diesel', $bitacora->fecha_carga_diesel ? \Carbon\Carbon::parse($bitacora->fecha_carga_diesel)->format('Y-m-d\TH:i') : '') }}">
+                                    </div>
+                                    <div class="form-group">
                                         <label for="litros" class="form-control-label">Litros de Diésel</label>
                                         <input class="form-control" type="number" step="0.01" name="litros" id="litros" value="{{ old('litros', $bitacora->litros) }}">
                                     </div>
@@ -108,6 +112,10 @@
                                             </div>
                                         </div>
                                     @endif
+                                    <div class="form-group">
+                                        <label for="fecha_carga_urea" class="form-control-label">Fecha y Hora Carga Urea</label>
+                                        <input class="form-control" type="datetime-local" name="fecha_carga_urea" id="fecha_carga_urea" value="{{ old('fecha_carga_urea', $bitacora->fecha_carga_urea ? \Carbon\Carbon::parse($bitacora->fecha_carga_urea)->format('Y-m-d\TH:i') : '') }}">
+                                    </div>
                                     <div class="form-group">
                                         <label for="litros_urea" class="form-control-label">Litros de Urea</label>
                                         <input class="form-control" type="number" step="0.01" name="litros_urea" id="litros_urea" value="{{ old('litros_urea', $bitacora->litros_urea) }}">
@@ -167,6 +175,10 @@
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="form-group">
+                                        <label for="viaje_iniciado" class="form-control-label">Fecha y Hora Inicio Viaje (Carga Contenedor)</label>
+                                        <input class="form-control" type="datetime-local" name="viaje_iniciado" id="viaje_iniciado" value="{{ old('viaje_iniciado', $bitacora->viaje_iniciado ? \Carbon\Carbon::parse($bitacora->viaje_iniciado)->format('Y-m-d\TH:i') : '') }}">
+                                    </div>
+                                    <div class="form-group">
                                         <label for="latitud_carga" class="form-control-label">Latitud de Inicio</label>
                                         <input class="form-control" type="text" name="latitud_carga" id="latitud_carga" value="{{ old('latitud_carga', $bitacora->latitud_carga) }}">
                                     </div>
@@ -207,17 +219,93 @@
 
                         <!-- TAB 3: CONCLUSIÓN DE VIAJE -->
                         <div class="tab-pane fade" id="entrega" role="tabpanel" aria-labelledby="entrega-tab">
-                            <h6 class="text-uppercase text-body text-xs font-weight-bolder mb-3">Coordenadas y Evidencias de Conclusión de Viaje</h6>
                             <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="latitud_fin" class="form-control-label">Latitud de Fin</label>
-                                        <input class="form-control" type="text" name="latitud_fin" id="latitud_fin" value="{{ old('latitud_fin', $bitacora->latitud_fin) }}">
+                                <!-- SECCIÓN APERTURA DE CONTENEDOR -->
+                                <div class="col-md-6 border-end pe-md-4 mb-4 mb-md-0">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="icon icon-shape bg-gradient-warning text-white rounded-circle shadow me-2 text-center d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                                            <i class="fa fa-box-open text-xs"></i>
+                                        </div>
+                                        <h6 class="text-uppercase text-body text-xs font-weight-bolder mb-0">Apertura de Contenedor</h6>
                                     </div>
+                                    <p class="text-xs text-muted mb-3">Punto de control cuando el operador realiza la apertura del contenedor durante el viaje.</p>
+                                    
                                     <div class="form-group">
-                                        <label for="longitud_fin" class="form-control-label">Longitud de Fin</label>
-                                        <input class="form-control" type="text" name="longitud_fin" id="longitud_fin" value="{{ old('longitud_fin', $bitacora->longitud_fin) }}">
+                                        <label for="apertura_contenedor" class="form-control-label">Fecha y Hora de Apertura</label>
+                                        <input class="form-control" type="datetime-local" name="apertura_contenedor" id="apertura_contenedor" value="{{ old('apertura_contenedor', $bitacora->apertura_contenedor ? \Carbon\Carbon::parse($bitacora->apertura_contenedor)->format('Y-m-d\TH:i') : '') }}">
                                     </div>
+
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <div class="form-group">
+                                                <label for="latitud_apertura" class="form-control-label">Latitud Apertura</label>
+                                                <input class="form-control" type="text" name="latitud_apertura" id="latitud_apertura" value="{{ old('latitud_apertura', $bitacora->latitud_apertura) }}">
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="form-group">
+                                                <label for="longitud_apertura" class="form-control-label">Longitud Apertura</label>
+                                                <input class="form-control" type="text" name="longitud_apertura" id="longitud_apertura" value="{{ old('longitud_apertura', $bitacora->longitud_apertura) }}">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <button class="btn btn-sm btn-info text-white mb-3" type="button" onclick="abrirModalMapa('latitud_apertura', 'longitud_apertura')">
+                                        <i class="fa fa-map-marker-alt"></i> Seleccionar en Mapa / Google Maps URL
+                                    </button>
+
+                                    <div class="form-group mt-3">
+                                        <label class="form-control-label">Fotos / Evidencias de Apertura</label>
+                                        <input class="form-control" type="file" name="fotos_apertura_files[]" multiple accept="image/*">
+                                        @if($bitacora->fotos_apertura)
+                                            @php $aperturaImgs = json_decode($bitacora->fotos_apertura, true) ?: []; @endphp
+                                            <div class="mt-2 row">
+                                                @foreach($aperturaImgs as $img)
+                                                    <div class="col-4 text-center mb-2">
+                                                        <a href="{{ asset($img) }}" target="_blank">
+                                                            <img src="{{ asset($img) }}" alt="Foto Apertura" style="max-height: 80px;" class="img-thumbnail d-block mx-auto mb-1">
+                                                        </a>
+                                                        <div class="form-check d-inline-block">
+                                                            <input class="form-check-input" type="checkbox" name="eliminar_fotos_apertura[]" value="{{ $img }}" id="eliminar_apertura_{{ $loop->index }}">
+                                                            <label class="form-check-label text-xs" for="eliminar_apertura_{{ $loop->index }}">Eliminar</label>
+                                                        </div>
+                                                    </div>
+                                                @endforeach
+                                            </div>
+                                        @endif
+                                    </div>
+                                </div>
+
+                                <!-- SECCIÓN FIN / CONCLUSIÓN DE VIAJE -->
+                                <div class="col-md-6 ps-md-4">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="icon icon-shape bg-gradient-success text-white rounded-circle shadow me-2 text-center d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                                            <i class="fa fa-check-circle text-xs"></i>
+                                        </div>
+                                        <h6 class="text-uppercase text-body text-xs font-weight-bolder mb-0">Fin de Viaje / Entrega Contenedor</h6>
+                                    </div>
+                                    <p class="text-xs text-muted mb-3">Coordenadas y evidencias fotográficas cargadas al finalizar la entrega del contenedor.</p>
+
+                                    <div class="form-group">
+                                        <label for="viaje_finalizado" class="form-control-label">Fecha y Hora Fin de Viaje (Entrega Contenedor)</label>
+                                        <input class="form-control" type="datetime-local" name="viaje_finalizado" id="viaje_finalizado" value="{{ old('viaje_finalizado', $bitacora->viaje_finalizado ? \Carbon\Carbon::parse($bitacora->viaje_finalizado)->format('Y-m-d\TH:i') : '') }}">
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <div class="form-group">
+                                                <label for="latitud_fin" class="form-control-label">Latitud de Fin</label>
+                                                <input class="form-control" type="text" name="latitud_fin" id="latitud_fin" value="{{ old('latitud_fin', $bitacora->latitud_fin) }}">
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="form-group">
+                                                <label for="longitud_fin" class="form-control-label">Longitud de Fin</label>
+                                                <input class="form-control" type="text" name="longitud_fin" id="longitud_fin" value="{{ old('longitud_fin', $bitacora->longitud_fin) }}">
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     <button class="btn btn-sm btn-info text-white mb-3" type="button" onclick="abrirModalMapa('latitud_fin', 'longitud_fin')">
                                         <i class="fa fa-map-marker-alt"></i> Seleccionar en Mapa / Google Maps URL
                                     </button>
@@ -242,9 +330,6 @@
                                             </div>
                                         @endif
                                     </div>
-                                </div>
-                                <div class="col-md-6 text-center">
-                                    <p class="text-sm text-muted">Las evidencias fotográficas deben cargarse al finalizar la entrega del contenedor.</p>
                                 </div>
                             </div>
                         </div>

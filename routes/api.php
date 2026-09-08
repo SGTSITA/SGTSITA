@@ -57,5 +57,6 @@ Route::get('/dashboard/reportes/descargar', [App\Http\Controllers\ApiValidationC
 Route::get('/dashboard/bancos/{id}/reporte-descargar', [App\Http\Controllers\ApiValidationController::class, 'descargarReporteBancoMobile']);
 Route::post('/operador/coordenadas', [App\Http\Controllers\ApiValidationController::class, 'guardarCoordenadas']);
 Route::post('/operador/iniciar-viaje', [App\Http\Controllers\ApiValidationController::class, 'iniciarViaje']);
+Route::post('/operador/apertura-contenedor', [App\Http\Controllers\ApiValidationController::class, 'aperturaContenedor']);
 Route::post('/operador/finalizar-viaje', [App\Http\Controllers\ApiValidationController::class, 'finalizarViajeOperador']);
 Route::post('/operador/estatus-flujo', [App\Http\Controllers\ApiValidationController::class, 'obtenerEstatusFlujo']);

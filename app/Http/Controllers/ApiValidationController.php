@@ -200,6 +200,12 @@ class ApiValidationController extends Controller
         return $this->forwardResponse($res);
     }
 
+    public function aperturaContenedor(Request $request)
+    {
+        $res = $this->apiValidationService->aperturaContenedor($request->all());
+        return $this->forwardResponse($res);
+    }
+
     public function finalizarViajeOperador(Request $request)
     {
         $res = $this->apiValidationService->finalizarViajeOperador($request->all());

@@ -302,17 +302,24 @@ class AppMovilAdminController extends Controller
         $asignacion = Asignaciones::find($bitacora->id_asignacion);
         
         $request->validate([
-            'latitud'        => 'nullable|numeric',
-            'longitud'       => 'nullable|numeric',
-            'latitud_carga'  => 'nullable|numeric',
-            'longitud_carga' => 'nullable|numeric',
-            'latitud_fin'    => 'nullable|numeric',
-            'longitud_fin'   => 'nullable|numeric',
-            'litros'         => 'nullable|numeric',
-            'costo'          => 'nullable|numeric',
-            'litros_urea'    => 'nullable|numeric',
-            'costo_urea'     => 'nullable|numeric',
-            'odometro'       => 'nullable|numeric',
+            'latitud'             => 'nullable|numeric',
+            'longitud'            => 'nullable|numeric',
+            'fecha_carga_diesel'  => 'nullable|date',
+            'fecha_carga_urea'    => 'nullable|date',
+            'viaje_iniciado'      => 'nullable|date',
+            'latitud_carga'       => 'nullable|numeric',
+            'longitud_carga'      => 'nullable|numeric',
+            'latitud_apertura'    => 'nullable|numeric',
+            'longitud_apertura'   => 'nullable|numeric',
+            'apertura_contenedor' => 'nullable|date',
+            'viaje_finalizado'    => 'nullable|date',
+            'latitud_fin'         => 'nullable|numeric',
+            'longitud_fin'        => 'nullable|numeric',
+            'litros'              => 'nullable|numeric',
+            'costo'               => 'nullable|numeric',
+            'litros_urea'         => 'nullable|numeric',
+            'costo_urea'          => 'nullable|numeric',
+            'odometro'            => 'nullable|numeric',
         ]);
 
         $idAsignacion = $bitacora->id_asignacion;
@@ -349,6 +356,19 @@ class AppMovilAdminController extends Controller
                 coordenadashistorial::create([
                     'latitud' => $request->latitud_carga,
                     'longitud' => $request->longitud_carga,
+                    'registrado_en' => Carbon::now(),
+                    'ubicacionable_id' => $asignacion->id_camion,
+                    'ubicacionable_type' => 'App\Models\Equipo',
+                    'tipo' => 'OperadorMovil'
+                ]);
+            }
+        }
+
+        if ($request->filled('latitud_apertura') && $request->filled('longitud_apertura')) {
+            if ($bitacora->latitud_apertura != $request->latitud_apertura || $bitacora->longitud_apertura != $request->longitud_apertura) {
+                coordenadashistorial::create([
+                    'latitud' => $request->latitud_apertura,
+                    'longitud' => $request->longitud_apertura,
                     'registrado_en' => Carbon::now(),
                     'ubicacionable_id' => $asignacion->id_camion,
                     'ubicacionable_type' => 'App\Models\Equipo',
@@ -403,6 +423,26 @@ class AppMovilAdminController extends Controller
         if ($request->filled('eliminar_fotos_carga')) {
             $eliminar = $request->input('eliminar_fotos_carga');
             $fotosCarga = array_values(array_filter($fotosCarga, function($f) use ($eliminar) {
+                return !in_array($f, $eliminar);
+            }));
+        }
+
+        // Reemplazar / Agregar Fotos de Apertura
+        $fotosApertura = json_decode($bitacora->fotos_apertura, true) ?: [];
+        if ($request->hasFile('fotos_apertura_files')) {
+            $pathApertura = public_path('/uploads/apertura_contenedor/' . $idAsignacion);
+            if (!file_exists($pathApertura)) {
+                mkdir($pathApertura, 0777, true);
+            }
+            foreach ($request->file('fotos_apertura_files') as $file) {
+                $fileSuffix = uniqid() . '_apertura_admin.jpg';
+                $file->move($pathApertura, $fileSuffix);
+                $fotosApertura[] = 'uploads/apertura_contenedor/' . $idAsignacion . '/' . $fileSuffix;
+            }
+        }
+        if ($request->filled('eliminar_fotos_apertura')) {
+            $eliminar = $request->input('eliminar_fotos_apertura');
+            $fotosApertura = array_values(array_filter($fotosApertura, function($f) use ($eliminar) {
                 return !in_array($f, $eliminar);
             }));
         }
@@ -513,21 +553,29 @@ class AppMovilAdminController extends Controller
 
         // Actualizar Bitácora
         $bitacora->update([
-            'latitud'      => $request->latitud,
-            'longitud'     => $request->longitud,
-            'latitud_carga' => $request->latitud_carga,
-            'longitud_carga' => $request->longitud_carga,
-            'latitud_fin'  => $request->latitud_fin,
-            'longitud_fin' => $request->longitud_fin,
-            'litros'       => $request->litros,
-            'costo'        => $request->costo,
-            'litros_urea'  => $request->litros_urea,
-            'costo_urea'   => $request->costo_urea,
-            'odometro'     => $request->odometro,
-            'comprobante'  => $fileName,
-            'comprobante_urea' => $ureaFileName,
-            'fotos_carga'  => json_encode($fotosCarga),
-            'fotos_fin'    => json_encode($fotosFin),
+            'latitud'             => $request->latitud,
+            'longitud'            => $request->longitud,
+            'fecha_carga_diesel'  => $request->filled('fecha_carga_diesel') ? $request->fecha_carga_diesel : null,
+            'fecha_carga_urea'    => $request->filled('fecha_carga_urea') ? $request->fecha_carga_urea : null,
+            'viaje_iniciado'      => $request->filled('viaje_iniciado') ? $request->viaje_iniciado : null,
+            'latitud_carga'       => $request->latitud_carga,
+            'longitud_carga'      => $request->longitud_carga,
+            'apertura_contenedor' => $request->filled('apertura_contenedor') ? $request->apertura_contenedor : null,
+            'latitud_apertura'    => $request->latitud_apertura,
+            'longitud_apertura'   => $request->longitud_apertura,
+            'viaje_finalizado'    => $request->filled('viaje_finalizado') ? $request->viaje_finalizado : null,
+            'latitud_fin'         => $request->latitud_fin,
+            'longitud_fin'        => $request->longitud_fin,
+            'litros'              => $request->litros,
+            'costo'               => $request->costo,
+            'litros_urea'         => $request->litros_urea,
+            'costo_urea'          => $request->costo_urea,
+            'odometro'            => $request->odometro,
+            'comprobante'         => $fileName,
+            'comprobante_urea'    => $ureaFileName,
+            'fotos_carga'         => json_encode($fotosCarga),
+            'fotos_apertura'      => json_encode($fotosApertura),
+            'fotos_fin'           => json_encode($fotosFin),
         ]);
 
         Session::flash('edit', 'La bitácora de viaje se ha actualizado con éxito.');
