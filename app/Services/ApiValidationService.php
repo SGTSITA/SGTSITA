@@ -67,6 +67,10 @@ class ApiValidationService
                         $q->where('estatus', 1)
                           ->orWhere('estatus_viaje', 'Aceptado');
                     })
+                    ->where(function($q) {
+                        $q->whereNull('estatus_viaje')
+                          ->orWhere('estatus_viaje', '!=', 'Finalizado');
+                    })
                     ->orderBy('id', 'desc')
                     ->first();
 
@@ -1210,6 +1214,80 @@ class ApiValidationService
         return ['success' => true, 'message' => 'Viaje iniciado y fotos guardadas correctamente.', 'data' => [], 'status' => 200];
     }
 
+    public function aperturaContenedor(array $data)
+    {
+        $idAsignacion = $data['id_asignacion'];
+        $asignacion = Asignaciones::find($idAsignacion);
+
+        if (!$asignacion) {
+            return ['success' => false, 'message' => 'Asignación no encontrada.', 'data' => [], 'status' => 404];
+        }
+
+        if (isset($data['latitud']) && isset($data['longitud'])) {
+            coordenadashistorial::create([
+                'latitud' => $data['latitud'],
+                'longitud' => $data['longitud'],
+                'registrado_en' => Carbon::now(),
+                'ubicacionable_id' => $asignacion->id_camion,
+                'ubicacionable_type' => 'App\Models\Equipo',
+                'tipo' => 'OperadorMovil'
+            ]);
+        }
+
+        $savedFilePaths = [];
+        $rawFotos = $data['fotos_base64'] ?? [];
+        if (is_string($rawFotos)) {
+            $decoded = json_decode($rawFotos, true);
+            if (is_array($decoded)) {
+                $rawFotos = $decoded;
+            } else {
+                $rawFotos = [$rawFotos];
+            }
+        }
+
+        if (is_array($rawFotos) && !empty($rawFotos)) {
+            $path = public_path('/uploads/apertura_contenedor/' . $idAsignacion);
+            try {
+                if (!file_exists($path)) {
+                    @mkdir($path, 0777, true);
+                }
+            } catch (\Throwable $e) {
+                Log::warning("No se pudo crear carpeta {$path}: " . $e->getMessage());
+            }
+
+            foreach ($rawFotos as $index => $base64Str) {
+                if (empty($base64Str)) continue;
+                try {
+                    $cleanBase64 = $base64Str;
+                    if (preg_match('/^data:image\/(\w+);base64,/', $cleanBase64, $type)) {
+                        $cleanBase64 = substr($cleanBase64, strpos($cleanBase64, ',') + 1);
+                    }
+                    $fileName = uniqid() . '_apertura_' . ($index + 1) . '.jpg';
+                    if (file_exists($path) || @mkdir($path, 0777, true)) {
+                        file_put_contents($path . '/' . $fileName, base64_decode($cleanBase64));
+                        $relativeUrl = 'uploads/apertura_contenedor/' . $idAsignacion . '/' . $fileName;
+                        $savedFilePaths[] = $relativeUrl;
+                    }
+                } catch (\Throwable $e) {
+                    Log::error("Error guardando foto apertura: " . $e->getMessage());
+                }
+            }
+        }
+
+        $flowRecord = BitacoraViajeOperador::firstOrCreate([
+            'id_asignacion' => $idAsignacion
+        ]);
+        $flowRecord->update([
+            'id_operador' => $asignacion->id_operador,
+            'apertura_contenedor' => Carbon::now(),
+            'fotos_apertura' => json_encode($savedFilePaths),
+            'latitud_apertura' => $data['latitud'] ?? null,
+            'longitud_apertura' => $data['longitud'] ?? null,
+        ]);
+
+        return ['success' => true, 'message' => 'Apertura de contenedor registrada correctamente.', 'data' => [], 'status' => 200];
+    }
+
     public function finalizarViajeOperador(array $data)
     {
         $idAsignacion = $data['id_asignacion'];
@@ -1281,7 +1359,10 @@ class ApiValidationService
             'longitud_fin' => $data['longitud'] ?? null,
         ]);
 
-        return ['success' => true, 'message' => 'Viaje finalizado correctamente.', 'data' => [], 'status' => 200];
+        $asignacion->estatus_viaje = 'Finalizado';
+        $asignacion->save();
+
+     return ['success' => true, 'message' => 'Viaje finalizado correctamente.', 'data' => [], 'status' => 200];
     }
 
     public function obtenerEstatusFlujo($idAsignacion)
@@ -1294,6 +1375,7 @@ class ApiValidationService
 
         $dieselRegistrado = $flowRecord && $flowRecord->comprobante !== null;
         $viajeIniciado = $flowRecord && $flowRecord->viaje_iniciado !== null;
+        $aperturaRegistrada = $flowRecord && $flowRecord->apertura_contenedor !== null;
         $viajeFinalizado = $flowRecord && $flowRecord->viaje_finalizado !== null;
 
         $fotos = [];
@@ -1302,6 +1384,16 @@ class ApiValidationService
             if (is_array($decoded)) {
                 foreach ($decoded as $path) {
                     $fotos[] = asset($path);
+                }
+            }
+        }
+
+        $fotosApertura = [];
+        if ($flowRecord && $flowRecord->fotos_apertura) {
+            $decodedApertura = json_decode($flowRecord->fotos_apertura, true);
+            if (is_array($decodedApertura)) {
+                foreach ($decodedApertura as $path) {
+                    $fotosApertura[] = asset($path);
                 }
             }
         }
@@ -1416,6 +1508,9 @@ class ApiValidationService
                 ] : null,
                 'viaje_iniciado' => $viajeIniciado,
                 'fotos' => $fotos,
+                'apertura_registrada' => $aperturaRegistrada,
+                'fotos_apertura' => $fotosApertura,
+                'fecha_apertura' => ($flowRecord && $flowRecord->apertura_contenedor) ? $flowRecord->apertura_contenedor->toDateTimeString() : null,
                 'viaje_finalizado' => $viajeFinalizado,
                 'fotos_fin' => $fotosFin,
                 'id_cotizacion' => $asignacion->Contenedor->id_cotizacion ?? null,
