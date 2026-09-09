@@ -34,22 +34,42 @@ class CotizacionesService
                         // 1. Start trip / loading photos
                         if (!empty($bitacora->fotos_carga)) {
                             $decodedCarga = json_decode($bitacora->fotos_carga, true);
-                            if (is_array($decodedCarga)) {
-                                foreach ($decodedCarga as $path) {
-                                    if (!empty($path) && !isset($uniquePaths[$path])) {
-                                        $uniquePaths[$path] = 'Evidencia de Carga';
-                                    }
+                            if (is_string($decodedCarga)) {
+                                $decodedCarga = [$decodedCarga];
+                            } elseif (!is_array($decodedCarga)) {
+                                $decodedCarga = [$bitacora->fotos_carga];
+                            }
+                            foreach ($decodedCarga as $path) {
+                                if (is_string($path) && !empty(trim($path)) && !isset($uniquePaths[$path])) {
+                                    $uniquePaths[$path] = 'Evidencia de Carga';
                                 }
                             }
                         }
-                        // 2. End trip / delivery photos
+                        // 2. Container opening photos
+                        if (!empty($bitacora->fotos_apertura)) {
+                            $decodedApertura = json_decode($bitacora->fotos_apertura, true);
+                            if (is_string($decodedApertura)) {
+                                $decodedApertura = [$decodedApertura];
+                            } elseif (!is_array($decodedApertura)) {
+                                $decodedApertura = [$bitacora->fotos_apertura];
+                            }
+                            foreach ($decodedApertura as $path) {
+                                if (is_string($path) && !empty(trim($path)) && !isset($uniquePaths[$path])) {
+                                    $uniquePaths[$path] = 'Apertura de Contenedor';
+                                }
+                            }
+                        }
+                        // 3. End trip / delivery photos
                         if (!empty($bitacora->fotos_fin)) {
                             $decodedFin = json_decode($bitacora->fotos_fin, true);
-                            if (is_array($decodedFin)) {
-                                foreach ($decodedFin as $path) {
-                                    if (!empty($path) && !isset($uniquePaths[$path])) {
-                                        $uniquePaths[$path] = 'Conclusión de Viaje';
-                                    }
+                            if (is_string($decodedFin)) {
+                                $decodedFin = [$decodedFin];
+                            } elseif (!is_array($decodedFin)) {
+                                $decodedFin = [$bitacora->fotos_fin];
+                            }
+                            foreach ($decodedFin as $path) {
+                                if (is_string($path) && !empty(trim($path)) && !isset($uniquePaths[$path])) {
+                                    $uniquePaths[$path] = 'Conclusión de Viaje';
                                 }
                             }
                         }

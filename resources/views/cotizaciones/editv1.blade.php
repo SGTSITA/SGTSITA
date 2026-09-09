@@ -2091,6 +2091,63 @@
                                                                                         </div>
                                                                                     @endif
 
+                                                                                    <!-- 3.5. Apertura de Contenedor -->
+                                                                                    @if ($bitacora->apertura_contenedor || $bitacora->fotos_apertura)
+                                                                                        <div class="col-md-6 col-12">
+                                                                                            <div
+                                                                                                class="p-2 border rounded bg-light">
+                                                                                                <div
+                                                                                                    class="d-flex justify-content-between align-items-center mb-1">
+                                                                                                    <span
+                                                                                                        class="badge bg-gradient-info">Apertura
+                                                                                                        Contenedor</span>
+                                                                                                    <small
+                                                                                                        class="text-muted"><i
+                                                                                                            class="far fa-clock"></i>
+                                                                                                        {{ $bitacora->apertura_contenedor ? \Carbon\Carbon::parse($bitacora->apertura_contenedor)->format('d/m/Y H:i') : 'S/N' }}</small>
+                                                                                                </div>
+                                                                                                <span
+                                                                                                    class="small text-dark d-block">Estado:
+                                                                                                    <strong>Apertura
+                                                                                                        Registrada</strong></span>
+                                                                                                @if ($bitacora->fotos_apertura)
+                                                                                                    @php
+                                                                                                        $fotosApertura = json_decode(
+                                                                                                            $bitacora->fotos_apertura,
+                                                                                                            true,
+                                                                                                        );
+                                                                                                        if (
+                                                                                                            json_last_error() !==
+                                                                                                                JSON_ERROR_NONE ||
+                                                                                                            !is_array(
+                                                                                                                $fotosApertura,
+                                                                                                            )
+                                                                                                        ) {
+                                                                                                            $fotosApertura = $bitacora->fotos_apertura
+                                                                                                                ? [
+                                                                                                                    $bitacora->fotos_apertura,
+                                                                                                                ]
+                                                                                                                : [];
+                                                                                                        }
+                                                                                                    @endphp
+                                                                                                    <div
+                                                                                                        class="d-flex flex-wrap gap-1 mt-1 align-items-center">
+                                                                                                        @foreach ($fotosApertura as $idx => $file)
+                                                                                                            <a href="{{ asset($file) }}"
+                                                                                                                target="_blank"
+                                                                                                                class="d-inline-flex align-items-center me-2">
+                                                                                                                <img src="{{ asset($file) }}"
+                                                                                                                    alt="Foto Apertura {{ $idx + 1 }}"
+                                                                                                                    class="rounded border shadow-sm"
+                                                                                                                    style="height: 35px; width: 60px; object-fit: cover;">
+                                                                                                            </a>
+                                                                                                        @endforeach
+                                                                                                    </div>
+                                                                                                @endif
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    @endif
+
                                                                                     <!-- 4. Concluir Viaje -->
                                                                                     @if ($bitacora->viaje_finalizado || $bitacora->fotos_fin)
                                                                                         <div class="col-md-6 col-12">
