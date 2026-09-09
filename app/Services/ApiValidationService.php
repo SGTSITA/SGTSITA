@@ -1373,7 +1373,12 @@ class ApiValidationService
 
         $flowRecord = BitacoraViajeOperador::where('id_asignacion', $idAsignacion)->first();
 
-        $dieselRegistrado = $flowRecord && $flowRecord->comprobante !== null;
+        $dieselRegistrado = $flowRecord && (
+            $flowRecord->fecha_carga_diesel !== null ||
+            (!empty($flowRecord->comprobante) && $flowRecord->comprobante !== '[]') ||
+            ((float) $flowRecord->litros > 0) ||
+            ((float) $flowRecord->costo > 0)
+        );
         $viajeIniciado = $flowRecord && $flowRecord->viaje_iniciado !== null;
         $aperturaRegistrada = $flowRecord && $flowRecord->apertura_contenedor !== null;
         $viajeFinalizado = $flowRecord && $flowRecord->viaje_finalizado !== null;
