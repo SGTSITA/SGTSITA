@@ -34,7 +34,8 @@ class Equipo extends Model
         'user_id',
         'gps_company_id',
         'usar_config_global',
-        'credenciales_gps'
+        'credenciales_gps',
+        'carga_diesel_al_final'
     ];
 
     public function gps()

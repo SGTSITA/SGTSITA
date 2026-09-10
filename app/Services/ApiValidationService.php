@@ -1125,6 +1125,18 @@ class ApiValidationService
             $cotizacion->update();
         }
 
+        // Si el equipo carga diésel al final y el viaje ya se había marcado como concluido en bitácora, finalizar la asignación
+        $camion = $asignacion->Camion ?? ($asignacion->id_camion ? Equipo::find($asignacion->id_camion) : null);
+        if ($camion && $camion->carga_diesel_al_final) {
+            $viajeFinalizadoEnBitacora = ($flowRecord->viaje_finalizado !== null && $flowRecord->viaje_finalizado !== '' && $flowRecord->viaje_finalizado !== '0000-00-00 00:00:00')
+                || !empty(self::parsePhotoUrls($flowRecord->fotos_fin));
+
+            if ($viajeFinalizadoEnBitacora) {
+                $asignacion->estatus_viaje = 'Finalizado';
+                $asignacion->save();
+            }
+        }
+
         return ['success' => true, 'message' => 'Coordenadas y registro de diésel guardados con éxito.', 'data' => [], 'status' => 200];
     }
 
@@ -1359,10 +1371,27 @@ class ApiValidationService
             'longitud_fin' => $data['longitud'] ?? null,
         ]);
 
-        $asignacion->estatus_viaje = 'Finalizado';
-        $asignacion->save();
+        $camion = $asignacion->Camion ?? ($asignacion->id_camion ? Equipo::find($asignacion->id_camion) : null);
+        $cargaDieselAlFinal = $camion ? (bool)$camion->carga_diesel_al_final : false;
 
-     return ['success' => true, 'message' => 'Viaje finalizado correctamente.', 'data' => [], 'status' => 200];
+        if ($cargaDieselAlFinal) {
+            $dieselRegistrado = (
+                ($flowRecord->fecha_carga_diesel !== null && $flowRecord->fecha_carga_diesel !== '' && $flowRecord->fecha_carga_diesel !== '0000-00-00 00:00:00') ||
+                (!empty($flowRecord->comprobante) && $flowRecord->comprobante !== '[]' && $flowRecord->comprobante !== '""' && $flowRecord->comprobante !== 'null') ||
+                ((float) $flowRecord->litros > 0) ||
+                ((float) $flowRecord->costo > 0)
+            );
+
+            if ($dieselRegistrado) {
+                $asignacion->estatus_viaje = 'Finalizado';
+                $asignacion->save();
+            }
+        } else {
+            $asignacion->estatus_viaje = 'Finalizado';
+            $asignacion->save();
+        }
+
+        return ['success' => true, 'message' => 'Viaje finalizado correctamente.', 'data' => [], 'status' => 200];
     }
 
     public function obtenerEstatusFlujo($idAsignacion)

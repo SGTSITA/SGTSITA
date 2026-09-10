@@ -66,6 +66,7 @@ class EquiposController extends Controller
             $proveedor->modelo = $request->get('modelo');
             $proveedor->acceso = $request->get('acceso');
             $proveedor->fecha = $request->get('fecha');
+            $proveedor->carga_diesel_al_final = $request->input('carga_diesel_al_final', 0);
             $proveedor->activo = true;
 
             if ($request->hasFile("tarjeta_circulacion")) {
@@ -165,7 +166,7 @@ class EquiposController extends Controller
         if ($request->tipo === 'Tractos / Camiones') {
             $data = $request->only([
                 'id_equipo', 'fecha', 'year', 'marca', 'modelo', 'placas',
-                'num_serie', 'motor', 'acceso'
+                'num_serie', 'motor', 'acceso', 'carga_diesel_al_final'
             ]);
         } elseif ($request->tipo === 'Chasis / Plataforma') {
             $data = $request->only([
