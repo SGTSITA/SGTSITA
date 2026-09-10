@@ -294,6 +294,63 @@
         });
 
         $(document).ready(function () {
+            // Advertencia al enviar cambio de empresa en buscador si ya está planeada
+            $(document).on("submit", ".form-cambio-empresa-modal", function(e) {
+                var form = this;
+                var planeado = $(form).data("planeado");
+                if (planeado == '1') {
+                    e.preventDefault();
+                    Swal.fire({
+                        title: '¿Confirmar cambio?',
+                        text: 'Esta cotización ya cuenta con planeación. Al cambiar de empresa o proveedor, la planeación se deshará (se eliminarán operadores, chasis, camiones, etc. de las asignaciones) y se registrará este movimiento en la auditoría para aclaraciones. ¿Desea continuar?',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: 'Sí, continuar y deshacer planeación',
+                        cancelButtonText: 'Cancelar',
+                        customClass: {
+                            confirmButton: 'btn btn-danger me-2',
+                            cancelButton: 'btn btn-secondary'
+                        },
+                        buttonsStyling: false
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            $(form).data("planeado", "0"); // Reset flag to bypass interceptor next time
+                            form.submit();
+                        }
+                    });
+                    return false;
+                }
+            });
+
+            // Cargar proveedores al cambiar empresa en los modals de busqueda
+            $(document).on("change", ".select-empresa-modal", function() {
+                var cotizacionId = $(this).data("cotizacion-id");
+                var proveedor = $(this).val();
+                var _token = $('meta[name="csrf-token"]').attr("content");
+                var selectProveedor = $('#id_proveedor_' + cotizacionId);
+
+                if (!proveedor) {
+                    selectProveedor.html('<option value="">Ninguno</option>');
+                    return;
+                }
+
+                $.ajax({
+                    type: "post",
+                    url: "/mec/transportistas/list",
+                    data: { proveedor: proveedor, _token: _token },
+                    success: function(response) {
+                        selectProveedor.empty();
+                        selectProveedor.append(new Option("Ninguno", ""));
+                        response.forEach(function(opcion) {
+                            selectProveedor.append(new Option(opcion.nombre, opcion.id));
+                        });
+                    },
+                    error: function() {
+                        selectProveedor.html('<option value="">Ninguno</option>');
+                    }
+                });
+            });
+
             $('[id^="btn_clientes_search"]').click(function () {
                 var cotizacionId = $(this).data('cotizacion-id'); // Obtener el ID de la cotización del atributo data
                 buscar_clientes(cotizacionId);

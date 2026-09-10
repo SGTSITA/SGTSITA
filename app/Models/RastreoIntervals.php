@@ -7,6 +7,6 @@ class RastreoIntervals extends Model
 {
 
     protected $table = 'rastreo_intervals';
-    protected $fillable = ['task_name', 'interval'];
+    protected $fillable = ['task_name', 'interval', 'alerta_distancia', 'metros_alerta'];
     
 }

@@ -269,7 +269,17 @@ class EquiposController extends Controller
     ])
          ->get();
 
-        $equipos = $equipos->map(function ($e) {
+        $duplicatedImeis = Equipo::where('activo', true)
+            ->whereNotNull('imei')
+            ->where('imei', '!=', '')
+            ->select('imei')
+            ->groupBy('imei')
+            ->havingRaw('count(*) > 1')
+            ->pluck('imei')
+            ->toArray();
+
+        $equipos = $equipos->map(function ($e) use ($duplicatedImeis) {
+            $e->is_duplicated_imei = !empty($e->imei) && in_array($e->imei, $duplicatedImeis);
 
             if ($e->credenciales_gps) {
                 try {
@@ -297,6 +307,19 @@ class EquiposController extends Controller
     public function updateMep(Request $request)
     {
         $mesagep = 'Equipo Actualizado con exito';
+
+        if (!empty($request->imei)) {
+            $query = Equipo::where('imei', $request->imei)->where('activo', true);
+            if ($request->equipo_id) {
+                $query->where('id', '!=', $request->equipo_id);
+            }
+            if ($query->exists()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El IMEI ya se encuentra registrado en otro equipo activo.'
+                ], 422);
+            }
+        }
 
         if ($request->equipo_id) {
 
