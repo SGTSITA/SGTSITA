@@ -1374,44 +1374,23 @@ class ApiValidationService
         $flowRecord = BitacoraViajeOperador::where('id_asignacion', $idAsignacion)->first();
 
         $dieselRegistrado = $flowRecord && (
-            $flowRecord->fecha_carga_diesel !== null ||
-            (!empty($flowRecord->comprobante) && $flowRecord->comprobante !== '[]') ||
+            ($flowRecord->fecha_carga_diesel !== null && $flowRecord->fecha_carga_diesel !== '' && $flowRecord->fecha_carga_diesel !== '0000-00-00 00:00:00') ||
+            (!empty($flowRecord->comprobante) && $flowRecord->comprobante !== '[]' && $flowRecord->comprobante !== '""' && $flowRecord->comprobante !== 'null') ||
             ((float) $flowRecord->litros > 0) ||
             ((float) $flowRecord->costo > 0)
         );
-        $viajeIniciado = $flowRecord && $flowRecord->viaje_iniciado !== null;
-        $aperturaRegistrada = $flowRecord && $flowRecord->apertura_contenedor !== null;
-        $viajeFinalizado = $flowRecord && $flowRecord->viaje_finalizado !== null;
 
-        $fotos = [];
-        if ($flowRecord && $flowRecord->fotos_carga) {
-            $decoded = json_decode($flowRecord->fotos_carga, true);
-            if (is_array($decoded)) {
-                foreach ($decoded as $path) {
-                    $fotos[] = asset($path);
-                }
-            }
-        }
+        $fotos = self::parsePhotoUrls($flowRecord ? $flowRecord->fotos_carga : null);
+        $fotosApertura = self::parsePhotoUrls($flowRecord ? $flowRecord->fotos_apertura : null);
+        $fotosFin = self::parsePhotoUrls($flowRecord ? $flowRecord->fotos_fin : null);
 
-        $fotosApertura = [];
-        if ($flowRecord && $flowRecord->fotos_apertura) {
-            $decodedApertura = json_decode($flowRecord->fotos_apertura, true);
-            if (is_array($decodedApertura)) {
-                foreach ($decodedApertura as $path) {
-                    $fotosApertura[] = asset($path);
-                }
-            }
-        }
+        $viajeIniciado = $flowRecord && (
+            ($flowRecord->viaje_iniciado !== null && $flowRecord->viaje_iniciado !== '' && $flowRecord->viaje_iniciado !== '0000-00-00 00:00:00') ||
+            !empty($fotos)
+        );
 
-        $fotosFin = [];
-        if ($flowRecord && $flowRecord->fotos_fin) {
-            $decodedFin = json_decode($flowRecord->fotos_fin, true);
-            if (is_array($decodedFin)) {
-                foreach ($decodedFin as $path) {
-                    $fotosFin[] = asset($path);
-                }
-            }
-        }
+        $aperturaRegistrada = ($flowRecord && ($flowRecord->apertura_contenedor !== null || !empty($fotosApertura)));
+        $viajeFinalizado = ($flowRecord && ($flowRecord->viaje_finalizado !== null || !empty($fotosFin)));
 
         $documentos = [];
         $asignacion = Asignaciones::with('Contenedor')->find($idAsignacion);
@@ -1664,6 +1643,49 @@ class ApiValidationService
         }
 
         return asset($value);
+    }
+
+    private static function parsePhotoUrls($value)
+    {
+        if (empty($value)) {
+            return [];
+        }
+
+        $paths = [];
+        if (is_array($value)) {
+            $paths = $value;
+        } elseif (is_string($value)) {
+            $value = trim($value);
+            if ((str_starts_with($value, '[') && str_ends_with($value, ']')) || (str_starts_with($value, '{') && str_ends_with($value, '}'))) {
+                $decoded = json_decode($value, true);
+                if (is_array($decoded)) {
+                    $paths = $decoded;
+                } else {
+                    $paths = [$value];
+                }
+            } elseif (str_contains($value, ',')) {
+                $paths = array_map('trim', explode(',', $value));
+            } else {
+                $paths = [$value];
+            }
+        }
+
+        $urls = [];
+        foreach ($paths as $p) {
+            if (empty($p)) continue;
+            $pStr = trim((string)$p);
+            $pStr = trim($pStr, "\" '[]");
+            if (empty($pStr)) continue;
+
+            if (str_starts_with($pStr, 'http://') || str_starts_with($pStr, 'https://')) {
+                $urls[] = $pStr;
+            } else {
+                $cleanPath = ltrim($pStr, '/');
+                $urls[] = asset($cleanPath);
+            }
+        }
+
+        return array_values(array_unique($urls));
     }
 
     private function actualizarKmRecorridosPorOdometro(Asignaciones $asignacion, float $odometroActual)
