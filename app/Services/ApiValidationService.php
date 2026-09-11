@@ -1327,8 +1327,18 @@ class ApiValidationService
             if (is_array($decoded)) {
                 $rawFotos = $decoded;
             } else {
-                $rawFotos = [$rawFotos];
+                $rawFotos = !empty($rawFotos) ? [$rawFotos] : [];
             }
+        }
+
+        $validFotosFin = is_array($rawFotos) ? array_filter($rawFotos, fn($f) => !empty($f)) : [];
+        if (empty($validFotosFin)) {
+            return [
+                'success' => false,
+                'message' => 'Debes adjuntar al menos una fotografía de evidencia para concluir el viaje.',
+                'data' => [],
+                'status' => 400
+            ];
         }
 
         if (is_array($rawFotos) && !empty($rawFotos)) {
