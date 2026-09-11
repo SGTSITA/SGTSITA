@@ -1664,24 +1664,32 @@ class ApiValidationService
             return null;
         }
 
+        $formatSingle = function($path) {
+            $p = trim((string)$path, "\" '[]");
+            if (empty($p)) return null;
+            if (str_starts_with($p, 'http://') || str_starts_with($p, 'https://')) {
+                return $p;
+            }
+            return asset(ltrim($p, '/'));
+        };
+
         // Check if JSON array
         if (str_starts_with($value, '[') && str_ends_with($value, ']')) {
             $decoded = json_decode($value, true);
             if (is_array($decoded)) {
-                return implode(',', array_map(function($path) {
-                    return asset($path);
-                }, $decoded));
+                $formatted = array_filter(array_map($formatSingle, $decoded));
+                return implode(',', $formatted);
             }
         }
 
         // Check if comma separated
         if (str_contains($value, ',')) {
-            return implode(',', array_map(function($path) {
-                return asset(trim($path));
-            }, explode(',', $value)));
+            $parts = explode(',', $value);
+            $formatted = array_filter(array_map($formatSingle, $parts));
+            return implode(',', $formatted);
         }
 
-        return asset($value);
+        return $formatSingle($value);
     }
 
     private static function parsePhotoUrls($value)
