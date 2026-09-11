@@ -1519,7 +1519,7 @@ class ApiValidationService
                 'diesel_registrado' => $dieselRegistrado,
                 'diesel_datos' => $dieselRegistrado ? [
                     'costo' => $flowRecord->costo,
-                    'fecha' => $flowRecord->created_at ? $flowRecord->created_at->toDateString() : Carbon::now()->toDateString(),
+                    'fecha' => ($flowRecord && $flowRecord->created_at) ? (is_string($flowRecord->created_at) ? $flowRecord->created_at : $flowRecord->created_at->toDateString()) : Carbon::now()->toDateString(),
                     'comprobante' => self::formatAssetUrls($flowRecord->comprobante),
                     'litros' => $flowRecord->litros,
                     'odometro' => $flowRecord->odometro,
@@ -1533,7 +1533,7 @@ class ApiValidationService
                 'fotos' => $fotos,
                 'apertura_registrada' => $aperturaRegistrada,
                 'fotos_apertura' => $fotosApertura,
-                'fecha_apertura' => ($flowRecord && $flowRecord->apertura_contenedor) ? $flowRecord->apertura_contenedor->toDateTimeString() : null,
+                'fecha_apertura' => ($flowRecord && $flowRecord->apertura_contenedor) ? (is_string($flowRecord->apertura_contenedor) ? $flowRecord->apertura_contenedor : $flowRecord->apertura_contenedor->toDateTimeString()) : null,
                 'viaje_finalizado' => $viajeFinalizado,
                 'fotos_fin' => $fotosFin,
                 'id_cotizacion' => $asignacion->Contenedor->id_cotizacion ?? null,
