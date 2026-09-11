@@ -1,8 +1,8 @@
 ---
 title: UI checks grid
 categories:
-  - Controls
+    - Controls
 tags:
-  - checkbox
-  - form
+    - checkbox
+    - form
 ---

@@ -1,9 +1,9 @@
 ---
 title: Emoji angry fill
 categories:
-  - Emoji
+    - Emoji
 tags:
-  - emoticon
-  - anger
-  - upset
+    - emoticon
+    - anger
+    - upset
 ---

@@ -1,11 +1,11 @@
 ---
 title: Diagram 3
 categories:
-  - Graphics
+    - Graphics
 tags:
-  - node
-  - diagram
-  - sitemap
-  - children
-  - "org chart"
+    - node
+    - diagram
+    - sitemap
+    - children
+    - 'org chart'
 ---

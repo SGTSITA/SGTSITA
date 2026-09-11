@@ -1,8 +1,8 @@
 ---
 title: Currency exchange
 categories:
-  - Commerce
+    - Commerce
 tags:
-  - money
-  - finance
+    - money
+    - finance
 ---

@@ -1,9 +1,9 @@
 ---
 title: Wifi off
 categories:
-  - Communications
+    - Communications
 tags:
-  - internet
-  - network
-  - wireless
+    - internet
+    - network
+    - wireless
 ---

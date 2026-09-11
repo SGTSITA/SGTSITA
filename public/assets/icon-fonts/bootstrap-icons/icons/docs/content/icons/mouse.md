@@ -1,8 +1,8 @@
 ---
 title: Mouse
 categories:
-  - Devices
+    - Devices
 tags:
-  - mice
-  - input
+    - mice
+    - input
 ---

@@ -9,7 +9,7 @@
             </div>
         </div>
         <div class="card-body">
-            <div id="myGrid" style="height: 500px;"></div>
+            <div id="myGrid" style="height: 500px"></div>
         </div>
     </div>
 @endsection
@@ -18,6 +18,7 @@
     <script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.js"></script>
     <script src="{{ asset('js/sgt/contactos/contactos.js') }}"></script>
 @endpush
+
 @push('javascript')
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="{{ asset('js/sgt/contactos/contactos.js') }}"></script>
@@ -28,7 +29,7 @@
                 icon: 'success',
                 title: 'Éxito',
                 html: `{!! session('success') !!}`,
-                confirmButtonText: 'Aceptar'
+                confirmButtonText: 'Aceptar',
             });
         </script>
     @endif

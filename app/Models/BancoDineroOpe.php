@@ -4,10 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\Auditable;
 
 class BancoDineroOpe extends Model
 {
     use HasFactory;
+    use Auditable;
     protected $table = 'banco_dinero_operadores';
 
     protected $fillable = [
@@ -36,6 +38,15 @@ class BancoDineroOpe extends Model
     public function Cotizacion()
     {
         return $this->belongsTo(Cotizaciones::class, 'id_cotizacion');
+    }
+
+    public function getAuditoriaData($old = [], $new = [])
+    {
+        $this->loadMissing('Cotizacion.DocCotizacion');
+
+        return [
+            'referencia' => $this->Cotizacion?->DocCotizacion?->num_contenedor,
+        ];
     }
     public function Banco1()
     {

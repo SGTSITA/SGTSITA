@@ -1,14 +1,14 @@
 ---
 title: Person badge fill
 categories:
-  - People
+    - People
 tags:
-  - human
-  - individual
-  - avatar
-  - user
-  - badge
-  - id
-  - card
-  - account
+    - human
+    - individual
+    - avatar
+    - user
+    - badge
+    - id
+    - card
+    - account
 ---

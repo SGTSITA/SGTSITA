@@ -1,6 +1,6 @@
 ---
 title: Patch minus
 categories:
-  - Badges
+    - Badges
 tags:
 ---

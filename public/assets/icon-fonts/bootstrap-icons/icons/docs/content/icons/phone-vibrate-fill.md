@@ -1,9 +1,9 @@
 ---
 title: Phone vibrate fill
 categories:
-  - Devices
+    - Devices
 tags:
-  - mobile
-  - telephone
-  - haptic
+    - mobile
+    - telephone
+    - haptic
 ---

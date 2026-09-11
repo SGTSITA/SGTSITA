@@ -1,8 +1,8 @@
 ---
 title: Badge vo
 categories:
-  - Badges
+    - Badges
 tags:
-  - voiceover
-  - accessibility
+    - voiceover
+    - accessibility
 ---

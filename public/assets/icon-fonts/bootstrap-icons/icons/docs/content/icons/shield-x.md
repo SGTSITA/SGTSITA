@@ -1,10 +1,10 @@
 ---
 title: Shield x
 categories:
-  - Security
+    - Security
 tags:
-  - privacy
-  - security
-  - remove
-  - delete
+    - privacy
+    - security
+    - remove
+    - delete
 ---

@@ -1,8 +1,8 @@
 ---
 title: Hexagon
 categories:
-  - Shapes
+    - Shapes
 tags:
-  - shape
-  - polygon
+    - shape
+    - polygon
 ---

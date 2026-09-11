@@ -1,8 +1,8 @@
 ---
 title: Clipboard x
 categories:
-  - Real world
+    - Real world
 tags:
-  - copy
-  - paste
+    - copy
+    - paste
 ---

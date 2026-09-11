@@ -1,8 +1,8 @@
 ---
 title: Wind
 categories:
-  - Weather
+    - Weather
 tags:
-  - windy
-  - breeze
+    - windy
+    - breeze
 ---

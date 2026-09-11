@@ -1,8 +1,8 @@
 ---
 title: Snow2
 categories:
-  - Weather
+    - Weather
 tags:
-  - blizzard
-  - flurries
+    - blizzard
+    - flurries
 ---

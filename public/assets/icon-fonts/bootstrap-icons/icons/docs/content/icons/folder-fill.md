@@ -1,7 +1,7 @@
 ---
 title: Folder fill
 categories:
-  - Files and folders
+    - Files and folders
 tags:
-  - directory
+    - directory
 ---

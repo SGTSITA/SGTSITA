@@ -1,8 +1,8 @@
 ---
 title: Pin
 categories:
-  - Real world
+    - Real world
 tags:
-  - pushpin
-  - thumbtack
+    - pushpin
+    - thumbtack
 ---

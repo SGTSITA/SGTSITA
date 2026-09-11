@@ -1,9 +1,9 @@
 ---
 title: Map
 categories:
-  - Geo
+    - Geo
 tags:
-  - geography
-  - directions
-  - location
+    - geography
+    - directions
+    - location
 ---

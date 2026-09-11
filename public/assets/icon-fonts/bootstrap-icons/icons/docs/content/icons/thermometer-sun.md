@@ -1,8 +1,8 @@
 ---
 title: Thermometer sun
 categories:
-  - Weather
+    - Weather
 tags:
-  - temperature
-  - weather
+    - temperature
+    - weather
 ---

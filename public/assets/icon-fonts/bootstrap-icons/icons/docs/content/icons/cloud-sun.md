@@ -1,8 +1,8 @@
 ---
 title: Cloud sun
 categories:
-  - Weather
+    - Weather
 tags:
-  - cloudy
-  - overcast
+    - cloudy
+    - overcast
 ---

@@ -1,7 +1,7 @@
 ---
 title: Tablet landscape
 categories:
-  - Devices
+    - Devices
 tags:
-  - mobile
+    - mobile
 ---

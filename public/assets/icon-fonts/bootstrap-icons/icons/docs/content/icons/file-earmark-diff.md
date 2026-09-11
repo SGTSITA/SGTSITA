@@ -1,10 +1,10 @@
 ---
 title: File earmark diff
 categories:
-  - Files and folders
+    - Files and folders
 tags:
-  - doc
-  - document
-  - version
-  - development
+    - doc
+    - document
+    - version
+    - development
 ---

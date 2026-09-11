@@ -1,8 +1,8 @@
 ---
 title: Power
 categories:
-  - UI and keyboard
+    - UI and keyboard
 tags:
-  - off
-  - on
+    - off
+    - on
 ---

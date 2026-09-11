@@ -1,7 +1,7 @@
 ---
 title: Cloud
 categories:
-  - Clouds
+    - Clouds
 tags:
-  - weather
+    - weather
 ---

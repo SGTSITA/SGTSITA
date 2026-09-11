@@ -1,10 +1,10 @@
 ---
 title: File code
 categories:
-  - Files and folders
+    - Files and folders
 tags:
-  - doc
-  - document
-  - code
-  - development
+    - doc
+    - document
+    - code
+    - development
 ---

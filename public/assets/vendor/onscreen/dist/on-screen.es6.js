@@ -43,13 +43,10 @@ function inViewport(el) {
     return (
         // Check bottom boundary
         elRect.bottom - options.tolerance > 0 &&
-
         // Check right boundary
         elRect.right - options.tolerance > 0 &&
-
         // Check left boundary
         elRect.left + options.tolerance < (window.innerWidth || document.documentElement.clientWidth) &&
-
         // Check top boundary
         elRect.top + options.tolerance < (window.innerHeight || document.documentElement.clientHeight)
     );
@@ -75,7 +72,7 @@ function inContainer(el) {
     if (typeof options === 'string') {
         options = {
             tolerance: 0,
-            container: document.querySelector(options)
+            container: document.querySelector(options),
         };
     }
     if (typeof options.container === 'string') {
@@ -84,7 +81,7 @@ function inContainer(el) {
     if (options instanceof HTMLElement) {
         options = {
             tolerance: 0,
-            container: options
+            container: options,
         };
     }
     if (!options.container) {
@@ -96,13 +93,10 @@ function inContainer(el) {
     return (
         // // Check bottom boundary
         el.offsetTop + el.clientHeight - options.tolerance > options.container.scrollTop &&
-
         // Check right boundary
         el.offsetLeft + el.clientWidth - options.tolerance > options.container.scrollLeft &&
-
         // Check left boundary
         el.offsetLeft + options.tolerance < containerRect.width + options.container.scrollLeft &&
-
         // // Check top boundary
         el.offsetTop + options.tolerance < containerRect.height + options.container.scrollTop
     );
@@ -181,9 +175,9 @@ function debouncedScroll() {
  * @return {void}
  */
 function destroy() {
-  this.options.container.removeEventListener('scroll', this._scroll);
-  window.removeEventListener('resize', this._scroll);
-  this.attached = false;
+    this.options.container.removeEventListener('scroll', this._scroll);
+    window.removeEventListener('resize', this._scroll);
+    this.attached = false;
 }
 
 /**
@@ -239,7 +233,7 @@ function on(event, selector, callback) {
         var item = {
             isVisible: false,
             wasVisible: false,
-            node: elems[i]
+            node: elems[i],
         };
 
         this.trackedElements[selector].nodes.push(item);
@@ -271,7 +265,7 @@ function observeDOM(obj, callback) {
 
         obs.observe(obj, {
             childList: true,
-            subtree: true
+            subtree: true,
         });
     } else {
         obj.addEventListener('DOMNodeInserted', callback, false);
@@ -288,7 +282,10 @@ function observeDOM(obj, callback) {
 function OnScreen() {
     var _this = this;
 
-    var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : { tolerance: 0, debounce: 100, container: window };
+    var options =
+        arguments.length > 0 && arguments[0] !== undefined
+            ? arguments[0]
+            : { tolerance: 0, debounce: 100, container: window };
 
     this.options = {};
     this.trackedElements = {};
@@ -310,7 +307,7 @@ function OnScreen() {
             },
             set: function set(value) {
                 options.container = value;
-            }
+            },
         },
         debounce: {
             get: function get() {
@@ -318,7 +315,7 @@ function OnScreen() {
             },
             set: function set(value) {
                 options.debounce = value;
-            }
+            },
         },
         tolerance: {
             get: function get() {
@@ -326,15 +323,15 @@ function OnScreen() {
             },
             set: function set(value) {
                 options.tolerance = value;
-            }
-        }
+            },
+        },
     });
 
     Object.defineProperty(this, '_scroll', {
         enumerable: false,
         configurable: false,
         writable: false,
-        value: this._debouncedScroll.call(this)
+        value: this._debouncedScroll.call(this),
     });
 
     observeDOM(document.querySelector('body'), function () {
@@ -352,32 +349,32 @@ Object.defineProperties(OnScreen.prototype, {
         configurable: false,
         writable: false,
         enumerable: false,
-        value: debouncedScroll
+        value: debouncedScroll,
     },
     attach: {
         configurable: false,
         writable: false,
         enumerable: false,
-        value: attach
+        value: attach,
     },
     destroy: {
         configurable: false,
         writable: false,
         enumerable: false,
-        value: destroy
+        value: destroy,
     },
     off: {
         configurable: false,
         writable: false,
         enumerable: false,
-        value: off
+        value: off,
     },
     on: {
         configurable: false,
         writable: false,
         enumerable: false,
-        value: on
-    }
+        value: on,
+    },
 });
 
 OnScreen.check = inViewport;

@@ -1,8 +1,8 @@
 ---
 title: Upc scan
 categories:
-  - Commerce
+    - Commerce
 tags:
-  - purchase
-  - barcode
+    - purchase
+    - barcode
 ---

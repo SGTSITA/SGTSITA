@@ -1,9 +1,9 @@
 ---
 title: Window dock
 categories:
-  - Apps
+    - Apps
 tags:
-  - application
-  - desktop
-  - os
+    - application
+    - desktop
+    - os
 ---

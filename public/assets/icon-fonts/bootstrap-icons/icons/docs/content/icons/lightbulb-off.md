@@ -1,8 +1,8 @@
 ---
 title: Lightbulb off
 categories:
-  - Real world
+    - Real world
 tags:
-  - lights
-  - lamp
+    - lights
+    - lamp
 ---

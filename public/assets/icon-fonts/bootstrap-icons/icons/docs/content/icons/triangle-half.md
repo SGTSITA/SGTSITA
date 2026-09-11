@@ -1,7 +1,7 @@
 ---
 title: Triangle half fill
 categories:
-  - Shapes
+    - Shapes
 tags:
-  - shape
+    - shape
 ---

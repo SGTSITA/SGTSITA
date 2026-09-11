@@ -1,8 +1,8 @@
 ---
 title: Lamp fill
 categories:
-  - Real world
+    - Real world
 tags:
-  - light
-  - lamp
+    - light
+    - lamp
 ---

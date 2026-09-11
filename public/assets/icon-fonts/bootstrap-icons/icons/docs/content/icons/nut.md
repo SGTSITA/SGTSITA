@@ -1,10 +1,10 @@
 ---
 title: Nut
 categories:
-  - Tools
+    - Tools
 tags:
-  - nut
-  - bolt
-  - hexagon
-  - tools
+    - nut
+    - bolt
+    - hexagon
+    - tools
 ---

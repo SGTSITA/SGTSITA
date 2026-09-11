@@ -1,7 +1,7 @@
 ---
 title: Backspace
 categories:
-  - UI and keyboard
+    - UI and keyboard
 tags:
-  - key
+    - key
 ---

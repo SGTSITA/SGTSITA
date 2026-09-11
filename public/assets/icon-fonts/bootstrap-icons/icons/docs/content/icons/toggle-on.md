@@ -1,9 +1,9 @@
 ---
 title: Toggle on
 categories:
-  - Controls
+    - Controls
 tags:
-  - toggle
-  - switch
-  - checkbox
+    - toggle
+    - switch
+    - checkbox
 ---

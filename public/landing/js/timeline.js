@@ -1,18 +1,17 @@
-jQuery(document).ready(function() {
-
+jQuery(document).ready(function () {
     // VARIABLES
-    const timeline = document.querySelector(".pbmit-timeline ol"),
-        elH = document.querySelectorAll(".pbmit-timeline li > div"),
-        arrows = document.querySelectorAll(".pbmit-timeline .arrows .arrow"),
-        arrowPrev = document.querySelector(".pbmit-timeline .arrows .arrow__prev"),
-        arrowNext = document.querySelector(".pbmit-timeline .arrows .arrow__next"),
-        firstItem = document.querySelector(".pbmit-timeline li:first-child"),
-        lastItem = document.querySelector(".pbmit-timeline li:last-child"),
+    const timeline = document.querySelector('.pbmit-timeline ol'),
+        elH = document.querySelectorAll('.pbmit-timeline li > div'),
+        arrows = document.querySelectorAll('.pbmit-timeline .arrows .arrow'),
+        arrowPrev = document.querySelector('.pbmit-timeline .arrows .arrow__prev'),
+        arrowNext = document.querySelector('.pbmit-timeline .arrows .arrow__next'),
+        firstItem = document.querySelector('.pbmit-timeline li:first-child'),
+        lastItem = document.querySelector('.pbmit-timeline li:last-child'),
         xScrolling = 280,
-        disabledClass = "disabled";
+        disabledClass = 'disabled';
 
     // START
-    window.addEventListener("load", init);
+    window.addEventListener('load', init);
 
     function init() {
         animateTl(xScrolling, arrows, timeline);
@@ -49,21 +48,22 @@ jQuery(document).ready(function() {
     function animateTl(scrolling, el, tl) {
         let counter = 0;
         for (let i = 0; i < el.length; i++) {
-            el[i].addEventListener("click", function() {
+            el[i].addEventListener('click', function () {
                 if (!arrowPrev.disabled) {
                     arrowPrev.disabled = true;
                 }
                 if (!arrowNext.disabled) {
                     arrowNext.disabled = true;
                 }
-                const sign = (this.classList.contains("arrow__prev")) ? "" : "-";
+                const sign = this.classList.contains('arrow__prev') ? '' : '-';
                 if (counter === 0) {
                     tl.style.transform = `translateX(-${scrolling}px)`;
                 } else {
                     const tlStyle = getComputedStyle(tl);
                     // add more browser prefixes if needed here
-                    const tlTransform = tlStyle.getPropertyValue("-webkit-transform") || tlStyle.getPropertyValue("transform");
-                    const values = parseInt(tlTransform.split(",")[4]) + parseInt(`${sign}${scrolling}`);
+                    const tlTransform =
+                        tlStyle.getPropertyValue('-webkit-transform') || tlStyle.getPropertyValue('transform');
+                    const values = parseInt(tlTransform.split(',')[4]) + parseInt(`${sign}${scrolling}`);
                     tl.style.transform = `translateX(${values}px)`;
                 }
 
@@ -80,14 +80,14 @@ jQuery(document).ready(function() {
     // ADD SWIPE SUPPORT FOR TOUCH DEVICES
     function setSwipeFn(tl, prev, next) {
         const hammer = new Hammer(tl);
-        hammer.on("swipeleft", () => next.click());
-        hammer.on("swiperight", () => prev.click());
+        hammer.on('swipeleft', () => next.click());
+        hammer.on('swiperight', () => prev.click());
     }
 
     // ADD BASIC KEYBOARD FUNCTIONALITY
     function setKeyboardFn(prev, next) {
-        document.addEventListener("keydown", (e) => {
-            if ((e.which === 37) || (e.which === 39)) {
+        document.addEventListener('keydown', (e) => {
+            if (e.which === 37 || e.which === 39) {
                 const timelineOfTop = timeline.offsetTop;
                 const y = window.pageYOffset;
                 if (timelineOfTop !== y) {
@@ -104,13 +104,17 @@ jQuery(document).ready(function() {
 });
 
 function container_height() {
-    var heights = jQuery(".pbmit-timeline ol li div").map(function() {
-        return jQuery(this).height();
-    }).get();
-    var li_height = (Math.max.apply(null, heights)) + 100;
-    jQuery('.pbmit-timeline ol').css('padding-top', li_height + 'px').css('padding-bottom', li_height + 'px');
+    var heights = jQuery('.pbmit-timeline ol li div')
+        .map(function () {
+            return jQuery(this).height();
+        })
+        .get();
+    var li_height = Math.max.apply(null, heights) + 100;
+    jQuery('.pbmit-timeline ol')
+        .css('padding-top', li_height + 'px')
+        .css('padding-bottom', li_height + 'px');
 }
 
-jQuery(window).resize(function() {
+jQuery(window).resize(function () {
     container_height();
 });

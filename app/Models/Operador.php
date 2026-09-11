@@ -6,10 +6,13 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes; // <- Importar
 use Illuminate\Support\Facades\Auth;
+use App\Traits\Auditable;
 
 class Operador extends Model
 {
-    use HasFactory, SoftDeletes; // <- Usar el trait
+    use HasFactory;
+    use SoftDeletes; // <- Usar el trait
+    use Auditable;
 
     protected $table = 'operadores';
 
@@ -31,6 +34,23 @@ class Operador extends Model
         'id_empresa',
         'curp',
     ];
+
+
+    public function proveedores()
+    {
+        return $this->belongsToMany(
+            Proveedor::class,
+            'proveedor_operador',
+            'operador_id',
+            'proveedor_id'
+        )->withPivot('empresa_id', 'estado')
+         ->withTimestamps();
+    }
+
+
+    public function prestamos(){
+         return $this->hasMany(Prestamo::class, 'id_operador', 'id');
+    }
 
     protected static function boot()
     {

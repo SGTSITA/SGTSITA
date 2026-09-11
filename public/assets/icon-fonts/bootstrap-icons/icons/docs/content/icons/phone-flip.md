@@ -1,8 +1,8 @@
 ---
 title: Phone flip
 categories:
-  - Devices
+    - Devices
 tags:
-  - mobile
-  - telephone
+    - mobile
+    - telephone
 ---

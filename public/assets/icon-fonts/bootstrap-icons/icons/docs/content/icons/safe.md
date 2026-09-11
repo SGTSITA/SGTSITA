@@ -1,9 +1,9 @@
 ---
 title: Safe
 categories:
-  - Real world
+    - Real world
 tags:
-  - vault
-  - bank
-  - finance
+    - vault
+    - bank
+    - finance
 ---

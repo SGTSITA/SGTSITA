@@ -1,13 +1,13 @@
 ---
 title: Person dash
 categories:
-  - People
+    - People
 tags:
-  - human
-  - individual
-  - avatar
-  - user
-  - remove
-  - delete
-  - account
+    - human
+    - individual
+    - avatar
+    - user
+    - remove
+    - delete
+    - account
 ---

@@ -1,8 +1,8 @@
 ---
 title: Emoji smile
 categories:
-  - Emoji
+    - Emoji
 tags:
-  - emoticon
-  - happy
+    - emoticon
+    - happy
 ---

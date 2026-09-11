@@ -1,9 +1,9 @@
 ---
 title: File lock
 categories:
-  - Files and folders
+    - Files and folders
 tags:
-  - lock
-  - private
-  - secure
+    - lock
+    - private
+    - secure
 ---

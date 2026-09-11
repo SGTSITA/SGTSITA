@@ -1,9 +1,9 @@
 ---
 title: Code square
 categories:
-  - Typography
+    - Typography
 tags:
-  - text
-  - type
-  - preformatted
+    - text
+    - type
+    - preformatted
 ---

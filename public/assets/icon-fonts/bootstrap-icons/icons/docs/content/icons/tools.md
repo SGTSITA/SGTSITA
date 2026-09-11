@@ -1,9 +1,9 @@
 ---
 title: Tools
 categories:
-  - Tools
+    - Tools
 tags:
-  - tool
-  - wrench
-  - screwdriver
+    - tool
+    - wrench
+    - screwdriver
 ---

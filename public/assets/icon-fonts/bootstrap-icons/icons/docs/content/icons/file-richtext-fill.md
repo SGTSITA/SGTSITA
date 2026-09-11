@@ -1,9 +1,9 @@
 ---
 title: File richtext fill
 categories:
-  - Files and folders
+    - Files and folders
 tags:
-  - doc
-  - document
-  - richtext
+    - doc
+    - document
+    - richtext
 ---

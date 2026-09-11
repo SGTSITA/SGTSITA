@@ -1,7 +1,7 @@
 ---
 title: Hurricane
 categories:
-  - Weather
+    - Weather
 tags:
-  - storm
+    - storm
 ---

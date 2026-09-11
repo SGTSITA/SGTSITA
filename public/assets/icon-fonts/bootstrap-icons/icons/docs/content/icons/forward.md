@@ -1,8 +1,8 @@
 ---
 title: Forward
 categories:
-  - Communications
+    - Communications
 tags:
-  - mail
-  - email
+    - mail
+    - email
 ---

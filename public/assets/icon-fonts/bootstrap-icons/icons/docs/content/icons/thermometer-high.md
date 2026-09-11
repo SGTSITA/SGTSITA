@@ -1,8 +1,8 @@
 ---
 title: Thermometer high
 categories:
-  - Weather
+    - Weather
 tags:
-  - temperature
-  - weather
+    - temperature
+    - weather
 ---

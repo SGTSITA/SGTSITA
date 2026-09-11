@@ -1,8 +1,8 @@
 ---
 title: Collection
 categories:
-  - Media
+    - Media
 tags:
-  - library
-  - group
+    - library
+    - group
 ---

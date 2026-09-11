@@ -1,8 +1,8 @@
 ---
 title: Patch minus fill
 categories:
-  - Badges
+    - Badges
 tags:
 aliases:
-  - /icons/patch-minus-fll/
+    - /icons/patch-minus-fll/
 ---

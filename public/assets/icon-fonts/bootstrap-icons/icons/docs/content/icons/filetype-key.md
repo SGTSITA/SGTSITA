@@ -1,10 +1,10 @@
 ---
 title: Filetype key
 categories:
-  - Files and folders
+    - Files and folders
 tags:
-  - file
-  - "file type"
-  - extension
-  - keynote
+    - file
+    - 'file type'
+    - extension
+    - keynote
 ---

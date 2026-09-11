@@ -1,9 +1,9 @@
 ---
 title: Projector
 categories:
-  - Devices
+    - Devices
 tags:
-  - projection
-  - present
-  - screen
+    - projection
+    - present
+    - screen
 ---

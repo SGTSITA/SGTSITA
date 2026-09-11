@@ -1,9 +1,9 @@
 ---
 title: Calendar range
 categories:
-  - Date and time
+    - Date and time
 tags:
-  - dates
-  - timeline
-  - duration
+    - dates
+    - timeline
+    - duration
 ---

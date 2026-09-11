@@ -1,7 +1,7 @@
 ---
 title: Printer fill
 categories:
-  - Devices
+    - Devices
 tags:
-  - print
+    - print
 ---

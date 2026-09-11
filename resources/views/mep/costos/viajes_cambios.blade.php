@@ -1,5 +1,5 @@
 @extends('layouts.app')
-<meta name="csrf-token" content="{{ csrf_token() }}">
+<meta name="csrf-token" content="{{ csrf_token() }}" />
 @section('template_title', 'Viajes solicitados / Cambios de costos')
 
 <style>
@@ -30,7 +30,10 @@
         background: linear-gradient(180deg, #ffffff, #f8fafc);
         border: 1px solid rgba(0, 0, 0, 0.06);
         box-shadow: 0 10px 20px rgba(15, 23, 42, 0.05);
-        transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+        transition:
+            transform 0.15s ease,
+            box-shadow 0.15s ease,
+            border-color 0.15s ease;
         cursor: pointer;
         user-select: none;
         display: flex;
@@ -58,11 +61,11 @@
     .field-card .fc-name {
         font-weight: 700;
         color: #0f172a;
-        letter-spacing: .2px;
+        letter-spacing: 0.2px;
         text-transform: capitalize;
     }
 
-    .field-card input[type="checkbox"] {
+    .field-card input[type='checkbox'] {
         display: none;
     }
 
@@ -91,7 +94,9 @@
         background: #e2e8f0;
         color: #475569;
         font-size: 12px;
-        transition: background .15s ease, color .15s ease;
+        transition:
+            background 0.15s ease,
+            color 0.15s ease;
     }
 
     .field-card.is-selected .fc-check {
@@ -129,10 +134,10 @@
     /* Botón mac-ish */
     .btn-mac {
         border-radius: 10px;
-        padding: .55rem .9rem;
+        padding: 0.55rem 0.9rem;
         font-weight: 700;
-        border: 1px solid rgba(0, 0, 0, .06);
-        box-shadow: 0 6px 14px rgba(15, 23, 42, .06);
+        border: 1px solid rgba(0, 0, 0, 0.06);
+        box-shadow: 0 6px 14px rgba(15, 23, 42, 0.06);
     }
 
     .modal-content {
@@ -159,61 +164,75 @@
     }
 </style>
 
-
 @section('content')
     <div class="container-fluid py-4">
         <div class="d-flex align-items-center justify-content-between mb-3">
             <div>
-                <h3 class="mb-0"> Costos de viajes solicitados</h3>
-                <small class="text-muted">Lista por estatus </small>
+                <h3 class="mb-0">Costos de viajes solicitados</h3>
+                <small class="text-muted">Lista por estatus</small>
             </div>
             <a href="{{ route('dashboard.costos_mep') }}" class="btn btn-outline-secondary">
-                <i class="fas fa-arrow-left me-2"></i> Volver al dashboard
+                <i class="fas fa-arrow-left me-2"></i>
+                Volver al dashboard
             </a>
         </div>
 
         <div class="card p-3 mb-3 toolbar shadow-sm border-0 rounded-4">
             <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
                 <div class="btn-group btn-group-toggle" data-bs-toggle="buttons">
-                    <input type="radio" class="btn-check" name="statusFilter" id="btnAll" autocomplete="off" checked>
-                    <label class="btn btn-light border  px-4" for="btnAll">
-                        <i class="fas fa-list me-1"></i> Todos
+                    <input type="radio" class="btn-check" name="statusFilter" id="btnAll" autocomplete="off" checked />
+                    <label class="btn btn-light border px-4" for="btnAll">
+                        <i class="fas fa-list me-1"></i>
+                        Todos
                     </label>
 
-                    <input type="radio" class="btn-check" name="statusFilter" id="btnPendientes" autocomplete="off">
-                    <label class="btn btn-warning-light text-dark border  px-4" for="btnPendientes">
-                        <i class="fas fa-hourglass-half me-1"></i> Pendientes
+                    <input type="radio" class="btn-check" name="statusFilter" id="btnPendientes" autocomplete="off" />
+                    <label class="btn btn-warning-light text-dark border px-4" for="btnPendientes">
+                        <i class="fas fa-hourglass-half me-1"></i>
+                        Pendientes
                     </label>
 
-                    <input type="radio" class="btn-check" name="statusFilter" id="btnAprobados" autocomplete="off">
-                    <label class="btn btn-success-light text-dark border  px-4" for="btnAprobados">
-                        <i class="fas fa-check-circle me-1"></i> Aprobados
+                    <input type="radio" class="btn-check" name="statusFilter" id="btnAprobados" autocomplete="off" />
+                    <label class="btn btn-success-light text-dark border px-4" for="btnAprobados">
+                        <i class="fas fa-check-circle me-1"></i>
+                        Aprobados
                     </label>
 
-                    <input type="radio" class="btn-check" name="statusFilter" id="btnRechazados" autocomplete="off">
-                    <label class="btn btn-danger-light text-dark border  px-4" for="btnRechazados">
-                        <i class="fas fa-times-circle me-1"></i> Rechazados
+                    <input type="radio" class="btn-check" name="statusFilter" id="btnRechazados" autocomplete="off" />
+                    <label class="btn btn-danger-light text-dark border px-4" for="btnRechazados">
+                        <i class="fas fa-times-circle me-1"></i>
+                        Rechazados
                     </label>
                 </div>
 
                 <div class="ms-auto">
-                    <input type="text" id="quickSearch" class="form-control form-control-sm rounded-pill shadow-sm"
-                        placeholder="🔍 Buscar..." style="min-width: 220px;" />
+                    <input
+                        type="text"
+                        id="quickSearch"
+                        class="form-control form-control-sm rounded-pill shadow-sm"
+                        placeholder="🔍 Buscar..."
+                        style="min-width: 220px"
+                    />
                 </div>
             </div>
         </div>
 
-
-        <div id="gridCambios" class="ag-theme-alpine" style="height: 68vh;"></div>
+        <div id="gridCambios" class="ag-theme-alpine" style="height: 68vh"></div>
     </div>
 
-    <div class="modal fade" id="modalObservaciones" tabindex="-1" aria-labelledby="modalObservacionesLabel"
-        aria-hidden="true">
+    <div
+        class="modal fade"
+        id="modalObservaciones"
+        tabindex="-1"
+        aria-labelledby="modalObservacionesLabel"
+        aria-hidden="true"
+    >
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content border-0 rounded-4 shadow-sm">
                 <div class="modal-header border-0 pb-0">
                     <div>
-                        <h5 class="modal-title fw-semibold text-dark" id="modalObservacionesLabel">Observaciones del cambio
+                        <h5 class="modal-title fw-semibold text-dark" id="modalObservacionesLabel">
+                            Observaciones del cambio
                         </h5>
                         <small class="text-muted">Detalle de campos observados y motivo del rechazo</small>
                     </div>
@@ -236,7 +255,7 @@
                     </div>
                     <div class="bg-light border rounded-3 p-3 mb-4">
                         <label class="form-label mb-1 fw-medium text-muted">Motivo del rechazo</label>
-                        <div id="motivoRechazo" class="text-dark fw-semibold" style="white-space: pre-wrap;"></div>
+                        <div id="motivoRechazo" class="text-dark fw-semibold" style="white-space: pre-wrap"></div>
                     </div>
 
                     <div class="table-responsive">
@@ -258,15 +277,13 @@
                         Cancelar
                     </button>
                     <button id="btnReenviarCambios" class="btn rounded-pill px-4 py-2 shadow-sm">
-                        <i class="fas fa-sync-alt me-2"></i> Reenviar cambios
+                        <i class="fas fa-sync-alt me-2"></i>
+                        Reenviar cambios
                     </button>
                 </div>
             </div>
         </div>
     </div>
-
-
-
 @endsection
 
 @push('custom-javascript')
