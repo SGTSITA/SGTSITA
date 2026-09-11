@@ -76,7 +76,17 @@
                         @csrf
                         <div class="card-body p-4">
 
-
+                            <!-- TOGGLE PLANEACION ELEMENTAL -->
+                            <div class="row mb-3">
+                                <div class="col-12">
+                                    <div class="form-check form-switch bg-light p-3 rounded border">
+                                        <input class="form-check-input ms-0 me-2" type="checkbox" id="toggleElementalEdit" name="elemental" value="1">
+                                        <label class="form-check-label font-weight-bold text-info" for="toggleElementalEdit" style="cursor: pointer;">
+                                            ⚡ Planeación Elemental (Activar solo para modificar fechas, operador, unidad o chasis sin requerir sueldo, dinero de viaje ni banco)
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
 
                             <!-- FECHAS Y ASIGNACIÓN DE EQUIPO -->
 
@@ -178,7 +188,7 @@
                                         @endforeach
                                     </select>
                                 </div>
-                                <div class="col-md-3 form-group">
+                                <div class="col-md-3 form-group elemental-hidden-edit">
                                     <label class="form-label font-weight-bold" for="txtSueldoOperador">Sueldo Operador
                                         *</label>
                                     <div class="input-group">
@@ -191,7 +201,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="row">
+                            <div class="row elemental-hidden-edit">
                                 <div class="col-md-3 form-group">
                                     <label class="form-label font-weight-bold" for="txtDineroViaje">Dinero viaje *</label>
                                     <div class="input-group">
@@ -279,11 +289,11 @@
                                 </div>
                             </div>
 
-                            <hr class="horizontal dark my-4">
+                            <hr class="horizontal dark my-4 elemental-hidden-edit">
 
                             <!-- GASTOS ADICIONALES -->
 
-                            <div class="row">
+                            <div class="row elemental-hidden-edit">
                                 <div class="col-12">
                                     <button type="button" class="btn btn-success btn-sm mt-2" id="btnAddGastoEdit">
                                         <i class="ni ni-fat-add"></i> Agregar gastos al viaje
@@ -417,6 +427,43 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Manejo de Planeación Elemental en Edición (desmarcado por defecto)
+            const toggleElementalEdit = document.getElementById('toggleElementalEdit');
+            const reqFieldsEdit = [
+                document.getElementById('txtSueldoOperador'),
+                document.getElementById('txtDineroViaje'),
+                document.getElementById('cmbBanco'),
+                document.getElementById('FechaAplicacionDinero')
+            ];
+
+            function actualizarEstadoElementalEdit() {
+                const isElemental = toggleElementalEdit && toggleElementalEdit.checked;
+                const hiddenElements = document.querySelectorAll('.elemental-hidden-edit');
+
+                hiddenElements.forEach(el => {
+                    if (isElemental) {
+                        el.classList.add('d-none');
+                    } else {
+                        el.classList.remove('d-none');
+                    }
+                });
+
+                reqFieldsEdit.forEach(field => {
+                    if (field) {
+                        if (isElemental) {
+                            field.removeAttribute('required');
+                        } else {
+                            field.setAttribute('required', 'required');
+                        }
+                    }
+                });
+            }
+
+            if (toggleElementalEdit) {
+                toggleElementalEdit.addEventListener('change', actualizarEstadoElementalEdit);
+                actualizarEstadoElementalEdit();
+            }
+
             // Configurar Flatpickr para fechas
             if (typeof flatpickr !== 'undefined') {
                 flatpickr("#txtFechaInicio", {

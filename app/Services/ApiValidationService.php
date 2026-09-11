@@ -1125,6 +1125,18 @@ class ApiValidationService
             $cotizacion->update();
         }
 
+        // Si el equipo carga diésel al final y el viaje ya se había marcado como concluido en bitácora, finalizar la asignación
+        $camion = $asignacion->Camion ?? ($asignacion->id_camion ? Equipo::find($asignacion->id_camion) : null);
+        if ($camion && $camion->carga_diesel_al_final) {
+            $viajeFinalizadoEnBitacora = ($flowRecord->viaje_finalizado !== null && $flowRecord->viaje_finalizado !== '' && $flowRecord->viaje_finalizado !== '0000-00-00 00:00:00')
+                || !empty(self::parsePhotoUrls($flowRecord->fotos_fin));
+
+            if ($viajeFinalizadoEnBitacora) {
+                $asignacion->estatus_viaje = 'Finalizado';
+                $asignacion->save();
+            }
+        }
+
         return ['success' => true, 'message' => 'Coordenadas y registro de diésel guardados con éxito.', 'data' => [], 'status' => 200];
     }
 
@@ -1315,8 +1327,18 @@ class ApiValidationService
             if (is_array($decoded)) {
                 $rawFotos = $decoded;
             } else {
-                $rawFotos = [$rawFotos];
+                $rawFotos = !empty($rawFotos) ? [$rawFotos] : [];
             }
+        }
+
+        $validFotosFin = is_array($rawFotos) ? array_filter($rawFotos, fn($f) => !empty($f)) : [];
+        if (empty($validFotosFin)) {
+            return [
+                'success' => false,
+                'message' => 'Debes adjuntar al menos una fotografía de evidencia para concluir el viaje.',
+                'data' => [],
+                'status' => 400
+            ];
         }
 
         if (is_array($rawFotos) && !empty($rawFotos)) {
@@ -1359,10 +1381,27 @@ class ApiValidationService
             'longitud_fin' => $data['longitud'] ?? null,
         ]);
 
-        $asignacion->estatus_viaje = 'Finalizado';
-        $asignacion->save();
+        $camion = $asignacion->Camion ?? ($asignacion->id_camion ? Equipo::find($asignacion->id_camion) : null);
+        $cargaDieselAlFinal = $camion ? (bool)$camion->carga_diesel_al_final : false;
 
-     return ['success' => true, 'message' => 'Viaje finalizado correctamente.', 'data' => [], 'status' => 200];
+        if ($cargaDieselAlFinal) {
+            $dieselRegistrado = (
+                ($flowRecord->fecha_carga_diesel !== null && $flowRecord->fecha_carga_diesel !== '' && $flowRecord->fecha_carga_diesel !== '0000-00-00 00:00:00') ||
+                (!empty($flowRecord->comprobante) && $flowRecord->comprobante !== '[]' && $flowRecord->comprobante !== '""' && $flowRecord->comprobante !== 'null') ||
+                ((float) $flowRecord->litros > 0) ||
+                ((float) $flowRecord->costo > 0)
+            );
+
+            if ($dieselRegistrado) {
+                $asignacion->estatus_viaje = 'Finalizado';
+                $asignacion->save();
+            }
+        } else {
+            $asignacion->estatus_viaje = 'Finalizado';
+            $asignacion->save();
+        }
+
+        return ['success' => true, 'message' => 'Viaje finalizado correctamente.', 'data' => [], 'status' => 200];
     }
 
     public function obtenerEstatusFlujo($idAsignacion)
@@ -1480,7 +1519,7 @@ class ApiValidationService
                 'diesel_registrado' => $dieselRegistrado,
                 'diesel_datos' => $dieselRegistrado ? [
                     'costo' => $flowRecord->costo,
-                    'fecha' => $flowRecord->created_at ? $flowRecord->created_at->toDateString() : Carbon::now()->toDateString(),
+                    'fecha' => ($flowRecord && $flowRecord->created_at) ? (is_string($flowRecord->created_at) ? $flowRecord->created_at : $flowRecord->created_at->toDateString()) : Carbon::now()->toDateString(),
                     'comprobante' => self::formatAssetUrls($flowRecord->comprobante),
                     'litros' => $flowRecord->litros,
                     'odometro' => $flowRecord->odometro,
@@ -1494,7 +1533,7 @@ class ApiValidationService
                 'fotos' => $fotos,
                 'apertura_registrada' => $aperturaRegistrada,
                 'fotos_apertura' => $fotosApertura,
-                'fecha_apertura' => ($flowRecord && $flowRecord->apertura_contenedor) ? $flowRecord->apertura_contenedor->toDateTimeString() : null,
+                'fecha_apertura' => ($flowRecord && $flowRecord->apertura_contenedor) ? (is_string($flowRecord->apertura_contenedor) ? $flowRecord->apertura_contenedor : $flowRecord->apertura_contenedor->toDateTimeString()) : null,
                 'viaje_finalizado' => $viajeFinalizado,
                 'fotos_fin' => $fotosFin,
                 'id_cotizacion' => $asignacion->Contenedor->id_cotizacion ?? null,
@@ -1625,24 +1664,32 @@ class ApiValidationService
             return null;
         }
 
+        $formatSingle = function($path) {
+            $p = trim((string)$path, "\" '[]");
+            if (empty($p)) return null;
+            if (str_starts_with($p, 'http://') || str_starts_with($p, 'https://')) {
+                return $p;
+            }
+            return asset(ltrim($p, '/'));
+        };
+
         // Check if JSON array
         if (str_starts_with($value, '[') && str_ends_with($value, ']')) {
             $decoded = json_decode($value, true);
             if (is_array($decoded)) {
-                return implode(',', array_map(function($path) {
-                    return asset($path);
-                }, $decoded));
+                $formatted = array_filter(array_map($formatSingle, $decoded));
+                return implode(',', $formatted);
             }
         }
 
         // Check if comma separated
         if (str_contains($value, ',')) {
-            return implode(',', array_map(function($path) {
-                return asset(trim($path));
-            }, explode(',', $value)));
+            $parts = explode(',', $value);
+            $formatted = array_filter(array_map($formatSingle, $parts));
+            return implode(',', $formatted);
         }
 
-        return asset($value);
+        return $formatSingle($value);
     }
 
     private static function parsePhotoUrls($value)
