@@ -311,20 +311,26 @@
         }
 
         function formatearmoneda(valor) {
-            return '$ ' + parseFloat(valor).toLocaleString('es-MX', {
+            let num = parseFloat(valor || 0);
+            let absStr = Math.abs(num).toLocaleString('es-MX', {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2
             });
+            return num < 0 ? '-$ ' + absStr : '$ ' + absStr;
         }
 
 
         function actualizarVista(data) {
-            document.getElementById('saldoAnterior').innerText = formatearmoneda(data.saldoAnterior);
+            let saldoAntNum = parseFloat(data.saldoAnterior || 0);
+            let saldoActNum = parseFloat(data.saldoActual || 0);
 
+            let elSaldoAnt = document.getElementById('saldoAnterior');
+            elSaldoAnt.innerText = formatearmoneda(saldoAntNum);
+            elSaldoAnt.style.color = saldoAntNum < 0 ? '#ea580c' : '';
 
-            document.getElementById('saldoActual').innerText =
-                formatearmoneda(data.saldoActual);
-
+            let elSaldoAct = document.getElementById('saldoActual');
+            elSaldoAct.innerText = formatearmoneda(saldoActNum);
+            elSaldoAct.style.color = saldoActNum < 0 ? '#ea580c' : '';
 
             document.getElementById('conteoDepositos').innerText = 'Depósitos (' + data.conteo_depositos + ')';
             document.getElementById('totalDepositos').innerText =
@@ -340,19 +346,31 @@
 
 
             data.movimientos.forEach((mov, index) => {
-                let claseCargo = mov.tipo === 'cargo' ?
-                    'text-danger fw-bold' :
-                    '';
+                let montoNum = parseFloat(mov.monto || 0);
+                let esNegativo = montoNum < 0;
 
-                let claseAbono = mov.tipo === 'abono' ?
-                    'text-success fw-bold' :
-                    '';
+                let styleCargo = '';
+                let styleAbono = '';
+                let textoCargo = '$ 0.00';
+                let textoAbono = '$ 0.00';
 
-                let onclickDetalle = `onclick="toggleDetalle(${mov.id})" style="cursor:pointer;"`;
+                if (mov.tipo === 'cargo') {
+                    styleCargo = (esNegativo ? 'color: #ea580c; font-weight: bold;' : 'color: #dc2626; font-weight: bold;') + ' cursor: pointer;';
+                    textoCargo = esNegativo ? formatearmoneda(montoNum) : '- ' + formatearmoneda(montoNum);
+                } else if (mov.tipo === 'abono') {
+                    styleAbono = (esNegativo ? 'color: #ea580c; font-weight: bold;' : 'color: #16a34a; font-weight: bold;') + ' cursor: pointer;';
+                    textoAbono = esNegativo ? formatearmoneda(montoNum) : '+ ' + formatearmoneda(montoNum);
+                }
+
+                let onclickCargo = mov.tipo === 'cargo' ? `onclick="toggleDetalle(${mov.id})"` : '';
+                let onclickAbono = mov.tipo === 'abono' ? `onclick="toggleDetalle(${mov.id})"` : '';
 
                 const esAlt = index % 2 === 1;
                 const claseFila = esAlt ? 'mov-row mov-row-alt' : 'mov-row';
                 const claseDetalle = esAlt ? 'detalle-row detalle-row-alt' : 'detalle-row';
+
+                let saldoResNum = parseFloat(mov.saldo_resultante || 0);
+                let styleSaldoRes = saldoResNum < 0 ? 'color: #ea580c; font-weight: bold;' : '';
 
                 tbody.innerHTML += `
         <tr class="${claseFila}">
@@ -366,15 +384,15 @@
     ${escapeHtml(mov.referencia ?? '')}
 </td>
 
-            <td class="${claseCargo}" ${mov.tipo === 'cargo' ? onclickDetalle : ''}>
-                ${mov.tipo === 'cargo' ? '- ' + formatearmoneda(mov.monto) : '$ 0.00'}
+            <td style="${styleCargo}" ${onclickCargo}>
+                ${textoCargo}
             </td>
 
-            <td class="${claseAbono}" ${mov.tipo === 'abono' ? onclickDetalle : ''}>
-                ${mov.tipo === 'abono' ? '+ ' + formatearmoneda(mov.monto) : '$ 0.00'}
+            <td style="${styleAbono}" ${onclickAbono}>
+                ${textoAbono}
             </td>
 
-            <td>${formatearmoneda(mov.saldo_resultante)}</td>
+            <td style="${styleSaldoRes}">${formatearmoneda(saldoResNum)}</td>
 
             <td>${escapeHtml(mov.origen ?? '')}</td>
         </tr>

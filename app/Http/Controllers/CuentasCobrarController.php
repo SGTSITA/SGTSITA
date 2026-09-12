@@ -332,64 +332,91 @@ class CuentasCobrarController extends Controller
 
     public function storeEdocuenta(Request $request)
     {
-
         $request->validate([
-    'numero' => 'required|string|max:50',
-    'cotizacionesId' => 'required|array|min:1',
-]);
+            'numero' => 'required|string|max:50',
+            'cotizacionesId' => 'required|array|min:1',
+        ]);
 
         try {
+            $numeroEdoCuenta = trim($request->numero);
+            $idsSeleccionados = $request->cotizacionesId;
+            $modo = $request->input('modo', 'crear');
+            $idEmpresa = auth()->user()->id_empresa;
+
+            // Verificar si ya existe un Estado de Cuenta con este número en la empresa actual
+            $estadoCuentaExistente = Estado_Cuenta::where('numero', $numeroEdoCuenta)
+                ->where('id_empresa', $idEmpresa)
+                ->first();
+
+            // 1. Si el modo es 'crear' y YA EXISTE, detener y advertir duplicidad
+            if ($modo === 'crear' && $estadoCuentaExistente) {
+                return response()->json([
+                    'ok' => false,
+                    'already_exists' => true,
+                    'message' => 'El número de estado de cuenta "' . $numeroEdoCuenta . '" ya existe en el sistema.'
+                ], 400);
+            }
+
+            // 2. Si el modo es 'anexar' y NO EXISTE, advertir que no se encontró para anexar
+            if ($modo === 'anexar' && !$estadoCuentaExistente) {
+                return response()->json([
+                    'ok' => false,
+                    'message' => 'El número de estado de cuenta "' . $numeroEdoCuenta . '" no existe en el sistema para anexar.'
+                ], 400);
+            }
+
+            // 3. Si el modo es 'editar' y el número pertenece a OTRO estado de cuenta distinto
+            if ($modo === 'editar' && $request->filled('edo_cuenta_actual_id')) {
+                $estadoCuentaActualId = $request->edo_cuenta_actual_id;
+                if ($estadoCuentaExistente && $estadoCuentaExistente->id != $estadoCuentaActualId) {
+                    return response()->json([
+                        'ok' => false,
+                        'already_exists' => true,
+                        'message' => 'El número de estado de cuenta "' . $numeroEdoCuenta . '" ya pertenece a otro estado de cuenta registrado.'
+                    ], 400);
+                }
+            }
 
             DB::beginTransaction();
 
-            $numeroEdoCuenta = trim($request->numero);
-            $idsSeleccionados = $request->cotizacionesId;
+            // Obtener o crear el registro objetivo de Estado_Cuenta
+            if ($estadoCuentaExistente) {
+                $estadoCuentaTarget = $estadoCuentaExistente;
+            } else {
+                $estadoCuentaTarget = Estado_Cuenta::create([
+                    'numero' => $numeroEdoCuenta,
+                    'id_empresa' => $idEmpresa,
+                    'created_by' => auth()->id(),
+                ]);
+            }
 
-
-            $estadoCuentaNuevo = Estado_Cuenta::firstOrCreate(
-                [
-        'numero'     => $numeroEdoCuenta,
-        'id_empresa' => auth()->user()->id_empresa,
-    ],
-                [
-        'created_by' => auth()->id(),
-    ]
-            );
-
-            if ($request->modo === 'editar') {
-
+            if ($modo === 'editar') {
                 $estadoCuentaActualId = $request->edo_cuenta_actual_id;
                 $soloEsta = $request->boolean("solo_esta");
 
                 if ($soloEsta) {
-
                     Estado_Cuenta_Cotizaciones::whereIn('cotizacion_id', $idsSeleccionados)
                         ->update([
-                            'estado_cuenta_id' => $estadoCuentaNuevo->id,
+                            'estado_cuenta_id' => $estadoCuentaTarget->id,
                             'assigned_by' => auth()->id(),
                             'updated_at' => now()
                         ]);
                 } else {
-
                     Estado_Cuenta_Cotizaciones::where('estado_cuenta_id', $estadoCuentaActualId)
                         ->update([
-                            'estado_cuenta_id' => $estadoCuentaNuevo->id,
+                            'estado_cuenta_id' => $estadoCuentaTarget->id,
                             'assigned_by' => auth()->id(),
                             'updated_at' => now()
                         ]);
                 }
-
-            } else {
-
-                //  dd($estadoCuentaNuevo);
-
+            } else { // 'crear' o 'anexar'
                 foreach ($idsSeleccionados as $idcot) {
                     Estado_Cuenta_Cotizaciones::updateOrCreate(
                         ['cotizacion_id' => $idcot],
                         [
-                            'estado_cuenta_id' => $estadoCuentaNuevo->id,
+                            'estado_cuenta_id' => $estadoCuentaTarget->id,
                             'assigned_by' => auth()->id(),
-                           'id_empresa' =>  auth()->user()->id_empresa
+                            'id_empresa' => $idEmpresa
                         ]
                     );
                 }
@@ -399,11 +426,12 @@ class CuentasCobrarController extends Controller
 
             return response()->json([
                 'ok' => true,
-                'message' => 'Estado de cuenta asignado correctamente'
+                'message' => $modo === 'anexar' 
+                    ? 'Cotizaciones anexadas al estado de cuenta correctamente' 
+                    : 'Estado de cuenta guardado correctamente'
             ]);
 
         } catch (\Throwable $th) {
-
             DB::rollBack();
 
             return response()->json([
@@ -412,7 +440,6 @@ class CuentasCobrarController extends Controller
                 'error' => $th->getMessage()
             ], 422);
         }
-
     }
 
     public function buscarPagos(Request $request)
