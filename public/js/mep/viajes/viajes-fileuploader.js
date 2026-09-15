@@ -216,7 +216,7 @@ function getFilesContenedor() {
                         .removeClass('bg-gradient-warning')
                         .addClass('bg-gradient-success')
                         .text('Cargado');
-                    document.querySelector('#' + btnVer).href = `/cotizaciones/cotizacion${d.identifier}/${d.filePath}`;
+                    document.querySelector('#' + btnVer).href = `/cotizaciones/cotizacion${d.identifier}/${d.filePath}?v=${Date.now()}`;
 
                     switch (d.fileType) {
                         case 'docx':

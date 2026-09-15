@@ -594,7 +594,17 @@
                         ],
                         firstDay: 1
                     },
-                    maxDate: moment()
+                    // maxDate: moment()
+                    ranges: {
+                        'Hoy': [moment(), moment()],
+                        'Últimos 7 días': [moment().subtract(6, 'days'), moment()],
+                        'Últimos 30 días': [moment().subtract(29, 'days'), moment()],
+                        'Este mes': [moment().startOf('month'), moment().endOf('month')],
+                        'Mes anterior': [
+                            moment().subtract(1, 'month').startOf('month'),
+                            moment().subtract(1, 'month').endOf('month')
+                        ]
+                    }
                 },
                 function(start, end, label) {
                     // Callback para el botón "Aplicar"

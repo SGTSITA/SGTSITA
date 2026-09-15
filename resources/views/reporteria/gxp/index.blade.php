@@ -23,6 +23,13 @@
                             class="form-control form-control-sm"
                             style="width: auto; min-width: 200px; box-shadow: none"
                         />
+                        
+                        <label class="mb-0 fw-semibold text-sm ms-3">Estatus:</label>
+                        <select id="statusFilter" class="form-select form-select-sm" style="width: auto; min-width: 150px; box-shadow: none">
+                            <option value="por_pagar">Por pagar</option>
+                            <option value="pagados">Pagados</option>
+                            <option value="todos">Todos</option>
+                        </select>
                     </div>
 
                     <div class="card-body">
@@ -53,7 +60,6 @@
     </div>
 
     <script>
-        window.cotizacionesData = @json($gastos ?? []);
         const exportUrl = '{{ route('gxp.export') }}';
     </script>
 @endsection

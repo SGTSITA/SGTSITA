@@ -19,7 +19,8 @@ class GpsCompany extends Model
         'url_conexion',
         'telefono',
         'correo',
-        'contacto'
+        'contacto',
+        'icono'
     ];
 
     public function serviciosGps()

@@ -15,14 +15,14 @@
 
                         <h2 class="fw-bold text-danger">
 
-                            {{ $titmesage ?? 'Acceso revocado' }}
+                            {{ session('titmesage') ?? 'Acceso revocado' }}
                         </h2>
 
-                        <p class="text-muted mt-3">
 
-                            {{ $messag ?? ' El acceso a estos documentos ya no es válido.' }}
+                        <p class="text-muted mt-3">
+                            {{ session('messag') ?? 'El acceso a estos documentos ya no es válido.' }}
                             <br>
-                            {{ $submessag ?? 'La contraseña fue revocada o el enlace ha expirado.' }}
+                            {{ session('submessag') ?? 'La contraseña fue revocada o el enlace ha expirado.' }}
                         </p>
                     </div>
 

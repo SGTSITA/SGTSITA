@@ -17,10 +17,14 @@ class DineroContenedor extends Model
 
     # protected $dates = ['deleted_at']; // Indica que SoftDeletes usará la columna deleted_at
 
-    public function DocCotizacion()
-    {
-        return $this->hasOne(DocumCotizacion::class, 'id_cotizacion', 'id_contenedor');
-    }
+   public function DocCotizacion()
+{
+    return $this->belongsTo(
+        DocumCotizacion::class,
+        'id_contenedor',
+        'id'
+    );
+}
 
     public function getAuditoriaData($old = [], $new = [])
     {
