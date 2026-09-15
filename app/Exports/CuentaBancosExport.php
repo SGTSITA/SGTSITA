@@ -64,14 +64,15 @@ class CuentaBancosExport implements FromCollection, WithHeadings, WithMapping, S
                 }
 
 
-                $sheet->setCellValue('A1', 'ESTADO DE CUENTA');
+                $tipoBancoText = ($this->cuenta->banco_1 == 1) ? 'Banco 1 (Base 1 / Oficial)' : 'Banco 2 (Base 2 / Secundaria)';
+                $sheet->setCellValue('A1', 'ESTADO DE CUENTA (' . mb_strtoupper($tipoBancoText) . ')');
                 $sheet->setCellValue('A2', 'Beneficiario: ' . ($this->cuenta->nombre_beneficiario ?? ''));
-                $sheet->setCellValue('A3', 'Banco: ' . ($this->cuenta->catBanco->nombre ?? ''));
+                $sheet->setCellValue('A3', 'Banco: ' . ($this->cuenta->catBanco->nombre ?? '') . ' | Tipo: ' . $tipoBancoText);
                 $sheet->setCellValue('A4', 'Cuenta: ' . $this->cuenta->cuenta_bancaria);
                 $sheet->setCellValue('A5', 'Saldo Inicial: ' . number_format($this->saldoAnterior, 2));
                 $sheet->setCellValue('A6', 'Depositos: ' . number_format($this->total_depositos, 2));
                 $sheet->setCellValue('A7', 'Cargos: ' . number_format($this->total_cargos, 2));
-                $sheet->setCellValue('A8', 'Saldo actual: ' . number_format($this->cuenta->saldo_actual, 2));
+                $sheet->setCellValue('A8', 'Saldo actual: ' . number_format($this->saldo_actual, 2));
 
 
                 $sheet->getStyle('A1:A8')->getAlignment()->setHorizontal(

@@ -3852,17 +3852,17 @@ $urlDocumento = asset("cotizaciones/cotizacion{$id_cot}/{$nameArchivo}");
             ]);
         }
 
-        if ($doc && $doc->num_contenedor != null) {
-            $numContenedor = $doc->num_contenedor;
+        // if ($doc && $doc->num_contenedor != null) {
+        //     $numContenedor = $doc->num_contenedor;
 
-            $contenedorExistente = DocumCotizacion::where('num_contenedor', $numContenedor)
-                                                ->where('id_empresa', $idEmpresa)
-                                                ->first();
+        //     $contenedorExistente = DocumCotizacion::where('num_contenedor', $numContenedor)
+        //                                         ->where('id_empresa', $idEmpresa)
+        //                                         ->first();
 
-            if ($contenedorExistente) {
-                return redirect()->back()->with('error', 'El contenedor ya existe en la empresa a la que se iba a asignar.');
-            }
-        }
+        //     if ($contenedorExistente) {
+        //         return redirect()->back()->with('error', 'El contenedor ya existe en la empresa a la que se iba a asignar.');
+        //     }
+        // }
 
         // Actualizar la cotización con el nuevo id_empresa y id_proveedor
         DB::table('cotizaciones')

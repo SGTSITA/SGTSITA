@@ -290,7 +290,15 @@
 
                     <input type="hidden" id="registroSeleccionado">
                     <input type="hidden" id="edoCuentaIdActual">
-                    <input type="hidden" id="modoEdoCuenta"> <!-- nuevo | editar -->
+                    <input type="hidden" id="modoEdoCuenta"> <!-- crear | anexar | editar -->
+
+                    <div class="mb-3 d-none" id="opcionModoEdoCuentaGroup">
+                        <label class="form-label font-weight-bold">Acción a realizar</label>
+                        <select class="form-select" id="selectModoAccionEdoCuenta">
+                            <option value="crear">Crear nuevo estado de cuenta</option>
+                            <option value="anexar">Anexar a estado de cuenta existente</option>
+                        </select>
+                    </div>
 
                     <div class="mb-3">
                         <label class="form-label">Número de estado de cuenta</label>
@@ -689,6 +697,74 @@
 
 
 
+            function ejecutarGuardarEdoCuenta(payload) {
+                $.ajax({
+                    url: '/reporteria/cxp/EdoCuenta/store',
+                    method: 'POST',
+                    data: payload,
+                    beforeSend: () => {
+                        Swal.fire({
+                            title: 'Guardando...',
+                            text: payload.modo === 'anexar' ? 'Anexando a estado de cuenta...' : 'Asignando estado de cuenta...',
+                            allowOutsideClick: false,
+                            didOpen: () => Swal.showLoading()
+                        });
+                    },
+                    success: (resp) => {
+                        if (!resp || !resp.ok) {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: resp?.message ?? 'Error al guardar el estado de cuenta'
+                            });
+                            return;
+                        }
+
+                        $('#modalAsignarEdoCuenta').modal('hide');
+
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Procesado',
+                            text: resp.message || 'Estado de cuenta guardado correctamente',
+                            timer: 1500,
+                            showConfirmButton: false
+                        });
+
+                        buscarInformacion(parametrosSearch);
+                        evaluarEstadoCuentaSeleccion();
+                    },
+                    error: (xhr) => {
+                        const resp = xhr.responseJSON;
+                        if (resp && resp.already_exists && payload.modo === 'crear') {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Estado de Cuenta Ya Existe',
+                                html: (resp.message || 'El número de estado de cuenta ya existe.') + '<br><br><b>¿Deseas anexar las cotizaciones seleccionadas a este estado de cuenta existente?</b>',
+                                showCancelButton: true,
+                                confirmButtonText: 'Sí, Anexar',
+                                cancelButtonText: 'Cancelar',
+                                confirmButtonColor: '#3085d6',
+                                cancelButtonColor: '#d33'
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    payload.modo = 'anexar';
+                                    $('#modoEdoCuenta').val('anexar');
+                                    $('#selectModoAccionEdoCuenta').val('anexar');
+                                    ejecutarGuardarEdoCuenta(payload);
+                                }
+                            });
+                            return;
+                        }
+
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: resp?.message ?? 'Error inesperado del servidor'
+                        });
+                    }
+                });
+            }
+
             $('#btnGuardarEdoCuenta').on('click', function() {
                 let cotizacionesId = table
                     .rows('.selected')
@@ -704,7 +780,6 @@
                     edo_cuenta_actual_id: $('#edoCuentaIdActual').val(),
                     solo_esta: $('#soloEstaCotizacion').is(':checked')
                 };
-
 
                 if (!payload.numero) {
                     Swal.fire({
@@ -724,54 +799,12 @@
                     return;
                 }
 
-                $.ajax({
-                    url: '/reporteria/cxp/EdoCuenta/store',
-                    method: 'POST',
-                    data: payload,
-                    beforeSend: () => {
-                        Swal.fire({
-                            title: 'Guardando...',
-                            text: 'Asignando estado de cuenta',
-                            allowOutsideClick: false,
-                            didOpen: () => Swal.showLoading()
-                        });
-                    },
-                    success: (resp) => {
-
-                        if (!resp || !resp.ok) {
-                            Swal.fire({
-                                icon: 'error',
-                                title: 'Error',
-                                text: resp?.message ??
-                                    'Error al guardar el estado de cuenta'
-                            });
-                            return;
-                        }
-
-                        $('#modalAsignarEdoCuenta').modal('hide');
-
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Asignado',
-                            text: 'Estado de cuenta asignado correctamente',
-                            timer: 1500,
-                            showConfirmButton: false
-                        });
-
-
-                        buscarInformacion(parametrosSearch);
-                        evaluarEstadoCuentaSeleccion();
-                    },
-                    error: (xhr) => {
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Error',
-                            text: xhr.responseJSON?.message ??
-                                'Error inesperado del servidor'
-                        });
-                    }
-                });
+                ejecutarGuardarEdoCuenta(payload);
             });
+        });
+
+        $('#selectModoAccionEdoCuenta').on('change', function() {
+            $('#modoEdoCuenta').val($(this).val());
         });
 
         function prepararModalCrear() {
@@ -779,6 +812,8 @@
                 .text('Asignar No Edo Cuenta');
 
             $('#modoEdoCuenta').val('crear');
+            $('#selectModoAccionEdoCuenta').val('crear');
+            $('#opcionModoEdoCuentaGroup').removeClass('d-none');
             $('#edoCuentaIdActual').val('');
 
             $('#noEdoCuenta')
@@ -795,6 +830,7 @@
                 .text('Editar No Edo Cuenta');
 
             $('#modoEdoCuenta').val('editar');
+            $('#opcionModoEdoCuentaGroup').addClass('d-none');
             $('#edoCuentaIdActual').val(edoCuentaId ?? '');
 
             $('#noEdoCuenta')

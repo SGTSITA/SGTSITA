@@ -1616,6 +1616,7 @@ class ApiValidationService
         // 2. Operadores
         $operadores = DB::table('operadores')
             ->where('id_empresa', $empresaId)
+            ->whereNotNull('deleted_at')
             ->select('nombre', 'id')
             ->get();
 
@@ -1623,6 +1624,7 @@ class ApiValidationService
         $camiones = DB::table('equipos')
             ->where('id_empresa', $empresaId)
             ->where('tipo', 'Tractos / Camiones')
+            ->where('activo', 1)
             ->select('id_equipo as nombre', 'id')
             ->get();
 
@@ -1630,6 +1632,7 @@ class ApiValidationService
         $chasis = DB::table('equipos')
             ->where('id_empresa', $empresaId)
             ->where('tipo', 'Chasis / Plataforma')
+            ->where('activo', 1)
             ->select('id_equipo as nombre', 'id')
             ->get();
 
