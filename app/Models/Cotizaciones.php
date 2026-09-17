@@ -144,6 +144,11 @@ class Cotizaciones extends Model
         return $this->hasOne(Empresas::class, 'id_empresa');
     }
 
+    public function Proveedor()
+    {
+        return $this->belongsTo(Proveedor::class, 'id_proveedor');
+    }
+
     public function estatusManiobra() //para local y estatus
     {
         return $this->belongsTo(EstatusManiobra::class, 'estatus_maniobra_id');

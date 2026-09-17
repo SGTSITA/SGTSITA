@@ -730,17 +730,19 @@ class CoordenadasService
                      ->when(!empty($filters['idCliente']), function ($q) use ($filters) {
                          $q->where('c.id_cliente', $filters['idCliente']);
                      });
-             })
-             // O si nunca ha viajado (no existe en ninguna asignación)
-             ->orWhereNotExists(function ($sub) {
-                 $sub->select(DB::raw(1))
-                     ->from('asignaciones as a')
-                     ->where(function ($q) {
-                         $q->whereColumn('a.id_camion', 'equipos.id')
-                             ->orWhereColumn('a.id_chasis', 'equipos.id')
-                             ->orWhereColumn('a.id_chasis2', 'equipos.id');
-                     });
              });
+
+             if (empty($filters['idCliente'])) {
+                 $queryOuter->orWhereNotExists(function ($sub) {
+                     $sub->select(DB::raw(1))
+                         ->from('asignaciones as a')
+                         ->where(function ($q) {
+                             $q->whereColumn('a.id_camion', 'equipos.id')
+                                 ->orWhereColumn('a.id_chasis', 'equipos.id')
+                                 ->orWhereColumn('a.id_chasis2', 'equipos.id');
+                         });
+                 });
+             }
          });
 
     }
