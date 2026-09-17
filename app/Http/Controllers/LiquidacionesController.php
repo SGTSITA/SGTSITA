@@ -1253,16 +1253,46 @@ class LiquidacionesController extends Controller
         $idOperadores = Operador::where('id_empresa', Auth::User()->id_empresa)->get()->pluck('id');
         $fechaI = $r->startDate;
         $fechaF = $r->endDate;
+        $numContenedor = $r->num_contenedor;
 
-        $historial = Liquidaciones::whereIn('id_operador', $idOperadores)->whereBetween('fecha', [$fechaI, $fechaF])->get();
+        $query = Liquidaciones::with(['Operadores', 'Viajes.Contenedores'])
+            ->whereIn('id_operador', $idOperadores);
+
+        if (!empty($numContenedor)) {
+            $query->whereHas('Viajes.Contenedores', function ($q) use ($numContenedor) {
+                $q->where('num_contenedor', 'like', "%{$numContenedor}%");
+            });
+        }
+
+        if ($fechaI && $fechaF) {
+            $query->whereBetween('fecha', [$fechaI, $fechaF]);
+        }
+
+        $historial = $query->get();
 
         $mapHistory = $historial->map(function ($h) {
-            return
-            [
+            $contenedores = $h->Viajes->map(function ($v) {
+                return $v->Contenedores?->num_contenedor;
+            })->filter()->unique()->implode(', ');
+
+            $contenedoresDetalle = $h->Viajes->map(function ($v) {
+                return [
+                    'id_contenedor' => $v->id_contenedor,
+                    'num_contenedor' => $v->Contenedores?->num_contenedor ?? 'N/A',
+                    'sueldo_operador' => (float) $v->sueldo_operador,
+                    'dinero_viaje' => (float) $v->dinero_viaje,
+                    'dinero_justificado' => (float) $v->dinero_justificado,
+                    'total_pagado' => (float) $v->total_pagado,
+                ];
+            })->values();
+
+            return [
                 "IdPago" => $h->id,
                 "IdOperador" => $h->id_operador,
                 "IdBanco" => $h->id_banco,
-                "Operador" => $h->operadores->nombre ,
+                "Operador" => $h->Operadores?->nombre ?? 'N/A',
+                "NumContenedor" => $contenedores ?: 'N/A',
+                "ContenedoresDetalle" => $contenedoresDetalle,
                 "Fecha" => $h->fecha,
                 "ViajesRealizados" => $h->viajes_realizados,
                 "SueldoOperador" => $h->sueldo_operador,

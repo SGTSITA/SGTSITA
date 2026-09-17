@@ -808,6 +808,7 @@ Route::middleware(['auth', 'idle.timeout'])->group(function () {
     Route::delete('/app-movil-admin/configs/{id}', [App\Http\Controllers\AppMovilAdminController::class, 'destroyConfig'])->name('app-movil-admin.configs.destroy');
     Route::post('/app-movil-admin/logs/limpiar', [App\Http\Controllers\AppMovilAdminController::class, 'limpiarLogs'])->name('app-movil-admin.logs.limpiar');
     Route::get('/app-movil-admin/logs/descargar', [App\Http\Controllers\AppMovilAdminController::class, 'descargarLogs'])->name('app-movil-admin.logs.descargar');
+    Route::get('/app-movil-admin/reporte-viaticos/{id_asignacion?}', [App\Http\Controllers\AppMovilAdminController::class, 'reporteViaticos'])->name('app-movil-admin.reporte-viaticos');
     Route::resource('app-movil-admin', App\Http\Controllers\AppMovilAdminController::class);
 
 

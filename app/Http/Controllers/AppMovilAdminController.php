@@ -695,4 +695,97 @@ class AppMovilAdminController extends Controller
         Session::flash('error', 'No se encontró el archivo de logs para la fecha seleccionada.');
         return redirect()->route('app-movil-admin.index', ['tab' => 'logs_app', 'log_fecha' => $fecha]);
     }
+
+    /**
+     * Generar reporte de viáticos en PDF para una asignación u operador desde la administración web.
+     */
+    public function reporteViaticos(Request $request, $id_asignacion = null)
+    {
+        $idAsignacion = $id_asignacion ?: $request->input('id_asignacion');
+        $idOperador = $request->input('id_operador');
+
+        $query = Asignaciones::with([
+            'Operador',
+            'Contenedor',
+            'Contenedor.Cotizacion'
+        ]);
+
+        if (!empty($idAsignacion)) {
+            $query->where('id', $idAsignacion);
+        } elseif (!empty($idOperador)) {
+            $query->where('id_operador', $idOperador);
+        } else {
+            $query->whereIn('id', BitacoraViajeOperador::pluck('id_asignacion'));
+        }
+
+        if (auth()->user()->es_admin !== 1) {
+            $query->where('id_empresa', auth()->user()->id_empresa);
+        }
+
+        $asignaciones = $query->orderBy('created_at', 'desc')->get();
+
+        if ($asignaciones->isEmpty()) {
+            return redirect()->back()->with('error', 'No se encontraron viajes o asignaciones para generar el reporte de viáticos.');
+        }
+
+        $primeraAsignacion = $asignaciones->first();
+        $operadorNombre = $primeraAsignacion->Operador?->nombre ?? 'N/A';
+
+        $empresaNombre = 'SGT Logistics';
+        if ($primeraAsignacion->id_empresa) {
+            $empresa = \App\Models\Empresas::find($primeraAsignacion->id_empresa);
+            if ($empresa) {
+                $empresaNombre = $empresa->nombre;
+            }
+        }
+        if ($empresaNombre === 'SGT Logistics' && auth()->user()->Empresa) {
+            $empresaNombre = auth()->user()->Empresa->nombre;
+        }
+
+        $reporteData = [];
+        $totalGeneral = 0.0;
+
+        foreach ($asignaciones as $asignacion) {
+            $doc = $asignacion->Contenedor;
+            $numContenedor = $doc?->num_contenedor ?? 'Sin Contenedor';
+            $referencia = $doc?->Cotizacion?->referencia_full ?? '';
+            $fechaInicio = $asignacion->fecha_inicio ? Carbon::parse($asignacion->fecha_inicio)->format('d/m/Y') : 'N/A';
+            
+            $gastos = [];
+            if ($doc && $doc->id_cotizacion) {
+                $viaticos = \App\Models\ViaticosOperador::where('id_cotizacion', $doc->id_cotizacion)
+                    ->select('descripcion_gasto as concepto', 'monto')
+                    ->get();
+
+                foreach ($viaticos as $v) {
+                    $montoFloat = (float) $v->monto;
+                    $gastos[] = [
+                        'concepto' => $v->concepto ?? 'Sin Concepto',
+                        'monto'    => $montoFloat
+                    ];
+                    $totalGeneral += $montoFloat;
+                }
+            }
+
+            $reporteData[] = [
+                'id_asignacion'  => $asignacion->id,
+                'num_contenedor' => $numContenedor,
+                'referencia'     => $referencia,
+                'fecha_inicio'   => $fechaInicio,
+                'gastos'         => $gastos
+            ];
+        }
+
+        $fechaGeneracion = Carbon::now()->format('d/m/Y H:i');
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('app_movil_admin.pdf_viaticos', compact(
+            'operadorNombre',
+            'empresaNombre',
+            'reporteData',
+            'totalGeneral',
+            'fechaGeneracion'
+        ));
+
+        return $pdf->stream("reporte_viaticos_" . ($idAsignacion ?? 'general') . ".pdf");
+    }
 }

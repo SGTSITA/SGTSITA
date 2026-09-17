@@ -17,6 +17,9 @@
                         <p class="text-xs text-secondary mb-0">Gestione las bitácoras de viajes y las configuraciones de la aplicación móvil.</p>
                     </div>
                     <div class="d-flex flex-wrap gap-2">
+                        <a href="{{ route('app-movil-admin.reporte-viaticos') }}" target="_blank" class="btn btn-sm btn-outline-danger shadow-xs" title="Generar Reporte de Viáticos General">
+                            <i class="fa fa-file-pdf me-1"></i> Reporte Viáticos (General)
+                        </a>
                         <a href="{{ route('app-movil-admin.create') }}" class="btn btn-sm text-white shadow-xs" style="background: {{ $configuracion->color_boton_add ?? '#5e72e4' }}">
                             <i class="fa fa-plus me-1"></i> Vincular Nueva Bitácora
                         </a>
@@ -149,6 +152,9 @@
                                                 </span>
                                             </td>
                                             <td class="align-middle text-center">
+                                                <a href="{{ route('app-movil-admin.reporte-viaticos', $bitacora->id_asignacion) }}" target="_blank" class="btn btn-xs btn-outline-danger me-1" title="Ver Reporte de Viáticos PDF">
+                                                    <i class="fa fa-file-pdf"></i> Reporte PDF
+                                                </a>
                                                 <a href="{{ route('app-movil-admin.edit', $bitacora->id) }}" class="btn btn-xs btn-info text-white me-1">
                                                     <i class="fa fa-edit"></i> Editar / Ver
                                                 </a>
