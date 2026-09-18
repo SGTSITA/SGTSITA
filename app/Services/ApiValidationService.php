@@ -2120,7 +2120,17 @@ class ApiValidationService
 
             $query = Cotizaciones::where('id_cliente', $idCliente)
                 ->where('jerarquia', '!=', 'Secundario')
-                ->with(['Cliente', 'DocCotizacion.Asignaciones.Operador', 'DocCotizacion.Asignaciones.Camion', 'DocCotizacion.naviera', 'viajes'])
+                ->with([
+                    'Cliente',
+                    'Empresa',
+                    'Proveedor',
+                    'DocCotizacion.Asignaciones.Operador',
+                    'DocCotizacion.Asignaciones.Camion',
+                    'DocCotizacion.Asignaciones.Proveedor',
+                    'DocCotizacion.Asignaciones.Empresa',
+                    'DocCotizacion.naviera',
+                    'viajes'
+                ])
                 ->orderBy('created_at', 'desc');
 
             $cotizaciones = $query->get();
@@ -2147,6 +2157,28 @@ class ApiValidationService
                     }
                 }
 
+                // Resolucion de Fechas
+                $rawFechaInicio = $asignacion?->fecha_inicio 
+                    ?? $doc?->fecha_inicio 
+                    ?? $cotizacion->fecha_seleccion_ubicacion 
+                    ?? $cotizacion->fecha_seleccion 
+                    ?? $cotizacion->fecha_ingreso_puerto;
+                    
+                $rawFechaFin = $asignacion?->fecha_fin 
+                    ?? $doc?->fecha_fin 
+                    ?? $cotizacion->fecha_salida_puerto 
+                    ?? $cotizacion->fecha_entrega;
+
+                $fechaInicioStr = $rawFechaInicio ? \Carbon\Carbon::parse($rawFechaInicio)->toDateString() : ($cotizacion->created_at ? $cotizacion->created_at->toDateString() : 'S/N');
+                $fechaFinStr = $rawFechaFin ? \Carbon\Carbon::parse($rawFechaFin)->toDateString() : 'S/N';
+
+                // Resolucion de Empresa y Transportista
+                $empresaObj = $asignacion?->Empresa ?? $cotizacion->Empresa;
+                $empresaNombre = $empresaObj?->nombre ?? $cotizacion->empresa_local ?? 'N/A';
+
+                $proveedorObj = $asignacion?->Proveedor ?? $cotizacion->Proveedor;
+                $transportistaNombre = $proveedorObj?->nombre ?? $cotizacion->transportista_local ?? ($empresaNombre !== 'N/A' ? $empresaNombre : 'N/A');
+
                 return [
                     'id' => $cotizacion->id,
                     'contenedor_id' => $doc?->id,
@@ -2165,6 +2197,12 @@ class ApiValidationService
                     'tamano' => $cotizacion->tamano ?? 'N/A',
                     'boleta_liberacion' => $doc?->boleta_liberacion ?? '',
                     'num_boleta_liberacion' => $doc?->num_boleta_liberacion ?? '',
+                    'empresa' => $empresaNombre,
+                    'Empresa' => $empresaNombre,
+                    'transportista' => $transportistaNombre,
+                    'transportista_nombre' => $transportistaNombre,
+                    'fecha_inicio' => $fechaInicioStr,
+                    'fecha_fin' => $fechaFinStr,
                     'fecha_registro' => $cotizacion->created_at ? $cotizacion->created_at->format('d/m/Y H:i') : ''
                 ];
             });

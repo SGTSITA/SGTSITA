@@ -400,15 +400,16 @@ class CoordenadasService
             })
 
 
-            ->when(!($filters['isAdmin'] ?? false), function ($q) use ($filters) {
+            // Si se especifica idCliente, filtrar por el cliente e ignorar id_empresa
+            ->when(!empty($filters['idCliente']), function ($q) use ($filters) {
+                $q->where('cli.id', $filters['idCliente']);
+            })
 
+            ->when(empty($filters['idCliente']) && !($filters['isAdmin'] ?? false), function ($q) use ($filters) {
                 $q->when($filters['id_empresa'] ?? null, function ($q, $id_empresa) {
                     $q->where('c.id_empresa', $id_empresa);
-                })
-
-                ->when($filters['idCliente'] ?? null, function ($q, $idCliente) {
-                    $q->where('cli.id', $idCliente);
-                })
+                });
+            })
 
                 ->when($filters['proveedor'] ?? null, function ($q, $proveedor) {
                     $q->whereRaw(
@@ -422,17 +423,13 @@ class CoordenadasService
                 })
 
                 ->when($filters['contenedores'] ?? null, function ($q, $contenedores) {
-
                     $list = array_filter(array_map('trim', explode(';', $contenedores)));
-
                     if (count($list) > 1) {
                         $q->whereIn('dc.num_contenedor', $list);
-                    } else {
+                    } else if (count($list) == 1) {
                         $q->where('dc.num_contenedor', $list[0]);
                     }
-                });
-
-            })
+                })
 
 
           ->when($filters['fecha'] ?? null, function ($q, $fecha) {
@@ -687,10 +684,8 @@ class CoordenadasService
 
         return $query
 
-         ->when(!($filters['isAdmin'] ?? false), function ($q) use ($filters) {
-
+         ->when(empty($filters['idCliente']) && !($filters['isAdmin'] ?? false), function ($q) use ($filters) {
              $empresa = $filters['id_empresa'] ?? 0;
-
              if ($empresa != 0) {
                  $q->where('equipos.id_empresa', $empresa);
              }
@@ -719,7 +714,7 @@ class CoordenadasService
                      })
 
                      // Si no es admin, también valida empresa en asignaciones
-                     ->when(!($filters['isAdmin'] ?? false), function ($q) use ($filters) {
+                     ->when(empty($filters['idCliente']) && !($filters['isAdmin'] ?? false), function ($q) use ($filters) {
                          $empresa = $filters['id_empresa'] ?? 0;
                          if ($empresa != 0) {
                              $q->where('a.id_empresa', $empresa);
