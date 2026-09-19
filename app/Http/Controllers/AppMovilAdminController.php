@@ -625,6 +625,9 @@ class AppMovilAdminController extends Controller
         if ($request->has('app_movil_release_notes')) {
             GlobalConfig::setVal('app_movil_release_notes', trim($request->input('app_movil_release_notes')), 'Novedades y notas de la versión del APK');
         }
+        if ($request->filled('app_movil_apk_url')) {
+            GlobalConfig::setVal('app_movil_apk_url', trim($request->input('app_movil_apk_url')), 'URL pública para la descarga directa del archivo APK de la App Móvil');
+        }
 
         if ($request->hasFile('apk_file')) {
             $file = $request->file('apk_file');
