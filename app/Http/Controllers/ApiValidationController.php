@@ -1099,12 +1099,12 @@ class ApiValidationController extends Controller
         ->leftJoin('docum_cotizacion', 'asignaciones.id_contenedor', '=', 'docum_cotizacion.id')
         ->leftJoin('cotizaciones', 'docum_cotizacion.id_cotizacion', '=', 'cotizaciones.id')
         ->leftJoin('liquidacion_contenedor', 'docum_cotizacion.id', '=', 'liquidacion_contenedor.id_contenedor')
-        ->leftJoin('bitacora_viaje_operadores', 'asignaciones.id', '=', 'bitacora_viaje_operadores.id_asignacion')
+        ->leftJoin('bitacora_viajes_operadores', 'asignaciones.id', '=', 'bitacora_viajes_operadores.id_asignacion')
         ->whereIn('asignaciones.id_operador', $operadorIds)
         ->whereNull('liquidacion_contenedor.id_liquidacion')
         ->where(function ($q) {
             $q->where('asignaciones.estatus_viaje', 'Finalizado')
-              ->orWhereNotNull('bitacora_viaje_operadores.viaje_finalizado');
+              ->orWhereNotNull('bitacora_viajes_operadores.viaje_finalizado');
         })
         ->select('asignaciones.*')
         ->distinct();
