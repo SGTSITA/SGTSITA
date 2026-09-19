@@ -950,19 +950,9 @@ class ApiValidationService
             ]);
         }
 
-        // Verificar si ya existe un gasto de diésel pagado en esta asignación
-        $dieselPagadoExistente = \App\Models\Gasto::where('origen_legacy_id', $idAsignacion)
-            ->where('origen_legacy', 'like', 'asignacion_planeacion%')
-            ->where('concepto', 'like', '%Diesel%')
-            ->where('estatus', 'pagado')
-            ->exists();
-
-        // Verificar si ya existe un gasto de urea pagado en esta asignación
-        $ureaPagadaExistente = \App\Models\Gasto::where('origen_legacy_id', $idAsignacion)
-            ->where('origen_legacy', 'like', 'asignacion_planeacion%')
-            ->where('concepto', 'like', '%Urea%')
-            ->where('estatus', 'pagado')
-            ->exists();
+        // Verificar si ya existe un gasto de diésel o urea pagado o parcialmente pagado en esta asignación
+        $dieselPagadoExistente = $this->verificarGastoPagado($idAsignacion, 'Diesel');
+        $ureaPagadaExistente = $this->verificarGastoPagado($idAsignacion, 'Urea');
 
         $savedFilePaths = [];
         $path = public_path('/uploads/diesel/' . $idAsignacion);
@@ -2508,6 +2498,28 @@ class ApiValidationService
                 'status' => 500
             ];
         }
+    }
+
+    private function verificarGastoPagado(int $idAsignacion, string $tipoConcepto): bool
+    {
+        return \App\Models\Gasto::where(function($q) use ($idAsignacion, $tipoConcepto) {
+                $q->where(function($q2) use ($idAsignacion, $tipoConcepto) {
+                    $q2->where('origen_legacy_id', $idAsignacion)
+                       ->where('origen_legacy', 'like', 'asignacion_planeacion%')
+                       ->where('concepto', 'like', "%{$tipoConcepto}%");
+                })->orWhereHas('vinculos', function($q2) use ($idAsignacion) {
+                    $q2->where('tipo_vinculo', 'asignacion')
+                       ->where('vinculable_type', \App\Models\Asignaciones::class)
+                       ->where('vinculable_id', $idAsignacion);
+                })->where('concepto', 'like', "%{$tipoConcepto}%");
+            })
+            ->where(function($q) {
+                $q->whereIn('estatus', ['pagado', 'pagado_parcial'])
+                  ->orWhereHas('pagos', function($q2) {
+                      $q2->where('estatus', 'aplicado');
+                  });
+            })
+            ->exists();
     }
 }
 
