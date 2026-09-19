@@ -32,15 +32,19 @@ class ApiValidationController extends Controller
 
     public function login(Request $request)
     {
+        if (!$request->has('email') && $request->has('usuario')) {
+            $request->merge(['email' => $request->usuario]);
+        }
+        if (!$request->has('password') && $request->has('contrasena')) {
+            $request->merge(['password' => $request->contrasena]);
+        }
+
         $request->validate([
             'email'    => 'required',
             'password' => 'required',
         ]);
 
         $credentials = $request->only('email', 'password');
-        if (!$request->has('email') && $request->has('usuario')) {
-            $credentials['email'] = $request->usuario;
-        }
         $res = $this->apiValidationService->login($credentials);
         return $this->forwardResponse($res);
     }
