@@ -506,10 +506,30 @@ const gridOptions = {
         },
         {
             field: "Estatus",
-            width: 100,
+            width: 140,
             filter: true,
             floatingFilter: true,
-            cellClassRules: ragCellClassRules,
+            cellRenderer: (params) => {
+                if (!params.value) return "";
+                const val = params.value.trim();
+                let customStyle = "background-color: #f8f9fa; color: #495057; border: 1px solid #dee2e6;";
+
+                if (val === "Planeado" || val === "Planeadas") {
+                    customStyle = "background-color: #fff7ed; color: #c2410c; border: 1px solid #fdba74;";
+                } else if (val === "Viaje solicitado" || val === "Pendiente" || val === "NO ASIGNADA") {
+                    customStyle = "background-color: #fefce8; color: #a16207; border: 1px solid #fde047;";
+                } else if (val === "Por Asignar") {
+                    customStyle = "background-color: #f5f3ff; color: #6d28d9; border: 1px solid #c4b5fd;";
+                } else if (val === "Aprobada" || val === "Aprobado" || val === "Aprobadas") {
+                    customStyle = "background-color: #eff6ff; color: #1d4ed8; border: 1px solid #93c5fd;";
+                } else if (val === "Finalizado" || val === "Finalizada" || val === "Finalizadas") {
+                    customStyle = "background-color: #f0fdf4; color: #15803d; border: 1px solid #86efac;";
+                } else if (val === "Cancelada" || val === "Cancelado" || val === "Canceladas") {
+                    customStyle = "background-color: #fef2f2; color: #b91c1c; border: 1px solid #fca5a5;";
+                }
+
+                return `<span class="badge fs-7 px-3 py-2 fw-bold" style="${customStyle}">${val}</span>`;
+            }
         },
         { field: "Origen", width: 100, filter: true, floatingFilter: true },
         { field: "Destino", width: 100 },

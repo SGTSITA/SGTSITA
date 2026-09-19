@@ -185,7 +185,7 @@
                     <!-- TAB 2: CONFIGURACIÓN DE LA APP MÓVIL       -->
                     <!-- ========================================== -->
                     <div class="tab-pane fade {{ $activeTab === 'config' ? 'show active' : '' }}" id="tab-config" role="tabpanel" aria-labelledby="config-tab">
-                        <form action="{{ route('app-movil-admin.configs.update') }}" method="POST">
+                        <form action="{{ route('app-movil-admin.configs.update') }}" method="POST" enctype="multipart/form-data">
                             @csrf
                             
                             <!-- SECCIÓN 1: DOCUMENTOS DEL OPERADOR -->
@@ -286,6 +286,60 @@
                                             <div class="p-2 border rounded bg-light text-center font-monospace text-sm fw-bold text-primary" id="previewNotifString">
                                                 {{ $notifDia }} {{ $notifHora }}
                                             </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- SECCIÓN 3: GESTIÓN DE VERSIÓN DE APP MÓVIL Y ARCHIVO APK (OTA) -->
+                            <div class="card border mb-4 shadow-none">
+                                <div class="card-header bg-light py-3">
+                                    <h5 class="mb-0 fw-bold text-dark">
+                                        <i class="fa fa-mobile-alt text-success me-2"></i>3. Gestión de Versión de la App Móvil y Carga de APK (OTA)
+                                    </h5>
+                                    <span class="badge bg-secondary font-monospace mt-1">Claves: app_movil_version, app_movil_build, app_movil_apk_url</span>
+                                </div>
+                                <div class="card-body">
+                                    <p class="text-sm text-secondary mb-3">
+                                        Permite publicar una nueva versión de la aplicación móvil hospedando el archivo <code>.apk</code> en el servidor. La App móvil consultará esta información al abrirse y permitirá a los operadores actualizar directamente con 1 clic.
+                                    </p>
+
+                                    <div class="row g-3">
+                                        <div class="col-md-4">
+                                            <label class="form-label fw-bold text-dark text-sm">Versión de App (ej: 1.0.1)</label>
+                                            <input type="text" name="app_movil_version" class="form-control" value="{{ \App\Models\GlobalConfig::getVal('app_movil_version', '1.0.0') }}" placeholder="1.0.1">
+                                        </div>
+
+                                        <div class="col-md-4">
+                                            <label class="form-label fw-bold text-dark text-sm">Número de Build / Compilación (ej: 2)</label>
+                                            <input type="number" name="app_movil_build" class="form-control" value="{{ \App\Models\GlobalConfig::getVal('app_movil_build', '1') }}" placeholder="2">
+                                        </div>
+
+                                        <div class="col-md-4 d-flex align-items-center mt-4">
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" name="app_movil_force_update" id="app_movil_force_update" value="1" {{ \App\Models\GlobalConfig::getVal('app_movil_force_update', '0') == '1' ? 'checked' : '' }}>
+                                                <label class="form-check-label fw-bold text-dark text-sm" for="app_movil_force_update">
+                                                    Forzar Actualización Obligatoria
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-md-12">
+                                            <label class="form-label fw-bold text-dark text-sm">Cargar Nuevo Archivo APK (instala en servidor)</label>
+                                            <input type="file" name="apk_file" class="form-control" accept=".apk">
+                                            @if (\App\Models\GlobalConfig::getVal('app_movil_apk_url'))
+                                                <div class="mt-2 text-xs text-muted">
+                                                    <i class="fa fa-link text-primary me-1"></i> URL Actual del APK:
+                                                    <a href="{{ \App\Models\GlobalConfig::getVal('app_movil_apk_url') }}" target="_blank" class="fw-bold text-primary">
+                                                        {{ \App\Models\GlobalConfig::getVal('app_movil_apk_url') }}
+                                                    </a>
+                                                </div>
+                                            @endif
+                                        </div>
+
+                                        <div class="col-md-12">
+                                            <label class="form-label fw-bold text-dark text-sm">Notas de la Versión (Novedades para el operador)</label>
+                                            <textarea name="app_movil_release_notes" class="form-control" rows="2" placeholder="Describa los cambios principales de esta actualización...">{{ \App\Models\GlobalConfig::getVal('app_movil_release_notes', 'Nueva actualización con estandarización de reportes de viáticos y correcciones.') }}</textarea>
                                         </div>
                                     </div>
                                 </div>
