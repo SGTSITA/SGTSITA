@@ -2112,5 +2112,402 @@ class ApiValidationService
             ];
         }
     }
+
+    public function getClienteOperaciones($user, array $params = [])
+    {
+        try {
+            $idCliente = $user->id_cliente ?? 0;
+
+            $query = Cotizaciones::where('id_cliente', $idCliente)
+                ->where('jerarquia', '!=', 'Secundario')
+                ->with([
+                    'Cliente',
+                    'Empresa',
+                    'Proveedor',
+                    'DocCotizacion.Asignaciones.Operador',
+                    'DocCotizacion.Asignaciones.Camion',
+                    'DocCotizacion.Asignaciones.Proveedor',
+                    'DocCotizacion.Asignaciones.Empresa',
+                    'DocCotizacion.naviera',
+                    'viajes'
+                ])
+                ->orderBy('created_at', 'desc');
+
+            $cotizaciones = $query->get();
+
+            $operaciones = $cotizaciones->map(function ($cotizacion) {
+                $doc = $cotizacion->DocCotizacion;
+                $asignacion = $doc?->Asignaciones;
+                $operador = $asignacion?->Operador;
+                $camion = $asignacion?->Camion;
+
+                $estatus = $cotizacion->estatus;
+                if ($cotizacion->estatus_planeacion == 1 && $estatus == 'Aprobada') {
+                    $estatus = 'Planeada';
+                }
+
+                $numContenedor = $doc ? $doc->num_contenedor : 'N/A';
+                if (!is_null($cotizacion->referencia_full)) {
+                    $secundaria = Cotizaciones::where('referencia_full', $cotizacion->referencia_full)
+                        ->where('jerarquia', 'Secundario')
+                        ->with('DocCotizacion')
+                        ->first();
+                    if ($secundaria && $secundaria->DocCotizacion) {
+                        $numContenedor .= ' / ' . $secundaria->DocCotizacion->num_contenedor;
+                    }
+                }
+
+                // Resolucion de Fechas
+                $rawFechaInicio = $asignacion?->fecha_inicio 
+                    ?? $doc?->fecha_inicio 
+                    ?? $cotizacion->fecha_seleccion_ubicacion 
+                    ?? $cotizacion->fecha_seleccion 
+                    ?? $cotizacion->fecha_ingreso_puerto;
+                    
+                $rawFechaFin = $asignacion?->fecha_fin 
+                    ?? $doc?->fecha_fin 
+                    ?? $cotizacion->fecha_salida_puerto 
+                    ?? $cotizacion->fecha_entrega;
+
+                $fechaInicioStr = $rawFechaInicio ? \Carbon\Carbon::parse($rawFechaInicio)->toDateString() : ($cotizacion->created_at ? $cotizacion->created_at->toDateString() : 'S/N');
+                $fechaFinStr = $rawFechaFin ? \Carbon\Carbon::parse($rawFechaFin)->toDateString() : 'S/N';
+
+                // Resolucion de Empresa y Transportista
+                $empresaObj = $asignacion?->Empresa ?? $cotizacion->Empresa;
+                $empresaNombre = $empresaObj?->nombre ?? $cotizacion->empresa_local ?? 'N/A';
+
+                $proveedorObj = $asignacion?->Proveedor ?? $cotizacion->Proveedor;
+                $transportistaNombre = $proveedorObj?->nombre ?? $cotizacion->transportista_local ?? ($empresaNombre !== 'N/A' ? $empresaNombre : 'N/A');
+
+                return [
+                    'id' => $cotizacion->id,
+                    'contenedor_id' => $doc?->id,
+                    'cliente' => $cotizacion->Cliente ? $cotizacion->Cliente->nombre : 'N/A',
+                    'contenedor' => $numContenedor,
+                    'origen' => $cotizacion->origen,
+                    'destino' => $cotizacion->destino,
+                    'estatus' => $estatus,
+                    'est_plane' => $cotizacion->estatus_planeacion ?? null,
+                    'operador' => $operador?->nombre ?? 'Sin Asignar',
+                    'container_num' => $doc?->num_contenedor ?? '',
+                    'unidad' => $camion?->no_economico ?? $camion?->placas ?? $camion?->id_equipo ?? 'Ninguna',
+                    'placas' => $camion?->placas ?? '',
+                    'terminal' => $doc?->terminal ?? 'N/A',
+                    'naviera' => $doc?->naviera?->naviera ?? 'N/A',
+                    'tamano' => $cotizacion->tamano ?? 'N/A',
+                    'boleta_liberacion' => $doc?->boleta_liberacion ?? '',
+                    'num_boleta_liberacion' => $doc?->num_boleta_liberacion ?? '',
+                    'empresa' => $empresaNombre,
+                    'Empresa' => $empresaNombre,
+                    'transportista' => $transportistaNombre,
+                    'transportista_nombre' => $transportistaNombre,
+                    'fecha_inicio' => $fechaInicioStr,
+                    'fecha_fin' => $fechaFinStr,
+                    'fecha_registro' => $cotizacion->created_at ? $cotizacion->created_at->format('d/m/Y H:i') : ''
+                ];
+            });
+
+            $total = $operaciones->count();
+            $enTransito = $operaciones->filter(fn($o) => in_array(strtolower($o['estatus']), ['en tránsito', 'en transito', 'en ruta', 'en proceso', 'activo']))->count();
+            $planeadas = $operaciones->filter(fn($o) => in_array(strtolower($o['estatus']), ['planeada', 'aprobada']) && $o['est_plane'] == 1)->count();
+            $pendientes = $operaciones->filter(fn($o) => in_array(strtolower($o['estatus']), ['pendiente', 'cotizada']))->count();
+            $finalizados = $operaciones->filter(fn($o) => strtolower($o['estatus']) === 'finalizado')->count();
+
+            return [
+                'success' => true,
+                'message' => 'Operaciones del cliente obtenidas con éxito.',
+                'data' => [
+                    'operaciones' => $operaciones->values(),
+                    'stats' => [
+                        'total' => $total,
+                        'en_transito' => $enTransito,
+                        'planeadas' => $planeadas,
+                        'pendientes' => $pendientes,
+                        'finalizados' => $finalizados,
+                    ]
+                ],
+                'status' => 200
+            ];
+        } catch (\Exception $e) {
+            Log::error("Error en getClienteOperaciones: " . $e->getMessage());
+            return [
+                'success' => false,
+                'message' => 'Error al obtener operaciones del cliente: ' . $e->getMessage(),
+                'data' => [],
+                'status' => 500
+            ];
+        }
+    }
+
+    public function getClienteInfoViaje($user, array $params)
+    {
+        try {
+            $idCliente = $user->id_cliente ?? 0;
+            $cotizacionId = $params['id_cotizacion'] ?? $params['cotizacion_id'] ?? $params['id'] ?? null;
+
+            if (!$cotizacionId) {
+                return [
+                    'success' => false,
+                    'message' => 'El parámetro id_cotizacion es requerido.',
+                    'data' => null,
+                    'status' => 400
+                ];
+            }
+
+            $cotizacion = Cotizaciones::where('id', $cotizacionId)
+                ->where('id_cliente', $idCliente)
+                ->with(['Cliente', 'Subcliente', 'DocCotizacion.Asignaciones.Operador', 'DocCotizacion.Asignaciones.Camion', 'DocCotizacion.naviera', 'Proveedor'])
+                ->first();
+
+            if (!$cotizacion) {
+                return [
+                    'success' => false,
+                    'message' => 'El viaje no existe o no pertenece a este cliente.',
+                    'data' => null,
+                    'status' => 404
+                ];
+            }
+
+            $doc = $cotizacion->DocCotizacion;
+            $asignacion = $doc?->Asignaciones;
+            $operador = $asignacion?->Operador;
+            $camion = $asignacion?->Camion;
+            $proveedor = $cotizacion->Proveedor;
+
+            $estatus = $cotizacion->estatus;
+            if ($cotizacion->estatus_planeacion == 1 && $estatus == 'Aprobada') {
+                $estatus = 'Planeada';
+            }
+
+            // Informacion General
+            $infoGeneral = [
+                'id' => $cotizacion->id,
+                'num_contenedor' => $doc?->num_contenedor ?? 'N/A',
+                'origen' => $cotizacion->origen,
+                'destino' => $cotizacion->destino,
+                'estatus' => $estatus,
+                'tamano' => $cotizacion->tamano,
+                'peso' => $cotizacion->peso ?? 'N/A',
+                'tipo_viaje' => $cotizacion->tipo_viaje_seleccion ?? 'N/A',
+                'terminal' => $doc?->terminal ?? 'N/A',
+                'naviera' => $doc?->naviera?->naviera ?? 'N/A',
+                'boleta_liberacion' => $doc?->num_boleta_liberacion ?? $doc?->boleta_liberacion ?? 'N/A',
+                'cliente' => $cotizacion->Cliente?->nombre ?? 'N/A',
+                'subcliente' => $cotizacion->Subcliente?->nombre ?? null,
+                'fecha_registro' => $cotizacion->created_at ? $cotizacion->created_at->format('d/m/Y H:i') : null,
+            ];
+
+            // Informacion de Equipo y Operador
+            $infoEquipoOperador = null;
+            if ($operador || $camion || $proveedor) {
+                $infoEquipoOperador = [
+                    'operador' => $operador?->nombre ?? null,
+                    'telefono_operador' => $operador?->telefono ?? null,
+                    'unidad' => $camion?->no_economico ?? $camion?->id_equipo ?? null,
+                    'placas' => $camion?->placas ?? null,
+                    'transportista' => $proveedor?->nombre ?? null,
+                ];
+            }
+
+            // Evaluacion Seccion FCCP / Carta Porte
+            $seccionFccp = null;
+            $usuarioObj = User::find($user->id);
+            $haceOcultarFacturacion = $usuarioObj && $usuarioObj->can('mec-ocultar_datos_facturacion');
+
+            if (!$haceOcultarFacturacion) {
+                $hasFccpData = !empty($cotizacion->sat_uso_cfdi_id) ||
+                    !empty($cotizacion->sat_forma_pago_id) ||
+                    !empty($cotizacion->sat_metodo_pago_id) ||
+                    !empty($cotizacion->cp_fraccion) ||
+                    !empty($cotizacion->cp_clave_sat) ||
+                    !empty($cotizacion->cp_pedimento) ||
+                    !empty($cotizacion->cp_clase_ped) ||
+                    !empty($cotizacion->cp_cantidad) ||
+                    !empty($cotizacion->cp_valor) ||
+                    !empty($cotizacion->cp_contacto_entrega) ||
+                    !empty($cotizacion->cp_fecha_tentativa_entrega) ||
+                    !empty($cotizacion->cp_hora_tentativa_entrega) ||
+                    !empty($cotizacion->cp_comentarios) ||
+                    !empty($doc?->doc_ccp);
+
+                if ($hasFccpData) {
+                    $seccionFccp = [
+                        'uso_cfdi' => $cotizacion->sat_uso_cfdi_id ?? null,
+                        'forma_pago' => $cotizacion->sat_forma_pago_id ?? null,
+                        'metodo_pago' => $cotizacion->sat_metodo_pago_id ?? null,
+                        'direccion_recinto' => $cotizacion->direccion_recinto ?? null,
+                        'cp_fraccion' => $cotizacion->cp_fraccion ?? null,
+                        'cp_clave_sat' => $cotizacion->cp_clave_sat ?? null,
+                        'cp_pedimento' => $cotizacion->cp_pedimento ?? null,
+                        'cp_clase_ped' => $cotizacion->cp_clase_ped ?? null,
+                        'cp_cantidad' => $cotizacion->cp_cantidad ?? null,
+                        'cp_valor' => $cotizacion->cp_valor ?? null,
+                        'cp_moneda' => $cotizacion->cp_moneda ?? null,
+                        'cp_contacto_entrega' => $cotizacion->cp_contacto_entrega ?? null,
+                        'cp_fecha_tentativa_entrega' => $cotizacion->cp_fecha_tentativa_entrega ?? null,
+                        'cp_hora_tentativa_entrega' => $cotizacion->cp_hora_tentativa_entrega ?? null,
+                        'cp_comentarios' => $cotizacion->cp_comentarios ?? null,
+                        'doc_ccp_url' => !empty($doc?->doc_ccp) ? asset($doc->doc_ccp) : null,
+                    ];
+                }
+            }
+
+            return [
+                'success' => true,
+                'message' => 'Información del viaje obtenida con éxito.',
+                'data' => [
+                    'informacion_general' => $infoGeneral,
+                    'informacion_equipo_operador' => $infoEquipoOperador,
+                    'seccion_fccp' => $seccionFccp,
+                ],
+                'status' => 200
+            ];
+        } catch (\Exception $e) {
+            Log::error("Error en getClienteInfoViaje: " . $e->getMessage());
+            return [
+                'success' => false,
+                'message' => 'Error al obtener información del viaje: ' . $e->getMessage(),
+                'data' => null,
+                'status' => 500
+            ];
+        }
+    }
+
+    public function getClienteEvidenciasDocumentos($user, $cotizacionId)
+    {
+        try {
+            $idCliente = $user->id_cliente ?? 0;
+
+            $cotizacion = Cotizaciones::where('id', $cotizacionId)
+                ->where('id_cliente', $idCliente)
+                ->with(['DocCotizacion.Asignaciones.BitacoraViaje'])
+                ->first();
+
+            if (!$cotizacion) {
+                return [
+                    'success' => false,
+                    'message' => 'Viaje no encontrado o no pertenece a este cliente.',
+                    'data' => ['documentos' => [], 'evidencias' => []],
+                    'status' => 404
+                ];
+            }
+
+            $doc = $cotizacion->DocCotizacion;
+            $documentos = [];
+            $evidencias = [];
+
+            // 1. Recopilar documentos del viaje
+            if (!empty($doc?->doc_ccp)) {
+                $documentos[] = [
+                    'nombre' => 'Carta Porte PDF',
+                    'url' => asset($doc->doc_ccp),
+                    'tipo' => 'PDF',
+                ];
+            }
+            if (!empty($doc?->boleta_liberacion)) {
+                $documentos[] = [
+                    'nombre' => 'Boleta de Liberación',
+                    'url' => asset($doc->boleta_liberacion),
+                    'tipo' => 'Documento',
+                ];
+            }
+            if (!empty($doc?->boleta_vacio)) {
+                $documentos[] = [
+                    'nombre' => 'Boleta de Vacío',
+                    'url' => asset($doc->boleta_vacio),
+                    'tipo' => 'Documento',
+                ];
+            }
+            if (!empty($doc?->doda)) {
+                $documentos[] = [
+                    'nombre' => 'DODA',
+                    'url' => asset($doc->doda),
+                    'tipo' => 'Documento',
+                ];
+            }
+
+            // 2. Recopilar evidencias subidas por el operador EXCLUYENDO diesel y urea
+            $asignacion = $doc?->Asignaciones;
+            if ($asignacion) {
+                $bitacora = BitacoraViajeOperador::where('id_asignacion', $asignacion->id)->first();
+                if ($bitacora) {
+                    $uniquePaths = [];
+
+                    // Fotos de Carga
+                    if (!empty($bitacora->fotos_carga)) {
+                        $decoded = json_decode($bitacora->fotos_carga, true);
+                        $arr = is_array($decoded) ? $decoded : [$bitacora->fotos_carga];
+                        foreach ($arr as $p) {
+                            if (is_string($p) && !empty(trim($p))) {
+                                $uniquePaths[$p] = 'Evidencia de Carga';
+                            }
+                        }
+                    }
+
+                    // Fotos de Apertura
+                    if (!empty($bitacora->fotos_apertura)) {
+                        $decoded = json_decode($bitacora->fotos_apertura, true);
+                        $arr = is_array($decoded) ? $decoded : [$bitacora->fotos_apertura];
+                        foreach ($arr as $p) {
+                            if (is_string($p) && !empty(trim($p))) {
+                                $uniquePaths[$p] = 'Apertura de Contenedor';
+                            }
+                        }
+                    }
+
+                    // Fotos de Conclusión / Fin de viaje
+                    if (!empty($bitacora->fotos_fin)) {
+                        $decoded = json_decode($bitacora->fotos_fin, true);
+                        $arr = is_array($decoded) ? $decoded : [$bitacora->fotos_fin];
+                        foreach ($arr as $p) {
+                            if (is_string($p) && !empty(trim($p))) {
+                                $uniquePaths[$p] = 'Conclusión de Viaje';
+                            }
+                        }
+                    }
+
+                    foreach ($uniquePaths as $relativePath => $labelTipo) {
+                        $pClean = strtolower(ltrim($relativePath, '/'));
+                        // Filtro estricto: EXCLUIR diesel y urea
+                        if (str_contains($pClean, 'diesel') || str_contains($pClean, 'urea') || str_contains($pClean, 'uploads/diesel')) {
+                            continue;
+                        }
+
+                        $fullPath = public_path(ltrim($relativePath, '/'));
+                        $url = asset(ltrim($relativePath, '/'));
+
+                        $size = file_exists($fullPath) ? round(filesize($fullPath) / 1024, 2) . ' KB' : 'N/A';
+                        $date = file_exists($fullPath) ? date("d/m/Y H:i", filemtime($fullPath)) : '';
+
+                        $evidencias[] = [
+                            'name' => basename($relativePath),
+                            'url' => $url,
+                            'tipo' => $labelTipo,
+                            'size' => $size,
+                            'date' => $date
+                        ];
+                    }
+                }
+            }
+
+            return [
+                'success' => true,
+                'message' => 'Evidencias y documentos obtenidos con éxito.',
+                'data' => [
+                    'documentos' => $documentos,
+                    'evidencias' => $evidencias,
+                ],
+                'status' => 200
+            ];
+        } catch (\Exception $e) {
+            Log::error("Error en getClienteEvidenciasDocumentos: " . $e->getMessage());
+            return [
+                'success' => false,
+                'message' => 'Error al obtener evidencias: ' . $e->getMessage(),
+                'data' => ['documentos' => [], 'evidencias' => []],
+                'status' => 500
+            ];
+        }
+    }
 }
 

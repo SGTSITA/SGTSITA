@@ -46,6 +46,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/operador/eliminar-gasto-viaje', [App\Http\Controllers\ApiValidationController::class, 'eliminarGastoViaje']);
     Route::get('/operador/notification-config', [App\Http\Controllers\ApiValidationController::class, 'getNotificationConfig']);
     Route::get('/operador/reporte-viaticos-pdf', [App\Http\Controllers\ApiValidationController::class, 'descargarReporteViaticosOperadorPdf']);
+
+    // Rutas Módulo Cliente
+    Route::get('/dashboard/cliente-operaciones', [App\Http\Controllers\ApiValidationController::class, 'getClienteOperaciones']);
+    Route::post('/dashboard/cliente-info-viaje', [App\Http\Controllers\ApiValidationController::class, 'getClienteInfoViaje']);
+    Route::get('/dashboard/cliente-evidencias-documentos/{cotizacion_id}', [App\Http\Controllers\ApiValidationController::class, 'getClienteEvidenciasDocumentos']);
 });
 
 Route::get('/app/version-check', [App\Http\Controllers\ApiValidationController::class, 'checkAppVersion']);

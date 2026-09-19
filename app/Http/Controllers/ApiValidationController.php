@@ -1176,5 +1176,36 @@ class ApiValidationController extends Controller
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => 'inline; filename="reporte_viaticos_operador.pdf"'
         ]);
+    public function getClienteOperaciones(Request $request)
+    {
+        $user = $request->user();
+        if (empty($user->id_cliente) || (int)$user->id_cliente === 0) {
+            return $this->apiResponse(false, 'Acceso denegado: El usuario no es un cliente válido.', [], 403);
+        }
+
+        $res = $this->apiValidationService->getClienteOperaciones($user, $request->all());
+        return $this->forwardResponse($res);
+    }
+
+    public function getClienteInfoViaje(Request $request)
+    {
+        $user = $request->user();
+        if (empty($user->id_cliente) || (int)$user->id_cliente === 0) {
+            return $this->apiResponse(false, 'Acceso denegado: El usuario no es un cliente válido.', [], 403);
+        }
+
+        $res = $this->apiValidationService->getClienteInfoViaje($user, $request->all());
+        return $this->forwardResponse($res);
+    }
+
+    public function getClienteEvidenciasDocumentos(Request $request, $cotizacion_id)
+    {
+        $user = $request->user();
+        if (empty($user->id_cliente) || (int)$user->id_cliente === 0) {
+            return $this->apiResponse(false, 'Acceso denegado: El usuario no es un cliente válido.', [], 403);
+        }
+
+        $res = $this->apiValidationService->getClienteEvidenciasDocumentos($user, $cotizacion_id);
+        return $this->forwardResponse($res);
     }
 }
