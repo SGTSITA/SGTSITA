@@ -1180,6 +1180,7 @@ class ApiValidationController extends Controller
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => 'inline; filename="reporte_viaticos_operador.pdf"'
         ]);
+    }
     public function getClienteOperaciones(Request $request)
     {
         $user = $request->user();
