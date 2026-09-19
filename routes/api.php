@@ -45,6 +45,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/operador/obtener-gastos-viaje/{id_asignacion}', [App\Http\Controllers\ApiValidationController::class, 'obtenerGastosViaje']);
     Route::post('/operador/eliminar-gasto-viaje', [App\Http\Controllers\ApiValidationController::class, 'eliminarGastoViaje']);
     Route::get('/operador/notification-config', [App\Http\Controllers\ApiValidationController::class, 'getNotificationConfig']);
+    Route::get('/operador/reporte-viaticos-pdf', [App\Http\Controllers\ApiValidationController::class, 'descargarReporteViaticosOperadorPdf']);
 
     // Rutas Módulo Cliente
     Route::get('/dashboard/cliente-operaciones', [App\Http\Controllers\ApiValidationController::class, 'getClienteOperaciones']);
@@ -52,6 +53,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/dashboard/cliente-evidencias-documentos/{cotizacion_id}', [App\Http\Controllers\ApiValidationController::class, 'getClienteEvidenciasDocumentos']);
 });
 
+Route::get('/app/version-check', [App\Http\Controllers\ApiValidationController::class, 'checkAppVersion']);
 Route::get('/api/coordenadas/subclientes/{clienteId}', [App\Http\Controllers\CoordenadasController::class, 'getSubclientes']);
 Route::get('/api/coordenadas/entidadesPC', [App\Http\Controllers\CoordenadasController::class, 'getEntidadesPC']);
 

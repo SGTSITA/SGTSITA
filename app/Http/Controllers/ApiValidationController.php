@@ -1054,6 +1054,128 @@ class ApiValidationController extends Controller
         ]);
     }
 
+    public function checkAppVersion(Request $request)
+    {
+        $version = \App\Models\GlobalConfig::getVal('app_movil_version', '1.0.0');
+        $build = (int) \App\Models\GlobalConfig::getVal('app_movil_build', 1);
+        $force = (bool) \App\Models\GlobalConfig::getVal('app_movil_force_update', false);
+        $apkUrl = \App\Models\GlobalConfig::getVal('app_movil_apk_url', asset('downloads/operador_app.apk'));
+        $notes = \App\Models\GlobalConfig::getVal('app_movil_release_notes', 'Nueva actualización de la app móvil SGT Logistics.');
+
+        return response()->json([
+            'success' => true,
+            'latest_version' => $version,
+            'build_number' => $build,
+            'force_update' => $force,
+            'apk_url' => $apkUrl,
+            'release_notes' => $notes,
+        ]);
+    }
+
+    public function descargarReporteViaticosOperadorPdf(Request $request)
+    {
+        $user = $request->user();
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'No autorizado.'], 401);
+        }
+
+        $operadorIds = DB::table('operador_usuario')
+            ->where('user_id', $user->id)
+            ->pluck('id_operador');
+
+        if ($operadorIds->isEmpty()) {
+            return response()->json(['success' => false, 'message' => 'No hay operadores vinculados a este usuario.'], 400);
+        }
+
+        $query = \App\Models\Asignaciones::with([
+            'Operador',
+            'Contenedor',
+            'Contenedor.Cotizacion'
+        ])
+        ->leftJoin('docum_cotizacion', 'asignaciones.id_contenedor', '=', 'docum_cotizacion.id')
+        ->leftJoin('cotizaciones', 'docum_cotizacion.id_cotizacion', '=', 'cotizaciones.id')
+        ->leftJoin('liquidacion_contenedor', 'docum_cotizacion.id', '=', 'liquidacion_contenedor.id_contenedor')
+        ->leftJoin('bitacora_viaje_operadores', 'asignaciones.id', '=', 'bitacora_viaje_operadores.id_asignacion')
+        ->whereIn('asignaciones.id_operador', $operadorIds)
+        ->whereNull('liquidacion_contenedor.id_liquidacion')
+        ->where(function ($q) {
+            $q->where('asignaciones.estatus_viaje', 'Finalizado')
+              ->orWhereNotNull('bitacora_viaje_operadores.viaje_finalizado');
+        })
+        ->select('asignaciones.*')
+        ->distinct();
+
+        $asignaciones = $query->orderBy('asignaciones.created_at', 'desc')->get();
+
+        if ($asignaciones->isEmpty()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No hay viajes finalizados pendientes de liquidar para generar el reporte.'
+            ], 404);
+        }
+
+        $primeraAsignacion = $asignaciones->first();
+        $operadorNombre = $primeraAsignacion->Operador?->nombre ?? ($user->name ?? 'N/A');
+
+        $empresaNombre = 'SGT Logistics';
+        if ($primeraAsignacion->id_empresa) {
+            $empresa = \App\Models\Empresas::find($primeraAsignacion->id_empresa);
+            if ($empresa) {
+                $empresaNombre = $empresa->nombre;
+            }
+        }
+        if ($empresaNombre === 'SGT Logistics' && $user->Empresa) {
+            $empresaNombre = $user->Empresa->nombre;
+        }
+
+        $reporteData = [];
+        $totalGeneral = 0.0;
+
+        foreach ($asignaciones as $asignacion) {
+            $doc = $asignacion->Contenedor;
+            $numContenedor = $doc?->num_contenedor ?? 'Sin Contenedor';
+            $referencia = $doc?->Cotizacion?->referencia_full ?? '';
+            $fechaInicio = $asignacion->fecha_inicio ? \Carbon\Carbon::parse($asignacion->fecha_inicio)->format('d/m/Y') : 'N/A';
+
+            $gastos = [];
+            if ($doc && $doc->id_cotizacion) {
+                $viaticos = \App\Models\ViaticosOperador::where('id_cotizacion', $doc->id_cotizacion)
+                    ->select('descripcion_gasto as concepto', 'monto')
+                    ->get();
+
+                foreach ($viaticos as $v) {
+                    $montoFloat = (float) $v->monto;
+                    $gastos[] = [
+                        'concepto' => $v->concepto ?? 'Sin Concepto',
+                        'monto'    => $montoFloat
+                    ];
+                    $totalGeneral += $montoFloat;
+                }
+            }
+
+            $reporteData[] = [
+                'id_asignacion'  => $asignacion->id,
+                'num_contenedor' => $numContenedor,
+                'referencia'     => $referencia,
+                'fecha_inicio'   => $fechaInicio,
+                'gastos'         => $gastos
+            ];
+        }
+
+        $fechaGeneracion = \Carbon\Carbon::now()->format('d/m/Y H:i');
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('app_movil_admin.pdf_viaticos', compact(
+            'operadorNombre',
+            'empresaNombre',
+            'reporteData',
+            'totalGeneral',
+            'fechaGeneracion'
+        ));
+
+        return response($pdf->output(), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="reporte_viaticos_operador.pdf"'
+        ]);
     public function getClienteOperaciones(Request $request)
     {
         $user = $request->user();
