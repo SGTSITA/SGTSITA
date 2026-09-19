@@ -3,6 +3,100 @@ let fechaFinViajes;
 
 let motivoBloqueo = "Selecciona al menos un registro";
 let docsData = [];
+let allViajesData = [];
+let currentTabStatus = "planeadas";
+let currentXhr = null;
+let searchDebounceTimer = null;
+
+function getTabStatusCategory(estatusStr) {
+    if (!estatusStr) return null;
+    const s = estatusStr.trim().toLowerCase();
+    if (s === "planeado" || s === "planeadas") {
+        return "planeadas";
+    }
+    if (s === "por asignar" || s === "por_asignar") {
+        return "por_asignar";
+    }
+    if (s === "viaje solicitado" || s === "pendiente" || s === "no asignada") {
+        return "pendientes";
+    }
+    if (s === "aprobada" || s === "aprobado" || s === "aprobadas") {
+        return "aprobadas";
+    }
+    if (s === "finalizado" || s === "finalizada" || s === "finalizadas") {
+        return "finalizadas";
+    }
+    if (s === "cancelada" || s === "cancelado" || s === "canceladas") {
+        return "canceladas";
+    }
+    return null;
+}
+
+function updateTabCounts(data) {
+    let counts = { planeadas: 0, pendientes: 0, por_asignar: 0, aprobadas: 0, finalizadas: 0, canceladas: 0 };
+    data.forEach(item => {
+        let cat = getTabStatusCategory(item.Estatus);
+        if (cat && counts[cat] !== undefined) counts[cat]++;
+    });
+    $("#count-planeadas").text(counts.planeadas);
+    $("#count-pendientes").text(counts.pendientes);
+    $("#count-por-asignar").text(counts.por_asignar);
+    $("#count-aprobadas").text(counts.aprobadas);
+    $("#count-finalizadas").text(counts.finalizadas);
+    $("#count-canceladas").text(counts.canceladas);
+}
+
+function applyCurrentFilters() {
+    const term = $("#inputSearchGeneral").length && $("#inputSearchGeneral").val()
+        ? $("#inputSearchGeneral").val().trim().toLowerCase()
+        : "";
+
+    let filtered = allViajesData.filter(item => {
+        const category = getTabStatusCategory(item.Estatus);
+        const matchesTab = (category === currentTabStatus);
+
+        let matchesSearch = true;
+        if (term !== "") {
+            matchesSearch = (
+                (item.NumContenedor && item.NumContenedor.toLowerCase().includes(term)) ||
+                (item.cliente && item.cliente.toLowerCase().includes(term)) ||
+                (item.Origen && item.Origen.toLowerCase().includes(term)) ||
+                (item.Destino && item.Destino.toLowerCase().includes(term)) ||
+                (item.transportista && item.transportista.toLowerCase().includes(term)) ||
+                (item.Estatus && item.Estatus.toLowerCase().includes(term))
+            );
+        }
+
+        return matchesTab && matchesSearch;
+    });
+
+    if (typeof apiGrid !== "undefined" && apiGrid) {
+        apiGrid.setGridOption("rowData", filtered);
+    }
+    updateRastreoButtonState();
+}
+
+function updateRastreoButtonState() {
+    const isPlaneadas = (currentTabStatus === "planeadas");
+    const $btn = $("#btnRastreo");
+    const $menuItem = $("#menuItemRastreo");
+
+    if (isPlaneadas) {
+        if ($btn.length) {
+            $btn.prop("disabled", false).removeClass("disabled").show();
+        }
+        if ($menuItem.length) {
+            $menuItem.show();
+        }
+    } else {
+        if ($btn.length) {
+            $btn.prop("disabled", true).addClass("disabled").hide();
+        }
+        if ($menuItem.length) {
+            $menuItem.hide();
+        }
+    }
+}
 
 function bloquearBoton(btn) {
     btn.classList.add("disabled");
@@ -29,6 +123,15 @@ function abrirMapaEnNuevaPestana(numContenedor, tipoS, origenRastreo) {
 const btnRastreo = document.getElementById("btnRastreo");
 if (btnRastreo) {
     btnRastreo.onclick = () => {
+        if (currentTabStatus !== "planeadas") {
+            Swal.fire({
+                icon: "warning",
+                title: "Opción restringida",
+                text: "El rastreo solo está disponible en la pestaña de Planeadas.",
+            });
+            return;
+        }
+
         const seleccionados = apiGrid.getSelectedRows();
 
         if (seleccionados.length === 0) {
@@ -59,8 +162,8 @@ if (btnRastreo) {
 }
 
 $(document).ready(function () {
-    let start = moment().subtract(1, "month");
-    let end = moment();
+    let start = moment().subtract(3, "months");
+    let end = moment().add(20, "days");
 
     function setFechas(start, end) {
         fechaInicioViajes = start.format("YYYY-MM-DD");
@@ -78,6 +181,7 @@ $(document).ready(function () {
             startDate: start,
             endDate: end,
             autoApply: true,
+            opens: "right",
             locale: {
                 format: "DD/MM/YYYY",
                 applyLabel: "Aplicar",
@@ -118,6 +222,47 @@ $(document).ready(function () {
         },
         setFechas,
     );
+
+    // Event listeners para pestañas de estatus
+    $(".status-tab-btn").on("click", function () {
+        $(".status-tab-btn").removeClass("active");
+        $(this).addClass("active");
+        currentTabStatus = $(this).attr("data-status");
+        applyCurrentFilters();
+    });
+
+    // Event listener para buscador general con debounce
+    $("#inputSearchGeneral").on("input", function () {
+        const term = $(this).val().trim().toLowerCase();
+        clearTimeout(searchDebounceTimer);
+        searchDebounceTimer = setTimeout(() => {
+            if (term !== "") {
+                const matches = allViajesData.filter((item) => {
+                    return (
+                        (item.NumContenedor && item.NumContenedor.toLowerCase().includes(term)) ||
+                        (item.cliente && item.cliente.toLowerCase().includes(term)) ||
+                        (item.Origen && item.Origen.toLowerCase().includes(term)) ||
+                        (item.Destino && item.Destino.toLowerCase().includes(term)) ||
+                        (item.transportista && item.transportista.toLowerCase().includes(term)) ||
+                        (item.Estatus && item.Estatus.toLowerCase().includes(term))
+                    );
+                });
+
+                if (matches.length > 0) {
+                    const categoriesFound = new Set(matches.map((m) => getTabStatusCategory(m.Estatus)).filter(Boolean));
+                    if (categoriesFound.size === 1) {
+                        const targetTab = Array.from(categoriesFound)[0];
+                        if (targetTab !== currentTabStatus) {
+                            currentTabStatus = targetTab;
+                            $(".status-tab-btn").removeClass("active");
+                            $(`.status-tab-btn[data-status="${targetTab}"]`).addClass("active");
+                        }
+                    }
+                }
+            }
+            applyCurrentFilters();
+        }, 350);
+    });
 
     // Ejecuta al cargar
     setFechas(start, end);
@@ -387,22 +532,38 @@ if (paginationTitle) {
 const btnDocumets = document.querySelectorAll(".btnDocs");
 //const api = createGrid(gridDiv, gridOptions)
 
-function getContenedoresPendientes(estatus = "Documentos Faltantes") {
+function getContenedoresPendientes(estatus = "all") {
+    if (currentXhr) {
+        currentXhr.abort();
+        currentXhr = null;
+    }
+
     var _token = document
         .querySelector('meta[name="csrf-token"]')
         .getAttribute("content");
-    $.ajax({
+
+    currentXhr = $.ajax({
         url: "/viajes/documents/pending",
         type: "post",
         data: { _token, estatus, fechaInicioViajes, fechaFinViajes },
-        beforeSend: () => {},
+        beforeSend: (jqXHR) => {
+            currentXhr = jqXHR;
+        },
         success: (response) => {
-            if (response.length > 0) {
+            currentXhr = null;
+            allViajesData = response || [];
+            if (allViajesData.length > 0) {
                 btnDocumets.forEach((btn) => (btn.disabled = false));
             }
-            apiGrid.setGridOption("rowData", response);
+            updateTabCounts(allViajesData);
+            applyCurrentFilters();
         },
-        error: () => {},
+        error: (jqXHR, textStatus) => {
+            if (textStatus === "abort") {
+                return;
+            }
+            currentXhr = null;
+        },
     });
 }
 

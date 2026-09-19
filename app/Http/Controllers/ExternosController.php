@@ -28,6 +28,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Services\CotizacionesService;
 use Maatwebsite\Excel\Facades\Excel;
 
 class ExternosController extends Controller
@@ -257,172 +258,15 @@ class ExternosController extends Controller
     }
 
 
-    public function getContenedoresPendientes(Request $request)
+    public function getContenedoresPendientes(Request $request, CotizacionesService $cotizacionesService)
     {
-        $proveedorEmpresa = DB::table('empresas')
-            ->select(
-                'id',
-                'nombre',
-                DB::raw("'Empresa' as tipo"),
-                'id as relacion_id'
-            )->where('estatus', 1)
-            ->unionAll(
-                DB::table('proveedores')
-                    ->select(
-                        'id',
-                        'nombre',
-                        DB::raw("'Proveedor' as tipo"),
-                        'id as relacion_id'
-                    )
-            );
+        $result = $cotizacionesService->getContenedoresCliente(
+            Auth::user()->id_cliente,
+            $request->fechaInicioViajes,
+            $request->fechaFinViajes
+        );
 
-        $docCotizacion = DB::table('cotizaciones')
-    ->join('docum_cotizacion as d', 'd.id_cotizacion', '=', 'cotizaciones.id')
-    ->select(
-        'cotizaciones.*',
-        'd.num_contenedor',
-        'd.doc_eir',
-        'd.doc_ccp',
-        'd.boleta_liberacion',
-        'd.doda',
-        'd.foto_patio',
-        'd.boleta_patio',
-        DB::raw("
-            CASE
-                WHEN cotizaciones.id_proveedor IS NULL
-                THEN cotizaciones.id_empresa
-                ELSE cotizaciones.id_proveedor
-            END as proveedor_empresa_id
-        "),
-        DB::raw("
-            CASE
-                WHEN cotizaciones.id_proveedor IS NULL
-                THEN 'Empresa'
-                ELSE 'Proveedor'
-            END as proveedor_empresa_tipo
-        ")
-    );
-
-
-
-        $condicion = ($request->estatus == 'Documentos Faltantes') ? '=' : '!=';
-        // $contenedoresPendientes = Cotizaciones::join('docum_cotizacion as d', 'cotizaciones.id', '=', 'd.id_cotizacion')
-        // ->leftjoin('proveedores as prov', 'cotizaciones.id_proveedor', '=', 'prov.id')
-        // ->leftjoin('empresa as empres', 'cotizaciones.id_empresa', '=', 'empres.id')
-        //                                         ->where('cotizaciones.id_cliente', '=', Auth::User()->id_cliente)
-        //                                         ->where('estatus', $condicion, 'Documentos Faltantes')
-        //                                         ->whereIn('tipo_viaje_seleccion', ['foraneo', 'local_to_foraneo'])
-        //                                         ->where('jerarquia', "!=", 'Secundario')
-        //                                         ->orderBy('created_at', 'desc')
-        //                                         ->selectRaw('cotizaciones.*, d.num_contenedor,d.doc_eir,doc_ccp ,d.boleta_liberacion,d.doda,d.foto_patio,case when prov.razon_social is null then empres.nombre else prov.razon_social end as transportista ')
-        //                                         ->get();
-
-        $contenedoresPendientes = DB::table('cotizaciones')
-        ->join('clients', 'cotizaciones.id_cliente', '=', 'clients.id')
-
-        ->joinSub($docCotizacion, 'cotidoc', function ($join) {
-            $join->on('cotidoc.id', '=', 'cotizaciones.id');
-        })
-
-        ->leftJoinSub($proveedorEmpresa, 'proveedor_empresa', function ($join) {
-            $join->on('proveedor_empresa.relacion_id', '=', 'cotidoc.proveedor_empresa_id')
-                 ->on('proveedor_empresa.tipo', '=', 'cotidoc.proveedor_empresa_tipo');
-        })
-
-
-
-        ->select(
-            'cotizaciones.*',
-            'clients.nombre as cliente',
-            'cotidoc.num_contenedor',
-            'cotidoc.doc_eir',
-            'cotidoc.doc_ccp',
-            'cotidoc.boleta_liberacion',
-            'cotidoc.doda',
-            'cotidoc.foto_patio',
-            'cotidoc.boleta_patio',
-            'proveedor_empresa.nombre as transportista',
-            'proveedor_empresa.tipo as tipo_transportista',
-            'cotizaciones.estatus'
-        )
-->where('cotizaciones.id_cliente', '=', Auth::User()->id_cliente)
-                                              ->where('cotizaciones.estatus', $condicion, 'Documentos Faltantes')
-                                                ->whereIn('cotizaciones.tipo_viaje_seleccion', ['foraneo', 'local_to_foraneo'])
-                                                ->where('cotizaciones.jerarquia', "!=", 'Secundario')
-                                                ->when($request->filled('fechaInicioViajes') && $request->filled('fechaFinViajes'), function ($q) use ($request) {
-                                                    $q->whereBetween('cotizaciones.fecha_entrega', [
-                                                        $request->fechaInicioViajes,
-                                                        $request->fechaFinViajes
-                                                    ]);
-                                                })
-
-        ->orderBy('cotizaciones.created_at', 'desc')
-        ->get();
-
-        // dd($contenedoresPendientes);
-        $resultContenedores =
-        $contenedoresPendientes->map(function ($c) {
-
-            $numContenedor = $c->num_contenedor;
-            $docCCP = ($c->doc_ccp == null) ? false : true;
-            $doda = ($c->doda == null) ? false : true;
-            $boletaLiberacion = ($c->boleta_liberacion == null) ? false : true;
-
-            $boletaVacio = ($c->img_boleta == null) ? false : true;
-            $docEir = $c->doc_eir;
-            $fotoPatio = ($c->foto_patio == null) ? false : true;
-            $boletaPatio = ($c->boleta_patio == null) ? false : true;
-            $cartaPortepdf = ($c->carta_porte == null) ? false : true;
-            $carta_porte_xml = ($c->carta_porte_xml == null) ? false : true;
-
-
-            $tipo = "Sencillo";
-
-            if (!is_null($c->referencia_full)) {
-                $secundaria = Cotizaciones::where('referencia_full', $c->referencia_full)
-                    ->where('jerarquia', 'Secundario')
-                    ->with('DocCotizacion.Asignaciones')
-                    ->first();
-
-                if ($secundaria && $secundaria->DocCotizacion) {
-                    $docCCP = ($docCCP && $secundaria->DocCotizacion->doc_ccp) ? true : false;
-                    $doda = ($doda && $secundaria->DocCotizacion->doda) ? true : false;
-                    $docEir = ($docEir && $secundaria->DocCotizacion->doc_eir) ? true : false;
-                    $boletaLiberacion = ($boletaLiberacion && $secundaria->DocCotizacion->boleta_liberacion) ? true : false;
-                    $cartaPortepdf = ($cartaPortepdf && $secundaria->carta_porte) ? true : false;
-                    $carta_porte_xml = ($carta_porte_xml && $secundaria->carta_porte_xml) ? true : false;
-                    $boletaVacio = ($boletaVacio && $secundaria->img_boleta) ? true : false;
-                    $fotoPatio = ($fotoPatio && $secundaria->foto_patio) ? true : false;
-                    $numContenedor .= '  ' . $secundaria->DocCotizacion->num_contenedor;
-                }
-
-                $tipo = "Full";
-            }
-
-            return [
-                "NumContenedor" => $numContenedor,
-                "Estatus" => ($c->estatus == "NO ASIGNADA") ? "Viaje solicitado" : ($c->estatus == "Aprobada" && $c->estatus_planeacion == 1 ? "Planeado" : $c->estatus),
-                "Origen" => $c->origen,
-                "Destino" => $c->destino,
-                "Peso" => $c->peso_contenedor,
-                "BoletaLiberacion" => $boletaLiberacion,
-                "DODA" => $doda,
-                "foto_patio" => $fotoPatio,
-                "FormatoCartaPorte" => $docCCP,
-                "PreAlta" => $boletaVacio,
-                "BoletaPatio" => $boletaPatio,
-                "docEir" => $docEir,
-                "cartaPortepdf" => $cartaPortepdf,
-                "carta_porte_xml" => $carta_porte_xml,
-                "FechaSolicitud" => Carbon::parse($c->created_at)->format('Y-m-d'),
-                "tipo" => $tipo,
-                "id" => $c->id,
-                "transportista" => $c->transportista,
-                 "convertido_local" => $c->tipo_viaje_seleccion === 'local' ? true : false,
-            ];
-        });
-
-        return $resultContenedores;
+        return response()->json($result);
     }
 
     public function getContenedoresAsignables(Request $request)
