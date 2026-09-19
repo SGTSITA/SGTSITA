@@ -324,17 +324,16 @@
                                             </div>
                                         </div>
 
-                                        <div class="col-md-12">
-                                            <label class="form-label fw-bold text-dark text-sm">Cargar Nuevo Archivo APK (instala en servidor)</label>
+                                        <div class="col-md-6">
+                                            <label class="form-label fw-bold text-dark text-sm">Opción A: Subir Archivo APK (Directo)</label>
                                             <input type="file" name="apk_file" class="form-control" accept=".apk">
-                                            @if (\App\Models\GlobalConfig::getVal('app_movil_apk_url'))
-                                                <div class="mt-2 text-xs text-muted">
-                                                    <i class="fa fa-link text-primary me-1"></i> URL Actual del APK:
-                                                    <a href="{{ \App\Models\GlobalConfig::getVal('app_movil_apk_url') }}" target="_blank" class="fw-bold text-primary">
-                                                        {{ \App\Models\GlobalConfig::getVal('app_movil_apk_url') }}
-                                                    </a>
-                                                </div>
-                                            @endif
+                                            <span class="text-xs text-muted d-block mt-1">* Si el archivo pesa más del límite de PHP (HTTP 413), suba por FTP a <code>public/downloads/operador_app.apk</code> e ingrese la URL en la Opción B.</span>
+                                        </div>
+
+                                        <div class="col-md-6">
+                                            <label class="form-label fw-bold text-dark text-sm">Opción B: URL Pública Directa del APK</label>
+                                            <input type="url" name="app_movil_apk_url" class="form-control" value="{{ \App\Models\GlobalConfig::getVal('app_movil_apk_url', asset('downloads/operador_app.apk')) }}" placeholder="https://demo.gologipro.com/downloads/operador_app.apk">
+                                            <span class="text-xs text-muted d-block mt-1">URL que abrirá la App para descargar el instalador.</span>
                                         </div>
 
                                         <div class="col-md-12">
