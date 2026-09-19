@@ -40,19 +40,22 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use App\Services\BancosService;
 use App\Services\GastosService;
 use App\Services\ViajesCostosService;
+use App\Services\CotizacionesService;
 use Illuminate\Support\Facades\Http;
 
 class CotizacionesController extends Controller
 {
+    protected $CotizacionesService;
     protected $BancosService;
     protected $CostosService;
     protected $GastosService;
 
-    public function __construct(BancosService $BancosService, ViajesCostosService $CostosService, GastosService $GastosService)
+    public function __construct(BancosService $BancosService, ViajesCostosService $CostosService, GastosService $GastosService, CotizacionesService $CotizacionesService)
     {
         $this->BancosService = $BancosService;
         $this->CostosService = $CostosService;
         $this->GastosService = $GastosService;
+        $this->CotizacionesService = $CotizacionesService;
     }
 
     public function index()
@@ -109,109 +112,12 @@ class CotizacionesController extends Controller
     public function getCotizacionesList()
     {
         //planeadas
-        $cotizaciones = $this->obtenerCotizacionesparametros('Aprobada', 1, null);
+        $cotizaciones = $this->CotizacionesService->obtenerCotizacionesparametros('Aprobada', 1, null);
 
         return response()->json(['list' => $cotizaciones]);
     }
 
-    public function obtenerCotizacionesparametros($estatusSearch = 'Aprobada', $estatus_planeacion = null, $validarNoplaneadas = null)
-    {
 
-        $ID_EMPRESA = auth()->user()->id_empresa;
-        $cotizacionesQuery = Cotizaciones::when($ID_EMPRESA != 0, function ($query) use ($ID_EMPRESA) {
-            $query->where('id_empresa', $ID_EMPRESA);
-        })
-        ->where('estatus', $estatusSearch)
-         ->when(!is_null($estatus_planeacion) && is_null($validarNoplaneadas), function ($query) use ($estatus_planeacion) {
-             $query->where('estatus_planeacion', $estatus_planeacion);
-         })
-          ->when($validarNoplaneadas == 1, function ($query) {
-              $query->where(function ($q) {
-                  $q->where('estatus_planeacion', 0)
-                    ->orWhereNull('estatus_planeacion');
-              });
-          })
-        ->where('jerarquia', '!=', 'Secundario')
-        ->orderBy('created_at', 'desc')
-        ->with(['cliente', 'DocCotizacion.Asignaciones'])
-        ->withExists([
-    'costosViajes as tiene_costos' => fn ($query) => $query->tieneValores()
-]);
-
-        $userProveedores = User::find(auth()->user()->id);
-
-
-        if ($userProveedores->proveedores()->exists()) {
-            $cotizacionesQuery->whereIn(
-                'id_proveedor',
-                $userProveedores->proveedores()->pluck('proveedor_id')
-            );
-        }
-
-        $cotizaciones = $cotizacionesQuery
-            ->get()
-            ->map(function ($cotizacion) {
-
-                $contenedor = $cotizacion->DocCotizacion
-                    ? $cotizacion->DocCotizacion->num_contenedor
-                    : 'N/A';
-
-                // Si es tipo Full, concatenar contenedor secundario
-                if (!is_null($cotizacion->referencia_full)) {
-                    $secundaria = Cotizaciones::where('referencia_full', $cotizacion->referencia_full)
-                        ->where('jerarquia', 'Secundario')
-                        ->with('DocCotizacion')
-                        ->first();
-
-                    if ($secundaria && $secundaria->DocCotizacion) {
-                        $contenedor .= ' ' . $secundaria->DocCotizacion->num_contenedor;
-                    }
-                }
-
-                // return [
-                //     'id'            => $cotizacion->id,
-                //     'cliente'       => optional($cotizacion->cliente)->nombre ?? 'N/A',
-                //     'origen'        => $cotizacion->origen,
-                //     'destino'       => $cotizacion->destino,
-                //     'contenedor'    => $contenedor,
-                //     'estatus'       => $cotizacion->estatus,
-                //     'coordenadas'   => optional($cotizacion->DocCotizacion?->Asignaciones)->id ? 'Ver' : '',
-                //     'id_asignacion' => optional($cotizacion->DocCotizacion?->Asignaciones)->id,
-                //     'edit_url'      => route('edit.cotizaciones', $cotizacion->id),
-                //     'tipo'          => $cotizacion->referencia_full ? 'Full' : 'Sencillo',
-                // ];
-                return [
-                   'id' => $cotizacion->id,
-                    'cliente' => $cotizacion->cliente ? $cotizacion->cliente->nombre : 'N/A',
-                     'subcliente' => $cotizacion->subcliente ? $cotizacion->subcliente->nombre : 'N/A',
-                    'origen' => $cotizacion->origen,
-                    'destino' => $cotizacion->destino,
-                    'contenedor' => $contenedor,
-                    'labelContenedor' => $cotizacion->DocCotizacion ? $cotizacion->DocCotizacion->num_contenedor : 'N/A',
-                    'estatus' => $cotizacion->estatus,
-                 'coordenadas' => optional($cotizacion->DocCotizacion)->Asignaciones ? 'Ver' : '',
-                    'edit_url' => route('edit.cotizaciones', $cotizacion->id),
-                    'tipo' => (!is_null($cotizacion->referencia_full)) ? 'Full' : 'Sencillo',
-                    'referencia_full' => $cotizacion->referencia_full,
-                    'peso_contenedor' => $cotizacion->peso_contenedor,
-                    'tamano' => $cotizacion->tamano,
-                    'precio_viaje' => $cotizacion->precio_viaje,
-                    'direccion_entrega' => $cotizacion->direccion_entrega,
-                    'total' => $cotizacion->total,
-                    'estatus_planeacion' => $cotizacion->estatus_planeacion,
-                    'valores' => $cotizacion->tiene_costos,
-               ];
-            });
-
-
-
-
-
-
-        return  $cotizaciones;
-
-
-    }
 
     public function getDocumentos($id)
     {
@@ -282,7 +188,7 @@ class CotizacionesController extends Controller
         //         ];
         //     });
 
-        $cotizaciones = $this->obtenerCotizacionesparametros('Finalizado');
+        $cotizaciones = $this->CotizacionesService->obtenerCotizacionesparametros('Finalizado');
 
         return response()->json(['list' => $cotizaciones]);
     }
@@ -329,7 +235,7 @@ class CotizacionesController extends Controller
 
         //     });
 
-        $cotizaciones = $this->obtenerCotizacionesparametros('Pendiente');
+        $cotizaciones = $this->CotizacionesService->obtenerCotizacionesparametros('Pendiente');
 
         return response()->json(['list' => $cotizaciones]);
     }
@@ -385,7 +291,7 @@ class CotizacionesController extends Controller
         //         ];
         //     });
 
-        $cotizaciones = $this->obtenerCotizacionesparametros('Aprobada', null, 1);
+        $cotizaciones = $this->CotizacionesService->obtenerCotizacionesparametros('Aprobada', null, 1);
 
         return response()->json(['list' => $cotizaciones]);
     }
@@ -427,7 +333,7 @@ class CotizacionesController extends Controller
         //     });
 
 
-        $cotizaciones = $this->obtenerCotizacionesparametros('Cancelada');
+        $cotizaciones = $this->CotizacionesService->obtenerCotizacionesparametros('Cancelada');
         return response()->json(['list' => $cotizaciones]);
     }
 
