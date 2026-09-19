@@ -75,14 +75,9 @@ class User extends Authenticatable
         );
     }
 
-    public function clientes()
+    public function cliente()
     {
-        return $this->belongsToMany(
-            Client::class,
-            'user_clientes',
-            'user_id',
-            'cliente_id'
-        );
+        return $this->belongsTo(Client::class, 'id_cliente');
     }
 
     public function notificaciones()

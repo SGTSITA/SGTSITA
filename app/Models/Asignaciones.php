@@ -71,6 +71,10 @@ class Asignaciones extends Model
     {
         return $this->belongsTo(Proveedor::class, 'id_proveedor');
     }
+    public function Empresa()
+    {
+        return $this->belongsTo(Empresas::class, 'id_empresa');
+    }
     public function Banco1()
     {
         return $this->belongsTo(Bancos::class, 'id_banco1_dinero_viaje');
