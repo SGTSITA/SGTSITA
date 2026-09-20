@@ -296,8 +296,16 @@
 
                 // Verificar si no se seleccionó ninguna fila
                 if (selectedIds.length === 0) {
-                    // Mostrar el mensaje de advertencia si no se seleccionó ninguna fila
-                    $('#warningMessage').removeClass('d-none');
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Atención',
+                            text: 'Por favor, elija al menos una cotización para realizar la exportación.',
+                            confirmButtonColor: '#F82018'
+                        });
+                    } else {
+                        $('#warningMessage').removeClass('d-none');
+                    }
                     return; // Detener la ejecución del código
                 }
 
@@ -341,26 +349,49 @@
                         // Limpiar después de la descarga
                         window.URL.revokeObjectURL(url);
                         document.body.removeChild(a);
-
-                        alert('El archivo se ha descargado correctamente.');
                     },
                     error: function(xhr, status, error) {
-                        console.error(error);
+                        console.error('Export Error:', xhr);
+
+                        function mostrarAlerta(mensaje) {
+                            if (typeof Swal !== 'undefined') {
+                                Swal.fire({
+                                    icon: 'warning',
+                                    title: 'Configuración Requerida',
+                                    text: mensaje || 'Ocurrió un error al exportar los datos.',
+                                    confirmButtonColor: '#F82018',
+                                    confirmButtonText: 'Entendido'
+                                });
+                            } else {
+                                alert(mensaje || 'Ocurrió un error al exportar los datos.');
+                            }
+                        }
+
                         if (xhr.response instanceof Blob) {
                             var reader = new FileReader();
                             reader.onload = function() {
                                 try {
                                     var json = JSON.parse(reader.result);
-                                    alert(json.message || json.error || 'Ocurrió un error al exportar los datos.');
+                                    mostrarAlerta(json.message || json.error);
                                 } catch(e) {
-                                    alert('Ocurrió un error al exportar los datos.');
+                                    mostrarAlerta(reader.result || 'Ocurrió un error al exportar los datos.');
                                 }
+                            };
+                            reader.onerror = function() {
+                                mostrarAlerta('Ocurrió un error al procesar la respuesta del servidor.');
                             };
                             reader.readAsText(xhr.response);
                         } else if (xhr.responseJSON && xhr.responseJSON.message) {
-                            alert(xhr.responseJSON.message);
+                            mostrarAlerta(xhr.responseJSON.message);
+                        } else if (xhr.responseText) {
+                            try {
+                                var json = JSON.parse(xhr.responseText);
+                                mostrarAlerta(json.message || json.error);
+                            } catch(e) {
+                                mostrarAlerta(xhr.responseText);
+                            }
                         } else {
-                            alert('Ocurrió un error al exportar los datos.');
+                            mostrarAlerta('Ocurrió un error al exportar los datos.');
                         }
                     }
                 });
