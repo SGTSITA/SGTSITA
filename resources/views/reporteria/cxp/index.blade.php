@@ -96,6 +96,20 @@
                         </form>
 
 
+                        @if (!empty($advertenciasCuentas))
+                            <div class="alert alert-warning text-dark my-3 p-3" role="alert" style="background-color: #fff3cd; border: 1px solid #ffe69c; border-radius: 6px;">
+                                <div class="d-flex align-items-center mb-1">
+                                    <i class="fas fa-exclamation-triangle me-2 text-warning fs-4"></i>
+                                    <strong>Atención de Configuración de Cuentas Bancarias:</strong>
+                                </div>
+                                <ul class="mb-0 ps-4">
+                                    @foreach ($advertenciasCuentas as $msg)
+                                        <li>{{ $msg }}</li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        @endif
+
                         <div class="table-responsive">
                             <div class="mb-3">
                             </div>
@@ -296,8 +310,16 @@
 
                 // Verificar si no se seleccionó ninguna fila
                 if (selectedIds.length === 0) {
-                    // Mostrar el mensaje de advertencia si no se seleccionó ninguna fila
-                    $('#warningMessage').removeClass('d-none');
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Atención',
+                            text: 'Por favor, elija al menos una cotización para realizar la exportación.',
+                            confirmButtonColor: '#F82018'
+                        });
+                    } else {
+                        $('#warningMessage').removeClass('d-none');
+                    }
                     return; // Detener la ejecución del código
                 }
 
@@ -341,12 +363,9 @@
                         // Limpiar después de la descarga
                         window.URL.revokeObjectURL(url);
                         document.body.removeChild(a);
-
-                        alert('El archivo se ha descargado correctamente.');
                     },
                     error: function(xhr, status, error) {
-                        console.error(error);
-                        alert('Ocurrió un error al exportar los datos.');
+                        console.error('Export Error:', xhr, error);
                     }
                 });
             });

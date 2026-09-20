@@ -278,6 +278,35 @@
             <tbody style="text-align: left; font-size: 10px; line-height: 1">
                 @if ($prov && $prov->CuentasBancarias->isNotEmpty())
                     @php
+                        $allCuentas = $prov->CuentasBancarias;
+
+                        $c1 = $allCuentas->firstWhere('cuenta_1', true);
+                        $c2 = $allCuentas->firstWhere('cuenta_2', true);
+
+                        $slot1 = $c1 ?: $allCuentas->first(fn($c) => !$c->cuenta_2);
+                        if (!$slot1) {
+                            $slot1 = $allCuentas->first();
+                        }
+
+                        $slot2 = $c2;
+                        if (!$slot2 && $slot1) {
+                            $slot2 = $allCuentas->first(fn($c) => $c->id !== $slot1->id);
+                        }
+
+                        $cuentasOrdenadas = collect();
+                        if ($slot1) {
+                            $cuentasOrdenadas->push($slot1);
+                        }
+                        if ($slot2 && (!$slot1 || $slot2->id !== $slot1->id)) {
+                            $cuentasOrdenadas->push($slot2);
+                        }
+
+                        foreach ($allCuentas as $c) {
+                            if (!$cuentasOrdenadas->contains('id', $c->id)) {
+                                $cuentasOrdenadas->push($c);
+                            }
+                        }
+
                         $contador = 1;
                         $colspan = 0;
                     @endphp
@@ -285,7 +314,7 @@
                     <table width="100%" cellspacing="0" cellpadding="0" style="margin-top:5px;">
                         <tr>
 
-                            @foreach ($prov->CuentasBancarias as $cuentas)
+                            @foreach ($cuentasOrdenadas as $cuentas)
                                 @php
                                     $colspan = $contador == 1 ? 4 : 8;
                                 @endphp
